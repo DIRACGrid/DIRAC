@@ -1,28 +1,32 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-admin-modify-user
+# File :    dirac-admin-delete-user
 # Author :  Adrian Casajus
 ########################################################################
+"""
+  Remove User from Configuration
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... User ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  User:     User name' ] ) )
+Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
-
-def usage():
-  print 'Usage: %s <username>+' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
 
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
 choice = raw_input( "Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join( args ) )
 choice = choice.lower()
@@ -45,3 +49,4 @@ for error in errorList:
   print "ERROR %s: %s" % error
 
 DIRAC.exit( exitCode )
+x
