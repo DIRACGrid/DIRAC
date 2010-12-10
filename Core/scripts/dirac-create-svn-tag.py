@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-create-svn-tag
-# Author : Adria Casajus
+# File :    dirac-create-svn-tag
+# Author :  Adria Casajus
 ########################################################################
 """
   Tag a new release in SVN
@@ -48,20 +48,16 @@ Script.registerSwitch( "p:", "package=", "packages to tag comma separated (defau
 Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
 Script.registerSwitch( "n", "releaseNotes", "Only refresh release notes", setOnlyReleaseNotes )
 
-Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
 gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 
-def usage():
-  Script.showHelp()
-  exit( 2 )
-
 if not svnVersions:
-  usage()
+  Script.showHelp()
 
 def generateAndUploadReleaseNotes( packageDistribution, svnPath, versionReleased ):
     tmpDir = tempfile.mkdtemp()
