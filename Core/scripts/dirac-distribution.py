@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-distribution
-# Author : Adria Casajus
+# File :    dirac-distribution
+# Author :  Adria Casajus
 ########################################################################
 """
   Create tarballs for a given DIRAC release
@@ -110,13 +110,8 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 
 Script.parseCommandLine( ignoreErrors = False )
 
-def usage():
-  Script.showHelp()
-  exit( 2 )
-
 if not cliParams.releasesToBuild:
-  usage()
-  exit( 2 )
+  Script.showHelp()
 
 ##
 #Helper functions
