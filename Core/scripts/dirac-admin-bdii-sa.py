@@ -18,19 +18,15 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... Site' % Script.scriptName,
                                      'Arguments:',
-                                     '  Site: Name of the Site (ie: CERN-PROD)'] ) )
+                                     '  Site:     Name of the Site (ie: CERN-PROD)'] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
-def usage():
-  Script.showHelp()
-  DIRAC.exit( 2 )
-
 if not len( args ) == 1:
-  usage()
+  Script.showHelp()
 
 site = args[0]
 
@@ -46,7 +42,7 @@ diracAdmin = DiracAdmin()
 
 result = diracAdmin.getBDIISA( site, useVO = vo, host = host )
 if not ['OK']:
-  print test['Message']
+  print result['Message']
   DIRAC.exit( 2 )
 
 
