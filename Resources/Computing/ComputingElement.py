@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Security                            import File
 from DIRAC.Core.Security.Misc                       import getProxyInfoAsString
+from DIRAC.Core.Utilities.Time                      import dateTime, second
 from DIRAC                                          import S_OK, S_ERROR, gLogger, version
 
 import os, re, string
@@ -38,14 +39,32 @@ class ComputingElement:
     self.ceRequirementDict = {}
     self.ceParameters = {}
     self.proxy = ''
+    self.valid = None
     
     self.ceConfigDict = getLocalCEConfigDict(ceName)
     self.initializeParameters()
         
-  def setProxy(self,proxy):
+  def setProxy(self,proxy,valid=0):
     """ Set proxy for this instance
     """      
     self.proxy = proxy
+    self.valid = dateTime() + second*valid
+    
+  def isProxyValid(self,valid=1000):
+    """ Check if the stored proxy is valid
+    """  
+    if not self.valid:
+      result = S_ERROR('Proxy is not valid for the requested length')
+      result['Value'] = 0
+      return result
+    delta = self.valid - dateTime()
+    totalSeconds = delta[0]*86400+delta[1]
+    if totalSeconds > valid:
+      return S_OK(totalSeconds-valid)
+    else:
+      result = S_ERROR('Proxy is not valid for the requested length')
+      result['Value'] = totalSeconds-valid    
+      return result
         
   def initializeParameters(self):
     """ Initialize the CE parameters after they are collected from various sources
