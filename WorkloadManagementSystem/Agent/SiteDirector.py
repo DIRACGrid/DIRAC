@@ -202,7 +202,7 @@ class SiteDirector( AgentModule ):
       if not result['OK']:
         return result
       self.proxy = result['Value']
-      ce.setProxy( self.proxy )
+      ce.setProxy( self.proxy, cpuTime-60 )
 
       result = ce.available()
       if not result['OK']:
@@ -522,9 +522,16 @@ EOF
                 self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
 
 
-    # The pilot can be in Done sate set by the job agentm check if the output is retrieved
+    # The pilot can be in Done state set by the job agent check if the output is retrieved
     for queue in self.queueDict:
       ce = self.queueDict[queue]['CE']
+      
+      if not ce.isProxyValid(120):
+        result = gProxyManager.getPilotProxyFromDIRACGroup(self.genericPilotDN, self.genericPilotGroup, 1000 )
+        if not result['OK']:
+          return result
+        ce.setProxy(self.proxy,940)
+      
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
