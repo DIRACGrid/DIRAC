@@ -12,6 +12,9 @@ from DIRAC.Core.Utilities.List                      import breakListIntoChunks
 from DIRAC.Resources.Catalog.FileCatalogueBase      import FileCatalogueBase
 import types
     
+rpc = None
+url = None    
+    
 class TransformationClient(Client,FileCatalogueBase):
   
   """ Exposes the functionality available in the DIRAC/TransformationHandler
@@ -99,6 +102,10 @@ class TransformationClient(Client,FileCatalogueBase):
   def getTransformationTasks(self,condDict={},older=None, newer=None, timeStamp='CreationTime', orderAttribute=None, limit=None, inputVector=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
     return rpcClient.getTransformationTasks(condDict,older, newer, timeStamp, orderAttribute, limit, inputVector)
+
+  def setFileStatusForTransformation(self,transName,status,lfns,force=False,timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
+    return rpcClient.setFileStatusForTransformation(transName,status,lfns,force)
 
   #####################################################################
   #
