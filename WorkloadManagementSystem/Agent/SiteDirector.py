@@ -166,14 +166,14 @@ class SiteDirector( AgentModule ):
     # Check if the site is allowed in the mask
     result = jobDB.getSiteMask()
     if not result['OK']:
-      return S_ERROR('Can not get the site mask')
+      return S_ERROR( 'Can not get the site mask' )
     siteMask = result['Value']
     if self.siteName in siteMask:
       result = self.submitJobs()
       if not result['OK']:
         self.log.error( 'Errors in the job submission: %s' % result['Message'] )
     else:
-      self.log.verbose('Site %s is not in the site mask' % self.siteName )    
+      self.log.verbose( 'Site %s is not in the site mask' % self.siteName )
 
     if self.updateStatus:
       result = self.updatePilotStatus()
@@ -202,7 +202,7 @@ class SiteDirector( AgentModule ):
       if not result['OK']:
         return result
       self.proxy = result['Value']
-      ce.setProxy( self.proxy, cpuTime-60 )
+      ce.setProxy( self.proxy, cpuTime - 60 )
 
       result = ce.available()
       if not result['OK']:
@@ -214,6 +214,7 @@ class SiteDirector( AgentModule ):
       self.log.verbose( result['Message'] )
 
       ceDict = ce.getParameterDict()
+      ceDict[ 'GridCE' ] = ceName
       result = taskQueueDB.getMatchingTaskQueues( ceDict )
 
       if not result['OK']:
@@ -221,15 +222,15 @@ class SiteDirector( AgentModule ):
         return result
       taskQueueDict = result['Value']
       if not taskQueueDict:
-        self.log.verbose('No matching TQs found')
+        self.log.verbose( 'No matching TQs found' )
         continue
 
       totalTQJobs = 0
       for tq in taskQueueDict:
         totalTQJobs += taskQueueDict[tq]['Jobs']
-        
+
       pilotsToSubmit = min( totalSlots, totalTQJobs )
-      self.log.verbose('Available slots=%d, TQ jobs=%d, Pilots to submit=%d' % (totalSlots,totalTQJobs,pilotsToSubmit) ) 
+      self.log.verbose( 'Available slots=%d, TQ jobs=%d, Pilots to submit=%d' % ( totalSlots, totalTQJobs, pilotsToSubmit ) )
 
       if pilotsToSubmit > 0:
         self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
@@ -525,13 +526,13 @@ EOF
     # The pilot can be in Done state set by the job agent check if the output is retrieved
     for queue in self.queueDict:
       ce = self.queueDict[queue]['CE']
-      
-      if not ce.isProxyValid(120):
-        result = gProxyManager.getPilotProxyFromDIRACGroup(self.genericPilotDN, self.genericPilotGroup, 1000 )
+
+      if not ce.isProxyValid( 120 ):
+        result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, 1000 )
         if not result['OK']:
           return result
-        ce.setProxy(self.proxy,940)
-      
+        ce.setProxy( self.proxy, 940 )
+
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
