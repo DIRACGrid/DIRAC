@@ -13,6 +13,8 @@ from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingEleme
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
+from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
+from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
 
@@ -59,6 +61,7 @@ class SiteDirector( AgentModule ):
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
     self.getOutput = self.am_getOption( 'GetPilotOutput', True )
+    self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
 
     self.log.always( 'Site:', self.siteName )
     ceTypes = self.am_getOption( 'CETypes', [] )
@@ -525,7 +528,42 @@ EOF
               result = pilotAgentsDB.storePilotOutput( pRef, output, error )
               if not result['OK']:
                 self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
-
+                
+          if self.sendAccounting:
+            # Send the pilot accounting record      
+            pA = PilotAccounting()
+            pA.setEndTime( pilotDict[pRef][ 'LastUpdateTime' ] )
+            pA.setStartTime( pilotDict[pRef][ 'SubmissionTime' ] )
+            retVal = CS.getUsernameForDN( pilotDict[pRef][ 'OwnerDN' ] )
+            if not retVal[ 'OK' ]:
+              userName = 'unknown'
+              self.log.error( "Can't determine username for dn:", pilotDict[pRef][ 'OwnerDN' ] )
+            else:
+              userName = retVal[ 'Value' ]
+            pA.setValueByKey( 'User', userName )
+            pA.setValueByKey( 'UserGroup', pilotDict[pRef][ 'OwnerGroup' ] )
+            result = getSiteForCE( pilotDict[pRef][ 'DestinationSite' ] )
+            if result['OK'] and result[ 'Value' ].strip():
+              pA.setValueByKey( 'Site', result['Value'].strip() )
+            else:
+              pA.setValueByKey( 'Site', 'Unknown' )
+            pA.setValueByKey( 'GridCE', pilotDict[pRef][ 'DestinationSite' ] )
+            pA.setValueByKey( 'GridMiddleware', pilotDict[pRef][ 'GridType' ] )
+            pA.setValueByKey( 'GridResourceBroker', pilotDict[pRef][ 'Broker' ] )
+            pA.setValueByKey( 'GridStatus', pilotDict[pRef][ 'Status' ] )
+            if not 'Jobs' in pilotDict[pRef]:
+              pA.setValueByKey( 'Jobs', 0 )
+            else:
+              pA.setValueByKey( 'Jobs', len( pilotDict[pRef]['Jobs'] ) )
+            self.log.verbose( "Added accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
+            retVal = gDataStoreClient.addRegister( pA )
+            if not retVal[ 'OK' ]:
+              self.log.error('Failed to send accounting info for pilot %s' % pRef )
+            else:
+              # Set up AccountingSent flag
+              result = pilotAgentsDB.setAccountingFlag(pRef)
+              if not result['OK']:
+                self.log.error('Failed to set accounting flag for pilot %s' % pRef )
 
     # The pilot can be in Done state set by the job agent check if the output is retrieved
     for queue in self.queueDict:
