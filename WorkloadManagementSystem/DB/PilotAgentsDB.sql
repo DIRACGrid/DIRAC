@@ -52,6 +52,7 @@ CREATE TABLE PilotAgents (
     StatusReason VARCHAR(255) NOT NULL DEFAULT 'Unknown',
     ParentID INTEGER NOT NULL DEFAULT 0,
     OutputReady ENUM ('True','False') NOT NULL DEFAULT 'False',
+    AccountingSent ENUM ('True','False') NOT NULL DEFAULT 'False',
     PRIMARY KEY (PilotID),
     INDEX (PilotJobReference),
     INDEX (Status)

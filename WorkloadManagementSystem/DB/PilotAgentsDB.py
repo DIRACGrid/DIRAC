@@ -341,6 +341,15 @@ class PilotAgentsDB(DB):
     req = "UPDATE PilotAgents SET BenchMark='%f' WHERE PilotJobReference='%s'" % (mark,pilotRef)
     result = self._update(req)
     return result
+  
+##########################################################################################
+  def setAccountingFlag(self,pilotRef,mark='True'):
+    """ Set the pilot AccountingSent flag
+    """
+
+    req = "UPDATE PilotAgents SET AccountingSent='%s' WHERE PilotJobReference='%s'" % (mark,pilotRef)
+    result = self._update(req)
+    return result  
 
 ##########################################################################################
   def setPilotRequirements(self,pilotRef,requirements):

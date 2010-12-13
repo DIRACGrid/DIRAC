@@ -509,6 +509,14 @@ class WMSAdministratorHandler(RequestHandler):
     """
     result = pilotDB.setPilotBenchmark(pilotRef,mark)
     return result
+  
+  ##########################################################################################
+  types_setAccountingFlag = [StringType]
+  def export_setAccountingFlag(self,pilotRef,mark='True'):
+    """ Set the pilot AccountingSent flag
+    """
+    result = pilotDB.setAccountingFlag(pilotRef,mark)
+    return result
 
   ##########################################################################################
   types_setPilotStatus = [StringType, StringType]
