@@ -33,6 +33,7 @@ class PilotStatusAgent( AgentModule ):
   queryStateList = ['Ready', 'Submitted', 'Running', 'Waiting', 'Scheduled']
   finalStateList = [ 'Done', 'Aborted', 'Cleared', 'Deleted' ]
   identityFieldsList = [ 'OwnerDN', 'OwnerGroup', 'GridType', 'Broker' ]
+  eligibleGridTypes = [ 'gLite' ]
 
   #############################################################################
   def initialize( self ):
@@ -77,6 +78,10 @@ class PilotStatusAgent( AgentModule ):
     pilotsToAccount = {}
 
     for ownerDN, ownerGroup, gridType, broker in result['Value']:
+      
+      if not gridType in self.eligibleGridTypes:
+        continue 
+      
       self.log.verbose( 'Getting pilots for %s:%s @ %s %s' % ( ownerDN, ownerGroup, gridType, broker ) )
 
       condDict1 = {'Status':'Done',
