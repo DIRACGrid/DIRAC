@@ -174,26 +174,26 @@ class AgentModule:
       return S_ERROR( "At least one executor method has to be defined" )
     if not self.am_Enabled():
       return S_ERROR( "Agent is disabled via the configuration" )
-    self.log.info( "="*40 )
-    self.log.info( "Loaded agent module %s" % self.__moduleProperties[ 'fullName' ] )
-    self.log.info( " Site: %s" % DIRAC.siteName() )
-    self.log.info( " Setup: %s" % gConfig.getValue( "/DIRAC/Setup" ) )
-    self.log.info( " Base Module version: %s " % __RCSID__ )
-    self.log.info( " Agent version: %s" % self.__codeProperties[ 'version' ] )
-    self.log.info( " DIRAC version: %s" % DIRAC.version )
-    self.log.info( " DIRAC platform: %s" % DIRAC.platform )
+    self.log.notice( "="*40 )
+    self.log.notice( "Loaded agent module %s" % self.__moduleProperties[ 'fullName' ] )
+    self.log.notice( " Site: %s" % DIRAC.siteName() )
+    self.log.notice( " Setup: %s" % gConfig.getValue( "/DIRAC/Setup" ) )
+    self.log.notice( " Base Module version: %s " % __RCSID__ )
+    self.log.notice( " Agent version: %s" % self.__codeProperties[ 'version' ] )
+    self.log.notice( " DIRAC version: %s" % DIRAC.version )
+    self.log.notice( " DIRAC platform: %s" % DIRAC.platform )
     pollingTime = int( self.am_getOption( 'PollingTime' ) )
     if pollingTime > 3600:
-      self.log.info( " Polling time: %s hours" % ( pollingTime / 3600. ) )
+      self.log.notice( " Polling time: %s hours" % ( pollingTime / 3600. ) )
     else:
-      self.log.info( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' ) )
-    self.log.info( " Control dir: %s" % self.am_getControlDirectory() )
-    self.log.info( " Work dir: %s" % self.am_getWorkDirectory() )
+      self.log.notice( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' ) )
+    self.log.notice( " Control dir: %s" % self.am_getControlDirectory() )
+    self.log.notice( " Work dir: %s" % self.am_getWorkDirectory() )
     if self.am_getOption( 'MaxCycles' ) > 0:
-      self.log.info( " Cycles: %s" % self.am_getMaxCycles() )
+      self.log.notice( " Cycles: %s" % self.am_getMaxCycles() )
     else:
-      self.log.info( " Cycles: unlimited" )
-    self.log.info( "="*40 )
+      self.log.notice( " Cycles: unlimited" )
+    self.log.notice( "="*40 )
     self.__initialized = True
     return S_OK()
 
@@ -317,13 +317,13 @@ class AgentModule:
       if not result[ 'OK' ]:
         self.log.error( result['Message'] )
         return result
-    self.log.info( "-"*40 )
-    self.log.info( "Starting cycle for module %s" % self.__moduleProperties[ 'fullName' ] )
+    self.log.notice( "-"*40 )
+    self.log.notice( "Starting cycle for module %s" % self.__moduleProperties[ 'fullName' ] )
     mD = self.am_getMaxCycles()
     if mD > 0:
       cD = self.__moduleProperties[ 'cyclesDone' ]
-      self.log.info( "Remaining %s of %s cycles" % ( mD - cD, mD ) )
-    self.log.info( "-"*40 )
+      self.log.notice( "Remaining %s of %s cycles" % ( mD - cD, mD ) )
+    self.log.notice( "-"*40 )
     elapsedTime = time.time()
     cpuStats = self.__startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
@@ -334,20 +334,20 @@ class AgentModule:
     #Show status
     elapsedTime = time.time() - elapsedTime
     self.__moduleProperties[ 'totalElapsedTime' ] += elapsedTime
-    self.log.info( "-"*40 )
-    self.log.info( "Agent module %s run summary" % self.__moduleProperties[ 'fullName' ] )
-    self.log.info( " Executed %s times previously" % self.__moduleProperties[ 'cyclesDone' ] )
-    self.log.info( " Cycle took %.2f seconds" % elapsedTime )
+    self.log.notice( "-"*40 )
+    self.log.notice( "Agent module %s run summary" % self.__moduleProperties[ 'fullName' ] )
+    self.log.notice( " Executed %s times previously" % self.__moduleProperties[ 'cyclesDone' ] )
+    self.log.notice( " Cycle took %.2f seconds" % elapsedTime )
     averageElapsedTime = self.__moduleProperties[ 'totalElapsedTime' ] / self.__moduleProperties[ 'cyclesDone' ]
-    self.log.info( " Average execution time: %.2f seconds" % ( averageElapsedTime ) )
+    self.log.notice( " Average execution time: %.2f seconds" % ( averageElapsedTime ) )
     elapsedPollingRate = averageElapsedTime * 100 / self.am_getOption( 'PollingTime' )
-    self.log.info( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' ) )
-    self.log.info( " Average execution/polling time: %.2f%%" % elapsedPollingRate )
+    self.log.notice( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' ) )
+    self.log.notice( " Average execution/polling time: %.2f%%" % elapsedPollingRate )
     if cycleResult[ 'OK' ]:
-      self.log.info( " Cycle was successful" )
+      self.log.notice( " Cycle was successful" )
     else:
       self.log.error( " Cycle had an error:", cycleResult[ 'Message' ] )
-    self.log.info( "-"*40 )
+    self.log.notice( "-"*40 )
     #Update number of cycles
     self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )
     return cycleResult
