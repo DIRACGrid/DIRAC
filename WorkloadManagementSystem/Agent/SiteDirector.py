@@ -163,17 +163,10 @@ class SiteDirector( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
-    # Check if the site is allowed in the mask
-    result = jobDB.getSiteMask()
+    result = self.submitJobs()
     if not result['OK']:
-      return S_ERROR( 'Can not get the site mask' )
-    siteMask = result['Value']
-    if self.siteName in siteMask:
-      result = self.submitJobs()
-      if not result['OK']:
-        self.log.error( 'Errors in the job submission: %s' % result['Message'] )
-    else:
-      self.log.verbose( 'Site %s is not in the site mask' % self.siteName )
+      self.log.error( 'Errors in the job submission: %s' % result['Message'] )
+
 
     if self.updateStatus:
       result = self.updatePilotStatus()
@@ -185,6 +178,12 @@ class SiteDirector( AgentModule ):
   def submitJobs( self ):
     """ Go through defined computing elements and submit jobs if necessary
     """
+
+    # Check if the site is allowed in the mask
+    result = jobDB.getSiteMask()
+    if not result['OK']:
+      return S_ERROR( 'Can not get the site mask' )
+    siteMask = self.siteName in result['Value']
 
     for queue in self.queueDict:
       ce = self.queueDict[queue]['CE']
@@ -215,6 +214,11 @@ class SiteDirector( AgentModule ):
 
       ceDict = ce.getParameterDict()
       ceDict[ 'GridCE' ] = ceName
+      if not siteMask and 'Site' in ceDict:
+        self.log.info( 'Site not in the mask %s' % self.siteName )
+        self.log.info( 'Removing "Site" from matching Dict' )
+        del ceDict[ 'Site' ]
+
       result = taskQueueDB.getMatchingTaskQueues( ceDict )
 
       if not result['OK']:
