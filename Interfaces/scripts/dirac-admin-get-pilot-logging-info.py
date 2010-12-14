@@ -4,20 +4,24 @@
 # File :    dirac-admin-get-pilot-logging-info.py
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve logging info of a Grid pilot
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  PilotID:  Grid ID of the pilot' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <Grid pilot reference> [<Grid pilot reference>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
