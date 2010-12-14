@@ -4,24 +4,25 @@
 # File :    dirac-admin-get-pilot-output
 # Author :  Ricardo Graciani
 ########################################################################
-#
-# Retrieve available info about the given pilotid
-# 
+"""
+  Retrieve available info about the given pilot
+"""
 __RCSID__ = "$Id: dirac-admin-get-pilot-output.py 18161 2009-11-11 12:07:09Z acasajus $"
 
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  PilotID:  Grid ID of the pilot' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <Grid pilot reference> [<Grid pilot reference>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
