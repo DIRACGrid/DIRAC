@@ -10,11 +10,10 @@ from DIRAC.Core.Base import Script
 
 Script.registerSwitch( "e", "extended", "Show extended info" )
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
-
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
