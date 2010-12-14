@@ -14,7 +14,7 @@ scriptName = os.path.basename( sys.argv[0] ).replace( '.py', '' )
 def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = False ):
   initialize( script, ignoreErrors, initializeMonitor, True )
 
-def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = True ):
+def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = False ):
   global localCfg, scriptName
 
   gLogger.showHeaders( False )
