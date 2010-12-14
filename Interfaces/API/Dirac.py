@@ -21,7 +21,7 @@
 """
 
 from DIRAC.Core.Base import Script
-Script.parseCommandLine()
+Script.initialize()
 
 __RCSID__ = "$Id$"
 

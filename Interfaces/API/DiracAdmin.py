@@ -5,7 +5,7 @@
 ########################################################################
 
 from DIRAC.Core.Base import Script
-Script.parseCommandLine()
+Script.initialize()
 
 """DIRAC Administrator API Class
 
