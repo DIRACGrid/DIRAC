@@ -4,6 +4,9 @@
 # File :    dirac-admin-list-users
 # Author :  Adrian Casajus
 ########################################################################
+"""
+  Lists the users in the Configuration. If no group is specified return all users.
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -12,15 +15,16 @@ Script.registerSwitch( "e", "extended", "Show extended info" )
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... [Group] ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  Group:    Only users from this group (default: all)' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s [<DIRAC group>/all]+' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
-if len( args ) < 1:
-  usage()
+if len( args ) == 0:
+  args = ['all']
 
 diracAdmin = DiracAdmin()
 exitCode = 0
