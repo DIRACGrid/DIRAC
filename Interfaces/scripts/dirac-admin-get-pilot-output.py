@@ -4,6 +4,9 @@
 # File :    dirac-admin-get-pilot-output
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve output of a Grid pilot
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -12,12 +15,14 @@ from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <Grid pilot reference> [<Grid pilot reference>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  PilotID:  Grid ID of the pilot' ] ) )
 
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
