@@ -4,6 +4,9 @@
 # File :    dirac-admin-select-requests
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Select requests from the request management system
+"""
 __RCSID__ = "$Id$"
 import sys, string
 import DIRAC
@@ -20,6 +23,10 @@ Script.registerSwitch( "", "RequestStart=", "First request to consider (start fr
 Script.registerSwitch( "", "Limit=", "Selection limit (default 100)" )
 Script.registerSwitch( "", "OwnerDN=", "DN of owner (in double quotes)" )
 Script.registerSwitch( "", "OwnerGroup=", "Owner group" )
+
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -37,13 +44,6 @@ ownerDN = None
 ownerGroup = None
 requestStart = 0
 limit = 100
-
-def usage():
-  print 'Usage: %s [Try -h,--help for more information]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
-if args:
-  usage()
 
 exitCode = 0
 
