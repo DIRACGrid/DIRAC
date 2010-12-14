@@ -11,7 +11,6 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers                import cfgPath
 
 grid = 'LCG'
@@ -34,6 +33,7 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
