@@ -4,20 +4,21 @@
 # File :    dirac-admin-service-ports
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Print the service ports for the specified setup
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... [Setup]' % Script.scriptName,
+                                     'Arguments:',
+                                     '  Setup:    Name of the setup' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
-
-def usage():
-  print 'Usage: %s <DIRAC Setup>' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
-if len( args ) > 1:
-  usage()
 
 setup = ''
 if args:
