@@ -4,11 +4,17 @@
 # File :    dirac-admin-get-site-protocols
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Check the defined protocols for all SEs of a given site
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch( "", "Site=", "Site for which protocols are to be checked" )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName ] ) )
+Script.registerSwitch( "", "Site=", "Site for which protocols are to be checked (mandatory)" )
 Script.parseCommandLine( ignoreErrors = True )
 
 site = None
@@ -16,16 +22,10 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "site":
     site = switch[1]
 
-args = Script.getPositionalArgs()
-
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
-def usage():
-  print 'Usage: %s --Site=<DIRAC SITE NAME> [Try -h,--help for more information]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
-if not site or args:
-  usage()
+if not site:
+  Script.showHelp()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
