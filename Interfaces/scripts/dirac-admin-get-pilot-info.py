@@ -11,7 +11,6 @@ __RCSID__ = "$Id: dirac-admin-get-pilot-output.py 18161 2009-11-11 12:07:09Z aca
 
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -24,6 +23,7 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
