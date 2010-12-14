@@ -4,13 +4,13 @@ __RCSID__ = "$Id$"
 import datetime, time
 import types
 import threading
-import os, os.path
-import re
 import random
 import DIRAC
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor, gConfig
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
+from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
+from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 gSynchro = ThreadSafe.Synchronizer()
@@ -103,48 +103,40 @@ class AccountingDB( DB ):
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't get a list of setups: %s" % retVal[ 'Message' ] )
     setupsList = retVal[ 'Value' ]
-    typeRE = re.compile( ".*[a-z1-9]\.py$" )
-    for typeFile in os.listdir( os.path.join( DIRAC.rootPath, "DIRAC", "AccountingSystem", "Client", "Types" ) ):
-      if typeRE.match( typeFile ):
-        for setup in setupsList:
-          pythonName = typeFile.replace( ".py", "" )
-          typeName = "%s_%s" % ( setup, pythonName )
-          if pythonName != "BaseAccountingType":
-            self.log.info( "Trying to register %s type for setup %s" % ( typeName, setup ) )
-            try:
-              typeModule = __import__( "DIRAC.AccountingSystem.Client.Types.%s" % pythonName,
-                                       globals(),
-                                       locals(), pythonName )
-              typeClass = getattr( typeModule, pythonName )
-            except Exception, e:
-              self.log.error( "Can't load type %s: %s" % ( typeName, str( e ) ) )
-              continue
-            typeDef = typeClass().getDefinition()
-            #dbTypeName = "%s_%s" % ( setup, typeName )
-            definitionKeyFields, definitionAccountingFields, bucketsLength = typeDef[1:]
-            #If already defined check the similarities
-            if typeName in self.dbCatalog:
-              bucketsLength.sort()
-              if bucketsLength != self.dbBucketsLength[ typeName ]:
-                bucketsLength = self.dbBucketsLength[ typeName ]
-                self.log.error( "Bucket length has changed for type %s" % typeName )
-              keyFields = [ f[0] for f in definitionKeyFields ]
-              if keyFields != self.dbCatalog[ typeName ][ 'keys' ]:
-                keyFields = self.dbCatalog[ typeName ][ 'keys' ]
-                self.log.error( "Definition fields have changed for type %s" % typeName )
-              valueFields = [ f[0] for f in definitionAccountingFields ]
-              if valueFields != self.dbCatalog[ typeName ][ 'values' ]:
-                valueFields = self.dbCatalog[ typeName ][ 'values' ]
-                self.log.error( "Accountable fields have changed for type %s" % typeName )
-            #Try to re register to check all the tables are there
-            retVal = self.registerType( typeName, definitionKeyFields,
-                                        definitionAccountingFields, bucketsLength )
-            if not retVal[ 'OK' ]:
-              self.log.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
-            #Set the timespan
-            self.dbCatalog[ typeName ][ 'dataTimespan' ] = typeClass().getDataTimespan()
-            self.dbCatalog[ typeName ][ 'definition' ] = { 'keys' : definitionKeyFields,
-                                                           'values' : definitionAccountingFields }
+    objectsLoaded = loadObjects( "AccountingSystem/Client/Types", parentClass = BaseAccountingType )
+
+    #Load the files
+    for pythonClassName in sorted( objectsLoaded ):
+      typeClass = objectsLoaded[ pythonClassName ]
+      for setup in setupsList:
+        typeName = "%s_%s" % ( setup, pythonClassName )
+
+        typeDef = typeClass().getDefinition()
+        #dbTypeName = "%s_%s" % ( setup, typeName )
+        definitionKeyFields, definitionAccountingFields, bucketsLength = typeDef[1:]
+        #If already defined check the similarities
+        if typeName in self.dbCatalog:
+          bucketsLength.sort()
+          if bucketsLength != self.dbBucketsLength[ typeName ]:
+            bucketsLength = self.dbBucketsLength[ typeName ]
+            self.log.error( "Bucket length has changed for type %s" % typeName )
+          keyFields = [ f[0] for f in definitionKeyFields ]
+          if keyFields != self.dbCatalog[ typeName ][ 'keys' ]:
+            keyFields = self.dbCatalog[ typeName ][ 'keys' ]
+            self.log.error( "Definition fields have changed for type %s" % typeName )
+          valueFields = [ f[0] for f in definitionAccountingFields ]
+          if valueFields != self.dbCatalog[ typeName ][ 'values' ]:
+            valueFields = self.dbCatalog[ typeName ][ 'values' ]
+            self.log.error( "Accountable fields have changed for type %s" % typeName )
+        #Try to re register to check all the tables are there
+        retVal = self.registerType( typeName, definitionKeyFields,
+                                    definitionAccountingFields, bucketsLength )
+        if not retVal[ 'OK' ]:
+          self.log.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
+        #Set the timespan
+        self.dbCatalog[ typeName ][ 'dataTimespan' ] = typeClass().getDataTimespan()
+        self.dbCatalog[ typeName ][ 'definition' ] = { 'keys' : definitionKeyFields,
+                                                       'values' : definitionAccountingFields }
 
     return S_OK()
 

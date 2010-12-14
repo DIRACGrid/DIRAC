@@ -28,7 +28,8 @@ class MainReporter:
 
   def generate( self, reportRequest, credDict ):
     typeName = reportRequest[ 'typeName' ]
-    if typeName not in gPlottersList:
+    plotterClass = gPlottersList.getPlotterClass( typeName )
+    if not plotterClass:
       return S_ERROR( "There's no reporter registered for type %s" % typeName )
     if typeName in gPoliciesList:
       retVal = gPoliciesList[ typeName ].checkRequest( reportRequest[ 'reportName' ],
@@ -38,11 +39,12 @@ class MainReporter:
       if not retVal[ 'OK' ]:
         return retVal
     reportRequest[ 'hash' ] = self.__calculateReportHash( reportRequest )
-    plotter = gPlottersList[ typeName ]( self.db, self.setup, reportRequest[ 'extraArgs' ] )
+    plotter = plotterClass( self.db, self.setup, reportRequest[ 'extraArgs' ] )
     return plotter.generate( reportRequest )
 
   def list( self, typeName ):
-    if typeName not in gPlottersList:
+    plotterClass = gPlottersList.getPlotterClass( typeName )
+    if not plotterClass:
       return S_ERROR( "There's no plotter registered for type %s" % typeName )
-    plotter = gPlottersList[ typeName ]( self.db, self.setup )
+    plotter = plotterClass( self.db, self.setup )
     return S_OK( plotter.plotsList() )

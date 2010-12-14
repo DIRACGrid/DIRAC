@@ -1,14 +1,21 @@
+import re
+from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
+from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
 
-from DIRAC.AccountingSystem.private.Plotters.DataOperationPlotter import DataOperationPlotter
-from DIRAC.AccountingSystem.private.Plotters.JobPlotter import JobPlotter
-from DIRAC.AccountingSystem.private.Plotters.WMSHistoryPlotter import WMSHistoryPlotter
-from DIRAC.AccountingSystem.private.Plotters.PilotPlotter import PilotPlotter
-from DIRAC.AccountingSystem.private.Plotters.SRMSpaceTokenDeploymentPlotter import SRMSpaceTokenDeploymentPlotter
+class PlottersList:
 
-gPlottersList = {
-                 'DataOperation' : DataOperationPlotter,
-                 'Job' : JobPlotter,
-                 'WMSHistory' : WMSHistoryPlotter,
-                 'Pilot' : PilotPlotter,
-                 'SRMSpaceTokenDeployment' : SRMSpaceTokenDeploymentPlotter
-                 }
+  def __init__( self ):
+    objectsLoaded = loadObjects( "AccountingSystem/private/Plotters",
+                                 re.compile( ".*[a-z1-9]Plotter\.py$" ),
+                                 BaseReporter )
+    self.__plotters = {}
+    for objName in objectsLoaded:
+      self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]
+
+  def getPlotterClass( self, typeName ):
+    try:
+      return self.__plotters[ typeName ]
+    except KeyError:
+      return None
+
+gPlottersList = PlottersList()
