@@ -11,12 +11,19 @@ localCfg = LocalConfiguration()
 
 scriptName = os.path.basename( sys.argv[0] ).replace( '.py', '' )
 
+_isAlreadyInitialized = False
+
 def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = False ):
   gLogger.showHeaders( False )
   initialize( script, ignoreErrors, initializeMonitor, True )
 
 def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = False ):
-  global localCfg, scriptName
+  global localCfg, scriptName, _isAlreadyInitialized
+
+  #Please do not call initialize in every file
+  if _isAlreadyInitialized:
+    return S_OK()
+  _isAlreadyInitialized = True
 
   userDisabled = not localCfg.isCSEnabled()
   if not userDisabled:
