@@ -11,8 +11,6 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
-
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... User ...' % Script.scriptName,
@@ -21,6 +19,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
