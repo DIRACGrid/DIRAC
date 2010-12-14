@@ -4,36 +4,36 @@
 # File :    dirac-admin-sync-users-from-file
 # Author :  Adrian Casajus
 ########################################################################
+"""
+  Sync users in Configuration with the cfg contents.
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.CFG import CFG
 
 Script.registerSwitch( "t", "test", "Only test. Don't commit changes" )
-
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... UserCfg' % Script.scriptName,
+                                     'Arguments:',
+                                     '  UserCfg:  Cfg FileName with Users as sections containing DN, Groups, and other properties as options' ] ) )
+Script.parseCommandLine( ignoreErrors = True )
 
 args = Script.getExtraCLICFGFiles()
 
-def usage():
-  print 'Usage: %s <fileWithUsers>.cfg' % ( Script.scriptName )
-  print ' File has to contain a user sections with DN groups and extra properties as options'
-  DIRAC.exit( 2 )
+if len( args ) < 1:
+  Script.showHelp()
 
-
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 testOnly = False
 errorList = []
 
-if len( args ) < 1:
-  usage()
-
-userProps = {}
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "t", "test" ):
     testOnly = True
-
 
 try:
   usersCFG = CFG().loadFromFile( args[0] )
@@ -42,7 +42,7 @@ except Exception, e:
   errorCode = 1
 else:
   if not diracAdmin.csSyncUsersWithCFG( usersCFG ):
-    errorList.append( ( "modify user", "Cannot sync with %s" % args[0] ) )
+    errorList.append( ( "modify users", "Cannot sync with %s" % args[0] ) )
     exitCode = 255
 
 if not exitCode and not testOnly:
