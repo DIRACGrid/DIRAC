@@ -4,20 +4,24 @@
 # File :    dirac-admin-get-job-pilot-output
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve the output of the pilot that executed a given job
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  JobID:    DIRAC ID of the Job' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <JobID> [<JobID>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
