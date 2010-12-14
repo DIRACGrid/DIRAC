@@ -408,7 +408,7 @@ class CSAPI:
   def syncUsersWithCFG( self, usersCFG ):
     """
     Sync users with the cfg contents. Usernames have to be sections containing
-    DN, groups, and extra properties as parameters
+    DN, Groups, and extra properties as parameters
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
