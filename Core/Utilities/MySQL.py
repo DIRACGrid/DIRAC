@@ -505,7 +505,6 @@ class MySQL:
 
         cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
                table, string.join( cmdList, ',\n' ), engine )
-        print cmd
         retDict = self._update( cmd )
         if not retDict['OK']:
           return retDict
