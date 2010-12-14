@@ -4,34 +4,37 @@
 # File :    dirac-dms-pfn-metadata
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve metadata for a PFN given a valid DIRAC SE
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                       import Dirac
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... PFN SE' % Script.scriptName,
+                                     'Arguments:',
+                                     '  PFN:      Physical File Name',
+                                     '  SE:       Valid DIRAC SE' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <PFN> <SE>' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 2:
-  usage()
+  Script.showHelp()
 
 if len( args ) > 2:
   print 'Only one PFN SE pair will be considered'
 
+from DIRAC.Interfaces.API.Dirac                       import Dirac
 dirac = Dirac()
 exitCode = 0
-errorList = []
 
-result = dirac.getPhysicalFileMetadata( args[0], args[1], printOutput = True )
+pfn = args[0]
+seName = args[1]
+result = dirac.getPhysicalFileMetadata( pfn, seName, printOutput = True )
 if not result['OK']:
-  errorList.append( ( args[0], result['Message'] ) )
+  print 'ERROR: ', result['Message']
   exitCode = 2
-
-for error in errorList:
-  print "ERROR %s: %s" % error
 
 DIRAC.exit( exitCode )

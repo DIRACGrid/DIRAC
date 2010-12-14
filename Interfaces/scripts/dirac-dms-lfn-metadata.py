@@ -4,31 +4,32 @@
 # File :    dirac-admin-lfn-metadata
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Obtain replica metadata from file catalogue client.
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                       import Dirac
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  LFN:      Logical File Name' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
-args = Script.getPositionalArgs()
+lfns = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <LFN> [<LFN>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
+if len( lfns ) < 1:
+  Script.showHelp()
 
-if len( args ) < 1:
-  usage()
-
+from DIRAC.Interfaces.API.Dirac                       import Dirac
 dirac = Dirac()
 exitCode = 0
 errorList = []
 
-result = dirac.getMetadata( args, printOutput = True )
+result = dirac.getMetadata( lfns, printOutput = True )
 if not result['OK']:
-  errorList.append( ( lfn, result['Message'] ) )
+  print 'ERROR: ', result['Message']
   exitCode = 2
-
-for error in errorList:
-  print "ERROR %s: %s" % error
 
 DIRAC.exit( exitCode )

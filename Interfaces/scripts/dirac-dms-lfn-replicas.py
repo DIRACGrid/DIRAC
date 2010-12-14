@@ -4,27 +4,31 @@
 # File :    dirac-admin-lfn-replicas
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Obtain replica information from file catalogue client.
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                         import Dirac
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  LFN:      Logical File Name' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
-args = Script.getPositionalArgs()
+lfns = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <LFN> [<LFN>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
+if len( lfns ) < 1:
+  Script.showHelp()
 
-if len( args ) < 1:
-  usage()
-
+from DIRAC.Interfaces.API.Dirac                         import Dirac
 dirac = Dirac()
 exitCode = 0
 
-result = dirac.getReplicas( args, printOutput = True )
+result = dirac.getReplicas( lfns, printOutput = True )
 if not result['OK']:
+  print 'ERROR: ', result['Message']
   exitCode = 2
-  print "ERROR:", result['Message']
 
 DIRAC.exit( exitCode )

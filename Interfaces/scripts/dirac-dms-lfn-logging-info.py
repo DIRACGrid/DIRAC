@@ -4,37 +4,34 @@
 # File :    dirac-dms-lfn-logging-ingo
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve logging information for a given LFN
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                              import Dirac
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  LFN:      Logical File Name' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <LFN> |[<LFN>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
+from DIRAC.Interfaces.API.Dirac                              import Dirac
 dirac = Dirac()
 exitCode = 0
 errorList = []
 
-for job in args:
+for lfn in args:
 
-  try:
-    job = str( job )
-  except Exception, x:
-    errorList.append( ( 'Expected integer for LFN', job ) )
-    exitCode = 2
-    continue
-
-  result = dirac.dataLoggingInfo( job, printOutput = True )
+  result = dirac.dataLoggingInfo( lfn, printOutput = True )
   if not result['OK']:
-    errorList.append( ( job, result['Message'] ) )
+    errorList.append( ( lfn, result['Message'] ) )
     exitCode = 2
 
 for error in errorList:
