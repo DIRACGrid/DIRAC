@@ -12,9 +12,6 @@ import DIRAC
 from DIRAC.Core.Base import Script
 
 Script.registerSwitch( "e", "extended", "Show extended info" )
-
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
-
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... [Group] ...' % Script.scriptName,
@@ -26,6 +23,7 @@ args = Script.getPositionalArgs()
 if len( args ) == 0:
   args = ['all']
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
