@@ -12,6 +12,7 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 
 class Dispatcher:
 
@@ -79,7 +80,8 @@ class Dispatcher:
       gLogger.error( "Oops. Invalid service name!", serviceName )
       return False
     gLogger.debug( "Trying to auto discover handler" )
-    rootModulesToLook = [ "%sDIRAC" % ext for ext in gConfig.getValue( "/DIRAC/Extensions", [] ) ] + [ 'DIRAC' ]
+    rootModulesToLook = getInstalledExtensions()
+    print rootModulesToLook
     for rootModule in rootModulesToLook:
       gLogger.debug( "Trying to find handler in %s root module" % rootModule )
       filePath = os.path.join( rootModule, "%sSystem" % fields[0], "Service", "%sHandler.py" % fields[1] )
