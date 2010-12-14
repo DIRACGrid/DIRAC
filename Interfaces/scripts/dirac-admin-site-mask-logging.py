@@ -4,21 +4,26 @@
 # File :    dirac-admin-site-mask-logging
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieves site mask logging information.
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... Site ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  Site:     Name of the Site' ] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <DIRAC SITE NAME> [<DIRAC SITE NAME>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
