@@ -10,7 +10,6 @@
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -24,6 +23,7 @@ setup = ''
 if args:
   setup = args[0]
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 result = diracAdmin.getServicePorts( setup, printOutput = True )
 if result['OK']:
