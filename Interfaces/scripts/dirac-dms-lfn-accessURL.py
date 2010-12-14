@@ -4,34 +4,38 @@
 # File :    dirac-dms-lfn-accessURL
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve an access URL for an LFN replica given a valid DIRAC SE.
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                         import Dirac
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... LFN SE' % Script.scriptName,
+                                     'Arguments:',
+                                     '  LFN:      Logical File Name',
+                                     '  SE:       Valid DIRAC SE' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <LFN> <SE>' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 2:
-  usage()
+  Script.showHelp()
 
 if len( args ) > 2:
   print 'Only one LFN SE pair will be considered'
 
+from DIRAC.Interfaces.API.Dirac                         import Dirac
 dirac = Dirac()
 exitCode = 0
-errorList = []
 
-result = dirac.getAccessURL( args[0], args[1], printOutput = True )
+lfn = args[0]
+seName = args[1]
+
+result = dirac.getAccessURL( lfn, seName, printOutput = True )
 if not result['OK']:
-  errorList.append( ( args[0], result['Message'] ) )
+  print 'ERROR: ', result['Message']
   exitCode = 2
-
-for error in errorList:
-  print "ERROR %s: %s" % error
 
 DIRAC.exit( exitCode )
