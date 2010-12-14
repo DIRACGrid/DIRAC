@@ -4,6 +4,9 @@
 # File :    dirac-admin-modify-user
 # Author :  Adrian Casajus
 ########################################################################
+"""
+  Modify a user in the CS.
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -11,22 +14,25 @@ from DIRAC.Core.Base import Script
 Script.registerSwitch( "p:", "property=", "Add property to the user <name>=<value>" )
 Script.registerSwitch( "f", "force", "create the user if it doesn't exist" )
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... user DN group [group] ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  user:     User name',
+                                     '  DN:       DN of the User',
+                                     '  group:    Add the user to the group' ] ) )
+Script.parseCommandLine( ignoreErrors = True )
 
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s [<options>] <username> <DN> <group> [<group>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
+if len( args ) < 3:
+  Script.showHelp()
 
-
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 forceCreation = False
 errorList = []
-
-if len( args ) < 3:
-  usage()
 
 userProps = {}
 for unprocSw in Script.getUnprocessedSwitches():
@@ -44,11 +50,12 @@ for unprocSw in Script.getUnprocessedSwitches():
       print "Setting property %s to %s" % ( pName, pValue )
       userProps[ pName ] = pValue
 
+userName = args[0]
 userProps[ 'DN' ] = args[1]
 userProps[ 'Groups' ] = args[2:]
 
-if not diracAdmin.csModifyUser( args[0], userProps, createIfNonExistant = forceCreation ):
-  errorList.append( ( "modify user", "Cannot modify user %s" % args[0] ) )
+if not diracAdmin.csModifyUser( userName, userProps, createIfNonExistant = forceCreation ):
+  errorList.append( ( "modify user", "Cannot modify user %s" % userName ) )
   exitCode = 255
 else:
   result = diracAdmin.csCommitChanges()
