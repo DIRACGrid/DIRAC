@@ -4,11 +4,19 @@
 # File :    dirac-admin-set-site-protocols
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Defined protocols for each SE for a given site.
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch( "", "Site=", "Site for which protocols are to be set (protocols are standard arguments)" )
+Script.registerSwitch( "", "Site=", "Site for which protocols are to be set (mandatory)" )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... Protocol ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  Protocol: SE access protocol (mandatory)' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 
 site = None
@@ -18,15 +26,10 @@ for switch in Script.getUnprocessedSwitches():
 
 args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
-
-def usage():
-  print 'Usage: %s <PROTOCOL> [<PROTOCOL>] --Site=<DIRAC SITE NAME> [Try -h,--help for more information]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if not site or not args:
-  usage()
+  Script.showHelp()
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 result = diracAdmin.setSiteProtocols( site, args, printOutput = True )
