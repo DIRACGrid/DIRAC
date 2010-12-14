@@ -7,10 +7,10 @@
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 Script.parseCommandLine( ignoreErrors = True )
 
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 diracAdmin.getExternalPackageVersions()
 DIRAC.exit( 0 )
