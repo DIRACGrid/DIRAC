@@ -5,7 +5,6 @@ import types
 import os
 import DIRAC
 from DIRAC.Core.Utilities import List
-#from DIRAC.ConfigurationSystem.Client.Helpers.GetFunctions import getVO
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR

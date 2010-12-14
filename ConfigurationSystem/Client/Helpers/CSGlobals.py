@@ -1,7 +1,7 @@
 ########################################################################
 # $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-submit-pilot-for-job.py $
-# File :   GetFunctions.py
-# Author : Ricardo Graciani
+# File :    CSGlobals.py
+# Author :  Ricardo Graciani
 ########################################################################
 """
 Some Helper functions to retrieve common location from the CS
