@@ -6,7 +6,6 @@ from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 def loadObjects( path, reFilter = None, parentClass = None ):
-  print "LOAD", path
   if not reFilter:
     reFilter = re.compile( ".*[a-z1-9]\.py$" )
   pathList = List.fromChar( path, "/" )
@@ -40,6 +39,8 @@ def loadObjects( path, reFilter = None, parentClass = None ):
       objClass = getattr( objModule, pythonClassName )
     except Exception, e:
       gLogger.error( "Can't load type %s/%s: %s" % ( parentModule, pythonClassName, str( e ) ) )
+      continue
+    if parentClass == objClass:
       continue
     if parentClass and not issubclass( objClass, parentClass ):
         gLogger.warn( "%s is not a subclass of %s. Skipping" % ( objClass, parentClass ) )
