@@ -2,26 +2,34 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
+"""
+  Monitor the jobs present in the repository
+"""
 __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac import Dirac
 import os, sys
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... RepoDir' % Script.scriptName,
+                                     'Arguments:',
+                                     '  RepoDir:  Location of Job Repository' ] ) )
 Script.parseCommandLine( ignoreErrors = False )
-args = sys.argv
+args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s repo' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
-if len( args ) < 2:
-  usage()
+if len( args ) != 1:
+  Script.showHelp()
 
 repoLocation = args[1]
-dirac = Dirac( True, repoLocation )
+from DIRAC.Interfaces.API.Dirac import Dirac
+dirac = Dirac( WithRepo = True, RepoLocation = repoLocation )
 
 exitCode = 0
-dirac.monitorRepository( True )
+result = dirac.monitorRepository( printOutput = True )
+if not result['OK']:
+  print 'ERROR: ', result['Message']
+  exitCode = 2
+
 DIRAC.exit( exitCode )
