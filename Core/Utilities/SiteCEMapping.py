@@ -122,4 +122,35 @@ def getCEsForSite( siteName ):
   ces = gConfig.getValue( siteSection, [] )
   return S_OK( ces )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#############################################################################
+def getQueueInfo( ceUniqueID ):
+  """
+    Extract information from full CE Name including associate DIRAC Site
+  """
+  try:
+    subClusterUniqueID = ceUniqueID.split( ':' )[0]
+    queueID = ceUniqueID.split( '/' )[1]
+  except:
+    return S_ERROR( 'Wrong full queue Name' )
+
+  result = getSiteForCE( subClusterUniqueID )
+  if not result['OK']:
+    return result
+  diracSiteName = result['Value']
+
+  if not diracSiteName:
+    return S_ERROR( 'Can not find corresponding Site in CS' )
+
+  gridType = diracSiteName.split( '.' )[0]
+
+  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % ( gridType, diracSiteName, subClusterUniqueID )
+  queueCSSection = '%s/Queues/%s' % ( siteCSSEction, queueID )
+
+  resultDict = { 'SubClusterUniqueID': subClusterUniqueID,
+                 'QueueID': queueID,
+                 'SiteName': diracSiteName,
+                 'Grid': gridType,
+                 'SiteCSSEction': siteCSSEction,
+                 'QueueCSSection': queueCSSection }
+
+  return S_OK( resultDict )
