@@ -22,7 +22,7 @@ def initialize( script = False, ignoreErrors = False, initializeMonitor = False,
 
   #Please do not call initialize in every file
   if _isAlreadyInitialized:
-    return S_OK()
+    return
   _isAlreadyInitialized = True
 
   userDisabled = not localCfg.isCSEnabled()
