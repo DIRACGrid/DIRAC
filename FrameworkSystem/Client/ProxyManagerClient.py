@@ -190,7 +190,7 @@ class ProxyManagerClient:
     else:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     if token:
-      retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
+      retVal = rpcClient.getProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
                                    long( requiredTimeLeft ), token )
     else:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
