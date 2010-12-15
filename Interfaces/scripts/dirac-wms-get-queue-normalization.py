@@ -4,67 +4,37 @@
 # File :    dirac-wms-get-queue-normalization.py
 # Author :  Ricardo Graciani
 ########################################################################
+"""
+  Report Normalization Factor applied by Site to the given Queue
+"""
 __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
-from DIRAC import gConfig
+from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getQueueNormalization
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... Queue ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  Queue:     GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <GlueCEUniqueID> [<GlueCEUniqueID>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
 exitCode = 0
-errorList = []
-resultList = {}
 
 for ceUniqueID in args:
 
-  try:
-    subClusterUniqueID = ceUniqueID.split( ':' )[0]
-    queueID = ceUniqueID.split( '/' )[1]
-  except:
-    errorList.append( ( ceUniqueID, 'Wrong full queue Name' ) )
-    exitCode = 1
-    continue
+  cpuNorm = getQueueNormalization( ceUniqueID )
 
-  result = getSiteForCE( subClusterUniqueID )
-  if not result['OK']:
-    errorList.append( ( ceUniqueID, result['Message'] ) )
+  if not cpuNorm['OK']:
+    print 'ERROR %s:' % ceUniqueID, cpuNorm['Message']
     exitCode = 2
     continue
-  diracSiteName = result['Value']
-  if not diracSiteName:
-    # getSiteForCE will return '' if not matching site is found
-    errorList.append( ( ceUniqueID, 'Can not find corresponding Site in CS' ) )
-    exitCode = 2
-    continue
-
-  gridType = diracSiteName.split( '.' )[0]
-  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % ( gridType, diracSiteName, subClusterUniqueID )
-  queueCSSection = '%s/Queues/%s' % ( siteCSSEction, queueID )
-
-  benchmarkSI00Option = '%s/%s' % ( queueCSSection, 'SI00' )
-  benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
-  if not benchmarkSI00:
-    benchmarkSI00Option = '%s/%s' % ( siteCSSEction, 'SI00' )
-    benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
-
-  if benchmarkSI00:
-    resultList[ceUniqueID] = benchmarkSI00
-    print ceUniqueID, benchmarkSI00
-  else:
-    errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
-    exitCode = 3
-
-for error in errorList:
-  print "ERROR %s: %s" % error
+  print ceUniqueID, cpuNorm['Value']
 
 DIRAC.exit( exitCode )
+
