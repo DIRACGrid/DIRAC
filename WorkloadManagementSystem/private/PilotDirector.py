@@ -235,8 +235,10 @@ class PilotDirector:
     for siteName in gridSites:
       if siteName in siteMask:
         ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName ), [] )
-        if ret:
-          ceMask.extend( ret )
+        for ce in ret:
+          submissionMode = gConfig.getValue( '%s/%s/CEs/%s/SubmissionMode' % ( section, siteName, ce ), 'gLite' )
+          if submissionMode == self.gridMiddleware:
+            ceMask.append( ce )
 
     if not ceMask:
       self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( siteMask ) )
