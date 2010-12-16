@@ -124,6 +124,11 @@ class PilotDirector:
     self.configureFromSection( csSection )
     self.reloadConfiguration( csSection, submitPool )
 
+    setup = gConfig.getValue( '/DIRAC/Setup', '' )
+    vo = getVO()
+    self.diracVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( vo, setup ),
+                                         self.diracVersion )
+
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
     self.log.info( '' )
