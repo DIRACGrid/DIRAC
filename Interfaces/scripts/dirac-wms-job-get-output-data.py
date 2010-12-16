@@ -1,39 +1,41 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-production-job-get-output-data
+# File :    dirac-wms-job-get-output-data
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve the output data files of a DIRAC job
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                              import Dirac
-import os
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  JobID:    DIRAC Job ID' ] ) )
+Script.registerSwitch( "D:", "Dir=", "Store the output in this directory" )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <JobID> |[<JobID>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
+from DIRAC.Interfaces.API.Dirac                              import Dirac
 dirac = Dirac()
 exitCode = 0
 errorList = []
 
+outputDir = None
+for sw, v in Script.getUnprocessedSwitches():
+  if sw in ( 'D', 'Dir' ):
+    outputDir = v
+
 for job in args:
 
-  try:
-    job = int( job )
-  except Exception, x:
-    errorList.append( ( 'Expected integer for jobID', job ) )
-    exitCode = 2
-    continue
-
-  result = dirac.getJobOutputData( job )
+  result = dirac.getJobOutputData( job, destinationDir = outputDir )
   if result['OK']:
     print 'Job %s output data retrieved' % ( job )
   else:
