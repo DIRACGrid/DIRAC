@@ -4,8 +4,10 @@
 # File :    dirac-wms-select-jobs
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Select DIRAC jobs matching the given conditions
+"""
 __RCSID__ = "$Id$"
-import sys, string
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -16,9 +18,10 @@ Script.registerSwitch( "", "Site=", "Execution site" )
 Script.registerSwitch( "", "Owner=", "Owner (DIRAC nickname)" )
 Script.registerSwitch( "", "JobGroup=", "Select jobs for specified job group" )
 Script.registerSwitch( "", "Date=", "Date in YYYY-MM-DD format, if not specified default is today" )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... JobID ...' % Script.scriptName ] ) )
 Script.parseCommandLine( ignoreErrors = True )
-
-from DIRAC.Interfaces.API.Dirac import Dirac
 
 args = Script.getPositionalArgs()
 
@@ -31,12 +34,8 @@ owner = None
 jobGroup = None
 date = None
 
-def usage():
-  print 'Usage: %s [Try -h,--help for more information]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if args:
-  usage()
+  Script.showHelp()
 
 exitCode = 0
 
@@ -59,9 +58,22 @@ for switch in Script.getUnprocessedSwitches():
 selDate = date
 if not date:
   selDate = 'Today'
-conditions = {'Status':status, 'MinorStatus':minorStatus, 'ApplicationStatus':appStatus, 'Owner':owner, 'JobGroup':jobGroup, 'Date':selDate}
+conditions = { 'Status':status,
+               'MinorStatus':minorStatus,
+               'ApplicationStatus':appStatus,
+               'Owner':owner,
+               'JobGroup':jobGroup,
+               'Date':selDate }
+
+from DIRAC.Interfaces.API.Dirac import Dirac
 dirac = Dirac()
-result = dirac.selectJobs( Status = status, MinorStatus = minorStatus, ApplicationStatus = appStatus, Site = site, Owner = owner, JobGroup = jobGroup, Date = date )
+result = dirac.selectJobs( Status = status,
+                           MinorStatus = minorStatus,
+                           ApplicationStatus = appStatus,
+                           Site = site,
+                           Owner = owner,
+                           JobGroup = jobGroup,
+                           Date = date )
 if not result['OK']:
   print 'ERROR %s' % result['Message']
   exitCode = 2
@@ -75,6 +87,9 @@ else:
   if len( jobs ) > 100:
     jobs = jobs[:100]
     constrained = ' (first 100 shown) '
-  print '==> Selected %s jobs%swith conditions: %s\n%s' % ( len( result['Value'] ), constrained, string.join( conds, ', ' ), string.join( jobs, ', ' ) )
+  print '==> Selected %s jobs%swith conditions: %s\n%s' % ( len( result['Value'] ),
+                                                            constrained,
+                                                            ', '.join( conds ),
+                                                            ', '.join( jobs ) )
 
 DIRAC.exit( exitCode )

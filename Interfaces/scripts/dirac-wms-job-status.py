@@ -1,34 +1,30 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-production-job-status
+# File :    dirac-wms-job-status
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve status of the given DIRAC job
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                              import Dirac
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  JobID:    DIRAC Job ID' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <JobID> |[<JobID>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
+from DIRAC.Interfaces.API.Dirac                              import Dirac
 dirac = Dirac()
 exitCode = 0
-errorList = []
-
-try:
-  jobs = [ int( job ) for job in args ]
-except Exception, x:
-  print 'Expected integer for jobID'
-  exitCode = 2
-  DIRAC.exit( exitCode )
 
 result = dirac.status( jobs )
 if result['OK']:
@@ -38,6 +34,7 @@ if result['OK']:
       print status + '=' + result['Value'][job][status] + ';',
     print
 else:
+  exitCode = 2
   print "ERROR: %s" % error
 
 DIRAC.exit( exitCode )

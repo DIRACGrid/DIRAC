@@ -4,8 +4,12 @@
 # File :    dirac-wms-jobs-select-output-search
 # Author :  Vladimir Romanovsky
 ########################################################################
+"""
+  Retrieve output sandbox for DIRAC Jobs for the given selection and search for a string in their std.out
+"""
 __RCSID__ = "$Id$"
-import os, sys, popen2
+import os
+from shutil import rmtree
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -17,10 +21,11 @@ Script.registerSwitch( "", "Owner=", "Owner (DIRAC nickname)" )
 Script.registerSwitch( "", "JobGroup=", "Select jobs for specified job group" )
 Script.registerSwitch( "", "Date=", "Date in YYYY-MM-DD format, if not specified default is today" )
 Script.registerSwitch( "", "File=", "File name,if not specified default is std.out " )
-Script.parseCommandLine( ignoreErrors = True )
-
-from DIRAC.Interfaces.API.Dirac                              import Dirac
-from shutil import rmtree
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... String ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  String:   string to search for' ] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -35,12 +40,8 @@ jobGroup = None
 date = None
 filename = 'std.out'
 
-def usage():
-  print 'Usage: %s string to seearch ' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) != 1:
-  usage()
+  Script.showHelp()
 
 searchstring = str( args[0] )
 
@@ -71,7 +72,13 @@ exitCode = 0
 errorList = []
 resultDict = {}
 
-result = dirac.selectJobs( Status = status, MinorStatus = minorStatus, ApplicationStatus = appStatus, Site = site, Owner = owner, JobGroup = jobGroup, Date = date )
+result = dirac.selectJobs( Status = status,
+                           MinorStatus = minorStatus,
+                           ApplicationStatus = appStatus,
+                           Site = site,
+                           Owner = owner,
+                           JobGroup = jobGroup,
+                           Date = date )
 if result['OK']:
   jobs = result['Value']
 else:
@@ -92,7 +99,7 @@ for job in jobs:
       for line in lines:
         if line.count( searchstring ):
           resultDict[job] = line
-    rmtree( "%s" % ( job ) )
+      rmtree( "%s" % ( job ) )
   else:
     errorList.append( ( job, result['Message'] ) )
     exitCode = 2

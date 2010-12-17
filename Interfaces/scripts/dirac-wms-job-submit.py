@@ -1,24 +1,28 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-production-job-submit
+# File :    dirac-wms-job-submit
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Submit jobs to DIRAC WMS
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                              import Dirac
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... JDL ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  JDL:      Path to JDL file' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <Path to JDL file> |[<Path to JDL file>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
+from DIRAC.Interfaces.API.Dirac                              import Dirac
 dirac = Dirac()
 exitCode = 0
 errorList = []
