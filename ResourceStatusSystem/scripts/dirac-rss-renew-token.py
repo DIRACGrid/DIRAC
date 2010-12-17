@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
+# File:     dirac-rss-renew-token
+# Author:   Federico Stagni
 ########################################################################
+"""
+  Extend the duration of given token
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -9,16 +14,20 @@ from DIRAC.Core.Base import Script
 hours = 24
 
 Script.registerSwitch( "e:", "Extension=", "      Number of hours of token renewal (will be 24 if unspecified)" )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... Token ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  Token:    Name of the Token' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 
 args = Script.getPositionalArgs()
+if not args:
+  Script.showHelp()
+
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "e" or switch[0].lower() == "extension":
     hours = int( switch[1] )
-
-def usage():
-  gLogger.info( ' Type "%s --help" for the available options and syntax' % Script.scriptName )
-  DIRAC.exit( -1 )
 
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
 from DIRAC.Core.Security.Misc                         import getProxyInfo
@@ -40,12 +49,6 @@ if group not in ( 'diracAdmin', 'lhcb_prod' ):
   gLogger.error( "You must be lhcb_prod or diracAdmin to execute this script" )
   gLogger.info( "Please issue 'lhcb-proxy-init -g lhcb_prod' or 'lhcb-proxy-init -g diracAdmin'" )
   DIRAC.exit( 2 )
-
-if not type( args ) == type( [] ):
-  usage()
-if not args:
-  gLogger.error( "There were no arguments provided" )
-  DIRAC.exit()
 
 for arg in args:
   g = s.whatIs( arg )
