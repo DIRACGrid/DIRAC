@@ -1020,10 +1020,17 @@ class ReplicaManager( CatalogToStorage ):
       if res['Value']['Failed']:
         return S_ERROR( "Failed to remove all files found in the catalog" )
     storageElements = gConfig.getValue( 'Resources/StorageElementGroups/Tier1_MC_M-DST', [] )
+    # TODO this is a terrible HACK that needs to be fixed at some point, for the moment this will 
+    # prevent the code from failing outside LHCb
+    #  storageElements.extend( ['CNAF_MC-DST', 'CNAF-RAW'] )
     # Have to add some additional storage elements because:
     # 1: CNAF has to use two different SE types
     # 2: CNAF has to use different namespace for different rentention
-    storageElements.extend( ['CNAF_MC-DST', 'CNAF-RAW'] )
+    result = gConfig.getOptionsDict( "/Resources/StorageElements" )
+    if result['OK']:
+      for se in ['CNAF_MC-DST', 'CNAF-RAW']:
+        if se in result['Value']:
+          storageElements.append( se )
     failed = False
     for storageElement in sortList( storageElements ):
       res = self.__removeStorageDirectory( dir, storageElement )
