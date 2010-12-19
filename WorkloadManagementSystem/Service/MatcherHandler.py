@@ -221,9 +221,14 @@ class MatcherHandler( RequestHandler ):
     """ Get extra conditions allowing site throttling
     """
     # Find Site job limits
-    grid, siteName, country = site.split( '.' )
-    siteSection = '/Resources/Sites/%s/%s' % ( grid, site )
-    result = gConfig.getSections( '%s/JobLimits' % siteSection )
+    grid,siteName,country = site.split('.')
+    siteSection = '/Resources/Sites/%s/%s' % (grid,site)
+    result = gConfig.getSections(siteSection)
+    if not result['OK']:
+      return result
+    if not 'JobLimits' in result['Value']:
+      return S_OK({})
+    result = gConfig.getSections('%s/JobLimits' % siteSection)
     if not result['OK']:
       return result
     sections = result['Value']
@@ -245,19 +250,25 @@ class MatcherHandler( RequestHandler ):
     fields = limitDict.keys()
     for field in fields:
       for key,value in limitDict[field]:
-        result = jobDB.getCounters('Jobs',['Status'],{'Site':site,field:key})
-        if not result['OK']:
-          return result
-        count = 0
-        if result['Value']:
-          for countDict,number in result['Value']:
-            if countDict['Status'] in ["Running","Matched"]:
-              count += number
-        if count > value:
+        if int(value) > 0
+          result = jobDB.getCounters('Jobs',['Status'],{'Site':site,field:key})
+          if not result['OK']:
+            return result
+          count = 0
+          if result['Value']:
+            for countDict,number in result['Value']:
+              if countDict['Status'] in ["Running","Matched"]:
+                count += number
+          if count > value:
+            if not resultDict.has_key(field):
+              resultDict[field] = []
+            resultDict[field].append(key)
+            gLogger.verbose('Job Limit imposed at %s on %s/%s/%d, %d jobs already deployed' % (site,field,key,value,count) )
+        else:
           if not resultDict.has_key(field):
             resultDict[field] = []
           resultDict[field].append(key)
-          gLogger.verbose('Job Limit imposed at %s on %s/%s/%d, %d jobs already deployed' % (site,field,key,value,count) )
+          gLogger.verbose('Jobs prohibited at %s for %s/%s' % (site,field,key) ) 
 
     return S_OK( resultDict )
 
