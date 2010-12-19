@@ -106,8 +106,9 @@ class SiteDirector( AgentModule ):
         if not result['OK']:
           return S_ERROR( 'Failed to look up the CS for ce %s' % ce )
         ceDict = result['Value']
-        if ceType in ceTypes:
-          ceList.append( ( ce, ceType, ceDict ) )
+        if "SubmissionMode" in ceDict and ceDict['SubmissionMode'].lower() == "direct":
+          if ceType in ceTypes:
+            ceList.append( ( ce, ceType, ceDict ) )
 
     self.queueDict = {}
     for ce, ceType, ceDict in ceList:
@@ -128,6 +129,7 @@ class SiteDirector( AgentModule ):
         self.queueDict[queueName] = {}
         self.queueDict[queueName]['ParametersDict'] = result['Value']
         self.queueDict[queueName]['ParametersDict']['Queue'] = queue
+        self.queueDict[queueName]['ParametersDict']['CEType'] = ceType
         self.queueDict[queueName]['ParametersDict']['Site'] = self.siteName
         self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
         self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'unknown' )
@@ -191,6 +193,7 @@ class SiteDirector( AgentModule ):
     for queue in self.queueDict:
       ce = self.queueDict[queue]['CE']
       ceName = self.queueDict[queue]['CEName']
+      ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
 
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
@@ -284,7 +287,7 @@ class SiteDirector( AgentModule ):
                                                      self.genericPilotDN,
                                                      self.genericPilotGroup,
                                                      self.localhost,
-                                                     'DIRAC',
+                                                     ceType,
                                                      '',
                                                      stampDict )
           if not result['OK']:
