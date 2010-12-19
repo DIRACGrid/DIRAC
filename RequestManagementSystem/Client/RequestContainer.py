@@ -500,7 +500,7 @@ class RequestContainer:
   #
 
   def isSubRequestEmpty(self,ind,type):
-    """ Check if the request contains more operations to be performed
+    """ Check if the request contains more operations to be performed 
     """
     if not self.subRequests.has_key(type):
       return S_ERROR("No requests of type specified found.")
@@ -551,6 +551,60 @@ class RequestContainer:
     """ Included for compatibility not sure if it is used
     """
     return self.isRequestEmpty()
+  
+  def isSubRequestDone(self,ind,type):
+    """ Check if the request contains more operations to be performed
+    """
+    if not self.subRequests.has_key(type):
+      return S_ERROR("No requests of type specified found.")
+    elif len(self.subRequests[type]) <= ind:
+      return S_ERROR("Subrequest index is out of range.")
+    else:
+      status = self.getSubRequestAttributeValue(ind,type,"Status")['Value']
+      if status == 'Done':
+        return S_OK(1)
+      files = self.getSubRequestFiles(ind,type)['Value']
+      for file in files:
+        if not file.has_key('Status'):
+          gLogger.error("!!! The file has no status information !!!")
+          gLogger.error("Ind:%s Type:%s" % (ind,type),self.toXML()['Value'])
+        elif file['Status'] != 'Done':
+          gLogger.verbose('Found file in a non-Done state')
+          return S_OK(0)
+      datasets = self.getSubRequestDatasets(ind, type)['Value']
+      for dataset in datasets:
+        if dataset['Status'] != 'Done':
+          return S_OK(0)
+
+    return S_OK(1)
+
+  def isRequestTypeDone(self,type):
+    """ Check whether the requests of given type are complete
+    """
+    numSubRequests = self.getNumSubRequests(type)['Value']
+    for subRequestInd in range(numSubRequests):
+      if not self.isSubRequestDone(subRequestInd,type)['Value']:
+        return S_OK(False)
+    return S_OK(True)
+
+  def isRequestDone(self):
+    """ Check whether all sub-requests are complete
+    """
+    requestTypes = self.getSubRequestTypes()['Value']
+    for requestType in requestTypes:
+      if not self.isRequestTypeDone(requestType)['Value']:
+        return S_OK(False)
+    return S_OK(True)
+
+  def isDone(self):
+    """ Included for compatibility not sure if it is used
+    """
+    return self.isRequestDone()
+  
+  ###########################################################
+  #
+  # Methods for setting specific requests
+  #
 
   def setDISETRequest(self,rpcStub,executionOrder=0):
     """ Add DISET subrequest from the DISET rpcStub
