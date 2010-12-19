@@ -38,7 +38,7 @@ class JobPathAgent(OptimizerModule):
   def beginExecution(self):
 
     self.basePath     = self.am_getOption( 'BasePath',  ['JobPath','JobSanity'] )
-    self.inputData    = self.am_getOption( 'InputData', ['InputData','BKInputData'] )
+    self.inputData    = self.am_getOption( 'InputData', ['InputData'] )
     self.endPath      = self.am_getOption( 'EndPath',   ['JobScheduling','TaskQueue'] )
     self.voPlugin     = self.am_getOption( 'VOPlugin',  '' )
 
