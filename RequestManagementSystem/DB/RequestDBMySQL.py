@@ -449,7 +449,7 @@ class RequestDBMySQL(DB):
               subRequestID = res['Value']['SubRequestID']
               res = self.__updateSubRequestFiles(ind,requestType,subRequestID,request)
               if res['OK']:
-                if request.isSubRequestEmpty(ind,requestType)['Value']:
+                if request.isSubRequestDone(ind,requestType)['Value']:
                   res = self._setSubRequestAttribute(requestID,subRequestID,'Status','Done')
                 else:
                   res = self._setSubRequestAttribute(requestID,subRequestID,'Status','Waiting')
@@ -467,7 +467,7 @@ class RequestDBMySQL(DB):
       errStr = 'Failed to update request %s.' % requestID
       return S_ERROR(errStr)
     else:
-      if request.isRequestEmpty()['Value']:
+      if request.isRequestDone()['Value']:
         res = self._setRequestAttribute(requestID,'Status','Done')
         if not res['OK']:
           errStr = 'Failed to update request status of %s to Done.' % requestID
