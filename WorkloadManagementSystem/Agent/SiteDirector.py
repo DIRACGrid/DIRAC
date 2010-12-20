@@ -88,7 +88,7 @@ class SiteDirector( AgentModule ):
     if self.queueDict:
       self.log.always("Agent will serve queues:")
       for queue in self.queueDict:
-        self.log.always("Site: %s, CE: %s, Queue: %s" % (self.queueDict[queue]['CEName'],
+        self.log.always("Site: %s, CE: %s, Queue: %s" % (self.queueDict[queue]['Site'],
                                                          self.queueDict[queue]['CEName'],
                                                          queue) )
 
@@ -99,13 +99,12 @@ class SiteDirector( AgentModule ):
     """
 
     ceFactory = ComputingElementFactory()
-
     ceTypes = self.am_getOption( 'CETypes', [] )
     ceConfList = self.am_getOption( 'CEs', [] )
-    ceList = []
     
     for siteName in self.siteNames:
       # Look up CE definitions in the site CS description
+      ceList = []
       gridType = siteName.split( '.' )[0]
       result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs' % ( gridType, siteName ) )
       if not result['OK']:
@@ -124,7 +123,6 @@ class SiteDirector( AgentModule ):
             if ceType in ceTypes:
               ceList.append( ( ce, ceType, ceDict ) )
   
-      self.queueDict = {}
       for ce, ceType, ceDict in ceList:
         section = '/Resources/Sites/%s/%s/CEs/%s/Queues' % ( gridType, siteName, ce )
         result = gConfig.getSections( section )
