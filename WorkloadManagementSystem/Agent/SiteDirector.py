@@ -67,6 +67,12 @@ class SiteDirector( AgentModule ):
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
     self.getOutput = self.am_getOption( 'GetPilotOutput', True )
     self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
+    if self.updateStatus:
+      self.log.always( 'Pilot status update requested' )
+    if self.getOutput:
+      self.log.always( 'Pilot output retrieval requested' )
+    if self.sendAccounting: 
+      self.log.always( 'Pilot accounting sending requested' )
 
     self.log.always( 'Site:', self.siteNames )
     ceTypes = self.am_getOption( 'CETypes', [] )
@@ -563,6 +569,7 @@ EOF
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
       ceType = self.queueDict[queue]['CEType']
+      siteName = self.queueDict[queue]['Site']
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                            'Queue':queueName,
                                            'GridType':ceType,
