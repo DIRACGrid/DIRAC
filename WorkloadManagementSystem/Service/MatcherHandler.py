@@ -250,7 +250,7 @@ class MatcherHandler( RequestHandler ):
     fields = limitDict.keys()
     for field in fields:
       for key,value in limitDict[field]:
-        if int(value) > 0
+        if int(value) > 0:
           result = jobDB.getCounters('Jobs',['Status'],{'Site':site,field:key})
           if not result['OK']:
             return result
