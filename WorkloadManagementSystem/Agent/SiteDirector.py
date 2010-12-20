@@ -46,12 +46,15 @@ class SiteDirector( AgentModule ):
     self.am_setOption( "maxPilotWaitingHours", 6 )
 
     # Get the site description dictionary
-    siteName = self.am_getOption( 'Site', 'Unknown' )
-    if siteName == 'Unknown':
+    siteNames = self.am_getOption( 'Site', [] )
+    if not siteNames:
       siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
       if siteName == 'Unknown':
         return S_ERROR( 'Unknown site' )
-    self.siteName = siteName
+      else:
+        siteNames = [siteName]
+        
+    self.siteNames = siteNames
     self.gridEnv = self.am_getOption( "GridEnv", '' )
 
     self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
@@ -65,7 +68,7 @@ class SiteDirector( AgentModule ):
     self.getOutput = self.am_getOption( 'GetPilotOutput', True )
     self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
 
-    self.log.always( 'Site:', self.siteName )
+    self.log.always( 'Site:', self.siteNames )
     ceTypes = self.am_getOption( 'CETypes', [] )
     if ceTypes:
       self.log.always( 'CETypes:', ceTypes )
@@ -85,7 +88,9 @@ class SiteDirector( AgentModule ):
     if self.queueDict:
       self.log.always("Agent will serve queues:")
       for queue in self.queueDict:
-        self.log.always("Site: %s, CE: %s, Queue: %s" % (self.siteName,self.queueDict[queue]['CEName'],queue) )
+        self.log.always("Site: %s, CE: %s, Queue: %s" % (self.queueDict[queue]['CEName'],
+                                                         self.queueDict[queue]['CEName'],
+                                                         queue) )
 
     return S_OK()
 
@@ -98,77 +103,80 @@ class SiteDirector( AgentModule ):
     ceTypes = self.am_getOption( 'CETypes', [] )
     ceConfList = self.am_getOption( 'CEs', [] )
     ceList = []
-    # Look up CE definitions in the site CS description
-    gridType = self.siteName.split( '.' )[0]
-    result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs' % ( gridType, self.siteName ) )
-    if not result['OK']:
-      return S_ERROR( 'Failed to look up the CS for the site %s CEs' % self.siteName )
-    if not result['Value']:
-      return S_ERROR( 'No CEs found for site %s' % self.siteName )
-    ceTotalList = result['Value']
-    for ce in ceTotalList:
-      if ( ceConfList and ce in ceConfList ) or not ceConfList:
-        ceType = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/CEType' % ( gridType, self.siteName, ce ), 'Unknown' )
-        result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( gridType, self.siteName, ce ) )
-        if not result['OK']:
-          return S_ERROR( 'Failed to look up the CS for ce %s' % ce )
-        ceDict = result['Value']
-        if "SubmissionMode" in ceDict and ceDict['SubmissionMode'].lower() == "direct":
-          if ceType in ceTypes:
-            ceList.append( ( ce, ceType, ceDict ) )
-
-    self.queueDict = {}
-    for ce, ceType, ceDict in ceList:
-      section = '/Resources/Sites/%s/%s/CEs/%s/Queues' % ( gridType, self.siteName, ce )
-      result = gConfig.getSections( section )
+    
+    for siteName in self.siteNames:
+      # Look up CE definitions in the site CS description
+      gridType = siteName.split( '.' )[0]
+      result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs' % ( gridType, siteName ) )
       if not result['OK']:
-        return S_ERROR( 'Failed to look up the CS for queues' )
+        return S_ERROR( 'Failed to look up the CS for the site %s CEs' % siteName )
       if not result['Value']:
-        return S_ERROR( 'No Queues found for site %s, ce %s' % ( self.siteName, ce ) )
-
-      queues = result['Value']
-      for queue in queues:
-        result = gConfig.getOptionsDict( '%s/%s' % ( section, queue ) )
+        return S_ERROR( 'No CEs found for site %s' % siteName )
+      ceTotalList = result['Value']
+      for ce in ceTotalList:
+        if ( ceConfList and ce in ceConfList ) or not ceConfList:
+          ceType = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/CEType' % ( gridType, siteName, ce ), 'Unknown' )
+          result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( gridType, siteName, ce ) )
+          if not result['OK']:
+            return S_ERROR( 'Failed to look up the CS for ce %s' % ce )
+          ceDict = result['Value']
+          if "SubmissionMode" in ceDict and ceDict['SubmissionMode'].lower() == "direct":
+            if ceType in ceTypes:
+              ceList.append( ( ce, ceType, ceDict ) )
+  
+      self.queueDict = {}
+      for ce, ceType, ceDict in ceList:
+        section = '/Resources/Sites/%s/%s/CEs/%s/Queues' % ( gridType, siteName, ce )
+        result = gConfig.getSections( section )
         if not result['OK']:
-          return S_ERROR( 'Failed to look up the CS for ce,queue %s,%s' % ( ce, queue ) )
-
-        queueName = '%s_%s' % ( ce, queue )
-        self.queueDict[queueName] = {}
-        self.queueDict[queueName]['ParametersDict'] = result['Value']
-        self.queueDict[queueName]['ParametersDict']['Queue'] = queue
-        self.queueDict[queueName]['ParametersDict']['Site'] = self.siteName
-        self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
-        self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'unknown' )
-        # Evaluate the CPU limit of the queue according to the Glue convention
-        # To Do: should be a utility
-        if "maxCPUTime" in self.queueDict[queueName]['ParametersDict'] and \
-           "SI00" in self.queueDict[queueName]['ParametersDict']:
-          maxCPUTime = float( self.queueDict[queueName]['ParametersDict']['maxCPUTime'] )
-          # For some sites there are crazy values in the CS
-          maxCPUTime = max( maxCPUTime, 0 )
-          maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
-          si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
-          queueCPUTime = 60. / 250. * maxCPUTime * si00
-          self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
-        qwDir = os.path.join( self.workingDirectory, queue )
-        if not os.path.exists( qwDir ):
-          os.mkdir( qwDir )
-        self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
-        queueDict = dict( ceDict )
-        queueDict.update( self.queueDict[queueName]['ParametersDict'] )
-        result = ceFactory.getCE( ceName = ce,
-                                 ceType = ceType,
-                                 ceParametersDict = queueDict )
-        if not result['OK']:
-          return result
-        self.queueDict[queueName]['CE'] = result['Value']
-        self.queueDict[queueName]['CEName'] = ce
-        self.queueDict[queueName]['CEType'] = ceType
-        self.queueDict[queueName]['QueueName'] = queue
-        result = self.queueDict[queueName]['CE'].isValid()
-        if not result['OK']:
-          self.log.fatal( result['Message'] )
-          return result
+          return S_ERROR( 'Failed to look up the CS for queues' )
+        if not result['Value']:
+          return S_ERROR( 'No Queues found for site %s, ce %s' % ( siteName, ce ) )
+  
+        queues = result['Value']
+        for queue in queues:
+          result = gConfig.getOptionsDict( '%s/%s' % ( section, queue ) )
+          if not result['OK']:
+            return S_ERROR( 'Failed to look up the CS for ce,queue %s,%s' % ( ce, queue ) )
+  
+          queueName = '%s_%s' % ( ce, queue )
+          self.queueDict[queueName] = {}
+          self.queueDict[queueName]['ParametersDict'] = result['Value']
+          self.queueDict[queueName]['ParametersDict']['Queue'] = queue
+          self.queueDict[queueName]['ParametersDict']['Site'] = siteName
+          self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
+          self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'unknown' )
+          # Evaluate the CPU limit of the queue according to the Glue convention
+          # To Do: should be a utility
+          if "maxCPUTime" in self.queueDict[queueName]['ParametersDict'] and \
+             "SI00" in self.queueDict[queueName]['ParametersDict']:
+            maxCPUTime = float( self.queueDict[queueName]['ParametersDict']['maxCPUTime'] )
+            # For some sites there are crazy values in the CS
+            maxCPUTime = max( maxCPUTime, 0 )
+            maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
+            si00 = float( self.queueDict[queueName]['ParametersDict']['SI00'] )
+            queueCPUTime = 60. / 250. * maxCPUTime * si00
+            self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
+          qwDir = os.path.join( self.workingDirectory, queue )
+          if not os.path.exists( qwDir ):
+            os.mkdir( qwDir )
+          self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
+          queueDict = dict( ceDict )
+          queueDict.update( self.queueDict[queueName]['ParametersDict'] )
+          result = ceFactory.getCE( ceName = ce,
+                                   ceType = ceType,
+                                   ceParametersDict = queueDict )
+          if not result['OK']:
+            return result
+          self.queueDict[queueName]['CE'] = result['Value']
+          self.queueDict[queueName]['CEName'] = ce
+          self.queueDict[queueName]['CEType'] = ceType
+          self.queueDict[queueName]['Site'] = siteName
+          self.queueDict[queueName]['QueueName'] = queue
+          result = self.queueDict[queueName]['CE'].isValid()
+          if not result['OK']:
+            self.log.fatal( result['Message'] )
+            return result
 
     return S_OK()
 
@@ -195,13 +203,15 @@ class SiteDirector( AgentModule ):
     result = jobDB.getSiteMask()
     if not result['OK']:
       return S_ERROR( 'Can not get the site mask' )
-    siteMask = self.siteName in result['Value']
+    siteMaskList = result['Value']
 
     for queue in self.queueDict:
       ce = self.queueDict[queue]['CE']
       ceName = self.queueDict[queue]['CEName']
       ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
+      siteName = self.queueDict[queue]['Site']
+      siteMask = siteName in siteMaskList
 
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
@@ -228,7 +238,7 @@ class SiteDirector( AgentModule ):
       ceDict = ce.getParameterDict()
       ceDict[ 'GridCE' ] = ceName
       if not siteMask and 'Site' in ceDict:
-        self.log.info( 'Site not in the mask %s' % self.siteName )
+        self.log.info( 'Site not in the mask %s' % siteName )
         self.log.info( 'Removing "Site" from matching Dict' )
         del ceDict[ 'Site' ]
 
@@ -303,7 +313,7 @@ class SiteDirector( AgentModule ):
           for pilot in pilotList:
             result = pilotAgentsDB.setPilotStatus( pilot, 'Submitted', ceName,
                                                   'Successfuly submitted by the SiteDirector',
-                                                  self.siteName, queueName )
+                                                  siteName, queueName )
             if not result['OK']:
               self.log.error( 'Failed to set pilot status: %s' % result['Message'] )
               continue
@@ -476,10 +486,12 @@ EOF
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
       ceType = self.queueDict[queue]['CEType']
+      siteName = self.queueDict[queue]['Site']
+      
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                            'Queue':queueName,
                                            'GridType':ceType,
-                                           'GridSite':self.siteName,
+                                           'GridSite':siteName,
                                            'Status':TRANSIENT_PILOT_STATUS} )
       if not result['OK']:
         self.log.error( 'Failed to select pilots: %s' % result['Message'] )
@@ -556,7 +568,7 @@ EOF
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                            'Queue':queueName,
                                            'GridType':ceType,
-                                           'GridSite':self.siteName,
+                                           'GridSite':siteName,
                                            'OutputReady':'False',
                                            'Status':FINAL_PILOT_STATUS} )
 
@@ -591,7 +603,7 @@ EOF
         result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                              'Queue':queueName,
                                              'GridType':ceType,
-                                             'GridSite':self.siteName,
+                                             'GridSite':siteName,
                                              'AccountingSent':'False',
                                              'Status':FINAL_PILOT_STATUS} )
               
