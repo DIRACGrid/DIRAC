@@ -16,12 +16,13 @@ from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from pylab import setp
 from matplotlib.patches import Polygon
+from matplotlib.dates import date2num
 import time,types
 
 class LineGraph( PlotBase ):
 
   """
-  The BarGraph class is a straightforward bar graph; given a dictionary
+  The LineGraph class is a straightforward line graph; given a dictionary
   of values, it takes the keys as the independent variable and the values
   as the dependent variable.
   """
@@ -51,6 +52,12 @@ class LineGraph( PlotBase ):
         tmp_b.append(0.)  
         ymin = 0.
         
+    start_plot = 0
+    end_plot = 0    
+    if "starttime" in self.prefs and "endtime" in self.prefs:
+      start_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['starttime'])))    
+      end_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['endtime'])))                         
+      
     self.polygons = []
     seq_b = [(self.gdata.max_num_key,0.0),(self.gdata.min_num_key,0.0)]    
     zorder = 0.0      
@@ -81,7 +88,7 @@ class LineGraph( PlotBase ):
         tmp_y.append( float(value)+tmp_b[ind] )   
         ind += 1       
       seq_t = zip(tmp_x,tmp_y)     
-      seq = seq_t+seq_b  
+      seq = seq_t+seq_b       
       poly = Polygon( seq, facecolor=color, fill=True, linewidth=.2, zorder=zorder)
       self.ax.add_patch( poly )
       self.polygons.append( poly )        
@@ -96,7 +103,10 @@ class LineGraph( PlotBase ):
     self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x) )
     self.ax.set_ylim( ymin=ymin, ymax=ymax )
     if self.gdata.key_type == 'time':
-      self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x))     
+      if start_plot and end_plot:
+        self.ax.set_xlim( xmin=start_plot, xmax=end_plot)   
+      else:      
+        self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x))     
           
   def x_formatter_cb( self, ax ):
     if self.gdata.key_type == "string":

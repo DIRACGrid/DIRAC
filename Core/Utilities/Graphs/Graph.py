@@ -215,7 +215,7 @@ class Graph(object):
     graphData = []
     plot_prefs = []
     for i in range(nPlots):
-      plot_prefs.append(evalPrefs(prefs,metadata[i]))        
+      plot_prefs.append(evalPrefs(prefs,metadata[i]))              
       gdata = GraphData(data[i])       
       if i == 0: plot_type = plot_prefs[i]['plot_type']      
       if plot_prefs[i].has_key('sort_labels'):      
@@ -229,14 +229,14 @@ class Graph(object):
       if plot_title != "NoTitle":
         begin = ''
         end = ''
-        if gdata.key_type == "time" :
-          begin = gdata.min_key
-          end = gdata.max_key
-        elif plot_prefs[i].has_key('starttime') and plot_prefs[i].has_key('endtime'):
+        if plot_prefs[i].has_key('starttime') and plot_prefs[i].has_key('endtime'):
           begin = to_timestamp(plot_prefs[i]['starttime'])
-          end = to_timestamp(plot_prefs[i]['endtime'])          
+          end = to_timestamp(plot_prefs[i]['endtime'])   
+        elif gdata.key_type == "time" :
+          begin = gdata.min_key
+          end = gdata.max_key   
         if begin and end:          
-          time_title = add_time_to_title(begin,end)
+          time_title = add_time_to_title(begin,end)          
           if plot_title:
             plot_title += ":"            
           plot_prefs[i]['plot_title'] = plot_title+' '+time_title

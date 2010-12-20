@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from pylab import setp
 from matplotlib.patches import Polygon
-
+from matplotlib.dates import date2num
 
 class BarGraph( PlotBase ):
 
@@ -60,6 +60,12 @@ class BarGraph( PlotBase ):
       offset = self.bar_graph_space / 2.0
     else:
       offset = 0
+      
+    start_plot = 0
+    end_plot = 0    
+    if "starttime" in self.prefs and "endtime" in self.prefs:
+      start_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['starttime'])))    
+      end_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['endtime'])))        
         
     labels = self.gdata.getLabels()  
     nKeys = self.gdata.getNumberOfKeys()
@@ -137,7 +143,10 @@ class BarGraph( PlotBase ):
     self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x)+offset )
     self.ax.set_ylim( ymin=ymin, ymax=ymax )
     if self.gdata.key_type == 'time':
-      self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x) )
+      if start_plot and end_plot:
+        self.ax.set_xlim( xmin=start_plot, xmax=end_plot)   
+      else:      
+        self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x)) 
                   
   def x_formatter_cb( self, ax ):
     if self.gdata.key_type == "string":

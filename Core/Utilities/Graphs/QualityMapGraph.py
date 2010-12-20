@@ -18,6 +18,7 @@ from pylab import setp
 from matplotlib.colors import normalize, LinearSegmentedColormap
 import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes, ColorbarBase
+from matplotlib.dates import date2num
 
 cdict = {'red': ((0.0, 1., 1.0),
                  (0.5, .0, .0),
@@ -89,6 +90,12 @@ class QualityMapGraph( PlotBase ):
     offset = 0.
     if self.gdata.key_type == 'time':
       width = width / 86400.0
+      
+    start_plot = 0
+    end_plot = 0    
+    if "starttime" in self.prefs and "endtime" in self.prefs:
+      start_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['starttime'])))    
+      end_plot = date2num( datetime.datetime.fromtimestamp(to_timestamp(self.prefs['endtime'])))          
         
     labels = self.gdata.getLabels()  
     nKeys = self.gdata.getNumberOfKeys()
@@ -133,7 +140,10 @@ class QualityMapGraph( PlotBase ):
     self.ax.set_xlim( xmin=0., xmax=xmax+width+offset )
     self.ax.set_ylim( ymin=0., ymax=ymax )
     if self.gdata.key_type == 'time':
-      self.ax.set_xlim( xmin=xmin, xmax=xmax+width )
+      if start_plot and end_plot:
+        self.ax.set_xlim( xmin=start_plot, xmax=end_plot)   
+      else:      
+        self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x)) 
     self.ax.set_yticks([ i+0.5 for i in range(nLabel) ])
     self.ax.set_yticklabels(labelNames)  
     setp(self.ax.get_xticklines(),markersize=0. )
