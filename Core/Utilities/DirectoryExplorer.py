@@ -9,7 +9,7 @@ class DirectoryExplorer:
   def isActive( self ):
     return len( self.__toExplore ) > 0
 
-  def getRemainingDirs( self ):
+  def getNumRemainingDirs( self ):
     return len( self.__toExplore )
 
   def getNextDir( self ):
