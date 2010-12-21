@@ -1,5 +1,5 @@
 
-class DirectoryBrowser:
+class DirectoryExplorer:
 
   def __init__( self, sort = False ):
     self.__toExplore = []
