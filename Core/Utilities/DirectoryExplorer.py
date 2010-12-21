@@ -24,10 +24,12 @@ class DirectoryBrowser:
     self.__explored.add( nextDir )
     return nextDir
 
-  def addDir( self, dirName, weight = 0 ):
+  def addDir( self, dirName, weight = None ):
+    if weight == None and self.__sort:
+      weight = dirName.count( "/" )
     if dirName not in self.__explored:
       self.__toExplore.append( ( weight, dirName ) )
 
-  def addDirList( self, dirList, weight = 0 ):
+  def addDirList( self, dirList, weight = None ):
     for d in dirList:
       self.addDir( d, weight )
