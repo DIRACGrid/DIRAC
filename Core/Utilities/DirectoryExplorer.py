@@ -1,10 +1,11 @@
 
 class DirectoryExplorer:
 
-  def __init__( self, sort = False ):
+  def __init__( self, sort = False, reverse = False ):
     self.__toExplore = []
     self.__explored = set()
     self.__sort = sort
+    self.__reverse = reverse
 
   def isActive( self ):
     return len( self.__toExplore ) > 0
@@ -12,13 +13,19 @@ class DirectoryExplorer:
   def getNumRemainingDirs( self ):
     return len( self.__toExplore )
 
+  def __popNextDir( self ):
+    if self.__reverse:
+      return self.__toExplore.pop()[1]
+    else:
+      return self.__toExplore.pop( 0 )[1]
+
   def getNextDir( self ):
     if self.__sort:
       sort( self.__toExplore )
     try:
-      nextDir = self.__toExplore.pop( 0 )[1]
+      nextDir = self.__popNextDir()
       while nextDir in self.__explored:
-        nextDir = self.__toExplore.pop( 0 )[1]
+        nextDir = self.__popNextDir()
     except IndexError:
       return False
     self.__explored.add( nextDir )
