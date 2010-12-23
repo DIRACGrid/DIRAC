@@ -445,7 +445,8 @@ class RequestDBMySQL(DB):
         for ind in range(numRequests):
           res = request.getSubRequestAttributes(ind,requestType)
           if res['OK']:
-            if res['Value'].has_key('SubRequestID'):
+            subRequestDict = res['Value']
+            if 'SubRequestID' in subRequestDict:
               subRequestID = res['Value']['SubRequestID']
               res = self.__updateSubRequestFiles(ind,requestType,subRequestID,request)
               if res['OK']:
@@ -457,6 +458,10 @@ class RequestDBMySQL(DB):
                   updateRequestFailed = True
               else:
                 updateRequestFailed = True
+              if "Error" in subRequestDict:
+                result = self._setSubRequestAttribute(requestID,subRequestID,'Error',subRequestDict['Error'])  
+                if not result['OK']:
+                  updateRequestFailed = True
             else:
               updateRequestFailed = True
           else:
