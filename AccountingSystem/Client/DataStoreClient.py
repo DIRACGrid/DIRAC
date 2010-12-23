@@ -25,7 +25,7 @@ class DataStoreClient:
     self.__registersList = []
     self.__maxTimeRetrying = retryGraceTime
     self.__lastSuccessfulCommit = time.time()
-    self.__failoverEnabled = True
+    self.__failoverEnabled = not gConfig.getValue( '/LocalSite/DisableFailover', False )
 
   def setRetryGraceTime( self, retryGraceTime ):
     """
