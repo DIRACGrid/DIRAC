@@ -21,7 +21,7 @@ def loadObjects( path, reFilter = None, parentClass = None ):
       if reFilter.match( objFile ):
         pythonClassName = objFile[:-3]
         if pythonClassName not in objectsToLoad:
-          gLogger.info( "Adding lo load queue %s/%s/%s" % ( parentModule, path, pythonClassName ) )
+          gLogger.info( "Adding to load queue %s/%s/%s" % ( parentModule, path, pythonClassName ) )
           objectsToLoad[ pythonClassName ] = parentModule
 
   #Load them!
