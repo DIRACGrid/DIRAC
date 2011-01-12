@@ -87,7 +87,7 @@ class gLitePilotDirector( GridPilotDirector ):
 
 RetryCount = 0;
 ShallowRetryCount = 0;
-MyProxyServer = "no-myproxy.cern.ch";
+MyProxyServer = "";
 
 AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
 Requirements = pilotRequirements && %s;
@@ -100,7 +100,7 @@ RetryCount = 0;
 ShallowRetryCount = 0;
 WMProxyEndPoints = { %s };
 LBEndPoints = { %s };
-MyProxyServer = "no-myproxy.cern.ch";
+MyProxyServer = "";
 EnableServiceDiscovery = false;
 JdlDefaultAttributes =  [
     requirements  =  ( other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special" );
