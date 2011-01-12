@@ -9,7 +9,7 @@ delete from user where user='Dirac';
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
 
 FLUSH PRIVILEGES;
 
@@ -23,6 +23,7 @@ CREATE TABLE FC_Files(
     UID SMALLINT UNSIGNED NOT NULL,
     GID TINYINT UNSIGNED NOT NULL,
     Status SMALLINT UNSIGNED NOT NULL,
+--    Status ENUM ('AprioriGood','Good','Trash','Deleting','Problematic','Checking','Bad') NOT NULL DEFAULT 'AprioriGood', 
     FileName VARCHAR(128) NOT NULL,
     INDEX (DirID),
     INDEX (UID,GID),
@@ -166,6 +167,15 @@ CREATE TABLE FC_DirMeta (
 );
 
 -- ------------------------------------------------------------------------------
+drop table if exists FC_FileMeta;
+CREATE TABLE FC_FileMeta (
+    FileID INTEGER NOT NULL,
+    MetaKey VARCHAR(31) NOT NULL DEFAULT 'Noname',
+    MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
+    PRIMARY KEY (FileID,MetaKey)
+);
+
+-- ------------------------------------------------------------------------------
 drop table if exists FC_DirectoryTree;
 CREATE TABLE FC_DirectoryTree (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
@@ -255,5 +265,6 @@ CREATE TABLE FC_FileAncestors (
   AncestorDepth INT NOT NULL DEFAULT 0,
   INDEX (FileID),
   INDEX (AncestorID),
-  INDEX (AncestorDepth)
+  INDEX (AncestorDepth),
+  UNIQUE INDEX (FileID,AncestorID)
 );

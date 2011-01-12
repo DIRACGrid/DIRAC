@@ -8,6 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC                                                                     import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                                        import DB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata     import DirectoryMetadata
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileMetadata          import FileMetadata
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   import DirectorySimpleTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree
@@ -54,6 +55,8 @@ class FileCatalogDB(DB, DirectoryMetadata):
       self.securityManager = eval("%s(self)" % databaseConfig['SecurityManager'])
       self.dtree = eval("%s(self)" % databaseConfig['DirectoryManager'])
       self.fileManager = eval("%s(self)" % databaseConfig['FileManager'])
+      self.dmeta = eval("%s(self)" % databaseConfig['DirectoryMetadata'])
+      self.fmeta = eval("%s(self)" % databaseConfig['FileMetadata'])
     except Exception, x:
       gLogger.fatal("Failed to create database objects",x)
       return S_ERROR("Failed to create database objects")
@@ -344,6 +347,19 @@ class FileCatalogDB(DB, DirectoryMetadata):
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
     
+  def addFileAncestors(self,lfns,credDict):
+    """ Add ancestor information for the given LFNs
+    """        
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.addFileAncestors(res['Value']['Successful'])
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    return S_OK( {'Successful':successful,'Failed':failed} )
   
   ########################################################################
   #
@@ -408,7 +424,31 @@ class FileCatalogDB(DB, DirectoryMetadata):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    return S_OK( {'Successful':successful,'Failed':failed} )  
+    
+  def getFileAncestors(self, lfns, depths, credDict):
+    res = self._checkPathPermissions('Read', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.getFileAncestors(res['Value']['Successful'],depths)
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    return S_OK( {'Successful':successful,'Failed':failed} )        
+    
+  def getFileDescendents(self, lfns, depths, credDict):
+    res = self._checkPathPermissions('Read', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.getFileDescendents(res['Value']['Successful'],depths)
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    return S_OK( {'Successful':successful,'Failed':failed} )     
 
   ########################################################################
   #
@@ -491,7 +531,35 @@ class FileCatalogDB(DB, DirectoryMetadata):
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
-
+    
+  #######################################################################
+  #
+  #  Catalog metadata methods
+  #  
+  
+  def setMetadata(self, path, metadataDict, credDict):
+    """ Add metadata to the given path
+    """
+    res = self._checkPathPermissions('Read', path, credDict)   
+    if not res['OK']:
+      return res
+    if not res['Value']['Successful']:
+      return S_ERROR('Permission denied')
+    if not res['Value']['Successful'][path]:
+      return S_ERROR('Permission denied') 
+      
+    result = self.dtree.isDirectory({path:True})
+    if not result['OK']:
+      return result
+    if not result['Value']['Successful']:
+      return S_ERROR('Failed to determine the path type')
+    if result['Value']['Successful'][path]:
+      # This is a directory
+      return self.dmeta.setMetadata(path,metadataDict,credDict)
+    else:
+      # This is a file      
+      return self.fmeta.setMetadata(path,metadataDict,credDict)                                     
+    
   #######################################################################
   #
   #  Catalog admin methods
@@ -531,7 +599,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     if not res['OK']:
       return res
     lfns = res['Value']
-    res = self.securityManager.hasAccess(operation,lfns.keys(),credDict)
+    res = self.securityManager.hasAccess(operation,lfns.keys(),credDict)   
     if not res['OK']:
       return res
     # Do not consider those paths for which we failed to determine access
@@ -539,8 +607,10 @@ class FileCatalogDB(DB, DirectoryMetadata):
     for lfn in failed.keys():
       lfns.pop(lfn)
     # Do not consider those paths for which access is denied
+    successful = {}
     for lfn,access in res['Value']['Successful'].items():
       if not access:
         failed[lfn] = 'Permission denied'
-        lfns.pop(lfn)
-    return S_OK( {'Successful':lfns,'Failed':failed} )
+      else:  
+        successful[lfn] = access
+    return S_OK( {'Successful':successful,'Failed':failed} )

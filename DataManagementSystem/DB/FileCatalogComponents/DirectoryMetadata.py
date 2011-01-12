@@ -12,6 +12,13 @@ from DIRAC import S_OK, S_ERROR
 
 class DirectoryMetadata:
 
+  def __init__(self,database = None):
+          
+    self.db = database
+    
+  def setDatabase( self, database ):
+    self.db = database
+        
 ##############################################################################
 #
 #  Manage Metadata fields
@@ -37,11 +44,11 @@ class DirectoryMetadata:
       valueType = "VARCHAR(64)"
     req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" \
                               % ( pname, valueType )
-    result = self._query( req )
+    result = self.db._query( req )
     if not result['OK']:
       return result
 
-    result = self._insert( 'FC_MetaFields', ['MetaName', 'MetaType'], [pname, ptype] )
+    result = self.db._insert( 'FC_MetaFields', ['MetaName', 'MetaType'], [pname, ptype] )
     if not result['OK']:
       return result
 
@@ -57,7 +64,7 @@ class DirectoryMetadata:
     """
 
     req = "DROP TABLE FC_Meta_%s" % pname
-    result = self._update( req )
+    result = self.db._update( req )
     return result
 
   def getMetadataFields( self, credDict ):
@@ -65,7 +72,7 @@ class DirectoryMetadata:
     """
 
     req = "SELECT MetaName,MetaType FROM FC_MetaFields"
-    result = self._query( req )
+    result = self.db._query( req )
     if not result['OK']:
       return result
 
@@ -87,7 +94,7 @@ class DirectoryMetadata:
       if not key in metaTypeDict:
         return S_ERROR( 'Unknown key %s' % key )
 
-    result = self._insert( 'FC_MetaSetNames', ['MetaSetName'], [metaSetName] )
+    result = self.db._insert( 'FC_MetaSetNames', ['MetaSetName'], [metaSetName] )
     if not result['OK']:
       return result
 
@@ -98,7 +105,7 @@ class DirectoryMetadata:
     for key, value in metaSetDict.items():
       vList.append( "(%d,'%s','%s')" % ( metaSetID, key, str( value ) ) )
     vString = ','.join( vList )
-    result = self._update( req % vString )
+    result = self.db._update( req % vString )
     return result
 
   def getMetadataSet( self, metaSetName, expandFlag, credDict ):
@@ -111,7 +118,7 @@ class DirectoryMetadata:
 
     req = "SELECT S.MetaKey,S.MetaValue FROM FC_MetaSets as S, FC_MetaSetNames as N "
     req += "WHERE N.MetaSetName='%s' AND N.MetaSetID=S.MetaSetID" % metaSetName
-    result = self._query( req )
+    result = self.db._query( req )
     if not result['OK']:
       return result
 
@@ -151,7 +158,7 @@ class DirectoryMetadata:
       return result
     metaFields = result['Value']
 
-    result = self.dtree.findDir( dpath )
+    result = self.db.dtree.findDir( dpath )
     if not result['OK']:
       return result
     dirID = result['Value']
@@ -170,11 +177,11 @@ class DirectoryMetadata:
       # Check that the metadata is not defined for the parent directories
       if metaName in dirmeta['Value']:
         return S_ERROR( 'Metadata conflict detected for %s for directory %s' % ( metaName, dpath ) )
-      result = self._insert( 'FC_Meta_%s' % metaName, ['DirID', 'Value'], [dirID, metaValue] )
+      result = self.db._insert( 'FC_Meta_%s' % metaName, ['DirID', 'Value'], [dirID, metaValue] )
       if not result['OK']:
         if result['Message'].find( 'Duplicate' ) != -1:
           req = "UPDATE FC_Meta_%s SET Value='%s' WHERE DirID=%d" % ( metaName, metaValue, dirID )
-          result = self._update( req )
+          result = self.db._update( req )
           if not result['OK']:
             return result
         else:
@@ -186,14 +193,14 @@ class DirectoryMetadata:
     """ Set an meta parameter - metadata which is not used in the the data
         search operations
     """
-    result = self.dtree.findDir( dpath )
+    result = self.db.dtree.findDir( dpath )
     if not result['OK']:
       return result
     dirID = result['Value']
     if not dirID:
       return S_ERROR( '%s: directory not found' % dpath )
 
-    result = self._insert( 'FC_DirMeta',
+    result = self.db._insert( 'FC_DirMeta',
                           ['DirID', 'MetaKey', 'MetaValue'],
                           [dirID, metaName, str( metaValue )] )
     return result
@@ -202,13 +209,13 @@ class DirectoryMetadata:
     """ Get meta parameters for the given directory
     """
     if inherited:
-      result = self.dtree.getPathIDs( dpath )
+      result = self.db.dtree.getPathIDs( dpath )
       if not result['OK']:
         return result
       pathIDs = result['Value']
       dirID = pathIDs[-1]
     else:
-      result = self.dtree.findDir( dpath )
+      result = self.db.dtree.findDir( dpath )
       if not result['OK']:
         return result
       dirID = result['Value']
@@ -221,7 +228,7 @@ class DirectoryMetadata:
       req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID in (%s)" % pathString
     else:
       req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID=%d " % dirID
-    result = self._query( req )
+    result = self.db._query( req )
     if not result['OK']:
       return result
     if not result['Value']:
@@ -244,7 +251,7 @@ class DirectoryMetadata:
         metadata parameters.
     """
 
-    result = self.dtree.getPathIDs( path )
+    result = self.db.dtree.getPathIDs( path )
     if not result['OK']:
       return result
     pathIDs = result['Value']
@@ -265,7 +272,7 @@ class DirectoryMetadata:
     pathString = ','.join( [ str( x ) for x in pathIDs ] )
     for meta in metaFields:
       req = "SELECT Value,DirID FROM FC_Meta_%s WHERE DirID in (%s)" % ( meta, pathString )
-      result = self._query( req )
+      result = self.db._query( req )
       if not result['OK']:
         return result
       if len( result['Value'] ) > 1:
@@ -296,7 +303,7 @@ class DirectoryMetadata:
     """
 
     req = "SELECT DirID,MetaValue from FC_DirMeta WHERE MetaKey='%s'" % metaname
-    result = self._query( req )
+    result = self.db._query( req )
     if not result['OK']:
       return result
     if not result['Value']:
@@ -309,7 +316,7 @@ class DirectoryMetadata:
 
     # Exclude child directories from the list
     for dirID in dirList:
-      result = self.dtree.getSubdirectoriesByID( dirID )
+      result = self.db.dtree.getSubdirectoriesByID( dirID )
       if not result['OK']:
         return result
       if not result['Value']:
@@ -324,12 +331,12 @@ class DirectoryMetadata:
       insertValueList.append( "( %d,'%s' )" % ( dirID, meta ) )
 
     req = "INSERT INTO FC_Meta_%s (DirID,Value) VALUES %s" % ( metaname, ', '.join( insertValueList ) )
-    result = self._update( req )
+    result = self.db._update( req )
     if not result['OK']:
       return result
 
     req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s'" % metaname
-    result = self._update( req )
+    result = self.db._update( req )
     return result
 
 ############################################################################################
@@ -380,7 +387,7 @@ class DirectoryMetadata:
 
     print req
 
-    result = self._query( req )
+    result = self.db._query( req )
     if not result['OK']:
       return result
     if not result['Value']:
@@ -391,7 +398,7 @@ class DirectoryMetadata:
       dirID = row[0]
       dirList.append( dirID )
       if subdirFlag:
-        result = self.dtree.getSubdirectoriesByID( dirID )
+        result = self.db.dtree.getSubdirectoriesByID( dirID )
         if not result['OK']:
           return result
         dirList += result['Value']
@@ -405,10 +412,10 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     dirList = result['Value']
-    table = self.dtree.getTreeTable()
+    table = self.db.dtree.getTreeTable()
     dirString = ','.join( [ str( x ) for x in dirList ] )
     req = 'SELECT DirID FROM %s WHERE DirID NOT IN ( %s )' % ( table, dirString )
-    result = self._query( req )
+    result = self.db._query( req )
     if not result['OK']:
       return result
     if not result['Value']:
@@ -475,7 +482,7 @@ class DirectoryMetadata:
 
     dirNameList = [ ]
     for dir in dirList:
-      result = self.dtree.getDirectoryPath( dir )
+      result = self.db.dtree.getDirectoryPath( dir )
       if not result['OK']:
         return result
       dirNameList.append( result['Value'] )
@@ -491,7 +498,7 @@ class DirectoryMetadata:
 
     dirList = result['Value']
     fileList = []
-    result = self.listDirectory( dirList, credDict )
+    result = self.db.listDirectory( dirList, credDict )
     if not result['OK']:
       return result
 
@@ -534,7 +541,7 @@ class DirectoryMetadata:
         return result
       psubdirs = result['Value']
       for psub in psubdirs:
-        result = self.dtree.getPathIDsByID( subdirs[0] )
+        result = self.db.dtree.getPathIDsByID( subdirs[0] )
         if not result['OK']:
           return result
         pdirs += result['Value']
@@ -563,7 +570,7 @@ class DirectoryMetadata:
       req = "SELECT DISTINCT(Value) FROM FC_Meta_%s" % meta
       if dString:
         req += " WHERE DirID in (%s)" % dString
-      result = self._query( req )
+      result = self.db._query( req )
       if not result['OK']:
         return result
       metaDict[meta] = []

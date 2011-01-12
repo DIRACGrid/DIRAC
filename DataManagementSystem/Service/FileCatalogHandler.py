@@ -24,11 +24,13 @@ def initializeFileCatalogHandler(serviceInfo):
 
   # Obtain the plugins to be used for DB interaction
   gLogger.info("Initializing with FileCatalog with following managers:")
-  defaultManagers = {  'UserGroupManager' : 'UserAndGroupManagerDB',
-                       'SEManager'        : 'SEManagerDB',
-                       'SecurityManager'  : 'NoSecurityManager',
-                       'DirectoryManager' : 'DirectoryLevelTree',
-                       'FileManager'      : 'FileManager'}
+  defaultManagers = {  'UserGroupManager'  : 'UserAndGroupManagerDB',
+                       'SEManager'         : 'SEManagerDB',
+                       'SecurityManager'   : 'NoSecurityManager',
+                       'DirectoryManager'  : 'DirectoryLevelTree',
+                       'FileManager'       : 'FileManager',
+                       'DirectoryMetadata' : 'DirectoryMetadata',
+                       'FileMetadata'      : 'FileMetadata'}
   for configKey in sortList(defaultManagers.keys()):
     defaultValue = defaultManagers[configKey]
     configValue = gConfig.getValue('%s/%s' % (serviceCS,configKey),defaultValue)
@@ -180,6 +182,11 @@ class FileCatalogHandler(RequestHandler):
   def export_setReplicaHost(self,lfns):
     """ Change the registered SE for the supplied replicas """
     return fcDB.setReplicaHost(lfns,self.getRemoteCredentials())
+    
+  types_addFileAncestors = [DictType]
+  def export_addFileAncestors(self,lfns):
+    """ Add file ancestor information for the given list of LFNs """
+    return fcDB.addFileAncestors(lfns,self.getRemoteCredentials())  
 
   ########################################################################
   #
@@ -211,6 +218,27 @@ class FileCatalogHandler(RequestHandler):
     """ Get the status for the supplied replicas """
     return fcDB.getReplicaStatus(lfns,self.getRemoteCredentials())
 
+  types_getFileAncestors = [ListType,[ListType,IntType,LongType]]
+  def export_getFileAncestors(self,lfns,depths):
+    """ Get the status for the supplied replicas """
+    dList = depths
+    if type(dList) != ListType:
+      dList = [depths]
+    lfnDict = {}        
+    for lfn in lfns:
+      lfnDict[lfn] = True
+    return fcDB.getFileAncestors(lfnDict,dList,self.getRemoteCredentials())
+    
+  types_getFileDescendents = [ListType,[ListType,IntType,LongType]]
+  def export_getFileDescendents(self,lfns,depths):
+    """ Get the status for the supplied replicas """
+    dList = depths
+    if type(dList) != ListType:
+      dList = [depths]      
+    lfnDict = {}        
+    for lfn in lfns:
+      lfnDict[lfn] = True  
+    return fcDB.getFileDescendents(lfnDict,dList,self.getRemoteCredentials())  
   
   ########################################################################
   #
@@ -270,19 +298,19 @@ class FileCatalogHandler(RequestHandler):
   def export_addMetadataField(self, fieldName, fieldType ):
     """ Add a new metadata field of the given type
     """
-    return fcDB.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
+    return fcDB.dmeta.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
 
   types_deleteMetadataField = [ StringTypes ]
   def export_deleteMetadataField(self, fieldName ):
     """ Delete the metadata field 
     """
-    return fcDB.deleteMetadataField( fieldName, self.getRemoteCredentials() )
+    return fcDB.dmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )
   
   types_getMetadataFields = [ ]
   def export_getMetadataFields(self):
     """ Get all the metadata fields
     """
-    return fcDB.getMetadataFields(self.getRemoteCredentials())
+    return fcDB.dmeta.getMetadataFields(self.getRemoteCredentials())
 
   types_setMetadata = [ StringTypes, DictType ]
   def export_setMetadata(self, path, metadatadict ):
@@ -294,34 +322,40 @@ class FileCatalogHandler(RequestHandler):
   def export_getDirectoryMetadata(self,path):
     """ Get all the metadata valid for the given directory path
     """
-    return fcDB.getDirectoryMetadata(path, self.getRemoteCredentials())
+    return fcDB.dmeta.getDirectoryMetadata(path, self.getRemoteCredentials())
+    
+  types_getFileUserMetadata = [ StringTypes ]
+  def export_getFileUserMetadata(self,path):
+    """ Get all the metadata valid for the given file
+    """
+    return fcDB.fmeta.getFileUserMetadata(path, self.getRemoteCredentials())  
   
   types_findDirectoriesByMetadata = [ DictType ]
   def export_findDirectoriesByMetadata(self,metaDict):
     """ Find all the directories satisfying the given metadata set
     """
-    return fcDB.findDirectoriesByMetadata(metaDict, self.getRemoteCredentials())
+    return fcDB.dmeta.findDirectoriesByMetadata(metaDict, self.getRemoteCredentials())
   
   types_findFilesByMetadata = [ DictType ]
   def export_findFilesByMetadata(self,metaDict):
     """ Find all the files satisfying the given metadata set
     """
-    return fcDB.findFilesByMetadata(metaDict, self.getRemoteCredentials())
+    return fcDB.dmeta.findFilesByMetadata(metaDict, self.getRemoteCredentials())
   
   types_getCompatibleMetadata = [ DictType ]
   def export_getCompatibleMetadata(self,metaDict):
     """ Get metadata values compatible with the given metadata subset
     """
-    return fcDB.getCompatibleMetadata(metaDict, self.getRemoteCredentials())
+    return fcDB.dmeta.getCompatibleMetadata(metaDict, self.getRemoteCredentials())
 
   types_addMetadataSet = [ StringTypes, DictType ]
   def export_addMetadataSet(self,setName,setDict):
     """ Add a new metadata set
     """
-    return fcDB.addMetadataSet(setName,setDict, self.getRemoteCredentials())
+    return fcDB.dmeta.addMetadataSet(setName,setDict, self.getRemoteCredentials())
   
   types_getMetadataSet = [ StringTypes, BooleanType ]
   def export_getMetadataSet(self,setName,expandFlag):
     """ Add a new metadata set
     """
-    return fcDB.getMetadataSet(setName,expandFlag, self.getRemoteCredentials())
+    return fcDB.dmeta.getMetadataSet(setName,expandFlag, self.getRemoteCredentials())

@@ -526,7 +526,107 @@ File Catalog Client $Revision: 1.17 $Date:
       else:
         print "Replica added successfully:", result['Value']['Successful'][lfn]    
     except Exception, x:
-      print "add pfn failed: ", str(x)      
+      print "add pfn failed: ", str(x)    
+      
+  def do_ancestorset(self,args):
+    """ Set ancestors for the given file
+    
+        usage: ancestorset <lfn> <ancestor_lfn> [<ancestor_lfn>...]
+    """            
+    
+    argss = args.split()    
+    lfn = argss[0]
+    ancestors = argss[1:]
+    
+    try:
+      result = self.fc.addFileAncestors({lfn:{'Ancestors':ancestors}})
+      if not result['OK']:
+        print "Failed to add file ancestors to the catalog: ",
+        print result['Message']
+      elif result['Value']['Failed']:
+        print "Failed to add file ancestors to the catalog: ",
+        print result['Value']['Failed'][lfn]
+      else:
+        print "Added %d ancestors to file %s" % (len(ancestors),lfn)
+    except Exception, x:
+      print "Exception while adding ancestors: ", str(x)                
+                         
+      
+  def do_ancestor(self,args):
+    """ Get ancestors of the given file
+    
+        usage: ancestor <lfn> [depth]
+    """            
+    
+    argss = args.split()
+    lfn = argss[0]
+    depth = [1]
+    if len(argss) > 1:
+      depth = int(argss[1])
+      depth = range(1,depth+1)
+        
+    try:
+      result = self.fc.getFileAncestors([lfn],depth)
+      if not result['OK']:
+        print "ERROR: Failed to get ancestors: ",
+        print result['Message']       
+      elif result['Value']['Failed']:
+        print "Failed to get ancestors: ",
+        print result['Value']['Failed'][lfn]
+      else:
+        depthDict = {}  
+        depSet = set()    
+        for lfn,ancestorDict in  result['Value']['Successful'].items():
+           for ancestor,dep in ancestorDict.items():     
+             depthDict.setdefault(dep,[])
+             depthDict[dep].append(ancestor)
+             depSet.add(dep)
+        depList = list(depSet)
+        depList.sort()
+        print lfn   
+        for dep in depList:
+          for lfn in depthDict[dep]:      
+            print dep,' '*dep*5, lfn
+    except Exception, x:
+      print "Exception while getting ancestors: ", str(x)    
+                                                                     
+  def do_descendent(self,args):
+    """ Get descendents of the given file
+    
+        usage: descendent <lfn> [depth]
+    """            
+    
+    argss = args.split()
+    lfn = argss[0]
+    depth = [1]
+    if len(argss) > 1:
+      depth = int(argss[1])
+      depth = range(1,depth+1)
+        
+    try:
+      result = self.fc.getFileDescendents([lfn],depth)
+      if not result['OK']:
+        print "ERROR: Failed to get descendents: ",
+        print result['Message']       
+      elif result['Value']['Failed']:
+        print "Failed to get descendents: ",
+        print result['Value']['Failed'][lfn]
+      else:
+        depthDict = {}  
+        depSet = set()    
+        for lfn,descDict in  result['Value']['Successful'].items():
+           for desc,dep in descDict.items():     
+             depthDict.setdefault(dep,[])
+             depthDict[dep].append(desc)
+             depSet.add(dep)
+        depList = list(depSet)
+        depList.sort()
+        print lfn   
+        for dep in depList:
+          for lfn in depthDict[dep]:      
+            print dep,' '*dep*5, lfn
+    except Exception, x:
+      print "Exception while getting descendents: ", str(x)              
       
 #######################################################################################
 # User and group methods      
@@ -1048,6 +1148,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Get metadata for the given directory
     """            
     expandFlag = False
+    dirFlag = True
     if len(argss) == 0:
       path ='.'
     else:  
@@ -1058,39 +1159,64 @@ File Catalog Client $Revision: 1.17 $Date:
         path ='.'  
       else:  
         path = argss[0]
+        dirFlag = False
     if path == '.':
       path = self.cwd
     elif path[0] != '/':
-      path = self.cwd+'/'+path  
-    result = self.fc.getDirectoryMetadata(path)      
-    if not result['OK']:
-      print ("Error: %s" % result['Message']) 
-      return
-    if result['Value']:
-      metaDict = result['MetadataOwner']
-      metaTypeDict = result['MetadataType']
-      for meta,value in result['Value'].items():
-        setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
-        prefix = ''
-        if setFlag:
-          prefix = "+"
-        if metaDict[meta] == 'ParentMetadata':
-          prefix += "*"
-          print (prefix+meta).rjust(20),':',value
-        elif metaDict[meta] == 'OwnMetadata':
-          prefix += "!"
-          print (prefix+meta).rjust(20),':',value   
-        else:
-          print meta.rjust(20),':',value 
-        if setFlag and expandFlag:
-          result = self.fc.getMetadataSet(value,expandFlag)
-          if not result['OK']:
-            print ("Error: %s" % result['Message']) 
-            return
-          for m,v in result['Value'].items():
-            print " "*10,m.rjust(20),':',v      
+      path = self.cwd+'/'+path
+      
+    if not dirFlag:
+      # Have to decide if it is a file or not
+      result = self.fc.isFile(path)
+      if not result['OK']:
+        print "ERROR: Failed to contact the catalog"      
+      if not result['Value']['Successful']:
+        print "ERROR: Path not found"
+      dirFlag = not result['Value']['Successful'][path]        
+        
+    if dirFlag:    
+            result = self.fc.getDirectoryMetadata(path)      
+            if not result['OK']:
+              print ("Error: %s" % result['Message']) 
+              return
+            if result['Value']:
+              metaDict = result['MetadataOwner']
+              metaTypeDict = result['MetadataType']
+              for meta,value in result['Value'].items():
+                setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
+                prefix = ''
+                if setFlag:
+                  prefix = "+"
+                if metaDict[meta] == 'ParentMetadata':
+                  prefix += "*"
+                  print (prefix+meta).rjust(20),':',value
+                elif metaDict[meta] == 'OwnMetadata':
+                  prefix += "!"
+                  print (prefix+meta).rjust(20),':',value   
+                else:
+                  print meta.rjust(20),':',value 
+                if setFlag and expandFlag:
+                  result = self.fc.getMetadataSet(value,expandFlag)
+                  if not result['OK']:
+                    print ("Error: %s" % result['Message']) 
+                    return
+                  for m,v in result['Value'].items():
+                    print " "*10,m.rjust(20),':',v      
+            else:
+              print "No metadata defined for directory"   
     else:
-      print "No metadata defined for directory"   
+      result = self.fc.getFileUserMetadata(path)      
+      
+      print result
+      
+      if not result['OK']:
+        print ("Error: %s" % result['Message']) 
+        return
+      if result['Value']:      
+        for meta,value in result['Value'].items():
+          print meta.rjust(20),':', value
+      else:
+        print "No metadata found"        
       
   def metaTag(self,argss):
     """ Get values of a given metadata tag compatible with the given selection

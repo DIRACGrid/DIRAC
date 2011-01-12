@@ -103,6 +103,31 @@ class FileManagerBase:
     """To be implemented on derived class
     """
     return S_ERROR( "To be implemented on derived class" )
+    
+  def _getFileLFNs(self,fileIDs):
+    """ Get the file LFNs for a given list of file IDs
+    """        
+    
+    stringIDs = intListToString(fileIDs)
+    req = "SELECT DirID, FileID, FileName from FC_Files WHERE FileID IN ( %s )" % stringIDs
+    result = self.db._query(req)
+    if not result['OK']:
+      return result
+    dirPathDict = {}  
+    fileNameDict = {}
+    for row in result['Value']:
+      if not row[0] in dirPathDict:
+        dirPathDict[row[0]] = self.db.dtree.getDirectoryPath(row[0])['Value']      
+      fileNameDict[row[1]] = '%s/%s' % (dirPathDict[row[0]],row[2])
+      
+    failed = {}
+    successful = fileNameDict
+    for id in fileIDs:
+      if not id in fileNameDict:
+        failed[id] = "File ID not found"
+        
+    return S_OK({'Successful':successful,'Failed':failed})          
+                                    
 
   def addFile( self, lfns, credDict, connection = False ):
     """ Add files to the catalog """
@@ -279,7 +304,10 @@ class FileManagerBase:
           toInsert[ancestorID] = relativeDepth + originalDepth
       res = self._insertFileAncestors( originalFileID, toInsert, connection = connection )
       if not res['OK']:
-        failed[lfn] = "Failed to insert ancestor files"
+        if "Duplicate" in res['Message']:
+          failed[lfn] = "Failed to insert ancestor files: duplicate entry"
+        else:              
+          failed[lfn] = "Failed to insert ancestor files"
       else:
         successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
@@ -311,7 +339,7 @@ class FileManagerBase:
       fileIDAncestors[fileID][ancestorID] = depth
     return S_OK( fileIDAncestors )
 
-  def _getFileDecendents( self, fileIDs, depths, connection = False ):
+  def _getFileDescendents( self, fileIDs, depths, connection = False ):
     connection = self._getConnection( connection )
     req = "SELECT AncestorID, FileID, AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN (%s)" \
                                 % intListToString( fileIDs )
@@ -326,6 +354,87 @@ class FileManagerBase:
         fileIDAncestors[ancestorID] = {}
       fileIDAncestors[ancestorID][fileID] = depth
     return S_OK( fileIDAncestors )
+
+  def addFileAncestors(self,lfns, connection = False ):
+    """ Add file ancestors to the catalog """
+    connection = self._getConnection( connection )
+    failed = {}
+    successful = {}
+    result = self._findFiles( lfns.keys(), connection = connection )
+    if not result['OK']:
+      return result
+    if result['Value']['Failed']:
+      failed.update(result['Value']['Failed'])
+      for lfn in result['Value']['Failed']:
+        lfns.pop(lfn)
+    if not lfns:
+      return S_OK({'Successful':successful,'Failed':failed})
+    
+    for lfn in  result['Value']['Successful']:
+       lfns[lfn]['FileID'] = result['Value']['Successful'][lfn]['FileID']
+    
+    result = self._populateFileAncestors(lfns, connection)
+    if not result['OK']:
+      return result
+    failed.update(result['Value']['Failed'])
+    successful = result['Value']['Successful']
+    return S_OK({'Successful':successful,'Failed':failed})                                           
+    
+  def _getFileRelatives( self, lfns, depths, relation, connection = False ):
+    connection = self._getConnection( connection )
+    failed = {}
+    successful = {}
+    result = self._findFiles( lfns.keys(), connection = connection )
+    if not result['OK']:
+      return result
+    if result['Value']['Failed']:
+      failed.update(result['Value']['Failed'])
+      for lfn in result['Value']['Failed']:
+        lfns.pop(lfn)
+    if not lfns:
+      return S_OK({'Successful':successful,'Failed':failed})
+    
+    inputIDDict = {}
+    for lfn in result['Value']['Successful']:
+       inputIDDict[ result['Value']['Successful'][lfn]['FileID'] ] = lfn
+  
+    inputIDs = inputIDDict.keys()
+    if relation == 'ancestor':
+      result = self._getFileAncestors(inputIDs,depths, connection)
+    else:
+      result = self._getFileDescendents(inputIDs,depths, connection)      
+            
+    if not result['OK']:
+      return result
+   
+    failed = {}
+    successful = {}
+    relDict = result['Value']
+    for id in inputIDs:
+      if id in relDict:
+        aList = relDict[id].keys()
+        result = self._getFileLFNs(aList)       
+        if not result['OK']:
+          failed[inputIDDict[id]] = "Failed to find %s" % relation    
+        else:
+          if result['Value']['Successful']:
+            resDict = {}                
+            for aID in result['Value']['Successful']:        
+              resDict[ result['Value']['Successful'][aID] ] = relDict[id][aID]         
+          successful[inputIDDict[id]] = resDict
+          for aID in result['Value']['Failed']:
+            failed[inputIDDict[id]] = "Failed to get the ancestor LFN"             
+      else:
+        successful[inputIDDict[id]] = {}                                     
+      
+    return S_OK({'Successful':successful,'Failed':failed})
+    
+  def getFileAncestors( self, lfns, depths, connection = False ):
+    return self._getFileRelatives(lfns, depths, 'ancestor', connection)
+
+  def getFileDescendents( self, lfns, depths, connection = False ):
+    return self._getFileRelatives(lfns, depths, 'descendent', connection)
+
 
   def _getExistingMetadata( self, lfns, connection = False ):
     connection = self._getConnection( connection )
@@ -645,13 +754,6 @@ class FileManagerBase:
         successful[dirName]['Execute'] = mode & stat.S_IXOTH
     return S_OK( {'Successful':successful, 'Failed':res['Value']['Failed']} )
 
-  def getFileAncestors( self, lfns, depths, connection = False ):
-    connection = self._getConnection( connection )
-    return S_ERROR()
-
-  def getFileDescendents( self, lfns, depths, connection = False ):
-    connection = self._getConnection( connection )
-    return S_ERROR()
 
   ######################################################
   #
