@@ -682,9 +682,21 @@ class SRM2Storage( StorageBase ):
     gLogger.info( "SRM2Storage.__putFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
     res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url, srctype, dsttype, nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
     if not res['OK']:
+      # Remove the failed replica, just in case
+      result = self.__executeOperation( dest_url, 'removeFile' )
+      if result['OK']:
+        gLogger.debug( "SRM2Storage.__putFile: Removed remote file remnant %s." % dest_url )
+      else:
+        gLogger.debug( "SRM2Storage.__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
     res = res['Value']
     if not res['OK']:
+      # Remove the failed replica, just in case
+      result = self.__executeOperation( dest_url, 'removeFile' )
+      if result['OK']:
+        gLogger.debug( "SRM2Storage.__putFile: Removed remote file remnant %s." % dest_url )
+      else:
+        gLogger.debug( "SRM2Storage.__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
     errCode, errStr = res['Value']
     if errCode == 0:
