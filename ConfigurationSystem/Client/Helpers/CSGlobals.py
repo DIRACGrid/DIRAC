@@ -39,3 +39,10 @@ def getInstalledExtensions():
       pass
   extensions.append( 'DIRAC' )
   return extensions
+
+
+def skipCACheck():
+  return gConfig.getValue( "/DIRAC/Security/SkipCAChecks", "false" ).lower() in ( "y", "yes", "true" )
+
+def useServerCertificate():
+  return gConfig.getValue( "/DIRAC/Security/UseServerCertificate", "false" ).lower() in ( "y", "yes", "true" )
