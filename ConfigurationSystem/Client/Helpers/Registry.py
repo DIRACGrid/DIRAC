@@ -1,5 +1,5 @@
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/Security/CS.py $
-__RCSID__ = "$Id: CS.py 31174 2010-12-03 18:24:06Z rgracian $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
