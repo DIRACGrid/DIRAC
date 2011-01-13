@@ -118,7 +118,7 @@ class ThreadScheduler:
     startTime = time.time()
     self.__executeTask( taskId )
     elapsedTime = time.time() - startTime
-    self.__schedueIfNeeded( taskId, elapsedTime )
+    self.__scheduleIfNeeded( taskId, elapsedTime )
     return self.__timeToNextTask()
 
   @gSchedulerLock
@@ -175,7 +175,7 @@ class ThreadScheduler:
       return False
     return True
 
-  def __schedueIfNeeded( self, taskId, elapsedTime = 0 ):
+  def __scheduleIfNeeded( self, taskId, elapsedTime = 0 ):
     if 'executions' in self.__taskDict[ taskId ]:
       if self.__taskDict[ taskId ][ 'executions' ] == 0:
         del( self.__taskDict[ taskId ] )

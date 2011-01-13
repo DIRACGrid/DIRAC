@@ -1,2 +1,0 @@
-""" DIRAC.LHCbSystem.Client package
-"""

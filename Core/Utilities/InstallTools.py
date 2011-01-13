@@ -448,7 +448,9 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
     return S_OK( 'Component options already exist' )
 
   # Add the component options now
+  print "AT >>>", componentType, system, component, instance, extensions
   result = getComponentCfg( componentType, system, component, instance, extensions )
+  print result
   if not result['OK']:
     return result
   compCfg = result['Value']
@@ -514,7 +516,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
 
   extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
 
-  compCfg = ''
+  compCfg = '' 
   for ext in extensionsDIRAC + ['DIRAC']:
     cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
     if os.path.exists( cfgTemplatePath ):
@@ -522,8 +524,11 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
       # Look up the component in this template
       loadCfg = CFG()
       loadCfg.loadFromFile( cfgTemplatePath )
+            
       try:
         compCfg = loadCfg[sectionName][component]
+        # section found
+        break
       except:
         error = 'Can not find %s in template' % cfgPath( sectionName, component )
         gLogger.error( error )
