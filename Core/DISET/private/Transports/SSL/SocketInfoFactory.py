@@ -39,14 +39,15 @@ class SocketInfoFactory:
     except Exception, e:
       return S_ERROR( str( e ) )
 
-  def __socketConnect( self, sslSocket, hostAddress, timeout, retries = 1 ):
+  def __socketConnect( self, sslSocket, hostAddress, timeout, retries = 2 ):
     try:
       sslSocket.connect( hostAddress )
     except socket.error , e:
-      if e.args[0] == 111 and retries > 0:
-        return self.__socketConnect( sslSocket, hostAddress, timeout, retries - 1 )
       if e.args[0] != 115:
-        return S_ERROR( "Can't connect: %s" % str( e ) )
+        if retries:
+          return self.__socketConnect( sslSocket, hostAddress, timeout, retries - 1 )
+        else:
+          return S_ERROR( "Can't connect: %s" % str( e ) )
       #Connect in progress
       oL = select.select( [], [ sslSocket ], [], timeout )[1]
       if len( oL ) == 0:
@@ -76,7 +77,7 @@ class SocketInfoFactory:
       sslSocket.set_session( gSessionManager.get( sessionId ) )
     #sslSocket.setblocking( 0 )
     if socketInfo.infoDict[ 'timeout' ]:
-      sslSocket.settimeout( 5 )
+      sslSocket.settimeout( 2 )
     #Connect baby!
     result = self.__socketConnect( sslSocket, hostAddress, socketInfo.infoDict[ 'timeout' ] )
     if not result[ 'OK' ]:
