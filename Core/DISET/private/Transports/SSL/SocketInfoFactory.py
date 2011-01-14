@@ -39,6 +39,24 @@ class SocketInfoFactory:
     except Exception, e:
       return S_ERROR( str( e ) )
 
+  def __socketConnect( self, sslSocket, hostAddress, timeout, retries = 1 ):
+    try:
+      sslSocket.connect( hostAddress )
+    except socket.error , e:
+      if e.args[0] == 111 and retries > 0:
+        return self.__socketConnect( sslSocket, hostAddress, timeout, retries - 1 )
+      if e.args[0] != 115:
+        return S_ERROR( "Can't connect: %s" % str( e ) )
+      #Connect in progress
+      oL = select.select( [], [ sslSocket ], [], timeout )[1]
+      if len( oL ) == 0:
+        sslSocket.close()
+        return S_ERROR( "Connection timeout" )
+      errno = sslSocket.getsockopt( socket.SOL_SOCKET, socket.SO_ERROR )
+      if errno != 0:
+        return S_ERROR( "Can't connect: %s" % str( ( errno, os.strerror( errno ) ) ) )
+    return S_OK()
+
   def __connect( self, socketInfo, hostAddress ):
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
@@ -59,19 +77,11 @@ class SocketInfoFactory:
     #sslSocket.setblocking( 0 )
     if socketInfo.infoDict[ 'timeout' ]:
       sslSocket.settimeout( 5 )
-    try:
-      sslSocket.connect( hostAddress )
-    except socket.error , e:
-      if e.args[0] != 115:
-        return S_ERROR( "Can't connect: %s" % str( e ) )
-      #Connect in progress
-      oL = select.select( [], [ sslSocket ], [], socketInfo.infoDict[ 'timeout' ] )[1]
-      if len( oL ) == 0:
-        sslSocket.close()
-        return S_ERROR( "Connection timeout" )
-      errno = sslSocket.getsockopt( socket.SOL_SOCKET, socket.SO_ERROR )
-      if errno != 0:
-        return S_ERROR( "Can't connect: %s" % str( ( errno, os.strerror( errno ) ) ) )
+    #Connect baby!
+    result = self.__socketConnect( sslSocket, hostAddress, socketInfo.infoDict[ 'timeout' ] )
+    if not result[ 'OK' ]:
+      return result
+    #Set the real timeout
     if socketInfo.infoDict[ 'timeout' ]:
       sslSocket.settimeout( socketInfo.infoDict[ 'timeout' ] )
     #Connected!
