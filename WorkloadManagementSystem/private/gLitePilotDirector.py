@@ -14,7 +14,6 @@ __RCSID__ = "$Id$"
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
 from DIRAC import S_OK, S_ERROR, gConfig, List
 from DIRAC.Core.Utilities.Grid import executeGridCommand
-from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
 
 import os, time, re
 
@@ -30,15 +29,16 @@ class gLitePilotDirector( GridPilotDirector ):
      Define some defaults and call parent __init__
     """
     self.gridMiddleware = 'gLite'
-    GridPilotDirector.__init__( self, submitPool )
 
     self.resourceBrokers = BROKERS
     # FIXME: We might be able to remove this
     self.loggingServers = [ LOGGING_SERVER ]
 
+    GridPilotDirector.__init__( self, submitPool )
+
   def configure( self, csSection, submitPool ):
     """
-     Here goes specific configuration for gLite PilotDirectors
+     Here goes especific configuration for gLite PilotDirectors
     """
     GridPilotDirector.configure( self, csSection, submitPool )
 
@@ -74,7 +74,7 @@ class gLitePilotDirector( GridPilotDirector ):
     LBs = List.randomize( LBs )
 
     nPilots = 1
-    vo = getVO()
+    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '' )
     if privateTQ or vo not in ['lhcb']:
       extraReq = "True"
     else:
@@ -87,7 +87,7 @@ class gLitePilotDirector( GridPilotDirector ):
 
 RetryCount = 0;
 ShallowRetryCount = 0;
-MyProxyServer = "";
+MyProxyServer = " ";
 
 AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
 Requirements = pilotRequirements && %s;
@@ -100,7 +100,7 @@ RetryCount = 0;
 ShallowRetryCount = 0;
 WMProxyEndPoints = { %s };
 LBEndPoints = { %s };
-MyProxyServer = "";
+MyProxyServer = " ";
 EnableServiceDiscovery = false;
 JdlDefaultAttributes =  [
     requirements  =  ( other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special" );
@@ -185,5 +185,4 @@ ParameterStart = 0;
       return [parentReference]
 
     return references
-
 
