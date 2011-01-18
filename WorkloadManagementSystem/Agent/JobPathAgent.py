@@ -1,15 +1,15 @@
 ########################################################################
 # $HeadURL$
-# File :   JobPathAgent.py
-# Author : Stuart Paterson
+# File :    JobPathAgent.py
+# Author :  Stuart Paterson
 ########################################################################
+""" 
+  The Job Path Agent determines the chain of Optimizing Agents that must
+  work on the job prior to the scheduling decision.
 
-"""   The Job Path Agent determines the chain of Optimizing Agents that must
-      work on the job prior to the scheduling decision.
-
-      Initially this takes jobs in the received state and starts the jobs on the
-      optimizer chain.  The next development will be to explicitly specify the
-      path through the optimizers.
+  Initially this takes jobs in the received state and starts the jobs on the
+  optimizer chain.  The next development will be to explicitly specify the
+  path through the optimizers.
 
 """
 __RCSID__ = "$Id$"
@@ -20,11 +20,16 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.ModuleFactory                    import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.JobDescription  import JobDescription
 from DIRAC                                                 import S_OK, S_ERROR, List
-import string, re
 
 OPTIMIZER_NAME = 'JobPath'
 
 class JobPathAgent( OptimizerModule ):
+  """
+      The specific Optimizer must provide the following methods:
+      - checkJob() - the main method called for each job
+      and it can provide:
+      - initializeOptimizer() before each execution cycle      
+  """
 
   #############################################################################
   def initializeOptimizer( self ):
@@ -36,7 +41,8 @@ class JobPathAgent( OptimizerModule ):
     return S_OK()
 
   def beginExecution( self ):
-
+    """Called before each Agent execution cycle
+    """
     self.basePath = self.am_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
     self.inputData = self.am_getOption( 'InputData', ['InputData'] )
     self.endPath = self.am_getOption( 'EndPath', ['JobScheduling', 'TaskQueue'] )
@@ -45,6 +51,8 @@ class JobPathAgent( OptimizerModule ):
     return S_OK()
 
   def __syncJobDesc( self, jobId, jobDesc, classAdJob ):
+    """ ???
+    """
     if not jobDesc.isDirty():
       return
     for op in jobDesc.getOptions():
@@ -119,7 +127,7 @@ class JobPathAgent( OptimizerModule ):
     result = self.setOptimizerChain( job, chain )
     if not result['OK']:
       self.log.warn( result['Message'] )
-    result = self.setJobParam( job, 'JobPath', string.join( chain, ',' ) )
+    result = self.setJobParam( job, 'JobPath', ','.join( chain ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
     return self.setNextOptimizer( job )
