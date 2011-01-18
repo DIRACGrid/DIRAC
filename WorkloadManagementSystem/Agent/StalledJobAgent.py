@@ -2,9 +2,8 @@
 # $HeadURL$
 # File :   StalledJobAgent.py
 ########################################################################
-
 """  The StalledJobAgent hunts for stalled jobs in the Job database. Jobs in "running"
-     state not receiving a heartbeat signal for more than stalledTime
+     state not receiving a heart beat signal for more than stalledTime
      seconds will be assigned the "Stalled" state.
 """
 
@@ -20,6 +19,15 @@ from DIRAC.AccountingSystem.Client.Types.Job        import Job
 import time, types
 
 class StalledJobAgent( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   #############################################################################
   def initialize( self ):
