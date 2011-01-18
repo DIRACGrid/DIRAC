@@ -1,25 +1,34 @@
 ########################################################################
 # $HeadURL$
-
-
-"""  JobHistoryAgent sends periodically numbers of jobs in various states for various
-     sites to the Monitoring system to create historical plots.
+# File :    JobHistoryAgent.py
+# Author :  A.T.
+########################################################################
 """
-
+  JobHistoryAgent sends periodically numbers of jobs in various states for various
+  sites to the Monitoring system to create historical plots.
+"""
 __RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
+from DIRAC  import gLogger, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.Core.Utilities import Time
 
-import time, os
+import time
 
 MONITOR_SITES = ['LCG.CERN.ch', 'LCG.IN2P3.fr', 'LCG.RAL.uk', 'LCG.CNAF.it',
                  'LCG.GRIDKA.de', 'LCG.NIKHEF.nl', 'LCG.PIC.es', 'All sites']
 MONITOR_STATUS = ['Running', 'Stalled', 'Done', 'Failed']
 
 class JobHistoryAgent( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   def initialize( self ):
 
@@ -53,9 +62,8 @@ class JobHistoryAgent( AgentModule ):
       totalDict[status] = 0
 
     for row in self.resultDB:
-      dict = row[0]
-      site = dict['Site']
-      status = dict['Status']
+      site = row[0]['Site']
+      status = row[0]['Status']
       count = row[1]
       if site in MONITOR_SITES and status in MONITOR_STATUS:
         gLogger.verbose( "Adding mark %s-%s: " % ( status, site ) + str( count ) )
