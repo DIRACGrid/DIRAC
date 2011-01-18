@@ -46,7 +46,11 @@ class MightyOptimizer( AgentModule ):
   def execute( self ):
     """ The method call by AgentModule on each iteration
     """
-    result = self.jobDB.selectJobs( { 'Status': self.__jobStates  } )
+    jobTypeCondition = self.am_getOption( "JobTypeRestriction", [] )
+    jobCond = { 'Status': self.__jobStates  }
+    if jobTypeCondition:
+      jobCond[ 'JobType' ] = jobTypeCondition
+    result = self.jobDB.selectJobs( jobCond )
     if not result[ 'OK' ]:
       return result
     jobsList = result[ 'Value' ]
