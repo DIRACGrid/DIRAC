@@ -1,22 +1,32 @@
 ########################################################################
 # $HeadURL$
-
-__RCSID__ = "$Id$"
+# File :    StatesAccountingAgent.py
+# Author :  A.T.
+########################################################################
 
 """  StatesAccountingAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
 """
+__RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
+
+from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.Core.Utilities import Time
 
-import time,os
-
-class StatesAccountingAgent(AgentModule):
+class StatesAccountingAgent( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   __summaryKeyFieldsMapping = [ 'Status',
                                 'Site',
@@ -31,7 +41,7 @@ class StatesAccountingAgent(AgentModule):
                                 ]
 
 
-  def initialize(self):
+  def initialize( self ):
     """ Standard constructor
     """
     self.dsClients = {}
@@ -48,7 +58,7 @@ class StatesAccountingAgent(AgentModule):
       self.__jobDBFields.append( field )
     return S_OK()
 
-  def execute(self):
+  def execute( self ):
     """ Main execution method
     """
     result = gConfig.getSections( "/DIRAC/Setups" )
@@ -62,7 +72,6 @@ class StatesAccountingAgent(AgentModule):
     if not result[ 'OK' ]:
       gLogger.error( "Can't the the jobdb summary", result[ 'Message' ] )
     else:
-      fields = list( result[ 'Value' ][0] )
       values = result[ 'Value' ][1]
       for record in values:
         recordSetup = record[0]
@@ -74,8 +83,8 @@ class StatesAccountingAgent(AgentModule):
           self.dsClients[ recordSetup ] = DataStoreClient( setup = recordSetup, retryGraceTime = 900 )
         record = record[1:]
         rD = {}
-        for FV in self.__summaryDefinedFields:
-          rD[ FV[0] ] = FV[1]
+        for fV in self.__summaryDefinedFields:
+          rD[ fV[0] ] = fV[1]
         for iP in range( len( self.__summaryKeyFieldsMapping ) ):
           fieldName = self.__summaryKeyFieldsMapping[iP]
           rD[ fieldName ] = record[iP]
@@ -86,7 +95,7 @@ class StatesAccountingAgent(AgentModule):
         acWMS.setStartTime( now )
         acWMS.setEndTime( now )
         acWMS.setValuesFromDict( rD )
-        retVal =  acWMS.checkValues()
+        retVal = acWMS.checkValues()
         if not retVal[ 'OK' ]:
           gLogger.error( "Invalid accounting record ", "%s -> %s" % ( retVal[ 'Message' ], rD ) )
         else:
@@ -95,7 +104,7 @@ class StatesAccountingAgent(AgentModule):
         gLogger.info( "Sending records for setup %s" % setup )
         result = self.dsClients[ setup ].commit()
         if not result[ 'OK' ]:
-          gLogger.error( "Couldn't commit wms history for setup %s"  % setup, result[ 'Message' ] )
+          gLogger.error( "Couldn't commit wms history for setup %s" % setup, result[ 'Message' ] )
         else:
           gLogger.info( "Sent %s records for setup %s" % ( result[ 'Value' ], setup ) )
     return S_OK()
