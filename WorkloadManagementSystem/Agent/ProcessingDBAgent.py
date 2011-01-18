@@ -3,13 +3,11 @@
 # File :   ProcessingDBAgent.py
 # Author : Stuart Paterson
 ########################################################################
-
 """   The ProcessingDB Agent queries the file catalogue for specified job input data and adds the
       relevant information to the job optimizer parameters to be used during the
       scheduling decision.
 
 """
-
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
@@ -19,6 +17,12 @@ from DIRAC                                                 import S_OK, S_ERROR
 import os, re, time, string
 
 class ProcessingDBAgent( OptimizerModule ):
+  """
+      The specific Optimizer must provide the following methods:
+      - checkJob() - the main method called for each job
+      and it can provide:
+      - initializeOptimizer() before each execution cycle      
+  """
 
   #############################################################################
   def initializeOptimizer( self ):
