@@ -1,19 +1,17 @@
 ########################################################################
 # $HeadURL$
-# File :   JobCleaningAgent.py
-# Author : A.T.
+# File :    JobCleaningAgent.py
+# Author :  A.T.
 ########################################################################
-
-"""  The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
-
+The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
+"""
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule                      import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB    import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.SandboxDB      import SandboxDB
-from DIRAC                                            import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                            import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 import DIRAC.Core.Utilities.Time as Time
 
@@ -24,6 +22,15 @@ REMOVE_STATUS_DELAY = {'Deleted':0,
 PRODUCTION_TYPES = ['DataReconstruction', 'DataStripping', 'MCSimulation', 'Merge', 'production']
 
 class JobCleaningAgent( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   #############################################################################
   def initialize( self ):
