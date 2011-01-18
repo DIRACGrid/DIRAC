@@ -3,13 +3,12 @@
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
-
-"""  The Job Agent class instantiates a CE instance that acts as a client to a
-     compute resource and also to the WMS.  The Job Agent constructs a classAd
-     based on the local resource description in the CS and the current resource
-     status that is used for matching.
 """
-
+  The Job Agent class instantiates a CE that acts as a client to a
+  compute resource and also to the WMS.
+  The Job Agent constructs a classAd based on the local resource description in the CS
+  and the current resource status that is used for matching.
+"""
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
@@ -18,17 +17,24 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft              import TimeLeft
 from DIRAC.Core.Base.AgentModule                         import AgentModule
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
-from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC                                               import S_OK, S_ERROR, gConfig, platform
+from DIRAC                                               import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Security.Misc                            import getProxyInfo
-from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Security                                 import Properties
 from DIRAC.WorkloadManagementSystem.Client.JobReport     import JobReport
 
-import os, sys, re, string, time
+import os, sys, re, time
 
 class JobAgent( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   #############################################################################
   def initialize( self, loops = 0 ):
@@ -45,9 +51,9 @@ class JobAgent( AgentModule ):
       self.log.info( 'Defining CE from local configuration = %s' % localCE )
       ceUniqueID = localCE
 
-    ceFactory = ComputingElementFactory(  )
+    ceFactory = ComputingElementFactory()
     self.ceName = ceUniqueID
-    ceInstance = ceFactory.getCE(ceUniqueID)
+    ceInstance = ceFactory.getCE( ceUniqueID )
     if not ceInstance['OK']:
       self.log.warn( ceInstance['Message'] )
       return ceInstance
@@ -62,9 +68,10 @@ class JobAgent( AgentModule ):
     #Agent options
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
     self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
+    defaultWrapperLocation = 'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py'
     self.jobWrapperTemplate = os.path.join( self.diracRoot,
                                             self.am_getOption( 'JobWrapperTemplate',
-                                                               'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py' ) )
+                                                                defaultWrapperLocation ) )
     self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', 10 )
     self.defaultLogLevel = self.am_getOption( 'DefaultLogLevel', 'info' )
     self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
@@ -133,15 +140,15 @@ class JobAgent( AgentModule ):
     matcherInfo = jobRequest['Value']
     jobID = matcherInfo['JobID']
     matcherParams = ['JDL', 'DN', 'Group']
-    for p in matcherParams:
-      if not matcherInfo.has_key( p ):
-        self.__report( jobID, 'Failed', 'Matcher did not return %s' % ( p ) )
+    for param in matcherParams:
+      if not matcherInfo.has_key( param ):
+        self.__report( jobID, 'Failed', 'Matcher did not return %s' % ( param ) )
         return self.__finish( 'Matcher Failed' )
-      elif not matcherInfo[p]:
-        self.__report( jobID, 'Failed', 'Matcher returned null %s' % ( p ) )
+      elif not matcherInfo[param]:
+        self.__report( jobID, 'Failed', 'Matcher returned null %s' % ( param ) )
         return self.__finish( 'Matcher Failed' )
       else:
-        self.log.verbose( 'Matcher returned %s = %s ' % ( p, matcherInfo[p] ) )
+        self.log.verbose( 'Matcher returned %s = %s ' % ( param, matcherInfo[param] ) )
 
     jobJDL = matcherInfo['JDL']
     jobGroup = matcherInfo['Group']
@@ -177,18 +184,19 @@ class JobAgent( AgentModule ):
     if not params.has_key( 'SystemConfig' ):
       self.log.warn( 'Job has no system configuration defined in JDL parameters' )
       systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-      self.log.info('Setting system config to /LocalSite/Architecture = %s since it was not specified' %systemConfig)
+      self.log.info( 'Setting system config to /LocalSite/Architecture = %s since it was not specified' % systemConfig )
       if not systemConfig:
-        self.log.warn('/LocalSite/Architecture is not defined')
-      params['SystemConfig']=systemConfig
+        self.log.warn( '/LocalSite/Architecture is not defined' )
+      params['SystemConfig'] = systemConfig
     else:
       systemConfig = params['SystemConfig']
       if systemConfig.lower() == 'any':
         systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-        self.log.info('Setting system config to /LocalSite/Architecture = %s since it was set to "ANY" in the job description' %systemConfig)      
+        self.log.info( 'Setting SystemConfig = /LocalSite/Architecture =',
+                       '"%s" since it was set to "ANY" in the job description' % systemConfig )
         if not systemConfig:
-          self.log.warn('/LocalSite/Architecture is not defined')
-        params['SystemConfig']=systemConfig
+          self.log.warn( '/LocalSite/Architecture is not defined' )
+        params['SystemConfig'] = systemConfig
 
     if not params.has_key( 'MaxCPUTime' ):
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
@@ -239,7 +247,7 @@ class JobAgent( AgentModule ):
         return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'] )
 
       self.log.verbose( 'After %sCE submitJob()' % ( self.ceName ) )
-    except Exception, x:
+    except Exception, e:
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception' )
 
@@ -278,6 +286,9 @@ class JobAgent( AgentModule ):
 
   #############################################################################
   def __setupProxy( self, ownerDN, ownerGroup ):
+    """
+    Retrieve a proxy for the execution of the job
+    """
     if gConfig.getValue( '/DIRAC/Security/UseServerCertificate' , False ):
       proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
       if not proxyResult['OK']:
@@ -471,8 +482,6 @@ class JobAgent( AgentModule ):
     siteRootPython = self.siteRoot
     self.log.debug( 'DIRACPython is:\n%s' % dPython )
     self.log.debug( 'SiteRootPythonDir is:\n%s' % siteRootPython )
-    libDir = '%s/%s/lib' % ( self.siteRoot, platform )
-    scriptsDir = '%s/scripts' % ( self.siteRoot )
     wrapperTemplate = wrapperTemplate.replace( "@SIGNATURE@", str( signature ) )
     wrapperTemplate = wrapperTemplate.replace( "@JOBID@", str( jobID ) )
     wrapperTemplate = wrapperTemplate.replace( "@DATESTRING@", str( date_time ) )
@@ -482,13 +491,13 @@ class JobAgent( AgentModule ):
     wrapper.write( wrapperTemplate )
     wrapper.close ()
     jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
-    #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s:%s:%s:$LD_LIBRARY_PATH\n%s %s -o LogLevel=debug' %(libDir,lib64Dir,usrlibDir,dPython,jobWrapperFile)
-    #jobFileContents = '#!/bin/sh\nexport LD_LIBRARY_PATH=%s\n%s %s -o LogLevel=%s' %(libDir,dPython,jobWrapperFile,logLevel)
-    jobFileContents = '#!/bin/sh\n%s %s -o LogLevel=%s' % ( dPython, jobWrapperFile, logLevel )
+    jobFileContents = \
+"""#!/bin/sh
+%s %s -o LogLevel=%s' % ( dPython, jobWrapperFile, logLevel )
+"""
     jobFile = open( jobExeFile, 'w' )
     jobFile.write( jobFileContents )
     jobFile.close()
-    #return S_OK(jobWrapperFile)
     return S_OK( jobExeFile )
 
   #############################################################################
@@ -615,18 +624,21 @@ class JobAgent( AgentModule ):
 
   #############################################################################
   def __rescheduleFailedJob( self, jobID, message ):
+    """
+    Set Job Status to "Rescheduled" and issue a reschedule command to the Job Manager
+    """
 
     self.log.warn( 'Failure during %s' % ( message ) )
 
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
-    jobReport = JobReport( int( jobID ), 'JobAgent@%s' % self.siteName)
+    jobReport = JobReport( int( jobID ), 'JobAgent@%s' % self.siteName )
 
     #Setting a job parameter does not help since the job will be rescheduled,
     #instead set the status with the cause and then another status showing the
     #reschedule operation.
 
-    jobReport.setJobStatus( status = 'Rescheduled', 
-                            application = message, 
+    jobReport.setJobStatus( status = 'Rescheduled',
+                            application = message,
                             sendFlag = True )
 
     self.log.info( 'Job will be rescheduled' )
@@ -646,7 +658,7 @@ class JobAgent( AgentModule ):
     gridCE = gConfig.getValue( '/LocalSite/GridCE', '' )
     queue = gConfig.getValue( '/LocalSite/CEQueue', '' )
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
-    result = wmsAdmin.setPilotStatus( str( self.pilotReference ), 'Done', gridCE, 
+    result = wmsAdmin.setPilotStatus( str( self.pilotReference ), 'Done', gridCE,
                                       'Report from JobAgent', self.siteName, queue )
     if not result['OK']:
       self.log.warn( result['Message'] )
