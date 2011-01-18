@@ -16,25 +16,25 @@ from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
 from DIRAC                                                 import S_OK, S_ERROR
-import string,re
+import string, re
 
-class TaskQueueAgent(OptimizerModule):
+class TaskQueueAgent( OptimizerModule ):
 
   #############################################################################
-  def initializeOptimizer(self):
+  def initializeOptimizer( self ):
     """Initialize specific parameters for TaskQueueAgent.
     """
-    self.waitingStatus      = self.am_getOption( 'WaitingStatus', 'Waiting' )
+    self.waitingStatus = self.am_getOption( 'WaitingStatus', 'Waiting' )
     self.waitingMinorStatus = self.am_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' )
     try:
-      self.taskQueueDB        = TaskQueueDB()
+      self.taskQueueDB = TaskQueueDB()
       result = self.taskQueueDB.enableAllTaskQueues()
       if not result[ 'OK' ]:
-        raise Exception( "Can't enable TaskQueues: %s" % result[ 'Message' ])
-      
+        raise Exception( "Can't enable TaskQueues: %s" % result[ 'Message' ] )
+
     except Exception, e:
       self.log.exception()
-      return S_ERROR( "Cannot initialize taskqueueDB: %s" % str(e) )
+      return S_ERROR( "Cannot initialize taskqueueDB: %s" % str( e ) )
     return S_OK()
 
   #############################################################################
@@ -43,12 +43,12 @@ class TaskQueueAgent(OptimizerModule):
     """
     result = self.insertJobInQueue( job, classAdJob )
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn( result['Message'] )
       return S_ERROR( result[ 'Message' ] )
 
     result = self.updateJobStatus( job, self.waitingStatus, self.waitingMinorStatus, 'Unknown' )
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn( result['Message'] )
 
     return S_OK()
 
@@ -57,25 +57,25 @@ class TaskQueueAgent(OptimizerModule):
     """ Check individual job and add to the Task Queue eventually.
     """
     #
-    requirements = classAdJob.get_expression("Requirements")
-    jobType = classAdJob.get_expression("JobType").replace('"','')
-    submitPool = classAdJob.get_expression( "SubmitPool" ).replace('"','')
-    ownerDN = classAdJob.get_expression( "OwnerDN" ).replace('"','')
-    ownerGroup = classAdJob.get_expression( "OwnerGroup" ).replace('"','')
+    requirements = classAdJob.get_expression( "Requirements" )
+    jobType = classAdJob.get_expression( "JobType" ).replace( '"', '' )
+    submitPool = classAdJob.get_expression( "SubmitPool" ).replace( '"', '' )
+    ownerDN = classAdJob.get_expression( "OwnerDN" ).replace( '"', '' )
+    ownerGroup = classAdJob.get_expression( "OwnerGroup" ).replace( '"', '' )
 
-    jobReq = classAdJob.get_expression("JobRequirements")
-    classAdJobReq = ClassAd(jobReq)
+    jobReq = classAdJob.get_expression( "JobRequirements" )
+    classAdJobReq = ClassAd( jobReq )
     jobReqDict = {}
     for name in self.taskQueueDB.getSingleValueTQDefFields():
-      if classAdJobReq.lookupAttribute(name):
+      if classAdJobReq.lookupAttribute( name ):
         if name == 'CPUTime':
-          jobReqDict[name] = classAdJobReq.getAttributeInt(name)
+          jobReqDict[name] = classAdJobReq.getAttributeInt( name )
         else:
-          jobReqDict[name] = classAdJobReq.getAttributeString(name)
+          jobReqDict[name] = classAdJobReq.getAttributeString( name )
 
     for name in self.taskQueueDB.getMultiValueTQDefFields():
-      if classAdJobReq.lookupAttribute(name):
-        jobReqDict[name] = classAdJobReq.getListFromExpression(name)
+      if classAdJobReq.lookupAttribute( name ):
+        jobReqDict[name] = classAdJobReq.getListFromExpression( name )
 
     jobPriority = classAdJobReq.getAttributeInt( 'UserPriority' )
 
@@ -83,7 +83,7 @@ class TaskQueueAgent(OptimizerModule):
     if not result[ 'OK' ]:
       self.log.error( "Cannot insert job %s in task queue: %s" % ( job, result[ 'Message' ] ) )
       # Force removing the job from the TQ if it was actually inserted
-      result = self.taskQueueDB.deleteJob(job)
+      result = self.taskQueueDB.deleteJob( job )
       if result['OK']:
         if result['Value']:
           self.log.info( "Job %s removed from the TQ" % job )
