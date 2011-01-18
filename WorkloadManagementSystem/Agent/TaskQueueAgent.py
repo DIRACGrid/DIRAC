@@ -1,24 +1,24 @@
 ########################################################################
 # $HeadURL$
-# File :   TaskQueueAgent.py
-# Author : Stuart Paterson
+# File :    TaskQueueAgent.py
+# Author :  Stuart Paterson
 ########################################################################
-
 """  The Task Queue Agent acts after Job Scheduling to place the ready jobs
      into a Task Queue.
 """
-
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
-from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
-from DIRAC.Core.Security.CS                                import getPropertiesForGroup
 from DIRAC                                                 import S_OK, S_ERROR
-import string, re
 
 class TaskQueueAgent( OptimizerModule ):
+  """
+      The specific Optimizer must provide the following methods:
+      - initializeOptimizer() before each execution cycle
+      - checkJob() - the main method called for each job
+  """
 
   #############################################################################
   def initializeOptimizer( self ):
@@ -57,11 +57,11 @@ class TaskQueueAgent( OptimizerModule ):
     """ Check individual job and add to the Task Queue eventually.
     """
     #
-    requirements = classAdJob.get_expression( "Requirements" )
-    jobType = classAdJob.get_expression( "JobType" ).replace( '"', '' )
-    submitPool = classAdJob.get_expression( "SubmitPool" ).replace( '"', '' )
-    ownerDN = classAdJob.get_expression( "OwnerDN" ).replace( '"', '' )
-    ownerGroup = classAdJob.get_expression( "OwnerGroup" ).replace( '"', '' )
+    #Êrequirements = classAdJob.get_expression( "Requirements" )
+    #ÊjobType = classAdJob.get_expression( "JobType" ).replace( '"', '' )
+    # submitPool = classAdJob.get_expression( "SubmitPool" ).replace( '"', '' )
+    #ÊownerDN = classAdJob.get_expression( "OwnerDN" ).replace( '"', '' )
+    # ownerGroup = classAdJob.get_expression( "OwnerGroup" ).replace( '"', '' )
 
     jobReq = classAdJob.get_expression( "JobRequirements" )
     classAdJobReq = ClassAd( jobReq )
