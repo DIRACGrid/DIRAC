@@ -3,7 +3,6 @@
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
-
 """  The TaskQueue Director Agent controls the submission of pilots via the
      PilotDirectors. These are Backend-specific PilotDirector derived classes.
      This is a simple wrapper that performs the instantiation and monitoring
@@ -13,7 +12,6 @@
      From the base Agent class it uses the following configuration Parameters
        - WorkDir:
        - PollingTime:
-       - ControlDirectory:
        - MaxCycles:
 
      The following parameters are searched for in WorkloadManagement/TaskQueueDirector:
@@ -139,7 +137,7 @@ from DIRAC.Resources.Computing.ComputingElement import getResourceDict
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB
 
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, systemCall, DictCache
+from DIRAC import S_OK, S_ERROR, List, Time, DictCache
 
 import random, time
 import DIRAC
@@ -147,6 +145,15 @@ import DIRAC
 random.seed()
 
 class TaskQueueDirector( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   def initialize( self ):
     """ Standard constructor
@@ -230,7 +237,9 @@ class TaskQueueDirector( AgentModule ):
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
 
-      result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList}, None, timeLimitToConsider )
+      result = pilotAgentsDB.countPilots( { 'TaskQueueID': taskQueueID,
+                                            'Status': waitingStatusList},
+                                          None, timeLimitToConsider )
       if not result['OK']:
         self.log.error( 'Fail to get Number of Waiting pilots', result['Message'] )
         waitingPilots = 0
@@ -277,7 +286,8 @@ class TaskQueueDirector( AgentModule ):
                                 self.pilotsPerJob * taskQueueJobs ) * maxCPU / taskQueueCPU )
     # limit the number of pilots according to the number of waiting job in the TaskQueue
     # and the number of already submitted pilots for that TaskQueue
-    pilotsToSubmit = min( pilotsToSubmit, int( ( 1 + extraPilotFraction ) * taskQueueJobs ) + extraPilots - waitingPilots )
+    pilotsToSubmit = min( pilotsToSubmit,
+                          int( ( 1 + extraPilotFraction ) * taskQueueJobs ) + extraPilots - waitingPilots )
 
     if pilotsToSubmit <= 0: return S_OK( 0 )
     self.log.verbose( 'Submitting %s pilots for TaskQueue %s' % ( pilotsToSubmit, taskQueueID ) )
@@ -320,9 +330,11 @@ class TaskQueueDirector( AgentModule ):
     return S_OK( pilotsToSubmit )
 
   def __checkSubmitPools( self ):
-    # this method is called at initialization and at the beginning of each execution cycle
-    # in this way running parameters can be dynamically changed via the remote
-    # configuration.
+    """
+      This method is called at initialization and at the beginning of each execution cycle
+      in this way running parameters can be dynamically changed via the remote
+      configuration.
+    """
 
     # First update common Configuration for all Directors
     self.__configureDirector()
@@ -339,9 +351,11 @@ class TaskQueueDirector( AgentModule ):
 
       # Now enable the director for this iteration, if some RB/WMS/CE is defined
       if submitPool in self.directors:
-        if 'resourceBrokers' in dir( self.directors[submitPool]['director'] ) and self.directors[submitPool]['director'].resourceBrokers:
+        if 'resourceBrokers' in dir( self.directors[submitPool]['director'] ) and \
+            self.directors[submitPool]['director'].resourceBrokers:
           self.directors[submitPool]['isEnabled'] = True
-        if 'computingElements' in dir( self.directors[submitPool]['director'] ) and self.directors[submitPool]['director'].computingElements:
+        if 'computingElements' in dir( self.directors[submitPool]['director'] ) and \
+            self.directors[submitPool]['director'].computingElements:
           self.directors[submitPool]['isEnabled'] = True
 
     # Now remove directors that are not Enable (they have been used but are no
@@ -407,11 +421,13 @@ class TaskQueueDirector( AgentModule ):
     return
 
   def __configureDirector( self, submitPool = None ):
-    # Update Configuration from CS
-    # if submitPool == None then,
-    #     disable all Directors
-    # else
-    #    Update Configuration for the PilotDirector of that SubmitPool
+    """
+      Update Configuration from CS
+      if submitPool == None then,
+          disable all Directors
+      else
+         Update Configuration for the PilotDirector of that SubmitPool
+    """
     if not submitPool:
       self.workDir = self.am_getWorkDirectory()
       # By default disable all directors
@@ -430,8 +446,10 @@ class TaskQueueDirector( AgentModule ):
       self.directors[submitPool]['isEnabled'] = True
 
   def __addPool( self, poolName ):
-    # create a new thread Pool, by default it has 2 executing threads and 40 requests
-    # in the Queue
+    """
+      create a new thread Pool, by default it has 2 executing threads and 40 requests
+      in the Queue
+    """
 
     if not poolName:
       return None
@@ -447,6 +465,8 @@ class TaskQueueDirector( AgentModule ):
     return poolName
 
   def callBack( self, threadedJob, submitResult ):
+    """ Call with result from director.submitPilots Threaded Job
+    """
     if not submitResult['OK']:
       self.log.error( 'submitPilot Failed: ', submitResult['Message'] )
       if 'Value' in submitResult:
