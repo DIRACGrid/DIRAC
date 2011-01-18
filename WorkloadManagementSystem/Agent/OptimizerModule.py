@@ -3,10 +3,10 @@
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
-
-"""  The Optimizer base class is an agent that polls for jobs with a specific
-     status and minor status pair.  The checkJob method is overridden for all
-     optimizer instances and associated actions are performed there.
+"""
+  The Optimizer base class is an agent that polls for jobs with a specific
+  status and minor status pair.  The checkJob method is overridden for all
+  optimizer instances and associated actions are performed there.
 """
 
 __RCSID__ = "$Id$"
@@ -16,12 +16,18 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
 from DIRAC.AccountingSystem.Client.Types.Job         import Job as AccountingJob
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight       import ClassAd
 from DIRAC.Core.Base.AgentModule                     import AgentModule
-from DIRAC.ConfigurationSystem.Client.Config         import gConfig
 from DIRAC                                           import S_OK, S_ERROR
 
-import os, re, time, string
-
 class OptimizerModule( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   #############################################################################
   def initialize( self, jobDB = False, logDB = False ):
@@ -51,6 +57,8 @@ class OptimizerModule( AgentModule ):
     return self.initializeOptimizer()
 
   def initializeOptimizer( self ):
+    """ To be overwritten by inheriting class 
+    """
     return S_OK()
 
   #############################################################################
@@ -88,6 +96,8 @@ class OptimizerModule( AgentModule ):
 
   #############################################################################
   def optimizeJob( self, job, classAdJob ):
+    """ Call the corresponding Optimizer checkJob method
+    """
     self.log.info( 'Job %s will be processed by %sAgent' % ( job, self.am_getModuleParam( 'optimizerName' ) ) )
     result = self.checkJob( job, classAdJob )
     if not result['OK']:
@@ -96,6 +106,8 @@ class OptimizerModule( AgentModule ):
 
   #############################################################################
   def getJobDefinition( self, job, jobDef = False ):
+    """ Retrieve JDL of the Job and return jobDef dictionary
+    """
     if jobDef == False:
       jobDef = {}
     #If not jdl in jobinfo load it
@@ -187,7 +199,8 @@ class OptimizerModule( AgentModule ):
     """This method updates the job status in the JobDB, this should only be
        used to fail jobs due to the optimizer chain.
     """
-    self.log.verbose( "self.jobDB.setJobStatus(%s,'Status/Minor/Application','%s'/'%s'/'%s',update=True)" % ( job, status, str( minorStatus ), str( appStatus ) ) )
+    self.log.verbose( "self.jobDB.setJobStatus(%s,'Status/Minor/Application','%s'/'%s'/'%s',update=True)" %
+                      ( job, status, str( minorStatus ), str( appStatus ) ) )
     if not self.am_Enabled():
       return S_OK()
 
