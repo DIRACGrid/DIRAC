@@ -23,10 +23,15 @@ from DIRAC.Core.Utilities.Time                                 import fromString
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC                                                     import S_OK, S_ERROR, List
 
-import random, string, re
+import random, re
 
 class JobSchedulingAgent( OptimizerModule ):
-  #############################################################################
+  """
+      The specific Optimizer must provide the following methods:
+      - checkJob() - the main method called for each job
+      and it can provide:
+      - initializeOptimizer() before each execution cycle      
+  """
 
   #############################################################################
   def initializeOptimizer( self ):
@@ -37,7 +42,7 @@ class JobSchedulingAgent( OptimizerModule ):
     self.stagingStatus = self.am_getOption( 'StagingStatus', 'Staging' )
     self.stagingMinorStatus = self.am_getOption( 'StagingMinorStatus', 'Request Sent' )
     delays = self.am_getOption( 'RescheduleDelays', [60, 180, 300, 600] )
-    self.rescheduleDelaysList = [ int(x) for x in delays ]
+    self.rescheduleDelaysList = [ int( x ) for x in delays ]
     self.maxRescheduleDelay = self.rescheduleDelaysList[-1]
     self.excludedOnHoldJobTypes = self.am_getOption( 'ExcludedOnHoldJobTypes', [] )
 
@@ -74,7 +79,7 @@ class JobSchedulingAgent( OptimizerModule ):
     userSites = result['Sites']
 
     if userSites:
-      userSites = self.__applySiteRequirements( userSites, [], userBannedSites )
+      userSites = applySiteRequirements( userSites, [], userBannedSites )
       if not userSites:
         msg = 'Impossible Site Requirement'
         return S_ERROR( msg )
@@ -94,10 +99,10 @@ class JobSchedulingAgent( OptimizerModule ):
     wmsBannedSites = wmsBannedSites['Value']
 
     if userSites:
-      sites = self.__applySiteRequirements( userSites, wmsSites, wmsBannedSites )
+      sites = applySiteRequirements( userSites, wmsSites, wmsBannedSites )
       if not sites:
         # Put on Hold only non-excluded job types
-        jobType = classAdJob.getAttributeString('JobType')
+        jobType = classAdJob.getAttributeString( 'JobType' )
         if not jobType in self.excludedOnHoldJobTypes:
           msg = 'On Hold: Requested site is Banned or not Active'
           self.log.info( msg )
@@ -138,12 +143,12 @@ class JobSchedulingAgent( OptimizerModule ):
     optSites = optInfo['SiteCandidates'].keys()
     self.log.info( 'Input Data Site Candidates: %s' % ( ', '.join( optSites ) ) )
     # Check that it is compatible with user requirements
-    optSites = self.__applySiteRequirements( optSites, userSites, userBannedSites )
+    optSites = applySiteRequirements( optSites, userSites, userBannedSites )
     if not optSites:
       msg = 'Impossible Site + InputData Requirement'
       return S_ERROR( msg )
 
-    sites = self.__applySiteRequirements( optSites, wmsSites, wmsBannedSites )
+    sites = applySiteRequirements( optSites, wmsSites, wmsBannedSites )
     if not sites:
       msg = 'On Hold: InputData Site is Banned or not Active'
       self.log.info( msg )
@@ -188,20 +193,6 @@ class JobSchedulingAgent( OptimizerModule ):
       self.log.verbose( 'Job %s does not require staging of input data' % ( job ) )
     #Finally send job to TaskQueueAgent
     return self.__sendJobToTaskQueue( job, classAdJob, destinationSites, userBannedSites )
-
-  def __applySiteRequirements( self, sites, activeSites = [], bannedSites = [] ):
-    """ Return site list after applying
-    """
-    siteList = list( sites )
-    if activeSites:
-      for site in sites:
-        if site not in activeSites:
-          siteList.remove( site )
-    for site in bannedSites:
-      if site in siteList:
-        siteList.remove( site )
-
-    return siteList
 
 
   #############################################################################
@@ -277,7 +268,8 @@ class JobSchedulingAgent( OptimizerModule ):
         self.log.verbose( 'Site %s has been randomly chosen for job' % ( randomSite ) )
         stagingFlag = 1
       else:
-        self.log.verbose( '%s is the candidate site with smallest number of tape replicas (=%s)' % ( minTapeSites[0], minTapeValue ) )
+        self.log.verbose( '%s is the site with smallest number of tape replicas (=%s)' %
+                          ( minTapeSites[0], minTapeValue ) )
         finalSiteCandidates.append( minTapeSites[0] )
         stagingFlag = 1
 
@@ -303,7 +295,7 @@ class JobSchedulingAgent( OptimizerModule ):
     #Ensure only tape SE files are staged
     tapeSEs = self.am_getOption( 'TapeSE', '-tape,-RDST,-RAW' )
     if type( tapeSEs ) == type( ' ' ):
-      tapeSEs = [x.strip() for x in string.split( tapeSEs, ',' )]
+      tapeSEs = [ x.strip() for x in tapeSEs.split( ',' ) ]
 
     siteTapeSEs = []
     for se in destinationSEs:
@@ -315,7 +307,7 @@ class JobSchedulingAgent( OptimizerModule ):
     if not destinationSEs:
       return S_ERROR( 'No LocalSEs For Site' )
 
-    self.log.verbose( 'Site tape SEs: %s' % ( string.join( destinationSEs, ', ' ) ) )
+    self.log.verbose( 'Site tape SEs: %s' % ( ', '.join( destinationSEs ) ) )
     stageSURLs = {} # OLD WAY
     stageLfns = {} # NEW WAY
     inputData = inputDataDict['Value']['Value']['Successful']
@@ -331,10 +323,11 @@ class JobSchedulingAgent( OptimizerModule ):
               stageLfns[se].append( lfn )     # NEW WAY
 
     stagerClient = StorageManagerClient()
-    request = stagerClient.setRequest( stageLfns, 'WorkloadManagement', 'updateJobFromStager@WorkloadManagement/JobStateUpdate', job )
+    request = stagerClient.setRequest( stageLfns, 'WorkloadManagement',
+                                       'updateJobFromStager@WorkloadManagement/JobStateUpdate', job )
     if request['OK']:
       self.jobDB.setJobParameter( int( job ), 'StageRequest', str( request['Value'] ) )
- 
+
     if not request['OK']:
       self.log.error( 'Problem sending Staging request:' )
       self.log.error( request )
@@ -362,7 +355,7 @@ class JobSchedulingAgent( OptimizerModule ):
     result = S_OK()
 
     bannedSites = classAdJob.getAttributeString( 'BannedSites' )
-    bannedSites = string.replace( string.replace( bannedSites, '{', '' ), '}', '' )
+    bannedSites = bannedSites.replace( '{', '' ).replace( '}', '' )
     bannedSites = List.fromChar( bannedSites )
 
     if not 'ANY' in site and not 'Unknown' in site and not 'Multiple' in site:
@@ -441,7 +434,7 @@ class JobSchedulingAgent( OptimizerModule ):
       classAddReq.insertAttributeVectorString( 'GridCEs', gridCEs )
 
     if siteCandidates:
-      sites = string.join( siteCandidates, ',' )
+      sites = ','.join( siteCandidates )
       classAdJob.insertAttributeString( "Site", sites )
 
     reqJDL = classAddReq.asJDL()
@@ -458,9 +451,9 @@ class JobSchedulingAgent( OptimizerModule ):
         self.jobDB.setJobAttribute( job, 'Site', siteCandidates[0] )
       elif bannedSites:
         remainingSites = []
-        for s in siteCandidates:
-          if not s in bannedSites:
-            remainingSites.append( s )
+        for site in siteCandidates:
+          if not site in bannedSites:
+            remainingSites.append( site )
         if remainingSites:
           if len( remainingSites ) == 1:
             self.log.verbose( 'Individual site candidate for job %s is %s' % ( job, remainingSites[0] ) )
@@ -477,29 +470,21 @@ class JobSchedulingAgent( OptimizerModule ):
 
     return self.setNextOptimizer( job )
 
-  #############################################################################
-  def __resolveJobJDLRequirement( self, requirements, siteCandidates ):
-    """Returns the job site requirement for the final candidate sites. Any existing
-       site requirements are replaced.
-    """
-    requirementsList = string.split( requirements, '&&' )
-    #First check whether site is already assigned
-    for req in requirementsList:
-      if re.search( 'other.Site==', req.replace( ' ', '' ) ):
-        return requirements
+def applySiteRequirements( sites, activeSites = [], bannedSites = [] ):
+  """ Return site list after applying
+  """
+  siteList = list( sites )
+  if activeSites:
+    for site in sites:
+      if site not in activeSites:
+        siteList.remove( site )
+  for site in bannedSites:
+    if site in siteList:
+      siteList.remove( site )
 
-    if siteCandidates:
-      jdlsite = ' && ( '
-      for site in siteCandidates:
-        if not re.search( site, jdlsite ):
-          jdlsite = jdlsite + ' other.Site == "' + site + '" || '
+  return siteList
 
-      jdlsite = jdlsite[0:-4]
-      jdlsite = jdlsite + " )"
 
-      requirements += jdlsite
-
-    return requirements
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
 
