@@ -1,7 +1,8 @@
 ########################################################################
 # $HeadURL$
+# File :    PilotStatusAgent.py
+# Author :  Stuart Paterson
 ########################################################################
-
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
@@ -9,9 +10,9 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
+from DIRAC import S_OK, S_ERROR, gConfig, List
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.Core.Utilities import systemCall, List, Time
+from DIRAC.Core.Utilities import List, Time
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -19,16 +20,24 @@ from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.Time import *
-from DIRAC import gConfig
 
 
-import os, sys, re, string, time
+import re, time
 from types import *
 
 MAX_JOBS_QUERY = 10
 MAX_WAITING_STATE_LENGTH = 3
 
 class PilotStatusAgent( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   queryStateList = ['Ready', 'Submitted', 'Running', 'Waiting', 'Scheduled']
   finalStateList = [ 'Done', 'Aborted', 'Cleared', 'Deleted' ]
@@ -50,7 +59,6 @@ class PilotStatusAgent( AgentModule ):
   def execute( self ):
     """The PilotAgent execution method.
     """
-    parentIDList = [ '0' , '-1' ]
 
     self.pilotStalledDays = self.am_getOption( 'PilotStalledDays', 3 )
     self.gridEnv = self.am_getOption( 'GridEnv' )
@@ -78,10 +86,10 @@ class PilotStatusAgent( AgentModule ):
     pilotsToAccount = {}
 
     for ownerDN, ownerGroup, gridType, broker in result['Value']:
-      
+
       if not gridType in self.eligibleGridTypes:
-        continue 
-      
+        continue
+
       self.log.verbose( 'Getting pilots for %s:%s @ %s %s' % ( ownerDN, ownerGroup, gridType, broker ) )
 
       condDict1 = {'Status':'Done',
@@ -122,7 +130,8 @@ class PilotStatusAgent( AgentModule ):
 
         for start_index in range( 0, len( refList ), MAX_JOBS_QUERY ):
           refsToQuery = refList[ start_index : start_index + MAX_JOBS_QUERY ]
-          self.log.verbose( 'Querying %d pilots of %s starting at %d' % ( len( refsToQuery ), len( refList ), start_index ) )
+          self.log.verbose( 'Querying %d pilots of %s starting at %d' %
+                            ( len( refsToQuery ), len( refList ), start_index ) )
           result = self.getPilotStatus( proxy, gridType, refsToQuery )
           if not result['OK']:
             if result['Message'] == 'Broker not Available':
@@ -235,13 +244,17 @@ class PilotStatusAgent( AgentModule ):
     return S_OK()
 
   def handleOldPilots( self, connection ):
-    # select all pilots that have not been updated in the last N days and declared them 
-    # Deleted, accounting for them.
+    """
+      select all pilots that have not been updated in the last N days and declared them 
+      Deleted, accounting for them.
+    """
     pilotsToAccount = {}
     timeLimitToConsider = Time.toString( Time.dateTime() - Time.day * self.pilotStalledDays )
     # A.T. Below looks to be a bug 
     #result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older=None, timeStamp='LastUpdateTime' )
-    result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older = timeLimitToConsider, timeStamp = 'LastUpdateTime' )
+    result = self.pilotDB.selectPilots( { 'Status':self.queryStateList} ,
+                                        older = timeLimitToConsider,
+                                        timeStamp = 'LastUpdateTime' )
     if not result['OK']:
       self.log.error( 'Failed to get the Pilot Agents' )
       return result
@@ -271,7 +284,8 @@ class PilotStatusAgent( AgentModule ):
     return S_OK()
 
   def accountPilots( self, pilotsToAccount, connection ):
-
+    """ account for pilots
+    """
     accountingFlag = False
     pae = self.am_getOption( 'PilotAccountingEnabled', 'yes' )
     if pae.lower() == "yes":
@@ -337,7 +351,8 @@ class PilotStatusAgent( AgentModule ):
 
     start = time.time()
     ret = executeGridCommand( proxy, cmd, self.gridEnv )
-    self.log.info( '%s Job Status Execution Time for %d jobs:' % ( gridType, len( pilotRefList ) ), time.time() - start )
+    self.log.info( '%s Job Status Execution Time for %d jobs:' %
+                   ( gridType, len( pilotRefList ) ), time.time() - start )
 
     if not ret['OK']:
       self.log.error( 'Failed to execute %s Job Status' % gridType, ret['Message'] )
@@ -375,7 +390,8 @@ class PilotStatusAgent( AgentModule ):
           # the Broker is not accesible
           return S_ERROR( 'Broker not Available' )
       if not deleted:
-        self.log.error( 'Error executing %s Job Status:' % gridType, str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] ) )
+        self.log.error( 'Error executing %s Job Status:' %
+                        gridType, str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] ) )
         return S_ERROR()
       return S_OK( resultDict )
 
@@ -389,6 +405,8 @@ class PilotStatusAgent( AgentModule ):
     return S_OK( resultDict )
 
   def __parseJobStatus( self, job, gridType ):
+    """ Parse output of grid pilot status command
+    """
 
     statusRE = 'Current Status:\s*(\w*)'
     destinationRE = 'Destination:\s*([\w\.-]*)'
@@ -410,8 +428,8 @@ class PilotStatusAgent( AgentModule ):
       if gridType == 'gLite' and re.search( submittedDateRE, job ):
         submittedDate = re.search( submittedDateRE, job ).group( 1 )
         submittedDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.strptime( submittedDate, '%b %d %H:%M:%S %Y %Z' ) )
-    except Exception, x:
-      self.log.error( 'Error parsing %s Job Status output:\n' % gridType, job )
+    except:
+      self.log.exception( 'Error parsing %s Job Status output:\n' % gridType, job )
 
     isParent = False
     if re.search( 'Nodes information', job ):
@@ -457,6 +475,8 @@ class PilotStatusAgent( AgentModule ):
              'ChildDicts' : childDicts }
 
   def __addPilotsAccountingReport( self, pilotsData ):
+    """ fill accounting data
+    """
     for pRef in pilotsData:
       pData = pilotsData[pRef]
       pA = PilotAccounting()
