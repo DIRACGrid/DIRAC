@@ -510,5 +510,5 @@ class TransformationCLI(cmd.Cmd,API):
 
 if __name__ == "__main__":
   import DIRAC
-  cli = TransformationDBCLI()
+  cli = TransformationCLI()
   cli.cmdloop()
