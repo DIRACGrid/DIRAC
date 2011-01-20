@@ -1,12 +1,10 @@
 import unittest
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient
 from DIRAC.ResourceStatusSystem.Client.SLSClient import *
 from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import *
-from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -19,13 +17,9 @@ class ClientsTestCase(unittest.TestCase):
 
     self.mockRSS = Mock()
     
-    self.GOCCli = GOCDBClient()
-    self.SLSCli = SLSClient()
     self.RSCli = ResourceStatusClient(serviceIn = self.mockRSS)
-    self.SAMCli = SAMResultsClient()
     self.PilotsCli = PilotsClient()
     self.JobsCli = JobsClient()
-    self.GGUSCli = GGUSTicketsClient()
 
 #############################################################################
 
