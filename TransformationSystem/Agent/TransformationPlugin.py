@@ -3,18 +3,26 @@
 from DIRAC                                                               import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping                                  import getSitesForSE,getSEsForSite
 from DIRAC.Core.Utilities.List                                           import breakListIntoChunks, sortList, uniqueElements,randomize
-from DIRAC.DataManagementSystem.Client.ReplicaManager                    import ReplicaManager
-from DIRAC.TransformationSystem.Client.TransformationClient              import TransformationClient
-import random,re
+import re
 
-class TransformationPlugin:
+class TransformationPlugin(object):
 
-  def __init__(self,plugin):
+  def __init__(self,plugin, transClient = None, replicaManager = None):
     self.params = False
     self.data = False
     self.plugin = plugin
     self.files = False
-    self.transClient = TransformationClient()
+    if transClient == None:
+      from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+      self.transClient = TransformationClient()
+    else:
+      self.transClient = transClient
+    if replicaManager == None:
+      from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+      self.rm = ReplicaManager()
+    else:
+      self.rm = replicaManager
+    
 
   def isOK(self):
     self.valid = True
@@ -69,7 +77,7 @@ class TransformationPlugin:
     targetSELfns = {}
     for replicaSE,lfns in fileGroups.items():
       ses = replicaSE.split(',')
-      sourceSites = self._getSitesForSEs(ses)
+      #sourceSites = self._getSitesForSEs(ses)
       atSource = False
       for se in ses:
         if se in sourceSEs:
@@ -247,8 +255,7 @@ class TransformationPlugin:
     # Group files by SE
     fileGroups = self._getFileGroups(self.data)
     # Get the file sizes
-    rm = ReplicaManager()
-    res = rm.getCatalogFileSize(self.data.keys())
+    res = self.rm.getCatalogFileSize(self.data.keys())
     if not res['OK']:
       return S_ERROR("Failed to get sizes for files")
     if res['Value']['Failed']:
