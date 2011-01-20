@@ -39,7 +39,7 @@ class TaskBase:
       if taskDict[taskID]['Success']:
         res = self.transClient.setTaskStatusAndWmsID(transID,taskID,'Submitted',str(taskDict[taskID]['ExternalID']))
         if not res['OK']:
-          gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission" , "%s %s" % (taskName,res['Message']))
+          gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission" , "%s %s" % (taskDict[taskID]['ExternalID'],res['Message']))
         updated +=1
     gLogger.info("updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % (updated,time.time()-startTime))
     return S_OK()
