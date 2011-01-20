@@ -308,3 +308,15 @@ class DBUtils:
         dataDict[ key ][ timeKey ] = [ ( timeData[0] / timeData[1] ) * bucketSums[ timeKey ] ]
 
     return dataDict
+
+  def _getBucketTotals( self, dataDict ):
+    """
+    Sum key data and get totals for each bucket
+    """
+    newData = {}
+    for k in dataDict:
+      for bt in dataDict[ k ]:
+        if bt not in newData:
+          newData[ bt ] = 0.0
+        newData[ bt ] += dataDict[ k ][ bt ]
+    return newData
