@@ -379,7 +379,9 @@ class TransferDB(DB):
     return res
 
   def getFilesForChannel(self,channelID,numberOfFiles):
-    req = "SELECT SourceSE,TargetSE FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY LastUpdateTimeOrder LIMIT 1;" % (channelID)
+    """ This method will only return Files for the oldest SourceSE,TargetSE Waiting for a given Channel.
+    """
+    req = "SELECT SourceSE,TargetSE FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY Retries, LastUpdateTimeOrder LIMIT 1;" % (channelID)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
@@ -387,7 +389,7 @@ class TransferDB(DB):
     if not res['Value']:
       return S_OK()
     sourceSE,targetSE = res['Value'][0]
-    req = "SELECT c.FileID,c.SourceSURL,c.TargetSURL,c.FileSize,f.LFN FROM Files as f, Channel as c WHERE c.ChannelID = %s AND c.FileID=f.FileID AND c.Status = 'Waiting' AND c.SourceSE = '%s' and c.TargetSE = '%s' ORDER BY c.LastUpdateTimeOrder LIMIT %s;" % (channelID,sourceSE,targetSE,numberOfFiles)
+    req = "SELECT c.FileID,c.SourceSURL,c.TargetSURL,c.FileSize,f.LFN FROM Files as f, Channel as c WHERE c.ChannelID = %s AND c.FileID=f.FileID AND c.Status = 'Waiting' AND c.SourceSE = '%s' and c.TargetSE = '%s' ORDER BY c.Retries, c.LastUpdateTimeOrder LIMIT %s;" % (channelID,sourceSE,targetSE,numberOfFiles)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
