@@ -1679,12 +1679,18 @@ class SRM2Storage( StorageBase ):
     # Create an accounting DataOperation record for each operation
     oDataOperation = self.__initialiseAccountingObject( operation, self.name, gfalDict['nbfiles'] )
 
-    res = self.__importExternals()
-    if not res['OK']:
-      return res
-
     oDataOperation.setStartTime()
     start = time.time()
+
+    res = self.__importExternals()
+    if not res['OK']:
+      oDataOperation.setEndTime()
+      oDataOperation.setValueByKey( 'TransferTime', 0. )
+      oDataOperation.setValueByKey( 'TransferOK', 0 )
+      oDataOperation.setValueByKey( 'FinalStatus', 'Failed' )
+      res['AccountingOperation'] = oDataOperation
+      return res
+
 
     timeout = gfalDict['timeout']
     res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID )
