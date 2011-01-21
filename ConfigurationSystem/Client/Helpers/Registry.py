@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 g_BaseSecuritySection = "/Registry"
 
