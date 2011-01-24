@@ -88,7 +88,7 @@ class CLIParams:
   def registerCLISwitches( self ):
     Script.registerSwitch( "v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime )
     Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
-    Script.registerSwitch( "d", "debug", "Enable debug output", self.setDebug )
+    Script.registerSwitch( "V", "verbose", "Enable extra output", self.setDebug )
     Script.registerSwitch( "C:", "Cert=", "File to use as user certificate", self.setCertLocation )
     Script.registerSwitch( "K:", "Key=", "File to use as user key", self.setKeyLocation )
     Script.registerSwitch( "P:", "Proxy=", "File to use as proxy", self.setProxyLocation )
