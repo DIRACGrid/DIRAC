@@ -493,8 +493,8 @@ class JobAgent( AgentModule ):
     jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
     jobFileContents = \
 """#!/bin/sh
-%s %s -o LogLevel=%s' % ( dPython, jobWrapperFile, logLevel )
-"""
+%s %s -o LogLevel=%s
+""" % ( dPython, jobWrapperFile, logLevel )
     jobFile = open( jobExeFile, 'w' )
     jobFile.write( jobFileContents )
     jobFile.close()
