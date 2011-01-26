@@ -201,7 +201,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result = systemCall( 0, ['python', '-c', 'import cx_Oracle'] )
     if result['OK'] and result['Value'][0] == 0:
       installOracleClient = True
-      
+
     cmdList = ['dirac-install', '-r', version, '-t', 'server', '-P', rootPath, '--useVersionsDir' ]
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
@@ -225,6 +225,15 @@ class SystemAdministratorHandler( RequestHandler ):
     # For LHCb we need to check Oracle client
     if installOracleClient:
       result = systemCall( 0, 'install_oracle-client.sh' )
+      if not result['OK']:
+        return result
+      status = result['Value'][0]
+      if status != 0:
+        # Get error messages
+        error = result['Value'][1].split( '\n' )
+        error.extend( result['Value'][2].split( '\n' ) )
+        error.append( 'Failed to install Oracle client module' )
+        return S_ERROR( '\n'.join( error ) )
     return S_OK()
 
   types_addOptionToDiracCfg = [ StringTypes, StringTypes ]
