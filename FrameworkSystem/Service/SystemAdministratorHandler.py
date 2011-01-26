@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
-from DIRAC import S_OK, S_ERROR, gConfig, shellCall
+from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
@@ -191,10 +191,21 @@ class SystemAdministratorHandler( RequestHandler ):
 # General purpose methods
 #  
   types_updateSoftware = [ StringTypes ]
-  def export_updateSoftware( self, version ):
+  def export_updateSoftware( self, version, rootPath = "/opt/dirac", gridVersion = "2009-08-13" ):
     """ Update the local DIRAC software installation to version
     """
-    result = shellCall( 0, 'update_sw.sh %s' % version )
+    if not os.path.exists( rootPath ):
+      return S_ERROR( 'Path "%s" does not exists' % rootPath )
+    # For LHCb we need to check Oracle client
+    installOracleClient = False
+    result = systemCall( 0, ['python', '-c', 'import cx_Oracle'] )
+    if result['OK'] and result['Value'][0] == 0:
+      installOracleClient = True
+      
+    cmdList = ['dirac-install', '-r', version, '-t', 'server', '-P', rootPath, '--useVersionsDir' ]
+    if gridVersion:
+      cmdList.extend( ['-g', gridVersion] )
+    result = systemCall( 0, cmdList )
     if not result['OK']:
       return result
     status = result['Value'][0]
@@ -211,6 +222,9 @@ class SystemAdministratorHandler( RequestHandler ):
       else:
         message = "Failed to update software to %s" % version
       return S_ERROR( message )
+    # For LHCb we need to check Oracle client
+    if installOracleClient:
+      result = systemCall( 0, 'install_oracle-client.sh' )
     return S_OK()
 
   types_addOptionToDiracCfg = [ StringTypes, StringTypes ]
