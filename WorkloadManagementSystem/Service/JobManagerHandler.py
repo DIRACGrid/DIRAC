@@ -25,6 +25,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
                                                                         RIGHT_DELETE, RIGHT_KILL, RIGHT_RESET
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 # This is a global instance of the JobDB class
@@ -76,19 +77,49 @@ class JobManagerHandler( RequestHandler ):
     if jobDesc[-1] != "]":
       jobDesc = "%s]" % jobDesc
 
-    result = gJobDB.insertNewJobIntoDB( jobDesc, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup )
-    if not result['OK']:
-      return result
+    # Check if the job is a parameteric one
+    jobClassAd = ClassAd(jobDesc)
+    parametricJob = False
+    if jobClassAd.lookupAttribute('Parameters'):
+      parametricJob = True
+      if jobClassAd.isAttributeList('Parameters'):
+        parameterList = jobClassAd.getListFromExpression('Parameters')
+      else:
+        nParameters = jobClassAd.getAttributeInt('Parameters')
+        pStart = jobClassAd.getAttributeInt('ParameterStart')
+        pStep = jobClassAd.getAttributeInt('ParameterStep')
+        parameterList = list( range(pStart,pStart+pStep*nParameters,pStep) )
 
-    gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( result['JobID'], self.ownerDN, self.ownerGroup ) )
+      jobDescList = []
+      for p in parameterList:
+        jobDescList.append( jobDesc.replace('%s',str(p)) )
+    else:
+      jobDescList = [ jobDesc ]     
 
-    gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'], source = 'JobManager' )
+    jobIDList = []
+    for jobDescription in jobDescList:
+      result = gJobDB.insertNewJobIntoDB( jobDescription, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup )
+      if not result['OK']:
+        return result
+
+      jobID = result['JobID']
+      gLogger.info( 'Job %s added to the JobDB for %s/%s' % ( jobID, self.ownerDN, self.ownerGroup ) )
+
+      gJobLoggingDB.addLoggingRecord( jobID, result['Status'], result['MinorStatus'], source = 'JobManager' )
+
+      jobIDList.append(jobID)
 
     #Set persistency flag
     retVal = gProxyManager.getUserPersistence( self.ownerDN, self.ownerGroup )
     if 'Value' not in retVal or not retVal[ 'Value' ]:
       gProxyManager.setPersistency( self.ownerDN, self.ownerGroup, True )
 
+    if parametricJob:
+      result = S_OK(jobIDList)
+    else:
+      result = S_OK(jobIDList[0])
+
+    result['JobID'] = result['Value']
     result[ 'requireProxyUpload' ] = self.__checkIfProxyUploadIsRequired()
     return result
 
