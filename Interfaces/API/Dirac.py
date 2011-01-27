@@ -60,7 +60,8 @@ COMPONENT_NAME = 'DiracAPI'
 class Dirac:
 
   #############################################################################
-  def __init__( self, WithRepo = False, RepoLocation = '', jobManagerClient = False, sbRPCClient = False, sbTransferClient = False, useCertificates = False ):
+  def __init__( self, WithRepo = False, RepoLocation = '', jobManagerClient = False, 
+                sbRPCClient = False, sbTransferClient = False, useCertificates = False ):
     """Internal initialization of the DIRAC API.
     """
     self.log = gLogger.getSubLogger( COMPONENT_NAME )
@@ -346,8 +347,11 @@ class Dirac:
         if not result['OK']:
           self.log.error( 'Job submission failure', result['Message'] )
         elif self.jobRepo:
-          jobID = result['Value']
-          result = self.jobRepo.addJob( jobID, 'Submitted' )
+          jobIDList = result['Value']
+          if type(jobIDList) != types.ListType:
+            jobIDList = [ jobIDList ]
+          for jobID in jobIDList: 
+            result = self.jobRepo.addJob( jobID, 'Submitted' )
 
     self.log.verbose( 'Cleaning up %s...' % cleanPath )
     self.__cleanTmp( cleanPath )
