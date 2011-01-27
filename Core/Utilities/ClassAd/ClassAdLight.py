@@ -154,6 +154,12 @@ class ClassAd:
     else:
       return ""
 
+  def isAttributeList(self,name):
+    """ Check if the given attribute is of the List type
+    """
+    attribute = self.get_expression(name).strip()
+    return attribute.startswith('{')
+
   def getListFromExpression(self,name):
     """ Get a list of values from a given expression
     """
