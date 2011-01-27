@@ -56,12 +56,6 @@ class TaskQueueAgent( OptimizerModule ):
   def insertJobInQueue( self, job, classAdJob ):
     """ Check individual job and add to the Task Queue eventually.
     """
-    #
-    #Êrequirements = classAdJob.get_expression( "Requirements" )
-    #ÊjobType = classAdJob.get_expression( "JobType" ).replace( '"', '' )
-    # submitPool = classAdJob.get_expression( "SubmitPool" ).replace( '"', '' )
-    #ÊownerDN = classAdJob.get_expression( "OwnerDN" ).replace( '"', '' )
-    # ownerGroup = classAdJob.get_expression( "OwnerGroup" ).replace( '"', '' )
 
     jobReq = classAdJob.get_expression( "JobRequirements" )
     classAdJobReq = ClassAd( jobReq )
