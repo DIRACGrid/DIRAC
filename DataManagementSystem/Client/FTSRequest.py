@@ -508,7 +508,7 @@ class FTSRequest:
     return S_OK()
 
   def __submitFTSTransfer(self):
-    comm = ['glite-transfer-submit','-s', self.ftsServer,'-f',self.surlFile,'-o']
+    comm = ['glite-transfer-submit','-s', self.ftsServer,'-f',self.surlFile]
     if self.targetToken:
       comm.append('-t')
       comm.append(self.targetToken)
