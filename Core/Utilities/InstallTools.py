@@ -1606,6 +1606,8 @@ def installMySQL():
     Slave
     None
   """
+  fixMySQLScripts()
+
   if mysqlInstalled( doNotExit = True )['OK']:
     gLogger.notice( 'MySQL already installed' )
     return S_OK()
@@ -1623,8 +1625,6 @@ def installMySQL():
 
   if mysqlMode:
     gLogger.notice( 'This is a MySQl %s server' % mysqlMode )
-
-  fixMySQLScripts()
 
   try:
     os.makedirs( mysqlDbDir )
