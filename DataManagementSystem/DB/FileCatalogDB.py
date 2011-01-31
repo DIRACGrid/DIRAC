@@ -612,5 +612,5 @@ class FileCatalogDB(DB, DirectoryMetadata):
       if not access:
         failed[lfn] = 'Permission denied'
       else:  
-        successful[lfn] = access
+        successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
