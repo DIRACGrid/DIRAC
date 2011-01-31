@@ -86,8 +86,20 @@ class JobManagerHandler( RequestHandler ):
         parameterList = jobClassAd.getListFromExpression('Parameters')
       else:
         nParameters = jobClassAd.getAttributeInt('Parameters')
-        pStart = jobClassAd.getAttributeInt('ParameterStart')
-        pStep = jobClassAd.getAttributeInt('ParameterStep')
+        if not nParameters:
+          value = jobClassAd.get_expression('Parameters')
+          return S_ERROR('Illegal value for Parameters JDL field: %s' % value)
+        if jobClassAd.lookupAttribute('ParameterStart'):
+          pStart = jobClassAd.getAttributeInt('ParameterStart')
+        else:
+          return S_ERROR('Missing JDL field ParameterStart')
+        if jobClassAd.lookupAttribute('ParameterStep'):  
+          pStep = jobClassAd.getAttributeInt('ParameterStep')
+          if not pStep:
+            value = jobClassAd.get_expression('ParameterStep')
+            return S_ERROR('Illegal value for ParameterStep JDL field: %s' % value)
+        else:
+          return S_ERROR('Missing JDL field ParameterStep')  
         parameterList = list( range(pStart,pStart+pStep*nParameters,pStep) )
 
       jobDescList = []
