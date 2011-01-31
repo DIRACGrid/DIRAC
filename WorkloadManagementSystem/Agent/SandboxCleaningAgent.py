@@ -5,7 +5,8 @@
 ########################################################################
 
 """  The Sandbox Cleaning Agent controls compression and cleaning of the sandbox
-     database partitions 
+     database partitions.
+     This is an obsoleted agent that shoudl be removed from the system 
 """
 
 __RCSID__ = "$Id$"
