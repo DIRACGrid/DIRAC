@@ -33,6 +33,8 @@ gJobDB = False
 gJobLoggingDB = False
 gtaskQueueDB = False
 
+MAX_PARAMETRIC_JOBS = 20
+
 def initializeJobManagerHandler( serviceInfo ):
 
   global gJobDB, gJobLoggingDB, gtaskQueueDB
@@ -102,6 +104,9 @@ class JobManagerHandler( RequestHandler ):
           return S_ERROR('Missing JDL field ParameterStep')  
         parameterList = list( range(pStart,pStart+pStep*nParameters,pStep) )
 
+      if len(parameterList) > MAX_PARAMETRIC_JOBS:
+        return S_ERROR('The number of parametric jobs exceeded the limit of %d' % MAX_PARAMETRIC_JOBS  )  
+        
       jobDescList = []
       for p in parameterList:
         jobDescList.append( jobDesc.replace('%s',str(p)) )
