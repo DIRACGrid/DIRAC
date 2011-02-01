@@ -15,7 +15,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... LFN SE' % Script.scriptName,
                                      'Arguments:',
-                                     '  LFN:      Physical File Name',
+                                     '  LFN:      Logical File Name or file containing LFNs',
                                      '  SE:       Valid DIRAC SE' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -32,9 +32,18 @@ exitCode = 0
 
 lfn = args[0]
 seName = args[1]
-result = dirac.removeReplica( lfn, seName, printOutput = True )
-if not result['OK']:
-  print 'ERROR: ', result['Message']
-  exitCode = 2
+
+try:
+  f = open( lfn, 'r' )
+  lfns = f.read().splitlines()
+  f.close()
+except:
+  lfns = [lfn]
+
+for lfn in lfns:
+  result = dirac.removeReplica( lfn, seName, printOutput = True )
+  if not result['OK']:
+    print 'ERROR: ', result['Message']
+    exitCode = 2
 
 DIRAC.exit( exitCode )

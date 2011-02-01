@@ -13,11 +13,11 @@ from DIRAC.Core.Base import Script
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
-                                     '  %s [option|cfgfile] ... LFN Source [Dest [Cache]]' % Script.scriptName,
+                                     '  %s [option|cfgfile] ... LFN Dest [Source [Cache]]' % Script.scriptName,
                                      'Arguments:',
-                                     '  LFN:      Physical File Name',
-                                     '  Source:   Valid DIRAC SE',
+                                     '  LFN:      Logical File Name or file containing LFNs',
                                      '  Dest:     Valid DIRAC SE',
+                                     '  Source:   Valid DIRAC SE',
                                      '  Cache:    Local directory to be used as cache' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -37,9 +37,18 @@ if len( args ) == 4:
 from DIRAC.Interfaces.API.Dirac                       import Dirac
 dirac = Dirac()
 exitCode = 0
-result = dirac.replicateFile( lfn, seName, sourceSE, localCache, printOutput = True )
-if not result['OK']:
-  print 'ERROR: ', result['Message']
-  exitCode = 2
+
+try:
+  f = open( lfn, 'r' )
+  lfns = f.read().splitlines()
+  f.close()
+except:
+  lfns = [lfn]
+
+for lfn in lfns:
+  result = dirac.replicateFile( lfn, seName, sourceSE, localCache, printOutput = True )
+  if not result['OK']:
+    print 'ERROR %s' % ( result['Message'] )
+    exitCode = 2
 
 DIRAC.exit( exitCode )

@@ -15,7 +15,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
                                      'Arguments:',
-                                     '  LFN:      Logical File Name' ] ) )
+                                     '  LFN:      Logical File Name  or file containing LFNs' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 lfns = Script.getPositionalArgs()
 
@@ -25,6 +25,14 @@ if len( lfns ) < 1:
 from DIRAC.Interfaces.API.Dirac                         import Dirac
 dirac = Dirac()
 exitCode = 0
+
+if len( lfns ) == 1:
+  try:
+    f = open( lfns[0], 'r' )
+    lfns = f.read().splitlines()
+    f.close()
+  except:
+    pass
 
 result = dirac.getReplicas( lfns, printOutput = True )
 if not result['OK']:

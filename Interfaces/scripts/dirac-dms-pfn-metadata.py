@@ -15,7 +15,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... PFN SE' % Script.scriptName,
                                      'Arguments:',
-                                     '  PFN:      Physical File Name',
+                                     '  PFN:      Physical File Name or file containing PFNs',
                                      '  SE:       Valid DIRAC SE' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -32,9 +32,17 @@ exitCode = 0
 
 pfn = args[0]
 seName = args[1]
-result = dirac.getPhysicalFileMetadata( pfn, seName, printOutput = True )
-if not result['OK']:
-  print 'ERROR: ', result['Message']
-  exitCode = 2
+try:
+  f = open( pfn, 'r' )
+  pfns = f.read().splitlines()
+  f.close()
+except:
+  pfns = [pfn]
+
+for pfn in pfns:
+  result = dirac.getPhysicalFileMetadata( pfn, seName, printOutput = True )
+  if not result['OK']:
+    print 'ERROR: ', result['Message']
+    exitCode = 2
 
 DIRAC.exit( exitCode )
