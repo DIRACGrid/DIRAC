@@ -45,10 +45,17 @@ try:
 except:
   lfns = [lfn]
 
+finalResult = {"Failed":[], "Successful":[]}
 for lfn in lfns:
   result = dirac.replicateFile( lfn, seName, sourceSE, localCache, printOutput = True )
   if not result['OK']:
+    finalResult["Failed"].append( lfn )
     print 'ERROR %s' % ( result['Message'] )
     exitCode = 2
+  else:
+    finalResult["Successful"].append( lfn )
+
+if len( lfns ) > 1:
+  print finalResults
 
 DIRAC.exit( exitCode )
