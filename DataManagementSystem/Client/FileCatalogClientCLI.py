@@ -969,7 +969,7 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[1]
     lfn = self.getPath(path)
     pathDict = {}
-    pathDict[lfn] = group
+    pathDict[lfn] = {"Group":group}
     
     try:
       result = self.fc.changePathGroup(pathDict,recursive)         
@@ -997,7 +997,7 @@ File Catalog Client $Revision: 1.17 $Date:
     lfn = self.getPath(path)
     pathDict = {}
     # treat mode as octal 
-    pathDict[lfn] = eval('0'+mode)
+    pathDict[lfn] = {"Mode":eval('0'+mode)}
     
     try:
       result = self.fc.changePathMode(pathDict,recursive)             
