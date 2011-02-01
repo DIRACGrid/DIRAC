@@ -334,7 +334,8 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path,owner in arguments.items():
+    for path,dict in arguments.items():
+      owner = dict['Owner']
       result = self.setDirectoryOwner(path,owner)
       if not result['OK']:
         failed[path] = result['Message']
@@ -376,7 +377,8 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path,group in arguments.items():
+    for path,dict in arguments.items():
+      group = dict['Group']
       result = self.setDirectoryGroup(path,group)
       if not result['OK']:
         failed[path] = result['Message']
@@ -410,7 +412,8 @@ class DirectoryTreeBase:
     arguments = result['Value']
     successful = {}
     failed = {}
-    for path,mode in arguments.items():
+    for path,dict in arguments.items():
+      mode = dict['Mode']
       result = self.setDirectoryMode(path,mode)
       if not result['OK']:
         failed[path] = result['Message']
