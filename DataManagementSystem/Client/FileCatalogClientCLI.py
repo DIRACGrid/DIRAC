@@ -608,6 +608,8 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     lfn = argss[0]
+    if lfn[0] != '/':
+      lfn = self.cwd + '/' + lfn
     depth = [1]
     if len(argss) > 1:
       depth = int(argss[1])
