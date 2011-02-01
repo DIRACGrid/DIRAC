@@ -15,7 +15,7 @@ class FTSRequest:
 
   def __init__(self):
 
-    self.gridEnv = '/afs/cern.ch/project/gd/LCG-share/3.2.4-0/etc/profile.d/grid-env'
+    self.gridEnv = '/afs/cern.ch/project/gd/LCG-share/3.2.8-0/etc/profile.d/grid-env'
 
     self.finalStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
     self.failedStates = ['Canceled','Failed','Hold','FinishedDirty']
@@ -508,7 +508,7 @@ class FTSRequest:
     return S_OK()
 
   def __submitFTSTransfer(self):
-    comm = ['glite-transfer-submit','-s', self.ftsServer,'-f',self.surlFile]
+    comm = ['glite-transfer-submit','-s', self.ftsServer,'-f',self.surlFile,'-o']
     if self.targetToken:
       comm.append('-t')
       comm.append(self.targetToken)
