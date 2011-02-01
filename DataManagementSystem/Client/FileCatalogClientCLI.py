@@ -536,7 +536,15 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()    
     lfn = argss[0]
+    if lfn[0] != '/':
+      lfn = self.cwd + '/' + lfn
     ancestors = argss[1:]
+    tmpList = []
+    for a in ancestors:
+      if a[0] != '/':
+        a = self.cwd + '/' + a
+      tmpList.append(a)
+    ancestors = tmpList       
     
     try:
       result = self.fc.addFileAncestors({lfn:{'Ancestors':ancestors}})
@@ -560,12 +568,14 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     lfn = argss[0]
+    if lfn[0] != '/':
+      lfn = self.cwd + '/' + lfn
     depth = [1]
     if len(argss) > 1:
       depth = int(argss[1])
       depth = range(1,depth+1)
         
-    try:
+    try:      
       result = self.fc.getFileAncestors([lfn],depth)
       if not result['OK']:
         print "ERROR: Failed to get ancestors: ",
@@ -1125,6 +1135,13 @@ File Catalog Client $Revision: 1.17 $Date:
     else:
       print "Unknown option:",option  
       
+  def __processArgs(self,argss):
+    """ Process the list of arguments to capture quoted strings
+    """
+    
+    argString = " ".join(argss)
+        
+      
   def metaSet(self,argss):
     """ Set metadata value for a directory
     """      
@@ -1207,9 +1224,6 @@ File Catalog Client $Revision: 1.17 $Date:
               print "No metadata defined for directory"   
     else:
       result = self.fc.getFileUserMetadata(path)      
-      
-      print result
-      
       if not result['OK']:
         print ("Error: %s" % result['Message']) 
         return
@@ -1289,6 +1303,9 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Add metadata field. 
     """
  
+    if len(argss) < 2:
+      print "Unsufficient number of arguments"
+      return
     mname = argss[0] 
     mtype = argss[1]
     
@@ -1363,21 +1380,34 @@ File Catalog Client $Revision: 1.17 $Date:
       return None
     typeDict = result['Value']
     metaDict = {}
+    contMode = False
     for arg in argss:
-      operation = ''
-      for op in ['>','<','>=','<=','!=','=']:
-        if arg.find(op) != -1:
-          operation = op
-          break
-      if not operation:
-        print "Error: operation is not found in the query"
-        return None
-        
-      name,value = arg.split(operation)
-      if not name in typeDict:
-        print "Error: metadata field %s not defined" % name
-        return None
-      mtype = typeDict[name]
+      if not contMode:
+        operation = ''
+        for op in ['>','<','>=','<=','!=','=']:
+          if arg.find(op) != -1:
+            operation = op
+            break
+        if not operation:
+          
+          print "Error: operation is not found in the query"
+          return None
+          
+        name,value = arg.split(operation)
+        if not name in typeDict:
+          print "Error: metadata field %s not defined" % name
+          return None
+        mtype = typeDict[name]
+      else:
+        value += ' ' + arg
+        value = value.replace(contMode,'')
+        contMode = False  
+      
+      if value[0] == '"' or value[0] == "'":
+        if value[-1] != '"' and value != "'":
+          contMode = value[0]
+          continue 
+      
       if value.find(',') != -1:
         valueList = [ x.replace("'","").replace('"','') for x in value.split(',') ]
         mvalue = valueList
