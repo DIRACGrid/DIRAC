@@ -941,9 +941,10 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[1]
     lfn = self.getPath(path)
     pathDict = {}
-    pathDict[lfn] = owner
+    pathDict[lfn] = {'Owner':owner}
     
     try:
+      result = self.fc.changePathOwner(pathDict,recursive)        
       if not result['OK']:
         print "Error:",result['Message']
         return
