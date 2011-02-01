@@ -469,7 +469,16 @@ class FileManager(FileManagerBase):
     connection = self._getConnection(connection)
     if type(fileID) not in [TupleType,ListType]:
       fileID = [fileID]
-    req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % (paramName,paramValue,intListToString(fileID))
+      
+    if paramName in ['UID','GID','Status','Size']:
+      # Treat primary file attributes specially
+      req = "UPDATE FC_Files SET %s='%s' WHERE FileID IN (%s)" % (paramName,paramValue,intListToString(fileID))
+      result = self.db._update(req,connection)
+      if not result['OK']:
+        return result
+      req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % intListToString(fileID)
+    else:  
+      req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % (paramName,paramValue,intListToString(fileID))
     return self.db._update(req,connection)
     
   def __getRepIDForReplica(self,fileID,seID,connection=False):

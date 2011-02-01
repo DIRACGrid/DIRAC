@@ -955,7 +955,7 @@ class FileManagerBase:
       return S_ERROR( storageElement.errorReason )
     return S_OK( storageElement )
 
-  def setFileGroup( self, lfns, connection = False ):
+  def setFileGroup( self, lfns, uid=0, gid=0, connection = False ):
     """ Get set the group for the supplied files """
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'GID'], connection = connection )
@@ -982,7 +982,7 @@ class FileManagerBase:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setFileOwner( self, lfns, connection = False ):
+  def setFileOwner( self, lfns, uid=0, gid=0, connection = False ):
     """ Get set the group for the supplied files """
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'UID'], connection = connection )
@@ -1009,7 +1009,7 @@ class FileManagerBase:
           successful[lfn] = True
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setFileMode( self, lfns, connection = False ):
+  def setFileMode( self, lfns, uid=0, gid=0, connection = False ):
     """ Get set the mode for the supplied files """
     connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'Mode'], connection = connection )
