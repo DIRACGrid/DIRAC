@@ -46,11 +46,11 @@ def checkArgumentList( path ):
 def checkArgumentDict( path ):
   """ Check and process format of the arguments to FileCatalog methods """
   if type( path ) in StringTypes:
-    urls = {path:False}
+    urls = {path:True}
   elif type( path ) == ListType:
     urls = {}
     for url in path:
-      urls[url] = False
+      urls[url] = True
   elif type( path ) == DictType:
     urls = path
   else:
