@@ -22,9 +22,17 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.Dirac                              import Dirac
+from DIRAC.Interfaces.API.Dirac  import Dirac
 dirac = Dirac()
 exitCode = 0
+
+try:
+  jobs = [ int( job ) for job in args ]
+except Exception, x:
+  print 'Expected integer for jobID'
+  exitCode = 2
+  DIRAC.exit( exitCode )
+
 
 result = dirac.status( jobs )
 if result['OK']:
