@@ -257,6 +257,10 @@ File Catalog Client $Revision: 1.17 $Date:
     # ToDo - adding directories
     
     argss = args.split()
+    
+    if len(argss) < 3:
+      print "Error: unsufficient number of arguments"
+    
     lfn = argss[0]
     lfn = self.getPath(lfn)
     pfn = argss[1]
@@ -427,6 +431,8 @@ File Catalog Client $Revision: 1.17 $Date:
           replicate <LFN> <SE> [<SourceSE>]
     """
     argss = args.split()
+    if len(args) < 2:
+      print "Error: unsufficient number of arguments"
     lfn = argss[0]
     lfn = self.getPath(lfn)
     se = argss[1]
@@ -437,10 +443,12 @@ File Catalog Client $Revision: 1.17 $Date:
       localCache=argss[3]
     try:
       dirac = Dirac()
-      result = dirac.replicate(lfn,se,sourceSE,printOutput=True)
+      result = dirac.replicate(lfn,se,sourceSE,printOutput=True)      
       if not result['OK']:
         print 'Error: %s' %(result['Message'])
-      else:
+      elif not result['Value']:
+        print "Replica is already present at the target SE"
+      else:  
         print "File %s successfully replicated to the %s SE" % (lfn,se)  
     except Exception, x:
       print "Error: replicate failed with exception: ", x      
@@ -517,7 +525,7 @@ File Catalog Client $Revision: 1.17 $Date:
     repDict[lfn] = infoDict    
       
     try:
-      result = self.fc.addReplica(repDict)               
+      result = self.fc.addReplica(repDict)                    
       if not result['OK']:
         print "Failed to add replica to the catalog: ",
         print result['Message']
