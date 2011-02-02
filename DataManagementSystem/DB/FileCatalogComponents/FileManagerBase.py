@@ -608,7 +608,7 @@ class FileManagerBase:
         failed[lfn] = res['Message']
     else:
       successful = res['Value']['Successful']
-      failed.update( res['Value']['Successful'] )
+      failed.update( res['Value']['Failed'] )
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def removeReplica( self, lfns, connection = False ):
