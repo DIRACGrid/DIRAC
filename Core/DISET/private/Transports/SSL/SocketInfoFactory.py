@@ -39,27 +39,42 @@ class SocketInfoFactory:
     except Exception, e:
       return S_ERROR( str( e ) )
 
-  def __socketConnect( self, sslSocket, hostAddress, timeout, retries = 2 ):
+  def __socketConnect( self, hostAddress, timeout, retries = 2 ):
+    osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+    #osSocket.setblocking( 0 )
+    if timeout:
+      osSocket.settimeout( 2 )
     try:
-      sslSocket.connect( hostAddress )
+      osSocket.connect( hostAddress )
     except socket.error , e:
-      if e.args[0] != 115:
+      print "== RETRY NUMBER %d" % retries
+      print "EXCPT", e
+      if e.args[0] == "timed out":
+        osSocket.close()
         if retries:
-          return self.__socketConnect( sslSocket, hostAddress, timeout, retries - 1 )
+          print "RETRY !"
+          return self.__socketConnect( hostAddress, timeout, retries - 1 )
         else:
           return S_ERROR( "Can't connect: %s" % str( e ) )
+      if e.args[0] not in ( 114, 115 ):
+        return S_ERROR( "Can't connect: %s" % str( e ) )
       #Connect in progress
-      oL = select.select( [], [ sslSocket ], [], timeout )[1]
+      oL = select.select( [], [ osSocket ], [], timeout )[1]
       if len( oL ) == 0:
-        sslSocket.close()
+        osSocket.close()
         return S_ERROR( "Connection timeout" )
-      errno = sslSocket.getsockopt( socket.SOL_SOCKET, socket.SO_ERROR )
+      errno = osSocket.getsockopt( socket.SOL_SOCKET, socket.SO_ERROR )
       if errno != 0:
         return S_ERROR( "Can't connect: %s" % str( ( errno, os.strerror( errno ) ) ) )
-    return S_OK()
+    return S_OK( osSocket )
 
   def __connect( self, socketInfo, hostAddress ):
-    osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+    #Connect baby!
+    result = self.__socketConnect( hostAddress, socketInfo.infoDict[ 'timeout' ] )
+    if not result[ 'OK' ]:
+      return result
+    osSocket = result[ 'Value' ]
+    #SSL MAGIC
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     #Generate sessionId
     sessionHash = md5.md5()
@@ -75,13 +90,6 @@ class SocketInfoFactory:
     socketInfo.setSSLSocket( sslSocket )
     if gSessionManager.isValid( sessionId ):
       sslSocket.set_session( gSessionManager.get( sessionId ) )
-    #sslSocket.setblocking( 0 )
-    if socketInfo.infoDict[ 'timeout' ]:
-      sslSocket.settimeout( 2 )
-    #Connect baby!
-    result = self.__socketConnect( sslSocket, hostAddress, socketInfo.infoDict[ 'timeout' ] )
-    if not result[ 'OK' ]:
-      return result
     #Set the real timeout
     if socketInfo.infoDict[ 'timeout' ]:
       sslSocket.settimeout( socketInfo.infoDict[ 'timeout' ] )
