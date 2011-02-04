@@ -15,10 +15,9 @@ from DIRAC                                            import S_OK, S_ERROR, gLog
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 import DIRAC.Core.Utilities.Time as Time
 
-REMOVE_STATUS_DELAY = {'Deleted':0,
-                       'Done':14,
-                       'Killed':7,
-                       'Failed':14 }
+REMOVE_STATUS_DELAY = { 'Done':14,
+                        'Killed':7,
+                        'Failed':14 }
 PRODUCTION_TYPES = ['DataReconstruction', 'DataStripping', 'MCSimulation', 'Merge', 'production']
 
 class JobCleaningAgent( AgentModule ):
@@ -37,77 +36,81 @@ class JobCleaningAgent( AgentModule ):
     """Sets defaults
     """
 
-    self.am_setOption( "PollingTime", 120.0 )
+    self.am_setOption( "PollingTime", 900 )
     self.jobDB = JobDB()
     self.taskQueueDB = TaskQueueDB()
     # self.sandboxDB = SandboxDB( 'SandboxDB' )
 
     return S_OK()
 
+  def __getAllowedJobTypes( self ):
+    #Get valid jobTypes
+    result = self.jobDB.getDistinctJobAttributes( 'JobType' )
+    if not result[ 'OK' ]:
+      return result
+    cleanJobTypes = []
+    for jobType in result[ 'Value' ]:
+      if jobType not in PRODUCTION_TYPES:
+        cleanJobTypes.append( jobType )
+    self.log.notice( "JobTypes to clean %s" % cleanJobTypes )
+    return S_OK( cleanJobTypes )
+
   #############################################################################
   def execute( self ):
     """The PilotAgent execution method.
     """
-
+    #Delete jobs in "Deleted" state
+    result = self.removeJobsByStatus( { 'Status' : 'Deleted' } )
+    if not result[ 'OK' ]:
+      return result
+    #Get all the Job types that can be cleaned
+    result = self.__getAllowedJobTypes()
+    if not result[ 'OK' ]:
+      return result
+    baseCond = { 'JobType' : result[ 'Value' ] }
     # Remove jobs with final status
-    for status, delay in REMOVE_STATUS_DELAY.items():
-      if delay > 0:
-        delTime = str( Time.dateTime() - delay * Time.day )
-      else:
-        delTime = ''
-      result = self.removeJobsByStatus( status, delTime )
+    for status in REMOVE_STATUS_DELAY:
+      delay = REMOVE_STATUS_DELAY[ status ]
+      condDict = dict( baseCond )
+      condDict[ 'Status' ] = status
+      delTime = str( Time.dateTime() - delay * Time.day )
+      result = self.removeJobsByStatus( condDict, delTime )
       if not result['OK']:
         gLogger.warn( 'Failed to remove jobs in status %s' % status )
     return S_OK()
 
-  def removeJobsByStatus( self, status, delay ):
+  def removeJobsByStatus( self, condDict, delay = False ):
     """ Remove deleted jobs
     """
     if delay:
-      gLogger.verbose( "Removing jobs with %s status and older than %s" % ( status, delay ) )
+      gLogger.verbose( "Removing jobs with %s and older than %s" % ( condDict, delay ) )
+      result = self.jobDB.selectJobs( condDict, older = delay )
     else:
-      gLogger.verbose( "Removing jobs with %s status" % status )
+      gLogger.verbose( "Removing jobs with %s " % condDict )
+      result = self.jobDB.selectJobs( condDict )
 
-    result = self.jobDB.selectJobs( {'Status':status}, older = delay )
     if not result['OK']:
       return result
 
     jobList = result['Value']
 
-    if status != "Deleted":
-      # get job types to skip production jobs
-      result = self.jobDB.getAttributesForJobList( jobList, ['JobType'] )
-      if not result['OK']:
-        return S_ERROR( 'Failed to get job types' )
-      attDict = result['Value']
-      newJobList = []
-      for j in jobList:
-        if not attDict[int( j )]['JobType'] in PRODUCTION_TYPES:
-          newJobList.append( j )
-      jobList = newJobList
+    self.log.notice( "Deleting %s jobs for %s" % ( len( jobList ), condDict ) )
 
     count = 0
     error_count = 0
     result = SandboxStoreClient( useCertificates = True ).unassignJobs( jobList )
     if not result[ 'OK' ]:
       gLogger.warn( "Cannot unassign jobs to sandboxes", result[ 'Message' ] )
+
     for jobID in jobList:
       resultJobDB = self.jobDB.removeJobFromDB( jobID )
       resultTQ = self.taskQueueDB.deleteJob( jobID )
-      # resultISB = self.sandboxDB.removeJob( jobID, 'InputSandbox' )
-      # resultOSB = self.sandboxDB.removeJob( jobID, 'OutputSandbox' )
       if not resultJobDB['OK']:
         gLogger.warn( 'Failed to remove job %d from JobDB' % jobID, result['Message'] )
         error_count += 1
       elif not resultTQ['OK']:
         gLogger.warn( 'Failed to remove job %d from TaskQueueDB' % jobID, result['Message'] )
         error_count += 1
-      # elif not resultISB['OK']:
-      #   gLogger.warn( 'Failed to remove job %d from InputSandboxDB' % jobID, result['Message'] )
-      #   error_count += 1
-      # elif not resultOSB['OK']:
-      #   gLogger.warn( 'Failed to remove job %d from OutputSandboxDB' % jobID, result['Message'] )
-      #   error_count += 1
       else:
         count += 1
 
