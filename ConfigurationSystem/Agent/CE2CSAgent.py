@@ -15,7 +15,7 @@ from DIRAC.Core.Utilities.Grid                                import ldapSite, l
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
 from DIRAC.Core.Security.Misc                                 import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers                 import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers                 import cfgPath, getVO
 
 import sys, os
 
@@ -441,7 +441,7 @@ class CE2CSAgent( AgentModule ):
                 self.csAPI.modifyValue( section, newsi00 )
               changed = True
 
-    if changed:
+    if False and changed:
       self.log.info( body )
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()
