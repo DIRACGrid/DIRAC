@@ -62,7 +62,6 @@ class FTSRequest:
       return S_ERROR("SourceSE is TargetSE")
     self.sourceSE = se
     self.oSourceSE = StorageElement(self.sourceSE)
-    self.__getSESpaceToken(self.oSourceSE)
     return self.__checkSourceSE()
 
   def getSourceSE(self):
@@ -85,10 +84,11 @@ class FTSRequest:
     res = self.oSourceSE.isValid('Read')
     if not res['OK']:
       return S_ERROR("SourceSE not available for reading")
-    res = self.oSourceSE.getStorageParameters("SRM2")
+    res = self.__getSESpaceToken( self.oSourceSE )
     if not res['OK']:
+      gLogger.error( "FTSRequest failed to get SRM Space Token for SourceSE", res['Message'] )
       return S_ERROR("SourceSE does not support FTS transfers")
-    self.sourceToken = res['Value'].get('SpaceToken')
+    self.sourceToken = res['Value']
     self.sourceValid = True
     return S_OK()
 
@@ -119,10 +119,11 @@ class FTSRequest:
     res = self.oTargetSE.isValid('Write')
     if not res['OK']:
       return S_ERROR("TargetSE not available for writing")
-    res = self.oTargetSE.getStorageParameters("SRM2")
+    res = self.__getSESpaceToken( self.oTargetSE )
     if not res['OK']:
-      return res
-    self.targetToken = res['Value'].get('SpaceToken')
+      gLogger.error( "FTSRequest failed to get SRM Space Token for TargetSE", res['Message'] )
+      return S_ERROR("SourceSE does not support FTS transfers")
+    self.targetToken = res['Value']
     self.targetValid = True
     return S_OK()
 
@@ -263,15 +264,12 @@ class FTSRequest:
   def submit(self,monitor=False,printOutput=True):
     res = self.__isSubmissionValid()
     if not res['OK']:
-      print res['Message']
       return res
     res = self.__createSURLPairFile()
     if not res['OK']:
-      print res['Message']
       return res
     res = self.__submitFTSTransfer()
     if not res['OK']:
-      print res['Message']
       return res
     resDict = {'ftsGUID':self.ftsGUID,'ftsServer':self.ftsServer}
     print "Submitted %s @ %s" % (self.ftsGUID,self.ftsServer)
