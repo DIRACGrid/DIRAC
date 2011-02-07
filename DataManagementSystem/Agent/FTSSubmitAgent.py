@@ -38,7 +38,7 @@ class FTSSubmitAgent( AgentModule ):
       gLogger.error( "Failed to retrieve channels for submission.", res['Message'] )
       return S_OK()
     elif not res['Value']:
-      gLogger.info( "FTSSubmitAgent. No channels eligable for submission." )
+      gLogger.info( "FTSSubmitAgent. No channels eligible for submission." )
       return S_OK()
     channelDicts = res['Value']
     gLogger.info( 'Found %s eligible channels.' % len( channelDicts ) )
@@ -112,24 +112,18 @@ class FTSSubmitAgent( AgentModule ):
       if not res['OK']:
         gLogger.error( 'Failed to update the Channel table for file to retry.', res['Message'] )
       return S_ERROR( errStr )
-    res = oFTSRequest.getFTSGUID()
-    if not res['OK']:
-      gLogger.error( "Failed to get FTS GUID after submission", res['Message'] )
-      return res
-    ftsGUID = res['Value']
-    res = oFTSRequest.getFTSServer()
-    if not res['OK']:
-      gLogger.error( "Failed to get FTS Server after submission", res['Message'] )
-      return res
-    ftsServer = res['Value']
+    ftsGUID = res['Value']['ftsGUID']
+    ftsServer = res['Value']['ftsServer']
+    infoStr = """Submitted FTS Job:
+    
+              FTS Guid: %s
+              FTS Server: %s
+              ChannelID: %s
+              SourceSE: %s
+              TargetSE: %s
+              Files: %s
 
-    infoStr = "Submitted FTS Job:\n\n\
-              FTS Guid:%s\n\
-              FTS Server:%s\n\
-              ChannelID:%s\n\
-              SourceSE:%s\n\
-              TargetSE:%s\n\
-              Files:%s\n\n" % ( ftsGUID.ljust( 15 ), ftsServer.ljust( 15 ), str( channelID ).ljust( 15 ), sourceSE.ljust( 15 ), targetSE.ljust( 15 ), str( len( files ) ).ljust( 15 ) )
+""" % ( ftsGUID, ftsServer, str( channelID ), sourceSE, targetSE, str( len( files ) ) )
     gLogger.info( infoStr )
 
     #########################################################################
