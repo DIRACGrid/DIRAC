@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/DB/StorageManagementDB.sql,v 1.4 2009/11/04 09:25:05 acsmith Exp $
+# $HeaderId: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/DB/StorageManagementDB.sql,v 1.4 2009/11/04 09:25:05 acsmith Exp $
 ########################################################################
 
 DROP DATABASE IF EXISTS StorageManagementDB;
