@@ -293,7 +293,7 @@ class Dirac:
           self.log.error( '>>>> Error in %s() <<<<\n%s' % ( method, string.join( errorList, '\n' ) ) )
         return S_ERROR( formulationErrors )
 
-      #Run any VO specific checks if desired prior to submission, this may or may not be overidden 
+      #Run any VO specific checks if desired prior to submission, this may or may not be overidden
       #in a derived class for example
       try:
         result = self.preSubmissionChecks( job, mode )
@@ -374,9 +374,9 @@ class Dirac:
 
   #############################################################################
   def preSubmissionChecks( self, job, mode ):
-    """Internal function.  The pre-submission checks method allows VOs to 
+    """Internal function.  The pre-submission checks method allows VOs to
        make their own checks before job submission. To make use of this the
-       method should be overridden in a derived VO-specific Dirac class. 
+       method should be overridden in a derived VO-specific Dirac class.
     """
     return S_OK( 'Nothing to do' )
 
@@ -584,7 +584,7 @@ class Dirac:
         return S_ERROR( 'Exceeded max waiting time of %s seconds for job %s to enter Waiting state, exiting.' % ( maxWaitingTime, jobID ) )
       time.sleep( pollingTime )
 
-  #############################################################################      
+  #############################################################################
   def __getVOPolicyModule( self, module ):
     """ Utility to get the VO Policy module name
     """
@@ -664,7 +664,7 @@ class Dirac:
     for lfn, reps in replicaDict['Value']['Successful'].items():
       guidDict['Value']['Successful'][lfn].update( reps )
     resolvedData = guidDict
-    diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER'] )
+    diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
     tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
     #Add catalog path / name here as well as site name to override the standard policy of resolving automatically
     configDict = {'JobID':None, 'LocalSEList':localSEList['Value'], 'DiskSEList':diskSE, 'TapeSEList':tapeSE, 'SiteName':siteName, 'CatalogName':fileName}
@@ -2496,7 +2496,7 @@ class Dirac:
        'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, ','LocalBatchID': 'dc768'}
 
        @param jobID: JobID
-       @type jobID: int or string 
+       @type jobID: int or string
        @param printOutput: Flag to print to stdOut
        @type printOutput: Boolean
        @return: S_OK,S_ERROR
