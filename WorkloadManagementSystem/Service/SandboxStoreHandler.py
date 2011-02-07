@@ -14,6 +14,7 @@ import os
 import time
 import random
 import types
+import threading
 import tempfile
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
@@ -37,6 +38,8 @@ def initializeSandboxStoreHandler( serviceInfo ):
 class SandboxStoreHandler( RequestHandler ):
 
   __purgeCount = -1
+  __purgeLock = threading.Lock()
+  __purgeWorking = False
 
   def initialize( self ):
     self.__backend = self.getCSOption( "Backend", "local" )
@@ -51,7 +54,7 @@ class SandboxStoreHandler( RequestHandler ):
       self.__seNameToUse = self.__backend
     #Execute the purge once every 100 calls
     SandboxStoreHandler.__purgeCount += 1
-    if SandboxStoreHandler.__purgeCount > 100:
+    if SandboxStoreHandler.__purgeCount > self.getCSOption( "QueriesBeforePurge", 1000 ):
       SandboxStoreHandler.__purgeCount = 0
     if SandboxStoreHandler.__purgeCount == 0:
       threading.Thread( target = self.purgeUnusedSandboxes ).start()
@@ -404,16 +407,31 @@ class SandboxStoreHandler( RequestHandler ):
   # Purge sandboxes
 
   def purgeUnusedSandboxes( self ):
+    #If a purge is already working skip 
+    SandboxStoreHandler.__purgeLock.acquire()
+    try:
+      if SandboxStoreHandler.__purgeWorking:
+        if time.time() - SandboxStoreHandler.__purgeWorking < 86400:
+          gLogger.info( "Sandbox purge still working" )
+          return S_OK()
+      SandboxStoreHandler.__purgeWorking = time.time()
+    finally:
+      SandboxStoreHandler.__purgeLock.release()
+
     gLogger.info( "Purging sandboxes" )
     result = sandboxDB.getUnusedSandboxes()
     if not result[ 'OK' ]:
       gLogger.error( "Error while retrieving sandboxes to purge", result[ 'Message' ] )
+      SandboxStoreHandler.__purgeWorking = False
       return result
     sbList = result[ 'Value' ]
     gLogger.info( "Got %s sandboxes to purge" % len( sbList ) )
     deletedFromSE = []
     for sbId, SEName, SEPFN in sbList:
       self.__purgeSandbox( sbId, SEName, SEPFN )
+
+    SandboxStoreHandler.__purgeWorking = False
+    return S_OK()
 
   def __purgeSandbox( self, sbId, SEName, SEPFN ):
     result = self.__deleteSandboxFromBackend( SEName, SEPFN )
