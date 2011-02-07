@@ -56,7 +56,19 @@ class ServiceInterface:
     Initializes and creates monitoring catalog db if it doesn't exist
     """
     acCatalog = self.__createCatalog()
-    return acCatalog.createSchema()
+    if not acCatalog.createSchema():
+      return False
+    #Register default view if it's not there
+    viewNames = [ str( v[1] ) for v in  acCatalog.getViews( False ) ]
+    if 'Dynamic component view' in viewNames:
+      return True
+    return acCatalog.registerView( "Dynamic component view",
+                                   DEncode.encode( { 'variable': ['sources.componentName'],
+                                                     'definition': {},
+                                                     'stacked': True,
+                                                     'groupBy': ['activities.description'],
+                                                     'label': '$SITE'} ),
+                                   ['sources.componentName'] )
 
   def __checkActivityDict( self, acDict ):
     """
