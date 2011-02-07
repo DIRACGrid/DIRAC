@@ -1,7 +1,7 @@
 """  MigrationMonitoringAgent monitors the migration status of newly uploaded files to ensure they are migrated correctly and timely.
 """
 
-__RCSID__ = "$Id: MigrationMonitoringAgent.py,v 1.4 2009/11/05 10:35:07 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                                  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath, siteName
 from DIRAC.Core.Base.AgentModule                            import AgentModule
