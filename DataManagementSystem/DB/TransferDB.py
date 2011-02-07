@@ -381,7 +381,8 @@ class TransferDB(DB):
   def getFilesForChannel(self,channelID,numberOfFiles):
     """ This method will only return Files for the oldest SourceSE,TargetSE Waiting for a given Channel.
     """
-    req = "SELECT SourceSE,TargetSE FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY Retries, LastUpdateTimeOrder LIMIT 1;" % (channelID)
+    # req = "SELECT SourceSE,TargetSE FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY Retries, LastUpdateTimeOrder LIMIT 1;" % (channelID)
+    req = "SELECT c.SourceSE,c.TargetSE FROM Channel as c,Files as f WHERE c.ChannelID = %s AND c.Status = 'Waiting' AND c.FileID=f.FileID ORDER BY c.Retries, c.LastUpdateTimeOrder LIMIT 1;" % (channelID)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
