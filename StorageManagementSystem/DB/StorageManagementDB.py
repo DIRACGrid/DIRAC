@@ -12,7 +12,7 @@
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.3 2009/11/03 16:06:29 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                        import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                           import DB
