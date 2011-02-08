@@ -145,10 +145,19 @@ for svnPackage in List.fromChar( svnPackages ):
     msg = 'Release %s' % svnVersion
     versionPath = "%s/%s" % ( versionsRoot, svnVersion )
     packageDistribution.queueMakeDir( versionPath, msg )
+    tmpFilesToDelete = []
     for extra in buildCFG.getOption( 'packageExtraFiles', [ '__init__.py', 'versions.cfg' ] ):
-      packageDistribution.queueCopy( '%s/trunk/%s/%s' % ( svnPackage, svnPackage, extra ),
-                                     '%s/%s' % ( versionPath, extra ),
-                                     msg )
+      if extra != "__init__.py":
+        packageDistribution.queueCopy( '%s/trunk/%s/%s' % ( svnPackage, svnPackage, extra ),
+                                       '%s/%s' % ( versionPath, extra ),
+                                       msg )
+      else:
+        versionInitFile = packageDistribution.writeVersionToTmpInit( svnVersion )
+        packageDistribution.queueImport( versionInitFile,
+                                         "%s/%s" % ( versionPath, extra ),
+                                         msg )
+        tmpFilesToDelete.append( versionInitFile )
+
     for pack in packageList:
       packVer = versionCFG.getOption( pack, '' )
       if packVer.lower() in ( 'trunk', '', 'head' ):
@@ -162,6 +171,9 @@ for svnPackage in List.fromChar( svnPackages ):
     gLogger.notice( 'Copying packages: %s' % ", ".join( packageList ) )
     if not packageDistribution.executeCommandQueue():
       gLogger.error( 'Failed to create tag' )
+
+    for tmpFile in tmpFilesToDelete:
+      os.unlink( tmpFile )
 
     #Generate release notes for version
     generateAndUploadReleaseNotes( packageDistribution, versionPath, svnVersion )
