@@ -58,7 +58,7 @@ Script.disableCS()
 Script.registerSwitch( "p:", "package=", "package to branch (default = DIRAC)", setPackage )
 Script.registerSwitch( "v:", "version=", "version to branch from", setVersion )
 Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
-Script.registerSwitch( "l=", "devel=", "Create a development branch", setDevelBranch )
+Script.registerSwitch( "l=", "devel=", "Create a development branch with name", setDevelBranch )
 Script.registerSwitch( "r", "pre", "Create a pre branch", setDevelBranch )
 Script.registerSwitch( "e", "release", "Create a release branch with name", setDevelBranch )
 
