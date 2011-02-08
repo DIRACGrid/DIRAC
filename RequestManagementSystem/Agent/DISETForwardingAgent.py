@@ -42,7 +42,7 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
 
     self.local = PathFinder.getServiceURL( "RequestManagement/localURL" )
     if not self.local:
-      self.local = AgentModule.am_getOption(self,'localURL','')
+      self.local = AgentModule.am_getOption( self, 'localURL', '' )
     if not self.local:
       errStr = 'The RequestManagement/localURL option must be defined.'
       gLogger.fatal( errStr )
@@ -149,7 +149,7 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
     if res['OK']:
       gLogger.info( "DISETForwardingAgent.execute: Successfully updated request." )
     else:
-      gLogger.error( "DISETForwardingAgent.execute: Failed to update request to", self.central )
+      gLogger.error( "DISETForwardingAgent.execute: Failed to update request to", self.local )
 
     if modified and jobID:
       result = self.finalizeRequest( requestName, jobID, self.local )
