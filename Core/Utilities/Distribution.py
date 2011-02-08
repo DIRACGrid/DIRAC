@@ -177,7 +177,7 @@ class Distribution:
 
   def __cmdImport( self, origin, dest, comment ):
     destT = self.__getDevCmdBase( dest )
-    cmd = "svn import -m '%s' %s %s %s" % ( comment, destT[0], origin, destT[1] )
+    cmd = "svn import -m '%s' %s '%s' '%s'" % ( comment, destT[0], origin, destT[1] )
     return cmd
 
   def queueImport( self, origin, dest, comment ):
@@ -189,11 +189,22 @@ class Distribution:
   def __cmdCopy( self, origin, dest, comment ):
     destT = self.__getDevCmdBase( dest )
     orT = self.__getDevCmdBase( origin )
-    cmd = "svn copy -m '%s' %s %s %s" % ( comment, destT[0], orT[1], destT[1] )
+    cmd = "svn copy -m '%s' %s '%s' '%s'" % ( comment, destT[0], orT[1], destT[1] )
     return cmd
 
   def queueCopy( self, origin, dest, comment ):
     self.addCommandToQueue( self.__cmdCopy( origin, dest, comment ) )
+
+  def __cmdMultiCopy( self, originList, dest, comment ):
+    orList = [ "'%s'" % self.__getDevCmdBase( orPath )[1] for orPath in originList ]
+    destT = self.__getDevCmdBase( dest )
+    cmd = "svn copy -m '%s' %s %s '%s'" % ( comment, destT[0], " ".join( orList ), destT[1] )
+    print "ASDASDS" * 5
+    print cmd
+    return cmd
+
+  def queueMultiCopy( self, originList, dest, comment ):
+    self.addCommandToQueue( self.__cmdMultiCopy( originList, dest, comment ) )
 
   # def doCopy( self, path, comment ):
   #   return self.executeCommand( self.__cmdCopy( origin, dest, comment ), False )
@@ -218,7 +229,20 @@ class Distribution:
     cmd = "svn ci -m '%s' %s '%s'" % ( comment, t[0], location )
     return self.executeCommand( cmd, False )
 
-
+  #Get copy revision
+  def getCopyRevision( self, location ):
+    t = self.__getDevCmdBase( location )
+    cmd = "svn log --stop-on-copy %s '%s'" % ( t[0], t[1] )
+    exitCode, outData = self.executeCommand( cmd )
+    if exitCode:
+      return 0
+    copyRev = 0
+    revRE = re.compile( "r([0-9]+)\s*\|\s*(\w+).*" )
+    for line in List.fromChar( outData, "\n" ):
+      reM = revRE.match( line.strip() )
+      if reM:
+        copyRev = reM.groups()[0]
+    return copyRev
 
 
 
