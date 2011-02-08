@@ -81,7 +81,6 @@ class Dispatcher:
       return False
     gLogger.debug( "Trying to auto discover handler" )
     rootModulesToLook = getInstalledExtensions()
-    print rootModulesToLook
     for rootModule in rootModulesToLook:
       gLogger.debug( "Trying to find handler in %s root module" % rootModule )
       filePath = os.path.join( rootModule, "%sSystem" % fields[0], "Service", "%sHandler.py" % fields[1] )

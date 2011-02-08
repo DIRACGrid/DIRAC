@@ -47,12 +47,9 @@ class SocketInfoFactory:
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
-      print "== RETRY NUMBER %d" % retries
-      print "EXCPT", e
       if e.args[0] == "timed out":
         osSocket.close()
         if retries:
-          print "RETRY !"
           return self.__socketConnect( hostAddress, timeout, retries - 1 )
         else:
           return S_ERROR( "Can't connect: %s" % str( e ) )

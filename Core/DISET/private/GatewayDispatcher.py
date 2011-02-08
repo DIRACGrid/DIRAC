@@ -286,7 +286,6 @@ class TransferRelay( TransferClient ):
     return S_OK( { 'data' : dataReceived, 'srvResponse' : retVal } )
 
   def forwardFromClient( self, clientFileHelper, params ):
-    print params
     fileId, token = params[:2]
     self.__currentMethod = "FromClient"
     result = self.getDataFromClient( clientFileHelper )
@@ -307,7 +306,6 @@ class TransferRelay( TransferClient ):
     return self.sendDataToService( "BulkFromClient", ( fileId, token, receivedBytes ), dataReceived )
 
   def forwardToClient( self, clientFileHelper, params ):
-    print params
     fileId, token = params[:2]
     self.__currentMethod = "ToClient"
     result = self.getDataFromService( "ToClient", ( fileId, token ) )
@@ -321,7 +319,6 @@ class TransferRelay( TransferClient ):
     return srvResponse
 
   def forwardBulkToClient( self, clientFileHelper, params ):
-    print params
     fileId, token = params[:2]
     self.__currentMethod = "BulkToClient"
     result = self.getDataFromService( "BulkToClient", ( fileId, token ) )

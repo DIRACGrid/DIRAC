@@ -83,7 +83,7 @@ class SSLTransport( BaseTransport ):
       try:
         return S_OK( self.oSocket.recv( bufSize ) )
       except GSI.SSL.WantReadError:
-        time.sleep(0.1)
+        time.sleep( 0.1 )
       except Exception, e:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
@@ -109,7 +109,6 @@ class SSLTransport( BaseTransport ):
         time.sleep( 0.1 )
         continue
       except Exception, e:
-        print "Exception while sending", e
         return S_ERROR( "Error while sending: %s" % str( e ) )
     return S_OK( sentBytes )
 
