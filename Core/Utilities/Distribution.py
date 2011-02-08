@@ -1,7 +1,7 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import urllib2, re, tarfile, os, types, sys, subprocess, urlparse
+import urllib2, re, tarfile, os, types, sys, subprocess, urlparse, tempfile
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import CFG, File, List
@@ -209,7 +209,7 @@ class Distribution:
 
   def __cmdMakeDir( self, path, comment ):
     t = self.__getDevCmdBase( path )
-    return "svn mkdir -m '%s' %s %s" % ( comment, t[0], t[1] )
+    return "svn mkdir --parents -m '%s' %s %s" % ( comment, t[0], t[1] )
 
   def queueMakeDir( self, path, comment ):
     self.addCommandToQueue( self.__cmdMakeDir( path, comment ) )
@@ -237,12 +237,37 @@ class Distribution:
     copyRev = 0
     revRE = re.compile( "r([0-9]+)\s*\|\s*(\w+).*" )
     for line in List.fromChar( outData, "\n" ):
-      reM = revRE.match( line.strip() )
+      reM = revRE.match( line )
       if reM:
         copyRev = reM.groups()[0]
     return copyRev
 
-
+  #
+  def writeVersionToTmpInit( self, version ):
+    verTup = parseVersionString( version )
+    if not verTup:
+      return False
+    t = self.__getDevCmdBase( "%s/trunk/%s/__init__.py" % ( self.package, self.package ) )
+    cmd = "svn cat %s '%s'" % ( t[0], t[1] )
+    exitCode, outData = self.executeCommand( cmd )
+    if exitCode:
+      return False
+    tmpfd, tmpname = tempfile.mkstemp()
+    versionStrings = ( "majorVersion", "minorVersion", "patchLevel", "preVersion" )
+    reList = []
+    for iP in range( len( versionStrings ) ):
+      if verTup[iP]:
+        replStr = "%s = %s" % ( versionStrings[iP], verTup[iP] )
+      else:
+        replStr = "%s = 0" % versionStrings[iP]
+      reList.append( ( re.compile( "^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
+    for line in outData.split( "\n" ):
+      for reCm, replStr in reList:
+        line = reCm.sub( replStr, line )
+        print "."
+      os.write( tmpfd, "%s\n" % line )
+    os.close( tmpfd )
+    return tmpname
 
 #End of Distribution class
 
@@ -258,6 +283,12 @@ def parseVersionString( version ):
     else:
       vN.append( None )
   return tuple( vN )
+
+
+#
+
+
+
 
 #
 
