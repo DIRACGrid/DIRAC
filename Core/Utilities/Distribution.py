@@ -160,7 +160,7 @@ class Distribution:
       if isHTTPS:
         args.append( "--username '%s'" % self.svnUser )
       else:
-        urlRes = list(urlparse.urlparse( devRoot ))        
+        urlRes = list( urlparse.urlparse( devRoot ) )
         urlRes[1] = "%s@%s" % ( self.svnUser, urlRes[1] )
         devRoot = urlparse.urlunparse( urlRes )
 
@@ -224,7 +224,20 @@ class Distribution:
 
 #End of Distribution class
 
+gVersionRE = re.compile( "v([0-9]+)r([0-9]+)(?:p([0-9]+))?(?:-pre([0-9]+))?" )
+def parseVersionString( version ):
+  result = gVersionRE.match( version.strip() )
+  if not result:
+    return {}
+  vN = []
+  for e in result.groups():
+    if e:
+      vN.append( int( e ) )
+    else:
+      vN.append( None )
+  return tuple( vN )
 
+#
 
 def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = [] ):
   tf = tarfile.open( tarballPath, "w:gz" )
