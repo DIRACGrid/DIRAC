@@ -6,10 +6,10 @@ class to interact with the ResourceStatus DB.
 import datetime
 from types import *
 
-from DIRAC import gConfig
+#from DIRAC import gConfig
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import *
 
-from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
+#from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 
@@ -3536,7 +3536,7 @@ class ResourceStatusDB:
     elif granularity in ('StorageElement', 'StorageElements'):
       DBtable = 'StorageElements'
       DBname = 'StorageElementName'
-    elif fromWhere in ('Cache', 'ClientsCache', 'ClientCache'):
+    elif granularity in ('Cache', 'ClientsCache', 'ClientCache'):
       DBtable = 'ClientsCache'
       DBname = 'Name'
     else:

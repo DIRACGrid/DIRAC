@@ -342,6 +342,6 @@ FROM (
 	 Services.Sitename = Sites.SiteName)
 	 INNER JOIN ServicesHistory ON 
 	  Services.ServiceName = ServicesHistory.ServiceName AND 
-  	Services.DateEffective = ServicesHistory.DateEnd 
+  	  Services.DateEffective = ServicesHistory.DateEnd 
 ) WHERE Services.DateEffective < UTC_TIMESTAMP()
 ORDER BY ServiceName;
