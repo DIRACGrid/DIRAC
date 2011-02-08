@@ -199,8 +199,6 @@ class Distribution:
     orList = [ "'%s'" % self.__getDevCmdBase( orPath )[1] for orPath in originList ]
     destT = self.__getDevCmdBase( dest )
     cmd = "svn copy -m '%s' %s %s '%s'" % ( comment, destT[0], " ".join( orList ), destT[1] )
-    print "ASDASDS" * 5
-    print cmd
     return cmd
 
   def queueMultiCopy( self, originList, dest, comment ):
