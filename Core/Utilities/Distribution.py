@@ -264,7 +264,6 @@ class Distribution:
     for line in outData.split( "\n" ):
       for reCm, replStr in reList:
         line = reCm.sub( replStr, line )
-        print "."
       os.write( tmpfd, "%s\n" % line )
     os.close( tmpfd )
     return tmpname
