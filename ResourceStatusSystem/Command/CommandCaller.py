@@ -49,7 +49,7 @@ class CommandCaller:
       cClass = comm[1]
       module = moduleBase + cModule
       commandModule = __import__(module, globals(), locals(), ['*'])
-    except TypeError, ImportError:
+    except ImportError:
       cModule = "Command"
       cClass = "Command"
       module = moduleBase + cModule
