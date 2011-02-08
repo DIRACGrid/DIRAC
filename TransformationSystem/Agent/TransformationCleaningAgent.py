@@ -309,6 +309,9 @@ class TransformationCleaningAgent( AgentModule ):
     if not res['OK']:
       return res
     fileToRemove = res['Value']
+    if not len(fileToRemove):
+      gLogger.info('No files found for transID %s'%transID)
+      return S_OK()
     res = self.replicaManager.removeFile( fileToRemove )
     if not res['OK']:
       return res
