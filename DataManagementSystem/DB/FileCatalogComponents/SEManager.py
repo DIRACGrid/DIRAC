@@ -6,6 +6,7 @@
 __RCSID__ = "$Id: SEManager.py 22623 2010-03-09 19:54:25Z acsmith $"
 
 from DIRAC                        import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities.Pfn     import pfnunparse
 import threading,time
 from types import *
 
@@ -164,6 +165,10 @@ class SEManagerDB(SEManagerBase):
       return result
     seDict = result['Value']
     self.db.seDefinitions[seID]['SEDict'] = seDict
+    if seDict:
+      result = pfnunparse(seDict)
+      if result['OK']:
+        self.db.seDefinitions[seID]['SEDict']['PFNPrefix'] = result['Value'] 
     self.db.seDefinitions[seID]['LastUpdate'] = time.time()
     return S_OK(self.db.seDefinitions[seID])
 
