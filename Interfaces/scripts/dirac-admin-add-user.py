@@ -9,7 +9,7 @@ from DIRAC.Core.Base                                   import Script
 userName = None
 userDN = None
 userMail = None
-userGroups = ['user']
+userGroups = []
 
 def setUserName( arg ):
   global userName
