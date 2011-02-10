@@ -283,10 +283,39 @@ def parseVersionString( version ):
       vN.append( None )
   return tuple( vN )
 
-
-#
-
-
+def writeVersionToInit( rootPath, version ):
+  verTup = parseVersionString( version )
+  if not verTup:
+    return S_ERROR( "Invalid version string" )
+  initFile = os.path.join( rootPath, "__init__.py" )
+  if not os.path.isfile( initFile ):
+    return S_OK()
+  try:
+    fd = open( initFile, "r" )
+    fileData = fd.read()
+    fd.close()
+  except Exception, e:
+    return S_ERROR( "Could not open %s: %s" % ( initFile, str( e ) ) )
+  versionStrings = ( "majorVersion", "minorVersion", "patchLevel", "preVersion" )
+  reList = []
+  for iP in range( len( versionStrings ) ):
+    if verTup[iP]:
+      replStr = "%s = %s" % ( versionStrings[iP], verTup[iP] )
+    else:
+      replStr = "%s = 0" % versionStrings[iP]
+    reList.append( ( re.compile( "^(%s\s*=)\s*[0-9]+\s*" % versionStrings[iP] ), replStr ) )
+  newData = []
+  for line in fileData.split( "\n" ):
+    for reCm, replStr in reList:
+      line = reCm.sub( replStr, line )
+    newData.append( line )
+  try:
+    fd = open( initFile, "w" )
+    fd.write( "\n".join( newData ) )
+    fd.close()
+  except Exception, e:
+    return S_ERROR( "Could write to %s: %s" % ( initFile, str( e ) ) )
+  return S_OK()
 
 
 #
