@@ -276,11 +276,12 @@ class InputDataAgent( OptimizerModule ):
         if sites['OK']:
           for site in sites['Value']:
             if site in siteCandidates:
+
               for disk in self.diskSE:
-                if se[-4:] == 'disk':
+                if se[-len( disk ):] == disk:
                   siteResult[site]['disk'] = siteResult[site]['disk'] + 1
               for tape in self.tapeSE:
-                if se[-4:] == 'tape':
+                if se[-len( tape ):] == tape:
                   siteResult[site]['tape'] = siteResult[site]['tape'] + 1
 
     return S_OK( siteResult )
