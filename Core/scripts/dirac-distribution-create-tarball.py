@@ -28,6 +28,7 @@ class TarModuleCreator( object ):
       self.name = False
       self.vcs = False
       self.vcsBranch = False
+      self.vcsPath = False
 
     def isOK( self ):
       if not self.version:
@@ -68,6 +69,10 @@ class TarModuleCreator( object ):
       self.vcsBranch = opVal
       return S_OK()
 
+    def setVCSPath( self, opVal ):
+      self.vcsPath = opVal
+      return S_OK()
+
   def __checkDestination( self, params ):
     if not params.destination:
       params.destination = tempfile.mkdtemp( 'DIRACTarball' )
@@ -84,8 +89,9 @@ class TarModuleCreator( object ):
 
   def __discoverVCS( self, params ):
     sourceURL = params.sourceURL
-    if sourceURL.find( "/" ) == 0:
-      params.vcs == "file"
+    if os.path.expanduser( sourceURL ).find( "/" ) == 0:
+      sourceURL = os.path.expanduser( sourceURL )
+      params.vcs = "file"
       return True
     if sourceURL.find( ":" ) == 0:
       params.vcs = "cvs"
@@ -104,6 +110,7 @@ class TarModuleCreator( object ):
       if not self.__discoverVCS( params ):
         return S_ERROR( "Could not autodiscover VCS" )
     gLogger.info( "Checking out using %s method" % params.vcs )
+
     if params.vcs == "file":
       return self.__checkoutFromFile( params )
     elif params.vcs == "cvs":
@@ -115,7 +122,7 @@ class TarModuleCreator( object ):
     elif params.vcs == "git":
       return self.__checkoutFromGit( params )
 
-    return S_ERROR( "OOPS" )
+    return S_ERROR( "OOPS. Unknown VCS %s!" % params.vcs )
 
   def __checkoutFromFile( self, params ):
     sourceURL = params.sourceURL
@@ -123,9 +130,17 @@ class TarModuleCreator( object ):
       sourceURL = sourceURL[ 7: ]
     sourceURL = os.path.realpath( sourceURL )
     try:
-      shutil.copytree( sourceURL, os.path.join( params.destination, params.name ),
-                       symlinks = True, ignore = ignore_patterns( '.svn', '.git', '.hg', '*.pyc', '*.pyo', 'CVS' ) )
-    except:
+      pyVer = sys.version_info
+      if pyVer[0] == 2 and pyVer[1] < 6:
+        shutil.copytree( sourceURL,
+                         os.path.join( params.destination, params.name ),
+                         symlinks = True )
+      else:
+        shutil.copytree( sourceURL,
+                         os.path.join( params.destination, params.name ),
+                         symlinks = True,
+                         ignore = shutil.ignore_patterns( '.svn', '.git', '.hg', '*.pyc', '*.pyo', 'CVS' ) )
+    except Exception, e:
       return S_ERROR( "Could not copy data from source URL: %s" % str( e ) )
     return S_OK()
 
@@ -156,19 +171,39 @@ class TarModuleCreator( object ):
       brCmr = "-b %s" % params.vcsBranch
     else:
       brCmr = ""
-    cmd = "hg clone %s '%s' '%s'" % ( brCmr,
-                                             params.sourceURL,
-                                             os.path.join( params.destination, params.name ) )
+    fDirName = os.path.join( params.destination, params.name )
+    cmd = "hg clone %s '%s' '%s.tmp1'" % ( brCmr,
+                                      params.sourceURL,
+                                      fDirName )
     gLogger.verbose( "Executing: %s" % cmd )
     if os.system( cmd ):
-      return S_ERROR( "Error while retrieving sources from git" )
-    for ftd in ( ".hg", ".hgignore" ):
-      ptd = os.path.join( params.destination, params.name, ftd )
-      if os.path.exists( ptd ):
-        if os.path.isdir( ptd ):
-          shutil.rmtree( ptd )
-        else:
-          os.unlink( ptd )
+      return S_ERROR( "Error while retrieving sources from hg" )
+
+    hgArgs = [ "--cwd '%s.tmp1'" % fDirName ]
+    if params.vcsPath:
+      hgArgs.append( "--include '%s/*'" % params.vcsPath )
+    hgArgs.append( "'%s.tmp2'" % fDirName )
+
+    cmd = "hg archive %s" % " ".join( hgArgs )
+    gLogger.verbose( "Executing: %s" % cmd )
+    exportRes = os.system( cmd )
+    shutil.rmtree( "%s.tmp1" % fDirName )
+
+    if exportRes:
+      return S_ERROR( "Error while exporting from hg" )
+
+    #TODO: tmp2/path to dest
+    source = "%s.tmp2" % fDirName
+    if params.vcsPath:
+      source = os.path.join( source, params.vcsPath )
+
+    if not os.path.isdir( source ):
+      shutil.rmtree( "%s.tmp2" % fDirName )
+      return S_ERROR( "Path %s does not exist in repo" )
+
+    os.rename( source, fDirName )
+    shutil.rmtree( "%s.tmp2" % fDirName )
+
     return S_OK()
 
   def __checkoutFromGit( self, params ):
@@ -176,19 +211,40 @@ class TarModuleCreator( object ):
       brCmr = "-b %s" % params.vcsBranch
     else:
       brCmr = ""
-    cmd = "git clone %s '%s' '%s'" % ( brCmr,
-                                       params.sourceURL,
-                                       os.path.join( params.destination, params.name ) )
+    fDirName = os.path.join( params.destination, params.name )
+    cmd = "git clone %s '%s' '%s.tmp'" % ( brCmr,
+                                           params.sourceURL,
+                                           os.path.join( params.destination, params.name ) )
     gLogger.verbose( "Executing: %s" % cmd )
     if os.system( cmd ):
       return S_ERROR( "Error while retrieving sources from git" )
-    for ftd in ( ".git", ".gitignore" ):
-      ptd = os.path.join( params.destination, params.name, ftd )
-      if os.path.exists( ptd ):
-        if os.path.isdir( ptd ):
-          shutil.rmtree( ptd )
-        else:
-          os.unlink( ptd )
+
+    gitArgs = [ '--format=tar' ]
+    tarArgs = [ "-C '%s'" % fDirName ]
+    if params.vcsBranch:
+      gitArgs.append( params.vcsBranch )
+    else:
+      gitArgs.append( "master" )
+
+    if params.vcsPath:
+      gitArgs.append( "'%s'" % params.vcsPath )
+      pathLevel = len( [ p for p in params.vcsPath.split( "/" ) if p.strip() ] )
+      tarArgs.append( '--strip-components=%d' % pathLevel )
+
+
+    if not os.path.isdir( fDirName ):
+      os.makedirs( fDirName )
+
+    cmd = "(cd '%s.tmp'; git archive --format=tar %s ) | tar x %s" % ( fDirName,
+                                                                       " ".join( gitArgs ),
+                                                                       " ".join( tarArgs ) )
+    gLogger.verbose( "Executing: %s" % cmd )
+    exportRes = os.system( cmd )
+    shutil.rmtree( "%s.tmp" % fDirName )
+
+    if exportRes:
+      return S_ERROR( "Error while exporting from git" )
+
     return S_OK()
 
   def __generateTarball( self, params ):
@@ -231,8 +287,8 @@ if __name__ == "__main__":
   Script.registerSwitch( "D:", "destination=", "Destination where to build the tar files", cliParams.setDestination )
   Script.registerSwitch( "n:", "name=", "Tarball name", cliParams.setName )
   Script.registerSwitch( "z:", "vcs=", "VCS to use to retrieve the sources (try to find out if not specified)", cliParams.setVCS )
-  Script.registerSwitch( "b:", "branch=", "VCS branch (if needed)", cliParams.setVCSBranch
-   )
+  Script.registerSwitch( "b:", "branch=", "VCS branch (if needed)", cliParams.setVCSBranch )
+  Script.registerSwitch( "p:", "path=", "VCS path (if needed)", cliParams.setVCSPath )
 
 
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -253,6 +309,6 @@ if __name__ == "__main__":
   tmc = TarModuleCreator()
   result = tmc.create( cliParams )
   if not result[ 'OK' ]:
-    gLogger.error( "Could not create the tarball: %s" % result[ 'Value' ] )
+    gLogger.error( "Could not create the tarball: %s" % result[ 'Message' ] )
     sys.exit( 1 )
   gLogger.always( "Tarball successfully created at %s" % result[ 'Value' ] )

@@ -270,11 +270,11 @@ class Distribution:
 
 #End of Distribution class
 
-gVersionRE = re.compile( "v([0-9]+)r([0-9]+)(?:p([0-9]+))?(?:-pre([0-9]+))?" )
+gVersionRE = re.compile( "v([0-9]+)(?:r([0-9]+))?(?:p([0-9]+))?(?:-pre([0-9]+))?" )
 def parseVersionString( version ):
   result = gVersionRE.match( version.strip() )
   if not result:
-    return {}
+    return False
   vN = []
   for e in result.groups():
     if e:
