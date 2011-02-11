@@ -7,50 +7,50 @@ __RCSID__ = "$Id:  $"
 import multiprocessing
 import sys
 import time
+import threading
 
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-#def S_OK():
-#  pass
-#def S_ERROR(m):
-#  return {}
+try:
+  from DIRAC.FrameworkSystem.Client.Logger import gLogger
+except:
+  gLogger = False
 
-PROCESS_IDLE = 0
-PROCESS_WORKING = 1
-PROCESS_NONE = 3
+try:
+  from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+except:
+  def S_OK( val = "" ):
+    return { 'OK' : True, 'Value' : val }
+  def S_ERROR( m ):
+    return { 'OK' : False, 'Message' : m }
 
-class WorkingProcess(multiprocessing.Process):
-  
-  def __init__( self, pendingQueue, resultsQueue, statusArray, processNumber, **kwargs ):
-    multiprocessing.Process.__init__( self, **kwargs )
+class WorkingProcess( multiprocessing.Process ):
+
+  def __init__( self, pendingQueue, resultsQueue ):
+    multiprocessing.Process.__init__( self )
     self.daemon = True
+    self.__working = multiprocessing.Value( 'i', 0 )
+    self.__alive = multiprocessing.Value( 'i', 1 )
     self.__pendingQueue = pendingQueue
     self.__resultsQueue = resultsQueue
-    self.__processAlive = True
-    self.__processNumber = processNumber 
-    self.__status = statusArray
-    self.__status[self.__processNumber] = PROCESS_IDLE
     self.start()
 
   def isWorking( self ):
-    return self.__status[self.__processNumber] == PROCESS_WORKING
+    return self.__working == 1
 
   def kill( self ):
-    self.__processAlive = False
-    self.terminate()
-    self.__status[self.__processNumber] = PROCESS_NONE
+    self.__alive = 0
 
   def run( self ):
-    while self.__processAlive:
-      print "Attempt to pick up task for process %s" % self.__processNumber
+    while self.__alive:
+      self.__working = 0
       task = self.__pendingQueue.get( block = True )
-      if not self.__processAlive:
+      self.__working = 1
+      if not self.__alive:
         self.__pendingQueue.put( task )
         break
-      self.__status[self.__processNumber] = PROCESS_WORKING
       task.process()
-      self.__status[self.__processNumber] = PROCESS_IDLE
       if task.hasCallback():
         self.__resultsQueue.put( task, block = True )
+
 
 class ProcessTask:
 
@@ -91,32 +91,29 @@ class ProcessTask:
     self.__done = True
     try:
       self.__taskResult = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
-    except Exception,x:
+    except Exception, x:
       self.__exceptionRaised = True
+
+      if not self.__exceptionCallback and gLogger:
+        gLogger.exception( "Exception in process of pool " )
+
       if self.__exceptionCallback:
-        result = S_ERROR('Exception')
-        result['Value'] = str(x)
+        result = S_ERROR( 'Exception' )
+        result['Value'] = str( x )
         result['Exc_info'] = sys.exc_info()[1]
         self.__taskException = result
-        
-class ProcessPool( multiprocessing.Process ):
 
-  def __init__( self, minSize = 2, maxSize=0, maxQueuedRequests = 10, strictLimits = True, **kwargs ):
-    multiprocessing.Process.__init__( self, **kwargs )
-    if minSize < 1:
-      self.__minSize = 1
-    else:
-      self.__minSize = minSize
-    if maxSize < self.__minSize:
-      self.__maxSize = self.__minSize
-    else:
-      self.__maxSize = maxSize
+class ProcessPool:
+
+  def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10, strictLimits = True ):
+    self.__minSize = max( 1, minSize )
+    self.__maxSize = max( self.__minSize, maxSize )
     self.__maxQueuedRequests = maxQueuedRequests
     self.__strictLimits = strictLimits
     self.__pendingQueue = multiprocessing.Queue( self.__maxQueuedRequests )
     self.__resultsQueue = multiprocessing.Queue( 0 )
-    self.__statusArray = multiprocessing.Array('I',self.__maxSize)
     self.__workingProcessList = []
+    self.__daemonProcess = False
     self.__spawnNeededWorkingProcesses()
 
   def getMaxSize( self ):
@@ -130,33 +127,21 @@ class ProcessPool( multiprocessing.Process ):
     for p in self.__workingProcessList:
       if p.isWorking():
         count += 1
-    return count     
-  
+    return count
+
   def getNumIdleProcesses( self ):
     count = 0
     for p in self.__workingProcessList:
       if not p.isWorking():
         count += 1
-    return count   
+    return count
 
   def getFreeSlots( self ):
-    return self.getNumIdleProcesses()
+    return max( 0, self.__maxSize - self.getNumWorkingProcesses() )
 
   def __spawnWorkingProcess( self ):
-    # Get the process number
-    nProcess = -1
-    for i in range(len(self.__statusArray)):
-      if self.__statusArray[i] == PROCESS_NONE:
-        nProcess = -1
-        break
-    if nProcess == -1:
-      nProcess = len(self.__workingProcessList)  
-    p = WorkingProcess( self.__pendingQueue, 
-                        self.__resultsQueue, 
-                        self.__statusArray, 
-                        nProcess ) 
-    self.__workingProcessList.append( p )
-    
+    self.__workingProcessList.append( WorkingProcess( self.__pendingQueue, self.__resultsQueue ) )
+
   def __killWorkingProcess( self ):
     if self.__strictLimits:
       for i in range( len( self.__workingProcessList ) ):
@@ -168,12 +153,14 @@ class ProcessPool( multiprocessing.Process ):
     else:
       self.__workingProcessList[0].kill()
       del( self.__workingProcessList[0] )
-  
+
   def __spawnNeededWorkingProcesses( self ):
     while len( self.__workingProcessList ) < self.__minSize:
       self.__spawnWorkingProcess()
-    while self.getNumIdleProcesses() == 0 and len( self.__workingProcessList ) < self.__maxSize:
+
+    while self.hasPendingTasks() and self.getNumIdleProcesses() == 0 and len( self.__workingProcessList ) < self.__maxSize:
       self.__spawnWorkingProcess()
+      time.sleep( 0.1 )
 
   def __killExceedingWorkingProcesses( self ):
     toKill = len( self.__workingProcessList ) - self.__maxSize
@@ -191,7 +178,7 @@ class ProcessPool( multiprocessing.Process ):
     except multiprocessing.Queue.Full:
       return S_ERROR( "Queue is full" )
     # Throttle a bit to allow task state propagation
-    time.sleep(0.01)
+    time.sleep( 0.01 )
     return S_OK()
 
   def createAndQueueTask( self,
@@ -218,7 +205,7 @@ class ProcessPool( multiprocessing.Process ):
     processed = 0
     while True:
       self.__spawnNeededWorkingProcesses()
-      time.sleep(0.1)
+      time.sleep( 0.1 )
       if self.__resultsQueue.empty():
         self.__killExceedingWorkingProcesses()
         break
@@ -234,26 +221,29 @@ class ProcessPool( multiprocessing.Process ):
       self.processResults()
       time.sleep( 0.1 )
     self.processResults()
-    
-  def daemonize( self ):
-    self.daemon = True
-    self.start()
 
-  def run( self ):
+  def daemonize( self ):
+    if self.__daemonProcess:
+      return
+    self.__daemonProcess = threading.Thread( target = self.__backgroundProcess )
+    self.__daemonProcess.setDaemon( 1 )
+    self.__daemonProcess.start()
+
+  def __backgroundProcess( self ):
     while True:
       self.processResults()
-      time.sleep( 1 )  
-    
+      time.sleep( 1 )
+
 if __name__ == "__main__":
-  
+
   import random
   import time
 
   def doSomething( number, r ):
     r = random.randint( 1, 5 )
-    print "sleeping %s secs for task number %s" % (r,number)
+    print "sleeping %s secs for task number %s" % ( r, number )
     time.sleep( r )
-    
+
     result = random.random() * number
     if result > 3:
       print "raising exception for task %s" % number
@@ -266,22 +256,25 @@ if __name__ == "__main__":
 
   def showException( task, exc_info ):
     print "Exception %s from %s" % ( exc_info, task )
-    
-  pp = ProcessPool(20)
-  
+
+  pp = ProcessPool( 1, 20 )
+  pp.daemonize()
+
   count = 0
   rmax = 0
   while count < 20:
-    if pp.getFreeSlots() > 0 and not pp.hasPendingTasks():
+    print "FREE SLOTS", pp.getFreeSlots()
+    print "PENDING", pp.hasPendingTasks()
+    if pp.getFreeSlots() > 0:
       print "spawning task %d" % count
       r = random.randint( 1, 5 )
       if r > rmax: rmax = r
-      result = pp.createAndQueueTask(doSomething,args=(count,r,),callback=showResult,exceptionCallback=showException)
+      result = pp.createAndQueueTask( doSomething, args = ( count, r, ), callback = showResult, exceptionCallback = showException )
       count += 1
     else:
-      print "no free slots"  
-      time.sleep(1)
-      
+      print "no free slots"
+      time.sleep( 1 )
+
   pp.processAllResults()
-  
-  print "Max sleep", rmax      
+
+  print "Max sleep", rmax
