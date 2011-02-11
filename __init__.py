@@ -5,7 +5,7 @@
    The LHCb distributed data production and analysis system.
 
    DIRAC is a software framework for distributed computing which
-   allows to integrate various computing resources in a single 
+   allows to integrate various computing resources in a single
    system. At the same time it integrates all kinds of computing
    activities like Monte Carlo simulations, data processing, or
    final user analysis.
@@ -24,7 +24,7 @@
     - Resources
     - Transformation
 
-    Which are used by other system providing functionality to 
+    Which are used by other system providing functionality to
     the end user:
     - DataManagement
     - Interfaces
@@ -39,10 +39,10 @@
     - preVersion:    DIRAC Pre release number
     - version:       DIRAC version string
     - buildVersion:  DIRAC version string
-    
+
     - errorMail:     mail address for important errors
     - alarmMail:     mail address for important alarms
-    
+
     - pythonPath:    absolute real path to the directory that contains this file
     - rootPath:      absolute real path to the parent of DIRAC.pythonPath
 
@@ -51,14 +51,14 @@
 
     It loads Modules from :
     - DIRAC.Core.Utililies
-    
+
     It loads:
     - S_OK:           OK return structure
     - S_ERROR:        ERROR return structure
     - gLogger:        global Logger object
     - gConfig:        global Config object
     - gMonitor:       global Monitor object
-   
+
     It defines the following functions:
     - abort:          aborts execution
     - exit:           finish execution using callbacks
@@ -75,8 +75,8 @@ import sys, os, platform
 # Define Version
 
 majorVersion = 5
-minorVersion = 11
-patchLevel = 6
+minorVersion = 12
+patchLevel = 0
 preVersion = 0
 
 version = "v%sr%s" % ( majorVersion, minorVersion )
