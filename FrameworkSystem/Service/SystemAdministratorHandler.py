@@ -11,7 +11,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
-
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import InstallTools
 
 cmDB = None
@@ -203,9 +203,16 @@ class SystemAdministratorHandler( RequestHandler ):
     if result['OK'] and result['Value'][0] == 0:
       installOracleClient = True
 
+    # Check if there are extensions
+    extensionList = getCSExtensions()
     cmdList = ['dirac-install', '-r', version, '-t', 'server', '-P', rootPath, '--useVersionsDir' ]
+    if extensionList:
+      cmdList += ['-e',','.join(extensionList)]
+      
+    # Are grid middleware bindings required ?   
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
+      
     result = systemCall( 0, cmdList )
     if not result['OK']:
       return result
