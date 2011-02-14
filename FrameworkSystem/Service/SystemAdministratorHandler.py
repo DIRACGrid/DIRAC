@@ -203,9 +203,12 @@ class SystemAdministratorHandler( RequestHandler ):
     if result['OK'] and result['Value'][0] == 0:
       installOracleClient = True
 
+    cmdList = ['dirac-install', '-r', version, '-t', 'server', '-P', rootPath, '--useVersionsDir' ]
+    
     # Check if there are extensions
     extensionList = getCSExtensions()
-    cmdList = ['dirac-install', '-r', version, '-t', 'server', '-P', rootPath, '--useVersionsDir' ]
+    if os.path.exists( rootPath+'/pro/Web' ):
+      extensionList.append('Web')  
     if extensionList:
       cmdList += ['-e',','.join(extensionList)]
       
