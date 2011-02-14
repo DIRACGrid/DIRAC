@@ -6,6 +6,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
+import os
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
