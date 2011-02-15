@@ -33,7 +33,7 @@ class BundleManager:
       for bId in dB:
         dirsToBundle[ bId ] = List.fromChar( dB[ bId ] )
     if gConfig.getValue( "%s/BundleCAs" % self.__csPath, True ):
-      dirsToBundle[ 'CAs' ] = [ "%s/*.0" % Locations.getCAsLocation(), "%s/*.signing_policy" % Locations.getCAsLocation() ]
+      dirsToBundle[ 'CAs' ] = [ "%s/*.0" % Locations.getCAsLocation(), "%s/*.signing_policy" % Locations.getCAsLocation(), "%s/*.pem" % Locations.getCAsLocation() ]
     if gConfig.getValue( "%s/BundleCRLs" % self.__csPath, True ):
       dirsToBundle[ 'CRLs' ] = [ "%s/*.r0" % Locations.getCAsLocation() ]
     return dirsToBundle
