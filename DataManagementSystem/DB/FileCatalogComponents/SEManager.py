@@ -166,7 +166,9 @@ class SEManagerDB(SEManagerBase):
     seDict = result['Value']
     self.db.seDefinitions[seID]['SEDict'] = seDict
     if seDict:
-      result = pfnunparse(seDict)
+      tmpDict = dict(seDict)
+      tmpDict['FileName'] = ''
+      result = pfnunparse(tmpDict)
       if result['OK']:
         self.db.seDefinitions[seID]['SEDict']['PFNPrefix'] = result['Value'] 
     self.db.seDefinitions[seID]['LastUpdate'] = time.time()
@@ -183,4 +185,3 @@ class SEManagerCS(SEManagerBase):
   def getSEDefinition(self,se):
     #TODO Think about using a cache for this information
     return gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)
-
