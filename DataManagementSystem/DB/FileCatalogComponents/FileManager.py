@@ -273,7 +273,6 @@ class FileManager(FileManagerBase):
         continue
       seID = res['Value']
       insertTuples.append((fileID,seID))
-           
     if not master:
       res = self._getRepIDsForReplica(insertTuples, connection=connection)
       if not res['OK']:
@@ -282,9 +281,8 @@ class FileManager(FileManagerBase):
         for seID,repID in repDict.items():
           successful[fileIDLFNs[fileID]] = True
           insertTuples.remove((fileID,seID))
-         
-    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (','.join(["(%d,%d,%d)" % (tuple[0],tuple[1],statusID) for tuple in insertTuples]))   
-    res = self.db._update(req,connection)    
+    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (','.join(["(%d,%d,%d)" % (tuple[0],tuple[1],statusID) for tuple in insertTuples]))
+    res = self.db._update(req,connection)
     if not res['OK']:
       return res
     res = self._getRepIDsForReplica(insertTuples, connection=connection)
@@ -505,8 +503,8 @@ class FileManager(FileManagerBase):
   #
 
   def _getFileReplicas(self,fileIDs,fields_input=['PFN'],connection=False):
-    
-    
+    """ Get replicas for the given list of files specified by their fileIDs
+    """
     fields = list(fields_input)
     connection = self._getConnection(connection)
     res = self.__getFileIDReplicas(fileIDs,connection=connection)
@@ -516,35 +514,40 @@ class FileManager(FileManagerBase):
     if fileIDDict:
       if 'Status' in fields:
         fields.remove('Status')
-      req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % (intListToString(fields),intListToString(fileIDDict.keys()))
-      res = self.db._query(req,connection)
-      if not res['OK']:
-        return res
-      repIDDict = {}
-      for tuple in res['Value']:
-        repID = tuple[0]
-        repIDDict[repID] = dict(zip(fields,tuple[1:])) 
-        statusID = fileIDDict[repID]['Status']
-        res = self._getIntStatus(statusID,connection=connection)
+      repIDDict = {}  
+      if fields:  
+        req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % (intListToString(fields),intListToString(fileIDDict.keys()))
+        res = self.db._query(req,connection)
         if not res['OK']:
-          continue
-        repIDDict[repID]['Status'] = res['Value']
+          return res
+        for tuple in res['Value']:
+          repID = tuple[0]
+          repIDDict[repID] = dict(zip(fields,tuple[1:])) 
+          statusID = fileIDDict[repID]['Status']
+          res = self._getIntStatus(statusID,connection=connection)
+          if not res['OK']:
+            continue
+          repIDDict[repID]['Status'] = res['Value']
+      else:
+        for repID in fileIDDict:
+          statusID = fileIDDict[repID]['Status']
+          res = self._getIntStatus(statusID,connection=connection)
+          if not res['OK']:
+            continue
+          repIDDict[repID] = {'Status' : res['Value'] }  
     seDict = {}
     replicas = {}
     for repID in fileIDDict.keys():
       fileID = fileIDDict[repID]['FileID']
       seID =  fileIDDict[repID]['SEID']
-      if not replicas.has_key(fileID):
-        replicas[fileID]= {}
-      if not repID in repIDDict.keys():
-        continue
-      if not seID in seDict.keys():
+      replicas.setdefault(fileID,{})
+      if not seID in seDict:
         res = self.db.seManager.getSEName(seID)
         if not res['OK']:
           continue
         seDict[seID] = res['Value']
       seName = seDict[seID]
-      replicas[fileID][seName] = repIDDict[repID]
+      replicas[fileID][seName] = repIDDict.get(repID,{})
     for fileID in fileIDs:
       if not replicas.has_key(fileID):
         replicas[fileID] = {}
