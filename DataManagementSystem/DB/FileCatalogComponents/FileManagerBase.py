@@ -15,6 +15,7 @@ class FileManagerBase:
 
   def __init__( self, database = None ):
     self.db = database
+    self.statusDict = {}
 
   def _getConnection( self, connection ):
     if connection:
@@ -792,13 +793,16 @@ class FileManagerBase:
             replicas[lfn][se] = pfn
     return S_OK( {'Successful':replicas, 'Failed':failed} )
 
-  def _resolvePFN( self, lfn, se ):
-    resSE = self.db.seManager.getSEDefinition( se )
+  def _resolvePFN(self,lfn,se):
+    resSE = self.db.seManager.getSEDefinition(se)
     if not resSE['OK']:
       return resSE
-    pfnDict = dict( resSE['Value']['SEDict'] )
-    pfnDict['FileName'] = lfn
-    return pfnunparse( pfnDict )
+    pfnDict = dict(resSE['Value']['SEDict'])
+    if "PFNPrefix" in pfnDict:
+      return S_OK(pfnDict['PFNPrefix']+lfn)
+    else:
+      pfnDict['FileName'] = lfn
+      return pfnunparse(pfnDict)
 
   def getReplicaStatus( self, lfns, connection = False ):
     """ Get replica status from the catalog """
@@ -844,15 +848,20 @@ class FileManagerBase:
       return res
     return S_OK( res['lastRowId'] )
 
-  def _getIntStatus( self, statusID, connection = False ):
-    connection = self._getConnection( connection )
-    req = "SELECT Status FROM FC_Statuses WHERE StatusID = %d" % statusID
-    res = self.db._query( req, connection )
+  def _getIntStatus(self,statusID,connection=False):
+    if statusID in self.statusDict:
+      return S_OK(self.statusDict[statusID])
+    connection = self._getConnection(connection)
+    req = "SELECT StatusID,Status FROM FC_Statuses" 
+    res = self.db._query(req,connection)
     if not res['OK']:
       return res
     if res['Value']:
-      return S_OK( res['Value'][0][0] )
-    return S_OK( 'Unknown' )
+      for row in res['Value']:
+        self.statusDict[int(row[0])] = row[1]
+    if statusID in self.statusDict:
+      return S_OK(self.statusDict[statusID])
+    return S_OK('Unknown')
 
   def getFilesInDirectory( self, dirID, path, verbose = False, connection = False ):
     connection = self._getConnection( connection )
