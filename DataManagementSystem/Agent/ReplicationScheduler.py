@@ -74,6 +74,7 @@ class ReplicationScheduler( AgentModule ):
 
     self.strategyHandler = StrategyHandler( bandwidths, channels, self.section )
 
+    processedRequests = []
     requestsPresent = True
     while requestsPresent:
 
@@ -103,6 +104,20 @@ class ReplicationScheduler( AgentModule ):
       logStr = 'ReplicationScheduler._execute: Parsing Request %s.' % ( requestName )
       gLogger.info( logStr )
       oRequest = RequestContainer( requestString )
+      res = oRequest.getAttribute( 'RequestID' )
+      if not res['OK']:
+        gLogger.error( 'ReplicationScheduler._execute: Failed to get requestID.', res['Message'] )
+        return S_ERROR( 'ReplicationScheduler._execute: Failed to get number of sub-requests.' )
+      requestID = res['Value']
+      if requestID in processedRequests:
+        # Break the loop once we have iterated once over all requests 
+        res = self.RequestDB.updateRequest( requestName, requestString )
+        if not res['OK']:
+          gLogger.error( "Failed to update request", "%s %s" % ( requestName, res['Message'] ) )
+        return S_OK()
+
+      processedRequests.append( requestID )
+
       res = oRequest.getNumSubRequests( 'transfer' )
       if not res['OK']:
         gLogger.error( 'ReplicationScheduler._execute: Failed to get number of sub-requests.', res['Message'] )
@@ -269,11 +284,11 @@ class ReplicationScheduler( AgentModule ):
               errStr = res['Message']
               gLogger.error( "ReplicationScheduler._execute: Failed to add File to Channel." , "%s %s" % ( fileID, channelID ) )
               return S_ERROR( errStr )
-            res = self.TransferDB.addFileRegistration(channelID, fileID,lfn,targetSURL,hopDestSE)
+            res = self.TransferDB.addFileRegistration( channelID, fileID, lfn, targetSURL, hopDestSE )
             if not res['OK']:
               errStr = res['Message']
               gLogger.error( "ReplicationScheduler._execute: Failed to add File registration." , "%s %s" % ( fileID, channelID ) )
-              result  = self.TransferDB.removeFileFromChannel(channelID, fileID)
+              result = self.TransferDB.removeFileFromChannel( channelID, fileID )
               if not result['OK']:
                 errStr += result['Message']
                 gLogger.error( "ReplicationScheduler._execute: Failed to remove File." , "%s %s" % ( fileID, channelID ) )
