@@ -89,7 +89,8 @@ class Job:
                       #'BannedSites':  '!Member(other.Site,BannedSites)', #doesn't work unfortunately
                       'BannedSites':  'other.Site!="VALUE"',
                       'SystemConfig': 'Member("VALUE",other.CompatiblePlatforms)'}
-
+    ##Add member to handle Parametric jobs
+    self.parametric = {}
     self.script = script
     if not script:
       self.workflow = Workflow()
@@ -232,6 +233,42 @@ class Job:
     return S_OK()
 
   #############################################################################
+  def setParametricInputSandbox( self, files ):
+    """Helper function.
+
+       Specify input sandbox files to used as parameters in the Parametric jobs. The possibilities are identical to the setInputSandbox.
+       
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job.setParametricInputSandbox(['LFN:/Some_file','LFN:/Some_other_file'])
+
+       @param files: Logical File Names
+       @type files: Single LFN string or list of LFNs
+    """
+    kwargs = {'files':files}
+    if type( files ) == list and len( files ):
+      for file in files:
+        if not file.lower().count("lfn:"):
+          return self._reportError('All files should be LFNs', **kwargs )
+      resolvedFiles = self._resolveInputSandbox( files )
+      fileList = string.join( resolvedFiles, ";" )
+      self.parametric['InputSandbox']=fileList
+      #self.sandboxFiles=resolvedFiles
+    elif type( files ) == type( " " ):
+      if not files.lower().count("lfn:"):
+        return self._reportError('All files should be LFNs', **kwargs )
+      resolvedFiles = self._resolveInputSandbox( [files] )
+      fileList = string.join( resolvedFiles, ";" )
+      self.parametric['InputSandbox']=fileList
+      #self.sandboxFiles = [files]
+    else:
+      return self._reportError( 'Expected file string or list of files for input sandbox contents', **kwargs )
+    
+    return S_OK()
+
+  #############################################################################
   def setOutputSandbox( self, files ):
     """Helper function.
 
@@ -290,7 +327,35 @@ class Job:
       return self._reportError( 'Expected lfn string or list of lfns for input data', **kwargs )
 
     return S_OK()
+  
+  #############################################################################
+  def setParametricInputData( self, lfns ):
+    """Helper function.
 
+       Specify input data by Logical File Name (LFN) to be used as a parameter in a parametric job
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job.setParametricInputData(['/lhcb/production/DC04/v2/DST/00000742_00003493_10.dst'])
+
+       @param lfns: Logical File Names
+       @type lfns: Single LFN string or list of LFNs
+    """
+    if type( lfns ) == list and len( lfns ):
+      for i in xrange( len( lfns ) ):
+        lfns[i] = lfns[i].replace( 'LFN:', '' )
+      inputData = map( lambda x: 'LFN:' + x, lfns )
+      inputDataStr = string.join( inputData, ';' )
+      self.parametric['InputData']=inputDataStr
+    elif type( lfns ) == type( ' ' ):  #single LFN
+      self.parametric['InputData']=lfns
+    else:
+      kwargs = {'lfns':lfns}
+      return self._reportError( 'Expected lfn string or list of lfns for parametric input data', **kwargs )
+    
+    return S_OK()
+  
   #############################################################################
   def setInputDataPolicy( self, policy, dataScheduling = True ):
     """Helper function.
@@ -1011,6 +1076,32 @@ class Job:
         paramsDict['InputData'] = {}
         paramsDict['InputData']['value'] = extraFiles
         paramsDict['InputData']['type'] = 'JDL'
+
+    ###Here handle the Parametric values
+    if self.parametric:
+      if self.parametric.has_key('InputData'):
+        if paramsDict.has_key('InputData'):
+          if paramsDict['InputData']['value']:
+            currentFiles = paramsDict['InputData']['value']+";%s"
+            paramsDict['InputData']['value'] =currentFiles
+          else:
+            paramsDict['InputData'] = {}
+            paramsDict['InputData']['value'] = "%s"
+            paramsDict['InputData']['type'] = 'JDL'
+        self.parametric['files']=  self.parametric['InputData']
+      elif self.parametric.has_key('InputSandbox'):
+        if paramsDict.has_key( 'InputSandbox' ):
+          currentFiles = paramsDict['InputSandbox']['value']+";%s"
+          paramsDict['InputSandbox']['value'] = currentFiles
+        else:
+          paramsDict['InputSandbox'] = {}
+          paramsDict['InputSandbox']['value'] = '%s'
+          paramsDict['InputSandbox']['type'] = 'JDL'
+        self.parametric['files']=  self.parametric['InputSandbox']
+      if self.parametric.has_key('files'):   
+        paramsDict['Parameters']={}
+        paramsDict['Parameters']['value']=self.parametric['files']
+        paramsDict['Parameters']['type'] = 'JDL'
 
     #Add any JDL parameters to classad obeying lists with ';' rule
     requirements = False
