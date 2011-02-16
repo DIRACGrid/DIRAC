@@ -21,7 +21,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
 
 #############################################################################
-class FileCatalogDB(DB, DirectoryMetadata):
+class FileCatalogDB(DB):
 
   def __init__( self, maxQueueSize=10 ):
     """ Standard Constructor
