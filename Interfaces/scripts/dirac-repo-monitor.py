@@ -22,7 +22,7 @@ args = Script.getPositionalArgs()
 if len( args ) != 1:
   Script.showHelp()
 
-repoLocation = args[1]
+repoLocation = args[0]
 from DIRAC.Interfaces.API.Dirac import Dirac
 dirac = Dirac( WithRepo = True, RepoLocation = repoLocation )
 
