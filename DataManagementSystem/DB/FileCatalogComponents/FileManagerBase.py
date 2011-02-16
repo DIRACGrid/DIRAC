@@ -788,7 +788,7 @@ class FileManagerBase:
         for se, repDict in seDict.items():
           repStatus = repDict['Status']
           if ( repStatus in self.db.visibleStatus ) or ( allStatus ):
-            pfn = repDict['PFN']
+            pfn = repDict.get('PFN','')
             if not pfn or self.db.lfnPfnConvention:
               res = self._resolvePFN( lfn, se )
               if res['OK']:
