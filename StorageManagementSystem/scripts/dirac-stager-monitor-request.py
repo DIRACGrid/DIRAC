@@ -15,7 +15,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... Request ...' % Script.scriptName,
                                      'Arguments:',
-                                     '  Request:  ID of the Stage request in the StorageManger' ] ) )
+                                     '  Request:  ID of the Stage request in the StorageManager' ] ) )
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
