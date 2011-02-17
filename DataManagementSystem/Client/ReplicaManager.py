@@ -1326,7 +1326,7 @@ class ReplicaManager( CatalogToStorage ):
       gDataStoreClient.addRegister( oDataOperation )
       startTime = time.time()
       gDataStoreClient.commit()
-      gLogger.info( 'ReplicaManger.putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+      gLogger.info( 'ReplicaManager.putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
       gLogger.error( errStr, "%s: %s" % ( file, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     successful[lfn] = {'put': putTime}
@@ -1357,7 +1357,7 @@ class ReplicaManager( CatalogToStorage ):
     gDataStoreClient.addRegister( oDataOperation )
     startTime = time.time()
     gDataStoreClient.commit()
-    gLogger.info( 'ReplicaManger.putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
+    gLogger.info( 'ReplicaManager.putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
