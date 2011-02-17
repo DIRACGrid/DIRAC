@@ -308,6 +308,7 @@ class TransformationDB( DB ):
     """
     resultList = []
     # Define the general filter first
+    self.database_name = self.__class__.__name__
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
     value = gConfig.getValue( '/Operations/InputDataFilter/%s/%sFilter' % ( setup, self.database_name ), '' )
     if value:
@@ -1333,7 +1334,8 @@ class TransformationDB( DB ):
       return res
     transType = res['Value']['Type']
     transID = res['Value']['TransformationID']
-    if transType.lower() not in ['simulation', 'mcsimulation']:
+    extendableProds = gConfig.getValue('/Operations/Production/%s/ExtendableTransfTypes'%self.__class__.__name__,['simulation', 'mcsimulation'])
+    if transType.lower() not in extendableProds:
       return S_ERROR( 'Can not extend non-SIMULATION type production' )
     taskIDs = []
     for task in range( nTasks ):
