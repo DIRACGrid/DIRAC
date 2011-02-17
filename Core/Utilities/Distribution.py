@@ -286,7 +286,7 @@ def parseVersionString( version ):
 def writeVersionToInit( rootPath, version ):
   verTup = parseVersionString( version )
   if not verTup:
-    return S_ERROR( "Invalid version string" )
+    return S_OK()
   initFile = os.path.join( rootPath, "__init__.py" )
   if not os.path.isfile( initFile ):
     return S_OK()
