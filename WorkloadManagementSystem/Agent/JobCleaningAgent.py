@@ -18,7 +18,6 @@ import DIRAC.Core.Utilities.Time as Time
 REMOVE_STATUS_DELAY = { 'Done':14,
                         'Killed':7,
                         'Failed':14 }
-PRODUCTION_TYPES = ['DataReconstruction', 'DataStripping', 'MCSimulation', 'Merge', 'production']
 
 class JobCleaningAgent( AgentModule ):
   """
@@ -40,7 +39,7 @@ class JobCleaningAgent( AgentModule ):
     self.jobDB = JobDB()
     self.taskQueueDB = TaskQueueDB()
     # self.sandboxDB = SandboxDB( 'SandboxDB' )
-
+    self.prod_types = self.am_getOption('ProductionTypes',['DataReconstruction', 'DataStripping', 'MCSimulation', 'Merge', 'production'])
     return S_OK()
 
   def __getAllowedJobTypes( self ):
@@ -50,7 +49,7 @@ class JobCleaningAgent( AgentModule ):
       return result
     cleanJobTypes = []
     for jobType in result[ 'Value' ]:
-      if jobType not in PRODUCTION_TYPES:
+      if jobType not in self.prod_types:
         cleanJobTypes.append( jobType )
     self.log.notice( "JobTypes to clean %s" % cleanJobTypes )
     return S_OK( cleanJobTypes )
