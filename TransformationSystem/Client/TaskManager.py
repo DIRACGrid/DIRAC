@@ -97,7 +97,7 @@ class RequestTasks(TaskBase):
         taskDict[taskID]['Success'] = True
         submitted +=1
       else:      
-        self.log.error("Failed to submit task to WMS",res['Message'])
+        self.log.error("Failed to submit task to RMS",res['Message'])
         taskDict[taskID]['Success'] = False
         failed += 1
     self.log.info('submitTasks: Submitted %d tasks to RMS in %.1f seconds' % (submitted,time.time()-startTime))
