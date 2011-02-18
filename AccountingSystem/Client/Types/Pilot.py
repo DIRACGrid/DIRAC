@@ -2,7 +2,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
-from DIRAC                                                  import gConfig
 
 class Pilot( BaseAccountingType ):
 
