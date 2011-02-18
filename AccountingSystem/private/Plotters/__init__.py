@@ -1,5 +1,5 @@
 import re
-from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
+from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
 from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
 
 class PlottersList:
@@ -7,7 +7,7 @@ class PlottersList:
   def __init__( self ):
     objectsLoaded = loadObjects( "AccountingSystem/private/Plotters",
                                  re.compile( ".*[a-z1-9]Plotter\.py$" ),
-                                 BaseReporter )
+                                 myBaseReporter )
     self.__plotters = {}
     for objName in objectsLoaded:
       self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]

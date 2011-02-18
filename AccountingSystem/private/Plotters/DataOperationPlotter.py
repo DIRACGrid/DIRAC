@@ -1,8 +1,7 @@
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
-from DIRAC.Core.Utilities import Time
 
 class DataOperationPlotter( BaseReporter ):
 
@@ -128,7 +127,7 @@ class DataOperationPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    dataDict = self._accumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
                                                                               self._getAccumulationMaxValue( dataDict ),
                                                                               "bytes" )

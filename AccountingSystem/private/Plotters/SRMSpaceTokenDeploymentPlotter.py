@@ -1,8 +1,7 @@
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.Types.SRMSpaceTokenDeployment import SRMSpaceTokenDeployment
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
-from DIRAC.Core.Utilities import Time
 
 class SRMSpaceTokenDeploymentPlotter( BaseReporter ):
 

@@ -1,9 +1,9 @@
-import time, copy
+import time, copy, types
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.DataCache import gDataCache
 from DIRAC.Core.Utilities import Time
-from DIRAC.AccountingSystem.private.Plots import *
+from DIRAC.AccountingSystem.private.Plots import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
 
 class BaseReporter( DBUtils ):
 
@@ -33,10 +33,16 @@ class BaseReporter( DBUtils ):
              'files' : ( ( 'files', 1, 1000 ), ( 'kfiles', 10 ** 3, 1000 ), ( 'Mfiles', 10 ** 6, 1 ) )
            }
 
+  # To be defined in the derived classes
+  _typeKeyFields = []
+  _typeName = ''
 
-  def __init__( self, db, setup, extraArgs = {} ):
+  def __init__( self, db, setup, extraArgs = None ):
     DBUtils.__init__( self, db, setup )
-    self._extraArgs = extraArgs
+    if type( extraArgs ) == types.DictType:
+      self._extraArgs = extraArgs
+    else:
+      self._extraArgs = {}
     reportsRevMap = {}
     for attr in dir( self ):
       if attr.find( "_report" ) == 0:
@@ -55,17 +61,17 @@ class BaseReporter( DBUtils ):
   def _translateGrouping( self, grouping ):
     return ( "%s", [ grouping ] )
 
-  def _averageConsolidation( self, a, b ):
-    if b == 0:
+  def _averageConsolidation( self, total, count ):
+    if count == 0:
       return 0
     else:
-      return float( a ) / float( b )
+      return float( total ) / float( count )
 
-  def _efficiencyConsolidation( self, a, b ):
-    if b == 0:
+  def _efficiencyConsolidation( self, total, count ):
+    if count == 0:
       return 0
     else:
-      return ( float( a ) / float( b ) ) * 100.0
+      return ( float( total ) / float( count ) ) * 100.0
 
   def generate( self, reportRequest ):
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
@@ -105,7 +111,7 @@ class BaseReporter( DBUtils ):
     funcName = "_report%s" % reportRequest[ 'reportName' ]
     try:
       funcObj = getattr( self, funcName )
-    except Exception, e:
+    except:
       return S_ERROR( "Report %s is not defined" % reportRequest[ 'reportName' ] )
     return gDataCache.getReportData( reportRequest, reportHash, funcObj )
 
@@ -113,7 +119,7 @@ class BaseReporter( DBUtils ):
     funcName = "_plot%s" % reportRequest[ 'reportName' ]
     try:
       funcObj = getattr( self, funcName )
-    except Exception, e:
+    except:
       return S_ERROR( "Plot function for report %s is not defined" % reportRequest[ 'reportName' ] )
     return gDataCache.getReportPlot( reportRequest, reportHash, reportData, funcObj )
 
@@ -169,7 +175,7 @@ class BaseReporter( DBUtils ):
       dataDict[ timeKey ] = [ functor( *dataDict[ timeKey ] ) ]
     return dataDict
 
-  def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict, reduceFunc = False ):
+  def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict = None, reduceFunc = False ):
     condDict = {}
     #Make safe selections
     for keyword in self._typeKeyFields:
