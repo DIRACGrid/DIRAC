@@ -71,32 +71,32 @@ class CliParams:
 
 def logDEBUG( msg ):
   if cliParams.debug:
-    for line in msg.split( "\n" ):
-      print "%s UTC dirac-pilot [DEBUG] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+    for _line in msg.split( "\n" ):
+      print "%s UTC dirac-pilot [DEBUG] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), _line )
     sys.stdout.flush()
 
 def logERROR( msg ):
-  for line in msg.split( "\n" ):
-    print "%s UTC dirac-pilot [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+  for _line in msg.split( "\n" ):
+    print "%s UTC dirac-pilot [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), _line )
   sys.stdout.flush()
 
 def logINFO( msg ):
-  for line in msg.split( "\n" ):
-    print "%s UTC dirac-pilot [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+  for _line in msg.split( "\n" ):
+    print "%s UTC dirac-pilot [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), _line )
   sys.stdout.flush()
 
 def executeAndGetOutput( cmd ):
   try:
     import subprocess
-    p = subprocess.Popen( "%s" % cmd, shell = True, stdout = subprocess.PIPE,
+    _p = subprocess.Popen( "%s" % cmd, shell = True, stdout = subprocess.PIPE,
                           stderr = subprocess.PIPE, close_fds = True )
-    outData = p.stdout.read().strip()
-    returnCode = p.wait()
+    outData = _p.stdout.read().strip()
+    returnCode = _p.wait()
   except ImportError:
     import popen2
-    p3 = popen2.Popen3( "%s" % cmd )
-    outData = p3.fromchild.read().strip()
-    returnCode = p3.wait()
+    _p3 = popen2.Popen3( "%s" % cmd )
+    outData = _p3.fromchild.read().strip()
+    returnCode = _p3.wait()
   return ( returnCode, outData )
 
 # Version print
@@ -120,8 +120,8 @@ rootPath = os.getcwd()
 
 installScriptName = 'dirac-install.py'
 
-for dir in ( pilotRootPath, rootPath ):
-  installScript = os.path.join( dir, installScriptName )
+for path in ( pilotRootPath, rootPath ):
+  installScript = os.path.join( path, installScriptName )
   if os.path.isfile( installScript ):
     break
 
@@ -149,11 +149,10 @@ os.chmod( installScript, stat.S_IRWXU )
 # Option parsing
 ###
 
-"""
- Flags not migrated from old dirac-pilot
-   -r --repository=<rep>       Use <rep> as cvs repository              <--Not done
-   -C --cvs                    Retrieve from CVS (implies -b) <--Not done
-"""
+
+# Flags not migrated from old dirac-pilot
+#   -r --repository=<rep>       Use <rep> as cvs repository              <--Not done
+#   -C --cvs                    Retrieve from CVS (implies -b) <--Not done
 
 cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 'd', 'debug', 'Set debug flag' ),
@@ -278,9 +277,9 @@ if cliParams.pythonVersion:
 
 pilotRef = 'Unknown'
 
-# Pilot reference is specifed at submission
+# Pilot reference is specified at submission
 if cliParams.pilotReference:
-  cliParams.flavor = 'DIRAC'
+  cliParams.flavour = 'DIRAC'
   pilotRef = cliParams.pilotReference
 
 # Take the reference from the Torque batch system  
@@ -378,6 +377,8 @@ sys.path.insert( 0, diracScriptsPath )
 # Configure DIRAC
 ###
 
+# Instead of dumping the Full configuration, include all Server in dirac.cfg
+configureOpts.append( '-I' )
 configureCmd = "%s %s" % ( os.path.join( diracScriptsPath, "dirac-configure" ), " ".join( configureOpts ) )
 
 logDEBUG( "Configuring DIRAC with: %s" % configureCmd )
@@ -390,10 +391,11 @@ if os.system( configureCmd ):
 # Dump the CS to cache in file
 ###
 
-cfgFile = os.path.join( rootPath, "etc", "dirac.cfg" )
-cacheScript = os.path.join( diracScriptsPath, "dirac-configuration-dump-local-cache" )
-if os.system( "%s -f %s" % ( cacheScript, cfgFile ) ):
-  logERROR( "Could not dump the CS to %s" % cfgFile )
+# cfgFile = os.path.join( rootPath, "etc", "dirac.cfg" )
+# cacheScript = os.path.join( diracScriptsPath, "dirac-configuration-dump-local-cache" )
+# if os.system( "%s -f %s" % ( cacheScript, cfgFile ) ):
+#   logERROR( "Could not dump the CS to %s" % cfgFile )
+configureScript = os.path.join( diracScriptsPath, "dirac-configure" )
 
 ###
 # Set the LD_LIBRARY_PATH and PATH
@@ -456,7 +458,8 @@ if architectureScript:
     localArchitecture = localArchitecture.strip()
     os.environ['CMTCONFIG'] = localArchitecture
     logINFO( 'Setting CMTCONFIG=%s' % localArchitecture )
-    os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
+    # os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
+    os.system( "%s -o '/LocalSite/Architecture=%s'" % ( configureScript, localArchitecture ) )
   else:
     logERROR( "There was an error calling %s" % architectureScript )
 #
@@ -560,8 +563,11 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
       if queueNorm:
         # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
         # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-        os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-        os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+        # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+        # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+        os.system( "%s -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( configureScript,
+                                                                                                      queueNorm / 250.,
+                                                                                                      queueNorm / 250. ) )
     else:
       logERROR( 'Fail to get Normalization of the Queue' )
   else:
