@@ -15,7 +15,7 @@ from DIRAC.AccountingSystem.private.Plots import generateErrorMessagePlot
 from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time, DEncode
+from DIRAC.Core.Utilities import Time
 
 gAccountingDB = False
 
@@ -103,13 +103,13 @@ class ReportGeneratorHandler( RequestHandler ):
   def export_generatePlot( self, reportRequest ):
     """
     Plot a accounting
-      Arguments:
-        - viewName : Name of view (easy!)
-        - startTime
-        - endTime
-        - argsDict : Arguments to the view.
-        - grouping
-        - extraArgs
+    Arguments:
+      - viewName : Name of view (easy!)
+      - startTime
+      - endTime
+      - argsDict : Arguments to the view.
+      - grouping
+      - extraArgs
     """
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
@@ -123,13 +123,13 @@ class ReportGeneratorHandler( RequestHandler ):
   def export_getReport( self, reportRequest ):
     """
     Plot a accounting
-      Arguments:
-        - viewName : Name of view (easy!)
-        - startTime
-        - endTime
-        - argsDict : Arguments to the view.
-        - grouping
-        - extraArgs
+    Arguments:
+      - viewName : Name of view (easy!)
+      - startTime
+      - endTime
+      - argsDict : Arguments to the view.
+      - grouping
+      - extraArgs
     """
     retVal = self.__checkPlotRequest( reportRequest )
     if not retVal[ 'OK' ]:
@@ -143,8 +143,8 @@ class ReportGeneratorHandler( RequestHandler ):
   def export_listReports( self, typeName ):
     """
     List all available plots
-      Arguments:
-        none
+    Arguments:
+      - none
     """
     reporter = MainReporter( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     return reporter.list( typeName )
@@ -153,8 +153,8 @@ class ReportGeneratorHandler( RequestHandler ):
   def export_listUniqueKeyValues( self, typeName ):
     """
     List all values for all keys in a type
-      Arguments:
-        none
+    Arguments:
+      - none
     """
     dbUtils = DBUtils( gAccountingDB, self.serviceInfoDict[ 'clientSetup' ] )
     credDict = self.getRemoteCredentials()
@@ -162,7 +162,7 @@ class ReportGeneratorHandler( RequestHandler ):
       policyFilter = gPoliciesList[ typeName ]
       filterCond = policyFilter.getListingConditions( credDict )
     else:
-      policyFilter = False
+      policyFilter = gPoliciesList[ 'Null' ]
       filterCond = {}
     retVal = dbUtils.getKeyValues( typeName, filterCond )
     if not policyFilter or not retVal[ 'OK' ]:
@@ -215,7 +215,7 @@ class ReportGeneratorHandler( RequestHandler ):
       fileId = result[ 'Value' ]
     retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
-      self.__sendErrorAsImg( result[ 'Message' ] )
+      self.__sendErrorAsImg( result[ 'Message' ], fileHelper )
       return retVal
     retVal = fileHelper.sendData( retVal[ 'Value' ] )
     if not retVal[ 'OK' ]:

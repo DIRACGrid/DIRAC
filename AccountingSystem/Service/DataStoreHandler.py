@@ -169,14 +169,13 @@ class DataStoreHandler( RequestHandler ):
       for i in range( len( entry ) ):
         if type( entry[i] ) != expectedTypes[i]:
           return S_ERROR( "%s field in the records should be %s" % ( i, expectedTypes[i] ) )
-    records = []
     ok = 0
     for entry in entriesList:
       typeName = "%s_%s" % ( setup, entry[0] )
       startTime = int( Time.toEpoch( entry[1] ) )
       endTime = int( Time.toEpoch( entry[2] ) )
-      records.append( ( typeName, startTime, endTime, entry[3] ) )
-      result = gAccountingDB.deleteRecord( typeName, startTime, endTime, valuesList )
+      record = entry[3]
+      result = gAccountingDB.deleteRecord( typeName, startTime, endTime, record )
       if not result[ 'OK' ]:
         return S_OK( ok )
       ok += 1
