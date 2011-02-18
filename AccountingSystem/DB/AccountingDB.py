@@ -5,9 +5,8 @@ import datetime, time
 import types
 import threading
 import random
-import DIRAC
 from DIRAC.Core.Base.DB import DB
-from DIRAC import S_OK, S_ERROR, gLogger, gMonitor, gConfig
+from DIRAC import S_OK, S_ERROR, gMonitor, gConfig
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
 from DIRAC.AccountingSystem.private.ObjectLoader import loadObjects
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
@@ -220,11 +219,11 @@ class AccountingDB( DB ):
       recordsToProcess = []
       for record in dbData:
         pending += 1
-        id = record[ 0 ]
+        iD = record[ 0 ]
         startTime = record[ -2 ]
         endTime = record[ -1 ]
         valuesList = list( record[ 1:-2 ] )
-        recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
+        recordsToProcess.append( ( iD, typeName, startTime, endTime, valuesList, now ) )
         if len( recordsToProcess ) % recordsPerSlot == 0:
           self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
                                                    args = ( recordsToProcess, ) )
@@ -286,10 +285,10 @@ class AccountingDB( DB ):
     tablesInThere = result[ 'Value' ]
     keyFieldsList = []
     valueFieldsList = []
-    for t in definitionKeyFields:
-      keyFieldsList.append( t[0] )
-    for t in definitionAccountingFields:
-      valueFieldsList.append( t[0] )
+    for key in definitionKeyFields:
+      keyFieldsList.append( key[0] )
+    for value in definitionAccountingFields:
+      valueFieldsList.append( value[0] )
     for field in definitionKeyFields:
       if field in valueFieldsList:
         return S_ERROR( "Key field %s is also in the list of value fields" % field )
@@ -566,24 +565,10 @@ class AccountingDB( DB ):
       result = self.__insertInQueueTable( typeName, startTime, endTime, valuesList )
       if not result[ 'OK' ]:
         return result
-      id = result[ 'Value' ]
-      recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
+      iD = result[ 'Value' ]
+      recordsToProcess.append( ( iD, typeName, startTime, endTime, valuesList, now ) )
 
     return S_OK()
-    recordsPerBundle = min( self.getCSOption( "RecordsPerSlot", 100 ), self.__threadPool.pendingJobs() )
-    recordsPerBundle = max( 1, recordsPerBundle )
-    self.__queuedRecordsLock.lock()
-    try:
-      self.__queuedRecordsToInsert.extend( recordsToProcess )
-      if len( self.__queuedRecordsToInsert ) >= recordsPerBundle:
-        self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
-                                                 args = ( self.__queuedRecordsToInsert, ) )
-        self.__queuedRecordsToInsert = []
-    finally:
-      self.__queuedRecordsLock.unlock()
-
-    return S_OK()
-
 
   def insertRecordThroughQueue( self, typeName, startTime, endTime, valuesList ):
     """
@@ -592,33 +577,10 @@ class AccountingDB( DB ):
     self.log.info( "Adding record to queue", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
-    #sqlFields = [ 'id', 'taken', 'takenSince' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-    #sqlValues = [ '0', '1', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
-    #retVal = self._insert( _getTableName( "in", typeName ),
-    #                       sqlFields,
-    #                       sqlValues)
-    #if not retVal[ 'OK' ]:
-    #  return retVal
-    #id = retVal[ 'lastRowId' ]
     result = self.__insertInQueueTable( typeName, startTime, endTime, valuesList )
     if not result[ '0K' ]:
       return result
 
-    return S_OK()
-    id = result[ 'Value' ]
-    record = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() )
-
-    recordsPerBundle = min( self.getCSOption( "RecordsPerSlot", 100 ), self.__threadPool.pendingJobs() )
-    recordsPerBundle = max( 1, recordsPerBundle )
-    self.__queuedRecordsLock.lock()
-    try:
-      self.__queuedRecordsToInsert.append( record )
-      if len( self.__queuedRecordsToInsert ) >= recordsPerBundle:
-        self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
-                                                 args = ( self.__queuedRecordsToInsert, ) )
-        self.__queuedRecordsToInsert = []
-    finally:
-      self.__queuedRecordsLock.unlock()
     return S_OK()
 
   def __insertFromINTable( self, recordTuples ):
@@ -627,13 +589,13 @@ class AccountingDB( DB ):
     """
     self.log.verbose( "Received bundle to process", "of %s elements" % len( recordTuples ) )
     for record in recordTuples:
-      id, typeName, startTime, endTime, valuesList, insertionEpoch = record
+      iD, typeName, startTime, endTime, valuesList, insertionEpoch = record
       result = self.insertRecordDirectly( typeName, startTime, endTime, valuesList )
       if not result[ 'OK' ]:
-        self._update( "UPDATE `%s` SET taken=0 WHERE id=%s" % ( _getTableName( "in", typeName ), id ) )
+        self._update( "UPDATE `%s` SET taken=0 WHERE id=%s" % ( _getTableName( "in", typeName ), iD ) )
         self.log.error( "Can't insert row", result[ 'Message' ] )
         continue
-      result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( _getTableName( "in", typeName ), id ) )
+      result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( _getTableName( "in", typeName ), iD ) )
       if not result[ 'OK' ]:
         self.log.error( "Can't delete row from the IN table", result[ 'Message' ] )
       gMonitor.addMark( "insertiontime", Time.toEpoch() - insertionEpoch )
@@ -968,18 +930,18 @@ class AccountingDB( DB ):
   def retrieveBucketedData( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = False ):
     """
     Get data from the DB
-      Parameters:
-        typeName -> typeName
-        startTime & endTime -> int epoch objects. Do I need to explain the meaning?
-        selectFields -> tuple containing a string and a list of fields:
-                        ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
-        condDict -> conditions for the query
-                    key -> name of the field
-                    value -> list of possible values
-        groupFields -> list of fields to group by
-                    ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
-        orderFields -> list of fields to order by
-                    ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
+    Parameters:
+     - typeName -> typeName
+     - startTime & endTime -> int epoch objects. Do I need to explain the meaning?
+     - selectFields -> tuple containing a string and a list of fields:
+                      ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
+     - condDict -> conditions for the query
+                  key -> name of the field
+                  value -> list of possible values
+     - groupFields -> list of fields to group by
+                  ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
+     - orderFields -> list of fields to order by
+                  ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
     """
     if typeName not in self.dbCatalog:
       return S_ERROR( "Type %s is not defined" % typeName )
@@ -999,7 +961,8 @@ class AccountingDB( DB ):
                              condDict,
                              groupFields,
                              orderFields,
-                             "bucket" )
+                             "bucket",
+                             connObj = connObj )
     gMonitor.addMark( "querytime", Time.toEpoch() - startQueryEpoch )
     return result
 
@@ -1173,7 +1136,6 @@ class AccountingDB( DB ):
     """
     Compact all buckets for a given type
     """
-    tableName = _getTableName( "bucket", typeName )
     nowEpoch = Time.toEpoch()
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
@@ -1221,7 +1183,6 @@ class AccountingDB( DB ):
     """
     Compact all buckets for a given type
     """
-    tableName = _getTableName( "bucket", typeName )
     nowEpoch = Time.toEpoch()
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
@@ -1255,7 +1216,7 @@ class AccountingDB( DB ):
                                                                                  selectEndTime - roundStartTime ) )
         if len( bucketsData ) == 0:
           break
-        now = time.time()
+
         result = self.__deleteIndividualForCompactBuckets( typeName, bucketsData, connObj )
         if not result[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
