@@ -516,7 +516,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
 
   extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
 
-  compCfg = '' 
+  compCfg = ''
   for ext in extensionsDIRAC + ['DIRAC']:
     cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
     if os.path.exists( cfgTemplatePath ):
@@ -524,7 +524,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
       # Look up the component in this template
       loadCfg = CFG()
       loadCfg.loadFromFile( cfgTemplatePath )
-            
+
       try:
         compCfg = loadCfg[sectionName][component]
         # section found
@@ -926,7 +926,7 @@ def runsvctrlComponent( system, component, mode ):
   Execute runsvctrl and check status of the specified component
   """
   if not mode in ['u', 'd', 'o', 'p', 'c', 'h', 'a', 'i', 'q', '1', '2', 't', 'k', 'x', 'e']:
-    return S_ERROR( 'Unknown runsvctrl mode "%"' % mode )
+    return S_ERROR( 'Unknown runsvctrl mode "%s"' % mode )
 
   startCompDirs = glob.glob( os.path.join( startDir, '%s_%s' % ( system, component ) ) )
   result = execCommand( 0, ['runsvctrl', mode] + startCompDirs )
