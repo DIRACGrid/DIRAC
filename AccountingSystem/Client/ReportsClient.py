@@ -1,10 +1,9 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import tempfile
+import tempfile, types
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time, DEncode
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.AccountingSystem.private.FileCoding import codeRequestInFileId
@@ -15,21 +14,20 @@ class ReportsClient:
     self.serviceName = "Accounting/ReportGenerator"
     self.rpcClient = rpcClient
     self.transferClient = transferClient
-    self.__forceRawEncoding = False
 
-  def __getRPCClient(self):
+  def __getRPCClient( self ):
     if not self.rpcClient:
       return RPCClient( self.serviceName )
     else:
       return self.rpcClient
 
-  def __getTransferClient(self):
+  def __getTransferClient( self ):
     if not self.transferClient:
       return TransferClient( self.serviceName )
     else:
       return self.transferClient
 
-  def pingService(self):
+  def pingService( self ):
     rpcClient = self.__getRPCClient()
     return rpcClient.ping()
 
@@ -40,8 +38,10 @@ class ReportsClient:
       del( result[ 'rpcStub' ] )
     return result
 
-  def getReport( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {} ):
+  def getReport( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = None ):
     rpcClient = self.__getRPCClient()
+    if type( extraArgs ) != types.DictType:
+      extraArgs = {}
     plotRequest = { 'typeName' : typeName,
                     'reportName' : reportName,
                     'startTime' : startTime,
@@ -54,8 +54,10 @@ class ReportsClient:
       del( result[ 'rpcStub' ] )
     return result
 
-  def generatePlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {} ):
+  def generatePlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = None ):
     rpcClient = self.__getRPCClient()
+    if type( extraArgs ) != types.DictType:
+      extraArgs = {}
     plotRequest = { 'typeName' : typeName,
                     'reportName' : reportName,
                     'startTime' : startTime,
@@ -68,7 +70,9 @@ class ReportsClient:
       del( result[ 'rpcStub' ] )
     return result
 
-  def generateDelayedPlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {}, compress = True ):
+  def generateDelayedPlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = None, compress = True ):
+    if type( extraArgs ) != types.DictType:
+      extraArgs = {}
     plotRequest = { 'typeName' : typeName,
                     'reportName' : reportName,
                     'startTime' : startTime,
@@ -95,7 +99,7 @@ class ReportsClient:
       destFilename = "%s/%s" % ( dirDestination, plotName )
       destFile = file( destFilename, "wb" )
     except Exception, e:
-      return S_ERROR( "Can't open file %s for writing: %s" % ( destFilename, str(e) ) )
+      return S_ERROR( "Can't open file %s for writing: %s" % ( destFilename, str( e ) ) )
     retVal = transferClient.receiveFile( destFile, plotName )
     if not retVal[ 'OK' ]:
       return retVal
