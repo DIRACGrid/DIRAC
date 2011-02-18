@@ -15,9 +15,9 @@ random.seed()
 class DataStoreClient:
   """
     Class providing front end access to DIRAC Accounting DataStore Service
-    - It allows to reduce the interactions with the server by building and list of
+     - It allows to reduce the interactions with the server by building and list of
     pending Registers to be sent that are sent in a bundle using the commit method.
-    - In case the DataStore is down Registers are sent as DISET requests.
+     - In case the DataStore is down Registers are sent as DISET requests.
   """
   def __init__( self, setup = False, retryGraceTime = 0 ):
     self.__setup = setup
@@ -40,7 +40,7 @@ class DataStoreClient:
     for parent in obj.__bases__:
       if parent.__name__ == "BaseAccountingType":
         return True
-      if self.__checkHandler( parent ):
+      if self.__checkBaseType( parent ):
         return True
     return False
 
@@ -91,7 +91,7 @@ class DataStoreClient:
       del( self.__registersList[ :self.__maxRecordsInABundle ] )
     return S_OK( sent )
 
-  def remove ( self, register ):
+  def remove( self, register ):
     """
     Remove a Register from the Accounting DataStore
     """
