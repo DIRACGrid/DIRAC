@@ -17,15 +17,16 @@
 
   others are optional
 
+  -I --IncludeAllServers                           To include all Configuration Servers (by default only those in -C option are included)
   -n --SiteName=<sitename>                         To define the DIRAC Site Name for the installation
   -N --CEName=<cename>                             To determine the DIRAC Site Name from the CE Name
   -V --VO=<vo>                                     To define the VO for the installation
-  -  --UseServerCertificate                        To use Server Certificate for all clients
-  -  --SkipCAChecks                                To skip check of CAs for all clients
-  -  --SkipCADownload                              To skip download of CAs 
+  -U  --UseServerCertificate                       To use Server Certificate for all clients
+  -H  --SkipCAChecks                               To skip check of CAs for all clients
+  -D  --SkipCADownload                             To skip download of CAs 
   -v --UseVersionsDir                              Use versions directory (This option will properly define RootPath and InstancePath)
-  --Architecture=<architecture>                    To define /LocalSite/Architecture=<architecture>
-  --LocalSE=<localse>                              To define /LocalSite/LocalSE=<localse>
+  -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
+  -L --LocalSE=<localse>                           To define /LocalSite/LocalSE=<localse>
 
   Other arguments will take proper defaults if not defined.
   
@@ -33,6 +34,7 @@
 
 Setup
 ConfigurationServer
+IncludeAllServers
 Gateway
 SiteName
 CEName
@@ -65,6 +67,7 @@ import sys, os
 logLevel = None
 setup = None
 configurationServer = None
+includeAllServers = False
 gatewayServer = None
 siteName = None
 useServerCert = False
@@ -92,6 +95,11 @@ def setServer( optionValue ):
   Script.localCfg.addDefaultEntry( '/DIRAC/Configuration/Servers', configurationServer )
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'ConfigurationServer' ), configurationServer )
   return DIRAC.S_OK()
+
+
+def setAllServers( optionValue ):
+  global includeAllServers
+  includeAllServers = True
 
 
 def setSetup( optionValue ):
@@ -174,6 +182,7 @@ Script.disableCS()
 
 Script.registerSwitch( "S:", "Setup=", "Set <setup> as DIRAC setup", setSetup )
 Script.registerSwitch( "C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", setServer )
+Script.registerSwitch( "I", "IncludeAllServers", "include all Configuration Servers", setAllServers )
 Script.registerSwitch( "n:", "SiteName=", "Set <sitename> as DIRAC Site Name", setSiteName )
 Script.registerSwitch( "N:", "CEName=", "Determiner <sitename> from <cename>", setCEName )
 Script.registerSwitch( "V:", "VO=", "Set the VO name", setVO )
@@ -212,6 +221,11 @@ if not configurationServer:
   newConfigurationServer = DIRAC.gConfig.getValue( cfgInstallPath( 'ConfigurationServer' ), '' )
   if newConfigurationServer:
     setServer( newConfigurationServer )
+
+if not includeAllServers:
+  newIncludeAllServer = DIRAC.gConfig.getValue( cfgInstallPath( 'IncludeAllServers' ), False )
+  if newIncludeAllServer:
+    setAllServers( True )
 
 if not setup:
   newSetup = DIRAC.gConfig.getValue( cfgInstallPath( 'Setup' ), '' )
@@ -374,6 +388,12 @@ if not useServerCert:
 else:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
+
+if includeAllServers:
+  DIRAC.gConfig.setOptionValue( '/DIRAC/Configuration/Servers', ','.join( DIRAC.gConfig.getServersList() ) )
+  DIRAC.gLogger.debug( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
+  DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
+
 
 #Do the vomsdir magic
 voName = getVO()
