@@ -15,6 +15,7 @@ class BaseAccountingType:
     self.keyFieldsList = []
     self.valueFieldsList = []
     self.valuesList = []
+    self.fieldsList = []
     self.startTime = 0
     self.endTime = 0
     self.dataTimespan = 0
@@ -33,15 +34,15 @@ class BaseAccountingType:
       raise Exception( "definitionKeyFields has to be filled prior to utilization" )
     if len( self.definitionAccountingFields ) == 0:
       raise Exception( "definitionAccountingFields has to be filled prior to utilization" )
-    for t in self.definitionKeyFields:
-      self.keyFieldsList.append( t[0] )
-    for t in self.definitionAccountingFields:
-      self.valueFieldsList.append( t[0] )
+    for key in self.definitionKeyFields:
+      self.keyFieldsList.append( key[0] )
+    for value in self.definitionAccountingFields:
+      self.valueFieldsList.append( value[0] )
     self.fieldsList = []
     self.fieldsList.extend( self.keyFieldsList )
     self.fieldsList.extend( self.valueFieldsList )
     if len( self.valuesList ) != len( self.fieldsList ):
-      self.valuesList = [ None for i in range( len( self.fieldsList ) ) ]
+      self.valuesList = [ None for i in self.fieldsList ]
 
   def getDataTimespan( self ):
     """
@@ -177,4 +178,4 @@ class BaseAccountingType:
     """
     Remove a register from server
     """
-    return gDataStoreClient.removeRecord( self )
+    return gDataStoreClient.remove( self )
