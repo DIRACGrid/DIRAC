@@ -22,8 +22,8 @@ class JobPolicy:
 
     return condDict
 
-  def checkRequest( self, id, credDict, condDict, groupingList ):
-    return self.__executor.applyFilters( id, credDict, condDict, groupingList )
+  def checkRequest( self, iD, credDict, condDict, groupingList ):
+    return self.__executor.applyFilters( iD, credDict, condDict, groupingList )
 
   def __checkConditions( self, credDict, condDict, groupingField ):
     userProps = credDict[ 'properties' ]
