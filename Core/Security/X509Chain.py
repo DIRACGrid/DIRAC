@@ -43,7 +43,7 @@ class X509Chain:
       pemData = fd.read()
       fd.close()
     except Exception, e:
-      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str(e) ) )
+      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str( e ) ) )
     return self.loadChainFromString( pemData )
 
   def loadChainFromString( self, pemData ):
@@ -55,7 +55,7 @@ class X509Chain:
     try:
       self.__certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return S_ERROR( "Can't load pem data: %s" % str(e) )
+      return S_ERROR( "Can't load pem data: %s" % str( e ) )
     self.__loadedChain = True
     #Update internals
     self.__checkProxyness()
@@ -80,7 +80,7 @@ class X509Chain:
       pemData = fd.read()
       fd.close()
     except Exception, e:
-      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str(e) ) )
+      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str( e ) ) )
     return self.loadKeyFromString( pemData, password )
 
   def loadKeyFromString( self, pemData, password = False ):
@@ -92,7 +92,7 @@ class X509Chain:
     try:
       self.__keyObj = crypto.load_privatekey( crypto.FILETYPE_PEM, pemData, password )
     except Exception, e:
-      return S_ERROR( "Can't load key file: %s (Probably bad pass phrase?)" % str(e) )
+      return S_ERROR( "Can't load key file: %s (Probably bad pass phrase?)" % str( e ) )
     self.__loadedPKey = True
     return S_OK()
 
@@ -115,7 +115,7 @@ class X509Chain:
       pemData = fd.read()
       fd.close()
     except Exception, e:
-      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str(e) ) )
+      return S_ERROR( "Can't open %s file: %s" % ( chainLocation, str( e ) ) )
     return self.loadProxyFromString( pemData )
 
   def loadProxyFromString( self, pemData ):
@@ -242,14 +242,14 @@ class X509Chain:
       fd.write( retVal['Value'] )
       fd.close()
     except Exception, e:
-      return S_ERROR( "Cannot write to file %s :%s" % ( filePath, str(e) ) )
+      return S_ERROR( "Cannot write to file %s :%s" % ( filePath, str( e ) ) )
     try:
       os.chmod( filePath, stat.S_IRUSR | stat.S_IWUSR )
     except Exception, e:
-      return S_ERROR( "Cannot set permissions to file %s :%s" % ( filePath, str(e) ) )
+      return S_ERROR( "Cannot set permissions to file %s :%s" % ( filePath, str( e ) ) )
     return S_OK()
 
-  def isProxy(self):
+  def isProxy( self ):
     """
     Check wether this chain is a proxy
     """
@@ -257,7 +257,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     return S_OK( self.__isProxy )
 
-  def isLimitedProxy(self):
+  def isLimitedProxy( self ):
     """
     Check wether this chain is a proxy
     """
@@ -282,7 +282,7 @@ class X509Chain:
       return retVal
     return S_OK( True )
 
-  def isVOMS(self):
+  def isVOMS( self ):
     """
     Check wether this chain is a proxy
     """
@@ -296,7 +296,7 @@ class X509Chain:
     return S_OK( False )
 
   def __checkProxyness( self ):
-    self.__firstProxyStep = len( self.__certList )-2 # -1 is user cert by default, -2 is first proxy step
+    self.__firstProxyStep = len( self.__certList ) - 2 # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
     self.__isLimitedProxy = False
     prevDNMatch = 2
@@ -317,7 +317,7 @@ class X509Chain:
         if dnMatch == 0:
           #If we are not in the first step we've found the entity cert
           if step > 0:
-            self.__firstProxyStep = step-1
+            self.__firstProxyStep = step - 1
             checkProxyPart = False
           #If we are in the first step this is not a proxy
           else:
@@ -341,7 +341,7 @@ class X509Chain:
     """
     issuerSubject = self.__certList[ issuerStep ].get_subject()
     proxySubject = self.__certList[ certStep ].get_subject().clone()
-    psEntries =  proxySubject.num_entries()
+    psEntries = proxySubject.num_entries()
     lastEntry = proxySubject.get_entry( psEntries - 1 )
     if lastEntry[0] != 'CN' or lastEntry[1] not in ( 'proxy', 'limited proxy' ):
       return 0
@@ -381,7 +381,7 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    for iC in range( len( self.__certList )-1, -1, -1 ):
+    for iC in range( len( self.__certList ) - 1, -1, -1 ):
       if self.__certList[iC].has_expired():
         return S_OK( True )
     return S_OK( False )
@@ -393,7 +393,7 @@ class X509Chain:
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
     notAfter = self.__certList[0].get_not_after()
-    for iC in range( len( self.__certList )-1, -1, -1 ):
+    for iC in range( len( self.__certList ) - 1, -1, -1 ):
       stepNotAfter = self.__certList[iC].get_not_after()
       if self.__certList[iC].has_expired():
         return S_OK( stepNotAfter )
@@ -410,7 +410,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     if not bitStrength:
       return S_ERROR( "bitStrength has to be greater than 1024 (%s)" % bitStrength )
-    x509 = self.getCertInChain(0)[ 'Value' ]
+    x509 = self.getCertInChain( 0 )[ 'Value' ]
     return x509.generateProxyRequest( bitStrength, limited )
 
   def generateChainFromRequestString( self, pemData, lifetime = 86400, requireLimited = False, diracGroup = False ):
@@ -425,7 +425,7 @@ class X509Chain:
     try:
       req = crypto.load_certificate_request( crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return S_ERROR( "Can't load request data: %s" % str(e) )
+      return S_ERROR( "Can't load request data: %s" % str( e ) )
 
     issuerCert = self.__certList[0]
 
@@ -433,13 +433,13 @@ class X509Chain:
     newSubj = issuerCert.get_subject().clone()
 
     isLimited = False
-    lastEntry = newSubj.get_entry( newSubj.num_entries() -1 )
+    lastEntry = newSubj.get_entry( newSubj.num_entries() - 1 )
     if lastEntry[0] == "CN" and lastEntry[1] == "limited proxy":
       isLimited = True
     for entryTuple in reqSubj.get_components():
-      if isLimited  and entryTuple[0]== "CN" and entryTuple[1] == "proxy":
+      if isLimited  and entryTuple[0] == "CN" and entryTuple[1] == "proxy":
         return S_ERROR( "Request is for a full proxy and chain is a limited one" )
-      if entryTuple[0]== "CN" and entryTuple[1] == "limited proxy":
+      if entryTuple[0] == "CN" and entryTuple[1] == "limited proxy":
         isLimited = True
       newSubj.insert_entry( entryTuple[0], entryTuple[1] )
 
@@ -454,7 +454,7 @@ class X509Chain:
     childCert.set_version( issuerCert.get_version() )
     childCert.set_pubkey( req.get_pubkey() )
     childCert.add_extensions( self.__getProxyExtensionList( diracGroup ) )
-    childCert.gmtime_adj_notBefore( 0 )
+    childCert.gmtime_adj_notBefore( -900 )
     childCert.gmtime_adj_notAfter( lifetime )
     childCert.sign( self.__keyObj, 'md5' )
 
@@ -470,9 +470,9 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    remainingSecs = self.getCertInChain(0)[ 'Value' ].getRemainingSecs()[ 'Value' ]
+    remainingSecs = self.getCertInChain( 0 )[ 'Value' ].getRemainingSecs()[ 'Value' ]
     for i in range( 1, len( self.__certList ) ):
-      stepRS = self.getCertInChain(i)[ 'Value' ].getRemainingSecs()[ 'Value' ]
+      stepRS = self.getCertInChain( i )[ 'Value' ].getRemainingSecs()[ 'Value' ]
       remainingSecs = min( remainingSecs, stepRS )
     return S_OK( remainingSecs )
 
@@ -500,18 +500,18 @@ class X509Chain:
     try:
       if not filename:
         fd, filename = tempfile.mkstemp()
-        os.write(fd, pemData )
-        os.close(fd)
+        os.write( fd, pemData )
+        os.close( fd )
       else:
         fd = file( filename, "w" )
         fd.write( pemData )
         fd.close()
     except Exception, e:
-      return S_ERROR( "Cannot write to file %s :%s" % ( filename, str(e) ) )
+      return S_ERROR( "Cannot write to file %s :%s" % ( filename, str( e ) ) )
     try:
       os.chmod( filename, stat.S_IRUSR | stat.S_IWUSR )
     except Exception, e:
-      return S_ERROR( "Cannot set permissions to file %s :%s" % ( filename, str(e) ) )
+      return S_ERROR( "Cannot set permissions to file %s :%s" % ( filename, str( e ) ) )
     return S_OK( filename )
 
   def dumpChainToString( self ):
@@ -533,7 +533,7 @@ class X509Chain:
       return S_ERROR( "No chain loaded" )
     return S_OK( crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj ) )
 
-  def __str__(self):
+  def __str__( self ):
     repStr = "<X509Chain"
     if self.__loadedChain:
       repStr += " %s certs " % len( self.__certList )
@@ -544,7 +544,7 @@ class X509Chain:
     repStr += ">"
     return repStr
 
-  def __repr__(self):
+  def __repr__( self ):
     return self.__str__()
 
   def getCredentials( self ):
