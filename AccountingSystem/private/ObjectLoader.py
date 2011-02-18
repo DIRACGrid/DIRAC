@@ -43,8 +43,8 @@ def loadObjects( path, reFilter = None, parentClass = None ):
     if parentClass == objClass:
       continue
     if parentClass and not issubclass( objClass, parentClass ):
-        gLogger.warn( "%s is not a subclass of %s. Skipping" % ( objClass, parentClass ) )
-        continue
+      gLogger.warn( "%s is not a subclass of %s. Skipping" % ( objClass, parentClass ) )
+      continue
     gLogger.info( "Loaded %s" % objPythonPath )
     loadedObjects[ pythonClassName ] = objClass
 

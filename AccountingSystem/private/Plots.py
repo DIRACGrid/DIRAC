@@ -1,12 +1,10 @@
-import time
-import datetime
 import cStringIO
 try:
   from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, cumulativeGraph, qualityGraph, textGraph
-except Exception, e:
-  raise Exception( "Missing plotting lib: %s" % str( e ) )
+except Exception, plotException:
+  raise Exception( "Missing plotting lib: %s" % str( plotException ) )
 
-from DIRAC import S_OK, S_ERROR, rootPath
+from DIRAC import S_OK, S_ERROR
 
 def checkMetadata( metadata ):
   if 'span' in metadata:
@@ -41,9 +39,9 @@ def generateTimedStackedBarPlot( fileName, data, metadata ):
   except:
     return S_ERROR( "Can't open %s" % fileName )
   checkMetadata( metadata )
-  for k, v in ( ( 'sort_labels', 'sum' ), ( 'legend_unit', '%' ) ):
-    if k not in metadata:
-      metadata[ k ] = v
+  for key, value in ( ( 'sort_labels', 'sum' ), ( 'legend_unit', '%' ) ):
+    if key not in metadata:
+      metadata[ key ] = value
   barGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
@@ -81,9 +79,9 @@ def generateStackedLinePlot( fileName, data, metadata ):
   except:
     return S_ERROR( "Can't open %s" % fileName )
   checkMetadata( metadata )
-  for k, v in ( ( 'sort_labels', 'sum' ), ( 'legend_unit', '%' ) ):
-    if k not in metadata:
-      metadata[ k ] = v
+  for key, value in ( ( 'sort_labels', 'sum' ), ( 'legend_unit', '%' ) ):
+    if key not in metadata:
+      metadata[ key ] = value
   lineGraph( data, fn, **metadata )
   fn.close()
   return S_OK()

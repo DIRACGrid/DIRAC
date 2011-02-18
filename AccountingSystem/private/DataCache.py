@@ -8,7 +8,6 @@ import threading
 
 from DIRAC import S_OK, S_ERROR, gLogger, rootPath, gConfig
 from DIRAC.Core.Utilities import DictCache
-from DIRAC.Core.Utilities import Time
 
 
 class DataCache:
@@ -75,8 +74,8 @@ class DataCache:
       fd = file( filename, "rb" )
       data = fd.read()
       fd.close()
-    except Exception, v:
-      return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str( v ) ) )
+    except Exception, e:
+      return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str( e ) ) )
     return S_OK( data )
 
 def _deleteGraph( plotDict ):

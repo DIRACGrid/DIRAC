@@ -1,6 +1,5 @@
 import types
 from DIRAC.Core.Utilities import Time
-from DIRAC import S_OK, S_ERROR
 
 class DBUtils:
 
@@ -13,29 +12,30 @@ class DBUtils:
                              startTime,
                              endTime,
                              selectFields,
-                             condDict = {},
-                             groupFields = [],
-                             orderFields = [] ):
+                             condDict = None,
+                             groupFields = None,
+                             orderFields = None ):
     """
     Get data from the DB
-      Parameters:
-        typeName -> typeName
-        startTime & endTime -> datetime objects. Do I need to explain the meaning?
-        selectFields -> tuple containing a string and a list of fields:
+    Parameters:
+      - typeName -> typeName
+      - startTime & endTime -> datetime objects. Do I need to explain the meaning?
+      - selectFields -> tuple containing a string and a list of fields:
                         ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
-        condDict -> conditions for the query
+      - condDict -> conditions for the query
                     key -> name of the key field
                     value -> list of possible values
-        groupFields -> list of fields to group by, can be in form
-                        ( "%s, %s", ( "field1name", "field2name", "field3name" ) )
-        orderFields -> list of fields to order by, can be in form
+      - groupFields -> list of fields to group by, can be in form
+                       ( "%s, %s", ( "field1name", "field2name", "field3name" ) )
+      - orderFields -> list of fields to order by, can be in form
                        ( "%s, %s", ( "field1name", "field2name", "field3name" )
     """
     typeName = "%s_%s" % ( self._setup, typeName )
     validCondDict = {}
-    for key in condDict:
-      if type( condDict[ key ] ) in ( types.ListType, types.TupleType ) and len( condDict[ key ] ) > 0:
-        validCondDict[ key ] = condDict[ key ]
+    if type( condDict ) == types.DictType:
+      for key in condDict:
+        if type( condDict[ key ] ) in ( types.ListType, types.TupleType ) and len( condDict[ key ] ) > 0:
+          validCondDict[ key ] = condDict[ key ]
     retVal = self._acDB._getConnection()
     if not retVal[ 'OK' ]:
       return retVal
@@ -160,7 +160,7 @@ class DBUtils:
   def _fillWithZero( self, granularity, startEpoch, endEpoch, dataDict ):
     """
     Fill with zeros missing buckets
-    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+      - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
     """
     startBucketEpoch = startEpoch - startEpoch % granularity
     for key in dataDict:
@@ -173,7 +173,7 @@ class DBUtils:
   def _getAccumulationMaxValue( self, dataDict ):
     """
     Divide by factor the values and get the maximum value
-    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+      - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
     """
     maxValue = 0
     maxEpoch = 0
@@ -190,7 +190,7 @@ class DBUtils:
   def _getMaxValue( self, dataDict ):
     """
     Divide by factor the values and get the maximum value
-    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+      - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
     """
     maxValues = {}
     for key in dataDict:
@@ -207,7 +207,7 @@ class DBUtils:
   def _divideByFactor( self, dataDict, factor ):
     """
     Divide by factor the values and get the maximum value
-    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+      - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
     """
     maxValue = 0.0
     for key in dataDict:
@@ -217,10 +217,10 @@ class DBUtils:
         maxValue = max( maxValue, currentDict[ timeEpoch ] )
     return dataDict, maxValue
 
-  def _acumulate( self, granularity, startEpoch, endEpoch, dataDict ):
+  def _accumulate( self, granularity, startEpoch, endEpoch, dataDict ):
     """
-    Acumulate all the values.
-    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+    Accumulate all the values.
+      - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
     """
     startBucketEpoch = startEpoch - startEpoch % granularity
     for key in dataDict:
@@ -236,16 +236,14 @@ class DBUtils:
     """
     Strip <fieldId> data and sum the rest as it was data from one key
     In:
-      dataDict : { 'key' : { <timeEpoch1>: [1, 2, 3],
-                             <timeEpoch2>: [3, 4, 5]..
-      fieldId : 0
+      - dataDict : { 'key' : { <timeEpoch1>: [1, 2, 3],
+                               <timeEpoch2>: [3, 4, 5].. } }
+      - fieldId : 0
     Out
-      dataDict : { 'key' : { <timeEpoch1>: 1,
-                             <timeEpoch2>: 3..
-      return : [ { <timeEpoch1>: 2,
-                   <timeEpoch2>: 4... }
-                 { <timeEpoch1>: 3,
-                   <timeEpoch2>): 5...
+      - dataDict : { 'key' : { <timeEpoch1>: 1,
+                               <timeEpoch2>: 3.. } }
+      - return : [ { <timeEpoch1>: 2, <timeEpoch2>: 4... }
+                   { <timeEpoch1>: 3, <timeEpoch2>): 5... } ]
     """
     remainingData = [{}] #Hack for empty data
     for key in dataDict:

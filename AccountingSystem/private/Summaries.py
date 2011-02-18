@@ -2,7 +2,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 
-class Summaries(DBUtils):
+class Summaries( DBUtils ):
 
   def __init__( self, db, setup ):
     DBUtils.__init__( self, db, setup )
@@ -11,7 +11,7 @@ class Summaries(DBUtils):
     funcName = "_summary%s" % summaryName
     try:
       funcObj = getattr( self, funcName )
-    except Exception, e:
+    except:
       return S_ERROR( "Summary %s is not defined" % summaryName )
     return funcObj( startTime, endTime, argsDict )
 
@@ -75,8 +75,9 @@ class Summaries(DBUtils):
 
   def _summaryDataBySourceAndDestination( self, startTime, endTime, argsDict ):
     """
-      argsDict: Source -> Summary only sites in source.
-                Destination -> Summary only sites in destination.
+      argsDict: 
+        - Source -> Summary only sites in source.
+        - Destination -> Summary only sites in destination.
     """
     keyFields = ( 'Destination', 'Source' )
     condDict = {}

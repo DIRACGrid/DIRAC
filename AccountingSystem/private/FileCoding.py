@@ -5,19 +5,20 @@ import base64
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DEncode
 
+gForceRawEncoding = False
 
 try:
   import zlib
-  zCompressionEnabled = True
-except:
-  zCompressionEnabled = False
+  gZCompressionEnabled = True
+except ImportError, x:
+  gZCompressionEnabled = False
 
 def codeRequestInFileId( plotRequest, compressIfPossible = True ):
-  compress = compressIfPossible and zCompressionEnabled
+  compress = compressIfPossible and gZCompressionEnabled
   thbStub = False
   if compress:
     plotStub = "Z:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
-  elif not self.__forceRawEncoding:
+  elif not gForceRawEncoding:
     plotStub = "S:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
   else:
     plotStub = "R:%s" % DEncode.encode( plotRequest )
@@ -28,7 +29,7 @@ def codeRequestInFileId( plotRequest, compressIfPossible = True ):
     extraArgs[ 'thumbnail' ] = False
     if compress:
       plotStub = "Z:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
-    elif not self.__forceRawEncoding:
+    elif not gForceRawEncoding:
       plotStub = "S:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
     else:
       plotStub = "R:%s" % DEncode.encode( plotRequest )
@@ -36,8 +37,8 @@ def codeRequestInFileId( plotRequest, compressIfPossible = True ):
 
 def extractRequestFromFileId( fileId ):
   stub = fileId[2:]
-  type = fileId[0]
-  if type == 'Z':
+  compressType = fileId[0]
+  if compressType == 'Z':
     gLogger.info( "Compressed request, uncompressing" )
     try:
       stub = base64.urlsafe_b64decode( stub )
@@ -49,19 +50,19 @@ def extractRequestFromFileId( fileId ):
     except Exception, e:
       gLogger.error( "Oops! Plot request is invalid!", str( e ) )
       return S_ERROR( "Oops! Plot request is invalid!: %s" % str( e ) )
-  elif type == 'S':
+  elif compressType == 'S':
     gLogger.info( "Base64 request, decoding" )
     try:
       stub = base64.urlsafe_b64decode( stub )
     except Exception, e:
       gLogger.error( "Oops! Plot request is not properly encoded!", str( e ) )
       return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str( e ) )
-  elif type == 'R':
+  elif compressType == 'R':
     #Do nothing, it's already uncompressed
     pass
   else:
-    gLogger.error( "Oops! Stub type '%s' is unknown :P" % type )
-    return S_ERROR( "Oops! Stub type '%s' is unknown :P" % type )
+    gLogger.error( "Oops! Stub type '%s' is unknown :P" % compressType )
+    return S_ERROR( "Oops! Stub type '%s' is unknown :P" % compressType )
   plotRequest, stubLength = DEncode.decode( stub )
   if len( stub ) != stubLength:
     gLogger.error( "Oops! The stub is longer than the data :P" )
