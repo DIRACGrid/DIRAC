@@ -31,6 +31,7 @@ import os, os.path, sys, string
 # Register workflow parameter switch
 Script.registerSwitch( 'p:', 'parameter=', 'Parameters that are passed directly to the workflow' )
 Script.parseCommandLine()
+gLogger.showHeaders(True)
 
 # Forcing the current directory to be the first in the PYTHONPATH
 sys.path.insert( 0, os.path.realpath( '.' ) )
