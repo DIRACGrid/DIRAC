@@ -324,11 +324,25 @@ class RequestDBFile:
         oRequest.update( tempRequest )
       requestString = oRequest.toXML()['Value']
       gLogger.info( "RequestDBFile.__getRequestString: Successfully obtained string for %s." % requestName )
-      return S_OK( requestString )
+      result = S_OK( requestString )
+      result['Request'] = oRequest
+      return result
     except Exception, x:
       errStr = "RequestDBFile.__getRequestString: Exception while obtaining request string."
       gLogger.exception( errStr, requestName, lException = x )
       return S_ERROR( errStr )
+    
+  def _getRequestAttribute(self,attribute,requestName):
+    """ Get attribute of request specified by requestname
+    """  
+    result = self.__getRequestString(requestName)
+    if not result['OK']:
+      return result    
+    request = result['Request']
+    try:
+      return request.getAttribute(attribute)
+    except KeyError,x:
+      return S_OK(None)
 
   def __readSubRequestString( self, subRequestPath ):
     """ Read the contents of the supplied sub-request path
