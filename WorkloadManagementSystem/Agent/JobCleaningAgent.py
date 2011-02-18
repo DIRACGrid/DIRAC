@@ -14,6 +14,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB    import TaskQueueDB
 from DIRAC                                            import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 import DIRAC.Core.Utilities.Time as Time
+import string
 
 REMOVE_STATUS_DELAY = { 'Done':14,
                         'Killed':7,
@@ -40,6 +41,7 @@ class JobCleaningAgent( AgentModule ):
     self.taskQueueDB = TaskQueueDB()
     # self.sandboxDB = SandboxDB( 'SandboxDB' )
     self.prod_types = self.am_getOption('ProductionTypes',['DataReconstruction', 'DataStripping', 'MCSimulation', 'Merge', 'production'])
+    gLogger.info('Will exclude the following Production types from cleaning %s'%(string.join(self.prod_types,', ')))
     return S_OK()
 
   def __getAllowedJobTypes( self ):
