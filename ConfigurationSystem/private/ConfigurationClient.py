@@ -56,6 +56,9 @@ class ConfigurationClient:
   def getServersList( self ):
     return gConfigurationData.getServers()
 
+  def useServerCertificate( self ):
+    return gConfigurationData.useServerCertificate()
+
   def _useServerCertificate( self ):
     return gConfigurationData.useServerCertificate()
 
