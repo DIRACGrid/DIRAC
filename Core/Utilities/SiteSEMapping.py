@@ -145,17 +145,58 @@ def isSameSiteSE( se1, se2 ):
   if not result['OK']:
     return result
   sites2 = result['Value']
-  try:
-    if sites1[0] == sites2[0]:
-      return S_OK( True )
-  except:
-    return S_OK( False )
 
   for site in sites1:
     if site in sites2:
       return S_OK( True )
 
   return S_OK( False )
+
+#############################################################################
+def hasCommonSiteSE( seList1, seList2 ):
+  """ Check in two lists of SEs whether two SEs are at the same site
+      Returns None or a tuple with the two SEs that are at the same
+  """
+  if type( seList1 ) == type( "" ):
+    seList1 = [seList1]
+  if type( seList2 ) == type( "" ):
+    seList2 = [seList2]
+
+  for se in seList1:
+    if se in seList2:
+      return S_OK( ( se, se ) )
+
+  if len( seList1 ) <= len( seList2 ):
+    l1 = seList1
+    l2 = seList2
+    swap = False
+  else:
+    l1 = seList2
+    l2 = seList1
+    swap = True
+
+  seSites1 = {}
+  for se2 in l2:
+    res = getSitesForSE( se2 )
+    if res['OK']:
+      sites2 = res['Value']
+    else:
+      continue
+    for se1 in l1:
+      # cache se1's sites
+      if not seSites1.has_key( se1 ):
+        res = getSitesForSE ( se1 )
+        if res['OK']:
+          seSites1[se1] = res['Value']
+      for site in sites2:
+        if site in seSites1[se1]:
+          if swap:
+            return S_OK( ( se2, se1 ) )
+          else:
+            return S_OK( ( se1, se2 ) )
+
+    return S_OK( None )
+
 
 #############################################################################
 def getSEsForCountry( country ):
