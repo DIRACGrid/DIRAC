@@ -59,6 +59,7 @@ class ConfigurationClient:
   def useServerCertificate( self ):
     return gConfigurationData.useServerCertificate()
 
+  # FIXME: to be removed
   def _useServerCertificate( self ):
     return gConfigurationData.useServerCertificate()
 
