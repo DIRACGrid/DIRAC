@@ -19,10 +19,10 @@ class Params:
 
   def __init__( self ):
     self.packagesToInstall = [ 'DIRAC' ]
-    self.release = ''
+    self.release = 'HEAD'
     self.externalsType = 'client'
     self.pythonVersion = '25'
-    self.platform = ''
+    self.platform = False
     self.targetPath = os.getcwd()
     self.buildExternals = False
     self.buildIfNotAvailable = False
@@ -62,7 +62,7 @@ def alarmTimeoutHandler( *args ):
 
 def urlretrieveTimeout( url, fileName, timeout = 0 ):
   """
-   Retrive remore url to local file, with timeout wrapper
+   Retrieve remote url to local file, with timeout wrapper
   """
   # NOTE: Not thread-safe, since all threads will catch same alarm.
   #       This is OK for dirac-install, since there are no threads.
@@ -264,7 +264,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'h', 'help', 'Show this help' ),
             ( 'u:', 'baseURL=', 'Change base URL for Tar Download repository' ),
-            ( 'V:', 'virtualOrganization=', 'Install for this Virtual Organization' )
+            ( 'V:', 'virtualOrganization=', 'Install for this Virtual Organization (using remote defaults)' )
           )
 
 optList, args = getopt.getopt( sys.argv[1:],
@@ -275,7 +275,28 @@ def usage():
   print "Usage %s <opts> <cfgFile>" % sys.argv[0]
   for cmdOpt in cmdOpts:
     print " %s %s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 20 ), cmdOpt[2] )
+  print
+  print "Known options and default values from /LocalInstallation section of local or remote cfgFile "
+  for options in [ ( 'Release', cliParams.release ),
+                   ( 'Extensions', [] ),
+                   ( 'InstallType', cliParams.externalsType ),
+                   ( 'PythonVersion', cliParams.pythonVersion ),
+                   ( 'Platform', cliParams.platform ),
+                   ( 'TargetPath', cliParams.targetPath ),
+                   ( 'LcgVer', cliParams.lcgVer ),
+                   ( 'BaseURL', cliParams.downBaseURL ),
+                   ( 'UseVersionsDir', cliParams.useVersionsDir ) ]:
+    print " %s = %s" % options
+
   sys.exit( 1 )
+
+# First check if -V option is set to attempt retrieval of defaults.cfg
+
+for o, v in optList:
+  if o in ( '-h', '--help' ):
+    usage()
+  elif o in ( '-V', '--virtualOrganization' ):
+    cliParams.vo = v
 
 #Load CFG  
 downloadFileFromSVN( "DIRAC/trunk/DIRAC/Core/Utilities/CFG.py", cliParams.targetPath, False, [ '@gCFGSynchro' ] )
@@ -285,6 +306,41 @@ CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
 cfgFD.close()
 
 optCfg = CFG.CFG()
+
+defCfgFile = "defaults.cfg"
+defaultsURL = "%s/%s" % ( cliParams.downBaseURL, defCfgFile )
+logNOTICE( "Getting defaults from %s" % defaultsURL )
+try:
+  urlretrieveTimeout( defaultsURL, defCfgFile, 30 )
+  # when all defaults are move to use LocalInstallation Section the next 2 lines can be removed
+  defCfg = CFG.CFG().loadFromFile( defCfgFile )
+  optCfg = defCfg
+  print optCfg
+  if defCfg.isSection( 'LocalInstallation' ):
+    optCfg = optCfg.mergeWith( defCfg['LocalInstallation'] )
+    print optCfg
+except Exception, e:
+  logNOTICE( "Cannot download default release version: %s" % ( str( e ) ) )
+
+if cliParams.vo:
+  voCfgFile = '%s_defaults.cfg' % cliParams.vo
+  voURL = "%s/%s" % ( cliParams.downBaseURL, voCfgFile )
+  logNOTICE( "Getting defaults from %s" % voURL )
+  try:
+    urlretrieveTimeout( voURL, voCfgFile, 30 )
+    voCfg = CFG.CFG().loadFromFile( voCfgFile )
+    # when all defaults are move to use LocalInstallation Section the next 5 lines can be removed
+    if not optCfg:
+      optCfg = voCfg
+    else:
+      optCfg = optCfg.mergeWith( voCfg )
+    print optCfg
+    if voCfg.isSection( 'LocalInstallation' ):
+      optCfg = optCfg.mergeWith( voCfg['LocalInstallation'] )
+      print optCfg
+  except Exception, e:
+    logNOTICE( "Cannot download VO default release version: %s" % ( str( e ) ) )
+
 for arg in args:
   if not arg[-4:] == ".cfg":
     continue
@@ -309,9 +365,7 @@ cliParams.useVersionsDir = optCfg.getOption( 'UseVersionsDir', cliParams.useVers
 
 
 for o, v in optList:
-  if o in ( '-h', '--help' ):
-    usage()
-  elif o in ( '-r', '--release' ):
+  if o in ( '-r', '--release' ):
     cliParams.release = v
   elif o in ( '-e', '--extraPackages' ):
     for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
@@ -336,48 +390,9 @@ for o, v in optList:
       pass
   elif o in ( '-v', '--useVersionsDir' ):
     cliParams.useVersionsDir = True
-
   elif o in ( '-b', '--build' ):
     cliParams.buildExternals = True
-  elif o in ( '-V', '--virtualOrganization' ):
-    cliParams.vo = v
 
-defaultsCFG = CFG.CFG()
-if not cliParams.release:
-  if cliParams.vo:
-    voURL = "%s/%s_defaults.cfg" % ( cliParams.downBaseURL, cliParams.vo )
-    logNOTICE( "Getting defaults from %s" % voURL )
-    try:
-      urlretrieveTimeout( voURL, '%s_defaults.cfg' % cliParams.vo, 30 )
-    except Exception, e:
-      logDEBUG( "Cannot download VO default release version: %s" % ( str( e ) ) )
-
-  defaultsURL = "%s/defaults.cfg" % cliParams.downBaseURL
-  logNOTICE( "Getting defaults from %s" % defaultsURL )
-  try:
-    urlretrieveTimeout( defaultsURL, 'defaults.cfg', 30 )
-  except Exception, e:
-    logERROR( "Cannot download default release version: %s" % ( str( e ) ) )
-    sys.exit( 1 )
-
-  if os.path.exists( 'defaults.cfg' ):
-    defaultsCFG.loadFromFile( 'defaults.cfg' )
-  if cliParams.vo and os.path.exists( '%s_defaults.cfg' % cliParams.vo ):
-    voCFG = CFG.CFG()
-    voCFG.loadFromFile( '%s_defaults.cfg' % cliParams.vo )
-    defaultsCFG = defaultsCFG.mergeWith( voCFG )
-  releaseVersion = defaultsCFG.getOption( 'Release', '' )
-  if releaseVersion:
-    cliParams.release = releaseVersion
-  else:
-    logERROR( ": Need to define a release version to install!" )
-    usage()
-
-if not cliParams.lcgVer:
-  lcgVer = defaultsCFG.getOption( 'LcgVer', '' )
-  if lcgVer:
-    logNOTICE( "LCG bindings version %s is requested" % lcgVer )
-    cliParams.lcgVer = lcgVer
 
 # Make sure Extensions are not duplicated and have the full name
 pkgList = cliParams.packagesToInstall
