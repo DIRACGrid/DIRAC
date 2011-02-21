@@ -157,7 +157,6 @@ class Dirac:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
-    toRetrieve = []
     for jobID in sortList( jobs.keys() ):
       jobDict = jobs[jobID]
       if jobDict.has_key( 'State' ) and ( jobDict['State'] in requestedStates ):
@@ -183,7 +182,6 @@ class Dirac:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
-    toRetrieve = []
     for jobID in sortList( jobs.keys() ):
       jobDict = jobs[jobID]
       if jobDict.has_key( 'State' ) and ( jobDict['State'] in requestedStates ):
@@ -386,9 +384,6 @@ class Dirac:
        site it is submitted from.
     """
 
-    # If not set differently in the CS use the root from the current DIRAC installation
-    siteRoot = gConfig.getValue( '/LocalSite/Root', DIRAC.rootPath )
-
     jdl = self.__forceLocal( jdl )
 
     jobID = self._sendJob( jdl )
@@ -539,8 +534,6 @@ class Dirac:
        successful WMS submission, this takes the jobID and allows to retry the job agent
        running.
     """
-    # If not set differently in the CS use the root from the current DIRAC installation
-    siteRoot = gConfig.getValue( '/LocalSite/Root', DIRAC.rootPath )
 
     result = self.__monitorSubmittedJob( jobID )
     if not result['OK']:
