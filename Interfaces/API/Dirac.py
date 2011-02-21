@@ -25,14 +25,13 @@ Script.initialize()
 
 __RCSID__ = "$Id$"
 
-import re, os, sys, string, time, shutil, types, tempfile, glob, fnmatch
+import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
 import DIRAC
 
 from DIRAC.Interfaces.API.Job                            import Job
 from DIRAC.Interfaces.API.JobRepository                  import JobRepository
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
-from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
@@ -40,7 +39,6 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient     import Sandbox
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
-from DIRAC.Core.Security.Misc                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection, getServiceURL
 from DIRAC.ConfigurationSystem.Client.Helpers            import getVO
 from DIRAC.Core.Utilities.Time                           import toString
@@ -50,7 +48,7 @@ from DIRAC.Core.Utilities.Version                        import getCurrentVersio
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
-from DIRAC.Core.Security                                 import Locations, CS
+from DIRAC.Core.Security                                 import Locations
 from DIRAC.FrameworkSystem.Client.LoggerClient           import LoggerClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
@@ -60,7 +58,7 @@ COMPONENT_NAME = 'DiracAPI'
 class Dirac:
 
   #############################################################################
-  def __init__( self, WithRepo = False, RepoLocation = '', jobManagerClient = False, 
+  def __init__( self, WithRepo = False, RepoLocation = '', jobManagerClient = False,
                 sbRPCClient = False, sbTransferClient = False, useCertificates = False ):
     """Internal initialization of the DIRAC API.
     """
@@ -348,9 +346,9 @@ class Dirac:
           self.log.error( 'Job submission failure', result['Message'] )
         elif self.jobRepo:
           jobIDList = result['Value']
-          if type(jobIDList) != types.ListType:
+          if type( jobIDList ) != types.ListType:
             jobIDList = [ jobIDList ]
-          for jobID in jobIDList: 
+          for jobID in jobIDList:
             result = self.jobRepo.addJob( jobID, 'Submitted' )
 
     self.log.verbose( 'Cleaning up %s...' % cleanPath )
