@@ -1,61 +1,78 @@
+##################################################################################################
 # $HeadURL$
-__RCSID__ = "$Id$"
+##################################################################################################
+
+"""Collection of DIRAC useful statistics related modules.
+
+.. warning::
+
+   By default on Error they return None.
 
 """
-   Collection of DIRAC useful statistics related modules
-   by default on Error they return None
-"""
+
+__RCSID__ = "$Id$"
 
 from math import sqrt     # Mathematical functions.
 
-def getMean(numbers):
-  "Returns the arithmetic mean of a numeric list."
-  return sum(numbers) / float(len(numbers))
+def getMean( numbers ):
+  """Returns the arithmetic mean of a numeric list.
+  
+  :param list numbers: data sample
+  """
+  if len(numbers):
+    numbers = sorted([float(x) for x in numbers])
+    return sum(numbers)/float(len(numbers))
+    
+def getMedian( numbers ):
+  """ Return the median of the list of numbers.
 
-def getMedian(numbers):
-  "Return the median of the list of numbers."
+  :param list numbers: data sample
+  """
   # Sort the list and take the middle element.
-  n = len(numbers)
-  copy = numbers[:] # So that "numbers" keeps its original order
-  copy.sort()
-  if n & 1:         # There is an odd number of elements
-    return copy[n // 2]
+  nbNum = len(numbers)
+  if not nbNum:
+    return 
+  copy = sorted( [float(x) for x in numbers] )
+  if nbNum & 1:         # There is an odd number of elements
+    return copy[nbNum//2]
   else:
-    return (copy[n // 2 - 1] + copy[n // 2]) / 2
+    return 0.5*(copy[nbNum//2 - 1] + copy[nbNum//2])
 
-def getVariance(numbers,posMean='Empty'):
+def getVariance( numbers, posMean='Empty' ):
   """Determine the measure of the spread of the data set about the mean.
   Sample variance is determined by default; population variance can be
   determined by setting population attribute to True.
-  """
-  x = 0 # Summation variable.
 
+  :param list numbers: data sample
+  :param mixed posMean: mean of a sample or 'Empty' str   
+  """
+  if not len(numbers):
+    return 
   if posMean == 'Empty':
     mean = getMean(numbers)
   else:
     mean = posMean
+  numbers = sorted( [float(x) for x in numbers] )
 
   # Subtract the mean from each data item and square the difference.
   # Sum all the squared deviations.
-  for item in numbers:
-    x += (float(item) - mean)**2.0
+  return sum([(float(item)-mean)**2.0 for item in numbers ])/len(numbers)
 
-  try:
-    # Divide sum of squares by N-1 (sample variance).
-    variance = x/(len(numbers))
-  except:
-    variance = 0
-  return variance
-
-def getStandardDeviation(numbers,variance='Empty',mean='Empty'):
+def getStandardDeviation(numbers, variance='Empty', mean='Empty'):
   """Determine the measure of the dispersion of the data set based on the
   variance.
+
+  :param list numbesr: data sample
+  :param mixed variance: variance or str 'Empty'
+  :param mixed mean: mean or str 'Empty'
   """
+  if not len(numbers): 
+    return
   # Take the square root of the variance.
-  if variance =='Empty':
+  if variance == 'Empty':
     if mean == 'Empty':
       variance = getVariance(numbers)
     else:
-      variance = getVariance(numbers,posMean=mean)
+      variance = getVariance(numbers, posMean=mean)
   return sqrt(variance)
-
+  

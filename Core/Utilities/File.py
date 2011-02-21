@@ -1,26 +1,35 @@
+#####################################################################################
 # $HeadURL$
-__RCSID__ = "$Id$"
+#####################################################################################
 
+"""Collection of DIRAC useful file related modules.
+
+.. warning::
+   By default on Error they return None.
 """
-   Collection of DIRAC useful file related modules
-   by default on Error they return None
-"""
+
+__RCSID__ = "$Id$"
 
 import os
 try:
   import hashlib as md5
-except:
+except ImportError:
   import md5
 import random
 import glob
 import types
+import re
 
 def makeGuid( fileName = None ):
-  """
-     Utility to create GUID's, if a filename it is provided the
+  """Utility to create GUID's, if a filename it is provided the
      GUID will correspond to its hexadecimal md5 checksum
      the format is capitalized 8-4-4-4-12, otherwise a random seed it is
-     used to create a GUID
+     used to create a GUID.
+     
+     .. warning::
+        Could return None in case of OSError or IOError.
+     
+     :param string fileName: name of file 
   """
   myMd5 = md5.md5()
   if fileName:
@@ -33,51 +42,55 @@ def makeGuid( fileName = None ):
       return None
   else:
     myMd5.update( str( random.getrandbits( 128 ) ) )
-
-  md5HexString = myMd5.hexdigest()
-
-  md5String = "%s-%s-%s-%s-%s" % ( md5HexString[0:8],
-                                   md5HexString[8:12],
-                                   md5HexString[12:16],
-                                   md5HexString[16:20],
-                                   md5HexString[20:32] )
-
-  return md5String.upper()
+  md5HexString = myMd5.hexdigest().upper()
+  return "-".join([ md5HexString[0:8], 
+                    md5HexString[8:12], 
+                    md5HexString[12:16], 
+                    md5HexString[16:20],
+                    md5HexString[20:32] ] )
 
 def checkGuid( guid ):
-  """
-     Checks whether a supplied GUID is of the correct format.
-     The guid is a string of 36 characters long split into 5 parts of length 8-4-4-4-12.
+  """Checks whether a supplied GUID is of the correct format.
+     The guid is a string of 36 characters [0-9A-F] long split into 5 parts of length 8-4-4-4-12.
 
-     INPUT:     guid - string to be checked .
-     OPERATION: Split the string on '-', checking each part is correct length.
-     OUTPUT:    Returns 1 if the supplied string is a GUID.
-                Returns 0 otherwise.
+     .. warning::
+        As we are using GUID produced by various services and some of them could not follow
+        convention this function is passing by a guid which can be made if small caps or even just 
+        have 5 parts of whatever chars of proper lenght.
+
+     :param string guid: string to be checked
+     :return: True (False) if supplied string is (not) a valid GUID. 
   """
-  guidSplit = guid.split( '-' )
-  if len( guid ) == 36 \
-    and len( guidSplit[0] ) == 8 \
-      and len( guidSplit[1] ) == 4 \
-        and len( guidSplit[2] ) == 4 \
-          and len( guidSplit[3] ) == 4 \
-            and len( guidSplit[4] ) == 12:
+  reGUID = re.compile("^[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}$")
+  if reGUID.match( guid.upper() ):
     return True
   else:
-    return False
+    guid = [ len(x) for x in guid.split("-") ]
+    if ( guid == [ 8, 4, 4, 4, 12 ] ):
+      return True
+  return False
 
 def getSize( fileName ):
-  """
-  Get size of a file
+  """Get size of a file.
+
+  :param string fileName: name of file to be checked
+  
+  The os module claims only OSError can be thrown, 
+  but just for curiosity it's catching all possible exceptions.
+
+  .. warning:: 
+     On any exception it returns -1.
+  
   """
   try:
     return os.stat( fileName )[6]
-  except Exception, v:
-    return - 1
+  except Exception, error: 
+    return -1
 
 def getGlobbedTotalSize( files ):
-  """
-  Get total size of a list of files or a single file.
-  Globs the parameter to allow regular expressions
+  """Get total size of a list of files or a single file.
+  Globs the parameter to allow regular expressions.
+
   """
   totalSize = 0
   if type( files ) in ( types.ListType, types.TupleType ):
@@ -99,9 +112,8 @@ def getGlobbedTotalSize( files ):
   return totalSize
 
 def getGlobbedFiles( files ):
-  """
-  Get list of files or a single file.
-  Globs the parameter to allow regular expressions
+  """Get list of files or a single file.
+  Globs the parameter to allow regular expressions.
   """
   globbedFiles = []
   if type( files ) in ( types.ListType, types.TupleType ):
@@ -117,22 +129,25 @@ def getGlobbedFiles( files ):
   return globbedFiles
 
 def getCommonPath( files ):
-  """
-  Get the common path for all files in the file list
-  """
+  """Get the common path for all files in the file list.
 
+  :param list files: list of strings with paths
+  """
   def properSplit( dirPath ):
+    """Splitting of path to drive and path parts for non-Unix file systems.
+
+    :param string dirParh: path
+    """
     nDrive, nPath = os.path.splitdrive( dirPath )
     return  [ nDrive ] + [ d for d in nPath.split( os.sep ) if d.strip() ]
-
   if not files:
     return ""
   commonPath = properSplit( files[0] )
-  for file in files:
-    if os.path.isdir( file ):
-      dirPath = file
+  for fileName in files:
+    if os.path.isdir( fileName ):
+      dirPath = fileName
     else:
-      dirPath = os.path.dirname( file )
+      dirPath = os.path.dirname( fileName )
     nPath = properSplit( dirPath )
     tPath = []
     for i in range( min( len( commonPath ), len( nPath ) ) ):
@@ -145,19 +160,22 @@ def getCommonPath( files ):
   return tPath[0] + os.sep + os.path.join( *tPath[1:] )
 
 def getMD5ForFiles( fileList ):
-  """
-  Calculate md5 for the content of all the files
+  """Calculate md5 for the content of all the files.
+
+  :param list fileList: list of paths
   """
   fileList.sort()
-  hash = md5.md5()
+  hashMD5 = md5.md5()
   for filePath in fileList:
+    if ( os.path.isdir( filePath ) ): 
+      continue
     fd = open( filePath, "rb" )
     buf = fd.read( 4096 )
     while buf:
-      hash.update( buf )
+      hashMD5.update( buf )
       buf = fd.read( 4096 )
     fd.close()
-  return hash.hexdigest()
+  return hashMD5.hexdigest()
 
 if __name__ == "__main__":
   import sys
