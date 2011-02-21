@@ -315,10 +315,8 @@ try:
   # when all defaults are move to use LocalInstallation Section the next 2 lines can be removed
   defCfg = CFG.CFG().loadFromFile( defCfgFile )
   optCfg = defCfg
-  print optCfg
   if defCfg.isSection( 'LocalInstallation' ):
     optCfg = optCfg.mergeWith( defCfg['LocalInstallation'] )
-    print optCfg
 except Exception, e:
   logNOTICE( "Cannot download default release version: %s" % ( str( e ) ) )
 
@@ -334,10 +332,8 @@ if cliParams.vo:
       optCfg = voCfg
     else:
       optCfg = optCfg.mergeWith( voCfg )
-    print optCfg
     if voCfg.isSection( 'LocalInstallation' ):
       optCfg = optCfg.mergeWith( voCfg['LocalInstallation'] )
-      print optCfg
   except Exception, e:
     logNOTICE( "Cannot download VO default release version: %s" % ( str( e ) ) )
 
