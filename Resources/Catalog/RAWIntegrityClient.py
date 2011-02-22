@@ -69,3 +69,17 @@ class RAWIntegrityClient(FileCatalogueBase):
     else:
       return S_ERROR("RAWIntegrityClient.__checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)
+  
+  def getPathPermissions( self, path ):
+    """ Determine the VOMs based ACL information for a supplied path
+    """
+    res = self.__checkArgumentFormat( path )
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    failed = {}
+    successful = {}
+    for lfn in lfns.keys():
+      successful[path] = lfn
+    resDict = {'Failed':failed, 'Successful':successful}
+    return S_OK( resDict )
