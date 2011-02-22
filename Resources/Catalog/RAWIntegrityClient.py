@@ -80,6 +80,6 @@ class RAWIntegrityClient(FileCatalogueBase):
     failed = {}
     successful = {}
     for lfn in lfns.keys():
-      successful[path] = lfn
+      successful[lfn] = {'Write':True}
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
