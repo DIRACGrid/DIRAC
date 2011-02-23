@@ -25,7 +25,7 @@ class RequestContainer:
 
     # Subrequests are represented as a dictionary. The subrequests of similar types are stored together in a list.
     # The dictionary named Attributes must be present and must have the following mandatory names
-    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime',
+    self.subAttributeNames = ['Status','SubRequestID','Operation','CreationTime','Catalogue',"TargetSE",
                               'LastUpdate','ExecutionOrder','Error']
     self.subRequests = {}
 
@@ -47,7 +47,7 @@ class RequestContainer:
         self.attributes['OwnerDN'] = proxyDict[ 'identity' ]
         if 'group' in proxyDict:
           self.attributes['OwnerGroup'] = proxyDict[ 'group' ]
-      self.attributes['DIRACSetup'] = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
+      self.attributes['DIRACSetup'] = gConfig.getValue('/DIRAC/Setup','Unknown')
     elif type(request) == types.InstanceType:
       for attr in self.attributeNames:
         self.attributes[attr] = request.attributes[attr]
@@ -181,7 +181,10 @@ class RequestContainer:
   def initiateSubRequest(self,type):
     """ Add dictionary to list of requests and return the list index
     """
-    defaultDict = {'Attributes':{},'Files':[],'Datasets':[]}
+    defaultAttributes = {}
+    for attr in self.subAttributeNames:
+      defaultAttributes[attr] = ''
+    defaultDict = {'Attributes':defaultAttributes,'Files':[],'Datasets':[]}
     if not self.subRequests.has_key(type):
       self.subRequests[type] = []
     self.subRequests[type].append(defaultDict)
@@ -222,6 +225,9 @@ class RequestContainer:
                      'ExecutionOrder':0}
     for attr,value in requestDict['Attributes'].items():
       attributeDict[attr] = value
+    for attr in self.subAttributeNames:
+      if not attr in attributeDict.keys():
+        attributeDict[attr] = '' 
     self.setSubRequestAttributes(index,type,attributeDict)
 
     if requestDict.has_key('Files'):
