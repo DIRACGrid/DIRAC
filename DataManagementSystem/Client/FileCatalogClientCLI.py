@@ -215,7 +215,7 @@ File Catalog Client $Revision: 1.17 $Date:
     cmd.Cmd.__init__(self)
     self.fc = client
     self.cwd = '/'
-    self.prompt = 'FC:'+self.cwd+'>'
+    self.prompt = 'FC:'+self.cwd+'> '
     self.previous_cwd = '/'
 
   def getPath(self,apath):
