@@ -103,7 +103,10 @@ class RegistrationAgent( AgentModule, RequestAgentMixIn ):
           if diracSE == 'SE':
             # We do not care about SE, put any there
             diracSE = "CERN-FAILOVER"
-          catalog = subRequestAttributes['Catalogue']
+          catalog = ''
+          if  subRequestAttributes.has_key( 'Catalogue' ):
+            catalog = subRequestAttributes['Catalogue']
+#          catalog = subRequestAttributes['Catalogue']
           if catalog == "None":
             catalog = ''
           subrequest_done = True
