@@ -7,6 +7,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers   import getVO
 from DIRAC.Resources.Catalog.FileCatalogueBase  import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                  import fromEpoch
 from DIRAC.Core.Utilities.List                  import sortList, breakListIntoChunks
+from DIRAC.Core.Security.Misc                   import getProxyInfo, formatProxyInfoAsString
+from DIRAC.Core.Security.CS                     import getDNForUsername, getVOMSAttributeForGroup
 from stat import *
 import os, re, string, commands, types, time
 
@@ -148,6 +150,29 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
+  def __getClientCertInfo( self ):
+    res = getProxyInfo( False, False )
+    if not res['OK']:
+      gLogger.error( "ReplicaManager.__getClientCertGroup: Failed to get client proxy information.", res['Message'] )
+      return res
+    proxyInfo = res['Value']
+    gLogger.debug( formatProxyInfoAsString( proxyInfo ) )
+    if not proxyInfo.has_key( 'group' ):
+      errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
+      gLogger.error( errStr )
+      return S_ERROR( errStr )
+    if not proxyInfo.has_key( 'VOMS' ):
+      proxyInfo['VOMS'] = getVOMSAttributeForGroup( proxyInfo['group'] )
+      errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the VOMs information."
+      gLogger.warn( errStr )
+    res = getDNForUsername( proxyInfo['username'] )
+    if not res['OK']:
+      errStr = "ReplicaManager.__getClientCertGroup: Error getting known proxies for user."
+      gLogger.error( errStr, res['Message'] )
+      return S_ERROR( errStr )
+    resDict = {'DN':proxyInfo['identity'], 'Role':proxyInfo['VOMS'], 'User':proxyInfo['username'], 'AllDNs':res['Value']}
+    return S_OK( resDict )
+
   def getPathPermissions( self, path ):
     """ Determine the VOMs based ACL information for a supplied path
     """
@@ -168,7 +193,35 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         if not res['OK']:
           failed[path] = res['Message']
         else:
-          successful[path] = res['Value']
+          # Evaluate access rights
+          lfcPerm = res['Value']
+          resClient = self.__getClientCertInfo()
+          if not resClient['OK']:
+            if resClient['Message'] == "Can't find a valid proxy":
+              failed[path] = resClient['Message']
+            else:
+              clientInfo = res['Value']
+              groupMatch = False
+              for vomsRole in clientInfo['Role']:
+                if vomsRole.endswith( lfcPerm['Role'] ):
+                  groupMatch = True
+              if ( lfcPerm['DN'] in clientInfo['AllDNs'] ):
+                if groupMatch:
+                  perms = lfcPerm['user']
+                else:
+                  perms = lfcPerm['world']
+              else:
+                if groupMatch:
+                  perms = lfcPerm['group']
+                else:
+                  perms = lfcPerm['world']
+          
+              lfcPerm['Write'] = (perms & 2) != 0 
+              lfcPerm['Read'] = (perms & 4) != 0
+              lfcPerm['Execute'] = (perms & 1) != 0
+          
+              successful[path] = lfcPerm
+              
     if created: self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
