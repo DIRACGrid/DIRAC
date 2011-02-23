@@ -375,7 +375,7 @@ class FTSRequest:
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
-      self.setSourceSURL( lfn, res['Value'] )
+      res = self.setSourceSURL( lfn, res['Value'] )
       if not res['OK']:
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
