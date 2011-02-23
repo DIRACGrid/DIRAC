@@ -55,7 +55,7 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
     self.threadPoolDepth = self.am_getOption( 'ThreadPoolDepth', 1 )
     self.threadPool = ThreadPool( 1, self.maxNumberOfThreads )
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
@@ -126,6 +126,7 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
           gLogger.info( "TransferAgent.execute: Attempting to execute %s sub-request." % operation )
           diracSE = str( subRequestAttributes['TargetSE'] )
           catalog = ''
+          subRequestError = ''
           if  subRequestAttributes.has_key( 'Catalogue' ):
             catalog = subRequestAttributes['Catalogue']
           for subRequestFile in subRequestFiles:
@@ -150,6 +151,7 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                     gLogger.info( "TransferAgent.execute: Successfully put %s to %s in %s seconds." % ( lfn, diracSE, res['Value']['Successful'][lfn]['put'] ) )
                     gLogger.info( "TransferAgent.execute: Failed to register %s to %s." % ( lfn, diracSE ) )
                     oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
+                    subRequestError = "Replication failed for %s to %s" % ( lfn, diracSE )
                     fileDict = res['Value']['Failed'][lfn]['register']
                     registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'], 'Operation':'registerFile'}, 'Files':[{'LFN': fileDict['LFN'], 'PFN':fileDict['PFN'], 'Size':fileDict['Size'], 'Addler':fileDict['Addler'], 'GUID':fileDict['GUID']}]}
                     gLogger.info( "TransferAgent.execute: Setting registration request for failed file." )
