@@ -1507,12 +1507,13 @@ class JobDB( DB ):
 
     failedTablesList = []
     jobIDString = ','.join( [str( j ) for j in jobIDList] )
-    for table in ( 'Jobs',
-                   'JobJDLs',
+    for table in ( 'JobJDLs',
                    'InputData',
                    'JobParameters',
                    'AtticJobParameters',
-                   'HeartBeatLoggingInfo'
+                   'HeartBeatLoggingInfo',
+                   'OptimizerParameters',
+                   'Jobs'
                    ):
 
       cmd = 'DELETE FROM %s WHERE JobID in (%s)' % ( table, jobIDString )
