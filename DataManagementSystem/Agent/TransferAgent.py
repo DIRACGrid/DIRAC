@@ -120,13 +120,13 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
         subRequestFiles = oRequest.getSubRequestFiles( ind, 'transfer' )['Value']
         operation = subRequestAttributes['Operation']
 
+        subRequestError = ''       
         ################################################
         #  If the sub-request is a put and register operation
         if operation == 'putAndRegister' or operation == 'putAndRegisterAndRemove':
           gLogger.info( "TransferAgent.execute: Attempting to execute %s sub-request." % operation )
           diracSE = str( subRequestAttributes['TargetSE'] )
           catalog = ''
-          subRequestError = ''
           if  subRequestAttributes.has_key( 'Catalogue' ):
             catalog = subRequestAttributes['Catalogue']
           for subRequestFile in subRequestFiles:
@@ -143,6 +143,8 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                     gMonitor.addMark( "Put failed", 1 )
                     self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
                     gLogger.info( "TransferAgent.execute: Failed to put %s to %s." % ( lfn, diracSE ) )
+                    subRequestError = "Put operation failed for %s to %s" % ( lfn, diracSE )
+                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Put failed' )
                   elif not res['Value']['Successful'][lfn].has_key( 'register' ):
                     gMonitor.addMark( "Put successful", 1 )
                     gMonitor.addMark( "File registration failed", 1 )
@@ -151,7 +153,8 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                     gLogger.info( "TransferAgent.execute: Successfully put %s to %s in %s seconds." % ( lfn, diracSE, res['Value']['Successful'][lfn]['put'] ) )
                     gLogger.info( "TransferAgent.execute: Failed to register %s to %s." % ( lfn, diracSE ) )
                     oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                    subRequestError = "Replication failed for %s to %s" % ( lfn, diracSE )
+                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Registration failed' )
+                    subRequestError = "Registration failed for %s to %s" % ( lfn, diracSE )
                     fileDict = res['Value']['Failed'][lfn]['register']
                     registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'], 'Operation':'registerFile'}, 'Files':[{'LFN': fileDict['LFN'], 'PFN':fileDict['PFN'], 'Size':fileDict['Size'], 'Addler':fileDict['Addler'], 'GUID':fileDict['GUID']}]}
                     gLogger.info( "TransferAgent.execute: Setting registration request for failed file." )
@@ -171,11 +174,15 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                   self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
                   errStr = "TransferAgent.execute: Failed to put and register file."
                   gLogger.error( errStr, "%s %s %s" % ( lfn, diracSE, res['Value']['Failed'][lfn] ) )
+                  oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Complete file failure' )
+                  subRequestError = "Failed to put and register file"
               else:
                 gMonitor.addMark( "Put failed", 1 )
                 self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
                 errStr = "TransferAgent.execute: Completely failed to put and register file."
                 gLogger.error( errStr, res['Message'] )
+                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'RM call failure' )
+                subRequestError = operation + " RM call file"
             else:
               gLogger.info( "TransferAgent.execute: File already completed." )
 
@@ -202,11 +209,15 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                   self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
                   errStr = "TransferAgent.execute: Failed to put file."
                   gLogger.error( errStr, "%s %s %s" % ( lfn, diracSE, res['Value']['Failed'][lfn] ) )
+                  subRequestError = "Put operation failed for %s to %s" % ( lfn, diracSE )
+                  oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Put failed' )
               else:
                 gMonitor.addMark( "Put failed", 1 )
                 self.DataLog.addFileRecord( lfn, 'PutFail', diracSE, '', 'TransferAgent' )
                 errStr = "TransferAgent.execute: Completely failed to put file."
                 gLogger.error( errStr, res['Message'] )
+                subRequestError = "Put RM call failed for %s to %s" % ( lfn, diracSE )
+                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Put RM call failed' )
             else:
               gLogger.info( "TransferAgent.execute: File already completed." )
 
@@ -218,7 +229,6 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
           sourceSE = subRequestAttributes['SourceSE']
           if sourceSE == "None":
             sourceSE = ''
-          subRequestError = ''
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
               gMonitor.addMark( "Replicate and register", 1 )
@@ -229,8 +239,7 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                   if not res['Value']['Successful'][lfn].has_key( 'replicate' ):
                     gLogger.info( "TransferAgent.execute: Failed to replicate %s to %s." % ( lfn, targetSE ) )
                     gMonitor.addMark( "Replication failed", 1 )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,
-                                                             "Error", "Replication failed" )
+                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,"Error", "Replication failed" )
                     subRequestError = "Replication failed for %s to %s" % ( lfn, targetSE )
                   elif not res['Value']['Successful'][lfn].has_key( 'register' ):
                     gMonitor.addMark( "Replication successful", 1 )
@@ -238,8 +247,8 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                     gLogger.info( "TransferAgent.execute: Successfully replicated %s to %s in %s seconds." % ( lfn, targetSE, res['Value']['Successful'][lfn]['replicate'] ) )
                     gLogger.info( "TransferAgent.execute: Failed to register %s to %s." % ( lfn, targetSE ) )
                     oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Done' )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,
-                                                             'Error', 'Registration failed' )
+                    oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Error', 'Registration failed' )
+                    subRequestError = "Registration failed for %s to %s" % ( lfn, targetSE )
                     fileDict = res['Value']['Failed'][lfn]['register']
                     registerRequestDict = {'Attributes':{'TargetSE': fileDict['TargetSE'], 'Operation':'registerReplica'}, 'Files':[{'LFN': fileDict['LFN'], 'PFN':fileDict['PFN']}]}
                     gLogger.info( "TransferAgent.execute: Setting registration request for failed replica." )
@@ -256,13 +265,13 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                   gMonitor.addMark( "Replication failed", 1 )
                   errStr = "TransferAgent.execute: Failed to replicate and register file."
                   gLogger.error( errStr, "%s %s %s" % ( lfn, targetSE, res['Value']['Failed'][lfn] ) )
+                  
               else:
                 gMonitor.addMark( "Replication failed", 1 )
                 errStr = "TransferAgent.execute: Completely failed to replicate and register file."
                 gLogger.error( errStr, res['Message'] )
-                subRequestError = "Replication failed for %s to %s" % ( lfn, targetSE )
-                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,
-                                                         "Error", "Replication failed" )
+                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'RM call failure' )
+                subRequestError = operation + " RM call failed"
             else:
               gLogger.info( "TransferAgent.execute: File already completed." )
 
@@ -287,10 +296,14 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
                   gMonitor.addMark( "Replication failed", 1 )
                   errStr = "TransferAgent.execute: Failed to replicate file."
                   gLogger.error( errStr, "%s %s %s" % ( lfn, targetSE, res['Value']['Failed'][lfn] ) )
+                  subRequestError = "Replicate operation failed for %s to %s" % ( lfn, targetSE )
+                  oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Put failed' )
               else:
                 gMonitor.addMark( "Replication failed", 1 )
                 errStr = "TransferAgent.execute: Completely failed to replicate file."
                 gLogger.error( errStr, res['Message'] )
+                subRequestError = "Replicate RM call failed for %s to %s" % ( lfn, targetSE )
+                oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn,'Error', 'Replicate RM call failed' )
             else:
               gLogger.info( "TransferAgent.execute: File already completed." )
 
