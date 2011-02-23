@@ -5,19 +5,15 @@
 """  RegistrationAgent takes register requests from the RequestDB and registers them
 """
 
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
+from DIRAC  import gLogger, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool, ThreadedJob
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
 
-import time, os
 from types import *
 
 __RCSID__ = "$Id$"
@@ -36,7 +32,7 @@ class RegistrationAgent( AgentModule, RequestAgentMixIn ):
     self.threadPoolDepth = self.am_getOption( 'ThreadPoolDepth', 1 )
     self.threadPool = ThreadPool( 1, self.maxNumberOfThreads )
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
