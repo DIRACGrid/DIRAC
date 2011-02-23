@@ -190,7 +190,7 @@ CREATE TABLE HeartBeatLoggingInfo (
     Value BLOB NOT NULL,
     HeartBeatTime DATETIME NOT NULL,
     INDEX (JobID)
-);
+)ENGINE = InnoDB;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobCommands;
