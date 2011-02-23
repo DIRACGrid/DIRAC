@@ -5,19 +5,15 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
+from DIRAC  import gLogger, gMonitor, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool, ThreadedJob
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
 
-import time, os
 from types import *
 
 AGENT_NAME = 'DataManagement/TransferAgent'
