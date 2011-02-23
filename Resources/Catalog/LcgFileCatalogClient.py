@@ -197,30 +197,29 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           lfcPerm = res['Value']
           resClient = self.__getClientCertInfo()
           if not resClient['OK']:
-            if resClient['Message'] == "Can't find a valid proxy":
-              failed[path] = resClient['Message']
-            else:
-              clientInfo = res['Value']
-              groupMatch = False
-              for vomsRole in clientInfo['Role']:
-                if vomsRole.endswith( lfcPerm['Role'] ):
-                  groupMatch = True
-              if ( lfcPerm['DN'] in clientInfo['AllDNs'] ):
-                if groupMatch:
-                  perms = lfcPerm['user']
-                else:
-                  perms = lfcPerm['world']
+            failed[path] = resClient['Message']
+          else:
+            clientInfo = resClient['Value']
+            groupMatch = False
+            for vomsRole in clientInfo['Role']:
+              if vomsRole.endswith( lfcPerm['Role'] ):
+                groupMatch = True
+            if ( lfcPerm['DN'] in clientInfo['AllDNs'] ):
+              if groupMatch:
+                perms = lfcPerm['user']
               else:
-                if groupMatch:
-                  perms = lfcPerm['group']
-                else:
-                  perms = lfcPerm['world']
+                perms = lfcPerm['world']
+            else:
+              if groupMatch:
+                perms = lfcPerm['group']
+              else:
+                perms = lfcPerm['world']
           
-              lfcPerm['Write'] = (perms & 2) != 0 
-              lfcPerm['Read'] = (perms & 4) != 0
-              lfcPerm['Execute'] = (perms & 1) != 0
+            lfcPerm['Write'] = (perms & 2) != 0 
+            lfcPerm['Read'] = (perms & 4) != 0
+            lfcPerm['Execute'] = (perms & 1) != 0
           
-              successful[path] = lfcPerm
+            successful[path] = lfcPerm
               
     if created: self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
