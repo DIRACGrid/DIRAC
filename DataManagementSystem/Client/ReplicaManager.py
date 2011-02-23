@@ -908,36 +908,9 @@ class ReplicaManager( CatalogToStorage ):
     """
     self.accountingClient = client
 
-  def __getClientCertInfo( self ):
-    res = getProxyInfo( False, False )
-    if not res['OK']:
-      gLogger.error( "ReplicaManager.__getClientCertGroup: Failed to get client proxy information.", res['Message'] )
-      return res
-    proxyInfo = res['Value']
-    gLogger.debug( formatProxyInfoAsString( proxyInfo ) )
-    if not proxyInfo.has_key( 'group' ):
-      errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
-      gLogger.error( errStr )
-      return S_ERROR( errStr )
-    if not proxyInfo.has_key( 'VOMS' ):
-      proxyInfo['VOMS'] = getVOMSAttributeForGroup( proxyInfo['group'] )
-      errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the VOMs information."
-      gLogger.warn( errStr )
-    res = getDNForUsername( proxyInfo['username'] )
-    if not res['OK']:
-      errStr = "ReplicaManager.__getClientCertGroup: Error getting known proxies for user."
-      gLogger.error( errStr, res['Message'] )
-      return S_ERROR( errStr )
-    resDict = {'DN':proxyInfo['identity'], 'Role':proxyInfo['VOMS'], 'User':proxyInfo['username'], 'AllDNs':res['Value']}
-    return S_OK( resDict )
-
   def __verifyOperationPermission( self, path ):
-    res = self.__getClientCertInfo()
-    if not res['OK']:
-      if res['Message'] == "Can't find a valid proxy":
-        return S_OK( True )
-      return res
-    clientInfo = res['Value']
+    """  Check if we have write permission to the given directory 
+    """
 
     fc = FileCatalog()
     res = fc.getPathPermissions( path )
@@ -945,27 +918,9 @@ class ReplicaManager( CatalogToStorage ):
       return res
     if not res['Value']['Successful'].has_key( path ):
       return S_ERROR( res['Value']['Failed'][path] )
-    lfcPerm = res['Value']['Successful'][path]
+    catalogPerm = res['Value']['Successful'][path]
 
-    if lfcPerm.has_key( 'Write' ) and lfcPerm['Write']:
-      return S_OK( True )
-
-    groupMatch = False
-    for vomsRole in clientInfo['Role']:
-      if vomsRole.endswith( lfcPerm['Role'] ):
-        groupMatch = True
-    if ( lfcPerm['DN'] in clientInfo['AllDNs'] ):
-      if groupMatch:
-        perms = lfcPerm['user']
-      else:
-        perms = lfcPerm['world']
-    else:
-      if groupMatch:
-        perms = lfcPerm['group']
-      else:
-        perms = lfcPerm['world']
-
-    if perms in [2, 3, 6, 7]:
+    if catalogPerm.has_key( 'Write' ) and catalogPerm['Write']:
       return S_OK( True )
     else:
       return S_OK( False )
@@ -1224,7 +1179,7 @@ class ReplicaManager( CatalogToStorage ):
         sortedSEs.append( se )
     return S_OK( sortedSEs )
 
-  def putAndRegister( self, lfn, file, diracSE, guid = None, path = None, checksum = None, catalog = None ):
+  def putAndRegister( self, lfn, file, diracSE, guid = None, path = None, checksum = None, catalog = None, ancestors = [] ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
         'lfn' is the file LFN
