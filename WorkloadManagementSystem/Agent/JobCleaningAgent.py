@@ -36,12 +36,13 @@ class JobCleaningAgent( AgentModule ):
     """Sets defaults
     """
 
-    self.am_setOption( "PollingTime", 900 )
+    self.am_setOption( "PollingTime", 60 )
     self.jobDB = JobDB()
     self.taskQueueDB = TaskQueueDB()
     # self.sandboxDB = SandboxDB( 'SandboxDB' )
     self.prod_types = self.am_getOption('ProductionTypes',['DataReconstruction', 'DataStripping', 'MCSimulation', 'Merge', 'production'])
     gLogger.info('Will exclude the following Production types from cleaning %s'%(string.join(self.prod_types,', ')))
+    self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce',200)
     return S_OK()
 
   def __getAllowedJobTypes( self ):
@@ -94,6 +95,8 @@ class JobCleaningAgent( AgentModule ):
       return result
 
     jobList = result['Value']
+    if len(jobList) > self.maxJobsAtOnce:
+      jobList = jobList[:self.maxJobsAtOnce]
 
     self.log.notice( "Deleting %s jobs for %s" % ( len( jobList ), condDict ) )
 
@@ -103,17 +106,31 @@ class JobCleaningAgent( AgentModule ):
     if not result[ 'OK' ]:
       gLogger.warn( "Cannot unassign jobs to sandboxes", result[ 'Message' ] )
 
+#    for jobID in jobList:
+#      resultJobDB = self.jobDB.removeJobFromDB( jobID )
+#      resultTQ = self.taskQueueDB.deleteJob( jobID )
+#      if not resultJobDB['OK']:
+#        gLogger.warn( 'Failed to remove job %d from JobDB' % jobID, result['Message'] )
+#        error_count += 1
+#      elif not resultTQ['OK']:
+#        gLogger.warn( 'Failed to remove job %d from TaskQueueDB' % jobID, result['Message'] )
+#        error_count += 1
+#      else:
+#        count += 1
+        
+    result = self.jobDB.removeJobFromDB( jobList )
+    if not result['OK']:
+      gLogger.error('Failed to delete %d jobs from JobDB' % len(jobList) )
+    else:
+      gLogger.info('Deleted %d jobs from JobDB' % len(jobList) )
+
     for jobID in jobList:
-      resultJobDB = self.jobDB.removeJobFromDB( jobID )
       resultTQ = self.taskQueueDB.deleteJob( jobID )
-      if not resultJobDB['OK']:
-        gLogger.warn( 'Failed to remove job %d from JobDB' % jobID, result['Message'] )
-        error_count += 1
-      elif not resultTQ['OK']:
-        gLogger.warn( 'Failed to remove job %d from TaskQueueDB' % jobID, result['Message'] )
+      if not resultTQ['OK']:
+        gLogger.warn( 'Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'] )
         error_count += 1
       else:
-        count += 1
+        count += 1    
 
     if count > 0 or error_count > 0 :
       gLogger.info( 'Deleted %d jobs from JobDB, %d errors' % ( count, error_count ) )
