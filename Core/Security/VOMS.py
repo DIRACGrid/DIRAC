@@ -2,7 +2,7 @@
 __RCSID__ = "$Id$"
 
 import os, stat, tempfile, shutil
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
@@ -134,6 +134,10 @@ class VOMS( BaseSecurity ):
     # FIXME: if the local copy of the voms server certificate is not up to date the command returns 0.
     # the stdout needs to be parsed.
     if status:
+      gLogger.warn( 'Failed to execute:', cmd )
+      gLogger.warn( 'Exit code:', status )
+      gLogger.warn( 'StdOut' , output )
+      gLogger.warn( 'StdErr' , error )
       if error.find( 'VOMS extension not found' ) == -1 and \
          not error.find( 'WARNING: Unable to verify signature! Server certificate possibly not installed.' ) == 0:
         return S_ERROR( 'Failed to get proxy info. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
