@@ -1,10 +1,10 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
 """ DIRAC FileCatalog Security Manager mix-in class
 """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import time,os
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -19,13 +19,32 @@ class SecurityManagerBase:
   def setDatabase(self,database):
     self.db = database
     
+  def getPathPermissions(self,paths,credDict):
+    """ Get path permissions according to the policy 
+    """  
+    return S_ERROR('The getPathPermissions method must be implemented in the inheriting class')
+  
   def hasAccess(self,opType,paths,credDict):
     successful = {}
-    if not opType.lower() in ['read','write']:
+    if not opType.lower() in ['read','write','execute']:
       return S_ERROR("Operation type not known")
-    for path in paths:
-      successful[path] = False
-    resDict = {'Successful':successful,'Failed':{}}
+    if self.db.globalReadAccess and (opType.lower() == 'read'):
+      for path in paths:
+        successful[path] = True
+      resDict = {'Successful':successful,'Failed':{}}
+      return S_OK(resDict)
+    
+    result = self.getPathPermissions(paths,credDict)
+    if not result['OK']:
+      return result
+    
+    permissions = result['Value']
+    for path,permDict in permissions.items():
+      if permDict[opType]:
+        successful[path] = True
+      else:
+        successful[path] = False
+    resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
   def hasAdminAccess(self,credDict):
@@ -36,6 +55,16 @@ class SecurityManagerBase:
 
 class NoSecurityManager(SecurityManagerBase):
 
+  def getPathPermissions(self,paths,credDict):
+    """ Get path permissions according to the policy
+    """
+    
+    permissions = {}
+    for path in paths:
+      permissions[path] = {'Read':True,'Write':True,'Execute':True}
+      
+    return S_OK(permissions)  
+  
   def hasAccess(self,opType,paths,credDict):
     successful = {}
     for path in paths:
@@ -48,15 +77,9 @@ class NoSecurityManager(SecurityManagerBase):
 
 class DirectorySecurityManager(SecurityManagerBase):
   
-  def hasAccess(self,opType,paths,credDict):
-    successful = {}
-    if not opType in ['Read','Write']:
-      return S_ERROR("Operation type not known")
-    if self.db.globalReadAccess and (opType.lower() == 'read'):
-      for path in paths:
-        successful[path] = True
-      resDict = {'Successful':successful,'Failed':{}}
-      return S_OK(resDict)
+  def getPathPermissions(self,paths,credDict):
+    """ Get path permissions according to the policy
+    """
     toGet = dict(zip(paths,[ [path] for path in paths ]))
     permissions = {}
     failed = {}
@@ -81,25 +104,18 @@ class DirectorySecurityManager(SecurityManagerBase):
           toGet[os.path.dirname(path)] = []
         toGet[os.path.dirname(path)] += resolvedPaths
         toGet.pop(path)
-    for path,permDict in permissions.items():
-      if permDict[opType]:
-        successful[path] = True
-      else:
-        successful[path] = False
-    resDict = {'Successful':successful,'Failed':failed}
-    return S_OK(resDict)
+      
+    if self.db.globalReadAccess:    
+      for path in permissions:
+        permissions[path]['Read'] = True
+        
+    return S_OK(permissions)    
 
 class FullSecurityManager(SecurityManagerBase):
-
-  def hasAccess(self,opType,paths,credDict):
-    successful = {}
-    if not opType in ['Read','Write']:
-      return S_ERROR("Operation type not known")
-    if self.db.globalReadAccess and (opType.lower() == 'read'):
-      for path in paths:
-        successful[path] = True
-      resDict = {'Successful':successful,'Failed':{}}
-      return S_OK(resDict)
+  
+  def getPathPermissions(self,paths,credDict):
+    """ Get path permissions according to the policy
+    """
     toGet = dict(zip(paths,[ [path] for path in paths ]))
     permissions = {}
     failed = {}
@@ -140,10 +156,9 @@ class FullSecurityManager(SecurityManagerBase):
           toGet[os.path.dirname(path)] = []
         toGet[os.path.dirname(path)] += resolvedPaths
         toGet.pop(path)
-    for path,permDict in permissions.items():
-      if permDict[opType]:
-        successful[path] = True
-      else:
-        successful[path] = False
-    resDict = {'Successful':successful,'Failed':failed}
-    return S_OK(resDict)
+    
+    if self.db.globalReadAccess:    
+      for path in permissions:
+        permissions[path]['Read'] = True
+        
+    return S_OK(permissions)    
