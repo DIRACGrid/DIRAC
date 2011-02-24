@@ -176,15 +176,25 @@ class FileCatalogDB(DB):
   def getPathPermissions(self, lfns, credDict):
     """ Get permissions for the given user/group to manipulate the given lfns 
     """
-    res = self._checkPathPermissions('Read', lfns, credDict)
-    if not res['OK']:
-      return res
-    failed = res['Value']['Failed']
-    res = self.dtree.getPathPermissions(res['Value']['Successful'],credDict)
-    if not res['OK']:
-      return res
-    failed.update(res['Value']['Failed'])
-    successful = res['Value']['Successful']   
+    failed = {}
+    successful = {}
+    for operation in ['Read','Write']:
+      res = self._checkPathPermissions(operation, lfns, credDict)
+      if not res['OK']:
+        return res
+      for lfn in lfns:
+        successful.setdefault(lfn,{})
+        if lfn in res['Value']['Failed']:
+          if lfn in successful:
+            successful.pop(successful.index(lfn))    
+          failed[lfn] = res['Value']['Failed'][lfn]
+        else:
+          successful[lfn]['Read'] = res['Value']['Successful'][lfn]
+          
+    # For completeness
+    for lfn in successful:
+       successful[lfn]['Execute'] = True     
+   
     return S_OK({'Successful':successful,'Failed':failed}) 
   
   ########################################################################
