@@ -173,6 +173,9 @@ class CREAMComputingElement( ComputingElement ):
     result = executeGridCommand( self.proxy, cmd, self.gridEnv )
     os.unlink( idFileName )
     resultDict = {}
+    if not result['OK']:
+      self.log.error('Failed to get job status',result['Message'])
+      return result
     if result['Value'][1]:
       resultDict = self.__parseJobStatus( result['Value'][1] )
 
