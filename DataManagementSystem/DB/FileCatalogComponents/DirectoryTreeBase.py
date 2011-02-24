@@ -445,7 +445,7 @@ class DirectoryTreeBase:
   #####################################################################
   def getDirectoryPermissions(self,path,credDict):
     """ Get permissions for the given user/group to manipulate the given directory 
-    """ 
+    """
     result = self.db.ugManager.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
@@ -464,17 +464,17 @@ class DirectoryTreeBase:
     dUid = result['Value']['UID']
     dGid = result['Value']['GID']
     mode = result['Value']['Mode']
-    
+
     owner = uid == dUid
     group = gid == dGid
-    
+
     resultDict = {}
     if self.db.globalReadAccess:
       resultDict['Read'] = True
     else:
-      resultDict['Read'] = (owner and mode&stat.S_IRUSR) or (group and mode&stat.S_IRGRP) or mode&stat.S_IROTH       
-    resultDict['Write'] = (owner and mode&stat.S_IWUSR) or (group and mode&stat.S_IWGRP) or mode&stat.S_IWOTH
-    resultDict['Execute'] = (owner and mode&stat.S_IXUSR) or (group and mode&stat.S_IXGRP) or mode&stat.S_IXOTH
+      resultDict['Read'] = (owner and mode&stat.S_IRUSR>0) or (group and mode&stat.S_IRGRP>0) or mode&stat.S_IROTH>0
+    resultDict['Write'] = (owner and mode&stat.S_IWUSR>0) or (group and mode&stat.S_IWGRP>0) or mode&stat.S_IWOTH>0
+    resultDict['Execute'] = (owner and mode&stat.S_IXUSR>0) or (group and mode&stat.S_IXGRP>0) or mode&stat.S_IXOTH>0
     return S_OK(resultDict)
   
   def __getFilesInDirectory(self,dirID):
