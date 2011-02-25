@@ -38,7 +38,7 @@ class SecurityManagerBase:
     if not result['OK']:
       return result
     
-    permissions = result['Value']
+    permissions = result['Value']['Successful']
     for path,permDict in permissions.items():
       if permDict[opType]:
         successful[path] = True
@@ -63,7 +63,7 @@ class NoSecurityManager(SecurityManagerBase):
     for path in paths:
       permissions[path] = {'Read':True,'Write':True,'Execute':True}
       
-    return S_OK(permissions)  
+    return S_OK( {'Successful':permissions,'Failed':{}} )  
   
   def hasAccess(self,opType,paths,credDict):
     successful = {}
@@ -109,7 +109,7 @@ class DirectorySecurityManager(SecurityManagerBase):
       for path in permissions:
         permissions[path]['Read'] = True
         
-    return S_OK(permissions)    
+    return S_OK( {'Successful':permissions,'Failed':failed} )    
 
 class FullSecurityManager(SecurityManagerBase):
   
@@ -161,4 +161,4 @@ class FullSecurityManager(SecurityManagerBase):
       for path in permissions:
         permissions[path]['Read'] = True
         
-    return S_OK(permissions)    
+    return S_OK( {'Successful':permissions,'Failed':failed} )    
