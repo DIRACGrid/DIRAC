@@ -12,6 +12,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities import InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 #
+from DIRAC import gConfig
 InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
