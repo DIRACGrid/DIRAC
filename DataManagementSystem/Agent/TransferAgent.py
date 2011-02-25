@@ -110,7 +110,10 @@ class TransferAgent( AgentModule, RequestAgentMixIn ):
       gMonitor.addMark( "Execute", 1 )
       gLogger.info( "TransferAgent.execute: Processing sub-request %s." % ind )
       subRequestAttributes = oRequest.getSubRequestAttributes( ind, 'transfer' )['Value']
-      subExecutionOrder = int( subRequestAttributes['ExecutionOrder'] )
+      if subRequestAttributes['ExecutionOrder']:
+        subExecutionOrder = int( subRequestAttributes['ExecutionOrder'] )
+      else:
+        subExecutionOrder = 0
       subStatus = subRequestAttributes['Status']
       if subStatus == 'Waiting' and subExecutionOrder <= currentOrder:
         subRequestFiles = oRequest.getSubRequestFiles( ind, 'transfer' )['Value']
