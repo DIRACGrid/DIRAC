@@ -459,7 +459,8 @@ if architectureScript:
     os.environ['CMTCONFIG'] = localArchitecture
     logINFO( 'Setting CMTCONFIG=%s' % localArchitecture )
     # os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
-    os.system( "%s -o '/LocalSite/Architecture=%s'" % ( configureScript, localArchitecture ) )
+    # dirac-configure will not change existing cfg unless -U option is used.
+    os.system( "%s -F -o '/LocalSite/Architecture=%s'" % ( configureScript, localArchitecture ) )
   else:
     logERROR( "There was an error calling %s" % architectureScript )
 #
@@ -565,7 +566,7 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
         # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
         # os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
         # os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
-        os.system( "%s -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( configureScript,
+        os.system( "%s -F -o /LocalSite/CPUScalingFactor=%s -o /LocalSite/CPUNormalizationFactor=%s" % ( configureScript,
                                                                                                       queueNorm / 250.,
                                                                                                       queueNorm / 250. ) )
     else:
