@@ -13,6 +13,10 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+# Register workflow parameter switch
+Script.registerSwitch( 'p:', 'parameter=', 'Parameters that are passed directly to the workflow' )
+Script.parseCommandLine()
+gLogger.showHeaders( True )
 
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
@@ -28,10 +32,6 @@ import DIRAC
 
 import os, os.path, sys, string
 
-# Register workflow parameter switch
-Script.registerSwitch( 'p:', 'parameter=', 'Parameters that are passed directly to the workflow' )
-Script.parseCommandLine()
-gLogger.showHeaders(True)
 
 # Forcing the current directory to be the first in the PYTHONPATH
 sys.path.insert( 0, os.path.realpath( '.' ) )
