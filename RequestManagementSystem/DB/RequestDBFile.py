@@ -380,3 +380,9 @@ class RequestDBFile:
       gLogger.exception( errStr, lException = x )
       return S_ERROR( errStr )
 
+  def getCurrentExecutionOrder(self,requestID):
+    """ Get the current subrequest execution order for the given request,
+        fake method to satisfy the standard interface
+    """
+
+    return S_OK(0)
