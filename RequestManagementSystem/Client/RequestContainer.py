@@ -184,6 +184,8 @@ class RequestContainer:
     defaultAttributes = {}
     for attr in self.subAttributeNames:
       defaultAttributes[attr] = ''
+      if attr == 'ExecutionOrder':
+        defaultAttributes[attr] = 0
     defaultDict = {'Attributes':defaultAttributes,'Files':[],'Datasets':[]}
     if not self.subRequests.has_key(type):
       self.subRequests[type] = []
@@ -228,6 +230,8 @@ class RequestContainer:
     for attr in self.subAttributeNames:
       if not attr in attributeDict.keys():
         attributeDict[attr] = '' 
+        if attr == "ExecutionOrder":
+          attributeDict[attr] = 0
     self.setSubRequestAttributes(index,type,attributeDict)
 
     if requestDict.has_key('Files'):
