@@ -27,6 +27,7 @@
   -v --UseVersionsDir                              Use versions directory (This option will properly define RootPath and InstancePath)
   -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
   -L --LocalSE=<localse>                           To define /LocalSite/LocalSE=<localse>
+  -F --ForceUpdate                                 Forces the update of dirac.cfg, even if it does already exists (use with care)
 
   Other arguments will take proper defaults if not defined.
   
@@ -78,7 +79,7 @@ architecture = None
 localSE = None
 ceName = None
 vo = None
-
+update = False
 
 def setGateway( optionValue ):
   global gatewayServer
@@ -178,6 +179,12 @@ def setVO( optionValue ):
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'VirtualOrganization' ), vo )
   return DIRAC.S_OK()
 
+def forceUpdate( optionValue ):
+  global update
+  update = True
+  DIRAC.gLogger.notice( 'Will update dirac.cfg' )
+  return DIRAC.S_OK()
+
 Script.disableCS()
 
 Script.registerSwitch( "S:", "Setup=", "Set <setup> as DIRAC setup", setSetup )
@@ -195,8 +202,10 @@ Script.registerSwitch( "D", "SkipCADownload", "Configure to skip download of CAs
 
 Script.registerSwitch( "v", "UseVersionsDir", "Use versions directory", setUseVersionsDir )
 
-Script.registerSwitch( "A", "Architecture=", "Configure /Architecture=<architecture>", setArchitecture )
-Script.registerSwitch( "L", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", setLocalSE )
+Script.registerSwitch( "A:", "Architecture=", "Configure /Architecture=<architecture>", setArchitecture )
+Script.registerSwitch( "L:", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", setLocalSE )
+
+Script.registerSwitch( "F", "ForceUpdate", "Force Update of dirac.cfg (otherwise nothing happens if dirac.cfg already exists)", forceUpdate )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     '\nUsage:',
@@ -373,7 +382,7 @@ if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
   configDir = os.path.dirname( DIRAC.gConfig.diracConfigFilePath )
   if not os.path.exists( configDir ):
     os.makedirs( configDir )
-
+  update = True
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
 
 # We need user proxy or server certificate to continue
@@ -392,6 +401,8 @@ else:
 if includeAllServers:
   DIRAC.gConfig.setOptionValue( '/DIRAC/Configuration/Servers', ','.join( DIRAC.gConfig.getServersList() ) )
   DIRAC.gLogger.debug( '/DIRAC/Configuration/Servers =', ','.join( DIRAC.gConfig.getServersList() ) )
+
+if update:
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
 
 
