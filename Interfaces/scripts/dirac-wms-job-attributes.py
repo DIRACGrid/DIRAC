@@ -29,7 +29,7 @@ errorList = []
 
 for job in args:
 
-  result = dirac.attributes( job, printOutput = True )
+  result = dirac.attributes( int(job), printOutput = True )
   if not result['OK']:
     errorList.append( ( job, result['Message'] ) )
     exitCode = 2
