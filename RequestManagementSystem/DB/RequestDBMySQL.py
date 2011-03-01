@@ -419,6 +419,8 @@ class RequestDBMySQL(DB):
       failed = True
       message = res['Message']
     for subRequestID,status in subRequestIDs.items():
+      if not status:
+        status = "Waiting"
       res = self._setSubRequestAttribute(requestID,subRequestID,'Status',status)
       if not res['OK']:
         failed = True
