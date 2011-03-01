@@ -43,7 +43,7 @@ class SocketInfoFactory:
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     #osSocket.setblocking( 0 )
     if timeout:
-      osSocket.settimeout( 2 )
+      osSocket.settimeout( 5 )
     try:
       osSocket.connect( hostAddress )
     except socket.error , e:
