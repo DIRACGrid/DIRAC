@@ -199,10 +199,14 @@ class SystemAdministratorHandler( RequestHandler ):
       return S_ERROR( 'Path "%s" does not exists' % rootPath )
     # For LHCb we need to check Oracle client
     installOracleClient = False
-    result = systemCall( 0, ['python', '-c', 'import cx_Oracle'] )
-    if result['OK'] and result['Value'][0] == 0:
+    oracleFlag = gConfig.getValue('/LocalInstallation/InstallOracleClient','unknown')
+    if oracleFlag.lower() in ['yes','true','1']:
       installOracleClient = True
-
+    elif oracleFlag.lower() == "unknown":
+      result = systemCall( 0, ['python', '-c', 'import cx_Oracle'] )
+      if result['OK'] and result['Value'][0] == 0:
+        installOracleClient = True
+ 
     cmdList = ['dirac-install', '-r', version, '-t', 'server', '-P', rootPath, '--useVersionsDir' ]
     
     # Check if there are extensions
