@@ -1,9 +1,6 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-
-__RCSID__ = "$Id$"
-
 """ This is the StorageElement class.
 
     self.name is the resolved name of the StorageElement i.e CERN-tape
@@ -13,21 +10,25 @@ __RCSID__ = "$Id$"
     self.remoteProtocols is a list of the remote protocols that were created by StorageFactory
     self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
 """
+__RCSID__ = "$Id$"
 
-from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
+
+from DIRAC                                              import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageFactory             import StorageFactory
-from DIRAC.Core.Utilities.Pfn                           import pfnparse, pfnunparse
+from DIRAC.Core.Utilities.Pfn                           import pfnparse
 from DIRAC.Core.Utilities.List                          import sortList
-from DIRAC.Core.Utilities.File                          import getSize
 from DIRAC.Core.Utilities.SiteSEMapping                 import getSEsForSite
-import re, time, os, types
+import re, types
 
 class StorageElement:
 
-  def __init__( self, name, protocols = [], overwride = False ):
+  def __init__( self, name, protocols = None, overwride = False ):
     self.overwride = overwride
     self.valid = True
-    res = StorageFactory().getStorages( name, protocolList = protocols )
+    if protocols == None:
+      res = StorageFactory().getStorages( name, protocolList = [] )
+    else:
+      res = StorageFactory().getStorages( name, protocolList = protocols )
     if not res['OK']:
       self.valid = False
       self.name = name
@@ -432,8 +433,11 @@ class StorageElement:
     else:
       return self.__executeFunction( pfn, 'getDirectory', {'localPath':localPath} )
 
-  def __executeSingleFile( self, pfn, operation, arguments = {} ):
-    res = self.__executeFunction( pfn, operation, arguments )
+  def __executeSingleFile( self, pfn, operation, arguments = None ):
+    if arguments == None:
+      res = self.__executeFunction( pfn, operation, {} )
+    else:
+      res = self.__executeFunction( pfn, operation, arguments )
     if type( pfn ) == types.ListType:
       pfn = pfn[0]
     elif type( pfn ) == types.DictType:
@@ -446,7 +450,7 @@ class StorageElement:
     else:
       return S_OK( res['Value']['Successful'][pfn] )
 
-  def __executeFunction( self, pfn, method, argsDict = {} ):
+  def __executeFunction( self, pfn, method, argsDict = None ):
     """
         'pfn' is the physical file name (as registered in the LFC)
         'method' is the functionality to be executed
