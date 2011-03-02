@@ -96,7 +96,7 @@ def getChunk( aList, chunkSize ):
 
   """
   for i in range( 0, len(aList), chunkSize ): 
-      yield aList[i:i+chunkSize]   
+    yield aList[i:i+chunkSize]   
 
 def breakListIntoChunks( aList, chunkSize ):
   """This method takes a list as input and breaks it into list of size 'chunkSize'. It returns a list of lists.
