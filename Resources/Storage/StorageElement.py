@@ -105,6 +105,41 @@ class StorageElement:
     gLogger.verbose( "StorageElement.getStorageElementName: The Storage Element name is %s." % self.name )
     return S_OK( self.name )
 
+  def getStatus( self ):
+    """
+     Return Status of the SE, a dictionary with:
+      - Read: True (is allowed), False (it is not allowed)
+      - Write: True (is allowed), False (it is not allowed)
+      - DiskSE: True if TXDY with Y > 0 (defaults to True)
+      - TapeSE: True if TXDY with X > 0 (defaults to False)
+      - TotalCapacityTB: float (-1 if not defined)
+      - DiskCacheTB: float (-1 if not defined)
+    """
+    retDict = {}
+    # If nothing is defined in the CS Access is allowed
+    # If something is defined, then it must be set to Active
+    retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
+    retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
+    diskSE = True
+    tapeSE = False
+    if self.options.has_key( 'Type' ):
+      # Type should follow the convention TXDY
+      seType = self.options['SEType']
+      diskSE = re.search( 'D[1-9]', seType ) != None
+      tapeSE = re.search( 'T[1-9]', seType ) != None
+    retDict['DiskSE'] = diskSE
+    retDict['TapeSE'] = tapeSE
+    try:
+      retDict['TotalCapacityTB'] = float( self.options['TotalCapacityTB'] )
+    except Exception:
+      retDict['TotalCapacityTB'] = -1
+    try:
+      retDict['DiskCacheTB'] = float( self.options['DiskCacheTB'] )
+    except Exception:
+      retDict['DiskCacheTB'] = -1
+
+    return S_OK( retDict )
+
   def isValid( self, operation = '' ):
     if self.overwride:
       return S_OK()
