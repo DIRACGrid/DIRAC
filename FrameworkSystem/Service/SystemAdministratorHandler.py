@@ -192,10 +192,10 @@ class SystemAdministratorHandler( RequestHandler ):
 # General purpose methods
 #  
   types_updateSoftware = [ StringTypes ]
-  def export_updateSoftware( self, version, rootPath = "/opt/dirac", gridVersion = "2009-08-13" ):
+  def export_updateSoftware( self, version, rootPath = "", gridVersion = "2009-08-13" ):
     """ Update the local DIRAC software installation to version
     """
-    if not os.path.exists( rootPath ):
+    if rootPath and not os.path.exists( rootPath ):
       return S_ERROR( 'Path "%s" does not exists' % rootPath )
     # For LHCb we need to check Oracle client
     installOracleClient = False
@@ -207,7 +207,9 @@ class SystemAdministratorHandler( RequestHandler ):
       if result['OK'] and result['Value'][0] == 0:
         installOracleClient = True
  
-    cmdList = ['dirac-install', '-r', version, '-t', 'server', '-P', rootPath, '--useVersionsDir' ]
+    cmdList = ['dirac-install', '-r', version, '-t', 'server']
+    if rootPath:
+      cmdList.extend( ['-P',rootPath] ) 
     
     # Check if there are extensions
     extensionList = getCSExtensions()
@@ -219,7 +221,11 @@ class SystemAdministratorHandler( RequestHandler ):
     # Are grid middleware bindings required ?   
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
-      
+   
+    targetPath = gConfig.getValue('/LocalInstallation/TargetPath','')
+    if targetPath:
+      cmdList.append(targetPath+'/etc/dirac.cfg')
+   
     result = systemCall( 0, cmdList )
     if not result['OK']:
       return result
