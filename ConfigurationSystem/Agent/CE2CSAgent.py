@@ -15,7 +15,8 @@ from DIRAC.Core.Utilities.Grid                                import ldapSite, l
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
 from DIRAC.Core.Security.Misc                                 import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers                 import cfgPath, getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.Path            import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals       import getVO
 
 import sys, os
 
