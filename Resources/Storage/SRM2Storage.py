@@ -1,5 +1,7 @@
 """ This is the SRM2 StorageClass """
 
+__RCSID__ = "$Id$"
+
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
 from DIRAC.ConfigurationSystem.Client.Helpers           import getVO
