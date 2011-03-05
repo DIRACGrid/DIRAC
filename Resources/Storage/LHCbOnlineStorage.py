@@ -1,5 +1,7 @@
 """ This is the LHCb Online storage """
 
+__RCSID__ = "$Id$"
+
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase        import StorageBase
 from stat                                       import *
