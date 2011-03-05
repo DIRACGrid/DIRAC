@@ -23,7 +23,7 @@ def getSiteSEMapping( gridName = '' ):
       If gridName is specified, result is restricted to that Grid type.
   """
   siteSEMapping = {}
-  gridTypes = gConfig.getSections( 'Resources/Sites/', [] )
+  gridTypes = gConfig.getSections( 'Resources/Sites/' )
   if not gridTypes['OK']:
     gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
     return gridTypes
@@ -36,7 +36,7 @@ def getSiteSEMapping( gridName = '' ):
 
   gLogger.debug( 'Grid Types are: %s' % ( string.join( gridTypes, ', ' ) ) )
   for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
+    sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
     if not sites['OK']:
       gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
       return sites
@@ -59,7 +59,7 @@ def getSESiteMapping( gridName = '' ):
       Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
   """
   seSiteMapping = {}
-  gridTypes = gConfig.getSections( '/Resources/Sites/', [] )
+  gridTypes = gConfig.getSections( '/Resources/Sites/' )
   if not gridTypes['OK']:
     gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
     return gridTypes
@@ -72,7 +72,7 @@ def getSESiteMapping( gridName = '' ):
 
   gLogger.debug( 'Grid Types are: %s' % ( string.join( gridTypes, ', ' ) ) )
   for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
+    sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
     if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
       gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
       return sites
@@ -93,7 +93,7 @@ def getSitesForSE( storageElement, gridName = '' ):
   """
 
   finalSites = []
-  gridTypes = gConfig.getSections( '/Resources/Sites/', [] )
+  gridTypes = gConfig.getSections( '/Resources/Sites/' )
   if not gridTypes['OK']:
     gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
     return gridTypes
@@ -106,7 +106,7 @@ def getSitesForSE( storageElement, gridName = '' ):
       return S_ERROR( 'Grid type %s not in list: %s' % ( gridName, string.join( gridTypes, ', ' ) ) )
 
   for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
+    sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
     if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
       gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
       return sites
