@@ -14,10 +14,11 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 class ConfigurationClient:
 
-  def __init__( self, fileToLoadList = [] ):
+  def __init__( self, fileToLoadList = None ):
     self.diracConfigFilePath = os.path.join( DIRAC.rootPath, "etc", "dirac.cfg" )
-    for fileName in fileToLoadList:
-      gConfigurationData.loadFile( fileName )
+    if fileToLoadList and type( fileToLoadList ) == types.ListType:
+      for fileName in fileToLoadList:
+        gConfigurationData.loadFile( fileName )
 
   def loadFile( self, fileName ):
     return gConfigurationData.loadFile( fileName )
@@ -119,12 +120,12 @@ class ConfigurationClient:
     if defaultType == types.ListType:
       try:
         return S_OK( List.fromChar( optionValue, ',' ) )
-      except Exception, v:
+      except Exception:
         return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
     elif defaultType == types.BooleanType:
       try:
         return S_OK( optionValue.lower() in ( "y", "yes", "true", "1" ) )
-      except Exception, v:
+      except Exception:
         return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
     else:
       try:

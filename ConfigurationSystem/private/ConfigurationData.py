@@ -19,12 +19,14 @@ class ConfigurationData:
     self.threadingEvent.set()
     self.threadingLock = threading.Lock()
     self.runningThreadsNumber = 0
-    self.compressedConfigurationData= ""
+    self.compressedConfigurationData = ""
     self.configurationPath = "/DIRAC/Configuration"
     self.backupsDir = os.path.join( DIRAC.rootPath, "etc", "csbackup" )
-    self.isService = False
+    self._isService = False
     self.localCFG = CFG()
     self.remoteCFG = CFG()
+    self.mergedCFG = CFG()
+    self.remoteServerList = []
     if loadDefaultCFG:
       defaultCFGFile = os.path.join( DIRAC.rootPath, "etc", "dirac.cfg" )
       gLogger.debug( "dirac.cfg should be at", "%s" % defaultCFGFile )
@@ -57,11 +59,11 @@ class ConfigurationData:
     try:
       fileCFG = CFG()
       fileCFG.loadFromFile( fileName )
-    except IOError, e:
+    except IOError:
       self.localCFG = self.localCFG.mergeWith( fileCFG )
       return S_ERROR( "Can't load a cfg file '%s'" % fileName )
-    return self.mergeWithLocal( fileCFG)
-  
+    return self.mergeWithLocal( fileCFG )
+
   def mergeWithLocal( self, extraCFG ):
     self.lock()
     try:
@@ -70,17 +72,17 @@ class ConfigurationData:
       gLogger.debug( "CFG merged" )
     except Exception, e:
       self.unlock()
-      return S_ERROR( "Cannot merge with new cfg: %s" % str(e) )
+      return S_ERROR( "Cannot merge with new cfg: %s" % str( e ) )
     self.sync()
     return S_OK()
 
-  def loadRemoteCFGFromCompressedMem( self, buffer ):
-    sUncompressedData = zlib.decompress( buffer )
+  def loadRemoteCFGFromCompressedMem( self, data ):
+    sUncompressedData = zlib.decompress( data )
     self.loadRemoteCFGFromMem( sUncompressedData )
 
-  def loadRemoteCFGFromMem( self, buffer ):
+  def loadRemoteCFGFromMem( self, data ):
     self.lock()
-    self.remoteCFG.loadFromBuffer( buffer )
+    self.remoteCFG.loadFromBuffer( data )
     self.unlock()
     self.sync()
 
@@ -108,7 +110,7 @@ class ConfigurationData:
       for section in levelList[:-1]:
         cfg = cfg[ section ]
       return self.dangerZoneEnd( cfg.getComment( levelList[-1] ) )
-    except Exception, e:
+    except Exception:
       pass
     return self.dangerZoneEnd( None )
 
@@ -121,7 +123,7 @@ class ConfigurationData:
       for section in levelList:
         cfg = cfg[ section ]
       return self.dangerZoneEnd( cfg.listSections( ordered ) )
-    except Exception, e:
+    except Exception:
       pass
     return self.dangerZoneEnd( None )
 
@@ -134,7 +136,7 @@ class ConfigurationData:
       for section in levelList:
         cfg = cfg[ section ]
       return self.dangerZoneEnd( cfg.listOptions( ordered ) )
-    except Exception, e:
+    except Exception:
       pass
     return self.dangerZoneEnd( None )
 
@@ -149,7 +151,7 @@ class ConfigurationData:
         cfg = cfg[ section ]
       if levelList[-1] in cfg.listOptions():
         return self.dangerZoneEnd( cfg[ levelList[ -1 ] ] )
-    except Exception, e:
+    except Exception:
       pass
     if not disableDangerZones:
       self.dangerZoneEnd()
@@ -215,7 +217,6 @@ class ConfigurationData:
     return self.setOptionInCFG( "%s/Name" % self.configurationPath,
                                 self.getName(),
                                 self.remoteCFG )
-    self.sync()
 
   def getRefreshTime( self ):
     try:
@@ -237,7 +238,7 @@ class ConfigurationData:
                                         self.mergedCFG ) )
     except:
       return 600
-    
+
   def mergingEnabled( self ):
     try:
       val = self.extractOptionFromCFG( "%s/EnableAutoMerge" % self.configurationPath,
@@ -295,10 +296,10 @@ class ConfigurationData:
     return "/Services"
 
   def setAsService( self ):
-    self.isService = True
+    self._isService = True
 
   def isService( self ):
-    return self.isService
+    return self._isService
 
   def useServerCertificate( self ):
     value = self.extractOptionFromCFG( "/DIRAC/Security/UseServerCertificate" )
@@ -318,7 +319,7 @@ class ConfigurationData:
       fd.write( str( self.localCFG ) )
       fd.close()
       gLogger.verbose( "Configuration file dumped", "'%s'" % fileName )
-    except IOError, e:
+    except IOError:
       gLogger.error( "Can't dump cfg file", "'%s'" % fileName )
       return S_ERROR( "Can't dump cfg file '%s'" % fileName )
     return S_OK()
@@ -349,10 +350,10 @@ class ConfigurationData:
     if os.path.isfile( configurationFile ):
       gLogger.info( "Making a backup of configuration in %s" % backupFile )
       try:
-        zf = zipfile.ZipFile( backupFile, "w", zipfile.ZIP_DEFLATED );
-        zf.write( configurationFile, "%s.backup.%s" % ( os.path.split( configurationFile )[1], backupName )  )
+        zf = zipfile.ZipFile( backupFile, "w", zipfile.ZIP_DEFLATED )
+        zf.write( configurationFile, "%s.backup.%s" % ( os.path.split( configurationFile )[1], backupName ) )
         zf.close()
-      except Exception, v:
+      except Exception:
         gLogger.exception()
         gLogger.error( "Cannot backup configuration data file",
                      "file %s" % backupFile )
@@ -377,7 +378,7 @@ class ConfigurationData:
     if not disableSync:
       self.sync()
 
-  def lock(self):
+  def lock( self ):
     """
     Locks Event to prevent further threads from reading.
     Stops current thread until no other thread is accessing.
@@ -387,14 +388,14 @@ class ConfigurationData:
     while self.runningThreadsNumber > 0:
       time.sleep( 0.1 )
 
-  def unlock(self):
+  def unlock( self ):
     """
     Unlocks Event.
     PRIVATE USE
     """
     self.threadingEvent.set()
 
-  def dangerZoneStart(self):
+  def dangerZoneStart( self ):
     """
     Start of danger zone. This danger zone may be or may not be a mutual exclusion zone.
     Counter is maintained to know how many threads are inside and be able to enable and disable mutual exclusion.
@@ -402,7 +403,7 @@ class ConfigurationData:
     """
     self.threadingEvent.wait()
     self.threadingLock.acquire()
-    self.runningThreadsNumber  += 1
+    self.runningThreadsNumber += 1
     self.threadingLock.release()
 
 

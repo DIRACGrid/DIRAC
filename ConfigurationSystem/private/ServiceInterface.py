@@ -1,7 +1,6 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import sys
 import os
 import time
 import re
@@ -165,7 +164,7 @@ class ServiceInterface( threading.Thread ):
 
   def getCommitHistory( self ):
     files = self.__getCfgBackups( gConfigurationData.getBackupDir() )
-    backups = [ ".".join( file.split( "." )[1:3] ).split( "@" ) for file in files ]
+    backups = [ ".".join( fileName.split( "." )[1:3] ).split( "@" ) for fileName in files ]
     return backups
 
   def run( self ):

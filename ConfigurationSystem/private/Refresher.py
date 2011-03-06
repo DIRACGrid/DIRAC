@@ -3,7 +3,6 @@ __RCSID__ = "$Id$"
 
 import threading
 import time
-import os
 import random
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs
@@ -11,6 +10,21 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.EventDispatcher import gEventDispatcher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+
+def __updateFromRemoteLocation( serviceClient ):
+  gLogger.debug( "", "Trying to refresh from %s" % serviceClient.serviceURL )
+  localVersion = gConfigurationData.getVersion()
+  retVal = serviceClient.getCompressedDataIfNewer( localVersion )
+  if retVal[ 'OK' ]:
+    dataDict = retVal[ 'Value' ]
+    if localVersion < dataDict[ 'newestVersion' ] :
+      gLogger.debug( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
+      gConfigurationData.loadRemoteCFGFromCompressedMem( dataDict[ 'data' ] )
+      gLogger.debug( "Updated to version %s" % gConfigurationData.getVersion() )
+      gEventDispatcher.triggerEvent( "CSNewVersion", dataDict[ 'newestVersion' ], threaded = True )
+    return S_OK()
+  return retVal
+
 
 class Refresher( threading.Thread ):
 
@@ -99,7 +113,7 @@ class Refresher( threading.Thread ):
       oClient = RPCClient( sMasterServer, timeout = self.__timeout,
                            useCertificates = gConfigurationData.useServerCertificate(),
                            skipCACheck = gConfigurationData.skipCACheck() )
-      dRetVal = self.__updateFromRemoteLocation( oClient )
+      dRetVal = __updateFromRemoteLocation( oClient )
       if not dRetVal[ 'OK' ]:
         gLogger.error( "Can't update from master server", dRetVal[ 'Message' ] )
         return False
@@ -132,7 +146,7 @@ class Refresher( threading.Thread ):
       oClient = RPCClient( sServer,
                          useCertificates = gConfigurationData.useServerCertificate(),
                          skipCACheck = gConfigurationData.skipCACheck() )
-      dRetVal = self.__updateFromRemoteLocation( oClient )
+      dRetVal = __updateFromRemoteLocation( oClient )
       if dRetVal[ 'OK' ]:
         return dRetVal
       else:
@@ -140,19 +154,9 @@ class Refresher( threading.Thread ):
         gLogger.warn( "Can't update from server", "Error while updating from %s: %s" % ( sServer, dRetVal[ 'Message' ] ) )
     return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList ) ) )
 
-  def __updateFromRemoteLocation( self, serviceClient ):
-    gLogger.debug( "", "Trying to refresh from %s" % serviceClient.serviceURL )
-    localVersion = gConfigurationData.getVersion()
-    retVal = serviceClient.getCompressedDataIfNewer( localVersion )
-    if retVal[ 'OK' ]:
-      dataDict = retVal[ 'Value' ]
-      if localVersion < dataDict[ 'newestVersion' ] :
-        gLogger.debug( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
-        gConfigurationData.loadRemoteCFGFromCompressedMem( dataDict[ 'data' ] )
-        gLogger.debug( "Updated to version %s" % gConfigurationData.getVersion() )
-        gEventDispatcher.triggerEvent( "CSNewVersion", dataDict[ 'newestVersion' ], threaded = True )
-      return S_OK()
-    return retVal
+  def daemonize( self ):
+    self.setDaemon( 1 )
+    self.start()
 
 gRefresher = Refresher()
 

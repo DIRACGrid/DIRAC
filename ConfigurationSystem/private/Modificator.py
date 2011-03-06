@@ -13,6 +13,8 @@ class Modificator:
   def __init__( self, rpcClient = False, commiterId = "unknown" ):
     self.commiterTag = "@@-"
     self.commiterId = commiterId
+    self.cfgData = CFG()
+    self.rpcClient = None
     if rpcClient:
       self.setRPCClient( rpcClient )
 
