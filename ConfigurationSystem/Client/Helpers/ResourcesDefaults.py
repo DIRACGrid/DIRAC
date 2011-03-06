@@ -1,13 +1,14 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-submit-pilot-for-job.py $
+# $HeadURL$
 # File :   ResourceDefaults.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__ = "$Id: dirac-admin-submit-pilot-for-job.py 18161 2009-11-11 12:07:09Z acasajus $"
 """
 Some Helper class to access Default options for Different Resources (CEs, SEs, Catalags,...)
 """
-from DIRAC.ConfigurationSystem.Client.Helpers.Path import *
+__RCSID__ = "$Id$"
+
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgResourceSection, cfgPath, cfgInstallPath, cfgPathToList
 from DIRAC.Core.Utilities.CFG import CFG
 
 def defaultSection( resource ):
@@ -16,7 +17,7 @@ def defaultSection( resource ):
   """
   return cfgPath( cfgResourceSection, 'Defaults', resource )
 
-def getComputingElementDefaults( ceName='', ceType='', cfg=None, currentSectionPath='' ):
+def getComputingElementDefaults( ceName = '', ceType = '', cfg = None, currentSectionPath = '' ):
   """
   Return cfgDefaults with defaults for the given CEs defined either in arguments or in the provided cfg
   """
@@ -25,7 +26,7 @@ def getComputingElementDefaults( ceName='', ceType='', cfg=None, currentSectionP
     try:
       cesCfg.loadFromFile( cfg )
       cesPath = cfgInstallPath( 'ComputingElements' )
-      if cesCfg.isSection(cesPath):
+      if cesCfg.isSection( cesPath ):
         for section in cfgPathToList( cesPath ):
           cesCfg = cesCfg[section]
     except:
@@ -38,11 +39,11 @@ def getComputingElementDefaults( ceName='', ceType='', cfg=None, currentSectionP
     if currentSectionPath:
       # Add Options from Command Line
       optionsDict = __getExtraOptions( currentSectionPath )
-      for name,value in optionsDict.items():
+      for name, value in optionsDict.items():
         cesCfg[ceName].setOption( name, value )
     if ceType:
       cesCfg[ceName].setOption( 'CEType', ceType )
-    
+
   ceDefaultSection = cfgPath( defaultSection( 'ComputingElements' ) )
   # Load Default for the given type from Central configuration is defined
   ceDefaults = __gConfigDefaults( ceDefaultSection )
@@ -52,7 +53,7 @@ def getComputingElementDefaults( ceName='', ceType='', cfg=None, currentSectionP
       if ceType in ceDefaults:
         for option in ceDefaults[ceType].listOptions():
           if option not in cesCfg[ceName]:
-            cesCfg[ceName].setOption( option,ceDefaults[ceType][option] )
+            cesCfg[ceName].setOption( option, ceDefaults[ceType][option] )
 
   return cesCfg
 
@@ -65,14 +66,14 @@ def __gConfigDefaults( defaultPath ):
   result = gConfig.getSections( defaultPath )
   if not result['OK']:
     return cfgDefaults
-  for type in result['Value']:
-    typePath = cfgPath( defaultPath, type )
-    cfgDefaults.createNewSection( type )
+  for name in result['Value']:
+    typePath = cfgPath( defaultPath, name )
+    cfgDefaults.createNewSection( name )
     result = gConfig.getOptionsDict( typePath )
     if result['OK']:
       optionsDict = result['Value']
-      for option,value in optionsDict.items():
-        cfgDefaults[type].setOption( option, value )
+      for option, value in optionsDict.items():
+        cfgDefaults[name].setOption( option, value )
 
   return cfgDefaults
 

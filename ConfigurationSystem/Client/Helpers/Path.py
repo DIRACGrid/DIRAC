@@ -1,12 +1,12 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-submit-pilot-for-job.py $
+# $HeadURL$
 # File :   Path.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__ = "$Id: dirac-admin-submit-pilot-for-job.py 18161 2009-11-11 12:07:09Z acasajus $"
 """
 Some Helper class to build CFG paths from tuples
 """
+__RCSID__ = "$Id$"
 
 cfgInstallSection = 'LocalInstallation'
 cfgResourceSection = 'Resources'
@@ -29,8 +29,8 @@ def cfgPathToList( arg ):
   """
   from types import StringTypes
   listPath = []
-  if type(arg) not in StringTypes:
+  if type( arg ) not in StringTypes:
     return listPath
-  while arg.find('/') == 0:
+  while arg.find( '/' ) == 0:
     arg = arg[1:]
-  return arg.split('/')
+  return arg.split( '/' )

@@ -1,7 +1,8 @@
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/ConfigurationSystem/Client/__init__.py $
-__RCSID__ = "$Id: __init__.py 18161 2009-11-11 12:07:09Z acasajus $"
+# $HeadURL$
 """
    DIRAC.ConfigurationSystem.Client.Helpers package  
 """
+__RCSID__ = "$Id$"
+
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import *
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions, getInstalledExtensions, getVO

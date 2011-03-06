@@ -1,12 +1,12 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-submit-pilot-for-job.py $
+# $HeadURL$
 # File :    CSGlobals.py
 # Author :  Ricardo Graciani
 ########################################################################
 """
 Some Helper functions to retrieve common location from the CS
 """
-__RCSID__ = "$Id: dirac-admin-submit-pilot-for-job.py 18161 2009-11-11 12:07:09Z acasajus $"
+__RCSID__ = "$Id$"
 
 #from DIRAC import gConfig
 
@@ -29,20 +29,23 @@ def getInstalledExtensions():
   """
     Return list of extensions registered in the CS and available in local installation
   """
-  from DIRAC import gConfig
+  import imp
   extensions = []
   for extension in getCSExtensions():
     try:
-      exec 'import %sDIRAC' % extension
-      extensions.append( '%sDIRAC' % extension )
-    except:
+      extension = '%sDIRAC' % extension
+      imp.find_module( extension )
+      extensions.append( extension )
+    except ImportError:
       pass
   extensions.append( 'DIRAC' )
   return extensions
 
 
 def skipCACheck():
+  from DIRAC import gConfig
   return gConfig.getValue( "/DIRAC/Security/SkipCAChecks", "false" ).lower() in ( "y", "yes", "true" )
 
 def useServerCertificate():
+  from DIRAC import gConfig
   return gConfig.getValue( "/DIRAC/Security/UseServerCertificate", "false" ).lower() in ( "y", "yes", "true" )
