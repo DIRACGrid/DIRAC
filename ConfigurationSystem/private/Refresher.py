@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.EventDispatcher import gEventDispatcher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
-def __updateFromRemoteLocation( serviceClient ):
+def _updateFromRemoteLocation( serviceClient ):
   gLogger.debug( "", "Trying to refresh from %s" % serviceClient.serviceURL )
   localVersion = gConfigurationData.getVersion()
   retVal = serviceClient.getCompressedDataIfNewer( localVersion )
@@ -113,7 +113,7 @@ class Refresher( threading.Thread ):
       oClient = RPCClient( sMasterServer, timeout = self.__timeout,
                            useCertificates = gConfigurationData.useServerCertificate(),
                            skipCACheck = gConfigurationData.skipCACheck() )
-      dRetVal = __updateFromRemoteLocation( oClient )
+      dRetVal = _updateFromRemoteLocation( oClient )
       if not dRetVal[ 'OK' ]:
         gLogger.error( "Can't update from master server", dRetVal[ 'Message' ] )
         return False
@@ -146,7 +146,7 @@ class Refresher( threading.Thread ):
       oClient = RPCClient( sServer,
                          useCertificates = gConfigurationData.useServerCertificate(),
                          skipCACheck = gConfigurationData.skipCACheck() )
-      dRetVal = __updateFromRemoteLocation( oClient )
+      dRetVal = _updateFromRemoteLocation( oClient )
       if dRetVal[ 'OK' ]:
         return dRetVal
       else:
