@@ -122,7 +122,7 @@ class StorageElement:
     retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
     diskSE = True
     tapeSE = False
-    if self.options.has_key( 'Type' ):
+    if self.options.has_key( 'SEType' ):
       # Type should follow the convention TXDY
       seType = self.options['SEType']
       diskSE = re.search( 'D[1-9]', seType ) != None
