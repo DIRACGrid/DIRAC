@@ -8,16 +8,42 @@ __RCSID__ = "$Id$"
 import cmd
 import sys
 import signal
+import types
 from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import gLogger
 
+def _showTraceback():
+  import traceback
+  excepType, execpValue = sys.exc_info()[:2]
+  print "________________________\n"
+  print "Exception", excepType, ":", execpValue
+  traceback.print_tb( sys.exc_info()[2] )
+  print "________________________\n"
+
+def _printComment( comment ):
+  commentList = comment.split( "\n" )
+  for commentLine in commentList[ :-1 ]:
+    print "# %s" % commentLine.strip()
+
+def _appendExtensionIfMissing( filename ):
+  dotPosition = filename.rfind( "." )
+  if dotPosition > -1:
+    filename = filename[ :dotPosition ]
+  return "%s.cfg" % filename
+
+
 class CSCLI( cmd.Cmd ):
 
   def __init__( self ):
     cmd.Cmd.__init__( self )
+    self.connected = False
+    self.masterURL = "unset"
+    self.writeEnabled = False
+    self.modifiedData = False
+    self.rpcClient = None
     self.do_connect()
     if self.connected:
       self.modificator = Modificator ( self.rpcClient )
@@ -25,8 +51,7 @@ class CSCLI( cmd.Cmd ):
       self.modificator = Modificator()
     self.identSpace = 20
     self.backupFilename = "dataChanges"
-    self.initSignals()
-    self.modifiedData = False
+    self._initSignals()
     #User friendly hack
     self.do_exit = self.do_quit
 
@@ -37,14 +62,14 @@ class CSCLI( cmd.Cmd ):
       if not retVal[ 'OK' ]:
         print "There was an error gathering your credentials"
         print retVal[ 'Message' ]
-        self.setStatus( False )
+        self._setStatus( False )
     try:
       self.cmdloop()
-    except KeyboardInterrupt, v:
+    except KeyboardInterrupt:
       gLogger.warn( "Received a keyboard interrupt." )
       self.do_quit( "" )
 
-  def initSignals( self ):
+  def _initSignals( self ):
     """
     Registers signal handlers
     """
@@ -54,15 +79,7 @@ class CSCLI( cmd.Cmd ):
       except:
         pass
 
-  def showTraceback( self ):
-    import traceback
-    type, value = sys.exc_info()[:2]
-    print "________________________\n"
-    print "Exception", type, ":", value
-    traceback.print_tb( sys.exc_info()[2] )
-    print "________________________\n"
-
-  def setConnected( self, connected, writeEnabled ):
+  def _setConnected( self, connected, writeEnabled ):
     self.connected = connected
     self.modifiedData = False
     self.writeEnabled = writeEnabled
@@ -75,18 +92,13 @@ class CSCLI( cmd.Cmd ):
       self.prompt = "(%s)-%s> " % ( self.masterURL, colorize( "Disconnected", "red" ) )
 
 
-  def printPair( self, key, value, separator = ":" ):
+  def _printPair( self, key, value, separator = ":" ):
     valueList = value.split( "\n" )
     print "%s%s%s %s" % ( key, " " * ( self.identSpace - len( key ) ), separator, valueList[0].strip() )
     for valueLine in valueList[ 1:-1 ]:
       print "%s  %s" % ( " " * self.identSpace, valueLine.strip() )
 
-  def printComment( self, comment ):
-    commentList = comment.split( "\n" )
-    for commentLine in commentList[ :-1 ]:
-      print "# %s" % commentLine.strip()
-
-  def do_quit( self, *args ):
+  def do_quit( self, dummy ):
     """
     Exits the application without sending changes to server
         Usage: quit
@@ -109,7 +121,7 @@ class CSCLI( cmd.Cmd ):
       attrList.sort()
       for attribute in attrList:
         if attribute.find( "do_" ) == 0:
-          self.printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
+          self._printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
           print ""
     else:
       command = args.split()[0].strip()
@@ -118,62 +130,63 @@ class CSCLI( cmd.Cmd ):
       except:
         print "There's no such %s command" % command
         return
-      self.printPair( command, obj.__doc__[1:] )
+      self._printPair( command, obj.__doc__[1:] )
 
-  def retrieveData( self ):
-    if not self.connected:
-      return False
-    response = self.rpcClient.dumpCompressed()
-    if response[ 'Status' ] == 'OK':
-      self.cDataHolder.loadFromCompressedSource( response[ 'Value' ] )
-      gLogger.info( "Data retrieved from server." )
-      return True
-    else:
-      gLogger.error( "Can't retrieve updated data from server." )
-      return False
+#  def retrieveData( self ):
+#    if not self.connected:
+#      return False
+#    response = self.rpcClient.dumpCompressed()
+#    if response[ 'Status' ] == 'OK':
+#      self.cDataHolder.loadFromCompressedSource( response[ 'Value' ] )
+#      gLogger.info( "Data retrieved from server." )
+#      return True
+#    else:
+#      gLogger.error( "Can't retrieve updated data from server." )
+#      return False
 
-  def setStatus( self, connected = True ):
+  def _setStatus( self, connected = True ):
     if not connected:
-      self.setConnected( False, False )
+      self.masterURL = "unset"
+      self._setConnected( False, False )
     else:
       retVal = self.rpcClient.writeEnabled()
       if retVal[ 'OK' ]:
         if retVal[ 'Value' ] == True:
-          self.setConnected( True, True )
+          self._setConnected( True, True )
         else:
-          self.setConnected( True, False )
+          self._setConnected( True, False )
       else:
         print "Server returned an error: %s" % retVal[ 'Message' ]
-        self.setConnected( True, False )
+        self._setConnected( True, False )
 
-  def tryConnection( self ):
+  def _tryConnection( self ):
     print "Trying connection to %s" % self.masterURL
-    self.rpcClient = RPCClient( self.masterURL )
-    self.setStatus()
+    try:
+      self.rpcClient = RPCClient( self.masterURL )
+      self._setStatus()
+    except Exception, x:
+      gLogger.error( "Couldn't connect to %s (%s)" % ( self.masterURL, str( x ) ) )
+      self._setStatus( False )
 
-  def do_connect( self, args = False ):
+  def do_connect( self, args = '' ):
     """
-    Connects to localhost server in specified port.
+    Connects to configuration master server (in specified url if provided).
         Usage: connect <url>
     """
-    if not args:
+    if not args or type( args ) not in types.StringTypes:
       self.masterURL = gConfigurationData.getMasterServer()
       if self.masterURL != "unknown" and self.masterURL:
-        self.tryConnection()
+        self._tryConnection()
       else:
-        self.masterURL = "unset"
-        self.setStatus( False )
-      return
-    splitted = args.split()
-    if len( splitted ) == 0:
-      print "Must specify witch url to connect"
-      return
-    try:
-      self.masterURL = splitted[0].strip()
-      self.tryConnection()
-    except Exception, v:
-      gLogger.error( "Couldn't connect to %s (%s)" % ( self.masterURL, str( v ) ) )
-      self.setConnected( False, False )
+        self._setStatus( False )
+    else:
+      splitted = args.split()
+      if len( splitted ) == 0:
+        print "Must specify witch url to connect"
+        self._setStatus( False )
+      else:
+        self.masterURL = splitted[0].strip()
+        self._tryConnection()
 
   def do_sections( self, args ):
     """
@@ -196,9 +209,9 @@ class CSCLI( cmd.Cmd ):
         return
       for section in sectionList:
         section = "%s/%s" % ( baseSection, section )
-        self.printPair( section, self.modificator.getComment( section ) , "#" )
+        self._printPair( section, self.modificator.getComment( section ) , "#" )
     except:
-      self.showTraceback()
+      _showTraceback()
 
   def do_options( self, args ):
     """
@@ -220,10 +233,10 @@ class CSCLI( cmd.Cmd ):
         print "Section %s has no options" % section
         return
       for option in optionsList:
-        self.printComment( self.modificator.getComment( "%s/%s" % ( section, option ) ) )
-        self.printPair( option, self.modificator.getValue( "%s/%s" % ( section, option ) ), "=" )
+        _printComment( self.modificator.getComment( "%s/%s" % ( section, option ) ) )
+        self._printPair( option, self.modificator.getValue( "%s/%s" % ( section, option ) ), "=" )
     except:
-      self.showTraceback()
+      _showTraceback()
 
   def do_get( self, args ):
     """
@@ -239,14 +252,14 @@ class CSCLI( cmd.Cmd ):
         return
       if self.modificator.existsOption( optionPath ):
         option = optionPath.split( "/" )[-1]
-        self.printComment( self.modificator.getComment( optionPath ) )
-        self.printPair( option, self.modificator.getValue( optionPath ), "=" )
+        _printComment( self.modificator.getComment( optionPath ) )
+        self._printPair( option, self.modificator.getValue( optionPath ), "=" )
       else:
         print "Option %s does not exist" % optionPath
     except:
-      self.showTraceback()
+      _showTraceback()
 
-  def do_writeToServer( self, args ):
+  def do_writeToServer( self, dummy ):
     """
     Sends changes to server.
         Usage: writeToServer
@@ -258,7 +271,6 @@ class CSCLI( cmd.Cmd ):
       if not self.writeEnabled:
         print "This server can't receive data modifications"
         return
-      assured = ""
       if not self.modifiedData:
         while True:
           choice = raw_input( "Data has not been modified, do you still want to upload changes? yes/no [no]: " )
@@ -283,9 +295,9 @@ class CSCLI( cmd.Cmd ):
         return
       else:
         print "Commit aborted"
-    except Exception, v:
-      self.showTraceback()
-      print "Could not upload changes. ", v
+    except Exception, x:
+      _showTraceback()
+      print "Could not upload changes. ", str( x )
 
   def do_set( self, args ):
     """
@@ -303,8 +315,8 @@ class CSCLI( cmd.Cmd ):
       value = " ".join( argsList[1:] ).strip()
       self.modificator.setOptionValue( optionPath, value )
       self.modifiedData = True
-    except Exception, v:
-      print "Cannot insert value: ", v
+    except Exception, x:
+      print "Cannot insert value: ", str( x )
 
   def do_removeOption( self, args ):
     """
@@ -327,8 +339,8 @@ class CSCLI( cmd.Cmd ):
           print "Can't be deleted"
       else:
         print "Aborting removal."
-    except Exception, v:
-      print "Error removing option, %s" % v
+    except Exception, x:
+      print "Error removing option, %s" % str( x )
 
   def do_removeSection( self, args ):
     """
@@ -350,8 +362,8 @@ class CSCLI( cmd.Cmd ):
           print "Can't be deleted"
       else:
         print "Aborting removal."
-    except Exception, v:
-      print "Error removing section, %s" % v
+    except Exception, x:
+      print "Error removing section, %s" % str( x )
 
   def do_setComment( self, args ):
     """
@@ -368,14 +380,8 @@ class CSCLI( cmd.Cmd ):
       value = " ".join( argsList[1:] ).strip()
       self.modificator.setComment( entryPath, value )
       self.modifiedData = True
-    except Exception, v:
-      print "Cannot insert comment: ", v
-
-  def appendExtensionIfMissing( self, filename ):
-    dotPosition = filename.rfind( "." )
-    if dotPosition > -1:
-      filename = filename[ :dotPosition ]
-    return "%s.cfg" % filename
+    except Exception, x:
+      print "Cannot insert comment: ", str( x )
 
   def do_writeToFile( self, args ):
     """
@@ -389,10 +395,10 @@ class CSCLI( cmd.Cmd ):
         print "Filename to write must be specified!"
         return
       filename = args.split()[0].strip()
-      filename = self.appendExtensionIfMissing( filename )
+      filename = _appendExtensionIfMissing( filename )
       self.modificator.dumpToFile( filename )
-    except Exception, v:
-      print "Couldn't write to file %s: %s" % ( filename, str( v ) )
+    except Exception, x:
+      print "Couldn't write to file %s: %s" % ( filename, str( x ) )
 
   def do_readFromFile( self, args ):
     """
@@ -406,11 +412,11 @@ class CSCLI( cmd.Cmd ):
         print "Filename to read must be specified!"
         return
       filename = args.split()[0].strip()
-      filename = self.appendExtensionIfMissing( filename )
+      filename = _appendExtensionIfMissing( filename )
       self.modificator.loadFromFile( filename )
       self.modifiedData = True
-    except Exception, v:
-      print "Couldn't read from file %s: %s" % ( filename, str( v ) )
+    except Exception, x:
+      print "Couldn't read from file %s: %s" % ( filename, str( x ) )
 
   def do_mergeFromFile( self, args ):
     """
@@ -425,14 +431,14 @@ class CSCLI( cmd.Cmd ):
         print "Filename to read must be specified!"
         return
       filename = args.split()[0].strip()
-      filename = self.appendExtensionIfMissing( filename )
+      filename = _appendExtensionIfMissing( filename )
       self.modificator.mergeFromFile( filename )
       self.modifiedData = True
-    except Exception, v:
-      self.showTraceback()
-      print "Couldn't read from file %s: %s" % ( filename, str( v ) )
+    except Exception, x:
+      _showTraceback()
+      print "Couldn't read from file %s: %s" % ( filename, str( x ) )
 
-  def do_showData( self, args ):
+  def do_showData( self, dummy ):
     """
     Shows the current modified configuration
     Usage: showData
@@ -452,11 +458,11 @@ class CSCLI( cmd.Cmd ):
       history = self.modificator.getHistory( limit )
       print "%s recent commits:" % limit
       for entry in history:
-        self.printPair( entry[0], entry[1], "@" )
-    except Exception, v:
-      self.showTraceback()
+        self._printPair( entry[0], entry[1], "@" )
+    except:
+      _showTraceback()
 
-  def do_showDiffWithServer( self, args ):
+  def do_showDiffWithServer( self, dummy ):
     """
     Shows diff with lastest version in server
     Usage: showDiffWithServer
@@ -473,8 +479,8 @@ class CSCLI( cmd.Cmd ):
           print colorize( line, "yellow" ),
         else:
           print line
-    except Exception, v:
-      self.showTraceback()
+    except:
+      _showTraceback()
 
   def do_showDiffBetweenVersions( self, args ):
     """
@@ -500,8 +506,8 @@ class CSCLI( cmd.Cmd ):
           print colorize( line, "yellow" ),
         else:
           print line
-    except Exception, v:
-      self.showTraceback()
+    except:
+      _showTraceback()
 
   def do_rollbackToVersion( self, args ):
     """
@@ -524,10 +530,10 @@ class CSCLI( cmd.Cmd ):
           self.modificator.loadFromRemote()
         else:
           print "Error sending data, server said: %s" % response['Message']
-    except Exception, v:
-      self.showTraceback()
+    except:
+      _showTraceback()
 
-  def do_mergeWithServer( self, args ):
+  def do_mergeWithServer( self, dummy ):
     """
     Shows diff with lastest version in server
     Usage: diffWithServer
@@ -543,6 +549,6 @@ class CSCLI( cmd.Cmd ):
           print "There was an error: ", retVal[ 'Message' ]
       else:
         print "Merge aborted"
-    except Exception, v:
-      self.showTraceback()
+    except:
+      _showTraceback()
 

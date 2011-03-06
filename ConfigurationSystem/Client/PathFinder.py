@@ -1,7 +1,6 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -43,7 +42,7 @@ def getAgentSection( agentName, agentTuple = False, setup = False ):
   systemSection = getSystemSection( agentName, agentTuple, setup = setup )
   return "%s/Agents/%s" % ( systemSection, agentTuple[1] )
 
-def getDatabaseSection(dbName, dbTuple = False, setup = False ):
+def getDatabaseSection( dbName, dbTuple = False, setup = False ):
   if not dbTuple:
     dbTuple = divideFullName( dbName )
   systemSection = getSystemSection( dbName, dbTuple, setup = setup )

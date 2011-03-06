@@ -1,4 +1,7 @@
-
+########################################################################
+# $HeadURL$
+########################################################################
+__RCSID__ = "$Id$"
 import types
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -15,6 +18,12 @@ class CSAPI:
     """
     self.__csModified = False
     self.__baseSecurity = "/Registry"
+
+    self.__userDN = ''
+    self.__userGroup = ''
+    self.__rpcClient = None
+    self.__csMod = None
+
     self.__initialized = self.initialize()
 
   def __getProxyID( self ):
@@ -51,7 +60,7 @@ class CSAPI:
     return True
 
   def initialize( self ):
-    if not gConfig._useServerCertificate():
+    if not gConfig.useServerCertificate():
       res = self.__getProxyID()
     else:
       res = self.__getCertificateID()
@@ -190,9 +199,7 @@ class CSAPI:
     usersInGroup = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
     if usersInGroup != None:
       userList = List.fromChar( usersInGroup )
-      try:
-        userPos = userList.index( username )
-      except ValueError:
+      if username not in userList:
         userList.append( username )
         self.__csMod.setOptionValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ), ",".join( userList ) )
       else:

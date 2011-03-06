@@ -31,6 +31,7 @@ class LocalConfiguration:
     self.unprocessedSwitches = []
     self.additionalCFGFiles = []
     self.parsedOptionList = []
+    self.commandArgList = []
     self.cliAdditionalCFGFiles = []
     self.__registerBasicOptions()
     self.isParsed = False
@@ -98,7 +99,7 @@ class LocalConfiguration:
     """
     Register a new command line option
     """
-    sortOption = shortOption.strip()
+    shortOption = shortOption.strip()
     longOption = longOption.strip()
     if not shortOption and not longOption:
       raise Exception( "No short or long options defined" )
@@ -235,10 +236,10 @@ class LocalConfiguration:
 
     try:
       opts, args = getopt.gnu_getopt( sys.argv[1:], shortOption, longOptionList )
-    except getopt.GetoptError, v:
-      # v = option "-k" not recognized
+    except getopt.GetoptError, x:
+      # x = option "-k" not recognized
       # print help information and exit
-      gLogger.fatal( "Error when parsing command line arguments: %s" % str( v ) )
+      gLogger.fatal( "Error when parsing command line arguments: %s" % str( x ) )
       self.showHelp()
       sys.exit( 2 )
 
