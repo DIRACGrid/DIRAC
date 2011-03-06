@@ -1,12 +1,10 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-
-__RCSID__ = "$Id$"
-
 """ Queries BDII for unknown CE.
     Queries BDII for CE information and put it to CS.
 """
+__RCSID__ = "$Id$"
 
 from DIRAC                                                    import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                              import AgentModule
@@ -18,26 +16,28 @@ from DIRAC.Core.Security.Misc                                 import getProxyInf
 from DIRAC.ConfigurationSystem.Client.Helpers.Path            import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals       import getVO
 
-import sys, os
-
 class CE2CSAgent( AgentModule ):
+
+  addressTo = ''
+  addressFrom = ''
+  vo = getVO()
+  csAPI = CSAPI()
+  subject = "CE2CSAgent"
 
   def initialize( self ):
 
     # TODO: Have no default and if no mail is found then use the diracAdmin group and resolve all associated mail addresses.
-    self.addressTo = self.am_getOption( 'MailTo', '' )
-    self.addressFrom = self.am_getOption( 'MailFrom', '' )
+    self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
+    self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     if self.addressTo and self.addressFrom:
       self.log.info( "MailTo", self.addressTo )
       self.log.info( "MailFrom", self.addressFrom )
-    self.subject = "CE2CSAgent"
 
     # This sets the Default Proxy to used as that defined under 
     # /Operations/Shifter/SAMManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'SAMManager' )
 
-    self.vo = getVO()
     if not self.vo:
       self.log.fatal( "VO option not defined for agent" )
       return S_ERROR()
@@ -52,7 +52,6 @@ class CE2CSAgent( AgentModule ):
     infoDict = result[ 'Value' ]
     self.log.info( formatProxyInfoAsString( infoDict ) )
 
-    self.csAPI = CSAPI()
     self._lookForCE()
     self._infoFromCE()
     self.log.info( "End Execution" )
@@ -131,15 +130,15 @@ class CE2CSAgent( AgentModule ):
       ceinfos = response['Value']
       if len( ceinfos ):
         ceinfo = ceinfos[0]
-        SystemName = ceinfo.get( 'GlueHostOperatingSystemName', 'Unknown' )
-        SystemVersion = ceinfo.get( 'GlueHostOperatingSystemVersion', 'Unknown' )
-        SystemRelease = ceinfo.get( 'GlueHostOperatingSystemRelease', 'Unknown' )
+        systemName = ceinfo.get( 'GlueHostOperatingSystemName', 'Unknown' )
+        systemVersion = ceinfo.get( 'GlueHostOperatingSystemVersion', 'Unknown' )
+        systemRelease = ceinfo.get( 'GlueHostOperatingSystemRelease', 'Unknown' )
       else:
-        SystemName = "Unknown"
-        SystemVersion = "Unknown"
-        SystemRelease = "Unknown"
+        systemName = "Unknown"
+        systemVersion = "Unknown"
+        systemRelease = "Unknown"
 
-      osstring = "SystemName: %s, SystemVersion: %s, SystemRelease: %s" % ( SystemName, SystemVersion, SystemRelease )
+      osstring = "SystemName: %s, SystemVersion: %s, SystemRelease: %s" % ( systemName, systemVersion, systemRelease )
       self.log.info( osstring )
 
       response = ldapCEState( ce, vo = self.vo )
