@@ -907,7 +907,7 @@ class ReplicaManager( CatalogToStorage ):
     self.accountingClient = client
 
   def __verifyOperationPermission( self, path ):
-    """  Check if we have write permission to the given directory 
+    """  Check if we have write permission to the given directory
     """
 
     fc = FileCatalog()
@@ -1874,9 +1874,15 @@ class ReplicaManager( CatalogToStorage ):
 
   def __removeReplica( self, storageElementName, fileTuple ):
     pfnDict = {}
-    for lfn, pfn in fileTuple:
-      pfnDict[pfn] = lfn
     failed = {}
+    for lfn, pfn in fileTuple:
+      res = self.__verifyOperationPermission( lfn )
+      if not res['OK'] or not res['Value']:
+        errStr = "ReplicaManager.__removeReplica: Write access not permitted for this credential."
+        gLogger.error( errStr, lfn )
+        failed[lfn] = errStr
+        continue
+      pfnDict[pfn] = lfn
     res = self.__removePhysicalReplica( storageElementName, pfnDict.keys() )
     if not res['OK']:
       errStr = "ReplicaManager.__removeReplica: Failed to remove catalog replicas."
@@ -2020,7 +2026,7 @@ class ReplicaManager( CatalogToStorage ):
     for pfn in res['Value']['Successful'].keys():
       successful[pfnDict[pfn]]
     resDict = {'Successful':successful, 'Failed':failed}
-    return res
+    return resDict
 
   def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
     gLogger.verbose( "ReplicaManager.__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ), storageElementName ) )
