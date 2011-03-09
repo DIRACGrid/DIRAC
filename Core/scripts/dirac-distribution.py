@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess
+from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess, CFG
 
 import sys, os, re, urllib2, tempfile, getpass
 
@@ -29,6 +29,7 @@ class Params:
     self.forceExternals = False
     self.ignoreExternals = False
     self.ignorePackages = False
+    self.relcfg = False
     self.externalsPython = '25'
     self.destination = ""
     self.externalsLocation = ""
@@ -87,6 +88,10 @@ class Params:
     self.makeJobs = max( 1, int( optionValue ) )
     return S_OK()
 
+  def setReleasesCFG( self, optionValue ):
+    self.relcfg = optionValue
+    return S_OK()
+
 cliParams = Params()
 
 Script.disableCS()
@@ -102,6 +107,7 @@ Script.registerSwitch( "D:", "destination", "Destination where to build the tar 
 Script.registerSwitch( "i:", "pythonVersion", "Python version to use (24/25)", cliParams.setPythonVersion )
 Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
 Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
+Script.registerSwitch( "C:", "relcfg=", "Use <file> as the releases.cfg", cliParams.setReleasesCFG )
 Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -285,7 +291,14 @@ def tarExternals( mainCFG, targetDir ):
         sys.exit( 1 )
       os.system( "rm -rf '%s'" % compileTarget )
 
-mainCFG = globalDistribution.loadCFGFromRepository( "/trunk/releases.cfg" )
+if cliParams.relcfg:
+  try:
+    mainCFG = CFG.CFG().loadFromFile( cliParams.relcfg )
+  except IOError, e:
+    gLogger.fatal( "Can not open %s: %s" % ( cliParams.relcfg, e ) )
+    sys.exit( 1 )
+else:
+  mainCFG = globalDistribution.loadCFGFromRepository( "/trunk/releases.cfg" )
 if 'Releases' not in mainCFG.listSections():
   gLogger.fatal( "releases.cfg file does not have a Releases section" )
   exit( 1 )
