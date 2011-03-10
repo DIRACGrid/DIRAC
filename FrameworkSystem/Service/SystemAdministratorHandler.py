@@ -195,6 +195,14 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_updateSoftware( self, version, rootPath = "", gridVersion = "2009-08-13" ):
     """ Update the local DIRAC software installation to version
     """
+    
+    # Check that we have a sane local configuration
+    result = gConfig.getOptionsDict('/LocalInstallation')
+    if not result['OK']:
+      return S_ERROR('Invalid installation - missing /LocalInstallation section in the configuration')
+    elif not result['Value']:
+      return S_ERROR('Invalid installation - empty /LocalInstallation section in the configuration')
+    
     if rootPath and not os.path.exists( rootPath ):
       return S_ERROR( 'Path "%s" does not exists' % rootPath )
     # For LHCb we need to check Oracle client
@@ -222,9 +230,12 @@ class SystemAdministratorHandler( RequestHandler ):
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
    
-    targetPath = gConfig.getValue('/LocalInstallation/TargetPath','')
-    if targetPath:
+    targetPath = gConfig.getValue('/LocalInstallation/TargetPath',
+                                  gConfig.getValue('/LocalInstallation/RootPath',''))
+    if targetPath and os.path.exists(targetPath+'/etc/dirac.cfg'):
       cmdList.append(targetPath+'/etc/dirac.cfg')
+    else:
+      return S_ERROR('Local configuration not found')  
    
     result = systemCall( 0, cmdList )
     if not result['OK']:
