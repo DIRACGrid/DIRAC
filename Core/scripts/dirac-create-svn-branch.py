@@ -18,7 +18,7 @@ import sys, os, tempfile, shutil, getpass
 svnVersion = ""
 svnPackages = 'DIRAC'
 svnUsername = ""
-branchPrefix = "rel"
+branchPrefix = ""
 branchName = ""
 
 def setVersion( optionValue ):
@@ -45,11 +45,13 @@ def setDevelBranch( optionValue ):
 def setPreBranch( optionValue ):
   global branchPrefix
   branchPrefix = "pre"
+  branchName = optionValue
   return S_OK()
 
 def setReleaseBranch( optionValue ):
   global branchPrefix
   branchPrefix = "rel"
+  branchName = optionValue
   return S_OK()
 
 
@@ -58,9 +60,9 @@ Script.disableCS()
 Script.registerSwitch( "p:", "package=", "package to branch (default = DIRAC)", setPackage )
 Script.registerSwitch( "v:", "version=", "version to branch from", setVersion )
 Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
-Script.registerSwitch( "l=", "devel=", "Create a development branch with name", setDevelBranch )
-Script.registerSwitch( "r", "pre", "Create a pre branch", setDevelBranch )
-Script.registerSwitch( "e", "release", "Create a release branch with name", setDevelBranch )
+Script.registerSwitch( "l:", "devel=", "Create a development branch with name", setDevelBranch )
+Script.registerSwitch( "r:", "pre=", "Create a pre branch with name", setDevelBranch )
+Script.registerSwitch( "e:", "release=", "Create a release branch with name", setDevelBranch )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -74,6 +76,10 @@ gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 if not svnVersion:
   gLogger.error( "Need to specify only one version from which to spawn the branch" )
   Script.showHelp()
+  sys.exit( 1 )
+
+if not branchPrefix:
+  gLogger.error( "No branch type/name defined!" )
   sys.exit( 1 )
 
 if not branchName:
@@ -108,6 +114,16 @@ for svnPackage in List.fromChar( svnPackages ):
   if packageDistribution.getDevPath().find( "https" ) == 0:
     password = getpass.getpass( "Insert password for %s: " % versionsRoot )
     packageDistribution.setSVNPassword( password )
+
+  if svnVersion.lower() in ( 'head', 'trunk' ):
+    packageDistribution.queueCopy( '%s/trunk/%s' % ( svnPackage, svnPackage ),
+                                   '%s' % ( branchPath ),
+                                   'Branch from trunk to %s' % branchBasePath )
+    if not packageDistribution.executeCommandQueue():
+      gLogger.error( 'Failed to create branch' )
+    else:
+      gLogger.notice( "Branch %s/%s done for %s" % ( branchPrefix, branchName, svnPackage ) )
+    continue
 
   #HERE!
 
