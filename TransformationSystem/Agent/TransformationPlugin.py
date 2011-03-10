@@ -67,8 +67,22 @@ class TransformationPlugin(object):
     """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs. """
     if not self.params:
       return S_ERROR("TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters.")
+
+    sourceseParam=self.params['SourceSE']
+    targetseParam = self.params['TargetSE']
+    sourceSEs = []
+    targetSEs= []
+    if sourceseParam.count('['):#assume it's an array
+      sourceSEs = eval(sourceseParam)
+    else:
+      sourceSEs= [sourceseParam]
     sourceSEs = eval(self.params['SourceSE'])
-    targetSEs = eval(self.params['TargetSE'])
+    if targetseParam.count('['):
+      targetSEs = eval(targetseParam)
+    else:
+      targetSEs= [targetseParam]
+    #sourceSEs = eval(self.params['SourceSE'])
+    #targetSEs = eval(self.params['TargetSE'])
     destinations = int(self.params.get('Destinations',0))
     if destinations and (destinations >= targetSEs):
       destinations = 0
