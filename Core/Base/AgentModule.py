@@ -234,7 +234,7 @@ class AgentModule:
   def am_getWorkDirectory( self ):
     return os.path.join( self.__basePath, str( self.am_getOption( 'WorkDirectory' ) ) )
 
-  def am_getShifterProxyLocaltion( self ):
+  def am_getShifterProxyLocation( self ):
     return os.path.join( self.__basePath, str( self.am_getOption( 'shifterProxyLocation' ) ) )
 
   def am_getOption( self, optionName, defaultValue = None ):
