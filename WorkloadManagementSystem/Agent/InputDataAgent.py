@@ -104,7 +104,7 @@ class InputDataAgent( OptimizerModule ):
     # if the replicas are really available
     replicas = self.rm.getReplicas( lfns )
     timing = time.time() - start
-    self.log.verbose( 'LFC Replicas Lookup Time: %.2f seconds ' % ( timing ) )
+    self.log.verbose( 'Catalog Replicas Lookup Time: %.2f seconds ' % ( timing ) )
     if not replicas['OK']:
       self.log.warn( replicas['Message'] )
       return replicas
@@ -122,7 +122,7 @@ class InputDataAgent( OptimizerModule ):
       start = time.time()
       guidDict = self.rm.getCatalogFileMetadata( lfns )
       timing = time.time() - start
-      self.log.info( 'LFC Metadata Lookup Time: %.2f seconds ' % ( timing ) )
+      self.log.info( 'Catalog Metadata Lookup Time: %.2f seconds ' % ( timing ) )
 
       if not guidDict['OK']:
         self.log.warn( guidDict['Message'] )
