@@ -58,7 +58,7 @@ class WMSClient:
     realFiles = []
     for file in inputSandbox:
       valid = True
-      for tag  in ( 'lfn:', 'LFN:', 'SB:' ):
+      for tag  in ( 'lfn:', 'LFN:', 'SB:','%s' ):#in case of parametric input sandbox, there is %s passed, so have to ignore it also 
         if file.find( tag ) == 0:
           valid = False
           break
