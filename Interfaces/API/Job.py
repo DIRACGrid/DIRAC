@@ -1027,7 +1027,6 @@ class Job:
       else:
         self.log.warn( 'JobConfigArgs defined with null value' )
 
-    classadJob.insertAttributeString( 'Arguments', string.join( arguments, ' ' ) )
     classadJob.insertAttributeString( 'Executable', self.executable )
     self.addToOutputSandbox.append( self.stderr )
     self.addToOutputSandbox.append( self.stdout )
@@ -1089,6 +1088,7 @@ class Job:
             paramsDict['InputData']['value'] = "%s"
             paramsDict['InputData']['type'] = 'JDL'
         self.parametric['files']=  self.parametric['InputData']
+        arguments.append(' -p ParametricInputData=%s')
       elif self.parametric.has_key('InputSandbox'):
         if paramsDict.has_key( 'InputSandbox' ):
           currentFiles = paramsDict['InputSandbox']['value']+";%s"
@@ -1098,10 +1098,14 @@ class Job:
           paramsDict['InputSandbox']['value'] = '%s'
           paramsDict['InputSandbox']['type'] = 'JDL'
         self.parametric['files']=  self.parametric['InputSandbox']
+        arguments.append(' -p ParametricInputSandbox=%s')
       if self.parametric.has_key('files'):   
         paramsDict['Parameters']={}
         paramsDict['Parameters']['value']=self.parametric['files']
         paramsDict['Parameters']['type'] = 'JDL'
+
+    ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
+    classadJob.insertAttributeString( 'Arguments', string.join( arguments, ' ' ) )
 
     #Add any JDL parameters to classad obeying lists with ';' rule
     requirements = False
