@@ -221,8 +221,9 @@ class SystemAdministratorHandler( RequestHandler ):
     
     # Check if there are extensions
     extensionList = getCSExtensions()
-    if os.path.exists( rootPath+'/pro/Web' ):
-      extensionList.append('Web')  
+    webFlag = gConfig.getValue('/LocalInstallation/WebPortal',False)
+    if webFlag:
+      extensionList.append('Web')        
     if extensionList:
       cmdList += ['-e',','.join(extensionList)]
       
