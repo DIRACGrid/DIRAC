@@ -872,6 +872,9 @@ class Job:
     self._addParameter( self.workflow, 'StdError', 'JDL', self.stderr, 'Standard error file' )
     self._addParameter( self.workflow, 'InputData', 'JDL', '', 'Default null input data value' )
     self._addParameter( self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level' )
+    #Those 2 below are need for on-site resolution
+    self._addParameter( self.workflow, 'ParametricInputData', 'JDL', '', 'Default null parametric input data value' )
+    self._addParameter( self.workflow, 'ParametricInputSandbox', 'JDL', '', 'Default null parametric input sandbox value' )
 
   #############################################################################
   def _addParameter( self, object, name, ptype, value, description, io = 'input' ):
