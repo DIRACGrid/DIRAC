@@ -1,18 +1,15 @@
 ########################################################################
 # $HeadURL$
-# File :   gLitePilotDirector.py
-# Author : Ricardo Graciani
+# File :    gLitePilotDirector.py
+# Author :  Ricardo Graciani
 ########################################################################
 """
-  gLitePilotDirector class,
-  It includes:
-   - basic configuration for gLite
-   - submit and monitor methods for gLite MiddleWare.
+  gLitePilotDirector module
 """
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
-from DIRAC import S_OK, S_ERROR, gConfig, List
+from DIRAC import gConfig, List
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 
 import os, time, re
@@ -21,9 +18,16 @@ import os, time, re
 
 BROKERS = ['wms206.cern.ch']
 LOGGING_SERVER = 'lb101.cern.ch'
+MYPROXYSERVER = ' '
 
 
 class gLitePilotDirector( GridPilotDirector ):
+  """
+    gLitePilotDirector class,
+    It includes:
+     - basic configuration for gLite
+     - submit and monitor methods for gLite MiddleWare.
+  """
   def __init__( self, submitPool ):
     """
      Define some defaults and call parent __init__
@@ -31,6 +35,7 @@ class gLitePilotDirector( GridPilotDirector ):
     self.gridMiddleware = 'gLite'
 
     self.resourceBrokers = BROKERS
+    self.myProxyServer = MYPROXYSERVER
     # FIXME: We might be able to remove this
     self.loggingServers = [ LOGGING_SERVER ]
 
@@ -38,7 +43,7 @@ class gLitePilotDirector( GridPilotDirector ):
 
   def configure( self, csSection, submitPool ):
     """
-     Here goes especific configuration for gLite PilotDirectors
+     Here goes specific configuration for gLite PilotDirectors
     """
     GridPilotDirector.configure( self, csSection, submitPool )
 
@@ -57,21 +62,28 @@ class gLitePilotDirector( GridPilotDirector ):
 
 
     self.loggingServers = gConfig.getValue( mySection + '/LoggingServers'       , self.loggingServers )
+    # This allows to set it to '' for LHCB and prevent CREAM CEs to reuse old proxies
+    # For this to work with parametric jobs it requires the UI default configuration files to properly defined a
+    #  consistent default.
+    # For other VOs it allows to set a proper MyProxyServer for automatic renewal 
+    #  of pilot credentials for private pilots
+    self.myProxyServer = gConfig.getValue( mySection + '/MyProxyServer'         , self.myProxyServer )
 
 
-  def _prepareJDL( self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
+  def _prepareJDL( self, taskQueueDict, workingDirectory, pilotOptions,
+                   pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
     """
       Write JDL for Pilot Submission
     """
-    RBs = []
+    rbList = []
     # Select Randomly one RB from the list
-    RB = List.randomize( self.resourceBrokers )[0]
-    RBs.append( '"https://%s:7443/glite_wms_wmproxy_server"' % RB )
+    rb = List.randomize( self.resourceBrokers )[0]
+    rbList.append( '"https://%s:7443/glite_wms_wmproxy_server"' % rb )
 
-    LBs = []
-    for LB in self.loggingServers:
-      LBs.append( '"https://%s:9000"' % LB )
-    LBs = List.randomize( LBs )
+    lbList = []
+    for lb in self.loggingServers:
+      lbList.append( '"https://%s:9000"' % lb )
+    lbList = List.randomize( lbList )
 
     nPilots = 1
     vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '' )
@@ -87,7 +99,7 @@ class gLitePilotDirector( GridPilotDirector ):
 
 RetryCount = 0;
 ShallowRetryCount = 0;
-MyProxyServer = " ";
+MyProxyServer = "%s";
 
 AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
 Requirements = pilotRequirements && %s;
@@ -100,7 +112,7 @@ RetryCount = 0;
 ShallowRetryCount = 0;
 WMProxyEndPoints = { %s };
 LBEndPoints = { %s };
-MyProxyServer = " ";
+MyProxyServer = "%s";
 EnableServiceDiscovery = false;
 JdlDefaultAttributes =  [
     requirements  =  ( other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special" );
@@ -109,7 +121,10 @@ JdlDefaultAttributes =  [
     PerusalFileEnable  =  false;
     ];
 ];
-""" % ( extraReq, workingDirectory, workingDirectory, workingDirectory, ', '.join( RBs ), ', '.join( LBs ) )
+""" % ( self.myProxyServer, extraReq,
+        workingDirectory, workingDirectory,
+        workingDirectory, ', '.join( rbList ),
+        ', '.join( lbList ), self.myProxyServer )
 
     if pilotsToSubmit > 1:
       wmsClientJDL += """
@@ -126,7 +141,7 @@ ParameterStart = 0;
     jdl = os.path.join( workingDirectory, '%s.jdl' % taskQueueDict['TaskQueueID'] )
     jdl = self._writeJDL( jdl, [pilotJDL, wmsClientJDL] )
 
-    return {'JDL':jdl, 'Requirements':pilotRequirements + " && " + extraReq, 'Pilots':nPilots, 'RB':RB }
+    return {'JDL':jdl, 'Requirements':pilotRequirements + " && " + extraReq, 'Pilots':nPilots, 'RB':rb }
 
   def _listMatch( self, proxy, jdl, taskQueueID, rb ):
     """
@@ -168,20 +183,21 @@ ParameterStart = 0;
     self.log.info( 'Job Status Execution Time: %.2f' % ( time.time() - start ) )
 
     stdout = ret['Value'][1]
-    stderr = ret['Value'][2]
+    # stderr = ret['Value'][2]
 
     references = []
 
     failed = 1
     for line in List.fromChar( stdout, '\n' ):
-      m = re.search( "Status info for the Job : (https:\S+)", line )
-      if ( m ):
-        glite_id = m.group( 1 )
+      match = re.search( "Status info for the Job : (https:\S+)", line )
+      if ( match ):
+        glite_id = match.group( 1 )
         if glite_id not in references and glite_id != parentReference:
           references.append( glite_id )
         failed = 0
     if failed:
-      self.log.error( 'Job Status returns no Child Reference:', str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] ) )
+      error = str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] )
+      self.log.error( 'Job Status returns no Child Reference:', error )
       return [parentReference]
 
     return references
