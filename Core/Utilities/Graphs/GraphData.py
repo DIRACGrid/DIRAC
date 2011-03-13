@@ -21,7 +21,7 @@ def get_key_type( keys ):
   """
 
   min_time_stamp = 1000000000
-  max_time_stamp = 2300000000
+  max_time_stamp = 1900000000
   time_type = True
   num_type = True
   string_type = True
