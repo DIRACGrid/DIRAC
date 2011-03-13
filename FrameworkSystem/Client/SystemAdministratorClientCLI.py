@@ -14,6 +14,43 @@ import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC import gConfig
 
+def printTable(fields,records):
+  """ Utility function to pretty print table data
+  """
+  if not records:
+    print "No output"
+    return  
+    
+  nFields = len(fields)
+  if nFields != len(records[0]):
+    print "Incorrect data structure to print"
+    return
+
+  lengths = []
+  for i in range(nFields):
+    lengths.append(len(fields[i]))
+    for r in records:
+      if len(r[i]) > lengths[i]:
+        lengths[i] = len(r[i])
+  
+  totalLength = 0
+  for i in lengths:
+    totalLength += i
+    totalLength += 2
+        
+  print ' '*3,      
+  for i in range(nFields):
+    print fields[i].ljust(lengths[i]+1),
+  print
+  print '='*totalLength
+  count = 1
+  for r in records:
+    print str(count).rjust(3),
+    for i in range(nFields):
+      print r[i].ljust(lengths[i]+1),
+    print    
+    count += 1
+
 class SystemAdministratorClientCLI( cmd.Cmd ):
   """ 
   """
@@ -59,18 +96,22 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def do_show( self, args ):
     """ 
-        Show list of components
+        Show list of components with various related information
         
         usage:
     
           show software      - show components for which software is available
-          show installed     - show components installed in the host
-          show setup         - show components set up in the host
+          show installed     - show components installed in the host with runit system
+          show setup         - show components set up for automatic running in the host
           show status        - show status of the installed components
-          show database      - show the status of the databases
-          show mysql         - show the status of the MySQL server
-          show log <system> <service|agent>
-          show info    - show version of software and setup
+          show database      - show status of the databases
+          show mysql         - show status of the MySQL server
+          show log  <system> <service|agent> [nlines]
+                             - show last <nlines> lines in the component log file
+          show info          - show version of software and setup
+          show errors [*|<system> <service|agent>] 
+                             - show error count for the given component or all the components
+                               in the last hour and day
     """
 
     argss = args.split()
@@ -181,9 +222,49 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           for e, v in result['Value']['Extensions'].items():
             print "%s version" % e, v
         print
+    elif option == "errors":    
+      self.getErrors( argss )
     else:
       print "Unknown option:", option
-
+      
+  def getErrors( self, argss ):
+    """ Get and print out errors from the logs of specified components
+    """       
+    component = ''
+    if len(argss) < 1:
+      component = '*'
+    else:
+      system = argss[0]
+      if system == "*":
+        component = '*'
+      else:
+        if len(argss) < 2:
+          print
+          print self.do_show.__doc__
+          return 
+        comp = argss[1]
+        component = '/'.join([system,comp])
+    
+    client = SystemAdministratorClient( self.host, self.port )   
+    result = client.checkComponentLog(component)  
+    if not result['OK']:
+      print "ERROR:", result['Message']
+    else:
+      fields = ['System','Component','Last hour','Last day','Last error']
+      records = []
+      for cname in result['Value']:
+        system,component = cname.split('/')
+        errors_1 = result['Value'][cname]['ErrorsHour']
+        errors_24 = result['Value'][cname]['ErrorsDay']
+        lastError = result['Value'][cname]['LastError']
+        lastError.strip()
+        if len(lastError) > 80:
+          lastError = lastError[:80]+'...'
+        records.append([system,component,str(errors_1),str(errors_24),lastError])
+      records.sort()  
+      printTable(fields,records)    
+    
+      
   def getLog( self, argss ):
     """ Get the tail of the log file of the given component
     """
