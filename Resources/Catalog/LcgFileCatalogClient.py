@@ -214,13 +214,13 @@ class LcgFileCatalogClient( FileCatalogueBase ):
                 perms = lfcPerm['group']
               else:
                 perms = lfcPerm['world']
-          
-            lfcPerm['Write'] = (perms & 2) != 0 
-            lfcPerm['Read'] = (perms & 4) != 0
-            lfcPerm['Execute'] = (perms & 1) != 0
-          
+
+            lfcPerm['Write'] = ( perms & 2 ) != 0
+            lfcPerm['Read'] = ( perms & 4 ) != 0
+            lfcPerm['Execute'] = ( perms & 1 ) != 0
+
             successful[path] = lfcPerm
-              
+
     if created: self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
@@ -927,7 +927,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   ####################################################################
   #
   # The following are write methods for datasets
-  # 
+  #
 
   def createDataset( self, dataset ):
     res = self.__checkArgumentFormat( dataset )
@@ -1172,7 +1172,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       status = replica.status
       if ( status != 'P' ) or allStatus:
         se = replica.host
-        pfn = replica.sfn#.strip()  
+        pfn = replica.sfn#.strip()
         replicas[se] = pfn
     return S_OK( replicas )
 
@@ -1195,17 +1195,17 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     else:
       fstat = res['Value']
       if fstat.guid != guid:
-        return S_ERROR( "This LFN is already registered with another GUID" )
+        return S_ERROR( "This LFN %s is already registered with another GUID" % lfn )
       if fstat.filesize != size:
-        return S_ERROR( "This LFN is already registered with another size" )
-      if fstat.csumvalue != checksum:
-        return S_ERROR( "This LFN is already registered with another adler32" )
+        return S_ERROR( "This LFN %s is already registered with another size" % lfn )
+      if fstat.csumvalue.upper() != checksum.upper():
+        return S_ERROR( "This LFN %s is already registered with another adler32" % lfn )
       res = self.__getFileReplicas( lfn, True )
       if not res['OK']:
-        return S_ERROR( "Failed to obtain replicas for existing LFN" )
+        return S_ERROR( "Failed to obtain replicas for existing LFN %s" % lfn )
       replicas = res['Value']
       if not ( replicas.has_key( se ) and ( replicas[se] == pfn ) ):
-        return S_ERROR( "This LFN is already registered with another SE/PFN" )
+        return S_ERROR( "This LFN %s is already registered with another SE/PFN" % lfn )
       return S_OK( False )
     try:
       size = long( size )
