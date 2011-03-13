@@ -107,7 +107,7 @@ class Distribution:
 
   def getSVNFileContents( self, svnPath ):
     import urllib2, stat
-    gLogger.info( "Reading %s" % ( svnPath ) )
+    gLogger.info( "Reading %s from %s" % ( svnPath, self.svnRoot) )
     remoteLocation = "%s/%s" % ( self.svnRoot, svnPath )
     try:
       remoteFile = urllib2.urlopen( remoteLocation )
