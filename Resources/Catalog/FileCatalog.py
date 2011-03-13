@@ -8,7 +8,8 @@ __RCSID__   = "$Id$"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import uniqueElements
-import types,re
+from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+import types,re,os
 
 class FileCatalog:
 
@@ -264,23 +265,37 @@ class FileCatalog:
     return S_OK(catalogConfig)
 
   def _generateCatalogObject(self,catalogName):
-    try:
-      # This inforces the convention that the plug in must be named after the file catalog
-      moduleName = "%sClient" % (catalogName)
-      catalogModule = __import__('DIRAC.Resources.Catalog.%s' % moduleName,globals(),locals(),[moduleName])
-    except Exception, x:
-      errStr = "FileCatalog._generateCatalogObject: Failed to import %s: %s" % (catalogName, x)
-      gLogger.exception(errStr)
-      return S_ERROR(errStr)
-    try:
-      evalString = "catalogModule.%s()" % moduleName
-      catalog = eval(evalString)
-      if not catalog.isOK():
-        errStr = "FileCatalog._generateCatalogObject: Failed to instantiate catalog plug in."
-        gLogger.error(errStr,moduleName)
+    moduleRootPaths = getInstalledExtensions()
+    moduleLoaded = False
+    for moduleRootPath in moduleRootPaths:
+      if moduleLoaded:
+        break
+      gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
+      moduleFile = os.path.join( moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogName )
+      gLogger.verbose( "Looking for file %s" % moduleFile )
+      if not os.path.isfile( moduleFile ):
+        continue 
+      try:
+        # This inforces the convention that the plug in must be named after the file catalog
+        moduleName = "%sClient" % (catalogName)
+        catalogModule = __import__('%s.Resources.Catalog.%s' % (moduleRootPath,moduleName),
+                                    globals(),locals(),[moduleName])
+      except Exception, x:
+        errStr = "FileCatalog._generateCatalogObject: Failed to import %s: %s" % (catalogName, x)
+        gLogger.exception(errStr)
         return S_ERROR(errStr)
-      return S_OK(catalog)
-    except Exception, x:
-      errStr = "FileCatalog._generateCatalogObject: Failed to instantiate %s()" % (moduleName)
-      gLogger.exception(errStr,lException=x)
-      return S_ERROR(errStr)
+      try:
+        evalString = "catalogModule.%s()" % moduleName
+        catalog = eval(evalString)
+        if not catalog.isOK():
+          errStr = "FileCatalog._generateCatalogObject: Failed to instantiate catalog plug in."
+          gLogger.error(errStr,moduleName)
+          return S_ERROR(errStr)
+        return S_OK(catalog)
+      except Exception, x:
+        errStr = "FileCatalog._generateCatalogObject: Failed to instantiate %s()" % (moduleName)
+        gLogger.exception(errStr,lException=x)
+        return S_ERROR(errStr)
+       
+    if not moduleLoaded:
+      return S_ERROR( 'Failed to find catalog client %s' % catalogName )  
