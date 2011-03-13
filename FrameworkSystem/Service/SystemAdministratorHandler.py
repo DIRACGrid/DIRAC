@@ -13,6 +13,7 @@ from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import InstallTools
+from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 
 cmDB = None
 
@@ -281,3 +282,57 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     result = shellCall( 60, command )
     return result
+
+  types_checkComponentLog = [ list(StringTypes)+[ListType] ]
+  def export_checkComponentLog( self, component ):
+    """ Check component log for errors
+    """
+    componentList = []
+    if '*' in component:
+      if component == '*':
+        result = InstallTools.getSetupComponents()
+        if result['OK']:
+          for ctype in ['Services','Agents']:
+            if ctype in result['Value']:
+              for sname in result['Value'][ctype]:
+                for cname in result['Value'][ctype][sname]:
+                  componentList.append('/'.join([sname,cname]))
+    elif type(component) in StringTypes:
+      componentList = [component]
+    else:
+      componentList = component
+
+    resultDict = {}
+    for c in componentList:
+      if not '/' in c:
+        continue
+      system,cname = c.split('/')
+
+      startDir = InstallTools.startDir
+      currentLog = startDir+'/'+system+'_'+cname+'/log/current'
+      logFile = file(currentLog,'r')
+      logLines = logFile.readlines()
+      logFile.close()
+
+      errors_1 = 0
+      errors_24 = 0
+      now = dateTime()
+      lastError = ''
+      for line in logLines:
+        if "ERROR:" in line:
+          fields = line.split()
+          recent = False
+          timeStamp = fromString(fields[0]+' '+fields[1])
+          if (now-timeStamp) < hour:
+            errors_1 += 1
+            recent = True
+          if (now-timeStamp) < day:
+            errors_24 += 1
+            recent = True
+          if recent:
+            lastError = line.split('ERROR:')[-1].strip()
+
+      resultDict[c] = {'ErrorsHour':errors_1,'ErrorsDay':errors_24,'LastError':lastError}
+
+    return S_OK(resultDict)
+            
