@@ -10,14 +10,14 @@ from DIRAC                                                        import gConfig
 from DIRAC.Core.Base.API                                          import API
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 
-COMPONENT_NAME='Transformation'
+COMPONENT_NAME = 'Transformation'
 
-class Transformation(API):
+class Transformation( API ):
 
   #############################################################################
-  def __init__(self,transID=0,transClient=''):
-    API.__init__(self)
-    self.paramTypes =   { 'TransformationID'      : [types.IntType,types.LongType],
+  def __init__( self, transID = 0, transClient = '' ):
+    API.__init__( self )
+    self.paramTypes = { 'TransformationID'      : [types.IntType, types.LongType],
                           'TransformationName'    : types.StringTypes,
                           'Status'                : types.StringTypes,
                           'Description'           : types.StringTypes,
@@ -27,12 +27,12 @@ class Transformation(API):
                           'AgentType'             : types.StringTypes,
                           'FileMask'              : types.StringTypes,
                           'TransformationGroup'   : types.StringTypes,
-                          'GroupSize'             : [types.IntType,types.LongType],
-                          'InheritedFrom'         : [types.IntType,types.LongType],
+                          'GroupSize'             : [types.IntType, types.LongType, types.FloatType],
+                          'InheritedFrom'         : [types.IntType, types.LongType],
                           'Body'                  : types.StringTypes,
-                          'MaxNumberOfTasks'      : [types.IntType,types.LongType],
-                          'EventsPerTask'         : [types.IntType,types.LongType]}
-    self.paramValues =  { 'TransformationID'      : 0,
+                          'MaxNumberOfTasks'      : [types.IntType, types.LongType],
+                          'EventsPerTask'         : [types.IntType, types.LongType]}
+    self.paramValues = { 'TransformationID'      : 0,
                           'TransformationName'    : '',
                           'Status'                : 'New',
                           'Description'           : '',
@@ -48,11 +48,11 @@ class Transformation(API):
                           'MaxNumberOfTasks'       : 0,
                           'EventsPerTask'          : 0}
 
-    self.supportedPlugins = ['Broadcast','Standard','BySize','ByShare']
+    self.supportedPlugins = ['Broadcast', 'Standard', 'BySize', 'ByShare']
     if not transClient:
       self.transClient = TransformationClient()
     else:
-      self.transClient = transClient   
+      self.transClient = transClient
     self.serverURL = self.transClient.getServer()
     self.exists = False
     if transID:
@@ -61,241 +61,241 @@ class Transformation(API):
       if res['OK']:
         self.exists = True
       elif res['Message'] == 'Transformation does not exist':
-        raise AttributeError,'TransformationID %d does not exist' % transID
+        raise AttributeError, 'TransformationID %d does not exist' % transID
       else:
         self.paramValues['TransformationID'] = 0
-        gLogger.fatal("Failed to get transformation from database", "%s @ %s" % (transID,self.transClient.serverURL))
+        gLogger.fatal( "Failed to get transformation from database", "%s @ %s" % ( transID, self.transClient.serverURL ) )
 
-  def setServer(self,server):
+  def setServer( self, server ):
     self.serverURL = server
-    self.transClient.setServer(self.serverURL)
+    self.transClient.setServer( self.serverURL )
 
-  def getServer(self):
+  def getServer( self ):
     return self.serverURL
 
-  def reset(self,transID=0):
-    self.__init__(transID)
-    self.transClient.setServer(self.serverURL)
+  def reset( self, transID = 0 ):
+    self.__init__( transID )
+    self.transClient.setServer( self.serverURL )
     return S_OK()
 
-  def setTargetSE(self,seList):
-    return self.__setSE('TargetSE',seList)
+  def setTargetSE( self, seList ):
+    return self.__setSE( 'TargetSE', seList )
 
-  def setSourceSE(self,seList):
-    return self.__setSE('SourceSE',seList)
+  def setSourceSE( self, seList ):
+    return self.__setSE( 'SourceSE', seList )
 
-  def __setSE(self,se,seList):
-    if type(seList) in types.StringTypes:
+  def __setSE( self, se, seList ):
+    if type( seList ) in types.StringTypes:
       try:
-        seList = eval(seList)
+        seList = eval( seList )
       except:
-        seList = seList.replace(',',' ').split()
-    res = self.__checkSEs(seList)
+        seList = seList.replace( ',', ' ' ).split()
+    res = self.__checkSEs( seList )
     if not res['OK']:
       return res
-    self.item_called = se 
-    return self.__setParam(seList)
+    self.item_called = se
+    return self.__setParam( seList )
 
-  def __getattr__(self,name):
-    if name.find('get') ==0:
+  def __getattr__( self, name ):
+    if name.find( 'get' ) == 0:
       item = name[3:]
       self.item_called = item
       return self.__getParam
-    if name.find('set') == 0:
+    if name.find( 'set' ) == 0:
       item = name[3:]
       self.item_called = item
       return self.__setParam
     raise AttributeError, name
 
-  def __getParam(self):
+  def __getParam( self ):
     if self.item_called == 'Available':
-      return S_OK(self.paramTypes.keys())
+      return S_OK( self.paramTypes.keys() )
     if self.item_called == 'Parameters':
-      return S_OK(self.paramValues)
+      return S_OK( self.paramValues )
     if self.item_called in self.paramValues.keys():
-      return S_OK(self.paramValues[self.item_called])
+      return S_OK( self.paramValues[self.item_called] )
     raise AttributeError, "Unknown parameter for transformation: %s" % self.item_called
 
-  def __setParam(self,value):
+  def __setParam( self, value ):
     change = False
     if self.item_called in self.paramTypes.keys():
       oldValue = self.paramValues[self.item_called]
       if oldValue != value:
-        if type(value) in self.paramTypes[self.item_called]:
+        if type( value ) in self.paramTypes[self.item_called]:
           change = True
         else:
-          raise TypeError, "%s %s %s expected one of %s" % (self.item_called,value,type(value),self.paramTypes[self.item_called])
+          raise TypeError, "%s %s %s expected one of %s" % ( self.item_called, value, type( value ), self.paramTypes[self.item_called] )
     if not self.item_called in self.paramTypes.keys():
-      if not self.paramValues.has_key(self.item_called):
+      if not self.paramValues.has_key( self.item_called ):
         change = True
       else:
-        oldValue =  self.paramValues[self.item_called]
+        oldValue = self.paramValues[self.item_called]
         if oldValue != value:
           change = True
     if not change:
-      gLogger.verbose("No change of parameter %s required" % self.item_called)
+      gLogger.verbose( "No change of parameter %s required" % self.item_called )
     else:
-      gLogger.verbose("Parameter %s to be changed" % self.item_called)
+      gLogger.verbose( "Parameter %s to be changed" % self.item_called )
       transID = self.paramValues['TransformationID']
       if self.exists and transID:
-        res = self.transClient.setTransformationParameter(transID,self.item_called,value)
+        res = self.transClient.setTransformationParameter( transID, self.item_called, value )
         if not res['OK']:
           return res
       self.paramValues[self.item_called] = value
     return S_OK()
 
-  def getTransformation(self,printOutput=False):
+  def getTransformation( self, printOutput = False ):
     transID = self.paramValues['TransformationID']
     if not transID:
-      gLogger.fatal("No TransformationID known")
+      gLogger.fatal( "No TransformationID known" )
       return S_ERROR()
-    res = self.transClient.getTransformation(transID,extraParams=True)
+    res = self.transClient.getTransformation( transID, extraParams = True )
     if not res['OK']:
       if printOutput:
-        self._prettyPrint(res)
+        self._prettyPrint( res )
       return res
     transParams = res['Value']
-    for paramName,paramValue in transParams.items():
+    for paramName, paramValue in transParams.items():
       execString = "self.set%s(paramValue)" % paramName
-      exec(execString)
+      exec( execString )
     if printOutput:
-      gLogger.info("No printing available yet")
-    return S_OK(transParams)
+      gLogger.info( "No printing available yet" )
+    return S_OK( transParams )
 
-  def getTransformationLogging(self,printOutput=False):
+  def getTransformationLogging( self, printOutput = False ):
     transID = self.paramValues['TransformationID']
     if not transID:
-      gLogger.fatal("No TransformationID known")
+      gLogger.fatal( "No TransformationID known" )
       return S_ERROR()
-    res = self.transClient.getTransformationLogging(transID)
+    res = self.transClient.getTransformationLogging( transID )
     if not res['OK']:
       if printOutput:
-        self._prettyPrint(res)
+        self._prettyPrint( res )
       return res
     loggingList = res['Value']
     if printOutput:
-      self._printFormattedDictList(loggingList,['Message','MessageDate','AuthorDN'],'MessageDate','MessageDate')
-    return S_OK(loggingList)
+      self._printFormattedDictList( loggingList, ['Message', 'MessageDate', 'AuthorDN'], 'MessageDate', 'MessageDate' )
+    return S_OK( loggingList )
 
-  def extendTransformation(self,nTasks, printOutput=False):
-    return self.__executeOperation('extendTransformation', nTasks, printOutput=printOutput)
+  def extendTransformation( self, nTasks, printOutput = False ):
+    return self.__executeOperation( 'extendTransformation', nTasks, printOutput = printOutput )
 
-  def cleanTransformation(self,printOutput=False):
-    res = self.__executeOperation('cleanTransformation', printOutput=printOutput)
+  def cleanTransformation( self, printOutput = False ):
+    res = self.__executeOperation( 'cleanTransformation', printOutput = printOutput )
     if res['OK']:
       self.paramValues['Status'] = 'Cleaned'
     return res
 
-  def deleteTransformation(self,printOutput=False):
-    res =  self.__executeOperation('deleteTransformation', printOutput=printOutput)
+  def deleteTransformation( self, printOutput = False ):
+    res = self.__executeOperation( 'deleteTransformation', printOutput = printOutput )
     if res['OK']:
       self.reset()
-    return res 
+    return res
 
-  def addFilesToTransformation(self,lfns, printOutput=False):
-    return self.__executeOperation('addFilesToTransformation', lfns, printOutput=printOutput)
+  def addFilesToTransformation( self, lfns, printOutput = False ):
+    return self.__executeOperation( 'addFilesToTransformation', lfns, printOutput = printOutput )
 
-  def setFileStatusForTransformation(self,status,lfns,printOutput=False): 
-    return self.__executeOperation('setFileStatusForTransformation', status, lfns, printOutput=printOutput)
+  def setFileStatusForTransformation( self, status, lfns, printOutput = False ):
+    return self.__executeOperation( 'setFileStatusForTransformation', status, lfns, printOutput = printOutput )
 
-  def getTransformationTaskStats(self,printOutput=False):
-    return self.__executeOperation('getTransformationTaskStats', printOutput=printOutput)
+  def getTransformationTaskStats( self, printOutput = False ):
+    return self.__executeOperation( 'getTransformationTaskStats', printOutput = printOutput )
 
-  def getTransformationStats(self,printOutput=False):
-    return self.__executeOperation('getTransformationStats',printOutput=printOutput)
+  def getTransformationStats( self, printOutput = False ):
+    return self.__executeOperation( 'getTransformationStats', printOutput = printOutput )
 
-  def deleteTasks(self,taskMin, taskMax, printOutput=False): 
-    return self.__executeOperation('deleteTasks',taskMin,taskMax,printOutput=printOutput)
+  def deleteTasks( self, taskMin, taskMax, printOutput = False ):
+    return self.__executeOperation( 'deleteTasks', taskMin, taskMax, printOutput = printOutput )
 
-  def addTaskForTransformation(self,lfns=[],se='Unknown', printOutput=False):
-    return self.__executeOperation('addTaskForTransformation',lfns,se,printOutput=printOutput)
+  def addTaskForTransformation( self, lfns = [], se = 'Unknown', printOutput = False ):
+    return self.__executeOperation( 'addTaskForTransformation', lfns, se, printOutput = printOutput )
 
-  def setTaskStatus(self, taskID, status, printOutput=False):
-    return self.__executeOperation('setTaskStatus',taskID, status,printOutput=printOutput)
+  def setTaskStatus( self, taskID, status, printOutput = False ):
+    return self.__executeOperation( 'setTaskStatus', taskID, status, printOutput = printOutput )
 
-  def __executeOperation(self,operation,*parms,**kwds):
+  def __executeOperation( self, operation, *parms, **kwds ):
     transID = self.paramValues['TransformationID']
     if not transID:
-      gLogger.fatal("No TransformationID known")
+      gLogger.fatal( "No TransformationID known" )
       return S_ERROR()
-    printOutput = kwds.pop('printOutput')
+    printOutput = kwds.pop( 'printOutput' )
     execString = "res = self.transClient.%s(transID,*parms,**kwds)" % operation
-    exec(execString)
+    exec( execString )
     if printOutput:
-      self._prettyPrint(res)
+      self._prettyPrint( res )
     return res
-  
-  def getTransformationFiles(self,fileStatus=[],lfns=[],outputFields=['FileID','LFN','Status','TaskID','TargetSE','UsedSE','ErrorCount','InsertedTime','LastUpdate'], orderBy='FileID', printOutput=False):
+
+  def getTransformationFiles( self, fileStatus = [], lfns = [], outputFields = ['FileID', 'LFN', 'Status', 'TaskID', 'TargetSE', 'UsedSE', 'ErrorCount', 'InsertedTime', 'LastUpdate'], orderBy = 'FileID', printOutput = False ):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if fileStatus:
       condDict['Status'] = fileStatus
     if lfns:
       condDict['LFN'] = lfns
-    res = self.transClient.getTransformationFiles(condDict=condDict)
+    res = self.transClient.getTransformationFiles( condDict = condDict )
     if not res['OK']:
       if printOutput:
-        self._prettyPrint(res)
+        self._prettyPrint( res )
       return res
     if printOutput:
       if not outputFields:
-        gLogger.info("Available fields are: %s" % string.join(res['ParameterNames']))
+        gLogger.info( "Available fields are: %s" % string.join( res['ParameterNames'] ) )
       elif not res['Value']:
-        gLogger.info("No tasks found for selection")
+        gLogger.info( "No tasks found for selection" )
       else:
-        self._printFormattedDictList(res['Value'],outputFields,'FileID',orderBy)
+        self._printFormattedDictList( res['Value'], outputFields, 'FileID', orderBy )
     return res
 
-  def getTransformationTasks(self,taskStatus=[],taskIDs=[],outputFields=['TransformationID','TaskID','ExternalStatus','ExternalID','TargetSE','CreationTime','LastUpdateTime'],orderBy='TaskID',printOutput=False):
+  def getTransformationTasks( self, taskStatus = [], taskIDs = [], outputFields = ['TransformationID', 'TaskID', 'ExternalStatus', 'ExternalID', 'TargetSE', 'CreationTime', 'LastUpdateTime'], orderBy = 'TaskID', printOutput = False ):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if taskStatus:
       condDict['ExternalStatus'] = taskStatus
     if taskIDs:
       condDict['TaskID'] = taskIDs
-    res = self.transClient.getTransformationTasks(condDict=condDict)
+    res = self.transClient.getTransformationTasks( condDict = condDict )
     if not res['OK']:
       if printOutput:
-        self._prettyPrint(res)
+        self._prettyPrint( res )
       return res
     if printOutput:
       if not outputFields:
-        gLogger.info("Available fields are: %s" % string.join(res['ParameterNames']))
+        gLogger.info( "Available fields are: %s" % string.join( res['ParameterNames'] ) )
       elif not res['Value']:
-        gLogger.info("No tasks found for selection")
+        gLogger.info( "No tasks found for selection" )
       else:
-        self._printFormattedDictList(res['Value'],outputFields,'TaskID',orderBy)
+        self._printFormattedDictList( res['Value'], outputFields, 'TaskID', orderBy )
     return res
 
   #############################################################################
-  def getTransformations(self,transID=[], transStatus=[], outputFields=['TransformationID','Status','AgentType','TransformationName','CreationDate'],orderBy='TransformationID',printOutput=False):
+  def getTransformations( self, transID = [], transStatus = [], outputFields = ['TransformationID', 'Status', 'AgentType', 'TransformationName', 'CreationDate'], orderBy = 'TransformationID', printOutput = False ):
     condDict = {}
     if transID:
       condDict['TransformationID'] = transID
     if transStatus:
       condDict['Status'] = transStatus
-    res = self.transClient.getTransformations(condDict=condDict)
+    res = self.transClient.getTransformations( condDict = condDict )
     if not res['OK']:
       if printOutput:
-        self._prettyPrint(res)
+        self._prettyPrint( res )
       return res
     if printOutput:
       if not outputFields:
-        gLogger.info("Available fields are: %s" % string.join(res['ParameterNames']))
+        gLogger.info( "Available fields are: %s" % string.join( res['ParameterNames'] ) )
       elif not res['Value']:
-        gLogger.info("No tasks found for selection")
+        gLogger.info( "No tasks found for selection" )
       else:
-        self._printFormattedDictList(res['Value'],outputFields,'TransformationID',orderBy)
+        self._printFormattedDictList( res['Value'], outputFields, 'TransformationID', orderBy )
     return res
 
   #############################################################################
-  def addTransformation(self,addFiles=True, printOutput=False):
+  def addTransformation( self, addFiles = True, printOutput = False ):
     res = self._checkCreation()
     if not res['OK']:
-      return self._errorReport(res,'Failed transformation sanity check')
+      return self._errorReport( res, 'Failed transformation sanity check' )
     if printOutput:
-      gLogger.info("Will attempt to create transformation with the following parameters")
-      self._prettyPrint(self.paramValues)
+      gLogger.info( "Will attempt to create transformation with the following parameters" )
+      self._prettyPrint( self.paramValues )
 
-    res = self.transClient.addTransformation(self.paramValues['TransformationName'],
+    res = self.transClient.addTransformation( self.paramValues['TransformationName'],
                                              self.paramValues['Description'],
                                              self.paramValues['LongDescription'],
                                              self.paramValues['Type'],
@@ -303,109 +303,109 @@ class Transformation(API):
                                              self.paramValues['AgentType'],
                                              self.paramValues['FileMask'],
                                              transformationGroup = self.paramValues['TransformationGroup'],
-                                             groupSize           = self.paramValues['GroupSize'],
-                                             inheritedFrom       = self.paramValues['InheritedFrom'],
-                                             body                = self.paramValues['Body'],
-                                             maxTasks            = self.paramValues['MaxNumberOfTasks'],
-                                             eventsPerTask       = self.paramValues['EventsPerTask'],
-                                             addFiles            = addFiles)
+                                             groupSize = self.paramValues['GroupSize'],
+                                             inheritedFrom = self.paramValues['InheritedFrom'],
+                                             body = self.paramValues['Body'],
+                                             maxTasks = self.paramValues['MaxNumberOfTasks'],
+                                             eventsPerTask = self.paramValues['EventsPerTask'],
+                                             addFiles = addFiles )
     if not res['OK']:
       if printOutput:
-        self._prettyPrint(res)
+        self._prettyPrint( res )
       return res
     transID = res['Value']
     self.exists = True
-    self.setTransformationID(transID)
-    gLogger.info("Created transformation %d" % transID)
-    for paramName,paramValue in self.paramValues.items():
-      if not self.paramTypes.has_key(paramName):
-        res = self.transClient.setTransformationParameter(transID,paramName,paramValue)
+    self.setTransformationID( transID )
+    gLogger.info( "Created transformation %d" % transID )
+    for paramName, paramValue in self.paramValues.items():
+      if not self.paramTypes.has_key( paramName ):
+        res = self.transClient.setTransformationParameter( transID, paramName, paramValue )
         if not res['OK']:
-          gLogger.error("Failed to add parameter", "%s %s" % (paramName,res['Message']))
-          gLogger.info("To add this parameter later please execute the following.")
-          gLogger.info("oTransformation = Transformation(%d)" % transID)
-          gLogger.info("oTransformation.set%s(...)" % paramName)
-    return S_OK(transID)
+          gLogger.error( "Failed to add parameter", "%s %s" % ( paramName, res['Message'] ) )
+          gLogger.info( "To add this parameter later please execute the following." )
+          gLogger.info( "oTransformation = Transformation(%d)" % transID )
+          gLogger.info( "oTransformation.set%s(...)" % paramName )
+    return S_OK( transID )
 
-  def _checkCreation(self):
+  def _checkCreation( self ):
     if self.paramValues['TransformationID']:
-      gLogger.info("You are currently working with an active transformation definition.")
-      gLogger.info("If you wish to create a new transformation reset the TransformationID.")
-      gLogger.info("oTransformation.reset()") 
+      gLogger.info( "You are currently working with an active transformation definition." )
+      gLogger.info( "If you wish to create a new transformation reset the TransformationID." )
+      gLogger.info( "oTransformation.reset()" )
       return S_ERROR()
 
-    requiredParameters = ['TransformationName','Description' ,'LongDescription','Type']
-    for parameter in requiredParameters: 
+    requiredParameters = ['TransformationName', 'Description' , 'LongDescription', 'Type']
+    for parameter in requiredParameters:
       if not self.paramValues[parameter]:
-        gLogger.info("%s is not defined for this transformation. This is required..." % parameter)
-        res = self.__promptForParameter(parameter)
+        gLogger.info( "%s is not defined for this transformation. This is required..." % parameter )
+        res = self.__promptForParameter( parameter )
         if not res['OK']:
           return res
-        
+
     plugin = self.paramValues['Plugin']
     if not plugin in self.supportedPlugins:
-      gLogger.info("The selected Plugin (%s) is not known to the transformation agent." % plugin)
-      res = self.__promptForParameter('Plugin',choices=self.supportedPlugins,default='Standard')
+      gLogger.info( "The selected Plugin (%s) is not known to the transformation agent." % plugin )
+      res = self.__promptForParameter( 'Plugin', choices = self.supportedPlugins, default = 'Standard' )
       if not res['OK']:
         return res
     plugin = self.paramValues['Plugin']
     execString = "res = self._check%sPlugin()" % plugin
-    exec(execString)
+    exec( execString )
     return res
 
-  def _checkBySizePlugin(self):
+  def _checkBySizePlugin( self ):
     return self._checkStandardPlugin()
 
-  def _checkBySharePlugin(self):
+  def _checkBySharePlugin( self ):
     return self._checkStandardPlugin()
 
-  def _checkStandardPlugin(self):
+  def _checkStandardPlugin( self ):
     groupSize = self.paramValues['GroupSize']
-    if (groupSize <= 0):
-      gLogger.info("The GroupSize was found to be less than zero. It has been set to 1.")
-      res = self.setGroupSize(1)
+    if ( groupSize <= 0 ):
+      gLogger.info( "The GroupSize was found to be less than zero. It has been set to 1." )
+      res = self.setGroupSize( 1 )
       if not res['OK']:
         return res
     return S_OK()
 
-  def _checkBroadcastPlugin(self):
-    gLogger.info("The Broadcast plugin requires the following parameters be set: %s" % (string.join(['SourceSE','TargetSE'],', ')))
-    requiredParams = ['SourceSE','TargetSE']
+  def _checkBroadcastPlugin( self ):
+    gLogger.info( "The Broadcast plugin requires the following parameters be set: %s" % ( string.join( ['SourceSE', 'TargetSE'], ', ' ) ) )
+    requiredParams = ['SourceSE', 'TargetSE']
     for requiredParam in requiredParams:
-      if (not self.paramValues.has_key(requiredParam)) or (not self.paramValues[requiredParam]):
-        res = self.__promptForParameter(requiredParam,insert=False)
+      if ( not self.paramValues.has_key( requiredParam ) ) or ( not self.paramValues[requiredParam] ):
+        res = self.__promptForParameter( requiredParam, insert = False )
         if not res['OK']:
           return res
         paramValue = res['Value']
-        ses = paramValue.replace(',',' ').split()
+        ses = paramValue.replace( ',', ' ' ).split()
         execString = "res = self.set%s(ses)" % requiredParam
-        exec(execString)
+        exec( execString )
         if not res['OK']:
           return res
     return S_OK()
 
-  def __checkSEs(self,seList):
-    res = gConfig.getSections('/Resources/StorageElements')
+  def __checkSEs( self, seList ):
+    res = gConfig.getSections( '/Resources/StorageElements' )
     if not res['OK']:
-      return self._errorReport(res,'Failed to get possible StorageElements')
+      return self._errorReport( res, 'Failed to get possible StorageElements' )
     missing = []
     for se in seList:
       if not se in res['Value']:
-        gLogger.error("StorageElement %s is not known" % se)
-        missing.append(se)
+        gLogger.error( "StorageElement %s is not known" % se )
+        missing.append( se )
     if missing:
-      return S_ERROR("%d StorageElements not known" %  len(missing))
+      return S_ERROR( "%d StorageElements not known" % len( missing ) )
     return S_OK()
-  
-  def __promptForParameter(self,parameter,choices = [], default = '',insert=True):
-    res = self._promptUser("Please enter %s" % parameter, choices=choices,default=default)
+
+  def __promptForParameter( self, parameter, choices = [], default = '', insert = True ):
+    res = self._promptUser( "Please enter %s" % parameter, choices = choices, default = default )
     if not res['OK']:
-      return self._errorReport(res)
-    gLogger.info("%s will be set to '%s'" % (parameter,res['Value']))
+      return self._errorReport( res )
+    gLogger.info( "%s will be set to '%s'" % ( parameter, res['Value'] ) )
     paramValue = res['Value']
     if insert:
       execString = "res = self.set%s(paramValue)" % parameter
-      exec(execString)
+      exec( execString )
       if not res['OK']:
         return res
-    return S_OK(paramValue)
+    return S_OK( paramValue )
