@@ -14,7 +14,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                    import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                    import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Utilities.List                import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 import os
@@ -145,8 +145,8 @@ class StorageFactory:
         port = protocolDict['Port']
         spaceToken = protocolDict['SpaceToken']
         wsUrl = protocolDict['WSUrl']
-        res = self.__generateStorageObject( storageName, protocolName, protocol, 
-                                            path = path, host = host, port = port, 
+        res = self.__generateStorageObject( storageName, protocolName, protocol,
+                                            path = path, host = host, port = port,
                                             spaceToken = spaceToken, wsUrl = wsUrl )
         if res['OK']:
           self.storages.append( res['Value'] )
@@ -285,7 +285,7 @@ class StorageFactory:
   # Below is the method for obtaining the object instantiated for a provided storage configuration
   #
 
-  def __generateStorageObject( self, storageName, protocolName, protocol, path = None, 
+  def __generateStorageObject( self, storageName, protocolName, protocol, path = None,
                               host = None, port = None, spaceToken = None, wsUrl = None ):
     moduleRootPaths = getInstalledExtensions()
     moduleLoaded = False
@@ -293,20 +293,20 @@ class StorageFactory:
       if moduleLoaded:
         break
       gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
-      moduleFile = os.path.join( moduleRootPath, "Resources", "Storage", "%sStorage.py" % protocolName )
+      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Storage", "%sStorage.py" % protocolName )
       gLogger.verbose( "Looking for file %s" % moduleFile )
       if not os.path.isfile( moduleFile ):
-        continue 
+        continue
       try:
         # This inforces the convention that the plug in must be named after the protocol
         moduleName = "%sStorage" % ( protocolName )
-        storageModule = __import__( '%s.Resources.Storage.%s' % (moduleRootPath,moduleName), 
+        storageModule = __import__( '%s.Resources.Storage.%s' % ( moduleRootPath, moduleName ),
                                     globals(), locals(), [moduleName] )
       except Exception, x:
         errStr = "StorageFactory._generateStorageObject: Failed to import %s: %s" % ( storageName, x )
         gLogger.exception( errStr )
         return S_ERROR( errStr )
-  
+
       try:
         evalString = "storageModule.%s(storageName,protocol,path,host,port,spaceToken,wsUrl)" % moduleName
         storage = eval( evalString )
@@ -321,4 +321,4 @@ class StorageFactory:
       return S_OK( storage )
 
     if not moduleLoaded:
-      return S_ERROR( 'Failed to find storage plugin %s' % protocolName )  
+      return S_ERROR( 'Failed to find storage plugin %s' % protocolName )
