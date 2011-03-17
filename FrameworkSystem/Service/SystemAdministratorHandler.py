@@ -256,6 +256,17 @@ class SystemAdministratorHandler( RequestHandler ):
       else:
         message = "Failed to update software to %s" % version
       return S_ERROR( message )
+    
+    # Check if there is a MySQL installation and fix the server scripts if necessary
+    if os.path.exists(InstallTools.mysqlDir):
+      startupScript = os.path.join( InstallTools.instancePath, 
+                                    'mysql', 'share', 'mysql', 'mysql.server' )
+      if not os.path.exists(startupScript):
+        startupScript = os.path.join( InstallTools.instancePath, 'pro',
+                                     'mysql', 'share', 'mysql', 'mysql.server' )
+      if os.path.exists(startupScript):  
+        InstallTools.fixMySQLScripts(startupScript)
+    
     # For LHCb we need to check Oracle client
     if installOracleClient:
       result = systemCall( 0, 'install_oracle-client.sh' )
