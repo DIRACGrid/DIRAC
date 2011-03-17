@@ -1490,7 +1490,7 @@ try:
       lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
     if 'X509_CERT_DIR' in os.environ:
       lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
-    lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( os.path.join( cliParams.targetPath, 'etc', 'grid-security', 'vomsdir' ) ) )
+    lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
     lines.extend( ['# Some DIRAC locations',
                    'export DIRAC=%s' % proPath,
                    'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
