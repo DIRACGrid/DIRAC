@@ -1509,17 +1509,17 @@ def setupPortal():
   # Final check
   return getStartupComponentStatus( [ ( 'Web', 'httpd' ), ( 'Web', 'paster' ) ] )
 
-def fixMySQLScripts():
+def fixMySQLScripts(startupScript=mysqlStartupScript):
   """
   Edit MySQL scripts to point to desired locations for db and my.cnf
   """
-  gLogger.verbose( 'Updating:', mysqlStartupScript )
+  gLogger.verbose( 'Updating:', startupScript )
   try:
-    f = open( mysqlStartupScript, 'r' )
+    f = open( startupScript, 'r' )
     orgLines = f.readlines()
     f.close()
 
-    f = open( mysqlStartupScript, 'w' )
+    f = open( startupScript, 'w' )
     for line in orgLines:
       if line.find( 'export HOME' ) == 0:
         continue
