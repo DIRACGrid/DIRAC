@@ -1,5 +1,5 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
 """
    DIRAC.Core package  
 """
+__RCSID__ = "$Id$"
