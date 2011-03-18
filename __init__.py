@@ -76,7 +76,7 @@ import sys, os, platform
 
 majorVersion = 5
 minorVersion = 12
-patchLevel = 24
+patchLevel = 25
 preVersion = 0
 
 version = "v%sr%s" % ( majorVersion, minorVersion )
