@@ -191,7 +191,7 @@ for o, v in optList:
     compType = v.lower()
   elif o in ( '-e', '--externalsPath' ):
     compExtSource = v
-  elif o in ( '-d', '--destination' ):
+  elif o in ( '-D', '--destination' ):
     compDest = v
   elif o in ( '-v', '--version' ):
     compExtVersion = v
