@@ -32,7 +32,10 @@ from DIRAC.Core.Utilities import InstallTools
 #
 InstallTools.exitOnError = True
 #
-InstallTools.setupSite( Script.localCfg, cfg )
+result = InstallTools.setupSite( Script.localCfg, cfg )
+if not result['OK']:
+  print "ERROR:", result['Message']
+  exit(-1)
 #
 result = InstallTools.getStartupComponentStatus( [] )
 if not result['OK']:
