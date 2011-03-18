@@ -9,8 +9,6 @@ from types import *
 import os
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import InstallTools
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
@@ -46,15 +44,15 @@ class SystemAdministratorHandler( RequestHandler ):
 
   types_getInstalledComponents = [ ]
   def export_getInstalledComponents( self ):
-    """  Get the list of all the components ( services and agents ) 
+    """  Get the list of all the components ( services and agents )
          installed on the system in the runit directory
     """
     return InstallTools.getInstalledComponents()
 
   types_getSetupComponents = [ ]
   def export_getSetupComponents( self ):
-    """  Get the list of all the components ( services and agents ) 
-         set up for running with runsvdir in /opt/dirac/startup directory 
+    """  Get the list of all the components ( services and agents )
+         set up for running with runsvdir in /opt/dirac/startup directory
     """
     return InstallTools.getSetupComponents()
 
@@ -67,8 +65,8 @@ class SystemAdministratorHandler( RequestHandler ):
 
   types_getStartupComponentStatus = [ ListType ]
   def export_getStartupComponentStatus( self, componentTupleList ):
-    """  Get the list of all the components ( services and agents ) 
-         set up for running with runsvdir in startup directory 
+    """  Get the list of all the components ( services and agents )
+         set up for running with runsvdir in startup directory
     """
     return InstallTools.getStartupComponentStatus( componentTupleList )
 
@@ -191,54 +189,54 @@ class SystemAdministratorHandler( RequestHandler ):
 
 #######################################################################################
 # General purpose methods
-#  
+#
   types_updateSoftware = [ StringTypes ]
   def export_updateSoftware( self, version, rootPath = "", gridVersion = "2009-08-13" ):
     """ Update the local DIRAC software installation to version
     """
-    
+
     # Check that we have a sane local configuration
-    result = gConfig.getOptionsDict('/LocalInstallation')
+    result = gConfig.getOptionsDict( '/LocalInstallation' )
     if not result['OK']:
-      return S_ERROR('Invalid installation - missing /LocalInstallation section in the configuration')
+      return S_ERROR( 'Invalid installation - missing /LocalInstallation section in the configuration' )
     elif not result['Value']:
-      return S_ERROR('Invalid installation - empty /LocalInstallation section in the configuration')
-    
+      return S_ERROR( 'Invalid installation - empty /LocalInstallation section in the configuration' )
+
     if rootPath and not os.path.exists( rootPath ):
       return S_ERROR( 'Path "%s" does not exists' % rootPath )
     # For LHCb we need to check Oracle client
     installOracleClient = False
-    oracleFlag = gConfig.getValue('/LocalInstallation/InstallOracleClient','unknown')
-    if oracleFlag.lower() in ['yes','true','1']:
+    oracleFlag = gConfig.getValue( '/LocalInstallation/InstallOracleClient', 'unknown' )
+    if oracleFlag.lower() in ['yes', 'true', '1']:
       installOracleClient = True
     elif oracleFlag.lower() == "unknown":
       result = systemCall( 0, ['python', '-c', 'import cx_Oracle'] )
       if result['OK'] and result['Value'][0] == 0:
         installOracleClient = True
- 
+
     cmdList = ['dirac-install', '-r', version, '-t', 'server']
     if rootPath:
-      cmdList.extend( ['-P',rootPath] ) 
-    
+      cmdList.extend( ['-P', rootPath] )
+
     # Check if there are extensions
     extensionList = getCSExtensions()
-    webFlag = gConfig.getValue('/LocalInstallation/WebPortal',False)
+    webFlag = gConfig.getValue( '/LocalInstallation/WebPortal', False )
     if webFlag:
-      extensionList.append('Web')        
+      extensionList.append( 'Web' )
     if extensionList:
-      cmdList += ['-e',','.join(extensionList)]
-      
-    # Are grid middleware bindings required ?   
+      cmdList += ['-e', ','.join( extensionList )]
+
+    # Are grid middleware bindings required ?
     if gridVersion:
       cmdList.extend( ['-g', gridVersion] )
-   
-    targetPath = gConfig.getValue('/LocalInstallation/TargetPath',
-                                  gConfig.getValue('/LocalInstallation/RootPath',''))
-    if targetPath and os.path.exists(targetPath+'/etc/dirac.cfg'):
-      cmdList.append(targetPath+'/etc/dirac.cfg')
+
+    targetPath = gConfig.getValue( '/LocalInstallation/TargetPath',
+                                  gConfig.getValue( '/LocalInstallation/RootPath', '' ) )
+    if targetPath and os.path.exists( targetPath + '/etc/dirac.cfg' ):
+      cmdList.append( targetPath + '/etc/dirac.cfg' )
     else:
-      return S_ERROR('Local configuration not found')  
-   
+      return S_ERROR( 'Local configuration not found' )
+
     result = systemCall( 0, cmdList )
     if not result['OK']:
       return result
@@ -256,17 +254,17 @@ class SystemAdministratorHandler( RequestHandler ):
       else:
         message = "Failed to update software to %s" % version
       return S_ERROR( message )
-    
+
     # Check if there is a MySQL installation and fix the server scripts if necessary
-    if os.path.exists(InstallTools.mysqlDir):
-      startupScript = os.path.join( InstallTools.instancePath, 
+    if os.path.exists( InstallTools.mysqlDir ):
+      startupScript = os.path.join( InstallTools.instancePath,
                                     'mysql', 'share', 'mysql', 'mysql.server' )
-      if not os.path.exists(startupScript):
+      if not os.path.exists( startupScript ):
         startupScript = os.path.join( InstallTools.instancePath, 'pro',
                                      'mysql', 'share', 'mysql', 'mysql.server' )
-      if os.path.exists(startupScript):  
-        InstallTools.fixMySQLScripts(startupScript)
-    
+      if os.path.exists( startupScript ):
+        InstallTools.fixMySQLScripts( startupScript )
+
     # For LHCb we need to check Oracle client
     if installOracleClient:
       result = systemCall( 0, 'install_oracle-client.sh' )
@@ -294,7 +292,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result = shellCall( 60, command )
     return result
 
-  types_checkComponentLog = [ list(StringTypes)+[ListType] ]
+  types_checkComponentLog = [ list( StringTypes ) + [ListType] ]
   def export_checkComponentLog( self, component ):
     """ Check component log for errors
     """
@@ -303,12 +301,12 @@ class SystemAdministratorHandler( RequestHandler ):
       if component == '*':
         result = InstallTools.getSetupComponents()
         if result['OK']:
-          for ctype in ['Services','Agents']:
+          for ctype in ['Services', 'Agents']:
             if ctype in result['Value']:
               for sname in result['Value'][ctype]:
                 for cname in result['Value'][ctype][sname]:
-                  componentList.append('/'.join([sname,cname]))
-    elif type(component) in StringTypes:
+                  componentList.append( '/'.join( [sname, cname] ) )
+    elif type( component ) in StringTypes:
       componentList = [component]
     else:
       componentList = component
@@ -317,11 +315,11 @@ class SystemAdministratorHandler( RequestHandler ):
     for c in componentList:
       if not '/' in c:
         continue
-      system,cname = c.split('/')
+      system, cname = c.split( '/' )
 
       startDir = InstallTools.startDir
-      currentLog = startDir+'/'+system+'_'+cname+'/log/current'
-      logFile = file(currentLog,'r')
+      currentLog = startDir + '/' + system + '_' + cname + '/log/current'
+      logFile = file( currentLog, 'r' )
       logLines = logFile.readlines()
       logFile.close()
 
@@ -333,17 +331,16 @@ class SystemAdministratorHandler( RequestHandler ):
         if "ERROR:" in line:
           fields = line.split()
           recent = False
-          timeStamp = fromString(fields[0]+' '+fields[1])
-          if (now-timeStamp) < hour:
+          timeStamp = fromString( fields[0] + ' ' + fields[1] )
+          if ( now - timeStamp ) < hour:
             errors_1 += 1
             recent = True
-          if (now-timeStamp) < day:
+          if ( now - timeStamp ) < day:
             errors_24 += 1
             recent = True
           if recent:
-            lastError = line.split('ERROR:')[-1].strip()
+            lastError = line.split( 'ERROR:' )[-1].strip()
 
-      resultDict[c] = {'ErrorsHour':errors_1,'ErrorsDay':errors_24,'LastError':lastError}
+      resultDict[c] = {'ErrorsHour':errors_1, 'ErrorsDay':errors_24, 'LastError':lastError}
 
-    return S_OK(resultDict)
-            
+    return S_OK( resultDict )
