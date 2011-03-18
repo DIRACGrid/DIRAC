@@ -1,5 +1,4 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -26,6 +25,7 @@ __RCSID__ = "$Id$"
        calls function with given arguments within a timeout Wrapper
        should be used to wrap third party python functions
 """
+__RCSID__ = "$Id$"
 
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported
@@ -48,14 +48,19 @@ class Subprocess:
 
   def __init__( self, timeout = False, bufferLimit = 52428800 ):
     self.log = gLogger.getSubLogger( 'Subprocess' )
+    self.timeout = False
     try:
       self.changeTimeout( timeout )
       self.bufferLimit = int( bufferLimit ) # 5MB limit for data
-    except Exception, v:
+    except Exception, x:
       self.log.exception( 'Failed initialisation of Subprocess object' )
-      raise v
+      raise x
+    self.child = None
     self.childPID = 0
     self.childKilled = False
+    self.callback = None
+    self.bufferList = []
+    self.cmdSeq = []
 
   def changeTimeout( self, timeout ):
     self.timeout = int( timeout )
@@ -69,7 +74,6 @@ class Subprocess:
 
     while len( redBuf ) > 0:
       redBuf = os.read( fd, 8192 )
-      lastSliceLength = len( redBuf )
       dataString += redBuf
       if len( dataString ) + baseLength > self.bufferLimit:
         self.log.error( 'Maximum output buffer length reached' )
@@ -83,13 +87,13 @@ class Subprocess:
   def __executePythonFunction( self, function, writePipe, *stArgs, **stKeyArgs ):
     try:
       os.write( writePipe, DEncode.encode( S_OK( function( *stArgs, **stKeyArgs ) ) ) )
-    except OSError, v:
-      if str( v ) == '[Errno 32] Broken pipe':
+    except OSError, x:
+      if str( x ) == '[Errno 32] Broken pipe':
         # the parent has died
         pass
-    except Exception, v:
+    except Exception, x:
       self.log.exception( 'Exception while executing', function.__name__ )
-      os.write( writePipe, DEncode.encode( S_ERROR( str( v ) ) ) )
+      os.write( writePipe, DEncode.encode( S_ERROR( str( x ) ) ) )
       #HACK: Allow some time to flush logs
       time.sleep( 1 )
     try:
@@ -103,7 +107,7 @@ class Subprocess:
       try:
         os.fstat( fd )
         validList.append( fd )
-      except OSError, e:
+      except OSError:
         pass
     if not validList:
       return False
@@ -114,13 +118,13 @@ class Subprocess:
     else:
       return select.select( validList , [], [], timeout )[0]
 
-  def __killPid( self, pid, signal = 9 ):
+  def __killPid( self, pid, sig = 9 ):
     try:
-      os.kill( pid, signal )
-    except Exception, v:
-      if not str( v ) == '[Errno 3] No such process':
-        self.log.exeption( 'Exception while killing timed out process' )
-        raise v
+      os.kill( pid, sig )
+    except Exception, x:
+      if not str( x ) == '[Errno 3] No such process':
+        self.log.exception( 'Exception while killing timed out process' )
+        raise x
 
   def __poll( self, pid ):
     try:
@@ -140,7 +144,7 @@ class Subprocess:
         try:
           os.kill( gcpid, signal.SIGKILL )
           self.__poll( gcpid )
-        except Exception, e:
+        except Exception:
           pass
     self.__killPid( self.childPID )
 
@@ -211,27 +215,27 @@ class Subprocess:
                            self.bufferList[1][0] )
     return retDict
 
-  def __readFromFile( self, file, baseLength, doAll = True ):
+  def __readFromFile( self, fd, baseLength, doAll = True ):
     try:
       dataString = ""
-      fn = file.fileno()
+      fn = fd.fileno()
       rawRead = type( fn ) == types.IntType
-      while file in select.select( [ file ], [], [], 1 )[0]:
+      while fd in select.select( [ fd ], [], [], 1 )[0]:
         if rawRead:
           nB = os.read( fn, self.bufferLimit )
         else:
-          nB = file.read( 1 )
+          nB = fd.read( 1 )
         if nB == "":
           break
         dataString += nB
-    except Exception, v:
+    except Exception, x:
       self.log.exception( "SUPROCESS: readFromFile exception" )
       try:
         self.log.error( 'Error reading', 'type(nB) =%s' % type( nB ) )
         self.log.error( 'Error reading', 'nB =%s' % str( nB ) )
-      except:
+      except Exception:
         pass
-      return S_ERROR( 'Can not read from output: %s' % str( v ) )
+      return S_ERROR( 'Can not read from output: %s' % str( x ) )
     if len( dataString ) + baseLength > self.bufferLimit:
       self.log.error( 'Maximum output buffer length reached' )
       retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) for called '
@@ -241,8 +245,8 @@ class Subprocess:
 
     return S_OK( dataString )
 
-  def __readFromSystemCommandOutput( self, file, bufferIndex ):
-    retDict = self.__readFromFile( file,
+  def __readFromSystemCommandOutput( self, fd, bufferIndex ):
+    retDict = self.__readFromFile( fd,
                                    len( self.bufferList[ bufferIndex ][0] ) )
     if retDict[ 'OK' ]:
       self.bufferList[ bufferIndex ][0] += retDict[ 'Value' ]
@@ -261,9 +265,9 @@ class Subprocess:
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
     if sys.platform.find( "win" ) == 0:
-        closefd = False
+      closefd = False
     else:
-        closefd = True
+      closefd = True
     try:
       self.child = subprocess.Popen( self.cmdSeq,
                                       shell = shell,
@@ -276,14 +280,14 @@ class Subprocess:
       retDict = S_ERROR( v )
       retDict['Value'] = ( -1, '' , str( v ) )
       return retDict
-    except Exception, v:
+    except Exception, x:
       try:
         self.child.stdout.close()
         self.child.stderr.close()
-      except:
+      except Exception:
         pass
       retDict = S_ERROR( v )
-      retDict['Value'] = ( -1, '' , str( v ) )
+      retDict['Value'] = ( -1, '' , str( x ) )
       return retDict
 
     try:
@@ -319,7 +323,7 @@ class Subprocess:
       try:
         self.child.stdout.close()
         self.child.stderr.close()
-      except:
+      except Exception:
         pass
 
   def getChildPID( self ):
@@ -331,7 +335,7 @@ class Subprocess:
       try:
         if not i.closed:
           fdList.append( i.fileno() )
-      except Exception, e:
+      except Exception:
         self.log.exception( "SUBPROCESS: readFromCommand exception" )
     readSeq = self.__selectFD( fdList, True )
     if readSeq == False:
@@ -357,9 +361,9 @@ class Subprocess:
         nL = self.bufferList[ bufferIndex ][1] + nextLineIndex + 1
         self.bufferList[ bufferIndex ][0] = self.bufferList[ bufferIndex ][0][ nL: ]
         self.bufferList[ bufferIndex ][1] = 0
-      except Exception, v:
+      except Exception:
         self.log.exception( 'Exception while calling callback function',
-                           '%s' % self.callback.__name__, lException = v )
+                           '%s' % self.callback.__name__ )
         self.log.showStack()
 
       return True
@@ -370,7 +374,7 @@ def systemCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimi
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, it is executed directly without calling a shell
   """
-  spObject = Subprocess( timeout )
+  spObject = Subprocess( timeout, bufferLimit = bufferLimit )
   return spObject.systemCall( cmdSeq,
                               callbackFunction = callbackFunction,
                               env = env,
@@ -381,7 +385,7 @@ def shellCall( timeout, cmdSeq, callbackFunction = None, env = None, bufferLimit
      Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
      with a timeout wrapper, cmdSeq it is invoque by /bin/sh
   """
-  spObject = Subprocess( timeout )
+  spObject = Subprocess( timeout, bufferLimit = bufferLimit )
   return spObject.systemCall( cmdSeq,
                               callbackFunction = callbackFunction,
                               env = env,
@@ -400,12 +404,20 @@ def __getChildrenForPID( ppid ):
   Get a list of children pids for ppid
   """
   magicCmd = "ps --no-headers --ppid %d -o pid" % ppid
-  exc = subprocess.Popen( magicCmd,
-                          stdout = subprocess.PIPE,
-                          shell = True,
-                          close_fds = True )
-  exc.wait()
-  return [ int( pid.strip() ) for pid in exc.stdout.readlines() if pid.strip() ]
+  try:
+    import psutil
+    childrenList = []
+    for proc in psutil.process_iter():
+      if proc.ppid == ppid:
+        childrenList.append( proc.pid )
+    return childrenList
+  except Exception:
+    exc = subprocess.Popen( magicCmd,
+                            stdout = subprocess.PIPE,
+                            shell = True,
+                            close_fds = True )
+    exc.wait()
+    return [ int( pid.strip() ) for pid in exc.stdout.readlines() if pid.strip() ]
 
 
 def getChildrenPIDs( ppid, foreachFunc = None ):
