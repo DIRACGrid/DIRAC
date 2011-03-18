@@ -1,5 +1,7 @@
+# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/DISET/private/Transports/SSL/ThreadSafeSSLObject.py $
 """ SAMResultsClient class is a client for the SAM Results DB.
 """
+__RCSID__ = "$Id: ThreadSafeSSLObject.py 18161 2009-11-11 12:07:09Z acasajus $"
 # it crashes epydoc
 #__docformat__ = "restructuredtext en"
 
@@ -11,6 +13,7 @@ import socket
 from DIRAC import S_OK, S_ERROR
 
 class SAMResultsClient:
+  # FIXME: Why is this a class and not just few methods?
 
 #############################################################################
 
@@ -105,11 +108,11 @@ class SAMResultsClient:
     doc = minidom.parseString( sam )
 
     if granularity in ( 'Site', 'Sites' ):
-        try:
-          s = doc.getElementsByTagName( "status" )[0].childNodes
-          status['SiteStatus'] = str( s[0].nodeValue )
-        except IndexError:
-          return None
+      try:
+        state = doc.getElementsByTagName( "status" )[0].childNodes
+        status['SiteStatus'] = str( state[0].nodeValue )
+      except IndexError:
+        return None
 
     elif granularity in ( 'Resource', 'Resources' ):
 
@@ -147,8 +150,8 @@ class SAMResultsClient:
         if metricToCheck is None:
           continue
 
-        s = metricToCheck.getElementsByTagName( "status" )[0].childNodes
-        status[test] = str( s[0].nodeValue )
+        state = metricToCheck.getElementsByTagName( "status" )[0].childNodes
+        status[test] = str( state[0].nodeValue )
 
     return status
 

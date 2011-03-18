@@ -1,5 +1,7 @@
+# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/DISET/private/Transports/SSL/ThreadSafeSSLObject.py $
 """ SLSClient class is a client for the SLS DB, looking for Status of a given Service.
 """
+__RCSID__ = "$Id: ThreadSafeSSLObject.py 18161 2009-11-11 12:07:09Z acasajus $"
 
 import socket
 import urllib2
@@ -8,6 +10,7 @@ from xml.dom import minidom
 from DIRAC import S_OK, S_ERROR
 
 class SLSClient:
+  # FIXME: Why is this a class and not just few methods?
 
 #############################################################################
 
