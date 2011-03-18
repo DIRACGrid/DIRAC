@@ -11,19 +11,19 @@ localCfg = LocalConfiguration()
 
 scriptName = os.path.basename( sys.argv[0] ).replace( '.py', '' )
 
-_isAlreadyInitialized = False
+gIsAlreadyInitialized = False
 
 def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = False ):
   if initialize( script, ignoreErrors, initializeMonitor, True ):
     gLogger.showHeaders( False )
 
 def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = False ):
-  global localCfg, scriptName, _isAlreadyInitialized
+  global scriptName, gIsAlreadyInitialized
 
   #Please do not call initialize in every file
-  if _isAlreadyInitialized:
+  if gIsAlreadyInitialized:
     return False
-  _isAlreadyInitialized = True
+  gIsAlreadyInitialized = True
 
   userDisabled = not localCfg.isCSEnabled()
   if not userDisabled:
@@ -34,7 +34,7 @@ def initialize( script = False, ignoreErrors = False, initializeMonitor = False,
 
   if script:
     scriptName = script
-  scriptSection = localCfg.setConfigurationForScript( scriptName )
+  localCfg.setConfigurationForScript( scriptName )
 
   if not ignoreErrors:
     localCfg.addMandatoryEntry( "/DIRAC/Setup" )
@@ -57,27 +57,21 @@ def initialize( script = False, ignoreErrors = False, initializeMonitor = False,
   return True
 
 def registerSwitch( showKey, longKey, helpString, callback = False ):
-  global localCfg
   localCfg.registerCmdOpt( showKey, longKey, helpString, callback )
 
 def getPositionalArgs():
-  global localCfg
   return localCfg.getPositionalArguments()
 
 def getExtraCLICFGFiles():
-  global localCfg
   return localCfg.getExtraCLICFGFiles()
 
 def getUnprocessedSwitches():
-  global localCfg
   return localCfg.getUnprocessedSwitches()
 
 def addDefaultOptionValue( option, value ):
-  global localCfg
   localCfg.addDefaultEntry( option, value )
 
 def setUsageMessage( usageMessage ):
-  global localCfg
   localCfg.setUsageMessage( usageMessage )
 
 def disableCS():

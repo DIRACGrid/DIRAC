@@ -9,8 +9,7 @@
 __RCSID__ = "$Id$"
 
 import sys, types, socket
-from DIRAC                           import gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC                           import gLogger, gConfig, S_OK
 from DIRAC.Core.Utilities.MySQL      import MySQL
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
@@ -82,7 +81,7 @@ class DB( MySQL ):
     self.log.info( "Host:           " + self.dbHost )
     #self.log.info("Password:       "+self.dbPass)
     self.log.info( "DBName:         " + self.dbName )
-    self.log.info( "MaxQueue:       " + `self.maxQueueSize` )
+    self.log.info( "MaxQueue:       " + self.maxQueueSize )
     self.log.info( "==================================================" )
 
 ########################################################################################
@@ -90,7 +89,8 @@ class DB( MySQL ):
 #  Utility functions
 #
 ########################################################################################
-  def buildCondition( self, condDict, older = None, newer = None, timeStamp = None, orderAttribute = False, limit = False ):
+  def buildCondition( self, condDict = None, older = None, newer = None,
+                      timeStamp = None, orderAttribute = None, limit = False ):
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
@@ -144,7 +144,8 @@ class DB( MySQL ):
     """
 
     cond = self.buildCondition( condDict, older, newer, timeStamp )
-    attrNames = ','.join( map( lambda x: str( x ), attrList ) )
+    attrNames = ','.join( [ str( x ) for x in attrList ] )
+    # attrNames = ','.join( map( lambda x: str( x ), attrList ) )
     cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
     result = self._query( cmd , connection )
     if not result['OK']:
@@ -160,7 +161,8 @@ class DB( MySQL ):
     return S_OK( resultList )
 
 #############################################################################
-  def getDistinctAttributeValues( self, table, attribute, condDict = {}, older = None, newer = None, timeStamp = None, connection = False ):
+  def getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
+                                  newer = None, timeStamp = None, connection = False ):
     """ Get distinct values of a table attribute under specified conditions
     """
     cond = self.buildCondition( condDict, older = older, newer = newer, timeStamp = timeStamp )

@@ -18,6 +18,15 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities import Time
+from DIRAC.Core.DISET.Server import _VmB, _endReportToMonitoring
+
+def _checkDir( path ):
+  try:
+    os.makedirs( path )
+  except Exception:
+    pass
+  if not os.path.isdir( path ):
+    raise Exception( 'Can not create %s' % path )
 
 class AgentModule:
   """ Base class for all agent modules
@@ -58,7 +67,7 @@ class AgentModule:
   
   """
 
-  def __init__( self, agentName, baseAgentName = False, properties = {} ):
+  def __init__( self, agentName, baseAgentName = False, properties = None ):
     """
       Common __init__ method for all Agents.
       All Agent modules must define:
@@ -103,6 +112,8 @@ class AgentModule:
       standaloneModule = False
 
     self.__basePath = gConfig.getValue( '/LocalSite/InstancePath', rootPath )
+    self.__agentModule = None
+    self.__codeProperties = {}
     self.__getCodeInfo()
 
     self.__moduleProperties = { 'fullName' : agentName,
@@ -128,12 +139,15 @@ class AgentModule:
                                                                         '.shifterCred' )
 
 
-    for key in properties:
-      self.__moduleProperties[ key ] = properties[ key ]
-    self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
-    self.__moduleProperties[ 'alive' ] = True
-    self.__moduleProperties[ 'shifterProxy' ] = False
+    if type( properties ) == types.DictType:
+      for key in properties:
+        self.__moduleProperties[ key ] = properties[ key ]
+      self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
+      self.__moduleProperties[ 'alive' ] = True
+      self.__moduleProperties[ 'shifterProxy' ] = False
 
+    self.__monitorLastStatsUpdate = -1
+    self.monitor = None
     self.__initializeMonitor()
     self.__initialized = False
 
@@ -145,13 +159,12 @@ class AgentModule:
                                        globals(),
                                        locals(),
                                        versionVar )
-    except Exception, e:
+    except Exception:
       self.log.exception( "Cannot load agent module" )
-    self.__codeProperties = {}
     for prop in ( ( versionVar, "version" ), ( docVar, "description" ) ):
       try:
         self.__codeProperties[ prop[1] ] = getattr( self.__agentModule, prop[0] )
-      except Exception, e:
+      except Exception:
         self.log.error( "Missing %s" % prop[0] )
         self.__codeProperties[ prop[1] ] = 'unset'
     self.__codeProperties[ 'DIRACVersion' ] = DIRAC.version
@@ -164,8 +177,8 @@ class AgentModule:
       return S_ERROR( "Error while initializing %s module: initialize must return S_OK/S_ERROR" % agentName )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
-    self.__checkDir( self.am_getControlDirectory() )
-    self.__checkDir( self.am_getWorkDirectory() )
+    _checkDir( self.am_getControlDirectory() )
+    _checkDir( self.am_getWorkDirectory() )
 
     self.__moduleProperties[ 'shifterProxy' ] = self.am_getOption( 'shifterProxy' )
     if self.am_monitoringEnabled():
@@ -197,14 +210,6 @@ class AgentModule:
     self.__initialized = True
     return S_OK()
 
-  def __checkDir( self, path ):
-    try:
-      os.makedirs( path )
-    except:
-      pass
-    if not os.path.isdir( path ):
-      raise Exception( 'Can not create %s' % path )
-
   def am_getControlDirectory( self ):
     return os.path.join( self.__basePath, str( self.am_getOption( 'ControlDirectory' ) ) )
 
@@ -219,13 +224,13 @@ class AgentModule:
       fd = open( self.am_getStopAgentFile(), 'w' )
       fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
       fd.close()
-    except:
+    except Exception:
       pass
 
   def am_removeStopAgentFile( self ):
     try:
       os.unlink( self.am_getStopAgentFile() )
-    except:
+    except Exception:
       pass
 
   def am_getBasePath( self ):
@@ -264,7 +269,6 @@ class AgentModule:
     return self.am_getModuleParam( 'cyclesDone' )
 
   def am_Enabled( self ):
-    enabled = self.am_getOption( "Enabled" )
     return self.am_getOption( "Enabled" )
 
   def am_disableMonitoring( self ):
@@ -328,7 +332,7 @@ class AgentModule:
     cpuStats = self.__startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
     if cpuStats:
-      self.__endReportToMonitoring( *cpuStats )
+      _endReportToMonitoring( *cpuStats )
     #Increment counters
     self.__moduleProperties[ 'cyclesDone' ] += 1
     #Show status
@@ -360,44 +364,16 @@ class AgentModule:
       if now - self.__monitorLastStatsUpdate < 10:
         return ( now, cpuTime )
       # Send CPU consumption mark
-      wallClock = now - self.__monitorLastStatsUpdate
       self.__monitorLastStatsUpdate = now
       # Send Memory consumption mark
-      membytes = self.__VmB( 'VmRSS:' )
+      membytes = _VmB( 'VmRSS:' )
       if membytes:
         mem = membytes / ( 1024. * 1024. )
         gMonitor.addMark( 'MEM', mem )
       return( now, cpuTime )
-    except:
+    except Exception:
       return False
 
-  def __endReportToMonitoring( self, initialWallTime, initialCPUTime ):
-    wallTime = time.time() - initialWallTime
-    stats = os.times()
-    cpuTime = stats[0] + stats[2] - initialCPUTime
-    percentage = cpuTime / wallTime * 100.
-    if percentage > 0:
-      gMonitor.addMark( 'CPU', percentage )
-
-  def __VmB( self, VmKey ):
-    '''Private.
-    '''
-    __memScale = {'kB': 1024.0, 'mB': 1024.0 * 1024.0, 'KB': 1024.0, 'MB': 1024.0 * 1024.0}
-    procFile = '/proc/%d/status' % os.getpid()
-     # get pseudo file  /proc/<pid>/status
-    try:
-      t = open( procFile )
-      v = t.read()
-      t.close()
-    except:
-      return 0.0  # non-Linux?
-     # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
-    i = v.index( VmKey )
-    v = v[i:].split( None, 3 )  # whitespace
-    if len( v ) < 3:
-      return 0.0  # invalid format?
-     # convert Vm value to bytes
-    return float( v[1] ) * __memScale[v[2]]
 
   def __executeModuleCycle( self ):
     #Execute the beginExecution function

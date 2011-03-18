@@ -1,27 +1,59 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/Base/API.py $
+# $HeadURL$
 # File :   API.py
 ########################################################################
-__RCSID__ = "$Id: API.py 19233 2009-12-04 22:40:35Z acsmith $"
-
 """ DIRAC API Base Class """
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base                import Script
 Script.initialize()
 
-from DIRAC                          import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC                          import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List      import sortList
 from DIRAC.Core.Security.Misc       import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.CS         import getDNForUsername
 
-import string, pprint, sys
+import pprint, sys
 
 COMPONENT_NAME = 'API'
+
+def _printFormattedDictList( dictList, fields, uniqueField, orderBy ):
+  """ Will print ordered the supplied field of a list of dictionaries """
+  orderDict = {}
+  fieldWidths = {}
+  dictFields = {}
+  for myDict in dictList:
+    for field in fields:
+      fieldValue = myDict[field]
+      if not fieldWidths.has_key( field ):
+        fieldWidths[field] = len( str( field ) )
+      if len( str( fieldValue ) ) > fieldWidths[field]:
+        fieldWidths[field] = len( str( fieldValue ) )
+    orderValue = myDict[orderBy]
+    if not orderDict.has_key( orderValue ):
+      orderDict[orderValue] = []
+    orderDict[orderValue].append( myDict[uniqueField] )
+    dictFields[myDict[uniqueField]] = myDict
+  headString = "%s" % fields[0].ljust( fieldWidths[fields[0]] + 5 )
+  for field in fields[1:]:
+    headString = "%s %s" % ( headString, field.ljust( fieldWidths[field] + 5 ) )
+  print headString
+  for orderValue in sortList( orderDict.keys() ):
+    uniqueFields = orderDict[orderValue]
+    for uniqueField in sortList( uniqueFields ):
+      myDict = dictFields[uniqueField]
+      outStr = "%s" % str( myDict[fields[0]] ).ljust( fieldWidths[fields[0]] + 5 )
+      for field in fields[1:]:
+        outStr = "%s %s" % ( outStr, str( myDict[field] ).ljust( fieldWidths[field] + 5 ) )
+      print outStr
+
+
 
 class API:
 
   #############################################################################
   def __init__( self ):
+    self._printFormattedDictList = _printFormattedDictList
     self.log = gLogger.getSubLogger( COMPONENT_NAME )
     self.section = COMPONENT_NAME
     self.pPrint = pprint.PrettyPrinter()
@@ -36,52 +68,22 @@ class API:
     self.log.warn( error )
     return S_ERROR( message )
 
-  #############################################################################
-  def _printFormattedDictList( self, dictList, fields, uniqueField, orderBy ):
-    """ Will print ordered the supplied field of a list of dictionaries """
-    orderDict = {}
-    fieldWidths = {}
-    dictFields = {}
-    for dict in dictList:
-      for field in fields:
-        fieldValue = dict[field]
-        if not fieldWidths.has_key( field ):
-          fieldWidths[field] = len( str( field ) )
-        if len( str( fieldValue ) ) > fieldWidths[field]:
-          fieldWidths[field] = len( str( fieldValue ) )
-      orderValue = dict[orderBy]
-      if not orderDict.has_key( orderValue ):
-        orderDict[orderValue] = []
-      orderDict[orderValue].append( dict[uniqueField] )
-      dictFields[dict[uniqueField]] = dict
-    headString = "%s" % fields[0].ljust( fieldWidths[fields[0]] + 5 )
-    for field in fields[1:]:
-      headString = "%s %s" % ( headString, field.ljust( fieldWidths[field] + 5 ) )
-    print headString
-    for orderValue in sortList( orderDict.keys() ):
-      uniqueFields = orderDict[orderValue]
-      for uniqueField in sortList( uniqueFields ):
-        dict = dictFields[uniqueField]
-        outStr = "%s" % str( dict[fields[0]] ).ljust( fieldWidths[fields[0]] + 5 )
-        for field in fields[1:]:
-          outStr = "%s %s" % ( outStr, str( dict[field] ).ljust( fieldWidths[field] + 5 ) )
-        print outStr
-
-  #############################################################################
-  def _prettyPrint( self, object ):
+  def _prettyPrint( self, myObject ):
     """Helper function to pretty print an object. """
-    print self.pPrint.pformat( object )
+    print self.pPrint.pformat( myObject )
 
   #############################################################################
-  def _promptUser( self, message, choices = ['y', 'n'], default = 'n' ):
+  def _promptUser( self, message, choices = None, default = 'n' ):
     """Internal function to pretty print an object. """
+    if choices == None:
+      choices = ['y', 'n']
     if ( choices ) and ( default ) and ( not default in choices ):
       return S_ERROR( "The default value is not a valid choice" )
     choiceString = ''
     if choices and default:
-      choiceString = string.join( choices, '/' ).replace( default, '[%s]' % default )
+      choiceString = '/'.join( choices ).replace( default, '[%s]' % default )
     elif choices and ( not default ):
-      choiceString = string.join( choices, '/' )
+      choiceString = '/'.join( choices )
     elif ( not choices ) and ( default ):
       choiceString = '[%s]' % default
 
@@ -102,7 +104,7 @@ class API:
 
     if promptAgain:
       if choices:
-        self.log.info( 'Possible responses are: %s' % ( string.join( choices, ', ' ) ) )
+        self.log.info( 'Possible responses are: %s' % ( '/'.join( choices ) ) )
       if choiceString:
         self.log.info( '%s %s :' % ( message, choiceString ) )
       elif default:
@@ -146,7 +148,10 @@ class API:
     for key in kwargs:
       if kwargs[key]:
         arguments.append( '%s = %s ( %s )' % ( key, kwargs[key], type( kwargs[key] ) ) )
-    finalReport = 'Problem with %s.%s() call:\nArguments: %s\nMessage: %s\n' % ( className, methodName, string.join( arguments, ', ' ), message )
+    finalReport = """Problem with %s.%s() call:
+Arguments: %s
+Message: %s
+""" % ( className, methodName, '/'.join( arguments ), message )
     if self.errorDict.has_key( methodName ):
       tmp = self.errorDict[methodName]
       tmp.append( finalReport )

@@ -21,7 +21,7 @@
   - starts the execution loop using the AgentReactor.go method
 
   Agent modules must be placed under the Agent directory of a DIRAC System. 
-  DIRAC Systems are called XXXSystem where XXX is the "DIRAC System Name", and 
+  DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and 
   must inherit from the base class AgentModule
 
 """
@@ -29,7 +29,7 @@ __RCSID__ = "$Id$"
 
 import time
 import os
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig, rootPath
+from DIRAC import S_OK, S_ERROR, gLogger, rootPath
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -131,7 +131,7 @@ class AgentReactor:
         if not result[ 'OK' ]:
           return S_ERROR( "Error while calling initialize method of %s: %s" % ( fullName, result[ 'Message' ] ) )
         moduleLoaded = True
-      except Exception, e:
+      except Exception:
         if not hideExceptions:
           gLogger.exception( "Can't load agent %s" % fullName )
     if not moduleLoaded:
@@ -179,7 +179,7 @@ class AgentReactor:
     for agentName in self.__agentModules:
       try:
         self.__agentModules[agentName]['instance'].finalize()
-      except:
+      except Exception:
         gLogger.exception( 'Failed to execute finalize for Agent:', agentName )
 
   def go( self ):
@@ -210,7 +210,7 @@ class AgentReactor:
     if maxCycles:
       try:
         maxCycles += self.__agentModules[ agentName ][ 'instance' ].am_getCyclesDone()
-      except:
+      except Exception:
         error = 'Can not determine number of cycles to execute'
         gLogger.exception( '%s:' % error, '"%s"' % maxCycles )
         return S_ERROR( error )
