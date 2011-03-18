@@ -1563,8 +1563,12 @@ def getMySQLPasswords():
   global mysqlRootPwd, mysqlPassword
   if not mysqlRootPwd:
     mysqlRootPwd = getpass.getpass( 'MySQL root password: ' )
+      
   if not mysqlPassword:
-    mysqlPassword = getpass.getpass( 'MySQL Dirac password: ' )
+    # Take it if it is already defined 
+    mysqlPassword = localCfg.getOption('/Systems/Databases/Password','')
+    if not mysqlPassword:
+      mysqlPassword = getpass.getpass( 'MySQL Dirac password: ' )
 
   return S_OK()
 
@@ -1830,13 +1834,13 @@ def installDatabase( dbName ):
             if exitOnError:
               exit( -1 )
             return S_ERROR( error )
-          dbAdded = True
-          result = execMySQL( 'FLUSH PRIVILEGES' )
-          if not result['OK']:
-            gLogger.error( result['Message'] )
-            if exitOnError:
-              exit( -1 )
-            return result
+        dbAdded = True
+        result = execMySQL( 'FLUSH PRIVILEGES' )
+        if not result['OK']:
+          gLogger.error( result['Message'] )
+          if exitOnError:
+            exit( -1 )
+          return result
 
       elif dbAdded:
         if l.strip():
