@@ -30,5 +30,9 @@ if len( args ) < 1:
 
 InstallTools.getMySQLPasswords()
 for db in args:
-  extension, system = InstallTools.installDatabase( db )['Value']
-  InstallTools.addDatabaseOptionsToCS( gConfig, system, db, True )
+  result = InstallTools.installDatabase( db )
+  if not result['OK']:
+    print "ERROR: failed to correctly install %s" % db,result['Message'] 
+  else:  
+    extension, system = result['Value']
+    InstallTools.addDatabaseOptionsToCS( gConfig, system, db, True )
