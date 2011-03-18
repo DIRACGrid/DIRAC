@@ -34,6 +34,12 @@ if len( args ) != 2:
 system = args[0]
 agent = args[1]
 
-InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent, getCSExtensions(), True )
-
-InstallTools.installComponent( 'agent', system, agent, getCSExtensions() )
+result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent, getCSExtensions(), True )
+if not result['OK']:
+  print "ERROR:", result['Message']
+else:
+  result = InstallTools.installComponent( 'agent', system, agent, getCSExtensions() )
+  if not result['OK']:
+    print "ERROR:", result['Message']
+  else:
+    print "Successfully installed agent %s in %s system" % (agent,system)    

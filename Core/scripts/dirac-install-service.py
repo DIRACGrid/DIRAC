@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+e#!/usr/bin/env python
 ########################################################################
 # $HeadURL$
 # File :    dirac-install-service
@@ -18,7 +18,7 @@ InstallTools.exitOnError = True
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
-                                    '  %s [option|cfgfile] ... System Service|System/Agent' % Script.scriptName,
+                                    '  %s [option|cfgfile] ... System Service|System/Service' % Script.scriptName,
                                     'Arguments:',
                                     '  System:  Name of the DIRAC system (ie: WorkloadManagement)',
                                     '  Service: Name of the DIRAC service (ie: Matcher)'] ) )
@@ -36,6 +36,12 @@ if len( args ) != 2:
 system = args[0]
 service = args[1]
 
-InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service, getCSExtensions(), True )
-
-InstallTools.installComponent( 'service', system, service, getCSExtensions() )
+result = InstallTools.addDefaultOptionsToCS( gConfig, 'service', system, service, getCSExtensions(), True )
+if not result['OK']:
+  print "ERROR:", result['Message']
+else:
+  result = InstallTools.installComponent( 'service', system, service, getCSExtensions() )
+  if not result['OK']:
+    print "ERROR:", result['Message']
+  else:
+    print "Successfully installed service %s in %s system" % (service,system)  
