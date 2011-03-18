@@ -20,62 +20,61 @@ _libc_search = re.compile( r'(__libc_init)'
                           '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)' )
 
 def libc_ver( executable = sys.executable, lib = '', version = '',
-
              chunksize = 2048 ):
 
-    """ Tries to determine the libc version that the file executable
-        (which defaults to the Python interpreter) is linked against.
+  """ Tries to determine the libc version that the file executable
+      (which defaults to the Python interpreter) is linked against.
 
-        Returns a tuple of strings (lib,version) which default to the
-        given parameters in case the lookup fails.
+      Returns a tuple of strings (lib,version) which default to the
+      given parameters in case the lookup fails.
 
-        Note that the function has intimate knowledge of how different
-        libc versions add symbols to the executable and thus is probably
-        only useable for executables compiled using gcc.
+      Note that the function has intimate knowledge of how different
+      libc versions add symbols to the executable and thus is probably
+      only useable for executables compiled using gcc.
 
-        The file is read and scanned in chunks of chunksize bytes.
+      The file is read and scanned in chunks of chunksize bytes.
 
-    """
-    f = open( executable, 'rb' )
-    binary = f.read( chunksize )
-    pos = 0
-    version = [0, 0, 0]
-    while 1:
-      m = _libc_search.search( binary, pos )
-      if not m:
-        binary = f.read( chunksize )
-        if not binary:
-          break
-        pos = 0
-        continue
-      libcinit, glibc, glibcversion, so, threads, soversion = m.groups()
+  """
+  f = open( executable, 'rb' )
+  binary = f.read( chunksize )
+  pos = 0
+  version = [0, 0, 0]
+  while 1:
+    m = _libc_search.search( binary, pos )
+    if not m:
+      binary = f.read( chunksize )
+      if not binary:
+        break
+      pos = 0
+      continue
+    libcinit, glibc, glibcversion, so, threads, soversion = m.groups()
+    if libcinit and not lib:
+      lib = 'libc'
+    elif glibc:
+      glibcversion_parts = glibcversion.split( '.' )
+      for i in range( len( glibcversion_parts ) ):
+        try:
+          glibcversion_parts[i] = int( glibcversion_parts[i] )
+        except ValueError:
+          glibcversion_parts[i] = 0
       if libcinit and not lib:
         lib = 'libc'
       elif glibc:
-        glibcversion_parts = glibcversion.split( '.' )
-        for i in range( len( glibcversion_parts ) ):
-          try:
-            glibcversion_parts[i] = int( glibcversion_parts[i] )
-          except ValueError:
-            glibcversion_parts[i] = 0
-        if libcinit and not lib:
-          lib = 'libc'
-        elif glibc:
-          if lib != 'glibc':
-            lib = 'glibc'
-            version = glibcversion_parts
-          elif glibcversion_parts > version:
-            version = glibcversion_parts
-      elif so:
         if lib != 'glibc':
-          lib = 'libc'
-          if soversion > version:
-            version = soversion
-          if threads and version[-len( threads ):] != threads:
-            version = version + threads
-      pos = m.end()
-    f.close()
-    return lib, '.'.join( map( str, version ) )
+          lib = 'glibc'
+          version = glibcversion_parts
+        elif glibcversion_parts > version:
+          version = glibcversion_parts
+    elif so:
+      if lib != 'glibc':
+        lib = 'libc'
+        if soversion > version:
+          version = soversion
+        if threads and version[-len( threads ):] != threads:
+          version = version + threads
+    pos = m.end()
+  f.close()
+  return lib, '.'.join( map( str, version ) )
 
 
 ### Command line interface

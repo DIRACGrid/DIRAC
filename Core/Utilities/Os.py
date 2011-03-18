@@ -1,19 +1,17 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
 """
    Collection of DIRAC useful os related modules
    by default on Error they return None
 """
+__RCSID__ = "$Id$"
 
 from types                          import StringTypes
-from string                         import join
 import os
 
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
 
-import shutil, os
 
 DEBUG = 0
 
@@ -28,8 +26,8 @@ def uniquePath( path = None ):
 
   try:
     elements = List.uniqueElements( List.fromChar( path, ":" ) )
-    return join( elements, ":" )
-  except:
+    return ':'.join( elements )
+  except Exception:
     return None
 
 def getDiskSpace( path = '.' ):
@@ -123,7 +121,7 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
       try:
         result['outputEnv'] = eval( stderr.split( '\n' )[-2] + '\n' )
         stderr = '\n'.join( stderr.split( '\n' )[:-2] )
-      except:
+      except Exception:
         stdout = cmd + '\n' + stdout
         result = DIRAC.S_ERROR( 'Could not parse Environment dictionary from stderr' )
     else:
@@ -152,12 +150,12 @@ def unifyLdLibraryPath( path, newpath ):
       if not os.path.isdir( newpath ):
         try:
           os.remove( newpath )
-        except:
+        except Exception:
           return path
     else:
       try:
         os.makedirs( newpath )
-      except:
+      except Exception:
         return path
     pathList = path.split( ':' )
     for dummy in pathList[:]:
@@ -165,9 +163,9 @@ def unifyLdLibraryPath( path, newpath ):
       if not os.path.isdir( ldDir ):
         continue
       ldLibs = os.listdir( ldDir )
-      for f in ldLibs:
-        newF = os.path.join( newpath, f )
-        ldF = os.path.join( ldDir, f )
+      for lib in ldLibs:
+        newF = os.path.join( newpath, lib )
+        ldF = os.path.join( ldDir, lib )
         # 1. Check if the file exist (broken links will return False)
         if os.path.isfile( ldF ):
           ldF = os.path.realpath( ldF )

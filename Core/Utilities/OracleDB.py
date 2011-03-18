@@ -58,14 +58,11 @@ from DIRAC                                  import S_OK, S_ERROR
 
 import cx_Oracle
 
-instances = 0
+gInstancesCount = 0
 
 import Queue
-import types
 import time
-import string
 import threading
-from types import StringTypes, DictType
 
 maxConnectRetry = 100
 maxArraysize = 5000 #max allowed 
@@ -78,17 +75,13 @@ class OracleDB:
     """
     set Oracle connection parameters and try to connect
     """
-    global instances
-    instances += 1
+    global gInstancesCount
+    gInstancesCount += 1
 
     self.__initialized = False
     self._connected = False
 
-    try:
-      # This allows derived classes from Oracle to define their onw
-      # self.logger and will not be overwritten.
-      test = self.logger
-    except:
+    if 'logger' not in dir( self ):
       self.logger = gLogger.getSubLogger( 'Oracle' )
 
     # let the derived class decide what to do with if is not 1
@@ -110,14 +103,14 @@ class OracleDB:
 
 
   def __del__( self ):
-    global instances
+    global gInstancesCount
 
     while 1 and self.__initialized:
       self.__connectionSemaphore.release()
       try:
         connection = self.__connectionQueue.get_nowait()
         connection.close()
-      except Queue.Empty, x:
+      except Queue.Empty:
         self.logger.debug( 'No more connection in Queue' )
         break
 
@@ -131,14 +124,14 @@ class OracleDB:
       raise Exception( 'OracleDB.__init__: wrong type for maxQueueSize' )
 
 
-  def _except( self, methodName, v, err ):
+  def _except( self, methodName, x, err ):
     """
     print Oracle error or exeption
     return S_ERROR with Exception
     """
 
     try:
-      raise v
+      raise x
     except cx_Oracle.Error, e:
       self.logger.debug( '%s: %s' % ( methodName, err ),
                      '%s' % ( e ) )
@@ -187,7 +180,8 @@ class OracleDB:
     self.logger.debug( '_query:', cmd )
 
     retDict = self.__getConnection( conn = conn )
-    if not retDict['OK'] : return retDict
+    if not retDict['OK'] :
+      return retDict
     connection = retDict['Value']
 
     try:
@@ -217,7 +211,7 @@ class OracleDB:
     try:
       connection.commit()
       cursor.close()
-    except Exception, v:
+    except Exception:
       pass
     if not conn:
       self.__putConnection( connection )
@@ -229,7 +223,8 @@ class OracleDB:
     self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
 
     retDict = self.__getConnection( conn = conn )
-    if not retDict['OK'] : return retDict
+    if not retDict['OK']:
+      return retDict
     connection = retDict['Value']
 
     try:
@@ -237,8 +232,8 @@ class OracleDB:
       result = None
       results = None
       if array != None:
-        L = cursor.arrayvar( cx_Oracle.STRING, array )
-        parameters += [L]
+        result = cursor.arrayvar( cx_Oracle.STRING, array )
+        parameters += [result]
       if output == True:
         result = connection.cursor()
         result.arraysize = maxArraysize # 500x faster!!
@@ -258,16 +253,19 @@ class OracleDB:
 
     try:
       cursor.close()
-    except Exception, v:
+    except Exception:
       pass
     if not conn:
       self.__putConnection( connection )
 
     return retDict
 
-  def executeStoredFunctions( self, packageName, returnType, parameters = [], conn = False ):
+  def executeStoredFunctions( self, packageName, returnType, parameters = None, conn = False ):
+    if parameters == None:
+      parameters = []
     retDict = self.__getConnection( conn = conn )
-    if not retDict['OK'] : return retDict
+    if not retDict['OK']:
+      return retDict
     connection = retDict['Value']
     try:
       cursor = connection.cursor()
@@ -282,7 +280,7 @@ class OracleDB:
 
     try:
       cursor.close()
-    except Exception, v:
+    except Exception:
       pass
     if not conn:
       self.__putConnection( connection )
@@ -312,7 +310,7 @@ class OracleDB:
       self.logger.debug( '__putConnection: Full Queue' )
       try:
         connection.close()
-      except:
+      except Exception:
         pass
     except Exception, x:
       self._except( '__putConnection', x, 'Failed to put Connection in Queue' )
@@ -338,7 +336,8 @@ class OracleDB:
     """
     self.logger.debug( '__getConnection:' )
 
-    if conn: return S_OK( conn )
+    if conn:
+      return S_OK( conn )
 
     try:
       self.__connectionSemaphore.acquire()

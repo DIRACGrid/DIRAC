@@ -1,8 +1,12 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
+
+
 from DIRAC import S_OK, S_ERROR, gLogger
 import os, re
 
 def pfnunparse( pfnDict ):
-  """ This method takes a dictionary containing a the pfn attributes and contructs it
+  """ This method takes a dictionary containing a the pfn attributes and constructs it
   """
   #gLogger.debug("Pfn.pfnunparse: Attempting to un-parse pfnDict.")
   try:
@@ -52,7 +56,7 @@ def pfnunparse( pfnDict ):
     #gLogger.debug("Pfn.pfnunparse: Successfully un-parsed pfn dictionary.")
     return S_OK( fullPfn )
 
-  except Exception, x:
+  except Exception:
     errStr = "Pfn.pfnunparse: Exception while un-parsing pfn dictionary."
     gLogger.exception( errStr )
     return S_ERROR( errStr )
@@ -126,7 +130,7 @@ def pfnparse( pfn ):
           pfnDict['FileName'] = fileName
     #gLogger.debug("Pfn.pfnparse: Successfully parsed pfn.")
     return S_OK( pfnDict )
-  except Exception, x:
+  except Exception:
     errStr = "Pfn.pfnparse: Exception while parsing pfn: " + str( pfn )
-    gLogger.exception( errStr, '', str( x ) )
+    gLogger.exception( errStr )
     return S_ERROR( errStr )
