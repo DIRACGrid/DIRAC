@@ -16,20 +16,20 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 
 ########################################################################
-class DB(MySQL):
+class DB( MySQL ):
 
-  def __init__(self,dbname,fullname,maxQueueSize):
+  def __init__( self, dbname, fullname, maxQueueSize ):
 
     self.database_name = dbname
     self.fullname = fullname
-    self.cs_path = getDatabaseSection(fullname)
+    self.cs_path = getDatabaseSection( fullname )
 
-    self.log = gLogger.getSubLogger(self.database_name)
+    self.log = gLogger.getSubLogger( self.database_name )
 
     self.dbHost = ''
-    result = gConfig.getOption( self.cs_path+'/Host')
+    result = gConfig.getOption( self.cs_path + '/Host' )
     if not result['OK']:
-      self.log.fatal('Failed to get the configuration parameters: Host')
+      self.log.fatal( 'Failed to get the configuration parameters: Host' )
       return
     self.dbHost = result['Value']
     # Check if the host is the local one and then set it to 'localhost' to use
@@ -39,58 +39,58 @@ class DB(MySQL):
       if localHostName == self.dbHost:
         self.dbHost = 'localhost'
     self.dbUser = ''
-    result = gConfig.getOption( self.cs_path+'/User')
+    result = gConfig.getOption( self.cs_path + '/User' )
     if not result['OK']:
       # No individual user name found, try at the common place
-      result = gConfig.getOption('/Systems/Databases/User')
+      result = gConfig.getOption( '/Systems/Databases/User' )
       if not result['OK']:
-        self.log.fatal('Failed to get the configuration parameters: User')
+        self.log.fatal( 'Failed to get the configuration parameters: User' )
         return
     self.dbUser = result['Value']
     self.dbPass = ''
-    result = gConfig.getOption( self.cs_path+'/Password')
+    result = gConfig.getOption( self.cs_path + '/Password' )
     if not result['OK']:
       # No individual password found, try at the common place
-      result = gConfig.getOption('/Systems/Databases/Password')
+      result = gConfig.getOption( '/Systems/Databases/Password' )
       if not result['OK']:
-        self.log.fatal('Failed to get the configuration parameters: Password')
+        self.log.fatal( 'Failed to get the configuration parameters: Password' )
         return
     self.dbPass = result['Value']
     self.dbName = ''
-    result = gConfig.getOption( self.cs_path+'/DBName')
+    result = gConfig.getOption( self.cs_path + '/DBName' )
     if not result['OK']:
-      self.log.fatal('Failed to get the configuration parameters: DBName')
+      self.log.fatal( 'Failed to get the configuration parameters: DBName' )
       return
     self.dbName = result['Value']
     self.maxQueueSize = maxQueueSize
-    result = gConfig.getOption( self.cs_path+'/MaxQueueSize')
+    result = gConfig.getOption( self.cs_path + '/MaxQueueSize' )
     if result['OK']:
-      self.maxQueueSize = int(result['Value'])
+      self.maxQueueSize = int( result['Value'] )
 
-    MySQL.__init__(self, self.dbHost, self.dbUser, self.dbPass,
-                   self.dbName, maxQueueSize=maxQueueSize )
+    MySQL.__init__( self, self.dbHost, self.dbUser, self.dbPass,
+                   self.dbName, maxQueueSize = maxQueueSize )
 
     if not self._connected:
       err = 'Can not connect to DB, exiting...'
-      self.log.fatal(err)
-      sys.exit(err)
+      self.log.fatal( err )
+      sys.exit( err )
 
 
-    self.log.info("==================================================")
+    self.log.info( "==================================================" )
     #self.log.info("SystemInstance: "+self.system)
-    self.log.info("User:           "+self.dbUser)
-    self.log.info("Host:           "+self.dbHost)
+    self.log.info( "User:           " + self.dbUser )
+    self.log.info( "Host:           " + self.dbHost )
     #self.log.info("Password:       "+self.dbPass)
-    self.log.info("DBName:         "+self.dbName)
-    self.log.info("MaxQueue:       "+`self.maxQueueSize`)
-    self.log.info("==================================================")
+    self.log.info( "DBName:         " + self.dbName )
+    self.log.info( "MaxQueue:       " + `self.maxQueueSize` )
+    self.log.info( "==================================================" )
 
 ########################################################################################
 #
 #  Utility functions
 #
 ########################################################################################
-  def buildCondition(self, condDict, older=None, newer=None, timeStamp=None,orderAttribute=False,limit=False):
+  def buildCondition( self, condDict, older = None, newer = None, timeStamp = None, orderAttribute = False, limit = False ):
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
@@ -101,17 +101,17 @@ class DB(MySQL):
 
     if condDict != None:
       for attrName, attrValue in condDict.items():
-        if type(attrValue) == types.ListType:
-          multiValue = ','.join(['"'+str(x).strip()+'"' for x in attrValue])
+        if type( attrValue ) == types.ListType:
+          multiValue = ','.join( ['"' + str( x ).strip() + '"' for x in attrValue] )
           condition = ' %s %s %s in (%s)' % ( condition,
                                               conjunction,
-                                              str(attrName),
-                                              multiValue  )
+                                              str( attrName ),
+                                              multiValue )
         else:
           condition = ' %s %s %s=\'%s\'' % ( condition,
                                              conjunction,
-                                             str(attrName),
-                                             str(attrValue)  )
+                                             str( attrName ),
+                                             str( attrValue ) )
         conjunction = "AND"
 
     if timeStamp:
@@ -119,57 +119,57 @@ class DB(MySQL):
         condition = ' %s %s %s < \'%s\'' % ( condition,
                                              conjunction,
                                              timeStamp,
-                                             str(older) )
+                                             str( older ) )
         conjunction = "AND"
 
       if newer:
-        condition = ' %s %s %s >= \'%s\'' %  ( condition,
+        condition = ' %s %s %s >= \'%s\'' % ( condition,
                                                conjunction,
                                                timeStamp,
-                                               str(newer) )
+                                               str( newer ) )
 
     if type( orderAttribute ) in types.StringTypes:
-      orderFields = orderAttribute.split(':')
+      orderFields = orderAttribute.split( ':' )
       condition = "%s ORDER BY %s" % ( condition, ' '.join( orderFields ) )
-        
+
     if limit:
-      condition = "%s LIMIT %d" % (condition,limit)
+      condition = "%s LIMIT %d" % ( condition, limit )
 
     return condition
 
 #########################################################################################
-  def getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None, connection=False):
+  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False ):
     """ Count the number of records on each distinct combination of AttrList, selected
         with condition defined by condDict and time stamps
     """
 
-    cond = self.buildCondition( condDict, older, newer, timeStamp)
-    attrNames = ','.join(map(lambda x: str(x),attrList ))
-    cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % (attrNames,table,cond,attrNames,attrNames)
-    result = self._query( cmd , connection)
+    cond = self.buildCondition( condDict, older, newer, timeStamp )
+    attrNames = ','.join( map( lambda x: str( x ), attrList ) )
+    cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
+    result = self._query( cmd , connection )
     if not result['OK']:
       return result
 
     resultList = []
     for raw in result['Value']:
       attrDict = {}
-      for i in range(len(attrList)):
+      for i in range( len( attrList ) ):
         attrDict[attrList[i]] = raw[i]
-      item = (attrDict,raw[len(attrList)])
-      resultList.append(item)
-    return S_OK(resultList)
+      item = ( attrDict, raw[len( attrList )] )
+      resultList.append( item )
+    return S_OK( resultList )
 
 #############################################################################
-  def getDistinctAttributeValues(self,table,attribute,condDict = {}, older = None, newer=None, timeStamp=None, connection=False):
+  def getDistinctAttributeValues( self, table, attribute, condDict = {}, older = None, newer = None, timeStamp = None, connection = False ):
     """ Get distinct values of a table attribute under specified conditions
     """
-    cond = self.buildCondition( condDict, older=older, newer=newer, timeStamp=timeStamp )
-    cmd = 'SELECT  DISTINCT(%s) FROM %s %s ORDER BY %s' % (attribute,table,cond,attribute)
-    result = self._query(cmd, connection)
+    cond = self.buildCondition( condDict, older = older, newer = newer, timeStamp = timeStamp )
+    cmd = 'SELECT  DISTINCT(%s) FROM %s %s ORDER BY %s' % ( attribute, table, cond, attribute )
+    result = self._query( cmd, connection )
     if not result['OK']:
       return result
     attr_list = [ x[0] for x in result['Value'] ]
-    return S_OK(attr_list)
+    return S_OK( attr_list )
 
 #############################################################################
   def getCSOption( self, optionName, defaultValue = None ):
