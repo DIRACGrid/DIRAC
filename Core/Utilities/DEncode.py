@@ -1,30 +1,26 @@
 # $HeadURL$
+"""
+Encoding and decoding for dirac, Ids:
+ i -> int
+ I -> long
+ f -> float
+ b -> bool
+ s -> string
+ z -> datetime
+ n -> none
+ l -> list
+ t -> tuple
+ d -> dictionary
+"""
 __RCSID__ = "$Id$"
 
-# Encoding and decoding for dirac
-#
-# Ids
-# i -> int
-# I -> long
-# f -> float
-# b -> bool
-# s -> string
-# z -> datetime
-# n -> none
-# l -> list
-# t -> tuple
-# d -> dictionary
-
-
-import sys
 import types
-import struct
 import datetime
 
 _dateTimeObject = datetime.datetime.utcnow()
-_dateTimeType = type( _dateTimeObject )
-_dateType     = type( _dateTimeObject.date() )
-_timeType     = type( _dateTimeObject.time() )
+_dateTimeType =   type( _dateTimeObject )
+_dateType =       type( _dateTimeObject.date() )
+_timeType =       type( _dateTimeObject.time() )
 
 g_dEncodeFunctions = {}
 g_dDecodeFunctions = {}
@@ -33,11 +29,11 @@ g_dDecodeFunctions = {}
 def encodeInt( iValue, eList ):
   eList.extend( ( "i", str( iValue ), "e" ) )
 
-def decodeInt( buffer, i ):
+def decodeInt( data, i ):
   i += 1
-  end  = buffer.index( 'e', i )
-  n = int( buffer[i:end] )
-  return ( n, end + 1 )
+  end = data.index( 'e', i )
+  value = int( data[i:end] )
+  return ( value, end + 1 )
 
 g_dEncodeFunctions[ types.IntType ] = encodeInt
 g_dDecodeFunctions[ "i" ] = decodeInt
@@ -47,11 +43,11 @@ def encodeLong( iValue, eList ):
   # corrected by KGG   eList.extend( ( "l", str( iValue ), "e" ) )
   eList.extend( ( "I", str( iValue ), "e" ) )
 
-def decodeLong( buffer, i ):
+def decodeLong( data, i ):
   i += 1
-  end  = buffer.index( 'e', i )
-  n = long( buffer[i:end] )
-  return ( n, end + 1 )
+  end = data.index( 'e', i )
+  value = long( data[i:end] )
+  return ( value, end + 1 )
 
 g_dEncodeFunctions[ types.LongType ] = encodeLong
 g_dDecodeFunctions[ "I" ] = decodeLong
@@ -60,16 +56,16 @@ g_dDecodeFunctions[ "I" ] = decodeLong
 def encodeFloat( iValue, eList ):
   eList.extend( ( "f", str( iValue ), "e" ) )
 
-def decodeFloat( buffer, i ):
+def decodeFloat( data, i ):
   i += 1
-  end  = buffer.index( 'e', i )
-  if end+1 < len( buffer ) and buffer[end+1] in ( '+', '-' ):
+  end = data.index( 'e', i )
+  if end + 1 < len( data ) and data[end + 1] in ( '+', '-' ):
     eI = end
-    end = buffer.index( 'e', end+1 )
-    n = float( buffer[i:eI] ) * 10 ** int( buffer[eI+1:end] )
+    end = data.index( 'e', end + 1 )
+    value = float( data[i:eI] ) * 10 ** int( data[eI + 1:end] )
   else:
-    n = float( buffer[i:end] )
-  return ( n, end + 1 )
+    n = float( data[i:end] )
+  return ( value, end + 1 )
 
 g_dEncodeFunctions[ types.FloatType ] = encodeFloat
 g_dDecodeFunctions[ "f" ] = decodeFloat
@@ -81,8 +77,8 @@ def encodeBool( bValue, eList ):
   else:
     eList.append( "b0" )
 
-def decodeBool( buffer, i ):
-  if buffer[ i + 1 ] == "0":
+def decodeBool( data, i ):
+  if data[ i + 1 ] == "0":
     return ( False, i + 2 )
   else:
     return ( True, i + 2 )
@@ -94,13 +90,13 @@ g_dDecodeFunctions[ "b" ] = decodeBool
 def encodeString( sValue, eList ):
   eList.extend( ( 's', str( len( sValue ) ), ':', sValue ) )
 
-def decodeString( buffer, i ):
+def decodeString( data, i ):
   i += 1
-  colon = buffer.index( ":", i )
-  n = int( buffer[ i : colon ] )
+  colon = data.index( ":", i )
+  value = int( data[ i : colon ] )
   colon += 1
-  end = colon + n
-  return ( buffer[ colon : end] , end )
+  end = colon + value
+  return ( data[ colon : end] , end )
 
 g_dEncodeFunctions[ types.StringType ] = encodeString
 g_dDecodeFunctions[ "s" ] = decodeString
@@ -110,53 +106,52 @@ def encodeUnicode( sValue, eList ):
   valueStr = sValue.encode( 'utf-8' )
   eList.extend( ( 'u', str( len( valueStr ) ), ':', valueStr ) )
 
-def decodeUnicode( buffer, i ):
+def decodeUnicode( data, i ):
   i += 1
-  colon = buffer.index( ":", i )
-  n = int( buffer[ i : colon ] )
+  colon = data.index( ":", i )
+  value = int( data[ i : colon ] )
   colon += 1
-  end = colon + n
-  return ( unicode( buffer[ colon : end], 'utf-8' ) , end )
+  end = colon + value
+  return ( unicode( data[ colon : end], 'utf-8' ) , end )
 
 g_dEncodeFunctions[ types.UnicodeType ] = encodeUnicode
 g_dDecodeFunctions[ "u" ] = decodeUnicode
 
 #Encoding and decoding datetime
 def encodeDateTime( oValue, eList ):
-  prefix = "z"
   if type( oValue ) == _dateTimeType:
     tDateTime = ( oValue.year, oValue.month, oValue.day, \
                       oValue.hour, oValue.minute, oValue.second, \
                       oValue.microsecond, oValue.tzinfo )
     eList.append( "za" )
     # corrected by KGG encode( tDateTime, eList )
-    g_dEncodeFunctions[ type( tDateTime) ]( tDateTime, eList )
+    g_dEncodeFunctions[ type( tDateTime ) ]( tDateTime, eList )
   elif type( oValue ) == _dateType:
     tData = ( oValue.year, oValue.month, oValue. day )
     eList.append( "zd" )
     # corrected by KGG encode( tData, eList )
-    g_dEncodeFunctions[ type( tData) ]( tData, eList )
+    g_dEncodeFunctions[ type( tData ) ]( tData, eList )
   elif type( oValue ) == _timeType:
     tTime = ( oValue.hour, oValue.minute, oValue.second, oValue.microsecond, oValue.tzinfo )
     eList.append( "zt" )
     # corrected by KGG encode( tTime, eList )
-    g_dEncodeFunctions[ type( tTime) ]( tTime, eList )
+    g_dEncodeFunctions[ type( tTime ) ]( tTime, eList )
   else:
     raise Exception( "Unexpected type %s while encoding a datetime object" % str( type( oValue ) ) )
 
-def decodeDateTime( buffer, i ):
+def decodeDateTime( data, i ):
   i += 1
-  type = buffer[i]
-  # corrected by KGG tupleObject, i = decode( buffer, i + 1 )
-  tupleObject, i = g_dDecodeFunctions[ buffer[ i+1 ] ]( buffer, i+1 )
-  if type == 'a':
+  dataType = data[i]
+  # corrected by KGG tupleObject, i = decode( data, i + 1 )
+  tupleObject, i = g_dDecodeFunctions[ data[ i + 1 ] ]( data, i + 1 )
+  if dataType == 'a':
     dtObject = datetime.datetime( *tupleObject )
-  elif type == 'd':
+  elif dataType == 'd':
     dtObject = datetime.date( *tupleObject )
-  elif type == 't':
+  elif dataType == 't':
     dtObject = datetime.time( *tupleObject )
   else:
-    raise Exception( "Unexpected type %s while decoding a datetime object" % type )
+    raise Exception( "Unexpected type %s while decoding a datetime object" % dataType )
   return ( dtObject, i )
 
 g_dEncodeFunctions[ _dateTimeType ] = encodeDateTime
@@ -168,7 +163,7 @@ g_dDecodeFunctions[ 'z' ] = decodeDateTime
 def encodeNone( oValue, eList ):
   eList.append( "n" )
 
-def decodeNone( buffer, i ):
+def decodeNone( data, i ):
   return ( None, i + 1 )
 
 g_dEncodeFunctions[ types.NoneType ] = encodeNone
@@ -181,11 +176,11 @@ def encodeList( lValue, eList ):
     g_dEncodeFunctions[ type( uObject ) ]( uObject, eList )
   eList.append( "e" )
 
-def decodeList( buffer, i ):
+def decodeList( data, i ):
   oL = []
   i += 1
-  while buffer[ i ] != "e":
-    ob, i = g_dDecodeFunctions[ buffer[ i ] ]( buffer, i )
+  while data[ i ] != "e":
+    ob, i = g_dDecodeFunctions[ data[ i ] ]( data, i )
     oL.append( ob )
   return( oL, i + 1 )
 
@@ -199,8 +194,8 @@ def encodeTuple( lValue, eList ):
     g_dEncodeFunctions[ type( uObject ) ]( uObject, eList )
   eList.append( "e" )
 
-def decodeTuple( buffer, i ):
-  oL, i = decodeList( buffer, i )
+def decodeTuple( data, i ):
+  oL, i = decodeList( data, i )
   return ( tuple( oL ), i )
 
 g_dEncodeFunctions[ types.TupleType ] = encodeTuple
@@ -214,12 +209,12 @@ def encodeDict( dValue, eList ):
     g_dEncodeFunctions[ type( dValue[key] ) ]( dValue[key], eList )
   eList.append( "e" )
 
-def decodeDict( buffer, i ):
+def decodeDict( data, i ):
   oD = {}
   i += 1
-  while buffer[ i ] != "e":
-    k, i = g_dDecodeFunctions[ buffer[ i ] ]( buffer, i )
-    oD[ k ], i = g_dDecodeFunctions[ buffer[ i ] ]( buffer, i )
+  while data[ i ] != "e":
+    k, i = g_dDecodeFunctions[ data[ i ] ]( data, i )
+    oD[ k ], i = g_dDecodeFunctions[ data[ i ] ]( data, i )
   return ( oD, i + 1 )
 
 g_dEncodeFunctions[ types.DictType ] = encodeDict
@@ -233,24 +228,24 @@ def encode( uObject ):
     #print "ENCODE FUNCTION : %s" % g_dEncodeFunctions[ type( uObject ) ]
     g_dEncodeFunctions[ type( uObject ) ]( uObject, eList )
     return "".join( eList )
-  except Exception, e:
+  except Exception:
     raise
 
-def decode( buffer ):
-  if not buffer:
-    return buffer
+def decode( data ):
+  if not data:
+    return data
   try:
     #print "DECODE FUNCTION : %s" % g_dDecodeFunctions[ sStream [ iIndex ] ]
-    return g_dDecodeFunctions[ buffer[ 0 ] ]( buffer, 0 )
-  except Exception, e:
+    return g_dDecodeFunctions[ data[ 0 ] ]( data, 0 )
+  except Exception:
     raise
 
 
-if __name__=="__main__":
-  uObject = {2:"3", True : (3,None), 2.0*10**20 : 2.0*10**-10 }
-  print "Initial: %s" % uObject
-  sData = encode( uObject )
-  print "Encoded: %s" % sData
-  print "Decoded: %s, [%s]" % decode( sData )
+if __name__ == "__main__":
+  gObject = {2:"3", True : ( 3, None ), 2.0 * 10 ** 20 : 2.0 * 10 ** -10 }
+  print "Initial: %s" % gObject
+  gData = encode( gObject )
+  print "Encoded: %s" % gData
+  print "Decoded: %s, [%s]" % decode( gData )
 
 

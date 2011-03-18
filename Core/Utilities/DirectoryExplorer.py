@@ -1,3 +1,5 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 class DirectoryExplorer:
 
@@ -21,7 +23,7 @@ class DirectoryExplorer:
 
   def getNextDir( self ):
     if self.__sort:
-      sort( self.__toExplore )
+      self.__toExplore = sorted( self.__toExplore )
     try:
       nextDir = self.__popNextDir()
       while nextDir in self.__explored:
@@ -38,5 +40,5 @@ class DirectoryExplorer:
       self.__toExplore.append( ( weight, dirName ) )
 
   def addDirList( self, dirList, weight = None ):
-    for d in dirList:
-      self.addDir( d, weight )
+    for dirName in dirList:
+      self.addDir( dirName, weight )

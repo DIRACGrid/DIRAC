@@ -6,65 +6,65 @@ import copy
 import os
 try:
   import zipfile
-  zipEnabled = True
-except:
-  zipEnabled = False
+  gZipEnabled = True
+except ImportError:
+  gZipEnabled = False
 
 try:
   from DIRAC.Core.Utilities import S_OK, S_ERROR
   from DIRAC.Core.Utilities import List, ThreadSafe
-  
+
   gCFGSynchro = ThreadSafe.Synchronizer( recursive = True )
-except:
+except Exception:
   #We're out of python, define required utilities
   import threading
   from types import StringTypes
-  
+
   def S_ERROR( messageString = '' ):
     return { 'OK' : False, 'Message' : str( messageString )  }
-    
-  def S_OK( value = ''  ):
+
+  def S_OK( value = '' ):
     return { 'OK' : True, 'Value' : value }
-  
+
   class ListDummy:
     def fromChar( self, inputString, sepChar = "," ):
       if not ( type( inputString ) in StringTypes and
                type( sepChar ) in StringTypes and
                sepChar ): # to prevent getting an empty String as argument
         return None
-    
+
       return [ fieldString.strip() for fieldString in inputString.split( sepChar ) if len( fieldString.strip() ) > 0 ]
-  
-  List=ListDummy()
+
+  List = ListDummy()
 
   class Synchronizer:
     """ Class enapsulating a lock
     allowing it to be used as a synchronizing
     decorator making the call thread-safe"""
-  
+
     def __init__( self, lockName = "", recursive = False ):
       self.lockName = lockName
       if recursive:
         self.lock = threading.RLock()
       else:
         self.lock = threading.Lock()
-  
+
     def __call__( self, funcToCall ):
       def lockedFunc( *args, **kwargs ):
         try:
           if self.lockName:
             print "LOCKING", self.lockName
           self.lock.acquire()
-          return funcToCall(*args, **kwargs)
+          return funcToCall( *args, **kwargs )
         finally:
           if self.lockName:
             print "UNLOCKING", self.lockName
           self.lock.release()
       return lockedFunc
-    
+
   gCFGSynchro = Synchronizer( recursive = True )
   #END OF OUT OF DIRAC
-  
+
 #START OF CFG MODULE
 
 class CFG:
@@ -73,6 +73,9 @@ class CFG:
     """
     Constructor
     """
+    self.__orderedList = []
+    self.__commentDict = {}
+    self.__dataDict = {}
     self.reset()
 
   @gCFGSynchro
@@ -111,7 +114,7 @@ class CFG:
       else:
         self.__dataDict[ sectionName ] = contents
     else:
-      raise Exception( "%s key already exists"  % sectionName )
+      raise Exception( "%s key already exists" % sectionName )
     return self.__dataDict[ sectionName ]
 
   def __overrideAndCloneSection( self, sectionName, oCFGToClone ):
@@ -310,7 +313,9 @@ class CFG:
     """
     if pathList[0] in self.__dataDict:
       if len( pathList ) == 1:
-        return { 'key' : pathList[0], 'value' : self.__dataDict[ pathList[0] ], 'comment' : self.__commentDict[ pathList[0] ] }
+        return { 'key' : pathList[0],
+                 'value' : self.__dataDict[ pathList[0] ],
+                 'comment' : self.__commentDict[ pathList[0] ] }
       else:
         return self.__dataDict[ pathList[0] ].__recurse( pathList[1:] )
     else:
@@ -332,7 +337,7 @@ class CFG:
                 value -> content of the key
                 comment -> comment of the key
     """
-    pathList = [ dir.strip() for dir in path.split( "/" ) if not dir.strip() == "" ]
+    pathList = [ dirName.strip() for dirName in path.split( "/" ) if not dirName.strip() == "" ]
     levelsAbove = abs( levelsAbove )
     if len( pathList ) - levelsAbove < 0:
       return False
@@ -364,15 +369,15 @@ class CFG:
     dataD = self.__dataDict
     while len( levels ) > 0:
       try:
-        dataD = dataD[ levels.pop( 0 ) ]
+        dataV = dataD[ levels.pop( 0 ) ]
       except KeyError:
         return defaultValue
-    try:
-      optionValue = dataD
-      if type( optionValue ) != types.StringType:
-        optionValue = defaultValue
-    except KeyError:
+      dataD = dataV
+
+    if type( dataV ) != types.StringType:
       optionValue = defaultValue
+    else:
+      optionValue = dataV
 
     #Return value if existing, defaultValue if not
     if optionValue == defaultValue:
@@ -392,17 +397,17 @@ class CFG:
     if defaultType == types.ListType:
       try:
         return List.fromChar( optionValue, ',' )
-      except Exception, v:
+      except Exception:
         return defaultValue
     elif defaultType == types.BooleanType:
       try:
         return optionValue.lower() in ( "y", "yes", "true", "1" )
-      except Exception, v:
+      except Exception:
         return defaultValue
     else:
       try:
         return defaultType( optionValue )
-      except:
+      except Exception:
         return defaultValue
 
   def getAsDict( self, path = "" ):
@@ -593,26 +598,26 @@ class CFG:
     @return: String with the contents of the CFG
     """
     indentation = "  "
-    CFGSTring = ""
+    cfgString = ""
     for entryName in self.__orderedList:
       if entryName in self.__commentDict:
         for commentLine in List.fromChar( self.__commentDict[ entryName ], "\n" ):
-          CFGSTring += "%s#%s\n" % ( tabLevelString, commentLine )
+          cfgString += "%s#%s\n" % ( tabLevelString, commentLine )
       if entryName in self.listSections():
-        CFGSTring += "%s%s\n%s{\n" % ( tabLevelString, entryName, tabLevelString )
-        CFGSTring += self.__dataDict[ entryName ].serialize( "%s%s" % ( tabLevelString, indentation ) )
-        CFGSTring += "%s}\n" % tabLevelString
+        cfgString += "%s%s\n%s{\n" % ( tabLevelString, entryName, tabLevelString )
+        cfgString += self.__dataDict[ entryName ].serialize( "%s%s" % ( tabLevelString, indentation ) )
+        cfgString += "%s}\n" % tabLevelString
       elif entryName in self.listOptions():
         valueList = List.fromChar( self.__dataDict[ entryName ] )
         if len( valueList ) == 0:
-          CFGSTring += "%s%s = \n" % ( tabLevelString, entryName )
+          cfgString += "%s%s = \n" % ( tabLevelString, entryName )
         else:
-          CFGSTring += "%s%s = %s\n" % ( tabLevelString, entryName, valueList[0] )
+          cfgString += "%s%s = %s\n" % ( tabLevelString, entryName, valueList[0] )
           for value in valueList[1:]:
-            CFGSTring += "%s%s += %s\n" % ( tabLevelString, entryName, value )
+            cfgString += "%s%s += %s\n" % ( tabLevelString, entryName, value )
       else:
         raise Exception( "Oops. There is an entry in the order which is not a section nor an option" )
-    return CFGSTring
+    return cfgString
 
   @gCFGSynchro
   def clone( self ):
@@ -665,8 +670,8 @@ class CFG:
                                     cfgToMergeWith.getComment( section ),
                                     cfgToMergeWith[ section ] )
     return mergedCFG
-  
-  def getModifications( self, newerCfg, ignoreMask = [], parentPath = "" ):
+
+  def getModifications( self, newerCfg, ignoreMask = None, parentPath = "" ):
     """
     Compare two cfgs
     
@@ -683,11 +688,11 @@ class CFG:
     for newOption in newOptions:
       iPos = newerCfg.__orderedList.index( newOption )
       newOptPath = "%s/%s" % ( parentPath, newOption )
-      if newOptPath in ignoreMask:
+      if ignoreMask and newOptPath in ignoreMask:
         continue
       if newOption not in oldOptions:
         modList.append( ( 'addOpt', newOption, iPos,
-                          newerCfg[ newOption ], 
+                          newerCfg[ newOption ],
                           newerCfg.getComment( newOption ) ) )
       else:
         modified = False
@@ -699,11 +704,11 @@ class CFG:
           modified = True
         if modified:
           modList.append( ( 'modOpt', newOption, iPos,
-                            newerCfg[ newOption ], 
+                            newerCfg[ newOption ],
                             newerCfg.getComment( newOption ) ) )
     for oldOption in oldOptions:
       oldOptPath = "%s/%s" % ( parentPath, oldOption )
-      if oldOptPath in ignoreMask:
+      if ignoreMask and oldOptPath in ignoreMask:
         continue
       if oldOption not in newOptions:
         modList.append( ( 'delOpt', oldOption, -1, '' ) )
@@ -713,11 +718,11 @@ class CFG:
     for newSection in newSections:
       iPos = newerCfg.__orderedList.index( newSection )
       newSecPath = "%s/%s" % ( parentPath, newSection )
-      if newSecPath in ignoreMask:
+      if ignoreMask and newSecPath in ignoreMask:
         continue
       if newSection not in oldSections:
-        modList.append( ( 'addSec', newSection, iPos, 
-                          str( newerCfg[ newSection ] ), 
+        modList.append( ( 'addSec', newSection, iPos,
+                          str( newerCfg[ newSection ] ),
                           newerCfg.getComment( newSection ) ) )
       else:
         modified = False
@@ -725,22 +730,22 @@ class CFG:
           modified = True
         elif newerCfg.getComment( newSection ) != self.getComment( newSection ):
           modified = True
-        subMod = self[ newSection ].getModifications( newerCfg[ newSection ], 
+        subMod = self[ newSection ].getModifications( newerCfg[ newSection ],
                                                       ignoreMask, newSecPath )
         if subMod:
           modified = True
         if modified:
           modList.append( ( 'modSec', newSection, iPos,
-                            subMod, 
+                            subMod,
                             newerCfg.getComment( newSection ) ) )
     for oldSection in oldSections:
       oldSecPath = "%s/%s" % ( parentPath, oldSection )
-      if oldSecPath in ignoreMask:
+      if ignoreMask and oldSecPath in ignoreMask:
         continue
       if oldSection not in newSections:
         modList.append( ( 'delSec', oldSection, -1, '' ) )
     return modList
-    
+
   def applyModifications( self, modList, parentSection = "" ):
     """
     Apply modifications to a CFG
@@ -805,9 +810,9 @@ class CFG:
         if key not in self.listOptions():
           return S_ERROR( "Option %s/%s does not exist" % ( parentSection, key ) )
         self.deleteKey( key )
-      
+
     return S_OK()
-        
+
   #Functions to load a CFG
   def loadFromFile( self, fileName ):
     """
@@ -817,7 +822,7 @@ class CFG:
     @param fileName: File name to load the contents from
     @return: This CFG
     """
-    if zipEnabled and fileName.find( ".zip" ) == len( fileName ) - 4:
+    if gZipEnabled and fileName.find( ".zip" ) == len( fileName ) - 4:
       #Zipped file
       zipHandler = zipfile.ZipFile( fileName )
       nameList = zipHandler.namelist()
@@ -889,14 +894,14 @@ class CFG:
     @return: True/False
     """
     try:
-      directory = os.path.dirname(fileName)
-      if directory and (not os.path.exists(directory)):
-        os.makedirs(directory)
+      directory = os.path.dirname( fileName )
+      if directory and ( not os.path.exists( directory ) ):
+        os.makedirs( directory )
       fd = file( fileName, "w" )
       fd.write( str( self ) )
       fd.close()
       return True
-    except:
+    except Exception:
       return False
 
 

@@ -10,18 +10,18 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 gEventSync = Synchronizer()
 
 class EventDispatcher:
-  
+
   def __init__( self ):
     self.__events = {}
     self.__processingEvents = set()
-  
+
   @gEventSync
   def registerEvent( self, eventName ):
     if eventName in self.__events:
       return
     self.__events[ eventName ] = []
-  
-  @gEventSync  
+
+  @gEventSync
   def addListener( self, eventName, functor ):
     if eventName not in self.__events:
       return S_ERROR( "Event %s is not registered" % eventName )
@@ -29,8 +29,8 @@ class EventDispatcher:
       return S_OK()
     self.__events[ eventName ].append( functor )
     return S_OK()
-  
-  @gEventSync  
+
+  @gEventSync
   def removeListener( self, eventName, functor ):
     if eventName not in self.__events:
       return S_ERROR( "Event %s is not registered" % eventName )
@@ -39,13 +39,13 @@ class EventDispatcher:
     iPos = self.__events[ eventName ].find( functor )
     del( self.__events[ eventName ][ iPos ] )
     return S_OK()
-  
+
   def isEventBeingProcessed( self, eventName ):
     return eventName in self.__processingEvents
-  
+
   def getRegisteredEvents( self ):
     return sorted( self.__events )
-  
+
   def triggerEvent( self, eventName, params = False, threaded = False ):
     if threaded:
       th = threading.Thread( target = self.__realTrigger, args = ( eventName, params ) )
@@ -54,7 +54,7 @@ class EventDispatcher:
       return S_OK( 0 )
     else:
       return self.__realTrigger( eventName, params )
-    
+
   def __realTrigger( self, eventName, params ):
     gEventSync.lock()
     try:
@@ -70,7 +70,7 @@ class EventDispatcher:
     for functor in eventFunctors:
       try:
         result = functor( eventName, params )
-      except Exception, e:
+      except Exception:
         gLogger.exception( "Listener %s for event %s raised an exception" % ( functor.__name__, eventName ) )
         continue
       if type( result ) != types.DictType or 'OK' not in result:
@@ -87,6 +87,5 @@ class EventDispatcher:
     if not finalResult[ 'OK' ]:
       return finalResult
     return S_OK( len( eventFunctors ) )
-        
+
 gEventDispatcher = EventDispatcher()
-        

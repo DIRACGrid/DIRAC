@@ -1,8 +1,8 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
 """
    DIRAC.Core.Utils package
 """
+__RCSID__ = "$Id$"
 from DIRAC.Core.Utilities.File               import *
 from DIRAC.Core.Utilities.List               import *
 from DIRAC.Core.Utilities.Network            import *

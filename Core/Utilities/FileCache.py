@@ -5,17 +5,22 @@ import os
 import os.path
 try:
   import hashlib as md5
-except:
+except ImportError:
   import md5
 import time
 import threading
 
-import os
 from DIRAC import S_OK, S_ERROR, gLogger, rootPath
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.Core.Utilities import Time
 
 gSynchro = Synchronizer()
+
+def _generateName( *args, **kwargs ):
+  md5Hash = md5.md5()
+  md5Hash.update( repr( args ) )
+  md5Hash.update( repr( kwargs ) )
+  return md5Hash.hexdigest()
 
 class FileCache:
 
@@ -35,20 +40,14 @@ class FileCache:
   def __initCacheLocation( self ):
     try:
       os.makedirs( self.__filesLocation )
-    except:
+    except Exception:
       pass
     try:
       fd = file( "%s/testPerm" % self.__filesLocation, "w" )
       fd.write( self.__cacheName )
       fd.close()
-    except:
+    except Exception:
       raise Exception( "Can't write into %s, check perms" % self.__filesLocation )
-
-  def __generateName( self, *args, **kwargs ):
-    m = md5.md5()
-    m.update( repr( args ) )
-    m.update( repr( kwargs ) )
-    return m.hexdigest()
 
   def __purgeExpired( self ):
     while self.__alive:
@@ -90,14 +89,14 @@ class FileCache:
              lifeTime : life time for the file
     """
     if not fileName:
-      fileName = "%s.png" % self.__generateName( funcToGenerate, extraArgs, lifeTime )
+      fileName = "%s.png" % _generateName( funcToGenerate, extraArgs, lifeTime )
     if fileName not in self.__cachedFiles:
       filePath = "%s/%s" % ( self.__filesLocation, fileName )
       try:
         retVal = funcToGenerate( filePath, *extraArgs )
         if not retVal[ 'OK' ]:
           return retVal
-      except Exception, e:
+      except Exception:
         gLogger.exception( "Exception while generating file" )
         return S_ERROR( "Exception while generating file" )
       if not lifeTime:

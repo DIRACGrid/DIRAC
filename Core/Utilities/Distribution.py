@@ -106,7 +106,6 @@ class Distribution:
     return versions
 
   def getSVNFileContents( self, svnPath ):
-    import urllib2, stat
     gLogger.info( "Reading %s from %s" % ( svnPath, self.svnRoot) )
     remoteLocation = "%s/%s" % ( self.svnRoot, svnPath )
     try:
@@ -115,7 +114,7 @@ class Distribution:
       remoteFile.close()
       if remoteData:
         return remoteData
-    except:
+    except Exception:
       pass
     #Web cat failed. Try directly with svn
     exitStatus, remoteData = self.executeCommand( "svn cat '%s" % remoteLocation )
@@ -138,12 +137,12 @@ class Distribution:
     if not getOutput:
       return subprocess.Popen( cmd, shell = True, env = env ).wait() == 0
     #Get output
-    p = subprocess.Popen( cmd,
+    proc = subprocess.Popen( cmd,
                           shell = True, stdout = subprocess.PIPE,
                           stderr = subprocess.PIPE, close_fds = True, env = env )
-    stdData = p.stdout.read()
-    p.wait()
-    return ( p.returncode, stdData )
+    stdData = proc.stdout.read()
+    proc.wait()
+    return ( proc.returncode, stdData )
 
   def __getDevCmdBase( self, path ):
     devRoot = self.getDevPath( path )
@@ -171,8 +170,8 @@ class Distribution:
 
 
   def doLS( self, path ):
-    t = self.__getDevCmdBase( path )
-    cmd = "svn ls %s %s" % t
+    destT = self.__getDevCmdBase( path )
+    cmd = "svn ls %s %s" % destT
     return self.executeCommand( cmd, True )
 
   def __cmdImport( self, origin, dest, comment ):
@@ -208,8 +207,8 @@ class Distribution:
   #   return self.executeCommand( self.__cmdCopy( origin, dest, comment ), False )
 
   def __cmdMakeDir( self, path, comment ):
-    t = self.__getDevCmdBase( path )
-    return "svn mkdir --parents -m '%s' %s %s" % ( comment, t[0], t[1] )
+    destT = self.__getDevCmdBase( path )
+    return "svn mkdir --parents -m '%s' %s %s" % ( comment, destT[0], destT[1] )
 
   def queueMakeDir( self, path, comment ):
     self.addCommandToQueue( self.__cmdMakeDir( path, comment ) )
@@ -218,19 +217,19 @@ class Distribution:
     return self.executeCommand( self.__cmdMakeDir( path, comment ), False )
 
   def doCheckout( self, path, location ):
-    t = self.__getDevCmdBase( path )
-    cmd = "svn co %s '%s' '%s'" % ( t[0], t[1], location )
+    destT = self.__getDevCmdBase( path )
+    cmd = "svn co %s '%s' '%s'" % ( destT[0], destT[1], location )
     return self.executeCommand( cmd, False )
 
   def doCommit( self, location, comment ):
-    t = self.__getDevCmdBase( "" )
-    cmd = "svn ci -m '%s' %s '%s'" % ( comment, t[0], location )
+    destT = self.__getDevCmdBase( "" )
+    cmd = "svn ci -m '%s' %s '%s'" % ( comment, destT[0], location )
     return self.executeCommand( cmd, False )
 
   #Get copy revision
   def getCopyRevision( self, location ):
-    t = self.__getDevCmdBase( location )
-    cmd = "svn log --stop-on-copy %s '%s'" % ( t[0], t[1] )
+    destT = self.__getDevCmdBase( location )
+    cmd = "svn log --stop-on-copy %s '%s'" % ( destT[0], destT[1] )
     exitCode, outData = self.executeCommand( cmd )
     if exitCode:
       return 0
@@ -247,8 +246,8 @@ class Distribution:
     verTup = parseVersionString( version )
     if not verTup:
       return False
-    t = self.__getDevCmdBase( "%s/trunk/%s/__init__.py" % ( self.package, self.package ) )
-    cmd = "svn cat %s '%s'" % ( t[0], t[1] )
+    destT = self.__getDevCmdBase( "%s/trunk/%s/__init__.py" % ( self.package, self.package ) )
+    cmd = "svn cat %s '%s'" % ( destT[0], destT[1] )
     exitCode, outData = self.executeCommand( cmd )
     if exitCode:
       return False
@@ -320,14 +319,15 @@ def writeVersionToInit( rootPath, version ):
 
 #
 
-def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = [] ):
+def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = None ):
   tf = tarfile.open( tarballPath, "w:gz" )
   tf.add( directoryToTar, os.path.basename( os.path.abspath( directoryToTar ) ), recursive = True )
   if type( additionalDirectoriesToTar ) in ( types.StringType, types.UnicodeType ):
     additionalDirectoriesToTar = [ additionalDirectoriesToTar ]
-  for dirToTar in additionalDirectoriesToTar:
-    if os.path.isdir( dirToTar ):
-      tf.add( dirToTar, os.path.basename( os.path.abspath( dirToTar ) ), recursive = True )
+  if additionalDirectoriesToTar:
+    for dirToTar in additionalDirectoriesToTar:
+      if os.path.isdir( dirToTar ):
+        tf.add( dirToTar, os.path.basename( os.path.abspath( dirToTar ) ), recursive = True )
   tf.close()
   md5FilePath = False
   for suffix in ( ".tar.gz", ".gz" ):
@@ -345,8 +345,8 @@ def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = [] 
 
 #Start of release notes
 
-allowedNoteTypes = ( "NEW", "CHANGE", "BUGFIX", 'FIX' )
-noteTypeAlias = { 'FIX' : 'BUGFIX' }
+gAllowedNoteTypes = ( "NEW", "CHANGE", "BUGFIX", 'FIX' )
+gNoteTypeAlias = { 'FIX' : 'BUGFIX' }
 
 def retrieveReleaseNotes( packages ):
   if type( packages ) in ( types.StringType, types.UnicodeType ):
@@ -372,10 +372,10 @@ def retrieveReleaseNotes( packages ):
         lastCommentType = False
         for line in lines:
           processedLine = False
-          for typeComment in allowedNoteTypes:
+          for typeComment in gAllowedNoteTypes:
             if line.find( "%s:" % typeComment ) == 0:
-              if typeComment in noteTypeAlias:
-                effectiveType = noteTypeAlias[ typeComment ]
+              if typeComment in gNoteTypeAlias:
+                effectiveType = gNoteTypeAlias[ typeComment ]
               else:
                 effectiveType = typeComment
               if effectiveType not in versionNotes[ subsys ]:
@@ -421,7 +421,7 @@ def generateReleaseNotes( packages, destinationPath, versionReleased = "", singl
       fileContents.append( "-" * len( dummy ) )
       if 'comment' in versionNotes:
         fileContents.extend( [ '', versionNotes[ 'comment' ], '' ] )
-      for noteType in allowedNoteTypes:
+      for noteType in gAllowedNoteTypes:
         notes4Type = []
         for system in versionNotes[ 'notes' ]:
           if noteType in versionNotes[ 'notes' ][ system ] and versionNotes[ 'notes' ][ system ][ noteType ]:
@@ -441,14 +441,14 @@ def generateReleaseNotes( packages, destinationPath, versionReleased = "", singl
 def generateHTMLReleaseNotesFromRST( rstFile, htmlFile ):
   try:
     import docutils.core
-  except:
+  except ImportError:
     gLogger.error( "Docutils is not installed, skipping generation of release notes in html format" )
     return False
   try:
     fd = open( rstFile )
     rstData = fd.read()
     fd.close()
-  except:
+  except Exception:
     gLogger.error( "Oops! Could not read the rst file :P" )
     return False
   parts = docutils.core.publish_parts( rstData, writer_name = 'html' )
@@ -456,7 +456,7 @@ def generateHTMLReleaseNotesFromRST( rstFile, htmlFile ):
     fd = open( htmlFile, "w" )
     fd.write( parts[ 'whole' ] )
     fd.close()
-  except:
+  except Exception:
     gLogger.error( "Oops! Could not write the html file :P" )
     return False
   return True

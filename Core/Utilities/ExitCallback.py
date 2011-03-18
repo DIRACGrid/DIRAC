@@ -1,3 +1,6 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
+
 import signal
 import os
 import sys
@@ -11,7 +14,7 @@ def registerSignals():
   for sigNum in ( signal.SIGINT, signal.SIGTERM ):
     try:
       signal.signal( sigNum, execute )
-    except:
+    except Exception:
       pass
 
 def execute( exitCode, frame ):
@@ -25,7 +28,7 @@ def execute( exitCode, frame ):
   for callback in gCallbackList:
     try:
       callback( exitCode )
-    except:
+    except Exception:
       from DIRAC.FrameworkSystem.Client.Logger import gLogger
       gLogger.exception( "Exception while calling callback" )
   os._exit( exitCode )
@@ -34,6 +37,5 @@ def registerExitCallback( function ):
   """
   Adds a new callback to the list
   """
-  global gCallbackList
   if not function in gCallbackList:
     gCallbackList.append( function )
