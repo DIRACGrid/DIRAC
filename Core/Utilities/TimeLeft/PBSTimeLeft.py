@@ -6,12 +6,12 @@
     current CPU and Wallclock consumed, as well as their limits.
 """
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
 
-import os, string, re, time
+import os, re
 
 class PBSTimeLeft:
 
@@ -80,10 +80,10 @@ class PBSTimeLeft:
     consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
     self.log.debug( consumed )
     failed = False
-    for k, v in consumed.items():
-      if v == None:
+    for key, val in consumed.items():
+      if val == None:
         failed = True
-        self.log.warn( 'Could not determine %s' % k )
+        self.log.warn( 'Could not determine %s' % key )
 
     if not failed:
       return S_OK( consumed )

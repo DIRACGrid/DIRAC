@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
 
-import os, string, re, time
+import os
 
 class BQSTimeLeft:
 
@@ -56,7 +56,7 @@ class BQSTimeLeft:
         cpuList = cpuItems[5].split( '/' )
         cpu = float( cpuList[0] )
         cpuLimit = float( cpuList[1] )
-    except Exception, x:
+    except Exception:
       self.log.warn( 'Problem parsing "%s" for CPU usage' % ( result['Value'] ) )
 
     #BQS has no wallclock limit so will simply return the same as for CPU to the TimeLeft utility
@@ -70,15 +70,17 @@ class BQSTimeLeft:
                 'WallClockLimit':wallClockLimit / 5. / self.scaleFactor}
     self.log.debug( consumed )
     failed = False
-    for k, v in consumed.items():
-      if v == None:
+    for key, val in consumed.items():
+      if val == None:
         failed = True
-        self.log.warn( 'Could not determine %s' % k )
+        self.log.warn( 'Could not determine %s' % key )
 
     if not failed:
       return S_OK( consumed )
     else:
-      self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
+      msg = 'Could not determine some parameters,' \
+            ' this is the stdout from the batch system call\n%s' % ( result['Value'] )
+      self.log.info( msg )
       return S_ERROR( 'Could not determine some parameters' )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

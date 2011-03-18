@@ -5,15 +5,15 @@
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
     current CPU and Wallclock consumed, as well as their limits.
 """
+__RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 from DIRAC.Core.Utilities.Os import sourceEnv
 
-__RCSID__ = "$Id$"
-
-import os, string, re, time
+import os, re, time
 
 class LSFTimeLeft:
 
@@ -35,7 +35,10 @@ class LSFTimeLeft:
     if os.environ.has_key( 'LSB_HOSTS' ):
       self.host = os.environ['LSB_HOSTS']
     self.year = time.strftime( '%Y', time.gmtime() )
-    self.log.verbose( 'LSB_JOBID=%s, LSB_QUEUE=%s, LSF_BINDIR=%s, LSB_HOSTS=%s' % ( self.jobID, self.queue, self.bin, self.host ) )
+    self.log.verbose( 'LSB_JOBID=%s, LSB_QUEUE=%s, LSF_BINDIR=%s, LSB_HOSTS=%s' % ( self.jobID,
+                                                                                    self.queue,
+                                                                                    self.bin,
+                                                                                    self.host ) )
 
     self.cpuLimit = None
     self.cpuRef = None
@@ -66,6 +69,7 @@ class LSFTimeLeft:
         else:
           self.log.warn( 'Problem parsing "%s" for wall clock limit' % lines[i + 1] )
 
+    modelMaxNorm = 0
     if self.cpuRef:
       # Now try to get the CPU_FACTOR for this reference CPU,
       # it must be either a Model, a Host or the largest Model
@@ -88,10 +92,9 @@ class LSFTimeLeft:
               try:
                 self.normRef = float( l2[i] )
                 self.log.info( 'Reference Normalization taken from Host', '%s: %s' % ( self.cpuRef, self.normRef ) )
-              except:
+              except Exception:
                 pass
 
-      modelMaxNorm = 0
       if not self.normRef:
         # Try if there is a model define with the name of cpuRef
         cmd = '%s/lsinfo -m' % ( self.bin )
@@ -99,15 +102,16 @@ class LSFTimeLeft:
         if result['OK']:
           lines = result['Value'].split( '\n' )
           for line in lines[1:]:
-            l = line.split()
-            if len( l ) > 1:
+            words = line.split()
+            if len( words ) > 1:
               try:
-                norm = float( l[1] )
+                norm = float( words[1] )
                 if norm > modelMaxNorm:
                   modelMaxNorm = norm
-                if l[0].find( self.cpuRef ) > -1:
+                if words[0].find( self.cpuRef ) > -1:
                   self.normRef = norm
-                  self.log.info( 'Reference Normalization taken from Host Model', '%s: %s' % ( self.cpuRef, self.normRef ) )
+                  self.log.info( 'Reference Normalization taken from Host Model',
+                                 '%s: %s' % ( self.cpuRef, self.normRef ) )
               except:
                 pass
 
@@ -126,25 +130,26 @@ class LSFTimeLeft:
               shared = egoShared
             elif os.path.exists( lsfShared ):
               shared = lsfShared
-          except:
+          except Exception:
             pass
           if shared:
             f = open( shared )
             hostModelSection = False
-            for l in f.readlines():
-              if l.find( 'Begin HostModel' ) == 0:
+            for line in f.readlines():
+              if line.find( 'Begin HostModel' ) == 0:
                 hostModelSection = True
                 continue
               if not hostModelSection:
                 continue
-              if l.find( 'End HostModel' ) == 0:
+              if line.find( 'End HostModel' ) == 0:
                 break
-              l = l.strip()
-              if l and l.split()[0] == self.cpuRef:
+              line = line.strip()
+              if line and line.split()[0] == self.cpuRef:
                 try:
-                  self.normRef = float( l.split()[1] )
-                  self.log.info( 'Reference Normalization taken from Configuration File', '(%s) %s: %s' % ( shared, self.cpuRef, self.normRef ) )
-                except:
+                  self.normRef = float( line.split()[1] )
+                  self.log.info( 'Reference Normalization taken from Configuration File',
+                                 '(%s) %s: %s' % ( shared, self.cpuRef, self.normRef ) )
+                except Exception:
                   pass
     if not self.normRef:
       # If nothing worked, take the maximum defined for a Model
@@ -213,7 +218,7 @@ class LSFTimeLeft:
         lCPU = sCPU.split( ':' )
         try:
           cpu = float( lCPU[0] ) * 3600 + float( lCPU[1] ) * 60 + float( lCPU[2] )
-        except:
+        except Exception:
           pass
       elif l1[i] == 'START_TIME':
         sStart = l2[i]
@@ -222,7 +227,7 @@ class LSFTimeLeft:
           timeTup = time.strptime( sStart, '%m/%d-%H:%M:%S %Y' )
           wallClock = time.mktime( timeTup )
           wallClock = time.mktime( time.localtime() ) - wallClock
-        except:
+        except Exception:
           pass
 
     if cpu == None or wallClock == None:
@@ -234,15 +239,17 @@ class LSFTimeLeft:
     consumed = {'CPU':cpu, 'CPULimit':self.cpuLimit, 'WallClock':wallClock, 'WallClockLimit':self.wallClockLimit}
     self.log.debug( consumed )
     failed = False
-    for k, v in consumed.items():
-      if v == None:
+    for key, val in consumed.items():
+      if val == None:
         failed = True
-        self.log.warn( 'Could not determine %s' % k )
+        self.log.warn( 'Could not determine %s' % key )
 
     if not failed:
       return S_OK( consumed )
     else:
-      self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
+      msg = 'Could not determine some parameters,' \
+            ' this is the stdout from the batch system call\n%s' % ( result['Value'] )
+      self.log.info( msg )
       return S_ERROR( 'Could not determine some parameters' )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
