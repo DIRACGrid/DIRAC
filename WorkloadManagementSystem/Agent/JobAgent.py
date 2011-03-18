@@ -255,8 +255,13 @@ class JobAgent( AgentModule ):
     if result['OK']:
       self.timeLeft = result['Value']
     else:
-      if result['Message'] != 'Currrent batch system is not supported':
+      if result['Message'] != 'Current batch system is not supported':
         self.timeLeftError = result['Message']
+      else:
+        if self.cpuFactor:
+          # if the batch system is not defined used the CPUNormalizationFactor 
+          # defined locally
+          self.timeLeft = self.__getCPUTimeLeft()
     scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
 
     self.__setJobParam( jobID, 'ScaledCPUTime', str( scaledCPUTime - self.scaledCPUTime ) )
@@ -266,15 +271,13 @@ class JobAgent( AgentModule ):
 
   #############################################################################
   def __getCPUTimeLeft( self ):
-    """Wrapper around TimeLeft utility. Returns CPU time left in DIRAC normalized
-       units. This value is subsequently used for scheduling further jobs in the
-       same slot.
+    """Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
     """
     utime, stime, cutime, cstime, elapsed = os.times()
     cpuTime = utime + stime + cutime
     self.log.info( 'Current raw CPU time consumed is %s' % cpuTime )
-    result = self.timeLeftUtil.getTimeLeft( cpuTime )
-    return result
+    timeleft = self.timeLeft - cpuTime * self.cpuFactor
+    return timeleft
 
   #############################################################################
   def __changeProxy( self, oldProxy, newProxy ):

@@ -13,14 +13,14 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
+__RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
 import DIRAC
-__RCSID__ = "$Id$"
 
-import os, re
+import os
 
 class TimeLeft:
 
@@ -38,7 +38,7 @@ class TimeLeft:
     if result['OK']:
       self.batchPlugin = result['Value']
     else:
-      self.batchPlugin = False
+      self.batchPlugin = None
       self.batchError = result['Message']
 
   def getScaledCPU( self ):
@@ -89,7 +89,8 @@ class TimeLeft:
     wcRemaining = 100 - wcFactor
     wcLimit = float( resources['WallClockLimit'] )
     self.log.verbose( 'Used CPU is %.02f, Used WallClock is %.02f.' % ( cpuFactor, wcFactor ) )
-    self.log.verbose( 'Remaining WallClock %.02f, Remaining CPU %.02f, margin %s' % ( wcRemaining, cpuRemaining, self.cpuMargin ) )
+    self.log.verbose( 'Remaining WallClock %.02f, Remaining CPU %.02f, margin %s' %
+                      ( wcRemaining, cpuRemaining, self.cpuMargin ) )
 
     timeLeft = None
     if wcRemaining > cpuRemaining and ( wcRemaining - cpuRemaining ) > self.cpuMargin:
@@ -97,15 +98,18 @@ class TimeLeft:
       # timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
       # We need time left in the same units used by the Matching
       timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
-      self.log.verbose( 'Remaining WallClock %.02f > Remaining CPU %.02f and difference > margin %s' % ( wcRemaining, cpuRemaining, self.cpuMargin ) )
+      self.log.verbose( 'Remaining WallClock %.02f > Remaining CPU %.02f and difference > margin %s' %
+                        ( wcRemaining, cpuRemaining, self.cpuMargin ) )
     else:
       if cpuRemaining > self.cpuMargin and wcRemaining > self.cpuMargin:
-        self.log.verbose( 'Remaining WallClock %.02f and Remaining CPU %.02f both > margin %s' % ( wcRemaining, cpuRemaining, self.cpuMargin ) )
+        self.log.verbose( 'Remaining WallClock %.02f and Remaining CPU %.02f both > margin %s' %
+                          ( wcRemaining, cpuRemaining, self.cpuMargin ) )
         # In some cases cpuFactor might be 0
         # timeLeft = float(cpuConsumed*self.scaleFactor*(wcRemaining-self.cpuMargin)/cpuFactor)
         timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
       else:
-        self.log.verbose( 'Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' % ( cpuRemaining, self.cpuMargin, wcRemaining, self.cpuMargin ) )
+        self.log.verbose( 'Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' %
+                          ( cpuRemaining, self.cpuMargin, wcRemaining, self.cpuMargin ) )
 
     if timeLeft:
       self.log.verbose( 'Remaining CPU in normalized units is: %.02f' % timeLeft )
@@ -127,12 +131,13 @@ class TimeLeft:
 
     if name == None:
       self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )
-      return S_ERROR( 'Currrent batch system is not supported' )
-    
+      return S_ERROR( 'Current batch system is not supported' )
+
     self.log.debug( 'Creating plugin for %s batch system' % ( name ) )
     try:
       batchSystemName = "%sTimeLeft" % ( name )
-      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' % batchSystemName, globals(), locals(), [batchSystemName] )
+      batchPlugin = __import__( 'DIRAC.Core.Utilities.TimeLeft.%s' %
+                                batchSystemName, globals(), locals(), [batchSystemName] )
     except Exception, x:
       msg = 'Could not import DIRAC.Core.Utilities.TimeLeft.%s' % ( batchSystemName )
       self.log.warn( x )
