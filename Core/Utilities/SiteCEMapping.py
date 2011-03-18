@@ -12,7 +12,7 @@
 
 __RCSID__ = "$Id$"
 
-import string, re
+import re
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 
@@ -34,7 +34,7 @@ def getSiteCEMapping( gridName = '' ):
       return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
     gridTypes = [gridName]
 
-  gLogger.debug( 'Grid Types are: %s' % ( string.join( gridTypes, ', ' ) ) )
+  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
     if not sites['OK']:
@@ -67,7 +67,7 @@ def getCESiteMapping( gridName = '' ):
       return S_ERROR( 'Could not get sections for /Resources/Sites/%s' % gridName )
     gridTypes = [gridName]
 
-  gLogger.debug( 'Grid Types are: %s' % ( string.join( gridTypes, ', ' ) ) )
+  gLogger.debug( 'Grid Types are: %s' % ( ', '.join( gridTypes ) ) )
   for grid in gridTypes:
     sites = gConfig.getSections( '/Resources/Sites/%s' % grid, [] )
     if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
@@ -117,7 +117,7 @@ def getCEsForSite( siteName ):
   """
   if not re.search( '.', siteName ):
     return S_ERROR( '%s is not a valid site name' % siteName )
-  gridName = string.split( siteName, '.' )[0]
+  gridName = '.'.split( siteName )[0]
   siteSection = '/Resources/Sites/%s/%s/CE' % ( gridName, siteName )
   ces = gConfig.getValue( siteSection, [] )
   return S_OK( ces )

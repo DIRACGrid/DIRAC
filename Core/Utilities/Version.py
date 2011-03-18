@@ -1,6 +1,5 @@
-# $HeadURL:  $
-
-__RCSID__ = "$Id: $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
@@ -9,14 +8,15 @@ def getCurrentVersion():
   """ Get a string corresponding to the current version of the DIRAC package and all the installed
       extension packages
   """
-
   import DIRAC
   version = 'DIRAC ' + DIRAC.version
 
-  for e in getCSExtensions():
+  for ext in getCSExtensions():
     try:
-      exec "import %sDIRAC" % e
-      version = "%sDIRAC " % e + eval( '%sDIRAC.version' % e ) + '; ' + version
+      import imp
+      module = imp.find_module( "%sDIRAC" % ext )
+      extModule = imp.load_module( "%sDIRAC" % ext, *module )
+      version = extModule.version
     except ImportError:
       pass
     except AttributeError:
@@ -33,11 +33,12 @@ def getVersion():
   vDict = {'Extensions':{}}
   vDict['DIRAC'] = DIRAC.version
 
-  for e in getCSExtensions():
+  for ext in getCSExtensions():
     try:
-      exec "import %sDIRAC" % e
-      version = eval( '%sDIRAC.version' % e )
-      vDict['Extensions'][e] = version
+      import imp
+      module = imp.find_module( "%sDIRAC" % ext )
+      extModule = imp.load_module( "%sDIRAC" % ext, *module )
+      vDict['Extensions'][ext] = extModule.version
     except ImportError:
       pass
     except AttributeError:

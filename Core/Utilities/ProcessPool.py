@@ -5,22 +5,23 @@
 __RCSID__ = "$Id$"
 
 import multiprocessing
+import Queue
 import sys
 import time
 import threading
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
-except:
+except ImportError:
   gLogger = False
 
 try:
   from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-except:
+except ImportError:
   def S_OK( val = "" ):
     return { 'OK' : True, 'Value' : val }
-  def S_ERROR( m ):
-    return { 'OK' : False, 'Message' : m }
+  def S_ERROR( mess ):
+    return { 'OK' : False, 'Message' : mess }
 
 class WorkingProcess( multiprocessing.Process ):
 
@@ -55,13 +56,13 @@ class WorkingProcess( multiprocessing.Process ):
 class ProcessTask:
 
   def __init__( self,
-                callable,
+                taskFunction,
                 args = None,
                 kwargs = None,
                 taskID = None,
                 callback = None,
                 exceptionCallback = None ):
-    self.__taskFunction = callable
+    self.__taskFunction = taskFunction
     self.__taskArgs = args or []
     self.__taskKwArgs = kwargs or {}
     self.__taskID = taskID
@@ -69,6 +70,8 @@ class ProcessTask:
     self.__exceptionCallback = exceptionCallback
     self.__done = False
     self.__exceptionRaised = False
+    self.__taskException = None
+    self.__taskResult = None
 
   def getTaskID( self ):
     return self.__taskID
@@ -98,10 +101,10 @@ class ProcessTask:
         gLogger.exception( "Exception in process of pool " )
 
       if self.__exceptionCallback:
-        result = S_ERROR( 'Exception' )
-        result['Value'] = str( x )
-        result['Exc_info'] = sys.exc_info()[1]
-        self.__taskException = result
+        retDict = S_ERROR( 'Exception' )
+        retDict['Value'] = str( x )
+        retDict['Exc_info'] = sys.exc_info()[1]
+        self.__taskException = retDict
 
 class ProcessPool:
 
@@ -123,18 +126,18 @@ class ProcessPool:
     return self.__minSize
 
   def getNumWorkingProcesses( self ):
-    count = 0
-    for p in self.__workingProcessList:
-      if p.isWorking():
-        count += 1
-    return count
+    counter = 0
+    for proc in self.__workingProcessList:
+      if proc.isWorking():
+        counter += 1
+    return counter
 
   def getNumIdleProcesses( self ):
-    count = 0
-    for p in self.__workingProcessList:
-      if not p.isWorking():
-        count += 1
-    return count
+    counter = 0
+    for proc in self.__workingProcessList:
+      if not proc.isWorking():
+        counter += 1
+    return counter
 
   def getFreeSlots( self ):
     return max( 0, self.__maxSize - self.getNumWorkingProcesses() )
@@ -158,7 +161,9 @@ class ProcessPool:
     while len( self.__workingProcessList ) < self.__minSize:
       self.__spawnWorkingProcess()
 
-    while self.hasPendingTasks() and self.getNumIdleProcesses() == 0 and len( self.__workingProcessList ) < self.__maxSize:
+    while self.hasPendingTasks() and \
+          self.getNumIdleProcesses() == 0 and \
+          len( self.__workingProcessList ) < self.__maxSize:
       self.__spawnWorkingProcess()
       time.sleep( 0.1 )
 
@@ -175,21 +180,21 @@ class ProcessPool:
       raise TypeError( "Tasks added to the process pool must be ProcessTask instances" )
     try:
       self.__pendingQueue.put( task, block = blocking )
-    except multiprocessing.Queue.Full:
+    except Queue.Full:
       return S_ERROR( "Queue is full" )
     # Throttle a bit to allow task state propagation
     time.sleep( 0.01 )
     return S_OK()
 
   def createAndQueueTask( self,
-                             callable,
+                             taskFunction,
                              args = None,
                              kwargs = None,
                              taskID = None,
                              callback = None,
                              exceptionCallback = None,
                              blocking = True ):
-    task = ProcessTask( callable, args, kwargs, taskID, callback, exceptionCallback )
+    task = ProcessTask( taskFunction, args, kwargs, taskID, callback, exceptionCallback )
     return self.queueTask( task, blocking )
 
   def hasPendingTasks( self ):
@@ -237,44 +242,46 @@ class ProcessPool:
 if __name__ == "__main__":
 
   import random
-  import time
 
   def doSomething( number, r ):
-    r = random.randint( 1, 5 )
-    print "sleeping %s secs for task number %s" % ( r, number )
-    time.sleep( r )
+    rnd = random.randint( 1, 5 )
+    print "sleeping %s secs for task number %s" % ( rnd, number )
+    time.sleep( rnd )
 
-    result = random.random() * number
-    if result > 3:
+    rnd = random.random() * number
+    if rnd > 3:
       print "raising exception for task %s" % number
       raise Exception( "TEST EXCEPTION" )
     print "task number %s done" % number
-    return result
+    return rnd
 
-  def showResult( task, result ):
-    print "Result %s from %s" % ( result, task )
+  def showResult( task, ret ):
+    print "Result %s from %s" % ( ret, task )
 
   def showException( task, exc_info ):
     print "Exception %s from %s" % ( exc_info, task )
 
-  pp = ProcessPool( 1, 20 )
-  pp.daemonize()
+  pPool = ProcessPool( 1, 20 )
+  pPool.daemonize()
 
   count = 0
   rmax = 0
   while count < 20:
-    print "FREE SLOTS", pp.getFreeSlots()
-    print "PENDING", pp.hasPendingTasks()
-    if pp.getFreeSlots() > 0:
+    print "FREE SLOTS", pPool.getFreeSlots()
+    print "PENDING", pPool.hasPendingTasks()
+    if pPool.getFreeSlots() > 0:
       print "spawning task %d" % count
       r = random.randint( 1, 5 )
-      if r > rmax: rmax = r
-      result = pp.createAndQueueTask( doSomething, args = ( count, r, ), callback = showResult, exceptionCallback = showException )
+      if r > rmax:
+        rmax = r
+      result = pPool.createAndQueueTask( doSomething, args = ( count, r, ),
+                                      callback = showResult,
+                                      exceptionCallback = showException )
       count += 1
     else:
       print "no free slots"
       time.sleep( 1 )
 
-  pp.processAllResults()
+  pPool.processAllResults()
 
   print "Max sleep", rmax

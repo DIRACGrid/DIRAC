@@ -1,20 +1,22 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import os
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Security import CS
 
-def getShifterProxy( type, file = False ):
+def getShifterProxy( shifterType, fileName = False ):
   """
   This method returns a shifter's proxy
-    - type : ProductionManager / DataManager...
+    - shifterType : ProductionManager / DataManager...
   """
-  if file:
+  if fileName:
     try:
-      os.makedirs( os.path.dirname( file ) )
+      os.makedirs( os.path.dirname( fileName ) )
     except:
       pass
-  shifterSection = "/Operations/Shifter/%s" % type
+  shifterSection = "/Operations/Shifter/%s" % shifterType
   userName = gConfig.getValue( '%s/User' % shifterSection, '' )
   if not userName:
     return S_ERROR( "No shifter defined in %s/User" % shifterSection )
@@ -34,7 +36,7 @@ def getShifterProxy( type, file = False ):
   if not result[ 'OK' ]:
     return result
   chain = result[ 'Value' ]
-  result = gProxyManager.dumpProxyToFile( chain, destinationFile = file )
+  result = gProxyManager.dumpProxyToFile( chain, destinationFile = fileName )
   if not result[ 'OK' ]:
     return result
   fileName = result[ 'Value' ]
@@ -44,14 +46,14 @@ def getShifterProxy( type, file = False ):
                  'chain' : chain,
                  'proxyFile' : fileName } )
 
-def setupShifterProxyInEnv( type, file = False ):
+def setupShifterProxyInEnv( shifterType, fileName = False ):
   """
   Return the shifter's proxy and set it up as the default
   proxy via changing the environment
   This method returns a shifter's proxy
-    - type : ProductionManager / DataManager...
+    - shifterType : ProductionManager / DataManager...
   """
-  result = getShifterProxy( type, file )
+  result = getShifterProxy( shifterType, fileName )
   if not result[ 'OK' ]:
     return result
   proxyDict = result[ 'Value' ]

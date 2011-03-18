@@ -1,9 +1,11 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 try:
   import hashlib as md5
-except:
+except ImportError:
   import md5
 import threading
 import time
@@ -170,7 +172,7 @@ class ThreadScheduler:
       task[ 'executions' ] -= 1
     try:
       task[ 'func' ]( *task[ 'args' ] )
-    except Exception, e:
+    except Exception:
       gLogger.exception( "Exception while executing scheduled task" )
       return False
     return True

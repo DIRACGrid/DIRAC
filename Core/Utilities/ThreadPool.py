@@ -1,7 +1,6 @@
 #################################################################
 # $HeadURL$
 #################################################################
-
 __RCSID__ = "$Id$"
 
 # Usage of ThreadPool
@@ -112,6 +111,8 @@ class ThreadedJob:
     self.__exceptionCallback = oExceptionCallback
     self.__done = False
     self.__exceptionRaised = False
+    self.__jobResult = None
+    self.__jobException = None
 
   def __showException( self, threadedJob, exceptionInfo ):
     if gLogger:
@@ -138,7 +139,7 @@ class ThreadedJob:
     self.__done = True
     try:
       self.__jobResult = self.__jobFunction( *self.__jobArgs, **self.__jobKwArgs )
-    except:
+    except Exception:
       self.__exceptionRaised = True
       if not self.__exceptionCallback:
         if gLogger:
@@ -276,14 +277,12 @@ class ThreadPool( threading.Thread ):
 
   #This is the ThreadPool threaded function. YOU ARE NOT SUPPOSED TO CALL THIS FUNCTION!!!
   def run( self ):
-    import time
     while True:
       self.processResults()
       time.sleep( 1 )
 
 if __name__ == "__main__":
   import random
-  import time
 
   def doSomething( iNumber ):
     time.sleep( random.randint( 1, 5 ) )
@@ -298,7 +297,7 @@ if __name__ == "__main__":
   def showException( oTJ, exc_info ):
     print "Exception %s from %s" % ( exc_info[1], oTJ )
 
-  oTP = ThreadPool( 5, 10 )
+  OTP = ThreadPool( 5, 10 )
 
   def generateWork( iWorkUnits ):
     for iNumber in [ random.randint( 1, 20 ) for uNothing in range( iWorkUnits ) ]:
@@ -306,16 +305,16 @@ if __name__ == "__main__":
                        args = ( iNumber, ),
                        oCallback = showResult,
                        oExceptionCallback = showException )
-      oTP.queueJob( oTJ )
+      OTP.queueJob( oTJ )
 
-  print 'MaxThreads =', oTP.getMaxThreads()
-  print 'MinThreads =', oTP.getMinThreads()
+  print 'MaxThreads =', OTP.getMaxThreads()
+  print 'MinThreads =', OTP.getMinThreads()
 
   generateWork( 30 )
   while True:
     time.sleep( 1 )
-    iResult = oTP.processResults()
-    iNew = iResult + random.randint( -3, 2 )
-    print "Processed %s, generating %s.." % ( iResult, iNew )
-    generateWork( iNew )
-    print "Threads %s" % oTP.numWorkingThreads(), oTP.pendingJobs()
+    gIResult = OTP.processResults()
+    gINew = gIResult + random.randint( -3, 2 )
+    print "Processed %s, generating %s.." % ( gIResult, gINew )
+    generateWork( gINew )
+    print "Threads %s" % OTP.numWorkingThreads(), OTP.pendingJobs()

@@ -1,5 +1,4 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
 """
 DIRAC Times module
 Support for basic Date and Time operations
@@ -25,27 +24,26 @@ An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
 
 """
+__RCSID__ = "$Id$"
 import time as nativetime
 import datetime
 from types import StringTypes
 
-"""
-Some useful constants for time operations
-"""
+# Some useful constants for time operations
 microsecond = datetime.timedelta( microseconds = 1 )
 second = datetime.timedelta( seconds = 1 )
 minute = datetime.timedelta( minutes = 1 )
 hour = datetime.timedelta( hours = 1 )
-day  = datetime.timedelta( days = 1 )
+day = datetime.timedelta( days = 1 )
 week = datetime.timedelta( days = 7 )
 
-dt = datetime.datetime(2000,1,1)
+dt = datetime.datetime( 2000, 1, 1 )
 
-def dateTime( ):
+def dateTime():
   """
   Return current UTC datetime, as datetime.datetime object
   """
-  return dt.utcnow( )
+  return dt.utcnow()
 
 def date( myDateTime = None ):
   """
@@ -86,15 +84,15 @@ def to2K( dateTimeObject = None ):
   if dateTimeObject == None:
     dateTimeObject = dateTime()
   delta = dateTimeObject - dt
-  return delta.days*86400+delta.seconds+delta.microseconds/1000000.
+  return delta.days * 86400 + delta.seconds + delta.microseconds / 1000000.
 
 def from2K( seconds2K = None ):
   """
   Get date from seconds since 2K
   """
   if seconds2K == None:
-    seconds2K = to2K(dt)
-  return dt + int( seconds2K ) * second + int( seconds2K % 1 * 1000000)  * microsecond
+    seconds2K = to2K( dt )
+  return dt + int( seconds2K ) * second + int( seconds2K % 1 * 1000000 ) * microsecond
 
 def toString( myDate = None ):
   """
@@ -135,35 +133,35 @@ def fromString( myDate = None ):
   """
   if StringTypes.__contains__( type( myDate ) ):
     if myDate.find( ' ' ) > 0:
-      dateTimeTuple = myDate.split(' ')
+      dateTimeTuple = myDate.split( ' ' )
       dateTuple = dateTimeTuple[0].split( '-' )
       try:
-        return ( datetime.datetime( year  = dateTuple[0],
+        return ( datetime.datetime( year = dateTuple[0],
                                     month = dateTuple[1],
-                                    day   = dateTuple[2] ) +
+                                    day = dateTuple[2] ) +
                fromString( dateTimeTuple[1] ) )
-        return dt.combine( fromString( dateTimeTuple[0] ),
-                                          fromString( dateTimeTuple[1] ) )
+        # return dt.combine( fromString( dateTimeTuple[0] ),
+        #                                   fromString( dateTimeTuple[1] ) )
       except:
-        return ( datetime.datetime( year  = int(dateTuple[0]),
-                                    month = int(dateTuple[1]),
-                                    day   = int(dateTuple[2]) ) +
+        return ( datetime.datetime( year = int( dateTuple[0] ),
+                                    month = int( dateTuple[1] ),
+                                    day = int( dateTuple[2] ) ) +
                fromString( dateTimeTuple[1] ) )
-        return dt.combine( fromString( dateTimeTuple[0] ),
-                                          fromString( dateTimeTuple[1] ) )
+        # return dt.combine( fromString( dateTimeTuple[0] ),
+        #                                   fromString( dateTimeTuple[1] ) )
         return None
     elif myDate.find( ':' ) > 0:
-      timeTuple = myDate.replace('.',':').split( ':' )
+      timeTuple = myDate.replace( '.', ':' ).split( ':' )
       try:
-        if len(timeTuple) == 4:
-          return datetime.timedelta( hours        = int(timeTuple[0]),
-                                     minutes      = int(timeTuple[1]),
-                                     seconds      = int(timeTuple[2]),
-                                     microseconds = int(timeTuple[3]) )
-        elif len(timeTuple) == 3:
-          return datetime.timedelta( hours        = int(timeTuple[0]),
-                                     minutes      = int(timeTuple[1]),
-                                     seconds      = int(timeTuple[2]),
+        if len( timeTuple ) == 4:
+          return datetime.timedelta( hours = int( timeTuple[0] ),
+                                     minutes = int( timeTuple[1] ),
+                                     seconds = int( timeTuple[2] ),
+                                     microseconds = int( timeTuple[3] ) )
+        elif len( timeTuple ) == 3:
+          return datetime.timedelta( hours = int( timeTuple[0] ),
+                                     minutes = int( timeTuple[1] ),
+                                     seconds = int( timeTuple[2] ),
                                      microseconds = 0 )
         else:
           return None
@@ -172,7 +170,7 @@ def fromString( myDate = None ):
     elif myDate.find( '-' ) > 0:
       dateTuple = myDate.split( '-' )
       try:
-        return datetime.date( int(dateTuple[0]), int(dateTuple[1]), int(dateTuple[2]) )
+        return datetime.date( int( dateTuple[0] ), int( dateTuple[1] ), int( dateTuple[2] ) )
       except:
         return None
 
@@ -198,10 +196,10 @@ class timeInterval:
     self.__error = False
     if intervalTimeDelta.days < 0:
       self.__startDateTime = initialDateTime + intervalTimeDelta
-      self.__endDateTime   = initialDateTime
+      self.__endDateTime = initialDateTime
     else:
       self.__startDateTime = initialDateTime
-      self.__endDateTime   = initialDateTime + intervalTimeDelta
+      self.__endDateTime = initialDateTime + intervalTimeDelta
 
   def includes( self, myDateTime ):
     """
@@ -217,8 +215,8 @@ class timeInterval:
     return True
 
 _dateTimeType = type( dateTime() )
-_dateType     = type( date() )
-_timeType     = type( time() )
+_dateType = type( date() )
+_timeType = type( time() )
 
 _allTimeTypes = ( _dateTimeType, _timeType )
 _allDateTypes = ( _dateTimeType, _dateType )
