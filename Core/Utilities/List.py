@@ -51,13 +51,13 @@ def randomize( aList ):
   random.shuffle( tmpList )
   return tmpList
 
-def sortList( aList, invert=False ):
+def sortList( aList, invert = False ):
   """Return a sorted list of ints or list of strings
 
 		:param list aList: list to sort
 		:param boolean invert: flag to revert sorting order (default False = list sorted in ascending order)
   """
-  return sorted( aList, reverse=invert )
+  return sorted( aList, reverse = invert )
 
 def pop( aList, popElement ):
   """ Pop the first element equal to popElement from the list.
@@ -66,21 +66,21 @@ def pop( aList, popElement ):
 	:param popElement: element to pop
   """
   if popElement in aList:
-    return aList.pop( aList.index(popElement) )
+    return aList.pop( aList.index( popElement ) )
 
 def stringListToString( aList ):
   """This method is used for making MySQL queries with a list of string elements.
 
     :param list aList: list tobe serialised to string for making queries
   """
-  return ",".join( ["'"+str(x)+"'" for x in aList ] )
+  return ",".join( ["'" + str( x ) + "'" for x in aList ] )
 
 def intListToString( aList ):
   """This method is used for making MySQL queries with a list of int elements.
 
   :param list aList: list to be serialised to string for making queries
   """
-  return ",".join( [str(x) for x in aList ] )
+  return ",".join( [str( x ) for x in aList ] )
 
 def getChunk( aList, chunkSize ):
   """Generator yielding chunk from a list of a size chunkSize. 
@@ -95,8 +95,8 @@ def getChunk( aList, chunkSize ):
         process( chunk )
 
   """
-  for i in range( 0, len(aList), chunkSize ): 
-    yield aList[i:i+chunkSize]   
+  for i in range( 0, len( aList ), chunkSize ):
+    yield aList[i:i + chunkSize]
 
 def breakListIntoChunks( aList, chunkSize ):
   """This method takes a list as input and breaks it into list of size 'chunkSize'. It returns a list of lists.
@@ -106,8 +106,8 @@ def breakListIntoChunks( aList, chunkSize ):
   :return: list of lists of length of chunkSize
   :raise: RuntimeError if numberOfFilesInChunk is less than 1
   """
-  if chunkSize < 1: 
-    raise RuntimeError("chunkSize cannot be less than 1")
+  if chunkSize < 1:
+    raise RuntimeError( "chunkSize cannot be less than 1" )
   return [ chunk for chunk in getChunk( aList, chunkSize ) ]
 
 def removeEmptyElements( aList ):

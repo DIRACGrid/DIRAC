@@ -1,13 +1,15 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
 """
     Extremely simple utility class to send mails
 """
+__RCSID__ = "$Id$"
+
 import socket
 from smtplib import SMTP
-from DIRAC import gLogger,S_OK,S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 
 class Mail( SMTP ):
+  # FIXME: __init__ method from base class 'SMTP' is not called
   def __init__( self ):
     from getpass import getuser
     self._hostname = socket.getfqdn()
@@ -20,7 +22,7 @@ class Mail( SMTP ):
 
   def _send( self ):
     try:
-      self.connect( )
+      self.connect()
       self.ehlo( self._hostname )
     except socket.error:
       gLogger.info( 'Could not connect to mail server' )
@@ -41,7 +43,7 @@ class Mail( SMTP ):
 
     mailString = "From: %s\nTo: %s\nSubject: %s\n%s\n"
     addresses = self._mailAddress
-    if not type(self._mailAddress)==type([]):
+    if not type( self._mailAddress ) == type( [] ):
       addresses = [self._mailAddress]
 
     text = mailString % ( self._fromAddress, ', '.join( addresses ),
@@ -49,9 +51,9 @@ class Mail( SMTP ):
 
     try:
       self.sendmail( self._fromAddress, self._mailAddress, text )
-    except Exception, v:
-      gLogger.error( "Sending mail failed", str( v ) )
-      return S_ERROR("Sending mail failed %s" % str( v ) )
+    except Exception, x:
+      gLogger.error( "Sending mail failed", str( x ) )
+      return S_ERROR( "Sending mail failed %s" % str( x ) )
 
     self.quit()
     gLogger.info( "The mail was succesfully sent", "to %s" \

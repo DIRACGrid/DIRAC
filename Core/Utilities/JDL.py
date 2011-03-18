@@ -1,3 +1,6 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
@@ -40,7 +43,7 @@ def loadJDLAsCFG( jdl ):
       return S_ERROR( "Invalid key name" )
     value = value.strip()
     if not value:
-      return S_ERROR( "No value for key %s" % key)
+      return S_ERROR( "No value for key %s" % key )
     if value[0] == "{":
       if value[-1 ] != "}":
         return S_ERROR( "Value '%s' seems a list but does not end in '}'" % ( value ) )
@@ -74,8 +77,8 @@ def loadJDLAsCFG( jdl ):
   insideLiteral = False
   cfg = CFG()
   while iPos < len( jdl ):
-    c = jdl[ iPos ]
-    if c == ";" and not insideLiteral:
+    char = jdl[ iPos ]
+    if char == ";" and not insideLiteral:
       if key.strip():
         result = assignValue( key, value, cfg )
         if not result[ 'OK' ]:
@@ -83,7 +86,7 @@ def loadJDLAsCFG( jdl ):
       key = ""
       value = ""
       action = "key"
-    elif c == "[" and not insideLiteral:
+    elif char == "[" and not insideLiteral:
       key = key.strip()
       if not key:
         return S_ERROR( "Invalid key in JDL" )
@@ -99,13 +102,13 @@ def loadJDLAsCFG( jdl ):
       action = "key"
       insideLiteral = False
       iPos += subPos
-    elif c == "=" and not insideLiteral:
+    elif char == "=" and not insideLiteral:
       if action == "key":
         action = "value"
         insideLiteral = False
       else:
-        value += c
-    elif c == "]" and not insideLiteral:
+        value += char
+    elif char == "]" and not insideLiteral:
       key = key.strip()
       if len( key ) > 0:
         result = assignValue( key, value, cfg )
@@ -114,10 +117,10 @@ def loadJDLAsCFG( jdl ):
       return S_OK( ( cfg, iPos ) )
     else:
       if action == "key":
-        key += c
+        key += char
       else:
-        value += c
-        if c == '"':
+        value += char
+        if char == '"':
           insideLiteral = not insideLiteral
     iPos += 1
 
@@ -135,21 +138,21 @@ def dumpCFGAsJDL( cfg, level = 1, tab = "  " ):
     else:
       val = List.fromChar( cfg[ key ] )
       if len( val ) < 2:
-        v = cfg[ key ]
+        value = cfg[ key ]
         try:
-          d = float( v )
-          contents.append( '%s%s = %s;' % ( tab*level, key, v ) )
-        except:
-          contents.append( '%s%s = "%s";' % ( tab*level, key, v ) )
+          value = float( value )
+          contents.append( '%s%s = %s;' % ( tab * level, key, value ) )
+        except Exception:
+          contents.append( '%s%s = "%s";' % ( tab * level, key, value ) )
       else:
         contents.append( "%s%s =" % ( indent, key ) )
         contents.append( "%s{" % indent )
         for iPos in range( len( val ) ):
           try:
-            d = float( val[iPos] )
-          except:
+            value = float( val[iPos] )
+          except Exception:
             val[ iPos ] = '"%s"' % val[ iPos ]
-        contents.append( ",\n".join( [ '%s%s' % ( tab * (level +1 ), v ) for v in val ] ) )
+        contents.append( ",\n".join( [ '%s%s' % ( tab * ( level + 1 ), value ) for value in val ] ) )
         contents.append( "%s};" % indent )
   contents.append( "%s]" % ( tab * ( level - 1 ) ) )
   return "\n".join( contents )

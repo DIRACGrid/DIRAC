@@ -1,8 +1,6 @@
 # $HeadURL$
-
 """ The Grid module contains several utilities for grid operations
 """
-
 __RCSID__ = "$Id$"
 
 import os, types

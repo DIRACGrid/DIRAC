@@ -1,11 +1,12 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
 """
    Collection of DIRAC useful network related modules
    by default on Error they return None
 
    getAllInterfaces and getAddressFromInterface do not work in MAC
 """
+__RCSID__ = "$Id$"
+
 import socket
 import struct
 import array
@@ -16,11 +17,11 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 def discoverInterfaces():
   max_possible = 128
-  bytes = max_possible * 32
-  s = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-  names = array.array( 'B', '\0' * bytes )
+  maxBytes = max_possible * 32
+  mySocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+  names = array.array( 'B', '\0' * maxBytes )
   #0x8912 SICGIFCONF
-  fcntlOut = fcntl.ioctl( s.fileno(), 0x8912, struct.pack( 'iL', bytes, names.buffer_info()[0] ) )
+  fcntlOut = fcntl.ioctl( mySocket.fileno(), 0x8912, struct.pack( 'iL', maxBytes, names.buffer_info()[0] ) )
   outbytes = struct.unpack( 'iL', fcntlOut )[0]
   namestr = names.tostring()
   ifaces = {}
@@ -38,18 +39,17 @@ def discoverInterfaces():
   return ifaces
 
 def getAllInterfaces():
-  import fcntl
   max_possible = 128  # arbitrary. raise if needed.
-  bytes = max_possible * 32
-  s = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-  names = array.array( 'B', '\0' * bytes )
+  maxBytes = max_possible * 32
+  mySocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+  names = array.array( 'B', '\0' * maxBytes )
   outbytes = struct.unpack( 
                             'iL',
                             fcntl.ioctl( 
-                                         s.fileno(),
+                                         mySocket.fileno(),
                                          0x8912, # SIOCGIFCONF
                                          struct.pack( 'iL',
-                                                      bytes,
+                                                      maxBytes,
                                                       names.buffer_info()[0] )
                                        )
                           )[0]
@@ -57,20 +57,19 @@ def getAllInterfaces():
   return [namestr[i:i + 32].split( '\0', 1 )[0] for i in range( 0, outbytes, 32 )]
 
 def getAddressFromInterface( ifName ):
-  import fcntl
   try:
-    s = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+    mySocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
     return socket.inet_ntoa( fcntl.ioctl( 
-                                          s.fileno(),
+                                          mySocket.fileno(),
                                           0x8915, # SIOCGIFADDR
                                           struct.pack( '256s', ifName[:15] )
                                         )[20:24] )
-  except:
+  except Exception:
     return False
 
 def getMACFromInterface( ifname ):
-  s = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-  info = fcntl.ioctl( s.fileno(), 0x8927, struct.pack( '256s', ifname[:15] ) )
+  mySocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+  info = fcntl.ioctl( mySocket.fileno(), 0x8927, struct.pack( '256s', ifname[:15] ) )
   return ''.join( ['%02x:' % ord( char ) for char in info[18:24]] )[:-1]
 
 def getFQDN():
@@ -80,18 +79,18 @@ def getFQDN():
     socket.getfqdn( sFQDN )
   return sFQDN
 
-def splitURL( URL ):
-  protocolEnd = URL.find( "://" )
+def splitURL( url ):
+  protocolEnd = url.find( "://" )
   if protocolEnd == -1:
-    return S_ERROR( "'%s' URL is malformed" % URL )
-  protocol = URL[ : protocolEnd ]
-  URL = URL[ protocolEnd + 3: ]
-  pathStart = URL.find( "/" )
+    return S_ERROR( "'%s' URL is malformed" % url )
+  protocol = url[ : protocolEnd ]
+  url = url[ protocolEnd + 3: ]
+  pathStart = url.find( "/" )
   if pathStart > -1:
-    host = URL[ :pathStart ]
-    path = URL[ pathStart + 1: ]
+    host = url[ :pathStart ]
+    path = url[ pathStart + 1: ]
   else:
-    host = URL
+    host = url
     path = "/"
   if path[-1] == "/":
     path = path[:-1]

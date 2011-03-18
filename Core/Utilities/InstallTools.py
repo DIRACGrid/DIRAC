@@ -1,7 +1,7 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py $
-# File :   InstallTools.py
-# Author : Ricardo Graciani
+# $HeadURL$
+# File :    InstallTools.py
+# Author :  Ricardo Graciani
 ########################################################################
 
 """
@@ -55,16 +55,16 @@ If a Master Configuration Server is being installed the following Options can be
 /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 """
 
-__RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
+__RCSID__ = "$Id$"
 
 #
 import os, re, glob, stat, time, shutil, socket
 
-defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
+import DIRAC
 from DIRAC import rootPath
 from DIRAC import gLogger
-from DIRAC import exit
 from DIRAC import systemCall
 from DIRAC import S_OK, S_ERROR
 
@@ -95,7 +95,7 @@ def loadDiracCfg( verbose = False ):
   cfgFile = os.path.join( rootPath, 'etc', 'dirac.cfg' )
   try:
     localCfg.loadFromFile( cfgFile )
-  except:
+  except Exception:
     gLogger.always( "Can't load ", cfgFile )
     gLogger.always( "Might be OK if setting up the site" )
 
@@ -176,8 +176,32 @@ def loadDiracCfg( verbose = False ):
   if verbose and mysqlLargeMem:
     gLogger.notice( 'Configuring MySQL server for Large Memory uasge' )
 
+# FIXME: we probably need a better way to do this
 mysqlRootPwd = ''
 mysqlPassword = ''
+mysqlMode = ''
+localCfg = None
+cfgFile = ''
+setup = ''
+instance = ''
+logLevel = ''
+linkedRootPath = ''
+host = ''
+basePath = ''
+instancePath = ''
+runitDir = ''
+startDir = ''
+db = {}
+mysqlDir = ''
+mysqlDbDir = ''
+mysqlLogDir = ''
+mysqlMyOrg = ''
+mysqlMyCnf = ''
+mysqlStartupScript = ''
+mysqlUser = ''
+mysqlHost = ''
+mysqlSmallMem = ''
+mysqlLargeMem = ''
 loadDiracCfg()
 
 def getInfo( extensions ):
@@ -199,11 +223,11 @@ def getExtensions():
   extensions = [ os.path.basename( os.path.dirname( k ) ) for k in initList]
   try:
     extensions.remove( 'DIRAC' )
-  except:
+  except Exception:
     error = 'DIRAC is not properly installed'
     gLogger.exception( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   return S_OK( extensions )
@@ -246,7 +270,7 @@ def _addCfgToLocalCS( cfg ):
     error = 'Missing %s' % cfgPath( 'DIRAC', 'Configuration', 'Name' )
     if exitOnError:
       gLogger.error( error )
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   csCfg = CFG()
@@ -278,7 +302,10 @@ def _getCentralCfg( installCfg ):
   if vo:
     centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' )
 
-  for section in [ 'Systems', 'Resources', 'Resources/Sites', 'Resources/Sites/DIRAC', 'Resources/Sites/LCG', 'Operations', 'Website', 'Registry' ]:
+  for section in [ 'Systems', 'Resources',
+                   'Resources/Sites', 'Resources/Sites/DIRAC',
+                   'Resources/Sites/LCG', 'Operations',
+                   'Website', 'Registry' ]:
     if installCfg.isSection( section ):
       centralCfg.createNewSection( section, contents = installCfg[section] )
 
@@ -290,9 +317,13 @@ def _getCentralCfg( installCfg ):
   adminGroupName = localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
   hostDN = localCfg.getOption( cfgInstallPath( 'HostDN' ), '' )
   defaultGroupName = 'user'
-  adminGroupProperties = [ ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, CS_ADMINISTRATOR, JOB_ADMINISTRATOR, FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR ]
+  adminGroupProperties = [ ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR,
+                           CS_ADMINISTRATOR, JOB_ADMINISTRATOR,
+                           FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR ]
   defaultGroupProperties = [ NORMAL_USER ]
-  defaultHostProperties = [ TRUSTED_HOST, CS_ADMINISTRATOR, JOB_ADMINISTRATOR, FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR ]
+  defaultHostProperties = [ TRUSTED_HOST, CS_ADMINISTRATOR,
+                            JOB_ADMINISTRATOR, FULL_DELEGATION,
+                            PROXY_MANAGEMENT, OPERATOR ]
 
   if adminUserName:
     if not ( adminUserDN and adminUserEmail ):
@@ -333,16 +364,16 @@ def _getCentralCfg( installCfg ):
           centralCfg['Registry']['Groups'][group].addKey( 'Properties', '', '' )
 
       properties = centralCfg['Registry']['Groups'][adminGroupName].getOption( 'Properties', [] )
-      for property in adminGroupProperties:
-        if property not in properties:
-          properties.append( property )
-          centralCfg['Registry']['Groups'][adminGroupName].appendToOption( 'Properties', ', %s' % property )
+      for prop in adminGroupProperties:
+        if prop not in properties:
+          properties.append( prop )
+          centralCfg['Registry']['Groups'][adminGroupName].appendToOption( 'Properties', ', %s' % prop )
 
       properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption( 'Properties', [] )
-      for property in defaultGroupProperties:
-        if property not in properties:
-          properties.append( property )
-          centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % property )
+      for prop in defaultGroupProperties:
+        if prop not in properties:
+          properties.append( prop )
+          centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % prop )
 
       # Add the master Host description
       if hostDN:
@@ -352,10 +383,10 @@ def _getCentralCfg( installCfg ):
         if not centralCfg['Registry']['Hosts'][host].isOption( 'Properties' ):
           centralCfg['Registry']['Hosts'][host].addKey( 'Properties', '', '' )
         properties = centralCfg['Registry']['Hosts'][host].getOption( 'Properties', [] )
-        for property in defaultHostProperties:
-          if property not in properties:
-            properties.append( property )
-            centralCfg['Registry']['Hosts'][host].appendToOption( 'Properties', ', %s' % property )
+        for prop in defaultHostProperties:
+          if prop not in properties:
+            properties.append( prop )
+            centralCfg['Registry']['Hosts'][host].appendToOption( 'Properties', ', %s' % prop )
 
   # Operations
   if adminUserEmail:
@@ -365,16 +396,25 @@ def _getCentralCfg( installCfg ):
     centralCfg = centralCfg.mergeWith( operationsCfg )
 
   # Website
-  websiteCfg = __getCfg( cfgPath( 'Website', 'Authorization', 'systems', 'configuration' ), 'Default', 'all' )
-  websiteCfg['Website'].addKey( 'DefaultGroups', ', '.join( ['visitor', defaultGroupName, adminGroupName] ), '' )
+  websiteCfg = __getCfg( cfgPath( 'Website', 'Authorization',
+                                  'systems', 'configuration' ), 'Default', 'all' )
+  websiteCfg['Website'].addKey( 'DefaultGroups',
+                                ', '.join( ['visitor', defaultGroupName, adminGroupName] ), '' )
   websiteCfg['Website'].addKey( 'DefaultSetup', setup, '' )
-  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showHistory' , 'CSAdministrator' , '' )
-  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'commitConfiguration' , 'CSAdministrator' , '' )
-  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showCurrentDiff' , 'CSAdministrator' , '' )
-  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showDiff' , 'CSAdministrator' , '' )
-  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'rollbackToVersion' , 'CSAdministrator' , '' )
-  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'manageRemoteConfig' , 'CSAdministrator' , '' )
-  websiteCfg['Website']['Authorization']['systems']['configuration'].appendToOption( 'manageRemoteConfig' , ', ServiceAdministrator' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showHistory' ,
+                                                                             'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'commitConfiguration' ,
+                                                                             'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showCurrentDiff' ,
+                                                                             'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showDiff' ,
+                                                                             'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'rollbackToVersion' ,
+                                                                             'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'manageRemoteConfig' ,
+                                                                             'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].appendToOption( 'manageRemoteConfig' ,
+                                                                                     ', ServiceAdministrator' )
 
   centralCfg = centralCfg.mergeWith( websiteCfg )
 
@@ -419,16 +459,17 @@ def addOptionToDiracCfg( option, value ):
 
   return S_ERROR( 'Could not merge %s=%s with local configuration' % ( option, value ) )
 
-def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extensions, setup = setup, overwrite = False ):
+def addDefaultOptionsToCS( gConfig, componentType, systemName,
+                           component, extensions, mySetup = setup, overwrite = False ):
   """ Add the section with the component options to the CS
   """
   system = systemName.replace( 'System', '' )
-  instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
+  instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
   if gConfig:
-    instance = gConfig.getValue( instanceOption, '' )
+    compInstance = gConfig.getValue( instanceOption, '' )
   else:
-    instance = localCfg.getOption( instanceOption, '' )
-  if not instance:
+    compInstance = localCfg.getOption( instanceOption, '' )
+  if not compInstance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
   sectionName = "Agents"
@@ -438,7 +479,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
   # Check if the component CS options exist
   addOptions = True
   if not overwrite:
-    componentSection = cfgPath( 'Systems', system, instance, sectionName, component )
+    componentSection = cfgPath( 'Systems', system, compInstance, sectionName, component )
     if gConfig:
       result = gConfig.getOptions( componentSection )
       if result['OK']:
@@ -448,8 +489,8 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
     return S_OK( 'Component options already exist' )
 
   # Add the component options now
-  print "AT >>>", componentType, system, component, instance, extensions
-  result = getComponentCfg( componentType, system, component, instance, extensions )
+  print "AT >>>", componentType, system, component, compInstance, extensions
+  result = getComponentCfg( componentType, system, component, compInstance, extensions )
   print result
   if not result['OK']:
     return result
@@ -464,12 +505,12 @@ def addDefaultOptionsToComponentCfg( componentType, systemName, component, exten
   """
   system = systemName.replace( 'System', '' )
   instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
-  instance = localCfg.getOption( instanceOption, '' )
-  if not instance:
+  compInstance = localCfg.getOption( instanceOption, '' )
+  if not compInstance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
   # Add the component options now
-  result = getComponentCfg( componentType, system, component, instance, extensions )
+  result = getComponentCfg( componentType, system, component, compInstance, extensions )
   if not result['OK']:
     return result
   compCfg = result['Value']
@@ -488,15 +529,15 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
     return S_OK()
   system = systemName.replace( 'System', '' )
   instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
-  instance = localCfg.getOption( instanceOption, '' )
+  compInstance = localCfg.getOption( instanceOption, '' )
 
-  if not instance:
+  if not compInstance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
   compCfgFile = os.path.join( rootPath, 'etc', '%s_%s.cfg' % ( system, component ) )
   compCfg = CFG()
   if os.path.exists( compCfgFile ):
     compCfg.loadFromFile( compCfgFile )
-  sectionPath = cfgPath( 'Systems', system, instance, sectionName )
+  sectionPath = cfgPath( 'Systems', system, compInstance, sectionName )
 
   newCfg = __getCfg( sectionPath )
   newCfg.createNewSection( cfgPath( sectionPath, component ), 'Added by InstallTools', cfg )
@@ -506,7 +547,7 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
   gLogger.error( error )
   return S_ERROR( error )
 
-def getComponentCfg( componentType, system, component, instance, extensions ):
+def getComponentCfg( componentType, system, component, compInstance, extensions ):
   """
   Get the CFG object of the component configuration
   """
@@ -516,7 +557,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
 
   extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
 
-  compCfg = ''
+  compCfg = None
   for ext in extensionsDIRAC + ['DIRAC']:
     cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
     if os.path.exists( cfgTemplatePath ):
@@ -529,21 +570,21 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
         compCfg = loadCfg[sectionName][component]
         # section found
         break
-      except:
+      except Exception:
         error = 'Can not find %s in template' % cfgPath( sectionName, component )
         gLogger.error( error )
         if exitOnError:
-          exit( -1 )
+          DIRAC.exit( -1 )
         return S_ERROR( error )
 
   if not compCfg:
     error = 'Configuration template not found'
     gLogger.error( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
-  sectionPath = cfgPath( 'Systems', system, instance, sectionName )
+  sectionPath = cfgPath( 'Systems', system, compInstance, sectionName )
   cfg = __getCfg( sectionPath )
   cfg.createNewSection( cfgPath( sectionPath, component ), '', compCfg )
 
@@ -551,30 +592,30 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
   if componentType == "service":
     port = compCfg.getOption( 'Port' , 0 )
     if port and host:
-      urlsPath = cfgPath( 'Systems', system, instance, 'URLs' )
+      urlsPath = cfgPath( 'Systems', system, compInstance, 'URLs' )
       cfg.createNewSection( urlsPath )
       cfg.setOption( cfgPath( urlsPath, component ),
                     'dips://%s:%d/%s/%s' % ( host, port, system, component ) )
 
   return S_OK( cfg )
 
-def addDatabaseOptionsToCS( gConfig, systemName, dbName, setup = setup, overwrite = False ):
+def addDatabaseOptionsToCS( gConfig, systemName, dbName, mySetup = setup, overwrite = False ):
   """
   Add the section with the database options to the CS
   """
   system = systemName.replace( 'System', '' )
-  instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
+  instanceOption = cfgPath( 'DIRAC', 'Setups', mySetup, system )
   if gConfig:
-    instance = gConfig.getValue( instanceOption, '' )
+    compInstance = gConfig.getValue( instanceOption, '' )
   else:
-    instance = localCfg.getOption( instanceOption, '' )
-  if not instance:
+    compInstance = localCfg.getOption( instanceOption, '' )
+  if not compInstance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
   # Check if the component CS options exist
   addOptions = True
   if not overwrite:
-    databasePath = cfgPath( 'Systems', system, instance, 'Databases', dbName )
+    databasePath = cfgPath( 'Systems', system, compInstance, 'Databases', dbName )
     result = gConfig.getOptions( databasePath )
     if result['OK']:
       addOptions = False
@@ -582,32 +623,32 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, setup = setup, overwrit
     return S_OK( 'Database options already exist' )
 
   # Add the component options now
-  result = getDatabaseCfg( system, dbName, instance )
+  result = getDatabaseCfg( system, dbName, compInstance )
   if not result['OK']:
     return result
   databaseCfg = result['Value']
   gLogger.notice( 'Adding to CS', '%s/%s' % ( system, dbName ) )
   return _addCfgToCS( databaseCfg )
 
-def getDatabaseCfg( system, dbName, instance ):
+def getDatabaseCfg( system, dbName, compInstance ):
   """ 
   Get the CFG object of the database configuration
   """
-  databasePath = cfgPath( 'Systems', system, instance, 'Databases', dbName )
+  databasePath = cfgPath( 'Systems', system, compInstance, 'Databases', dbName )
   cfg = __getCfg( databasePath, 'DBName', dbName )
   cfg.setOption( cfgPath( databasePath, 'Host' ), mysqlHost )
 
   return S_OK( cfg )
 
-def addSystemInstance( systemName, instance, setup = setup, localCfg = False ):
+def addSystemInstance( systemName, compInstance, mySetup = setup, myCfg = False ):
   """ 
   Add a new system instance to dirac.cfg and CS
   """
   system = systemName.replace( 'System', '' )
-  gLogger.notice( 'Adding %s system as %s instance for %s setup to dirac.cfg and CS' % ( system, instance, setup ) )
+  gLogger.notice( 'Adding %s system as %s instance for %s setup to dirac.cfg and CS' % ( system, compInstance, mySetup ) )
 
-  cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', setup ), system, instance )
-  if localCfg:
+  cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', mySetup ), system, compInstance )
+  if myCfg:
     if not _addCfgToDiracCfg( cfg ):
       return S_ERROR( 'Failed to add system instance to dirac.cfg' )
 
@@ -615,13 +656,14 @@ def addSystemInstance( systemName, instance, setup = setup, localCfg = False ):
 
 def printStartupStatus( rDict ):
   """
-  Print in nice format the return dictionary from getStartupComponentStatus (also returned by runsvctrlComponent)
+  Print in nice format the return dictionary from getStartupComponentStatus 
+  (also returned by runsvctrlComponent)
   """
   try:
     print 'Name'.rjust( 32 ), ':', 'Runit    Uptime    PID'
     for comp in rDict:
       print comp.rjust( 32 ), ':', rDict[comp]['RunitStatus'].ljust( 7 ), rDict[comp]['Timeup'].rjust( 7 ), rDict[comp]['PID'].rjust( 8 )
-  except:
+  except Exception:
     pass
   return S_OK()
 
@@ -649,7 +691,7 @@ def printOverallStatus( rDict ):
           print str( rDict[compType][system][component]['Timeup'] ).rjust( 7 ),
           print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
           print
-  except:
+  except Exception:
     pass
 
   return S_OK()
@@ -781,11 +823,11 @@ def getStartupComponentStatus( componentTupleList ):
         cList.extend( glob.glob( os.path.join( startDir, '_'.join( componentTuple ) ) ) )
     else:
       cList = glob.glob( os.path.join( startDir, '*' ) )
-  except:
+  except Exception:
     error = 'Failed to parse List of Components'
     gLogger.exception( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   result = execCommand( 0, ['runsvstat'] + cList )
@@ -800,26 +842,26 @@ def getStartupComponentStatus( componentTupleList ):
     cname, routput = line.split( ':' )
     cname = cname.replace( '%s/' % startDir, '' )
     run = False
-    result = re.search( '^ run', routput )
-    if result:
+    reResult = re.search( '^ run', routput )
+    if reResult:
       run = True
     down = False
-    result = re.search( '^ down', routput )
-    if result:
+    reResult = re.search( '^ down', routput )
+    if reResult:
       down = True
-    result = re.search( '([0-9]+) seconds', routput )
+    reResult = re.search( '([0-9]+) seconds', routput )
     timeup = 0
-    if result:
-      timeup = result.group( 1 )
-    result = re.search( 'pid ([0-9]+)', routput )
+    if reResult:
+      timeup = reResult.group( 1 )
+    reResult = re.search( 'pid ([0-9]+)', routput )
     pid = 0
-    if result:
-      pid = result.group( 1 )
+    if reResult:
+      pid = reResult.group( 1 )
     runsv = "Not running"
     if run or down:
       runsv = "Running"
-    result = re.search( 'runsv not running', routput )
-    if result:
+    reResult = re.search( 'runsv not running', routput )
+    if reResult:
       runsv = "Not running"
 
     runDict = {}
@@ -881,14 +923,12 @@ def getOverallStatus( extensions ):
           try:
             if component in setupDict[compType][system]:
               resultDict[compType][system][component]['Setup'] = True
-          except Exception, x:
-            #print str(x)
+          except Exception:
             pass
           try:
             if component in installedDict[compType][system]:
               resultDict[compType][system][component]['Installed'] = True
-          except Exception, x:
-            #print str(x) 
+          except Exception:
             pass
           try:
             compDir = system + '_' + component
@@ -957,7 +997,7 @@ def getLogTail( system, component, length = 100 ):
       retDict[compName] = 'No log file found'
     else:
       logFile = open( logFileName, 'r' )
-      lines = [ l.strip() for l in logFile.readlines() ]
+      lines = [ line.strip() for line in logFile.readlines() ]
       logFile.close()
 
       if len( lines ) < length:
@@ -991,11 +1031,11 @@ def setupSite( scriptCfg, cfg = None ):
         diracCfg.setOption( cfgPath( 'LocalSite', 'InstancePath' ), instancePath )
 
       _addCfgToDiracCfg( diracCfg, verbose = True )
-    except:
+    except Exception:
       error = 'Failed to load %s' % cfg
       gLogger.exception( error )
       if exitOnError:
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
   # Now get the necessary info from localCfg
@@ -1018,7 +1058,7 @@ def setupSite( scriptCfg, cfg = None ):
     if error:
       if exitOnError:
         gLogger.error( error )
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
   for agentTuple in setupAgents:
@@ -1030,7 +1070,7 @@ def setupSite( scriptCfg, cfg = None ):
     if error:
       if exitOnError:
         gLogger.error( error )
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
   # And to find out the available extensions
@@ -1044,17 +1084,17 @@ def setupSite( scriptCfg, cfg = None ):
     if not os.path.exists( instancePath ):
       try:
         os.makedirs( instancePath )
-      except:
+      except Exception:
         error = 'Can not create directory for instance %s' % instancePath
         if exitOnError:
           gLogger.exception( error )
-          exit( -1 )
+          DIRAC.exit( -1 )
         return S_ERROR( error )
     if not os.path.isdir( instancePath ):
       error = 'Instance directory %s is not valid' % instancePath
       if exitOnError:
         gLogger.error( error )
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
     instanceEtcDir = os.path.join( instancePath, 'etc' )
@@ -1062,18 +1102,18 @@ def setupSite( scriptCfg, cfg = None ):
     if not os.path.exists( instanceEtcDir ):
       try:
         os.symlink( etcDir, instanceEtcDir )
-      except:
+      except Exception:
         error = 'Can not create link to configuration %s' % instanceEtcDir
         if exitOnError:
           gLogger.exception( error )
-          exit( -1 )
+          DIRAC.exit( -1 )
         return S_ERROR( error )
 
     if os.path.realpath( instanceEtcDir ) != os.path.realpath( etcDir ):
       error = 'Instance etc (%s) is not the same as DIRAC etc (%s)' % ( instanceEtcDir, etcDir )
       if exitOnError:
         gLogger.error( error )
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
   # if any server or agent needs to be install we need the startup directory and runsvdir running
@@ -1081,18 +1121,18 @@ def setupSite( scriptCfg, cfg = None ):
     if not os.path.exists( startDir ):
       try:
         os.makedirs( startDir )
-      except:
+      except Exception:
         error = 'Can not create %s' % startDir
         if exitOnError:
           gLogger.exception( error )
-          exit( -1 )
+          DIRAC.exit( -1 )
         return S_ERROR( error )
     # And need to make sure runsvdir is running
     result = execCommand( 0, ['ps', '-ef'] )
     if not result['OK']:
       if exitOnError:
         gLogger.error( result['Message'] )
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( result['Message'] )
     processList = result['Value'][1].split( '\n' )
     cmd = 'runsvdir %s' % startDir
@@ -1130,7 +1170,7 @@ def setupSite( scriptCfg, cfg = None ):
   result = scriptCfg.enableCS()
   if not result['OK']:
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return result
 
   cfgClient = CSAPI()
@@ -1138,7 +1178,7 @@ def setupSite( scriptCfg, cfg = None ):
     error = 'Configuration Server not defined'
     if exitOnError:
       gLogger.error( error )
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   # We need to make sure components are connecting to the Master CS, that is the only one being update
@@ -1182,24 +1222,24 @@ def setupSite( scriptCfg, cfg = None ):
     if not result['OK']:
       if exitOnError:
         gLogger.error( result['Message'] )
-        exit( -1 )
+        DIRAC.exit( -1 )
       return result
     installedDatabases = result['Value']
-    for db in setupDatabases:
-      if db not in installedDatabases:
-        extension, system = installDatabase( db )['Value']
-        gLogger.notice( 'Database %s from %s/%s installed' % ( db, extension, system ) )
-        result = addDatabaseOptionsToCS( None, system, db, overwrite = True )
+    for dbName in setupDatabases:
+      if dbName not in installedDatabases:
+        extension, system = installDatabase( dbName )['Value']
+        gLogger.notice( 'Database %s from %s/%s installed' % ( dbName, extension, system ) )
+        result = addDatabaseOptionsToCS( None, system, dbName, overwrite = True )
         if not result['OK']:
-          gLogger.error( 'Database %s CS registration failed: %s' % ( db, result['Message'] ) )
-      gLogger.notice( 'Database %s already installed' % db )
+          gLogger.error( 'Database %s CS registration failed: %s' % ( dbName, result['Message'] ) )
+      gLogger.notice( 'Database %s already installed' % dbName )
 
   if mysqlPassword:
     if not _addMySQLToDiracCfg():
       error = 'Failed to add MySQL user password to local configuration'
       if exitOnError:
         gLogger.error( error )
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
   # 4.- Then installed requested services
@@ -1228,16 +1268,16 @@ def _createRunitLog( runitCompDir ):
   os.makedirs( logDir )
 
   logConfigFile = os.path.join( logDir, 'config' )
-  f = open( logConfigFile, 'w' )
-  f.write( 
+  fd = open( logConfigFile, 'w' )
+  fd.write( 
 """s10000000
 n20
 """ )
-  f.close()
+  fd.close()
 
   logRunFile = os.path.join( logDir, 'run' )
-  f = open( logRunFile, 'w' )
-  f.write( 
+  fd = open( logRunFile, 'w' )
+  fd.write( 
 """#!/bin/bash
 #
 rcfile=%(bashrc)s
@@ -1246,9 +1286,9 @@ rcfile=%(bashrc)s
 exec svlogd .
 
 """ % { 'bashrc' : os.path.join( instancePath, 'bashrc' ) } )
-  f.close()
+  fd.close()
 
-  os.chmod( logRunFile, defaultPerms )
+  os.chmod( logRunFile, gDefaultPerms )
 
 
 def installComponent( componentType, system, component, extensions ):
@@ -1259,7 +1299,7 @@ def installComponent( componentType, system, component, extensions ):
     error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
     if exitOnError:
       gLogger.error( error )
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   # Check if the component is already installed
@@ -1275,14 +1315,14 @@ def installComponent( componentType, system, component, extensions ):
   try:
     componentCfg = os.path.join( linkedRootPath, 'etc', '%s_%s.cfg' % ( system, component ) )
     if not os.path.exists( componentCfg ):
-      f = open( componentCfg, 'w' )
-      f.close()
+      fd = open( componentCfg, 'w' )
+      fd.close()
 
     _createRunitLog( runitCompDir )
 
     runFile = os.path.join( runitCompDir, 'run' )
-    f = open( runFile, 'w' )
-    f.write( 
+    fd = open( runFile, 'w' )
+    fd.write( 
 """#!/bin/bash
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
@@ -1299,15 +1339,15 @@ exec python %(DIRAC)s/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%
        'component': component,
        'componentCfg': componentCfg,
        'logLevel': logLevel } )
-    f.close()
+    fd.close()
 
-    os.chmod( runFile, defaultPerms )
+    os.chmod( runFile, gDefaultPerms )
 
-  except:
+  except Exception:
     error = 'Failed to prepare setup for %s %s/%s' % ( componentType, system, component )
     gLogger.exception( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   result = execCommand( 5, [runFile] )
@@ -1361,7 +1401,7 @@ def unsetupComponent( system, component ):
   for startCompDir in glob.glob( os.path.join( startDir, '%s_%s' % ( system, component ) ) ):
     try:
       os.unlink( startCompDir )
-    except:
+    except Exception:
       gLogger.exception()
 
   return S_OK()
@@ -1375,7 +1415,7 @@ def uninstallComponent( system, component ):
   for runitCompDir in glob.glob( os.path.join( runitDir, system, component ) ):
     try:
       shutil.rmtree( runitCompDir )
-    except:
+    except Exception:
       gLogger.exception()
 
   return S_OK()
@@ -1391,7 +1431,7 @@ def installPortal():
     error = 'Web extension not installed at %s' % webDir
     if exitOnError:
       gLogger.error( error )
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   # First the lighthttpd server
@@ -1409,8 +1449,8 @@ def installPortal():
     try:
       _createRunitLog( runitHttpdDir )
       runFile = os.path.join( runitHttpdDir, 'run' )
-      f = open( runFile, 'w' )
-      f.write( 
+      fd = open( runFile, 'w' )
+      fd.write( 
 """#!/bin/bash
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
@@ -1419,14 +1459,14 @@ exec 2>&1
 #
 exec lighttpdSvc.sh < /dev/null
 """ % {'bashrc': os.path.join( instancePath, 'bashrc' ), } )
-      f.close()
+      fd.close()
 
-      os.chmod( runFile, defaultPerms )
-    except:
+      os.chmod( runFile, gDefaultPerms )
+    except Exception:
       error = 'Failed to prepare setup for light httpd'
       gLogger.exception( error )
       if exitOnError:
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
     result = execCommand( 5, [runFile] )
@@ -1444,8 +1484,8 @@ exec lighttpdSvc.sh < /dev/null
     try:
       _createRunitLog( runitPasterDir )
       runFile = os.path.join( runitPasterDir, 'run' )
-      f = open( runFile, 'w' )
-      f.write( 
+      fd = open( runFile, 'w' )
+      fd.write( 
 """#!/bin/bash
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
@@ -1456,14 +1496,14 @@ cd %(DIRAC)s/Web
 exec paster serve --reload production.ini < /dev/null
 """ % {'bashrc': os.path.join( instancePath, 'bashrc' ),
        'DIRAC': linkedRootPath} )
-      f.close()
+      fd.close()
 
-      os.chmod( runFile, defaultPerms )
-    except:
+      os.chmod( runFile, gDefaultPerms )
+    except Exception:
       error = 'Failed to prepare setup for Web Portal'
       gLogger.exception( error )
       if exitOnError:
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
     result = execCommand( 5, [runFile] )
@@ -1509,17 +1549,16 @@ def setupPortal():
   # Final check
   return getStartupComponentStatus( [ ( 'Web', 'httpd' ), ( 'Web', 'paster' ) ] )
 
-def fixMySQLScripts(startupScript=mysqlStartupScript):
+def fixMySQLScripts( startupScript = mysqlStartupScript ):
   """
   Edit MySQL scripts to point to desired locations for db and my.cnf
   """
   gLogger.verbose( 'Updating:', startupScript )
   try:
-    f = open( startupScript, 'r' )
-    orgLines = f.readlines()
-    f.close()
-
-    f = open( startupScript, 'w' )
+    fd = open( startupScript, 'r' )
+    orgLines = fd.readlines()
+    fd.close()
+    fd = open( startupScript, 'w' )
     for line in orgLines:
       if line.find( 'export HOME' ) == 0:
         continue
@@ -1527,13 +1566,13 @@ def fixMySQLScripts(startupScript=mysqlStartupScript):
         line = 'datadir=%s\n' % mysqlDbDir
         gLogger.debug( line )
         line += 'export HOME=%s\n' % mysqlDir
-      f.write( line )
-    f.close()
-  except:
+      fd.write( line )
+    fd.close()
+  except Exception:
     error = 'Failed to Update MySQL startup script'
     gLogger.exception( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   return S_OK()
@@ -1552,7 +1591,7 @@ def mysqlInstalled( doNotExit = False ):
   error = 'MySQL not properly Installed'
   gLogger.error( error )
   if exitOnError:
-    exit( -1 )
+    DIRAC.exit( -1 )
   return S_ERROR( error )
 
 def getMySQLPasswords():
@@ -1563,10 +1602,10 @@ def getMySQLPasswords():
   global mysqlRootPwd, mysqlPassword
   if not mysqlRootPwd:
     mysqlRootPwd = getpass.getpass( 'MySQL root password: ' )
-      
+
   if not mysqlPassword:
     # Take it if it is already defined 
-    mysqlPassword = localCfg.getOption('/Systems/Databases/Password','')
+    mysqlPassword = localCfg.getOption( '/Systems/Databases/Password', '' )
     if not mysqlPassword:
       mysqlPassword = getpass.getpass( 'MySQL Dirac password: ' )
 
@@ -1620,7 +1659,7 @@ def installMySQL():
     error = 'Unknown MySQL server Mode'
     if exitOnError:
       gLogger.fatal( error, mysqlMode )
-      exit( -1 )
+      DIRAC.exit( -1 )
     gLogger.error( error, mysqlMode )
     return S_ERROR( error )
 
@@ -1633,19 +1672,19 @@ def installMySQL():
   try:
     os.makedirs( mysqlDbDir )
     os.makedirs( mysqlLogDir )
-  except:
+  except Exception:
     error = 'Can not create MySQL dirs'
     gLogger.exception( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   try:
-    f = open( mysqlMyOrg, 'r' )
-    myOrg = f.readlines()
-    f.close()
+    fd = open( mysqlMyOrg, 'r' )
+    myOrg = fd.readlines()
+    fd.close()
 
-    f = open( mysqlMyCnf, 'w' )
+    fd = open( mysqlMyCnf, 'w' )
     for line in myOrg:
       if line.find( '[mysqld]' ) == 0:
         line += '\n'.join( [ 'innodb_file_per_table', '' ] )
@@ -1664,7 +1703,6 @@ def installMySQL():
                            'log-slave-updates', '' ] )
       elif line.find( 'server-id' ) == 0 and mysqlMode.lower() == 'slave':
         # MySQL Configuration for Slave Server
-        import time
         line = '\n'.join( ['server-id = %s' % int( time.time() ),
                            '# DIRAC Slave-Server',
                            'sync-binlog = 1',
@@ -1682,13 +1720,13 @@ def installMySQL():
         if line.find( 'innodb_buffer_pool_size' ) == 0:
           line = 'innodb_buffer_pool_size = 10G\n'
 
-      f.write( line )
-    f.close()
-  except:
+      fd.write( line )
+    fd.close()
+  except Exception:
     error = 'Can not create my.cnf'
     gLogger.exception( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   gLogger.notice( 'Initializing MySQL...' )
@@ -1743,11 +1781,11 @@ def getAvailableDatabases( extensions ):
   dbDict = {}
   for extension in extensions + ['']:
     databases = glob.glob( os.path.join( rootPath, '%sDIRAC' % extension, '*', 'DB', '*.sql' ) )
-    for db in databases:
-      dbName = os.path.basename( db ).replace( '.sql', '' )
+    for dbPath in databases:
+      dbName = os.path.basename( dbPath ).replace( '.sql', '' )
       dbDict[dbName] = {}
       dbDict[dbName]['Extension'] = extension
-      dbDict[dbName]['System'] = db.split( '/' )[-3].replace( 'System', '' )
+      dbDict[dbName]['System'] = dbPath.split( '/' )[-3].replace( 'System', '' )
 
   return S_OK( dbDict )
 
@@ -1760,9 +1798,9 @@ def getDatabases():
   if not result['OK']:
     return result
   dbList = []
-  for db in result['Value']:
-    if not db[0] in ['Database', 'information_schema', 'mysql', 'test']:
-      dbList.append( db[0] )
+  for dbName in result['Value']:
+    if not dbName[0] in ['Database', 'information_schema', 'mysql', 'test']:
+      dbList.append( dbName[0] )
 
   return S_OK( dbList )
 
@@ -1796,24 +1834,24 @@ def installDatabase( dbName ):
     error = 'Database %s not found' % dbName
     gLogger.error( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   dbFile = dbFile[0]
 
   try:
-    f = open( dbFile )
-    dbLines = f.readlines()
-    f.close()
+    fd = open( dbFile )
+    dbLines = fd.readlines()
+    fd.close()
     dbAdded = False
     cmdLines = []
-    for l in dbLines:
-      if l.lower().find( ( 'use %s;' % dbName ).lower() ) > -1:
+    for line in dbLines:
+      if line.lower().find( ( 'use %s;' % dbName ).lower() ) > -1:
         result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
         if not result['OK']:
           gLogger.error( result['Message'] )
           if exitOnError:
-            exit( -1 )
+            DIRAC.exit( -1 )
           return result
 
         result = execMySQL( 'SHOW STATUS' )
@@ -1821,18 +1859,22 @@ def installDatabase( dbName ):
           error = 'Could not connect to MySQL server'
           gLogger.error( error )
           if exitOnError:
-            exit( -1 )
+            DIRAC.exit( -1 )
           return S_ERROR( error )
-        for cmd in ["GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON `%s`.* TO 'Dirac'@'localhost' IDENTIFIED BY '%s'" % ( dbName, mysqlPassword ),
-                    "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON `%s`.* TO 'Dirac'@'%s' IDENTIFIED BY '%s'" % ( dbName, mysqlHost, mysqlPassword ),
-                    "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON `%s`.* TO 'Dirac'@'%%' IDENTIFIED BY '%s'" % ( dbName, mysqlPassword ),
+        perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER"
+        for cmd in ["GRANT %s ON `%s`.* TO 'Dirac'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName,
+                                                                                       mysqlPassword ),
+                    "GRANT %s ON `%s`.* TO 'Dirac'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName,
+                                                                                mysqlHost, mysqlPassword ),
+                    "GRANT %s ON `%s`.* TO 'Dirac'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName,
+                                                                                mysqlPassword ),
                     ]:
           result = execMySQL( cmd )
           if not result['OK']:
             error = 'Error setting MySQL permissions'
             gLogger.error( error, result['Message'] )
             if exitOnError:
-              exit( -1 )
+              DIRAC.exit( -1 )
             return S_ERROR( error )
         dbAdded = True
         result = execMySQL( 'FLUSH PRIVILEGES' )
@@ -1843,16 +1885,16 @@ def installDatabase( dbName ):
           return result
 
       elif dbAdded:
-        if l.strip():
-          cmdLines.append( l.strip() )
-        if l.strip() and l.strip()[-1] == ';':
+        if line.strip():
+          cmdLines.append( line.strip() )
+        if line.strip() and line.strip()[-1] == ';':
           result = execMySQL( '\n'.join( cmdLines ), dbName )
           if not result['OK']:
             error = 'Failed to initialize Database'
             gLogger.notice( '\n'.join( cmdLines ) )
             gLogger.error( error, result['Message'] )
             if exitOnError:
-              exit( -1 )
+              DIRAC.exit( -1 )
             return S_ERROR( error )
           cmdLines = []
 
@@ -1863,42 +1905,42 @@ def installDatabase( dbName ):
         try:
           dbFile = cmd.split()[1]
           dbFile = os.path.join( rootPath, dbFile )
-          f = open( dbFile )
-          dbLines = f.readlines()
-          f.close()
+          fd = open( dbFile )
+          dbLines = fd.readlines()
+          fd.close()
           cmdLines = []
-          for l in dbLines:
-            if l.strip():
-              cmdLines.append( l.strip() )
-            if l.strip() and l.strip()[-1] == ';':
+          for line in dbLines:
+            if line.strip():
+              cmdLines.append( line.strip() )
+            if line.strip() and line.strip()[-1] == ';':
               result = execMySQL( '\n'.join( cmdLines ), dbName )
               if not result['OK']:
                 error = 'Failed to initialize Database'
                 gLogger.notice( '\n'.join( cmdLines ) )
                 gLogger.error( error, result['Message'] )
                 if exitOnError:
-                  exit( -1 )
+                  DIRAC.exit( -1 )
                 return S_ERROR( error )
               cmdLines = []
-        except:
+        except Exception:
           error = 'Failed to %s' % cmd
           gLogger.exception( error )
           if exitOnError:
-            exit( -1 )
+            DIRAC.exit( -1 )
           return S_ERROR( error )
 
     if not dbAdded:
       error = 'Missing "use %s;"' % dbName
       gLogger.error( error )
       if exitOnError:
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
-  except:
+  except Exception:
     error = 'Failed to create Database'
     gLogger.exception( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   return S_OK( dbFile.split( '/' )[-4:-2] )
@@ -1917,7 +1959,7 @@ def execMySQL( cmd, dbName = 'mysql' ):
     error = 'Could not connect to MySQL server'
     gLogger.error( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
   return db[dbName]._query( cmd )
 
@@ -1939,7 +1981,6 @@ def configureCE( ceName = '', ceType = '', cfg = None, currentSectionPath = '' )
   Produce new dirac.cfg including configuration for new CE
   """
   from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
-  from DIRAC.Resources.Computing.ComputingElement          import getLocalCEConfigDict
   from DIRAC import gConfig
   cesCfg = ResourcesDefaults.getComputingElementDefaults( ceName, ceType, cfg, currentSectionPath )
   ceNameList = cesCfg.listSections()
@@ -1947,7 +1988,7 @@ def configureCE( ceName = '', ceType = '', cfg = None, currentSectionPath = '' )
     error = 'No CE Name provided'
     gLogger.error( error )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return S_ERROR( error )
 
   for ceName in ceNameList:
@@ -1955,7 +1996,7 @@ def configureCE( ceName = '', ceType = '', cfg = None, currentSectionPath = '' )
       error = 'Missing Type for CE "%s"' % ceName
       gLogger.error( error )
       if exitOnError:
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
   localsiteCfg = localCfg['LocalSite']
@@ -1974,17 +2015,17 @@ def configureCE( ceName = '', ceType = '', cfg = None, currentSectionPath = '' )
     ceFactory = ComputingElementFactory()
     try:
       ceInstance = ceFactory.getCE( ceType, ceName )
-    except Exception, x:
+    except Exception:
       error = 'Fail to instantiate CE'
       gLogger.exception( error )
       if exitOnError:
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
     if not ceInstance['OK']:
       error = 'Fail to instantiate CE: %s' % ceInstance['Message']
       gLogger.error( error )
       if exitOnError:
-        exit( -1 )
+        DIRAC.exit( -1 )
       return S_ERROR( error )
 
   # Everything is OK, we can save the new cfg
@@ -2024,7 +2065,7 @@ def execCommand( timeout, cmd ):
     gLogger.error( 'Failed to execute', cmd[0] )
     gLogger.error( result['Message'] )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     return result
 
   if result['Value'][0]:
@@ -2032,7 +2073,7 @@ def execCommand( timeout, cmd ):
     gLogger.error( error, cmd[0] )
     gLogger.error( 'Exit code:' , ( '%s\n' % result['Value'][0] ) + '\n'.join( result['Value'][1:] ) )
     if exitOnError:
-      exit( -1 )
+      DIRAC.exit( -1 )
     error = S_ERROR( error )
     error['Value'] = result['Value']
     return error

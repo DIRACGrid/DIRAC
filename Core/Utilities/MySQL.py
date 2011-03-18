@@ -84,16 +84,36 @@ from DIRAC                                  import S_OK, S_ERROR
 import MySQLdb
 # This is for proper initialization of embeded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
-instances = 0
+gInstancesCount = 0
 
 import Queue
 import types
 import time
-import string
 import threading
 from types import StringTypes, DictType
 
 maxConnectRetry = 10
+
+def _checkQueueSize( maxQueueSize ):
+
+  if maxQueueSize <= 0:
+    raise Exception( 'MySQL.__init__: maxQueueSize must positive' )
+  try:
+    maxQueueSize - 1
+  except Exception:
+    raise Exception( 'MySQL.__init__: wrong type for maxQueueSize' )
+
+def _checkFields( inFields, inValues ):
+
+  if inFields == None and inValues == None:
+    return S_OK()
+
+  if len( inFields ) != len( inValues ):
+    return S_ERROR( 'Missmatch between inFields and inValues.' )
+  return S_OK()
+
+
+
 
 class MySQL:
   """
@@ -105,23 +125,19 @@ class MySQL:
     """
     set MySQL connection parameters and try to connect
     """
-    global instances
-    instances += 1
+    global gInstancesCount
+    gInstancesCount += 1
 
     self._connected = False
 
-    try:
-      # This allows derived classes from MySQL to define their onw
-      # self.logger and will not be overwritten.
-      test = self.logger
-    except:
+    if 'logger' not in dir( self ):
       self.logger = gLogger.getSubLogger( 'MySQL' )
 
     # let the derived class decide what to do with if is not 1
     self._threadsafe = MySQLdb.thread_safe()
     self.logger.debug( 'thread_safe = %s' % self._threadsafe )
 
-    self.__checkQueueSize( maxQueueSize )
+    _checkQueueSize( maxQueueSize )
 
     self.__hostName = str( hostName )
     self.__userName = str( userName )
@@ -137,59 +153,42 @@ class MySQL:
 
 
   def __del__( self ):
-    global instances
+    global gInstancesCount
     try:
       while 1 and self.__initialized:
         self.__connectionSemaphore.release()
         try:
           connection = self.__connectionQueue.get_nowait()
           connection.close()
-        except Queue.Empty, x:
+        except Queue.Empty:
           self.logger.debug( 'No more connection in Queue' )
           break
-      if instances == 1:
+      if gInstancesCount == 1:
         # only when the last instance of a MySQL object is deleted, the server
         # can be ended
         MySQLdb.server_end()
-      instances -= 1
-    except:
+      gInstancesCount -= 1
+    except Exception:
       pass
 
-  def __checkQueueSize( self, maxQueueSize ):
-
-    if maxQueueSize <= 0:
-      raise Exception( 'MySQL.__init__: maxQueueSize must positive' )
-    try:
-      test = maxQueueSize - 1
-    except:
-      raise Exception( 'MySQL.__init__: wrong type for maxQueueSize' )
-
-
-  def _except( self, methodName, v, err ):
+  def _except( self, methodName, x, err ):
     """
     print MySQL error or exeption
     return S_ERROR with Exception
     """
 
     try:
-      raise v
+      raise x
     except MySQLdb.Error, e:
       self.logger.debug( '%s: %s' % ( methodName, err ),
                      '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
-    except Exception, x:
-      self.logger.debug( '%s: %s' % ( methodName, err ), str( x ) )
-      return S_ERROR( '%s: (%s)' % ( err, str( x ) ) )
+    except Exception, e:
+      self.logger.debug( '%s: %s' % ( methodName, err ), str( e ) )
+      return S_ERROR( '%s: (%s)' % ( err, str( e ) ) )
 
 
-  def __checkFields( self, inFields, inValues ):
-
-    if len( inFields ) != len( inValues ):
-      return S_ERROR( 'Missmatch between inFields and inValues.' )
-    return S_OK()
-
-
-  def __escapeString( self, s, connection ):
+  def __escapeString( self, myString, connection ):
     """
     To be used for escaping any MySQL string before passing it to the DB
     this should prevent passing non-MySQL acepted characters to the DB
@@ -197,11 +196,11 @@ class MySQL:
     """
 
     try:
-      escape_string = connection.escape_string( str( s ) )
+      escape_string = connection.escape_string( str( myString ) )
       self.logger.debug( '__scape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
     except Exception, x:
-      self.logger.debug( '__escape_string: Could not escape string', '"%s"' % s )
+      self.logger.debug( '__escape_string: Could not escape string', '"%s"' % myString )
       return self._except( '__escape_string', x, 'Could not escape string' )
 
   def __checkTable( self, tableName, force = False ):
@@ -223,31 +222,36 @@ class MySQL:
     return S_OK()
 
 
-  def _escapeString( self, s, conn = False ):
-    self.logger.debug( '_scapeString:', '"%s"' % s )
+  def _escapeString( self, myString, conn = None ):
+    self.logger.debug( '_scapeString:', '"%s"' % myString )
 
     retDict = self.__getConnection( conn )
-    if not retDict['OK'] : return retDict
+    if not retDict['OK']:
+      return retDict
     connection = retDict['Value']
 
-    retDict = self.__escapeString( s, connection )
+    retDict = self.__escapeString( myString, connection )
     if not conn:
       self.__putConnection( connection )
 
     return retDict
 
 
-  def _escapeValues( self, inValues = [] ):
+  def _escapeValues( self, inValues = None ):
     """
     Escapes all strings in the list of values provided
     """
     self.logger.debug( '_escapeValues:', inValues )
 
     retDict = self.__getConnection()
-    if not retDict['OK'] : return retDict
+    if not retDict['OK']:
+      return retDict
     connection = retDict['Value']
 
     inEscapeValues = []
+
+    if not inValues:
+      return S_OK( inEscapeValues )
 
     for value in inValues:
       if type( value ) in StringTypes:
@@ -284,7 +288,7 @@ class MySQL:
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
-  def _query( self, cmd, conn = False ):
+  def _query( self, cmd, conn = None ):
     """
     execute MySQL query command
     return S_OK structure with fetchall result as tuple
@@ -297,7 +301,8 @@ class MySQL:
       connection = conn
     else:
       retDict = self._getConnection()
-      if not retDict['OK'] : return retDict
+      if not retDict['OK']:
+        return retDict
       connection = retDict[ 'Value' ]
 
     try:
@@ -321,13 +326,13 @@ class MySQL:
 
     try:
       cursor.close()
-    except Exception, v:
+    except Exception:
       pass
 
     return retDict
 
 
-  def _update( self, cmd, conn = False ):
+  def _update( self, cmd, conn = None ):
     """ execute MySQL update command
         return S_OK with number of updated registers upon success
         return S_ERROR upon error
@@ -335,7 +340,8 @@ class MySQL:
     self.logger.debug( '_update:', cmd )
 
     retDict = self.__getConnection( conn = conn )
-    if not retDict['OK'] : return retDict
+    if not retDict['OK']:
+      return retDict
     connection = retDict['Value']
 
     try:
@@ -352,7 +358,7 @@ class MySQL:
 
     try:
       cursor.close()
-    except Exception, v:
+    except Exception:
       pass
     if not conn:
       self.__putConnection( connection )
@@ -416,7 +422,6 @@ class MySQL:
     tableCreationList = [[]]
 
     auxiliaryTableList = []
-    primaryTableList = []
 
     i = 0
     extracted = True
@@ -477,13 +482,13 @@ class MySQL:
         if thisTable.has_key( 'Indexes' ):
           indexDict = thisTable['Indexes']
           for index in indexDict:
-            indexedFields = string.join( indexDict[index], '`, `' )
+            indexedFields = '`, `'.join( indexDict[index] )
             cmdList.append( 'INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
 
         if thisTable.has_key( 'UniqueIndexes' ):
           indexDict = thisTable['UniqueIndexes']
           for index in indexDict:
-            indexedFields = string.join( indexDict[index], '`, `' )
+            indexedFields = '`, `'.join( indexDict[index] )
             cmdList.append( 'UNIQUE INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
         if 'ForeignKeys' in thisTable:
           thisKeys = thisTable['ForeignKeys']
@@ -504,7 +509,7 @@ class MySQL:
           engine = 'InnoDB'
 
         cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
-               table, string.join( cmdList, ',\n' ), engine )
+               table, ',\n'.join( cmdList ), engine )
         retDict = self._update( cmd )
         if not retDict['OK']:
           return retDict
@@ -512,62 +517,68 @@ class MySQL:
 
     return S_OK()
 
-  def _insert( self, tableName, inFields = [], inValues = [], conn = False ):
+  def _insert( self, tableName, inFields = None, inValues = None, conn = None ):
     """
     Insert a new row in "tableName" assigning the values "inValues" to the
     fields "inFields".
     String type values will be appropriately escaped.
     """
     quotedInFields = []
-    for field in inFields:
-      quotedInFields.append( '`%s`' % field )
-    inFieldString = string.join( quotedInFields, ', ' )
+    if inFields != None:
+      for field in inFields:
+        quotedInFields.append( '`%s`' % field )
+    inFieldString = ', '.join( quotedInFields )
 
     self.logger.debug( '_insert:', 'inserting ( %s ) into table `%s`'
                           % ( inFieldString, tableName ) )
 
-    retDict = self.__checkFields( inFields, inValues )
-    if not retDict['OK']: return retDict
+    retDict = _checkFields( inFields, inValues )
+    if not retDict['OK']:
+      return retDict
 
     retDict = self._escapeValues( inValues )
-    if not retDict['OK']: return retDict
+    if not retDict['OK']:
+      return retDict
 
-    inValueString = string.join( retDict['Value'], ', ' )
+    inValueString = ', '.join( retDict['Value'] )
 
     return self._update( 'INSERT INTO `%s` ( %s ) VALUES ( %s )' %
                          ( tableName, inFieldString, inValueString ), conn )
 
 
-  def _getFields( self, tableName, outFields = [],
-                  inFields = [], inValues = [],
-                  limit = 0, conn = False ):
+  def _getFields( self, tableName, outFields = None,
+                  inFields = None, inValues = None,
+                  limit = 0, conn = None ):
     """
     Select "outFields" from "tableName" with
     conditions lInFields = lInValues
     N records can match the condition
     return S_OK( tuple(Field,Value) )
-    if outFields = [] all fields in "tableName" are returned
-    if inFields and inValues are [], no condition is imposed
+    if outFields == None all fields in "tableName" are returned
+    if inFields and inValues are None, no condition is imposed
     if limit is not 0, the given limit is set
-    Strings inValues are properly scaped using the _escape_string method.
+    Strings inValues are properly escaped using the _escape_string method.
     """
     self.logger.debug( '_getFields:', 'selecting fields %s from table `%s`.' %
                           ( str( outFields ), tableName ) )
 
     quotedOutFields = []
-    for field in outFields:
-      quotedOutFields.append( '`%s`' % field )
+    if outFields != None:
+      for field in outFields:
+        quotedOutFields.append( '`%s`' % field )
 
-    outFieldString = string.join( quotedOutFields, ', ' )
-    if not outFieldString: outFieldString = '*'
+    outFieldString = ', '.join( quotedOutFields )
+    if not outFieldString:
+      outFieldString = '*'
 
-    retDict = self.__checkFields( inFields, inValues )
+    retDict = _checkFields( inFields, inValues )
     if not retDict['OK']:
       self.logger.debug( '_getFields: %s' % retDict['Message'] )
       return retDict
 
     retDict = self._escapeValues( inValues )
-    if not retDict['OK']: return retDict
+    if not retDict['OK']:
+      return retDict
     escapeInValues = retDict['Value']
 
     condition = ''
@@ -640,7 +651,7 @@ class MySQL:
     self.__connectionSemaphore.release()
     return retDict
 
-  def __getConnection( self, conn = False, trial = 0 ):
+  def __getConnection( self, conn = None, trial = 0 ):
     """
     Return a new connection to the DB,
     if conn is provided then just return it.
@@ -650,7 +661,8 @@ class MySQL:
     """
     self.logger.debug( '__getConnection:' )
 
-    if conn: return S_OK( conn )
+    if conn:
+      return S_OK( conn )
 
     try:
       self.__connectionSemaphore.acquire()
