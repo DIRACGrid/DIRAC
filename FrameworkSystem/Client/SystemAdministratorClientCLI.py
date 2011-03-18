@@ -516,6 +516,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     else:
       print "Software successfully updated."
       print "You should restart the services to use the new software version."
+      print "Think of updating /Operation/<vo>/<setup>/Versions section in the CS"
 
   def do_add( self, args ):
     """ 
