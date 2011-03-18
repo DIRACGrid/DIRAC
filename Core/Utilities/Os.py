@@ -32,52 +32,52 @@ def uniquePath( path = None ):
   except:
     return None
 
-def getDiskSpace(path='.'):
+def getDiskSpace( path = '.' ):
   """ Get the free disk space in the partition containing the path.
       The disk space is reported in MBytes. Returned 0 in case of any
       error, e.g. path does not exist
   """
 
-  if not os.path.exists(path):
-    return -1
+  if not os.path.exists( path ):
+    return - 1
   comm = 'df -P -m %s | tail -1' % path
-  resultDF = shellCall(0,comm)
+  resultDF = shellCall( 0, comm )
   if resultDF['OK'] and not resultDF['Value'][0]:
     output = resultDF['Value'][1]
-    if output.find(' /afs') >= 0 :    # AFS disk space
+    if output.find( ' /afs' ) >= 0 :    # AFS disk space
       comm = 'fs lq | tail -1'
-      resultAFS = shellCall(0,comm)
+      resultAFS = shellCall( 0, comm )
       if resultAFS['OK'] and not resultAFS['Value'][0]:
         output = resultAFS['Value'][1]
         fields = output.split()
-        quota = long(fields[1])
-        used = long(fields[2])
-        space = (quota-used)/1024
-        return int(space)
+        quota = long( fields[1] )
+        used = long( fields[2] )
+        space = ( quota - used ) / 1024
+        return int( space )
       else:
-        return -1
+        return - 1
     else:
       print output
       fields = output.split()
-      return int(fields[3])
+      return int( fields[3] )
   else:
-    return -1
+    return - 1
 
-def getDirectorySize(path):
+def getDirectorySize( path ):
   """ Get the total size of the given directory in MB
   """
 
   comm = "du -s -m %s" % path
-  result = shellCall(0,comm)
+  result = shellCall( 0, comm )
   if not result['OK'] or result['Value'][0] != 0:
     return 0
   else:
     output = result['Value'][1]
     print output
-    size = int(output.split()[0])
+    size = int( output.split()[0] )
     return size
 
-def sourceEnv( timeout, cmdTuple, inputEnv=None ):
+def sourceEnv( timeout, cmdTuple, inputEnv = None ):
   """ Function to source configuration files in a platform dependent way and get 
       back the environment
   """
@@ -103,11 +103,11 @@ def sourceEnv( timeout, cmdTuple, inputEnv=None ):
   # On Linux or Darwin use bash and source the file.
   if DIRAC.platformTuple[0] == 'Windows':
     # this needs to be tested
-    cmd = ' '.join(cmdTuple) + envAsDict
-    ret = DIRAC.shellCall( timeout, [ cmd ], env = inputEnv ) 
+    cmd = ' '.join( cmdTuple ) + envAsDict
+    ret = DIRAC.shellCall( timeout, [ cmd ], env = inputEnv )
   else:
-    cmdTuple.insert(0,'source')
-    cmd = ' '.join(cmdTuple) + envAsDict
+    cmdTuple.insert( 0, 'source' )
+    cmd = ' '.join( cmdTuple ) + envAsDict
     ret = DIRAC.systemCall( timeout, [ '/bin/bash', '-c', cmd ], env = inputEnv )
 
   # 3.- Now get back the result
@@ -117,19 +117,19 @@ def sourceEnv( timeout, cmdTuple, inputEnv=None ):
   if ret['OK']:
     # The Command has not timeout, retrieve stdout and stderr
     stdout = ret['Value'][1]
-    stderr = ret['Value'][2] 
+    stderr = ret['Value'][2]
     if ret['Value'][0] == 0:
       # execution was OK
       try:
-        result['outputEnv'] = eval( stderr.split('\n')[-2]+'\n' )
-        stderr = '\n'.join(stderr.split('\n')[:-2])
+        result['outputEnv'] = eval( stderr.split( '\n' )[-2] + '\n' )
+        stderr = '\n'.join( stderr.split( '\n' )[:-2] )
       except:
         stdout = cmd + '\n' + stdout
-        result = DIRAC.S_ERROR('Could not parse Environment dictionary from stderr')
+        result = DIRAC.S_ERROR( 'Could not parse Environment dictionary from stderr' )
     else:
       # execution error
       stdout = cmd + '\n' + stdout
-      result = DIRAC.S_ERROR('Execution returns %s' % ret['Value'][0] )
+      result = DIRAC.S_ERROR( 'Execution returns %s' % ret['Value'][0] )
   else:
     # Timeout
     stdout = cmd
@@ -139,17 +139,17 @@ def sourceEnv( timeout, cmdTuple, inputEnv=None ):
   # 4.- Put stdout and stderr in result structure
   result['stdout'] = stdout
   result['stderr'] = stderr
-  
+
   return result
 
 def unifyLdLibraryPath( path, newpath ):
   """ for Linux and MacOS link all the files in the path in a single directory 
       newpath. For that we go along the path in a reverse order and link all files
       from the path, the latest appearance of a file will take precedence
-  """    
+  """
   if not DIRAC.platformTuple[0] == 'Windows':
     if os.path.exists( newpath ):
-      if not os.path.isdir(newpath):
+      if not os.path.isdir( newpath ):
         try:
           os.remove( newpath )
         except:
@@ -159,15 +159,15 @@ def unifyLdLibraryPath( path, newpath ):
         os.makedirs( newpath )
       except:
         return path
-    pathList = path.split(':')
+    pathList = path.split( ':' )
     for dummy in pathList[:]:
       ldDir = pathList.pop()
       if not os.path.isdir( ldDir ):
         continue
       ldLibs = os.listdir( ldDir )
       for f in ldLibs:
-        newF = os.path.join( newpath,f )
-        ldF  = os.path.join( ldDir, f)
+        newF = os.path.join( newpath, f )
+        ldF = os.path.join( ldDir, f )
         # 1. Check if the file exist (broken links will return False)
         if os.path.isfile( ldF ):
           ldF = os.path.realpath( ldF )
