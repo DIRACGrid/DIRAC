@@ -1,5 +1,5 @@
 ########################################################################
-# $Id$
+# $HeadURL$
 ########################################################################
 
 """ ClassAd Class - a light purely Python representation of the
@@ -7,8 +7,6 @@
 """
 
 __RCSID__ = "$Id$"
-
-import string
 
 class ClassAd:
 
@@ -127,7 +125,7 @@ class ClassAd:
     """
 
     tmp = map ( lambda x : '"' + x + '"', attributelist )
-    tmpstr = string.join( tmp, ',' )
+    tmpstr = ','.join( tmp )
     self.contents[name] = '{' + tmpstr + '}'
 
   def lookupAttribute( self, name ):
@@ -175,9 +173,9 @@ class ClassAd:
 
     tempList = self.get_expression( name )[1:-1]
     resDict = {}
-    for p in tempList.split( ';' ):
-      if len( p.split( '=' ) ) == 2:
-        resDict[p.split( '=' )[0].strip()] = p.split( '=' )[1].strip().replace( '"', '' )
+    for item in tempList.split( ';' ):
+      if len( item.split( '=' ) ) == 2:
+        resDict[item.split( '=' )[0].strip()] = item.split( '=' )[1].strip().replace( '"', '' )
       else:
         return {}
 
@@ -233,7 +231,7 @@ class ClassAd:
     """
     value = ''
     if self.lookupAttribute( name ):
-      value = string.replace( self.get_expression( name ), '"', '' )
+      value = self.get_expression( name ).replace( '"', '' )
     return value
 
   def getAttributeInt( self, name ):
@@ -242,19 +240,18 @@ class ClassAd:
     value = 0
     if self.lookupAttribute( name ):
       try:
-        value = int( string.replace( self.get_expression( name ), '"', '' ) )
-      except:
+        value = int( self.get_expression( name ).replace( '"', '' ) )
+      except Exception:
         value = 0
     return value
 
   def getAttributeBool( self, name ):
     """ Get Boolean type attribute value
     """
-    value = False
     if self.lookupAttribute( name ):
-      value = string.replace( self.get_expression( name ), '"', '' )
+      value = self.get_expression( name ).replace( '"', '' )
     else:
-      return value
+      return False
     if value.lower() == "true":
       return True
     elif value.lower() == "false":
@@ -268,7 +265,7 @@ class ClassAd:
     value = 0.0
     if self.lookupAttribute( name ):
       try:
-        value = float( string.replace( self.get_expression( name ), '"', '' ) )
-      except:
+        value = float( self.get_expression( name ).replace( '"', '' ) )
+      except Exception:
         value = 0.0
     return value

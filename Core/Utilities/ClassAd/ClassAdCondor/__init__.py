@@ -6,17 +6,17 @@
    library. The ClassAd API is extended for the use in the
    DIRAC project
 """
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from ClassAdBase import ClassAd, MatchClassAd
-import string
 
 # Provide the API used in the DIRAC project
 
 def insertAttributeStringList( self, name, attrList ):
   """ Insert an attribute of type list of strings
   """
-  attrString = '{"' + string.join( attrList, '","' ) + '"}'
+  attrString = '{"' + '","'.join( attrList ) + '"}'
   result = self.insertExpression( name, attrString )
   return result
 
