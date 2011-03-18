@@ -43,13 +43,13 @@ def setDevelBranch( optionValue ):
   return S_OK()
 
 def setPreBranch( optionValue ):
-  global branchPrefix
+  global branchPrefix, branchName
   branchPrefix = "pre"
   branchName = optionValue
   return S_OK()
 
 def setReleaseBranch( optionValue ):
-  global branchPrefix
+  global branchPrefix, branchName
   branchPrefix = "rel"
   branchName = optionValue
   return S_OK()
