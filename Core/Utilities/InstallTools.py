@@ -1060,6 +1060,9 @@ def setupSite( scriptCfg, cfg = None ):
         gLogger.error( error )
         DIRAC.exit( -1 )
       return S_ERROR( error )
+    serviceSysInstance = serviceTupe[0]
+    if not serviceSysInstance in setupSystems:
+      setupSystems.append(serviceSysInstance)
 
   for agentTuple in setupAgents:
     error = ''
@@ -1072,6 +1075,9 @@ def setupSite( scriptCfg, cfg = None ):
         gLogger.error( error )
         DIRAC.exit( -1 )
       return S_ERROR( error )
+    agentSysInstance = agentTuple[0]
+    if not agentSysInstance in setupSystems:
+      setupSystems.append(agentSysInstance)
 
   # And to find out the available extensions
   result = getExtensions()
