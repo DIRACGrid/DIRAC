@@ -17,10 +17,11 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAg
 class LocalConfiguration:
   """
     Main class to interface with Configuration of a running DIRAC Component.
+
     For most cases this is handled via 
-    - DIRAC.Core.Base.Script class for scripts
-    - dirac-agent for agents
-    - dirac-service for services 
+      - DIRAC.Core.Base.Script class for scripts
+      - dirac-agent for agents
+      - dirac-service for services 
   """
 
   def __init__( self, defaultSectionPath = "" ):

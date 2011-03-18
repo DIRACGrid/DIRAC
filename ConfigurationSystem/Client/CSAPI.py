@@ -208,12 +208,12 @@ class CSAPI:
   def addUser( self, username, properties ):
     """
     Add a user to the cs
-      -username
-      -properties is a dict with keys:
-        DN
-        groups
-        <extra params>
-      Returns True/False
+      - username
+      - properties is a dict with keys:
+        - DN
+        - groups
+        - <extra params>
+    Returns True/False
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
@@ -244,12 +244,12 @@ class CSAPI:
   def modifyUser( self, username, properties, createIfNonExistant = False ):
     """
     Modify a user
-      -username
-      -properties is a dict with keys:
-        DN
-        Groups
-        <extra params>
-      Returns True/False
+      - username
+      - properties is a dict with keys:
+        - DN
+        - Groups
+        - <extra params>
+    Returns True/False
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
@@ -301,12 +301,12 @@ class CSAPI:
   def addGroup( self, groupname, properties ):
     """
     Add a group to the cs
-      -groupname
-      -properties is a dict with keys:
-        Users
-        Properties
-        <extra params>
-      Returns True/False
+      - groupname
+      - properties is a dict with keys:
+        - Users
+        - Properties
+        - <extra params>
+    Returns True/False
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
@@ -323,12 +323,12 @@ class CSAPI:
   def modifyGroup( self, groupname, properties, createIfNonExistant = False ):
     """
     Modify a user
-      -groupname
-      -properties is a dict with keys:
-        Users
-        Properties
-        <extra params>
-      Returns True/False
+      - groupname
+      - properties is a dict with keys:
+        - Users
+        - Properties
+        - <extra params>
+    Returns True/False
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
@@ -356,12 +356,12 @@ class CSAPI:
   def addHost( self, hostname, properties ):
     """
     Add a host to the cs
-      -hostname
-      -properties is a dict with keys:
-        DN
-        Properties
-        <extra params>
-      Returns True/False
+      - hostname
+      - properties is a dict with keys:
+        - DN
+        - Properties
+        - <extra params>
+    Returns True/False
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
@@ -382,12 +382,12 @@ class CSAPI:
   def modifyHost( self, hostname, properties, createIfNonExistant = False ):
     """
     Modify a user
-      -hostname
-      -properties is a dict with keys:
-        DN
-        Properties
-        <extra params>
-      Returns True/False
+      - hostname
+      - properties is a dict with keys:
+        - DN
+        - Properties
+        - <extra params>
+    Returns True/False
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )

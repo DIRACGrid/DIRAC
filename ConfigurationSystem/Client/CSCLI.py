@@ -101,7 +101,8 @@ class CSCLI( cmd.Cmd ):
   def do_quit( self, dummy ):
     """
     Exits the application without sending changes to server
-        Usage: quit
+
+    Usage: quit
     """
     if self.modifiedData:
       print "Changes are about to be written to file for later use."
@@ -112,8 +113,11 @@ class CSCLI( cmd.Cmd ):
   def do_help( self, args ):
     """
     Shows help information
-        Usage: help <command>
-        If no command is specified all commands are shown
+
+    Usage: help <command>
+
+    If no command is specified all commands are shown
+
     """
     if len( args ) == 0:
       print "\nAvailable commands:\n"
@@ -171,7 +175,8 @@ class CSCLI( cmd.Cmd ):
   def do_connect( self, args = '' ):
     """
     Connects to configuration master server (in specified url if provided).
-        Usage: connect <url>
+    
+    Usage: connect <url>
     """
     if not args or type( args ) not in types.StringTypes:
       self.masterURL = gConfigurationData.getMasterServer()
@@ -192,7 +197,8 @@ class CSCLI( cmd.Cmd ):
     """
     Shows all sections with their comments.
     If no section is specified, root is taken.
-        Usage: sections <section>
+
+    Usage: sections <section>
     """
     try:
       argList = args.split()
@@ -216,7 +222,8 @@ class CSCLI( cmd.Cmd ):
   def do_options( self, args ):
     """
     Shows all options and values of a specified section
-        Usage: options <section>
+    
+    Usage: options <section>
     """
     try:
       argList = args.split()
@@ -241,7 +248,8 @@ class CSCLI( cmd.Cmd ):
   def do_get( self, args ):
     """
     Shows value and comment for specified option in section
-        Usage: get <path to option>
+    
+    Usage: get <path to option>
     """
     try:
       argList = args.split()
@@ -262,7 +270,8 @@ class CSCLI( cmd.Cmd ):
   def do_writeToServer( self, dummy ):
     """
     Sends changes to server.
-        Usage: writeToServer
+    
+    Usage: writeToServer
     """
     if not self.connected:
       print "You are not connected!"
@@ -302,9 +311,12 @@ class CSCLI( cmd.Cmd ):
   def do_set( self, args ):
     """
     Sets option's value
-        Usage: set <optionPath> <value>...
-        From second argument until the last one is considered option's value
-        NOTE: If specified section does not exist it is created.
+    
+    Usage: set <optionPath> <value>...
+
+    From second argument until the last one is considered option's value
+
+    NOTE: If specified section does not exist it is created.
     """
     try:
       argsList = args.split()
@@ -321,8 +333,10 @@ class CSCLI( cmd.Cmd ):
   def do_removeOption( self, args ):
     """
     Removes an option.
-        Usage: removeOption <option>
-        There can be empty sections.
+
+    Usage: removeOption <option>
+
+    There can be empty sections.
     """
     try:
       argsList = args.split()
@@ -345,7 +359,8 @@ class CSCLI( cmd.Cmd ):
   def do_removeSection( self, args ):
     """
     Removes a section.
-        Usage: removeSection <section>
+    
+    Usage: removeSection <section>
     """
     try:
       argsList = args.split()
@@ -368,8 +383,10 @@ class CSCLI( cmd.Cmd ):
   def do_setComment( self, args ):
     """
     Sets option or section's comment. Requested entry MUST exist.
-        Usage: set <option/section> <comment>...
-        From third argument until the last one is considered option's comment.
+
+    Usage: set <option/section> <comment>...
+
+    From third argument until the last one is considered option's comment.
     """
     try:
       argsList = args.split()
@@ -386,9 +403,11 @@ class CSCLI( cmd.Cmd ):
   def do_writeToFile( self, args ):
     """
     Writes modification to file for later use.
-        Usage: writeToFile <filename>.cfg
-        Note that if a file extension is specified, it is replaced by .cfg suffix
-        If not it is added automatically
+
+    Usage: writeToFile <filename>.cfg
+
+    Note that if a file extension is specified, it is replaced by .cfg suffix.
+    If not it is added automatically
     """
     try:
       if len( args ) == 0:
@@ -403,9 +422,11 @@ class CSCLI( cmd.Cmd ):
   def do_readFromFile( self, args ):
     """
     Reads data from filename to be used. Actual data will be replaced!
-        Usage: readFromFile <filename>.cfg
-        Note that if a file extension is specified, it is replaced by .cfg suffix
-        If not it is added automatically
+    
+    Usage: readFromFile <filename>.cfg
+
+    Note that if a file extension is specified, it is replaced by .cfg suffix.
+    If not it is added automatically
     """
     try:
       if len( args ) == 0:
@@ -422,9 +443,11 @@ class CSCLI( cmd.Cmd ):
     """
     Reads data from filename and merges it with current data.
     Data read from file has more precedence that current one.
-        Usage: mergeFromFile <filename>.cfg
-        Note that if a file extension is specified, it is replaced by .cfg suffix.
-        If not it is added automatically
+
+    Usage: mergeFromFile <filename>.cfg
+        
+    Note that if a file extension is specified, it is replaced by .cfg suffix.
+    If not it is added automatically
     """
     try:
       if len( args ) == 0:
