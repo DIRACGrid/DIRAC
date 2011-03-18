@@ -1,11 +1,13 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import types
 import os
 import tempfile
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.Helpers import getVO
-from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
-from DIRAC.Core.Security import Locations, File
+from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security import Locations
 from DIRAC import gConfig, S_OK, S_ERROR
 
 class BaseSecurity:
@@ -61,12 +63,12 @@ class BaseSecurity:
 
   def _unlinkFiles( self, files ):
     if type( files ) in ( types.ListType, types.TupleType ):
-      for file in files:
-        self._unlinkFiles( file )
+      for fileName in files:
+        self._unlinkFiles( fileName )
     else:
       try:
         os.unlink( files )
-      except:
+      except Exception:
         pass
 
   def _generateTemporalFile( self ):

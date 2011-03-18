@@ -1,4 +1,5 @@
-
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import GSI
 

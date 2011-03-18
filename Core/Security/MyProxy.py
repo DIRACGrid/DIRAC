@@ -1,16 +1,13 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 
-import time
-import os
 import re
-import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
-import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
-from DIRAC.Core.Security.X509Chain import g_X509ChainType
 
 class MyProxy( BaseSecurity ):
 

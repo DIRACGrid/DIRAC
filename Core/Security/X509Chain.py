@@ -20,6 +20,8 @@ class X509Chain:
 
   def __init__( self, certList = False, keyObj = False ):
     self.__isProxy = False
+    self.__firstProxyStep = 0
+    self.__isLimitedProxy = True
     if certList:
       self.__loadedChain = True
       self.__certList = certList
@@ -318,7 +320,6 @@ class X509Chain:
           #If we are not in the first step we've found the entity cert
           if step > 0:
             self.__firstProxyStep = step - 1
-            checkProxyPart = False
           #If we are in the first step this is not a proxy
           else:
             self.__isProxy = False
@@ -482,12 +483,12 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    buffer = crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[0] )
+    data = crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[0] )
     if self.__loadedPKey:
-      buffer += crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj )
+      data += crypto.dump_privatekey( crypto.FILETYPE_PEM, self.__keyObj )
     for i in range( 1, len( self.__certList ) ):
-      buffer += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
-    return S_OK( buffer )
+      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[i] )
+    return S_OK( data )
 
   def dumpAllToFile( self, filename = False ):
     """
@@ -520,10 +521,10 @@ class X509Chain:
     """
     if not self.__loadedChain:
       return S_ERROR( "No chain loaded" )
-    buffer = ''
+    data = ''
     for i in range( len( self.__certList ) ):
-      buffer += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[1] )
-    return S_OK( buffer )
+      data += crypto.dump_certificate( crypto.FILETYPE_PEM, self.__certList[1] )
+    return S_OK( data )
 
   def dumpPKeyToString( self ):
     """

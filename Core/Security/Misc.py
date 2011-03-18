@@ -1,10 +1,11 @@
-import os
+# $HeadURL$
+__RCSID__ = "$Id$"
 import base64
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security import Locations, CS
+from DIRAC.Core.Security import Locations
 
 
 def getProxyInfo( proxy = False, disableVOMS = False ):
@@ -85,7 +86,7 @@ def formatProxyInfoAsString( infoDict ):
       continue
     if field == 'secondsLeft':
       secs = infoDict[ field ]
-      hours = int( secs /  3600 )
+      hours = int( secs / 3600 )
       secs -= hours * 3600
       mins = int( secs / 60 )
       secs -= mins * 60
@@ -122,7 +123,7 @@ def formatProxyStepsInfoAsString( infoList ):
   for i in range( len( infoList ) ):
     contentsList.append( " + Step %s" % i )
     stepInfo = infoList[i]
-    for key in ( 'subject', 'issuer', 'serial', 'not after', 'not before', 
+    for key in ( 'subject', 'issuer', 'serial', 'not after', 'not before',
                  'group', 'VOMS ext', 'lifetime', 'extensions' ):
       if key in stepInfo:
         value = stepInfo[ key ]
@@ -130,12 +131,13 @@ def formatProxyStepsInfoAsString( infoList ):
           value = base64.b16encode( value )
         if key == 'lifetime':
           secs = value
-          hours = int( secs /  3600 )
+          hours = int( secs / 3600 )
           secs -= hours * 3600
           mins = int( secs / 60 )
           secs -= mins * 60
           value = "%02d:%02d:%02d" % ( hours, mins, secs )
         if key == "extensions":
-          value = "\n   %s" % "\n   ".join( [ "%s = %s" % ( extName.strip().rjust(20), extValue.strip() ) for extName, extValue in value ] )
-        contentsList.append( "  %s : %s" % ( key.ljust(10).capitalize(), value ) )
+          value = "\n   %s" % "\n   ".join( [ "%s = %s" % ( extName.strip().rjust( 20 ), extValue.strip() )
+                                              for extName, extValue in value ] )
+        contentsList.append( "  %s : %s" % ( key.ljust( 10 ).capitalize(), value ) )
   return "\n".join( contentsList )

@@ -11,22 +11,26 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Security import CS
 
+# Not Used
+# def _proxyExtensionList( ):
+#   return [ GSI.crypto.X509Extension( 'keyUsage', 'critical, digitalSignature, keyEncipherment, dataEncipherment' ) ]
+
 class X509Certificate:
 
-  def __init__( self, x509Obj = False ):
+  def __init__( self, x509Obj = None ):
     self.__valid = False
     if x509Obj:
       self.__certObj = x509Obj
       self.__valid = True
 
-  def load(self,certificate):
+  def load( self, certificate ):
     """ Load a x509 certificate either from a file or from a string
     """
 
-    if os.path.exists(certificate):
-      return self.loadFromFile(certificate)
+    if os.path.exists( certificate ):
+      return self.loadFromFile( certificate )
     else:
-      return self.loadFromString(certificate)
+      return self.loadFromString( certificate )
 
   def loadFromFile( self, certLocation ):
     """
@@ -49,7 +53,7 @@ class X509Certificate:
     try:
       self.__certObj = GSI.crypto.load_certificate( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return S_ERROR( "Can't load pem data: %s" % str(e) )
+      return S_ERROR( "Can't load pem data: %s" % str( e ) )
     self.__valid = True
     return S_OK()
 
@@ -105,7 +109,7 @@ class X509Certificate:
       return S_ERROR( "No certificate loaded" )
     return S_OK( self.__certObj.get_issuer().one_line() )
 
-  def getSubjectNameObject(self):
+  def getSubjectNameObject( self ):
     """
     Get subject name object
     Return: S_OK( X509Name )/S_ERROR
@@ -114,7 +118,7 @@ class X509Certificate:
       return S_ERROR( "No certificate loaded" )
     return S_OK( self.__certObj.get_subject() )
 
-  def getIssuerNameObject(self):
+  def getIssuerNameObject( self ):
     """
     Get issuer name object
     Return: S_OK( X509Name )/S_ERROR
@@ -123,7 +127,7 @@ class X509Certificate:
       return S_ERROR( "No certificate loaded" )
     return S_OK( self.__certObj.get_issuer() )
 
-  def getPublicKey(self):
+  def getPublicKey( self ):
     """
     Get the public key of the certificate
     """
@@ -131,7 +135,7 @@ class X509Certificate:
       return S_ERROR( "No certificate loaded" )
     return S_OK( self.__certObj.get_pubkey() )
 
-  def getSerialNumber(self):
+  def getSerialNumber( self ):
     """
     Get certificate serial number
     Return: S_OK( serial )/S_ERROR
@@ -154,7 +158,7 @@ class X509Certificate:
       return S_OK( False )
     return S_OK( CS.getDefaultUserGroup() )
 
-  def hasVOMSExtensions(self):
+  def hasVOMSExtensions( self ):
     """
     Has voms extensions
     """
@@ -166,9 +170,6 @@ class X509Certificate:
         return S_OK( True )
     return S_OK( False )
 
-  def __proxyExtensionList(self):
-    return [ GSI.crypto.X509Extension( 'keyUsage', 'critical, digitalSignature, keyEncipherment, dataEncipherment' ) ]
-
   def generateProxyRequest( self, bitStrength = 1024, limited = False ):
     """
     Generate a proxy request
@@ -179,7 +180,7 @@ class X509Certificate:
 
     if not limited:
       subj = self.__certObj.get_subject()
-      lastEntry = subj.get_entry( subj.num_entries() -1 )
+      lastEntry = subj.get_entry( subj.num_entries() - 1 )
       if lastEntry[0] == 'CN' and lastEntry[1] == "limited proxy":
         limited = True
 
@@ -198,7 +199,7 @@ class X509Certificate:
     notAfter = self.__certObj.get_not_after()
     remaining = notAfter - Time.dateTime()
     return S_OK( max( 0, remaining.days * 86400 + remaining.seconds ) )
-    
+
   def getExtensions( self ):
     """
     Get a decoded list of extensions
@@ -210,7 +211,7 @@ class X509Certificate:
       sn = ext.get_sn()
       try:
         value = ext.get_value()
-      except:
+      except Exception:
         value = "Cannot decode value"
       extList.append( ( sn, value ) )
     return S_OK( sorted( extList ) )

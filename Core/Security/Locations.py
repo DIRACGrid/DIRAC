@@ -1,3 +1,5 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import os
 import DIRAC

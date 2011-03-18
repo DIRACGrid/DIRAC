@@ -1,3 +1,5 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 import os
 import stat
 import tempfile
@@ -6,7 +8,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import g_X509ChainType, X509Chain
 from DIRAC.Core.Security.Locations import getProxyLocation
 
-def writeToProxyFile( proxyContents, fileName = False):
+def writeToProxyFile( proxyContents, fileName = False ):
   """
   Write an proxy string to file
   arguments:
@@ -16,20 +18,20 @@ def writeToProxyFile( proxyContents, fileName = False):
   if not fileName:
     try:
       fd, proxyLocation = tempfile.mkstemp()
-      os.close(fd)
+      os.close( fd )
     except IOError:
-      return S_ERROR('Failed to create temporary file')
+      return S_ERROR( 'Failed to create temporary file' )
     fileName = proxyLocation
   try:
     fd = open( fileName, 'w' )
     fd.write( proxyContents )
     fd.close()
   except Exception, e:
-    return S_ERROR( "Cannot write to file %s :%s" % ( fileName, str(e) ) )
+    return S_ERROR( "Cannot write to file %s :%s" % ( fileName, str( e ) ) )
   try:
     os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
   except Exception, e:
-    return S_ERROR( "Cannot set permissions to file %s :%s" % ( fileName, str(e) ) )
+    return S_ERROR( "Cannot set permissions to file %s :%s" % ( fileName, str( e ) ) )
   return S_OK( fileName )
 
 def writeChainToProxyFile( proxyChain, fileName ):
@@ -51,9 +53,9 @@ def writeChainToTemporaryFile( proxyChain ):
   """
   try:
     fd, proxyLocation = tempfile.mkstemp()
-    os.close(fd)
+    os.close( fd )
   except IOError:
-    return S_ERROR('Failed to create temporary file')
+    return S_ERROR( 'Failed to create temporary file' )
   retVal = writeChainToProxyFile( proxyChain, proxyLocation )
   if not retVal[ 'OK' ]:
     try:
@@ -104,7 +106,7 @@ def multiProxyArgument( proxy = False ):
       proxyLoc = proxy
     #Load proxy
     proxy = X509Chain()
-    retVal = proxy.loadProxyFromFile( proxyLoc)
+    retVal = proxy.loadProxyFromFile( proxyLoc )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't load proxy at %s" % proxyLoc )
   return S_OK( { 'file' : proxyLoc,

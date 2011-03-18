@@ -1,3 +1,5 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 #
 TRUSTED_HOST = "TrustedHost"
 # Normal user operations

@@ -17,8 +17,9 @@ class X509Request:
     if reqObj and pkeyObj:
       self.__valid = True
 
-  def setParentCerts( self, certList ):
-    self.__cerList = certList
+  # It is not used
+  # def setParentCerts( self, certList ):
+  #   self.__cerList = certList
 
   def generateProxyRequest( self, bitStrength = 1024, limited = False ) :
     self.__pkeyObj = GSI.crypto.PKey()
@@ -38,7 +39,7 @@ class X509Request:
     if not self.__valid:
       return S_ERROR( "No request loaded" )
     try:
-      reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj  )
+      reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj )
     except Exception, e:
       return S_ERROR( "Can't serialize request: %s" % str( e ) )
     return S_OK( reqStr )
@@ -56,7 +57,7 @@ class X509Request:
     if not self.__valid:
       return S_ERROR( "No request loaded" )
     try:
-      pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj  )
+      pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
     except Exception, e:
       return S_ERROR( "Can't serialize pkey: %s" % str( e ) )
     return S_OK( pkeyStr )
@@ -69,11 +70,11 @@ class X509Request:
       return S_ERROR( "No request loaded" )
 
     try:
-      reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj  )
+      reqStr = GSI.crypto.dump_certificate_request( GSI.crypto.FILETYPE_PEM, self.__reqObj )
     except Exception, e:
       return S_ERROR( "Can't serialize request: %s" % str( e ) )
     try:
-      pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj  )
+      pkeyStr = GSI.crypto.dump_privatekey( GSI.crypto.FILETYPE_PEM, self.__pkeyObj )
     except Exception, e:
       return S_ERROR( "Can't serialize pkey: %s" % str( e ) )
     return S_OK( "%s%s" % ( reqStr, pkeyStr ) )
@@ -84,7 +85,7 @@ class X509Request:
     except Exception, e:
       return S_ERROR( "Can't load request: %s" % str( e ) )
     try:
-      self.__pkeyObj = GSI.crypto.load_privatekey( GSI.crypto.FILETYPE_PEM, pemData  )
+      self.__pkeyObj = GSI.crypto.load_privatekey( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
       return S_ERROR( "Can't load pkey: %s" % str( e ) )
     self.__valid = True
@@ -100,7 +101,7 @@ class X509Request:
     try:
       certList = GSI.crypto.load_certificate_chain( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
-      return S_ERROR( "Can't load pem data: %s" % str(e) )
+      return S_ERROR( "Can't load pem data: %s" % str( e ) )
     chain = X509Chain()
     chain.setChain( certList )
     chain.setPKey( self.__pkeyObj )

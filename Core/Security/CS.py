@@ -2,7 +2,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
 
@@ -64,22 +63,30 @@ def getAllUsers():
     return []
   return retVal[ 'Value' ]
 
-def getUsersInGroup( groupName, defaultValue = [] ):
+def getUsersInGroup( groupName, defaultValue = None ):
   option = "%s/Groups/%s/Users" % ( gBaseSecuritySection, groupName )
+  if defaultValue == None:
+    return gConfig.getValue( option, [] )
   return gConfig.getValue( option, defaultValue )
 
-def getPropertiesForGroup( groupName, defaultValue = [] ):
+def getPropertiesForGroup( groupName, defaultValue = None ):
   option = "%s/Groups/%s/Properties" % ( gBaseSecuritySection, groupName )
+  if defaultValue == None:
+    return gConfig.getValue( option, [] )
   return gConfig.getValue( option, defaultValue )
 
-def getPropertiesForHost( hostName, defaultValue = [] ):
+def getPropertiesForHost( hostName, defaultValue = None ):
   option = "%s/Hosts/%s/Properties" % ( gBaseSecuritySection, hostName )
+  if defaultValue == None:
+    return gConfig.getValue( option, [] )
   return gConfig.getValue( option, defaultValue )
 
-def getPropertiesForEntity( group, name = "", DN = "", defaultValue = [] ):
+def getPropertiesForEntity( group, name = "", dn = "", defaultValue = None ):
+  if defaultValue == None:
+    defaultValue = []
   if group == 'hosts':
     if not name:
-      result = getHostnameForDN( DN )
+      result = getHostnameForDN( dn )
       if not result[ 'OK' ]:
         return defaultValue
       name = result[ 'Value' ]

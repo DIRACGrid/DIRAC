@@ -115,7 +115,7 @@ class VOMS( BaseSecurity ):
     if not retVal[ 'OK' ]:
       return retVal
     proxyDict = retVal[ 'Value' ]
-    chain = proxyDict[ 'chain' ]
+    # chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
     cmd = 'voms-proxy-info -dont-verify-ac -file %s' % proxyLocation
@@ -239,7 +239,8 @@ class VOMS( BaseSecurity ):
 
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
-    if tmpDir: shutil.rmtree( tmpDir )
+    if tmpDir:
+      shutil.rmtree( tmpDir )
 
     File.deleteMultiProxy( proxyDict )
 
