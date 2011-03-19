@@ -67,7 +67,7 @@ class AgentModule:
   
   """
 
-  def __init__( self, agentName, baseAgentName = False, properties = None ):
+  def __init__( self, agentName, baseAgentName = False, properties = {} ):
     """
       Common __init__ method for all Agents.
       All Agent modules must define:
@@ -317,7 +317,7 @@ class AgentModule:
     #Set the shifter proxy if required
     if self.__moduleProperties[ 'shifterProxy' ]:
       result = setupShifterProxyInEnv( self.__moduleProperties[ 'shifterProxy' ],
-                                       self.am_getShifterProxyLocaltion() )
+                                       self.am_getShifterProxyLocation() )
       if not result[ 'OK' ]:
         self.log.error( result['Message'] )
         return result

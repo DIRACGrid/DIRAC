@@ -81,7 +81,7 @@ class DB( MySQL ):
     self.log.info( "Host:           " + self.dbHost )
     #self.log.info("Password:       "+self.dbPass)
     self.log.info( "DBName:         " + self.dbName )
-    self.log.info( "MaxQueue:       " + self.maxQueueSize )
+    self.log.info( "MaxQueue:       " + str(self.maxQueueSize) )
     self.log.info( "==================================================" )
 
 ########################################################################################
