@@ -18,9 +18,9 @@ import types
 import datetime
 
 _dateTimeObject = datetime.datetime.utcnow()
-_dateTimeType =   type( _dateTimeObject )
-_dateType =       type( _dateTimeObject.date() )
-_timeType =       type( _dateTimeObject.time() )
+_dateTimeType = type( _dateTimeObject )
+_dateType = type( _dateTimeObject.date() )
+_timeType = type( _dateTimeObject.time() )
 
 g_dEncodeFunctions = {}
 g_dDecodeFunctions = {}
@@ -64,7 +64,7 @@ def decodeFloat( data, i ):
     end = data.index( 'e', end + 1 )
     value = float( data[i:eI] ) * 10 ** int( data[eI + 1:end] )
   else:
-    n = float( data[i:end] )
+    value = float( data[i:end] )
   return ( value, end + 1 )
 
 g_dEncodeFunctions[ types.FloatType ] = encodeFloat
