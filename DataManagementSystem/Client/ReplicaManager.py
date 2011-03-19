@@ -2026,7 +2026,7 @@ class ReplicaManager( CatalogToStorage ):
     for pfn in res['Value']['Successful'].keys():
       successful[pfnDict[pfn]]
     resDict = {'Successful':successful, 'Failed':failed}
-    return resDict
+    return S_OK(resDict)
 
   def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
     gLogger.verbose( "ReplicaManager.__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ), storageElementName ) )
