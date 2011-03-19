@@ -1,8 +1,8 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/TransformationSystem/Agent/WorkflowTaskAgent.py $
+# $HeadURL$
 ########################################################################
 """  The Request Task Agent takes workflow tasks created in the transformation database and submits to the workload management system. """
-__RCSID__ = "$Id: WorkflowTaskAgent.py 20001 2010-01-20 12:47:38Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase

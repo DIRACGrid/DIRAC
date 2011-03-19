@@ -1,7 +1,7 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/LHCbDIRAC/TransformationSystem/Agent/TransformationCleaningAgent.py $
+# $HeadURL$
 ########################################################################
-__RCSID__ = "$Id: TransformationCleaningAgent.py 28908 2010-10-05 07:57:08Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                                    import AgentModule

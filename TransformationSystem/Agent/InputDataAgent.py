@@ -1,8 +1,8 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/DIRAC/TransformationSystem/Agent/InputDataAgent.py $
+# $HeadURL$
 ########################################################################
 
-__RCSID__ = "$Id: InputDataAgent.py 28908 2010-10-05 07:57:08Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                                                import S_OK, S_ERROR, gConfig, gLogger, gMonitor
 from DIRAC.Core.Base.AgentModule                                          import AgentModule

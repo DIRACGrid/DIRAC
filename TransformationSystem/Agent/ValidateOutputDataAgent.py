@@ -1,7 +1,7 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/LHCbDIRAC/TransformationSystem/Agent/ValidateOutputDataAgent.py $
+# $HeadURL$
 ########################################################################
-__RCSID__ = "$Id: ValidateOutputDataAgent.py 28415 2010-09-15 17:47:54Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                                     import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                               import AgentModule

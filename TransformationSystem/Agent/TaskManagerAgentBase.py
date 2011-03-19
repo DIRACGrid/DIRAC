@@ -1,9 +1,9 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/TransformationSystem/Agent/TaskManagerAgentBase.py $
+# $HeadURL$
 ########################################################################
 """  The TaskManagerAgentBase is the base class to submit tasks to external systems, monitor and update the tasks and file status in the transformation DB. """
 
-__RCSID__ = "$Id: TaskManagerAgentBase.py 20001 2010-01-20 12:47:38Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                                    import AgentModule

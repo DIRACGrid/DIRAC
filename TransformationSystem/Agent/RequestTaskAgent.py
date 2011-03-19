@@ -1,8 +1,8 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/TransformationSystem/Agent/RequestTaskAgent.py $
+# $HeadURL$
 ########################################################################
 """  The Request Task Agent takes request tasks created in the transformation database and submits to the request management system. """
-__RCSID__ = "$Id: ReplicationSubmissionAgent.py 20001 2010-01-20 12:47:38Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
