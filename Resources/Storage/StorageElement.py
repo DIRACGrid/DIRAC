@@ -68,14 +68,17 @@ class StorageElement:
     self.writeMethods = [  'retransferOnlineFile',
                            'putFile',
                            'replicateFile',
-                           'removeFile',
                            'prestageFile',
                            'prestageFileStatus',
                            'pinFile',
                            'releaseFile',
                            'createDirectory',
-                           'removeDirectory',
                            'putDirectory']
+
+    self.removeMethods = [
+                           'removeFile',
+                           'removeDirectory',
+                          ]
 
   def dump( self ):
     """
@@ -120,6 +123,7 @@ class StorageElement:
     # If something is defined, then it must be set to Active
     retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
     retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
+    retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active' )
     diskSE = True
     tapeSE = False
     if self.options.has_key( 'SEType' ):
@@ -154,6 +158,9 @@ class StorageElement:
     writing = True
     if self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active':
       writing = False
+    removing = True
+    if self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active':
+      removing = False
     # Determine whether the requested operation can be fulfilled    
     if ( not operation ) and ( not reading ) and ( not writing ):
       gLogger.error( "StorageElement.isValid: Read and write access not permitted." )
@@ -166,6 +173,8 @@ class StorageElement:
       operation = 'Read'
     elif operation in self.writeMethods or ( operation.lower() == 'write' ):
       operation = 'Write'
+    elif operation in self.removeMethods or ( operation.lower() == 'remove' ):
+      operation = 'Remove'
     else:
       gLogger.error( "StorageElement.isValid: The supplied operation is not known.", operation )
       return S_ERROR( "StorageElement.isValid: The supplied operation is not known." )
@@ -178,6 +187,10 @@ class StorageElement:
       if not writing:
         gLogger.error( "StorageElement.isValid: Write access not currently permitted." )
         return S_ERROR( "StorageElement.isValid: Write access not currently permitted." )
+    if operation == 'Remove':
+      if not removing:
+        gLogger.error( "StorageElement.isValid: Remove access not currently permitted." )
+        return S_ERROR( "StorageElement.isValid: Remove access not currently permitted." )
     return S_OK()
 
   def getProtocols( self ):
