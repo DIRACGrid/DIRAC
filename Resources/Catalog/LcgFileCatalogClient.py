@@ -628,7 +628,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     lfc.lfc_umask( 0000 )
     for lfnList in breakListIntoChunks( sortList( lfns.keys() ), 1000 ):
       fileChunk = []
-      for lfn in lfnList:
+      for lfn in list( lfnList ):
         lfnInfo = lfns[lfn]
         pfn = lfnInfo['PFN']
         size = lfnInfo['Size']
