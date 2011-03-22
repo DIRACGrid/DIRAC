@@ -32,7 +32,7 @@ class ConfigurationData:
       gLogger.debug( "dirac.cfg should be at", "%s" % defaultCFGFile )
       retVal = self.loadFile( defaultCFGFile )
       if not retVal[ 'OK' ]:
-        gLogger.error( "Can't load %s file" % defaultCFGFile )
+        gLogger.warn( "Can't load %s file" % defaultCFGFile )
     self.sync()
 
   def getBackupDir( self ):
