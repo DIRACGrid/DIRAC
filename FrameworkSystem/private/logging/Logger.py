@@ -57,9 +57,9 @@ class Logger:
     self._minLevel = self._logLevels.getLevelValue( "NOTICE" )
     #HACK to take into account dev levels before the command line if fully parsed
     debLevs = 0
-    for arg in sys.args:
+    for arg in sys.argv:
       if arg.find( "-d" ) == 0:
-        devLevs += arg.count( "d" )
+        debLevs += arg.count( "d" )
     if debLevs == 1:
       self.setLevel( "VERBOSE" )
     elif debLevs == 2:
