@@ -55,6 +55,19 @@ class Logger:
     self._systemName = "Framework"
     self.registerBackends( [ 'stdout' ] )
     self._minLevel = self._logLevels.getLevelValue( "NOTICE" )
+    #HACK to take into account dev levels before the command line if fully parsed
+    debLevs = 0
+    for arg in sys.args:
+      if arg.find( "-d" ) == 0:
+        devLevs += arg.count( "d" )
+    if debLevs == 1:
+      self.setLevel( "VERBOSE" )
+    elif debLevs == 2:
+      self.setLevel( "VERBOSE" )
+      self.showHeaders( True )
+    elif debLevs >= 3:
+      self.setLevel( "DEBUG" )
+      self.showHeaders( True )
 
   def initialize( self, systemName, cfgPath ):
     if self.__initialized:
