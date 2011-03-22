@@ -1,12 +1,12 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
+__RCSID__ = "$Id$"
 """ File catalog class. This is a simple dispatcher for the file catalogue plug-ins.
     It ensures that all operations are performed on the desired catalogs.
 """
-__RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 import types, re, os
@@ -271,7 +271,7 @@ class FileCatalog:
       if moduleLoaded:
         break
       gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
-      moduleFile = os.path.join( moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogName )
+      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogName )
       gLogger.verbose( "Looking for file %s" % moduleFile )
       if not os.path.isfile( moduleFile ):
         continue
