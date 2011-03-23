@@ -40,7 +40,7 @@ class PilotStatusAgent( AgentModule ):
   """
 
   queryStateList = ['Ready', 'Submitted', 'Running', 'Waiting', 'Scheduled']
-  finalStateList = [ 'Done', 'Aborted', 'Cleared', 'Deleted' ]
+  finalStateList = [ 'Done', 'Aborted', 'Cleared', 'Deleted', 'Failed' ]
   identityFieldsList = [ 'OwnerDN', 'OwnerGroup', 'GridType', 'Broker' ]
   eligibleGridTypes = [ 'gLite' ]
 
@@ -412,6 +412,7 @@ class PilotStatusAgent( AgentModule ):
     destinationRE = 'Destination:\s*([\w\.-]*)'
     statusDateLCGRE = 'reached on:\s*....(.*)'
     submittedDateRE = 'Submitted:\s*....(.*)'
+    statusFailedRE = 'Current Status:.*\(Failed\)'
 
     status = None
     destination = 'Unknown'
@@ -420,6 +421,8 @@ class PilotStatusAgent( AgentModule ):
 
     try:
       status = re.search( statusRE, job ).group( 1 )
+      if status == 'Done' and re.search( statusFailedRE, job ):
+        status = 'Failed'
       if re.search( destinationRE, job ):
         destination = re.search( destinationRE, job ).group( 1 )
       if gridType == 'LCG' and re.search( statusDateLCGRE, job ):
