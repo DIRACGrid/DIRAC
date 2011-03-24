@@ -92,7 +92,7 @@ class InputDataResolution:
   #############################################################################
   def __resolveInputData( self ):
     """This method controls the execution of the DIRAC input data modules according
-       to the LHCb VO policy defined in the configuration service.
+       to the VO policy defined in the configuration service.
     """
     if self.arguments['Configuration'].has_key( 'SiteName' ):
       site = self.arguments['Configuration']['SiteName']
@@ -158,8 +158,9 @@ class InputDataResolution:
   #############################################################################
   def __runModule( self, modulePath, remainingReplicas ):
     """This method provides a way to run the modules specified by the VO that
-       govern the input data access policy for the current site.  For LHCb the
-       standard WMS modules are applied in a different order depending on the site.
+       govern the input data access policy for the current site. Using the 
+       section /Operations/InputDataPolicy different modules can be defined for 
+       particular sites or for InputDataPolicy defined in the JDL of the jobs.
     """
     self.log.info( 'Attempting to run %s' % ( modulePath ) )
     moduleFactory = ModuleFactory()
