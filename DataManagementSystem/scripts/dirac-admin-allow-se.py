@@ -67,14 +67,15 @@ for se in ses:
   if not res['OK']:
     gLogger.error( "Storage Element %s does not exist" % se )
     continue
-  if read:
+  existingOptions = res['Value']
+  if read and existingOptions['ReadAccess'] == "InActive":
     res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "Active" )
     if not res['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
       gLogger.debug( "Successfully updated %s read access to Active" % se )
       readAllowed.append( se )
-  if write:
+  if write and existingOptions['WriteAccess'] == "InActive":
     res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "Active" )
     if not res['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
