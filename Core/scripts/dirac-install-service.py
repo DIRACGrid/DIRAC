@@ -1,4 +1,4 @@
-e#!/usr/bin/env python
+#!/usr/bin/env python
 ########################################################################
 # $HeadURL$
 # File :    dirac-install-service
@@ -44,4 +44,4 @@ else:
   if not result['OK']:
     print "ERROR:", result['Message']
   else:
-    print "Successfully installed service %s in %s system" % (service,system)  
+    print "Successfully installed service %s in %s system" % ( service, system )
