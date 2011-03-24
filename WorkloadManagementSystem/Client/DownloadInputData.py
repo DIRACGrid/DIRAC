@@ -1,5 +1,5 @@
 ########################################################################
-# $Id$
+# $HeadURL$
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -16,31 +16,31 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager               import Repli
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
-import os,sys,re,string,tempfile
+import os, sys, re, string, tempfile
 
 COMPONENT_NAME = 'DownloadInputData'
 
 class DownloadInputData:
 
   #############################################################################
-  def __init__(self,argumentsDict):
+  def __init__( self, argumentsDict ):
     """ Standard constructor
     """
     self.name = COMPONENT_NAME
-    self.log = gLogger.getSubLogger(self.name)
+    self.log = gLogger.getSubLogger( self.name )
     self.inputData = argumentsDict['InputData']
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
     # By default put each input data file into a separate directory
     self.inputDataDirectory = 'PerFile'
-    if argumentsDict.has_key('InputDataDirectory'):
-      self.inputDataDirectory = argumentsDict['InputDataDirectory'] 
+    if argumentsDict.has_key( 'InputDataDirectory' ):
+      self.inputDataDirectory = argumentsDict['InputDataDirectory']
     self.jobID = None
     self.rm = ReplicaManager()
-    self.counter=1
+    self.counter = 1
 
   #############################################################################
-  def execute(self,dataToResolve=None):
+  def execute( self, dataToResolve = None ):
     """This method is called to download the requested files in the case where
        enough local disk space is available.  A buffer is left in this calculation
        to leave room for any produced files.
@@ -51,95 +51,95 @@ class DownloadInputData:
     diskSEList = self.configuration['DiskSEList']
     tapeSEList = self.configuration['TapeSEList']
 
-    if self.configuration.has_key('JobID'):
+    if self.configuration.has_key( 'JobID' ):
       self.jobID = self.configuration['JobID']
 
     #Problematic files will be returned and can be handled by another module
     failedReplicas = []
 
     if dataToResolve:
-      self.log.verbose('Data to resolve passed directly to DownloadInputData module')
+      self.log.verbose( 'Data to resolve passed directly to DownloadInputData module' )
       self.inputData = dataToResolve #e.g. list supplied by another module
 
 
-    self.inputData = [x.replace('LFN:','') for x in self.inputData]
-    self.log.info('InputData to be downloaded is:')
+    self.inputData = [x.replace( 'LFN:', '' ) for x in self.inputData]
+    self.log.info( 'InputData to be downloaded is:' )
     for i in self.inputData:
-      self.log.verbose(i)
+      self.log.verbose( i )
 
     replicas = self.fileCatalogResult['Value']['Successful']
 
     #For the unlikely case that a file is found on two SEs at the same site
     #disk-based replicas are favoured.
     downloadReplicas = {}
-    for lfn,reps in replicas.items():
+    for lfn, reps in replicas.items():
       localStorage = {}
       localTapeSE = ''
       if lfn in self.inputData:
         for localSE in localSEList:
-          if reps.has_key(localSE):
+          if reps.has_key( localSE ):
             for diskSE in diskSEList:
-              if re.search(diskSE,localSE):
-                localStorage[localSE]=1
+              if re.search( diskSE, localSE ):
+                localStorage[localSE] = 1
             for tapeSE in tapeSEList:
-              if re.search(tapeSE,localSE):
+              if re.search( tapeSE, localSE ):
                 localTapeSE = localSE
-                localStorage[localTapeSE]=0
+                localStorage[localTapeSE] = 0
 
-        for se,flag in localStorage.items():
+        for se, flag in localStorage.items():
           if flag:
             pfn = replicas[lfn][se]
-            if replicas[lfn].has_key('Size') and replicas[lfn].has_key('GUID'):
+            if replicas[lfn].has_key( 'Size' ) and replicas[lfn].has_key( 'GUID' ):
               size = replicas[lfn]['Size']
               guid = replicas[lfn]['GUID']
-              downloadReplicas[lfn] = {'SE':se,'PFN':pfn,'Size':size,'GUID':guid}
+              downloadReplicas[lfn] = {'SE':se, 'PFN':pfn, 'Size':size, 'GUID':guid}
 
-        if not downloadReplicas.has_key(lfn):
-          if replicas[lfn].has_key(localTapeSE):
+        if not downloadReplicas.has_key( lfn ):
+          if replicas[lfn].has_key( localTapeSE ):
             pfn = replicas[lfn][localTapeSE]
-            if replicas[lfn].has_key('Size') and replicas[lfn].has_key('GUID'):
+            if replicas[lfn].has_key( 'Size' ) and replicas[lfn].has_key( 'GUID' ):
               size = replicas[lfn]['Size']
               guid = replicas[lfn]['GUID']
-              downloadReplicas[lfn] = {'SE':localTapeSE,'PFN':pfn,'Size':size,'GUID':guid}
+              downloadReplicas[lfn] = {'SE':localTapeSE, 'PFN':pfn, 'Size':size, 'GUID':guid}
       else:
-        self.log.verbose('LFN %s is not in requested input data to download')
+        self.log.verbose( 'LFN %s is not in requested input data to download' )
 
     if not downloadReplicas:
-      self.log.info('Failed to find data at local site SEs, will try to download from anywhere')
-      for lfn,reps in replicas.items():
-        if replicas[lfn].has_key('Size') and replicas[lfn].has_key('GUID'):
+      self.log.info( 'Failed to find data at local site SEs, will try to download from anywhere' )
+      for lfn, reps in replicas.items():
+        if replicas[lfn].has_key( 'Size' ) and replicas[lfn].has_key( 'GUID' ):
           size = replicas[lfn]['Size']
-          guid = replicas[lfn]['GUID']        
-          downloadReplicas[lfn]={'SE':'','PFN':'','Size':size,'GUID':guid}
+          guid = replicas[lfn]['GUID']
+          downloadReplicas[lfn] = {'SE':'', 'PFN':'', 'Size':size, 'GUID':guid}
 
     totalSize = 0
-    self.log.verbose('Replicas to download are:')
-    for lfn,reps in downloadReplicas.items():
-      self.log.verbose(lfn)
-      for n,v in reps.items():
+    self.log.verbose( 'Replicas to download are:' )
+    for lfn, reps in downloadReplicas.items():
+      self.log.verbose( lfn )
+      for n, v in reps.items():
         if v:
-          self.log.verbose('%s %s' %(n,v))
-        if n=='Size':
-          totalSize+=int(v) #bytes
+          self.log.verbose( '%s %s' % ( n, v ) )
+        if n == 'Size':
+          totalSize += int( v ) #bytes
 
-    self.log.info('Total size of files to be downloaded is %s bytes' %(totalSize))
+    self.log.info( 'Total size of files to be downloaded is %s bytes' % ( totalSize ) )
     for i in self.inputData:
-      if not downloadReplicas.has_key(i):
-        self.log.warn('Not all file metadata (SE,PFN,Size,GUID) was available for LFN %s' %(i))
-        failedReplicas.append(i)
+      if not downloadReplicas.has_key( i ):
+        self.log.warn( 'Not all file metadata (SE,PFN,Size,GUID) was available for LFN %s' % ( i ) )
+        failedReplicas.append( i )
 
     #Now need to check that the list of replicas to download fits into
     #the available disk space. Initially this is a simple check and if there is not
     #space for all input data, no downloads are attempted.
-    result = self.__checkDiskSpace(totalSize)
+    result = self.__checkDiskSpace( totalSize )
     if not result['OK']:
-      self.log.warn('Problem checking available disk space:\n%s' %(result))
+      self.log.warn( 'Problem checking available disk space:\n%s' % ( result ) )
       return result
 
     if not result['Value']:
-      report = 'Not enough disk space available for download: %s / %s bytes' %(result['Value'],totalSize)
-      self.log.warn(report)
-      self.__setJobParam(COMPONENT_NAME,report)
+      report = 'Not enough disk space available for download: %s / %s bytes' % ( result['Value'], totalSize )
+      self.log.warn( report )
+      self.__setJobParam( COMPONENT_NAME, report )
       result = S_OK()
       result['Failed'] = self.inputData
       result['Successful'] = {}
@@ -148,34 +148,34 @@ class DownloadInputData:
     resolvedData = {}
     localSECount = 0
     for lfn in downloadReplicas.keys():
-      result = self.__getPFN(downloadReplicas[lfn]['PFN'], downloadReplicas[lfn]['SE'],downloadReplicas[lfn]['Size'],downloadReplicas[lfn]['GUID'])
+      result = self.__getPFN( downloadReplicas[lfn]['PFN'], downloadReplicas[lfn]['SE'], downloadReplicas[lfn]['Size'], downloadReplicas[lfn]['GUID'] )
       if not result['OK']:
-        self.log.warn('Download of file from localSE failed with message:\n%s' %(result))
-        result = self.__getLFN(lfn,downloadReplicas[lfn]['PFN'], downloadReplicas[lfn]['SE'],downloadReplicas[lfn]['Size'],downloadReplicas[lfn]['GUID'])
+        self.log.warn( 'Download of file from localSE failed with message:\n%s' % ( result ) )
+        result = self.__getLFN( lfn, downloadReplicas[lfn]['PFN'], downloadReplicas[lfn]['SE'], downloadReplicas[lfn]['Size'], downloadReplicas[lfn]['GUID'] )
         if not result['OK']:
-          self.log.warn('Download of file from any SE failed with message:\n%s' %(result))
-          failedReplicas.append(lfn)
+          self.log.warn( 'Download of file from any SE failed with message:\n%s' % ( result ) )
+          failedReplicas.append( lfn )
         else:
           resolvedData[lfn] = result['Value']
       else:
         resolvedData[lfn] = result['Value']
-        localSECount+=1
+        localSECount += 1
 
     #Report datasets that could not be downloaded
     report = ''
     if failedReplicas:
-      report =  'The following LFN(s) could not be downloaded to the WN:\n'
+      report = 'The following LFN(s) could not be downloaded to the WN:\n'
       for lfn in failedReplicas:
-        report+='%s\n' %(lfn)
-        self.log.warn(report)
+        report += '%s\n' % ( lfn )
+        self.log.warn( report )
 
     if resolvedData:
       report = 'Successfully downloaded LFN(s):\n'
-      for lfn,reps in resolvedData.items():
-        report+='%s\n' %(lfn)
-      totalLFNs = len(resolvedData.keys())
-      report+='\nDownloaded %s / %s files from local Storage Elements on first attempt.' %(localSECount,totalLFNs)
-      self.__setJobParam(COMPONENT_NAME,report)
+      for lfn, reps in resolvedData.items():
+        report += '%s\n' % ( lfn )
+      totalLFNs = len( resolvedData.keys() )
+      report += '\nDownloaded %s / %s files from local Storage Elements on first attempt.' % ( localSECount, totalLFNs )
+      self.__setJobParam( COMPONENT_NAME, report )
 
     result = S_OK()
     result['Successful'] = resolvedData
@@ -183,104 +183,104 @@ class DownloadInputData:
     return result
 
   #############################################################################
-  def __checkDiskSpace(self,totalSize):
+  def __checkDiskSpace( self, totalSize ):
     """Compare available disk space to the file size reported from the catalog
        result.
     """
     diskSpace = getDiskSpace() #MB
-    availableBytes = diskSpace*1024*1024 #bytes
+    availableBytes = diskSpace * 1024 * 1024 #bytes
     #below can be a configuration option sent via the job wrapper in the future
-    buffer = 3*1024*1024*1024 # 3GB in bytes
-    if (buffer+totalSize) < availableBytes:
-      msg = 'Enough disk space available (%s bytes)' %(availableBytes)
-      self.log.verbose(msg)
-      return S_OK(msg)
+    buffer = 3 * 1024 * 1024 * 1024 # 3GB in bytes
+    if ( buffer + totalSize ) < availableBytes:
+      msg = 'Enough disk space available (%s bytes)' % ( availableBytes )
+      self.log.verbose( msg )
+      return S_OK( msg )
     else:
-      msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' %((buffer+totalSize),availableBytes)
-      self.log.warn(msg)
-      return S_ERROR(msg)
+      msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' % ( ( buffer + totalSize ), availableBytes )
+      self.log.warn( msg )
+      return S_ERROR( msg )
 
   #############################################################################
-  def __getLFN(self,lfn,pfn,se,size,guid):
+  def __getLFN( self, lfn, pfn, se, size, guid ):
     """ Download a local copy of a single LFN from the specified Storage Element.
         This is used as a last resort to attempt to retrieve the file.  The Replica
         Manager will perform an LFC lookup to refresh the stored result.
     """
     start = os.getcwd()
     if self.inputDataDirectory == "PerFile":
-      downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
+      downloadDir = tempfile.mkdtemp( prefix = 'InputData_%s' % ( self.counter ), dir = start )
     elif self.inputDataDirectory == "CWD":
       downloadDir = start
     else:
-      downloadDir = self.inputDataDirectory    
-    self.counter+=1
-    os.chdir(downloadDir)
-    self.log.verbose('Attempting to ReplicaManager.getFile for %s in %s' %(lfn,downloadDir))
-    result = self.rm.getFile(lfn)
-    os.chdir(start)
-    fileName = os.path.basename(pfn)
+      downloadDir = self.inputDataDirectory
+    self.counter += 1
+    os.chdir( downloadDir )
+    self.log.verbose( 'Attempting to ReplicaManager.getFile for %s in %s' % ( lfn, downloadDir ) )
+    result = self.rm.getFile( lfn )
+    os.chdir( start )
+    fileName = os.path.basename( pfn )
     if not fileName:
-      fileName=os.path.basename(lfn)
+      fileName = os.path.basename( lfn )
 
-    self.log.verbose(result)
-    localFile = '%s/%s' %(downloadDir,fileName)
-    if os.path.exists(localFile):
-      self.log.verbose('File %s exists in current directory' %(fileName))
-      fileDict = {'turl':'Downloaded','protocol':'Downloaded','se':se,'pfn':pfn,'guid':guid,'path':localFile}
-      return S_OK(fileDict)
+    self.log.verbose( result )
+    localFile = '%s/%s' % ( downloadDir, fileName )
+    if os.path.exists( localFile ):
+      self.log.verbose( 'File %s exists in current directory' % ( fileName ) )
+      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':se, 'pfn':pfn, 'guid':guid, 'path':localFile}
+      return S_OK( fileDict )
     else:
-      self.log.warn('File does not exist in local directory after download')
-      return S_ERROR('OK download result but file missing in current directory')
+      self.log.warn( 'File does not exist in local directory after download' )
+      return S_ERROR( 'OK download result but file missing in current directory' )
 
   #############################################################################
-  def __getPFN(self,pfn,se,size,guid):
+  def __getPFN( self, pfn, se, size, guid ):
     """ Download a local copy of a single PFN from the specified Storage Element.
     """
     if not pfn:
-      return S_ERROR('Assume file is not at this site')
-    
-    fileName = os.path.basename(pfn)
-    if os.path.exists('%s/%s' %(os.getcwd(),fileName)):
-      self.log.verbose('File already %s exists in current directory' %(fileName))
-      fileDict = {'turl':'LocalData','protocol':'LocalData','se':se,'pfn':pfn,'guid':guid,'path':'%s/%s' %(os.getcwd(),fileName)}
-      return S_OK(fileDict)
+      return S_ERROR( 'Assume file is not at this site' )
+
+    fileName = os.path.basename( pfn )
+    if os.path.exists( '%s/%s' % ( os.getcwd(), fileName ) ):
+      self.log.verbose( 'File already %s exists in current directory' % ( fileName ) )
+      fileDict = {'turl':'LocalData', 'protocol':'LocalData', 'se':se, 'pfn':pfn, 'guid':guid, 'path':'%s/%s' % ( os.getcwd(), fileName )}
+      return S_OK( fileDict )
 
     start = os.getcwd()
     if self.inputDataDirectory == "PerFile":
-      downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
+      downloadDir = tempfile.mkdtemp( prefix = 'InputData_%s' % ( self.counter ), dir = start )
     elif self.inputDataDirectory == "CWD":
       downloadDir = start
     else:
-      downloadDir = self.inputDataDirectory  
-    self.counter+=1
+      downloadDir = self.inputDataDirectory
+    self.counter += 1
 
-    result = self.rm.getStorageFile(pfn,se,localPath=downloadDir,singleFile=True)
+    result = self.rm.getStorageFile( pfn, se, localPath = downloadDir, singleFile = True )
     if not result['OK']:
-      self.log.warn('Problem getting PFN %s:\n%s' %(pfn,result))
+      self.log.warn( 'Problem getting PFN %s:\n%s' % ( pfn, result ) )
       return result
-    self.log.verbose(result)
+    self.log.verbose( result )
 
-    localFile = '%s/%s' %(downloadDir,fileName)
-    if os.path.exists(localFile):
-      self.log.verbose('File %s exists in current directory' %(fileName))
-      fileDict = {'turl':'Downloaded','protocol':'Downloaded','se':se,'pfn':pfn,'guid':guid,'path':localFile}
-      return S_OK(fileDict)
+    localFile = '%s/%s' % ( downloadDir, fileName )
+    if os.path.exists( localFile ):
+      self.log.verbose( 'File %s exists in current directory' % ( fileName ) )
+      fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':se, 'pfn':pfn, 'guid':guid, 'path':localFile}
+      return S_OK( fileDict )
     else:
-      self.log.warn('File does not exist in local directory after download')
-      return S_ERROR('OK download result but file missing in current directory')
+      self.log.warn( 'File does not exist in local directory after download' )
+      return S_ERROR( 'OK download result but file missing in current directory' )
 
   #############################################################################
-  def __setJobParam(self,name,value):
+  def __setJobParam( self, name, value ):
     """Wraps around setJobParameter of state update client
     """
     if not self.jobID:
-      return S_ERROR('JobID not defined')
+      return S_ERROR( 'JobID not defined' )
 
-    jobReport = RPCClient('WorkloadManagement/JobStateUpdate',timeout=120)
-    jobParam = jobReport.setJobParameter(int(self.jobID),str(name),str(value))
-    self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
+    jobReport = RPCClient( 'WorkloadManagement/JobStateUpdate', timeout = 120 )
+    jobParam = jobReport.setJobParameter( int( self.jobID ), str( name ), str( value ) )
+    self.log.verbose( 'setJobParameter(%s,%s,%s)' % ( self.jobID, name, value ) )
     if not jobParam['OK']:
-      self.log.warn(jobParam['Message'])
+      self.log.warn( jobParam['Message'] )
 
     return jobParam
 
