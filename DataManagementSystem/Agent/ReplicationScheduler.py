@@ -16,6 +16,7 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient    import DataLoggingCl
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL        import RequestDBMySQL
 from DIRAC.RequestManagementSystem.Client.RequestContainer  import RequestContainer
 from DIRAC.Resources.Storage.StorageFactory                 import StorageFactory
+from DIRAC.Core.Utilities.SiteSEMapping                     import getSitesForSE
 import types, re, random
 
 __RCSID__ = "$Id$"
@@ -33,7 +34,7 @@ class ReplicationScheduler( AgentModule ):
     self.factory = StorageFactory()
     self.rm = ReplicaManager()
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
@@ -110,7 +111,7 @@ class ReplicationScheduler( AgentModule ):
         return S_ERROR( 'ReplicationScheduler._execute: Failed to get number of sub-requests.' )
       requestID = res['Value']
       if requestID in processedRequests:
-        # Break the loop once we have iterated once over all requests 
+        # Break the loop once we have iterated once over all requests
         res = self.RequestDB.updateRequest( requestName, requestString )
         if not res['OK']:
           gLogger.error( "Failed to update request", "%s %s" % ( requestName, res['Message'] ) )
@@ -414,17 +415,21 @@ class StrategyHandler:
     self.__incrementChosenStrategy()
     return chosenStrategy
 
-  def __simple( self, sourceSE, targetSEs ):
+  def __simple( self, sourceSE, destSEs ):
     """ This just does a simple replication from the source to all the targets
     """
     tree = {}
-    for targetSE in targetSEs:
+    if not self.__getActiveSEs( [sourceSE] ):
+      return tree
+    sourceSites = self.__getChannelSitesForSE( sourceSE )
+    for destSE in destSEs:
+      destSites = self.__getChannelSitesForSE( destSE )
       for channelID, dict in self.channels.items():
-        if re.search( dict['Source'], sourceSE ) and re.search( dict['Destination'], targetSE ):
+        if dict['Source'] in sourceSites and dict['Destination'] in destSites:
           tree[channelID] = {}
           tree[channelID]['Ancestor'] = False
           tree[channelID]['SourceSE'] = sourceSE
-          tree[channelID]['DestSE'] = targetSE
+          tree[channelID]['DestSE'] = destSE
           tree[channelID]['Strategy'] = 'Simple'
     return tree
 
@@ -438,23 +443,26 @@ class StrategyHandler:
       return {}
     channelInfo = res['Value']
     minTimeToStart = float( "inf" )
-    destSite = destSE.split( '-' )[0].split( '_' )[0]
-    for sourceSE in replicas.keys():
-      sourceSite = sourceSE.split( '-' )[0].split( '_' )[0]
-      channelName = '%s-%s' % ( sourceSite, destSite )
-      if channelInfo.has_key( channelName ):
-        channelID = channelInfo[channelName]['ChannelID']
-        channelTimeToStart = channelInfo[channelName]['TimeToStart']
-        if channelTimeToStart <= minTimeToStart:
-          minTimeToStart = channelTimeToStart
-          selectedSourceSE = sourceSE
-          selectedDestSE = destSE
-          selectedChannelID = channelID
-          selected = True
-      else:
-        errStr = 'StrategyHandler.__swarm: Channel not defined'
-        gLogger.error( errStr, channelName )
-        waitingChannel = False
+    sourceSEs = self.__getActiveSEs( replicas.keys() )
+    destSites = self.__getChannelSitesForSE( destSE )
+    for destSite in destSites:
+      for sourceSE in sourceSEs:
+        sourceSites = self.__getChannelSitesForSE( sourceSE )
+        for sourceSite in sourceSites:
+          channelName = '%s-%s' % ( sourceSite, destSite )
+          if channelInfo.has_key( channelName ):
+            channelID = channelInfo[channelName]['ChannelID']
+            channelTimeToStart = channelInfo[channelName]['TimeToStart']
+            if channelTimeToStart <= minTimeToStart:
+              minTimeToStart = channelTimeToStart
+              selectedSourceSE = sourceSE
+              selectedDestSE = destSE
+              selectedChannelID = channelID
+              selected = True
+          else:
+            errStr = 'StrategyHandler.__swarm: Channel not defined'
+            gLogger.warn( errStr, channelName )
+            waitingChannel = False
 
     tree = {}
     if selected:
@@ -481,33 +489,35 @@ class StrategyHandler:
       minTotalTimeToStart = float( "inf" )
       candidateChannels = []
       for destSE in destSEs:
-        destSite = destSE.split( '-' )[0].split( '_' )[0]
-        for sourceSE in sourceSEs:
-          sourceSite = sourceSE.split( '-' )[0].split( '_' )[0]
-          channelName = '%s-%s' % ( sourceSite, destSite )
-          if channelInfo.has_key( channelName ):
-            channelID = channelInfo[channelName]['ChannelID']
-            channelTimeToStart = channelInfo[channelName]['TimeToStart']
-            if timeToSite.has_key( sourceSE ):
-              totalTimeToStart = timeToSite[sourceSE] + channelTimeToStart + self.sigma
-            else:
-              totalTimeToStart = channelTimeToStart
-            #print '%s-%s %s %s' % (sourceSE,destSE,channelTimeToStart,totalTimeToStart)
-            if totalTimeToStart < minTotalTimeToStart:
-              minTotalTimeToStart = totalTimeToStart
-              selectedPathTimeToStart = totalTimeToStart
-              candidateChannels = [( sourceSE, destSE, channelID )]
-            elif totalTimeToStart == minTotalTimeToStart:
-              candidateChannels.append( ( sourceSE, destSE, channelID ) )
+        destSites = self.__getChannelSitesForSE( destSE )
+        for destSite in destSites:
+          for sourceSE in self.__getActiveSEs( sourceSEs ):
+            sourceSites = self.__getChannelSitesForSE( sourceSE )
+            for sourceSite in sourceSites:
+              channelName = '%s-%s' % ( sourceSite, destSite )
+              if channelInfo.has_key( channelName ):
+                channelID = channelInfo[channelName]['ChannelID']
+                channelTimeToStart = channelInfo[channelName]['TimeToStart']
+                if timeToSite.has_key( sourceSE ):
+                  totalTimeToStart = timeToSite[sourceSE] + channelTimeToStart + self.sigma
+                else:
+                  totalTimeToStart = channelTimeToStart
+                #print '%s-%s %s %s' % (sourceSE,destSE,channelTimeToStart,totalTimeToStart)
+                if totalTimeToStart < minTotalTimeToStart:
+                  minTotalTimeToStart = totalTimeToStart
+                  selectedPathTimeToStart = totalTimeToStart
+                  candidateChannels = [( sourceSE, destSE, channelID )]
+                elif totalTimeToStart == minTotalTimeToStart:
+                  candidateChannels.append( ( sourceSE, destSE, channelID ) )
 
-              #minTotalTimeToStart = totalTimeToStart
-              #selectedPathTimeToStart = totalTimeToStart
-              #selectedSourceSE = sourceSE
-              #selectedDestSE = destSE
-              #selectedChannelID = channelID
-          else:
-            errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
-            gLogger.error( errStr, channelName )
+                  #minTotalTimeToStart = totalTimeToStart
+                  #selectedPathTimeToStart = totalTimeToStart
+                  #selectedSourceSE = sourceSE
+                  #selectedDestSE = destSE
+                  #selectedChannelID = channelID
+              else:
+                errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
+                gLogger.warn( errStr, channelName )
 
       #print 'Selected %s \n' % selectedPathTimeToStart
 
@@ -548,32 +558,33 @@ class StrategyHandler:
     while len( destSEs ) > 0:
       minTotalTimeToStart = float( "inf" )
       for destSE in destSEs:
-        destSite = destSE.split( '-' )[0].split( '_' )[0]
-        for sourceSE in sourceSEs:
-          sourceSite = sourceSE.split( '-' )[0].split( '_' )[0]
-          channelName = '%s-%s' % ( sourceSite, destSite )
-          if channelInfo.has_key( channelName ):
-            channelID = channelInfo[channelName]['ChannelID']
-            channelTimeToStart = channelInfo[channelName]['TimeToStart']
-            if not sourceSE in primarySources:
-              channelTimeToStart += self.sigma
+        destSites = self.__getChannelSitesForSE( destSE )
+        for destSite in destSites:
+          for sourceSE in self.__getActiveSEs( sourceSEs ):
+            sourceSites = self.__getChannelSitesForSE( sourceSE )
+            for sourceSite in sourceSites:
+              channelName = '%s-%s' % ( sourceSite, destSite )
+              if channelInfo.has_key( channelName ):
+                channelID = channelInfo[channelName]['ChannelID']
+                channelTimeToStart = channelInfo[channelName]['TimeToStart']
+                if not sourceSE in primarySources:
+                  channelTimeToStart += self.sigma
 
-            if minTotalTimeToStart == float( "inf" ):
-              minTotalTimeToStart = channelTimeToStart
-              selectedPathTimeToStart = channelTimeToStart
-              candidateChannels = [( sourceSE, destSE, channelID )]
+                if minTotalTimeToStart == float( "inf" ):
+                  minTotalTimeToStart = channelTimeToStart
+                  selectedPathTimeToStart = channelTimeToStart
+                  candidateChannels = [( sourceSE, destSE, channelID )]
 
-            elif ( channelTimeToStart < minTotalTimeToStart ):
-              minTotalTimeToStart = channelTimeToStart
-              selectedPathTimeToStart = channelTimeToStart
-              candidateChannels = [( sourceSE, destSE, channelID )]
+                elif ( channelTimeToStart < minTotalTimeToStart ):
+                  minTotalTimeToStart = channelTimeToStart
+                  selectedPathTimeToStart = channelTimeToStart
+                  candidateChannels = [( sourceSE, destSE, channelID )]
 
-            elif ( channelTimeToStart == minTotalTimeToStart ):
-              candidateChannels.append( ( sourceSE, destSE, channelID ) )
-
-          else:
-            errStr = 'StrategyHandler.__minimiseTotalWait: Channel not defined'
-            gLogger.error( errStr, channelName )
+                elif ( channelTimeToStart == minTotalTimeToStart ):
+                  candidateChannels.append( ( sourceSE, destSE, channelID ) )
+              else:
+                errStr = 'StrategyHandler.__minimiseTotalWait: Channel not defined'
+                gLogger.warn( errStr, channelName )
 
       if not candidateChannels:
         return {}
@@ -645,5 +656,25 @@ class StrategyHandler:
         return S_ERROR( errStr )
 
     return S_OK( channelInfo )
+
+  def __getActiveSEs( self, selist, access = "Read" ):
+    activeSE = []
+    for se in selist:
+      res = gConfig.getOption( '/Resources/StorageElements/%s/%sAccess' % ( se, access ), 'Unknown' )
+      if res['OK'] and res['Value'] == 'Active':
+        activeSE.append( se )
+    return activeSE
+
+  def __getChannelSitesForSE( self, se ):
+    res = getSitesForSE( se )
+    sites = []
+    if res['OK']:
+      for site in res['Value']:
+        s = site.split( '.' )
+        if len( s ) > 1:
+          if not s[1] in sites:
+            sites.append( s[1] )
+    return sites
+
 
 
