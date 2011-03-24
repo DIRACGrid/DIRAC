@@ -425,6 +425,8 @@ class StrategyHandler:
     for destSE in destSEs:
       destSites = self.__getChannelSitesForSE( destSE )
       for channelID, dict in self.channels.items():
+        if tree.has_key( channelID ):
+          continue
         if dict['Source'] in sourceSites and dict['Destination'] in destSites:
           tree[channelID] = {}
           tree[channelID]['Ancestor'] = False
@@ -497,6 +499,8 @@ class StrategyHandler:
               channelName = '%s-%s' % ( sourceSite, destSite )
               if channelInfo.has_key( channelName ):
                 channelID = channelInfo[channelName]['ChannelID']
+                if tree.has_key( channelID ):
+                  continue
                 channelTimeToStart = channelInfo[channelName]['TimeToStart']
                 if timeToSite.has_key( sourceSE ):
                   totalTimeToStart = timeToSite[sourceSE] + channelTimeToStart + self.sigma
@@ -566,6 +570,9 @@ class StrategyHandler:
               channelName = '%s-%s' % ( sourceSite, destSite )
               if channelInfo.has_key( channelName ):
                 channelID = channelInfo[channelName]['ChannelID']
+                # If this channel is already used, look for another sourceSE
+                if tree.has_key( channelID ):
+                  continue
                 channelTimeToStart = channelInfo[channelName]['TimeToStart']
                 if not sourceSE in primarySources:
                   channelTimeToStart += self.sigma
