@@ -1,7 +1,7 @@
 ########################################################################
 # $HeadURL$
-# File :   DownloadInputData.py
-# Author : Stuart Paterson
+# File :    DownloadInputData.py
+# Author :  Stuart Paterson
 ########################################################################
 
 """ The Download Input Data module wraps around the Replica Management
@@ -14,9 +14,9 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
-import os, sys, re, string, tempfile
+import os, re, tempfile
 
 COMPONENT_NAME = 'DownloadInputData'
 
@@ -36,7 +36,7 @@ class DownloadInputData:
     if argumentsDict.has_key( 'InputDataDirectory' ):
       self.inputDataDirectory = argumentsDict['InputDataDirectory']
     self.jobID = None
-    self.rm = ReplicaManager()
+    self.replicaManager = ReplicaManager()
     self.counter = 1
 
   #############################################################################
@@ -116,11 +116,11 @@ class DownloadInputData:
     self.log.verbose( 'Replicas to download are:' )
     for lfn, reps in downloadReplicas.items():
       self.log.verbose( lfn )
-      for n, v in reps.items():
-        if v:
-          self.log.verbose( '%s %s' % ( n, v ) )
-        if n == 'Size':
-          totalSize += int( v ) #bytes
+      for item, value in reps.items():
+        if value:
+          self.log.verbose( '%s %s' % ( item, value ) )
+        if item == 'Size':
+          totalSize += int( value ) #bytes
 
     self.log.info( 'Total size of files to be downloaded is %s bytes' % ( totalSize ) )
     for i in self.inputData:
@@ -148,10 +148,16 @@ class DownloadInputData:
     resolvedData = {}
     localSECount = 0
     for lfn in downloadReplicas.keys():
-      result = self.__getPFN( downloadReplicas[lfn]['PFN'], downloadReplicas[lfn]['SE'], downloadReplicas[lfn]['Size'], downloadReplicas[lfn]['GUID'] )
+      result = self.__getPFN( downloadReplicas[lfn]['PFN'],
+                              downloadReplicas[lfn]['SE'],
+                              downloadReplicas[lfn]['Size'],
+                              downloadReplicas[lfn]['GUID'] )
       if not result['OK']:
         self.log.warn( 'Download of file from localSE failed with message:\n%s' % ( result ) )
-        result = self.__getLFN( lfn, downloadReplicas[lfn]['PFN'], downloadReplicas[lfn]['SE'], downloadReplicas[lfn]['Size'], downloadReplicas[lfn]['GUID'] )
+        result = self.__getLFN( lfn, downloadReplicas[lfn]['PFN'],
+                                downloadReplicas[lfn]['SE'],
+                                downloadReplicas[lfn]['Size'],
+                                downloadReplicas[lfn]['GUID'] )
         if not result['OK']:
           self.log.warn( 'Download of file from any SE failed with message:\n%s' % ( result ) )
           failedReplicas.append( lfn )
@@ -190,13 +196,14 @@ class DownloadInputData:
     diskSpace = getDiskSpace() #MB
     availableBytes = diskSpace * 1024 * 1024 #bytes
     #below can be a configuration option sent via the job wrapper in the future
-    buffer = 3 * 1024 * 1024 * 1024 # 3GB in bytes
-    if ( buffer + totalSize ) < availableBytes:
+    data = 3 * 1024 * 1024 * 1024 # 3GB in bytes
+    if ( data + totalSize ) < availableBytes:
       msg = 'Enough disk space available (%s bytes)' % ( availableBytes )
       self.log.verbose( msg )
       return S_OK( msg )
     else:
-      msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' % ( ( buffer + totalSize ), availableBytes )
+      msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' \
+             % ( ( buffer + totalSize ), availableBytes )
       self.log.warn( msg )
       return S_ERROR( msg )
 
@@ -216,7 +223,7 @@ class DownloadInputData:
     self.counter += 1
     os.chdir( downloadDir )
     self.log.verbose( 'Attempting to ReplicaManager.getFile for %s in %s' % ( lfn, downloadDir ) )
-    result = self.rm.getFile( lfn )
+    result = self.replicaManager.getFile( lfn )
     os.chdir( start )
     fileName = os.path.basename( pfn )
     if not fileName:
@@ -242,7 +249,12 @@ class DownloadInputData:
     fileName = os.path.basename( pfn )
     if os.path.exists( '%s/%s' % ( os.getcwd(), fileName ) ):
       self.log.verbose( 'File already %s exists in current directory' % ( fileName ) )
-      fileDict = {'turl':'LocalData', 'protocol':'LocalData', 'se':se, 'pfn':pfn, 'guid':guid, 'path':'%s/%s' % ( os.getcwd(), fileName )}
+      fileDict = { 'turl':'LocalData',
+                   'protocol':'LocalData',
+                   'se':se,
+                   'pfn':pfn,
+                   'guid':guid,
+                   'path':'%s/%s' % ( os.getcwd(), fileName )}
       return S_OK( fileDict )
 
     start = os.getcwd()
@@ -254,7 +266,7 @@ class DownloadInputData:
       downloadDir = self.inputDataDirectory
     self.counter += 1
 
-    result = self.rm.getStorageFile( pfn, se, localPath = downloadDir, singleFile = True )
+    result = self.replicaManager.getStorageFile( pfn, se, localPath = downloadDir, singleFile = True )
     if not result['OK']:
       self.log.warn( 'Problem getting PFN %s:\n%s' % ( pfn, result ) )
       return result
