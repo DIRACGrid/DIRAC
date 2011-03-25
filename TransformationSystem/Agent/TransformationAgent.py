@@ -85,7 +85,7 @@ class TransformationAgent( AgentModule ):
       return S_OK()
 
     # Check the data is available with replicas
-    res = self.__getDataReplicas( transID, lfns )
+    res = self.__getDataReplicas( transID, lfns, active = ( transDict['Type'].lower() != "removal" ) )
     if not res['OK']:
       gLogger.error( "%s.processTransformation: Failed to get data replicas" % AGENT_NAME, res['Message'] )
       return res
@@ -152,10 +152,13 @@ class TransformationAgent( AgentModule ):
       gLogger.exception( "%s.__generatePluginObject: Failed to create %s()." % ( AGENT_NAME, plugin ), '', x )
       return S_ERROR()
 
-  def __getDataReplicas( self, transID, lfns ):
+  def __getDataReplicas( self, transID, lfns, active = True ):
     """ Get the replicas for the LFNs and check their statuses """
     startTime = time.time()
-    res = self.rm.getActiveReplicas( lfns )
+    if active:
+      res = self.rm.getActiveReplicas( lfns )
+    else:
+      res = self.rm.getReplicas( lfns )
     if not res['OK']:
       return res
     gLogger.info( "%s.__getDataReplicas: Replica results for %d files obtained in %.2f seconds" % ( AGENT_NAME, len( lfns ), time.time() - startTime ) )
@@ -164,7 +167,7 @@ class TransformationAgent( AgentModule ):
     for lfn, replicaDict in res['Value']['Successful'].items():
       ses = replicaDict.keys()
       for se in ses:
-        if re.search( 'failover', se.lower() ):
+        if active and re.search( 'failover', se.lower() ):
           gLogger.warn( "%s.__getDataReplicas: Ignoring failover replica for %s." % ( AGENT_NAME, lfn ) )
         else:
           if not dataReplicas.has_key( lfn ):
