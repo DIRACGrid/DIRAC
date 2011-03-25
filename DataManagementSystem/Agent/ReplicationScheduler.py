@@ -556,11 +556,11 @@ class StrategyHandler:
     timeToSite = {}                # Maintains time to site including previous hops
     siteAncestor = {}              # Maintains the ancestor channel for a site
     tree = {}                      # Maintains replication tree
-    candidateChannels = []
     primarySources = sourceSEs
 
     while len( destSEs ) > 0:
       minTotalTimeToStart = float( "inf" )
+      candidateChannels = []
       for destSE in destSEs:
         destSites = self.__getChannelSitesForSE( destSE )
         for destSite in destSites:
