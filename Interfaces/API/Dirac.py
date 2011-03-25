@@ -996,7 +996,7 @@ class Dirac:
         print self.pPrint.pformat( metaDict )
 
   #############################################################################
-  def getReplicas( self, lfns, printOutput = False ):
+  def getReplicas( self, lfns, active = True, printOutput = False ):
     """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
 
        Example usage:
@@ -1027,7 +1027,10 @@ class Dirac:
 
     start = time.time()
     rm = ReplicaManager()
-    repsResult = rm.getActiveReplicas( lfns )
+    if active:
+      repsResult = rm.getActiveReplicas( lfns )
+    else:
+      repsResult = rm.getReplicas( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     self.log.verbose( repsResult )
