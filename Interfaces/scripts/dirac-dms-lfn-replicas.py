@@ -11,6 +11,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
+Script.registerSwitch( 'a', "All", "  Also show inactive replicas" )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
@@ -18,7 +19,13 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  LFN:      Logical File Name  or file containing LFNs' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 lfns = Script.getPositionalArgs()
+switches = Script.getUnprocessedSwitches()
 
+active = True
+for switch in switches:
+  opt = switch[0].lower()
+  if opt in ( "a", "all" ):
+    active = False
 if len( lfns ) < 1:
   Script.showHelp()
 
@@ -34,7 +41,7 @@ if len( lfns ) == 1:
   except:
     pass
 
-result = dirac.getReplicas( lfns, printOutput = True )
+result = dirac.getReplicas( lfns, active = active, printOutput = True )
 if not result['OK']:
   print 'ERROR: ', result['Message']
   exitCode = 2
