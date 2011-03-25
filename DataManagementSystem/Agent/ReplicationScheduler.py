@@ -566,6 +566,10 @@ class StrategyHandler:
         for destSite in destSites:
           for sourceSE in self.__getActiveSEs( sourceSEs ):
             sourceSites = self.__getChannelSitesForSE( sourceSE )
+            if destSite in sourceSites:
+              # Favour local transfer
+              sourceSites.remove( destSite )
+              sourceSites.insert( 0, destSite )
             for sourceSite in sourceSites:
               channelName = '%s-%s' % ( sourceSite, destSite )
               if channelInfo.has_key( channelName ):
@@ -589,6 +593,8 @@ class StrategyHandler:
 
                 elif ( channelTimeToStart == minTotalTimeToStart ):
                   candidateChannels.append( ( sourceSE, destSE, channelID ) )
+                if sourceSite == destSite:
+                  break
               else:
                 errStr = 'StrategyHandler.__minimiseTotalWait: Channel not defined'
                 gLogger.warn( errStr, channelName )
