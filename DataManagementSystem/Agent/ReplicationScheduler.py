@@ -17,6 +17,7 @@ from DIRAC.RequestManagementSystem.DB.RequestDBMySQL        import RequestDBMySQ
 from DIRAC.RequestManagementSystem.Client.RequestContainer  import RequestContainer
 from DIRAC.Resources.Storage.StorageFactory                 import StorageFactory
 from DIRAC.Core.Utilities.SiteSEMapping                     import getSitesForSE
+from DIRAC.Core.Utilities.SiteSEMapping                     import getSEsForSite
 import types, re, random
 
 __RCSID__ = "$Id$"
@@ -247,6 +248,7 @@ class ReplicationScheduler( AgentModule ):
           #
 
           for channelID, dict in tree.items():
+            gLogger.info( "ReplicationScheduler.execute: processing for channel %d %s" % ( channelID, str( dict ) ) )
             hopSourceSE = dict['SourceSE']
             hopDestSE = dict['DestSE']
             hopAncestor = dict['Ancestor']
@@ -464,7 +466,6 @@ class StrategyHandler:
           else:
             errStr = 'StrategyHandler.__swarm: Channel not defined'
             gLogger.warn( errStr, channelName )
-            waitingChannel = False
 
     tree = {}
     if selected:
@@ -490,12 +491,17 @@ class StrategyHandler:
     while len( destSEs ) > 0:
       minTotalTimeToStart = float( "inf" )
       candidateChannels = []
+      sourceActiveSEs = self.__getActiveSEs( sourceSEs )
       for destSE in destSEs:
         destSites = self.__getChannelSitesForSE( destSE )
+        localTransfer = False
         for destSite in destSites:
-          for sourceSE in self.__getActiveSEs( sourceSEs ):
+          if localTransfer: break
+          for sourceSE in sourceActiveSEs:
+            if localTransfer: break
             sourceSites = self.__getChannelSitesForSE( sourceSE )
             for sourceSite in sourceSites:
+              if localTransfer: break
               channelName = '%s-%s' % ( sourceSite, destSite )
               if channelInfo.has_key( channelName ):
                 channelID = channelInfo[channelName]['ChannelID']
@@ -507,7 +513,8 @@ class StrategyHandler:
                 else:
                   totalTimeToStart = channelTimeToStart
                 #print '%s-%s %s %s' % (sourceSE,destSE,channelTimeToStart,totalTimeToStart)
-                if totalTimeToStart < minTotalTimeToStart:
+                localTransfer = ( sourceSite == destSite )
+                if localTransfer or totalTimeToStart < minTotalTimeToStart:
                   minTotalTimeToStart = totalTimeToStart
                   selectedPathTimeToStart = totalTimeToStart
                   candidateChannels = [( sourceSE, destSE, channelID )]
@@ -561,16 +568,17 @@ class StrategyHandler:
     while len( destSEs ) > 0:
       minTotalTimeToStart = float( "inf" )
       candidateChannels = []
+      sourceActiveSEs = self.__getActiveSEs( sourceSEs )
       for destSE in destSEs:
         destSites = self.__getChannelSitesForSE( destSE )
+        localTransfer = False
         for destSite in destSites:
-          for sourceSE in self.__getActiveSEs( sourceSEs ):
+          if localTransfer: break
+          for sourceSE in sourceActiveSEs:
+            if localTransfer: break
             sourceSites = self.__getChannelSitesForSE( sourceSE )
-            if destSite in sourceSites:
-              # Favour local transfer
-              sourceSites.remove( destSite )
-              sourceSites.insert( 0, destSite )
             for sourceSite in sourceSites:
+              if localTransfer: break
               channelName = '%s-%s' % ( sourceSite, destSite )
               if channelInfo.has_key( channelName ):
                 channelID = channelInfo[channelName]['ChannelID']
@@ -581,23 +589,18 @@ class StrategyHandler:
                 if not sourceSE in primarySources:
                   channelTimeToStart += self.sigma
 
-                if minTotalTimeToStart == float( "inf" ):
-                  minTotalTimeToStart = channelTimeToStart
-                  selectedPathTimeToStart = channelTimeToStart
-                  candidateChannels = [( sourceSE, destSE, channelID )]
-
-                elif ( channelTimeToStart < minTotalTimeToStart ):
+                localTransfer = ( sourceSite == destSite )
+                if localTransfer or minTotalTimeToStart == float( "inf" ) or channelTimeToStart < minTotalTimeToStart:
                   minTotalTimeToStart = channelTimeToStart
                   selectedPathTimeToStart = channelTimeToStart
                   candidateChannels = [( sourceSE, destSE, channelID )]
 
                 elif ( channelTimeToStart == minTotalTimeToStart ):
                   candidateChannels.append( ( sourceSE, destSE, channelID ) )
-                if sourceSite == destSite:
-                  break
               else:
                 errStr = 'StrategyHandler.__minimiseTotalWait: Channel not defined'
                 gLogger.warn( errStr, channelName )
+
 
       if not candidateChannels:
         return {}
