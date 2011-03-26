@@ -85,7 +85,7 @@ class TransformationAgent( AgentModule ):
       return S_OK()
 
     # Check the data is available with replicas
-    res = self.__getDataReplicas( transID, lfns, active = ( transDict['Type'].lower() != "removal" ) )
+    res = self.__getDataReplicas( transID, lfns, active = ( transDict['Type'].lower() not in ["replication", "removal"] ) )
     if not res['OK']:
       gLogger.error( "%s.processTransformation: Failed to get data replicas" % AGENT_NAME, res['Message'] )
       return res
