@@ -42,7 +42,7 @@ diracAdmin = DiracAdmin()
 
 result = diracAdmin.getBDIICEVOView( ce, useVO = vo, host = host )
 if not ['OK']:
-  print test['Message']
+  print result['Message']
   DIRAC.exit( 2 )
 
 
