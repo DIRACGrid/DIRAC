@@ -42,7 +42,7 @@ diracAdmin = DiracAdmin()
 
 result = diracAdmin.getBDIICEState( ce, useVO = vo, host = host )
 if not result['OK']:
-  print test['Message']
+  print result['Message']
   DIRAC.exit( 2 )
 
 
