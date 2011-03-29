@@ -720,7 +720,7 @@ class Dirac:
     for lfn, reps in replicaDict['Value']['Successful'].items():
       guidDict['Value']['Successful'][lfn].update( reps )
     resolvedData = guidDict
-    diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER'] )
+    diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER'], ['-FREEZER'] )
     tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
     configDict = {'JobID':None, 'LocalSEList':localSEList, 'DiskSEList':diskSE, 'TapeSEList':tapeSE}
     self.log.verbose( configDict )
@@ -809,7 +809,7 @@ class Dirac:
       for lfn, reps in replicaDict['Value']['Successful'].items():
         guidDict['Value']['Successful'][lfn].update( reps )
       resolvedData = guidDict
-      diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER'] )
+      diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER'], ['-FREEZER'] )
       tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
       configDict = {'JobID':None, 'LocalSEList':localSEList, 'DiskSEList':diskSE, 'TapeSEList':tapeSE}
       self.log.verbose( configDict )
