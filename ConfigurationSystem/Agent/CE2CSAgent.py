@@ -204,7 +204,7 @@ class CE2CSAgent( AgentModule ):
 
           result = ldapSite( name )
           if not result['OK']:
-            self.log.warn( "BDII site", result['Message'] )
+            self.log.warn( "BDII site %s: %s" % (name, result['Message'] ))
           else:
             bdiisites = result['Value']
             if len( bdiisites ) == 0:
