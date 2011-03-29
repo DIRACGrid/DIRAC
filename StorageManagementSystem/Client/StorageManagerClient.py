@@ -14,4 +14,4 @@ import types
 class StorageManagerClient(Client):
 
   def __init__(self):
-    self.setServer('StorageManagement/StorageManagerHandler')
+    self.setServer('StorageManagement/StorageManager')
