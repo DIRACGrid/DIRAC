@@ -11,7 +11,10 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
+from DIRAC.Resources.Storage.StorageElement                import StorageElement
+
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
+from DIRAC.Core.Utilities.List                             import uniqueElements
 from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
 import time
@@ -29,8 +32,6 @@ class InputDataAgent( OptimizerModule ):
     """
     self.failedMinorStatus = self.am_getOption( '/FailedJobStatus', 'Input Data Not Available' )
     #this will ignore failover SE files
-    self.diskSE = self.am_getOption( 'DiskSE', ['-disk', '-DST', '-USER'] )
-    self.tapeSE = self.am_getOption( 'TapeSE', ['-tape', '-RDST', '-RAW'] )
     self.checkFileMetadata = self.am_getOption( 'CheckFileMetadata', True )
 
     #Define the shifter proxy needed
@@ -40,7 +41,7 @@ class InputDataAgent( OptimizerModule ):
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     try:
-      self.rm = ReplicaManager()
+      self.replicaManager = ReplicaManager()
     except Exception, e:
       msg = 'Failed to create ReplicaManager'
       self.log.exception( msg )
@@ -102,7 +103,7 @@ class InputDataAgent( OptimizerModule ):
     start = time.time()
     # In order to place jobs on Hold if a certain SE is banned we need first to check first if
     # if the replicas are really available
-    replicas = self.rm.getReplicas( lfns )
+    replicas = self.replicaManager.getReplicas( lfns )
     timing = time.time() - start
     self.log.verbose( 'Catalog Replicas Lookup Time: %.2f seconds ' % ( timing ) )
     if not replicas['OK']:
@@ -120,7 +121,7 @@ class InputDataAgent( OptimizerModule ):
     if self.checkFileMetadata:
       guids = True
       start = time.time()
-      guidDict = self.rm.getCatalogFileMetadata( lfns )
+      guidDict = self.replicaManager.getCatalogFileMetadata( lfns )
       timing = time.time() - start
       self.log.info( 'Catalog Metadata Lookup Time: %.2f seconds ' % ( timing ) )
 
@@ -183,7 +184,7 @@ class InputDataAgent( OptimizerModule ):
     the execution of the job
     """
     # Now let's check if some replicas might not be available due to banned SE's
-    activeReplicas = self.rm.checkActiveReplicas( replicaDict )
+    activeReplicas = self.replicaManager.checkActiveReplicas( replicaDict )
     if not activeReplicas['OK']:
       # due to banned SE's input data might no be available
       msg = "On Hold: Missing replicas due to banned SE"
@@ -246,7 +247,7 @@ class InputDataAgent( OptimizerModule ):
         sites = self.__getSitesForSE( se )
         if sites['OK']:
           siteList += sites['Value']
-      fileSEs[lfn] = siteList
+      fileSEs[lfn] = uniqueElements( siteList )
 
     siteCandidates = []
     i = 0
@@ -270,19 +271,25 @@ class InputDataAgent( OptimizerModule ):
     for site in siteCandidates:
       siteResult[site] = { 'disk': 0, 'tape': 0 }
 
+    seDict = {}
     for lfn, replicas in inputData.items():
       for se in replicas.keys():
-        sites = self.__getSitesForSE( se )
-        if sites['OK']:
-          for site in sites['Value']:
+        if se not in seDict:
+          sites = self.__getSitesForSE( se )
+          if not sites['OK']:
+            continue
+          try:
+            storageElement = StorageElement( se )
+            seDict[se] = { 'Sites': sites['Value'], 'Status': storageElement .getStatus()['Value'] }
+          except Exception:
+            self.log.exception( 'Failed to instantiate StorageElement( %s )' % se )
+            continue
+          for site in seDict[se]['Sites']:
             if site in siteCandidates:
-
-              for disk in self.diskSE:
-                if se[-len( disk ):] == disk:
-                  siteResult[site]['disk'] = siteResult[site]['disk'] + 1
-              for tape in self.tapeSE:
-                if se[-len( tape ):] == tape:
-                  siteResult[site]['tape'] = siteResult[site]['tape'] + 1
+              if seDict[se]['Status']['Read'] and seDict[se]['Status']['Disk']:
+                siteResult[site]['disk'] += 1
+              if seDict[se]['Status']['Read'] and seDict[se]['Status']['Tape']:
+                siteResult[site]['tape'] += 1
 
     return S_OK( siteResult )
 
