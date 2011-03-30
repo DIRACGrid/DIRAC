@@ -128,7 +128,7 @@ class RequestPreparationAgent( AgentModule ):
   def __getNewReplicas( self ):
     """ This obtains the New replicas from the Replicas table and for each LFN the requested storage element """
     # First obtain the New replicas from the Replicas table
-    res = self.stagerClient.getReplicasWithStatus( 'Waiting' )
+    res = self.stagerClient.getReplicasWithStatus( 'New' )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getNewReplicas: Failed to get replicas with New status.", res['Message'] )
       return res
