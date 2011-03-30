@@ -30,7 +30,7 @@ class JobSchedulingAgent( OptimizerModule ):
       The specific Optimizer must provide the following methods:
       - checkJob() - the main method called for each job
       and it can provide:
-      - initializeOptimizer() before each execution cycle      
+      - initializeOptimizer() before each execution cycle
   """
 
   #############################################################################
@@ -223,32 +223,32 @@ class JobSchedulingAgent( OptimizerModule ):
     self.log.verbose( inputDataDict )
     finalSiteCandidates = []
     tapeCount = 0
+    diskCount = 0
     tapeList = []
     stagingFlag = 0
     numberOfCandidates = len( siteCandidates )
     self.log.verbose( 'Job %s has %s candidate sites' % ( job, numberOfCandidates ) )
     for site in siteCandidates:
-      tape = inputDataDict[site]['tape']
-      tapeList.append( tape )
-      if tape > 0:
-        self.log.verbose( '%s replicas on tape storage for %s' % ( tape, site ) )
-        tapeCount += 1
-
-    if not tapeCount:
-      self.log.verbose( 'All replicas on disk, no staging required' )
-      finalSiteCandidates = siteCandidates
-      result = S_OK( stagingFlag )
-      result['SiteCandidates'] = finalSiteCandidates
-      return result
-
-    if tapeCount < numberOfCandidates:
-      self.log.verbose( 'All replicas on disk for some candidate sites, restricting to those' )
-      for site in siteCandidates:
+      disk = inputDataDict[site]['disk']
+      if not disk:
         tape = inputDataDict[site]['tape']
-        if tape == 0:
+        tapeList.append( tape )
+        if tape > 0:
+          self.log.verbose( '%s replicas on tape storage for %s' % ( tape, site ) )
+          tapeCount += 1
+      else:
+        diskCount += 1
+
+    if diskCount:
+      if not tapeCount:
+        self.log.verbose( 'All replicas on disk, no staging required' )
+      else:
+        self.log.verbose( 'Some replicas on disk for some candidate sites, restricting to those, no staging required' )
+      for site in siteCandidates:
+        if inputDataDict[site]['disk']:
           finalSiteCandidates.append( site )
 
-    if tapeCount == numberOfCandidates:
+    elif tapeCount >= numberOfCandidates:
       self.log.verbose( 'Staging is required for job' )
       tapeList.sort()
       minTapeValue = tapeList[0]
