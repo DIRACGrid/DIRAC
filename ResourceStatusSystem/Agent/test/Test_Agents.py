@@ -2,6 +2,7 @@ import unittest
 import sys
 import DIRAC.ResourceStatusSystem.test.fake_AgentModule
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
+import DIRAC.ResourceStatusSystem.test.fake_rmDB
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 
 class AgentsTestCase( unittest.TestCase ):
@@ -12,6 +13,7 @@ class AgentsTestCase( unittest.TestCase ):
     sys.modules["DIRAC.LoggingSystem.Client.Logger"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Base.AgentModule"] = DIRAC.ResourceStatusSystem.test.fake_AgentModule
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
+    sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceManagementDB"] = DIRAC.ResourceStatusSystem.test.fake_rmDB
     sys.modules["DIRAC.Interfaces.API.DiracAdmin"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ConfigurationSystem.Client.CSAPI"] = DIRAC.ResourceStatusSystem.test.fake_Logger

@@ -5,8 +5,9 @@ import urllib2
 
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 #from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
 
 #############################################################################
@@ -107,8 +108,8 @@ class SLSStatus_Command(Command):
     except urllib2.URLError:
       gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
       return  {'Result':'Unknown'}
-    except:
-      gLogger.exception("Exception when calling SLSClient")
+    except: 
+      gLogger.exception("Exception when calling SLSClient for %s"%SLSName)
       return {'Result':'Unknown'}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
@@ -144,6 +145,7 @@ class SLSServiceInfo_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
+      #gLogger.info(SLSName,self.args[2])   
       res = self.client.getServiceInfo(SLSName, self.args[2], timeout = self.timeout)
       if not res['OK']:
         gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
@@ -156,7 +158,7 @@ class SLSServiceInfo_Command(Command):
       gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
       return  {'Result':'Unknown'}
     except:
-      gLogger.exception("Exception when calling SLSClient")
+      gLogger.exception("Exception when calling SLSClient for " + self.args[0] + " " + self.args[1])
       return {'Result':'Unknown'}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__

@@ -6,8 +6,8 @@
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 #import datetime
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
 class JobsClient:
   
@@ -137,7 +137,7 @@ class JobsClient:
 
     res = RPC.getSiteSummaryWeb({'Site':name},[],0,500)
     if not res['OK']:
-      raise RSSException, where(self, self.getJobsSimpleEff) + " " + res['Message'] 
+      raise RSSException, where(self, self.getJobsSimpleEff) + " " + res['Message'] + " " + str(name)
     else:
       res = res['Value']['Records']
     

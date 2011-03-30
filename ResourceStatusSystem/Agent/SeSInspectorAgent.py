@@ -11,11 +11,14 @@ from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import *
+from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB 
+
 
 __RCSID__ = "$Id: $"
 
@@ -34,6 +37,7 @@ class SeSInspectorAgent(AgentModule):
     
     try:
       self.rsDB = ResourceStatusDB()
+      self.rmDB = ResourceManagementDB()
       
       self.ServicesToBeChecked = Queue.Queue()
       self.ServiceNamesInCheck = []
@@ -61,7 +65,7 @@ class SeSInspectorAgent(AgentModule):
 
       self.csAPI = CSAPI()      
       
-      for i in range(self.maxNumberOfThreads):
+      for i in xrange(self.maxNumberOfThreads):
         self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (None, ) )  
         
       return S_OK()
@@ -129,7 +133,7 @@ class SeSInspectorAgent(AgentModule):
                      formerStatus = formerStatus, siteType = siteType, 
                      serviceType = serviceType, tokenOwner = tokenOwner)
         
-        newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
+        newPEP.enforce(rsDBIn = self.rsDB, rmDBIn = self.rmDB, setupIn = self.setup, ncIn = self.nc, 
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)
     
         # remove from InCheck list

@@ -9,13 +9,14 @@ import datetime
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB, RSSDBException
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import 
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
 __RCSID__ = "$Id$"
 
 AGENT_NAME = 'ResourceStatus/CleanerAgent'
-
 
 class CleanerAgent(AgentModule):
 
@@ -28,6 +29,7 @@ class CleanerAgent(AgentModule):
     try:
 
       self.rsDB = ResourceStatusDB()
+      self.rmDB = ResourceManagementDB()  
       self.tablesWithHistory = self.rsDB.getTablesWithHistory()
       self.historyTables = [x+'History' for x in self.tablesWithHistory]
       
@@ -77,7 +79,7 @@ class CleanerAgent(AgentModule):
                                                 second = 0) - datetime.timedelta(days = 1))
       
       req = "SELECT Opt_ID FROM ClientsCache WHERE Value = 'EndDate' AND Result < '%s'" %aDayAgo
-      resQuery = self.rsDB.db._query(req)
+      resQuery = self.rmDB.db._query(req)
       if not resQuery['OK']:
         raise RSSDBException, where(self, self.execute) + resDel['Message']
       if resQuery['Value'] != ():
@@ -85,7 +87,7 @@ class CleanerAgent(AgentModule):
 
         req = "DELETE FROM ClientsCache WHERE Opt_ID IN (%s)" %DT_ID_to_remove
       
-        resDel = self.rsDB.db._update(req)
+        resDel = self.rmDB.db._update(req)
         if not resDel['OK']:
           raise RSSDBException, where(self, self.execute) + resDel['Message']       
 
@@ -94,7 +96,7 @@ class CleanerAgent(AgentModule):
       anHourAgo = str((datetime.datetime.utcnow()).replace(microsecond = 0, 
                                                   second = 0) - datetime.timedelta(minutes = 30))
       req = "DELETE FROM AccountingCache WHERE LastCheckTime < '%s'" %(anHourAgo)
-      resDel = self.rsDB.db._update(req)
+      resDel = self.rmDB.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.execute) + resDel['Message']
 
@@ -107,3 +109,4 @@ class CleanerAgent(AgentModule):
       return S_ERROR(errorStr)
 
 #############################################################################
+      

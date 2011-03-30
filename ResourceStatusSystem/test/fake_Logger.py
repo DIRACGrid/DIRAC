@@ -113,3 +113,21 @@ def getSiteSEMapping(gridName=''):
           'Value': {'LCG.NIKHEF.nl': ['NIKHEF-DST', 'NIKHEF_M-DST', 'NIKHEF_MC_M-DST', 'NIKHEF_MC-DST', 'NIKHEF-USER', 'NIKHEF-FAILOVER'], 
                     'LCG.TCD.ie': ['TCD-disk'], 'LCG.UKI-SCOTGRID-ECDF.uk': ['Edinburgh-DST'], 
                     'LCG.CNAF.it': ['CNAF-RAW', 'CNAF-DST', 'CNAF_M-DST', 'CNAF-USER', 'CNAF-FAILOVER', 'CNAF-disk', 'CNAF-tape', 'CNAF-RDST', 'CNAF_MC_M-DST', 'CNAF_MC-DST'], 'LCG.LAL.fr': ['GRIF-USER'], 'LCG.IN2P3.fr': ['IN2P3-RAW', 'IN2P3-DST', 'IN2P3_M-DST', 'IN2P3-USER', 'IN2P3-FAILOVER', 'IN2P3-disk', 'IN2P3-tape', 'IN2P3-RDST', 'IN2P3_MC_M-DST', 'IN2P3_MC-DST'], 'LCG.PIC.es': ['PIC-DST', 'PIC-RDST', 'PIC_M-DST', 'PIC-USER', 'PIC-FAILOVER', 'PIC-RAW', 'PIC-disk', 'PIC-tape', 'PIC_MC_M-DST', 'PIC_MC-DST'], 'LCG.RAL.uk': ['RAL-RAW', 'RAL-DST', 'RAL_M-DST', 'RAL-USER', 'RAL-FAILOVER', 'RAL-disk', 'RAL-tape', 'RAL-RDST', 'RAL_MC_M-DST', 'RAL_MC-DST'], 'LCG.CPPM.fr': ['CPPM-USER'], 'LCG.SARA.nl': ['NIKHEF-RAW', 'NIKHEF-RDST'], 'LCG.Dortmund.de': ['Dortmund-disk'], 'LCG.CERN.ch': ['CERN-RAW', 'CERN_M-DST', 'CERN-USER', 'CERN-FAILOVER', 'CERN-disk', 'CERN-tape', 'CERN-RDST', 'CERN_MC_M-DST', 'CERN-HIST'], 'LCG.GRIDKA.de': ['GRIDKA-RAW', 'GRIDKA-DST', 'GRIDKA_M-DST', 'GRIDKA-USER', 'GRIDKA-FAILOVER', 'GRIDKA-disk', 'GRIDKA-tape', 'GRIDKA-RDST', 'GRIDKA_MC_M-DST', 'GRIDKA_MC-DST'], 'LCG.RAL-test.uk': ['RAL-USER-TEST219', 'RAL-DST-TEST219', 'RAL_M-DST-TEST219', 'RAL-RAW-TEST219', 'RAL-RDST-TEST219', 'RAL-FAILOVER-TEST219']}}
+  
+def getMailForUser( users ):
+  return {'OK' : True,
+          'Value': []
+          }
+  
+def getOperationMails( op ):
+  return {'OK' : True,
+          'Value': []
+          }
+  
+def getSites( grids = None ):
+  return {'Ok': True,
+          'Value' : ['LCG.NIKHEF.nl', 'LCG.CNAF.it', 'LCG.IN2P3.fr', 'LCG.PIC.es', 'LCG.RAL.uk', 'LCG.GRIDKA.de', 'LCG.CERN.ch', 'LCG.SARA.nl']}
+   
+def getSiteTier( sites ):
+  return {'Ok': True,
+          'Value' : [0]}

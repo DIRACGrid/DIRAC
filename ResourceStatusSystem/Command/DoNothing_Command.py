@@ -1,4 +1,4 @@
-from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Command.Command import *
 
 class DoNothing_Command(Command):
   

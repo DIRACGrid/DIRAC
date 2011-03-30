@@ -3,13 +3,13 @@
 # it crashes epydoc
 # __docformat__ = "restructuredtext en"
 
-import datetime
+#import datetime
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
-from DIRAC.Core.DISET.RPCClient import RPCClient
+#from DIRAC.Core.DISET.RPCClient import RPCClient
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where, ValidRes
 
 class PilotsClient:
   
@@ -72,34 +72,34 @@ class PilotsClient:
 
 
 #############################################################################
-
-  def getPilotsEff(self, granularity, name, periods):
-    """  
-    Return pilot stats of entity in args for periods
-    
-    :Parameters:
-      `granularity`
-        string - should be a ValidRes
-    
-      `name`
-        string - should be the name of the ValidRes
-    
-      `name`
-        list - periods contains the periods to consider in the query
-
-    :return:
-      {
-        'PilotsEff': X (0-1)'
-      }
-    """
-
-    if granularity == 'Site':
-      entity = getSiteRealName(name)
-      _granularity = 'Site'
-    else:
-      entity = name
-      granularity = 'GridCE'
-    
+#
+#  def getPilotsEff(self, granularity, name, periods):
+#    """  
+#    Return pilot stats of entity in args for periods
+#    
+#    :Parameters:
+#      `granularity`
+#        string - should be a ValidRes
+#    
+#      `name`
+#        string - should be the name of the ValidRes
+#    
+#      `name`
+#        list - periods contains the periods to consider in the query
+#
+#    :return:
+#      {
+#        'PilotsEff': X (0-1)'
+#      }
+#    """
+#
+#    if granularity == 'Site':
+#      entity = getSiteRealName(name)
+#      _granularity = 'Site'
+#    else:
+##      entity = name
+#      granularity = 'GridCE'
+#    
     #######TODO
 #    numberOfPilots = self.rc.getReport('Pilot', 'NumberOfPilots', 
 #                                       datetime.datetime.utcnow()-datetime.timedelta(hours = 24), 

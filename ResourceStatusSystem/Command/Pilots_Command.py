@@ -4,8 +4,9 @@
 
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
 #############################################################################
 
@@ -133,7 +134,9 @@ class PilotsEffSimpleCached_Command(Command):
     """
     super(PilotsEffSimpleCached_Command, self).doCommand()
 
-    if self.client is None:
+    client = self.client
+
+    if client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       self.client = ResourceStatusClient(timeout = self.timeout)
       
@@ -151,13 +154,17 @@ class PilotsEffSimpleCached_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
+        
+      if client is None:  
+        from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+        self.client = ResourceManagementClient(timeout = self.timeout) 
       res = self.client.getCachedResult(name, 'PilotsEffSimpleEverySites', 'PE_S', 'NULL')
       if res == None:
         return {'Result':'Idle'}
       if res == []:
         return {'Result':'Idle'}
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
+      gLogger.exception("Exception when calling ResourceManagementClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
     
     return {'Result':res[0]}

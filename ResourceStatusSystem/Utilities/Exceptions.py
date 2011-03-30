@@ -3,7 +3,7 @@
       - exceptions
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType, PolicyTypes
 
 #############################################################################
 

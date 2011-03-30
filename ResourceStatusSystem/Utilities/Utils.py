@@ -103,6 +103,6 @@ ValidStatus = ['Active', 'Probing', 'Bad', 'Banned']
 PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType', 'RealBan_PolType']
 ValidSiteType = ['T0', 'T1', 'T2', 'T3']
 ValidResourceType = ['CE', 'CREAMCE', 'SE', 'LFC_C', 'LFC_L', 'FTS', 'VOMS']
-ValidService = ValidServiceType = ['Computing', 'Storage', 'VO-BOX', 'VOMS']
-
+ValidServiceType = ['Computing', 'Storage', 'VO-BOX', 'VOMS']
+ValidService = ValidServiceType
 #############################################################################

@@ -6,8 +6,9 @@ import datetime
 
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
 #############################################################################
 
@@ -183,8 +184,8 @@ class TransferQualityCached_Command(Command):
     super(TransferQualityCached_Command, self).doCommand()
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.client = ResourceManagementClient(timeout = self.timeout)
       
     name = self.args[1]
     
@@ -223,8 +224,8 @@ class CachedPlot_Command(Command):
     super(CachedPlot_Command, self).doCommand()
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.client = ResourceManagementClient(timeout = self.timeout)
       
     granularity = self.args[0]
     name = self.args[1]
@@ -239,7 +240,7 @@ class CachedPlot_Command(Command):
       if res == []:
         return {'Result':{'data':{}, 'granularity':900}}
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
+      gLogger.exception("Exception when calling ResourcePolicyClient for %s" %(name))
       return {'Result':'Unknown'}
     
     return {'Result':eval(res[0])}
@@ -265,8 +266,8 @@ class TransferQualityFromCachedPlot_Command(Command):
     super(TransferQualityFromCachedPlot_Command, self).doCommand()
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.client = ResourceManagementClient(timeout = self.timeout)
       
     granularity = self.args[0]
     name = self.args[1]
@@ -292,7 +293,7 @@ class TransferQualityFromCachedPlot_Command(Command):
       meanQuality = s/n
       
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
+      gLogger.exception("Exception when calling ResourcePolicyClient for %s" %(name))
       return {'Result':'Unknown'}
     
     return {'Result':meanQuality}

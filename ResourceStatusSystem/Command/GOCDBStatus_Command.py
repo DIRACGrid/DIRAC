@@ -9,8 +9,10 @@ import datetime
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Command.Command import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import convertTime
+
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 #############################################################################
 
@@ -186,8 +188,8 @@ class DTCached_Command(Command):
     name = self.args[1]
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.client = ResourceManagementClient(timeout = self.timeout)
 
     now = datetime.datetime.utcnow().replace(microsecond = 0, second = 0)
     

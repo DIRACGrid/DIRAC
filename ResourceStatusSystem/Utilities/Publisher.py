@@ -8,11 +8,15 @@ import copy
 import threading
 
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import *
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.CS import *
+from DIRAC.ResourceStatusSystem.Utilities.CS import getStorageElementStatus
+
+from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes
+
+
 
 class Publisher:
   """ 
@@ -137,7 +141,7 @@ class Publisher:
       (granularityForPanel, nameForPanel) = self.__getNameForPanel(granularity, name, panel)
       
       if not self._resExist(granularityForPanel, nameForPanel):
-        completeInfoForPanel_res = None
+#        completeInfoForPanel_res = None
         continue
       
       #take composite RSS result for name

@@ -2,7 +2,7 @@
 # $HeadURL:  $
 ########################################################################
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 import copy
 
 __RCSID__ = "$Id:  $"
@@ -362,7 +362,7 @@ class InfoGetter:
                 if p in x.keys():
                   toRemove = x
               info.remove(toRemove)
-            except Exception, e:
+            except Exception:
               continue
     
     return info

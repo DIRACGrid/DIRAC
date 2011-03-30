@@ -12,10 +12,10 @@
        c. other....
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import *
+from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, getStorageElementStatus, getOperationMails, getMailForUser
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where, ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes, InvalidStatus, InvalidResourceType, InvalidServiceType, InvalidSiteType
 
 import copy
 import time
@@ -123,7 +123,7 @@ class PEP:
       
 #############################################################################
     
-  def enforce(self, pdpIn = None, rsDBIn = None, ncIn = None, setupIn = None, 
+  def enforce(self, pdpIn = None, rsDBIn = None, rmDBIn = None, ncIn = None, setupIn = None, 
               daIn = None, csAPIIn = None, knownInfo = None):
     """ 
     enforce policies, using a PDP  (Policy Decision Point), based on
@@ -153,7 +153,9 @@ class PEP:
      :params:
        :attr:`pdpIn`: a custom PDP object (optional)
   
-       :attr:`rsDBIn`: a custom database object (optional)
+       :attr:`rsDBIn`: a custom (statuses) database object (optional)
+       
+       :attr:`rmDBIn`: a custom (management) database object (optional)
      
        :attr:`setupIn`: a string with the present setup (optional)
 
@@ -184,6 +186,13 @@ class PEP:
       # Use standard DIRAC DB
       from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
       rsDB = ResourceStatusDB()
+    
+    if rmDBIn is not None:
+      rmDB = rmDBIn
+    else:
+      # Use standard DIRAC DB
+      from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+      rmDB = ResourceManagementDB()    
     
     #setup
     if setupIn is not None:
@@ -227,7 +236,7 @@ class PEP:
       self.__policyType = res['PolicyType']
 
       if 'Resource_PolType' in self.__policyType:
-        self._ResourcePolTypeActions(resDecisions, res, rsDB)
+        self._ResourcePolTypeActions(resDecisions, res, rsDB, rmDB)
       
       if 'Alarm_PolType' in self.__policyType:
         self._AlarmPolTypeActions(res, nc, setup, rsDB)
@@ -258,9 +267,9 @@ class PEP:
     
 #############################################################################
 
-  def _ResourcePolTypeActions(self, resDecisions, res, rsDB):
+  def _ResourcePolTypeActions(self, resDecisions, res, rsDB, rmDB):
     # Update the DB
-  
+   
     if res['Action']:
       if self.__granularity == 'Site':
         rsDB.setSiteStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
@@ -288,7 +297,7 @@ class PEP:
     
     for resP in resDecisions['SinglePolicyResults']:
       if not resP.has_key('OLD'):
-        rsDB.addOrModifyPolicyRes(self.__granularity, self.__name, 
+        rmDB.addOrModifyPolicyRes(self.__granularity, self.__name, 
                                   resP['PolicyName'], resP['Status'], resP['Reason'])
     
     if res.has_key('EndDate'):
@@ -393,7 +402,7 @@ class PEP:
       elif self.__granularity == 'StorageElement':
       
         presentReadStatus = getStorageElementStatus( self.__name, 'ReadAccess')['Value']
-        presentWriteStatus = getStorageElementStatus( self.__name, 'WriteAccess')['Value']
+#        presentWriteStatus = getStorageElementStatus( self.__name, 'WriteAccess')['Value']
   
         if res['Status'] == 'Banned':
           

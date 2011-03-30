@@ -205,25 +205,25 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
         res = self.rsh.export_getPeriods(granularity, 'XX', status, 20)
         self.assert_(res['OK'])
     
-  def test_export_getPolicyRes(self):
-    res = self.rsh.export_getPolicyRes('XX', 'XX', False)
-    self.assert_(res['OK'])
+#  def test_export_getPolicyRes(self):
+#    res = self.rsh.export_getPolicyRes('XX', 'XX', False)
+#    self.assert_(res['OK'])
         
-  def test_export_getDownTimesWeb(self):
-    res = self.rsh.export_getDownTimesWeb({}, [], 0, 500)
-    self.assert_(res['OK'])
+#  def test_export_getDownTimesWeb(self):
+#    res = self.rsh.export_getDownTimesWeb({}, [], 0, 500)
+#    self.assert_(res['OK'])
     
-  def test_export_getCachedAccountingResult(self):
-    res = self.rsh.export_getCachedAccountingResult('XX', 'YY', 'ZZ')
-    self.assert_(res['OK'])
+#  def test_export_getCachedAccountingResult(self):
+#    res = self.rsh.export_getCachedAccountingResult('XX', 'YY', 'ZZ')
+#    self.assert_(res['OK'])
         
-  def test_export_getCachedResult(self):
-    res = self.rsh.export_getCachedResult('XX', 'YY', 'ZZ', 1)
-    self.assert_(res['OK'])
+#  def test_export_getCachedResult(self):
+#    res = self.rsh.export_getCachedResult('XX', 'YY', 'ZZ', 1)
+#    self.assert_(res['OK'])
         
-  def test_export_getCachedIDs(self):
-    res = self.rsh.export_getCachedIDs('XX', 'YY')
-    self.assert_(res['OK'])
+#  def test_export_getCachedIDs(self):
+#    res = self.rsh.export_getCachedIDs('XX', 'YY')
+#    self.assert_(res['OK'])
         
   def test_export_getGeneralName(self):
     for g_1 in ValidRes:

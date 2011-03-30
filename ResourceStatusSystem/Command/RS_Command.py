@@ -4,8 +4,9 @@
 
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where, ValidRes, ValidStatus
 
 #############################################################################
 

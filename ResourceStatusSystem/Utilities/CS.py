@@ -1,4 +1,4 @@
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK#, S_ERROR
 #from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
@@ -6,7 +6,7 @@ g_BaseRegistrySection = "/Registry"
 g_BaseResourcesSection = "/Resources"
 g_BaseOperationsSection = "/Operations"
 
-import time
+#import time
 
 #############################################################################
 

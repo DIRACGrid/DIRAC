@@ -7,9 +7,11 @@ import datetime
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRACSiteName
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Command.Command import *
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
 #############################################################################
 
@@ -31,7 +33,7 @@ class JobsEffSimpleEveryOne_Command( Command ):
       self.client = JobsClient()
 
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
       RPC = RPCClient( "ResourceStatus/ResourceStatus" )
       sites = RPC.getSitesList()
       if not sites['OK']:
@@ -40,7 +42,7 @@ class JobsEffSimpleEveryOne_Command( Command ):
         sites = sites['Value']
 
     if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
       self.RPC = RPCClient( "WorkloadManagement/WMSAdministrator" )
 
     try:
@@ -79,7 +81,7 @@ class PilotsEffSimpleEverySites_Command( Command ):
       self.client = PilotsClient()
 
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
       RPC = RPCClient( "ResourceStatus/ResourceStatus" )
       sites = RPC.getSitesList()
       if not sites['OK']:
@@ -88,7 +90,7 @@ class PilotsEffSimpleEverySites_Command( Command ):
         sites = sites['Value']
 
     if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
       self.RPC = RPCClient( "WorkloadManagement/WMSAdministrator" )
 
     try:
@@ -125,7 +127,7 @@ class TransferQualityEverySEs_Command( Command ):
     """
 
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
       RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
       SEs = RPC_RSS.getStorageElementsList()
       if not SEs['OK']:
@@ -134,7 +136,7 @@ class TransferQualityEverySEs_Command( Command ):
         SEs = SEs['Value']
 
     if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
       self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
 
     if self.client is None:
@@ -213,7 +215,7 @@ class DTEverySites_Command( Command ):
       self.client = GOCDBClient()
 
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
       RPC = RPCClient( "ResourceStatus/ResourceStatus" )
       GOC_sites = RPC.getGridSitesList()
       if not GOC_sites['OK']:
@@ -283,7 +285,7 @@ class DTEveryResources_Command( Command ):
       self.client = GOCDBClient()
 
     if resources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
       RPC = RPCClient( "ResourceStatus/ResourceStatus" )
       resources = RPC.getResourcesList()
       if not resources['OK']:

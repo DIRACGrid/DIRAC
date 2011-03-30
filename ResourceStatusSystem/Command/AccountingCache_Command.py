@@ -6,8 +6,12 @@ import datetime
 
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Command.Command import *
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+
+from DIRAC.Core.DISET.RPCClient import RPCClient
+#from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 
 #############################################################################
 
@@ -276,6 +280,7 @@ class TransferQualityBySourceSplittedSite_Command(Command):
       storSitesWeb = storSitesWeb['Value']['Records']
     
     SESiteMapping = {}
+    siteSEMapping = {}
     
     for r in storSitesWeb:
       sites = r[2].split(' ')[:-1]

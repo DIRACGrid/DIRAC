@@ -7,8 +7,9 @@ import urllib2, httplib
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where 
 
 #from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
 

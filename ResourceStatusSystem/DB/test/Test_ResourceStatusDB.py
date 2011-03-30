@@ -5,7 +5,7 @@ import sys
 import datetime
 import unittest
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes,ValidStatus
 from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -28,9 +28,10 @@ class ResourceStatusDBTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
 
     from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
+   #from DIRAC.ResourceStatusSystem.DB.test.FakeResourceStatusDB import FakeResourceStatusDB
+    
     from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-    
-    
+        
     # setting mock interface
     self.rsDB = ResourceStatusDB(DBin=self.mock_DB)
 
@@ -161,16 +162,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   ###test general methods###
   ##########################
 
-  def test_addOrModifyPolicyRes(self):
-    for g in ValidRes:
-      for s in ValidStatus:
-        res = self.rsDB.addOrModifyPolicyRes(g, 'XXX', 'ppp', s, 'XXX')
-        self.assertEqual(res, None)
-
-  def test_getPolicyRes(self):
-    res = self.rsDB.getPolicyRes('XX', 'YY')
-    self.assertEqual(res, [])
-
   def test_addOrModifyGridSite(self):
     for t in ValidSiteType:
       res = self.rsDB.addOrModifyGridSite('XXX', t)
@@ -189,57 +180,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, [])
     res = self.rsDB.getGridSitesList(paramsList = ['GridSiteName', 'GridTier'], 
                                      gridSiteName = ['AAAA', 'BBBB'], gridTier = ['T0', 'T1'])
-    self.assertEqual(res, [])
-
-  def test_addOrModifyClientCacheRes(self):
-    for g in ValidRes:
-      res = self.rsDB.addOrModifyClientsCacheRes(g, 'XXX', 'ppp', 'XXX', 'ID')
-      self.assertEqual(res, None)
-
-  def test_getClientsCacheStuff(self):
-    res = self.rsDB.getClientsCacheStuff()
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff('XX')
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff(None, 'YY')
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff(None, None, 'ZZ')
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff('XX', None, 'ZZ')
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff('XX', 'YY', None)
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff(None, 'XX', 'YY')
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff('XX', 'YY', None, 'XX', 'YY', None)
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff(None, 'XX', 'YY', 'XX', 'YY', None, 'ZZ')
-    self.assertEqual(res, [])
-    res = self.rsDB.getClientsCacheStuff(None, 'XX', 'YY', ['XX', 'YY'], None, ['ZZ'])
-    self.assertEqual(res, [])
-
-  def test_addOrModifyAccountingCacheRes(self):
-    res = self.rsDB.addOrModifyAccountingCacheRes('Name', 'XXX', 'ppp', 'XXX')
-    self.assertEqual(res, None)
-
-  def test_getAccountingCacheStuff(self):
-    res = self.rsDB.getAccountingCacheStuff()
-    self.assertEqual(res, [])
-    res = self.rsDB.getAccountingCacheStuff('XX')
-    self.assertEqual(res, [])
-    res = self.rsDB.getAccountingCacheStuff(None, 'YY')
-    self.assertEqual(res, [])
-    res = self.rsDB.getAccountingCacheStuff(None, None, 'ZZ')
-    self.assertEqual(res, [])
-    res = self.rsDB.getAccountingCacheStuff('XX', None, 'ZZ')
-    self.assertEqual(res, [])
-    res = self.rsDB.getAccountingCacheStuff('XX', 'YY', None)
-    self.assertEqual(res, [])
-    res = self.rsDB.getAccountingCacheStuff(None, 'XX', 'YY')
-    self.assertEqual(res, [])
-    res = self.rsDB.getAccountingCacheStuff(['XX'], 'YY', None, 'XX')
-    self.assertEqual(res, [])
-    res = self.rsDB.getAccountingCacheStuff(None, 'XX', 'YY', 'XX')
     self.assertEqual(res, [])
     
   def test_getMonitoredsList(self):
@@ -401,7 +341,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getStatusList()
     self.assertEqual(res, [])
 
-
   def test_getEndings(self):
     res = self.rsDB.getEndings('Sites')
     self.assertEqual(res, [])
@@ -452,25 +391,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getStorageElementsStats('Site', 'XX')
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
 
-  def test_getDownTimesWeb(self):
-    g1 = 'Site'
-    g2 = 'Resource'
-    s1 = 'OUTAGE'
-    s2 = 'AT_RISK'
-    for g in (g1, g2):
-      for s in (s1, s2):
-        res = self.rsDB.getDownTimesWeb({'Granularity': g, 'Severity': [s]})
-        self.assertEqual(res['Records'], [])
-        res = self.rsDB.getDownTimesWeb({'Granularity': [g1, g2], 'Severity': [s]})
-        self.assertEqual(res['Records'], [])
-        res = self.rsDB.getDownTimesWeb({'Granularity': g, 'Severity': [s]}, [])
-        self.assertEqual(res['Records'], [])
-        res = self.rsDB.getDownTimesWeb({'Granularity': [g1, g2], 'Severity': [s]})
-        self.assertEqual(res['Records'], [])
-      res = self.rsDB.getDownTimesWeb({'Granularity': [g], 'Severity': [s1, s2]})
-      self.assertEqual(res['Records'], [])
-    res = self.rsDB.getDownTimesWeb({'Granularity': [g1, g2], 'Severity': [s1, s2]})
-    self.assertEqual(res['Records'], [])
 
   def test_getStuffToCheck(self):
     for g in ValidRes:
@@ -480,24 +400,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
       self.assertEqual(res, [])
       res = self.rsDB.getStuffToCheck(g,None,None,'aaa')
       self.assertEqual(res, [])
-
-#  def test_setMonitoredToBeChecked(self):
-#    for monitored in ValidRes:
-#      for granularity in ValidRes:
-#        if monitored == granularity:
-#          continue
-#        res = self.rsDB.setMonitoredToBeChecked(monitored, granularity, 'aaa.ch')
-#        self.assertEqual(res, None)
-
-#  def test_rankRes(self):
-#    for granularity in ValidRes:
-#      res = self.rsDB.rankRes(granularity, 30)
-#      self.assertEqual(res, {'WeightedRank':[], 'ActivesRank':[], 'ProbingsRank':[], 'BadsRank':[]})
-
-#  def test_syncWithCS(self):
-#    res = self.rsDB.syncWithCS()
-#    self.assertEqual(res, None)
-
 
   def test_getTokens(self):
     for g in ValidRes:
@@ -562,6 +464,7 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.getResourceStats, 'Site', 'xxx')
     self.assertRaises(RSSDBException, self.rsDB.getStorageElementsStats, 'Site', 'xxx')
     self.assertRaises(RSSDBException, self.rsDB.getCountries, 'Site')
+    #print self.defaultTestResult()   
 
     for g in ['Site', 'Service', 'Resource']:
       self.assertRaises(RSSDBException, self.rsDB.getTypesList, g) 
@@ -575,10 +478,11 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
       self.assertRaises(RSSDBException, self.rsDB.setMonitoredReason, g, 'xxx', 'x', 'x')
 #    self.assertRaises(RSSDBException, self.rsDB.syncWithCS)
    
-
-
 if __name__ == '__main__':
+    
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusDBTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusDBSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusDBFailure))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusDBFailure))        
+  unittest.TextTestRunner(verbosity=2).run(suite)
+
+  

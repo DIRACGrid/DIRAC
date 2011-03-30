@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
 from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRACSiteName
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import *
+from DIRAC.ResourceStatusSystem.Utilities.CS import getSites, getSiteTier, getSENodes, getLFCSites, getLFCNode, getFTSSites, getVOMSEndpoints, getFTSEndpoint, getCEType, getStorageElements
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient

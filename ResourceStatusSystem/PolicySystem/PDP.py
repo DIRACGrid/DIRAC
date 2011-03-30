@@ -7,11 +7,12 @@ The PDP (Policy Decision Point) module is used to:
 """
 #############################################################################
 
-import time
+#import time
 import datetime
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
@@ -337,7 +338,7 @@ class PDP:
     """
     
     from DIRAC.Core.DISET.RPCClient import RPCClient
-    rsS = RPCClient("ResourceStatus/ResourceStatus")
+    rsS = RPCClient("ResourceStatus/ResourceManagement")
     
     res = rsS.getPolicyRes(name, policyName, True)
     if not res['OK']:

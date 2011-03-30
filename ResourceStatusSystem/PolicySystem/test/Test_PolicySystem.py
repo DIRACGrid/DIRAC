@@ -48,6 +48,7 @@ class PolicySystemTestCase(unittest.TestCase):
     self.pi = PolicyInvoker()
     self.mock_pdp = Mock()
     self.mock_rsDB = Mock()
+    self.mock_rmDB = Mock()
     self.mock_nc = Mock()
     self.mock_da = Mock()
     self.mock_da.getBannedSites.return_value = {'OK': True, 
@@ -121,7 +122,7 @@ class PEPSuccess(PolicySystemTestCase):
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
         #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', user)
                         self.mock_rsDB.getMonitoredsHistory.return_value = ('Active', 'Reason', '2010-04-09 09:54:52')
-                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc, 
+                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc, 
                                           setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
                         self.assertEqual(res, None)
                         self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
@@ -135,7 +136,7 @@ class PEPSuccess(PolicySystemTestCase):
                                                                                              'Reason': 'DT:OUTAGE in 1 hours', 
                                                                                              'EndDate': '2010-02-16 15:00:00', 
                                                                                              'SAT': True}] }
-                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc, 
+                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc, 
                                           setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
                         self.assertEqual(res, None)
         

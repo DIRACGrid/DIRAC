@@ -2,8 +2,8 @@
     for interacting with the clients
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class Command( object ):
 

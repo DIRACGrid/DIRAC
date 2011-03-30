@@ -7,8 +7,8 @@ import urllib2
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Command.Command import *
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 def callClient(args, clientIn = None):
 

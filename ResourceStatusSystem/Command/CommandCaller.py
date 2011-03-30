@@ -13,7 +13,7 @@ class CommandCaller:
                         args = None, comm = None, extraArgs = None):
     
     c = command
-    a = args
+#    a = args
     
     if c is None: 
       c = self.setCommandObject(comm)

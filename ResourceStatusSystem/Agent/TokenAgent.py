@@ -13,9 +13,9 @@ from DIRAC import gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.CS import *
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Utilities.CS import getMailForUser
       
 __RCSID__ = "$Id:  $"
 

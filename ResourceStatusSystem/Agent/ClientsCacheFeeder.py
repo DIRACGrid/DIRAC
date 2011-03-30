@@ -14,6 +14,7 @@ from DIRAC.ResourceStatusSystem.Utilities.CS import getExt
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
 
@@ -32,6 +33,7 @@ class ClientsCacheFeeder( AgentModule ):
     try:
 
       self.rsDB = ResourceStatusDB()
+      self.rmDB = ResourceManagementDB()
 
       self.clientsInvoker = ClientsInvoker()
 
@@ -92,11 +94,11 @@ class ClientsCacheFeeder( AgentModule ):
             if 'ID' in res[key].keys():
               for value in res[key].keys():
                 if value != 'ID':
-                  self.rsDB.addOrModifyClientsCacheRes( key.split()[1], co[0][1].split( '_' )[0],
+                  self.rmDB.addOrModifyClientsCacheRes( key.split()[1], co[0][1].split( '_' )[0],
                                                        value, res[key][value], res[key]['ID'] )
             else:
               for value in res[key].keys():
-                self.rsDB.addOrModifyClientsCacheRes( key, co[0][1].split( '_' )[0],
+                self.rmDB.addOrModifyClientsCacheRes( key, co[0][1].split( '_' )[0],
                                                      value, res[key][value] )
         except:
           gLogger.exception( "Exception when executing " + co[0][1] )
@@ -117,7 +119,7 @@ class ClientsCacheFeeder( AgentModule ):
           plotType = res.keys()[0]
           for name in res[plotType].keys():
             plotName = co[0][1].split( '_' )[0] + '_' + str( co[2][0] )
-            self.rsDB.addOrModifyAccountingCacheRes( name, plotType, plotName,
+            self.rmDB.addOrModifyAccountingCacheRes( name, plotType, plotName,
                                                     res[plotType][name] )
         except:
           gLogger.exception( "Exception when executing " + co[0][1] )

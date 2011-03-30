@@ -4,6 +4,7 @@ from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 #from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -18,6 +19,7 @@ class ClientsTestCase( unittest.TestCase ):
     self.mockRSS = Mock()
 
     self.RSCli = ResourceStatusClient( serviceIn = self.mockRSS )
+    self.RMCli = ResourceManagementClient( serviceIn = self.mockRSS )
     self.PilotsCli = PilotsClient()
     self.JobsCli = JobsClient()
 
@@ -66,18 +68,18 @@ class ResourceStatusClientSuccess( ClientsTestCase ):
 
   def test_getCachedAccountingResult( self ):
     self.mockRSS.getCachedAccountingResult.return_value = {'OK':True, 'Value':[]}
-    res = self.RSCli.getCachedAccountingResult( 'XX', 'pippo', 'ZZ' )
+    res = self.RMCli.getCachedAccountingResult( 'XX', 'pippo', 'ZZ' )
     self.assertEqual( res, [] )
 
   def test_getCachedResult( self ):
     self.mockRSS.getCachedResult.return_value = {'OK':True, 'Value':[]}
-    res = self.RSCli.getCachedResult( 'XX', 'pippo', 'ZZ', 1 )
+    res = self.RMCli.getCachedResult( 'XX', 'pippo', 'ZZ', 1 )
     self.assertEqual( res, [] )
 
   def test_getCachedIDs( self ):
     self.mockRSS.getCachedIDs.return_value = {'OK':True,
                                               'Value':[78805473L, 78805473L, 78805473L, 78805473L]}
-    res = self.RSCli.getCachedIDs( 'XX', 'pippo' )
+    res = self.RMCli.getCachedIDs( 'XX', 'pippo' )
     self.assertEqual( res, [78805473L, 78805473L, 78805473L, 78805473L] )
 
 
