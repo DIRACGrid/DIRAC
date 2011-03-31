@@ -280,15 +280,15 @@ class InputDataAgent( OptimizerModule ):
             continue
           try:
             storageElement = StorageElement( se )
-            seDict[se] = { 'Sites': sites['Value'], 'Status': storageElement .getStatus()['Value'] }
+            seDict[se] = { 'Sites': sites['Value'], 'Status': storageElement.getStatus()['Value'] }
           except Exception:
             self.log.exception( 'Failed to instantiate StorageElement( %s )' % se )
             continue
           for site in seDict[se]['Sites']:
             if site in siteCandidates:
-              if seDict[se]['Status']['Read'] and seDict[se]['Status']['Disk']:
+              if seDict[se]['Status']['Read'] and seDict[se]['Status']['DiskSE']:
                 siteResult[site]['disk'] += 1
-              if seDict[se]['Status']['Read'] and seDict[se]['Status']['Tape']:
+              if seDict[se]['Status']['Read'] and seDict[se]['Status']['TapeSE']:
                 siteResult[site]['tape'] += 1
 
     return S_OK( siteResult )
