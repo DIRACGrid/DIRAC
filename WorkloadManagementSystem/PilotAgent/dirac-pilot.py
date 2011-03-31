@@ -65,6 +65,8 @@ class CliParams:
     self.pilotReference = ''
     self.releaseVersion = ''
 
+cliParams = CliParams()
+
 ###
 # Helper functions
 ###
@@ -183,8 +185,6 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 'c', 'cert', 'Use server certificate instead of proxy' ),
             ( 'R:', 'reference=', 'Use this pilot reference' ),
           )
-
-cliParams = CliParams()
 
 installOpts = []
 configureOpts = []
