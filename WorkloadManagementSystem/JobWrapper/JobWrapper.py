@@ -84,7 +84,7 @@ class JobWrapper:
     self.diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER'] )
     self.tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
     self.sandboxSizeLimit = gConfig.getValue( self.section + '/OutputSandboxLimit', 1024 * 1024 * 10 )
-    self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', False )
+    self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', True )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.vo = getVO( 'lhcb' )
