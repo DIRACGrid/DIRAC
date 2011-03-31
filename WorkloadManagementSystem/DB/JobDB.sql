@@ -131,7 +131,7 @@ CREATE TABLE OptimizerParameters (
     Name VARCHAR(100) NOT NULL,
     Value MEDIUMBLOB NOT NULL,
     PRIMARY KEY(JobID, Name)
-);
+) ENGINE = InnoDB;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AtticJobParameters;
