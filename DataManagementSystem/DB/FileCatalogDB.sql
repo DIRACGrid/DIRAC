@@ -24,7 +24,7 @@ CREATE TABLE FC_Files(
     GID TINYINT UNSIGNED NOT NULL,
     Status SMALLINT UNSIGNED NOT NULL,
 --    Status ENUM ('AprioriGood','Good','Trash','Deleting','Problematic','Checking','Bad') NOT NULL DEFAULT 'AprioriGood', 
-    FileName VARCHAR(128) NOT NULL,
+    FileName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
     INDEX (DirID),
     INDEX (UID,GID),
     INDEX (Status),
@@ -73,6 +73,7 @@ CREATE TABLE FC_Replicas (
     FileID INT NOT NULL,
     SEID INTEGER NOT NULL,
     Status SMALLINT UNSIGNED NOT NULL,
+    CreationDate DATETIME,
     INDEX (FileID),
     INDEX (SEID),
     INDEX (FileID,SEID),
@@ -121,7 +122,7 @@ CREATE TABLE FC_Users (
 drop table if exists FC_StorageElements;
 CREATE TABLE FC_StorageElements (
     SEID INTEGER AUTO_INCREMENT PRIMARY KEY,
-    SEName VARCHAR(127) NOT NULL,
+    SEName VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
     AliasName VARCHAR(127) DEFAULT '',
     UNIQUE KEY (SEName)
 );
@@ -161,7 +162,7 @@ CREATE TABLE DirectoryInfo(
 drop table if exists FC_DirMeta;
 CREATE TABLE FC_DirMeta (
     DirID INTEGER NOT NULL,
-    MetaKey VARCHAR(31) NOT NULL DEFAULT 'Noname',
+    MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (DirID,MetaKey)
 );
@@ -170,7 +171,7 @@ CREATE TABLE FC_DirMeta (
 drop table if exists FC_FileMeta;
 CREATE TABLE FC_FileMeta (
     FileID INTEGER NOT NULL,
-    MetaKey VARCHAR(31) NOT NULL DEFAULT 'Noname',
+    MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (FileID,MetaKey)
 );
@@ -179,7 +180,7 @@ CREATE TABLE FC_FileMeta (
 drop table if exists FC_DirectoryTree;
 CREATE TABLE FC_DirectoryTree (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
- DirName VARCHAR(1024) NOT NULL,
+ DirName VARCHAR(1024) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
  Parent INT NOT NULL DEFAULT 0,
  INDEX (Parent),
  INDEX (DirName)
@@ -189,7 +190,7 @@ CREATE TABLE FC_DirectoryTree (
 drop table if exists FC_DirectoryTreeM;
 CREATE TABLE FC_DirectoryTreeM (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
- DirName VARCHAR(255) NOT NULL,
+ DirName VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
  Parent INT NOT NULL DEFAULT 0,
  Level INT NOT NULL,
  INDEX (Level),
@@ -201,7 +202,7 @@ CREATE TABLE FC_DirectoryTreeM (
 drop table if exists FC_DirectoryLevelTree;
 CREATE TABLE FC_DirectoryLevelTree (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
- DirName VARCHAR(255) NOT NULL,
+ DirName VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
  Parent INT NOT NULL DEFAULT 0,
  Level INT NOT NULL,
  LPATH1 SMALLINT NOT NULL DEFAULT 0,
@@ -236,7 +237,7 @@ CREATE TABLE FC_DirectoryUsage(
 drop table if exists FC_MetaFields;
 CREATE TABLE FC_MetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
-  MetaName VARCHAR(64) NOT NULL,
+  MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   MetaType VARCHAR(128) NOT NULL
 );
 
@@ -244,7 +245,7 @@ CREATE TABLE FC_MetaFields (
 drop table if exists FC_MetaSetNames;
 CREATE TABLE FC_MetaSetNames (
   MetaSetID INT AUTO_INCREMENT PRIMARY KEY,
-  MetaSetName VARCHAR(64) NOT NULL,
+  MetaSetName VARCHAR(64)  NOT NULL,
   UNIQUE INDEX (MetaSetName)
 );
 
