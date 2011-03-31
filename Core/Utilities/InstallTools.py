@@ -1450,7 +1450,7 @@ def installPortal():
     msg = "lighthttpd already installed"
     gLogger.notice( msg )
   else:
-    gLogger.notice( 'Installing Light httpd' )
+    gLogger.notice( 'Installing Lighttpd' )
     # Now do the actual installation
     try:
       _createRunitLog( runitHttpdDir )
@@ -1469,7 +1469,7 @@ exec lighttpdSvc.sh < /dev/null
 
       os.chmod( runFile, gDefaultPerms )
     except Exception:
-      error = 'Failed to prepare setup for light httpd'
+      error = 'Failed to prepare setup for lighttpd'
       gLogger.exception( error )
       if exitOnError:
         DIRAC.exit( -1 )
