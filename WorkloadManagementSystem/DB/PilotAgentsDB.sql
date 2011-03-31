@@ -73,7 +73,7 @@ CREATE TABLE PilotOutput (
     StdOutput MEDIUMBLOB,
     StdError MEDIUMBLOB,
     PRIMARY KEY (PilotID)
-);
+) ENGINE = InnoDB;
 
 DROP TABLE IF EXISTS PilotRequirements;
 CREATE TABLE PilotRequirements (
