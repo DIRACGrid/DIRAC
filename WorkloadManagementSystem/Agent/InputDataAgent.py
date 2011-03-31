@@ -269,7 +269,7 @@ class InputDataAgent( OptimizerModule ):
     #for optimizations during scheduling
     siteResult = {}
     for site in siteCandidates:
-      siteResult[site] = { 'disk': 0, 'tape': 0 }
+      siteResult[site] = { 'disk': [], 'tape': [] }
 
     seDict = {}
     for lfn, replicas in inputData.items():
@@ -287,10 +287,15 @@ class InputDataAgent( OptimizerModule ):
         for site in seDict[se]['Sites']:
           if site in siteCandidates:
             if seDict[se]['Status']['Read'] and seDict[se]['Status']['DiskSE']:
-              siteResult[site]['disk'] += 1
+              if lfn not in siteResult[site]['disk']:
+                siteResult[site]['disk'].append( lfn )
             if seDict[se]['Status']['Read'] and seDict[se]['Status']['TapeSE']:
-              siteResult[site]['tape'] += 1
+              if lfn not in siteResult[site]['tape']:
+                siteResult[site]['tape'].append( lfn )
 
+    for site in siteResult:
+      siteResult[site]['disk'] = len( siteResult[site]['disk'] )
+      siteResult[site]['tape'] = len( siteResult[site]['tape'] )
     return S_OK( siteResult )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
