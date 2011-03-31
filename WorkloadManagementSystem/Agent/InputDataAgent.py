@@ -284,12 +284,12 @@ class InputDataAgent( OptimizerModule ):
           except Exception:
             self.log.exception( 'Failed to instantiate StorageElement( %s )' % se )
             continue
-          for site in seDict[se]['Sites']:
-            if site in siteCandidates:
-              if seDict[se]['Status']['Read'] and seDict[se]['Status']['DiskSE']:
-                siteResult[site]['disk'] += 1
-              if seDict[se]['Status']['Read'] and seDict[se]['Status']['TapeSE']:
-                siteResult[site]['tape'] += 1
+        for site in seDict[se]['Sites']:
+          if site in siteCandidates:
+            if seDict[se]['Status']['Read'] and seDict[se]['Status']['DiskSE']:
+              siteResult[site]['disk'] += 1
+            if seDict[se]['Status']['Read'] and seDict[se]['Status']['TapeSE']:
+              siteResult[site]['tape'] += 1
 
     return S_OK( siteResult )
 
