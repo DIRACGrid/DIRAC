@@ -30,7 +30,7 @@ class JobSchedulingAgent( OptimizerModule ):
       The specific Optimizer must provide the following methods:
       - checkJob() - the main method called for each job
       and it can provide:
-      - initializeOptimizer() before each execution cycle
+      - initializeOptimizer() before each execution cycle      
   """
 
   #############################################################################
@@ -121,8 +121,10 @@ class JobSchedulingAgent( OptimizerModule ):
       return self.__sendJobToTaskQueue( job, classAdJob, userSites, userBannedSites )
 
     hasInputData = False
-    for i in result['Value']:
-      if i:
+    inputData = []
+    for lfn in result['Value']:
+      if lfn:
+        inputData.append( lfn )
         hasInputData = True
 
     if not hasInputData:
@@ -157,7 +159,7 @@ class JobSchedulingAgent( OptimizerModule ):
 
     #Set stager request as necessary, optimize for smallest #files on tape if
     #more than one site candidate left at this point
-    checkStaging = self.__resolveSitesForStaging( job, sites, optInfo['SiteCandidates'] )
+    checkStaging = self.__resolveSitesForStaging( job, sites, inputData, optInfo['SiteCandidates'] )
     if not checkStaging['OK']:
       return checkStaging
 
@@ -216,67 +218,65 @@ class JobSchedulingAgent( OptimizerModule ):
     return S_ERROR( msg )
 
   #############################################################################
-  def __resolveSitesForStaging( self, job, siteCandidates, inputDataDict ):
+  def __resolveSitesForStaging( self, job, siteCandidates, inputData, inputDataDict ):
     """Site candidates are resolved from potential candidates and any job site
        requirement is compared at this point.
     """
-    self.log.verbose( inputDataDict )
+    self.log.verbose( 'InputData', inputData )
+    self.log.verbose( 'InputDataDict', inputDataDict )
     finalSiteCandidates = []
+    stageSiteCandidates = {}
+    # Number of sites with some files on Tape
     tapeCount = 0
+    # Number of sites with all files on Disk
     diskCount = 0
+    # List with the number of files on Tape
     tapeList = []
+    # List with the number of files on Disk
+    diskList = []
     stagingFlag = 0
     numberOfCandidates = len( siteCandidates )
+    numberOfFiles = len( inputData )
     self.log.verbose( 'Job %s has %s candidate sites' % ( job, numberOfCandidates ) )
     for site in siteCandidates:
+      tape = inputDataDict[site]['tape']
       disk = inputDataDict[site]['disk']
-      if not disk:
-        tape = inputDataDict[site]['tape']
-        tapeList.append( tape )
-        if tape > 0:
-          self.log.verbose( '%s replicas on tape storage for %s' % ( tape, site ) )
-          tapeCount += 1
-      else:
-        diskCount += 1
-
-    if diskCount:
-      if not tapeCount:
-        self.log.verbose( 'All replicas on disk, no staging required' )
-      else:
-        self.log.verbose( 'Some replicas on disk for some candidate sites, restricting to those, no staging required' )
-      for site in siteCandidates:
-        if inputDataDict[site]['disk']:
+      tapeList.append( tape )
+      diskList.append( disk )
+      if disk not in stageSiteCandidates:
+        stageSiteCandidates[disk] = []
+      if tape > 0:
+        self.log.verbose( '%s replicas on tape storage for %s' % ( tape, site ) )
+        tapeCount += 1
+      if disk > 0:
+        self.log.verbose( '%s replicas on disk storage for %s' % ( disk, site ) )
+        stageSiteCandidates[disk].append( site )
+        if disk == numberOfFiles:
+          diskCount += 1
           finalSiteCandidates.append( site )
 
-    elif tapeCount >= numberOfCandidates:
-      self.log.verbose( 'Staging is required for job' )
-      tapeList.sort()
-      minTapeValue = tapeList[0]
-      minTapeSites = []
-      for site in siteCandidates:
-        if inputDataDict[site]['tape'] == minTapeValue:
-          minTapeSites.append( site )
+    if diskCount:
+      self.log.verbose( 'All replicas on disk, no staging required' )
+      result = S_OK( stagingFlag )
+      result['SiteCandidates'] = finalSiteCandidates
+      return result
 
-      if not minTapeSites:
-        return S_ERROR( 'No possible site candidates' )
-
-      if len( minTapeSites ) > 1:
-        self.log.verbose( 'The following sites have %s tape replicas: %s' % ( minTapeValue, minTapeSites ) )
-        random.shuffle( minTapeSites )
-        randomSite = minTapeSites[0]
-        finalSiteCandidates.append( randomSite )
-        self.log.verbose( 'Site %s has been randomly chosen for job' % ( randomSite ) )
-        stagingFlag = 1
-      else:
-        self.log.verbose( '%s is the site with smallest number of tape replicas (=%s)' %
-                          ( minTapeSites[0], minTapeValue ) )
-        finalSiteCandidates.append( minTapeSites[0] )
-        stagingFlag = 1
+    # If not all files are available on Disk at a single site, select those with 
+    # a larger number of files on disk
+    self.log.verbose( 'Staging is required for job' )
+    maxDiskValue = sorted( diskList )[-1]
+    self.log.verbose( 'The following sites have %s disk replicas: %s' % ( maxDiskValue, stageSiteCandidates[maxDiskValue] ) )
+    random.shuffle( stageSiteCandidates[maxDiskValue] )
+    finalSiteCandidates.extend( stageSiteCandidates[maxDiskValue] )
+    stagingFlag = 1
+    if len( finalSiteCandidates ) > 1:
+      self.log.verbose( 'Site %s has been randomly chosen for job' % ( finalSiteCandidates[0] ) )
+    else:
+        self.log.verbose( '%s is the site with highest number of disk replicas (=%s)' %
+                          ( finalSiteCandidates[0], maxDiskValue ) )
 
     result = S_OK( stagingFlag )
-
     result['SiteCandidates'] = finalSiteCandidates
-
     return result
 
   #############################################################################
