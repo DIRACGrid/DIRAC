@@ -113,6 +113,7 @@ class StorageElement:
      Return Status of the SE, a dictionary with:
       - Read: True (is allowed), False (it is not allowed)
       - Write: True (is allowed), False (it is not allowed)
+      - Remove: True (is allowed), False (it is not allowed)
       - DiskSE: True if TXDY with Y > 0 (defaults to True)
       - TapeSE: True if TXDY with X > 0 (defaults to False)
       - TotalCapacityTB: float (-1 if not defined)
