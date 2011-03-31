@@ -21,9 +21,11 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight                 import ClassAd
 from DIRAC.Core.Utilities.SiteSEMapping                        import getSEsForSite
 from DIRAC.Core.Utilities.Time                                 import fromString, toEpoch
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+from DIRAC.Resources.Storage.StorageElement                    import StorageElement
+
 from DIRAC                                                     import S_OK, S_ERROR, List
 
-import random, re
+import random
 
 class JobSchedulingAgent( OptimizerModule ):
   """
@@ -226,8 +228,6 @@ class JobSchedulingAgent( OptimizerModule ):
     self.log.verbose( 'InputDataDict', inputDataDict )
     finalSiteCandidates = []
     stageSiteCandidates = {}
-    # Number of sites with some files on Tape
-    tapeCount = 0
     # Number of sites with all files on Disk
     diskCount = 0
     # List with the number of files on Tape
@@ -247,7 +247,6 @@ class JobSchedulingAgent( OptimizerModule ):
         stageSiteCandidates[disk] = []
       if tape > 0:
         self.log.verbose( '%s replicas on tape storage for %s' % ( tape, site ) )
-        tapeCount += 1
       if disk > 0:
         self.log.verbose( '%s replicas on disk storage for %s' % ( disk, site ) )
         stageSiteCandidates[disk].append( site )
@@ -265,7 +264,8 @@ class JobSchedulingAgent( OptimizerModule ):
     # a larger number of files on disk
     self.log.verbose( 'Staging is required for job' )
     maxDiskValue = sorted( diskList )[-1]
-    self.log.verbose( 'The following sites have %s disk replicas: %s' % ( maxDiskValue, stageSiteCandidates[maxDiskValue] ) )
+    self.log.verbose( 'The following sites have %s disk replicas: %s'
+                      % ( maxDiskValue, stageSiteCandidates[maxDiskValue] ) )
     random.shuffle( stageSiteCandidates[maxDiskValue] )
     finalSiteCandidates.extend( stageSiteCandidates[maxDiskValue] )
     stagingFlag = 1
@@ -292,35 +292,46 @@ class JobSchedulingAgent( OptimizerModule ):
       return S_ERROR( 'Could not determine SEs for site %s' % destination )
     destinationSEs = destinationSEs['Value']
 
-    #Ensure only tape SE files are staged
-    tapeSEs = self.am_getOption( 'TapeSE', '-tape,-RDST,-RAW' )
-    if type( tapeSEs ) == type( ' ' ):
-      tapeSEs = [ x.strip() for x in tapeSEs.split( ',' ) ]
-
     siteTapeSEs = []
+    siteDiskSEs = []
     for se in destinationSEs:
-      for tapeSE in tapeSEs:
-        if re.search( '%s$' % tapeSE, se ):
-          siteTapeSEs.append( se )
+      storageElement = StorageElement( se )
+      seStatus = storageElement.getStatus()['Value']
+      if seStatus['Read'] and seStatus['TapeSE']:
+        siteTapeSEs.append( se )
+      if seStatus['Read'] and seStatus['DiskSE']:
+        siteDiskSEs.append( se )
 
-    destinationSEs = siteTapeSEs
-    if not destinationSEs:
+    if not siteTapeSEs:
       return S_ERROR( 'No LocalSEs For Site' )
 
-    self.log.verbose( 'Site tape SEs: %s' % ( ', '.join( destinationSEs ) ) )
+    self.log.verbose( 'Site tape SEs: %s' % ( ', '.join( siteTapeSEs ) ) )
     stageSURLs = {} # OLD WAY
     stageLfns = {} # NEW WAY
+
     inputData = inputDataDict['Value']['Value']['Successful']
     for lfn, reps in inputData.items():
       for se, surl in reps.items():
-        for destSE in destinationSEs:
-          if se == destSE:
-            if not lfn in stageSURLs.keys():
-              stageSURLs[lfn] = {}
-              stageSURLs[lfn].update( {se:surl} )
-              if not stageLfns.has_key( se ): # NEW WAY
-                stageLfns[se] = []          # NEW WAY
-              stageLfns[se].append( lfn )     # NEW WAY
+        if se in siteDiskSEs:
+          # this File is on Disk, we can ignore it
+          break
+        if not lfn in stageSURLs.keys():
+          stageSURLs[lfn] = {}
+          stageSURLs[lfn].update( {se:surl} )
+          if not stageLfns.has_key( se ): # NEW WAY
+            stageLfns[se] = []          # NEW WAY
+          stageLfns[se].append( lfn )     # NEW WAY
+
+    # Now we need to check is any LFN is in more than one SE
+    if len( stageLfns ) > 1:
+      stageSEs = sorted( [ ( len( stageLfns[se] ), se ) for se in stageLfns.keys() ] )
+      for lfn in stageSURLs:
+        lfnFound = False
+        for ( se, numberOfLfns ) in reversed( stageSEs ):
+          if lfnFound and lfn in stageLfns[se]:
+            stageLfns[se].remove( lfn )
+          if lfn in stageLfns[se]:
+            lfnFound = True
 
     stagerClient = StorageManagerClient()
     request = stagerClient.setRequest( stageLfns, 'WorkloadManagement',
@@ -470,7 +481,7 @@ class JobSchedulingAgent( OptimizerModule ):
 
     return self.setNextOptimizer( job )
 
-def applySiteRequirements( sites, activeSites = [], bannedSites = [] ):
+def applySiteRequirements( sites, activeSites = None, bannedSites = None ):
   """ Return site list after applying
   """
   siteList = list( sites )
@@ -478,9 +489,10 @@ def applySiteRequirements( sites, activeSites = [], bannedSites = [] ):
     for site in sites:
       if site not in activeSites:
         siteList.remove( site )
-  for site in bannedSites:
-    if site in siteList:
-      siteList.remove( site )
+  if bannedSites:
+    for site in bannedSites:
+      if site in siteList:
+        siteList.remove( site )
 
   return siteList
 
