@@ -120,6 +120,16 @@ class StorageElement:
       - DiskCacheTB: float (-1 if not defined)
     """
     retDict = {}
+    if not self.valid:
+      retDict['Read'] = False
+      retDict['Write'] = False
+      retDict['Remove'] = False
+      retDict['DiskSE'] = False
+      retDict['TapeSE'] = False
+      retDict['TotalCapacityTB'] = -1
+      retDict['DiskCacheTB'] = -1
+      return S_OK( retDict )
+
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
     retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
