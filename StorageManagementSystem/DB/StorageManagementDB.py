@@ -41,7 +41,7 @@ class StorageManagementDB(DB):
   ################################################################
   #
   # State machine management
-  # 
+  #
 
   def updateTaskStatus(self,taskIDs,newTaskStatus,connection=False):
     return self.__updateTaskStatus(taskIDs,newTaskStatus,connection=connection)
@@ -138,7 +138,7 @@ class StorageManagementDB(DB):
     # * -> Failed
     if newReplicaState == 'Failed':
       oldReplicaState = []
-    # New -> Waiting 
+    # New -> Waiting
     elif newReplicaState == 'Waiting':
       oldReplicaState = ['New']
     # Waiting -> StageSubmitted
@@ -233,13 +233,13 @@ class StorageManagementDB(DB):
     req = "SELECT TaskID,Status,Source,SubmitTime,CompleteTime,CallBackMethod,SourceTaskID from Tasks WHERE TaskID = %s;" % taskID
     res = self._query(req,connection)
     if not res['OK']:
-      gLogger.error('StagerDB.getTaskInfo: Failed to get task information.', res['Message'])
+      gLogger.error('StorageManagementDB.getTaskInfo: Failed to get task information.', res['Message'])
       return res
     resDict = {}
     for taskID,status,source,submitTime,completeTime,callBackMethod,sourceTaskID in res['Value']:
       resDict[taskID] = {'Status':status,'Source':source,'SubmitTime':submitTime,'CompleteTime':completeTime,'CallBackMethod':callBackMethod,'SourceTaskID':sourceTaskID}
     if not resDict:
-      gLogger.error('StagerDB.getTaskInfo: The supplied task did not exist')
+      gLogger.error('StorageManagementDB.getTaskInfo: The supplied task did not exist')
       return S_ERROR('The supplied task did not exist')
     return S_OK(resDict)
 
@@ -253,7 +253,7 @@ class StorageManagementDB(DB):
     req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
     res = self._query(req,connection)
     if not res['OK']:
-      gLogger.error('StagerDB.getTaskSummary: Failed to get Replica summary for task.',res['Message'])
+      gLogger.error('StorageManagementDB.getTaskSummary: Failed to get Replica summary for task.',res['Message'])
       return res
     replicaInfo = {}
     for lfn,storageElement,pfn,fileSize,status,reason in res['Value']:
@@ -375,7 +375,7 @@ class StorageManagementDB(DB):
   #
 
   def setRequest(self,lfnDict,source,callbackMethod,sourceTaskID,connection=False):
-    """ This method populates the StagerDB Files and Tasks tables with the requested files. """
+    """ This method populates the StorageManagementDB Tasks table with the requested files. """
     connection = self.__getConnection(connection)
     if not lfnDict:
       return S_ERROR("No files supplied in request")
@@ -397,7 +397,7 @@ class StorageManagementDB(DB):
       # Insert the CacheReplicas that do not already exist
       for lfn in lfns:
         if lfn in existingReplicas.keys():
-          gLogger.verbose('StagerDB.setRequest: Replica already exists in CacheReplicas table %s @ %s' % (lfn,se))
+          gLogger.verbose('StorageManagementDB.setRequest: Replica already exists in CacheReplicas table %s @ %s' % (lfn,se))
           existingFileState = existingReplicas[lfn][1]
           taskState = self.__getTaskStateFromReplicaState(existingFileState)
           if not taskState in taskStates:
@@ -416,10 +416,13 @@ class StorageManagementDB(DB):
       self._cleanTask(taskID,connection=connection)
       return res
     # Check whether the the task status is Done based on the existing file states
+    # If all the files for a particular Task are 'Staged', update the Task
     if taskStates == ['Staged']:
+    #so if the tasks are for LFNs from the lfns dictionary, which are already staged,
+    #they immediately change state New->Done
       self.__updateTaskStatus([taskID],'Done',True,connection=connection)
     if 'Failed' in taskStates:
-      self.__updateTaskStatus([taskID],'Failed',True,connection=connection) 
+      self.__updateTaskStatus([taskID],'Failed',True,connection=connection)
     return S_OK(taskID)
 
   def _cleanTask(self,taskID,connection=False):
@@ -434,10 +437,10 @@ class StorageManagementDB(DB):
     req = "INSERT INTO Tasks (Source,SubmitTime,CallBackMethod,SourceTaskID) VALUES ('%s',UTC_TIMESTAMP(),'%s','%s');" % (source,callbackMethod,sourceTaskID)
     res = self._update(req,connection)
     if not res['OK']:
-      gLogger.error("StagerDB._createTask: Failed to create task.", res['Message'])
+      gLogger.error("StorageManagementDB._createTask: Failed to create task.", res['Message'])
       return res
     taskID = res['lastRowId']
-    gLogger.info("StagerDB._createTask: Created task with ('%s','%s','%s') and obtained TaskID %s" % (source,callbackMethod,sourceTaskID,taskID))
+    gLogger.info("StorageManagementDB._createTask: Created task with ('%s','%s','%s') and obtained TaskID %s" % (source,callbackMethod,sourceTaskID,taskID))
     return S_OK(taskID)
 
   def _getExistingReplicas(self,storageElement,lfns,connection=False):
@@ -446,7 +449,7 @@ class StorageManagementDB(DB):
     req = "SELECT ReplicaID,LFN,Status FROM CacheReplicas WHERE SE = '%s' AND LFN IN (%s);" % (storageElement,stringListToString(lfns))
     res = self._query(req,connection)
     if not res['OK']:
-      gLogger.error('StagerDB._getExistingReplicas: Failed to get existing replicas.', res['Message'])
+      gLogger.error('StorageManagementDB._getExistingReplicas: Failed to get existing replicas.', res['Message'])
       return res
     existingReplicas = {}
     for replicaID,lfn,status in res['Value']:
@@ -475,9 +478,9 @@ class StorageManagementDB(DB):
     req = req.rstrip(',')
     res = self._update(req,connection)
     if not res['OK']:
-      gLogger.error('StagerDB._insertTaskReplicaInformation: Failed to insert to TaskReplicas table.',res['Message'])
+      gLogger.error('StorageManagementDB._insertTaskReplicaInformation: Failed to insert to TaskReplicas table.',res['Message'])
       return res
-    gLogger.info("StagerDB._insertTaskReplicaInformation: Successfully added %s CacheReplicas to Task %s." % (res['Value'],taskID))
+    gLogger.info("StorageManagementDB._insertTaskReplicaInformation: Successfully added %s CacheReplicas to Task %s." % (res['Value'],taskID))
     return S_OK()
 
   #
@@ -492,7 +495,7 @@ class StorageManagementDB(DB):
     req = "SELECT TR.TaskID, R.Status, COUNT(*) from TaskReplicas as TR, CacheReplicas as R where TR.ReplicaID=R.ReplicaID GROUP BY TR.TaskID,R.Status;"
     res = self._query(req,connection)
     if not res['OK']:
-      gLogger.error('StagerDB.getWaitingReplicas: Failed to get eligible TaskReplicas',res['Message'])
+      gLogger.error('StorageManagementDB.getWaitingReplicas: Failed to get eligible TaskReplicas',res['Message'])
       return res
     badTasks = []
     goodTasks = []
@@ -538,7 +541,7 @@ class StorageManagementDB(DB):
       req = "UPDATE CacheReplicas SET Reason = '%s' WHERE ReplicaID = %d" % (terminalReplicaIDs[replicaID],replicaID)
       res = self._update(req)
       if not res['OK']:
-        gLogger.error('StagerDB.updateReplicaFailure: Failed to update replica fail reason.',res['Message'])
+        gLogger.error('StorageManagementDB.updateReplicaFailure: Failed to update replica fail reason.',res['Message'])
     return S_OK(updated)
 
   ####################################################################
@@ -553,6 +556,7 @@ class StorageManagementDB(DB):
       res = self._update(req)
       if not res['OK']:
         gLogger.error('StagerDB.updateReplicaInformation: Failed to insert replica information.', res['Message'])
+      gLogger.debug('StagerDB.updateReplicaInformation: Successfully updated CacheReplicas record With Status=Waiting, for ReplicaID= %s' % ( replicaID ) )
     return S_OK()
 
   ####################################################################
@@ -561,10 +565,12 @@ class StorageManagementDB(DB):
   #
 
   def getSubmittedStagePins(self):
-    req = "SELECT SE,COUNT(*),SUM(Size) from CacheReplicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY SE;"
+    # change the query to take into account pin expiry time
+    #req = "SELECT SE,COUNT(*),SUM(Size) from CacheReplicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY SE;"
+    req = "SELECT SE,Count(*),SUM(Size) from CacheReplicas,StageRequests WHERE Status NOT IN ('New','Waiting','Failed') and CacheReplicas.ReplicaID=StageRequests.ReplicaID and PinExpiryTime>Now() GROUP BY SE;"
     res = self._query(req)
     if not res['OK']:
-      gLogger.error('StagerDB.getSubmittedStagePins: Failed to obtain submitted requests.',res['Message'])
+      gLogger.error('StorageManagementDB.getSubmittedStagePins: Failed to obtain submitted requests.',res['Message'])
       return res
     storageRequests = {}
     for storageElement,replicas,totalSize in res['Value']:
@@ -580,9 +586,9 @@ class StorageManagementDB(DB):
     req = req.rstrip(',')
     res = self._update(req)
     if not res['OK']:
-      gLogger.error('StagerDB.insertStageRequest: Failed to insert to StageRequests table.',res['Message'])
+      gLogger.error('StorageManagementDB.insertStageRequest: Failed to insert to StageRequests table.',res['Message'])
       return res
-    gLogger.info("StagerDB.insertStageRequest: Successfully added %s StageRequests with RequestID %s." % (res['Value'],requestID))
+    gLogger.debug("StorageManagementDB.insertStageRequest: Successfully added %s StageRequests with RequestID %s." % (res['Value'],requestID))
     return S_OK()
 
   ####################################################################
@@ -591,18 +597,21 @@ class StorageManagementDB(DB):
   #
 
   def setStageComplete(self,replicaIDs):
-    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP(),PinExpiryTime = DATE_ADD(UTC_TIMESTAMP(),INTERVAL 84000 SECOND) WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
+    # Daniela: FIX wrong PinExpiryTime (84000->86400 seconds = 1 day)
+    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP(),PinExpiryTime = DATE_ADD(UTC_TIMESTAMP(),INTERVAL 86400 SECOND) WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
     res = self._update(req)
     if not res['OK']:
-      gLogger.error("StagerDB.setStageComplete: Failed to set StageRequest completed.", res['Message'])
+      gLogger.error("StorageManagementDB.setStageComplete: Failed to set StageRequest completed.", res['Message'])
       return res
+    gLogger.debug("StorageManagementDB.setStageComplete: Successfully updated %s StageRequests table with StageStatus=Staged for ReplicaIDs: %s." % (res['Value'],replicaIDs))
     return res
 
   ####################################################################
   #
   # This code handles the finalization of stage tasks
   #
-
+  # Daniela: useless method
+  '''
   def updateStageCompletingTasks(self):
     """ This will select all the Tasks in StageCompleting status and check whether all the associated files are Staged. """
     req = "SELECT TR.TaskID,COUNT(if(R.Status NOT IN ('Staged'),1,NULL)) FROM Tasks AS T, TaskReplicas AS TR, CacheReplicas AS R WHERE T.Status='StageCompleting' AND T.TaskID=TR.TaskID AND TR.ReplicaID=R.ReplicaID GROUP BY TR.TaskID;"
@@ -620,11 +629,15 @@ class StorageManagementDB(DB):
     if not res['OK']:
       return res
     return S_OK(taskIDs)
-
+  '''
   def setTasksDone(self,taskIDs):
     """ This will update the status for a list of taskIDs to Done. """
     req = "UPDATE Tasks SET Status = 'Done', CompleteTime = UTC_TIMESTAMP() WHERE TaskID IN (%s);" % intListToString(taskIDs)
     res = self._update(req)
+    if not res['OK']:
+      gLogger.error("StorageManagementDB.setTasksDone: Failed to set Tasks status to Done.", res['Message'])
+      return res
+    gLogger.debug("StorageManagementDB.setTasksDone: Successfully updated %s Tasks with StageStatus=Done for taskIDs: %s." % (res['Value'],taskIDs))
     return res
 
   def removeTasks(self,taskIDs,connection=False):
@@ -633,9 +646,12 @@ class StorageManagementDB(DB):
     req = "DELETE FROM TaskReplicas WHERE TaskID IN (%s);" % intListToString(taskIDs)
     res = self._update(req,connection)
     if not res['OK']:
+      gLogger.error("StorageManagementDB.removeTasks. Problem removing entries from TaskReplicas.")
       return res
     req = "DELETE FROM Tasks WHERE TaskID in (%s);" % intListToString(taskIDs)
     res = self._update(req,connection)
+    if not res['OK']:
+       gLogger.error("StorageManagementDB.removeTasks. Problem removing entries from Tasks.")
     return res
 
   def removeUnlinkedReplicas(self,connection=False):
@@ -644,6 +660,7 @@ class StorageManagementDB(DB):
     req = "SELECT ReplicaID from CacheReplicas WHERE Links = 0;"
     res = self._query(req,connection)
     if not res['OK']:
+      gLogger.error("StorageManagementDB.removeUnlinkedReplicas. Problem selecting entries from CacheReplicas where Links = 0.")
       return res
     replicaIDs = []
     for tuple in res['Value']:
@@ -653,7 +670,13 @@ class StorageManagementDB(DB):
     req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
     res = self._update(req,connection)
     if not res['OK']:
+      gLogger.error("StorageManagementDB.removeUnlinkedReplicas. Problem deleting from StageRequests.")
       return res
+    gLogger.debug("StorageManagementDB.removeUnlinkedReplicas: Successfully removed %s StageRequests entries for ReplicaIDs: %s." % (res['Value'],replicaIDs))
     req = "DELETE FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
     res = self._update(req,connection)
+    if res['OK']:
+      gLogger.debug("StorageManagementDB.removeUnlinkedReplicas: Successfully removed %s CacheReplicas entries for ReplicaIDs: %s." % (res['Value'],replicaIDs))
+    else:
+      gLogger.error("StorageManagementDB.removeUnlinkedReplicas. Problem removing entries from CacheReplicas.")
     return res
