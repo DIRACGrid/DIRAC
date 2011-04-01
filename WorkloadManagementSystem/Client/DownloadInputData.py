@@ -13,14 +13,18 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
+from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
-import os, re, tempfile
+import os, tempfile, random
 
 COMPONENT_NAME = 'DownloadInputData'
 
 class DownloadInputData:
+  """
+   retrieve InputData LFN from localSEs (if available) or from elsewhere.
+  """
 
   #############################################################################
   def __init__( self, argumentsDict ):
@@ -48,8 +52,6 @@ class DownloadInputData:
 
     #Define local configuration options present at every site
     localSEList = self.configuration['LocalSEList']
-    diskSEList = self.configuration['DiskSEList']
-    tapeSEList = self.configuration['TapeSEList']
 
     if self.configuration.has_key( 'JobID' ):
       self.jobID = self.configuration['JobID']
@@ -61,7 +63,6 @@ class DownloadInputData:
       self.log.verbose( 'Data to resolve passed directly to DownloadInputData module' )
       self.inputData = dataToResolve #e.g. list supplied by another module
 
-
     self.inputData = [x.replace( 'LFN:', '' ) for x in self.inputData]
     self.log.info( 'InputData to be downloaded is:' )
     for i in self.inputData:
@@ -72,65 +73,67 @@ class DownloadInputData:
     #For the unlikely case that a file is found on two SEs at the same site
     #disk-based replicas are favoured.
     downloadReplicas = {}
+    # determine Disk and Tape SEs
+    diskSEs = []
+    tapeSEs = []
+    for localSE in localSEList:
+      seStatus = StorageElement( localSE ).getStatus()['Value']
+      if seStatus['Read'] and seStatus['DiskSE']:
+        if localSE not in diskSEs:
+          diskSEs.append( localSE )
+      elif seStatus['Read'] and seStatus['TapeSE']:
+        if localSE not in tapeSEs:
+          tapeSEs.append( localSE )
+
     for lfn, reps in replicas.items():
-      localStorage = {}
-      localTapeSE = ''
-      if lfn in self.inputData:
-        for localSE in localSEList:
-          if reps.has_key( localSE ):
-            for diskSE in diskSEList:
-              if re.search( diskSE, localSE ):
-                localStorage[localSE] = 1
-            for tapeSE in tapeSEList:
-              if re.search( tapeSE, localSE ):
-                localTapeSE = localSE
-                localStorage[localTapeSE] = 0
-
-        for se, flag in localStorage.items():
-          if flag:
-            pfn = replicas[lfn][se]
-            if replicas[lfn].has_key( 'Size' ) and replicas[lfn].has_key( 'GUID' ):
-              size = replicas[lfn]['Size']
-              guid = replicas[lfn]['GUID']
-              downloadReplicas[lfn] = {'SE':se, 'PFN':pfn, 'Size':size, 'GUID':guid}
-
-        if not downloadReplicas.has_key( lfn ):
-          if replicas[lfn].has_key( localTapeSE ):
-            pfn = replicas[lfn][localTapeSE]
-            if replicas[lfn].has_key( 'Size' ) and replicas[lfn].has_key( 'GUID' ):
-              size = replicas[lfn]['Size']
-              guid = replicas[lfn]['GUID']
-              downloadReplicas[lfn] = {'SE':localTapeSE, 'PFN':pfn, 'Size':size, 'GUID':guid}
-      else:
+      if lfn not in self.inputData:
         self.log.verbose( 'LFN %s is not in requested input data to download' )
+        failedReplicas.append( lfn )
+        continue
 
-    if not downloadReplicas:
-      self.log.info( 'Failed to find data at local site SEs, will try to download from anywhere' )
-      for lfn, reps in replicas.items():
-        if replicas[lfn].has_key( 'Size' ) and replicas[lfn].has_key( 'GUID' ):
-          size = replicas[lfn]['Size']
-          guid = replicas[lfn]['GUID']
-          downloadReplicas[lfn] = {'SE':'', 'PFN':'', 'Size':size, 'GUID':guid}
+      if not ( 'Size' in reps and 'GUID' in reps ):
+        self.log.error( 'Missing LFN metadata', "%s %s" % ( lfn, str( reps ) ) )
+        failedReplicas.append( lfn )
+        continue
+
+      size = reps['Size']
+      guid = reps['GUID' ]
+      downloadReplicas[lfn] = {'SE':[], 'Size':size, 'GUID':guid}
+      for se in diskSEs:
+        if se in reps:
+          downloadReplicas[lfn]['SE'].append( ( se, reps[se] ) )
+      if not downloadReplicas[lfn]['SE']:
+        for se in tapeSEs:
+          if se in reps:
+            downloadReplicas[lfn]['SE'].append( ( se, reps[se] ) )
 
     totalSize = 0
     self.log.verbose( 'Replicas to download are:' )
     for lfn, reps in downloadReplicas.items():
       self.log.verbose( lfn )
-      for item, value in reps.items():
+      if not reps['SE']:
+        self.log.info( 'Failed to find data at local SEs, will try to download from anywhere', lfn )
+        reps['SE'] = ''
+        reps['PFN'] = ''
+      else:
+        if len( reps['SE'] ) > 1:
+          # if more than one SE is available randomly select one
+          random.shuffle( reps['SE'] )
+        reps['SE'] = reps['SE'][0][0]
+        reps['PFN'] = reps['SE'][0][1]
+      for item, value in sorted( reps.items() ):
         if value:
           self.log.verbose( '%s %s' % ( item, value ) )
         if item == 'Size':
           totalSize += int( value ) #bytes
 
     self.log.info( 'Total size of files to be downloaded is %s bytes' % ( totalSize ) )
-    for i in self.inputData:
-      if not downloadReplicas.has_key( i ):
-        self.log.warn( 'Not all file metadata (SE,PFN,Size,GUID) was available for LFN %s' % ( i ) )
-        failedReplicas.append( i )
+    for lfn in failedReplicas:
+      self.log.warn( 'Not all file metadata (SE,PFN,Size,GUID) was available for LFN', lfn )
 
-    #Now need to check that the list of replicas to download fits into
-    #the available disk space. Initially this is a simple check and if there is not
-    #space for all input data, no downloads are attempted.
+    # Now need to check that the list of replicas to download fits into
+    # the available disk space. Initially this is a simple check and if there is not
+    # space for all input data, no downloads are attempted.
     result = self.__checkDiskSpace( totalSize )
     if not result['OK']:
       self.log.warn( 'Problem checking available disk space:\n%s' % ( result ) )
@@ -225,11 +228,10 @@ class DownloadInputData:
     self.log.verbose( 'Attempting to ReplicaManager.getFile for %s in %s' % ( lfn, downloadDir ) )
     result = self.replicaManager.getFile( lfn )
     os.chdir( start )
-    fileName = os.path.basename( pfn )
-    if not fileName:
-      fileName = os.path.basename( lfn )
-
+    if not result['OK']:
+      return result
     self.log.verbose( result )
+    fileName = os.path.basename( result['Value'] )
     localFile = '%s/%s' % ( downloadDir, fileName )
     if os.path.exists( localFile ):
       self.log.verbose( 'File %s exists in current directory' % ( fileName ) )
