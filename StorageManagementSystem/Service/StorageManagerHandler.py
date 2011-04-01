@@ -70,7 +70,7 @@ class StorageManagerHandler(RequestHandler):
   types_getTasks = [DictType]
   def export_getTasks(self, condDict, older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None):
     """ Get the replicas known to the DB. """
-    res = storageDB.getTasks(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit) 
+    res = storageDB.getTasks(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit)
     if not res['OK']:
       gLogger.error('getTasks: Failed to get Cache replicas',res['Message'])
     return res
@@ -78,7 +78,7 @@ class StorageManagerHandler(RequestHandler):
   types_getCacheReplicas = [DictType]
   def export_getCacheReplicas(self, condDict, older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None):
     """ Get the replcias known to the DB. """
-    res = storageDB.getCacheReplicas(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit) 
+    res = storageDB.getCacheReplicas(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit)
     if not res['OK']:
       gLogger.error('getCacheReplicas: Failed to get Cache replicas',res['Message'])
     return res
@@ -86,13 +86,13 @@ class StorageManagerHandler(RequestHandler):
   types_getStageRequests = [DictType]
   def export_getStageRequests(self, condDict, older=None, newer=None, timeStamp='StageRequestSubmitTime', orderAttribute=None, limit=None):
     """ Get the replcias known to the DB. """
-    res = storageDB.getStageRequests(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit) 
+    res = storageDB.getStageRequests(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit)
     if not res['OK']:
       gLogger.error('getStageRequests: Failed to get Cache replicas',res['Message'])
     return res
-  #                                                                    
-  #                                                Monitoring methods    
-  #                                                                    
+  #
+  #                                                Monitoring methods
+  #
   ######################################################################
 
 
@@ -181,14 +181,15 @@ class StorageManagerHandler(RequestHandler):
   #
   # The methods for finalization of tasks
   #
-
-  types_updateStageCompletingTasks = []
+  # Daniela: useless method
+  '''types_updateStageCompletingTasks = []
   def export_updateStageCompletingTasks(self):
     """ This method checks whether the file for Tasks in 'StageCompleting' status are all Staged and updates the Task status to Staged """
     res = storageDB.updateStageCompletingTasks()
     if not res['OK']:
       gLogger.error('updateStageCompletingTasks: Failed to update StageCompleting tasks.',res['Message'])
     return res
+  '''
 
   types_setTasksDone = [ListType]
   def export_setTasksDone(self,taskIDs):
