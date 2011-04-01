@@ -29,9 +29,18 @@ class CE2CSAgent( AgentModule ):
     # TODO: Have no default and if no mail is found then use the diracAdmin group and resolve all associated mail addresses.
     self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
+    # create a list of alternative bdii urls
+    self.alternativeBDIIs = map(lambda x: x.strip(), self.am_getOption( 'AlternativeBDIIs', '').split(','))
+    # check if the bdii url is appended by a port number, if not append the default 2170
+    for index,url in enumerate(self.alternativeBDIIs):
+      if not url.split(':')[-1].isdigit():
+        self.alternativeBDIIs[index] +=':2170'
     if self.addressTo and self.addressFrom:
       self.log.info( "MailTo", self.addressTo )
       self.log.info( "MailFrom", self.addressFrom )
+    if self.alternativeBDIIs :
+      self.log.info( "AlternativeBDII URLs:", self.alternativeBDIIs )
+    self.subject = "CE2CSAgent"
 
     # This sets the Default Proxy to used as that defined under 
     # /Operations/Shifter/SAMManager
@@ -57,6 +66,18 @@ class CE2CSAgent( AgentModule ):
     self.log.info( "End Execution" )
     return S_OK()
 
+  def _checkAlternativeBDIISite(self, fun, *args):
+    if self.alternativeBDIIs:
+      self.log.warn( "Trying to use alternative bdii sites" )
+      for site in self.alternativeBDIIs :
+        self.log.info( "Trying to contact alternative bdii ", site )
+        if len(args) == 1 : result = fun( args[0], host=site )
+        elif len(args) == 2 : result = fun( args[0], vo=args[1], host=site)
+        if not result['OK'] : self.log.error ( "Problem contacting alternative bddii", result['Message'])
+        elif result['OK'] : return result
+      self.log.warn( "Also checking alternative BDII sites failed" )
+      return result
+
   def _lookForCE( self ):
 
     knownces = self.am_getOption( 'BannedCEs', [] )
@@ -81,6 +102,7 @@ class CE2CSAgent( AgentModule ):
     response = ldapCEState( '', vo = self.vo )
     if not response['OK']:
       self.log.error( "Error during BDII request", response['Message'] )
+      response = self._checkAlternativeBDIISite( ldapCEState, '', self.vo )
       return response
 
     newces = {}
@@ -101,6 +123,7 @@ class CE2CSAgent( AgentModule ):
       response = ldapCluster( ce )
       if not response['OK']:
         self.log.warn( "Error during BDII request", response['Message'] )
+        response = self._checkAlternativeBDIISite( ldapCluster, ce )
         continue
       clusters = response['Value']
       if len( clusters ) != 1:
@@ -125,6 +148,7 @@ class CE2CSAgent( AgentModule ):
       response = ldapCE( ce )
       if not response['OK']:
         self.log.warn( "Error during BDII request", response['Message'] )
+        response = self._checkAlternativeBDIISite( ldapCE, ce )
         continue
 
       ceinfos = response['Value']
@@ -144,6 +168,7 @@ class CE2CSAgent( AgentModule ):
       response = ldapCEState( ce, vo = self.vo )
       if not response['OK']:
         self.log.warn( "Error during BDII request", response['Message'] )
+        response = self._checkAlternativeBDIISite( ldapCEState, ce, self.vo )
         continue
 
       newcestring = "\n\n%s\n%s" % ( cestring, osstring )
@@ -205,7 +230,9 @@ class CE2CSAgent( AgentModule ):
           result = ldapSite( name )
           if not result['OK']:
             self.log.warn( "BDII site %s: %s" % (name, result['Message'] ))
-          else:
+            result = self._checkAlternativeBDIISite( ldapSite, name )
+            
+          if result['OK']:
             bdiisites = result['Value']
             if len( bdiisites ) == 0:
               self.log.warn( name, "Error in bdii: leng = 0" )
@@ -280,6 +307,7 @@ class CE2CSAgent( AgentModule ):
           result = ldapCE( ce )
           if not result['OK']:
             self.log.warn( 'Error in bdii for %s' % ce, result['Message'] )
+            result = self._checkAlternativeBDIISite( ldapCE, ce )
             continue
           try:
             bdiice = result['Value'][0]
@@ -361,6 +389,8 @@ class CE2CSAgent( AgentModule ):
               changed = True
 
           result = ldapService( ce )
+          if not result['OK'] :
+            result = self._checkAlternativeBDIISite( ldapService, ce )
           if result['OK']:
             services = result['Value']
             newcetype = 'LCG'
@@ -382,6 +412,7 @@ class CE2CSAgent( AgentModule ):
           result = ldapCEState( ce, vo = self.vo )        #getBDIICEVOView
           if not result['OK']:
             self.log.warn( 'Error in bdii for queue %s' % ce, result['Message'] )
+            result = self._checkAlternativeBDIISite( ldapCEState, ce, self.vo )
             continue
           try:
             queues = result['Value']
