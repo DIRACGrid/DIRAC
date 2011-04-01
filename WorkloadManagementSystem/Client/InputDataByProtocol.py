@@ -13,9 +13,8 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
-
-import os, sys, re, string
+from DIRAC.Resources.Storage.StorageElement                         import StorageElement
+from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
 COMPONENT_NAME = 'InputDataByProtocol'
 
@@ -42,8 +41,6 @@ class InputDataByProtocol:
 
     #Define local configuration options present at every site
     localSEList = self.configuration['LocalSEList']
-    diskSEList = self.configuration['DiskSEList']
-    tapeSEList = self.configuration['TapeSEList']
     if self.configuration.has_key( 'JobID' ):
       self.jobID = self.configuration['JobID']
 
@@ -64,47 +61,46 @@ class InputDataByProtocol:
     replicas = self.fileCatalogResult['Value']['Successful']
     self.log.verbose( 'File Catalogue result is:' )
     self.log.verbose( replicas )
+
+    diskSEs = []
+    tapeSEs = []
+    for localSE in localSEList:
+      seStatus = StorageElement( localSE ).getStatus()['Value']
+      if seStatus['Read'] and seStatus['DiskSE']:
+        if localSE not in diskSEs:
+          diskSEs.append( localSE )
+      elif seStatus['Read'] and seStatus['TapeSE']:
+        if localSE not in tapeSEs:
+          tapeSEs.append( localSE )
+
+    # Check that all replicas are on a valid local SE
     for lfn, reps in replicas.items():
       localReplica = False
-      for localSE in localSEList:
-        if reps.has_key( localSE ):
+      for se in reps:
+        if se in diskSEs or se in tapeSEs:
           localReplica = True
       if not localReplica:
         failedReplicas.append( lfn )
 
-    #Check that all LFNs have at least one replica and GUID
+    # Check that all LFNs have at least one replica and GUID
     if failedReplicas:
-      #in principle this is not a failure but depends on the policy of the VO
-      #datasets could be downloaded from another site
-      self.log.info( 'The following file(s) were found not to have replicas for available LocalSEs:\n%s' % ( string.join( failedReplicas, ',\n' ) ) )
+      # in principle this is not a failure but depends on the policy of the VO
+      # datasets could be downloaded from another site
+      self.log.info( 'The following file(s) were found not to have replicas for available LocalSEs:' )
+      self.log.info( '', '\n'.join( failedReplicas ) )
 
     #For the unlikely case that a file is found on two SEs at the same site
     #disk-based replicas are favoured.
     newReplicasDict = {}
     for lfn, reps in replicas.items():
-      localStorage = {}
-      localTapeSE = ''
-      if not lfn in failedReplicas:
-        for localSE in localSEList:
-          if reps.has_key( localSE ):
-            for diskSE in diskSEList:
-              if re.search( diskSE, localSE ):
-                localStorage[localSE] = 1
-            for tapeSE in tapeSEList:
-              if re.search( tapeSE, localSE ):
-                localTapeSE = localSE
-                localStorage[localTapeSE] = 0
-
-        for se, flag in localStorage.items():
-          if flag:
-            pfn = replicas[lfn][se]
-            newReplicasDict[lfn] = {se:pfn}
-
-        if not newReplicasDict.has_key( lfn ) and localTapeSE:
-          pfn = replicas[lfn][localTapeSE]
-          newReplicasDict[lfn] = {localTapeSE:pfn}
-
-    replicas = newReplicasDict
+      newReplicasDict[lfn] = []
+      for se in diskSEs:
+        if se in reps:
+          newReplicasDict[lfn].append( ( se, reps[se] ) )
+      if not newReplicasDict[lfn]:
+        for se in tapeSEs:
+          if se in reps:
+            newReplicasDict[lfn].append( ( se, reps[se] ) )
 
     #Need to group files by SE in order to stage optimally
     #we know from above that all remaining files have a replica
@@ -112,21 +108,25 @@ class InputDataByProtocol:
     #IMPORTANT, only add replicas for input data that is requested
     #since this module could have been executed after another.
     seFilesDict = {}
+    for lfn, seList in newReplicasDict.items():
+      if lfn not in self.inputData:
+        continue
+      for se, pfn in seList:
+        if se not in seFilesDict:
+          seFilesDict[se] = {}
+        seFilesDict[se][lfn] = pfn
+
+    sortedSEs = sorted( [ ( len( lfns ), se ) for se, lfns in seFilesDict.items() ] )
+
     trackLFNs = {}
-    for localSE in localSEList:
-      for lfn, reps in replicas.items():
-        if lfn in self.inputData:
-          if reps.has_key( localSE ):
-            pfn = reps[localSE]
-            if seFilesDict.has_key( localSE ):
-              currentFiles = seFilesDict[localSE]
-              if not lfn in trackLFNs.keys():
-                currentFiles.append( pfn )
-              seFilesDict[localSE] = currentFiles
-              trackLFNs[lfn] = pfn
-            else:
-              seFilesDict[localSE] = [pfn]
-              trackLFNs[lfn] = pfn
+    for lfns, se in reversed( sortedSEs ):
+      for lfn, pfn in seFilesDict[se].items():
+        if lfn not in trackLFNs:
+          if 'Size' in replicas[lfn] and 'GUID' in replicas[lfn]:
+            trackLFNs[lfn] = { 'pfn': pfn, 'se': se, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] }
+        else:
+          # Remove the lfn from those SEs with less lfns
+          del seFilesDict[se][lfn]
 
     self.log.verbose( 'Files grouped by LocalSE are:' )
     self.log.verbose( seFilesDict )
@@ -136,22 +136,11 @@ class InputDataByProtocol:
       for pfn in pfnList:
         self.log.info( '%s %s' % ( se, pfn ) )
 
-    #Construct resolvedData dictionary with final metadata for selected replicas
-    #knowing each file has one site replica from above
-    resolvedData = {}
-    for lfn, reps in replicas.items():
-      for se, rep in reps.items():
-        if seFilesDict.has_key( se ):
-          pfnList = seFilesDict[se]
-          for pfn in pfnList:
-            if rep == pfn:
-              guid = self.fileCatalogResult['Value']['Successful'][lfn]['GUID']
-              resolvedData[lfn] = {'pfn':pfn, 'se':se, 'guid':guid}
-
     #Can now start to obtain TURLs for files grouped by localSE
     #for requested input data
     requestedProtocol = self.configuration.get( 'Protocol', '' )
-    for se, pfnList in seFilesDict.items():
+    for se, lfnDict in seFilesDict.items():
+      pfnList = lfnDict.values()
       result = self.rm.getStorageFileAccessUrl( pfnList, se, protocol = requestedProtocol )
       self.log.debug( result )
       if not result['OK']:
@@ -166,44 +155,45 @@ class InputDataByProtocol:
         for pfn, cause in seResult['Failed'].items():
           badTURLCount += 1
           badTURLs.append( 'Failed to obtain TURL for %s\n Problem: %s' % ( pfn, cause ) )
-          for lfn, reps in replicas.items():
-            for se, rep in reps.items():
-              if rep == pfn:
-                if not lfn in failedReplicas:
-                  failedReplicas.append( lfn )
+          for lfn in lfnDict:
+            if lfnDict[lfn] == pfn:
+              break
+          if not lfn in failedReplicas:
+            failedReplicas.append( lfn )
 
       if badTURLCount:
         self.log.warn( 'Found %s problematic TURL(s) for job %s' % ( badTURLCount, self.jobID ) )
-        param = string.join( badTURLs, '\n' )
+        param = '\n'.join( badTURLs )
         self.log.info( param )
         result = self.__setJobParam( 'ProblematicTURLs', param )
         if not result['OK']:
           self.log.warn( result )
 
       pfnTurlDict = seResult['Successful']
-      for lfn, reps in replicas.items():
-        if lfn in self.inputData:
-          for se, rep in reps.items():
-            for pfn in pfnTurlDict.keys():
-              if rep == pfn:
-                turl = pfnTurlDict[pfn]
-                resolvedData[lfn]['turl'] = turl
-                self.log.info( 'Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s' % ( se, lfn, pfn, turl ) )
+      for pfn, turl in pfnTurlDict.items():
+        for lfn in lfnDict:
+          if lfnDict[lfn] == pfn:
+            break
+        trackLFNs[lfn]['turl'] = turl
+        se = trackLFNs[lfn]['se']
+        self.log.info( 'Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>PFN: %s\n>>>>TURL: %s' %
+                       ( se, lfn, pfn, turl ) )
 
-    self.log.verbose( resolvedData )
-    for lfn, mdata in resolvedData.items():
+
+    self.log.verbose( trackLFNs )
+    for lfn, mdata in trackLFNs.items():
       if not mdata.has_key( 'turl' ):
         self.log.verbose( '%s: No TURL resolved for %s' % ( COMPONENT_NAME, lfn ) )
 
     #Remove any failed replicas from the resolvedData dictionary
     if failedReplicas:
-      self.log.verbose( 'The following LFN(s) were not resolved by protocol:\n%s' % ( string.join( failedReplicas, '\n' ) ) )
+      self.log.verbose( 'The following LFN(s) were not resolved by protocol:\n%s' % ( '\n'.join( failedReplicas ) ) )
       for lfn in failedReplicas:
-        if resolvedData.has_key( lfn ):
-          del resolvedData[lfn]
+        if trackLFNs.has_key( lfn ):
+          del trackLFNs[lfn]
 
     result = S_OK()
-    result['Successful'] = resolvedData
+    result['Successful'] = trackLFNs
     result['Failed'] = failedReplicas #lfn list to be passed to another resolution mechanism
     return result
 
