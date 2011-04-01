@@ -119,8 +119,8 @@ class DownloadInputData:
         if len( reps['SE'] ) > 1:
           # if more than one SE is available randomly select one
           random.shuffle( reps['SE'] )
-        reps['SE'] = reps['SE'][0][0]
         reps['PFN'] = reps['SE'][0][1]
+        reps['SE'] = reps['SE'][0][0]
       for item, value in sorted( reps.items() ):
         if value:
           self.log.verbose( '%s %s' % ( item, value ) )
