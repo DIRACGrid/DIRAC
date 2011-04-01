@@ -263,17 +263,22 @@ class JobSchedulingAgent( OptimizerModule ):
     # If not all files are available on Disk at a single site, select those with 
     # a larger number of files on disk
     self.log.verbose( 'Staging is required for job' )
-    maxDiskValue = sorted( diskList )[-1]
-    self.log.verbose( 'The following sites have %s disk replicas: %s'
-                      % ( maxDiskValue, stageSiteCandidates[maxDiskValue] ) )
-    random.shuffle( stageSiteCandidates[maxDiskValue] )
-    finalSiteCandidates.extend( stageSiteCandidates[maxDiskValue] )
     stagingFlag = 1
+    if stageSiteCandidates:
+      maxDiskValue = sorted( diskList )[-1]
+      self.log.verbose( 'The following sites have %s disk replicas: %s'
+                        % ( maxDiskValue, stageSiteCandidates[maxDiskValue] ) )
+      finalSiteCandidates.extend( stageSiteCandidates[maxDiskValue] )
+    else:
+      # there is no site with a replica on disk, select any of the sites
+      finalSiteCandidates = list( siteCandidates )
+
+    random.shuffle( finalSiteCandidates )
     if len( finalSiteCandidates ) > 1:
       self.log.verbose( 'Site %s has been randomly chosen for job' % ( finalSiteCandidates[0] ) )
     else:
-        self.log.verbose( '%s is the site with highest number of disk replicas (=%s)' %
-                          ( finalSiteCandidates[0], maxDiskValue ) )
+      self.log.verbose( '%s is the site with highest number of disk replicas (=%s)' %
+                        ( finalSiteCandidates[0], maxDiskValue ) )
 
     result = S_OK( stagingFlag )
     result['SiteCandidates'] = finalSiteCandidates
