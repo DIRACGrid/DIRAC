@@ -20,7 +20,7 @@ class StageMonitorAgent( AgentModule ):
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
@@ -37,7 +37,7 @@ class StageMonitorAgent( AgentModule ):
     """
     res = self.__getStageSubmittedReplicas()
     if not res['OK']:
-      gLogger.fatal( "StageMonitor.monitorStageRequests: Failed to get replicas from StagerDB.", res['Message'] )
+      gLogger.fatal( "StageMonitor.monitorStageRequests: Failed to get replicas from StorageManagementDB.", res['Message'] )
       return res
     if not res['Value']:
       gLogger.info( "StageMonitor.monitorStageRequests: There were no StageSubmitted replicas found" )
@@ -110,12 +110,12 @@ class StageMonitorAgent( AgentModule ):
         seReplicas[storageElement] = []
       seReplicas[storageElement].append( replicaID )
 
-    # RequestID was missing from replicaIDs dictionary 
+    # RequestID was missing from replicaIDs dictionary BUGGY?
     res = self.stagerClient.getStageRequests( {'ReplicaID':replicaIDs.keys()} )
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR( 'Could not obtain request IDs for replicas' )
+      return S_ERROR( 'Could not obtain request IDs for replicas %s from StageRequests table' %(replicaIDs.keys()))
 
     for replicaID, info in res['Value'].items():
       reqID = info['RequestID']

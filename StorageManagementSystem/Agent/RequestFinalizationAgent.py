@@ -16,7 +16,7 @@ class RequestFinalizationAgent( AgentModule ):
 
   def initialize( self ):
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
@@ -27,6 +27,7 @@ class RequestFinalizationAgent( AgentModule ):
   def execute( self ):
     res = self.clearFailedTasks()
     res = self.callbackStagedTasks()
+    res = self.callbackDoneTasks()
     res = self.removeUnlinkedReplicas()
     return res
 
@@ -55,14 +56,31 @@ class RequestFinalizationAgent( AgentModule ):
     gLogger.info( "RequestFinalization.clearFailedTasks: ...removed." )
     return S_OK()
 
+  def callbackDoneTasks( self ):
+    """ This issues the call back message for the Tasks with a State='Done'
+    """
+    res = self.stagerClient.getTasksWithStatus( 'Done' )
+    if not res['OK']:
+      gLogger.fatal( "RequestFinalization.callbackDoneTasks: Failed to get Done Tasks from StorageManagementDB.", res['Message'] )
+      return res
+    doneTasks = res['Value']
+    gLogger.info( "RequestFinalization.callbackDoneTasks: Obtained %s tasks in the 'Done' status." % len( doneTasks ) )
+    for taskID, ( source, callback, sourceTask ) in doneTasks.items():
+      if ( callback and sourceTask ):
+        res = self.__performCallback( 'Done', callback, sourceTask )
+        if not res['OK']:
+          doneTasks.pop( taskID )
+    if not doneTasks:
+      gLogger.info( "RequestFinalization.callbackDoneTasks: No tasks to update to Done." )
+      return S_OK()
+    res = self.stagerClient.removeTasks( doneTasks.keys() )
+    if not res['OK']:
+      gLogger.fatal( "RequestFinalization.callbackDoneTasks: Failed to remove Done tasks.", res['Message'] )
+    return res
+
   def callbackStagedTasks( self ):
     """ This updates the status of the Tasks to Done then issues the call back message
     """
-    res = self.stagerClient.updateStageCompletingTasks()
-    if not res['OK']:
-      gLogger.fatal( "RequestFinalization.callbackStagedTasks: Failed to update StageCompleting Tasks from StagerDB.", res['Message'] )
-      return res
-    gLogger.info( "RequestFinalization.callbackStagedTasks: Updated %s Tasks from StageCompleting to Staged." % len( res['Value'] ) )
     res = self.stagerClient.getTasksWithStatus( 'Staged' )
     if not res['OK']:
       gLogger.fatal( "RequestFinalization.callbackStagedTasks: Failed to get Staged Tasks from StagerDB.", res['Message'] )
@@ -77,10 +95,11 @@ class RequestFinalizationAgent( AgentModule ):
     if not stagedTasks:
       gLogger.info( "RequestFinalization.callbackStagedTasks: No tasks to update to Done." )
       return S_OK()
+    # Daniela: Why is the line below commented out?
     #res = self.stagerClient.setTasksDone(stagedTasks.keys())
     res = self.stagerClient.removeTasks( stagedTasks.keys() )
     if not res['OK']:
-      gLogger.fatal( "RequestFinalization.callbackStagedTasks: Failed to set status of Tasks to Done.", res['Message'] )
+      gLogger.fatal( "RequestFinalization.callbackStagedTasks: Failed to remove staged Tasks.", res['Message'] )
     return res
 
   def __performCallback( self, status, callback, sourceTask ):

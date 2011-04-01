@@ -21,7 +21,7 @@ class RequestPreparationAgent( AgentModule ):
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
 
-    # This sets the Default Proxy to used as that defined under 
+    # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
@@ -120,6 +120,7 @@ class RequestPreparationAgent( AgentModule ):
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica failures.", res['Message'] )
     if replicaMetadata:
       gLogger.info( "RequestPreparation.prepareNewReplicas: %s replica metadata to be updated." % len( replicaMetadata ) )
+      # Sets the Status='Waiting' of CacheReplicas records that are OK with catalogue checks
       res = self.stagerClient.updateReplicaInformation( replicaMetadata )
       if not res['OK']:
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica metadata.", res['Message'] )
@@ -127,7 +128,7 @@ class RequestPreparationAgent( AgentModule ):
 
   def __getNewReplicas( self ):
     """ This obtains the New replicas from the Replicas table and for each LFN the requested storage element """
-    # First obtain the New replicas from the Replicas table
+    # First obtain the New replicas from the CacheReplicas table
     res = self.stagerClient.getReplicasWithStatus( 'New' )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getNewReplicas: Failed to get replicas with New status.", res['Message'] )
