@@ -264,8 +264,8 @@ class JobSchedulingAgent( OptimizerModule ):
     # a larger number of files on disk
     self.log.verbose( 'Staging is required for job' )
     stagingFlag = 1
-    if stageSiteCandidates:
-      maxDiskValue = sorted( diskList )[-1]
+    maxDiskValue = sorted( diskList )[-1]
+    if maxDiskValue:
       self.log.verbose( 'The following sites have %s disk replicas: %s'
                         % ( maxDiskValue, stageSiteCandidates[maxDiskValue] ) )
       finalSiteCandidates.extend( stageSiteCandidates[maxDiskValue] )
