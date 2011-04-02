@@ -583,6 +583,9 @@ def getComponentCfg( componentType, system, component, compInstance, extensions 
     if exitOnError:
       DIRAC.exit( -1 )
     return S_ERROR( error )
+  
+  # Delete Dependencies section if any
+  compCfg.deleteKey('Dependencies')
 
   sectionPath = cfgPath( 'Systems', system, compInstance, sectionName )
   cfg = __getCfg( sectionPath )
