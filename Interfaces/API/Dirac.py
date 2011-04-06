@@ -80,7 +80,17 @@ class Dirac:
     self.sandboxClient = SandboxStoreClient( useCertificates, sbRPCClient, sbTransferClient )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     self.pPrint = pprint.PrettyPrinter()
-    self.defaultFileCatalog = gConfig.getValue( self.section + '/FileCatalog', 'LcgFileCatalogCombined' )
+    # Determine the default file catalog
+    defaultFC = gConfig.getValue( self.section + '/FileCatalog', '' )
+    if not defaultFC:
+      result = gConfig.getSections('Resources/FileCatalogs',[])
+      if result['OK']:
+        if result['Value']:
+          self.defaultFileCatalog = result['Value'][0]
+    else:
+      self.defaultFileCatalog = defaultFC
+    if not defaultFC:
+      self.defaultFileCatalog = 'FileCatalog'  
 
   def version( self ):
     return S_OK( DIRAC.buildVersion )
