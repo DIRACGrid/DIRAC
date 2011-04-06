@@ -27,9 +27,7 @@ except:
 
 try:
   from DIRAC.Core.Utilities import S_OK, S_ERROR
-  from DIRAC.Core.Utilities import List, ThreadSafe
-
-  gCFGSynchro = ThreadSafe.Synchronizer( recursive = True )
+  from DIRAC.Core.Utilities import List
 except:
   #We're out of python, define required utilities
   import threading
@@ -52,34 +50,6 @@ except:
 
   List = ListDummy()
 
-  class Synchronizer:
-    """ Class enapsulating a lock
-    allowing it to be used as a synchronizing
-    decorator making the call thread-safe"""
-
-    def __init__( self, lockName = "", recursive = False ):
-      self.lockName = lockName
-      if recursive:
-        self.lock = threading.RLock()
-      else:
-        self.lock = threading.Lock()
-
-    def __call__( self, funcToCall ):
-      def lockedFunc( *args, **kwargs ):
-        try:
-          if self.lockName:
-            print "LOCKING", self.lockName
-          self.lock.acquire()
-          return funcToCall( *args, **kwargs )
-        finally:
-          if self.lockName:
-            print "UNLOCKING", self.lockName
-          self.lock.release()
-      return lockedFunc
-
-  gCFGSynchro = Synchronizer( recursive = True )
-  #END OF OUT OF DIRAC
-
 #START OF CFG MODULE
 
 class CFG:
@@ -90,7 +60,7 @@ class CFG:
     """
     self.reset()
 
-  @gCFGSynchro
+  
   def reset( self ):
     """
     Empty the CFG
@@ -99,7 +69,7 @@ class CFG:
     self.__commentDict = {}
     self.__dataDict = {}
 
-  @gCFGSynchro
+  
   def createNewSection( self, sectionName, comment = "", contents = False ):
     """
     Create a new section
@@ -142,7 +112,7 @@ class CFG:
       raise Exception( "Section %s does not exist" % sectionName )
     self.__dataDict[ sectionName ] = oCFGToClone.clone()
 
-  @gCFGSynchro
+  
   def setOption( self, optionName, value, comment = "" ):
     """
     Create a new option.
@@ -200,7 +170,7 @@ class CFG:
       self.__orderedList.reverse()
     return unordered != self.__orderedList
 
-  @gCFGSynchro
+  
   def deleteKey( self, key ):
     """
     Delete an option/section
@@ -217,7 +187,7 @@ class CFG:
       return True
     return False
 
-  @gCFGSynchro
+  
   def copyKey( self, originalKey, newKey ):
     """
     Copy an option/section
@@ -239,7 +209,7 @@ class CFG:
       return True
     return False
 
-  @gCFGSynchro
+  
   def listOptions( self, ordered = True ):
     """
     List options
@@ -253,7 +223,7 @@ class CFG:
     else:
       return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
 
-  @gCFGSynchro
+  
   def listSections( self, ordered = True ):
     """
     List subsections
@@ -267,7 +237,7 @@ class CFG:
     else:
       return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) != types.StringType ]
 
-  @gCFGSynchro
+  
   def isSection( self, key ):
     """
     Return if a section exists
@@ -287,7 +257,7 @@ class CFG:
       return section.isSection( secKey )
     return key in self.__dataDict and type( self.__dataDict[ key ] ) not in ( types.StringType, types.UnicodeType )
 
-  @gCFGSynchro
+  
   def isOption( self, key ):
     """
     Return if an option exists
@@ -331,7 +301,7 @@ class CFG:
     else:
       return False
 
-  @gCFGSynchro
+  
   def getRecursive( self, path, levelsAbove = 0 ):
     """
     Get path contents
@@ -443,7 +413,7 @@ class CFG:
       resVal[ sec ] = self[ sec ].getAsDict()
     return resVal
 
-  @gCFGSynchro
+  
   def appendToOption( self, optionName, value ):
     """
     Append a value to an option prepending a comma
@@ -457,7 +427,7 @@ class CFG:
       raise Exception( "Option %s has not been declared" % optionName )
     self.__dataDict[ optionName ] += str( value )
 
-  @gCFGSynchro
+  
   def addKey( self, key, value, comment, beforeKey = "" ):
     """
     Add a new entry (option or section)
@@ -482,7 +452,7 @@ class CFG:
       refKeyPos = self.__orderedList.index( beforeKey )
       self.__orderedList.insert( refKeyPos, key )
 
-  @gCFGSynchro
+  
   def renameKey( self, oldName, newName ):
     """
     Rename a option/section
@@ -569,7 +539,7 @@ class CFG:
         return False
     return True
 
-  @gCFGSynchro
+  
   def getComment( self, entryName ):
     """
     Get the comment for an option/section
@@ -583,7 +553,7 @@ class CFG:
     except:
       raise Exception( "%s does not have any comment defined" % entryName )
 
-  @gCFGSynchro
+  
   def setComment( self, entryName, comment ):
     """
     Set the comment for an option/section
@@ -598,7 +568,7 @@ class CFG:
       return True
     return False
 
-  @gCFGSynchro
+  
   def serialize( self, tabLevelString = "" ):
     """
     Generate a human readable serialization of a CFG
@@ -629,7 +599,7 @@ class CFG:
         raise Exception( "Oops. There is an entry in the order which is not a section nor an option" )
     return CFGSTring
 
-  @gCFGSynchro
+  
   def clone( self ):
     """
     Create a copy of the CFG
@@ -645,7 +615,7 @@ class CFG:
       clonedCFG.__dataDict[ section ] = self[ section ].clone()
     return clonedCFG
 
-  @gCFGSynchro
+  
   def mergeWith( self, cfgToMergeWith ):
     """
     Generate a CFG by merging with the contents of another CFG.
@@ -845,7 +815,7 @@ class CFG:
       fd.close()
     return self.loadFromBuffer( fileData )
 
-  @gCFGSynchro
+  
   def loadFromBuffer( self, data ):
     """
     Load the contents of the CFG from a string
@@ -1204,7 +1174,7 @@ for o, v in optList:
     cliParams.vo = v
 
 #Load CFG  
-#downloadFileFromSVN( "DIRAC/trunk/DIRAC/Core/Utilities/CFG.py", cliParams.targetPath, False, [ '@gCFGSynchro' ] )
+#downloadFileFromSVN( "DIRAC/trunk/DIRAC/Core/Utilities/CFG.py", cliParams.targetPath, False, [ '' ] )
 #cfgPath = os.path.join( cliParams.targetPath , "CFG.py" )
 #cfgFD = open( cfgPath, "r" )
 #CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
