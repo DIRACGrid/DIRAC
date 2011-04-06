@@ -61,8 +61,8 @@ Script.registerSwitch( "p:", "package=", "package to branch (default = DIRAC)", 
 Script.registerSwitch( "v:", "version=", "version to branch from", setVersion )
 Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
 Script.registerSwitch( "l:", "devel=", "Create a development branch with name", setDevelBranch )
-Script.registerSwitch( "r:", "pre=", "Create a pre branch with name", setPreBranch )
-Script.registerSwitch( "e:", "release=", "Create a release branch with name", setReleaseBranch )
+Script.registerSwitch( "e:", "pre=", "Create a pre branch with name", setPreBranch )
+Script.registerSwitch( "r:", "release=", "Create a release branch with name", setReleaseBranch )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
