@@ -73,7 +73,6 @@ CREATE TABLE FC_Replicas (
     FileID INT NOT NULL,
     SEID INTEGER NOT NULL,
     Status SMALLINT UNSIGNED NOT NULL,
-    CreationDate DATETIME,
     INDEX (FileID),
     INDEX (SEID),
     INDEX (FileID,SEID),
