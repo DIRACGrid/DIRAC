@@ -282,6 +282,15 @@ class ThreadPool( threading.Thread ):
       self.processResults()
       time.sleep( 1 )
 
+
+gThreadPool = False
+def getGlobalThreadPool():
+  global gThreadPool
+  if not gThreadPool:
+    gThreadPool = ThreadPool( 1, 500 )
+    gThreadPool.daemonize()
+  return gThreadPool
+
 if __name__ == "__main__":
   import random
 

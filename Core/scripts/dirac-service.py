@@ -4,13 +4,13 @@
 # File :   dirac-service
 # Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 
 import sys
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.DISET.Server import Server
+from DIRAC.Core.DISET.ServiceReactor import ServiceReactor
 
 localCfg = LocalConfiguration()
 
@@ -18,7 +18,7 @@ positionalArgs = localCfg.getPositionalArguments()
 if len( positionalArgs ) == 0:
   gLogger.initialize( "NOT SPECIFIED", "/" )
   gLogger.fatal( "You must specify which server to run!" )
-  sys.exit(1)
+  sys.exit( 1 )
 
 serverName = positionalArgs[0]
 localCfg.setConfigurationForServer( serverName )
@@ -30,9 +30,16 @@ resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.initialize( serverName, "/" )
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
-  sys.exit(1)
+  sys.exit( 1 )
 
 
 
-serverToLaunch = Server( serverName )
-serverToLaunch.serve()
+serverToLaunch = ServiceReactor( positionalArgs )
+result = serverToLaunch.initialize()
+if not result[ 'OK' ]:
+  gLogger.error( result[ 'Message' ] )
+  sys.exit( 1 )
+result = serverToLaunch.serve()
+if not result[ 'OK' ]:
+  gLogger.error( result[ 'Message' ] )
+  sys.exit( 1 )

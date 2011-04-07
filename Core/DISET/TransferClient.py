@@ -54,19 +54,21 @@ class TransferClient( BaseClient ):
     if not retVal[ 'OK' ]:
       return retVal
     fd = retVal[ 'Value' ]
-    retVal = self._sendTransferHeader( "FromClient", ( fileId, token, File.getSize( filename ) ) )
-    if not retVal[ 'OK' ]:
+    try:
+      retVal = self._sendTransferHeader( "FromClient", ( fileId, token, File.getSize( filename ) ) )
+      if not retVal[ 'OK' ]:
+        return retVal
+      transport = retVal[ 'Value' ]
+      fileHelper.setTransport( transport )
+      retVal = fileHelper.FDToNetwork( fd )
+      if not retVal[ 'OK' ]:
+        return retVal
+      retVal = transport.receiveData()
       return retVal
-    transport = retVal[ 'Value' ]
-    fileHelper.setTransport( transport )
-    retVal = fileHelper.FDToNetwork( fd )
-    if not retVal[ 'OK' ]:
-      return retVal
-    retVal = transport.receiveData()
-    transport.close()
-    return retVal
+    finally:
+      self._disconnect()
 
-  def receiveFile( self, filename, fileId, token = ""):
+  def receiveFile( self, filename, fileId, token = "" ):
     """
     Receive a file from the server
 
@@ -84,19 +86,22 @@ class TransferClient( BaseClient ):
       return retVal
     dS = retVal[ 'Value' ]
     closeAfterUse = retVal[ 'closeAfterUse' ]
-    retVal = self._sendTransferHeader( "ToClient", ( fileId, token ) )
-    if not retVal[ 'OK' ]:
+    try:
+      retVal = self._sendTransferHeader( "ToClient", ( fileId, token ) )
+      if not retVal[ 'OK' ]:
+        return retVal
+      transport = retVal[ 'Value' ]
+      fileHelper.setTransport( transport )
+      retVal = fileHelper.networkToDataSink( dS )
+      if not retVal[ 'OK' ]:
+        return retVal
+      retVal = transport.receiveData()
+      self._disconnect()
+      if closeAfterUse:
+        dS.close()
       return retVal
-    transport = retVal[ 'Value' ]
-    fileHelper.setTransport( transport )
-    retVal = fileHelper.networkToDataSink( dS )
-    if not retVal[ 'OK' ]:
-      return retVal
-    retVal = transport.receiveData()
-    transport.close()
-    if closeAfterUse:
-      dS.close()
-    return retVal
+    finally:
+      self._disconnect()
 
   def __checkFileList( self, fileList ):
     bogusEntries = []
@@ -128,17 +133,20 @@ class TransferClient( BaseClient ):
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self._sendTransferHeader( "BulkFromClient", ( bulkId, token, bulkSize ) )
-    if not retVal[ 'OK' ]:
+    try:
+      retVal = self._sendTransferHeader( "BulkFromClient", ( bulkId, token, bulkSize ) )
+      if not retVal[ 'OK' ]:
+        return retVal
+      transport = retVal[ 'Value' ]
+      fileHelper = FileHelper( transport )
+      retVal = fileHelper.bulkToNetwork( fileList, compress, onthefly )
+      if not retVal[ 'OK' ]:
+        return retVal
+      retVal = transport.receiveData()
+      self._disconnect()
       return retVal
-    transport = retVal[ 'Value' ]
-    fileHelper = FileHelper( transport )
-    retVal = fileHelper.bulkToNetwork( fileList, compress, onthefly )
-    if not retVal[ 'OK' ]:
-      return retVal
-    retVal = transport.receiveData()
-    transport.close()
-    return retVal
+    finally:
+      self._disconnect()
 
   def receiveBulk( self, destDir, bulkId, token = "", compress = True ):
     """
@@ -160,17 +168,20 @@ class TransferClient( BaseClient ):
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self._sendTransferHeader( "BulkToClient", ( bulkId, token ) )
-    if not retVal[ 'OK' ]:
+    try:
+      retVal = self._sendTransferHeader( "BulkToClient", ( bulkId, token ) )
+      if not retVal[ 'OK' ]:
+        return retVal
+      transport = retVal[ 'Value' ]
+      fileHelper = FileHelper( transport )
+      retVal = fileHelper.networkToBulk( destDir, compress )
+      if not retVal[ 'OK' ]:
+        return retVal
+      retVal = transport.receiveData()
+      self._disconnect()
       return retVal
-    transport = retVal[ 'Value' ]
-    fileHelper = FileHelper( transport )
-    retVal = fileHelper.networkToBulk( destDir, compress )
-    if not retVal[ 'OK' ]:
-      return retVal
-    retVal = transport.receiveData()
-    transport.close()
-    return retVal
+    finally:
+      self._disconnect()
 
   def listBulk( self, bulkId, token = "", compress = True ):
     """
@@ -188,10 +199,13 @@ class TransferClient( BaseClient ):
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self._sendTransferHeader( "ListBulk", ( bulkId, token ) )
-    if not retVal[ 'OK' ]:
-      return retVal
-    transport = retVal[ 'Value' ]
-    response = transport.receiveData( 1048576 )
-    transport.close()
-    return response
+    try:
+      retVal = self._sendTransferHeader( "ListBulk", ( bulkId, token ) )
+      if not retVal[ 'OK' ]:
+        return retVal
+      transport = retVal[ 'Value' ]
+      response = transport.receiveData( 1048576 )
+      self._disconnect()
+      return response
+    finally:
+      self._disconnect()

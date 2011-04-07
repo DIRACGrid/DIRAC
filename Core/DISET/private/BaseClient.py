@@ -12,6 +12,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import *
 from DIRAC.Core.Security import CS
+from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 
 class BaseClient:
 
@@ -21,6 +22,7 @@ class BaseClient:
   KW_EXTRA_CREDENTIALS = "extraCredentials"
   KW_TIMEOUT = "timeout"
   KW_SETUP = "setup"
+  KW_VO = "VO"
   KW_DELEGATED_DN = "delegatedDN"
   KW_DELEGATED_GROUP = "delegatedGroup"
   KW_IGNORE_GATEWAYS = "ignoreGateways"
@@ -28,27 +30,36 @@ class BaseClient:
   KW_PROXY_STRING = "proxyString"
   KW_PROXY_CHAIN = "proxyChain"
   KW_SKIP_CA_CHECK = "skipCACheck"
+  KW_KEEP_ALIVE_LAPSE = "keepAliveLapse"
 
   def __init__( self, serviceName, **kwargs ):
     if type( serviceName ) != types.StringType:
-      raise TypeError( "Service name expected to be a string. Received %s type %s" % ( str(serviceName), type(serviceName) ) )
-    self.serviceName = serviceName
+      raise TypeError( "Service name expected to be a string. Received %s type %s" % ( str( serviceName ), type( serviceName ) ) )
+    self._destinationSrv = serviceName
     self.kwargs = kwargs
     self.__initStatus = S_OK()
     self.__idDict = {}
+    self.__trid = False
     self.__enableThreadCheck = False
-    for initFunc in ( self.__discoverSetup, self.__discoverTimeout, self.__discoverURL,
-                      self.__discoverCredentialsToUse, self.__discoverExtraCredentials,
-                      self.__checkTransportSanity ):
+    for initFunc in ( self.__discoverSetup, self.__discoverVO, self.__discoverTimeout,
+                      self.__discoverURL, self.__discoverCredentialsToUse,
+                      self.__discoverExtraCredentials, self.__checkTransportSanity,
+                      self.__setKeepAliveLapse ):
       result = initFunc()
-      if not result[ 'OK' ]:
+      if not result[ 'OK' ] and self.__initStatus[ 'OK' ]:
         self.__initStatus = result
-        return
+    self._initialize()
     #HACK for thread-safety:
     self.__allowedThreadID = False
 
 
-  def __discoverSetup(self):
+  def _initialize( self ):
+    pass
+
+  def getDestinationService( self ):
+    return self._destinationSrv
+
+  def __discoverSetup( self ):
     #Which setup to use?
     if self.KW_SETUP in self.kwargs and self.kwargs[ self.KW_SETUP ]:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
@@ -56,19 +67,28 @@ class BaseClient:
       self.setup = gConfig.getValue( "/DIRAC/Setup", "Test" )
     return S_OK()
 
-  def __discoverURL(self):
+  def __discoverVO( self ):
+    #Which setup to use?
+    if self.KW_VO in self.kwargs and self.kwargs[ self.KW_VO ]:
+      self.vo = str( self.kwargs[ self.KW_VO ] )
+    else:
+      self.vo = gConfig.getValue( "/DIRAC/VirtualOrganization", "unknown" )
+    return S_OK()
+
+  def __discoverURL( self ):
     #Calculate final URL
     try:
       result = self.__findServiceURL()
     except Exception, e:
-      return S_ERROR( str(e) )
+      return S_ERROR( str( e ) )
     if not result[ 'OK' ]:
       return result
     self.serviceURL = result[ 'Value' ]
     retVal = Network.splitURL( self.serviceURL )
     if not retVal[ 'OK' ]:
       return S_ERROR( "URL is malformed: %s" % retVal[ 'Message' ] )
-    self.URLTuple = retVal[ 'Value' ]
+    self.__URLTuple = retVal[ 'Value' ]
+    self._serviceName = self.__URLTuple[-1]
     return S_OK()
 
   def __discoverTimeout( self ):
@@ -121,39 +141,43 @@ class BaseClient:
     return S_OK()
 
   def __findServiceURL( self ):
+    if not self.__initStatus[ 'OK' ]:
+      return self.__initStatus
     gatewayURL = False
     if self.KW_IGNORE_GATEWAYS not in self.kwargs or not self.kwargs[ self.KW_IGNORE_GATEWAYS ]:
       dRetVal = gConfig.getOption( "/DIRAC/Gateways/%s" % DIRAC.siteName() )
       if dRetVal[ 'OK' ]:
         rawGatewayURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )[0]
         gatewayURL = "/".join( rawGatewayURL.split( "/" )[:3] )
-          
+
     for protocol in gProtocolDict.keys():
-      if self.serviceName.find( "%s://" % protocol ) == 0:
-        gLogger.debug( "Already given a valid url", self.serviceName )
+      if self._destinationSrv.find( "%s://" % protocol ) == 0:
+        gLogger.debug( "Already given a valid url", self._destinationSrv )
         if not gatewayURL:
-          return S_OK( self.serviceName )
+          return S_OK( self._destinationSrv )
         gLogger.debug( "Reconstructing given URL to pass through gateway" )
-        path = "/".join( self.serviceName.split( "/" )[3:] )
-        finalURL = "%s/%s" % (  gatewayURL, path )
-        gLogger.debug( "Gateway URL conversion:\n %s -> %s" % ( self.serviceName, finalURL ) )
+        path = "/".join( self._destinationSrv.split( "/" )[3:] )
+        finalURL = "%s/%s" % ( gatewayURL, path )
+        gLogger.debug( "Gateway URL conversion:\n %s -> %s" % ( self._destinationSrv, finalURL ) )
         return S_OK( finalURL )
 
     if gatewayURL:
       gLogger.debug( "Using gateway", gatewayURL )
-      return S_OK( "%s/%s" % (  gatewayURL, self.serviceName ) )
+      return S_OK( "%s/%s" % ( gatewayURL, self._destinationSrv ) )
 
     try:
-      urls = getServiceURL( self.serviceName, setup = self.setup )
+      urls = getServiceURL( self._destinationSrv, setup = self.setup )
     except Exception, e:
-      return S_ERROR( "Cannot get URL for %s in setup %s: %s" % ( self.serviceName, self.setup, str(e) ) )
+      return S_ERROR( "Cannot get URL for %s in setup %s: %s" % ( self._destinationSrv, self.setup, str( e ) ) )
     if not urls:
-      return S_ERROR( "URL for service %s not found" % self.serviceName )
+      return S_ERROR( "URL for service %s not found" % self._destinationSrv )
     sURL = List.randomize( List.fromChar( urls, "," ) )[0]
-    gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self.serviceName, sURL ) )
+    gLogger.debug( "Discovering URL for service", "%s -> %s" % ( self._destinationSrv, sURL ) )
     return S_OK( sURL )
 
   def __checkThreadID( self ):
+    if not self.__initStatus[ 'OK' ]:
+      return self.__initStatus
     cThID = thread.get_ident()
     if not self.__allowedThreadID:
       self.__allowedThreadID = cThID
@@ -165,28 +189,41 @@ can only run on thread %s
 and this is thread %s
 ===============================================================""" % ( str( self ),
                                                                          self.__allowedThreadID,
-                                                                         cThID  )
+                                                                         cThID )
       gLogger.error( msgTxt )
       #raise Exception( msgTxt )
 
 
   def _connect( self ):
+    self.__trid = False
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     if self.__enableThreadCheck:
       self.__checkThreadID()
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
     try:
-      transport = gProtocolDict[ self.URLTuple[0] ][ 'transport' ]( self.URLTuple[1:3], **self.kwargs )
+      transport = gProtocolDict[ self.__URLTuple[0] ][ 'transport' ]( self.__URLTuple[1:3], **self.kwargs )
       retVal = transport.initAsClient()
       if not retVal[ 'OK' ]:
         return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, retVal ) )
     except Exception, e:
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, e ) )
+    self.__trid = getGlobalTransportPool().add( transport )
     return S_OK( transport )
 
-  def _proposeAction( self, transport, sAction ):
-    stConnectionInfo = ( ( self.URLTuple[3], self.setup ), sAction, self.__extraCredentials )
+  def _getTrid( self ):
+    return self.__trid
+
+  def _disconnect( self ):
+    if self.__trid:
+      getGlobalTransportPool().close( self.__trid )
+
+  def _proposeAction( self, transport, action ):
+    if not self.__initStatus[ 'OK' ]:
+      return self.__initStatus
+    stConnectionInfo = ( ( self.__URLTuple[3], self.setup, self.vo ),
+                         action,
+                         self.__extraCredentials )
     retVal = transport.sendData( S_OK( stConnectionInfo ) )
     if not retVal[ 'OK' ]:
       return retVal
@@ -201,7 +238,7 @@ and this is thread %s
     return serverReturn
 
   def __delegateCredentials( self, transport, delegationRequest ):
-    retVal = gProtocolDict[ self.URLTuple[0] ][ 'delegation' ]( delegationRequest, self.kwargs )
+    retVal = gProtocolDict[ self.__URLTuple[0] ][ 'delegation' ]( delegationRequest, self.kwargs )
     if not retVal[ 'OK' ]:
       return retVal
     retVal = transport.sendData( retVal[ 'Value' ] )
@@ -210,12 +247,26 @@ and this is thread %s
     return transport.receiveData()
 
   def __checkTransportSanity( self ):
-    retVal = gProtocolDict[ self.URLTuple[0] ][ 'sanity' ]( self.URLTuple[1:3], self.kwargs )
+    if not self.__initStatus[ 'OK' ]:
+      return self.__initStatus
+    retVal = gProtocolDict[ self.__URLTuple[0] ][ 'sanity' ]( self.__URLTuple[1:3], self.kwargs )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Insane environment for protocol: %s" % retVal[ 'Message' ] )
     idDict = retVal[ 'Value' ]
     for key in idDict:
       self.__idDict[ key ] = idDict[ key ]
+    return S_OK()
+
+  def __setKeepAliveLapse( self ):
+    kaa = 1
+    if self.KW_KEEP_ALIVE_LAPSE in self.kwargs:
+      try:
+        kaa = max( 0, int( self.kwargs ) )
+      except:
+        pass
+    if kaa:
+      kaa = max( 150, kaa )
+    self.kwargs[ self.KW_KEEP_ALIVE_LAPSE ] = kaa
     return S_OK()
 
   def _getBaseStub( self ):
@@ -233,10 +284,10 @@ and this is thread %s
             newKwargs[ self.KW_DELEGATED_GROUP ] = CS.getDefaultUserGroup()
           if CS.getHostnameForDN( newKwargs[ self.KW_DELEGATED_DN ] )[ 'OK' ]:
             newKwargs[ self.KW_DELEGATED_GROUP ] = self.VAL_EXTRA_CREDENTIALS_HOST
-        
+
     if 'useCertificates' in newKwargs:
       del( newKwargs[ 'useCertificates' ] )
-    return ( self.serviceName, newKwargs )
+    return ( self._destinationSrv, newKwargs )
 
   def __nonzero__( self ):
     return True

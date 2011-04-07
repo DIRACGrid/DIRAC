@@ -83,7 +83,10 @@ class EventDispatcher:
     try:
       self.__processingEvents.discard( eventName )
     finally:
-      gEventSync.unlock()
+      try:
+        gEventSync.unlock()
+      except:
+        pass
     if not finalResult[ 'OK' ]:
       return finalResult
     return S_OK( len( eventFunctors ) )

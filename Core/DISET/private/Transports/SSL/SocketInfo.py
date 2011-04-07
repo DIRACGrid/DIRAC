@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 import time
 import copy
 import os.path
-from socket import gethostbyname
+import threading
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.Network import checkHostsMatch
@@ -14,8 +14,15 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 class SocketInfo:
 
+  __cachedCAsCRLs = False
+  __cachedCAsCRLsLastLoaded = 0
+  __cachedCAsCRLsLoadLock = threading.Lock()
+
+
   def __init__( self, infoDict, sslContext = False ):
     self.infoDict = infoDict
+    #HACK:DISABLE CRLS!!!!!
+    self.infoDict[ 'IgnoreCRLs' ] = True
     if sslContext:
       self.sslContext = sslContext
     else:
@@ -92,7 +99,7 @@ class SocketInfo:
     """
     hostCN_m = hostCN
     if '/' in hostCN:
-      hostCN_m = hostCN.split('/')[1]
+      hostCN_m = hostCN.split( '/' )[1]
     if hostCN_m == hostConn:
       return True
     result = checkHostsMatch( hostCN_m, hostCN )
@@ -113,17 +120,94 @@ class SocketInfo:
         return ok
     return ok
 
-
   def _serverCallback( self, conn, cert, errnum, depth, ok ):
     return ok
+
+  def __getCAStore( self ):
+    SocketInfo.__cachedCAsCRLsLoadLock.acquire()
+    try:
+      if not SocketInfo.__cachedCAsCRLs or time.time() - SocketInfo.__cachedCAsCRLsLastLoaded > 900:
+        #Need to generate the CA Store
+        casDict = {}
+        crlsDict = []
+        casPath = Locations.getCAsLocation()
+        if not casPath:
+          return S_ERROR( "No valid CAs location found" )
+        gLogger.debug( "CAs location is %s" % casPath )
+        casFound = 0
+        crlsFound = 0
+        SocketInfo.__caStore = GSI.crypto.X509Store()
+        for fileName in os.listdir( casPath ):
+          filePath = os.path.join( casPath, fileName )
+          if not os.path.isfile( filePath ):
+            continue
+          fObj = file( filePath, "rb" )
+          pemData = fObj.read()
+          fObj.close()
+          #Try to load CA Cert
+          try:
+            caCert = GSI.crypto.load_certificate( GSI.crypto.FILETYPE_PEM, pemData )
+            if caCert.has_expired():
+              continue
+            caID = ( caCert.get_subject().one_line(), caCert.get_issuer().one_line() )
+            caNotAfter = caCert.get_not_after()
+            if caID not in casDict:
+              casDict[ caID ] = ( caNotAfter, caCert )
+              casFound += 1
+            else:
+              if casDict[ caID ][0] < caNotAfter:
+                casDict[ caID ] = ( caNotAfter, caCert ) 
+            continue
+          except:
+            if fileName.find( ".0" ) == len( fileName ) - 2:
+              gLogger.exception( "LOADING %s" % filePath )
+          if 'IgnoreCRLs' not in self.infoDict or not self.infoDict[ 'IgnoreCRLs' ]:
+            #Try to load CRL 
+            try:
+              crl = GSI.crypto.load_crl( GSI.crypto.FILETYPE_PEM, pemData )
+              if crl.has_expired():
+                continue
+              crlID = crl.get_issuer().one_line()
+              crlNotAfter = crl.get_not_after()
+              if crlID not in crlsDict:
+                crlsDict[ crlID ] = ( crlNotAfter, crl )
+                crlsFound += 1
+              else:
+                if crlsDict[ crlID ][0] < crlNotAfter:
+                  crlsDict[ crlID ] = ( crlNotAfter, crl ) 
+              continue
+            except:
+              if fileName.find( ".r0" ) == len( fileName ) - 2:
+                gLogger.exception( "LOADING %s" % filePath )
+
+        gLogger.debug( "Loaded %s CAs [%s CRLs]" % ( casFound, crlsFound ) )
+        SocketInfo.__cachedCAsCRLs = ( [ casDict[k][1] for k in casDict ], 
+                                       [ crlsDict[k][1] for k in crlsDict ] )
+        SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
+    except:
+      gLogger.exception( "ASD" )
+    finally:
+      SocketInfo.__cachedCAsCRLsLoadLock.release()
+    #Generate CA Store
+    caStore = GSI.crypto.X509Store()
+    caList = SocketInfo.__cachedCAsCRLs[0]
+    for caCert in caList:
+      caStore.add_cert( caCert )
+    crlList = SocketInfo.__cachedCAsCRLs[1]
+    for crl in crlList:
+      caStore.add_crl( crl )
+    return S_OK( caStore )
+
 
   def __createContext( self ):
     clientContext = self.__getValue( 'clientMode', False )
     # Initialize context
+    contextOptions = GSI.SSL.OP_ALL
     if clientContext:
       methodSuffix = "CLIENT_METHOD"
     else:
       methodSuffix = "SERVER_METHOD"
+      contextOptions |= GSI.SSL.OP_NO_SSLv2 | GSI.SSL.OP_NO_SSLv3
     if 'sslMethod' in self.infoDict:
       methodName = "%s_%s" % ( self.infoDict[ 'sslMethod' ], methodSuffix )
     else:
@@ -133,6 +217,9 @@ class SocketInfo:
     except:
       return S_ERROR( "SSL method %s is not valid" % self.infoDict[ 'sslMethod' ] )
     self.sslContext = GSI.SSL.Context( method )
+    if contextOptions:
+      self.sslContext.set_options( contextOptions )
+    #self.sslContext.set_read_ahead( 1 )
     #Enable GSI?
     gsiEnable = False
     if not clientContext or self.__getValue( 'gsiEnable', False ):
@@ -141,11 +228,11 @@ class SocketInfo:
     if not self.__getValue( 'skipCACheck', False ):
       #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
       self.sslContext.set_verify( GSI.SSL.VERIFY_PEER | GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, gsiEnable ) # Demand a certificate
-      casPath = Locations.getCAsLocation()
-      if not casPath:
-        return S_ERROR( "No valid CAs location found" )
-      gLogger.debug( "CAs location is %s" % casPath )
-      self.sslContext.load_verify_locations_path( casPath )
+      result = self.__getCAStore()
+      if not result[ 'OK' ]:
+        return result
+      caStore = result[ 'Value' ]
+      self.sslContext.set_cert_store( caStore )
     else:
       self.sslContext.set_verify( GSI.SSL.VERIFY_NONE, None, gsiEnable ) # Demand a certificate
     return S_OK()

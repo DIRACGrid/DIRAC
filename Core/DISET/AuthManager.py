@@ -49,9 +49,7 @@ class AuthManager:
       userString += " extraCredentials=%s" % str( credDict[ self.KW_EXTRA_CREDENTIALS ] )
     self.__authLogger.verbose( "Trying to authenticate %s" % userString )
     #Get properties
-    requiredProperties = self.getValidPropertiesForMethod( methodQuery )
-    if not requiredProperties and defaultProperties:
-      requiredProperties = List.fromChar( defaultProperties )
+    requiredProperties = self.getValidPropertiesForMethod( methodQuery, defaultProperties )
     #Check non secure backends
     if self.KW_DN not in credDict:
       if 'all' in requiredProperties or 'any' in requiredProperties:
@@ -79,7 +77,7 @@ class AuthManager:
     #HACK TO MAINTAIN COMPATIBILITY
     else:
       if self.KW_EXTRA_CREDENTIALS in credDict and not self.KW_GROUP in credDict:
-        credDict[ self.KW_GROUP ]  = credDict[ self.KW_EXTRA_CREDENTIALS ]
+        credDict[ self.KW_GROUP ] = credDict[ self.KW_EXTRA_CREDENTIALS ]
     #END OF HACK
     #Get the username
     if self.KW_DN in credDict and credDict[ self.KW_DN ]:
@@ -96,6 +94,7 @@ class AuthManager:
         if not self.getUsername( credDict ):
           self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
           return False
+    #If any or all in the props, allow
     if "any" in requiredProperties or "all" in requiredProperties:
       return True
     #Check user is authenticated
@@ -106,7 +105,7 @@ class AuthManager:
     if "authenticated" in requiredProperties:
       return True
     if not self.matchProperties( credDict, requiredProperties ):
-      self.__authLogger.warn( "Peer is not authorized\nValid properties: %s\nPeer: %s" % ( requiredProperties,credDict ) )
+      self.__authLogger.warn( "Client is not authorized\nValid properties: %s\Client: %s" % ( requiredProperties, credDict ) )
       return False
     return True
 
@@ -130,7 +129,7 @@ class AuthManager:
     credDict[ self.KW_USERNAME ] = retVal[ 'Value' ]
     return True
 
-  def getValidPropertiesForMethod( self, method ):
+  def getValidPropertiesForMethod( self, method, defaultProperties = False ):
     """
     Get all authorized groups for calling a method
 
@@ -138,12 +137,21 @@ class AuthManager:
     @param method: Method to test
     @return: List containing the allowed groups
     """
-    authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
-    if not authGroups:
-      defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
-      self.__authLogger.verbose( "Method %s has no properties defined, trying %s" % ( method, defaultPath ) )
-      authGroups = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
-    return authGroups
+    authProps = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
+    if authProps:
+      return [ prop.lower() for prop in authProps ]
+    if defaultProperties:
+      self.__authLogger.verbose( "Using hardcoded properties for method %s : %s" % ( method, defaultProperties ) )
+      if type( defaultProperties ) not in ( types.ListType, types.TupleType ):
+        return List.fromChar( defaultProperties )
+      return [ prop.lower() for prop in defaultProperties ]
+    defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
+    authProps = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
+    if authProps:
+      self.__authLogger.verbose( "Method %s has no properties defined using %s" % ( method, defaultPath ) )
+      return [ prop.lower() for prop in authProps ]
+    self.__authLogger.verbose( "Method %s has no authorization rules defined. Allowing no properties" % method )
+    return []
 
   def forwardedCredentials( self, credDict ):
     """
@@ -187,7 +195,7 @@ class AuthManager:
       return True
     if not self.KW_GROUP in credDict:
       credDict[ self.KW_GROUP ] = CS.getDefaultUserGroup()
-    credDict[ self.KW_PROPERTIES ] = CS.getPropertiesForGroup( credDict[ self.KW_GROUP ], [])
+    credDict[ self.KW_PROPERTIES ] = CS.getPropertiesForGroup( credDict[ self.KW_GROUP ], [] )
     usersInGroup = CS.getUsersInGroup( credDict[ self.KW_GROUP ], [] )
     if not usersInGroup:
       return False
@@ -197,7 +205,7 @@ class AuthManager:
       return True
     return False
 
-  def matchProperties( self, credDict, validProps ):
+  def matchProperties( self, credDict, validProps, caseSensitive = True ):
     """
     Return True if one or more properties are in the valid list of properties
     @type  props: list
@@ -206,9 +214,13 @@ class AuthManager:
     @param validProps: List of valid properties
     @return: Boolean specifying whether any property has matched the valid ones
     """
+    if not caseSensitive:
+      validProps = [ prop.lower() for prop in validProps ]
     groupProperties = credDict[ self.KW_PROPERTIES ]
     foundProps = []
     for prop in groupProperties:
+      if not caseSensitive:
+        prop = prop.lower()
       if prop in validProps:
         foundProps.append( prop )
     credDict[ self.KW_PROPERTIES ] = foundProps

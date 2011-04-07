@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 import os
 import types
 import time
+import threading
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -13,7 +14,33 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.X509Certificate import X509Certificate
 
+GSI.SSL.set_thread_safe()
+
 class SSLTransport( BaseTransport ):
+
+  __readWriteLock = threading.Lock()
+
+  def __init__( self, *args, **kwargs ):
+    self.__writesDone = 0
+    self.__locked = False
+    BaseTransport.__init__( self, *args, **kwargs )
+
+  def __lock( self, timeout = 1000 ):
+    while self.__locked and timeout:
+      time.sleep( 0.1 )
+      timeout -= 0.1
+    if not timeout:
+      return False
+    SSLTransport.__readWriteLock.acquire()
+    if self.__locked:
+      SSLTransport.__readWriteLock.release()
+      return self.__lock( timeout )
+    self.__locked = True
+    SSLTransport.__readWriteLock.release()
+    return True
+
+  def __unlock( self ):
+    self.__locked = False
 
   def initAsClient( self ):
     retVal = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
@@ -41,8 +68,20 @@ class SSLTransport( BaseTransport ):
 
   def close( self ):
     gLogger.debug( "Closing socket" )
-    self.oSocket.shutdown()
-    self.oSocket.close()
+    try:
+      self.oSocket.shutdown()
+      self.oSocket.close()
+    except:
+      pass
+
+  def renewServerContext( self ):
+    BaseTransport.renewServerContext( self )
+    result = gSocketInfoFactory.renewServerContext( self.oSocketInfo )
+    if not result[ 'OK' ]:
+      return result
+    self.oSocketInfo = result[ 'Value' ]
+    self.oSocket = self.oSocketInfo.getSSLSocket()
+    return S_OK()
 
   def handshake( self ):
     retVal = self.oSocketInfo.doServerHandshake()
@@ -74,43 +113,71 @@ class SSLTransport( BaseTransport ):
 
 
   def _read( self, bufSize = 4096, skipReadyCheck = False ):
-    start = time.time()
-    timeout = self.oSocketInfo.infoDict[ 'timeout' ]
-    while True:
+    self.__lock()
+    try:
+      timeout = self.oSocketInfo.infoDict[ 'timeout' ]
       if timeout:
-        if time.time() - start > timeout:
-          return S_ERROR( "Socket read timeout exceeded" )
-      try:
-        return S_OK( self.oSocket.recv( bufSize ) )
-      except GSI.SSL.WantReadError:
-        time.sleep( 0.1 )
-      except Exception, e:
-        return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
-
-  def _write( self, buffer ):
-    sentBytes = 0
-    timeout = self.oSocketInfo.infoDict[ 'timeout' ]
-    if timeout:
-      start = time.time()
-    while sentBytes < len( buffer ):
-      try:
+         start = time.time()
+      while True:
         if timeout:
           if time.time() - start > timeout:
-            return S_ERROR( "Socket write timeout exceeded" )
-        sent = self.oSocket.write( buffer[ sentBytes: ] )
-        if sent == 0:
-          return S_ERROR( "Connection closed by peer" )
-        if sent > 0:
-          sentBytes += sent
-      except GSI.SSL.WantWriteError:
-        time.sleep( 0.1 )
-        continue
-      except GSI.SSL.WantReadError:
-        time.sleep( 0.1 )
-        continue
-      except Exception, e:
-        return S_ERROR( "Error while sending: %s" % str( e ) )
-    return S_OK( sentBytes )
+            return S_ERROR( "Socket read timeout exceeded" )
+        try:
+          return S_OK( self.oSocket.recv( bufSize ) )
+        except GSI.SSL.WantReadError:
+          time.sleep( 0.1 )
+        except GSI.SSL.WantWriteError:
+          time.sleep( 0.1 )
+        except GSI.SSL.ZeroReturnError:
+          return S_OK( "" )
+        except Exception, e:
+          return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
+    finally:
+      self.__unlock()
+
+  def isLocked( self ):
+    return self.__locked
+
+  def _write( self, buffer ):
+    self.__lock()
+    try:
+      #Renegotiation
+      if not self.oSocketInfo.infoDict[ 'clientMode' ]:
+        #self.__writesDone += 1
+        if self.__writesDone > 1000:
+
+          self.__writesDone = 0
+          ok = self.oSocket.renegotiate()
+          if ok:
+            try:
+              ok = self.oSocket.do_handshake()
+            except Exception, e:
+              return S_ERROR( "Renegotiation failed: %s" % str( e ) )
+
+
+      sentBytes = 0
+      timeout = self.oSocketInfo.infoDict[ 'timeout' ]
+      if timeout:
+        start = time.time()
+      while sentBytes < len( buffer ):
+        try:
+          if timeout:
+            if time.time() - start > timeout:
+              return S_ERROR( "Socket write timeout exceeded" )
+          sent = self.oSocket.write( buffer[ sentBytes: ] )
+          if sent == 0:
+            return S_ERROR( "Connection closed by peer" )
+          if sent > 0:
+            sentBytes += sent
+        except GSI.SSL.WantWriteError:
+          time.sleep( 0.1 )
+        except GSI.SSL.WantReadError:
+          time.sleep( 0.1 )
+        except Exception, e:
+          return S_ERROR( "Error while sending: %s" % str( e ) )
+      return S_OK( sentBytes )
+    finally:
+      self.__unlock()
 
 
 def checkSanity( urlTuple, kwargs ):

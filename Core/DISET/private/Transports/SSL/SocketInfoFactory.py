@@ -16,6 +16,9 @@ from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManag
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
 
+if GSI.__version__ < "0.5.0":
+  raise Exception( "Required GSI version >= 0.5.0" )
+
 class SocketInfoFactory:
 
   def generateClientInfo( self, destinationHostname, kwargs ):
@@ -139,6 +142,16 @@ class SocketInfoFactory:
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     sslSocket.bind( hostAddress )
     sslSocket.listen( listeningQueueSize )
+    socketInfo.setSSLSocket( sslSocket )
+    return S_OK( socketInfo )
+
+  def renewServerContext( self, origSocketInfo ):
+    retVal = self.generateServerInfo( origSocketInfo.infoDict )
+    if not retVal[ 'OK' ]:
+      return retVal
+    socketInfo = retVal[ 'Value' ]
+    osSocket = origSocketInfo.getSSLSocket().get_socket()
+    sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     socketInfo.setSSLSocket( sslSocket )
     return S_OK( socketInfo )
 
