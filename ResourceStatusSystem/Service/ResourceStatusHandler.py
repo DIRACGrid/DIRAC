@@ -27,7 +27,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import RSSDBException, Resou
 from DIRAC.ResourceStatusSystem.Utilities.CS import getExt
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import whoRaised, where
-from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
+#from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
@@ -47,9 +47,9 @@ def initializeResourceStatusHandler(serviceInfo):
   
   WMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
 
-  global publisher
-  publisher = Publisher(VOExtension, rsDBIn = rsDB, commandCallerIn = cc, 
-                        infoGetterIn = ig, WMSAdminIn = WMSAdmin)
+#  global publisher
+#  publisher = Publisher(VOExtension, rsDBIn = rsDB, commandCallerIn = cc, 
+#                        infoGetterIn = ig, WMSAdminIn = WMSAdmin)
 
   sync_O = Synchronizer(rsDB)
   gConfig.addListenerToNewVersionEvent( sync_O.sync )

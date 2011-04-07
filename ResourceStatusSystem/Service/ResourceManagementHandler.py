@@ -57,8 +57,8 @@ def initializeResourceManagementHandler(serviceInfo):
   publisher = Publisher(VOExtension, rsDBIn = rsDB, commandCallerIn = cc, 
                         infoGetterIn = ig, WMSAdminIn = WMSAdmin)
 
-  sync_O = Synchronizer(rsDB)
-  gConfig.addListenerToNewVersionEvent( sync_O.sync )
+#  sync_O = Synchronizer(rsDB)
+#  gConfig.addListenerToNewVersionEvent( sync_O.sync )
     
   return S_OK()
 
@@ -82,14 +82,14 @@ class ResourceManagementHandler(RequestHandler):
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getStatusList`
     """
     try:
-      gLogger.info("ResourceStatusHandler.getStatusList: Attempting to get status list")
+      gLogger.info("ResourceManagementHandler.getStatusList: Attempting to get status list")
       try:
         res = rmDB.getStatusList()
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getStatusList: got status list")
+      gLogger.info("ResourceManagementHandler.getStatusList: got status list")
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getStatusList)
@@ -103,14 +103,14 @@ class ResourceManagementHandler(RequestHandler):
     """ get Policy Result
     """
     try:
-      gLogger.info("ResourceStatusHandler.getPolicyRes: Attempting to get result of %s for %s" % (policyName, name))
+      gLogger.info("ResourceManagementHandler.getPolicyRes: Attempting to get result of %s for %s" % (policyName, name))
       try:
         res = rmDB.getPolicyRes(name, policyName, lastCheckTime)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getPolicyRes: got result of %s for %s" % (policyName, name))
+      gLogger.info("ResourceManagementHandler.getPolicyRes: got result of %s for %s" % (policyName, name))
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getPolicyRes)
@@ -124,7 +124,7 @@ class ResourceManagementHandler(RequestHandler):
     """ get a cached accounting result
     """
     try:
-      gLogger.info("ResourceStatusHandler.getCachedAccountingResult: Attempting to get %s: %s, %s accounting cached result" % (name, plotType, plotName))
+      gLogger.info("ResourceManagementHandler.getCachedAccountingResult: Attempting to get %s: %s, %s accounting cached result" % (name, plotType, plotName))
       try:
         res = rmDB.getAccountingCacheStuff(['Result'], name = name, plotType = plotType, 
                                            plotName = plotName)
@@ -134,7 +134,7 @@ class ResourceManagementHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getCachedAccountingResult: got %s: %s %s cached result" % (name, plotType, plotName))
+      gLogger.info("ResourceManagementHandler.getCachedAccountingResult: got %s: %s %s cached result" % (name, plotType, plotName))
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getCachedAccountingResult)
@@ -148,7 +148,7 @@ class ResourceManagementHandler(RequestHandler):
     """ get a cached result
     """
     try:
-      gLogger.info("ResourceStatusHandler.getCachedResult: Attempting to get %s: %s, %s cached result" % (name, value, command))
+      gLogger.info("ResourceManagementHandler.getCachedResult: Attempting to get %s: %s, %s cached result" % (name, value, command))
       try:
         if opt_ID == 'NULL':
           opt_ID = None
@@ -160,7 +160,7 @@ class ResourceManagementHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getCachedResult: got %s: %s %s cached result" % (name, value, command))
+      gLogger.info("ResourceManagementHandler.getCachedResult: got %s: %s %s cached result" % (name, value, command))
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getCachedResult)
@@ -174,7 +174,7 @@ class ResourceManagementHandler(RequestHandler):
     """ get a cached IDs
     """
     try:
-      gLogger.info("ResourceStatusHandler.getCachedIDs: Attempting to get %s: %s cached IDs" % (name, command))
+      gLogger.info("ResourceManagementHandler.getCachedIDs: Attempting to get %s: %s cached IDs" % (name, command))
       try:
         dt_ID = []
         res = rmDB.getClientsCacheStuff('opt_ID', name = name, commandName = command)
@@ -185,7 +185,7 @@ class ResourceManagementHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getCachedIDs: got %s: %s cached result" % (name, command))
+      gLogger.info("ResourceManagementHandler.getCachedIDs: got %s: %s cached result" % (name, command))
       return S_OK(dt_ID)
     except Exception:
       errorStr = where(self, self.export_getCachedIDs)
@@ -233,7 +233,7 @@ class ResourceManagementHandler(RequestHandler):
         }
     """
     try:
-      gLogger.info("ResourceStatusHandler.getDownTimesWeb: Attempting to get down times list")
+      gLogger.info("ResourceManagementHandler.getDownTimesWeb: Attempting to get down times list")
       try:
         try:
           granularity = selectDict['Granularity']
@@ -338,7 +338,7 @@ class ResourceManagementHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getDownTimesWeb: got DT list")
+      gLogger.info("ResourceManagementHandler.getDownTimesWeb: got DT list")
       return S_OK(finalDict)
     except Exception:
       errorStr = where(self, self.export_getDownTimesWeb)
@@ -352,7 +352,7 @@ class ResourceManagementHandler(RequestHandler):
     """ Enforce all the policies. If `useNewRes` is False, use cached results only (where available).
     """
     try:
-      gLogger.info("ResourceStatusHandler.enforcePolicies: Attempting to enforce policies for %s %s" % (granularity, name))
+      gLogger.info("ResourceManagementHandler.enforcePolicies: Attempting to enforce policies for %s %s" % (granularity, name))
       try:
         reason = serviceType = resourceType = None 
 
@@ -375,8 +375,8 @@ class ResourceManagementHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.enforcePolicies: enforced for %s: %s" % (granularity, name))
-      return S_OK("ResourceStatusHandler.enforcePolicies: enforced for %s: %s" % (granularity, name))
+      gLogger.info("ResourceManagementHandler.enforcePolicies: enforced for %s: %s" % (granularity, name))
+      return S_OK("ResourceManagementHandler.enforcePolicies: enforced for %s: %s" % (granularity, name))
     except Exception:
       errorStr = where(self, self.export_getCachedResult)
       gLogger.exception(errorStr)
@@ -400,11 +400,11 @@ class ResourceManagementHandler(RequestHandler):
         otherwise it will get cached results (where available).
     """
     try:
-      gLogger.info("ResourceStatusHandler.publisher: Attempting to get info for %s: %s" % (granularity, name))
+      gLogger.info("ResourceManagementHandler.publisher: Attempting to get info for %s: %s" % (granularity, name))
       try:
         if useNewRes == True:
           from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-          gLogger.info("ResourceStatusHandler.publisher: Recalculating policies for %s: %s" % (granularity, name))
+          gLogger.info("ResourceManagementHandler.publisher: Recalculating policies for %s: %s" % (granularity, name))
           if granularity in ('Site', 'Sites'):
             res = rsDB.getStuffToCheck(granularity, name = name)[0]
             status = res[1]
@@ -454,7 +454,7 @@ class ResourceManagementHandler(RequestHandler):
       except RSSException, x:
         errorStr = "RSSException"
         gLogger.exception(whoRaised(x) + errorStr)
-      gLogger.info("ResourceStatusHandler.publisher: got info for %s: %s" % (granularity, name))
+      gLogger.info("ResourceManagementHandler.publisher: got info for %s: %s" % (granularity, name))
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_publisher)
