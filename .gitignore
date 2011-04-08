@@ -21,4 +21,5 @@ pip-log.txt
 #eclipse
 .project
 .pyproject
+.pydevproject
 
