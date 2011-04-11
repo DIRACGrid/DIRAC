@@ -13,13 +13,28 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess, CFG
 
-import sys, os, re, urllib2, tempfile, getpass, ConfigParser
+import sys, os, re, urllib2, tempfile, getpass, imp
 
 globalDistribution = Distribution.Distribution()
 
 projectMapping = {
   'DIRAC' : "https://github.com/DIRACGrid/DIRAC/raw/master/releases.ini"
   }
+
+###
+# Load release manager from dirac-install
+##
+diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install.py" )
+try:
+  diFile = open( diracInstallLocation, "r" )
+  ReleaseConfig = imp.load_module( "ReleaseConfig", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
+  diFile.close()
+except Exception, excp:
+  raise
+  gLogger.fatal( "Cannot find dirac-install! Aborting (%s)" % str( excp ) )
+  sys.exit( 1 )
+##END OF LOAD
+
 
 class Params:
 
@@ -87,7 +102,7 @@ class Params:
 
   def registerSwitches( self ):
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
-    Script.registerSwitch( "p:", "project=", "Project to build the release for (DIRAC by default)", cliParams.setProject )
+    Script.registerSwitch( "t:", "project=", "Project to build the release for (DIRAC by default)", cliParams.setProject )
     Script.registerSwitch( "D:", "destination", "Destination where to build the tar files", cliParams.setDestination )
     Script.registerSwitch( "i:", "pythonVersion", "Python version to use (25/26)", cliParams.setPythonVersion )
     Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
@@ -101,193 +116,6 @@ class Params:
     Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                         '\nUsage:',
                                         '  %s [option|cfgfile] ...\n' % Script.scriptName ] ) )
-
-class ReleaseConfig:
-
-  #Because python's INI parser is the utmost shittiest thing ever done
-  class CFG:
-    def __init__( self, cfgData = "" ):
-      self.__data = {}
-      self.__children = {}
-      if cfgData:
-        self.parse( cfgData )
-
-    def parse( self, cfgData ):
-      self.__parse( cfgData )
-      return self
-
-    def __parse( self, cfgData, cIndex = 0 ):
-      childName = ""
-      numLine = 0
-      while cIndex < len( cfgData ):
-        eol = cfgData.find( "\n", cIndex )
-        if eol < cIndex:
-          #End?
-          return cIndex
-        numLine += 1
-        if eol == cIndex:
-          cIndex += 1
-          continue
-        line = cfgData[ cIndex : eol ].strip()
-        #Jump EOL
-        cIndex = eol + 1
-        if line[0] == "#":
-          continue
-        if line.find( "=" ) > -1:
-          fields = line.split( "=" )
-          self.__data[ fields[0].strip() ] = "=".join( fields[1:] ).strip()
-          print self.__data
-          continue
-
-        opFound = line.find( "{" )
-        if opFound > -1:
-          childName += line[ :opFound ].strip()
-          if not childName:
-            raise Exception( "No section name defined for opening in line %s" % numLine )
-          childName = childName.strip()
-          self.__children[ childName ] = ReleaseConfig.CFG()
-          eoc = self.__children[ childName ].__parse( cfgData, cIndex )
-          cIndex = eoc
-          childName = ""
-          continue
-
-        if line == "}":
-          return cIndex
-        #Must be name for section
-        childName += line.strip()
-      return cIndex
-
-    def isSection( self, obList ):
-      return self.__exists( [ ob.strip() for ob in obList.split( "/" ) if ob.strip() ] ) == 2
-
-    def isOption( self, obList ):
-      return self.__exists( [ ob.strip() for ob in obList.split( "/" ) if ob.strip() ] ) == 1
-
-    def __exists( self, obList ):
-      if len( obList ) == 1:
-        if obList[0] in self.__children:
-          return  2
-        elif obList[0] in self.__data:
-          return 1
-        else:
-          return 0
-      if obList[0] in self.__children:
-        return self.__children[ obList[0] ].__exists( obList[1:] )
-      return 0
-
-    def get( self, opName ):
-      return self.__get( [ op.strip() for op in opName.split( "/" ) if op.strip() ] )
-
-    def __get( self, obList ):
-      if len( obList ) == 1:
-        if obList[0] in self.__data:
-          return self.__data[ obList[0] ]
-        raise ValueError( "Missing option %s" % obList[0] )
-      if obList[0] in self.__children:
-        return self.__children[ obList[0] ].__get( obList[1:] )
-      raise ValueError( "Missing section %s" % obList[0] )
-
-    def toString( self, tabs = 0 ):
-      lines = [ "%s = %s" % ( opName, self.__data[ opName ] ) for opName in self.__data ]
-      for secName in self.__children:
-        lines.append( "%s" % secName )
-        lines.append( "{" )
-        lines.append( self.__children[ secName ].toString( tabs + 1 ) )
-        lines.append( "}" )
-      return "\n".join( [ "%s%s" % ( "  " * tabs, line ) for line in lines ] )
-
-    #END OF INI CLASS
-
-  def __init__( self ):
-    self.__configs = {}
-    self.__projects = []
-
-  def loadProject( self, projectName, releasesLocation = False ):
-    if projectName in self.__projects:
-      return True
-    try:
-      if releasesLocation:
-        relFile = file( releasesLocation )
-      else:
-        releasesLocation = projectMapping[ projectName ]
-        relFile = urllib2.urlopen( releasesLocation )
-    except:
-      gLogger.exception( "Could not open %s" % releasesLocation )
-      return False
-    try:
-      config = ReleaseConfig.CFG( relFile.read() )
-    except:
-      gLogger.exception( "Could not parse %s" % releasesLocation )
-      return False
-    relFile.close()
-    gLogger.verbose( "Loaded data is:" )
-    gLogger.verbose( config.toString() )
-    gLogger.notice( "Loaded %s" % releasesLocation )
-    self.__projects.append( projectName )
-    self.__configs[ projectName ] = config
-    return True
-
-  def __getOpt( self, projectName, option ):
-    try:
-      return self.__configs[ projectName ].get( option )
-    except ValueError:
-      gLogger.error( "Missing option %s for project %s" % ( option, projectName ) )
-      return False
-
-  def getCFG( self, projectName ):
-    return self.__configs[ projectName ]
-
-  def getModulesForProjectRelease( self, projectName, releaseVersion ):
-    if not projectName in self.__projects:
-      gLogger.fatal( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
-      return False
-    config = self.__configs[ projectName ]
-    if not config.isSection( "releases/%s" % releaseVersion ):
-      gLogger.error( "Release %s is not defined for project %s" % ( releaseVersion, projectName ) )
-      return False
-    #Defined Modules explicitly in the release
-    modules = self.__getOpt( projectName, "%s/modules" % releaseVersion )
-    if modules:
-      dMods = {}
-      for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]:
-        if len( entry ) == 1:
-          dMods[ entry[0].strip() ] = releaseVersion
-        else:
-          dMods[ entry[0].strip() ] = entry[1].strip()
-      modules = dMods
-    else:
-      #Default modules with the same version as the release version
-      modules = self.__getOpt( projectName, "defaultModules" )
-      if modules:
-        modules = dict( [ ( modName.strip() , releaseVersion ) for modName in modules.split( "," ) if modName.strip() ] )
-      else:
-        #Mod = projectName and same version
-        modules = { projectName : releaseVersion }
-    #Check projectName is in the modNames if not DIRAC
-    if projectName != "DIRAC":
-      for modName in modules:
-        if modName.find( projectName ) != 0:
-          gLogger.error( "Module %s does not start with the project name %s" ( modName, projectName ) )
-          return False
-    return modules
-
-  def getModSource( self, projectName, modName ):
-    if not projectName in self.__projects:
-      gLogger.fatal( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
-      return False
-    modLocation = self.__getOpt( projectName, "sources/%s" % modName )
-    if not modLocation:
-      gLogger.error( "Source origin for module %s is not defined" % modName )
-      return False
-    modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ]
-    if len( modTpl ) == 1:
-      return ( False, modTpl[0] )
-    return ( modTpl[0], modTpl[1] )
-
-  def getExtenalsVersion( self, releaseVersion ):
-    if 'DIRAC' not in self.__projects:
-      return False
-    return self.__configs[ 'DIRAC' ].get( 'releases/%s/externals' % releaseVersion )
 
 
 class DistributionMaker:
