@@ -482,8 +482,8 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     signal.alarm( 0 )
   return True
 
-def downloadAndExtractTarball( tarsURL, pkgMod, targetPath, checkHash = True ):
-  tarName = "%s.tar.gz" % ( pkgMod )
+def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
+  tarName = "%s-%s.tar.gz" % ( pkgName, pkgVer )
   tarPath = os.path.join( cliParams.targetPath, tarName )
   try:
     if not urlretrieveTimeout( "%s/%s" % ( tarsURL, tarName ), tarPath, 300 ):
@@ -493,7 +493,7 @@ def downloadAndExtractTarball( tarsURL, pkgMod, targetPath, checkHash = True ):
     logERROR( "Cannot download %s: %s" % ( tarName, str( e ) ) )
     sys.exit( 1 )
   if checkHash:
-    md5Name = "%s.md5" % ( pkgMod )
+    md5Name = "%s-%s.md5" % ( pkgName, pkgVer )
     md5Path = os.path.join( cliParams.targetPath, md5Name )
     try:
       if not urlretrieveTimeout( "%s/%s" % ( tarsURL, md5Name ), md5Path, 300 ):
@@ -531,6 +531,16 @@ def downloadAndExtractTarball( tarsURL, pkgMod, targetPath, checkHash = True ):
   os.system( tarCmd )
   #Delete tar
   os.unlink( tarPath )
+
+  postInstallScript = os.path.join( cliParams.targetPath, pkgName, 'dirac-postInstall.py' )
+  if os.path.isfile( postInstallScript ):
+    os.chmod( postInstallScript , executablePerms )
+    logNOTICE( "Executing %s..." % postInstallScript )
+    if os.system( "python '%s' > '%s.out' 2> '%s.err'" % ( postInstallScript,
+                                                           postInstallScript,
+                                                           postInstallScript ) ):
+      logERROR( "Post installation script %s failed. Check %s.err" % ( postInstallScript,
+                                                                       postInstallScript ) )
   return True
 
 def fixBuildPaths():
@@ -712,6 +722,17 @@ def loadConfiguration():
 
   return S_OK( releaseConfig )
 
+def compileExternals( extVersion ):
+  logNOTICE( "Compiling externals %s" % extVersion )
+  buildCmd = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-compile-externals.py" )
+  buildCmd = "%s -t '%s' -D '%s' -v '%s' -i '%s'" % ( buildCmd, cliParams.externalsType,
+                                                      os.path.join( cliParams.targetPath, cliParams.platform ),
+                                                      extVersion,
+                                                      cliParams.pythonVersion )
+  if os.system( buildCmd ):
+    logERROR( "Could not compile binaries" )
+    return False
+  return True
 
 def installExternals( externalsVersion ):
   if not cliParams.platform:
@@ -721,67 +742,91 @@ def installExternals( externalsVersion ):
     platFD.close()
     cliParams.platform = Platform.getPlatformString()
 
+  if cliParams.buildExternals:
+    return compileExternals( externalsVersion )
+
   logNOTICE( "Using platform: %s" % cliParams.platform )
-  extName = "Externals-%s-%s-%s-python%s" % ( cliParams.externalsType, externalsVersion, cliParams.platform, cliParams.pythonVersion )
-  logDEBUG( "Externals %s are to be installed" % extName )
-  if not downloadAndExtractTarball( releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ], extName, cliParams.targetPath ):
-    return False
+  extVer = "%s-%s-%s-python%s" % ( externalsVersion, cliParams.platform, cliParams.pythonVersion )
+  logDEBUG( "Externals %s are to be installed" % extVer )
+  tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
+  if not downloadAndExtractTarball( tarsURL, "Externals", extVer ):
+    return cliParams.buildIfNotAvailable and compileExternals( externalsVersion )
   logNOTICE( "Fixing externals paths..." )
   fixBuildPaths()
   logNOTICE( "Runnning externals post install..." )
   runExternalsPostInstall()
   checkPlatformAliasLink()
-  #TODO: If externals NOT there, compile them if necessary
+  #lcg utils?
+  #LCG utils if required
+  if cliParams.lcgVer:
+    verString = "%s-%s-python%s" % ( cliParams.lcgVer, cliParams.platform, cliParams.pythonVersion )
+    #HACK: try to find a more elegant solution for the lcg bundles location
+    if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False ):
+      logERROR( "Check that there is a release for your platform: %s" % tarBallName )
   return True
 
+def createBashrc():
 
+  proPath = cliParams.targetPath
+  if cliParams.useVersionsDir:
+    oldPath = os.path.join( cliParams.basePath, 'old' )
+    proPath = os.path.join( cliParams.basePath, 'pro' )
+    try:
+      if os.path.exists( proPath ):
+        if os.path.exists( oldPath ):
+          os.unlink( oldPath )
+        os.rename( proPath, oldPath )
+      os.symlink( cliParams.targetPath, proPath )
+      for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc']:
+        fake = os.path.join( cliParams.targetPath, dir )
+        real = os.path.join( cliParams.basePath, dir )
+        if not os.path.exists( real ):
+          os.makedirs( real )
+        os.symlink( real, fake )
+    except Exception, x:
+      logERROR( str( x ) )
+      return False
 
+  # Now create bashrc at basePath
+  try:
+    bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
+    if cliParams.useVersionsDir:
+      bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
+    logNOTICE( 'Creating %s' % bashrcFile )
+    if not os.path.exists( bashrcFile ):
+      lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
+                'export PYTHONUNBUFFERED=yes',
+                'export PYTHONOPTIMIZE=x' ]
+      if 'HOME' in os.environ:
+        lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
+      if 'X509_CERT_DIR' in os.environ:
+        lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
+      lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
+      lines.extend( ['# Some DIRAC locations',
+                     'export DIRAC=%s' % proPath,
+                     'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
+                     'export DIRACSCRIPTS=%s' % os.path.join( proPath, 'scripts' ),
+                     'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ),
+                     'export TERMINFO=%s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ),
+                     'export RRD_DEFAULT_FONT=%s' % os.path.join( proPath, cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
+      lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
+                    'PYTHONPATH=""',
+                    'LD_LIBRARY_PATH=""'] )
 
+      lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
+                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
+                     'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
+                     'export PYTHONPATH=$DIRAC'] )
+      lines.append( '' )
+      f = open( bashrcFile, 'w' )
+      f.write( '\n'.join( lines ) )
+      f.close()
+  except Exception, x:
+   logERROR( str( x ) )
+   return False
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return True
 
 
 if __name__ == "__main__":
@@ -800,10 +845,11 @@ if __name__ == "__main__":
   logNOTICE( "Installing modules..." )
   for modName in modsToInstall:
     tarURL, modVersion = modsToInstall[ modName ]
-    pkgMod = "%s-%s" % ( modName, modVersion )
-    logNOTICE( "Installing %s" % pkgMod )
-    if not downloadAndExtractTarball( tarURL, pkgMod, cliParams.targetPath ):
+    logNOTICE( "Installing %s:%s" % ( modName, modVersion ) )
+    if not downloadAndExtractTarball( tarURL, modName, modVersion ):
       sys.exit( 1 )
+  logNOTICE( "Deloying scripts..." )
+  os.system( os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" ) )
   logNOTICE( "Installing externals..." )
   externalsVersion = releaseConfig.getExtenalsVersion()
   if not externalsVersion:
@@ -811,332 +857,7 @@ if __name__ == "__main__":
     sys.exit( 1 )
   if not installExternals( externalsVersion ):
     sys.exit( 1 )
-
-
-sys.exit( 0 )
-
-
-
-
-# First check if -V option is set to attempt retrieval of defaults.cfg
-
-for o, v in optList:
-  if o in ( '-h', '--help' ):
-    usage()
-  elif o in ( '-V', '--virtualOrganization' ):
-    cliParams.vo = v
-
-#Load CFG  
-#downloadFileFromSVN( "DIRAC/trunk/DIRAC/Core/Utilities/CFG.py", cliParams.targetPath, False, [ '' ] )
-#cfgPath = os.path.join( cliParams.targetPath , "CFG.py" )
-#cfgFD = open( cfgPath, "r" )
-#CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
-#cfgFD.close()
-
-optCfg = CFG()
-
-defCfgFile = "defaults.cfg"
-defaultsURL = "%s/%s" % ( cliParams.downBaseURL, defCfgFile )
-logNOTICE( "Getting defaults from %s" % defaultsURL )
-try:
-  urlretrieveTimeout( defaultsURL, defCfgFile, 30 )
-  # when all defaults are move to use LocalInstallation Section the next 2 lines can be removed
-  defCfg = CFG().loadFromFile( defCfgFile )
-  optCfg = defCfg
-  if defCfg.isSection( 'LocalInstallation' ):
-    optCfg = optCfg.mergeWith( defCfg['LocalInstallation'] )
-except Exception, e:
-  logNOTICE( "Cannot download default release version: %s" % ( str( e ) ) )
-
-if cliParams.vo:
-  voCfgFile = '%s_defaults.cfg' % cliParams.vo
-  voURL = "%s/%s" % ( cliParams.downBaseURL, voCfgFile )
-  logNOTICE( "Getting defaults from %s" % voURL )
-  try:
-    urlretrieveTimeout( voURL, voCfgFile, 30 )
-    voCfg = CFG().loadFromFile( voCfgFile )
-    # when all defaults are move to use LocalInstallation Section the next 5 lines can be removed
-    if not optCfg:
-      optCfg = voCfg
-    else:
-      optCfg = optCfg.mergeWith( voCfg )
-    if voCfg.isSection( 'LocalInstallation' ):
-      optCfg = optCfg.mergeWith( voCfg['LocalInstallation'] )
-  except Exception, e:
-    logNOTICE( "Cannot download VO default release version: %s" % ( str( e ) ) )
-
-for arg in args:
-  if not arg[-4:] == ".cfg":
-    continue
-  cfg = CFG().loadFromFile( arg )
-  if not cfg.isSection( 'LocalInstallation' ):
-    continue
-  if not optCfg:
-    optCfg = cfg['LocalInstallation']
-    continue
-  optCfg = optCfg.mergeWith( cfg['LocalInstallation'] )
-
-cliParams.release = optCfg.getOption( 'Release', cliParams.release )
-cliParams.packagesToInstall.extend( optCfg.getOption( 'Extensions', [] ) )
-cliParams.externalsType = optCfg.getOption( 'InstallType', cliParams.externalsType )
-cliParams.pythonVersion = optCfg.getOption( 'PythonVersion', cliParams.pythonVersion )
-cliParams.platform = optCfg.getOption( 'Platform', cliParams.platform )
-cliParams.targetPath = optCfg.getOption( 'TargetPath', cliParams.targetPath )
-cliParams.buildExternals = optCfg.getOption( 'BuildExternals', cliParams.buildExternals )
-cliParams.lcgVer = optCfg.getOption( 'LcgVer', cliParams.lcgVer )
-cliParams.downBaseURL = optCfg.getOption( 'BaseURL', cliParams.downBaseURL )
-cliParams.useVersionsDir = optCfg.getOption( 'UseVersionsDir', cliParams.useVersionsDir )
-
-
-for o, v in optList:
-  if o in ( '-r', '--release' ):
-    cliParams.release = v
-  elif o in ( '-e', '--extraPackages' ):
-    for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-      cliParams.packagesToInstall.append( pkg )
-  elif o in ( '-t', '--installType' ):
-    cliParams.externalsType = v
-  elif o in ( '-y', '--pythonVersion' ):
-    cliParams.pythonVersion = v
-  elif o in ( '-p', '--platform' ):
-    cliParams.platform = v
-  elif o in ( '-d', '--debug' ):
-    cliParams.debug = True
-  elif o in ( '-g', '--grid' ):
-    cliParams.lcgVer = v
-  elif o in ( '-u', '--baseURL' ):
-    cliParams.downBaseURL = v
-  elif o in ( '-P', '--installationPath' ):
-    cliParams.targetPath = v
-    try:
-      os.makedirs( v )
-    except:
-      pass
-  elif o in ( '-v', '--useVersionsDir' ):
-    cliParams.useVersionsDir = True
-  elif o in ( '-b', '--build' ):
-    cliParams.buildExternals = True
-
-
-# Make sure Extensions are not duplicated and have the full name
-pkgList = cliParams.packagesToInstall
-cliParams.packagesToInstall = []
-for pkg in pkgList:
-  pl = pkg.split( '@' )
-  if pl[0] != 'Web':
-    iPos = pl[0].find( "DIRAC" )
-    if iPos == -1 or iPos != len( pl[0] ) - 5:
-      pl[0] = "%sDIRAC" % pl[0]
-  pkg = "@".join( pl )
-  if pkg not in cliParams.packagesToInstall:
-    cliParams.packagesToInstall.append( pkg )
-
-if cliParams.useVersionsDir:
-  # install under <installPath>/versions/<version>_<timestamp>
-  cliParams.basePath = cliParams.targetPath
-  cliParams.targetPath = os.path.join( cliParams.targetPath, 'versions', '%s_%s' % ( cliParams.release, int( time.time() ) ) )
-  try:
-    os.makedirs( cliParams.targetPath )
-  except:
-    pass
-
-#Get the list of tarfiles
-tarsURL = "%s/tars/tars.list" % cliParams.downBaseURL
-logDEBUG( "Getting the tar list from %s" % tarsURL )
-tarListPath = os.path.join( cliParams.targetPath, "tars.list" )
-try:
-  urlretrieveTimeout( tarsURL, tarListPath, 300 )
-except Exception, e:
-  logERROR( "Cannot download list of tars: %s" % ( str( e ) ) )
-  sys.exit( 1 )
-fd = open( tarListPath, "r" )
-availableTars = [ line.strip() for line in fd.readlines() if line.strip() ]
-fd.close()
-os.unlink( tarListPath )
-
-#Load releases
-cfgURL = "%s/%s/%s" % ( cliParams.downBaseURL, "tars", "releases-%s.cfg" % cliParams.release )
-cfgLocation = os.path.join( cliParams.targetPath, "releases.cfg" )
-if not urlretrieveTimeout( cfgURL, cfgLocation, 300 ):
-  logERROR( "Release %s doesn't seem to have been distributed" % cliParams.release )
-  sys.exit( 1 )
-mainCFG = CFG().loadFromFile( cfgLocation )
-
-if 'Releases' not in mainCFG.listSections():
-  logERROR( " There's no Releases section in releases.cfg" )
-  sys.exit( 1 )
-
-if cliParams.release not in mainCFG[ 'Releases' ].listSections():
-  logERROR( " There's no release %s" % cliParams.release )
-  sys.exit( 1 )
-
-#Tar fest!
-
-moduleDIRACRe = re.compile( "^.*DIRAC$" )
-
-releaseCFG = mainCFG[ 'Releases' ][ cliParams.release ]
-for package in cliParams.packagesToInstall:
-  pl = package.split( '@' )
-  packageVersion = False
-  #Explicit version can be defined for packages using pkgName@version
-  if len( pl ) > 1 :
-    package = pl[0]
-    packageVersion = "@".join( pl[1:] )
-  else:
-    #Try to get the defined package version
-    if package not in releaseCFG.listOptions():
-      logERROR( " Package %s is not defined for the release" % package )
-      sys.exit( 1 )
-    packageVersion = releaseCFG.getOption( package, "trunk" )
-  packageTar = "%s-%s.tar.gz" % ( package, packageVersion )
-  if packageTar not in availableTars:
-    logERROR( "%s is not registered" % packageTar )
+  if not createBashrc():
     sys.exit( 1 )
-  logNOTICE( "Installing package %s version %s" % ( package, packageVersion ) )
-  if not downloadAndExtractTarball( "%s-%s" % ( package, packageVersion ), cliParams.targetPath ):
-    sys.exit( 1 )
-  if moduleDIRACRe.match( package ):
-    initFilePath = os.path.join( cliParams.targetPath, package, "__init__.py" )
-    if not os.path.isfile( initFilePath ):
-      fd = open( initFilePath, "w" )
-      fd.write( "#Generated by dirac-install\n" )
-      fd.close()
-  postInstallScript = os.path.join( cliParams.targetPath, package, 'dirac-postInstall.py' )
-  if os.path.isfile( postInstallScript ):
-    os.chmod( postInstallScript , executablePerms )
-    logNOTICE( "Executing %s..." % postInstallScript )
-    if os.system( "python '%s' > '%s.out' 2> '%s.err'" % ( postInstallScript,
-                                                           postInstallScript,
-                                                           postInstallScript ) ):
-      logERROR( "Post installation script %s failed. Check %s.err" % ( postInstallScript,
-                                                                       postInstallScript ) )
-      sys.exit( 1 )
-
-#Deploy scripts :)
-os.system( os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" ) )
-
-#Do we have a platform defined?
-if not cliParams.platform:
-  platformPath = os.path.join( cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py" )
-  platFD = open( platformPath, "r" )
-  Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-  platFD.close()
-  cliParams.platform = Platform.getPlatformString()
-
-logNOTICE( "Using platform: %s" % cliParams.platform )
-
-#Externals stuff
-extVersion = releaseCFG.getOption( 'Externals', "trunk" )
-if cliParams.platform in platformAlias:
-  effectivePlatform = platformAlias[ cliParams.platform ]
-else:
-  effectivePlatform = cliParams.platform
-extDesc = "-".join( [ cliParams.externalsType, extVersion,
-                          effectivePlatform, 'python%s' % cliParams.pythonVersion ] )
-
-logDEBUG( "Externals version is %s" % extDesc )
-extTar = "Externals-%s" % extDesc
-extAvailable = "%s.tar.gz" % ( extTar ) in availableTars
-
-buildCmd = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-compile-externals.py" )
-buildCmd = "%s -t '%s' -D '%s' -v '%s' -i '%s'" % ( buildCmd, cliParams.externalsType,
-                                                    os.path.join( cliParams.targetPath, cliParams.platform ),
-                                                    extVersion,
-                                                    cliParams.pythonVersion )
-if cliParams.buildExternals:
-  if os.system( buildCmd ):
-    logERROR( "Could not compile binaries" )
-    sys.exit( 1 )
-else:
-  if extAvailable:
-    if not downloadAndExtractTarball( extTar, cliParams.targetPath ):
-      sys.exit( 1 )
-    fixBuildPaths()
-    runExternalsPostInstall()
-    checkPlatformAliasLink()
-  else:
-    if cliParams.buildIfNotAvailable:
-      if os.system( buildCmd ):
-        logERROR( "Could not compile binaries" )
-        sys.exit( 1 )
-    else:
-      logERROR( "%s.tar.gz is not registered" % extTar )
-      sys.exit( 1 )
-
-#LCG utils if required
-if cliParams.lcgVer:
-  tarBallName = "DIRAC-lcg-%s-%s-python%s" % ( cliParams.lcgVer, cliParams.platform, cliParams.pythonVersion )
-  if not downloadAndExtractTarball( tarBallName, cliParams.targetPath, "lcgBundles", False ):
-    logERROR( "Check that there is a release for your platform: %s" % tarBallName )
-
-for file in ( "releases.cfg", "CFG.py", "CFG.pyc", "CFG.pyo" ):
-  dirs = [ cliParams.targetPath, os.getcwd() ]
-  if cliParams.useVersionsDir:
-    dirs.append( cliParams.basePath )
-  for dir in dirs:
-    filePath = os.path.join( dir, file )
-    if os.path.isfile( filePath ):
-      os.unlink( filePath )
-
-
-proPath = cliParams.targetPath
-if cliParams.useVersionsDir:
-  oldPath = os.path.join( cliParams.basePath, 'old' )
-  proPath = os.path.join( cliParams.basePath, 'pro' )
-  try:
-    if os.path.exists( proPath ):
-      if os.path.exists( oldPath ):
-        os.unlink( oldPath )
-      os.rename( proPath, oldPath )
-    os.symlink( cliParams.targetPath, proPath )
-    for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc']:
-      fake = os.path.join( cliParams.targetPath, dir )
-      real = os.path.join( cliParams.basePath, dir )
-      if not os.path.exists( real ):
-        os.makedirs( real )
-      os.symlink( real, fake )
-  except Exception, x:
-    logERROR( str( x ) )
-    sys.exit( 1 )
-
-# Now create bashrc at basePath
-try:
-  bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
-  if cliParams.useVersionsDir:
-    bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
-  logNOTICE( 'Creating %s' % bashrcFile )
-  if not os.path.exists( bashrcFile ):
-    lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
-              'export PYTHONUNBUFFERED=yes',
-              'export PYTHONOPTIMIZE=x' ]
-    if 'HOME' in os.environ:
-      lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
-    if 'X509_CERT_DIR' in os.environ:
-      lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
-    lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
-    lines.extend( ['# Some DIRAC locations',
-                   'export DIRAC=%s' % proPath,
-                   'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
-                   'export DIRACSCRIPTS=%s' % os.path.join( proPath, 'scripts' ),
-                   'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ),
-                   'export TERMINFO=%s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ),
-                   'export RRD_DEFAULT_FONT=%s' % os.path.join( proPath, cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
-
-    lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
-                  'PYTHONPATH=""',
-                  'LD_LIBRARY_PATH=""'] )
-
-    lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
-                   '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
-                   'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
-                   'export PYTHONPATH=$DIRAC'] )
-    lines.append( '' )
-    f = open( bashrcFile, 'w' )
-    f.write( '\n'.join( lines ) )
-    f.close()
-except Exception, x:
- logERROR( str( x ) )
- sys.exit( 1 )
-
-logNOTICE( "DIRAC release %s successfully installed" % cliParams.release )
-sys.exit( 0 )
+  logNOTICE( "%s properly installed" % cliParams.project )
+  sys.exit( 0 )
