@@ -183,24 +183,32 @@ class ReleaseConfig:
     self.__defaults[ self.__projectName ] = ReleaseConfig.CFG()
     try:
       defaultsLocation = self.__globalDefaults.get( "%s/defaultsLocation" % self.__projectName )
-      self.__dbgMsg( "Defaults for project %s are in %s" % ( self.__projectName, defaultsLocation ) )
+    except ValueError:
+      self.__dbgMsg( "No defaults file defined for project %s" % self.__projectName )
+      return S_ERROR( "No defaults file defined for project %s" % self.__projectName )
+
+    self.__dbgMsg( "Defaults for project %s are in %s" % ( self.__projectName, defaultsLocation ) )
+    try:
       defFile = urllib2.urlopen( defaultsLocation )
       self.__defaults[ self.__projectName ].parse( defFile.read() )
       defFile.close()
-      self.__dbgMsg( "Loaded" )
-    except ValueError:
-      self.__dbgMsg( "No defaults file defined for project %s" % self.__projectName )
-      pass
+    except Exception, excp:
+      self.__dbgMsg( "Cannot load %s: %s" % ( defaultsLocation, excp ) )
+      return S_ERROR( "Cannot load %s: %s" % ( defaultsLocation, excp ) )
+    self.__dbgMsg( "Loaded" )
+
     return S_OK()
 
 
-  def getDefaultValue( self, opName ):
+  def getDefaultValue( self, opName, projectName = False ):
+    if not projectName:
+      projectName = self.__projectName
     try:
-      return self.__defaults[ self.__projectName ].get( opName )
+      return self.__defaults[ projectName ].get( opName )
     except:
       pass
     try:
-      return self.__globalDefaults.get( "%s/%s" % ( self.__projectName, opName ) )
+      return self.__globalDefaults.get( "%s/%s" % ( projectName, opName ) )
     except:
       pass
     return None
@@ -223,7 +231,7 @@ class ReleaseConfig:
     if self.__projectName in self.__configs:
       return S_OK()
     if releasesLocation:
-      relFile = "file://%s" % os.path.realpath( releasesLocation )
+      releasesLocation = "file://%s" % os.path.realpath( releasesLocation )
     elif self.getDefaultValue( "releases" ):
       releasesLocation = self.getDefaultValue( "releases" )
     elif self.__projectName in self.__projectRelease:
@@ -243,12 +251,12 @@ class ReleaseConfig:
   def getTarsLocation( self, projectName = "" ):
     if not projectName:
       projectName = self.__projectName
-    defLoc = self.getDefaultValue( "tarsPath" )
+    defLoc = self.getDefaultValue( "tarsPath", projectName )
     if defLoc:
       return S_OK( defLoc )
     elif projectName in self.__projectTarLocation:
       return S_OK( self.__projectTarLocation[ projectName ] )
-    return S_ERROR( "Don't know how to find the tarballs location for project %s" % projectName )
+    return S_ERROR( "Don't know how to find the installation tarballs for project %s" % projectName )
 
 
   def loadProjectForInstall( self, releaseVersion, projectName = "" ):
@@ -262,7 +270,6 @@ class ReleaseConfig:
                                                                                             releaseVersion,
                                                                                             self.__depsLoaded[ projectName ] ) )
     else:
-      #Already loaded
       return S_OK()
     #Load
     self.__dbgMsg( "Loading release definition for project %s version %s" % ( projectName, releaseVersion ) )
@@ -279,7 +286,10 @@ class ReleaseConfig:
       self.__dbgMsg( "Loaded %s" % relcfgLoc )
       self.__projectsLoaded.append( projectName )
     deps = self.getReleaseDependencies( projectName, releaseVersion )
+    if deps:
+      self.__dbgMsg( "Depends on %s" % ", ".join( [ "%s:%s" % ( k, deps[k] ) for k in deps ] ) )
     for dProj in deps:
+      dVer = deps[ dProj ]
       self.__dbgMsg( "%s:%s requires on %s:%s to be installed" % ( projectName, releaseVersion, dProj, dVer ) )
       dVer = deps[ dProj ]
       result = self.loadProjectForInstall( dVer, dProj )
@@ -299,10 +309,10 @@ class ReleaseConfig:
     return self.__configs[ projectName ]
 
   def getReleaseDependencies( self, projectName, releaseVersion ):
-    if not self.__configs[ projectName ].isOption( "%s/depends" % projectName ):
+    if not self.__configs[ projectName ].isOption( "releases/%s/depends" % releaseVersion ):
       return {}
     deps = {}
-    for field in self.__configs[ projectName ].get( "%s/depends" % projectName ).split( "," ):
+    for field in self.__configs[ projectName ].get( "releases/%s/depends" % releaseVersion ).split( "," ):
       field = field.strip()
       if not field:
         continue
@@ -310,7 +320,7 @@ class ReleaseConfig:
       if len( pv ) == 1:
         deps[ pv[0].strip() ] = releaseVersion
       else:
-        dep[ pv[0].strip() ] = ":".join( pv[1:] ).strip()
+        deps[ pv[0].strip() ] = ":".join( pv[1:] ).strip()
     return deps
 
   def getModulesForRelease( self, releaseVersion, projectName = False ):
@@ -380,7 +390,7 @@ class ReleaseConfig:
       tarsPath = result[ 'Value' ]
       relVersion = self.__depsLoaded[ projectName ]
       self.__dbgMsg( "Discovering modules to install for project %s (%s)" % ( projectName, relVersion ) )
-      result = self.getModulesForRelease( relVersion )
+      result = self.getModulesForRelease( relVersion, projectName )
       if not result[ 'OK' ]:
         return result
       modVersions = result[ 'Value' ]
@@ -599,7 +609,7 @@ def checkPlatformAliasLink():
 ####
 
 cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
-            ( 't:', 'project=', 'Project to install' ),
+            ( 'l:', 'project=', 'Project to install' ),
             ( 'e:', 'extraPackages=', 'Extra packages to install (comma separated)' ),
             ( 't:', 'installType=', 'Installation type (client/server)' ),
             ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
@@ -643,7 +653,7 @@ def loadConfiguration():
   for o, v in optList:
     if o in ( '-h', '--help' ):
       usage()
-    elif o in ( '-t', '--project' ):
+    elif o in ( '-l', '--project' ):
       cliParams.project = v
     elif o in ( "-d", "--debug" ):
       cliParams.debug = True
@@ -653,7 +663,7 @@ def loadConfiguration():
     releaseConfig.setDebugCB( logDEBUG )
   result = releaseConfig.loadDefaults()
   if not result[ 'OK' ]:
-    logERROR( "Cold not load defaults" )
+    logERROR( "Could not load defaults" )
 
 
   for opName in ( 'packagesToInstall', 'release', 'externalsType', 'pythonVersion',
@@ -746,7 +756,7 @@ def installExternals( externalsVersion ):
     return compileExternals( externalsVersion )
 
   logNOTICE( "Using platform: %s" % cliParams.platform )
-  extVer = "%s-%s-%s-python%s" % ( externalsVersion, cliParams.platform, cliParams.pythonVersion )
+  extVer = "%s-%s-%s-python%s" % ( cliParams.externalsType, externalsVersion, cliParams.platform, cliParams.pythonVersion )
   logDEBUG( "Externals %s are to be installed" % extVer )
   tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
   if not downloadAndExtractTarball( tarsURL, "Externals", extVer ):
@@ -833,13 +843,13 @@ if __name__ == "__main__":
   logNOTICE( "Processing installation requirements" )
   result = loadConfiguration()
   if not result[ 'OK' ]:
-    logERROR( result[ 'Value' ] )
+    logERROR( result[ 'Message' ] )
     sys.exit( 1 )
   releaseConfig = result[ 'Value' ]
   logNOTICE( "Discovering modules to install" )
   result = releaseConfig.getModulesToInstall()
   if not result[ 'OK' ]:
-    logERROR( result[ 'Value' ] )
+    logERROR( result[ 'Message' ] )
     sys.exit( 1 )
   modsToInstall = result[ 'Value' ]
   logNOTICE( "Installing modules..." )
@@ -849,7 +859,11 @@ if __name__ == "__main__":
     if not downloadAndExtractTarball( tarURL, modName, modVersion ):
       sys.exit( 1 )
   logNOTICE( "Deloying scripts..." )
-  os.system( os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" ) )
+  ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
+  if os.path.isfile( ddeLocation ):
+    os.system( ddeLocation )
+  else:
+    logDEBUG( "No dirac-deploy-scripts found. This doesn't look good" )
   logNOTICE( "Installing externals..." )
   externalsVersion = releaseConfig.getExtenalsVersion()
   if not externalsVersion:
