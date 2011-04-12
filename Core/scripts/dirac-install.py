@@ -277,7 +277,7 @@ class ReleaseConfig:
       result = self.getTarsLocation( projectName )
       if not result[ 'OK' ]:
         return result
-      relcfgLoc = "%s/releases-%s-%s.cfg" % ( result[ 'Value' ], projectName, releaseVersion )
+      relcfgLoc = "%s/release-%s-%s.cfg" % ( result[ 'Value' ], projectName, releaseVersion )
       self.__dbgMsg( "Releases file is %s" % relcfgLoc )
       result = self.__loadCFGFromURL( relcfgLoc )
       if not result[ 'OK' ]:
