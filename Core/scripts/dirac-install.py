@@ -222,6 +222,9 @@ class ReleaseConfig:
       pass
     return None
 
+  def isProjectLoaded( self, projectName ):
+    return projectName in self.__configs
+
   #HERE!
 
   def __loadCFGFromURL( self, urlcfg, checkHash = False ):
@@ -305,7 +308,7 @@ class ReleaseConfig:
       self.__configs[ projectName ] = result[ 'Value' ]
       self.__dbgMsg( "Loaded %s" % relcfgLoc )
       self.__projectsLoaded.append( projectName )
-    deps = self.getReleaseDependencies( projectName, releaseVersion )
+    deps = self.getReleaseDependencies( releaseVersion, projectName )
     if deps:
       self.__dbgMsg( "Depends on %s" % ", ".join( [ "%s:%s" % ( k, deps[k] ) for k in deps ] ) )
     for dProj in deps:
@@ -328,7 +331,9 @@ class ReleaseConfig:
   def getCFG( self, projectName ):
     return self.__configs[ projectName ]
 
-  def getReleaseDependencies( self, projectName, releaseVersion ):
+  def getReleaseDependencies( self, releaseVersion, projectName = False ):
+    if not projectName:
+      projectName = self.__projectName
     if not self.__configs[ projectName ].isOption( "Releases/%s/Depends" % releaseVersion ):
       return {}
     deps = {}
@@ -752,6 +757,9 @@ def loadConfiguration():
   result = releaseConfig.loadProjectForInstall( cliParams.release )
   if not result[ 'OK' ]:
     return result
+
+  if releaseConfig.isProjectLoaded( "DIRAC" ):
+    return S_ERROR( "DIRAC is not depended by this installation. Aborting" )
 
   return S_OK( releaseConfig )
 
