@@ -34,7 +34,7 @@ def S_ERROR( msg = "" ):
 class Params:
 
   def __init__( self ):
-    self.packagesToInstall = []
+    self.modulesToInstall = []
     self.project = 'DIRAC'
     self.release = False
     self.externalsType = 'client'
@@ -64,7 +64,12 @@ class ReleaseConfig:
         self.parse( cfgData )
 
     def parse( self, cfgData ):
-      self.__parse( cfgData )
+      try:
+        self.__parse( cfgData )
+      except:
+        import traceback
+        traceback.print_exc()
+        raise
       return self
 
     def __parse( self, cfgData, cIndex = 0 ):
@@ -82,8 +87,17 @@ class ReleaseConfig:
         line = cfgData[ cIndex : eol ].strip()
         #Jump EOL
         cIndex = eol + 1
-        if line[0] == "#":
+        if not line or line[0] == "#":
           continue
+        if line.find( "+=" ) > -1:
+          fields = line.split( "+=" )
+          opName = fields[0].strip()
+          if opName in self.__data:
+            self.__data[ opName ] = "+=".join( fields[1:] ).strip()
+          else:
+            self.__data[ opName ].append( "+=".join( fields[1:] ).strip() )
+          continue
+
         if line.find( "=" ) > -1:
           fields = line.split( "=" )
           self.__data[ fields[0].strip() ] = "=".join( fields[1:] ).strip()
@@ -173,12 +187,10 @@ class ReleaseConfig:
   def loadDefaults( self ):
     globalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
     self.__dbgMsg( "Loading global defaults from: %s" % globalDefaultsLoc )
-    try:
-      defFile = urllib2.urlopen( globalDefaultsLoc )
-      self.__globalDefaults.parse( defFile.read() )
-      defFile.close()
-    except Exception, excp:
-      return S_ERROR( "Could not load global defaults: %s" % excp )
+    result = self.__loadCFGFromURL( globalDefaultsLoc )
+    if not result[ 'OK' ]:
+      return result
+    self.__globalDefaults = result[ 'Value' ]
     self.__dbgMsg( "Loaded" )
     self.__defaults[ self.__projectName ] = ReleaseConfig.CFG()
     try:
@@ -188,13 +200,10 @@ class ReleaseConfig:
       return S_ERROR( "No defaults file defined for project %s" % self.__projectName )
 
     self.__dbgMsg( "Defaults for project %s are in %s" % ( self.__projectName, defaultsLocation ) )
-    try:
-      defFile = urllib2.urlopen( defaultsLocation )
-      self.__defaults[ self.__projectName ].parse( defFile.read() )
-      defFile.close()
-    except Exception, excp:
-      self.__dbgMsg( "Cannot load %s: %s" % ( defaultsLocation, excp ) )
-      return S_ERROR( "Cannot load %s: %s" % ( defaultsLocation, excp ) )
+    result = self.__loadCFGFromURL( defaultsLocation )
+    if not result[ 'OK' ]:
+      return result
+    self.__defaults[ self.__projectName ] = result[ 'Value' ]
     self.__dbgMsg( "Loaded" )
 
     return S_OK()
@@ -215,16 +224,27 @@ class ReleaseConfig:
 
   #HERE!
 
-  def __loadCFGFromURL( self, urlcfg ):
+  def __loadCFGFromURL( self, urlcfg, checkHash = False ):
     try:
       cfgFile = urllib2.urlopen( urlcfg )
     except:
       return S_ERROR( "Could not open %s" % urlcfg )
     try:
-      cfg = ReleaseConfig.CFG( cfgFile.read() )
+      cfgData = cfgFile.read()
+      cfg = ReleaseConfig.CFG( cfgData )
     except Exception, excp:
       return S_ERROR( "Could not parse %s: %s" % ( urlcfg, excp ) )
     cfgFile.close()
+    if not checkHash:
+      return S_OK( cfg )
+    try:
+      md5File = urllib2.urlopen( urlcfg[:4] + ".md5" )
+      md5Hex = md5File.read().strip()
+      md5File.close()
+      if md5Hex != md5.md5( cfgData ).hexdigest():
+        return S_ERROR( "Hash check failed on %s" % urlcfg )
+    except Exception, excp:
+      return S_ERROR( "Hash check failed on %s: %s" % ( urlcfg, excp ) )
     return S_OK( cfg )
 
   def loadProjectForRelease( self, releasesLocation = False ):
@@ -251,7 +271,7 @@ class ReleaseConfig:
   def getTarsLocation( self, projectName = "" ):
     if not projectName:
       projectName = self.__projectName
-    defLoc = self.getDefaultValue( "TarsBaseURL", projectName )
+    defLoc = self.getDefaultValue( "InstallBaseURL", projectName )
     if defLoc:
       return S_OK( defLoc )
     elif projectName in self.__projectTarLocation:
@@ -279,7 +299,7 @@ class ReleaseConfig:
         return result
       relcfgLoc = "%s/release-%s-%s.cfg" % ( result[ 'Value' ], projectName, releaseVersion )
       self.__dbgMsg( "Releases file is %s" % relcfgLoc )
-      result = self.__loadCFGFromURL( relcfgLoc )
+      result = self.__loadCFGFromURL( relcfgLoc, checkHash = True )
       if not result[ 'OK' ]:
         return result
       self.__configs[ projectName ] = result[ 'Value' ]
@@ -359,7 +379,7 @@ class ReleaseConfig:
   def getModSource( self, modName ):
     if not self.__projectName in self.__configs:
       return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__projectName )
-    modLocation = self.__getOpt( self.__projectName, "Source/%s" % modName )
+    modLocation = self.__getOpt( self.__projectName, "Sources/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )
     modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ]
@@ -374,7 +394,10 @@ class ReleaseConfig:
       if 'DIRAC' not in self.__depsLoaded:
         return False
       releaseVersion = self.__depsLoaded[ 'DIRAC' ]
-    return self.__configs[ 'DIRAC' ].get( 'Releases/%s/Externals' % releaseVersion )
+    try:
+      return self.__configs[ 'DIRAC' ].get( 'Releases/%s/Externals' % releaseVersion )
+    except ValueError:
+      return False
 
   def getModulesToInstall( self, extraModules = False ):
     if not extraModules:
@@ -629,15 +652,15 @@ def usage():
     print " %s %s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 20 ), cmdOpt[2] )
   print
   print "Known options and default values from /defaults section of releases file"
-  for options in [ ( 'release', cliParams.release ),
-                   ( 'packagesToInstall', [] ),
-                   ( 'externalsType', cliParams.externalsType ),
-                   ( 'pythonVersion', cliParams.pythonVersion ),
-                   ( 'lcgVer', cliParams.lcgVer ),
-                   ( 'useVersionsDir', cliParams.useVersionsDir ),
-                   ( 'buildExternals', cliParams.buildExternals ),
-                   ( 'buildIfNotAvailable', cliParams.buildIfNotAvailable ),
-                   ( 'debug', cliParams.debug ) ]:
+  for options in [ ( 'Release', cliParams.release ),
+                   ( 'ModulesToInstall', [] ),
+                   ( 'ExternalsType', cliParams.externalsType ),
+                   ( 'PythonVersion', cliParams.pythonVersion ),
+                   ( 'LcgVer', cliParams.lcgVer ),
+                   ( 'UseVersionsDir', cliParams.useVersionsDir ),
+                   ( 'BuildExternals', cliParams.buildExternals ),
+                   ( 'BuildIfNotAvailable', cliParams.buildIfNotAvailable ),
+                   ( 'Debug', cliParams.debug ) ]:
     print " %s = %s" % options
 
   sys.exit( 1 )
@@ -666,9 +689,9 @@ def loadConfiguration():
     logERROR( "Could not load defaults" )
 
 
-  for opName in ( 'packagesToInstall', 'release', 'externalsType', 'pythonVersion',
+  for opName in ( 'modulesToInstall', 'release', 'externalsType', 'pythonVersion',
                   'buildExternals', 'buildIfNotAvailable', 'debug' , 'lcgVer', 'useVersionsDir' ):
-    opVal = releaseConfig.getDefaultValue( "default/%s" % opName )
+    opVal = releaseConfig.getDefaultValue( "Defaults/%s" % ( opName[0].upper() + opName[1:] ) )
     if opVal == None:
       continue
     if type( getattr( cliParams, opName ) ) == types.StringType:
@@ -684,8 +707,8 @@ def loadConfiguration():
       cliParams.release = v
     elif o in ( '-e', '--extraPackages' ):
       for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-        if pkg not in cliParams.packagesToInstall:
-          cliParams.packagesToInstall.append( pkg )
+        if pkg not in cliParams.modulesToInstall:
+          cliParams.modulesToInstall.append( pkg )
     elif o in ( '-t', '--installType' ):
       cliParams.externalsType = v
     elif o in ( '-y', '--pythonVersion' ):
@@ -847,7 +870,7 @@ if __name__ == "__main__":
     sys.exit( 1 )
   releaseConfig = result[ 'Value' ]
   logNOTICE( "Discovering modules to install" )
-  result = releaseConfig.getModulesToInstall()
+  result = releaseConfig.getModulesToInstall( cliParams.modulesToInstall )
   if not result[ 'OK' ]:
     logERROR( result[ 'Message' ] )
     sys.exit( 1 )

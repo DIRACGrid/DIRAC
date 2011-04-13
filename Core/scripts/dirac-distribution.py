@@ -15,10 +15,15 @@ from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess,
 
 import sys, os, re, urllib2, tempfile, getpass, imp
 
+try:
+  import hashlib as md5
+except ImportError:
+  import md5
+
 globalDistribution = Distribution.Distribution()
 
 projectMapping = {
-  'DIRAC' : "https://github.com/DIRACGrid/DIRAC/raw/master/releases.ini"
+  'DIRAC' : "https://github.com/DIRACGrid/DIRAC/raw/master/releases.cfg"
   }
 
 ###
@@ -143,7 +148,7 @@ class DistributionMaker:
     return True
 
   def loadReleases( self ):
-    gLogger.notice( "Loading releases.ini" )
+    gLogger.notice( "Loading releases.cfg" )
     return self.relConf.loadProjectForRelease( self.cliParams.relcfg )
 
   def createModuleTarballs( self ):
@@ -269,7 +274,7 @@ class DistributionMaker:
       return False
     result = distMaker.loadReleases()
     if not result[ 'OK' ]:
-      gLogger.fatal( "There was an error when loading the release.ini file: %s" % result[ 'Message' ] )
+      gLogger.fatal( "There was an error when loading the release.cfg file: %s" % result[ 'Message' ] )
       return False
     #Module tars
     if self.cliParams.ignorePackages:
@@ -287,11 +292,18 @@ class DistributionMaker:
         gLogger.fatal( "There was a problem when creating the Externals tarballs" )
         return False
     #Write the releases files
-    relcfgData = self.relConf.getCFG( self.cliParams.projectName ).toString()
+    relcfgData = self.relConf.getCFG( self.cliParams.projectName ).toString() + "\n"
     for relVersion in self.cliParams.releasesToBuild:
       try:
         relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
-        relFile.write( "%s\n" % relcfgData )
+        relFile.write( relcfgData )
+        relFile.close()
+      except Exception, exc:
+        gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
+        return False
+      try:
+        relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.md5" % ( self.cliParams.projectName, relVersion ) ), "w" )
+        relFile.write( md5.md5( relcfgData ).hexdigest() )
         relFile.close()
       except Exception, exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
