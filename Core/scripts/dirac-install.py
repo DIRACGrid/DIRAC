@@ -905,7 +905,7 @@ if __name__ == "__main__":
     os.system( ddeLocation )
   else:
     logDEBUG( "No dirac-deploy-scripts found. This doesn't look good" )
-  logNOTICE( "Installing externals..." )
+  logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   externalsVersion = releaseConfig.getExtenalsVersion()
   if not externalsVersion:
     logERROR( "No externals defined" )
