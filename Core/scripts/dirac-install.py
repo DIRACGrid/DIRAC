@@ -533,8 +533,10 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
 def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
   tarName = "%s-%s.tar.gz" % ( pkgName, pkgVer )
   tarPath = os.path.join( cliParams.targetPath, tarName )
+  tarFileURL = "%s/%s" % ( tarsURL, tarName )
+  logNOTICE( "Retrieving %s" % tarFileURL )
   try:
-    if not urlretrieveTimeout( "%s/%s" % ( tarsURL, tarName ), tarPath, 300 ):
+    if not urlretrieveTimeout( tarFileURL, tarPath, 300 ):
       logERROR( "Cannot download %s" % tarName )
       return False
   except Exception, e:
@@ -543,8 +545,10 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
   if checkHash:
     md5Name = "%s-%s.md5" % ( pkgName, pkgVer )
     md5Path = os.path.join( cliParams.targetPath, md5Name )
+    md5FileURL = "%s/%s" % ( tarsURL, md5Name )
+    logNOTICE( "Retrieving %s" % md5FileURL )
     try:
-      if not urlretrieveTimeout( "%s/%s" % ( tarsURL, md5Name ), md5Path, 300 ):
+      if not urlretrieveTimeout( md5FileURL, md5Path, 300 ):
         logERROR( "Cannot download %s" % tarName )
         return False
     except Exception, e:
@@ -796,7 +800,7 @@ def installExternals( externalsVersion ):
   if cliParams.buildExternals:
     return compileExternals( externalsVersion )
 
-  logNOTICE( "Using platform: %s" % cliParams.platform )
+  logDEBUG( "Using platform: %s" % cliParams.platform )
   extVer = "%s-%s-%s-python%s" % ( cliParams.externalsType, externalsVersion, cliParams.platform, cliParams.pythonVersion )
   logDEBUG( "Externals %s are to be installed" % extVer )
   tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
