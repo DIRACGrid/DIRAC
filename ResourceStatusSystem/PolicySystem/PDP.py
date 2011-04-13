@@ -10,7 +10,7 @@ The PDP (Policy Decision Point) module is used to:
 #import time
 import datetime
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where, assignOrRaise
 from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
@@ -57,14 +57,14 @@ class PDP:
 
     self.VOExtension = VOExtension
 
-    self.__assignOrRaise(self.__granularity, granularity, ValidRes, InvalidRes, self.__init__)
+    self.__granularity = assignOrRaise(granularity, ValidRes, InvalidRes, self, self.__init__)
     self.__name = name
-    self.__assignOrRaise(self.__status, status, ValidStatus, InvalidStatus, self.__init__)
-    self.__assignOrRaise(self.__formerStatus, formerStatus, ValidStatus, InvalidStatus, self.__init__)
+    self.__status = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
+    self.__formerStatus = assignOrRaise(formerStatus, ValidStatus, InvalidStatus, self, self.__init__)
     self.__reason = reason
-    self.__assignOrRaise(self.__siteType, siteType, ValidSiteType, InvalidSiteType, self.__init__)
-    self.__assignOrRaise(self.__serviceType, serviceType, ValidServiceType, InvalidServiceType, self.__init__)
-    self.__assignOrRaise(self.__resourceType, resourceType, ValidResourceType, InvalidResourceType, self.__init__)
+    self.__siteType = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
+    self.__serviceType = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
+    self.__resourceType = assignOrRaise(resourceType, ValidResourceType, InvalidResourceType, self, self.__init__)
 
     cc = CommandCaller()
     self.pc = PolicyCaller(cc)
@@ -345,15 +345,5 @@ class PDP:
     result['PolicyName'] = policyName
 
     return result
-
-
-  def __assignOrRaise(self, valueTo, valueFrom, set_, exc, fun):
-    """
-    If value is not None and is not in set, raise the corresponding exception
-    """
-    if valueFrom is not None and value not in set_:
-      valueTo = None
-      raise exc, where(self, fun)
-    else: valueTo = valueFrom
 
 #############################################################################

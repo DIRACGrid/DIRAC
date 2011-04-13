@@ -22,7 +22,7 @@ class PolicySystemTestCase(unittest.TestCase):
 
   def setUp(self):
 #    from DIRAC.Core.Base import Script
-#    Script.parseCommandLine() 
+#    Script.parseCommandLine()
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -51,7 +51,7 @@ class PolicySystemTestCase(unittest.TestCase):
     self.mock_rmDB = Mock()
     self.mock_nc = Mock()
     self.mock_da = Mock()
-    self.mock_da.getBannedSites.return_value = {'OK': True, 
+    self.mock_da.getBannedSites.return_value = {'OK': True,
                                                 'Value': ['LCG.APC.fr', 'LCG.Bari.it', 'LCG.Catania.it']}
     self.mock_da.addSiteInMask.return_value = {'OK': True, 'Value': ''}
     self.mock_da.banSiteFromMask.return_value = {'OK': True, 'Value': ''}
@@ -60,11 +60,11 @@ class PolicySystemTestCase(unittest.TestCase):
     self.mock_csAPI.setOption.return_value = {'OK': True, 'Value': ''}
     self.mock_csAPI.commit.return_value = {'OK': True, 'Value': ''}
     self.ig = InfoGetter(self.VO)
-    
+
 #############################################################################
 
 class PEPSuccess(PolicySystemTestCase):
-  
+
 #############################################################################
 
   def test_enforce(self):
@@ -84,102 +84,102 @@ class PEPSuccess(PolicySystemTestCase):
                   for resourceType in ValidResourceType:
                     for user in ("RS_SVC", "Federico"):
                       for setup in ("LHCb-Production", "LHCb-Development", "LHCb-Certification"):
-      
+
                         self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
                                                                                              'Action':True, 'Status':status,
-                                                                                             'Reason':'testReason'}], 
-                                                                   'SinglePolicyResults': [{'Status': 'Active', 
-                                                                                            'PolicyName': 'SAM_CE_Policy', 
-                                                                                            'Reason': 'SAM:ok', 
-                                                                                            'SAT': True}, 
-                                                                                            {'Status': 'Banned', 
-                                                                                             'PolicyName': 'DT_Policy_Scheduled', 
-                                                                                             'Reason': 'DT:OUTAGE in 1 hours', 
-                                                                                             'EndDate': '2010-02-16 15:00:00', 
+                                                                                             'Reason':'testReason'}],
+                                                                   'SinglePolicyResults': [{'Status': 'Active',
+                                                                                            'PolicyName': 'SAM_CE_Policy',
+                                                                                            'Reason': 'SAM:ok',
+                                                                                            'SAT': True},
+                                                                                            {'Status': 'Banned',
+                                                                                             'PolicyName': 'DT_Policy_Scheduled',
+                                                                                             'Reason': 'DT:OUTAGE in 1 hours',
+                                                                                             'EndDate': '2010-02-16 15:00:00',
                                                                                              'SAT': True}] }
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
 
 
-                        pep = PEP(self.VO, granularity, 'XX', status, oldStatus, 'XX', siteType, 
+                        pep = PEP(self.VO, granularity, 'XX', status, oldStatus, 'XX', siteType,
                                   serviceType, resourceType, user)
 
-        
-        #                self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
-        #                                                                                     'Action':True, 'Status':status, 
-        #                                                                                     'Reason':'testReason'}, 
-        #                                                                                     {'PolicyType':[policyType, newPolicyType], 
-        #                                                                                      'Action':True, 'Status':status, 
-        #                                                                                      'Reason':'testReason'}], 
-        #                                                           'SinglePolicyResults': [{'Status': 'Active', 
-        #                                                                                    'PolicyName': 'SAM_CE_Policy', 
-        #                                                                                    'Reason': 'SAM:ok', 
-        #                                                                                    'SAT': True}, 
-        #                                                                                    {'Status': 'Banned', 
-        #                                                                                     'PolicyName': 'DT_Policy_Scheduled', 
-        #                                                                                     'Reason': 'DT:OUTAGE in 1 hours', 
-        #                                                                                     'EndDate': '2010-02-16 15:00:00', 
+
+        #                self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
+        #                                                                                     'Action':True, 'Status':status,
+        #                                                                                     'Reason':'testReason'},
+        #                                                                                     {'PolicyType':[policyType, newPolicyType],
+        #                                                                                      'Action':True, 'Status':status,
+        #                                                                                      'Reason':'testReason'}],
+        #                                                           'SinglePolicyResults': [{'Status': 'Active',
+        #                                                                                    'PolicyName': 'SAM_CE_Policy',
+        #                                                                                    'Reason': 'SAM:ok',
+        #                                                                                    'SAT': True},
+        #                                                                                    {'Status': 'Banned',
+        #                                                                                     'PolicyName': 'DT_Policy_Scheduled',
+        #                                                                                     'Reason': 'DT:OUTAGE in 1 hours',
+        #                                                                                     'EndDate': '2010-02-16 15:00:00',
         #                                                                                     'SAT': True}] }
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
         #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', user)
                         self.mock_rsDB.getMonitoredsHistory.return_value = ('Active', 'Reason', '2010-04-09 09:54:52')
-                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc, 
+                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc,
                                           setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
                         self.assertEqual(res, None)
                         self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
-                                                                                             'Action':False, 'Reason':'testReason'}], 
-                                                                   'SinglePolicyResults': [{'Status': 'Active', 
-                                                                                            'PolicyName': 'SAM_CE_Policy', 
-                                                                                            'Reason': 'SAM:ok', 
-                                                                                            'SAT': True}, 
-                                                                                            {'Status': 'Banned', 
-                                                                                             'PolicyName': 'DT_Policy_Scheduled', 
-                                                                                             'Reason': 'DT:OUTAGE in 1 hours', 
-                                                                                             'EndDate': '2010-02-16 15:00:00', 
+                                                                                             'Action':False, 'Reason':'testReason'}],
+                                                                   'SinglePolicyResults': [{'Status': 'Active',
+                                                                                            'PolicyName': 'SAM_CE_Policy',
+                                                                                            'Reason': 'SAM:ok',
+                                                                                            'SAT': True},
+                                                                                            {'Status': 'Banned',
+                                                                                             'PolicyName': 'DT_Policy_Scheduled',
+                                                                                             'Reason': 'DT:OUTAGE in 1 hours',
+                                                                                             'EndDate': '2010-02-16 15:00:00',
                                                                                              'SAT': True}] }
-                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc, 
+                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc,
                                           setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
                         self.assertEqual(res, None)
-        
-                    
-        #            self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
-        #                                                                                 'Action':True, 'Status':status, 'Reason':'testReason'}], 
-        #                                                       'SinglePolicyResults': [{'Status': 'Active', 
-        #                                                                                    'PolicyName': 'SAM_CE_Policy', 
-        #                                                                                    'Reason': 'SAM:ok', 
-        #                                                                                    'SAT': True}, 
-        #                                                                                    {'Status': 'Banned', 
-        #                                                                                     'PolicyName': 'DT_Policy_Scheduled', 
-        #                                                                                     'Reason': 'DT:OUTAGE in 1 hours', 
-        #                                                                                     'EndDate': '2010-02-16 15:00:00', 
+
+
+        #            self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
+        #                                                                                 'Action':True, 'Status':status, 'Reason':'testReason'}],
+        #                                                       'SinglePolicyResults': [{'Status': 'Active',
+        #                                                                                    'PolicyName': 'SAM_CE_Policy',
+        #                                                                                    'Reason': 'SAM:ok',
+        #                                                                                    'SAT': True},
+        #                                                                                    {'Status': 'Banned',
+        #                                                                                     'PolicyName': 'DT_Policy_Scheduled',
+        #                                                                                     'Reason': 'DT:OUTAGE in 1 hours',
+        #                                                                                     'EndDate': '2010-02-16 15:00:00',
         #                                                                                     'SAT': True}] }
         #            pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE')
         #            res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         #            self.assertEqual(res, None)
-        #            self.mock_pdp.takeDecision.return_value =  {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
-        #                                                                                  'Action':False, 'Reason':'testReason'}], 
-        #                                                       'SinglePolicyResults': [{'Status': 'Active', 
-        #                                                                                'PolicyName': 'SAM_CE_Policy', 
-        #                                                                                'Reason': 'SAM:ok', 
-        #                                                                                'SAT': True}, 
-        #                                                                                {'Status': 'Banned', 
-        #                                                                                 'PolicyName': 'DT_Policy_Scheduled', 
-        #                                                                                 'Reason': 'DT:OUTAGE in 1 hours', 
-        #                                                                                 'EndDate': '2010-02-16 15:00:00', 
+        #            self.mock_pdp.takeDecision.return_value =  {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
+        #                                                                                  'Action':False, 'Reason':'testReason'}],
+        #                                                       'SinglePolicyResults': [{'Status': 'Active',
+        #                                                                                'PolicyName': 'SAM_CE_Policy',
+        #                                                                                'Reason': 'SAM:ok',
+        #                                                                                'SAT': True},
+        #                                                                                {'Status': 'Banned',
+        #                                                                                 'PolicyName': 'DT_Policy_Scheduled',
+        #                                                                                 'Reason': 'DT:OUTAGE in 1 hours',
+        #                                                                                 'EndDate': '2010-02-16 15:00:00',
         #                                                                                 'SAT': True}] }
         #            res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         #            self.assertEqual(res, None)
-                
-                
-        #        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
-        #                                                                             'Action':True, 'Status':status, 'Reason':'testReason'}], 
-        #                                                  'SinglePolicyResults': [{'Status': 'Active', 
-        #                                                                           'PolicyName': 'SAM_CE_Policy', 
-        #                                                                           'Reason': 'SAM:ok', 
-        #                                                                           'SAT': True}, 
-        #                                                                           {'Status': 'Banned', 
-        #                                                                            'PolicyName': 'DT_Policy_Scheduled', 
-        #                                                                            'Reason': 'DT:OUTAGE in 1 hours', 
-        #                                                                            'EndDate': '2010-02-16 15:00:00', 
+
+
+        #        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
+        #                                                                             'Action':True, 'Status':status, 'Reason':'testReason'}],
+        #                                                  'SinglePolicyResults': [{'Status': 'Active',
+        #                                                                           'PolicyName': 'SAM_CE_Policy',
+        #                                                                           'Reason': 'SAM:ok',
+        #                                                                           'SAT': True},
+        #                                                                           {'Status': 'Banned',
+        #                                                                            'PolicyName': 'DT_Policy_Scheduled',
+        #                                                                            'Reason': 'DT:OUTAGE in 1 hours',
+        #                                                                            'EndDate': '2010-02-16 15:00:00',
         #                                                                            'SAT': True}] }
         #        pep = PEP(granularity, 'XX')
         #        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
@@ -187,16 +187,16 @@ class PEPSuccess(PolicySystemTestCase):
         #        pep = PEP(granularity, 'XX')
         #        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         #        self.assertEqual(res, None)
-        #        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
-        #                                                                             'Action':False, 'Reason':'testReason'}], 
-        #                                                  'SinglePolicyResults': [{'Status': 'Active', 
-        #                                                                           'PolicyName': 'SAM_CE_Policy', 
-        #                                                                           'Reason': 'SAM:ok', 
-        #                                                                           'SAT': True}, 
-        #                                                                           {'Status': 'Banned', 
-        #                                                                            'PolicyName': 'DT_Policy_Scheduled', 
-        #                                                                            'Reason': 'DT:OUTAGE in 1 hours', 
-        #                                                                            'EndDate': '2010-02-16 15:00:00', 
+        #        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
+        #                                                                             'Action':False, 'Reason':'testReason'}],
+        #                                                  'SinglePolicyResults': [{'Status': 'Active',
+        #                                                                           'PolicyName': 'SAM_CE_Policy',
+        #                                                                           'Reason': 'SAM:ok',
+        #                                                                           'SAT': True},
+        #                                                                           {'Status': 'Banned',
+        #                                                                            'PolicyName': 'DT_Policy_Scheduled',
+        #                                                                            'Reason': 'DT:OUTAGE in 1 hours',
+        #                                                                            'EndDate': '2010-02-16 15:00:00',
         #                                                                            'SAT': True}] }
         #        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         #        self.assertEqual(res, None)
@@ -204,7 +204,7 @@ class PEPSuccess(PolicySystemTestCase):
 #############################################################################
 
 class PEPFailure(PolicySystemTestCase):
-  
+
 #############################################################################
 
   def test_PEPFail(self):
@@ -225,13 +225,13 @@ class PEPFailure(PolicySystemTestCase):
                   for resourceType in ValidResourceType:
 #                    pep = PEP(granularity, 'XX', status, oldStatus, 'XX', siteType, serviceType, resourceType,  {'PolicyType':newPolicyType, 'Granularity':newGranularity})
                     pep = PEP(self.VO, granularity, 'XX', status, oldStatus, 'XX', siteType, serviceType, resourceType)
-                    self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, ncIn = self.mock_nc, 
+                    self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, ncIn = self.mock_nc,
                                           setupIn = 'LHCb-Development', daIn = self.mock_da, csAPIIn = self.mock_csAPI )
-                    self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'}, 
-                                          ncIn = self.mock_nc, setupIn = 'LHCb-Development', daIn = self.mock_da, 
+                    self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'},
+                                          ncIn = self.mock_nc, setupIn = 'LHCb-Development', daIn = self.mock_da,
                                           csAPIIn = self.mock_csAPI )
 
-    
+
 #############################################################################
 
   def test_PEPBadInputs(self):
@@ -254,7 +254,7 @@ class PEPFailure(PolicySystemTestCase):
 #############################################################################
 
 class PDPSuccess(PolicySystemTestCase):
-  
+
 #############################################################################
 
   def test_takeDecision(self):
@@ -264,7 +264,7 @@ class PDPSuccess(PolicySystemTestCase):
         for oldStatus in ValidStatus:
           if status == oldStatus:
             continue
-          self.mock_p.evaluate.return_value = [{'SAT':True, 'Status':status, 
+          self.mock_p.evaluate.return_value = [{'SAT':True, 'Status':status,
                                                'Reason':'testReason', 'PolicyName': 'test_P'}]
           pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
           res = pdp.takeDecision(policyIn = self.mock_p)
@@ -280,7 +280,7 @@ class PDPSuccess(PolicySystemTestCase):
           for r in res:
             self.assert_(r['Action'])
 
-          self.mock_p.evaluate.return_value = [{'SAT':False, 'Status':status, 
+          self.mock_p.evaluate.return_value = [{'SAT':False, 'Status':status,
                                                'Reason':'testReason', 'PolicyName': 'test_P'}]
           res = pdp.takeDecision(policyIn = self.mock_p)
           res = res['PolicyCombinedResult']
@@ -294,8 +294,8 @@ class PDPSuccess(PolicySystemTestCase):
           res = res['PolicyCombinedResult']
           for r in res:
             self.assertFalse(r['Action'])
- 
-          self.mock_p.evaluate.return_value = [{'SAT':None, 'Status':status, 
+
+          self.mock_p.evaluate.return_value = [{'SAT':None, 'Status':status,
                                                'Reason':'testReason', 'PolicyName': 'test_P'}]
           res = pdp.takeDecision(policyIn = self.mock_p)
           res = res['PolicyCombinedResult']
@@ -309,8 +309,8 @@ class PDPSuccess(PolicySystemTestCase):
           res = res['PolicyCombinedResult']
           for r in res:
             self.assertFalse(r['Action'])
- 
-          self.mock_p.evaluate.return_value = [{'SAT':'Unknown', 'Status':status, 
+
+          self.mock_p.evaluate.return_value = [{'SAT':'Unknown', 'Status':status,
                                                'Reason':'testReason', 'PolicyName': 'test_P'}]
           res = pdp.takeDecision(policyIn = self.mock_p)
           res = res['PolicyCombinedResult']
@@ -324,8 +324,8 @@ class PDPSuccess(PolicySystemTestCase):
           res = res['PolicyCombinedResult']
           for r in res:
             self.assert_(r['Action'])
- 
-          self.mock_p.evaluate.return_value = [{'SAT':'NeedConfirmation', 'Status':status, 
+
+          self.mock_p.evaluate.return_value = [{'SAT':'NeedConfirmation', 'Status':status,
                                                'Reason':'testReason', 'PolicyName': 'test_P'}]
           res = pdp.takeDecision(policyIn = self.mock_p)
           res = res['PolicyCombinedResult']
@@ -339,9 +339,9 @@ class PDPSuccess(PolicySystemTestCase):
           res = res['PolicyCombinedResult']
           for r in res:
             self.assert_(r['Action'])
- 
+
   def test__policyCombination(self):
-    
+
     for granularity in ValidRes:
       for status in ValidStatus:
         for oldStatus in ValidStatus:
@@ -429,9 +429,9 @@ class PDPSuccess(PolicySystemTestCase):
               polResF2 = {'SAT':False, 'Status':newStatusF2, 'Reason':'-ReasonFalse2-'}
               polResF3 = {'SAT':False, 'Status':newStatusF3, 'Reason':'-ReasonFalse3-'}
               # TRUE, TRUE, TRUE
-              
-#              print  "status", status, "newStatus1", newStatus1, "newStatus2", newStatus2,  "newStatus3", newStatus3  
-              
+
+#              print  "status", status, "newStatus1", newStatus1, "newStatus2", newStatus2,  "newStatus3", newStatus3
+
               res = pdp._policyCombination(polRes, polRes2, polRes3)
               if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
                 if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus3):
@@ -458,7 +458,7 @@ class PDPSuccess(PolicySystemTestCase):
               # TRUE, TRUE, FALSE
               if newStatusF3 == newStatus1 or newStatusF3 == newStatus2:
                 continue
-              else:  
+              else:
                 res = pdp._policyCombination(polRes, polRes2, polResF3)
                 if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
                   if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus3):
@@ -480,7 +480,7 @@ class PDPSuccess(PolicySystemTestCase):
 #############################################################################
 
 class PDPFailure(PolicySystemTestCase):
-  
+
 #############################################################################
 
   def test_PolicyFail(self):
@@ -493,7 +493,7 @@ class PDPFailure(PolicySystemTestCase):
           pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
           self.failUnlessRaises(Exception, pdp.takeDecision, self.mock_pdp, self.mock_rsDB)
           self.failUnlessRaises(Exception, pdp.takeDecision, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'})
-        
+
 #############################################################################
 
   def test_PDPBadInputs(self):
@@ -518,36 +518,36 @@ class PolicyCallerSuccess(PolicySystemTestCase):
     cc = Mock()
 
     policies_modules = {'Site':['DT_Policy', 'GGUSTickets_Policy'],
-                        'Service': ['PilotsEfficiency_Simple_Policy', 'JobsEfficiency_Simple_Policy'], 
+                        'Service': ['PilotsEfficiency_Simple_Policy', 'JobsEfficiency_Simple_Policy'],
                         'Resource':['SAMResults_Policy', 'DT_Policy'],
                         'StorageElement':['SEOccupancy_Policy', 'TransferQuality_Policy']
                         }
 
     for g in ValidRes:
       for status in ValidStatus:
-        self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status, 
-                                             'Reason':'testReason', 
+        self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status,
+                                             'Reason':'testReason',
                                              'PolicyName': 'test_P'}
         pc = PolicyCaller(commandCallerIn = cc)
 
         for pol_mod in policies_modules[g]:
-          res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p, 
+          res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p,
                                     (g, 'XX', status), None, pol_mod)
           self.assert_(res['SAT'])
 
-          res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p, 
+          res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p,
                                     None, None, pol_mod)
           self.assert_(res['SAT'])
-  
+
           for extraArgs in ((g, 'XX', status), [(g, 'XX', status), (g, 'XX', status)]):
-            res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p, 
+            res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p,
                                       None, None, pol_mod, extraArgs)
             self.assert_(res['SAT'])
-  
+
 #############################################################################
 
 class PolicyBaseSuccess(PolicySystemTestCase):
-  
+
   def test_setArgs(self):
     for g in ValidRes:
       for s in ValidStatus:
@@ -569,11 +569,11 @@ class PolicyBaseSuccess(PolicySystemTestCase):
 #############################################################################
 
 class PolicyBaseFailure(PolicySystemTestCase):
-  
+
   def test_setBadArgs(self):
     self.failUnlessRaises(InvalidRes, self.pb.setArgs, ('Sites', 'XX', 'Active'))
     self.failUnlessRaises(InvalidStatus, self.pb.setArgs, ('Site', 'XX', 'Actives'))
-    
+
     self.pb.setArgs(('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'))
     self.mock_command.doCommand.return_value = {'Result':'aRes'}
     self.pb.setCommand(self.mock_command)
@@ -590,7 +590,7 @@ class PolicyInvokerSuccess(PolicySystemTestCase):
     self.assertEqual(self.pi.policy, self.mock_policy)
 
   def test_evaluatePolicy(self):
-    
+
     self.mock_policy.evaluate.return_value = {'Result':'Satisfied', 'Status':'Banned', 'Reason':"reason"}
     self.pi.setPolicy(self.mock_policy)
     for granularity in ValidRes:
@@ -601,16 +601,16 @@ class PolicyInvokerSuccess(PolicySystemTestCase):
     for granularity in ValidRes:
       res = self.pi.evaluatePolicy()
       self.assertEqual(res['Result'], 'Un-Satisfied')
-    
+
 #############################################################################
 
 class PolicyInvokerFailure(PolicySystemTestCase):
-  
+
   def test_policyFail(self):
     self.mock_policy.evaluate.side_effect = RSSException()
     for granularity in ValidRes:
       self.failUnlessRaises(Exception, self.pi.evaluatePolicy)
-        
+
 #############################################################################
 
 
@@ -626,5 +626,5 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-  
+
 #############################################################################
