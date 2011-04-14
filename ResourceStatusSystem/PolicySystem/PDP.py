@@ -9,6 +9,8 @@ The PDP (Policy Decision Point) module is used to:
 
 #import time
 import datetime
+import copy
+import sys
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where, assignOrRaise
 from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
@@ -57,19 +59,24 @@ class PDP:
 
     self.VOExtension = VOExtension
 
-    self.__granularity = assignOrRaise(granularity, ValidRes, InvalidRes, self, self.__init__)
-    self.__name = name
-    self.__status = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
+    self.__granularity  = assignOrRaise(granularity, ValidRes, InvalidRes, self, self.__init__)
+    self.__name         = name
+    self.__status       = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
     self.__formerStatus = assignOrRaise(formerStatus, ValidStatus, InvalidStatus, self, self.__init__)
-    self.__reason = reason
-    self.__siteType = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
-    self.__serviceType = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
+    self.__reason       = reason
+    self.__siteType     = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
+    self.__serviceType  = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
     self.__resourceType = assignOrRaise(resourceType, ValidResourceType, InvalidResourceType, self, self.__init__)
 
     cc = CommandCaller()
     self.pc = PolicyCaller(cc)
 
     self.useNewRes = useNewRes
+
+    self.args      = None
+    self.policy    = None
+    self.knownInfo = None
+    self.ig        = None
 
 
 #############################################################################
@@ -139,15 +146,10 @@ class PDP:
                                                self.__name, self.__status, self.policy,
                                                self.args, policyGroup['Policies'])
 
-      policyCombinedResults = self._evaluate(singlePolicyResults)
+      policyCombinedResults = self._policyCombination(singlePolicyResults)
 
-      if policyCombinedResults == None:
-        return {'SinglePolicyResults' : singlePolicyResults,
-                'PolicyCombinedResult' : [{'PolicyType': policyType,
-                                           'Action': False,
-                                           'Reason':'No policy results'}]}
+      # policy results communication
 
-      #policy results communication
       if policyCombinedResults['SAT']:
         newstatus = policyCombinedResults['Status']
         reason = policyCombinedResults['Reason']
@@ -160,6 +162,7 @@ class PDP:
         if policyCombinedResults.has_key('EndDate'):
           decision['EndDate'] = policyCombinedResults['EndDate']
         policyCombinedResultsList.append(decision)
+
       elif not policyCombinedResults['SAT']:
         reason = policyCombinedResults['Reason']
         decision = {'PolicyType': policyType, 'Action': False, 'Reason':'%s'%reason}
@@ -210,119 +213,63 @@ class PDP:
 
     return policyResults
 
-##############################################################################
-
-  def _evaluate(self, policyResults):
-    """ Just makes a proper invocation of policyCombination
-    """
-
-
-    if len(policyResults) == 1:
-      return self._policyCombination(policyResults[0])
-    elif len(policyResults) == 2:
-      return self._policyCombination(policyResults[0], policyResults[1])
-    elif len(policyResults) == 3:
-      return self._policyCombination(policyResults[0], policyResults[1], policyResults[2])
-    elif len(policyResults) == 4:
-      return self._policyCombination(policyResults[0], policyResults[1], policyResults[2],
-                                     policyResults[3])
-
-
 #############################################################################
 
-  def _policyCombination(self, *args):
-    """ Combination of single policy results: determines 'SAT' and combines 'Reason'
-    """
+  def _policyCombination(self, policies):
 
-    if len(args) == 1:
-      res = {}
-      for k in args[0].keys():
-        res[k] = args[0][k]
-      return res
+    def combine(p1, p2):
+      # TODO: Implement proper combination function elsewhere
+      if ValidStatus.index(p1['Status']) > ValidStatus.index(p2['Status']):
+        return p1
+      elif ValidStatus.index(p1['Status']) < ValidStatus.index(p2['Status']):
+        return p2
+      else: return None
 
-    elif len(args) == 2:
+    def composeReason(r1, r2):
+      if    r1 == '': return r2
+      elif  r2 == '': return r1
+      elif  r1 == r2: return r1
+      else:           return r1 + ' |###| ' + r2
 
-      if ( ( not args[0]['SAT'] ) and ( not args[1]['SAT'] ) ):
-        compReason = args[0]['Reason'] + ' |###| ' + args[1]['Reason']
-        pcr = args[0]
-
-      # only one of the two is SAT
-      elif ( ( args[0]['SAT'] and ( not args[1]['SAT'] ) )
-            or
-            ( ( not args[0]['SAT'] ) and args[1]['SAT'] ) ):
-        s0 = args[0]['Status']
-        s1 = args[1]['Status']
-        if ValidStatus.index(s0) > ValidStatus.index(s1):
-          pcr = args[0]
-        elif ValidStatus.index(s0) < ValidStatus.index(s1):
-          pcr = args[1]
-        else:
-          if args[0]['SAT']:
-            pcr = args[0]  
-          else:
-            pcr = args[1]
-
-      # both are SAT
-      elif args[0]['SAT'] and args[1]['SAT']:
-        s0 = args[0]['Status']
-        s1 = args[1]['Status']
-
-        if ValidStatus.index(s0) > ValidStatus.index(s1):
-          pcr = args[0]
-        elif ValidStatus.index(s0) < ValidStatus.index(s1):
-          pcr = args[1]
-        else:
-          pcr = args[0]
-          compReason = args[0]['Reason'] + ' |###| ' + args[1]['Reason']
-        
-      # both are None    
-      else:
-        s0 = args[0]['Status']
-        s1 = args[1]['Status']
-
-        if ValidStatus.index(s0) > ValidStatus.index(s1):
-          pcr = args[0]
-        elif ValidStatus.index(s0) < ValidStatus.index(s1):
-          pcr = args[1]
-        else:
-          pcr = args[0]
-          compReason = args[0]['Reason'] + ' |###| ' + args[1]['Reason']      
-
-      # if there's an EndDate
-      if args[0].has_key('EndDate') and args[1].has_key('EndDate'):
-        endDate = max(args[0]['EndDate'], args[1]['EndDate'])
-      elif args[0].has_key('EndDate') and not args[1].has_key('EndDate'):
-        endDate = args[0]['EndDate']
-      elif not args[0].has_key('EndDate') and args[1].has_key('EndDate'):
-        endDate = args[1]['EndDate']
+    def reducefun(p1, p2):
 
       res = {}
 
-      for k in pcr.keys():
-        res[k] = pcr[k]
-      try:
-        res['Reason'] = compReason
-      except:
-        pass
-      try:
-        res['EndDate'] = endDate
-      except:
-        pass
+      # Endkey
+      if p1.has_key('EndDate'):
+        res['EndDate'] = p1['EndDate']
+      elif p2.has_key('EndDate'):
+        res['EndDate'] = p2['EndDate']
+
+      if p1['SAT'] and p2['SAT']:        # Both are SAT
+        comb = combine(p1, p2)
+        if comb == None:
+                        res           = copy.deepcopy(p1)
+                        res['Reason'] = composeReason(p1['Reason'], p2['Reason'])
+        else:           res           = comb
+      elif p1['SAT'] or p2['SAT']:       # Only one is SAT
+        comb = combine(p1, p2)
+        if comb == None:
+          if p1['SAT']: res = p1
+          else:         res = p2
+        else:           res = comb
+      else:                              # Both are not SAT
+        comb = combine(p1, p2)
+        if comb == None: res = p1
+        else:            res = comb
+        res['Reason'] = composeReason(p1['Reason'], p2['Reason'])
 
       return res
 
-    elif len(args) == 3:
+    if sys.version_info[0] == 3:
+      import functools
+      res = functools.reduce(reducefun, policies, \
+            {'SAT': False, 'Status': 'Active', 'Reason': ''})
+    else:
+      res = reduce(reducefun, policies, \
+            {'SAT': False, 'Status': 'Active', 'Reason': ''})
 
-      resFirstCombination = self._policyCombination(args[0], args[1])
-      resSecondCombination = self._policyCombination(resFirstCombination, args[2])
-      return resSecondCombination
-
-    elif len(args) == 4:
-
-      resFirstCombination = self._policyCombination(args[0], args[1])
-      resSecondCombination = self._policyCombination(resFirstCombination, args[2])
-      resThirdCombination = self._policyCombination(resSecondCombination, args[3])
-      return resThirdCombination
+    return copy.deepcopy(res)
 
 #############################################################################
 
@@ -336,7 +283,7 @@ class PDP:
 
     res = rsS.getPolicyRes(name, policyName, True)
     if not res['OK']:
-      raise RSSException, where(self, self.__useOldPolicyRes) + 'Could not get a policy result'
+      raise RSSException, where(self, self.__useOldPolicyRes) + ' Could not get a policy result'
 
     res = res['Value']
 
