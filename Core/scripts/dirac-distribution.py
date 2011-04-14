@@ -288,7 +288,7 @@ class DistributionMaker:
     relcfgData = self.relConf.getCFG( self.cliParams.projectName ).toString()
     for relVersion in self.cliParams.releasesToBuild:
       try:
-        relFile = file( os.path.join( self.cliParams.destination, "releases-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
+        relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
         relFile.write( "%s\n" % relcfgData )
         relFile.close()
       except Exception, exc:
