@@ -1,6 +1,3 @@
-.pydevproject
-.project
-
 *.py[co]
 
 # Packages
@@ -20,3 +17,9 @@ pip-log.txt
 # Unit test / coverage reports
 .coverage
 .tox
+
+# Eclipse
+.project
+.pydevproject
+.pyproject
+
