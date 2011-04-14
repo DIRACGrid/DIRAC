@@ -31,7 +31,7 @@ class Params:
     self.ignoreExternals = False
     self.forceExternals = False
     self.ignorePackages = False
-    self.relini = False
+    self.relcfg = False
     self.externalsPython = '26'
     self.destination = ""
     self.externalsLocation = ""
@@ -81,8 +81,8 @@ class Params:
     self.makeJobs = max( 1, int( optionValue ) )
     return S_OK()
 
-  def setReleasesINI( self, optionValue ):
-    self.relini = optionValue
+  def setReleasesCFG( self, optionValue ):
+    self.relcfg = optionValue
     return S_OK()
 
   def registerSwitches( self ):
@@ -91,7 +91,7 @@ class Params:
     Script.registerSwitch( "D:", "destination", "Destination where to build the tar files", cliParams.setDestination )
     Script.registerSwitch( "i:", "pythonVersion", "Python version to use (25/26)", cliParams.setPythonVersion )
     Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
-    Script.registerSwitch( "C:", "relinit=", "Use <file> as the releases.ini", cliParams.setReleasesINI )
+    Script.registerSwitch( "C:", "relcfg=", "Use <file> as the releases.cfg", cliParams.setReleasesCFG )
     Script.registerSwitch( "b", "buildExternals", "Force externals compilation even if already compiled", cliParams.setForceExternals )
     Script.registerSwitch( "B", "ignoreExternals", "Skip externals compilation", cliParams.setIgnoreExternals )
     Script.registerSwitch( "t:", "buildType=", "External type to build (client/server)", cliParams.setExternalsBuildType )
@@ -105,53 +105,98 @@ class Params:
 class ReleaseConfig:
 
   #Because python's INI parser is the utmost shittiest thing ever done
-  class INI:
-    def __init__( self, iniData ):
-      self.__globalOps = {}
-      self.__sections = {}
-      self.__parse( iniData )
+  class CFG:
+    def __init__( self, cfgData = "" ):
+      self.__data = {}
+      self.__children = {}
+      if cfgData:
+        self.parse( cfgData )
 
-    def __parse( self, iniData ):
-      secName = False
-      for line in iniData.split( "\n" ):
-        line = line.strip()
-        if not line or line[0] in ( "#", ";" ):
+    def parse( self, cfgData ):
+      self.__parse( cfgData )
+      return self
+
+    def __parse( self, cfgData, cIndex = 0 ):
+      childName = ""
+      numLine = 0
+      while cIndex < len( cfgData ):
+        eol = cfgData.find( "\n", cIndex )
+        if eol < cIndex:
+          #End?
+          return cIndex
+        numLine += 1
+        if eol == cIndex:
+          cIndex += 1
           continue
-        if line[0] == "[" and line[-1] == "]":
-          secName = line[1:-1].strip()
-          if secName not in self.__sections:
-            self.__sections[ secName ] = {}
+        line = cfgData[ cIndex : eol ].strip()
+        #Jump EOL
+        cIndex = eol + 1
+        if line[0] == "#":
           continue
-        tS = line.split( "=" )
-        opName = tS[0].strip()
-        opValue = "=".join( tS[1:] ).strip()
-        if secName:
-          self.__sections[ secName ][ opName ] = opValue
+        if line.find( "=" ) > -1:
+          fields = line.split( "=" )
+          self.__data[ fields[0].strip() ] = "=".join( fields[1:] ).strip()
+          print self.__data
+          continue
+
+        opFound = line.find( "{" )
+        if opFound > -1:
+          childName += line[ :opFound ].strip()
+          if not childName:
+            raise Exception( "No section name defined for opening in line %s" % numLine )
+          childName = childName.strip()
+          self.__children[ childName ] = ReleaseConfig.CFG()
+          eoc = self.__children[ childName ].__parse( cfgData, cIndex )
+          cIndex = eoc
+          childName = ""
+          continue
+
+        if line == "}":
+          return cIndex
+        #Must be name for section
+        childName += line.strip()
+      return cIndex
+
+    def isSection( self, obList ):
+      return self.__exists( [ ob.strip() for ob in obList.split( "/" ) if ob.strip() ] ) == 2
+
+    def isOption( self, obList ):
+      return self.__exists( [ ob.strip() for ob in obList.split( "/" ) if ob.strip() ] ) == 1
+
+    def __exists( self, obList ):
+      if len( obList ) == 1:
+        if obList[0] in self.__children:
+          return  2
+        elif obList[0] in self.__data:
+          return 1
         else:
-          self.__globalOps[ opName ] = opValue
+          return 0
+      if obList[0] in self.__children:
+        return self.__children[ obList[0] ].__exists( obList[1:] )
+      return 0
 
-    def isSection( self, secName ):
-      return secName in self.__sections
+    def get( self, opName ):
+      return self.__get( [ op.strip() for op in opName.split( "/" ) if op.strip() ] )
 
-    def get( self, opName, secName = False ):
-      if secName:
-        if secName not in self.__sections:
-          return False
-        if opName not in self.__sections[ secName ]:
-          return False
-        return self.__sections[ secName ][ opName ]
-      #global op
-      if opName not in self.__globalOps:
-        return False
-      return self.__globalOps[ opName ]
+    def __get( self, obList ):
+      if len( obList ) == 1:
+        if obList[0] in self.__data:
+          return self.__data[ obList[0] ]
+        raise ValueError( "Missing option %s" % obList[0] )
+      if obList[0] in self.__children:
+        return self.__children[ obList[0] ].__get( obList[1:] )
+      raise ValueError( "Missing section %s" % obList[0] )
 
-    def toString( self ):
-      lines = [ "%s = %s" % ( opName, self.__globalOps[ opName ] ) for opName in self.__globalOps ] + [""]
-      for secName in self.__sections:
-        lines.append( "[%s]" % secName )
-        lines += [ "   %s = %s" % ( opName, self.__sections[ secName ][ opName ] ) for opName in self.__sections[ secName ] ] + [ "" ]
-      return "\n".join( lines )
-  #END OF INI CLASS
+    def toString( self, tabs = 0 ):
+      lines = [ "%s = %s" % ( opName, self.__data[ opName ] ) for opName in self.__data ]
+      for secName in self.__children:
+        lines.append( "%s" % secName )
+        lines.append( "{" )
+        lines.append( self.__children[ secName ].toString( tabs + 1 ) )
+        lines.append( "}" )
+      return "\n".join( [ "%s%s" % ( "  " * tabs, line ) for line in lines ] )
+
+    #END OF INI CLASS
 
   def __init__( self ):
     self.__configs = {}
@@ -170,37 +215,38 @@ class ReleaseConfig:
       gLogger.exception( "Could not open %s" % releasesLocation )
       return False
     try:
-      config = ReleaseConfig.INI( relFile.read() )
+      config = ReleaseConfig.CFG( relFile.read() )
     except:
       gLogger.exception( "Could not parse %s" % releasesLocation )
       return False
     relFile.close()
+    gLogger.verbose( "Loaded data is:" )
     gLogger.verbose( config.toString() )
     gLogger.notice( "Loaded %s" % releasesLocation )
     self.__projects.append( projectName )
     self.__configs[ projectName ] = config
     return True
 
-  def __getOpt( self, projectName, option, section = False ):
-    opVal = self.__configs[ projectName ].get( option, section )
-    if not opVal:
-      if section:
-        gLogger.error( "Missing option %s/%s for project %s" % ( section, option, projectName ) )
-      else:
-        gLogger.error( "Missing option %s for project %s" % ( option, projectName ) )
+  def __getOpt( self, projectName, option ):
+    try:
+      return self.__configs[ projectName ].get( option )
+    except ValueError:
+      gLogger.error( "Missing option %s for project %s" % ( option, projectName ) )
       return False
-    return opVal
+
+  def getCFG( self, projectName ):
+    return self.__configs[ projectName ]
 
   def getModulesForProjectRelease( self, projectName, releaseVersion ):
     if not projectName in self.__projects:
       gLogger.fatal( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
       return False
     config = self.__configs[ projectName ]
-    if not config.isSection( releaseVersion ):
+    if not config.isSection( "releases/%s" % releaseVersion ):
       gLogger.error( "Release %s is not defined for project %s" % ( releaseVersion, projectName ) )
       return False
     #Defined Modules explicitly in the release
-    modules = self.__getOpt( projectName, "modules", releaseVersion )
+    modules = self.__getOpt( projectName, "%s/modules" % releaseVersion )
     if modules:
       dMods = {}
       for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]:
@@ -222,14 +268,14 @@ class ReleaseConfig:
       for modName in modules:
         if modName.find( projectName ) != 0:
           gLogger.error( "Module %s does not start with the project name %s" ( modName, projectName ) )
-          return Falseorigin / release - procedure
+          return False
     return modules
 
   def getModSource( self, projectName, modName ):
     if not projectName in self.__projects:
       gLogger.fatal( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
       return False
-    modLocation = self.__getOpt( projectName, "src_%s" % modName )
+    modLocation = self.__getOpt( projectName, "sources/%s" % modName )
     if not modLocation:
       gLogger.error( "Source origin for module %s is not defined" % modName )
       return False
@@ -241,7 +287,7 @@ class ReleaseConfig:
   def getExtenalsVersion( self, releaseVersion ):
     if 'DIRAC' not in self.__projects:
       return False
-    return self.__configs[ 'DIRAC' ].get( 'externals', releaseVersion )
+    return self.__configs[ 'DIRAC' ].get( 'releases/%s/externals' % releaseVersion )
 
 
 class DistributionMaker:
@@ -272,7 +318,7 @@ class DistributionMaker:
 
   def loadReleases( self ):
     gLogger.notice( "Loading releases.ini" )
-    return self.relConf.loadProject( self.cliParams.projectName, self.cliParams.relini )
+    return self.relConf.loadProject( self.cliParams.projectName, self.cliParams.relcfg )
 
   def createModuleTarballs( self ):
     for version in self.cliParams.releasesToBuild:
@@ -347,7 +393,6 @@ class DistributionMaker:
     platform = Platform.getPlatformString()
     availableExternals = self.getAvailableExternals()
 
-
     if not externalsVersion:
       gLogger.notice( "Externals is not defined for release %s" % releaseVersion )
       return False
@@ -386,6 +431,8 @@ class DistributionMaker:
         sys.exit( 1 )
       os.system( "rm -rf '%s'" % compileTarget )
 
+    return True
+
   def doTheMagic( self ):
     if not distMaker.isOK():
       gLogger.fatal( "There was an error with the release description" )
@@ -408,13 +455,13 @@ class DistributionMaker:
         gLogger.fatal( "There was a problem when creating the Externals tarballs" )
         return False
     #Write the releases files
-    reliniData = self.relConf.getConf( self.cliParams.projectName ).toString()
+    relcfgData = self.relConf.getCFG( self.cliParams.projectName ).toString()
     for relVersion in self.cliParams.releasesToBuild:
       try:
-        relFile = file( os.path.join( self.cliParams.destination, "releases-%s-%s.ini" % self.cliParams.projectName, relVersion ), "w" )
-        relFile.write( reliniData )
+        relFile = file( os.path.join( self.cliParams.destination, "releases-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
+        relFile.write( relcfgData )
         relFile.close()
-      except Excetion, exc:
+      except Exception, exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
     return True
