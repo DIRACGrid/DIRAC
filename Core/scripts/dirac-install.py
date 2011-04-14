@@ -36,17 +36,17 @@ class Params:
   def __init__( self ):
     self.modulesToInstall = []
     self.project = 'DIRAC'
-    self.release = False
+    self.release = ""
     self.externalsType = 'client'
     self.pythonVersion = '26'
-    self.platform = False
+    self.platform = ""
     self.targetPath = os.getcwd()
     self.buildExternals = False
     self.buildIfNotAvailable = False
     self.debug = False
     self.lcgVer = ''
     self.useVersionsDir = False
-    self.installSource = False
+    self.installSource = ""
 
 cliParams = Params()
 
@@ -178,6 +178,12 @@ class ReleaseConfig:
         'DIRAC' : "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars"
         }
 
+  def getProject( self ):
+    return self.__projectName
+
+  def setProject( self, projectName ):
+    self.__projectName = projectName
+
   def setDebugCB( self, debFunc ):
     self.__debugCB = debFunc
 
@@ -199,22 +205,39 @@ class ReleaseConfig:
     if projectName in self.__defaults:
       return S_OK()
     self.__defaults[ projectName ] = ReleaseConfig.CFG()
-    if self.getDefaultValue( "SkipDefaults", projectName ):
+    skipDefaults = self.getDefaultValue( "SkipDefaults", projectName )
+    if skipDefaults and skipDefaults.lower() in ( 'y', 'yes', 'true', '1' ):
       self.__dbgMsg( "Skipping loading defaults for project %s" % projectName )
       return S_OK()
-    self.__dbgMsg( "Loading defaults for project %s" % projectName )
-    try:
-      defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % projectName )
-    except ValueError:
-      self.__dbgMsg( "No defaults file defined for project %s" % projectName )
-      return S_ERROR( "No defaults file defined for project %s" % projectName )
 
-    self.__dbgMsg( "Defaults for project %s are in %s" % ( projectName, defaultsLocation ) )
-    result = self.__loadCFGFromURL( defaultsLocation )
-    if not result[ 'OK' ]:
-      return result
-    self.__defaults[ projectName ] = result[ 'Value' ]
-    self.__dbgMsg( "Loaded defaults for project %s" % projectName )
+    linkToProject = self.getDefaultValue( "LinkToProject", projectName )
+    #If not link to project then load defaults
+    if not linkToProject:
+      self.__dbgMsg( "Loading defaults for project %s" % projectName )
+      try:
+        defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % projectName )
+      except ValueError:
+        self.__dbgMsg( "No defaults file defined for project %s" % projectName )
+        return S_ERROR( "No defaults file defined for project %s" % projectName )
+
+      self.__dbgMsg( "Defaults for project %s are in %s" % ( projectName, defaultsLocation ) )
+      result = self.__loadCFGFromURL( defaultsLocation )
+      if not result[ 'OK' ]:
+        return result
+      self.__defaults[ projectName ] = result[ 'Value' ]
+      self.__dbgMsg( "Loaded defaults for project %s" % projectName )
+      #Update link to project var
+      linkToProject = self.getDefaultValue( "LinkToProject", projectName )
+
+    if linkToProject:
+      if self.__projectName == projectName:
+        self.__projectName = linkToProject
+      return self.__loadProjectDefaults( linkToProject )
+
+    #If a default project is there, load the defaults
+    defaultProject = self.getDefaultValue( "Default/Project", projectName )
+    if defaultProject:
+      return self.__loadProjectDefaults( defaultProject )
 
     return S_OK()
 
@@ -293,7 +316,12 @@ class ReleaseConfig:
 
   def loadProjectForInstall( self, releaseVersion, projectName = "", sourceURL = False ):
     if not projectName:
-      projectName = self.__projectName
+      defProject = self.getDefaultValue( "Defaults/Project" )
+      if defProject:
+        projectName = defProject
+      else:
+        projectName = self.__projectName
+
     #Check what's loaded
     if projectName not in self.__depsLoaded:
       self.__depsLoaded[ projectName ] = releaseVersion
@@ -671,6 +699,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
             ( 'd', 'debug', 'Show debug messages' ),
+            ( 'V:', 'VO=', 'Virtual Organization (deprecated, use -l or --project)' ),
             ( 'h', 'help', 'Show this help' ),
           )
 
@@ -681,6 +710,7 @@ def usage():
   print
   print "Known options and default values from /defaults section of releases file"
   for options in [ ( 'Release', cliParams.release ),
+                   ( 'Project', cliParams.project ),
                    ( 'ModulesToInstall', [] ),
                    ( 'ExternalsType', cliParams.externalsType ),
                    ( 'PythonVersion', cliParams.pythonVersion ),
@@ -706,6 +736,8 @@ def loadConfiguration():
       usage()
     elif o in ( '-l', '--project' ):
       cliParams.project = v
+    elif o in ( '-V', '--VO' ):
+      cliParams.project = v
     elif o in ( "-d", "--debug" ):
       cliParams.debug = True
 
@@ -718,16 +750,18 @@ def loadConfiguration():
 
 
   for opName in ( 'modulesToInstall', 'release', 'externalsType', 'pythonVersion',
-                  'buildExternals', 'buildIfNotAvailable', 'debug' , 'lcgVer', 'useVersionsDir' ):
+                  'buildExternals', 'buildIfNotAvailable', 'debug' ,
+                  'lcgVer', 'useVersionsDir',
+                  'project', 'release' ):
     opVal = releaseConfig.getDefaultValue( "Defaults/%s" % ( opName[0].upper() + opName[1:] ) )
     if opVal == None:
       continue
     if type( getattr( cliParams, opName ) ) == types.StringType:
-      cliParams.opName = opVal
+      setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
-      cliParams.opName = opVal.lower() in ( "y", "yes", "true", "1" )
+      setattr( cliParams, opName, opVal.lower() in ( "y", "yes", "true", "1" ) )
     elif type( getattr( cliParams, opName ) ) == types.LisType:
-      cliParams.opName = [ opV.strip() for opV in opVal.split( "," ) if opV ]
+      setattr( cliParams, opName, [ opV.strip() for opV in opVal.split( "," ) if opV ] )
 
   #Now parse the ops
   for o, v in optList:
@@ -932,5 +966,5 @@ if __name__ == "__main__":
     sys.exit( 1 )
   if not createBashrc():
     sys.exit( 1 )
-  logNOTICE( "%s properly installed" % cliParams.project )
+  logNOTICE( "%s properly installed" % releaseConfig.getProject() )
   sys.exit( 0 )
