@@ -41,6 +41,10 @@ class Params:
     self.releasesToBuild = List.fromChar( optionValue )
     return S_OK()
 
+  def setProject( self, optionValue ):
+    self.projectName = optionValue
+    return S_OK()
+
   def setDebug( self, optionValue ):
     self.debug = True
     return S_OK()
@@ -83,7 +87,7 @@ class Params:
 
   def registerSwitches( self ):
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
-    Script.registerSwitch( "p:", "project=", "Project to build the release for (DIRAC by default)", cliParams.setReleases )
+    Script.registerSwitch( "p:", "project=", "Project to build the release for (DIRAC by default)", cliParams.setProject )
     Script.registerSwitch( "D:", "destination", "Destination where to build the tar files", cliParams.setDestination )
     Script.registerSwitch( "i:", "pythonVersion", "Python version to use (25/26)", cliParams.setPythonVersion )
     Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
@@ -424,3 +428,6 @@ if __name__ == "__main__":
   distMaker = DistributionMaker( cliParams )
   if not distMaker.doTheMagic():
     sys.exit( 1 )
+  gLogger.notice( "Everything seems ok. Tarballs generated in %s" % cliParams.destination )
+  if cliParams.projectName in ( "DIRAC", "LHCb" ):
+    gLogger.notice( "( cd %s ; tar -cf - *.tar.gz *.md5 *.ini ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % cliParams.destination )
