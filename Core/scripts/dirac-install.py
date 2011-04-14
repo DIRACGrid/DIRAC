@@ -16,9 +16,9 @@ except:
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
 try:
-  from hashlib import md5
+  import hashlib as md5
 except:
-  from md5 import md5
+  import md5
 
 def S_OK( value = "" ):
   return { 'OK' : True, 'Value' : value }
@@ -238,7 +238,7 @@ class ReleaseConfig:
     if not checkHash:
       return S_OK( cfg )
     try:
-      md5File = urllib2.urlopen( urlcfg[:4] + ".md5" )
+      md5File = urllib2.urlopen( urlcfg[:-4] + ".md5" )
       md5Hex = md5File.read().strip()
       md5File.close()
       if md5Hex != md5.md5( cfgData ).hexdigest():
@@ -540,7 +540,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
     md5Expected = fd.read().strip()
     fd.close()
     #Calculate md5
-    md5Calculated = md5()
+    md5Calculated = md5.md5()
     fd = open( os.path.join( cliParams.targetPath, tarName ), "r" )
     buf = fd.read( 4096 )
     while buf:
