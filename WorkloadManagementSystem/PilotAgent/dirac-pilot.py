@@ -162,6 +162,7 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 'g:', 'grid=', 'lcg tools package version' ),
             ( 'h', 'help', 'Show this help' ),
             ( 'i:', 'python=', 'Use python<24|25> interpreter' ),
+            ( 'l:', 'project=', 'Project to install' ),
             ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
             ( 't', 'test', 'Make a dry run. Do not run JobAgent' ),
             ( 'u:', 'url=', 'Use <url> to download tarballs' ),
@@ -209,6 +210,8 @@ for o, v in optList:
     cliParams.gridVersion = v
   elif o == '-i' or o == '--python':
     cliParams.pythonVersion = v
+  elif o in ( '-l', '--project' ):
+    installOpts.append( "-l '%s'" % v )
   elif o == '-n' or o == '--name':
     configureOpts.append( '-n "%s"' % v )
     cliParams.site = v
