@@ -256,6 +256,11 @@ class PDP:
           pcr = args[0]
         elif ValidStatus.index(s0) < ValidStatus.index(s1):
           pcr = args[1]
+        else:
+          if args[0]['SAT']:
+            pcr = args[0]  
+          else:
+            pcr = args[1]
 
       # both are SAT
       elif args[0]['SAT'] and args[1]['SAT']:
@@ -269,6 +274,19 @@ class PDP:
         else:
           pcr = args[0]
           compReason = args[0]['Reason'] + ' |###| ' + args[1]['Reason']
+        
+      # both are None    
+      else:
+        s0 = args[0]['Status']
+        s1 = args[1]['Status']
+
+        if ValidStatus.index(s0) > ValidStatus.index(s1):
+          pcr = args[0]
+        elif ValidStatus.index(s0) < ValidStatus.index(s1):
+          pcr = args[1]
+        else:
+          pcr = args[0]
+          compReason = args[0]['Reason'] + ' |###| ' + args[1]['Reason']      
 
       # if there's an EndDate
       if args[0].has_key('EndDate') and args[1].has_key('EndDate'):

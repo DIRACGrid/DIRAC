@@ -211,8 +211,16 @@ class PEP:
 
       self.__policyType = res['PolicyType']
 
+      #if self.__realBan == False:
+      #  continue
+
       if 'Resource_PolType' in self.__policyType:
-        self._ResourcePolTypeActions(resDecisions, res, rsDB, rmDB)
+        # If token != RS_SVC, we do not update the token, just the LastCheckedTime
+        
+        if self.__realBan == False:
+          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
+        else:
+          self._ResourcePolTypeActions(resDecisions, res, rsDB, rmDB)
 
       if 'Alarm_PolType' in self.__policyType:
         self._AlarmPolTypeActions(res, nc, setup, rsDB)
