@@ -212,35 +212,20 @@ class TarModuleCreator( object ):
     else:
       brCmr = ""
     fDirName = os.path.join( params.destination, params.name )
-    cmd = "git clone %s '%s' '%s.tmp'" % ( brCmr,
+    cmd = "git clone %s '%s' '%s'" % ( brCmr,
                                            params.sourceURL,
-                                           os.path.join( params.destination, params.name ) )
+                                           fDirName )
     gLogger.verbose( "Executing: %s" % cmd )
     if os.system( cmd ):
       return S_ERROR( "Error while retrieving sources from git" )
 
-    gitArgs = [ '--format=tar' ]
-    tarArgs = [ "-C '%s'" % fDirName ]
-    if params.vcsBranch:
-      gitArgs.append( params.vcsBranch )
-    else:
-      gitArgs.append( "master" )
+    branchName = "DIRACDistribution-%s" % os.getpid()
 
-    if params.vcsPath:
-      gitArgs.append( "'%s'" % params.vcsPath )
-      pathLevel = len( [ p for p in params.vcsPath.split( "/" ) if p.strip() ] )
-      tarArgs.append( '--strip-components=%d' % pathLevel )
+    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % ( fDirName, branchName, params.version )
 
-
-    if not os.path.isdir( fDirName ):
-      os.makedirs( fDirName )
-
-    cmd = "(cd '%s.tmp'; git archive --format=tar %s ) | tar x %s" % ( fDirName,
-                                                                       " ".join( gitArgs ),
-                                                                       " ".join( tarArgs ) )
     gLogger.verbose( "Executing: %s" % cmd )
     exportRes = os.system( cmd )
-    shutil.rmtree( "%s.tmp" % fDirName )
+    shutil.rmtree( "%s/.git" % fDirName )
 
     if exportRes:
       return S_ERROR( "Error while exporting from git" )
