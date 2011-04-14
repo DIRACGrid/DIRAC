@@ -26,6 +26,8 @@ def S_OK( value = "" ):
 def S_ERROR( msg = "" ):
   return { 'OK' : False, 'Message' : msg }
 
+g_GlobalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
+
 ############
 # Start of CFG
 ############
@@ -192,9 +194,8 @@ class ReleaseConfig:
       self.__debugCB( msg )
 
   def loadDefaults( self ):
-    globalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
-    self.__dbgMsg( "Loading global defaults from: %s" % globalDefaultsLoc )
-    result = self.__loadCFGFromURL( globalDefaultsLoc )
+    self.__dbgMsg( "Loading global defaults from: %s" % g_GlobalDefaultsLoc )
+    result = self.__loadCFGFromURL( g_GlobalDefaultsLoc )
     if not result[ 'OK' ]:
       return result
     self.__globalDefaults = result[ 'Value' ]
