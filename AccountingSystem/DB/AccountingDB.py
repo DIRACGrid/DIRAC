@@ -446,6 +446,7 @@ class AccountingDB( DB ):
       tablesToDelete.append( "`%s`" % _getTableName( "key", typeName, keyField ) )
     tablesToDelete.insert( 0, "`%s`" % _getTableName( "type", typeName ) )
     tablesToDelete.insert( 0, "`%s`" % _getTableName( "bucket", typeName ) )
+    tablesToDelete.insert( 0, "`%s`" % _getTableName( "in", typeName ) )
     retVal = self._query( "DROP TABLE %s" % ", ".join( tablesToDelete ) )
     if not retVal[ 'OK' ]:
       return retVal
