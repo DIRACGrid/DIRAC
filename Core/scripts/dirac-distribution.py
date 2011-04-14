@@ -292,22 +292,30 @@ class DistributionMaker:
         gLogger.fatal( "There was a problem when creating the Externals tarballs" )
         return False
     #Write the releases files
-    relcfgData = self.relConf.getCFG( self.cliParams.projectName ).toString() + "\n"
+    projectCFG = self.relConf.getCFG( self.cliParams.projectName )
+    projectCFGData = projectCFG.toString() + "\n"
     for relVersion in self.cliParams.releasesToBuild:
       try:
         relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
-        relFile.write( relcfgData )
+        relFile.write( projectCFGData )
         relFile.close()
       except Exception, exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
       try:
         relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.md5" % ( self.cliParams.projectName, relVersion ) ), "w" )
-        relFile.write( md5.md5( relcfgData ).hexdigest() )
+        relFile.write( md5.md5( projectCFGData ).hexdigest() )
         relFile.close()
       except Exception, exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
+      #Check deps
+      if 'DIRAC' != cliParams.projectName:
+        deps = self.relConf.getReleaseDependencies( relVersion )
+        if 'DIRAC' not in deps:
+          gLogger.notice( "Release %s doesn't depend on DIRAC. Check it's what you really want" % relVersion )
+        else:
+          gLogger.notice( "Release %s depends on DIRAC %s" % ( relVersion, deps[ 'DIRAC'] ) )
     return True
 
 if __name__ == "__main__":
