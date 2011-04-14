@@ -28,7 +28,8 @@ class Params:
     self.projectName = 'DIRAC'
     self.debug = False
     self.externalsBuildType = [ 'client' ]
-    self.buildExternals = False
+    self.ignoreExternals = False
+    self.forceExternals = False
     self.ignorePackages = False
     self.relini = False
     self.externalsPython = '26'
@@ -48,8 +49,12 @@ class Params:
     self.externalsBuildType = List.fromChar( optionValue )
     return S_OK()
 
-  def setBuildExternals( self, optionValue ):
-    self.buildExternals = True
+  def setForceExternals( self, optionValue ):
+    self.forceExternals = True
+    return S_OK()
+
+  def setIgnoreExternals( self, optionValue ):
+    self.ignoreExternals = True
     return S_OK()
 
   def setDestination( self, optionValue ):
@@ -82,8 +87,9 @@ class Params:
     Script.registerSwitch( "D:", "destination", "Destination where to build the tar files", cliParams.setDestination )
     Script.registerSwitch( "i:", "pythonVersion", "Python version to use (25/26)", cliParams.setPythonVersion )
     Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
-    Script.registerSwitch( "C:", "relcfg=", "Use <file> as the releases.ini", cliParams.setReleasesINI )
-    Script.registerSwitch( "b", "buildExternals", "Force externals compilation even if already compiled", cliParams.setBuildExternals )
+    Script.registerSwitch( "C:", "relinit=", "Use <file> as the releases.ini", cliParams.setReleasesINI )
+    Script.registerSwitch( "b", "buildExternals", "Force externals compilation even if already compiled", cliParams.setForceExternals )
+    Script.registerSwitch( "B", "ignoreExternals", "Skip externals compilation", cliParams.setIgnoreExternals )
     Script.registerSwitch( "t:", "buildType=", "External type to build (client/server)", cliParams.setExternalsBuildType )
     Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
     Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
@@ -94,82 +100,144 @@ class Params:
 
 class ReleaseConfig:
 
+  #Because python's INI parser is the utmost shittiest thing ever done
+  class INI:
+    def __init__( self, iniData ):
+      self.__globalOps = {}
+      self.__sections = {}
+      self.__parse( iniData )
+
+    def __parse( self, iniData ):
+      secName = False
+      for line in iniData.split( "\n" ):
+        line = line.strip()
+        if not line or line[0] in ( "#", ";" ):
+          continue
+        if line[0] == "[" and line[-1] == "]":
+          secName = line[1:-1].strip()
+          if secName not in self.__sections:
+            self.__sections[ secName ] = {}
+          continue
+        tS = line.split( "=" )
+        opName = tS[0].strip()
+        opValue = "=".join( tS[1:] ).strip()
+        if secName:
+          self.__sections[ secName ][ opName ] = opValue
+        else:
+          self.__globalOps[ opName ] = opValue
+
+    def isSection( self, secName ):
+      return secName in self.__sections
+
+    def get( self, opName, secName = False ):
+      if secName:
+        if secName not in self.__sections:
+          return False
+        if opName not in self.__sections[ secName ]:
+          return False
+        return self.__sections[ secName ][ opName ]
+      #global op
+      if opName not in self.__globalOps:
+        return False
+      return self.__globalOps[ opName ]
+
+    def toString( self ):
+      lines = [ "%s = %s" % ( opName, self.__globalOps[ opName ] ) for opName in self.__globalOps ] + [""]
+      for secName in self.__sections:
+        lines.append( "[%s]" % secName )
+        lines += [ "   %s = %s" % ( opName, self.__sections[ secName ][ opName ] ) for opName in self.__sections[ secName ] ] + [ "" ]
+      return "\n".join( lines )
+  #END OF INI CLASS
+
   def __init__( self ):
     self.__configs = {}
     self.__projects = []
 
-  def loadProject( self, projectName ):
+  def loadProject( self, projectName, releasesLocation = False ):
     if projectName in self.__projects:
       return True
     try:
-      releasesLocation = projectMapping[ self.cliParams.projectName ]
-      remoteFile = urllib2.urlopen( releasesLocation )
-    except urllib2.URLError:
+      if releasesLocation:
+        relFile = file( releasesLocation )
+      else:
+        releasesLocation = projectMapping[ projectName ]
+        relFile = urllib2.urlopen( releasesLocation )
+    except:
       gLogger.exception( "Could not open %s" % releasesLocation )
       return False
     try:
-      config = ConfigParser.SafeConfigParser()
-      config.readfp( remoteFile )
+      config = ReleaseConfig.INI( relFile.read() )
     except:
       gLogger.exception( "Could not parse %s" % releasesLocation )
       return False
-    remoteFile.close()
-    if 'config' not in config.sections():
-      gLogger.error( "'config' section missing in %s" % releasesLocation )
-      return False
+    relFile.close()
+    gLogger.verbose( config.toString() )
+    gLogger.notice( "Loaded %s" % releasesLocation )
     self.__projects.append( projectName )
     self.__configs[ projectName ] = config
     return True
 
   def __getOpt( self, projectName, option, section = False ):
-    if not section:
-      section = "Config"
-    try:
-      return self.__configs[ projectName ].get( section, option )
-    except ConfigParser.NoOptionError:
-      gLogger.error( "Missing option %s/%s for project %s" % ( section, option, projectName ) )
+    opVal = self.__configs[ projectName ].get( option, section )
+    if not opVal:
+      if section:
+        gLogger.error( "Missing option %s/%s for project %s" % ( section, option, projectName ) )
+      else:
+        gLogger.error( "Missing option %s for project %s" % ( option, projectName ) )
       return False
+    return opVal
 
-  def getExtensionsForProjectRelease( self, projectName, releaseVersion ):
+  def getModulesForProjectRelease( self, projectName, releaseVersion ):
     if not projectName in self.__projects:
-      gLogger.error( "[GEFPR] Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
+      gLogger.fatal( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
       return False
     config = self.__configs[ projectName ]
-    if releaseVersion not in config.sections():
+    if not config.isSection( releaseVersion ):
       gLogger.error( "Release %s is not defined for project %s" % ( releaseVersion, projectName ) )
       return False
-    #Defined extensions explicitly in the release
-    extensions = self.__getOpt( projectName, "extensions", releaseVersion )
-    if extensions:
-      #I know I shouldn't be doing lines this complex, but I've always been a oneliner guy :P
-      extensions = dict( [ [ f.strip() for f in entry.split( ":" ) ] for entry in extensions.split( "," ) if entry.strip() ] )
+    #Defined Modules explicitly in the release
+    modules = self.__getOpt( projectName, "modules", releaseVersion )
+    if modules:
+      dMods = {}
+      for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]:
+        if len( entry ) == 1:
+          dMods[ entry[0].strip() ] = releaseVersion
+        else:
+          dMods[ entry[0].strip() ] = entry[1].strip()
+      modules = dMods
     else:
-      #Default extensions with the same version as the release version
-      extensions = self._getOpt( projectName, "defaultExtensions" )
-      if extensions:
-        extensions = dict( [ ( extName.strip() , releaseVersion ) for extName in extensions.split( "," ) if extName.strip() ] )
+      #Default modules with the same version as the release version
+      modules = self.__getOpt( projectName, "defaultModules" )
+      if modules:
+        modules = dict( [ ( modName.strip() , releaseVersion ) for modName in modules.split( "," ) if modName.strip() ] )
       else:
-        #Ext = projectName and same version
-        extensions = { projectName : releaseVersion }
-    #Check projectName is in the extNames if not DIRAC
+        #Mod = projectName and same version
+        modules = { projectName : releaseVersion }
+    #Check projectName is in the modNames if not DIRAC
     if projectName != "DIRAC":
-      for extName in extensions:
-        if extName.find( projectName ) != 0:
-          gLogger.error( "Extension %s does not start with the project name %s" ( extName, projectName ) )
-          return False
-    return extensions
+      for modName in modules:
+        if modName.find( projectName ) != 0:
+          gLogger.error( "Module %s does not start with the project name %s" ( modName, projectName ) )
+          return Falseorigin / release - procedure
+    return modules
 
-  def getExtSource( self, projectName, extName ):
+  def getModSource( self, projectName, modName ):
     if not projectName in self.__projects:
-      gLogger.error( "[GETEXTSOURCE] Project %s has not been loaded. I¡'m a MEGA BUG! Please report me!" % projectName )
+      gLogger.fatal( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
       return False
-    extLocation = self.__getOpt( projectName, "src_%s" % extName )
-    if not extLocation:
+    modLocation = self.__getOpt( projectName, "src_%s" % modName )
+    if not modLocation:
+      gLogger.error( "Source origin for module %s is not defined" % modName )
       return False
-    extTpl = [ field.strip() for field in extLocation.split( "|" ) if field.strip() ]
-    if extTpl == 1:
-      return ( False, extTpl )
-    return ( extTpl[0], extTpl[1] )
+    modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ]
+    if len( modTpl ) == 1:
+      return ( False, modTpl[0] )
+    return ( modTpl[0], modTpl[1] )
+
+  def getExtenalsVersion( self, releaseVersion ):
+    if 'DIRAC' not in self.__projects:
+      return False
+    return self.__configs[ 'DIRAC' ].get( 'externals', releaseVersion )
 
 
 class DistributionMaker:
@@ -182,11 +250,11 @@ class DistributionMaker:
     if not self.cliParams.releasesToBuild:
       gLogger.error( "Missing releases to build!" )
       Script.showHelp()
-      sys.exit( 1 )
+      return False
 
     if self.cliParams.projectName not in projectMapping:
       gLogger.error( "Don't know how to find releases.ini for %s" % self.cliParams.projectName )
-      sys.exit( 1 )
+      return False
 
     if not self.cliParams.destination:
       self.cliParams.destination = tempfile.mkdtemp( 'DiracDist' )
@@ -196,45 +264,156 @@ class DistributionMaker:
       except:
         pass
     gLogger.notice( "Will generate tarballs in %s" % self.cliParams.destination )
-
+    return True
 
   def loadReleases( self ):
-    return self.relConf.loadProject( self.cliParams.projectName )
+    gLogger.notice( "Loading releases.ini" )
+    return self.relConf.loadProject( self.cliParams.projectName, self.cliParams.relini )
 
-  def createExtTarballs( self, releaseVersion ):
-    extsToTar = self.relConf.getExtensionsForProjectRelease( self.cliParams.projectName, releaseVersion )
-    if not extToTar:
+  def createModuleTarballs( self ):
+    for version in self.cliParams.releasesToBuild:
+      if not self.__createReleaseTarballs( version ):
+        return False
+    return True
+
+  def __createReleaseTarballs( self, releaseVersion ):
+    modsToTar = self.relConf.getModulesForProjectRelease( self.cliParams.projectName, releaseVersion )
+    if not modsToTar:
       return False
-    for extName in extToTar:
-      extVersion = extToTar[ extName ]
+    for modName in modsToTar:
+      modVersion = modsToTar[ modName ]
       dctArgs = []
       #Version
-      dctArgs.append( "-v '%s" % extVersion )
-      gLogger.notice( "Creating tar for %s version %s" % { extName, extVersion } )
+      dctArgs.append( "-n '%s'" % modName )
+      dctArgs.append( "-v '%s'" % modVersion )
+      gLogger.notice( "Creating tar for %s version %s" % ( modName, modVersion ) )
       #Source
-      extSrcTuple = self.relConf.getExtSource( projectName, extName )
-      if not extSrcTuple:
+      modSrcTuple = self.relConf.getModSource( self.cliParams.projectName, modName )
+      if not modSrcTuple:
         return False
-      if extSrcTuple[1]:
-        logMsgVCS = extSrcTuple[0]
-        dctArgs.append( "-z '%s'" % extSrcTuple[0] )
+      if modSrcTuple[0]:
+        logMsgVCS = modSrcTuple[0]
+        dctArgs.append( "-z '%s'" % modSrcTuple[0] )
       else:
         logMsgVCS = "autodiscover"
-      args.append( "-u '%s'" % extSrcTuple[1] )
-      gLogger.info( "Sources will be retrieved from %s (%s)" % ( extSrcTuple[1], logMsgVCS ) )
+      dctArgs.append( "-u '%s'" % modSrcTuple[1] )
+      gLogger.info( "Sources will be retrieved from %s (%s)" % ( modSrcTuple[1], logMsgVCS ) )
       #Tar destination
       dctArgs.append( "-D '%s'" % self.cliParams.destination )
       #Script location discovery
-      scriptName = os.path.join( os.path.dirname( __FILE__ ), "dirac-create-distribution-tarball.py" )
+      scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball.py" )
       cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
       gLogger.verbose( "Executing %s" % cmd )
       if os.system( cmd ):
-        gLogger.error( "Failed creating tarball for extension %s. Aborting" % extName )
+        gLogger.error( "Failed creating tarball for module %s. Aborting" % modName )
         return False
-      gLogger.info( "Tarball for %s version %s created" % ( extName, extVersion ) )
+      gLogger.info( "Tarball for %s version %s created" % ( modName, modVersion ) )
     return True
 
 
+  def getAvailableExternals( self ):
+    packagesURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars/tars.list"
+    try:
+      remoteFile = urllib2.urlopen( packagesURL )
+    except urllib2.URLError:
+      gLogger.exception()
+      return []
+    remoteData = remoteFile.read()
+    remoteFile.close()
+    versionRE = re.compile( "Externals-([a-zA-Z]*)-([a-zA-Z0-9]*(?:-pre[0-9]+)*)-(.*)-(python[0-9]+)\.tar\.gz" )
+    availableExternals = []
+    for line in remoteData.split( "\n" ):
+      res = versionRE.search( line )
+      if res:
+        availableExternals.append( res.groups() )
+    return availableExternals
+
+  def createExternalsTarballs( self ):
+    extDone = []
+    for releaseVersion in self.cliParams.releasesToBuild:
+      if releaseVersion in extDone:
+        continue
+      if not self.tarExternals( releaseVersion ):
+        return False
+      extDone.append( releaseVersion )
+    return True
+
+  def tarExternals( self, releaseVersion ):
+    externalsVersion = self.relConf.getExtenalsVersion( releaseVersion )
+    platform = Platform.getPlatformString()
+    availableExternals = self.getAvailableExternals()
+
+
+    if not externalsVersion:
+      gLogger.notice( "Externals is not defined for release %s" % releaseVersion )
+      return False
+
+    for externalType in self.cliParams.externalsBuildType:
+      requestedExternals = ( externalType, externalsVersion, platform, 'python%s' % self.cliParams.externalsPython )
+      requestedExternalsString = "-".join( list( requestedExternals ) )
+      gLogger.notice( "Trying to compile %s externals..." % requestedExternalsString )
+      if not self.cliParams.forceExternals and requestedExternals in availableExternals:
+        gLogger.notice( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
+        continue
+      compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals" )
+      if not os.path.isfile( compileScript ):
+        compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
+      compileTarget = os.path.join( self.cliParams.destination, platform )
+      cmdArgs = []
+      cmdArgs.append( "-D '%s'" % compileTarget )
+      cmdArgs.append( "-t '%s'" % externalType )
+      cmdArgs.append( "-v '%s'" % externalsVersion )
+      cmdArgs.append( "-i '%s'" % self.cliParams.externalsPython )
+      if cliParams.externalsLocation:
+        cmdArgs.append( "-e '%s'" % self.cliParams.externalsLocation )
+      if cliParams.makeJobs:
+        cmdArgs.append( "-j '%s'" % self.cliParams.makeJobs )
+      compileCmd = "%s %s" % ( compileScript, " ".join( cmdArgs ) )
+      gLogger.info( compileCmd )
+      if os.system( compileCmd ):
+        gLogger.error( "Error while compiling externals!" )
+        sys.exit( 1 )
+      tarfilePath = os.path.join( self.cliParams.destination, "Externals-%s.tar.gz" % ( requestedExternalsString ) )
+      result = Distribution.createTarball( tarfilePath,
+                                           compileTarget,
+                                           os.path.join( self.cliParams.destination, "mysql" ) )
+      if not result[ 'OK' ]:
+        gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
+        sys.exit( 1 )
+      os.system( "rm -rf '%s'" % compileTarget )
+
+  def doTheMagic( self ):
+    if not distMaker.isOK():
+      gLogger.fatal( "There was an error with the release description" )
+      return False
+    if not distMaker.loadReleases():
+      gLogger.fatal( "There was an error when loading the release.ini file" )
+      return False
+    #Module tars
+    if self.cliParams.ignorePackages:
+      gLogger.notice( "Skipping creating module tarballs" )
+    else:
+      if not self.createModuleTarballs():
+        gLogger.fatal( "There was a problem when creating the module tarballs" )
+        return False
+    #Externals
+    if self.cliParams.ignoreExternals:
+      gLogger.notice( "Skipping creating externals tarball" )
+    else:
+      if not self.createExternalsTarballs():
+        gLogger.fatal( "There was a problem when creating the Externals tarballs" )
+        return False
+    #Write the releases files
+    reliniData = self.relConf.getConf( self.cliParams.projectName ).toString()
+    for relVersion in self.cliParams.releasesToBuild:
+      try:
+        relFile = file( os.path.join( self.cliParams.destination, "releases-%s-%s.ini" % self.cliParams.projectName, relVersion ), "w" )
+        relFile.write( reliniData )
+        relFile.close()
+      except Excetion, exc:
+        gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
+        return False
+    return True
 
 if __name__ == "__main__":
   cliParams = Params()
@@ -242,186 +421,6 @@ if __name__ == "__main__":
   Script.addDefaultOptionValue( "/DIRAC/Setup", "Dummy" )
   cliParams.registerSwitches()
   Script.parseCommandLine( ignoreErrors = False )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if not cliParams.releasesToBuild:
-  Script.showHelp()
-
-
-##
-#Helper functions
-##
-
-def autoTarPackages( mainCFG, targetDir ):
-  global cliParams
-
-  releasesCFG = mainCFG[ 'Releases' ]
-  autoTarPackages = mainCFG.getOption( 'AutoTarPackages', [] )
-  for releaseVersion in cliParams.releasesToBuild:
-    releaseTMPPath = os.path.join( targetDir, releaseVersion )
-    gLogger.notice( "Getting %s release to %s" % ( releaseVersion, targetDir ) )
-    os.mkdir( releaseTMPPath )
-    for package in releasesCFG[ releaseVersion ].listOptions():
-      if package not in autoTarPackages:
-        continue
-      version = releasesCFG[ releaseVersion ].getOption( package, "" )
-      versionPath = getVersionPath( package, version )
-      pkgSVNPath = globalDistribution.getSVNPathForPackage( package, versionPath )
-      pkgHDPath = os.path.join( releaseTMPPath, package )
-      gLogger.notice( " Getting %s" % pkgSVNPath )
-      svnCmd = "svn export '%s' '%s'" % ( pkgSVNPath, pkgHDPath )
-      result = Subprocess.shellCall( 900, svnCmd )
-      if not result[ 'OK' ]:
-        gLogger.error( "Error while retrieving %s package" % package, result[ 'Message' ] )
-        sys.exit( 1 )
-      exitStatus, stdData, errData = result[ 'Value' ]
-      if exitStatus:
-        gLogger.error( "Error while retrieving %s package" % package, "\n".join( [ stdData, errData ] ) )
-        sys.exit( 1 )
-      gLogger.notice( "Taring %s..." % package )
-      tarfilePath = os.path.join( targetDir, "%s-%s.tar.gz" % ( package, version ) )
-      result = Distribution.createTarball( tarfilePath, pkgHDPath )
-      if not result[ 'OK' ]:
-        gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
-        sys.exit( 1 )
-      #Remove package dir
-      os.system( "rm -rf '%s'" % os.path.join( targetDir, package ) )
-
-def getAvailableExternals():
-  packagesURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars/tars.list"
-  try:
-    remoteFile = urllib2.urlopen( packagesURL )
-  except urllib2.URLError:
-    gLogger.exception()
-    return []
-  remoteData = remoteFile.read()
-  remoteFile.close()
-  versionRE = re.compile( "Externals-([a-zA-Z]*)-([a-zA-Z0-9]*(?:-pre[0-9]+)*)-(.*)-(python[0-9]+)\.tar\.gz" )
-  availableExternals = []
-  for line in remoteData.split( "\n" ):
-    res = versionRE.search( line )
-    if res:
-      availableExternals.append( res.groups() )
-  return availableExternals
-
-def tarExternals( mainCFG, targetDir ):
-  global cliParams
-
-  releasesCFG = mainCFG[ 'Releases' ]
-  platform = Platform.getPlatformString()
-  availableExternals = getAvailableExternals()
-  for releaseVersion in cliParams.releasesToBuild:
-    externalsVersion = releasesCFG[ releaseVersion ].getOption( "Externals", "" )
-    if not externalsVersion:
-      gLogger.notice( "Externals is not defined for release %s" % releaseVersion )
-      continue
-    for externalType in cliParams.externalsBuildType:
-      requestedExternals = ( externalType, externalsVersion, platform, 'python%s' % cliParams.externalsPython )
-      requestedExternalsString = "-".join( list( requestedExternals ) )
-      gLogger.notice( "Trying to compile %s externals..." % requestedExternalsString )
-      if not cliParams.forceExternals and requestedExternals in availableExternals:
-        gLogger.notice( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
-        continue
-      compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals" )
-      if not os.path.isfile( compileScript ):
-        compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
-      compileTarget = os.path.join( targetDir, platform )
-      cmdArgs = []
-      cmdArgs.append( "-D '%s'" % compileTarget )
-      cmdArgs.append( "-t '%s'" % externalType )
-      cmdArgs.append( "-v '%s'" % externalsVersion )
-      cmdArgs.append( "-i '%s'" % cliParams.externalsPython )
-      if cliParams.externalsLocation:
-        cmdArgs.append( "-e '%s'" % cliParams.externalsLocation )
-      if cliParams.makeJobs:
-        cmdArgs.append( "-j '%s'" % cliParams.makeJobs )
-      compileCmd = "%s %s" % ( compileScript, " ".join( cmdArgs ) )
-      gLogger.debug( compileCmd )
-      if os.system( compileCmd ):
-        gLogger.error( "Error while compiling externals!" )
-        sys.exit( 1 )
-      tarfilePath = os.path.join( targetDir, "Externals-%s.tar.gz" % ( requestedExternalsString ) )
-      result = Distribution.createTarball( tarfilePath,
-                                           compileTarget,
-                                           os.path.join( targetDir, "mysql" ) )
-      if not result[ 'OK' ]:
-        gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
-        sys.exit( 1 )
-      os.system( "rm -rf '%s'" % compileTarget )
-
-if cliParams.relcfg:
-  try:
-    mainCFG = CFG.CFG().loadFromFile( cliParams.relcfg )
-  except IOError, e:
-    gLogger.fatal( "Can not open %s: %s" % ( cliParams.relcfg, e ) )
+  distMaker = DistributionMaker( cliParams )
+  if not distMaker.doTheMagic():
     sys.exit( 1 )
-else:
-  mainCFG = globalDistribution.loadCFGFromRepository( "/trunk/releases.cfg" )
-if 'Releases' not in mainCFG.listSections():
-  gLogger.fatal( "releases.cfg file does not have a Releases section" )
-  exit( 1 )
-releasesCFG = mainCFG[ 'Releases' ]
-
-for release in cliParams.releasesToBuild:
-  if release not in releasesCFG.listSections():
-    gLogger.error( "Release %s is not defined in the releases.cfg" % release )
-    sys.exit( 1 )
-
-if not cliParams.destination:
-  targetPath = tempfile.mkdtemp( 'DiracDist' )
-else:
-  targetPath = cliParams.destination
-  try:
-    os.makedirs( targetPath )
-  except:
-    pass
-gLogger.notice( "Will generate tarballs in %s" % targetPath )
-
-doneSomeTars = False
-
-if not cliParams.ignoreSVNLinks:
-  taggedReleases = globalDistribution.getRepositoryVersions()
-  tagSVNReleases( mainCFG, taggedReleases )
-  doneSomeTars = True
-
-if not cliParams.ignoreExternals:
-  tarExternals( mainCFG, targetPath )
-  doneSomeTars = True
-
-if not cliParams.ignorePackages:
-  autoTarPackages( mainCFG, targetPath )
-  doneSomeTars = True
-
-if not doneSomeTars:
-  gLogger.notice( "No packages were tared" )
-else:
-  for release in cliParams.releasesToBuild:
-    if not mainCFG.writeToFile( os.path.join( targetPath, "releases-%s.cfg" % release ) ):
-      gLogger.error( "Could not write releases.cfg file to %s" % targetPath )
-      sys.exit( 1 )
-  gLogger.notice( "Everything seems ok" )
-  gLogger.notice( "Please upload the tarballs by executing:" )
-  gLogger.notice( "( cd %s ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )
