@@ -4,7 +4,7 @@ import time
 import DIRAC
 import threading
 from DIRAC import gConfig, gMonitor, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import List, Time
+from DIRAC.Core.Utilities import List, Time, MemStat
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
@@ -491,16 +491,16 @@ class Service:
     now = time.time()
     stats = os.times()
     cpuTime = stats[0] + stats[2]
-    if now - self.__monitorLastStatsUpdate < 10:
+    if now - self.__monitorLastStatsUpdate < 0:
       return ( now, cpuTime )
     # Send CPU consumption mark
     wallClock = now - self.__monitorLastStatsUpdate
     self.__monitorLastStatsUpdate = now
     # Send Memory consumption mark
-    membytes = self.__VmB( 'VmRSS:' )
+    membytes = MemStat.VmB( 'VmRSS:' )
     if membytes:
       mem = membytes / ( 1024. * 1024. )
-      gMonitor.addMark( 'MEM', mem )
+      self._monitor.addMark( 'MEM', mem )
     return ( now, cpuTime )
 
   def __endReportToMonitoring( self, initialWallTime, initialCPUTime ):
@@ -509,4 +509,4 @@ class Service:
     cpuTime = stats[0] + stats[2] - initialCPUTime
     percentage = cpuTime / wallTime * 100.
     if percentage > 0:
-      gMonitor.addMark( 'CPU', percentage )
+      self._monitor.addMark( 'CPU', percentage )
