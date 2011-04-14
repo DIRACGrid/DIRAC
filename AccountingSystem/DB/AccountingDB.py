@@ -551,6 +551,12 @@ class AccountingDB( DB ):
   def __insertInQueueTable( self, typeName, startTime, endTime, valuesList ):
     sqlFields = [ 'id', 'taken', 'takenSince' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
     sqlValues = [ '0', '0', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
+    if len( sqlFields ) != len( sqlValues ):
+      numRcv = len( valuesList ) + 2
+      numExp = len( self.dbCatalog[ typeName ][ 'typeFields' ] )
+      return S_ERROR( "Fields mismatch for record %s. %s fields and %s expected" % ( typeName,
+                                                                                     numRcv,
+                                                                                     numExp ) )
     retVal = self._insert( _getTableName( "in", typeName ),
                            sqlFields,
                            sqlValues )
