@@ -29,6 +29,7 @@ class TarModuleCreator( object ):
       self.vcs = False
       self.vcsBranch = False
       self.vcsPath = False
+      self.relNotes = False
 
     def isOK( self ):
       if not self.version:
@@ -71,6 +72,10 @@ class TarModuleCreator( object ):
 
     def setVCSPath( self, opVal ):
       self.vcsPath = opVal
+      return S_OK()
+
+    def setReleaseNotes( self, opVal ):
+      self.relNotes = opVal
       return S_OK()
 
   def __checkDestination( self, params ):
@@ -232,6 +237,54 @@ class TarModuleCreator( object ):
 
     return S_OK()
 
+  def __generateReleaseNotes( params ):
+    if not params.relNotes:
+      relNotesPath = os.path.join( params.destination, params.name, "releasenotes.rst" )
+    else:
+      relNotesPath = params.relNotes
+    if not os.path.isfile( relNotesPath ):
+      if params.relNotes:
+        return S_ERROR( "Defined release notes %s do not exist!" % params.relNotes )
+      gLogger.notice( "No release notes found in %s. Skipping" % relNotesPath )
+      return S_OK()
+    try:
+      import docutils.core
+    except ImportError:
+      return S_ERROR( "Docutils is not installed. Please install and rerun" )
+    #Find basename
+    baseNotesPath = relNotesPath
+    for ext in ( '.rst', '.txt' ):
+      if relNotesPath[ :-len( ext ) ].find( ext ) == 0:
+        baseNotesPath = relNotes[ :-len( ext ) ]
+        break
+    #To HTML
+    try:
+      fd = open( relNotesPath )
+      rstData = fd.read()
+      fd.close()
+    except Exception, excp:
+      return S_ERROR( "Could not read %s: %s" % ( relNotesPath, excp ) )
+    try:
+      parts = docutils.core.publish_parts( rstData, writer_name = 'html' )
+    except Exception, excp:
+      return S_ERROR( "Cannot generate the html release notes: %s" % str( excp ) )
+    htmlFileName = baseNotesPath + ".html"
+    try:
+      fd = open( htmlFileName, "w" )
+      fd.write( parts[ 'whole' ] )
+      fd.close()
+    except Exception, excp:
+      return S_ERROR( "Could not write %s: %s" % ( htmlFileName, excp ) )
+    #To pdf
+    if os.system( "rst2pdf '%s' -o '%s.pdf'" % ( relNotesPath, baseNotesPath ) ):
+      gLogger.warn( "Could not generate PDF version of release notes" )
+    if not cliParams.relNotes:
+      try:
+        os.unlink( relNotesPath )
+      except:
+        pass
+    return S_OK()
+
   def __generateTarball( self, params ):
     destDir = params.destination
     tarName = "%s-%s.tar.gz" % ( params.name, params.version )
@@ -260,6 +313,9 @@ class TarModuleCreator( object ):
     result = self.__checkoutSource( params )
     if not result[ 'OK' ]:
       return result
+    result = self.__generateReleaseNotes( params )
+    if not result[ 'OK' ]:
+      return result
     return self.__generateTarball( params )
 
 if __name__ == "__main__":
@@ -274,6 +330,7 @@ if __name__ == "__main__":
   Script.registerSwitch( "z:", "vcs=", "VCS to use to retrieve the sources (try to find out if not specified)", cliParams.setVCS )
   Script.registerSwitch( "b:", "branch=", "VCS branch (if needed)", cliParams.setVCSBranch )
   Script.registerSwitch( "p:", "path=", "VCS path (if needed)", cliParams.setVCSPath )
+  Script.registerSwitch( "K:", "releasenotes=", "Path to the release notes", cliParams.setReleaseNotes )
 
 
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
