@@ -191,23 +191,28 @@ class ReleaseConfig:
     if not result[ 'OK' ]:
       return result
     self.__globalDefaults = result[ 'Value' ]
-    self.__dbgMsg( "Loaded" )
-    self.__defaults[ self.__projectName ] = ReleaseConfig.CFG()
-    try:
-      defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % self.__projectName )
-    except ValueError:
-      self.__dbgMsg( "No defaults file defined for project %s" % self.__projectName )
-      return S_ERROR( "No defaults file defined for project %s" % self.__projectName )
+    self.__dbgMsg( "Loaded global defaults" )
+    return self.__loadProjectDefaults( self.__projectName )
 
-    self.__dbgMsg( "Defaults for project %s are in %s" % ( self.__projectName, defaultsLocation ) )
+  def __loadProjectDefaults( self, projectName ):
+    if projectName in self.__defaults:
+      return S_OK()
+    self.__defaults[ projectName ] = ReleaseConfig.CFG()
+    self.__dbgMsg( "Loading defaults for project %s" % projectName )
+    try:
+      defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % projectName )
+    except ValueError:
+      self.__dbgMsg( "No defaults file defined for project %s" % projectName )
+      return S_ERROR( "No defaults file defined for project %s" % projectName )
+
+    self.__dbgMsg( "Defaults for project %s are in %s" % ( projectName, defaultsLocation ) )
     result = self.__loadCFGFromURL( defaultsLocation )
     if not result[ 'OK' ]:
       return result
-    self.__defaults[ self.__projectName ] = result[ 'Value' ]
-    self.__dbgMsg( "Loaded" )
+    self.__defaults[ projectName ] = result[ 'Value' ]
+    self.__dbgMsg( "Loaded defaults for project %s" % projectName )
 
     return S_OK()
-
 
   def getDefaultValue( self, opName, projectName = False ):
     if not projectName:
@@ -294,7 +299,12 @@ class ReleaseConfig:
                                                                                             self.__depsLoaded[ projectName ] ) )
     else:
       return S_OK()
-    #Load
+    #Load defaults
+    result = self.__loadProjectDefaults( projectName )
+    if not result[ 'OK' ]:
+      self.__dbgMsg( "Could not load defaults for project %s" % project )
+      return result
+    #Load the project release definitions
     self.__dbgMsg( "Loading release definition for project %s version %s" % ( projectName, releaseVersion ) )
     if projectName not in self.__configs:
       result = self.getTarsLocation( projectName )
@@ -758,7 +768,7 @@ def loadConfiguration():
   if not result[ 'OK' ]:
     return result
 
-  if releaseConfig.isProjectLoaded( "DIRAC" ):
+  if not releaseConfig.isProjectLoaded( "DIRAC" ):
     return S_ERROR( "DIRAC is not depended by this installation. Aborting" )
 
   return S_OK( releaseConfig )
