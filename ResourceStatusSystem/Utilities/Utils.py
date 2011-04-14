@@ -18,12 +18,24 @@ def whoRaised(x):
 
 #############################################################################
 
+def assignOrRaise(value, set_, exc, obj, fun):
+  """
+  Check that a value is in a set or raise the corresponding exception
+  If value is not None and is not in set, raise the corresponding
+  exception, else return it
+  """
+  if value is not None and value not in set_:
+    raise exc, where(obj, fun)
+  else: return value
+
+#############################################################################
+
 def convertTime(t, inTo = None):
-  
+
   if inTo is None or inTo in ('second', 'seconds'):
-  
+
     sec = 0
-    
+
     try:
       tms = t.milliseconds
       sec = sec + tms/1000
@@ -54,13 +66,13 @@ def convertTime(t, inTo = None):
       sec = sec + tw * 604800
     except AttributeError:
       pass
-    
+
     return sec
-  
+
   elif inTo in ('hour', 'hours'):
-    
+
     hour = 0
-    
+
     try:
       tms = t.milliseconds
       hour = hour + tms/36000
@@ -91,9 +103,9 @@ def convertTime(t, inTo = None):
       hour = hour + tw * 168
     except AttributeError:
       pass
-    
+
     return hour
-    
+
 #############################################################################
 # general parameters
 #############################################################################

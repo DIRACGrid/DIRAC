@@ -17,8 +17,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.Utilities import Time
-from DIRAC.Core.DISET.Server import _VmB, _endReportToMonitoring
+from DIRAC.Core.Utilities import Time, MemStat
 
 def _checkDir( path ):
   try:
@@ -332,7 +331,7 @@ class AgentModule:
     cpuStats = self.__startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
     if cpuStats:
-      _endReportToMonitoring( *cpuStats )
+      self.__endReportToMonitoring( *cpuStats )
     #Increment counters
     self.__moduleProperties[ 'cyclesDone' ] += 1
     #Show status
@@ -366,13 +365,21 @@ class AgentModule:
       # Send CPU consumption mark
       self.__monitorLastStatsUpdate = now
       # Send Memory consumption mark
-      membytes = _VmB( 'VmRSS:' )
+      membytes = MemStat.VmB( 'VmRSS:' )
       if membytes:
         mem = membytes / ( 1024. * 1024. )
         gMonitor.addMark( 'MEM', mem )
       return( now, cpuTime )
     except Exception:
       return False
+
+  def __endReportToMonitoring( self, initialWallTime, initialCPUTime ):
+    wallTime = time.time() - initialWallTime
+    stats = os.times()
+    cpuTime = stats[0] + stats[2] - initialCPUTime
+    percentage = cpuTime / wallTime * 100.
+    if percentage > 0:
+      gMonitor.addMark( 'CPU', percentage )
 
 
   def __executeModuleCycle( self ):
