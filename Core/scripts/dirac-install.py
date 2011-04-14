@@ -182,7 +182,7 @@ class ReleaseConfig:
     self.__dbgMsg( "Loaded" )
     self.__defaults[ self.__projectName ] = ReleaseConfig.CFG()
     try:
-      defaultsLocation = self.__globalDefaults.get( "%s/defaultsLocation" % self.__projectName )
+      defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % self.__projectName )
     except ValueError:
       self.__dbgMsg( "No defaults file defined for project %s" % self.__projectName )
       return S_ERROR( "No defaults file defined for project %s" % self.__projectName )
@@ -232,9 +232,9 @@ class ReleaseConfig:
       return S_OK()
     if releasesLocation:
       releasesLocation = "file://%s" % os.path.realpath( releasesLocation )
-    elif self.getDefaultValue( "releases" ):
-      releasesLocation = self.getDefaultValue( "releases" )
-    elif self.__projectName in self.__projectRelease:
+    elif self.getDefaultValue( "Releases" ):
+      releasesLocation = self.getDefaultValue( "Releases" )
+    elif self.__projectName not in self.__projectRelease:
       return S_ERROR( "Don't know how to find releases.cfg for project %s" % self.__projectName )
     else:
       releasesLocation = self.__projectRelease[ self.__projectName ]
@@ -251,7 +251,7 @@ class ReleaseConfig:
   def getTarsLocation( self, projectName = "" ):
     if not projectName:
       projectName = self.__projectName
-    defLoc = self.getDefaultValue( "tarsPath", projectName )
+    defLoc = self.getDefaultValue( "TarsBaseURL", projectName )
     if defLoc:
       return S_OK( defLoc )
     elif projectName in self.__projectTarLocation:
@@ -309,10 +309,10 @@ class ReleaseConfig:
     return self.__configs[ projectName ]
 
   def getReleaseDependencies( self, projectName, releaseVersion ):
-    if not self.__configs[ projectName ].isOption( "releases/%s/depends" % releaseVersion ):
+    if not self.__configs[ projectName ].isOption( "Releases/%s/Depends" % releaseVersion ):
       return {}
     deps = {}
-    for field in self.__configs[ projectName ].get( "releases/%s/depends" % releaseVersion ).split( "," ):
+    for field in self.__configs[ projectName ].get( "Releases/%s/Depends" % releaseVersion ).split( "," ):
       field = field.strip()
       if not field:
         continue
@@ -329,10 +329,10 @@ class ReleaseConfig:
     if not projectName in self.__configs:
       return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
     config = self.__configs[ projectName ]
-    if not config.isSection( "releases/%s" % releaseVersion ):
+    if not config.isSection( "Releases/%s" % releaseVersion ):
       return S_ERROR( "Release %s is not defined for project %s" % ( releaseVersion, projectName ) )
     #Defined Modules explicitly in the release
-    modules = self.__getOpt( projectName, "%s/modules" % releaseVersion )
+    modules = self.__getOpt( projectName, "Releases/%s/Modules" % releaseVersion )
     if modules:
       dMods = {}
       for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]:
@@ -343,7 +343,7 @@ class ReleaseConfig:
       modules = dMods
     else:
       #Default modules with the same version as the release version
-      modules = self.__getOpt( projectName, "defaultModules" )
+      modules = self.__getOpt( projectName, "DefaultModules" )
       if modules:
         modules = dict( [ ( modName.strip() , releaseVersion ) for modName in modules.split( "," ) if modName.strip() ] )
       else:
@@ -359,7 +359,7 @@ class ReleaseConfig:
   def getModSource( self, modName ):
     if not self.__projectName in self.__configs:
       return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__projectName )
-    modLocation = self.__getOpt( self.__projectName, "sources/%s" % modName )
+    modLocation = self.__getOpt( self.__projectName, "Source/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )
     modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ]
@@ -374,7 +374,7 @@ class ReleaseConfig:
       if 'DIRAC' not in self.__depsLoaded:
         return False
       releaseVersion = self.__depsLoaded[ 'DIRAC' ]
-    return self.__configs[ 'DIRAC' ].get( 'releases/%s/externals' % releaseVersion )
+    return self.__configs[ 'DIRAC' ].get( 'Releases/%s/Externals' % releaseVersion )
 
   def getModulesToInstall( self, extraModules = False ):
     if not extraModules:
@@ -395,7 +395,7 @@ class ReleaseConfig:
         return result
       modVersions = result[ 'Value' ]
       modNames = []
-      defaultMods = self.__configs[ projectName ].get( "defaultModules" )
+      defaultMods = self.__configs[ projectName ].get( "DefaultModules" )
       if defaultMods:
         modNames += [ mod.strip() for mod in defaultMods.split( "," ) if mod.strip() ]
       for extraMod in extraModules:

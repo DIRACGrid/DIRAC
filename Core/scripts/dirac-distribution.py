@@ -124,6 +124,7 @@ class DistributionMaker:
   def __init__( self, cliParams ):
     self.cliParams = cliParams
     self.relConf = DiracInstall.ReleaseConfig( cliParams.projectName )
+    self.relConf.loadDefaults()
 
   def isOK( self ):
     if not self.cliParams.releasesToBuild:
@@ -169,7 +170,6 @@ class DistributionMaker:
       if not result[ 'OK' ]:
         return result
       modSrcTuple = result[ 'Value' ]
-      print modSrcTuple
       if modSrcTuple[0]:
         logMsgVCS = modSrcTuple[0]
         dctArgs.append( "-z '%s'" % modSrcTuple[0] )
@@ -179,6 +179,8 @@ class DistributionMaker:
       gLogger.info( "Sources will be retrieved from %s (%s)" % ( modSrcTuple[1], logMsgVCS ) )
       #Tar destination
       dctArgs.append( "-D '%s'" % self.cliParams.destination )
+      if cliParams.debug:
+        dctArgs.append( "-dd" )
       #Script location discovery
       scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball.py" )
       cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
