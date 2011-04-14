@@ -46,6 +46,7 @@ class Params:
     self.debug = False
     self.lcgVer = ''
     self.useVersionsDir = False
+    self.installSource = False
 
 cliParams = Params()
 
@@ -198,6 +199,9 @@ class ReleaseConfig:
     if projectName in self.__defaults:
       return S_OK()
     self.__defaults[ projectName ] = ReleaseConfig.CFG()
+    if self.getDefaultValue( "SkipDefaults", projectName ):
+      self.__dbgMsg( "Skipping loading defaults for project %s" % projectName )
+      return S_OK()
     self.__dbgMsg( "Loading defaults for project %s" % projectName )
     try:
       defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % projectName )
@@ -287,7 +291,7 @@ class ReleaseConfig:
     return S_ERROR( "Don't know how to find the installation tarballs for project %s" % projectName )
 
 
-  def loadProjectForInstall( self, releaseVersion, projectName = "" ):
+  def loadProjectForInstall( self, releaseVersion, projectName = "", sourceURL = False ):
     if not projectName:
       projectName = self.__projectName
     #Check what's loaded
@@ -307,10 +311,14 @@ class ReleaseConfig:
     #Load the project release definitions
     self.__dbgMsg( "Loading release definition for project %s version %s" % ( projectName, releaseVersion ) )
     if projectName not in self.__configs:
-      result = self.getTarsLocation( projectName )
-      if not result[ 'OK' ]:
-        return result
-      relcfgLoc = "%s/release-%s-%s.cfg" % ( result[ 'Value' ], projectName, releaseVersion )
+      if not sourceURL:
+        result = self.getTarsLocation( projectName )
+        if not result[ 'OK' ]:
+          return result
+        siu = result[ 'Value' ]
+      else:
+        siu = sourceURL
+      relcfgLoc = "%s/release-%s-%s.cfg" % ( siu, projectName, releaseVersion )
       self.__dbgMsg( "Releases file is %s" % relcfgLoc )
       result = self.__loadCFGFromURL( relcfgLoc, checkHash = True )
       if not result[ 'OK' ]:
@@ -325,7 +333,7 @@ class ReleaseConfig:
       dVer = deps[ dProj ]
       self.__dbgMsg( "%s:%s requires on %s:%s to be installed" % ( projectName, releaseVersion, dProj, dVer ) )
       dVer = deps[ dProj ]
-      result = self.loadProjectForInstall( dVer, dProj )
+      result = self.loadProjectForInstall( dVer, dProj, sourceURL = sourceURL )
       if not result[ 'OK' ]:
         return result
 
@@ -661,6 +669,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'g:', 'grid=', 'lcg tools package version' ),
             ( 'B', 'buildIfNotAvailable', 'Build if not available' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
+            ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'h', 'help', 'Show this help' ),
           )
@@ -739,7 +748,7 @@ def loadConfiguration():
     elif o in ( '-g', '--grid' ):
       cliParams.lcgVer = v
     elif o in ( '-u', '--baseURL' ):
-      cliParams.downBaseURL = v
+      cliParams.installSource = v
     elif o in ( '-P', '--installationPath' ):
       cliParams.targetPath = v
       try:
@@ -768,7 +777,7 @@ def loadConfiguration():
 
   logNOTICE( "Destination path for installation is %s" % cliParams.targetPath )
 
-  result = releaseConfig.loadProjectForInstall( cliParams.release )
+  result = releaseConfig.loadProjectForInstall( cliParams.release, sourceURL = cliParams.installSource )
   if not result[ 'OK' ]:
     return result
 
@@ -803,7 +812,10 @@ def installExternals( externalsVersion ):
   logDEBUG( "Using platform: %s" % cliParams.platform )
   extVer = "%s-%s-%s-python%s" % ( cliParams.externalsType, externalsVersion, cliParams.platform, cliParams.pythonVersion )
   logDEBUG( "Externals %s are to be installed" % extVer )
-  tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
+  if cliParams.installSource:
+    tarsURL = cliParams.installSource
+  else:
+    tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
   if not downloadAndExtractTarball( tarsURL, "Externals", extVer ):
     return cliParams.buildIfNotAvailable and compileExternals( externalsVersion )
   logNOTICE( "Fixing externals paths..." )
@@ -899,9 +911,11 @@ if __name__ == "__main__":
   modsToInstall = result[ 'Value' ]
   logNOTICE( "Installing modules..." )
   for modName in modsToInstall:
-    tarURL, modVersion = modsToInstall[ modName ]
+    tarsURL, modVersion = modsToInstall[ modName ]
+    if cliParams.installSource:
+      tarsURL = cliParams.installSource
     logNOTICE( "Installing %s:%s" % ( modName, modVersion ) )
-    if not downloadAndExtractTarball( tarURL, modName, modVersion ):
+    if not downloadAndExtractTarball( tarsURL, modName, modVersion ):
       sys.exit( 1 )
   logNOTICE( "Deloying scripts..." )
   ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
