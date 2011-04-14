@@ -237,7 +237,7 @@ class TarModuleCreator( object ):
 
     return S_OK()
 
-  def __generateReleaseNotes( params ):
+  def __generateReleaseNotes( self, params ):
     if not params.relNotes:
       relNotesPath = os.path.join( params.destination, params.name, "releasenotes.rst" )
     else:
@@ -254,8 +254,8 @@ class TarModuleCreator( object ):
     #Find basename
     baseNotesPath = relNotesPath
     for ext in ( '.rst', '.txt' ):
-      if relNotesPath[ :-len( ext ) ].find( ext ) == 0:
-        baseNotesPath = relNotes[ :-len( ext ) ]
+      if relNotesPath[ -len( ext ): ] == ext:
+        baseNotesPath = relNotesPath[ :-len( ext ) ]
         break
     #To HTML
     try:
