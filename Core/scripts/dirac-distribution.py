@@ -27,12 +27,13 @@ projectMapping = {
 diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install.py" )
 try:
   diFile = open( diracInstallLocation, "r" )
-  ReleaseConfig = imp.load_module( "ReleaseConfig", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
+  DiracInstall = imp.load_module( "DiracInstall", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
   diFile.close()
 except Exception, excp:
   raise
   gLogger.fatal( "Cannot find dirac-install! Aborting (%s)" % str( excp ) )
   sys.exit( 1 )
+
 ##END OF LOAD
 
 
@@ -102,7 +103,7 @@ class Params:
 
   def registerSwitches( self ):
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
-    Script.registerSwitch( "t:", "project=", "Project to build the release for (DIRAC by default)", cliParams.setProject )
+    Script.registerSwitch( "l:", "project=", "Project to build the release for (DIRAC by default)", cliParams.setProject )
     Script.registerSwitch( "D:", "destination", "Destination where to build the tar files", cliParams.setDestination )
     Script.registerSwitch( "i:", "pythonVersion", "Python version to use (25/26)", cliParams.setPythonVersion )
     Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
@@ -122,16 +123,12 @@ class DistributionMaker:
 
   def __init__( self, cliParams ):
     self.cliParams = cliParams
-    self.relConf = ReleaseConfig()
+    self.relConf = DiracInstall.ReleaseConfig( cliParams.projectName )
 
   def isOK( self ):
     if not self.cliParams.releasesToBuild:
       gLogger.error( "Missing releases to build!" )
       Script.showHelp()
-      return False
-
-    if self.cliParams.projectName not in projectMapping:
-      gLogger.error( "Don't know how to find releases.ini for %s" % self.cliParams.projectName )
       return False
 
     if not self.cliParams.destination:
@@ -146,18 +143,20 @@ class DistributionMaker:
 
   def loadReleases( self ):
     gLogger.notice( "Loading releases.ini" )
-    return self.relConf.loadProject( self.cliParams.projectName, self.cliParams.relcfg )
+    return self.relConf.loadProjectForRelease( self.cliParams.relcfg )
 
   def createModuleTarballs( self ):
     for version in self.cliParams.releasesToBuild:
-      if not self.__createReleaseTarballs( version ):
-        return False
-    return True
+      result = self.__createReleaseTarballs( version )
+      if not result[ 'OK' ]:
+        return result
+    return S_OK()
 
   def __createReleaseTarballs( self, releaseVersion ):
-    modsToTar = self.relConf.getModulesForProjectRelease( self.cliParams.projectName, releaseVersion )
-    if not modsToTar:
-      return False
+    result = self.relConf.getModulesForRelease( releaseVersion )
+    if not result[ 'OK' ]:
+      return result
+    modsToTar = result[ 'Value' ]
     for modName in modsToTar:
       modVersion = modsToTar[ modName ]
       dctArgs = []
@@ -166,9 +165,11 @@ class DistributionMaker:
       dctArgs.append( "-v '%s'" % modVersion )
       gLogger.notice( "Creating tar for %s version %s" % ( modName, modVersion ) )
       #Source
-      modSrcTuple = self.relConf.getModSource( self.cliParams.projectName, modName )
-      if not modSrcTuple:
-        return False
+      result = self.relConf.getModSource( modName )
+      if not result[ 'OK' ]:
+        return result
+      modSrcTuple = result[ 'Value' ]
+      print modSrcTuple
       if modSrcTuple[0]:
         logMsgVCS = modSrcTuple[0]
         dctArgs.append( "-z '%s'" % modSrcTuple[0] )
@@ -183,10 +184,9 @@ class DistributionMaker:
       cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
       gLogger.verbose( "Executing %s" % cmd )
       if os.system( cmd ):
-        gLogger.error( "Failed creating tarball for module %s. Aborting" % modName )
-        return False
+        return S_ERROR( "Failed creating tarball for module %s. Aborting" % modName )
       gLogger.info( "Tarball for %s version %s created" % ( modName, modVersion ) )
-    return True
+    return S_OK()
 
 
   def getAvailableExternals( self ):
@@ -265,18 +265,20 @@ class DistributionMaker:
     if not distMaker.isOK():
       gLogger.fatal( "There was an error with the release description" )
       return False
-    if not distMaker.loadReleases():
-      gLogger.fatal( "There was an error when loading the release.ini file" )
+    result = distMaker.loadReleases()
+    if not result[ 'OK' ]:
+      gLogger.fatal( "There was an error when loading the release.ini file: %s" % result[ 'Message' ] )
       return False
     #Module tars
     if self.cliParams.ignorePackages:
       gLogger.notice( "Skipping creating module tarballs" )
     else:
-      if not self.createModuleTarballs():
-        gLogger.fatal( "There was a problem when creating the module tarballs" )
+      result = self.createModuleTarballs()
+      if not result[ 'OK' ]:
+        gLogger.fatal( "There was a problem when creating the module tarballs: %s" % result[ 'Message' ] )
         return False
     #Externals
-    if self.cliParams.ignoreExternals:
+    if self.cliParams.ignoreExternals or cliParams.projectName != "DIRAC":
       gLogger.notice( "Skipping creating externals tarball" )
     else:
       if not self.createExternalsTarballs():
@@ -287,7 +289,7 @@ class DistributionMaker:
     for relVersion in self.cliParams.releasesToBuild:
       try:
         relFile = file( os.path.join( self.cliParams.destination, "releases-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
-        relFile.write( relcfgData )
+        relFile.write( "%s\n" % relcfgData )
         relFile.close()
       except Exception, exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
@@ -305,4 +307,12 @@ if __name__ == "__main__":
     sys.exit( 1 )
   gLogger.notice( "Everything seems ok. Tarballs generated in %s" % cliParams.destination )
   if cliParams.projectName in ( "DIRAC", "LHCb" ):
-    gLogger.notice( "( cd %s ; tar -cf - *.tar.gz *.md5 *.ini ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % cliParams.destination )
+    gLogger.notice( "( cd %s ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % cliParams.destination )
+  else:
+    gLogger.notice( "Tarballs created in %s" % cliParams.destination )
+    filesToCopy = []
+    for fileName in os.listdir( cliParams.destination ):
+      for ext in ( ".tar.gz", ".md5", ".cfg" ):
+        if fileName.find( ext ) == len( fileName ) - len( ext ):
+          filesToCopy.append( os.path.join( cliParams.destination, fileName ) )
+    gLogger.notice( "Please upload to your installation source:\n\t %s\n" % " ".join( filesToCopy ) )
