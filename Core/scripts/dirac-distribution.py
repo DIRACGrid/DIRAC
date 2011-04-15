@@ -131,6 +131,8 @@ class DistributionMaker:
     self.cliParams = cliParams
     self.relConf = DiracInstall.ReleaseConfig( cliParams.projectName )
     self.relConf.loadDefaults()
+    if cliParams.debug:
+      self.relConf.setDebugCB( gLogger.info )
 
   def isOK( self ):
     if not self.cliParams.releasesToBuild:
