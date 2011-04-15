@@ -161,7 +161,8 @@ class TarModuleCreator( object ):
     return S_OK()
 
   def __checkoutFromSVN( self, params ):
-    cmd = "svn export --trust-server-cert --non-interactive '%s' '%s'" % ( params.sourceURL, os.path.join( params.destination, params.name ) )
+    cmd = "svn export --trust-server-cert --non-interactive '%s/%s' '%s'" % ( params.sourceURL, params.version,
+                                                                              os.path.join( params.destination, params.name ) )
     gLogger.verbose( "Executing: %s" % cmd )
     result = Subprocess.shellCall( 900, cmd )
     if not result[ 'OK' ]:
