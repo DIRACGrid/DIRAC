@@ -409,6 +409,9 @@ class LocalConfiguration:
     self.__debugMode += 1
     return S_OK()
 
+  def getDebugMode( self ):
+    return self.__debugMode
+
   def showHelp( self, dummy = False ):
     """
     Printout help message including a Usage message if defined via setUsageMessage method
