@@ -174,10 +174,12 @@ class ReleaseConfig:
     self.__debugCB = False
     self.__projectName = projectName
     self.__projectRelease = {
-        'DIRAC' : "https://github.com/DIRACGrid/DIRAC/raw/master/releases.cfg"
+        'DIRAC' : "http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/DIRAC/releases.cfg",
+        'LHCb' : "http://svnweb.cern.ch/guest/lbdirac/LHCbDIRAC/trunk/LHCbDIRAC/releases.cfg"
         }
     self.__projectTarLocation = {
-        'DIRAC' : "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars"
+        'DIRAC' : "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/installSource",
+        'LHCb' : "http://lhcbproject.web.cern.ch/lhcbproject/dist/LHCbDirac_project"
         }
 
   def getProject( self ):
