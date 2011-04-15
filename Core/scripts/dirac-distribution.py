@@ -22,9 +22,10 @@ except ImportError:
 
 globalDistribution = Distribution.Distribution()
 
-projectMapping = {
-  'DIRAC' : "https://github.com/DIRACGrid/DIRAC/raw/master/releases.cfg"
-  }
+g_uploadCmd = {
+  'DIRAC' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'LHCb' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
+}
 
 ###
 # Load release manager from dirac-install
@@ -236,6 +237,7 @@ class DistributionMaker:
       requestedExternals = ( externalType, externalsVersion, platform, 'python%s' % self.cliParams.externalsPython )
       requestedExternalsString = "-".join( list( requestedExternals ) )
       gLogger.notice( "Trying to compile %s externals..." % requestedExternalsString )
+      print requestedExternals, availableExternals
       if not self.cliParams.forceExternals and requestedExternals in availableExternals:
         gLogger.notice( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
         continue
@@ -328,8 +330,8 @@ if __name__ == "__main__":
   if not distMaker.doTheMagic():
     sys.exit( 1 )
   gLogger.notice( "Everything seems ok. Tarballs generated in %s" % cliParams.destination )
-  if cliParams.projectName in ( "DIRAC", "LHCb" ):
-    gLogger.notice( "( cd %s ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % cliParams.destination )
+  if cliParams.projectName in g_uploadCmd:
+    gLogger.always( "Please execute:\n%s" % g_uploadCmd[ cliParams.projectName ].replace( "%TARSLOCATION%", cliParams.destination ) )
   else:
     gLogger.notice( "Tarballs created in %s" % cliParams.destination )
     filesToCopy = []
