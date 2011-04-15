@@ -244,7 +244,6 @@ class DistributionMaker:
       requestedExternals = ( externalType, externalsVersion, platform, 'python%s' % self.cliParams.externalsPython )
       requestedExternalsString = "-".join( list( requestedExternals ) )
       gLogger.notice( "Trying to compile %s externals..." % requestedExternalsString )
-      print requestedExternals, availableExternals
       if not self.cliParams.forceExternals and requestedExternals in availableExternals:
         gLogger.notice( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
         continue
