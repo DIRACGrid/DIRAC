@@ -325,6 +325,8 @@ if __name__ == "__main__":
   Script.addDefaultOptionValue( "/DIRAC/Setup", "Dummy" )
   cliParams.registerSwitches()
   Script.parseCommandLine( ignoreErrors = False )
+  if Script.localCfg.getDebugMode():
+    cliParams.debug = True
   distMaker = DistributionMaker( cliParams )
   if not distMaker.doTheMagic():
     sys.exit( 1 )
