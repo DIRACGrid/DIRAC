@@ -592,7 +592,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True ):
         return False
     except Exception, e:
       logERROR( "Cannot download %s: %s" % ( md5Name, str( e ) ) )
-      sys.exit( 1 )
+      return False
     #Read md5  
     fd = open( os.path.join( cliParams.targetPath, md5Name ), "r" )
     md5Expected = fd.read().strip()
