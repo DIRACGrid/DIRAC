@@ -15,7 +15,7 @@ from DIRAC                                                 import S_OK, S_ERROR,
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
-from DIRAC.Core.Security                                   import CS       
+from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
@@ -53,7 +53,7 @@ class SiteDirector( AgentModule ):
         return S_ERROR( 'Unknown site' )
       else:
         siteNames = [siteName]
-        
+
     self.siteNames = siteNames
     self.gridEnv = self.am_getOption( "GridEnv", '' )
 
@@ -71,7 +71,7 @@ class SiteDirector( AgentModule ):
       self.log.always( 'Pilot status update requested' )
     if self.getOutput:
       self.log.always( 'Pilot output retrieval requested' )
-    if self.sendAccounting: 
+    if self.sendAccounting:
       self.log.always( 'Pilot accounting sending requested' )
 
     self.log.always( 'Site:', self.siteNames )
@@ -92,11 +92,11 @@ class SiteDirector( AgentModule ):
       return result
 
     if self.queueDict:
-      self.log.always("Agent will serve queues:")
+      self.log.always( "Agent will serve queues:" )
       for queue in self.queueDict:
-        self.log.always("Site: %s, CE: %s, Queue: %s" % (self.queueDict[queue]['Site'],
+        self.log.always( "Site: %s, CE: %s, Queue: %s" % ( self.queueDict[queue]['Site'],
                                                          self.queueDict[queue]['CEName'],
-                                                         queue) )
+                                                         queue ) )
 
     return S_OK()
 
@@ -107,7 +107,7 @@ class SiteDirector( AgentModule ):
     ceFactory = ComputingElementFactory()
     ceTypes = self.am_getOption( 'CETypes', [] )
     ceConfList = self.am_getOption( 'CEs', [] )
-    
+
     for siteName in self.siteNames:
       # Look up CE definitions in the site CS description
       ceList = []
@@ -128,7 +128,7 @@ class SiteDirector( AgentModule ):
           if "SubmissionMode" in ceDict and ceDict['SubmissionMode'].lower() == "direct":
             if ceType in ceTypes:
               ceList.append( ( ce, ceType, ceDict ) )
-  
+
       for ce, ceType, ceDict in ceList:
         section = '/Resources/Sites/%s/%s/CEs/%s/Queues' % ( gridType, siteName, ce )
         result = gConfig.getSections( section )
@@ -136,13 +136,13 @@ class SiteDirector( AgentModule ):
           return S_ERROR( 'Failed to look up the CS for queues' )
         if not result['Value']:
           return S_ERROR( 'No Queues found for site %s, ce %s' % ( siteName, ce ) )
-  
+
         queues = result['Value']
         for queue in queues:
           result = gConfig.getOptionsDict( '%s/%s' % ( section, queue ) )
           if not result['OK']:
             return S_ERROR( 'Failed to look up the CS for ce,queue %s,%s' % ( ce, queue ) )
-  
+
           queueName = '%s_%s' % ( ce, queue )
           self.queueDict[queueName] = {}
           self.queueDict[queueName]['ParametersDict'] = result['Value']
@@ -368,6 +368,11 @@ class SiteDirector( AgentModule ):
       self.log.error( 'PilotVersion is not defined in the configuration' )
       return None
     pilotOptions.append( '-r %s' % diracVersion )
+    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotProject" % ( vo, setup ), "unknown" )
+    if projectName == 'unknown':
+      self.log.info( 'PilotProject is not defined in the configuration' )
+    else:
+      pilotOptions.append( '-l %s' % projectName )
 
     ownerDN = self.genericPilotDN
     ownerGroup = self.genericPilotGroup
@@ -491,7 +496,7 @@ EOF
       queueName = self.queueDict[queue]['QueueName']
       ceType = self.queueDict[queue]['CEType']
       siteName = self.queueDict[queue]['Site']
-      
+
       result = pilotAgentsDB.selectPilots( {'DestinationSite':ceName,
                                            'Queue':queueName,
                                            'GridType':ceType,
@@ -611,7 +616,7 @@ EOF
                                              'GridSite':siteName,
                                              'AccountingSent':'False',
                                              'Status':FINAL_PILOT_STATUS} )
-              
+
         if not result['OK']:
           self.log.error( 'Failed to select pilots: %s' % result['Message'] )
           continue
@@ -623,17 +628,17 @@ EOF
           self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
           continue
         pilotDict = result['Value']
-        result = self.sendPilotAccounting(pilotDict)
+        result = self.sendPilotAccounting( pilotDict )
         if not result['OK']:
-          self.log.error('Failed to send pilot agent accounting')
-        
+          self.log.error( 'Failed to send pilot agent accounting' )
+
     return S_OK()
 
-  def sendPilotAccounting(self,pilotDict):
+  def sendPilotAccounting( self, pilotDict ):
     """ Send pilot accounting record
     """
     for pRef in pilotDict:
-      self.log.verbose('Preparing accounting record for pilot %s' % pRef)   
+      self.log.verbose( 'Preparing accounting record for pilot %s' % pRef )
       pA = PilotAccounting()
       pA.setEndTime( pilotDict[pRef][ 'LastUpdateTime' ] )
       pA.setStartTime( pilotDict[pRef][ 'SubmissionTime' ] )
@@ -661,24 +666,24 @@ EOF
       self.log.info( "Adding accounting record for pilot %s" % pilotDict[pRef][ 'PilotID' ] )
       retVal = gDataStoreClient.addRegister( pA )
       if not retVal[ 'OK' ]:
-        self.log.error('Failed to send accounting info for pilot %s' % pRef )
+        self.log.error( 'Failed to send accounting info for pilot %s' % pRef )
       else:
         # Set up AccountingSent flag
-        result = pilotAgentsDB.setAccountingFlag(pRef)
+        result = pilotAgentsDB.setAccountingFlag( pRef )
         if not result['OK']:
-          self.log.error('Failed to set accounting flag for pilot %s' % pRef )
-          
-    self.log.info('Committing accounting records for %d pilots' % len(pilotDict) )      
+          self.log.error( 'Failed to set accounting flag for pilot %s' % pRef )
+
+    self.log.info( 'Committing accounting records for %d pilots' % len( pilotDict ) )
     result = gDataStoreClient.commit()
     if result['OK']:
       for pRef in pilotDict:
-        self.log.verbose('Setting AccountingSent flag for pilot %s' % pRef)   
-        result = pilotAgentsDB.setAccountingFlag(pRef)
+        self.log.verbose( 'Setting AccountingSent flag for pilot %s' % pRef )
+        result = pilotAgentsDB.setAccountingFlag( pRef )
         if not result['OK']:
-          self.log.error('Failed to set accounting flag for pilot %s' % pRef )      
+          self.log.error( 'Failed to set accounting flag for pilot %s' % pRef )
     else:
       return result
-    
-    return S_OK()  
 
-    
+    return S_OK()
+
+
