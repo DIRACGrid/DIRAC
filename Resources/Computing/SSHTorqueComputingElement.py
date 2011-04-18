@@ -72,8 +72,7 @@ class SSH:
         return S_ERROR((-1,child.before,''))  
     else:
       # Try passwordless login
-      cmd = "ssh %s@%s '%s'" % (user,host,command) 
-      result = shellCall(timeout,cmd) 
+      result = shellCall(timeout,command) 
       return result   
       
   
