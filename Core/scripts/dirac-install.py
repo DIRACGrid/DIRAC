@@ -40,7 +40,7 @@ class Params:
     self.project = 'DIRAC'
     self.release = ""
     self.externalsType = 'client'
-    self.pythonVersion = '26'
+    self.pythonVersion = '25'
     self.platform = ""
     self.targetPath = os.getcwd()
     self.buildExternals = False
