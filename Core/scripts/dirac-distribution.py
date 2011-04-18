@@ -30,7 +30,9 @@ g_uploadCmd = {
 ###
 # Load release manager from dirac-install
 ##
-diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install.py" )
+diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install" )
+if not os.path.isfile( diracInstallLocation ):
+  diracInstallLocation = os.path.join( os.path.dirname( __file__ ), "dirac-install.py" )
 try:
   diFile = open( diracInstallLocation, "r" )
   DiracInstall = imp.load_module( "DiracInstall", diFile, diracInstallLocation, ( "", "r", imp.PY_SOURCE ) )
@@ -190,7 +192,9 @@ class DistributionMaker:
       if cliParams.debug:
         dctArgs.append( "-dd" )
       #Script location discovery
-      scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball.py" )
+      scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball" )
+      if not os.path.isfile( scriptName ):
+        scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball.py" )
       cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
       gLogger.verbose( "Executing %s" % cmd )
       if os.system( cmd ):
