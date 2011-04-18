@@ -166,7 +166,7 @@ class PilotDirector:
       reload from CS
     """
     self.pilot = gConfig.getValue( mySection + '/PilotScript'          , self.pilot )
-    self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.self.installVersion )
+    self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
     self.installProject = gConfig.getValue( mySection + '/InstallProject'        , self.installProject )
@@ -311,7 +311,7 @@ class PilotDirector:
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
     # Requested version of DIRAC
-    pilotOptions.append( '-r %s' % self.self.installVersion )
+    pilotOptions.append( '-r %s' % self.installVersion )
     # Requested Project to install
     pilotOptions.append( '-l %s' % self.installProject )
     # Requested CPU time
