@@ -337,7 +337,7 @@ class ReleaseConfig:
     #Load defaults
     result = self.__loadProjectDefaults( projectName )
     if not result[ 'OK' ]:
-      self.__dbgMsg( "Could not load defaults for project %s" % project )
+      self.__dbgMsg( "Could not load defaults for project %s" % projectName )
       return result
     #Load the project release definitions
     self.__dbgMsg( "Loading release definition for project %s version %s" % ( projectName, releaseVersion ) )
