@@ -169,21 +169,24 @@ class ReplicationScheduler( AgentModule ):
         for file in files:
           lfn = file['LFN']
           if file['Status'] != 'Waiting':
-            gLogger.info( "ReplicationScheduler._execute: %s will not be scheduled because it is %s." % ( lfn, file['Status'] ) )
+            gLogger.debug( "ReplicationScheduler._execute: %s will not be scheduled because it is %s." % ( lfn, file['Status'] ) )
           else:
             fileID = file['FileID']
             filesDict[lfn] = fileID
         if not filesDict:
           gLogger.info( "ReplicationScheduler._execute: No Waiting files found for request" )
           continue
+        notSched = len( files ) - len( filesDict )
+        if notSched:
+          gLogger.info( "ReplicationScheduler._execute: %d files found not Waiting" % notSched )
 
         ######################################################################################
         #
         #  Now obtain replica information for the files associated to the sub-request.
         #
 
-        gLogger.info( "ReplicationScheduler._execute: Obtaining replica information for sub-request files." )
         lfns = filesDict.keys()
+        gLogger.info( "ReplicationScheduler._execute: Obtaining replica information for %d sub-request files." % len( lfns ) )
         res = self.rm.getCatalogReplicas( lfns )
         if not res['OK']:
           gLogger.error( "ReplicationScheduler._execute: Failed to get replica information.", res['Message'] )
@@ -200,8 +203,8 @@ class ReplicationScheduler( AgentModule ):
         #  Now obtain the file sizes for the files associated to the sub-request.
         #
 
-        gLogger.info( "ReplicationScheduler._execute: Obtaining file sizes for sub-request files." )
         lfns = replicas.keys()
+        gLogger.info( "ReplicationScheduler._execute: Obtaining file sizes for %d sub-request files." % len( lfns ) )
         res = self.rm.getCatalogFileMetadata( lfns )
         if not res['OK']:
           gLogger.error( "ReplicationScheduler._execute: Failed to get file size information.", res['Message'] )
@@ -226,7 +229,7 @@ class ReplicationScheduler( AgentModule ):
           targets = []
           for targetSE in targetSEs:
             if targetSE in lfnReps.keys():
-              gLogger.info( "ReplicationScheduler.execute: %s already present at %s." % ( lfn, targetSE ) )
+              gLogger.debug( "ReplicationScheduler.execute: %s already present at %s." % ( lfn, targetSE ) )
             else:
               targets.append( targetSE )
           if not targets:
@@ -307,7 +310,7 @@ class ReplicationScheduler( AgentModule ):
       requestString = oRequest.toXML()['Value']
       res = self.RequestDB.updateRequest( requestName, requestString )
       if not res['OK']:
-        gLogger.error( "Failed to update request", "%s %s" % ( requestName, res['Message'] ) )
+        gLogger.error( "ReplicationScheduler._execute: Failed to update request", "%s %s" % ( requestName, res['Message'] ) )
 
   def obtainLFNSURL( self, targetSE, lfn ):
     """ Creates the targetSURL for the storage and LFN supplied
