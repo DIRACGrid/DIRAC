@@ -1165,10 +1165,7 @@ class ReplicaManager( CatalogToStorage ):
     res = getSEsForCountry( countryCode )
     if res['OK']:
       countrySEs = res['Value']
-    sortedSEs = []
-    for se in randomize( ses ):
-      if se in localSEs:
-        sortedSEs.append( se )
+    sortedSEs = [se for se in localSEs if se in ses]
     for se in randomize( ses ):
       if ( se in countrySEs ) and ( not se in sortedSEs ):
         sortedSEs.append( se )
@@ -2026,7 +2023,7 @@ class ReplicaManager( CatalogToStorage ):
     for pfn in res['Value']['Successful'].keys():
       successful[pfnDict[pfn]]
     resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK(resDict)
+    return S_OK( resDict )
 
   def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
     gLogger.verbose( "ReplicaManager.__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ), storageElementName ) )
