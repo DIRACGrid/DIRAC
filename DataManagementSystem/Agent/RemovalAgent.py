@@ -135,23 +135,25 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
           for diracSE in diracSEs:
             res = self.ReplicaManager.removeStorageFile( physicalFiles, diracSE )
             if res['OK']:
-              for lfn in res['Value']['Failed'].keys():
-                if not failed.has_key( lfn ):
-                  failed[lfn] = {}
-                failed[lfn][diracSE] = res['Value']['Failed'][lfn]
+              for pfn in res['Value']['Failed'].keys():
+                if not failed.has_key( pfn ):
+                  failed[pfn] = {}
+                failed[pfn][diracSE] = res['Value']['Failed'][pfn]
             else:
               errMsg[diracSE] = res['Message']
-              for lfn in physicalFiles:
-                if not failed.has_key( lfn ):
-                  failed[lfn] = {}
-                failed[lfn][diracSE] = 'Completely'
+              for pfn in physicalFiles:
+                if not failed.has_key( pfn ):
+                  failed[pfn] = {}
+                failed[pfn][diracSE] = 'Completely'
           # Now analyse the results
           failedPFNs = failed.keys()
-          pfnsOK = [lfn for lfn in physicalFiles if not lfn in failedPFNs]
+          pfnsOK = [pfn for pfn in physicalFiles if not pfn in failedPFNs]
           gMonitor.addMark( 'PhysicalRemovalDone', len( pfnsOK ) )
           for pfn in pfnsOK:
             gLogger.info( "RemovalAgent.execute: Successfully removed %s at %s" % ( pfn, str( diracSEs ) ) )
-            oRequest.setSubRequestFileAttributeValue( ind, 'removal', pfn, 'Status', 'Done' )
+            res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', pfnToLfn[pfn], 'Status', 'Done' )
+            if not res['OK']:
+              gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', pfnToLfn[pfn] ) )
             modified = True
           if failed:
             gMonitor.addMark( 'PhysicalRemovalFail', len( failedPFNs ) )
@@ -160,7 +162,9 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
                 if type( failed[pfn][diracSE] ) in StringTypes:
                   if re.search( 'no such file or directory', failed[pfn][diracSE].lower() ):
                     gLogger.info( "RemovalAgent.execute: File did not exist.", pfn )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'removal', pfnToLfn[pfn], 'Status', 'Done' )
+                    res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', pfnToLfn[pfn], 'Status', 'Done' )
+                    if not res['OK']:
+                      gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', pfnToLfn[pfn] ) )
                     modified = True
                   else:
                     gLogger.info( "RemovalAgent.execute: Failed to remove file.", "%s at %s - %s" % ( pfn, diracSE, failed[pfn][diracSE] ) )
@@ -185,14 +189,18 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
             gMonitor.addMark( 'RemoveFileDone', len( res['Value']['Successful'].keys() ) )
             for lfn in res['Value']['Successful'].keys():
               gLogger.info( "RemovalAgent.execute: Successfully removed %s." % lfn )
-              oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+              res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+              if not res['OK']:
+                gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
               modified = True
             gMonitor.addMark( 'RemoveFileFail', len( res['Value']['Failed'].keys() ) )
             for lfn in res['Value']['Failed'].keys():
               if type( res['Value']['Failed'][lfn] ) in StringTypes:
                 if re.search( 'no such file or directory', res['Value']['Failed'][lfn].lower() ):
                   gLogger.info( "RemovalAgent.execute: File did not exist.", lfn )
-                  oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+                  res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+                  if not res['OK']:
+                    gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
                   modified = True
                 else:
                   gLogger.info( "RemovalAgent.execute: Failed to remove file.", "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
@@ -233,7 +241,9 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
           gMonitor.addMark( 'ReplicaRemovalDone', len( lfnsOK ) )
           for lfn in lfnsOK:
             gLogger.info( "RemovalAgent.execute: Successfully removed %s at %s" % ( lfn, str( diracSEs ) ) )
-            oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+            res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+            if not res['OK']:
+              gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
             modified = True
           if failed:
             gMonitor.addMark( 'PhysicalRemovalFail', len( failedLFNs ) )
@@ -242,7 +252,9 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
                 if type( failed[lfn][diracSE] ) in StringTypes:
                   if re.search( 'no such file or directory', failed[lfn][diracSE].lower() ):
                     gLogger.info( "RemovalAgent.execute: File did not exist.", lfn )
-                    oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+                    res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+                    if not res['OK']:
+                      gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
                     modified = True
                   else:
                     gLogger.info( "RemovalAgent.execute: Failed to remove file.", "%s at %s - %s" % ( lfn, diracSE, failed[lfn][diracSE] ) )
@@ -264,7 +276,9 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
               if res['OK']:
                 if res['Value']['Successful'].has_key( pfn ):
                   gLogger.info( "RemovalAgent.execute: Successfully requested retransfer of %s." % pfn )
-                  oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+                  res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+                  if not res['OK']:
+                    gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
                   modified = True
                 else:
                   errStr = "RemovalAgent.execute: Failed to request retransfer."
