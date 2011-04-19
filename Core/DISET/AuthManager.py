@@ -205,7 +205,7 @@ class AuthManager:
       return True
     return False
 
-  def matchProperties( self, credDict, validProps, caseSensitive = True ):
+  def matchProperties( self, credDict, validProps, caseSensitive = False ):
     """
     Return True if one or more properties are in the valid list of properties
     @type  props: list
