@@ -316,7 +316,7 @@ class TarModuleCreator( object ):
       return result
     result = self.__generateReleaseNotes( params )
     if not result[ 'OK' ]:
-      return result
+      gLogger.error( "Won't generate release notes: %s" result[ 'Message' ] )
     return self.__generateTarball( params )
 
 if __name__ == "__main__":
