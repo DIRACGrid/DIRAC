@@ -298,9 +298,6 @@ class TarModuleCreator( object ):
             keyDict[ 'FEATURE' ] = []
           keyDict[ 'FEATURE' ].append( line )
 
-    import pprint
-    print pprint.pprint( relData )
-
     return S_OK( relData )
 
   def __generateRSTFile( self, releaseData, rstFileName, versionFilter = False ):
@@ -328,7 +325,7 @@ class TarModuleCreator( object ):
           rstData.append( ":" * ( len( key ) + 5 ) )
           rstData.append( "" )
           for entry in featureData[ key ]:
-            rstData.append( entry )
+            rstData.append( " - %s" % entry )
           rstData.append( "" )
     #Write releasenotes.rst
     try:
