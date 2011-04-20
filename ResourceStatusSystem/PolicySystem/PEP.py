@@ -67,12 +67,12 @@ class PEP:
     except NameError:
       pass
 
-    self.__name = name
-    self.__status = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
+    self.__name         = name
+    self.__status       = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
     self.__formerStatus = assignOrRaise(formerStatus, ValidStatus, InvalidStatus, self, self.__init__)
-    self.__reason = reason
-    self.__siteType = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
-    self.__serviceType = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
+    self.__reason       = reason
+    self.__siteType     = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
+    self.__serviceType  = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
     self.__resourceType = assignOrRaise(resourceType, ValidResourceType, InvalidResourceType, self, self.__init__)
 
     self.__realBan = False
@@ -216,7 +216,7 @@ class PEP:
 
       if 'Resource_PolType' in self.__policyType:
         # If token != RS_SVC, we do not update the token, just the LastCheckedTime
-        
+
         if self.__realBan == False:
           rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
         else:
