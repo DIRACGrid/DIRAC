@@ -9,15 +9,14 @@ The PDP (Policy Decision Point) module is used to:
 
 #import time
 import datetime
-import copy
-import sys
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where, assignOrRaise
-from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+from DIRAC.ResourceStatusSystem.Utilities.Utils           import where, assignOrRaise
+from DIRAC.ResourceStatusSystem.Utilities.Combine         import valueOfStatus
+from DIRAC.ResourceStatusSystem.Utilities.Utils           import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions      import InvalidRes, InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
-from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
+from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
 
 #############################################################################
 
@@ -68,7 +67,7 @@ class PDP:
     self.__serviceType  = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
     self.__resourceType = assignOrRaise(resourceType, ValidResourceType, InvalidResourceType, self, self.__init__)
 
-    cc = CommandCaller()
+    cc      = CommandCaller()
     self.pc = PolicyCaller(cc)
 
     self.useNewRes = useNewRes
@@ -133,45 +132,52 @@ class PDP:
       policyType = policyGroup['PolicyType']
 
       if self.policy is not None:
-        #TO CHECK!
-        singlePolicyResults = self.policy.evaluate(self.policy)
+        # Only the policy provided will be evaluated
+        # FIXME: Check that the policies are valid.
+        singlePolicyResults = self.policy.evaluate()
       else:
         if policyGroup['Policies'] is None:
           return {'SinglePolicyResults' : [],
                   'PolicyCombinedResult' : [{'PolicyType': policyType,
                                              'Action': False,
                                              'Reason':'No policy results'}]}
+        else:
+          singlePolicyResults = self._invocation(self.VOExtension, self.__granularity,
+                                                 self.__name, self.__status, self.policy,
+                                                 self.args, policyGroup['Policies'])
 
-        singlePolicyResults = self._invocation(self.VOExtension, self.__granularity,
-                                               self.__name, self.__status, self.policy,
-                                               self.args, policyGroup['Policies'])
+      if not singlePolicyResults:
+        return { 'SinglePolicyResults': singlePolicyResults,
+                 'PolicyCombinedResult': [] }
 
       policyCombinedResults = self._policyCombination(singlePolicyResults)
 
+      #
       # policy results communication
+      #
 
-      if policyCombinedResults['SAT']:
-        newstatus = policyCombinedResults['Status']
+      newstatus = policyCombinedResults['Status']
+
+      if newstatus != self.__status: # Policies satisfy
         reason = policyCombinedResults['Reason']
         newPolicyType = self.ig.getNewPolicyType(self.__granularity, newstatus)
         for npt in newPolicyType:
           if npt not in policyType:
             policyType.append(npt)
-        decision = {'PolicyType': policyType, 'Action': True, 'Status':'%s'%newstatus,
-                    'Reason':'%s'%reason}
+        decision = { 'PolicyType': policyType, 'Action': True, 'Status': newstatus, 'Reason': reason }
         if policyCombinedResults.has_key('EndDate'):
           decision['EndDate'] = policyCombinedResults['EndDate']
         policyCombinedResultsList.append(decision)
 
-      elif not policyCombinedResults['SAT']:
+      else: # Policies does not satisfy
         reason = policyCombinedResults['Reason']
-        decision = {'PolicyType': policyType, 'Action': False, 'Reason':'%s'%reason}
+        decision = { 'PolicyType': policyType, 'Action': False, 'Reason': reason }
         if policyCombinedResults.has_key('EndDate'):
           decision['EndDate'] = policyCombinedResults['EndDate']
         policyCombinedResultsList.append(decision)
 
-    res = {'SinglePolicyResults': singlePolicyResults,
-           'PolicyCombinedResult' : policyCombinedResultsList}
+    res = { 'SinglePolicyResults' : singlePolicyResults,
+           'PolicyCombinedResult' : policyCombinedResultsList }
 
     return res
 
@@ -194,11 +200,18 @@ class PDP:
                                      status = status, policy = policy, args = args, pName = pName,
                                      pModule = pModule, extraArgs = extraArgs, commandIn = commandIn)
 
-      if res['SAT'] == 'Unknown':
-        res = self.__useOldPolicyRes(name = name, policyName = pName,
-                                     status = status)
+      # If res is empty, return immediately
+      if not res: return policyResults
 
-      if res['SAT'] == 'NeedConfirmation':
+      if not res.has_key('Status'):
+        print("\n\n Policy result " + str(res) + " does not return 'Status'\n\n")
+        raise TypeError
+
+      # Else
+      if res['Status'] == 'Unknown':
+        res = self.__useOldPolicyRes(name = name, policyName = pName)
+
+      if res['Status'] == 'NeedConfirmation':
         pName = p['ConfirmationPolicy']
         triggeredPolicy = self.ig.C_Policies[pName]
         pModule = triggeredPolicy['module']
@@ -208,7 +221,7 @@ class PDP:
                                        status = status, policy = policy, args = args, pName = pName,
                                        pModule = pModule, extraArgs = extraArgs, commandIn = commandIn)
 
-      if res['SAT'] != None:
+      if res['Status'] not in ('Error', 'Unknown', 'NeedConfirmation'):
         policyResults.append(res)
 
     return policyResults
@@ -216,66 +229,54 @@ class PDP:
 #############################################################################
 
   def _policyCombination(self, policies):
+    """
+    * Sort policies according to an order (specified by Utils.valueOfStatus)
+    * Make a list of policies that have the worse result.
+    * Concatenate the Reason fields
+    * Take the first EndDate field that exists (FIXME: Do something more clever)
+    * Finally, return the result
+    """
 
-    def combine(p1, p2):
-      # TODO: Implement proper combination function elsewhere
-      if ValidStatus.index(p1['Status']) > ValidStatus.index(p2['Status']):
-        return p1
-      elif ValidStatus.index(p1['Status']) < ValidStatus.index(p2['Status']):
-        return p2
-      else: return None
+    policies.sort(key=valueOfStatus)
+    worsePolicies = [p for p in policies if p['Status'] == policies[0]['Status']]
 
-    def composeReason(r1, r2):
-      if    r1 == '': return r2
-      elif  r2 == '': return r1
-      elif  r1 == r2: return r1
-      else:           return r1 + ' |###| ' + r2
-
-    def reducefun(p1, p2):
-
-      res = {}
-
-      # Endkey
-      if p1.has_key('EndDate'):
-        res['EndDate'] = p1['EndDate']
-      elif p2.has_key('EndDate'):
-        res['EndDate'] = p2['EndDate']
-
-      if p1['SAT'] and p2['SAT']:        # Both are SAT
-        comb = combine(p1, p2)
-        if comb == None:
-                        res           = copy.deepcopy(p1)
-                        res['Reason'] = composeReason(p1['Reason'], p2['Reason'])
-        else:           res           = comb
-      elif p1['SAT'] or p2['SAT']:       # Only one is SAT
-        comb = combine(p1, p2)
-        if comb == None:
-          if p1['SAT']: res = p1
-          else:         res = p2
-        else:           res = comb
-      else:                              # Both are not SAT
-        comb = combine(p1, p2)
-        if comb == None: res = p1
-        else:            res = comb
-        res['Reason'] = composeReason(p1['Reason'], p2['Reason'])
-
+    # Concatenate reasons
+    def getReason(p):
+      try:
+        res = p['Reason']
+      except KeyError:
+        res = ''
       return res
 
-    if sys.version_info[0] == 3:
-      import functools
-      res = functools.reduce(reducefun, policies, \
-            {'SAT': False, 'Status': 'Active', 'Reason': ''})
-    else:
-      res = reduce(reducefun, policies, \
-            {'SAT': False, 'Status': 'Active', 'Reason': ''})
+    worsePoliciesReasons = map(getReason, worsePolicies)
 
-    return copy.deepcopy(res)
+    def catRes(x, y):
+      if x and y : return x + ' |###| ' + y
+      elif x or y:
+        if x: return x
+        else: return y
+      else       : return ''
+
+    # FIXME: not Python 3.x compatible (use functools.reduce instead)
+    concatenatedRes = reduce(catRes, worsePoliciesReasons, '')
+
+    # Handle EndDate
+    endDatePolicies = [p for p in worsePolicies if p.has_key('EndDate')]
+
+    # Building and returning result
+    res = {}
+    if policies == []: return res
+    else:
+      res['Status'] = policies[0]['Status']
+      if concatenatedRes != '': res['Reason']  = concatenatedRes
+      if endDatePolicies != []: res['EndDate'] = endDatePolicies[0]['EndDate']
+      return res
 
 #############################################################################
 
-  def __useOldPolicyRes(self, name, policyName, status):
+  def __useOldPolicyRes(self, name, policyName):
     """ Use the RSS Service to get an old policy result.
-        If such result is older than 2 hours, it returns {'SAT':None}
+        If such result is older than 2 hours, it returns {'Status':'Unknown'}
     """
 
     from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -288,21 +289,16 @@ class PDP:
     res = res['Value']
 
     if res == []:
-      return {'SAT':None}
+      return {'Status':'Unknown'}
 
     oldStatus = res[0]
     oldReason = res[1]
     lastCheckTime = res[2]
 
     if ( lastCheckTime + datetime.timedelta(hours = 2) ) < datetime.datetime.utcnow():
-      return {'SAT':None}
+      return {'Status':'Unknown'}
 
     result = {}
-
-    if status == oldStatus:
-      result['SAT'] = False
-    else:
-      result['SAT'] = True
 
     result['Status'] = oldStatus
     result['Reason'] = oldReason

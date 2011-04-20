@@ -1,15 +1,17 @@
 import unittest
 import sys
-from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
+
+from DIRAC.ResourceStatusSystem.Utilities.mock       import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC import S_OK, S_ERROR
+from DIRAC.ResourceStatusSystem.Utilities.Utils      import *
+from DIRAC.ResourceStatusSystem.Utilities.Combine    import *
+from DIRAC                                           import S_OK, S_ERROR
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
 import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP          import PEP
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP          import PDP
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 
 
@@ -262,11 +264,9 @@ class PDPSuccess(PolicySystemTestCase):
     for granularity in ValidRes:
       for status in ValidStatus:
         for oldStatus in ValidStatus:
-          if status == oldStatus:
-            continue
-          self.mock_p.evaluate.return_value = [{'SAT':True, 'Status':status,
-                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
-          pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
+          if status == oldStatus: continue
+          self.mock_p.evaluate.return_value = [{'Status': status, 'Reason': 'testReason', 'PolicyName': 'test_P'}]
+          pdp = PDP(self.VO, granularity, 'XX', oldStatus, None, 'XX')
           res = pdp.takeDecision(policyIn = self.mock_p)
           res = res['PolicyCombinedResult']
           for r in res:
@@ -280,65 +280,11 @@ class PDPSuccess(PolicySystemTestCase):
           for r in res:
             self.assert_(r['Action'])
 
-          self.mock_p.evaluate.return_value = [{'SAT':False, 'Status':status,
-                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
-          res = pdp.takeDecision(policyIn = self.mock_p)
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assertFalse(r['Action'])
-          res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assertFalse(r['Action'])
-          res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assertFalse(r['Action'])
-
-          self.mock_p.evaluate.return_value = [{'SAT':None, 'Status':status,
-                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
-          res = pdp.takeDecision(policyIn = self.mock_p)
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assertFalse(r['Action'])
-          res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assertFalse(r['Action'])
-          res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assertFalse(r['Action'])
-
-          self.mock_p.evaluate.return_value = [{'SAT':'Unknown', 'Status':status,
-                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
-          res = pdp.takeDecision(policyIn = self.mock_p)
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
-          res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
-          res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
-
-          self.mock_p.evaluate.return_value = [{'SAT':'NeedConfirmation', 'Status':status,
-                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
-          res = pdp.takeDecision(policyIn = self.mock_p)
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
-          res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
-          res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
-          res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
+  def test_valueOfStatus(self):
+    self.assertEqual(valueOfStatus('Banned'), 0)
+    self.assertEqual(valueOfStatus('Bad'), 1)
+    self.assertEqual(valueOfStatus('Probing'), 2)
+    self.assertEqual(valueOfStatus('Active'), 3)
 
   def test__policyCombination(self):
 
@@ -348,135 +294,41 @@ class PDPSuccess(PolicySystemTestCase):
           if status == oldStatus:
             continue
           for newStatus1 in ValidStatus:
-            newStatusF1 = newStatus1
             for newStatus2 in ValidStatus:
-              newStatusF2 = newStatus2
-              if newStatus1 == newStatusF2 or newStatusF1 == newStatus2:
-                continue
               pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
-              polRes = {'SAT':True, 'Status':newStatus1, 'Reason':'-Reason1-'}
-              polResF = {'SAT':False, 'Status':newStatusF2, 'Reason':'-Reason2-'}
+              polRes  = {'Status':newStatus1, 'Reason':'-Reason1-'}
+              polRes2 = {'Status':newStatus2, 'Reason':'-Reason2-'}
+
+
+              # 0 policies
+              res = pdp._policyCombination([])
+              self.assertEqual(res, {})
 
               # 1 policy
               res = pdp._policyCombination([polRes])
-              self.assert_(res['SAT'])
               self.assertEqual(res['Status'], newStatus1)
               self.assertEqual(res['Reason'], '-Reason1-')
-              res = pdp._policyCombination([polResF])
-              self.assertFalse(res['SAT'])
-              self.assertEqual(res['Status'], newStatus2)
-              self.assertEqual(res['Reason'], '-Reason2-')
 
               # 2 policies
-              # FALSE, FALSE
-              res = pdp._policyCombination([polResF, polResF])
-              self.assertFalse(res['SAT'])
-              self.assertEqual(res['Status'], newStatus2)
-              # self.assertEqual(res['Reason'], '-Reason2- |###| -Reason2-')
-              # FALSE, TRUE
-#              polResF = {'SAT':False, 'Status':newStatus2, 'Reason':'-Reason2-'}
-              if newStatus1 == newStatusF2 or newStatusF1 == newStatus2:
-                continue
-              else:
-                res = pdp._policyCombination([polResF, polRes])
-                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
-                  self.assert_(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-Reason1-')
-                elif ValidStatus.index(newStatus1) < ValidStatus.index(newStatus2):
-                  self.assertFalse(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus2)
-                  self.assertEqual(res['Reason'], '-Reason2-')
-                # TRUE, FALSE
-   #             polResF = {'SAT':False, 'Status':newStatus2, 'Reason':'-Reason2-'}
-                res = pdp._policyCombination([polRes, polResF])
-                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
-                  self.assert_(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-Reason1-')
-                elif ValidStatus.index(newStatus1) < ValidStatus.index(newStatus2):
-                  self.assertFalse(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus2)
-                  self.assertEqual(res['Reason'], '-Reason2-')
-              # TRUE, TRUE
-              polRes2 = {'SAT':True, 'Status':newStatus2, 'Reason':'-Reason2-'}
               res = pdp._policyCombination([polRes, polRes2])
-              if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
-                self.assert_(res['SAT'])
-                self.assertEqual(res['Status'], newStatus1)
-                self.assertEqual(res['Reason'], '-Reason1-')
-              elif ValidStatus.index(newStatus1) < ValidStatus.index(newStatus2):
-                self.assert_(res['SAT'])
+
+              if valueOfStatus(polRes) > valueOfStatus(polRes2):
                 self.assertEqual(res['Status'], newStatus2)
                 self.assertEqual(res['Reason'], '-Reason2-')
-              elif ValidStatus.index(newStatus1) == ValidStatus.index(newStatus2):
-                self.assert_(res['SAT'])
+              elif valueOfStatus(polRes) < valueOfStatus(polRes2):
                 self.assertEqual(res['Status'], newStatus1)
-                self.assertEqual(res['Status'], newStatus2)
-                self.assertEqual(res['Reason'], '-Reason1-|-Reason2-')
-
-            for newStatus3 in ValidStatus:
-              newStatusF3 = newStatus3
-              if newStatus1 == status:
-                continue
-              if newStatus2 == status:
-                continue
-              if newStatus3 == status:
-                continue
-              polRes = {'SAT':True, 'Status':newStatus1, 'Reason':'-ReasonTrue-'}
-              polRes2 = {'SAT':True, 'Status':newStatus2, 'Reason':'-ReasonTrue2-'}
-              polRes3 = {'SAT':True, 'Status':newStatus3, 'Reason':'-ReasonTrue3-'}
-              polResF = {'SAT':False, 'Status':newStatusF1, 'Reason':'-ReasonFalse-'}
-              polResF2 = {'SAT':False, 'Status':newStatusF2, 'Reason':'-ReasonFalse2-'}
-              polResF3 = {'SAT':False, 'Status':newStatusF3, 'Reason':'-ReasonFalse3-'}
-              # TRUE, TRUE, TRUE
-
-#              print  "status", status, "newStatus1", newStatus1, "newStatus2", newStatus2,  "newStatus3", newStatus3
-
-              res = pdp._policyCombination([polRes, polRes2, polRes3])
-              if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
-                if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus3):
-                  self.assert_(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-ReasonTrue-')
-              if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus3):
-                if ValidStatus.index(newStatus3) > ValidStatus.index(newStatus2):
-                  self.assert_(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-ReasonTrue-')
-              if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus1):
-                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus3):
-                  self.assert_(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus2)
-                  self.assertEqual(res['Reason'], '-ReasonTrue2-')
-              elif ValidStatus.index(newStatus1) == ValidStatus.index(newStatus2) == ValidStatus.index(newStatus3):
-                self.assert_(res['SAT'])
-                self.assertEqual(res['Status'], newStatus1)
-                self.assertEqual(res['Status'], newStatus2)
-                self.assertEqual(res['Status'], newStatus3)
-                self.assertEqual(res['Reason'], '-ReasonTrue- |###| -ReasonTrue2- |###| -ReasonTrue3-')
-              # etc...
-              # TRUE, TRUE, FALSE
-              if newStatusF3 == newStatus1 or newStatusF3 == newStatus2:
-                continue
+                self.assertEqual(res['Reason'], '-Reason1-')
               else:
-                res = pdp._policyCombination([polRes, polRes2, polResF3])
-                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
-                  if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus3):
-                    self.assert_(res['SAT'])
-                    self.assertEqual(res['Status'], newStatus1)
-                    self.assertEqual(res['Reason'], '-ReasonTrue-')
-                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus3):
-                  if ValidStatus.index(newStatus3) > ValidStatus.index(newStatus2):
-                    self.assert_(res['SAT'])
-                    self.assertEqual(res['Status'], newStatus1)
-                    self.assertEqual(res['Reason'], '-ReasonTrue-')
-                if ValidStatus.index(newStatus3) > ValidStatus.index(newStatus2):
-                  if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus1):
-                    self.assert_(res['SAT'])
-                    self.assertEqual(res['Status'], newStatus3)
-                    self.assertEqual(res['Reason'], '-ReasonTrue3-')
+                self.assertEqual(res['Status'], newStatus1)
+                self.assertEqual(res['Reason'], '-Reason1- |###| -Reason2-')
 
+              # all different policies
+              def make_polres(status):
+                return { 'Status': status, 'Reason': 'Because of ' + status }
+              all_polres = map(make_polres, ValidStatus)
+
+              res = pdp._policyCombination(all_polres)
+              self.assertEqual(res['Status'], 'Banned')
 
 #############################################################################
 
@@ -526,24 +378,24 @@ class PolicyCallerSuccess(PolicySystemTestCase):
 
     for g in ValidRes:
       for status in ValidStatus:
-        self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status,
+        self.mock_p.evaluate.return_value = {'Status':status,
                                              'Reason':'testReason',
                                              'PolicyName': 'test_P'}
         pc = PolicyCaller(commandCallerIn = cc)
 
         for pol_mod in policies_modules[g]:
           res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p,
-                                    (g, 'XX', status), None, pol_mod)
-          self.assert_(res['SAT'])
+                                    (g, 'XX'), None, pol_mod)
+          self.assertEqual(res['Status'], status)
 
           res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p,
                                     None, None, pol_mod)
-          self.assert_(res['SAT'])
+          self.assertEqual(res['Status'], status)
 
-          for extraArgs in ((g, 'XX', status), [(g, 'XX', status), (g, 'XX', status)]):
+          for extraArgs in ((g, 'XX'), [(g, 'XX'), (g, 'XX')]):
             res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p,
                                       None, None, pol_mod, extraArgs)
-            self.assert_(res['SAT'])
+            self.assertEqual(res['Status'], status)
 
 #############################################################################
 
@@ -551,29 +403,25 @@ class PolicyBaseSuccess(PolicySystemTestCase):
 
   def test_setArgs(self):
     for g in ValidRes:
-      for s in ValidStatus:
-        for a in [(g, 'XX', s)]:
-          self.pb.setArgs(a)
-          self.assertEqual(self.pb.args, a)
-          self.assertEqual(self.pb.oldStatus, s)
+      for a in [(g, 'XX')]:
+        self.pb.setArgs(a)
+        self.assertEqual(self.pb.args, a)
 
   def test_evaluate(self):
     for g in ValidRes:
-      for s in ValidStatus:
-        for a in [(g, 'XX', s)]:
-          self.pb.setArgs(a)
-          self.mock_command.doCommand.return_value = {'Result':'aRes'}
-          self.pb.setCommand(self.mock_command)
-          res = self.pb.evaluate()
-          self.assertEqual(res, 'aRes')
+      for a in [(g, 'XX')]:
+        self.pb.setArgs(a)
+        self.mock_command.doCommand.return_value = {'Result':'aRes'}
+        self.pb.setCommand(self.mock_command)
+        res = self.pb.evaluate()
+        self.assertEqual(res, 'aRes')
 
 #############################################################################
 
 class PolicyBaseFailure(PolicySystemTestCase):
 
   def test_setBadArgs(self):
-    self.failUnlessRaises(InvalidRes, self.pb.setArgs, ('Sites', 'XX', 'Active'))
-    self.failUnlessRaises(InvalidStatus, self.pb.setArgs, ('Site', 'XX', 'Actives'))
+    self.failUnlessRaises(InvalidRes, self.pb.setArgs, ('Sites', 'XX'))
 
 
     # 6 arguments should be handled with no problem: why the limitation to 5 ?! (removing this test)

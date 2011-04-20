@@ -1,8 +1,8 @@
 """ The Policy class is a simple base class for all the policies
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, InvalidStatus, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where, ValidRes, ValidStatus
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions   import InvalidRes, InvalidStatus, RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Utils        import where, ValidRes, ValidStatus
 
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
 
@@ -13,8 +13,6 @@ class PolicyBase(object):
   Base class for all the policies. Do not instantiate directly.
   To use, you should call at least `setArgs` and, alternatively,
   `setCommand` or `setCommandName` on the real policy instance.
-
-  It will set `self.oldStatus` as the status of the ValidRes.
   """
 
   def __init__(self):
@@ -35,18 +33,11 @@ class PolicyBase(object):
         - `args[0]` should be a ValidRes
 
         - `args[1]` should be the name of the ValidRes
-
-        - `args[2]` should be the present status
     """
     self.args = argsIn
 
     if self.args[0] not in ValidRes:
       raise InvalidRes, where(self, self.setArgs)
-    if self.args[2] not in ValidStatus:
-      raise InvalidStatus, where(self, self.setArgs)
-
-    self.oldStatus = self.args[2]
-
 
   def setCommand(self, commandIn = None):
     """
@@ -91,7 +82,6 @@ class PolicyBase(object):
     """
     Before use, call at least `setArgs` and, alternatively,
     `setCommand` or `setCommandName`.
-    Then, use `self.oldStatus` as the status of the ValidRes.
 
     Invoking `super(PolicyCLASS, self).evaluate` will invoke
     the command (if necessary) as it is provided and returns the results.
