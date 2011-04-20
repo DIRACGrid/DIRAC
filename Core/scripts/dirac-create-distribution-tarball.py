@@ -78,59 +78,62 @@ class TarModuleCreator( object ):
       self.relNotes = opVal
       return S_OK()
 
-  def __checkDestination( self, params ):
-    if not params.destination:
-      params.destination = tempfile.mkdtemp( 'DIRACTarball' )
+  def __init__( self, params ):
+    self.params = params
 
-    gLogger.notice( "Will generate tarball in %s" % params.destination )
+  def __checkDestination( self ):
+    if not self.params.destination:
+      self.params.destination = tempfile.mkdtemp( 'DIRACTarball' )
 
-    if not os.path.isdir( params.destination ):
+    gLogger.notice( "Will generate tarball in %s" % self.params.destination )
+
+    if not os.path.isdir( self.params.destination ):
       try:
-        os.makedirs( params.destination )
+        os.makedirs( self.params.destination )
       except Exception, e:
         return S_ERROR( "Cannot write to destination: %s" % str( e ) )
 
     return S_OK()
 
-  def __discoverVCS( self, params ):
-    sourceURL = params.sourceURL
+  def __discoverVCS( self ):
+    sourceURL = self.params.sourceURL
     if os.path.expanduser( sourceURL ).find( "/" ) == 0:
       sourceURL = os.path.expanduser( sourceURL )
-      params.vcs = "file"
+      self.params.vcs = "file"
       return True
     if sourceURL.find( ":" ) == 0:
-      params.vcs = "cvs"
+      self.params.vcs = "cvs"
       return True
     if sourceURL.find( ".git" ) == len( sourceURL ) - 4:
-      params.vcs = "git"
+      self.params.vcs = "git"
       return True
     for vcs in TarModuleCreator.VALID_VCS:
       if sourceURL.find( vcs ) == 0:
-        params.vcs = vcs
+        self.params.vcs = vcs
         return True
     return False
 
-  def __checkoutSource( self, params ):
-    if not params.vcs:
-      if not self.__discoverVCS( params ):
+  def __checkoutSource( self ):
+    if not self.params.vcs:
+      if not self.__discoverVCS():
         return S_ERROR( "Could not autodiscover VCS" )
-    gLogger.info( "Checking out using %s method" % params.vcs )
+    gLogger.info( "Checking out using %s method" % self.params.vcs )
 
-    if params.vcs == "file":
-      return self.__checkoutFromFile( params )
-    elif params.vcs == "cvs":
-      return self.__checkoutFromCVS( params )
-    elif params.vcs == "svn":
-      return self.__checkoutFromSVN( params )
-    elif params.vcs == "hg":
-      return self.__checkoutFromHg( params )
-    elif params.vcs == "git":
-      return self.__checkoutFromGit( params )
+    if self.params.vcs == "file":
+      return self.__checkoutFromFile()
+    elif self.params.vcs == "cvs":
+      return self.__checkoutFromCVS()
+    elif self.params.vcs == "svn":
+      return self.__checkoutFromSVN()
+    elif self.params.vcs == "hg":
+      return self.__checkoutFromHg()
+    elif self.params.vcs == "git":
+      return self.__checkoutFromGit()
 
-    return S_ERROR( "OOPS. Unknown VCS %s!" % params.vcs )
+    return S_ERROR( "OOPS. Unknown VCS %s!" % self.params.vcs )
 
-  def __checkoutFromFile( self, params ):
-    sourceURL = params.sourceURL
+  def __checkoutFromFile( self ):
+    sourceURL = self.params.sourceURL
     if sourceURL.find( "file://" ) == 0:
       sourceURL = sourceURL[ 7: ]
     sourceURL = os.path.realpath( sourceURL )
@@ -138,19 +141,19 @@ class TarModuleCreator( object ):
       pyVer = sys.version_info
       if pyVer[0] == 2 and pyVer[1] < 6:
         shutil.copytree( sourceURL,
-                         os.path.join( params.destination, params.name ),
+                         os.path.join( self.params.destination, self.params.name ),
                          symlinks = True )
       else:
         shutil.copytree( sourceURL,
-                         os.path.join( params.destination, params.name ),
+                         os.path.join( self.params.destination, self.params.name ),
                          symlinks = True,
                          ignore = shutil.ignore_patterns( '.svn', '.git', '.hg', '*.pyc', '*.pyo', 'CVS' ) )
     except Exception, e:
       return S_ERROR( "Could not copy data from source URL: %s" % str( e ) )
     return S_OK()
 
-  def __checkoutFromCVS( self, params ):
-    cmd = "cvs export -d '%s' '%s'" % ( params.sourceURL, os.path.join( params.destination, params.name ) )
+  def __checkoutFromCVS( self ):
+    cmd = "cvs export -d '%s' '%s'" % ( self.params.sourceURL, os.path.join( self.params.destination, self.params.name ) )
     gLogger.verbose( "Executing: %s" % cmd )
     result = Subprocess.shellCall( 900, cmd )
     if not result[ 'OK' ]:
@@ -160,9 +163,9 @@ class TarModuleCreator( object ):
       return S_ERROR( "Error while retrieving sources from CVS: %s" % "\n".join( [ stdData, errData ] ) )
     return S_OK()
 
-  def __checkoutFromSVN( self, params ):
-    cmd = "svn export --trust-server-cert --non-interactive '%s/%s' '%s'" % ( params.sourceURL, params.version,
-                                                                              os.path.join( params.destination, params.name ) )
+  def __checkoutFromSVN( self ):
+    cmd = "svn export --trust-server-cert --non-interactive '%s/%s' '%s'" % ( self.params.sourceURL, self.params.version,
+                                                                              os.path.join( self.params.destination, self.params.name ) )
     gLogger.verbose( "Executing: %s" % cmd )
     result = Subprocess.shellCall( 900, cmd )
     if not result[ 'OK' ]:
@@ -172,22 +175,22 @@ class TarModuleCreator( object ):
       return S_ERROR( "Error while retrieving sources from SVN: %s" % "\n".join( [ stdData, errData ] ) )
     return S_OK()
 
-  def __checkoutFromHg( self, params ):
-    if params.vcsBranch:
-      brCmr = "-b %s" % params.vcsBranch
+  def __checkoutFromHg( self ):
+    if self.params.vcsBranch:
+      brCmr = "-b %s" % self.params.vcsBranch
     else:
       brCmr = ""
-    fDirName = os.path.join( params.destination, params.name )
+    fDirName = os.path.join( self.params.destination, self.params.name )
     cmd = "hg clone %s '%s' '%s.tmp1'" % ( brCmr,
-                                      params.sourceURL,
+                                      self.params.sourceURL,
                                       fDirName )
     gLogger.verbose( "Executing: %s" % cmd )
     if os.system( cmd ):
       return S_ERROR( "Error while retrieving sources from hg" )
 
     hgArgs = [ "--cwd '%s.tmp1'" % fDirName ]
-    if params.vcsPath:
-      hgArgs.append( "--include '%s/*'" % params.vcsPath )
+    if self.params.vcsPath:
+      hgArgs.append( "--include '%s/*'" % self.params.vcsPath )
     hgArgs.append( "'%s.tmp2'" % fDirName )
 
     cmd = "hg archive %s" % " ".join( hgArgs )
@@ -200,8 +203,8 @@ class TarModuleCreator( object ):
 
     #TODO: tmp2/path to dest
     source = "%s.tmp2" % fDirName
-    if params.vcsPath:
-      source = os.path.join( source, params.vcsPath )
+    if self.params.vcsPath:
+      source = os.path.join( source, self.params.vcsPath )
 
     if not os.path.isdir( source ):
       shutil.rmtree( "%s.tmp2" % fDirName )
@@ -212,14 +215,14 @@ class TarModuleCreator( object ):
 
     return S_OK()
 
-  def __checkoutFromGit( self, params ):
-    if params.vcsBranch:
-      brCmr = "-b %s" % params.vcsBranch
+  def __checkoutFromGit( self ):
+    if self.params.vcsBranch:
+      brCmr = "-b %s" % self.params.vcsBranch
     else:
       brCmr = ""
-    fDirName = os.path.join( params.destination, params.name )
+    fDirName = os.path.join( self.params.destination, self.params.name )
     cmd = "git clone %s '%s' '%s'" % ( brCmr,
-                                           params.sourceURL,
+                                           self.params.sourceURL,
                                            fDirName )
     gLogger.verbose( "Executing: %s" % cmd )
     if os.system( cmd ):
@@ -227,7 +230,7 @@ class TarModuleCreator( object ):
 
     branchName = "DIRACDistribution-%s" % os.getpid()
 
-    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % ( fDirName, branchName, params.version )
+    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % ( fDirName, branchName, self.params.version )
 
     gLogger.verbose( "Executing: %s" % cmd )
     exportRes = os.system( cmd )
@@ -238,37 +241,161 @@ class TarModuleCreator( object ):
 
     return S_OK()
 
-  def __generateReleaseNotes( self, params ):
-    if not params.relNotes:
-      relNotesPath = os.path.join( params.destination, params.name, "releasenotes.rst" )
+
+  def __loadReleaseNotesFile( self ):
+    if not self.params.relNotes:
+      relNotes = os.path.join( self.params.destination, self.params.name, "release.notes" )
     else:
-      relNotesPath = params.relNotes
-    if not os.path.isfile( relNotesPath ):
-      if params.relNotes:
-        return S_ERROR( "Defined release notes %s do not exist!" % params.relNotes )
-      gLogger.notice( "No release notes found in %s. Skipping" % relNotesPath )
+      relNotes = self.params.relNotes
+    if not os.path.isfile( relNotes ):
+      return S_OK( "" )
+    try:
+      fd = open( relNotes, "r" )
+      relaseContents = fd.readlines()
+      fd.close()
+    except Exception, excp:
+      return S_ERROR( "Could not open %s: %s" % ( relNotes, excp ) )
+    gLogger.info( "Loaded %s" % relNotes )
+    relData = []
+    version = False
+    feature = False
+    for rawLine in relaseContents:
+      line = rawLine.strip()
+      if not line:
+        continue
+      if version == False:
+        if line[0] == "[" and line[-1] == "]":
+          version = line[1:-1].strip()
+          relData.append( ( version, { 'comment' : [], 'features' : [] } ) )
+          feature = False
+        continue
+      if line[0] == "*":
+        feature = line[1:].strip()
+        relData[-1][1][ 'features' ].append( [ feature, {} ] )
+        continue
+      if not feature:
+        relData[ -1 ][1][ 'comment' ].append( rawLine )
+        continue
+      keyDict = relData[-1][1][ 'features' ][-1][1]
+      for key in ( 'BUGFIX', 'BUG', 'FIX', "CHANGE", "NEW", "FEATURE" ):
+        if line.find( "%s:" % key ) == 0:
+          line = line[ len( key ) + 2: ].strip()
+        elif line.find( "%s " % key ) == 0:
+           line = line[ len( key ) + 1: ].strip()
+        else:
+          continue
+
+        if key in ( 'BUGFIX', 'BUG', 'FIX' ):
+          if 'BUGFIX' not in keyDict:
+            keyDict[ 'BUGFIX' ] = []
+          keyDict[ 'BUGFIX' ].append( line )
+        elif key == 'CHANGE':
+          if 'CHANGE' not in keyDict:
+            keyDict[ 'CHANGE' ] = []
+          keyDict[ 'CHANGE' ].append( line )
+        elif key in ( 'NEW', 'FEATURE' ):
+          if 'FEATURE' not in keyDict:
+            keyDict[ 'FEATURE' ] = []
+          keyDict[ 'FEATURE' ].append( line )
+
+    import pprint
+    print pprint.pprint( relData )
+
+    return S_OK( relData )
+
+  def __generateRSTFile( self, releaseData, rstFileName, versionFilter = False ):
+    rstData = []
+    for version, verData in releaseData:
+      if versionFilter and version != versionFilter:
+        continue
+      versionLine = "Version %s" % version
+      rstData.append( "" )
+      rstData.append( "=" * len( versionLine ) )
+      rstData.append( versionLine )
+      rstData.append( "=" * len( versionLine ) )
+      rstData.append( "" )
+      if verData[ 'comment' ]:
+        rstData.append( "\n".join( verData[ 'comment' ] ) )
+        rstData.append( "" )
+      for feature, featureData in verData[ 'features' ]:
+        if not featureData:
+          continue
+        rstData.append( feature )
+        rstData.append( "=" * len( feature ) )
+        rstData.append( "" )
+        for key in sorted( featureData ):
+          rstData.append( key.capitalize() )
+          rstData.append( ":" * ( len( key ) + 5 ) )
+          rstData.append( "" )
+          for entry in featureData[ key ]:
+            rstData.append( entry )
+          rstData.append( "" )
+    #Write releasenotes.rst
+    try:
+      rstFilePath = os.path.join( self.params.destination, self.params.name, rstFileName )
+      fd = open( rstFilePath, "w" )
+      fd.write( "\n".join( rstData ) )
+      fd.close()
+    except Exception, excp:
+      return S_ERROR( "Could not write %s: %s" % ( rstFileName, excp ) )
+    return S_OK()
+
+  def __generateReleaseNotes( self ):
+    result = self.__loadReleaseNotesFile()
+    if not result[ 'OK' ]:
+      return result
+    releaseData = result[ 'Value' ]
+    if not releaseData:
+      gLogger.info( "release.notes not found. Trying to find releasenotes.rst" )
+      for rstFileName in ( "releasenotes.rst", "releasehistory.rst" ):
+        result = self.__compileReleaseNotes()
+        if result[ 'OK' ]:
+          gLogger.notice( "Compiled %s file!" % rstFileName )
+      return S_OK()
+    gLogger.info( "Loaded release.notes" )
+    for rstFileName, versionFilter in ( ( "releasenotes.rst", self.params.version ),
+                                        ( "releasehistory.rst", False ) ):
+      result = self.__generateRSTFile( releaseData, rstFileName,
+                                       versionFilter )
+      if not result[ 'OK' ]:
+        gLogger.error( "Could not generate releasenotes.rst: %s" % result[ 'Message' ] )
+        continue
+      result = self.__compileReleaseNotes( rstFileName )
+      if not result[ 'OK' ]:
+        gLogger.error( "Could not compile releasenotes.rst: %s" % result[ 'Message' ] )
+        continue
+      gLogger.notice( "Compiled %s file!" % rstFileName )
+    return S_OK()
+
+
+  def __compileReleaseNotes( self, rstFile ):
+    relNotesRST = os.path.join( self.params.destination, self.params.name, rstFile )
+    if not os.path.isfile( relNotesRST ):
+      if self.params.relNotes:
+        return S_ERROR( "Defined release notes %s do not exist!" % self.params.relNotes )
+      gLogger.notice( "No release notes found in %s. Skipping" % relNotesRST )
       return S_OK()
     try:
       import docutils.core
     except ImportError:
       return S_ERROR( "Docutils is not installed. Please install and rerun" )
     #Find basename
-    baseNotesPath = relNotesPath
+    baseNotesPath = relNotesRST
     for ext in ( '.rst', '.txt' ):
-      if relNotesPath[ -len( ext ): ] == ext:
-        baseNotesPath = relNotesPath[ :-len( ext ) ]
+      if relNotesRST[ -len( ext ): ] == ext:
+        baseNotesPath = relNotesRST[ :-len( ext ) ]
         break
     #To HTML
     try:
-      fd = open( relNotesPath )
+      fd = open( relNotesRST )
       rstData = fd.read()
       fd.close()
     except Exception, excp:
-      return S_ERROR( "Could not read %s: %s" % ( relNotesPath, excp ) )
+      return S_ERROR( "Could not read %s: %s" % ( relNotesRST, excp ) )
     try:
       parts = docutils.core.publish_parts( rstData, writer_name = 'html' )
     except Exception, excp:
-      return S_ERROR( "Cannot generate the html release notes: %s" % str( excp ) )
+      return S_ERROR( "Cannot generate the html %s: %s" % ( baseNotesPath, str( excp ) ) )
     htmlFileName = baseNotesPath + ".html"
     try:
       fd = open( htmlFileName, "w" )
@@ -277,21 +404,21 @@ class TarModuleCreator( object ):
     except Exception, excp:
       return S_ERROR( "Could not write %s: %s" % ( htmlFileName, excp ) )
     #To pdf
-    if os.system( "rst2pdf '%s' -o '%s.pdf'" % ( relNotesPath, baseNotesPath ) ):
-      gLogger.warn( "Could not generate PDF version of release notes" )
+    if os.system( "rst2pdf '%s' -o '%s.pdf'" % ( relNotesRST, baseNotesPath ) ):
+      gLogger.warn( "Could not generate PDF version of %s" % baseNotesPath )
     if not cliParams.relNotes:
       try:
-        os.unlink( relNotesPath )
+        os.unlink( relNotesRST )
       except:
         pass
     return S_OK()
 
-  def __generateTarball( self, params ):
-    destDir = params.destination
-    tarName = "%s-%s.tar.gz" % ( params.name, params.version )
+  def __generateTarball( self ):
+    destDir = self.params.destination
+    tarName = "%s-%s.tar.gz" % ( self.params.name, self.params.version )
     tarfilePath = os.path.join( destDir, tarName )
-    dirToTar = os.path.join( params.destination, params.name )
-    result = Distribution.writeVersionToInit( dirToTar, params.version )
+    dirToTar = os.path.join( self.params.destination, self.params.name )
+    result = Distribution.writeVersionToInit( dirToTar, self.params.version )
     if not result[ 'OK' ]:
       return result
     result = Distribution.createTarball( tarfilePath, dirToTar )
@@ -302,22 +429,22 @@ class TarModuleCreator( object ):
     gLogger.info( "Tar file %s created" % tarName )
     return S_OK( tarfilePath )
 
-  def create( self, params ):
-    if not isinstance( params, TarModuleCreator.Params ):
+  def create( self ):
+    if not isinstance( self.params, TarModuleCreator.Params ):
       return S_ERROR( "Argument is not a TarModuleCreator.Params object " )
-    result = params.isOK()
+    result = self.params.isOK()
     if not result[ 'OK' ]:
       return result
-    result = self.__checkDestination( params )
+    result = self.__checkDestination()
     if not result[ 'OK' ]:
       return result
-    result = self.__checkoutSource( params )
+    result = self.__checkoutSource()
     if not result[ 'OK' ]:
       return result
-    result = self.__generateReleaseNotes( params )
+    result = self.__generateReleaseNotes()
     if not result[ 'OK' ]:
       gLogger.error( "Won't generate release notes: %s" % result[ 'Message' ] )
-    return self.__generateTarball( params )
+    return self.__generateTarball()
 
 if __name__ == "__main__":
   cliParams = TarModuleCreator.Params()
@@ -349,8 +476,8 @@ if __name__ == "__main__":
     Script.showHelp()
     sys.exit( 1 )
 
-  tmc = TarModuleCreator()
-  result = tmc.create( cliParams )
+  tmc = TarModuleCreator( cliParams )
+  result = tmc.create()
   if not result[ 'OK' ]:
     gLogger.error( "Could not create the tarball: %s" % result[ 'Message' ] )
     sys.exit( 1 )
