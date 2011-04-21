@@ -175,7 +175,7 @@ class TransformationDB( DB ):
     self.__updateTransformationLogging( transID, message, authorDN, connection = connection )
     return S_OK( transID )
 
-  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'CreationDate', orderAttribute = None, limit = None, extraParams = False, connection = False ):
+  def getTransformations( self, condDict = {}, older = None, newer = None, timeStamp = 'LastUpdate', orderAttribute = None, limit = None, extraParams = False, connection = False ):
     """ Get parameters of all the Transformations with support for the web standard structure """
     connection = self.__getConnection( connection )
     req = "SELECT %s FROM Transformations %s" % ( intListToString( self.TRANSPARAMS ), self.buildCondition( condDict, older, newer, timeStamp, orderAttribute, limit ) )
@@ -378,7 +378,6 @@ class TransformationDB( DB ):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    message = ''
     if paramName in self.TRANSPARAMS:
       return S_ERROR( "Can not delete core transformation parameter" )
     res = self.__deleteTransformationParameters( transID, parameters = [paramName], connection = connection )
@@ -1334,7 +1333,7 @@ class TransformationDB( DB ):
       return res
     transType = res['Value']['Type']
     transID = res['Value']['TransformationID']
-    extendableProds = gConfig.getValue('/Operations/Production/%s/ExtendableTransfTypes'%self.__class__.__name__,['simulation', 'mcsimulation'])
+    extendableProds = gConfig.getValue( '/Operations/Production/%s/ExtendableTransfTypes' % self.__class__.__name__, ['simulation', 'mcsimulation'] )
     if transType.lower() not in extendableProds:
       return S_ERROR( 'Can not extend non-SIMULATION type production' )
     taskIDs = []
