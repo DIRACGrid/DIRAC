@@ -788,8 +788,8 @@ def loadConfiguration():
 
   for opName in ( 'modulesToInstall', 'release', 'externalsType', 'pythonVersion',
                   'buildExternals', 'buildIfNotAvailable', 'debug' ,
-                  'lcgVer', 'useVersionsDir',
-                  'project', 'release' ):
+                  'lcgVer', 'useVersionsDir', 'targetPath',
+                  'project', 'release', 'extraPackages' ):
     opVal = releaseConfig.getDefaultValue( "Defaults/%s" % ( opName[0].upper() + opName[1:] ) )
     if opVal == None:
       continue
@@ -797,7 +797,7 @@ def loadConfiguration():
       setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
       setattr( cliParams, opName, opVal.lower() in ( "y", "yes", "true", "1" ) )
-    elif type( getattr( cliParams, opName ) ) == types.LisType:
+    elif type( getattr( cliParams, opName ) ) == types.ListType:
       setattr( cliParams, opName, [ opV.strip() for opV in opVal.split( "," ) if opV ] )
 
   #Now parse the ops
