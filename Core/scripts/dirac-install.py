@@ -806,8 +806,8 @@ def loadConfiguration():
       cliParams.release = v
     elif o in ( '-e', '--extraPackages' ):
       for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-        if pkg not in cliParams.modulesToInstall:
-          cliParams.modulesToInstall.append( pkg )
+        if pkg not in cliParams.extraPackages:
+          cliParams.extraPackages.append( pkg )
     elif o in ( '-t', '--installType' ):
       cliParams.externalsType = v
     elif o in ( '-y', '--pythonVersion' ):
@@ -975,7 +975,7 @@ if __name__ == "__main__":
     sys.exit( 1 )
   releaseConfig = result[ 'Value' ]
   logNOTICE( "Discovering modules to install" )
-  result = releaseConfig.getModulesToInstall( cliParams.modulesToInstall )
+  result = releaseConfig.getModulesToInstall( cliParams.cliParams.extraPackages )
   if not result[ 'OK' ]:
     logERROR( result[ 'Message' ] )
     sys.exit( 1 )
