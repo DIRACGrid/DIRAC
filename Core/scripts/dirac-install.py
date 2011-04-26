@@ -779,7 +779,7 @@ def loadConfiguration():
       if not result[ 'OK' ]:
         logERROR( result[ 'Message' ] )
       else:
-        logINFO( "Loaded %s" % arg )
+        logNOTICE( "Loaded %s" % arg )
 
   result = releaseConfig.loadDefaults()
   if not result[ 'OK' ]:
