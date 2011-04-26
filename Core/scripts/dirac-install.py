@@ -36,7 +36,7 @@ g_GlobalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/gl
 class Params:
 
   def __init__( self ):
-    self.modulesToInstall = []
+    self.extraPackages = []
     self.project = 'DIRAC'
     self.release = ""
     self.externalsType = 'client'
@@ -786,7 +786,7 @@ def loadConfiguration():
     logERROR( "Could not load defaults" )
 
 
-  for opName in ( 'modulesToInstall', 'release', 'externalsType', 'pythonVersion',
+  for opName in ( 'release', 'externalsType', 'pythonVersion',
                   'buildExternals', 'buildIfNotAvailable', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
                   'project', 'release', 'extraPackages' ):
