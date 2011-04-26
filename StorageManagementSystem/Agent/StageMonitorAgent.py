@@ -72,7 +72,8 @@ class StageMonitorAgent( AgentModule ):
         gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: PFN did not exist in the StorageElement", pfn )
         terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN did not exist in the StorageElement'
     for pfn, staged in prestageStatus['Successful'].items():
-      if staged: stagedReplicas.append( pfnRepIDs[pfn] )
+      if staged and 'Cached' in staged and staged['Cached']:
+        stagedReplicas.append( pfnRepIDs[pfn] )
 
     # Update the states of the replicas in the database
     if terminalReplicaIDs:
@@ -115,7 +116,7 @@ class StageMonitorAgent( AgentModule ):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR( 'Could not obtain request IDs for replicas %s from StageRequests table' %(replicaIDs.keys()))
+      return S_ERROR( 'Could not obtain request IDs for replicas %s from StageRequests table' % ( replicaIDs.keys() ) )
 
     for replicaID, info in res['Value'].items():
       reqID = info['RequestID']
