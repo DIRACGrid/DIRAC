@@ -975,7 +975,7 @@ if __name__ == "__main__":
     sys.exit( 1 )
   releaseConfig = result[ 'Value' ]
   logNOTICE( "Discovering modules to install" )
-  result = releaseConfig.getModulesToInstall( cliParams.cliParams.extraPackages )
+  result = releaseConfig.getModulesToInstall( cliParams.extraPackages )
   if not result[ 'OK' ]:
     logERROR( result[ 'Message' ] )
     sys.exit( 1 )
