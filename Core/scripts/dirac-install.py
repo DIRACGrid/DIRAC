@@ -76,9 +76,9 @@ class ReleaseConfig:
       return self
 
     def getChild( self, path ):
-      child = self.__children
-      for childName in [ sec.strip() for sec in path.split( "/" ) if not sec.strip() ]:
-        if childName not in child:
+      child = self
+      for childName in [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]:
+        if childName not in child.__children:
           return False
         child = child.__children[ childName ]
       return child
@@ -260,7 +260,7 @@ class ReleaseConfig:
       fd.close()
       localDefs = self.__localDefaults.getChild( "LocalInstallation" )
       if localDefs:
-        self.__localDefaults = localDefs
+        self.__localDefaults = ReleaseConfig.CFG( "Defaults\n{\n%s\n}" % localDefs.toString() )
     except Exception, excp :
       return S_ERROR( "Could not load %s: %s" % ( fileName, excp ) )
     return S_OK()
@@ -774,7 +774,7 @@ def loadConfiguration():
     releaseConfig.setDebugCB( logDEBUG )
 
   for arg in args:
-    if arg.find( ".cfg" ) == len( arg ) - 4:
+    if len( arg ) > 4 and arg.find( ".cfg" ) == len( arg ) - 4:
       result = releaseConfig.loadLocalDefaults( arg )
       if not result[ 'OK' ]:
         logERROR( result[ 'Message' ] )
