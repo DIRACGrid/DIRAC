@@ -75,6 +75,14 @@ class ReleaseConfig:
         raise
       return self
 
+    def getChild( self, path ):
+      child = self.__children
+      for childName in [ sec.strip() for sec in path.split( "/" ) if not sec.strip() ]:
+        if childName not in child:
+          return False
+        child = child.__children[ childName ]
+      return child
+
     def __parse( self, cfgData, cIndex = 0 ):
       childName = ""
       numLine = 0
@@ -168,6 +176,7 @@ class ReleaseConfig:
   def __init__( self, projectName ):
     self.__configs = {}
     self.__globalDefaults = ReleaseConfig.CFG()
+    self.__localDefaults = ReleaseConfig.CFG()
     self.__defaults = {}
     self.__depsLoaded = {}
     self.__projectsLoaded = []
@@ -244,7 +253,23 @@ class ReleaseConfig:
 
     return S_OK()
 
+  def loadLocalDefaults( self, fileName ):
+    try:
+      fd = open( fileName, "r" )
+      self.__localDefaults.parse( fd.read() )
+      fd.close()
+      localDefs = self.__localDefaults.getChild( "LocalInstallation" )
+      if localDefs:
+        self.__localDefaults = localDefs
+    except Exception, excp :
+      return S_ERROR( "Could not load %s: %s" % ( fileName, excp ) )
+    return S_OK()
+
   def getDefaultValue( self, opName, projectName = False ):
+    try:
+      return self.__localDefaults.get( opName )
+    except:
+      pass
     if not projectName:
       projectName = self.__projectName
     try:
@@ -747,6 +772,15 @@ def loadConfiguration():
   releaseConfig = ReleaseConfig( cliParams.project )
   if cliParams.debug:
     releaseConfig.setDebugCB( logDEBUG )
+
+  for arg in args:
+    if arg.find( ".cfg" ) == len( arg ) - 4:
+      result = releaseConfig.loadLocalDefaults( arg )
+      if not result[ 'OK' ]:
+        logERROR( result[ 'Message' ] )
+      else:
+        logINFO( "Loaded %s" % arg )
+
   result = releaseConfig.loadDefaults()
   if not result[ 'OK' ]:
     logERROR( "Could not load defaults" )
