@@ -13,6 +13,7 @@ except:
   import md5
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 
 class UserProfileDB( DB ):
@@ -54,9 +55,19 @@ class UserProfileDB( DB ):
                                         'UniqueIndexes' : { 'G' : [ 'UserGroup' ] }
                                       }
 
+    if 'up_VOs' not in tablesInDB:
+      tablesD[ 'up_VOs' ] = { 'Fields' : { 'Id' : 'INTEGER AUTO_INCREMENT NOT NULL',
+                                           'VO' : 'VARCHAR(32) NOT NULL',
+                                           'LastAccess' : 'DATETIME'
+                                         },
+                                        'PrimaryKey' : 'Id',
+                                        'UniqueIndexes' : { 'VO' : [ 'VO' ] }
+                                      }
+
     if 'up_ProfilesData' not in tablesInDB:
       tablesD[ 'up_ProfilesData' ] = { 'Fields' : { 'UserId' : 'INTEGER',
                                                     'GroupId' : 'INTEGER',
+                                                    'VOId' : 'INTEGER',
                                                     'Profile' : 'VARCHAR(255) NOT NULL',
                                                     'VarName' : 'VARCHAR(255) NOT NULL',
                                                     'Data' : 'BLOB',
@@ -71,6 +82,7 @@ class UserProfileDB( DB ):
     if 'up_HashTags' not in tablesInDB:
       tablesD[ 'up_HashTags' ] = { 'Fields' : { 'UserId' : 'INTEGER',
                                                 'GroupId' : 'INTEGER',
+                                                'VOId' : 'INTEGER',
                                                 'HashTag' : 'VARCHAR(32) NOT NULL',
                                                 'TagName' : 'VARCHAR(255) NOT NULL',
                                                 'LastAccess' : 'DATETIME'
@@ -81,44 +93,31 @@ class UserProfileDB( DB ):
     return self._createTables( tablesD )
 
   def __getUserId( self, userName, insertIfMissing = True, connObj = False ):
-    result = self._escapeString( userName )
-    if not result[ 'OK' ]:
-      return result
-    sqlUserName = result[ 'Value' ]
-    selectSQL = "SELECT Id FROM `up_Users` WHERE UserName = %s" % sqlUserName
-    result = self._query( selectSQL, connObj )
-    if not result[ 'OK' ]:
-      return result
-    data = result[ 'Value' ]
-    if len( data ) > 0:
-      id = data[0][0]
-      self._update ( "UPDATE `up_Users` SET LastAccess = UTC_TIMESTAMP() WHERE Id = %s" % id )
-      return S_OK( id )
-    if not insertIfMissing:
-      return S_ERROR( "No user %s defined in the DB" % userName )
-    insertSQL = "INSERT INTO `up_Users` ( Id, UserName, LastAccess ) VALUES ( 0, %s, UTC_TIMESTAMP() )" % sqlUserName
-    result = self._update( insertSQL, connObj )
-    if not result[ 'OK' ]:
-      return result
-    return S_OK( result[ 'lastRowId' ] )
+    return self.__getObjId( userName, 'UserName', 'up_Users', insertIfMissing, connObj )
 
   def __getGroupId( self, groupName, insertIfMissing = True, connObj = False ):
-    result = self._escapeString( groupName )
+    return self.__getObjId( groupName, 'UserGroup', 'up_Groups', insertIfMissing, connObj )
+
+  def __getVOId( self, voName, insertIfMissing = True, connObj = False ):
+    return self.__getObjId( voName, 'VO', 'up_VOs', insertIfMissing, connObj )
+
+  def __getObjId( self, objValue, varName, tableName, insertIfMissing = True, connObj = False ):
+    result = self._escapeString( objValue )
     if not result[ 'OK' ]:
       return result
-    sqlGroupName = result[ 'Value' ]
-    selectSQL = "SELECT Id FROM `up_Groups` WHERE UserGroup = %s" % sqlGroupName
+    sqlObjValue = result[ 'Value' ]
+    selectSQL = "SELECT Id FROM `%s` WHERE %s = %s" % ( tableName, varName, sqlObjValue )
     result = self._query( selectSQL, connObj )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
     if len( data ) > 0:
       id = data[0][0]
-      self._update ( "UPDATE `up_Groups` SET LastAccess = UTC_TIMESTAMP() WHERE Id = %s" % id )
+      self._update ( "UPDATE `%s` SET LastAccess = UTC_TIMESTAMP() WHERE Id = %s" % ( tableName, id ) )
       return S_OK( id )
     if not insertIfMissing:
-      return S_ERROR( "No group %s defined in the DB" % groupName )
-    insertSQL = "INSERT INTO `up_Groups` ( Id, UserGroup, LastAccess ) VALUES ( 0, %s, UTC_TIMESTAMP() )" % sqlGroupName
+      return S_ERROR( "No entry %s for %s defined in the DB" % ( objValue, varName ) )
+    insertSQL = "INSERT INTO `%s` ( Id, %s, LastAccess ) VALUES ( 0, %s, UTC_TIMESTAMP() )" % ( tableName, varName, sqlObjValue )
     result = self._update( insertSQL, connObj )
     if not result[ 'OK' ]:
       return result
@@ -133,7 +132,14 @@ class UserProfileDB( DB ):
     if not result[ 'OK' ]:
       return result
     groupId = result[ 'Value' ]
-    return S_OK( ( userId, groupId ) )
+    userVO = Registry.getVOForGroup( userGroup )
+    if not userVO:
+      userVO = "undefined"
+    result = self.__getVOId( userVO, insertIfMissing, connObj = connObj )
+    if not result[ 'OK' ]:
+      return result
+    voId = result[ 'Value' ]
+    return S_OK( ( userId, groupId, voId ) )
 
   def deleteUserProfile( self, userName, userGroup = False ):
     """
@@ -157,18 +163,21 @@ class UserProfileDB( DB ):
     delSQL = "DELETE FROM `up_Users` WHERE Id = %s" % userId
     return self._update( delSQL )
 
-  def __webProfileUserDataCond( self, userIds, sqlProfileName, sqlVarName = False ):
+  def __webProfileUserDataCond( self, userIds, sqlProfileName = False, sqlVarName = False ):
     condSQL = [ '`up_ProfilesData`.UserId=%s' % userIds[0],
                 '`up_ProfilesData`.GroupId=%s' % userIds[1],
-                '`up_ProfilesData`.Profile=%s' % sqlProfileName ]
+                '`up_ProfilesData`.VOId=%s' % userIds[2] ]
+    if sqlProfileName:
+      condSQL.append( '`up_ProfilesData`.Profile=%s' % sqlProfileName )
     if sqlVarName:
       condSQL.append( '`up_ProfilesData`.VarName=%s' % sqlVarName )
     return " AND ".join( condSQL )
 
   def __webProfileReadAccessDataCond( self, userIds, ownerIds, sqlProfileName, sqlVarName = False ):
     permCondSQL = []
-    permCondSQL.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s' % ownerIds )
+    permCondSQL.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s' % ( ownerIds[0], ownerIds[1] ) )
     permCondSQL.append( '`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.ReadAccess="GROUP"' % userIds[1] )
+    permCondSQL.append( '`up_ProfilesData`.VOId=%s AND `up_ProfilesData`.ReadAccess="VO"' % userIds[2] )
     permCondSQL.append( '`up_ProfilesData`.ReadAccess="ALL"' )
     sqlCond = []
     sqlCond.append( '`up_ProfilesData`.Profile = %s' % sqlProfileName )
@@ -180,8 +189,9 @@ class UserProfileDB( DB ):
 
   def __webProfilePublishAccessDataCond( self, userIds, sqlProfileName ):
     condSQL = []
-    condSQL.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId=%s' % userIds )
+    condSQL.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId=%s' % ( userIds[0], userIds[1] ) )
     condSQL.append( '`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.PublishAccess="GROUP"' % userIds[1] )
+    condSQL.append( '`up_ProfilesData`.VOId=%s AND `up_ProfilesData`.PublishAccess="VO"' % userIds[2] )
     condSQL.append( '`up_ProfilesData`.PublishAccess="ALL"' )
     sqlCond = "`up_ProfilesData`.Profile = %s AND ( ( %s ) )" % ( sqlProfileName,
                                                                   " ) OR ( ".join( condSQL ) )
@@ -251,6 +261,22 @@ class UserProfileDB( DB ):
     data = result[ 'Value' ]
     return S_OK( dict( data ) )
 
+  def retrieveUserProfilesById( self, userIds, connObj = False ):
+    """
+    Get all profiles and data for a user
+    """
+    selectSQL = "SELECT Profile, varName, data FROM `up_ProfilesData` WHERE %s" % self.__webProfileUserDataCond( userIds )
+    result = self._query( selectSQL, conn = connObj )
+    if not result[ 'OK' ]:
+      return result
+    data = result[ 'Value' ]
+    dataDict = {}
+    for row in data:
+      if row[0] not in dataDict:
+        dataDict[ row[0] ] = {}
+      dataDict[ row[0] ][ row[1] ] = row[2 ]
+    return S_OK( dataDict )
+
   def retrieveVarPermsById( self, userIds, ownerIds, profileName, varName, connObj = False ):
     """
     Get a data entry for a profile
@@ -306,6 +332,7 @@ class UserProfileDB( DB ):
 
     sqlInsertKeys.append( ( 'UserId', userIds[0] ) )
     sqlInsertKeys.append( ( 'GroupId', userIds[1] ) )
+    sqlInsertKeys.append( ( 'VOId', userIds[2] ) )
 
     result = self._escapeString( profileName )
     if not result[ 'OK' ]:
@@ -382,6 +409,16 @@ class UserProfileDB( DB ):
 
     return self.retrieveVarById( userIds, ownerIds, profileName, varName, connObj )
 
+  def retrieveUserProfiles( self, userName, userGroup, connObj = False ):
+    """
+    Helper for getting data
+    """
+    result = self.getUserGroupIds( userName, userGroup )
+    if not result[ 'OK' ]:
+      return result
+    userIds = result[ 'Value' ]
+    return self.retrieveUserProfilesById( userIds, connObj )
+
   def retrieveAllUserVars( self, userName, userGroup, profileName, connObj = False ):
     """
     Helper for getting data
@@ -453,6 +490,7 @@ class UserProfileDB( DB ):
     sqlProfileName = result[ 'Value' ]
     sqlCond = [ "`up_Users`.Id = `up_ProfilesData`.UserId",
                 "`up_Groups`.Id = `up_ProfilesData`.GroupId",
+                "`up_VOs`.Id = `up_ProfilesData`.VOId",
                 self.__webProfilePublishAccessDataCond( userIds, sqlProfileName ) ]
     if filterDict:
       if 'UserGroup' in filterDict:
@@ -464,10 +502,22 @@ class UserProfileDB( DB ):
           result = self.__getGroupId( group )
           if not result[ 'OK' ]:
             return result
-          groupIds.append( group )
+          groupIds.append( result[ 'Value' ] )
         sqlCond.append( "`up_ProfilesData`.GroupId in ( %s )" % ", ".join( [ str( groupId ) for groupId in groupIds ] ) )
-    sqlVars2Get = [ "`up_Users`.UserName", "`up_Groups`.UserGroup", "`up_ProfilesData`.VarName" ]
-    sqlQuery = "SELECT %s FROM `up_Users`, `up_Groups`, `up_ProfilesData` WHERE %s" % ( ", ".join( sqlVars2Get ),
+      if 'VO' in filterDict:
+        VOs = filterDict[ 'VO' ]
+        if type( groups ) in types.StringTypes:
+          VOs = [ VOs ]
+        VOIds = [ userIds[2] ]
+        for VO in VOs:
+          result = self.__getVOId( VO )
+          if not result[ 'OK' ]:
+            return result
+          VOIds.append( result[ 'Value' ] )
+        sqlCond.append( "`up_ProfilesData`.GroupId in ( %s )" % ", ".join( [ str( groupId ) for groupId in groupIds ] ) )
+
+    sqlVars2Get = [ "`up_Users`.UserName", "`up_Groups`.UserGroup", "`up_VOs`.VO", "`up_ProfilesData`.VarName" ]
+    sqlQuery = "SELECT %s FROM `up_Users`, `up_Groups`, `up_VOs`, `up_ProfilesData` WHERE %s" % ( ", ".join( sqlVars2Get ),
                                                                                         " AND ".join( sqlCond ) )
 
     return self._query( sqlQuery )
@@ -496,14 +546,14 @@ class UserProfileDB( DB ):
     if not result[ 'OK' ]:
       return result
     tagName = result[ 'Value' ]
-    insertSQL = "INSERT INTO `up_HashTags` ( UserId, GroupId, TagName, HashTag ) VALUES ( %s, %s, %s, %s )" % ( userIds[0], userIds[1], tagName, hashTag )
+    insertSQL = "INSERT INTO `up_HashTags` ( UserId, GroupId, VOId, TagName, HashTag ) VALUES ( %s, %s, %s, %s, %s )" % ( userIds[0], userIds[1], userIds[2], tagName, hashTag )
     result = self._update( insertSQL, conn = connObj )
     if result[ 'OK' ]:
       return S_OK( hashTagUnescaped )
     #If error and not duplicate -> real error
     if result[ 'Message' ].find( "Duplicate entry" ) == -1:
       return result
-    updateSQL = "UPDATE `up_HashTags` set HashTag=%s WHERE UserId = %s AND GroupId = %s AND TagName = %s" % ( hashTag, userIds[0], userIds[1], tagName )
+    updateSQL = "UPDATE `up_HashTags` set HashTag=%s WHERE UserId = %s AND GroupId = %s AND VOId = %s AND TagName = %s" % ( hashTag, userIds[0], userIds[1], userIds[2], tagName )
     result = self._update( updateSQL, conn = connObj )
     if not result[ 'OK' ]:
       return result
@@ -517,7 +567,7 @@ class UserProfileDB( DB ):
     if not result[ 'OK' ]:
       return result
     hashTag = result[ 'Value' ]
-    selectSQL = "SELECT TagName FROM `up_HashTags` WHERE UserId = %s AND GroupId = %s AND HashTag = %s" % ( userIds[0], userIds[1], hashTag )
+    selectSQL = "SELECT TagName FROM `up_HashTags` WHERE UserId = %s AND GroupId = %s AND VOId = %s AND HashTag = %s" % ( userIds[0], userIds[1], userIds[2], hashTag )
     result = self._query( selectSQL, conn = connObj )
     if not result[ 'OK' ]:
       return result
@@ -530,7 +580,7 @@ class UserProfileDB( DB ):
     """
     Get a data entry for a profile
     """
-    selectSQL = "SELECT HashTag, TagName FROM `up_HashTags` WHERE UserId = %s AND GroupId = %s" % ( userIds[0], userIds[1] )
+    selectSQL = "SELECT HashTag, TagName FROM `up_HashTags` WHERE UserId = %s AND GroupId = %s AND VOId = %s" % userIds
     result = self._query( selectSQL, conn = connObj )
     if not result[ 'OK' ]:
       return result

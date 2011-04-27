@@ -85,6 +85,15 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.listVars( userName, userGroup, profileName, filterDict )
 
+  types_getUserProfiles = []
+  def export_getUserProfiles( self ):
+    """ Get all profiles for a user
+    """
+    credDict = self.getRemoteCredentials()
+    userName = credDict[ 'username' ]
+    userGroup = credDict[ 'group' ]
+    return gUPDB.retrieveUserProfiles( userName, userGroup )
+
   types_setProfileVarPermissions = [  types.StringType, types.StringType, types.DictType ]
   def export_setProfileVarPermissions( self, profileName, varName, perms ):
     """ Set profile data for web

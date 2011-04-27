@@ -97,6 +97,10 @@ class UserProfileClient:
     rpcClient = self.__getRPCClient()
     return rpcClient.listAvailableProfileVars( self.profile, filterDict )
 
+  def getUserProfiles( self ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getUserProfiles()
+
   def setVarPermissions( self, varName, perms ):
     rpcClient = self.__getRPCClient()
     return rpcClient.setProfileVarPermissions( self.profile, varName, perms )

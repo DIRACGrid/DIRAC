@@ -97,6 +97,12 @@ def getPropertiesForEntity( group, name = "", dn = "", defaultValue = None ):
 def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % gBaseSecuritySection, [] )
 
+def getVOForGroup( group ):
+  voName = gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+  if voName:
+    return voName
+  return gConfig.getValue( "%s/Groups/%s/VO" % ( gBaseSecuritySection, group ), "" )
+
 def getDefaultVOMSAttribute():
   return gConfig.getValue( "%s/DefaultVOMSAttribute" % gBaseSecuritySection, "" )
 
