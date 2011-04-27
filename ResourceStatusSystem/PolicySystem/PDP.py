@@ -11,7 +11,7 @@ The PDP (Policy Decision Point) module is used to:
 import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils           import where, assignOrRaise
-from DIRAC.ResourceStatusSystem.Utilities.Combine         import valueOfStatus
+from DIRAC.ResourceStatusSystem.Utilities.Combine         import StateMachine
 from DIRAC.ResourceStatusSystem.Utilities.Utils           import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions      import InvalidRes, InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
@@ -146,11 +146,12 @@ class PDP:
                                                  self.__name, self.__status, self.policy,
                                                  self.args, policyGroup['Policies'])
 
-      if not singlePolicyResults:
+      policyCombinedResults = self._policyCombination(singlePolicyResults)
+
+      if not policyCombinedResults:
         return { 'SinglePolicyResults': singlePolicyResults,
                  'PolicyCombinedResult': [] }
 
-      policyCombinedResults = self._policyCombination(singlePolicyResults)
 
       #
       # policy results communication
@@ -231,14 +232,16 @@ class PDP:
   def _policyCombination(self, policies):
     """
     * Sort policies according to an order (specified by Utils.valueOfStatus)
-    * Make a list of policies that have the worse result.
+    * Make a list of policies that have the worst result.
     * Concatenate the Reason fields
     * Take the first EndDate field that exists (FIXME: Do something more clever)
     * Finally, return the result
     """
 
-    policies.sort(key=valueOfStatus)
-    worsePolicies = [p for p in policies if p['Status'] == policies[0]['Status']]
+    sm = StateMachine(self.__status)
+    newStatus = sm.combine(policies)
+
+    worstPolicies = [p for p in policies if p['Status'] == newStatus]
 
     # Concatenate reasons
     def getReason(p):
@@ -248,7 +251,7 @@ class PDP:
         res = ''
       return res
 
-    worsePoliciesReasons = map(getReason, worsePolicies)
+    worstPoliciesReasons = [getReason(p) for p in worstPolicies]
 
     def catRes(x, y):
       if x and y : return x + ' |###| ' + y
@@ -258,16 +261,16 @@ class PDP:
       else       : return ''
 
     # FIXME: not Python 3.x compatible (use functools.reduce instead)
-    concatenatedRes = reduce(catRes, worsePoliciesReasons, '')
+    concatenatedRes = reduce(catRes, worstPoliciesReasons, '')
 
     # Handle EndDate
-    endDatePolicies = [p for p in worsePolicies if p.has_key('EndDate')]
+    endDatePolicies = [p for p in worstPolicies if p.has_key('EndDate')]
 
     # Building and returning result
     res = {}
-    if policies == []: return res
+    if worstPolicies == []: return res
     else:
-      res['Status'] = policies[0]['Status']
+      res['Status'] = newStatus
       if concatenatedRes != '': res['Reason']  = concatenatedRes
       if endDatePolicies != []: res['EndDate'] = endDatePolicies[0]['EndDate']
       return res

@@ -83,3 +83,14 @@ class InvalidPolicyType(RSSException):
     return "Invalid policy type: \nshould be in " + repr(PolicyTypes) + repr(self.message)
 
 #############################################################################
+
+class InvalidStateValueDict(RSSException):
+
+  def __init__(self,  message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+
+  def __str__(self):
+    return "Invalid dictionnary for the state values. " + repr(self.message)
+
+#############################################################################

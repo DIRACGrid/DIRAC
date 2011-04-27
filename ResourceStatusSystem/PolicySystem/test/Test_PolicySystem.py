@@ -259,6 +259,7 @@ class PDPSuccess(PolicySystemTestCase):
 
 #############################################################################
 
+
   def test_takeDecision(self):
 
     for granularity in ValidRes:
@@ -281,10 +282,11 @@ class PDPSuccess(PolicySystemTestCase):
             self.assert_(r['Action'])
 
   def test_valueOfStatus(self):
-    self.assertEqual(valueOfStatus('Banned'), 0)
-    self.assertEqual(valueOfStatus('Bad'), 1)
-    self.assertEqual(valueOfStatus('Probing'), 2)
-    self.assertEqual(valueOfStatus('Active'), 3)
+    sm = StateMachine('Active') # State of the machine doesn't matter here
+    self.assertEqual(sm.valueOfStatus('Banned'), 0)
+    self.assertEqual(sm.valueOfStatus('Bad'), 1)
+    self.assertEqual(sm.valueOfStatus('Probing'), 2)
+    self.assertEqual(sm.valueOfStatus('Active'), 3)
 
   def test__policyCombination(self):
 
@@ -293,6 +295,8 @@ class PDPSuccess(PolicySystemTestCase):
         for oldStatus in ValidStatus:
           if status == oldStatus:
             continue
+
+          sm = StateMachine(status)
           for newStatus1 in ValidStatus:
             for newStatus2 in ValidStatus:
               pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
@@ -306,21 +310,43 @@ class PDPSuccess(PolicySystemTestCase):
 
               # 1 policy
               res = pdp._policyCombination([polRes])
-              self.assertEqual(res['Status'], newStatus1)
-              self.assertEqual(res['Reason'], '-Reason1-')
+              if sm.transitionAllowed(newStatus1):
+                self.assertEqual(res['Status'], newStatus1)
+                self.assertEqual(res['Reason'], '-Reason1-')
+              else:
+                self.assertEqual(res, {})
 
               # 2 policies
               res = pdp._policyCombination([polRes, polRes2])
 
-              if valueOfStatus(polRes) > valueOfStatus(polRes2):
-                self.assertEqual(res['Status'], newStatus2)
-                self.assertEqual(res['Reason'], '-Reason2-')
-              elif valueOfStatus(polRes) < valueOfStatus(polRes2):
-                self.assertEqual(res['Status'], newStatus1)
-                self.assertEqual(res['Reason'], '-Reason1-')
+              if sm.valueOfPolicy(polRes) > sm.valueOfPolicy(polRes2):
+                if sm.transitionAllowed(newStatus2):
+                  self.assertEqual(res['Status'], newStatus2)
+                  self.assertEqual(res['Reason'], '-Reason2-')
+                elif sm.transitionAllowed(newStatus1):
+                  self.assertEqual(res['Status'], newStatus1)
+                  self.assertEqual(res['Reason'], '-Reason1-')
+                else:
+                  self.assertEqual(res, {})
+
+              elif sm.valueOfPolicy(polRes) < sm.valueOfPolicy(polRes2):
+                if sm.transitionAllowed(newStatus1):
+                  self.assertEqual(res['Status'], newStatus1)
+                  self.assertEqual(res['Reason'], '-Reason1-')
+                elif sm.transitionAllowed(newStatus2):
+                  self.assertEqual(res['Status'], newStatus2)
+                  self.assertEqual(res['Reason'], '-Reason2-')
+                else:
+                  self.assertEqual(res, {})
+
               else:
-                self.assertEqual(res['Status'], newStatus1)
-                self.assertEqual(res['Reason'], '-Reason1- |###| -Reason2-')
+                if sm.transitionAllowed(newStatus1):
+                  self.assertEqual(res['Status'], newStatus1)
+                  self.assertEqual(res['Reason'], '-Reason1- |###| -Reason2-')
+                else:
+                  self.assertEqual(res, {})
+
+
 
               # all different policies
               def make_polres(status):
