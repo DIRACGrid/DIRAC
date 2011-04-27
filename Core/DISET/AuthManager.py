@@ -50,9 +50,10 @@ class AuthManager:
     self.__authLogger.verbose( "Trying to authenticate %s" % userString )
     #Get properties
     requiredProperties = self.getValidPropertiesForMethod( methodQuery, defaultProperties )
+    lowerCaseProperties = [ prop.lower() for prop in requiredProperties ]
     #Check non secure backends
     if self.KW_DN not in credDict:
-      if 'all' in requiredProperties or 'any' in requiredProperties:
+      if 'all' in lowerCaseProperties or 'any' in lowerCaseProperties:
         self.__authLogger.verbose( "Accepted request from unsecure transport" )
         return True
       else:
@@ -95,7 +96,7 @@ class AuthManager:
           self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
           return False
     #If any or all in the props, allow
-    if "any" in requiredProperties or "all" in requiredProperties:
+    if "any" in lowerCaseProperties or "all" in lowerCaseProperties:
       return True
     #Check user is authenticated
     if not self.KW_DN in credDict or not credDict[ self.KW_DN ]:
@@ -139,17 +140,17 @@ class AuthManager:
     """
     authProps = gConfig.getValue( "%s/%s" % ( self.authSection, method ), [] )
     if authProps:
-      return [ prop.lower() for prop in authProps ]
+      return authProps
     if defaultProperties:
       self.__authLogger.verbose( "Using hardcoded properties for method %s : %s" % ( method, defaultProperties ) )
       if type( defaultProperties ) not in ( types.ListType, types.TupleType ):
         return List.fromChar( defaultProperties )
-      return [ prop.lower() for prop in defaultProperties ]
+      return defaultProperties
     defaultPath = "%s/Default" % "/".join( method.split( "/" )[:-1] )
     authProps = gConfig.getValue( "%s/%s" % ( self.authSection, defaultPath ), [] )
     if authProps:
       self.__authLogger.verbose( "Method %s has no properties defined using %s" % ( method, defaultPath ) )
-      return [ prop.lower() for prop in authProps ]
+      return authProps
     self.__authLogger.verbose( "Method %s has no authorization rules defined. Allowing no properties" % method )
     return []
 
@@ -214,14 +215,17 @@ class AuthManager:
     @param validProps: List of valid properties
     @return: Boolean specifying whether any property has matched the valid ones
     """
+    #HACK: Map lower case properties to properties to make the check in lowercase but return the proper case
     if not caseSensitive:
-      validProps = [ prop.lower() for prop in validProps ]
+      validProps = dict( [ ( prop.lower(), prop ) for prop in validProps ] )
+    else:
+      validProps = dict( [ ( prop, prop ) for prop in validProps ] )
     groupProperties = credDict[ self.KW_PROPERTIES ]
     foundProps = []
     for prop in groupProperties:
       if not caseSensitive:
         prop = prop.lower()
       if prop in validProps:
-        foundProps.append( prop )
+        foundProps.append( validProps[ prop ] )
     credDict[ self.KW_PROPERTIES ] = foundProps
     return foundProps
