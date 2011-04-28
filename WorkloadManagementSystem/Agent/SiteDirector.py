@@ -181,6 +181,8 @@ class SiteDirector( AgentModule ):
           if not result['OK']:
             self.log.fatal( result['Message'] )
             return result
+          if 'BundleProxy' in self.queueDict[queueName]['ParametersDict']:
+            self.queueDict[queueName]['BundleProxy'] = True
 
     return S_OK()
 
