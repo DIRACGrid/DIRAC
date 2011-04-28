@@ -26,6 +26,7 @@ class SecurityManagerBase:
   
   def hasAccess(self,opType,paths,credDict):
     successful = {}
+    failed = {}
     if not opType.lower() in ['read','write','execute']:
       return S_ERROR("Operation type not known")
     if self.db.globalReadAccess and (opType.lower() == 'read'):
