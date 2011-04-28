@@ -29,7 +29,7 @@ class UserProfileDB( DB ):
     Create the tables
     """
     self.__permValues = [ 'USER', 'GROUP', 'VO', 'ALL' ]
-    self.__permAttrs = [ 'ReadAccess', 'PublishAccess' ]
+    self.__permAttrs = [ 'ReadAccess' ]
     retVal = self._query( "show tables" )
     if not retVal[ 'OK' ]:
       return retVal
@@ -71,8 +71,7 @@ class UserProfileDB( DB ):
                                                     'Profile' : 'VARCHAR(255) NOT NULL',
                                                     'VarName' : 'VARCHAR(255) NOT NULL',
                                                     'Data' : 'BLOB',
-                                                    'ReadAccess' : 'VARCHAR(10) DEFAULT "USER"',
-                                                    'PublishAccess' : 'VARCHAR(10) DEFAULT "USER"'
+                                                    'ReadAccess' : 'VARCHAR(10) DEFAULT "USER"'
                                                   },
                                       'PrimaryKey' : [ 'UserId', 'GroupId', 'Profile', 'VarName' ],
                                       'Indexes' : { 'ProfileKey' : [ 'UserId', 'GroupId', 'Profile' ],
@@ -187,16 +186,6 @@ class UserProfileDB( DB ):
     sqlCond.append( "( ( %s ) )" % " ) OR ( ".join( permCondSQL ) )
     return " AND ".join( sqlCond )
 
-  def __webProfilePublishAccessDataCond( self, userIds, sqlProfileName ):
-    condSQL = []
-    condSQL.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId=%s' % ( userIds[0], userIds[1] ) )
-    condSQL.append( '`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.PublishAccess="GROUP"' % userIds[1] )
-    condSQL.append( '`up_ProfilesData`.VOId=%s AND `up_ProfilesData`.PublishAccess="VO"' % userIds[2] )
-    condSQL.append( '`up_ProfilesData`.PublishAccess="ALL"' )
-    sqlCond = "`up_ProfilesData`.Profile = %s AND ( ( %s ) )" % ( sqlProfileName,
-                                                                  " ) OR ( ".join( condSQL ) )
-    return sqlCond
-
   def __parsePerms( self, perms, addMissing = True ):
     normPerms = {}
     for pName in self.__permAttrs:
@@ -213,12 +202,6 @@ class UserProfileDB( DB ):
         if pName not in normPerms and addMissing:
           normPerms[ pName ] = self.__permValues[0]
 
-    if 'PublishAccess' in normPerms:
-      if 'ReadAccess' in normPerms:
-        iP = self.__permValues.index( normPerms[ 'PublishAccess' ] )
-        iR = self.__permValues.index( normPerms[ 'ReadAccess' ] )
-        if iP > iR:
-          normPerms[ 'ReadAccess' ] = self.__permValues[ iP ]
     return normPerms
 
   def retrieveVarById( self, userIds, ownerIds, profileName, varName, connObj = False ):
@@ -516,7 +499,7 @@ class UserProfileDB( DB ):
     sqlCond = [ "`up_Users`.Id = `up_ProfilesData`.UserId",
                 "`up_Groups`.Id = `up_ProfilesData`.GroupId",
                 "`up_VOs`.Id = `up_ProfilesData`.VOId",
-                self.__webProfilePublishAccessDataCond( userIds, sqlProfileName ) ]
+                self.__webProfileReadAccessDataCond( userIds, sqlProfileName ) ]
     if filterDict:
       for k in filterDict:
         filterDict[ k.lower() ] = filterDict[ k ]
