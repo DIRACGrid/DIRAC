@@ -1,5 +1,5 @@
 """
-This module contains a class to synchronize the content of the DataBase with what is the CS  
+This module contains a class to synchronize the content of the DataBase with what is the CS
 """
 
 import socket
@@ -13,7 +13,8 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRAC
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import getSites, getSiteTier, getSENodes, getLFCSites, getLFCNode, getFTSSites, getVOMSEndpoints, getFTSEndpoint, getCEType, getStorageElements
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidStatus, \
+    ValidSiteType, ValidServiceType, ValidResourceType
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 
 class Synchronizer:
@@ -40,7 +41,7 @@ class Synchronizer:
     """
 
 #    if thingsToSync == None:
-#      thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements'],     
+#      thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements'],
 
     thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements']
 
@@ -89,7 +90,7 @@ class Synchronizer:
 
   def _syncSites( self ):
     """
-    Sync DB content with sites that are in the CS 
+    Sync DB content with sites that are in the CS
     """
 
     # sites in the DB now
@@ -198,7 +199,7 @@ class Synchronizer:
       for x in i:
         SEList.append( x )
 
-    # SE Nodes in CS now 
+    # SE Nodes in CS now
     SENodeList = []
     for SE in SEList:
       node = getSENodes( SE )['Value'][0]

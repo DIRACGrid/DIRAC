@@ -4,6 +4,7 @@ import sys
 from DIRAC.ResourceStatusSystem.Utilities.mock       import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import *
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import *
 from DIRAC.ResourceStatusSystem.Utilities.Combine    import *
 from DIRAC                                           import S_OK, S_ERROR
 import DIRAC.ResourceStatusSystem.test.fake_Logger

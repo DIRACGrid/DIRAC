@@ -5,7 +5,7 @@ import sys
 import datetime
 import unittest
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes,ValidStatus
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes,ValidStatus
 from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -29,15 +29,15 @@ class ResourceStatusDBTestCase(unittest.TestCase):
 
     from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
    #from DIRAC.ResourceStatusSystem.DB.test.FakeResourceStatusDB import FakeResourceStatusDB
-    
+
     from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-        
+
     # setting mock interface
     self.rsDB = ResourceStatusDB(DBin=self.mock_DB)
 
     self.mock_DB_1 = Mock()
     self.mock_DB_1._query.return_value = {'OK': True, 'Value': (('VOMS',),)}
-    
+
     self.rsDB_1 = ResourceStatusDB(DBin=self.mock_DB_1)
 
 class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
@@ -45,15 +45,15 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   ###########################
   #####test site methods#####
   ###########################
-  
+
   def test__addSiteRow(self):
     res = self.rsDB._addSiteRow('Ferrara', 'T2', 'INFN-FERRARA', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
-    
+
   def test__addSiteHistoryRow(self):
     res = self.rsDB._addSiteHistoryRow('Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
-  
+
   def test_setSiteStatus(self):
     res = self.rsDB.setSiteStatus('LCG.CNAF.it', 'Active', 'reasons', 'Federico')
     self.assertEqual(res, None)
@@ -70,16 +70,16 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   ##############################
   #####test service methods#####
   ##############################
-  
+
 
   def test__addServiceRow(self):
     res = self.rsDB._addServiceRow('Computing@Ferrara', 'Computing', 'Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
-    
+
   def test__addServiceHistoryRow(self):
     res = self.rsDB._addServiceHistoryRow('Computing@Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
-  
+
   def test_setServiceStatus(self):
     res = self.rsDB.setServiceStatus('CNAF', 'Active', 'reasons', 'Federico')
     self.assertEqual(res, None)
@@ -96,7 +96,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   ###############################
   #####test resource methods#####
   ###############################
-  
+
   def test__addResourcesRow(self):
     res = self.rsDB._addResourcesRow('CE01', 'CE', 'Computing', 'Ferrara', 'INFN-Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
@@ -104,11 +104,11 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, None)
     res = self.rsDB._addResourcesRow('CE01', 'CE', 'Computing', 'NULL', 'INFN-Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
-    
+
   def test__addResourcesHistoryRow(self):
     res = self.rsDB._addResourcesHistoryRow('CE01', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
-    
+
   def test_setResourceStatus(self):
     res = self.rsDB.setResourceStatus('CE01', 'Active', 'reasons', 'Federico')
     self.assertEqual(res, None)
@@ -130,7 +130,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   ###############################
   #####test storageElement methods#####
   ###############################
-  
+
   def test__addStorageElementRow(self):
     res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', 'Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
@@ -138,11 +138,11 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, None)
     res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', 'NULL', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
-    
+
   def test__addStorageElementHistoryRow(self):
     res = self.rsDB._addStorageElementHistoryRow('xxx', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
-    
+
   def test_setStorageElementStatus(self):
     res = self.rsDB.setStorageElementStatus('SE', 'Active', 'reasons', 'Federico')
     self.assertEqual(res, None)
@@ -157,7 +157,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, None)
     res = self.rsDB.removeStorageElement('XX', 'XX')
     self.assertEqual(res, None)
-  
+
   ##########################
   ###test general methods###
   ##########################
@@ -178,10 +178,10 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, [])
     res = self.rsDB.getGridSitesList(gridSiteName = ['AAAA', 'BBBB'], gridTier = ['T0', 'T1'])
     self.assertEqual(res, [])
-    res = self.rsDB.getGridSitesList(paramsList = ['GridSiteName', 'GridTier'], 
+    res = self.rsDB.getGridSitesList(paramsList = ['GridSiteName', 'GridTier'],
                                      gridSiteName = ['AAAA', 'BBBB'], gridTier = ['T0', 'T1'])
     self.assertEqual(res, [])
-    
+
   def test_getMonitoredsList(self):
     for g in ValidRes:
       res = self.rsDB.getMonitoredsList(g, countries = 'a')
@@ -192,7 +192,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
       self.assertEqual(res, [])
       res = self.rsDB.getMonitoredsList(g, siteName = ['xx', 'ss'], countries = 'a')
       self.assertEqual(res, [])
-      
+
     res = self.rsDB.getMonitoredsList('Site', siteType = ['XXX'], countries = 'a')
     self.assertEqual(res, [])
     res = self.rsDB.getMonitoredsList('Site', paramsList = ['SiteName', 'Status'], status = ['Active'], siteType = ['XXX'], countries = 'a')
@@ -204,7 +204,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, [])
     res = self.rsDB.getMonitoredsList('Service', paramsList = ['ServiceName', 'Status'], status = ['Active'], serviceType = ['XXX'], countries = 'a')
     self.assertEqual(res, [])
-    
+
     res = self.rsDB.getMonitoredsList('Resource', resourceName = ['CNAF', 'Ferrara'], countries = 'a')
     self.assertEqual(res, [])
     res = self.rsDB.getMonitoredsList('Service', resourceType = ['XXX'], countries = 'a')
@@ -259,14 +259,14 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res['Records'], [])
     res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceName':['XX', 'zz'], 'SiteName':['XX', 'zz'], 'Status':['XX', 'zz'], 'ResourceType':['xx'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-   
+
   def test_getMonitoredsHistory(self):
     for g in ValidRes:
       res = self.rsDB.getMonitoredsHistory(g)
       self.assertEqual(res, [])
       res = self.rsDB.getMonitoredsHistory(g, paramsList = ['aaa'])
       self.assertEqual(res, [])
- 
+
   def test_getTypesList(self):
     for g in ['Site', 'Service', 'Resource']:
       res = self.rsDB.getTypesList(g)
@@ -288,7 +288,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     for status in ValidStatus:
       res = self.rsDB.removeStatus(status)
       self.assertEqual(res, None)
-  
+
   def test_setMonitoredReason(self):
     for g in ValidRes:
       res = self.rsDB.setMonitoredReason(g, 'xx', 'reasons', 'Federico')
@@ -384,7 +384,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   def test_getServiceStats(self):
     res = self.rsDB.getServiceStats('XX')
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
-    
+
   def test_getStorageElementsStats(self):
     res = self.rsDB.getStorageElementsStats('Resource', 'XX')
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
@@ -431,17 +431,17 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(NotAllowedDate, self.rsDB.addOrModifySite, 'CNAF', 'T1', 'INFN-FERRARA', 'Active', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
     self.assertRaises(NotAllowedDate, self.rsDB.addOrModifyService, 'Computing@CERN', 'Computing', 'CERN', 'Active', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
     self.assertRaises(NotAllowedDate, self.rsDB.addOrModifyResource, 'CE01', 'CE', 'Computing', 'CERN', 'INFN-T1', 'Active', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
-    
+
   def test_DBFail(self):
     self.mock_DB._query.return_value = {'OK': False, 'Message': 'boh'}
     self.mock_DB._update.return_value = {'OK': False, 'Message': 'boh'}
     from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import RSSDBException
 
-    self.assertRaises(RSSDBException, self.rsDB.addOrModifySite, 'CNAF', 'T1', 'INFN-FERRARA', 'Banned', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() + datetime.timedelta(minutes=10)) 
+    self.assertRaises(RSSDBException, self.rsDB.addOrModifySite, 'CNAF', 'T1', 'INFN-FERRARA', 'Banned', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() + datetime.timedelta(minutes=10))
     self.assertRaises(RSSDBException, self.rsDB.setSiteStatus, 'CNAF', 'Active', 'reasons', 'Federico')
     self.assertRaises(RSSDBException, self.rsDB._addSiteRow, 'Ferrara', 'T2', 'INFN-FERRARA', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertRaises(RSSDBException, self.rsDB._addSiteHistoryRow, 'Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
-    
+
     self.assertRaises(RSSDBException, self.rsDB.addOrModifyService, 'Computing@CERN', 'Computing', 'CERN', 'Banned', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() + datetime.timedelta(minutes=10))
     self.assertRaises(RSSDBException, self.rsDB.setServiceStatus, 'Computing@CERN', 'Active', 'reasons', 'Federico')
     self.assertRaises(RSSDBException, self.rsDB._addServiceRow, 'Computing@CERN', 'Computing', 'Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
@@ -453,7 +453,7 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB._addResourcesHistoryRow, 'CE01', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
 
     self.assertRaises(RSSDBException, self.rsDB.getStatusList)
-    self.assertRaises(RSSDBException, self.rsDB.getEndings, 'Resources') 
+    self.assertRaises(RSSDBException, self.rsDB.getEndings, 'Resources')
     self.assertRaises(RSSDBException, self.rsDB.getTablesWithHistory)
     self.assertRaises(RSSDBException, self.rsDB.addStatus, '')
     self.assertRaises(RSSDBException, self.rsDB.removeStatus, '')
@@ -464,25 +464,23 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.getResourceStats, 'Site', 'xxx')
     self.assertRaises(RSSDBException, self.rsDB.getStorageElementsStats, 'Site', 'xxx')
     self.assertRaises(RSSDBException, self.rsDB.getCountries, 'Site')
-    #print self.defaultTestResult()   
+    #print self.defaultTestResult()
 
     for g in ['Site', 'Service', 'Resource']:
-      self.assertRaises(RSSDBException, self.rsDB.getTypesList, g) 
-      self.assertRaises(RSSDBException, self.rsDB.removeType, g, 'xx') 
+      self.assertRaises(RSSDBException, self.rsDB.getTypesList, g)
+      self.assertRaises(RSSDBException, self.rsDB.removeType, g, 'xx')
 
     for g in ValidRes:
       self.assertRaises(RSSDBException, self.rsDB.getMonitoredsList, g)
-      self.assertRaises(RSSDBException, self.rsDB.getStuffToCheck, g,Configurations.Sites_check_freq,3) 
+      self.assertRaises(RSSDBException, self.rsDB.getStuffToCheck, g,Configurations.Sites_check_freq,3)
       self.assertRaises(RSSDBException, self.rsDB.removeRow, g, 'xx', datetime.datetime.utcnow())
       self.assertRaises(RSSDBException, self.rsDB.setLastMonitoredCheckTime, g, 'xxx')
       self.assertRaises(RSSDBException, self.rsDB.setMonitoredReason, g, 'xxx', 'x', 'x')
 #    self.assertRaises(RSSDBException, self.rsDB.syncWithCS)
-   
+
 if __name__ == '__main__':
-    
+
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusDBTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusDBSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusDBFailure))        
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusDBFailure))
   unittest.TextTestRunner(verbosity=2).run(suite)
-
-  

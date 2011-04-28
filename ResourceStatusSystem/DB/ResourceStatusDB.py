@@ -1,5 +1,5 @@
-""" 
-The ResourcesStatusDB module contains a couple of exception classes, and a 
+"""
+The ResourcesStatusDB module contains a couple of exception classes, and a
 class to interact with the ResourceStatus DB.
 """
 
@@ -10,28 +10,29 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes, InvalidStatus
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where, convertTime 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes, ValidStatus, ValidSiteType, ValidResourceType, ValidServiceType
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where, convertTime
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, ValidStatus, ValidSiteType, \
+    ValidResourceType, ValidServiceType
 
 #############################################################################
 
 class RSSDBException(RSSException):
-  """ 
-  DB exception 
   """
-  
+  DB exception
+  """
+
   def __init__(self, message = ""):
     self.message = message
     RSSException.__init__(self, message)
-  
+
   def __str__(self):
     return "Exception in the RSS DB: " + repr(self.message)
 
 #############################################################################
 
 class NotAllowedDate(RSSException):
-  """ 
-  Exception that signals a not allowed date 
+  """
+  Exception that signals a not allowed date
   """
 
   def __init__(self, message = ""):
@@ -44,17 +45,17 @@ class NotAllowedDate(RSSException):
 #############################################################################
 
 class ResourceStatusDB:
-  """ 
+  """
   The ResourcesStatusDB class is a front-end to the Resource Status Database.
-  
-  The simplest way to instantiate an object of type :class:`ResourceStatusDB` 
-  is simply by calling 
+
+  The simplest way to instantiate an object of type :class:`ResourceStatusDB`
+  is simply by calling
 
    >>> rsDB = ResourceStatusDB()
 
-  This way, it will use the standard :mod:`DIRAC.Core.Base.DB`. 
-  But there's the possibility to use other DB classes. 
-  For example, we could pass custom DB instantiations to it, 
+  This way, it will use the standard :mod:`DIRAC.Core.Base.DB`.
+  But there's the possibility to use other DB classes.
+  For example, we could pass custom DB instantiations to it,
   provided the interface is the same exposed by :mod:`DIRAC.Core.Base.DB`.
 
    >>> AnotherDB = AnotherDBClass()
@@ -72,7 +73,7 @@ class ResourceStatusDB:
 
   """
 
-  
+
   def __init__(self, *args, **kwargs):
 
     if len(args) == 1:
@@ -88,7 +89,7 @@ class ResourceStatusDB:
     elif len(args) == 0:
 #      systemInstance='Default'
       maxQueueSize=10
-    
+
     if 'DBin' in kwargs.keys():
       DBin = kwargs['DBin']
       if isinstance(DBin, list):
@@ -99,16 +100,16 @@ class ResourceStatusDB:
     else:
       from DIRAC.Core.Base.DB import DB
       self.db = DB('ResourceStatusDB','ResourceStatus/ResourceStatusDB',maxQueueSize)
-  
+
 #  def __init__(self, DBin=None, systemInstance='Default', maxQueueSize=10):
-#    
+#
 #    if not isinstance(DBin, Mock):
 #      from DIRAC.Core.Base.DB import DB
 #      self.db = DB('ResourceStatusDB','ResourceStatus/ResourceStatusDB',maxQueueSize)
 #    else:
 #      self.db = DBin
 #    self.lock = threading.Lock()
-    
+
 
 #############################################################################
 
@@ -118,50 +119,50 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 
-                        serviceName = None, resourceName = None, storageElementName = None, 
-                        status = None, siteType = None, resourceType = None, 
+  def getMonitoredsList(self, granularity, paramsList = None, siteName = None,
+                        serviceName = None, resourceName = None, storageElementName = None,
+                        status = None, siteType = None, resourceType = None,
                         serviceType = None, countries = None, gridSiteName = None):
-    """ 
-    Get Present Sites/Services/Resources/StorageElements lists. 
-    
+    """
+    Get Present Sites/Services/Resources/StorageElements lists.
+
     :params:
       :attr:`granularity`: a ValidRes
-    
-      :attr:`paramsList`: a list of parameters can be entered. If not given, 
-      a custom list is used. 
-      
-      :attr:`siteName`, `serviceName`, `resourceName`, `storageElementName`: 
-      a string or a list representing the site/service/resource/storageElement name. 
+
+      :attr:`paramsList`: a list of parameters can be entered. If not given,
+      a custom list is used.
+
+      :attr:`siteName`, `serviceName`, `resourceName`, `storageElementName`:
+      a string or a list representing the site/service/resource/storageElement name.
       If not given, fetch all.
-      
+
       :attr:`status`: a string or a list representing the status. If not given, fetch all.
-      
-      :attr:`siteType`: a string or a list representing the site type. 
+
+      :attr:`siteType`: a string or a list representing the site type.
       If not given, fetch all.
-      
-      :attr:`serviceType`: a string or a list representing the service type. 
+
+      :attr:`serviceType`: a string or a list representing the service type.
       If not given, fetch all.
-      
+
       :attr:`resourceType`: a string or a list representing the resource type.
       If not given, fetch all.
-      
+
       :attr:`countries`: a string or a list representing the countries extensions.
       If not given, fetch all.
-      
-      :attr:`gridSiteName`: a string or a list representing the grid site name. 
+
+      :attr:`gridSiteName`: a string or a list representing the grid site name.
       If not given, fetch all.
-      
+
       See :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils` for these parameters.
-      
+
     :return:
       list of monitored paramsList's values
     """
-    
+
     #get the parameters of the query
-    
+
     getInfo = []
-    
+
     if granularity in ('Site', 'Sites'):
       DBname = 'SiteName'
       DBtable = 'PresentSites'
@@ -204,7 +205,7 @@ class ResourceStatusDB:
         if type(siteName) is not type([]):
           siteName = [siteName]
         siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
-    
+
     #gridSiteName
     if 'GridSiteName' in getInfo:
       if (gridSiteName == None or gridSiteName == []):
@@ -220,10 +221,10 @@ class ResourceStatusDB:
         if type(gridSiteName) is not type([]):
           gridSiteName = [gridSiteName]
         gridSiteName = ','.join(['"'+x.strip()+'"' for x in gridSiteName])
-    
+
     #serviceName
     if 'ServiceName' in getInfo:
-      if (serviceName == None or serviceName == []): 
+      if (serviceName == None or serviceName == []):
         r = "SELECT ServiceName FROM PresentServices"
         resQuery = self.db._query(r)
         if not resQuery['OK']:
@@ -236,10 +237,10 @@ class ResourceStatusDB:
         if type(serviceName) is not type([]):
           serviceName = [serviceName]
         serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
-    
+
     #resourceName
     if 'ResourceName' in getInfo:
-      if (resourceName == None or resourceName == []): 
+      if (resourceName == None or resourceName == []):
         r = "SELECT ResourceName FROM PresentResources"
         resQuery = self.db._query(r)
         if not resQuery['OK']:
@@ -252,10 +253,10 @@ class ResourceStatusDB:
         if type(resourceName) is not type([]):
           resourceName = [resourceName]
         resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
-      
+
     #storageElementName
     if 'StorageElementName' in getInfo:
-      if (storageElementName == None or storageElementName == []): 
+      if (storageElementName == None or storageElementName == []):
         r = "SELECT StorageElementName FROM PresentStorageElements"
         resQuery = self.db._query(r)
         if not resQuery['OK']:
@@ -268,7 +269,7 @@ class ResourceStatusDB:
         if type(storageElementName) is not type([]):
           storageElementName = [storageElementName]
         storageElementName = ','.join(['"'+x.strip()+'"' for x in storageElementName])
-      
+
     #status
     if (status == None or status == []):
       status = ValidStatus
@@ -346,7 +347,7 @@ class ResourceStatusDB:
     if 'StorageElementName' in getInfo:
       if storageElementName != [] and storageElementName != None and storageElementName is not None and storageElementName != '':
         req = req + " StorageElementName IN (%s) AND" %(storageElementName)
-    #status    
+    #status
     req = req + " Status IN (%s)" % (status)
     #types
     if 'SiteType' in getInfo:
@@ -373,56 +374,56 @@ class ResourceStatusDB:
 #############################################################################
 
   def getMonitoredsStatusWeb(self, granularity, selectDict, sortList, startItem, maxItems):
-    """ 
+    """
     Get present sites status list, for the web.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
     and :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsHistory`
-    
+
     Example of parameters:
-    
+
     :params:
-      :attr:`selectDict`: { 'SiteName':['XX', ...] , 'ExpandSiteHistory': ['XX', ...], 
+      :attr:`selectDict`: { 'SiteName':['XX', ...] , 'ExpandSiteHistory': ['XX', ...],
       'Status': ['XX', ...]}
-      and equivalents for the other monitoreds 
-      
-      :attr:`sortList` 
-      
-      :attr:`startItem` 
-      
+      and equivalents for the other monitoreds
+
+      :attr:`sortList`
+
+      :attr:`startItem`
+
       :attr:`maxItems`
-      
-    :return: { 
-      :attr:`ParameterNames`: ['SiteName', 'Tier', 'GridType', 'Country', 
-      'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
-      
-      :attr:'Records': [[], [], ...], 
-      
+
+    :return: {
+      :attr:`ParameterNames`: ['SiteName', 'Tier', 'GridType', 'Country',
+      'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'],
+
+      :attr:'Records': [[], [], ...],
+
       :attr:'TotalRecords': X,
-       
+
       :attr:'Extras': {}
-      
+
       }
     """
-        
+
     if granularity in ('Site', 'Sites'):
       paramNames = ['SiteName', 'Tier', 'GridType', 'Country',
                      'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['SiteName', 'SiteType', 'Status', 'DateEffective', 
+      paramsList = ['SiteName', 'SiteType', 'Status', 'DateEffective',
                     'FormerStatus', 'Reason']
     elif granularity in ('Service', 'Services'):
-      paramNames = ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status', 
+      paramNames = ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status',
                     'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 
+      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status',
                     'DateEffective', 'FormerStatus', 'Reason']
     elif granularity in ('Resource', 'Resources'):
-      paramNames = ['ResourceName', 'ServiceType', 'SiteName', 'ResourceType', 
+      paramNames = ['ResourceName', 'ServiceType', 'SiteName', 'ResourceType',
                     'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 'ResourceType', 
+      paramsList = ['ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 'ResourceType',
                     'Status', 'DateEffective', 'FormerStatus', 'Reason']
     elif granularity in ('StorageElement', 'StorageElements'):
-      paramNames = ['StorageElementName', 'ResourceName', 'SiteName',  
+      paramNames = ['StorageElementName', 'ResourceName', 'SiteName',
                     'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status', 
+      paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status',
                     'DateEffective', 'FormerStatus', 'Reason']
     else:
       raise InvalidRes, where(self, self.getMonitoredsStatusWeb)
@@ -450,14 +451,14 @@ class ResourceStatusDB:
       if type(sites_select) is not list:
         sites_select = [sites_select]
       del selectDict['SiteName']
-      
+
     #specify ServiceName
     if selectDict.has_key('ServiceName'):
       services_select = selectDict['ServiceName']
       if type(services_select) is not list:
         services_select = [services_select]
       del selectDict['ServiceName']
-      
+
     #ResourceName
     if selectDict.has_key('ResourceName'):
       resources_select = selectDict['ResourceName']
@@ -478,42 +479,42 @@ class ResourceStatusDB:
       if type(status_select) is not list:
         status_select = [status_select]
       del selectDict['Status']
-      
+
     #SiteType
     if selectDict.has_key('SiteType'):
       siteType_select = selectDict['SiteType']
       if type(siteType_select) is not list:
         siteType_select = [siteType_select]
       del selectDict['SiteType']
-      
+
     #ServiceType
     if selectDict.has_key('ServiceType'):
       serviceType_select = selectDict['ServiceType']
       if type(serviceType_select) is not list:
         serviceType_select = [serviceType_select]
       del selectDict['ServiceType']
-      
+
     #ResourceType
     if selectDict.has_key('ResourceType'):
       resourceType_select = selectDict['ResourceType']
       if type(resourceType_select) is not list:
         resourceType_select = [resourceType_select]
       del selectDict['ResourceType']
-    
+
     #Countries
     if selectDict.has_key('Countries'):
       countries_select = selectDict['Countries']
       if type(countries_select) is not list:
         countries_select = [countries_select]
       del selectDict['Countries']
-      
+
     #ExpandSiteHistory
     if selectDict.has_key('ExpandSiteHistory'):
       paramsList = ['SiteName', 'Status', 'Reason', 'DateEffective']
       sites_select = selectDict['ExpandSiteHistory']
       if type(sites_select) is not list:
         sites_select = [sites_select]
-      sitesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList, 
+      sitesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList,
                                                name = sites_select)
       # sitesHistory is a list of tuples
       for site in sitesHistory:
@@ -534,7 +535,7 @@ class ResourceStatusDB:
       services_select = selectDict['ExpandServiceHistory']
       if type(services_select) is not list:
         services_select = [services_select]
-      servicesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList, 
+      servicesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList,
                                                   name = services_select)
       # servicesHistory is a list of tuples
       for service in servicesHistory:
@@ -570,7 +571,7 @@ class ResourceStatusDB:
         record.append(None) #FormerStatus
         record.append(resource[2]) #Reason
         records.append(record)
-    
+
     #ExpandStorageElementHistory
     elif selectDict.has_key('ExpandStorageElementHistory'):
       paramsList = ['StorageElementName', 'Status', 'Reason', 'DateEffective']
@@ -591,14 +592,14 @@ class ResourceStatusDB:
         record.append(None) #FormerStatus
         record.append(storageElement[2]) #Reason
         records.append(record)
-    
+
     else:
       if granularity in ('Site', 'Sites'):
-        sitesList = self.getMonitoredsList(granularity, 
-                                           paramsList = paramsList, 
-                                           siteName = sites_select, 
-                                           status = status_select, 
-                                           siteType = siteType_select, 
+        sitesList = self.getMonitoredsList(granularity,
+                                           paramsList = paramsList,
+                                           siteName = sites_select,
+                                           status = status_select,
+                                           siteType = siteType_select,
                                            countries = countries_select)
         for site in sitesList:
           record = []
@@ -615,13 +616,13 @@ class ResourceStatusDB:
           records.append(record)
 
       elif granularity in ('Service', 'Services'):
-        servicesList = self.getMonitoredsList(granularity, 
-                                              paramsList = paramsList, 
-                                              serviceName = services_select, 
-                                              siteName = sites_select, 
-                                              status = status_select, 
+        servicesList = self.getMonitoredsList(granularity,
+                                              paramsList = paramsList,
+                                              serviceName = services_select,
+                                              siteName = sites_select,
+                                              status = status_select,
                                               siteType = siteType_select,
-                                              serviceType = serviceType_select, 
+                                              serviceType = serviceType_select,
                                               countries = countries_select)
         for service in servicesList:
           record = []
@@ -638,36 +639,36 @@ class ResourceStatusDB:
 
       elif granularity in ('Resource', 'Resources'):
         if sites_select == []:
-          sites_select = self.getMonitoredsList('Site', 
+          sites_select = self.getMonitoredsList('Site',
                                                 paramsList = ['SiteName'])
           sites_select = [x[0] for x in sites_select]
-        gridSites_select = self.getMonitoredsList('Site', 
-                                                  paramsList = ['GridSiteName'], 
-                                                  siteName = sites_select) 
+        gridSites_select = self.getMonitoredsList('Site',
+                                                  paramsList = ['GridSiteName'],
+                                                  siteName = sites_select)
         gridSites_select = [x[0] for x in gridSites_select]
-        resourcesList = self.getMonitoredsList(granularity, 
-                                               paramsList = paramsList, 
-                                               resourceName = resources_select, 
-                                               status = status_select, 
+        resourcesList = self.getMonitoredsList(granularity,
+                                               paramsList = paramsList,
+                                               resourceName = resources_select,
+                                               status = status_select,
                                                siteType = siteType_select,
-                                               resourceType = resourceType_select, 
+                                               resourceType = resourceType_select,
                                                countries = countries_select,
                                                gridSiteName = gridSites_select)
-        
+
         for resource in resourcesList:
           DIRACsite = resource[2]
-          
+
           if DIRACsite == None:
             GridSiteName = resource[3]  #self.getGridSiteName(granularity, resource[0])
             DIRACsites = getDIRACSiteName(GridSiteName)
             if not DIRACsites['OK']:
               raise RSSDBException, 'Error executing getDIRACSiteName'
             DIRACsites = DIRACsites['Value']
-            DIRACsite_comp = '' 
+            DIRACsite_comp = ''
             for DIRACsite in DIRACsites:
               if DIRACsite not in sites_select:
                 continue
-              DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp 
+              DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
             record = []
             record.append(resource[0]) #ResourceName
             record.append(resource[1]) #ServiceType
@@ -680,7 +681,7 @@ class ResourceStatusDB:
             record.append(resource[7]) #FormerStatus
             record.append(resource[8]) #Reason
             records.append(record)
-          
+
           else:
             if DIRACsite not in sites_select:
               continue
@@ -700,26 +701,26 @@ class ResourceStatusDB:
 
       elif granularity in ('StorageElement', 'StorageElements'):
         if sites_select == []:
-          sites_select = self.getMonitoredsList('Site', 
+          sites_select = self.getMonitoredsList('Site',
                                                 paramsList = ['SiteName'])
           sites_select = [x[0] for x in sites_select]
-        gridSites_select = self.getMonitoredsList('Site', 
-                                                  paramsList = ['GridSiteName'], 
-                                                  siteName = sites_select) 
+        gridSites_select = self.getMonitoredsList('Site',
+                                                  paramsList = ['GridSiteName'],
+                                                  siteName = sites_select)
         gridSites_select = [x[0] for x in gridSites_select]
 
-        storageElementsList = self.getMonitoredsList(granularity, 
-                                                     paramsList = paramsList, 
-                                                     storageElementName = storageElements_select, 
-                                                     status = status_select, 
+        storageElementsList = self.getMonitoredsList(granularity,
+                                                     paramsList = paramsList,
+                                                     storageElementName = storageElements_select,
+                                                     status = status_select,
                                                      countries = countries_select,
                                                      gridSiteName = gridSites_select)
 
-#      paramNames = ['StorageElementName', 'ResourceName', 'SiteName', 'Country', 
+#      paramNames = ['StorageElementName', 'ResourceName', 'SiteName', 'Country',
 #                    'Status', 'DateEffective', 'FormerStatus', 'Reason']
-#      paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status', 
+#      paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status',
 #                    'DateEffective', 'FormerStatus', 'Reason']
-       
+
         for storageElement in storageElementsList:
           DIRACsites = getDIRACSiteName(storageElement[2])
           if not DIRACsites['OK']:
@@ -729,7 +730,7 @@ class ResourceStatusDB:
           for DIRACsite in DIRACsites:
             if DIRACsite not in sites_select:
               continue
-            DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp 
+            DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
           record = []
           record.append(storageElement[0]) #StorageElementName
           record.append(storageElement[1]) #ResourceName
@@ -760,20 +761,20 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getMonitoredsHistory(self, granularity, paramsList = None, name = None, 
+  def getMonitoredsHistory(self, granularity, paramsList = None, name = None,
                            presentAlso = True, order = 'ASC', limit = None):
-    """ 
-    Get history of sites/services/resources/storageElements in a list 
+    """
+    Get history of sites/services/resources/storageElements in a list
     (a site name can be specified)
-        
+
     :params:
       :attr:`granularity`: a ValidRes
-    
+
       :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
-  
-      :attr:`name`: list of strings. If not given, fetches the complete list 
+
+      :attr:`name`: list of strings. If not given, fetches the complete list
     """
-    
+
     if paramsList is not None:
       if type(paramsList) is not type([]):
         paramsList = [paramsList]
@@ -809,10 +810,10 @@ class ResourceStatusDB:
       DBid = 'StorageElementsHistoryID'
     else:
       raise InvalidRes, where(self, self.getMonitoredsHistory)
-      
+
 
     #take history data
-    if (name == None or name == []): 
+    if (name == None or name == []):
       req = "SELECT %s FROM %s ORDER BY %s, %s" %(params, DBtable, DBname, DBid)
     else:
       if type(name) is not type([]):
@@ -820,7 +821,7 @@ class ResourceStatusDB:
       else:
         nameM = name
       nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
-      req = "SELECT %s FROM %s WHERE %s IN (%s) ORDER BY %s" % (params, DBtable, DBname, 
+      req = "SELECT %s FROM %s WHERE %s IN (%s) ORDER BY %s" % (params, DBtable, DBname,
                                                                 nameM, DBid)
       if order == 'DESC':
         req = req + " DESC"
@@ -833,10 +834,10 @@ class ResourceStatusDB:
       return []
 #    list_h = []
     list_h = [ x for x in resQuery['Value']]
-    
+
     if presentAlso:
       #take present data
-      if (name == None or name == []): 
+      if (name == None or name == []):
         req = "SELECT %s FROM %s ORDER BY %s" %(params, DBtableP, DBname)
       else:
         if type(name) is not type([]):
@@ -845,7 +846,7 @@ class ResourceStatusDB:
           nameM = name
         nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
         req = "SELECT %s FROM %s WHERE %s IN (%s)" % (params, DBtableP, DBname, nameM)
-      
+
       resQuery = self.db._query(req)
       if not resQuery['OK']:
         raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
@@ -853,31 +854,31 @@ class ResourceStatusDB:
         return []
       list_p = []
       list_p = [ x for x in resQuery['Value']]
-  
+
       list = list_h + list_p
     else:
       list = list_h
-    
+
     return list
- 
+
 #############################################################################
 
   def setLastMonitoredCheckTime(self, granularity, name):
-    """ 
+    """
     Set to utcnow() LastCheckTime of table Sites/Services/Resources/StorageElements
-    
+
     :params:
       :attr:`granularity`: a ValidRes
-    
+
       :attr:`name`: string
     """
-    
+
     DBtable, DBname = self.__DBchoice(granularity)
-    
+
     req = "UPDATE %s SET LastCheckTime = UTC_TIMESTAMP() WHERE " %(DBtable)
     req = req + "%s = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (DBname, name)
     resUpdate = self.db._update(req)
-    
+
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self.setLastMonitoredCheckTime) + resUpdate['Message']
 
@@ -886,24 +887,24 @@ class ResourceStatusDB:
   def setMonitoredReason(self, granularity, name, reason, tokenOwner):
     """
     Set new reason to name.
-        
+
     :params:
       :attr:`granularity`: a ValidRes
-    
+
       :attr:`name`: string, name or res
 
       :attr:`reason`: string, reason
 
-      :attr:`tokenOwner`: string, who's making this change 
+      :attr:`tokenOwner`: string, who's making this change
       (RS_SVC if it's the service itslef)
     """
-    
+
     DBtable, DBname = self.__DBchoice(granularity)
-    
+
     req = "UPDATE %s SET Reason = '%s', " %(DBtable, reason)
     req = req + "TokenOwner = '%s' WHERE %s = '%s';"  %(tokenOwner, DBname, name)
     resUpdate = self.db._update(req)
-    
+
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self.setMonitoredReason) + resUpdate['Message']
 
@@ -916,17 +917,17 @@ class ResourceStatusDB:
 #############################################################################
 
   def setSiteStatus(self, siteName, status, reason, tokenOwner):
-    """ 
+    """
     Set a Site status, effective from now, with no ending
-        
+
     :params:
       :attr:`siteName`: string
-  
-      :attr:`status`: string. Possibilities: 
+
+      :attr:`status`: string. Possibilities:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-  
+
       :attr:`reason`: string
-  
+
       :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
@@ -940,31 +941,31 @@ class ResourceStatusDB:
 
     siteType = resQuery['Value'][0][0]
     gridSiteName = resQuery['Value'][0][1]
-  
-    self.addOrModifySite(siteName, siteType, gridSiteName, status, reason, 
-                         datetime.datetime.utcnow().replace(microsecond = 0), tokenOwner, 
+
+    self.addOrModifySite(siteName, siteType, gridSiteName, status, reason,
+                         datetime.datetime.utcnow().replace(microsecond = 0), tokenOwner,
                          datetime.datetime(9999, 12, 31, 23, 59, 59))
-    
+
 #############################################################################
 
   def addOrModifySite(self, siteName, siteType, gridSiteName, status,
                       reason, dateEffective, tokenOwner, dateEnd):
-    """ 
+    """
     Add or modify a site to the Sites table.
-    
+
     :params:
       :attr:`siteName`: string - name of the site (DIRAC name)
-    
-      :attr:`siteType`: string - ValidSiteType: 
+
+      :attr:`siteType`: string - ValidSiteType:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`. LHCb Tier of the site
-      
+
       :attr:`gridSiteName`: string - name of the site in GOC DB
-    
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
+
       :attr:`dateEffective`: datetime.datetime - date from which the site status is effective
 
       :attr:`tokenOwner`: string - free
@@ -980,7 +981,7 @@ class ResourceStatusDB:
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.addOrModifySite) + resQuery['Message']
 
-    if resQuery['Value']: 
+    if resQuery['Value']:
       if dateEffective <= (dateCreated + datetime.timedelta(minutes=2)):
         #site modification, effective in less than 2 minutes
         self.setDateEnd('Site', siteName, dateEffective)
@@ -992,32 +993,32 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, 
-                              datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+      self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective,
+                              datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '),
                               tokenOwner)
 
     #in any case add a row to present Sites table
-    self._addSiteRow(siteName, siteType, gridSiteName, status, reason,  
+    self._addSiteRow(siteName, siteType, gridSiteName, status, reason,
                      dateCreated, dateEffective, dateEnd, tokenOwner)
 
 #############################################################################
 
-  def _addSiteRow(self, siteName, siteType, gridSiteName, status, reason,  
+  def _addSiteRow(self, siteName, siteType, gridSiteName, status, reason,
                   dateCreated, dateEffective, dateEnd, tokenOwner):
     """
     Add a new site row in Sites table
 
     :params:
       :attr:`siteName`: string - name of the site (DIRAC name)
-    
+
       :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`gridSiteName`: string - name of the site in GOC DB
-    
+
       :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
+
       :attr:`dateCreated`: datetime.datetime or string - date when which the site row is created
 
       :attr:`dateEffective`: datetime.datetime or string - date from which the site status is effective
@@ -1031,7 +1032,7 @@ class ResourceStatusDB:
 
     req = "INSERT INTO Sites (SiteName, SiteType, GridSiteName, Status, Reason, "
     req = req + "DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
-    req = req + "VALUES ('%s', '%s', '%s', " % (siteName, siteType, gridSiteName) 
+    req = req + "VALUES ('%s', '%s', '%s', " % (siteName, siteType, gridSiteName)
     req = req + "'%s', '%s', '%s', " %(status, reason, dateCreated)
     req = req + "'%s', '%s', '%s', '9999-12-31 23:59:59');" %(dateEffective, dateEnd, tokenOwner)
 
@@ -1041,24 +1042,24 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, 
+  def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective,
                          dateEnd, tokenOwner):
-    """ 
+    """
     Add an old site row in the SitesHistory table
 
     :params:
       :attr:`siteName`: string - name of the site (DIRAC name)
-    
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
+
       :attr:`dateCreated`: datetime.datetime or string - date when which the site row is created
 
       :attr:`dateEffective`: datetime.datetime or string - date from which the site status is effective
 
-      :attr:`dateEnd`: datetime.datetime or string - date from which the site status 
+      :attr:`dateEnd`: datetime.datetime or string - date from which the site status
       ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1083,31 +1084,31 @@ class ResourceStatusDB:
 #############################################################################
 
   def removeSite(self, siteName):
-    """ 
-    Completely remove a site from the Sites, SitesHistory tables. 
+    """
+    Completely remove a site from the Sites, SitesHistory tables.
     Also, remove its services and CEs.
-    
+
     :params:
       :attr:`siteName`: string
     """
-    
+
     gridSiteName = self.getGridSiteName('Site', siteName)
-    
-    DIRACSiteNames = [x[0] for x in self.getMonitoredsList('Site', 'GridSiteName', 
+
+    DIRACSiteNames = [x[0] for x in self.getMonitoredsList('Site', 'GridSiteName',
                                                            gridSiteName = gridSiteName)]
 
     if len(DIRACSiteNames) == 1:
       self.removeResource(gridSiteName = gridSiteName)
     else:
       self.removeResource(siteName = siteName)
-    
+
     self.removeService(siteName = siteName)
-    
+
     req = "DELETE from Sites WHERE SiteName = '%s';" %siteName
     resDel = self.db._update(req)
     if not resDel['OK']:
       raise RSSDBException, where(self, self.removeSite) + resDel['Message']
-    
+
     req = "DELETE from SitesHistory WHERE SiteName = '%s';" %siteName
     resDel = self.db._update(req)
     if not resDel['OK']:
@@ -1120,25 +1121,25 @@ class ResourceStatusDB:
 #############################################################################
 
 #############################################################################
-  
+
   def setServiceStatus(self, serviceName, status, reason, tokenOwner):
-    """ 
+    """
     Set a Service status, effective from now, with no ending
-        
+
     :params:
       :attr:`serviceName`: string
-      
-      :attr:`status`: string. Possibilities: 
+
+      :attr:`status`: string. Possibilities:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string
-      
+
       :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
-    req = "SELECT ServiceType, SiteName FROM Services WHERE ServiceName = " 
+    req = "SELECT ServiceType, SiteName FROM Services WHERE ServiceName = "
     req = req + "'%s' AND DateEffective < UTC_TIMESTAMP();" %(serviceName)
-    
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.setServiceStatus) + resQuery['Message']
@@ -1147,31 +1148,31 @@ class ResourceStatusDB:
 
     serviceType = resQuery['Value'][0][0]
     siteName = resQuery['Value'][0][1]
-  
-    self.addOrModifyService(serviceName, serviceType, siteName, status, reason, 
-                            datetime.datetime.utcnow().replace(microsecond = 0), tokenOwner, 
+
+    self.addOrModifyService(serviceName, serviceType, siteName, status, reason,
+                            datetime.datetime.utcnow().replace(microsecond = 0), tokenOwner,
                             datetime.datetime(9999, 12, 31, 23, 59, 59))
-    
+
 #############################################################################
 
-  def addOrModifyService(self, serviceName, serviceType, siteName, status, reason, 
+  def addOrModifyService(self, serviceName, serviceType, siteName, status, reason,
                          dateEffective, tokenOwner, dateEnd):
-    """ 
+    """
     Add or modify a service to the Services table.
-    
+
     :params:
       :attr:`serviceName`: string - name of the service (DIRAC name)
-    
-      :attr:`serviceType`: string - ValidServiceType: 
+
+      :attr:`serviceType`: string - ValidServiceType:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`siteName`: string - DIRAC site name
-      
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
+
       :attr:`dateEffective`: datetime.datetime - date from which the service status is effective
 
       :attr:`tokenOwner`: string - free
@@ -1187,7 +1188,7 @@ class ResourceStatusDB:
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.addOrModifyService) + resQuery['Message']
 
-    if resQuery['Value']: 
+    if resQuery['Value']:
       if dateEffective <= (dateCreated + datetime.timedelta(minutes=2)):
         #service modification, effective in less than 2 minutes
         self.setDateEnd('Service', serviceName, dateEffective)
@@ -1199,43 +1200,43 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addServiceHistoryRow(serviceName, oldStatus, reason, dateCreated, dateEffective, 
-                                 datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+      self._addServiceHistoryRow(serviceName, oldStatus, reason, dateCreated, dateEffective,
+                                 datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '),
                                  tokenOwner)
 
     #in any case add a row to present Services table
-    self._addServiceRow(serviceName, serviceType, siteName, status, reason, 
+    self._addServiceRow(serviceName, serviceType, siteName, status, reason,
                         dateCreated, dateEffective, dateEnd, tokenOwner)
 #    serviceRow = "Added %s --- %s " %(serviceName, dateEffective)
 #    return serviceRow
 
 #############################################################################
 
-  def _addServiceRow(self, serviceName, serviceType, siteName, status, reason, 
+  def _addServiceRow(self, serviceName, serviceType, siteName, status, reason,
                      dateCreated, dateEffective, dateEnd, tokenOwner):
     """
     Add a new service row in Services table
 
     :params:
       :attr:`serviceName`: string - name of the service (DIRAC name)
-    
-      :attr:`serviceType`: string - ValidServiceType: 
+
+      :attr:`serviceType`: string - ValidServiceType:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`siteName`: string - DIRAC site name
-      
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
-      :attr:`dateCreated`: datetime.datetime or string - 
+
+      :attr:`dateCreated`: datetime.datetime or string -
       date when which the service row is created
 
-      :attr:`dateEffective`: datetime.datetime or string - 
+      :attr:`dateEffective`: datetime.datetime or string -
       date from which the service status is effective
 
-      :attr:`dateEnd`: datetime.datetime or string - 
+      :attr:`dateEnd`: datetime.datetime or string -
       date from which the service status ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1248,33 +1249,33 @@ class ResourceStatusDB:
     req = req + "VALUES ('%s', '%s', '%s', " % (serviceName, serviceType, siteName)
     req = req + "'%s', '%s', '%s', '%s'" %(status, reason, dateCreated, dateEffective)
     req = req + ", '%s', '%s', '9999-12-31 23:59:59');" %(dateEnd, tokenOwner)
-    
+
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self._addServiceRow) + resUpdate['Message']
 
 #############################################################################
 
-  def _addServiceHistoryRow(self, serviceName, status, reason, dateCreated, 
+  def _addServiceHistoryRow(self, serviceName, status, reason, dateCreated,
                             dateEffective, dateEnd, tokenOwner):
     """
     Add an old service row in the ServicesHistory table
 
     :params:
       :attr:`serviceName`: string - name of the service (DIRAC name)
-    
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
-      :attr:`dateCreated`: datetime.datetime or string - 
+
+      :attr:`dateCreated`: datetime.datetime or string -
       date when which the service row is created
 
-      :attr:`dateEffective`: datetime.datetime or string - 
+      :attr:`dateEffective`: datetime.datetime or string -
       date from which the service status is effective
 
-      :attr:`dateEnd`: datetime.datetime or string - 
+      :attr:`dateEnd`: datetime.datetime or string -
       date from which the service status ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1294,34 +1295,34 @@ class ResourceStatusDB:
 #############################################################################
 
   def removeService(self, serviceName = None, siteName = None):
-    """ 
+    """
     Completely remove a service from the Services and ServicesHistory tables
-        
+
     :params:
       :attr:`serviceName`: string
     """
-    
-    if serviceName != None: 
+
+    if serviceName != None:
 
       req = "DELETE from Services WHERE ServiceName = '%s';" % (serviceName)
       resDel = self.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeService) + resDel['Message']
-  
+
       req = "DELETE from ServicesHistory WHERE ServiceName = '%s';" % (serviceName)
       resDel = self.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeService) + resDel['Message']
 
-    if siteName != None: 
+    if siteName != None:
 
       self.removeResource(siteName = siteName)
-      
+
       req = "DELETE from Services WHERE SiteName = '%s';" % (siteName)
       resDel = self.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeService) + resDel['Message']
-  
+
 
 #############################################################################
 
@@ -1332,13 +1333,13 @@ class ResourceStatusDB:
 #############################################################################
 
   def setResourceStatus(self, resourceName, status, reason, tokenOwner):
-    """ 
+    """
     Set a Resource status, effective from now, with no ending
-    
+
     :params:
       :attr:`resourceName`: string
 
-      :attr:`status`: string. Possibilities: 
+      :attr:`status`: string. Possibilities:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
 
       :attr:`reason`: string
@@ -1359,35 +1360,35 @@ class ResourceStatusDB:
     siteName = resQuery['Value'][0][2]
     gridSiteName = resQuery['Value'][0][3]
 
-    self.addOrModifyResource(resourceName, resourceType, serviceType, siteName, gridSiteName,  
-                             status, reason, datetime.datetime.utcnow().replace(microsecond = 0), 
+    self.addOrModifyResource(resourceName, resourceType, serviceType, siteName, gridSiteName,
+                             status, reason, datetime.datetime.utcnow().replace(microsecond = 0),
                              tokenOwner, datetime.datetime(9999, 12, 31, 23, 59, 59))
-    
+
 #############################################################################
 
-  def addOrModifyResource(self, resourceName, resourceType, serviceType, siteName,  
+  def addOrModifyResource(self, resourceName, resourceType, serviceType, siteName,
                           gridSiteName, status, reason, dateEffective, tokenOwner, dateEnd):
-    """ 
+    """
     Add or modify a resource to the Resources table.
-    
+
     :params:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
-    
-      :attr:`resourceType`: string - ValidResourceType: 
+
+      :attr:`resourceType`: string - ValidResourceType:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
-      :attr:`serviceType`: string - ValidServiceType: 
+
+      :attr:`serviceType`: string - ValidServiceType:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`siteName`: string - name of the site (DIRAC name). Can be NULL.
-    
+
       :attr:`gridSiteName`: string - name of the site in GOC DB. Can be NULL.
-    
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
+
       :attr:`dateEffective`: datetime.datetime - date from which the resource status is effective
 
       :attr:`tokenOwner`: string - free
@@ -1403,7 +1404,7 @@ class ResourceStatusDB:
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.addOrModifyResource) + resQuery['Message']
 
-    if resQuery['Value']: 
+    if resQuery['Value']:
       #site modification, effective from now
       if dateEffective <= (dateCreated + datetime.timedelta(minutes=2)):
         self.setDateEnd('Resource', resourceName, dateEffective)
@@ -1415,57 +1416,57 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addResourcesHistoryRow(resourceName, oldStatus, reason, dateCreated, dateEffective, 
-                                   datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+      self._addResourcesHistoryRow(resourceName, oldStatus, reason, dateCreated, dateEffective,
+                                   datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '),
                                    tokenOwner)
 
     #in any case add a row to present Sites table
-    self._addResourcesRow(resourceName, resourceType, serviceType, siteName, gridSiteName,  
+    self._addResourcesRow(resourceName, resourceType, serviceType, siteName, gridSiteName,
                           status, reason, dateCreated, dateEffective, dateEnd, tokenOwner)
 
 #############################################################################
 
-  def _addResourcesRow(self, resourceName, resourceType, serviceType, siteName, gridSiteName,  
+  def _addResourcesRow(self, resourceName, resourceType, serviceType, siteName, gridSiteName,
                        status, reason, dateCreated, dateEffective, dateEnd, tokenOwner):
-    """ 
+    """
     Add a new resource row in Resources table
 
     :params:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
-    
-      :attr:`resourceType`: string - ValidResourceType: 
+
+      :attr:`resourceType`: string - ValidResourceType:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
-      :attr:`serviceType`: string - ValidServiceType: 
+
+      :attr:`serviceType`: string - ValidServiceType:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`siteName`: string - name of the site (DIRAC name). Can be NULL.
-    
+
       :attr:`gridSiteName`: string - name of the site in GOC DB. Can be NULL.
-    
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
+
       :attr:`dateCreated`: datetime.datetime  or string - date when which the resource row is created
 
-      :attr:`dateEffective`: datetime.datetime or string - date from which the resource status 
+      :attr:`dateEffective`: datetime.datetime or string - date from which the resource status
       is effective
 
-      :attr:`dateEnd`: datetime.datetime  or string - date from which the resource status 
+      :attr:`dateEnd`: datetime.datetime  or string - date from which the resource status
       ends to be effective
 
       :attr:`tokenOwner`: string - free
     """
 
     dateCreated, dateEffective, dateEnd = self.__usualChecks(dateCreated, dateEffective, dateEnd, status)
-    
+
     if siteName is None:
       siteName = 'NULL'
     if gridSiteName is None:
       gridSiteName = 'NULL'
-    
+
     req = "INSERT INTO Resources (ResourceName, ResourceType, ServiceType, SiteName, GridSiteName, "
     req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
     req = req + "VALUES ('%s', '%s', '%s', " %(resourceName, resourceType, serviceType)
@@ -1483,29 +1484,29 @@ class ResourceStatusDB:
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self._addResourcesRow) + resUpdate['Message']
-    
+
 
 #############################################################################
 
-  def _addResourcesHistoryRow(self, resourceName, status, reason, dateCreated, 
+  def _addResourcesHistoryRow(self, resourceName, status, reason, dateCreated,
                               dateEffective, dateEnd, tokenOwner):
     """
     Add an old resource row in the ResourcesHistory table
 
     :params:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
-    
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
+
       :attr:`dateCreated`: datetime.datetime  or string - date when which the resource row is created
 
-      :attr:`dateEffective`: datetime.datetime  or string - date from which the resource status 
+      :attr:`dateEffective`: datetime.datetime  or string - date from which the resource status
       is effective
 
-      :attr:`dateEnd`: datetime.datetime  or string - date from which the resource status ends 
+      :attr:`dateEnd`: datetime.datetime  or string - date from which the resource status ends
       to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1514,12 +1515,12 @@ class ResourceStatusDB:
     dateCreated, dateEffective, dateEnd = self.__usualChecks(dateCreated, dateEffective, dateEnd, status)
 
     req = "INSERT INTO ResourcesHistory (ResourceName, "
-    req = req + " Status, Reason, DateCreated," 
+    req = req + " Status, Reason, DateCreated,"
     req = req + " DateEffective, DateEnd, TokenOwner) "
     req = req + "VALUES ('%s', " % (resourceName)
     req = req + "'%s', '%s', '%s', " %(status, reason, dateCreated)
     req = req + "'%s', '%s', '%s');" %(dateEffective, dateEnd, tokenOwner)
-    
+
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self._addResourcesHistoryRow) + resUpdate['Message']
@@ -1527,77 +1528,77 @@ class ResourceStatusDB:
 #############################################################################
 
   def removeResource(self, resourceName = None, siteName = None, gridSiteName = None):
-    """ 
+    """
     Completely remove a resource from the Resources and ResourcesHistory tables.
     Also, remove the SEs of an SRM endpont.
     """
 
     if resourceName != None:
       self.removeStorageElement(resourceName = resourceName)
-      
+
       req = "DELETE from Resources WHERE ResourceName = '%s';" % (resourceName)
       resDel = self.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeResource) + resDel['Message']
-  
+
       req = "DELETE from ResourcesHistory WHERE ResourceName = '%s';" % (resourceName)
       resDel = self.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeResource) + resDel['Message']
 
     if siteName != None:
-        
+
       req = "DELETE from Resources WHERE SiteName = '%s';" % (siteName)
       resDel = self.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeResource) + resDel['Message']
-  
+
     if gridSiteName != None:
-        
+
       req = "DELETE from Resources WHERE GridSiteName = '%s';" % (gridSiteName)
       resDel = self.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeResource) + resDel['Message']
-  
+
 #############################################################################
 
   def setMonitoredToBeChecked(self, monitoreds, granularity, name):
-    """ 
+    """
     Set LastCheckTime to 0 to monitored(s)
-    
+
     :params:
       :attr:`monitoreds`: string, or a list of strings where each is a ValidRes:
       which granularity has to be set to be checked
-    
-      :attr:`granularity`: string, a ValidRes: from who this set comes 
-      
+
+      :attr:`granularity`: string, a ValidRes: from who this set comes
+
       :attr:`name`: string, name of Site or Resource
     """
-    
+
     if type(monitoreds) is not list:
       monitoreds = [monitoreds]
-    
+
     for monitored in monitoreds:
-    
+
       if monitored in ('Site', 'Sites'):
         siteName = self.getGeneralName(name, granularity, monitored)
         siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
-        
-        req = "UPDATE Sites SET LastCheckTime = '00000-00-00 00:00:00'" 
+
+        req = "UPDATE Sites SET LastCheckTime = '00000-00-00 00:00:00'"
         req = req + " WHERE SiteName IN (%s);" %(siteName)
-  
-  
-      
+
+
+
       elif monitored in ('Service', 'Services'):
-      
+
         if granularity in ('Site', 'Sites'):
-          serviceName = self.getMonitoredsList('Service', paramsList = ['ServiceName'], 
+          serviceName = self.getMonitoredsList('Service', paramsList = ['ServiceName'],
                                                siteName = name)
           if type(serviceName) is not list:
             serviceName = [serviceName]
           if serviceName == []:
             raise RSSDBException, where(self, self.setMonitoredToBeChecked) + " No services for site %s" %name
-          else:  
+          else:
             serviceName = [x[0] for x in serviceName]
             serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
             req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00'"
@@ -1605,53 +1606,53 @@ class ResourceStatusDB:
         else:
           serviceName = self.getGeneralName(name, granularity, monitored)
           serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
-          
-          req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00'" 
+
+          req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00'"
           req = req + " WHERE ServiceName IN (%s);" %(serviceName)
-      
-  
-      
+
+
+
       elif monitored in ('Resource', 'Resources'):
-      
+
         if granularity in ('Site', 'Sites'):
-          resourceName = self.getMonitoredsList('Resource', paramsList = ['ResourceName'], 
+          resourceName = self.getMonitoredsList('Resource', paramsList = ['ResourceName'],
                                                 siteName = name)
           if type(resourceName) is not list:
             resourceName = [resourceName]
           if resourceName == []:
             raise RSSDBException, where(self, self.setMonitoredToBeChecked) + " No resources for site %s" %name
           else:
-            resourceName = [x[0] for x in resourceName]  
+            resourceName = [x[0] for x in resourceName]
             resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
             req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'"
             req = req + " WHERE ResourceName IN (%s);" %(resourceName)
-    
+
         elif granularity in ('Service', 'Services'):
-  
-          resourceName = self.getMonitoredsList('Resource', paramsList = ['ResourceName'], 
+
+          resourceName = self.getMonitoredsList('Resource', paramsList = ['ResourceName'],
                                                 serviceName = name)
           if type(resourceName) is not list:
             resourceName = [resourceName]
           if resourceName == []:
             raise RSSDBException, where(self, self.setMonitoredToBeChecked) + " No resources for service %s" %name
-          else:  
+          else:
             resourceName = [x[0] for x in resourceName]
             resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
             req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'"
             req = req + " WHERE ResourceName IN (%s);" %(resourceName)
-    
-          
+
+
         elif granularity in ('StorageElement', 'StorageElements'):
           resourceName = self.getGeneralName(name, granularity, monitored)
           resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
-          
-          req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'" 
+
+          req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'"
           req = req + " WHERE ResourceName IN (%s);" %(resourceName)
-      
-  
-  
+
+
+
       elif monitored in ('StorageElement', 'StorageElements'):
-        
+
         if granularity in ('Site', 'Sites'):
           SEName = self.getMonitoredsList(monitored, paramsList = ['StorageElementName'],
                                           siteName = name)
@@ -1665,7 +1666,7 @@ class ResourceStatusDB:
             SEName = ','.join(['"'+x.strip()+'"' for x in SEName])
             req = "UPDATE StorageElements SET LastCheckTime = '00000-00-00 00:00:00'"
             req = req + " WHERE StorageElementName IN (%s);" %(SEName)
-        
+
         elif granularity in ('Resource', 'Resources'):
           SEName = self.getMonitoredsList(monitored, paramsList = ['StorageElementName'],
                                           resourceName = name)
@@ -1674,12 +1675,12 @@ class ResourceStatusDB:
           if SEName == []:
             pass
 #            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for resource %s" %name
-          else:  
+          else:
             SEName = [x[0] for x in SEName]
             SEName = ','.join(['"'+x.strip()+'"' for x in SEName])
             req = "UPDATE StorageElements SET LastCheckTime = '00000-00-00 00:00:00'"
             req = req + " WHERE StorageElementName IN (%s);" %(SEName)
-    
+
         elif granularity in ('Service', 'Services'):
           SEName = self.getMonitoredsList(monitored, paramsList = ['StorageElementName'],
                                           siteName = name.split('@').pop())
@@ -1688,15 +1689,15 @@ class ResourceStatusDB:
           if SEName == []:
             pass
 #            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for service %s" %name
-          else:  
+          else:
             SEName = [x[0] for x in SEName]
             SEName = ','.join(['"'+x.strip()+'"' for x in SEName])
             req = "UPDATE StorageElements SET LastCheckTime = '00000-00-00 00:00:00'"
             req = req + " WHERE StorageElementName IN (%s);" %(SEName)
-    
-         
+
+
       resUpdate = self.db._update(req)
-      
+
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.setMonitoredToBeChecked) + resUpdate['Message']
 
@@ -1704,37 +1705,37 @@ class ResourceStatusDB:
 #############################################################################
 
   def getResourceStats(self, granularity, name):
-    """ 
+    """
     Returns simple statistics of active, probing, bad and banned resources of a site or service;
-        
+
     :params:
       :attr:`granularity`: string: site or service
-      
+
       :attr:`name`: string - name of site or service
-    
+
     :returns:
       { 'Active':xx, 'Probing':yy, 'Bad':vv 'Banned':zz, 'Total':xyvz }
     """
-    
+
     res = {'Active':0, 'Probing':0, 'Bad':0, 'Banned':0, 'Total':0}
-    
-    
+
+
     if granularity in ('Site', 'Sites'):
       name = self.getGridSiteName(granularity, name)
-      DBname = 'GridSiteName'   
+      DBname = 'GridSiteName'
 
     elif granularity in ('Service', 'Services'):
       serviceType = name.split('@')[0]
       name = name.split('@')[1]
       if serviceType == 'Computing':
         DBname = 'SiteName'
-      
+
       else:
         name = self.getGridSiteName('Site', name)
         DBname = 'GridSiteName'
-    
-    
-    req = "SELECT Status, COUNT(*) " 
+
+
+    req = "SELECT Status, COUNT(*) "
     req = req + "FROM Resources WHERE %s = '%s' " %(DBname, name)
     if granularity in ('Service', 'Services') and serviceType != 'Computing':
       req = req + "AND ServiceType = '%s' " %serviceType
@@ -1745,34 +1746,34 @@ class ResourceStatusDB:
     else:
       for x in resQuery['Value']:
         res[x[0]] = int(x[1])
-        
+
     res['Total'] = sum(res.values())
-    
+
     return res
 
 #############################################################################
 
   def getStorageElementsStats(self, granularity, name):
-    """ 
+    """
     Returns simple statistics of active, probing, bad and banned resources of a site or resource;
-        
+
     :params:
       :attr:`granularity`: string: site or resource
-      
+
       :attr:`name`: string - name of site or resource
-    
+
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
-    
+
     res = {'Active':0, 'Probing':0, 'Bad':0, 'Banned':0, 'Total':0}
-    
-    if granularity in ('Site', 'Sites'): 
+
+    if granularity in ('Site', 'Sites'):
 #      gridSiteName = self.getGridSiteName(granularity, name)
-      req = "SELECT Status, COUNT(*)" 
+      req = "SELECT Status, COUNT(*)"
       req = req + " FROM StorageElements WHERE GridSiteName = '%s' GROUP BY Status" %name
-    elif granularity in ('Resource', 'Resources'): 
-      req = "SELECT Status, COUNT(*)" 
+    elif granularity in ('Resource', 'Resources'):
+      req = "SELECT Status, COUNT(*)"
       req = req + " FROM StorageElements WHERE ResourceName = '%s' GROUP BY Status" %name
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -1780,9 +1781,9 @@ class ResourceStatusDB:
     else:
       for x in resQuery['Value']:
         res[x[0]] = int(x[1])
-        
+
     res['Total'] = sum(res.values())
-    
+
     return res
 
 #############################################################################
@@ -1794,21 +1795,21 @@ class ResourceStatusDB:
 #############################################################################
 
   def setStorageElementStatus(self, storageElementName, status, reason, tokenOwner):
-    """ 
+    """
     Set a StorageElement status, effective from now, with no ending
-        
+
     :params:
       :attr:`storageElementName`: string
-  
-      :attr:`status`: string. Possibilities: 
+
+      :attr:`status`: string. Possibilities:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-  
+
       :attr:`reason`: string
-  
+
       :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
-    req = "SELECT ResourceName, GridSiteName FROM StorageElements WHERE StorageElementName = " 
+    req = "SELECT ResourceName, GridSiteName FROM StorageElements WHERE StorageElementName = "
     req = req + "'%s' AND DateEffective < UTC_TIMESTAMP();" %(storageElementName)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -1818,49 +1819,49 @@ class ResourceStatusDB:
 
     resourceName = resQuery['Value'][0][0]
     gridSiteName = resQuery['Value'][0][1]
-  
-    self.addOrModifyStorageElement(storageElementName, resourceName, gridSiteName, status, 
-                                   reason, datetime.datetime.utcnow().replace(microsecond = 0), 
+
+    self.addOrModifyStorageElement(storageElementName, resourceName, gridSiteName, status,
+                                   reason, datetime.datetime.utcnow().replace(microsecond = 0),
                                    tokenOwner, datetime.datetime(9999, 12, 31, 23, 59, 59))
-    
+
 #############################################################################
 
-  def addOrModifyStorageElement(self, storageElementName, resourceName, gridSiteName, 
+  def addOrModifyStorageElement(self, storageElementName, resourceName, gridSiteName,
                                 status, reason, dateEffective, tokenOwner, dateEnd):
-    """ 
+    """
     Add or modify a storageElement to the StorageElements table.
-    
+
     :params:
       :attr:`storageElementName`: string - name of the storageElement
-    
+
       :attr:`resourceName`: string - name of the node
-    
+
       :attr:`gridSiteName`: string - name of the site in GOC DB
-    
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
-      :attr:`dateEffective`: datetime.datetime - 
+
+      :attr:`dateEffective`: datetime.datetime -
       date from which the storageElement status is effective
 
       :attr:`tokenOwner`: string - free
 
-      :attr:`dateEnd`: datetime.datetime - 
+      :attr:`dateEnd`: datetime.datetime -
       date from which the storageElement status ends to be effective
     """
 
     dateCreated, dateEffective = self.__addOrModifyInit(dateEffective, dateEnd, status)
 
     #check if the storageElement is already there
-    query = "SELECT StorageElementName FROM StorageElements WHERE " 
+    query = "SELECT StorageElementName FROM StorageElements WHERE "
     query = query + "StorageElementName='%s'" % storageElementName
     resQuery = self.db._query(query)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.addOrModifyStorageElement) + resQuery['Message']
 
-    if resQuery['Value']: 
+    if resQuery['Value']:
       if dateEffective <= (dateCreated + datetime.timedelta(minutes=2)):
         #storageElement modification, effective in less than 2 minutes
         self.setDateEnd('StorageElement', storageElementName, dateEffective)
@@ -1872,40 +1873,40 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addStorageElementHistoryRow(storageElementName, oldStatus, reason, dateCreated, dateEffective, 
-                                        datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+      self._addStorageElementHistoryRow(storageElementName, oldStatus, reason, dateCreated, dateEffective,
+                                        datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '),
                                         tokenOwner)
 
     #in any case add a row to present StorageElements table
-    self._addStorageElementRow(storageElementName, resourceName, gridSiteName, status, 
+    self._addStorageElementRow(storageElementName, resourceName, gridSiteName, status,
                                reason, dateCreated, dateEffective, dateEnd, tokenOwner)
 
 #############################################################################
 
-  def _addStorageElementRow(self, storageElementName, resourceName, gridSiteName, status, 
+  def _addStorageElementRow(self, storageElementName, resourceName, gridSiteName, status,
                             reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     """
     Add a new storageElement row in StorageElements table
 
     :params:
       :attr:`storageElementName`: string - name of the storageElement
-    
+
       :attr:`resourceName`: string - name of the resource
-  
+
       :attr:`gridSiteName`: string - name of the site (GOC DB name)
-      
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
-      :attr:`dateCreated`: datetime.datetime or string - date when which the storageElement 
+
+      :attr:`dateCreated`: datetime.datetime or string - date when which the storageElement
       row is created
 
-      :attr:`dateEffective`: datetime.datetime or string - date from which the storageElement 
+      :attr:`dateEffective`: datetime.datetime or string - date from which the storageElement
       status is effective
 
-      :attr:`dateEnd`: datetime.datetime or string - date from which the storageElement status 
+      :attr:`dateEnd`: datetime.datetime or string - date from which the storageElement status
       ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1925,33 +1926,33 @@ class ResourceStatusDB:
       req = req + "'%s', " %gridSiteName
     req = req + "'%s', '%s', '%s', " %(status, reason, dateCreated, )
     req = req + "'%s', '%s', '%s', '9999-12-31 23:59:59');" %(dateEffective, dateEnd, tokenOwner)
-    
+
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self._addStorageElementRow) + resUpdate['Message']
 
 #############################################################################
 
-  def _addStorageElementHistoryRow(self, storageElementName, status, 
+  def _addStorageElementHistoryRow(self, storageElementName, status,
                                    reason, dateCreated, dateEffective, dateEnd, tokenOwner):
-    """ 
+    """
     Add an old storageElement row in the StorageElementsHistory table
 
     :params:
       :attr:`storageElementName`: string - name of the storageElement
-    
-      :attr:`status`: string - ValidStatus: 
+
+      :attr:`status`: string - ValidStatus:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-      
+
       :attr:`reason`: string - free
-      
-      :attr:`dateCreated`: datetime.datetime or string - 
+
+      :attr:`dateCreated`: datetime.datetime or string -
       date when which the storageElement row is created
 
-      :attr:`dateEffective`: datetime.datetime or string - 
+      :attr:`dateEffective`: datetime.datetime or string -
       date from which the storageElement status is effective
 
-      :attr:`dateEnd`: datetime.datetime or string - 
+      :attr:`dateEnd`: datetime.datetime or string -
       date from which the storageElement status ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1973,24 +1974,24 @@ class ResourceStatusDB:
 #############################################################################
 
   def removeStorageElement(self, storageElementName = None, resourceName = None):
-    """ 
-    Completely remove a storageElement from the StorageElements 
+    """
+    Completely remove a storageElement from the StorageElements
     and StorageElementsHistory tables
-    
+
     :params:
       :attr:`storageElementName`: string
 
       :attr:`resourceName`: string
     """
-    
+
     if storageElementName != None:
-      req = "DELETE from StorageElements " 
+      req = "DELETE from StorageElements "
       req = req + "WHERE StorageElementName = '%s';" % (storageElementName)
       resDel = self.db._update(req)
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeStorageElement) + resDel['Message']
-  
-      req = "DELETE from StorageElementsHistory" 
+
+      req = "DELETE from StorageElementsHistory"
       req = req + " WHERE StorageElementName = '%s';" % (storageElementName)
       resDel = self.db._update(req)
       if not resDel['OK']:
@@ -2011,13 +2012,13 @@ class ResourceStatusDB:
 #############################################################################
 
   def addType(self, granularity, type, description=''):
-    """ 
-    Add a site, service or resource type 
+    """
+    Add a site, service or resource type
     (T1, Computing, CE (different types also), SE, ...)
-        
+
     :params:
-      :attr:`granularity`: string - 'Site', 'Service', 'Resource' 
-    
+      :attr:`granularity`: string - 'Site', 'Service', 'Resource'
+
       :attr:`serviceType`: string
 
       :attr:`description`: string, optional
@@ -2037,54 +2038,54 @@ class ResourceStatusDB:
   def addOrModifyGridSite(self, name, tier):
     """
     Add or modify a Grid Site to the GridSites table.
-    
+
     :params:
       :attr:`name`: string - name of the site in GOC DB
-      
+
       :attr:`tier`: string - tier of the site
     """
-    
+
     if tier not in ValidSiteType:
       raise RSSDBException, "Not the right SiteType"
-    
+
     req = "SELECT GridSiteName, GridTier FROM GridSites "
     req = req + "WHERE GridSiteName = '%s'" %(name)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.addOrModifyGridSite) + resQuery['Message']
 
-    if resQuery['Value']: 
+    if resQuery['Value']:
       req = "UPDATE GridSites SET GridTier = '%s' WHERE GridSiteName = '%s'" %(tier, name)
-      
+
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.addOrModifyGridSite) + resUpdate['Message']
     else:
       req = "INSERT INTO GridSites (GridSiteName, GridTier) VALUES ('%s', '%s')" %(name, tier)
-      
+
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.addOrModifyGridSite) + resUpdate['Message']
-    
+
 #############################################################################
 
   def getGridSitesList(self, paramsList = None, gridSiteName = None, gridTier = None):
-    """ 
-    Get grid site lists. 
-    
+    """
+    Get grid site lists.
+
     :params:
-      :attr:`paramsList`: a list of parameters can be entered. If not given, 
-      a custom list is used. 
-      
+      :attr:`paramsList`: a list of parameters can be entered. If not given,
+      a custom list is used.
+
       :attr:`gridSiteName` grid site name. If not given, fetch all.
-      
-      :attr:`gridTier`: a string or a list representing the site type. 
+
+      :attr:`gridTier`: a string or a list representing the site type.
       If not given, fetch all.
-      
+
     :return:
       list of gridSites paramsList's values
     """
-    
+
     #paramsList
     if (paramsList == None or paramsList == []):
       params = 'GridSiteName, GridTier'
@@ -2107,7 +2108,7 @@ class ResourceStatusDB:
       if type(gridSiteName) is not type([]):
         gridSiteName = [gridSiteName]
       gridSiteName = ','.join(['"'+x.strip()+'"' for x in gridSiteName])
-    
+
     #gridTier
     if (gridTier == None or gridTier == []):
       gridTier = ValidSiteType
@@ -2121,7 +2122,7 @@ class ResourceStatusDB:
     if gridSiteName != [] and gridSiteName != None and gridSiteName is not None and gridSiteName != '':
       req = req + " GridSiteName IN (%s) " %(gridSiteName)
     req = req + " AND GridTier IN (%s)" % (gridTier)
-    
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
@@ -2134,15 +2135,15 @@ class ResourceStatusDB:
 ##############################################################################
 
   def removeRow(self, fromWhere, name, dateEffective = None):
-    """ 
+    """
     Remove a row from one of the tables
-    
+
     :params:
       :attr:`fromWhere`: string, a ValidRes
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-    
+
       :attr:`name`: string
-      
+
       :attr:`dateEffective`: string or datetime.datetime
     """
 
@@ -2151,7 +2152,7 @@ class ResourceStatusDB:
         dateEffective = dateEffective.isoformat(' ')
 
     DBtable, DBname = self.__DBchoice(fromWhere)
-    
+
     req = "DELETE from %s WHERE %s = '%s'" % (DBtable, DBname, name)
     if dateEffective is not None:
       req = req + " AND DateEffective = '%s'" %(dateEffective)
@@ -2162,13 +2163,13 @@ class ResourceStatusDB:
 #############################################################################
 
   def getTypesList(self, granularity, type=None):
-    """ 
+    """
     Get list of site, resource, service types with description
-    
+
     :Params:
       :attr:`type`: string, the type.
     """
-    
+
     DBtype, DBtable = self.__DBchoiceType(granularity)
 
     if type == None:
@@ -2189,24 +2190,24 @@ class ResourceStatusDB:
 #############################################################################
 
   def removeType(self, granularity, type):
-    """ 
+    """
     Remove a type from the DB
-    
+
     :params:
       :attr:`type`: string, a type (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
     """
 
     DBtype, DBtable = self.__DBchoiceType(granularity)
-    
+
     req = "DELETE from %s WHERE %s = '%s';" % (DBtable, DBtype, type)
     resDel = self.db._update(req)
     if not resDel['OK']:
       raise RSSDBException, where(self, self.removeType) + resDel['Message']
 
 #############################################################################
-  
+
   def getStatusList(self):
-    """ 
+    """
     Get list of status with no descriptions.
     """
 
@@ -2223,22 +2224,22 @@ class ResourceStatusDB:
 #############################################################################
 
   def getGeneralName(self, name, from_g, to_g):
-    """ 
+    """
     Get name of res, of granularity `from_g`, to the name of res with granularity `to_g`
-      
+
     For a StorageElement, get the Site name, or the Service name, or the Resource name.
     For a Resource, get the Site name, or the Service name.
     For a Service name, get the Site name
-    
+
     :params:
       :attr:`name`: a string with a name
-      
-      :attr:`from_g`: a string with a valid granularity 
+
+      :attr:`from_g`: a string with a valid granularity
       (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
-      
-      :attr:`to_g`: a string with a valid granularity 
+
+      :attr:`to_g`: a string with a valid granularity
       (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
-      
+
     :return:
       a string with the resulting name
     """
@@ -2258,7 +2259,7 @@ class ResourceStatusDB:
       else:
         req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
         req = req + "(SELECT GridSiteName FROM Resources WHERE ResourceName = '%s')" %(name)
-         
+
     elif from_g in ('StorageElement', 'StorageElements'):
       if to_g in ('Resource', 'Resources'):
         req = "SELECT ResourceName FROM StorageElements WHERE StorageElementName = '%s'" %name
@@ -2268,25 +2269,25 @@ class ResourceStatusDB:
 
         if to_g in ('Service', 'Services'):
           serviceType = 'Storage'
-         
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
     if not resQuery['Value']:
       return []
     newNames = [ x[0] for x in resQuery['Value'] ]
-    
+
     if to_g in ('Service', 'Services'):
       return [ serviceType + '@' + x for x in newNames ]
     else:
       return newNames
-    
+
 #############################################################################
 
   def getGridSiteName(self, granularity, name):
-    
+
     DBtable, DBname = self.__DBchoice(granularity)
-    
+
     req = "SELECT GridSiteName FROM %s WHERE %s = '%s'" %(DBtable, DBname, name)
 
     resQuery = self.db._query(req)
@@ -2294,15 +2295,15 @@ class ResourceStatusDB:
       raise RSSDBException, where(self, self.getGridSiteName) + resQuery['Message']
     if not resQuery['Value']:
       return []
-    
+
     return resQuery['Value'][0][0]
-     
+
 #############################################################################
 
   def getEndings(self, table):
     """ get list of rows from table(s) that end to be effective
     """
-    
+
     #getting primary key for table
     req = "SELECT k.column_name FROM information_schema.table_constraints t "
     req = req + "JOIN information_schema.key_column_usage k "
@@ -2335,30 +2336,30 @@ class ResourceStatusDB:
 #############################################################################
 
   def getPeriods(self, granularity, name, status, hours = None, days = None):
-    """ 
-    Get list of periods of times when a ValidRes was in ValidStatus 
-    (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`) 
+    """
+    Get list of periods of times when a ValidRes was in ValidStatus
+    (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
     for a total of `hours` or `days`.
     :params:
       :attr:`granularity`: string - ValidRes
-      
+
       :attr:`name`: string - name
-      
+
       :attr:`status`: string - ValidStatus
-      
+
       :attr:`hours`: integer
-      
+
       :attr:`days`: integer
-      
+
     :return:
       list of periods of time as tuples in string format
     """
-    
+
     if days is not None:
       hours = 24*days
-    
+
     hours = datetime.timedelta(hours = hours)
-    
+
     if granularity in ('Site', 'Sites'):
       req = "SELECT DateEffective FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
     elif granularity in ('Service', 'Services'):
@@ -2367,7 +2368,7 @@ class ResourceStatusDB:
       req = "SELECT DateEffective FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
     elif granularity in ('StorageElement', 'StorageElements'):
       req = "SELECT DateEffective FROM StorageElements WHERE StorageElementName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
-    
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getPeriods) + resQuery['Message']
@@ -2382,25 +2383,25 @@ class ResourceStatusDB:
         #actual status is what was requested
         effFrom = resQuery['Value'][0][0]
         timeInStatus = datetime.datetime.utcnow().replace(microsecond = 0) - effFrom
-   
+
         if timeInStatus > hours:
-          return [((datetime.datetime.utcnow().replace(microsecond = 0)-hours).isoformat(' '), datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))] 
-        
+          return [((datetime.datetime.utcnow().replace(microsecond = 0)-hours).isoformat(' '), datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))]
+
         periods = [(effFrom.isoformat(' '), datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))]
-   
+
       if granularity in ('Site', 'Sites'):
-        req = "SELECT DateEffective, DateEnd FROM SitesHistory WHERE " 
+        req = "SELECT DateEffective, DateEnd FROM SitesHistory WHERE "
         req = req + "SiteName = '%s' AND Status = '%s'" %(name, status)
       elif granularity in ('Resource', 'Resources'):
         req = "SELECT DateEffective, DateEnd FROM ResourcesHistory WHERE "
         req = req + "ResourceName = '%s' AND Status = '%s'" %(name, status)
       elif granularity in ('Service', 'Services'):
-        req = "SELECT DateEffective, DateEnd FROM ServicesHistory WHERE " 
+        req = "SELECT DateEffective, DateEnd FROM ServicesHistory WHERE "
         req = req + "ServiceName = '%s' AND Status = '%s'" %(name, status)
       elif granularity in ('StorageElement', 'StorageElements'):
         req = "SELECT DateEffective, DateEnd FROM StorageElementsHistory "
         req = req + "WHERE StorageElementName = '%s' AND Status = '%s'" %(name, status)
-      
+
       resQuery = self.db._query(req)
       if not resQuery['OK']:
         raise RSSDBException, where(self, self.getPeriods) + resQuery['Message']
@@ -2412,7 +2413,7 @@ class ResourceStatusDB:
           oldTimeInStatus = timeInStatus
           timeInStatus = timeInStatus + (effTo - effFrom)
           if timeInStatus > hours:
-            periods.append(((effTo - (hours - oldTimeInStatus)).isoformat(' '), 
+            periods.append(((effTo - (hours - oldTimeInStatus)).isoformat(' '),
                             effTo.isoformat(' ')))
             return periods
           else:
@@ -2422,12 +2423,12 @@ class ResourceStatusDB:
 #############################################################################
 
   def getTablesWithHistory(self):
-    """ 
+    """
     Get list of tables with associated an history table
     """
 
     tablesList=[]
-    req = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES " 
+    req = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES "
     req = req + "WHERE TABLE_SCHEMA = 'ResourceStatusDB' AND TABLE_NAME LIKE \"%History\"";
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -2441,18 +2442,18 @@ class ResourceStatusDB:
 #############################################################################
 
   def getServiceStats(self, siteName):
-    """ 
+    """
     Returns simple statistics of active, probing, bad and banned services of a site;
-        
+
     :params:
       :attr:`siteName`: string - a site name
-    
+
     :returns:
       { 'Active':xx, 'Probing':yy, 'Bad':vv, 'Banned':zz, 'Total':xyz }
     """
-    
+
     res = {'Active':0, 'Probing':0, 'Bad':0,'Banned':0, 'Total':0}
-    
+
     req = "SELECT Status, COUNT(*) FROM Services WHERE SiteName = '%s' GROUP BY Status" %siteName
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -2460,42 +2461,42 @@ class ResourceStatusDB:
     else:
       for x in resQuery['Value']:
         res[x[0]] = int(x[1])
-        
+
     res['Total'] = sum(res.values())
-    
+
     return res
 
 #############################################################################
 
 
   def transact2History(self, *args):
-    """ 
+    """
     Transact a row from a Sites or Service or Resources table to history.
     Does not do a real transaction in terms of DB.
-    
+
     :params:
       :attr: a tuple with info on what to transact
-      
+
     Examples of possible way to call it:
-    
-    >>> trasact2History(('Site', 'LCG.CERN.ch', 
-          datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
+
+    >>> trasact2History(('Site', 'LCG.CERN.ch',
+          datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))
           - the date is the DateEffective parameter
         trasact2History(('Site', 523)) - the number if the SiteID
-        trasact2History(('Service', 'Computing@LCG.CERN.ch', 'LCG.CERN.ch', 
-          datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
+        trasact2History(('Service', 'Computing@LCG.CERN.ch', 'LCG.CERN.ch',
+          datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))
           - the date is the DateEffective parameter
         trasact2History(('Service', 523)) - the number if the ServiceID
-        trasact2History(('Resource', 'srm-lhcb.cern.ch', 'Computing@LCG.CERN.ch', 
-          'LCG.CERN.ch', datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
+        trasact2History(('Resource', 'srm-lhcb.cern.ch', 'Computing@LCG.CERN.ch',
+          'LCG.CERN.ch', datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))
           - the date is the DateEffective parameter
         trasact2History(('Resource', 523)) - the number if the ResourceID
-        trasact2History(('StorageElement', 'CERN-RAW', 'srm-lhcb.cern.ch', 
-          'LCG.CERN.ch', datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
+        trasact2History(('StorageElement', 'CERN-RAW', 'srm-lhcb.cern.ch',
+          'LCG.CERN.ch', datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))
           - the date is the DateEffective parameter
         trasact2History(('StorageElement', 523)) - the number if the StorageElementID
     """
-    
+
     if args[0] in ('Site', 'Sites'):
       #get row to be put in history Sites table
       if len(args) == 3:
@@ -2515,7 +2516,7 @@ class ResourceStatusDB:
         oldTokenOwner = resQuery['Value'][0][5]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addSiteHistoryRow(args[1], oldStatus, oldReason, oldDateCreated, 
+        self._addSiteHistoryRow(args[1], oldStatus, oldReason, oldDateCreated,
                                 oldDateEffective, oldDateEnd, oldTokenOwner)
         self.removeRow(args[0], args[1], oldDateEffective)
 
@@ -2537,7 +2538,7 @@ class ResourceStatusDB:
         oldTokenOwner = resQuery['Value'][0][6]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addSiteHistoryRow(siteName, oldStatus, oldReason, oldDateCreated, 
+        self._addSiteHistoryRow(siteName, oldStatus, oldReason, oldDateCreated,
                                 oldDateEffective, oldDateEnd, oldTokenOwner)
         self.removeRow(args[0], siteName, oldDateEffective)
 
@@ -2561,8 +2562,8 @@ class ResourceStatusDB:
         oldTokenOwner = resQuery['Value'][0][5]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addServiceHistoryRow(args[1], oldStatus, oldReason, 
-                                   oldDateCreated, oldDateEffective, oldDateEnd, 
+        self._addServiceHistoryRow(args[1], oldStatus, oldReason,
+                                   oldDateCreated, oldDateEffective, oldDateEnd,
                                    oldTokenOwner)
         self.removeRow(args[0], args[1], oldDateEffective)
 
@@ -2584,12 +2585,12 @@ class ResourceStatusDB:
         oldTokenOwner = resQuery['Value'][0][6]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addServiceHistoryRow(serviceName, oldStatus, oldReason, 
-                                   oldDateCreated, oldDateEffective, oldDateEnd, 
+        self._addServiceHistoryRow(serviceName, oldStatus, oldReason,
+                                   oldDateCreated, oldDateEffective, oldDateEnd,
                                    oldTokenOwner)
         self.removeRow(args[0], serviceName, oldDateEffective)
 
-        
+
     if args[0] in ('Resource', 'Resources'):
       if len(args) == 3:
         req = "SELECT Status, Reason, DateCreated, "
@@ -2607,11 +2608,11 @@ class ResourceStatusDB:
         oldDateEnd = resQuery['Value'][0][4]
         oldTokenOwner = resQuery['Value'][0][5]
 
-        self._addResourcesHistoryRow(args[1], oldStatus, oldReason, 
-                                     oldDateCreated, oldDateEffective, oldDateEnd, 
+        self._addResourcesHistoryRow(args[1], oldStatus, oldReason,
+                                     oldDateCreated, oldDateEffective, oldDateEnd,
                                      oldTokenOwner)
         self.removeRow(args[0], args[1], oldDateEffective)
-        
+
       elif len(args) == 2:
         req = "SELECT ResourceName, Status, Reason, DateCreated, "
         req = req + "DateEffective, DateEnd, TokenOwner from Resources "
@@ -2628,10 +2629,10 @@ class ResourceStatusDB:
         oldDateEffective = resQuery['Value'][0][4]
         oldDateEnd = resQuery['Value'][0][5]
         oldTokenOwner = resQuery['Value'][0][6]
-        
+
         #start "transaction" to history -- should be better to use a real transaction
-        self._addResourcesHistoryRow(resourceName, oldStatus, 
-                                     oldReason, oldDateCreated, oldDateEffective, 
+        self._addResourcesHistoryRow(resourceName, oldStatus,
+                                     oldReason, oldDateCreated, oldDateEffective,
                                      oldDateEnd, oldTokenOwner)
         self.removeRow(args[0], resourceName, oldDateEffective)
 
@@ -2652,11 +2653,11 @@ class ResourceStatusDB:
         oldDateEnd = resQuery['Value'][0][4]
         oldTokenOwner = resQuery['Value'][0][5]
 
-        self._addStorageElementHistoryRow(args[1], oldStatus, oldReason, 
-                                          oldDateCreated, oldDateEffective, oldDateEnd, 
+        self._addStorageElementHistoryRow(args[1], oldStatus, oldReason,
+                                          oldDateCreated, oldDateEffective, oldDateEnd,
                                           oldTokenOwner)
         self.removeRow(args[0], args[1], oldDateEffective)
-        
+
       elif len(args) == 2:
         req = "SELECT StorageElementName, Status, Reason, "
         req = req + "DateCreated, DateEffective, DateEnd, TokenOwner from StorageElements "
@@ -2673,28 +2674,28 @@ class ResourceStatusDB:
         oldDateEffective = resQuery['Value'][0][4]
         oldDateEnd = resQuery['Value'][0][5]
         oldTokenOwner = resQuery['Value'][0][6]
-        
+
         #start "transaction" to history -- should be better to use a real transaction
-        self._addStorageElementHistoryRow(storageElementName, oldStatus, oldReason, oldDateCreated, 
+        self._addStorageElementHistoryRow(storageElementName, oldStatus, oldReason, oldDateCreated,
                                           oldDateEffective, oldDateEnd, oldTokenOwner)
         self.removeRow(args[0], storageElementName, oldDateEffective)
 
 #############################################################################
 
   def setDateEnd(self, granularity, name, dateEffective):
-    """ 
+    """
     Set date end, for a Site or for a Resource
-    
+
     :params:
-      :attr:`granularity`: a ValidRes. 
-      
+      :attr:`granularity`: a ValidRes.
+
       :attr:`name`: string, the name of the ValidRes
-        
+
       :attr:`dateEffective`: a datetime.datetime
     """
-    
+
     DBtable, DBname = self.__DBchoice(granularity)
-      
+
     query = "UPDATE %s SET DateEnd = '%s' " % (DBtable, dateEffective)
     query = query + "WHERE %s = '%s' AND DateEffective < '%s'" %(DBname, name, dateEffective)
     resUpdate = self.db._update(query)
@@ -2705,12 +2706,12 @@ class ResourceStatusDB:
 
   #usata solo nell'handler
   def addStatus(self, status, description=''):
-    """ 
+    """
     Add a status.
-    
+
     :params:
       :attr:`status`: string - a new status
-      
+
       :attr:`description`: string - optional description
     """
 
@@ -2725,9 +2726,9 @@ class ResourceStatusDB:
 
   #usata solo nell'handler
   def removeStatus(self, status):
-    """ 
+    """
     Remove a status from the Status table.
-    
+
     :params:
       :attr:`status`: string - status
     """
@@ -2740,13 +2741,13 @@ class ResourceStatusDB:
 #############################################################################
 
   def getCountries(self, granularity):
-    """ 
+    """
     Get countries of resources in granularity
-    
+
     :params:
       :attr:`granularity`: string - a ValidRes
     """
-    
+
     DBtable, DBname = self.__DBchoice(granularity)
 
     if granularity in ('StorageElement', 'StorageElements'):
@@ -2759,9 +2760,9 @@ class ResourceStatusDB:
       raise RSSDBException, where(self, self.getCountries) + resQuery['Message']
     if not resQuery['Value']:
       return None
-    
+
     countries = []
-    
+
     for name in resQuery['Value']:
       country = name[0].split('.').pop()
       if country not in countries:
@@ -2772,19 +2773,19 @@ class ResourceStatusDB:
 #############################################################################
 
   def unique(self, table, ID):
-    """ 
+    """
     Check if a ValidRes is unique.
-    
+
     :params:
       :attr:`table`: string of the table name
-      
+
       :attr:`ID`: integer
     """
-    
+
 #    DBtable, DBname = self.__DBchoice(table)
     DBname = self.__DBchoice(table)[1]
     DBid = table.rstrip('s') + 'ID'
-    
+
     req = "SELECT COUNT(*) FROM %s WHERE %s = (SELECT %s " %(table, DBname, DBname)
     req = req + " FROM %s WHERE %s = '%d');" % (table, DBid, ID)
 
@@ -2797,23 +2798,23 @@ class ResourceStatusDB:
         return True
       else:
         return False
-      
+
 #############################################################################
 
   def getTokens(self, granularity, name = None, dateExpiration = None):
-    """ 
+    """
     Get tokens, either by name, those expiring or expired
-    
+
     :params:
       :attr:`granularity`: a ValidRes
-      
+
       :attr:`granularity`: optional name of the res
-      
+
       :attr:`dateExpiration`: optional, datetime.datetime - date from which to consider
     """
 
     DBtable, DBname = self.__DBchoice(granularity)
-    
+
     req = "SELECT %s, TokenOwner, TokenExpiration FROM %s WHERE " %(DBname, DBtable)
     if name is not None:
       req = req + "%s = '%s' " % (DBname, name)
@@ -2830,31 +2831,31 @@ class ResourceStatusDB:
 #    tokenList = []
     tokenList = [ x for x in resQuery['Value']]
     return tokenList
-    
+
 
 #############################################################################
 
-  def setToken(self, granularity, name, newTokenOwner, dateExpiration):    
-    """ 
+  def setToken(self, granularity, name, newTokenOwner, dateExpiration):
+    """
     (re)Set token properties.
     """
-    
+
     DBtable, DBname = self.__DBchoice(granularity)
-    
+
     query = "UPDATE %s SET TokenOwner = '%s', TokenExpiration" % (DBtable, newTokenOwner)
     query = query + " = '%s' WHERE %s = '%s'" %(dateExpiration, DBname, name)
     resUpdate = self.db._update(query)
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self.setToken) + resUpdate['Message']
 
-    
+
 #############################################################################
 
   def whatIs(self, name):
     """
-    Find which is the granularity of name. 
+    Find which is the granularity of name.
     """
-    
+
     for g in ValidRes:
       DBtable, DBname = self.__DBchoice(g)
       req = "SELECT %s FROM %s WHERE %s = '%s'" %(DBname, DBtable, DBname, name)
@@ -2865,23 +2866,23 @@ class ResourceStatusDB:
         continue
       else:
         return g
-    
-    return 'Unknown' 
-  
+
+    return 'Unknown'
+
 #############################################################################
-  
+
   def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None, name = None):
-    """ 
+    """
     Get Sites, Services, Resources, StorageElements to be checked using Present-x views.
-    
+
     :params:
       :attr:`granularity`: a ValidRes
-      
+
       :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
-      
+
       :attr:`maxN`: integer - maximum number of lines in output
     """
-    
+
     if checkFrequency is not None:
       T0activeCheckFrequecy = checkFrequency['T0_ACTIVE_CHECK_FREQUENCY']
       T0probingCheckFrequecy = checkFrequency['T0_PROBING_CHECK_FREQUENCY']
@@ -2895,7 +2896,7 @@ class ResourceStatusDB:
       T2probingCheckFrequecy = checkFrequency['T2_PROBING_CHECK_FREQUENCY']
       T2badCheckFrequecy = checkFrequency['T2_BAD_CHECK_FREQUENCY']
       T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
-  
+
       T0dateToCheckFromActive = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
       T0dateToCheckFromProbing = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
       T0dateToCheckFromBad = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T0badCheckFrequecy)).isoformat(' ')
@@ -2947,7 +2948,7 @@ class ResourceStatusDB:
         req = req + " StorageElementName = '%s'" %name
     if maxN != None:
       req = req + " LIMIT %d" %maxN
-    
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getStuffToCheck) + resQuery['Message']
@@ -2962,15 +2963,15 @@ class ResourceStatusDB:
 
   def rankRes(self, granularity, days, startingDate = None):
     """
-    Construct the rank of a ValidRes, based on the time it's been Active, Probing, Bad 
+    Construct the rank of a ValidRes, based on the time it's been Active, Probing, Bad
     (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
-    
+
     :params:
       :attr:`granularity`: string, a ValidRes
-      
+
       :attr:`days`: integer, amount of days in the past to look at
-      
-      :attr:`startingDate`: datetime.datetime or string - optional date to start from  
+
+      :attr:`startingDate`: datetime.datetime or string - optional date to start from
     """
 
     if granularity not in ValidRes:
@@ -2981,9 +2982,9 @@ class ResourceStatusDB:
         startingDate = datetime.datetime.strptime(startingDate, '%Y-%m-%d %H:%M:%S')
     else:
       startingDate = datetime.datetime.utcnow().replace(microsecond = 0)
-    
+
     dateToCheckFrom = startingDate - datetime.timedelta(days = days)
-    
+
     if granularity in ('Site', 'Sites'):
       resList = self.getMonitoredsList(granularity, paramsList = ['SiteName'])
     if granularity in ('Service', 'Services'):
@@ -2992,32 +2993,32 @@ class ResourceStatusDB:
       resList = self.getMonitoredsList(granularity, paramsList = ['ResourceName'])
     if granularity in ('StorageElement', 'StorageElements'):
       resList = self.getMonitoredsList(granularity, paramsList = ['StorageElementName'])
-    
+
     rankList = []
     activeRankList = []
     probingRankList = []
     badRankList = []
-    
+
     for res in resList:
 
       periodsActive = self.getPeriods(granularity, res[0], 'Active', None, days)
-      periodsActive = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
+      periodsActive = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'),
                          datetime.datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsActive ]
-      
+
       for p in periodsActive:
         if p[1] < dateToCheckFrom:
           periodsActive.remove(p)
         elif p[0] < dateToCheckFrom:
           p[0] = dateToCheckFrom
-      
+
       activePeriodsLength = [ x[1]-x[0] for x in periodsActive ]
       activePeriodsLength = [convertTime(x) for x in activePeriodsLength]
       activeRankList.append((res, sum(activePeriodsLength)))
 
-      
-      
+
+
       periodsProbing = self.getPeriods(granularity, res[0], 'Probing', None, days)
-      periodsProbing = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
+      periodsProbing = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'),
                           datetime.datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsProbing ]
 
       for p in periodsProbing:
@@ -3025,17 +3026,17 @@ class ResourceStatusDB:
           periodsProbing.remove(p)
         elif p[0] < dateToCheckFrom:
           p[0] = dateToCheckFrom
-      
+
       probingPeriodsLength = [ x[1]-x[0] for x in periodsProbing ]
       probingPeriodsLength = [convertTime(x) for x in probingPeriodsLength]
       probingRankList.append((res, sum(probingPeriodsLength)))
-    
-      rankList.append( ( res[0], sum(activePeriodsLength) + sum(probingPeriodsLength)/2 ) )
-      
 
-      
+      rankList.append( ( res[0], sum(activePeriodsLength) + sum(probingPeriodsLength)/2 ) )
+
+
+
       periodsBad = self.getPeriods(granularity, res[0], 'Bad', None, days)
-      periodsBad = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
+      periodsBad = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'),
                       datetime.datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsBad ]
 
       for p in periodsBad:
@@ -3043,20 +3044,20 @@ class ResourceStatusDB:
           periodsBad.remove(p)
         elif p[0] < dateToCheckFrom:
           p[0] = dateToCheckFrom
-      
+
       badPeriodsLength = [ x[1]-x[0] for x in periodsBad ]
       badPeriodsLength = [convertTime(x) for x in badPeriodsLength]
       badRankList.append((res, sum(badPeriodsLength)))
-    
-      rankList.append( ( res[0], 
+
+      rankList.append( ( res[0],
                          sum(activePeriodsLength) + sum(probingPeriodsLength) + sum(badPeriodsLength)/2 ) )
-      
+
     activeRankList = sorted(activeRankList, key=lambda x:(x[1], x[0]))
     probingRankList = sorted(probingRankList, key=lambda x:(x[1], x[0]))
     badRankList = sorted(badRankList, key=lambda x:(x[1], x[0]))
     rankList = sorted(rankList, key=lambda x:(x[1], x[0]))
 
-    rank = {'WeightedRank':rankList, 'ActivesRank':activeRankList, 
+    rank = {'WeightedRank':rankList, 'ActivesRank':activeRankList,
             'ProbingsRank':probingRankList,
             'BadsRank':badRankList}
 
@@ -3065,7 +3066,7 @@ class ResourceStatusDB:
 #############################################################################
 
   def __DBchoice(self, granularity):
-    
+
     if granularity in ('Site', 'Sites'):
       DBtable = 'Sites'
       DBname = 'SiteName'
@@ -3083,13 +3084,13 @@ class ResourceStatusDB:
 #      DBname = 'Name'
     else:
       raise InvalidRes, where(self, self.__DBchoice)
-    
+
     return (DBtable, DBname)
 
 #############################################################################
 
   def __DBchoiceType(self, granularity):
-    
+
     if granularity in ('Site', 'Sites'):
       DBtype = 'SiteType'
       DBtable = 'SiteTypes'
@@ -3107,7 +3108,7 @@ class ResourceStatusDB:
 #############################################################################
 
   def __usualChecks(self, dateCreated, dateEffective, dateEnd, status):
-    
+
     if not isinstance(dateCreated, basestring):
       dateCreated = dateCreated.isoformat(' ')
     if not isinstance(dateEffective, basestring):
@@ -3118,7 +3119,7 @@ class ResourceStatusDB:
       raise InvalidStatus, where(self, self.__usualChecks)
 
     return (dateCreated, dateEffective, dateEnd)
-  
+
 #############################################################################
 
   def __addOrModifyInit(self, dateEffective, dateEnd, status):

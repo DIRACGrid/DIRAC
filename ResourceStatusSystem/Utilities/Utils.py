@@ -105,17 +105,3 @@ def convertTime(t, inTo = None):
       pass
 
     return hour
-
-#############################################################################
-# general parameters
-#############################################################################
-
-ValidRes = ['Site', 'Service', 'Resource', 'StorageElement']
-ValidStatus = ['Active', 'Probing', 'Bad', 'Banned']
-ValidPolicyResult = ['Error', 'Unknown', 'NeedConfirmation', 'Active', 'Probing', 'Bad', 'Banned']
-PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType', 'RealBan_PolType']
-ValidSiteType = ['T0', 'T1', 'T2', 'T3']
-ValidResourceType = ['CE', 'CREAMCE', 'SE', 'LFC_C', 'LFC_L', 'FTS', 'VOMS']
-ValidServiceType = ['Computing', 'Storage', 'VO-BOX', 'VOMS']
-ValidService = ValidServiceType
-#############################################################################

@@ -12,10 +12,15 @@
        c. other....
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, getStorageElementStatus, getOperationMails, getMailForUser
+from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, \
+    getStorageElementStatus, getOperationMails, getMailForUser
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where, assignOrRaise, ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes, InvalidStatus, InvalidResourceType, InvalidServiceType, InvalidSiteType
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where, assignOrRaise
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, \
+    ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
+
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, \
+    InvalidRes, InvalidStatus, InvalidResourceType, InvalidServiceType, InvalidSiteType
 
 import copy
 import time

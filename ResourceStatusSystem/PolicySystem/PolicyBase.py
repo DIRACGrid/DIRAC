@@ -1,10 +1,11 @@
 """ The Policy class is a simple base class for all the policies
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions   import InvalidRes, InvalidStatus, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils        import where, ValidRes, ValidStatus
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes
 
-from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.ClientsInvoker      import ClientsInvoker
 
 #############################################################################
 

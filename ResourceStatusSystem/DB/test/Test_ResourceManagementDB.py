@@ -5,7 +5,7 @@ import sys
 #import datetime
 import unittest
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes,ValidStatus
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes,ValidStatus
 #from LHCbDIRAC.ResourceStatusSystem.Management import Configurations
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -28,18 +28,18 @@ class ResourceManagementDBTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
 
     from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
-    from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB   
-    
+    from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+
     # setting mock interface
     self.rmDB = ResourceManagementDB(DBin=self.mock_DB)
 
     self.mock_DB_1 = Mock()
     self.mock_DB_1._query.return_value = {'OK': True, 'Value': (('VOMS',),)}
-    
+
     self.rmDB_1 = ResourceManagementDB(DBin=self.mock_DB_1)
 
 class ResourceManagementDBSuccess(ResourceManagementDBTestCase):
- 
+
   ##########################
   ###test general methods###
   ##########################
@@ -104,12 +104,12 @@ class ResourceManagementDBSuccess(ResourceManagementDBTestCase):
     self.assertEqual(res, [])
     res = self.rmDB.getAccountingCacheStuff(None, 'XX', 'YY', 'XX')
     self.assertEqual(res, [])
-    
+
   def test_removeStatus(self):
     for status in ValidStatus:
       res = self.rmDB.removeStatus(status)
       self.assertEqual(res, None)
-  
+
   def test_addStatus(self):
     for status in ValidStatus:
       res = self.rmDB.addStatus(status, 'test desc')
@@ -140,12 +140,12 @@ class ResourceManagementDBSuccess(ResourceManagementDBTestCase):
     self.assertEqual(res['Records'], [])
 
 class ResourceManagementDBFailure(ResourceManagementDBTestCase):
-   
+
   def test_DBFail(self):
     self.mock_DB._query.return_value = {'OK': False, 'Message': 'boh'}
     self.mock_DB._update.return_value = {'OK': False, 'Message': 'boh'}
     from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import RSSManagementDBException
-    
+
     self.assertRaises(RSSManagementDBException, self.rmDB.getStatusList)
     self.assertRaises(RSSManagementDBException, self.rmDB.addStatus, '')
     self.assertRaises(RSSManagementDBException, self.rmDB.removeStatus, '')
@@ -155,6 +155,5 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ResourceManagementDBTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceManagementDBSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceManagementDBFailure))
-        
+
   unittest.TextTestRunner(verbosity=2).run(suite)
-  

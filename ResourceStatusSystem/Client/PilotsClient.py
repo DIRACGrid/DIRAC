@@ -9,29 +9,30 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 #from DIRAC.Core.DISET.RPCClient import RPCClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where, ValidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes
 
 class PilotsClient:
-  
+
 #  def __init__(self):
 #    self.rc = ReportsClient()
 
 #############################################################################
 
   def getPilotStats(self, granularity, name, periods):
-    """  
+    """
     Return pilot stats
-    
+
     :Parameters:
-      `granularity` 
+      `granularity`
         string - should be a ValidRes
-      
+
       `name`
         string - should be the name of the ValidRes
-      
+
       `periods`
         list - contains the periods to consider in the query
-      
+
     :return:
       {
         'MeanProcessedPilots': X'
@@ -39,10 +40,10 @@ class PilotsClient:
         'LastProcessedPilots': X'
       }
     """
-    
+
     if granularity.capitalize() not in ValidRes:
       raise InvalidRes, where(self, self.getPilotStats)
-    
+
     if granularity == 'Site':
       entity = getGOCSiteName(name)
       if not entity['OK']:
@@ -52,38 +53,38 @@ class PilotsClient:
     else:
       entity = name
       _granularity = 'GridCE'
-    
+
     #######TODO
-#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', 
-#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2), 
-#                                                 datetime.datetime.utcnow(), {granularity:[entity]}, 
+#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots',
+#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2),
+#                                                 datetime.datetime.utcnow(), {granularity:[entity]},
 #                                                 'GridStatus')
-#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', 
-#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2), 
-#                                                 datetime.datetime.utcnow(), {granularity:[entity]}, 
+#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots',
+#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2),
+#                                                 datetime.datetime.utcnow(), {granularity:[entity]},
 #                                                 'GridStatus')
-#    
+#
 #    for x in numberOfPilots['Value']['data'].itervalues():
 #      total = 0
 #      for y in x.values():
 #        total = total+y
-#      
+#
 #    print r
 
 
 #############################################################################
 #
 #  def getPilotsEff(self, granularity, name, periods):
-#    """  
+#    """
 #    Return pilot stats of entity in args for periods
-#    
+#
 #    :Parameters:
 #      `granularity`
 #        string - should be a ValidRes
-#    
+#
 #      `name`
 #        string - should be the name of the ValidRes
-#    
+#
 #      `name`
 #        list - periods contains the periods to consider in the query
 #
@@ -99,42 +100,42 @@ class PilotsClient:
 #    else:
 ##      entity = name
 #      granularity = 'GridCE'
-#    
+#
     #######TODO
-#    numberOfPilots = self.rc.getReport('Pilot', 'NumberOfPilots', 
-#                                       datetime.datetime.utcnow()-datetime.timedelta(hours = 24), 
-#                                       datetime.datetime.utcnow(), {self._granularity:[self_entity]}, 
+#    numberOfPilots = self.rc.getReport('Pilot', 'NumberOfPilots',
+#                                       datetime.datetime.utcnow()-datetime.timedelta(hours = 24),
+#                                       datetime.datetime.utcnow(), {self._granularity:[self_entity]},
 #                                       'GridStatus')
-    
-    
+
+
 #############################################################################
 
 
-  def getPilotsSimpleEff(self, granularity, name, siteName = None, 
+  def getPilotsSimpleEff(self, granularity, name, siteName = None,
                          RPCWMSAdmin = None, timeout = None):
-    """  
+    """
     Return pilots simple efficiency of entity in args for periods
-    
+
     :Parameters:
-      `granularity` 
+      `granularity`
         string - should be a ValidRes (Site or Resource)
-      
+
       `name`
         string or list - names of the ValidRes
-      
+
       `siteName`
         string - optional site name, in case granularity is `Resource`
 
       `RPCWMSAdmin`
         RPCClient to RPCWMSAdmin
-    
+
     :return:
       {
       'PilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
-    
-    if RPCWMSAdmin is not None: 
+
+    if RPCWMSAdmin is not None:
       RPC = RPCWMSAdmin
     else:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -150,18 +151,18 @@ class PilotsClient:
         if siteName is None or siteName == []:
 #          gLogger.info('%s is not a resource in DIRAC' %name)
           return None
-        
+
       res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
     else:
-      raise InvalidRes, where(self, self.getPilotSimpleEff)
-    
+      raise InvalidRes, where(self, self.getPilotsSimpleEff)
+
     if not res['OK']:
-      raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message'] 
+      raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message']
     else:
       res = res['Value']['Records']
-    
+
     if len(res) == 0:
-      return None 
+      return None
 
     effRes = {}
 
@@ -173,8 +174,8 @@ class PilotsClient:
             eff = r[14]
           except IndexError:
             eff = 'Idle'
-          effRes[name] = eff 
-        
+          effRes[name] = eff
+
       elif granularity in ('Resource', 'Resources'):
         eff = None
         for r in res:
@@ -184,11 +185,11 @@ class PilotsClient:
             except IndexError:
               eff = 'Idle'
             break
-        effRes[name] = eff 
+        effRes[name] = eff
 
       return effRes
-        
+
     except IndexError:
       return None
-    
+
 #############################################################################

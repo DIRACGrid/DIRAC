@@ -12,69 +12,69 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import getStorageElementStatus
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import ValidRes
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes
 
 
 
 class Publisher:
-  """ 
+  """
   Class Publisher is in charge of getting dispersed information, to be published on the web.
   """
 
 #############################################################################
 
-  def __init__(self, VOExtension, rsDBIn = None, commandCallerIn = None, infoGetterIn = None, 
+  def __init__(self, VOExtension, rsDBIn = None, commandCallerIn = None, infoGetterIn = None,
                WMSAdminIn = None):
-    """ 
+    """
     Standard constructor
-    
+
     :params:
       :attr:`VOExtension`: string, VO Extension (e.g. 'LHCb')
 
-      :attr:`rsDBIn`: optional ResourceStatusDB object 
+      :attr:`rsDBIn`: optional ResourceStatusDB object
       (see :class: `DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB`)
-    
+
       :attr:`commandCallerIn`: optional CommandCaller object
-      (see :class: `DIRAC.ResourceStatusSystem.Command.CommandCaller.CommandCaller`) 
-    
+      (see :class: `DIRAC.ResourceStatusSystem.Command.CommandCaller.CommandCaller`)
+
       :attr:`infoGetterIn`: optional InfoGetter object
-      (see :class: `DIRAC.ResourceStatusSystem.Utilities.InfoGetter.InfoGetter`) 
-    
+      (see :class: `DIRAC.ResourceStatusSystem.Utilities.InfoGetter.InfoGetter`)
+
       :attr:`WMSAdminIn`: optional RPCClient object for WMSAdmin
-      (see :class: `DIRAC.Core.DISET.RPCClient.RPCClient`) 
+      (see :class: `DIRAC.Core.DISET.RPCClient.RPCClient`)
     """
-    
-    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+
+    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
                                    globals(), locals(), ['*'])
-    
+
     if rsDBIn is not None:
       self.rsDB = rsDBIn
     else:
       from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
       self.rsDB = ResourceStatusDB()
-    
+
     if commandCallerIn is not None:
       self.cc = commandCallerIn
     else:
       from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
-      self.cc = CommandCaller() 
-    
+      self.cc = CommandCaller()
+
     if infoGetterIn is not None:
       self.ig = infoGetterIn
     else:
       from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
       self.ig = InfoGetter(VOExtension)
-    
+
     if WMSAdminIn is not None:
       self.WMSAdmin = WMSAdminIn
     else:
       from DIRAC.Core.DISET.RPCClient import RPCClient
       self.WMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
-    
+
     self.threadPool = ThreadPool( 2, 5 )
-    
+
     self.lockObj = threading.RLock()
 
     self.infoForPanel_res = {}
@@ -82,22 +82,22 @@ class Publisher:
 #############################################################################
 
   def getInfo(self, granularity, name, useNewRes = False):
-    """ 
+    """
     Standard method to get all the info to be published
-    
+
     This method uses a ThreadPool (:class:`DIRAC.Core.Utilities.ThreadPool.ThreadPool`)
-    with 2-5 threads. The threaded method is 
+    with 2-5 threads. The threaded method is
     :meth:`DIRAC.ResourceStatusSystem.Utilities.Publisher.Publisher.getInfoForPanel`
-    
+
     :params:
-      :attr:`granularity`: string - a ValidRes 
-      
+      :attr:`granularity`: string - a ValidRes
+
       :attr:`name`: string - name of the Validres
-      
-      :attr:`useNewRes`: boolean. When set to true, will get new results, 
+
+      :attr:`useNewRes`: boolean. When set to true, will get new results,
       otherwise it will get cached results (where available).
     """
-    
+
     if granularity not in ValidRes:
       raise InvalidRes, where(self, self.getInfo)
 
@@ -111,44 +111,44 @@ class Publisher:
 
     if granularity in ('Resource', 'Resources'):
       try:
-        resourceType = self.rsDB.getMonitoredsList('Resource', ['ResourceType'], 
+        resourceType = self.rsDB.getMonitoredsList('Resource', ['ResourceType'],
                                               resourceName = name)[0][0]
       except IndexError:
         return "%s does not exist!" %name
-                                            
+
     if granularity in ('StorageElement', 'StorageElements'):
       try:
-        siteType = self.rsDB.getMonitoredsList('StorageElement', ['SiteType'], 
+        siteType = self.rsDB.getMonitoredsList('StorageElement', ['SiteType'],
                                               storageElementName = name)[0][0]
       except IndexError:
         return "%s does not exist!" %name
-                                            
+
     paramNames = ['Type', 'Group', 'Name', 'Policy', 'DIRAC Status',
                   'RSS Status', 'Reason', 'Description']
-    
-    infoToGet = self.ig.getInfoToApply(('view_info', ), granularity, status = status, 
+
+    infoToGet = self.ig.getInfoToApply(('view_info', ), granularity, status = status,
                                        formerStatus = formerStatus, siteType = siteType,
-                                       serviceType = serviceType, resourceType = resourceType, 
+                                       serviceType = serviceType, resourceType = resourceType,
                                        useNewRes = useNewRes)[0]['Panels']
     infoToGet_res = {}
-    
+
     recordsList = []
 
     infosForPolicy = {}
 
     for panel in infoToGet.keys():
-      
+
       (granularityForPanel, nameForPanel) = self.__getNameForPanel(granularity, name, panel)
-      
+
       if not self._resExist(granularityForPanel, nameForPanel):
 #        completeInfoForPanel_res = None
         continue
-      
+
       #take composite RSS result for name
       nameStatus_res = self._getStatus(nameForPanel, panel)
-      
+
       recordBase = [None, None, None, None, None, None, None, None]
-      
+
       recordBase[1] = panel.replace('_Panel', '')
       recordBase[2] = nameForPanel #nameForPanel
       try:
@@ -156,18 +156,18 @@ class Publisher:
       except:
         pass
       recordBase[5] = nameStatus_res[nameForPanel]['RSSStatus'] #RSS Status
-      
+
       record = copy.deepcopy(recordBase)
       record[0] = 'ResultsForResource'
-      
+
       recordsList.append(record)
-      
+
       #take info that goes into the panel
       infoForPanel = infoToGet[panel]
-      
+
       for info in infoForPanel:
-        
-        self.threadPool.generateJobAndQueueIt(self.getInfoForPanel, 
+
+        self.threadPool.generateJobAndQueueIt(self.getInfoForPanel,
                                               args = (info, granularityForPanel, nameForPanel) )
 
       self.threadPool.processAllResults()
@@ -183,7 +183,7 @@ class Publisher:
         recordsList.append(record)
 
         infosForPolicy[policy] = self.infoForPanel_res[policy]['infos']
-        
+
     infoToGet_res['TotalRecords'] = len(recordsList)
     infoToGet_res['ParameterNames'] = paramNames
     infoToGet_res['Records'] = recordsList
@@ -208,66 +208,66 @@ class Publisher:
       self.infoForPanel_res[policyResToGet] = pol_res_dict
     finally:
       self.lockObj.release()
-    
+
     #get policy description
     desc = self._getPolicyDesc(policyResToGet)
-    
+
     #get other info
     othersInfo = info.values()[0]
     if not isinstance(othersInfo, list):
       othersInfo = [othersInfo]
-    
+
     info_res = {}
-    
+
     for oi in othersInfo:
       format = oi.keys()[0]
       what = oi.values()[0]
-      
+
       info_bit_got = self._getInfo(granularityForPanel, nameForPanel, format, what)
 
       info_res[format] = info_bit_got
-      
+
     self.lockObj.acquire()
     try:
-      self.infoForPanel_res[policyResToGet]['infos'] = info_res 
+      self.infoForPanel_res[policyResToGet]['infos'] = info_res
       self.infoForPanel_res[policyResToGet]['desc'] = desc
     finally:
       self.lockObj.release()
 
 #############################################################################
-  
+
   def _getStatus(self, name, panel):
-  
+
     #get RSS status
     RSSStatus = self._getInfoFromRSSDB(name, panel)[0][1]
-    
+
     #get DIRAC status
     if panel in ('Site_Panel', 'SE_Panel'):
-      
+
       if panel == 'Site_Panel':
         DIRACStatus = self.WMSAdmin.getSiteMaskLogging(name)
         if DIRACStatus['OK']:
           DIRACStatus = DIRACStatus['Value'][name].pop()[0]
         else:
           raise RSSException, where(self, self._getStatus)
-      
+
       elif panel == 'SE_Panel':
         ra = getStorageElementStatus(name, 'ReadAccess')['Value']
         wa = getStorageElementStatus(name, 'WriteAccess')['Value']
         DIRACStatus = {'ReadAccess': ra, 'WriteAccess': wa}
-      
+
       status = { name : { 'RSSStatus': RSSStatus, 'DIRACStatus': DIRACStatus } }
 
     else:
       status = { name : { 'RSSStatus': RSSStatus} }
-      
-    
+
+
     return status
 
 #############################################################################
 
   def _getInfo(self, granularity, name, format, what):
-  
+
     if format == 'RSS':
       info_bit_got = self._getInfoFromRSSDB(name, what)
     else:
@@ -277,10 +277,10 @@ class Publisher:
       else:
         command = what
         extraArgs = None
-      
-      info_bit_got = self.cc.commandInvocation(granularity, name, None, 
+
+      info_bit_got = self.cc.commandInvocation(granularity, name, None,
                                                None, command, extraArgs)
-      
+
       try:
         info_bit_got = info_bit_got['Result']
       except:
@@ -300,7 +300,7 @@ class Publisher:
     storageElementName = None
     serviceType = None
     gridSiteName = None
-    
+
     if what == 'ServiceOfSite':
       gran = 'Service'
       paramsL.insert(0, 'ServiceName')
@@ -369,19 +369,19 @@ class Publisher:
       gran = 'StorageElement'
       paramsL.insert(0, 'StorageElementName')
       storageElementName = name
-      
-    info_bit_got = self.rsDB.getMonitoredsList(gran, paramsList = paramsL, siteName = siteName, 
-                                               serviceName = serviceName, serviceType = serviceType, 
+
+    info_bit_got = self.rsDB.getMonitoredsList(gran, paramsList = paramsL, siteName = siteName,
+                                               serviceName = serviceName, serviceType = serviceType,
                                                resourceName = resourceName,
-                                               storageElementName = storageElementName, 
+                                               storageElementName = storageElementName,
                                                gridSiteName = gridSiteName)
-    
+
     return info_bit_got
 
 #############################################################################
 
   def _getPolicyDesc(self, policyName):
-    
+
     return self.configModule.Policies[policyName]['Description']
 
 #############################################################################
@@ -410,18 +410,18 @@ class Publisher:
 #    else:
 #      granularity = granularity
 #      name = name
-      
+
     return (granularity, name)
 
 #############################################################################
 
   def _resExist(self, granularity, name):
-    
+
     siteName = None
     serviceName = None
     resourceName = None
     storageElementName = None
-    
+
     if granularity in ('Site', 'Sites'):
       siteName = name
     elif granularity in ('Service', 'Services'):
@@ -430,14 +430,14 @@ class Publisher:
       resourceName = name
     elif granularity in ('StorageElement', 'StorageElements'):
       storageElementName = name
-    
-    res = self.rsDB.getMonitoredsList(granularity, siteName = siteName, 
+
+    res = self.rsDB.getMonitoredsList(granularity, siteName = siteName,
                                       serviceName = serviceName, resourceName = resourceName,
                                       storageElementName = storageElementName)
-    
+
     if res == []:
       return False
-    else: 
+    else:
       return True
-    
+
 #############################################################################
