@@ -296,7 +296,8 @@ shutil.rmtree( workingDirectory )
     jobDict = {}
     for job in jobIDList:
       jobNumber = job.split('.')[0]
-      jobDict[jobNumber] = job
+      if jobNumber:
+        jobDict[jobNumber] = job
       
     cmd = [ 'qstat',' '.join(jobIDList) ]
     ssh = SSH(self.sshUser, self.sshHost, self.sshPassword)
