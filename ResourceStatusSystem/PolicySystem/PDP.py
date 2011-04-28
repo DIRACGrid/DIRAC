@@ -240,7 +240,7 @@ class PDP:
     * Finally, return the result
     """
 
-    sm = StateMachine(self.__status)
+    sm = StateMachine(self.VOExtension, self.__status)
     newStatus = sm.combine(policies)
 
     worstPolicies = [p for p in policies if p['Status'] == newStatus]

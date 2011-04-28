@@ -283,7 +283,7 @@ class PDPSuccess(PolicySystemTestCase):
             self.assert_(r['Action'])
 
   def test_valueOfStatus(self):
-    sm = StateMachine('Active') # State of the machine doesn't matter here
+    sm = StateMachine(self.VO, 'Active') # State of the machine doesn't matter here
     self.assertEqual(sm.valueOfStatus('Banned'), 0)
     self.assertEqual(sm.valueOfStatus('Bad'), 1)
     self.assertEqual(sm.valueOfStatus('Probing'), 2)
@@ -297,7 +297,7 @@ class PDPSuccess(PolicySystemTestCase):
           if status == oldStatus:
             continue
 
-          sm = StateMachine(status)
+          sm = StateMachine(self.VO, status)
           for newStatus1 in ValidStatus:
             for newStatus2 in ValidStatus:
               pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')

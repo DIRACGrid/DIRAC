@@ -6,21 +6,7 @@ finite automata) that is specific to a VO. If a VO doesn't provide its
 own specific automata, then it can use the generic one provided here.
 
 """
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus, InvalidStateValueDict
-
-defaultStateValues = {
-  'Banned'  : 0,
-  'Bad'     : 1,
-  'Probing' : 2,
-  'Active'  : 3
-  }
-
-defaultAutomata = {
-  'Active'  : ['Active', 'Bad', 'Banned'],
-  'Bad'     : ['Bad', 'Active', 'Banned'],
-  'Probing' : ['Probing', 'Active', 'Banned'],
-  'Banned'  : ['Banned', 'Probing', 'Active']
-  }
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus
 
 class StateMachine(object):
   """
@@ -33,31 +19,32 @@ class StateMachine(object):
   list of the states and the state value function are checked against
   the automata.
   """
-  __stateValues  = None
-  __automata     = None
-  __states       = None
   __currentState = None
+  __M            = None
 
-  def __init__(self, currentState, stateValues=defaultStateValues, automata=defaultAutomata):
-    self.__automata     = automata
+  def __init__(self, VOExtension, currentState):
 
-    # Check that the defaultStateValues has a value for each state of
-    # the automata
+    try:
+      module = VOExtension + "DIRAC.ResourceStatusSystem.Policy.Configurations"
+      self.__M = __import__(module, locals(), globals(), ['*'])
 
-    # NOTE: .sort() : Ugly Python 2.x hack because dict.keys() return
-    # a list instead of a set. Corrected in Python 3.x
-    if(stateValues.keys().sort() == automata.keys().sort()):
-      self.__stateValues = stateValues
-    else: raise InvalidStateValueDict("%s not equal to %s" % (stateValues.keys(), automata.keys()))
+      # TODO: Develop a real plugin architecture and get rid of that
+      # kind of hack. Here: verify that the module has the following
+      # values
+      getattr(self.__M, "Automata")
+      getattr(self.__M, "StateValues")
+      getattr(self.__M, "ValidStatus")
 
-    self.__states       = [st for st in automata]
+    except (ImportError, AttributeError):
+      self.__M = __import__("DIRAC.ResourceStatusSystem.PolicySystem.Configurations",
+                            locals(), globals(), ['*'])
 
-    if currentState in self.__states:
+    if currentState in self.__M.ValidStatus:
       self.__currentState = currentState
     else: raise InvalidStatus()
 
   def setCurrentState(self, s):
-    if s in self.__states:
+    if s in self.__M.ValidStatus:
       self.__currentState = s
     else: raise InvalidStatus()
 
@@ -65,7 +52,7 @@ class StateMachine(object):
     return self.__currentState
 
   def transitionAllowed(self, s):
-    return s in self.__automata[self.__currentState]
+    return s in self.__M.Automata[self.__currentState]
 
   def valueOfStatus(self, s):
     """
@@ -73,7 +60,7 @@ class StateMachine(object):
 
     Returns the value of that status
     """
-    try: return self.__stateValues[s]
+    try: return self.__M.StateValues[s]
     except KeyError: raise InvalidStatus()
 
   def valueOfPolicy(self, p):
@@ -82,7 +69,7 @@ class StateMachine(object):
 
     Returns the value of the status of that policy
     """
-    try: return self.__stateValues[p['Status']]
+    try: return self.__M.StateValues[p['Status']]
     except KeyError: raise InvalidStatus()
 
   def combine(self, ps):
