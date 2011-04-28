@@ -483,6 +483,31 @@ class UserProfileDB( DB ):
     finally:
       connObj.close()
 
+  def __profilesCondGenerator( self, value, type, initialValue = False ):
+    if type( value ) in types.StringTypes:
+      value = [ value ]
+    ids = []
+    if initialValue:
+      ids.append( initialValue )
+    for val in value:
+      if type == 'user':
+        result = self.__getUserId( val, insertIfMissing = False )
+      elif type == 'group':
+        result = self.__getGroupId( val, insertIfMissing = False )
+      else:
+        result = self.__getVOId( val, insertIfMissing = False )
+      if not result[ 'OK' ]:
+          continue
+      ids.append( result[ 'Value' ] )
+    if type == 'user':
+      fieldName = 'UserId'
+    elif type == 'group':
+      fieldName = 'GroupId'
+    else:
+      fieldName = 'VOId'
+    return "`up_ProfilesData`.%s in ( %s )" % ( fieldName, ", ".join( [ str( id ) for id in ids ] ) )
+
+
   def listVarsById( self, userIds, profileName, filterDict = {} ):
     result = self._escapeString( profileName )
     if not result[ 'OK' ]:
@@ -493,28 +518,11 @@ class UserProfileDB( DB ):
                 "`up_VOs`.Id = `up_ProfilesData`.VOId",
                 self.__webProfilePublishAccessDataCond( userIds, sqlProfileName ) ]
     if filterDict:
-      if 'UserGroup' in filterDict:
-        groups = filterDict[ 'UserGroup' ]
-        if type( groups ) in types.StringTypes:
-          groups = [ groups ]
-        groupIds = [ userIds[1] ]
-        for group in groups:
-          result = self.__getGroupId( group )
-          if not result[ 'OK' ]:
-            return result
-          groupIds.append( result[ 'Value' ] )
-        sqlCond.append( "`up_ProfilesData`.GroupId in ( %s )" % ", ".join( [ str( groupId ) for groupId in groupIds ] ) )
-      if 'VO' in filterDict:
-        VOs = filterDict[ 'VO' ]
-        if type( groups ) in types.StringTypes:
-          VOs = [ VOs ]
-        VOIds = [ userIds[2] ]
-        for VO in VOs:
-          result = self.__getVOId( VO )
-          if not result[ 'OK' ]:
-            return result
-          VOIds.append( result[ 'Value' ] )
-        sqlCond.append( "`up_ProfilesData`.GroupId in ( %s )" % ", ".join( [ str( groupId ) for groupId in groupIds ] ) )
+      for k in filterDict:
+        filterDict[ k.lower() ] = filterDict[ k ]
+      for k in ( 'user', 'group', 'vo' ):
+        if k in filterDict:
+          sqlCond.append( self.__profilesCondGenerator( filterDict[ k ], k ) )
 
     sqlVars2Get = [ "`up_Users`.UserName", "`up_Groups`.UserGroup", "`up_VOs`.VO", "`up_ProfilesData`.VarName" ]
     sqlQuery = "SELECT %s FROM `up_Users`, `up_Groups`, `up_VOs`, `up_ProfilesData` WHERE %s" % ( ", ".join( sqlVars2Get ),
