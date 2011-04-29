@@ -46,6 +46,7 @@ class Params:
     self.buildExternals = False
     self.buildIfNotAvailable = False
     self.debug = False
+    self.externalsOnly = False
     self.lcgVer = ''
     self.useVersionsDir = False
     self.installSource = ""
@@ -728,6 +729,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'V:', 'VO=', 'Virtual Organization (deprecated, use -l or --project)' ),
+            ( 'X', 'externalsOnly', 'Only install external binaries' ),
             ( 'h', 'help', 'Show this help' ),
           )
 
@@ -832,6 +834,8 @@ def loadConfiguration():
       cliParams.buildExternals = True
     elif o in ( "-B", '--buildIfNotAvailable' ):
       cliParams.buildIfNotAvailable = True
+    elif o in ( '-X', '--externalsOnly' ):
+      cliParams.externalsOnly = True
 
   if not cliParams.release:
     logERROR( "Missing release to install" )
@@ -872,7 +876,12 @@ def compileExternals( extVersion ):
 def installExternals( externalsVersion ):
   if not cliParams.platform:
     platformPath = os.path.join( cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py" )
-    platFD = open( platformPath, "r" )
+    try:
+      platFD = open( platformPath, "r" )
+    except IOError:
+      logERROR( "Cannot open Platform.py. Is DIRAC installed?" )
+      return False
+
     Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
     platFD.close()
     cliParams.platform = Platform.getPlatformString()
@@ -974,26 +983,29 @@ if __name__ == "__main__":
     logERROR( result[ 'Message' ] )
     sys.exit( 1 )
   releaseConfig = result[ 'Value' ]
-  logNOTICE( "Discovering modules to install" )
-  result = releaseConfig.getModulesToInstall( cliParams.extraPackages )
-  if not result[ 'OK' ]:
-    logERROR( result[ 'Message' ] )
-    sys.exit( 1 )
-  modsToInstall = result[ 'Value' ]
-  logNOTICE( "Installing modules..." )
-  for modName in modsToInstall:
-    tarsURL, modVersion = modsToInstall[ modName ]
-    if cliParams.installSource:
-      tarsURL = cliParams.installSource
-    logNOTICE( "Installing %s:%s" % ( modName, modVersion ) )
-    if not downloadAndExtractTarball( tarsURL, modName, modVersion ):
+  if not cliParams.externalsOnly:
+    logNOTICE( "Discovering modules to install" )
+    result = releaseConfig.getModulesToInstall( cliParams.extraPackages )
+    if not result[ 'OK' ]:
+      logERROR( result[ 'Message' ] )
       sys.exit( 1 )
-  logNOTICE( "Deloying scripts..." )
-  ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
-  if os.path.isfile( ddeLocation ):
-    os.system( ddeLocation )
+    modsToInstall = result[ 'Value' ]
+    logNOTICE( "Installing modules..." )
+    for modName in modsToInstall:
+      tarsURL, modVersion = modsToInstall[ modName ]
+      if cliParams.installSource:
+        tarsURL = cliParams.installSource
+      logNOTICE( "Installing %s:%s" % ( modName, modVersion ) )
+      if not downloadAndExtractTarball( tarsURL, modName, modVersion ):
+        sys.exit( 1 )
+    logNOTICE( "Deloying scripts..." )
+    ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
+    if os.path.isfile( ddeLocation ):
+      os.system( ddeLocation )
+    else:
+      logDEBUG( "No dirac-deploy-scripts found. This doesn't look good" )
   else:
-    logDEBUG( "No dirac-deploy-scripts found. This doesn't look good" )
+    logNOTICE( "Skipping installing DIRAC" )
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   externalsVersion = releaseConfig.getExtenalsVersion()
   if not externalsVersion:
