@@ -8,6 +8,7 @@ from DIRAC.Core.Base.AgentModule                                import AgentModu
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageManagerClient
 from DIRAC.Resources.Catalog.FileCatalog                        import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient      import DataIntegrityClient
+from DIRAC.StorageManagementSystem.DB.StorageManagementDB       import StorageManagementDB
 
 import time, os, sys, re
 from types import *
@@ -18,9 +19,9 @@ class RequestPreparationAgent( AgentModule ):
 
   def initialize( self ):
     self.fileCatalog = FileCatalog()
-    self.stagerClient = StorageManagerClient()
+    #self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
-
+    self.storageDB = StorageManagementDB()
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -115,13 +116,14 @@ class RequestPreparationAgent( AgentModule ):
     # Update the states of the files in the database
     if terminalReplicaIDs:
       gLogger.info( "RequestPreparation.prepareNewReplicas: %s replicas are terminally failed." % len( terminalReplicaIDs ) )
-      res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
+      #res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
+      res = self.storageDB.updateReplicaFailure( terminalReplicaIDs )
       if not res['OK']:
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica failures.", res['Message'] )
     if replicaMetadata:
       gLogger.info( "RequestPreparation.prepareNewReplicas: %s replica metadata to be updated." % len( replicaMetadata ) )
       # Sets the Status='Waiting' of CacheReplicas records that are OK with catalogue checks
-      res = self.stagerClient.updateReplicaInformation( replicaMetadata )
+      res = self.storageDB.updateReplicaInformation( replicaMetadata )
       if not res['OK']:
         gLogger.error( "RequestPreparation.prepareNewReplicas: Failed to update replica metadata.", res['Message'] )
     return S_OK()
@@ -129,7 +131,7 @@ class RequestPreparationAgent( AgentModule ):
   def __getNewReplicas( self ):
     """ This obtains the New replicas from the Replicas table and for each LFN the requested storage element """
     # First obtain the New replicas from the CacheReplicas table
-    res = self.stagerClient.getReplicasWithStatus( 'New' )
+    res = self.storageDB.getCacheReplicas( {'Status':'New'} )
     if not res['OK']:
       gLogger.error( "RequestPreparation.__getNewReplicas: Failed to get replicas with New status.", res['Message'] )
       return res

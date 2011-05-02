@@ -9,6 +9,7 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageMa
 from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 import time, os, sys, re
 from types import *
+from DIRAC.StorageManagementSystem.DB.StorageManagementDB       import StorageManagementDB
 
 AGENT_NAME = 'StorageManagement/RequestFinalizationAgent'
 
@@ -20,21 +21,21 @@ class RequestFinalizationAgent( AgentModule ):
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
+    self.storageDB = StorageManagementDB()
+    #self.stagerClient = StorageManagerClient()
 
-    self.stagerClient = StorageManagerClient()
     return S_OK()
 
   def execute( self ):
     res = self.clearFailedTasks()
     res = self.callbackStagedTasks()
-    res = self.callbackDoneTasks()
     res = self.removeUnlinkedReplicas()
     return res
 
   def clearFailedTasks( self ):
     """ This obtains the tasks which are marked as Failed and remove all the associated records
     """
-    res = self.stagerClient.getTasksWithStatus( 'Failed' )
+    res = self.storageDB.getTasksWithStatus( 'Failed' )
     if not res['OK']:
       gLogger.fatal( "RequestFinalization.clearFailedTasks: Failed to get Failed Tasks from StagerDB.", res['Message'] )
       return res
@@ -49,39 +50,17 @@ class RequestFinalizationAgent( AgentModule ):
       gLogger.info( "RequestFinalization.clearFailedTasks: No tasks to remove." )
       return S_OK()
     gLogger.info( "RequestFinalization.clearFailedTasks: Removing %s tasks..." % len( failedTasks ) )
-    res = self.stagerClient.removeTasks( failedTasks.keys() )
+    res = self.storageDB.removeTasks( failedTasks.keys() )
     if not res['OK']:
       gLogger.error( "RequestFinalization.clearFailedTasks: Failed to remove tasks.", res['Message'] )
       return res
     gLogger.info( "RequestFinalization.clearFailedTasks: ...removed." )
     return S_OK()
 
-  def callbackDoneTasks( self ):
-    """ This issues the call back message for the Tasks with a State='Done'
-    """
-    res = self.stagerClient.getTasksWithStatus( 'Done' )
-    if not res['OK']:
-      gLogger.fatal( "RequestFinalization.callbackDoneTasks: Failed to get Done Tasks from StorageManagementDB.", res['Message'] )
-      return res
-    doneTasks = res['Value']
-    gLogger.info( "RequestFinalization.callbackDoneTasks: Obtained %s tasks in the 'Done' status." % len( doneTasks ) )
-    for taskID, ( source, callback, sourceTask ) in doneTasks.items():
-      if ( callback and sourceTask ):
-        res = self.__performCallback( 'Done', callback, sourceTask )
-        if not res['OK']:
-          doneTasks.pop( taskID )
-    if not doneTasks:
-      gLogger.info( "RequestFinalization.callbackDoneTasks: No tasks to update to Done." )
-      return S_OK()
-    res = self.stagerClient.removeTasks( doneTasks.keys() )
-    if not res['OK']:
-      gLogger.fatal( "RequestFinalization.callbackDoneTasks: Failed to remove Done tasks.", res['Message'] )
-    return res
-
   def callbackStagedTasks( self ):
     """ This updates the status of the Tasks to Done then issues the call back message
     """
-    res = self.stagerClient.getTasksWithStatus( 'Staged' )
+    res = self.storageDB.getTasksWithStatus( 'Staged' )
     if not res['OK']:
       gLogger.fatal( "RequestFinalization.callbackStagedTasks: Failed to get Staged Tasks from StagerDB.", res['Message'] )
       return res
@@ -97,7 +76,7 @@ class RequestFinalizationAgent( AgentModule ):
       return S_OK()
     # Daniela: Why is the line below commented out?
     #res = self.stagerClient.setTasksDone(stagedTasks.keys())
-    res = self.stagerClient.removeTasks( stagedTasks.keys() )
+    res = self.storageDB.removeTasks( stagedTasks.keys() )
     if not res['OK']:
       gLogger.fatal( "RequestFinalization.callbackStagedTasks: Failed to remove staged Tasks.", res['Message'] )
     return res
@@ -118,7 +97,7 @@ class RequestFinalizationAgent( AgentModule ):
 
   def removeUnlinkedReplicas( self ):
     gLogger.info( "RequestFinalization.removeUnlinkedReplicas: Attempting to cleanup unlinked Replicas." )
-    res = self.stagerClient.removeUnlinkedReplicas()
+    res = self.storageDB.removeUnlinkedReplicas()
     if not res['OK']:
       gLogger.error( "RequestFinalization.removeUnlinkedReplicas: Failed to cleanup unlinked Replicas.", res['Message'] )
     else:
@@ -126,14 +105,14 @@ class RequestFinalizationAgent( AgentModule ):
     return res
 
   def clearReleasedTasks( self ):
-    # TODO: issue release of the pins assoicated to this task
-    res = self.stagerClient.getTasksWithStatus( 'Released' )
+    # TODO: issue release of the pins associated to this task
+    res = self.storageDB.getTasksWithStatus( 'Released' )
     if not res['OK']:
       gLogger.fatal( "RequestFinalization.clearReleasedTasks: Failed to get Released Tasks from StagerDB.", res['Message'] )
       return res
     stagedTasks = res['Value']
     gLogger.info( "RequestFinalization.clearReleasedTasks: Removing %s tasks..." % len( stagedTasks ) )
-    res = self.stagerClient.removeTasks( stagedTasks.keys() )
+    res = self.storageDB.removeTasks( stagedTasks.keys() )
     if not res['OK']:
       gLogger.error( "RequestFinalization.clearReleasedTasks: Failed to remove tasks.", res['Message'] )
       return res
