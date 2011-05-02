@@ -812,7 +812,7 @@ def loadConfiguration():
           cliParams.extraPackages.append( pkg )
     elif o in ( '-t', '--installType' ):
       cliParams.externalsType = v
-    elif o in ( '-y', '--pythonVersion' ):
+    elif o in ( '-i', '--pythonVersion' ):
       cliParams.pythonVersion = v
     elif o in ( '-p', '--platform' ):
       cliParams.platform = v
