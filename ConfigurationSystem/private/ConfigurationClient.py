@@ -69,7 +69,7 @@ class ConfigurationClient:
     if retVal[ 'OK' ]:
       return retVal[ 'Value' ]
     else:
-      gLogger.warn( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
+      gLogger.debug( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return defaultValue
 
 #  def getSpecialValue( self, optionPath, defaultValue = None, vo = None, setup = None ):
