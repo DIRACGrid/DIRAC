@@ -22,6 +22,8 @@ from DIRAC.Core.Utilities.SiteSEMapping                        import getSEsForS
 from DIRAC.Core.Utilities.Time                                 import fromString, toEpoch
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement                    import StorageElement
+from DIRAC.Core.Utilities.SiteSEMapping                        import getSEsForSite
+
 
 from DIRAC                                                     import S_OK, S_ERROR, List
 
@@ -191,6 +193,7 @@ class JobSchedulingAgent( OptimizerModule ):
       stagerDict = self.__setStagingRequest( job, stagingSite, optInfo )
       if not stagerDict['OK']:
         return stagerDict
+      self.__updateOtherSites( job, stagingSite, stagerDict['Value'], optInfo )
       return S_OK()
     else:
       #No staging required, can proceed to task queue agent and then waiting status
@@ -198,6 +201,45 @@ class JobSchedulingAgent( OptimizerModule ):
     #Finally send job to TaskQueueAgent
     return self.__sendJobToTaskQueue( job, classAdJob, destinationSites, userBannedSites )
 
+  #############################################################################
+  def __updateOtherSites( self, job, stagingSite, stagedLFNsPerSE, optInfo ):
+    """
+      Update Optimizer Info for other sites for which the SE on which we have staged
+      Files are declared local
+    """
+    updated = False
+    for site, siteDict in optInfo['SiteCandidates'].items():
+      if stagingSite == site:
+        continue
+      closeSEs = getSEsForSite( site )
+      if not closeSEs['OK']:
+        continue
+      closeSEs = closeSEs['Value']
+      siteDiskSEs = []
+      for se in closeSEs:
+        storageElement = StorageElement( se )
+        seStatus = storageElement.getStatus()['Value']
+        if seStatus['Read'] and seStatus['DiskSE']:
+          siteDiskSEs.append( se )
+
+      for lfn, replicas in optInfo['Value']['Value']['Successful'].items():
+        for stageSE, stageLFNs in stagedLFNsPerSE.items():
+          if lfn in stageLFNs and stageSE in closeSEs:
+            # The LFN has been staged, we need to check now if this SE is close 
+            # to the Site and if the LFN was not already on a Disk SE at the Site
+            isOnDisk = False
+            for se in replicas:
+              if se in siteDiskSEs:
+                isOnDisk = True
+            if not isOnDisk:
+              # This is updating optInfo
+              updated = True
+              siteDict['disk'] += 1
+              siteDict['tape'] -= 1
+            break
+
+    if updated:
+      self.setOptimizerJobInfo( job, self.dataAgentName, optInfo )
 
   #############################################################################
   def __checkOptimizerInfo( self, job ):
@@ -354,7 +396,7 @@ class JobSchedulingAgent( OptimizerModule ):
     result = self.updateJobStatus( job, self.stagingStatus, self.stagingMinorStatus )
     if not result['OK']:
       return result
-    return S_OK()
+    return S_OK( stageLfns )
 
   #############################################################################
   def __getJobSiteRequirement( self, job, classAdJob ):
