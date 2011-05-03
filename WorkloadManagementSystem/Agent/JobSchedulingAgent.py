@@ -188,7 +188,10 @@ class JobSchedulingAgent( OptimizerModule ):
 
       # Site is selected for staging, report it
       self.log.verbose( 'Staging site candidate for job %s is %s' % ( job, stagingSite ) )
-      self.jobDB.setJobAttribute( job, 'Site', stagingSite )
+      if len( destinationSites ) == 1:
+        self.jobDB.setJobAttribute( job, 'Site', stagingSite )
+      else:
+        self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
 
       stagerDict = self.__setStagingRequest( job, stagingSite, optInfo )
       if not stagerDict['OK']:
