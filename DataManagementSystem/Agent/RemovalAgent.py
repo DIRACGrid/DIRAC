@@ -189,8 +189,8 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
             gMonitor.addMark( 'RemoveFileDone', len( res['Value']['Successful'].keys() ) )
             for lfn in res['Value']['Successful'].keys():
               gLogger.info( "RemovalAgent.execute: Successfully removed %s." % lfn )
-              res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
-              if not res['OK']:
+              result = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+              if not result['OK']:
                 gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
               modified = True
             gMonitor.addMark( 'RemoveFileFail', len( res['Value']['Failed'].keys() ) )
@@ -198,8 +198,8 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
               if type( res['Value']['Failed'][lfn] ) in StringTypes:
                 if re.search( 'no such file or directory', res['Value']['Failed'][lfn].lower() ):
                   gLogger.info( "RemovalAgent.execute: File did not exist.", lfn )
-                  res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
-                  if not res['OK']:
+                  result = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+                  if not result['OK']:
                     gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
                   modified = True
                 else:
