@@ -1,54 +1,79 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-
-"""  RemovalAgent takes removal requests from the RequestDB and replicates them
+"""  RemovalAgent takes removal requests from the RequestDB and executes them
 """
 
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
+from DIRAC  import gLogger, gMonitor, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool, ThreadedJob
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
-import time, os, re
-from types import *
+import re
+from types import StringTypes
 
 __RCSID__ = "$Id$"
 
 AGENT_NAME = 'DataManagement/RemovalAgent'
 
 class RemovalAgent( AgentModule, RequestAgentMixIn ):
+  """
+    This Agent takes care of executing "removal" request from the RequestManagement system
+  """
+
+  def __init__( self, *args ):
+    """
+    Initialize the base class and define some extra data members
+    """
+    AgentModule.__init__( self, *args )
+    self.requestDBClient = None
+    self.replicaManager = None
+    self.maxNumberOfThreads = 4
+    self.maxRequestsInQueue = 100
+    self.threadPool = None
 
   def initialize( self ):
-
-    self.RequestDBClient = RequestClient()
-    self.ReplicaManager = ReplicaManager()
+    """
+      Called by the framework upon startup, before any cycle (execute method bellow)
+    """
+    self.requestDBClient = RequestClient()
+    self.replicaManager = ReplicaManager()
 
     gMonitor.registerActivity( "Iteration", "Agent Loops", "RemovalAgent", "Loops/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Execute", "Request Processed", "RemovalAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Done", "Request Completed", "RemovalAgent", "Requests/min", gMonitor.OP_SUM )
 
-    gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical removals attempted", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalDone", "Successful physical removals", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalFail", "Failed physical removals", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalSize", "Physically removed size", "RemovalAgent", "Bytes", gMonitor.OP_ACUM )
+    gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical removals attempted",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "PhysicalRemovalDone", "Successful physical removals",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "PhysicalRemovalFail", "Failed physical removals",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "PhysicalRemovalSize", "Physically removed size",
+                               "RemovalAgent", "Bytes", gMonitor.OP_ACUM )
 
-    gMonitor.registerActivity( "ReplicaRemovalAtt", "Replica removal attempted", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "ReplicaRemovalDone", "Successful replica removals", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "ReplicaRemovalFail", "Failed replica removals", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "ReplicaRemovalAtt", "Replica removal attempted",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "ReplicaRemovalDone", "Successful replica removals",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "ReplicaRemovalFail", "Failed replica removals",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
 
-    gMonitor.registerActivity( "RemoveFileAtt", "File removal attempted", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveFileDone", "File removal done", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveFileFail", "File removal failed", "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RemoveFileAtt", "File removal attempted",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RemoveFileDone", "File removal done",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RemoveFileFail", "File removal failed",
+                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
 
-    self.maxNumberOfThreads = self.am_getOption( 'NumberOfThreads', 0 )
-    self.threadPoolDepth = self.am_getOption( 'ThreadPoolDepth', 0 )
-    self.threadPool = ThreadPool( 1, self.maxNumberOfThreads )
+    self.maxNumberOfThreads = self.am_getOption( 'NumberOfThreads', self.maxNumberOfThreads )
+    self.maxRequestsInQueue = self.am_getOption( 'RequestsInQueue', self.maxRequestsInQueue )
+    self.threadPool = ThreadPool( 1, self.maxNumberOfThreads, self.maxRequestsInQueue )
+
+    # Set the ThreadPool in daemon mode to process new ThreadedJobs as they are inserted
+    self.threadPool.daemonize()
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
@@ -58,18 +83,26 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
     return S_OK()
 
   def execute( self ):
+    """
+    Fill the TreadPool with ThreadJobs
+    """
 
-    for i in range( self.threadPoolDepth ):
+    while True:
       requestExecutor = ThreadedJob( self.executeRequest )
-      self.threadPool.queueJob( requestExecutor )
-    self.threadPool.processResults()
-    return self.executeRequest()
+      ret = self.threadPool.queueJob( requestExecutor )
+      if not ret['OK']:
+        break
+
+      return S_OK()
 
   def executeRequest( self ):
+    """
+    Do the actual work in the Thread
+    """
     ################################################
     # Get a request from request DB
     gMonitor.addMark( "Iteration", 1 )
-    res = self.RequestDBClient.getRequest( 'removal' )
+    res = self.requestDBClient.getRequest( 'removal' )
     if not res['OK']:
       gLogger.info( "RemovalAgent.execute: Failed to get request from database." )
       return S_OK()
@@ -81,11 +114,11 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
     sourceServer = res['Value']['Server']
     try:
       jobID = int( res['Value']['JobID'] )
-    except:
+    except ValueError:
       jobID = 0
     gLogger.info( "RemovalAgent.execute: Obtained request %s" % requestName )
 
-    result = self.RequestDBClient.getCurrentExecutionOrder( requestName, sourceServer )
+    result = self.requestDBClient.getCurrentExecutionOrder( requestName, sourceServer )
     if result['OK']:
       currentOrder = result['Value']
     else:
@@ -133,7 +166,7 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
           failed = {}
           errMsg = {}
           for diracSE in diracSEs:
-            res = self.ReplicaManager.removeStorageFile( physicalFiles, diracSE )
+            res = self.replicaManager.removeStorageFile( physicalFiles, diracSE )
             if res['OK']:
               for pfn in res['Value']['Failed'].keys():
                 if not failed.has_key( pfn ):
@@ -184,7 +217,7 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
               lfn = str( subRequestFile['LFN'] )
               lfns.append( lfn )
           gMonitor.addMark( 'RemoveFileAtt', len( lfns ) )
-          res = self.ReplicaManager.removeFile( lfns )
+          res = self.replicaManager.removeFile( lfns )
           if res['OK']:
             gMonitor.addMark( 'RemoveFileDone', len( res['Value']['Successful'].keys() ) )
             for lfn in res['Value']['Successful'].keys():
@@ -203,7 +236,8 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
                     gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
                   modified = True
                 else:
-                  gLogger.info( "RemovalAgent.execute: Failed to remove file.", "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
+                  gLogger.info( "RemovalAgent.execute: Failed to remove file:",
+                                "%s %s" % ( lfn, res['Value']['Failed'][lfn] ) )
           else:
             gMonitor.addMark( 'RemoveFileFail', len( lfns ) )
             errStr = "RemovalAgent.execute: Completely failed to remove files files."
@@ -220,10 +254,11 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
               lfn = str( subRequestFile['LFN'] )
               lfns.append( lfn )
           gMonitor.addMark( 'ReplicaRemovalAtt', len( lfns ) )
+
           failed = {}
           errMsg = {}
           for diracSE in diracSEs:
-            res = self.ReplicaManager.removeReplica( diracSE, lfns )
+            res = self.replicaManager.removeReplica( diracSE, lfns )
             if res['OK']:
               for lfn in res['Value']['Failed'].keys():
                 if not failed.has_key( lfn ):
@@ -272,12 +307,12 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
             if subRequestFile['Status'] == 'Waiting':
               pfn = str( subRequestFile['PFN'] )
               lfn = str( subRequestFile['LFN'] )
-              res = self.ReplicaManager.onlineRetransfer( diracSE, pfn )
+              res = self.replicaManager.onlineRetransfer( diracSE, pfn )
               if res['OK']:
                 if res['Value']['Successful'].has_key( pfn ):
                   gLogger.info( "RemovalAgent.execute: Successfully requested retransfer of %s." % pfn )
-                  res = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
-                  if not res['OK']:
+                  result = oRequest.setSubRequestFileAttributeValue( ind, 'removal', lfn, 'Status', 'Done' )
+                  if not result['OK']:
                     gLogger.error( "RemovalAgent.execute: Error setting status to %s for %s" % ( 'Done', lfn ) )
                   modified = True
                 else:
@@ -303,14 +338,26 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
       ################################################
       #  If the sub-request is already in terminal state
       else:
-        gLogger.info( "RemovalAgent.execute: Sub-request %s is status '%s' and  not to be executed." % ( ind, subRequestAttributes['Status'] ) )
+        gLogger.info( "RemovalAgent.execute:",
+                      "Sub-request %s is status '%s' and not to be executed." %
+                      ( ind, subRequestAttributes['Status'] ) )
 
     ################################################
     #  Generate the new request string after operation
     requestString = oRequest.toXML()['Value']
-    res = self.RequestDBClient.updateRequest( requestName, requestString, sourceServer )
+    res = self.requestDBClient.updateRequest( requestName, requestString, sourceServer )
 
     if modified and jobID:
       result = self.finalizeRequest( requestName, jobID, sourceServer )
 
+    return S_OK()
+
+  def finalize( self ):
+    """
+    Called by the Agent framework to cleanly end execution.
+    In this case this module will wait until all pending ThreadedJbos in the
+    ThreadPool get executed
+    """
+
+    self.threadPool.processAllResults()
     return S_OK()
