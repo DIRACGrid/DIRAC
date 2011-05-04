@@ -521,7 +521,7 @@ class JobSchedulingAgent( OptimizerModule ):
             self.jobDB.setJobAttribute( job, 'Site', remainingSites[0] )
           else:
             self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( remainingSites ) ) )
-            self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
+            self.jobDB.setJobAttribute( job, 'Site', 'ANY' )
       else:
         self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( siteCandidates ) ) )
         self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
