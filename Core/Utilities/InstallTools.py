@@ -489,9 +489,9 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
     return S_OK( 'Component options already exist' )
 
   # Add the component options now
-  print "AT >>>", componentType, system, component, compInstance, extensions
+  # print "AT >>>", componentType, system, component, compInstance, extensions
   result = getComponentCfg( componentType, system, component, compInstance, extensions )
-  print result
+  # print result
   if not result['OK']:
     return result
   compCfg = result['Value']
@@ -583,9 +583,9 @@ def getComponentCfg( componentType, system, component, compInstance, extensions 
     if exitOnError:
       DIRAC.exit( -1 )
     return S_ERROR( error )
-  
+
   # Delete Dependencies section if any
-  compCfg.deleteKey('Dependencies')
+  compCfg.deleteKey( 'Dependencies' )
 
   sectionPath = cfgPath( 'Systems', system, compInstance, sectionName )
   cfg = __getCfg( sectionPath )
