@@ -13,7 +13,7 @@ Automata    = {
   'Active'  : ['Active', 'Bad', 'Banned'],
   'Bad'     : ['Bad', 'Active', 'Banned'],
   'Probing' : ['Probing', 'Active', 'Banned'],
-  'Banned'  : ['Banned', 'Probing', 'Active']
+  'Banned'  : ['Banned', 'Probing']
   }
 
 StateValues = {
