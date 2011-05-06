@@ -248,7 +248,7 @@ class ReleaseConfig:
       return self.__loadProjectDefaults( linkToProject )
 
     #If a default project is there, load the defaults
-    defaultProject = self.getDefaultValue( "Default/Project", projectName )
+    defaultProject = self.getDefaultValue( "LocalInstallation/Project", projectName )
     if defaultProject:
       return self.__loadProjectDefaults( defaultProject )
 
@@ -259,9 +259,6 @@ class ReleaseConfig:
       fd = open( fileName, "r" )
       self.__localDefaults.parse( fd.read() )
       fd.close()
-      localDefs = self.__localDefaults.getChild( "LocalInstallation" )
-      if localDefs:
-        self.__localDefaults = ReleaseConfig.CFG( "Defaults\n{\n%s\n}" % localDefs.toString() )
     except Exception, excp :
       return S_ERROR( "Could not load %s: %s" % ( fileName, excp ) )
     return S_OK()
@@ -345,7 +342,7 @@ class ReleaseConfig:
 
   def loadProjectForInstall( self, releaseVersion, projectName = "", sourceURL = False ):
     if not projectName:
-      defProject = self.getDefaultValue( "Defaults/Project" )
+      defProject = self.getDefaultValue( "LocalInstallation/Project" )
       if defProject:
         projectName = defProject
       else:
@@ -792,7 +789,7 @@ def loadConfiguration():
                   'buildExternals', 'buildIfNotAvailable', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
                   'project', 'release', 'extraPackages' ):
-    opVal = releaseConfig.getDefaultValue( "Defaults/%s" % ( opName[0].upper() + opName[1:] ) )
+    opVal = releaseConfig.getDefaultValue( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     if opVal == None:
       continue
     if type( getattr( cliParams, opName ) ) == types.StringType:
