@@ -93,7 +93,7 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
       if not ret['OK']:
         break
 
-      return S_OK()
+    return S_OK()
 
   def executeRequest( self ):
     """
