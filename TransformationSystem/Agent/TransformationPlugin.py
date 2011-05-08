@@ -1,13 +1,13 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
 from DIRAC                                                               import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SiteSEMapping                                  import getSitesForSE,getSEsForSite
-from DIRAC.Core.Utilities.List                                           import breakListIntoChunks, sortList, uniqueElements,randomize
+from DIRAC.Core.Utilities.SiteSEMapping                                  import getSitesForSE, getSEsForSite
+from DIRAC.Core.Utilities.List                                           import breakListIntoChunks, sortList, uniqueElements, randomize
 import re
 
-class TransformationPlugin(object):
+class TransformationPlugin( object ):
 
-  def __init__(self,plugin, transClient = None, replicaManager = None):
+  def __init__( self, plugin, transClient = None, replicaManager = None ):
     self.params = False
     self.data = False
     self.plugin = plugin
@@ -22,75 +22,76 @@ class TransformationPlugin(object):
       self.rm = ReplicaManager()
     else:
       self.rm = replicaManager
-    
 
-  def isOK(self):
+
+  def isOK( self ):
     self.valid = True
-    if (not self.data) or (not self.params):
+    if ( not self.data ) or ( not self.params ):
       self.valid = False
     return self.valid
 
-  def setInputData(self,data):
+  def setInputData( self, data ):
     self.data = data
 
-  def setTransformationFiles(self,files): #TODO ADDED
+  def setTransformationFiles( self, files ): #TODO ADDED
     self.files = files
 
-  def setParameters(self,params):
+  def setParameters( self, params ):
     self.params = params
 
-  def generateTasks(self):
+  def generateTasks( self ):
     try:
       evalString = "self._%s()" % self.plugin
-      return eval(evalString)
-    except AttributeError,x:
-      if re.search(self.plugin,str(x)):
-        return S_ERROR("Plugin not found")
+      return eval( evalString )
+    except AttributeError, x:
+      if re.search( self.plugin, str( x ) ):
+        return S_ERROR( "Plugin not found" )
       else:
-        raise AttributeError,x
-    except Exception,x:
-      raise Exception,x
+        raise AttributeError, x
+    except Exception, x:
+      gLogger.exception()
+      raise Exception, x
 
-  def _Standard(self):
+  def _Standard( self ):
     res = self._groupByReplicas()
     if not res['OK']:
       return res
     newTasks = []
-    for se,lfns in res['Value']:
-      newTasks.append(('',lfns))
-    return S_OK(newTasks)
+    for se, lfns in res['Value']:
+      newTasks.append( ( '', lfns ) )
+    return S_OK( newTasks )
 
-  def _BySize(self):
+  def _BySize( self ):
     return self._groupBySize()
 
-  def _Broadcast(self):
+  def _Broadcast( self ):
     """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs. """
     if not self.params:
-      return S_ERROR("TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters.")
+      return S_ERROR( "TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters." )
 
-    sourceseParam=self.params['SourceSE']
+    sourceseParam = self.params['SourceSE']
     targetseParam = self.params['TargetSE']
     sourceSEs = []
-    targetSEs= []
-    if sourceseParam.count('['):#assume it's an array
-      sourceSEs = eval(sourceseParam)
+    targetSEs = []
+    if sourceseParam.count( '[' ):#assume it's an array
+      sourceSEs = eval( sourceseParam )
     else:
-      sourceSEs= [sourceseParam]
-    sourceSEs = eval(self.params['SourceSE'])
-    if targetseParam.count('['):
-      targetSEs = eval(targetseParam)
+      sourceSEs = [sourceseParam]
+    sourceSEs = eval( self.params['SourceSE'] )
+    if targetseParam.count( '[' ):
+      targetSEs = eval( targetseParam )
     else:
-      targetSEs= [targetseParam]
+      targetSEs = [targetseParam]
     #sourceSEs = eval(self.params['SourceSE'])
     #targetSEs = eval(self.params['TargetSE'])
-    destinations = int(self.params.get('Destinations',0))
-    if destinations and (destinations >= targetSEs):
+    destinations = int( self.params.get( 'Destinations', 0 ) )
+    if destinations and ( destinations >= targetSEs ):
       destinations = 0
 
-    fileGroups = self._getFileGroups(self.data)
+    fileGroups = self._getFileGroups( self.data )
     targetSELfns = {}
-    for replicaSE,lfns in fileGroups.items():
-      ses = replicaSE.split(',')
+    for replicaSE, lfns in fileGroups.items():
+      ses = replicaSE.split( ',' )
       #sourceSites = self._getSitesForSEs(ses)
       atSource = False
       for se in ses:
@@ -98,46 +99,46 @@ class TransformationPlugin(object):
           atSource = True
       if not atSource:
         continue
-      
+
       for lfn in lfns:
         targets = []
-        sources = self._getSitesForSEs(ses)
-        for targetSE in randomize(targetSEs):
-          site = self._getSiteForSE(targetSE)['Value']
+        sources = self._getSitesForSEs( ses )
+        for targetSE in randomize( targetSEs ):
+          site = self._getSiteForSE( targetSE )['Value']
           if not site in sources:
-            if (destinations) and (len(targets) >= destinations):
+            if ( destinations ) and ( len( targets ) >= destinations ):
               continue
-            targets.append(targetSE)
-            sources.append(site)
-        strTargetSEs = str.join(',',sortList(targets))
-        if not targetSELfns.has_key(strTargetSEs):
+            targets.append( targetSE )
+            sources.append( site )
+        strTargetSEs = str.join( ',', sortList( targets ) )
+        if not targetSELfns.has_key( strTargetSEs ):
           targetSELfns[strTargetSEs] = []
-        targetSELfns[strTargetSEs].append(lfn)
+        targetSELfns[strTargetSEs].append( lfn )
     tasks = []
-    for ses,lfns in targetSELfns.items():
-      tasks.append((ses,lfns))
-    return S_OK(tasks)
+    for ses, lfns in targetSELfns.items():
+      tasks.append( ( ses, lfns ) )
+    return S_OK( tasks )
 
-  def _ByShare(self,type='CPU'):  
-    res = self._getShares(type,normalise=True)
+  def _ByShare( self, type = 'CPU' ):
+    res = self._getShares( type, normalise = True )
     if not res['OK']:
-      return res  
+      return res
     cpuShares = res['Value']
-    gLogger.info("Obtained the following target shares (%):")
-    for site in sortList(cpuShares.keys()):
-      gLogger.info("%s: %.1f" % (site.ljust(15),cpuShares[site]))
+    gLogger.info( "Obtained the following target shares (%):" )
+    for site in sortList( cpuShares.keys() ):
+      gLogger.info( "%s: %.1f" % ( site.ljust( 15 ), cpuShares[site] ) )
 
     # Get the existing destinations from the transformationDB
-    res = self._getExistingCounters(requestedSites=cpuShares.keys())
+    res = self._getExistingCounters( requestedSites = cpuShares.keys() )
     if not res['OK']:
-      gLogger.error("Failed to get existing file share",res['Message'])
+      gLogger.error( "Failed to get existing file share", res['Message'] )
       return res
     existingCount = res['Value']
     if existingCount:
-      gLogger.info("Existing site utilization (%):") 
-      normalisedExistingCount = self._normaliseShares(existingCount.copy())
-      for se in sortList(normalisedExistingCount.keys()):
-        gLogger.info("%s: %.1f" % (se.ljust(15),normalisedExistingCount[se]))
+      gLogger.info( "Existing site utilization (%):" )
+      normalisedExistingCount = self._normaliseShares( existingCount.copy() )
+      for se in sortList( normalisedExistingCount.keys() ):
+        gLogger.info( "%s: %.1f" % ( se.ljust( 15 ), normalisedExistingCount[se] ) )
 
     # Group the input files by their existing replicas
     res = self._groupByReplicas()
@@ -147,174 +148,174 @@ class TransformationPlugin(object):
 
     tasks = []
     # For the replica groups 
-    for replicaSE,lfns in replicaGroups:
-      possibleSEs = replicaSE.split(',')
+    for replicaSE, lfns in replicaGroups:
+      possibleSEs = replicaSE.split( ',' )
       # Determine the next site based on requested shares, existing usage and candidate sites
-      res = self._getNextSite(existingCount,cpuShares,candidates=self._getSitesForSEs(possibleSEs))
+      res = self._getNextSite( existingCount, cpuShares, candidates = self._getSitesForSEs( possibleSEs ) )
       if not res['OK']:
-        gLogger.error("Failed to get next destination SE",res['Message']) 
+        gLogger.error( "Failed to get next destination SE", res['Message'] )
         continue
       targetSite = res['Value']
       # Resolve the ses for the target site
-      res = getSEsForSite(targetSite)
+      res = getSEsForSite( targetSite )
       if not res['OK']:
         continue
       ses = res['Value']
       # Determine the selected SE and create the task 
       for chosenSE in ses:
         if chosenSE in possibleSEs:
-          tasks.append((chosenSE,lfns))
-          if not existingCount.has_key(targetSite):
+          tasks.append( ( chosenSE, lfns ) )
+          if not existingCount.has_key( targetSite ):
             existingCount[targetSite] = 0
-          existingCount[targetSite] += len(lfns)
-    return S_OK(tasks)
+          existingCount[targetSite] += len( lfns )
+    return S_OK( tasks )
 
-  def _getShares(self,type,normalise=False):
-    res = gConfig.getOptionsDict('/Resources/Shares/%s' % type)
+  def _getShares( self, type, normalise = False ):
+    res = gConfig.getOptionsDict( '/Resources/Shares/%s' % type )
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("/Resources/Shares/%s option contains no shares" % type)
+      return S_ERROR( "/Resources/Shares/%s option contains no shares" % type )
     shares = res['Value']
-    for site,value in shares.items():
-      shares[site] = float(value)
+    for site, value in shares.items():
+      shares[site] = float( value )
     if normalise:
-      shares = self._normaliseShares(shares)
+      shares = self._normaliseShares( shares )
     if not shares:
-      return S_ERROR("No non-zero shares defined")
-    return S_OK(shares)
+      return S_ERROR( "No non-zero shares defined" )
+    return S_OK( shares )
 
-  def _getExistingCounters(self,normalise=False,requestedSites=[]):
-    res = self.transClient.getCounters('TransformationFiles',['UsedSE'],{'TransformationID':self.params['TransformationID']}) 
+  def _getExistingCounters( self, normalise = False, requestedSites = [] ):
+    res = self.transClient.getCounters( 'TransformationFiles', ['UsedSE'], {'TransformationID':self.params['TransformationID']} )
     if not res['OK']:
       return res
     usageDict = {}
-    for usedDict,count in res['Value']:
+    for usedDict, count in res['Value']:
       usedSE = usedDict['UsedSE']
       if usedSE != 'Unknown':
         usageDict[usedSE] = count
     if requestedSites:
       siteDict = {}
-      for se,count in usageDict.items():
-        res = getSitesForSE(se,gridName='LCG')
+      for se, count in usageDict.items():
+        res = getSitesForSE( se, gridName = 'LCG' )
         if not res['OK']:
           return res
         for site in res['Value']:
           if site in requestedSites:
             siteDict[site] = count
-      usageDict = siteDict.copy() 
+      usageDict = siteDict.copy()
     if normalise:
-      usageDict = self._normaliseShares(usageDict)
-    return S_OK(usageDict)
+      usageDict = self._normaliseShares( usageDict )
+    return S_OK( usageDict )
 
-  def _normaliseShares(self,originalShares):
-    shares = originalShares.copy()    
+  def _normaliseShares( self, originalShares ):
+    shares = originalShares.copy()
     total = 0.0
-    for site in shares.keys():   
-      share = float(shares[site])
+    for site in shares.keys():
+      share = float( shares[site] )
       shares[site] = share
       total += share
     for site in shares.keys():
-      share = 100.0*(shares[site]/total)
+      share = 100.0 * ( shares[site] / total )
       shares[site] = share
     return shares
 
-  def _getNextSite(self,existingCount,cpuShares,candidates=[]):
+  def _getNextSite( self, existingCount, cpuShares, candidates = [] ):
     # normalise the shares
-    siteShare = self._normaliseShares(existingCount)
+    siteShare = self._normaliseShares( existingCount )
     # then fill the missing share values to 0
     for site in cpuShares.keys():
-      if (not siteShare.has_key(site)):
+      if ( not siteShare.has_key( site ) ):
         siteShare[site] = 0.0
     # determine which site is furthest from its share
     chosenSite = ''
-    minShareShortFall = - float("inf")
-    for site,cpuShare in cpuShares.items():
-      if (candidates) and not (site in candidates):
+    minShareShortFall = -float( "inf" )
+    for site, cpuShare in cpuShares.items():
+      if ( candidates ) and not ( site in candidates ):
         continue
       if not cpuShare:
         continue
       existingShare = siteShare[site]
-      shareShortFall = cpuShare-existingShare
+      shareShortFall = cpuShare - existingShare
       if shareShortFall > minShareShortFall:
         minShareShortFall = shareShortFall
         chosenSite = site
-    return S_OK(chosenSite)
- 
-  def _groupByReplicas(self):
+    return S_OK( chosenSite )
+
+  def _groupByReplicas( self ):
     """ Generates a job based on the location of the input data """
     if not self.params:
-      return S_ERROR("TransformationPlugin._Standard: The 'Standard' plug-in requires parameters.")
+      return S_ERROR( "TransformationPlugin._Standard: The 'Standard' plug-in requires parameters." )
     status = self.params['Status']
     groupSize = self.params['GroupSize']
     # Group files by SE
-    fileGroups = self._getFileGroups(self.data)
+    fileGroups = self._getFileGroups( self.data )
     # Create tasks based on the group size
     tasks = []
-    for replicaSE in sortList(fileGroups.keys()):
+    for replicaSE in sortList( fileGroups.keys() ):
       lfns = fileGroups[replicaSE]
-      tasksLfns = breakListIntoChunks(lfns,groupSize)
+      tasksLfns = breakListIntoChunks( lfns, groupSize )
       for taskLfns in tasksLfns:
-        if (status == 'Flush') or (len(taskLfns) >= int(groupSize)):
-          tasks.append((replicaSE,taskLfns))
-    return S_OK(tasks)
-  
-  def _groupBySize(self):
+        if ( status == 'Flush' ) or ( len( taskLfns ) >= int( groupSize ) ):
+          tasks.append( ( replicaSE, taskLfns ) )
+    return S_OK( tasks )
+
+  def _groupBySize( self ):
     """ Generate a task for a given amount of data """
     if not self.params:
-      return S_ERROR("TransformationPlugin._BySize: The 'BySize' plug-in requires parameters.")
+      return S_ERROR( "TransformationPlugin._BySize: The 'BySize' plug-in requires parameters." )
     status = self.params['Status']
-    requestedSize = float(self.params['GroupSize'])*1000*1000*1000 # input size in GB converted to bytes
-    maxFiles = self.params.get('MaxFiles',100)
+    requestedSize = float( self.params['GroupSize'] ) * 1000 * 1000 * 1000 # input size in GB converted to bytes
+    maxFiles = self.params.get( 'MaxFiles', 100 )
     # Group files by SE
-    fileGroups = self._getFileGroups(self.data)
+    fileGroups = self._getFileGroups( self.data )
     # Get the file sizes
-    res = self.rm.getCatalogFileSize(self.data.keys())
+    res = self.rm.getCatalogFileSize( self.data.keys() )
     if not res['OK']:
-      return S_ERROR("Failed to get sizes for files")
+      return S_ERROR( "Failed to get sizes for files" )
     if res['Value']['Failed']:
-      return S_ERROR("Failed to get sizes for all files")
+      return S_ERROR( "Failed to get sizes for all files" )
     fileSizes = res['Value']['Successful']
     tasks = []
-    for replicaSE,lfns in fileGroups.items():
+    for replicaSE, lfns in fileGroups.items():
       taskLfns = []
       taskSize = 0
       for lfn in lfns:
         taskSize += fileSizes[lfn]
-        taskLfns.append(lfn)
-        if (taskSize > requestedSize) or (len(taskLfns) >= maxFiles):
-          tasks.append((replicaSE,taskLfns))
+        taskLfns.append( lfn )
+        if ( taskSize > requestedSize ) or ( len( taskLfns ) >= maxFiles ):
+          tasks.append( ( replicaSE, taskLfns ) )
           taskLfns = []
           taskSize = 0
-      if (status == 'Flush') and taskLfns:
-        tasks.append((replicaSE,taskLfns))
-    return S_OK(tasks)
+      if ( status == 'Flush' ) and taskLfns:
+        tasks.append( ( replicaSE, taskLfns ) )
+    return S_OK( tasks )
 
-  def _getFileGroups(self,fileReplicas):
+  def _getFileGroups( self, fileReplicas ):
     fileGroups = {}
-    for lfn,replicas in fileReplicas.items():
-      replicaSEs = str.join(',',sortList(uniqueElements(replicas.keys())))
-      if not fileGroups.has_key(replicaSEs):
+    for lfn, replicas in fileReplicas.items():
+      replicaSEs = str.join( ',', sortList( uniqueElements( replicas.keys() ) ) )
+      if not fileGroups.has_key( replicaSEs ):
         fileGroups[replicaSEs] = []
-      fileGroups[replicaSEs].append(lfn)
+      fileGroups[replicaSEs].append( lfn )
     return fileGroups
-  
-  def _getSiteForSE(self,se):
+
+  def _getSiteForSE( self, se ):
     """ Get site name for the given SE
     """
-    result = getSitesForSE(se,gridName='LCG')
+    result = getSitesForSE( se, gridName = 'LCG' )
     if not result['OK']:
       return result
     if result['Value']:
-      return S_OK(result['Value'][0])
-    return S_OK('')
+      return S_OK( result['Value'][0] )
+    return S_OK( '' )
 
-  def _getSitesForSEs(self, seList):
+  def _getSitesForSEs( self, seList ):
     """ Get all the sites for the given SE list
     """
     sites = []
     for se in seList:
-      result = getSitesForSE(se,gridName='LCG')
+      result = getSitesForSE( se, gridName = 'LCG' )
       if result['OK']:
         sites += result['Value']
     return sites
