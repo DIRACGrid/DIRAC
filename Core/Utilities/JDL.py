@@ -140,7 +140,7 @@ def dumpCFGAsJDL( cfg, level = 1, tab = "  " ):
       if len( val ) < 2:
         value = cfg[ key ]
         try:
-          value = float( value )
+          try_value = float( value )
           contents.append( '%s%s = %s;' % ( tab * level, key, value ) )
         except Exception:
           contents.append( '%s%s = "%s";' % ( tab * level, key, value ) )
