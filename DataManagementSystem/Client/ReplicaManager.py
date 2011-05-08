@@ -369,7 +369,7 @@ class StorageBase:
             'storageElementName' is the DIRAC SE name to be accessed e.g. CERN-DST.
             'pfn' contains a single pfn string or a list or dictionary containing the required files.
             'method' is the name of the StorageElement() method to be invoked.
-          'argsDict' contains aditional arguments that are requred for the method.
+          'argsDict' contains additional arguments that are required for the method.
 
         _executeSingleStorageElementFunction(storageElementName,pfn,method,argsDict={})
           Is a wrapper around _executeStorageElementFunction().
@@ -914,14 +914,19 @@ class ReplicaManager( CatalogToStorage ):
     res = fc.getPathPermissions( path )
     if not res['OK']:
       return res
-    if not res['Value']['Successful'].has_key( path ):
-      return S_ERROR( res['Value']['Failed'][path] )
-    catalogPerm = res['Value']['Successful'][path]
 
-    if catalogPerm.has_key( 'Write' ) and catalogPerm['Write']:
-      return S_OK( True )
-    else:
-      return S_OK( False )
+    paths = path
+    if type(path) in types.StringTypes:
+      paths = [path]
+
+    for p in paths:
+      if not res['Value']['Successful'].has_key( p ):
+        return S_OK(False)
+      catalogPerm = res['Value']['Successful'][p]
+      if not ( catalogPerm.has_key( 'Write' ) and catalogPerm['Write'] ):
+        return S_OK(False)
+
+    return S_OK(True)
 
   ##########################################################################
   #
@@ -1758,6 +1763,15 @@ class ReplicaManager( CatalogToStorage ):
       errStr = "ReplicaManager.removeFile: Supplied lfns must be string or list of strings."
       gLogger.error( errStr )
       return S_ERROR( errStr )
+    # Check that we have write permissions to this directory.
+    res = self.__verifyOperationPermission( lfns )
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      errStr = "ReplicaManager.__replicate: Write access not permitted for this credential."
+      gLogger.error( errStr, lfns )
+      return S_ERROR( errStr )
+
     gLogger.verbose( "ReplicaManager.removeFile: Attempting to remove %s files from Storage and Catalogue." % len( lfns ) )
     gLogger.verbose( "ReplicaManager.removeFile: Attempting to obtain replicas for %s lfns." % len( lfns ) )
     res = self.fileCatalogue.exists( lfns )
@@ -1838,6 +1852,14 @@ class ReplicaManager( CatalogToStorage ):
     else:
       errStr = "ReplicaManager.removeReplica: Supplied lfns must be string or list of strings."
       gLogger.error( errStr )
+      return S_ERROR( errStr )
+    # Check that we have write permissions to this directory.
+    res = self.__verifyOperationPermission( lfns )
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      errStr = "ReplicaManager.__replicate: Write access not permitted for this credential."
+      gLogger.error( errStr, lfns )
       return S_ERROR( errStr )
     gLogger.verbose( "ReplicaManager.removeReplica: Attempting to remove catalogue entry for %s lfns at %s." % ( len( lfns ), storageElementName ) )
     res = self.fileCatalogue.getReplicas( lfns, True )
@@ -1998,6 +2020,14 @@ class ReplicaManager( CatalogToStorage ):
     else:
       errStr = "ReplicaManager.removePhysicalReplica: Supplied lfns must be string or list of strings."
       gLogger.error( errStr )
+      return S_ERROR( errStr )
+    # Check that we have write permissions to this directory.
+    res = self.__verifyOperationPermission( lfns )
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      errStr = "ReplicaManager.__replicate: Write access not permitted for this credential."
+      gLogger.error( errStr, lfns )
       return S_ERROR( errStr )
     gLogger.verbose( "ReplicaManager.removePhysicalReplica: Attempting to remove %s lfns at %s." % ( len( lfns ), storageElementName ) )
     gLogger.verbose( "ReplicaManager.removePhysicalReplica: Attempting to resolve replicas." )

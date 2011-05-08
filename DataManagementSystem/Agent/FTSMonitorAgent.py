@@ -193,11 +193,15 @@ class FTSMonitorAgent( AgentModule ):
       if not res['OK']:
         gLogger.error( 'Failed to update the Channel table for ancestors of successful files.', res['Message'] )
         allUpdated = False
-      gLogger.info( 'Updating the FileToCat table for successful files' )
-      res = self.TransferDB.setRegistrationWaiting( channelID, completedFileIDs )
-      if not res['OK']:
-        gLogger.error( 'Failed to update the FileToCat table for successful files.', res['Message'] )
-        allUpdated = False
+      
+      #
+      #  cibak: temporary switch off of regitstration in FileToCat
+      #
+      #gLogger.info( 'Updating the FileToCat table for successful files' )
+      #res = self.TransferDB.setRegistrationWaiting( channelID, completedFileIDs )
+      #if not res['OK']:
+      #  gLogger.error( 'Failed to update the FileToCat table for successful files.', res['Message'] )
+      #  allUpdated = False
 
     if fileToFTSUpdates:
       gLogger.info( 'Updating the FileToFTS table for files' )
