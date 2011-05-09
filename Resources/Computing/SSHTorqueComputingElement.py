@@ -164,7 +164,7 @@ class SSHTorqueComputingElement( ComputingElement ):
     """ Method to submit job
     """
 
-    self.log.info( "Executable file path: %s" % executableFile )
+    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, 0755 )
 
