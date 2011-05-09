@@ -296,12 +296,10 @@ class PDP:
 
     # Building and returning result
     res = {}
-    if worstPolicies == []: return res
-    else:
-      res['Status'] = status_of_value(newStatus)
-      if concatenatedRes != '': res['Reason']  = concatenatedRes
-      if endDatePolicies != []: res['EndDate'] = endDatePolicies[0]['EndDate']
-      return res
+    res['Status'] = status_of_value(newStatus)
+    if concatenatedRes != '': res['Reason']  = concatenatedRes
+    if endDatePolicies != []: res['EndDate'] = endDatePolicies[0]['EndDate']
+    return res
 
 #############################################################################
 
