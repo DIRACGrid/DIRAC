@@ -4,8 +4,8 @@ import sys
 from DIRAC.ResourceStatusSystem.Utilities.mock       import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import *
+from DIRAC.ResourceStatusSystem.PolicySystem.Status import *
 from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import *
-from DIRAC.ResourceStatusSystem.Utilities.Combine    import *
 from DIRAC                                           import S_OK, S_ERROR
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
@@ -282,13 +282,6 @@ class PDPSuccess(PolicySystemTestCase):
           for r in res:
             self.assert_(r['Action'])
 
-  def test_valueOfStatus(self):
-    sm = StateMachine(self.VO, 'Active') # State of the machine doesn't matter here
-    self.assertEqual(sm.valueOfStatus('Banned'), 0)
-    self.assertEqual(sm.valueOfStatus('Bad'), 1)
-    self.assertEqual(sm.valueOfStatus('Probing'), 2)
-    self.assertEqual(sm.valueOfStatus('Active'), 3)
-
   def test__policyCombination(self):
 
     for granularity in ValidRes:
@@ -297,7 +290,6 @@ class PDPSuccess(PolicySystemTestCase):
           if status == oldStatus:
             continue
 
-          sm = StateMachine(self.VO, status)
           for newStatus1 in ValidStatus:
             for newStatus2 in ValidStatus:
               pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
@@ -311,43 +303,29 @@ class PDPSuccess(PolicySystemTestCase):
 
               # 1 policy
               res = pdp._policyCombination([polRes])
-              if sm.transitionAllowed(newStatus1):
-                self.assertEqual(res['Status'], newStatus1)
-                self.assertEqual(res['Reason'], '-Reason1-')
+
+              if status == 'Banned':
+                self.assertTrue(value_of_status(res['Status']) <= 1)
+
+              if status == 'Banned' and newStatus1 in ['Active','Bad','Probing']:
+                self.assertEqual(res['Status'], 'Probing')
               else:
-                self.assertEqual(res, {})
+                self.assertEqual(res['Status'], newStatus1)
+
 
               # 2 policies
               res = pdp._policyCombination([polRes, polRes2])
 
-              if sm.valueOfPolicy(polRes) > sm.valueOfPolicy(polRes2):
-                if sm.transitionAllowed(newStatus2):
-                  self.assertEqual(res['Status'], newStatus2)
-                  self.assertEqual(res['Reason'], '-Reason2-')
-                elif sm.transitionAllowed(newStatus1):
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-Reason1-')
-                else:
-                  self.assertEqual(res, {})
+              if status == 'Banned':
+                self.assertTrue(value_of_status(res['Status']) <= 1)
 
-              elif sm.valueOfPolicy(polRes) < sm.valueOfPolicy(polRes2):
-                if sm.transitionAllowed(newStatus1):
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-Reason1-')
-                elif sm.transitionAllowed(newStatus2):
-                  self.assertEqual(res['Status'], newStatus2)
-                  self.assertEqual(res['Reason'], '-Reason2-')
-                else:
-                  self.assertEqual(res, {})
+              if status == 'Banned' and newStatus1 in ['Active','Bad','Probing'] and newStatus2 in ['Active','Bad','Probing']:
+                self.assertEqual(res['Status'], 'Probing')
 
-              else:
-                if sm.transitionAllowed(newStatus1):
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-Reason1- |###| -Reason2-')
-                else:
-                  self.assertEqual(res, {})
-
-
+              if status != 'Banned' and value_of_status(newStatus1) < value_of_status(newStatus1):
+                self.assertEqual(res['Status'], newStatus1)
+              if status != 'Banned' and value_of_status(newStatus2) < value_of_status(newStatus1):
+                self.assertEqual(res['Status'], newStatus2)
 
               # all different policies
               def make_polres(status):

@@ -1,9 +1,7 @@
-""" collects:
-
-      - utility functions
-
-      - parameters
 """
+This module collects utility functions
+"""
+
 #############################################################################
 # useful functions
 #############################################################################
@@ -11,12 +9,8 @@
 def where(c, f):
   return "Class " + str(c.__class__.__name__) + ", in Function " + (f.__name__)
 
-#############################################################################
-
 def whoRaised(x):
   return "Exception: " + str(x.__class__.__name__) +", raised by " + str(x)
-
-#############################################################################
 
 def assignOrRaise(value, set_, exc, obj, fun):
   """
@@ -27,8 +21,6 @@ def assignOrRaise(value, set_, exc, obj, fun):
   if value is not None and value not in set_:
     raise exc, where(obj, fun)
   else: return value
-
-#############################################################################
 
 def convertTime(t, inTo = None):
 
@@ -105,3 +97,7 @@ def convertTime(t, inTo = None):
       pass
 
     return hour
+
+# vibernar utils functions
+
+id_fun = lambda x: x
