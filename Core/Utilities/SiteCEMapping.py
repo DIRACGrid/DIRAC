@@ -117,7 +117,7 @@ def getCEsForSite( siteName ):
   """
   if not re.search( '.', siteName ):
     return S_ERROR( '%s is not a valid site name' % siteName )
-  gridName = '.'.split( siteName )[0]
+  gridName = siteName.split( '.' )[0]
   siteSection = '/Resources/Sites/%s/%s/CE' % ( gridName, siteName )
   ces = gConfig.getValue( siteSection, [] )
   return S_OK( ces )

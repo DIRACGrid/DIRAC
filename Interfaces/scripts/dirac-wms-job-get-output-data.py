@@ -28,7 +28,7 @@ dirac = Dirac()
 exitCode = 0
 errorList = []
 
-outputDir = None
+outputDir = ''
 for sw, v in Script.getUnprocessedSwitches():
   if sw in ( 'D', 'Dir' ):
     outputDir = v
