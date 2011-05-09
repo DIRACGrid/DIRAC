@@ -97,7 +97,7 @@ class CREAMComputingElement( ComputingElement ):
       cmd = ['glite-ce-job-submit', '-n', '-a', '-N', '-r',
              '%s/%s' % ( self.ceName, self.queue ),
              '%s' % jdlName ]
-      result = executeGridCommand( proxy, cmd, self.gridEnv )
+      result = executeGridCommand( self.proxy, cmd, self.gridEnv )
 
       if result['OK']:
         pilotJobReference = result['Value'][1].strip()
@@ -107,25 +107,34 @@ class CREAMComputingElement( ComputingElement ):
     else:
       delegationID = makeGuid()
       cmd = [ 'glite-ce-delegate-proxy', '-e', '%s' % self.ceName, '%s' % delegationID ]
-      result = executeGridCommand( proxy, cmd, self.gridEnv )
+      result = executeGridCommand( self.proxy, cmd, self.gridEnv )
+      if not result['OK']:
+        self.log.error('Failed to delegate proxy: %s' % result['Message'])
+        return result
       for i in range( numberOfJobs ):
         jdlName, diracStamp = self.__writeJDL( executableFile )
         cmd = ['glite-ce-job-submit', '-n', '-N', '-r',
                '%s/%s' % ( self.ceName, self.queue ),
                '-D', '%s' % delegationID, '%s' % jdlName ]
-        result = executeGridCommand( proxy, cmd, self.gridEnv )
+        result = executeGridCommand( self.proxy, cmd, self.gridEnv )
         if not result['OK']:
           break
         if result['Value'][0] != 0:
           break
         pilotJobReference = result['Value'][1].strip()
-        batchIDList.append( pilotJobReference )
-        stampDict[pilotJobReference] = diracStamp
+        if pilotJobReference:
+          batchIDList.append( pilotJobReference )
+          stampDict[pilotJobReference] = diracStamp
+        else:
+          break  
         os.unlink( jdlName )
 
     os.unlink( executableFile )
-    result = S_OK( batchIDList )
-    result['PilotStampDict'] = stampDict
+    if batchIDList:
+      result = S_OK( batchIDList )
+      result['PilotStampDict'] = stampDict
+    else:
+      result = S_ERROR('No pilot references obtained from the glite job submission')  
     return result
 
   #############################################################################
