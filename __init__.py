@@ -91,7 +91,7 @@ if preVersion:
 # Check of python version
 
 __pythonMajorVersion = ( "2", )
-__pythonMinorVersion = ( "4", "5", "6" )
+__pythonMinorVersion = ( "4", "5", "6", "7" )
 
 pythonVersion = platform.python_version_tuple()
 if str( pythonVersion[0] ) not in __pythonMajorVersion or str( pythonVersion[1] ) not in __pythonMinorVersion:
