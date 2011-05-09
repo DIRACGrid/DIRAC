@@ -425,6 +425,9 @@ class JobSchedulingAgent( OptimizerModule ):
       result['Sites'] = site
     elif 'Multiple' in site:
       result['Sites'] = classAdJob.getListFromExpression( 'Site' )
+      # We might also be here after a Staging Request where several Sites are allowed
+      if 'ANY' in result['Sites'] or '' in result['Sites']:
+        result['Sites'] = []
     else:
       result['Sites'] = []
 
