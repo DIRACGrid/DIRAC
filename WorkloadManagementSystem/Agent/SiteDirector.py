@@ -273,14 +273,11 @@ class SiteDirector( AgentModule ):
         if not result['OK']:
           return result
 
-        # If proxy is not bundled in, submit with the user proxy 
-
-        executable = result['Executable']
-        proxy = result['Proxy']
-        result = ce.submitJob( executable, proxy, pilotsToSubmit )
+        executable = result['Value']
+        result = ce.submitJob( executable, '', pilotsToSubmit )
         if not result['OK']:
           self.log.error( 'Failed submission to queue %s:' % queue, result['Message'] )
-
+          continue
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
         pilotList = result['Value']
@@ -331,21 +328,14 @@ class SiteDirector( AgentModule ):
     """ Prepare the full executable for queue
     """
 
-    result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, 1000 )
-    if not result['OK']:
-      return result
-
-    proxyString = result['Value']
     proxy = ''
     if bundleProxy:
-      proxy = proxyString
+      proxy = self.proxy
     pilotOptions = self.__getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
     executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy )
-    result = S_OK()
-    result['Executable'] = executable
-    result['Proxy'] = proxyString
+    result = S_OK(executable)
     return result
 
 #####################################################################################    
