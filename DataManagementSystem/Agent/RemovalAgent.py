@@ -11,7 +11,10 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
-import re
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
+import re, os
 from types import StringTypes
 
 __RCSID__ = "$Id$"
@@ -263,6 +266,9 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
               res = self.replicaManager.removeReplica( diracSE, lfns )
               if res['OK']:
                 for lfn in res['Value']['Failed'].keys():
+                  if res['Value']['Failed'][lfn].find( 'Write access not permitted for this credential.' ) != -1:
+                    if self.__getProxyAndRemoveReplica( diracSE, lfn ):
+                      continue
                   if not failed.has_key( lfn ):
                     failed[lfn] = {}
                   failed[lfn][diracSE] = res['Value']['Failed'][lfn]
@@ -358,6 +364,55 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
       result = self.finalizeRequest( requestName, jobID, sourceServer )
 
     return S_OK()
+
+  def __getProxyAndRemoveReplica( self, diracSE, lfn ):
+    """
+    get a proxy from the owner of the file and try to remove it
+    returns True if it succeeds, False otherwise
+    """
+
+    result = self.replicaManager.getCatalogDirectoryMetadata( lfn, singleFile = True )
+    if not result[ 'OK' ]:
+      gLogger.error( "Could not get metadata info", result[ 'Message' ] )
+      return False
+    ownerRole = result[ 'Value' ][ 'OwnerRole' ]
+    ownerDN = result[ 'Value' ][ 'OwnerDN' ]
+    if ownerRole[0] != "/":
+      ownerRole = "/%s" % ownerRole
+
+    userProxy = ''
+    for ownerGroup in Registry.getGroupsWithVOMSAttribute( ownerRole ):
+      result = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup, limited = True,
+                                                requiredVOMSAttribute = ownerRole )
+      if not result[ 'OK' ]:
+        gLogger.verbose ( 'Failed to retrieve voms proxy for %s : %s:' % ( ownerDN, ownerRole ),
+                          result[ 'Message' ] )
+        continue
+      userProxy = result[ 'Value' ]
+      gLogger.verbose( "Got proxy for %s@%s [%s]" % ( ownerDN, ownerGroup, ownerRole ) )
+      break
+    if not userProxy:
+      return False
+
+    result = userProxy.dumpAllToFile()
+    if not result[ 'OK' ]:
+      gLogger.verbose( result[ 'Message' ] )
+      return False
+
+    upFile = result[ 'Value' ]
+    prevProxyEnv = os.environ[ 'X509_USER_PROXY' ]
+    os.environ[ 'X509_USER_PROXY' ] = upFile
+
+    try:
+      res = self.replicaManager.removeReplica( diracSE, lfn )
+      if res['OK'] and lfn in res[ 'Value' ]['Successful']:
+        gLogger.verbose( 'Removed %s from %s' % ( lfn, diracSE ) )
+        return True
+    finally:
+      os.environ[ 'X509_USER_PROXY' ] = prevProxyEnv
+      os.unlink( upFile )
+
+    return False
 
   def finalize( self ):
     """
