@@ -170,7 +170,7 @@ class DistributionMaker:
     modsToTar = result[ 'Value' ]
     for modName in modsToTar:
       modVersion = modsToTar[ modName ]
-      dctArgs = []
+      dctArgs = [ '-A' ] #Leave a copy of the release notes outside the tarballs
       #Version
       dctArgs.append( "-n '%s'" % modName )
       dctArgs.append( "-v '%s'" % modVersion )
@@ -199,7 +199,7 @@ class DistributionMaker:
       gLogger.verbose( "Executing %s" % cmd )
       if os.system( cmd ):
         return S_ERROR( "Failed creating tarball for module %s. Aborting" % modName )
-      gLogger.info( "Tarball for %s version %s created" % ( modName, modVersion ) )
+      gLogger.notice( "Tarball for %s version %s created" % ( modName, modVersion ) )
     return S_OK()
 
 
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     gLogger.notice( "Tarballs created in %s" % cliParams.destination )
     filesToCopy = []
     for fileName in os.listdir( cliParams.destination ):
-      for ext in ( ".tar.gz", ".md5", ".cfg" ):
+      for ext in ( ".tar.gz", ".md5", ".cfg", ".html", ".pdf" ):
         if fileName.find( ext ) == len( fileName ) - len( ext ):
           filesToCopy.append( os.path.join( cliParams.destination, fileName ) )
     gLogger.notice( "Please upload to your installation source:\n\t %s\n" % " ".join( filesToCopy ) )
