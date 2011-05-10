@@ -4,6 +4,8 @@ drop database if exists RSSConfigurationDB;
 create database RSSConfigurationDB;
 use RSSConfigurationDB;
 
+grant all privileges on RSSConfigurationDB.* to 'Dirac'@'localhost' identified by 'must_be_set';
+
 -- ----------------------------------------------------------------
 drop table if exists Users;
 
@@ -11,9 +13,6 @@ create table Users (
  login varchar(32),
  primary key (login)
 );
-
--- insert into Users values
---        ('fstagni'), ('roma'), ('santinel'), ('joel'), ('rsantana'), ('vibernar'), ('ubeda');
 -- ----------------------------------------------------------------
 drop table if exists Status;
 
@@ -22,15 +21,11 @@ create table Status (
  priority integer,
  primary key (label)
 );
-
-insert into Status values
-       ('Banned', 0), ('Bad',1), ('Probing', 3), ('Active', 4);
 -- -----------------------------------------------------------------
 
 --
 -- Tables for the actual Configurations
 --
-
 
 -- ----------------------------------------------------------------
 drop table if exists PoliciesParams;
@@ -75,3 +70,4 @@ create table Policies (
  primary key (label),
  foreign key (status)        references Status(label)
 );
+-- ----------------------------------------------------------------
