@@ -1,11 +1,15 @@
 [v6r0-pre1]
 
-*feature 1 Updated DISET Framework
+Updated DISET Framework
 NEW: modified client/server protocol
 
-*feature 2 Package base installation tools
+Package base installation tools
 NEW: release preparations and installation tools based om installation packages
 
-*feature 3 SiteDirector
+Direct pilot submission to sites with SiteDirector
 CHANGE: Simplified executable generation
 NEW: Few more checks of error conditions 
+
+Various fixes
+BUGFIX: Mail.py uses SMTP class rather than inheriting it
+FIX: Platform utility will properly discover libc version even for the new Ubuntu
