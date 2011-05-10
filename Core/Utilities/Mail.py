@@ -6,30 +6,19 @@ __RCSID__ = "$Id$"
 
 import socket
 from smtplib import SMTP
+from getpass import getuser
 from DIRAC import gLogger, S_OK, S_ERROR
 
-class Mail( SMTP ):
-  # FIXME: __init__ method from base class 'SMTP' is not called
+class Mail:
+
   def __init__( self ):
-    from getpass import getuser
-    self._hostname = socket.getfqdn()
     self._subject = ''
     self._message = ''
     self._mailAddress = ''
-    self._fromAddress = getuser() + '@' + self._hostname
+    self._fromAddress = getuser() + '@' + socket.getfqdn()
     self.esmtp_features = {}
-    self.local_hostname = '[127.0.0.1]'
 
   def _send( self ):
-    try:
-      self.connect()
-      self.ehlo( self._hostname )
-    except socket.error:
-      gLogger.info( 'Could not connect to mail server' )
-      return S_ERROR( 'Could not connect to mail server' )
-
-
-    self.set_debuglevel( None )
 
     if not self._mailAddress:
       gLogger.warn( "No mail address was provided. Mail not sent." )
@@ -49,13 +38,17 @@ class Mail( SMTP ):
     text = mailString % ( self._fromAddress, ', '.join( addresses ),
                           self._subject, self._message )
 
+    smtp = SMTP()
+    smtp.set_debuglevel( 0 )
     try:
+      #smtp.connect( self._hostname )
+      smtp.connect()
       self.sendmail( self._fromAddress, self._mailAddress, text )
     except Exception, x:
       gLogger.error( "Sending mail failed", str( x ) )
       return S_ERROR( "Sending mail failed %s" % str( x ) )
 
-    self.quit()
+    smtp.quit()
     gLogger.info( "The mail was succesfully sent", "to %s" \
                   % ', '.join( addresses ) )
     return S_OK( "The mail was succesfully sent" )
