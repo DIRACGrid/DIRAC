@@ -103,7 +103,7 @@ class RSSConfigurationDB(object):
     statuses = [{'label':l, 'priority':p} for (l,p) in statuses]
     return {'OK':ret, 'Value':statuses}
 
-  def addCheckFreq(self, **kwargs):
+  def addCheckFreq(self, kwargs):
     """
     Add a new check frequency. Arguments must be: granularity,
     site_type, status, freq.
@@ -111,7 +111,7 @@ class RSSConfigurationDB(object):
     return self._addValue(t_checkfreqs, kwargs)
 
 
-  def delCheckFreq(self, **kwargs):
+  def delCheckFreq(self, kwargs):
     """
     Delete check frequencies. Arguments must be part or all of:
     granularity, site_type, status, freq.
@@ -124,14 +124,14 @@ class RSSConfigurationDB(object):
              for (g,st,sta,f) in freqs]
     return {'OK':ret, 'Value':freqs}
 
-  def addAssigneeGroup(self, **kwargs):
+  def addAssigneeGroup(self, kwargs):
     """
     Add new assignee groups. Argument must be: label, login,
     granularity, site_type, service_type, resource_type, notification.
     """
     return self._addValue(t_assigneegroups, kwargs)
 
-  def delAssigneeGroup(self, **kwargs):
+  def delAssigneeGroup(self, kwargs):
     """
     Delete assignee groups. Argument must be all or part of: label,
     login, granularity, site_type, service_type, resource_type,
@@ -149,14 +149,14 @@ class RSSConfigurationDB(object):
               ]
     return {'OK':ret, 'Value':groups}
 
-  def addPolicy(self, **kwargs):
+  def addPolicy(self, kwargs):
     """
     Add new policies. Argument must be: label, description, status,
     former_status, site_type, service_type, resource_type.
     """
     return self._addValue(t_policies, kwargs)
 
-  def delPolicy(self, **kwargs):
+  def delPolicy(self, kwargs):
     """
     Delete policies. Argument must be all or part of: label,
     description, status, former_status, site_type, service_type,
