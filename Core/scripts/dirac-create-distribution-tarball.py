@@ -345,7 +345,7 @@ class TarModuleCreator( object ):
     if not releaseData:
       gLogger.info( "release.notes not found. Trying to find releasenotes.rst" )
       for rstFileName in ( "releasenotes.rst", "releasehistory.rst" ):
-        result = self.__compileReleaseNotes()
+        result = self.__compileReleaseNotes( rstFileName )
         if result[ 'OK' ]:
           gLogger.notice( "Compiled %s file!" % rstFileName )
       return S_OK()
