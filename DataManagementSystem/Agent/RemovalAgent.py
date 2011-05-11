@@ -266,7 +266,7 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
               res = self.replicaManager.removeReplica( diracSE, lfns )
               if res['OK']:
                 for lfn in res['Value']['Failed'].keys():
-                  if res['Value']['Failed'][lfn].find( 'Write access not permitted for this credential.' ) != -1:
+                  if str( res['Value']['Failed'][lfn] ).find( 'Write access not permitted for this credential.' ) != -1:
                     if self.__getProxyAndRemoveReplica( diracSE, lfn ):
                       continue
                   if not failed.has_key( lfn ):
