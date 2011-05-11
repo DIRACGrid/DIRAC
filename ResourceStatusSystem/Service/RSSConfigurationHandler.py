@@ -22,7 +22,7 @@ class RSSConfigurationHandler(RequestHandler):
   types_addUsers = [list]
   def export_addUsers(self, users):
     gLogger.info("[RSSConfig] Adding users " + str(users))
-    return rssConfDB.addUsers(users)
+    return rssConfDB.addUsers(users)[0]
 
   types_addUser = [str]
   def export_addUser(self, username):
@@ -32,7 +32,7 @@ class RSSConfigurationHandler(RequestHandler):
   types_delUsers = [list]
   def export_delUsers(self, users):
     gLogger.info("[RSSConfig] Deleting users " + str(users))
-    return rssConfDB.delUsers(users)
+    return rssConfDB.delUsers(users)[0]
 
   types_delUser = [str]
   def export_delUser(self, username):
@@ -47,7 +47,7 @@ class RSSConfigurationHandler(RequestHandler):
   types_addStatuses = [list]
   def export_addStatuses(self, statuses):
     gLogger.info("[RSSConfig] Adding statuses " + str(statuses))
-    return rssConfDB.addStatuses(statuses)
+    return rssConfDB.addStatuses(statuses)[0]
 
   types_addStatus = [str, int]
   def export_addStatus(self, status, priority):
@@ -57,9 +57,9 @@ class RSSConfigurationHandler(RequestHandler):
   types_delStatuses = [list]
   def export_delStatuses(self, statuses):
     gLogger.info("[RSSConfig] Deleting statuses " + str(statuses))
-    return rssConfDB.delStatuses(statuses)
+    return rssConfDB.delStatuses(statuses)[0]
 
-  types_delUser = [str]
+  types_delStatus = [str]
   def export_delStatus(self, status):
     gLogger.info("[RSSConfig] Deleting status " + status)
     return rssConfDB.delStatus(status)
@@ -79,7 +79,7 @@ class RSSConfigurationHandler(RequestHandler):
     gLogger.info("[RSSConfig] Deleting Check Frequency " + str(freq_dict))
     return rssConfDB.delCheckFreq(freq_dict)
 
-  types_getCheckFreq = []
+  types_getCheckFreqs = []
   def export_getCheckFreqs(self):
     gLogger.info("[RSSConfig] Getting Check Frequencies")
     return rssConfDB.getCheckFreqs()
@@ -113,3 +113,8 @@ class RSSConfigurationHandler(RequestHandler):
   def export_getPolicies(self):
     gLogger.info("[RSSConfig] Getting Policies")
     return rssConfDB.getPolicies()
+
+  types_messWithDB = []
+  def export_messWithDB(self, SQLString):
+    gLogger.info("[RSSConfig] Someone is messing with the DB! Hope he knows what is he doing...")
+    return rssConfDB.db._update(SQLString)

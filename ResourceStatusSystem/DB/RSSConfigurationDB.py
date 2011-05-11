@@ -64,14 +64,14 @@ class RSSConfigurationDB(object):
     return self._addValues(t_users, unames)
 
   def addUser(self, uname):
-    return self.addUsers([uname])
+    return self.addUsers([uname])[0]
 
   def delUsers(self, unames):
     unames = [{'login': u} for u in unames]
     return self._delValues(t_users, unames)
 
   def delUser(self, uname):
-    return self.delUsers([uname])
+    return self.delUsers([uname])[0]
 
   def getUsers(self):
     ret, users = self._query(t_users)
@@ -86,7 +86,7 @@ class RSSConfigurationDB(object):
     return self._addValues(t_statuses, statuses)
 
   def addStatus(self, label, priority):
-    return self.addStatuses([(label, priority)])
+    return self.addStatuses([(label, priority)])[0]
 
   def delStatuses(self, statuses):
     """
@@ -96,7 +96,7 @@ class RSSConfigurationDB(object):
     return self._delValues(t_statuses, statuses)
 
   def delStatus(self, status):
-    return self.delStatuses([status])
+    return self.delStatuses([status])[0]
 
   def getStatuses(self):
     ret, statuses = self._query(t_statuses)
@@ -109,7 +109,6 @@ class RSSConfigurationDB(object):
     site_type, status, freq.
     """
     return self._addValue(t_checkfreqs, kwargs)
-
 
   def delCheckFreq(self, kwargs):
     """
