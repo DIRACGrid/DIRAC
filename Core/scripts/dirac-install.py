@@ -44,7 +44,7 @@ class Params:
     self.platform = ""
     self.targetPath = os.getcwd()
     self.buildExternals = False
-    self.buildIfNotAvailable = False
+    self.noAutoBuild = False
     self.debug = False
     self.externalsOnly = False
     self.lcgVer = ''
@@ -218,10 +218,6 @@ class ReleaseConfig:
     if projectName in self.__defaults:
       return S_OK()
     self.__defaults[ projectName ] = ReleaseConfig.CFG()
-    skipDefaults = self.getDefaultValue( "SkipDefaults", projectName )
-    if skipDefaults and skipDefaults.lower() in ( 'y', 'yes', 'true', '1' ):
-      self.__dbgMsg( "Skipping loading defaults for project %s" % projectName )
-      return S_OK()
 
     linkToProject = self.getDefaultValue( "LinkToProject", projectName )
     #If not link to project then load defaults
@@ -230,17 +226,18 @@ class ReleaseConfig:
       try:
         defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % projectName )
       except ValueError:
+        defaultsLocation = False
         self.__dbgMsg( "No defaults file defined for project %s" % projectName )
-        return S_ERROR( "No defaults file defined for project %s" % projectName )
 
-      self.__dbgMsg( "Defaults for project %s are in %s" % ( projectName, defaultsLocation ) )
-      result = self.__loadCFGFromURL( defaultsLocation )
-      if not result[ 'OK' ]:
-        return result
-      self.__defaults[ projectName ] = result[ 'Value' ]
-      self.__dbgMsg( "Loaded defaults for project %s" % projectName )
-      #Update link to project var
-      linkToProject = self.getDefaultValue( "LinkToProject", projectName )
+      if defaultsLocation:
+        self.__dbgMsg( "Defaults for project %s are in %s" % ( projectName, defaultsLocation ) )
+        result = self.__loadCFGFromURL( defaultsLocation )
+        if not result[ 'OK' ]:
+          return result
+        self.__defaults[ projectName ] = result[ 'Value' ]
+        self.__dbgMsg( "Loaded defaults for project %s" % projectName )
+        #Update link to project var
+        linkToProject = self.getDefaultValue( "LinkToProject", projectName )
 
     if linkToProject:
       if self.__projectName == projectName:
@@ -481,6 +478,7 @@ class ReleaseConfig:
       extraModules = []
     extraFound = []
     modsToInstall = {}
+    modsOrder = []
     for projectName in self.__projectsLoaded:
       if projectName not in self.__depsLoaded:
         continue
@@ -511,12 +509,13 @@ class ReleaseConfig:
       self.__dbgMsg( "Modules to be installed for project %s are: %s" % ( projectName, ", ".join( modNameVer ) ) )
       for modName in modNames:
         modsToInstall[ modName ] = ( tarsPath, modVersions[ modName ] )
+        modsOrder.insert( 0, modName )
 
     for modName in extraModules:
       if modName not in extraFound:
         return S_ERROR( "No module %s defined. You sure it's defined for this release?" % modName )
 
-    return S_OK( modsToInstall )
+    return S_OK( ( modsOrder, modsToInstall ) )
 
 
 ###
@@ -721,7 +720,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'P:', 'installationPath=', 'Path where to install (default current working dir)' ),
             ( 'b', 'build', 'Force local compilation' ),
             ( 'g:', 'grid=', 'lcg tools package version' ),
-            ( 'B', 'buildIfNotAvailable', 'Build if not available' ),
+            ( 'B', 'noAutoBuild', 'Do not build if not available' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
             ( 'd', 'debug', 'Show debug messages' ),
@@ -744,7 +743,7 @@ def usage():
                    ( 'LcgVer', cliParams.lcgVer ),
                    ( 'UseVersionsDir', cliParams.useVersionsDir ),
                    ( 'BuildExternals', cliParams.buildExternals ),
-                   ( 'BuildIfNotAvailable', cliParams.buildIfNotAvailable ),
+                   ( 'NoAutoBuild', cliParams.noAutoBuild ),
                    ( 'Debug', cliParams.debug ) ]:
     print " %s = %s" % options
 
@@ -786,7 +785,7 @@ def loadConfiguration():
 
 
   for opName in ( 'release', 'externalsType', 'pythonVersion',
-                  'buildExternals', 'buildIfNotAvailable', 'debug' ,
+                  'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
                   'project', 'release', 'extraPackages' ):
     opVal = releaseConfig.getDefaultValue( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
@@ -829,8 +828,8 @@ def loadConfiguration():
       cliParams.useVersionsDir = True
     elif o in ( '-b', '--build' ):
       cliParams.buildExternals = True
-    elif o in ( "-B", '--buildIfNotAvailable' ):
-      cliParams.buildIfNotAvailable = True
+    elif o in ( "-B", '--noAutoBuild' ):
+      cliParams.noAutoBuild = True
     elif o in ( '-X', '--externalsOnly' ):
       cliParams.externalsOnly = True
 
@@ -894,7 +893,7 @@ def installExternals( externalsVersion ):
   else:
     tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
   if not downloadAndExtractTarball( tarsURL, "Externals", extVer ):
-    return cliParams.buildIfNotAvailable and compileExternals( externalsVersion )
+    return ( not cliParams.noAutoBuild ) and compileExternals( externalsVersion )
   logNOTICE( "Fixing externals paths..." )
   fixBuildPaths()
   logNOTICE( "Runnning externals post install..." )
@@ -986,9 +985,9 @@ if __name__ == "__main__":
     if not result[ 'OK' ]:
       logERROR( result[ 'Message' ] )
       sys.exit( 1 )
-    modsToInstall = result[ 'Value' ]
+    modsOrder, modsToInstall = result[ 'Value' ]
     logNOTICE( "Installing modules..." )
-    for modName in modsToInstall:
+    for modName in modsOrder:
       tarsURL, modVersion = modsToInstall[ modName ]
       if cliParams.installSource:
         tarsURL = cliParams.installSource
