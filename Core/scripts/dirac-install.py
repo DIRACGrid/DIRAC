@@ -219,9 +219,9 @@ class ReleaseConfig:
       return S_OK()
     self.__defaults[ projectName ] = ReleaseConfig.CFG()
 
-    linkToProject = self.getDefaultValue( "LinkToProject", projectName )
+    aliasTo = self.getDefaultValue( "Alias", projectName )
     #If not link to project then load defaults
-    if not linkToProject:
+    if not aliasTo:
       self.__dbgMsg( "Loading defaults for project %s" % projectName )
       try:
         defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % projectName )
@@ -237,12 +237,12 @@ class ReleaseConfig:
         self.__defaults[ projectName ] = result[ 'Value' ]
         self.__dbgMsg( "Loaded defaults for project %s" % projectName )
         #Update link to project var
-        linkToProject = self.getDefaultValue( "LinkToProject", projectName )
+        aliasTo = self.getDefaultValue( "Alias", projectName )
 
-    if linkToProject:
+    if aliasTo:
       if self.__projectName == projectName:
-        self.__projectName = linkToProject
-      return self.__loadProjectDefaults( linkToProject )
+        self.__projectName = aliasTo
+      return self.__loadProjectDefaults( aliasTo )
 
     #If a default project is there, load the defaults
     defaultProject = self.getDefaultValue( "LocalInstallation/Project", projectName )
@@ -329,7 +329,7 @@ class ReleaseConfig:
   def getTarsLocation( self, projectName = "" ):
     if not projectName:
       projectName = self.__projectName
-    defLoc = self.getDefaultValue( "InstallBaseURL", projectName )
+    defLoc = self.getDefaultValue( "LocalInstallation/BaseURL", projectName )
     if defLoc:
       return S_OK( defLoc )
     elif projectName in self.__projectTarLocation:
