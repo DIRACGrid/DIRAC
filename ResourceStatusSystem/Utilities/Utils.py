@@ -101,3 +101,66 @@ def convertTime(t, inTo = None):
 # vibernar utils functions
 
 id_fun = lambda x: x
+
+
+class GetForm(object):
+  """This class asks the user to fill a form inside a CLI. It checks
+  the type of entered values and keep on asking them until the form
+  has the correct type.
+  """
+
+  prompt = "> "
+  form   = None
+
+  def __init__(self, form):
+    """form is a dict in the form label:<type or set of values>"""
+    self.form = form
+
+  def run(self):
+    res = {}
+    for i in self.form:
+      res[i] = self.getval(i, self.form[i])
+    return res
+
+  def getval(self, label, restr):
+    """Restriction can be based on a type, or on a list of acceptable
+    values
+    """
+    value = None
+
+    if type(restr) == type:
+      # Checks that the provided value is of type restr.
+      while type(value) != restr:
+        print "Enter value for %s: %s" % (label, str(restr))
+        value = raw_input(self.prompt)
+      return value
+
+    else:
+      # Checks that the provided value(s) are in the iterable
+      print "Enter value for %s: " % label
+      return self.pickvals(restr)
+
+  def pickvals(self, iterable, NoneAllowed=False, AllAllowed=True):
+    """Ask the user to pick one or more value in a iterable (list,
+    set). Return a set of chosen values that match the possible values
+    (i.e in range(-1, len(iterable)+1))
+    """
+    self.print_iterable(iterable, NoneAllowed, AllAllowed)
+    res = [int(i) for i in raw_input(self.prompt).split()]
+    if AllAllowed and len(iterable) in res:
+      return iterable
+    elif NoneAllowed and res == [-1]:
+      return []
+    else:
+      return [iterable[i] for i in res if i in range(0, len(iterable))]
+
+  def print_iterable(self, iterable, NoneAllowed=False, AllAllowed=True):
+    """Prints an iterable with numbering to enable a user to pick some
+    or all elements by typing the numbers. To be used by an input function.
+    """
+    if NoneAllowed:
+      print "(-1) [Nothing]"
+    for idx, value in enumerate(iterable):
+      print "(%d) [%s]" % (idx, value)
+    if AllAllowed:
+      print "(%d) [All]" % len(iterable)
