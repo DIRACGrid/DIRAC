@@ -36,6 +36,8 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
     self.maxNumberOfThreads = 4
     self.maxRequestsInQueue = 100
     self.threadPool = None
+    self.timeOutCounter = 0
+    self.pendingRequests = True
 
   def initialize( self ):
     """
@@ -89,11 +91,15 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
     """
     Fill the TreadPool with ThreadJobs
     """
-    while True:
+    self.pendingRequests = True
+    while self.pendingRequests:
       requestExecutor = ThreadedJob( self.executeRequest )
       ret = self.threadPool.queueJob( requestExecutor )
       if not ret['OK']:
         break
+
+    if self.timeOutCounter:
+      gLogger.error( 'Timeouts during removal execution:', self.timeOutCounter )
 
     return S_OK()
 
@@ -110,6 +116,7 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
       return S_OK()
     elif not res['Value']:
       gLogger.info( "RemovalAgent.execute: No requests to be executed found." )
+      self.pendingRequests = False
       return S_OK()
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
@@ -266,9 +273,12 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
               res = self.replicaManager.removeReplica( diracSE, lfns )
               if res['OK']:
                 for lfn in res['Value']['Failed'].keys():
-                  if str( res['Value']['Failed'][lfn] ).find( 'Write access not permitted for this credential.' ) != -1:
+                  errorMessage = str( res['Value']['Failed'][lfn] )
+                  if errorMessage.find( 'Write access not permitted for this credential.' ) != -1:
                     if self.__getProxyAndRemoveReplica( diracSE, lfn ):
                       continue
+                  if errorMessage.find( 'seconds timeout for "__gfal_wrapper" call' ) != -1:
+                    self.timeOutCounter += 1
                   if not failed.has_key( lfn ):
                     failed[lfn] = {}
                   failed[lfn][diracSE] = res['Value']['Failed'][lfn]
