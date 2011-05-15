@@ -191,7 +191,7 @@ try:
 except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
-cmd = "%(executable)s"
+cmd = "./%(executable)s"
 print 'Executing: ', cmd
 sys.stdout.flush()
 os.system( cmd )
