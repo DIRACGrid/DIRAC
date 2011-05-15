@@ -14,7 +14,7 @@ from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMi
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
-import re, os
+import re, os, time
 from types import StringTypes
 
 __RCSID__ = "$Id$"
@@ -97,6 +97,7 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
       ret = self.threadPool.queueJob( requestExecutor )
       if not ret['OK']:
         break
+      time.sleep( 0.1 )
 
     if self.timeOutCounter:
       gLogger.error( 'Timeouts during removal execution:', self.timeOutCounter )
