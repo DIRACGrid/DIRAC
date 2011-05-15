@@ -215,6 +215,8 @@ class RequestDBMySQL( DB ):
   def getRequest( self, requestType = '' ):
     """ Get a request of a given type
     """
+    # RG: What if requestType is not given?
+    # the first query will return nothing.
     start = time.time()
     dmRequest = RequestContainer( init = False )
     requestID = 0
@@ -235,6 +237,8 @@ class RequestDBMySQL( DB ):
         req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
         from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % ( reqID, requestType, 'Waiting' )
       else:
+        # RG: What if requestType is not given?
+        # we should never get there, and it misses the "AND Status='Waiting'"
         req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
         from SubRequests WHERE RequestID=%s" % reqID
       res = self._query( req )
@@ -245,6 +249,8 @@ class RequestDBMySQL( DB ):
       subIDList = []
       for tuple in res['Value']:
         subID = tuple[0]
+        # RG: We should set the condition "AND Status='Waiting'"
+        # if the subrequest has got assigned it will failed
         req = "UPDATE SubRequests SET Status='Assigned' WHERE RequestID=%s AND SubRequestID=%s;" % ( reqID, subID )
         resAssigned = self._update( req )
         if not resAssigned['OK']:
@@ -257,6 +263,8 @@ class RequestDBMySQL( DB ):
         else:
           subIDList.append( subID )
 
+        # RG: We need to check that all subRequest with smaller ExecutionOrder are "Done"
+
       if subIDList:
         # We managed to get some requests, can continue now
         requestID = reqID
@@ -267,11 +275,13 @@ class RequestDBMySQL( DB ):
       return S_OK()
 
     dmRequest.setRequestID( requestID )
+    # RG: We have this list in subIDList, can different queries get part of the subrequets of the same type?
     subRequestIDs = []
 
     for subRequestID, operation, arguments, executionOrder, sourceSE, targetSE, catalogue, creationTime, submissionTime, lastUpdate in res['Value']:
       if not subRequestID in subIDList: continue
       subRequestIDs.append( subRequestID )
+      # RG: res['Value'] is the range of the loop and it gets redefined here !!!!!!
       res = dmRequest.initiateSubRequest( requestType )
       ind = res['Value']
       subRequestDict = {
