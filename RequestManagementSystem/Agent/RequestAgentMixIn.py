@@ -25,7 +25,7 @@ class RequestAgentMixIn:
       if subrequestStatus == "Done":
         result = self.RequestDBClient.setRequestStatus( requestName, 'Done', server )
         if not result['OK']:
-          gLogger.error( ".checkRequest: Failed to set request status", self.central )
+          gLogger.error( ".checkRequest: Failed to set request status", server )
         # The request is completed, update the corresponding job status
         if jobID:
           monitorServer = RPCClient( 'WorkloadManagement/JobMonitoring', useCertificates = True )
@@ -47,7 +47,7 @@ class RequestAgentMixIn:
                 if not result['OK']:
                   gLogger.error( ".checkRequest: Failed to set job status" )
     else:
-      gLogger.error( "Failed to get request status at", self.central )
+      gLogger.error( "Failed to get request status at", server )
 
     # Update the job pending request digest in any case since it is modified
     gLogger.info( '.checkRequest: Updating request digest for job %d' % jobID )
