@@ -44,6 +44,8 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
       Called by the framework upon startup, before any cycle (execute method bellow)
     """
     self.requestDBClient = RequestClient()
+    # the RequestAgentMixIn needs the capitalized version, until is is fixed keep this.
+    self.RequestDBClient = self.requestDBClient
     self.replicaManager = ReplicaManager()
 
     gMonitor.registerActivity( "Iteration", "Agent Loops", "RemovalAgent", "Loops/min", gMonitor.OP_SUM )
