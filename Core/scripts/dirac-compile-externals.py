@@ -295,7 +295,6 @@ for envVar in ( 'LD_LIBRARY_PATH', 'PATH' ):
   valList = [ val.strip() for val in envValue.split( ":" ) if envValue.strip() ]
   fixedValList = []
   for value in valList:
-    print patDet
     if value.find( patDet ) != 0:
       fixedValList.append( value )
   os.environ[ envVar ] = ":".join( fixedValList )
