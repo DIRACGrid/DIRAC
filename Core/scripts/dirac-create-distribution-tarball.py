@@ -221,11 +221,11 @@ class TarModuleCreator( object ):
     return S_OK()
 
 
-  def __gitKeywords( self, dirToDo ):
+  def replaceKeywordsWithGit( self, dirToDo ):
     for fileName in os.listdir( dirToDo ):
       objPath = os.path.join( dirToDo, fileName )
       if os.path.isdir( objPath ):
-        self.__gitKeywords( objPath )
+        self.replaceKeywordsWithGit( objPath )
       elif os.path.isfile( objPath ):
         if fileName.find( '.py', len( fileName ) - 3 ) == len( fileName ) - 3 :
           fd = open( objPath, "r" )
@@ -279,7 +279,7 @@ class TarModuleCreator( object ):
 
     #Add the keyword substitution
     gLogger.notice( "Replacing keywords (can take a while)..." )
-    self.__gitKeywords( fDirName )
+    self.replaceKeywordsWithGit( fDirName )
 
     shutil.rmtree( "%s/.git" % fDirName )
 
