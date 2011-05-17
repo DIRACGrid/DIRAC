@@ -23,8 +23,9 @@ except ImportError:
 globalDistribution = Distribution.Distribution()
 
 g_uploadCmd = {
-  'DIRAC' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
-  'LHCb' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'DIRAC' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'LHCb' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'ILC' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'",
 }
 
 ###
@@ -170,7 +171,7 @@ class DistributionMaker:
     modsToTar = result[ 'Value' ]
     for modName in modsToTar:
       modVersion = modsToTar[ modName ]
-      dctArgs = []
+      dctArgs = [ '-A' ] #Leave a copy of the release notes outside the tarballs
       #Version
       dctArgs.append( "-n '%s'" % modName )
       dctArgs.append( "-v '%s'" % modVersion )
@@ -199,7 +200,7 @@ class DistributionMaker:
       gLogger.verbose( "Executing %s" % cmd )
       if os.system( cmd ):
         return S_ERROR( "Failed creating tarball for module %s. Aborting" % modName )
-      gLogger.info( "Tarball for %s version %s created" % ( modName, modVersion ) )
+      gLogger.notice( "Tarball for %s version %s created" % ( modName, modVersion ) )
     return S_OK()
 
 
@@ -343,7 +344,7 @@ if __name__ == "__main__":
     gLogger.notice( "Tarballs created in %s" % cliParams.destination )
     filesToCopy = []
     for fileName in os.listdir( cliParams.destination ):
-      for ext in ( ".tar.gz", ".md5", ".cfg" ):
+      for ext in ( ".tar.gz", ".md5", ".cfg", ".html", ".pdf" ):
         if fileName.find( ext ) == len( fileName ) - len( ext ):
           filesToCopy.append( os.path.join( cliParams.destination, fileName ) )
     gLogger.notice( "Please upload to your installation source:\n\t %s\n" % " ".join( filesToCopy ) )
