@@ -220,12 +220,12 @@ class TarModuleCreator( object ):
 
     return S_OK()
 
-
-  def replaceKeywordsWithGit( self, dirToDo ):
+  @classmethod
+  def replaceKeywordsWithGit( cls, dirToDo ):
     for fileName in os.listdir( dirToDo ):
       objPath = os.path.join( dirToDo, fileName )
       if os.path.isdir( objPath ):
-        self.replaceKeywordsWithGit( objPath )
+        TarModuleCreator.replaceKeywordsWithGit( objPath )
       elif os.path.isfile( objPath ):
         if fileName.find( '.py', len( fileName ) - 3 ) == len( fileName ) - 3 :
           fd = open( objPath, "r" )
