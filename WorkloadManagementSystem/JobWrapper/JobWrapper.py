@@ -901,12 +901,14 @@ class JobWrapper:
     if not re.search( '^LFN:', outputFile ):
       localfile = outputFile
       initial = owner[:1]
-      timeTuple = time.gmtime()
       subdir = str( self.jobID / 1000 )
       if outputPath:
         # Add output Path if given
         subdir = outputPath + '/' + subdir
-      lfn = '/' + self.vo + '/user/' + initial + '/' + owner + '/' + subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
+      basePath = '/' + self.vo + '/user/' + initial + '/' + owner
+      finalPath = subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
+      lfn = os.path.join( basePath, finalPath )
+      # lfn = '/' + self.vo + '/user/' + initial + '/' + owner + '/' + subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
     else:
       localfile = os.path.basename( string.replace( outputFile, "LFN:", "" ) )
       lfn = string.replace( outputFile, "LFN:", "" )
