@@ -13,7 +13,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess
 
-import sys, os, shutil, tempfile, getpass
+import sys, os, shutil, tempfile, getpass, subprocess
 
 class TarModuleCreator( object ):
 
@@ -220,6 +220,36 @@ class TarModuleCreator( object ):
 
     return S_OK()
 
+
+  def __gitKeywords( self, dirToDo ):
+    for fileName in os.listdir( dirToDo ):
+      objPath = os.path.join( dirToDo, fileName )
+      if os.path.isdir( objPath ):
+        self.__gitKeywords( objPath )
+      elif os.path.isfile( objPath ):
+        if fileName.find( '.py', len( fileName ) - 3 ) == len( fileName ) - 3 :
+          fd = open( objPath, "r" )
+          fileContents = fd.read()
+          fd.close()
+          changed = False
+          for keyWord, cmdArgs in ( ( '$Id$', '--pretty="%h (%ad) %an <%aE>" --date=iso' ),
+                                    ( '$SHA1$', '--pretty="%H"' ) ):
+            foundKeyWord = fileContents.find( keyWord )
+            if foundKeyWord > -1 :
+              po2 = subprocess.Popen( "git log -n 1 %s '%s' 2>/dev/null" % ( cmdArgs, fileName ),
+                                       stdout = subprocess.PIPE, cwd = dirToDo, shell = True )
+              exitStatus = po2.wait()
+              if po2.returncode:
+                continue
+              toReplace = po2.stdout.read().strip()
+              fileContents = fileContents.replace( keyWord, toReplace )
+              changed = True
+
+          fd = open( objPath, "w" )
+          fd.write( fileContents )
+          fd.close()
+
+
   def __checkoutFromGit( self ):
     if self.params.vcsBranch:
       brCmr = "-b %s" % self.params.vcsBranch
@@ -246,6 +276,11 @@ class TarModuleCreator( object ):
 
     gLogger.verbose( "Executing: %s" % cmd )
     exportRes = os.system( cmd )
+
+    #Add the keyword substitution
+    gLogger.notice( "Replacing keywords (can take a while)..." )
+    self.__gitKeywords( fDirName )
+
     shutil.rmtree( "%s/.git" % fDirName )
 
     if exportRes:
