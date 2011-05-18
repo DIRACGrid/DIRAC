@@ -10,12 +10,19 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine(ignoreErrors = True)
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import\
+    ValidRes, ValidSiteType, ValidServiceType, ValidResourceType, ValidStatus
+
+from DIRAC.ResourceStatusSystem.Utilities.Utils import GetForm, dict_split
 
 class RSSConfigCmd(cmd.Cmd):
 
   S = None
   item  = ["user", "status", "frequency", "group", "policy"]
   items = ["users", "statuses", "frequencies", "groups", "policies"]
+  ops   = ['add', 'del', 'modify']
+  status = ValidStatus
+  # TODO: Get the status list from SQL and not from the static list
 
   prompt = "RSS > "
 
@@ -122,6 +129,45 @@ type ::== ["users", "statuses", "frequencies", "groups", "policies"]
   def complete_show(self, text, _line, _begidx, _endidx):
     """Completion of the 'show' command"""
     return self.complete_list(text, _line, _begidx, _endidx)
+
+  def do_policy(self, line):
+    """Manage policies. Subcommands: add, del, modify"""
+    args = line.split()
+    if len(args) == 0:
+      print "Usage: %s <action>\n<action> ::== add | del | modify"
+
+    elif len(args) == 1:
+      if args[0] == "add":
+        request_dict = { 'label': str, 'description': str, 'status':ValidStatus,
+                         'former_status':ValidStatus, 'site_type':ValidSiteType,
+                         'service_type':ValidServiceType, 'resource_type':ValidResourceType }
+        res = GetForm(request_dict).run()
+        res_split = dict_split(res)
+        for p in res_split:
+          res_add = self.S.addPolicy(p)
+          if not res_add['OK']:
+            print "RPC Call failed: %s" % res_add['Message']
+            print str(res_add)
+          else:
+            print "Policy added: " + str(res_add)
+
+  def do_test(self, line):
+    print line
+
+  def complete_policy(self, text, line, _begidx, _endidx):
+    args = line.split()
+    if len(args) == 2:
+      return [i for i in self.ops if i.lower().startswith(text.lower())]
+    elif len(args) == 3:
+      if args[1] == 'add':
+        # Label, nothing to complete
+        pass
+      elif args[1] == 'del':
+        # Get the list of policies labels to complete
+        pass
+      elif args[1] == 'modify':
+        # TODO later
+        pass
 
   def default(self, line):
     """Override [Cmd.default(line)] function."""

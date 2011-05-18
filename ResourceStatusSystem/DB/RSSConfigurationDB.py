@@ -2,6 +2,8 @@
 Module to access the RSSConfigurationDB
 """
 
+from DIRAC.ResourceStatusSystem.Utilities.Utils import list_split
+
 # Config
 t_users          = "Users"
 t_statuses       = "Status"
@@ -32,10 +34,12 @@ class RSSConfigurationDB(object):
     return self.db._update('DELETE FROM ' + tableName + ' WHERE ' + where_clause)
 
   def _addValue(self, table, vdict):
-    return self.db._insert(table, list(vdict.keys()), list(vdict.values()))
+    keys, values = list_split(vdict.items())
+    return self.db._insert(table, keys, values)
 
   def _delValue(self, table, vdict):
-    return self._delete(table, list(vdict.keys()), list(vdict.values()))
+    keys, values = list_split(vdict.items())
+    return self._delete(table, keys, values)
 
   def _addValues(self, table, vdicts):
     res = []
@@ -60,38 +64,49 @@ class RSSConfigurationDB(object):
   # Helper functions.
 
   def addUsers(self, unames):
+    """Add users. The argument is a list of strings representing
+    usernames."""
     unames = [{'login':u} for u in unames]
     return self._addValues(t_users, unames)
 
   def addUser(self, uname):
+    """Add one user. The argument is a string representing the
+    username"""
     return self.addUsers([uname])[0]
 
   def delUsers(self, unames):
+    """Delete users. The argument is a list of strings representing
+    usernames."""
     unames = [{'login': u} for u in unames]
     return self._delValues(t_users, unames)
 
   def delUser(self, uname):
+    """Delete a user. The argument is a string representing
+    username."""
     return self.delUsers([uname])[0]
 
   def getUsers(self):
+    """Return users registered in database. Return S_OK() with Value:
+    a dict representing users with (for now) only a field 'login'.
+    TODO: This function is not supposed to fail in normal conditions,
+    and result incorrect if it fails. Fix this.
+    """
     ret, users = self._query(t_users)
     users = [{'login': u} for u in users]
     return {'OK':ret, 'Value':users}
 
   def addStatuses(self, statuses):
-    """
-    Add statuses. Argument is a list of tuples (label, priority)
-    """
+    """Add statuses. Argument is a list of tuples (label, priority)"""
     statuses = [{'label':l, 'priority':p} for (l,p) in statuses]
     return self._addValues(t_statuses, statuses)
 
   def addStatus(self, label, priority):
+    """Add a status. The argument is respectively a string and an
+    integer, representing the name of the status and the priority"""
     return self.addStatuses([(label, priority)])[0]
 
   def delStatuses(self, statuses):
-    """
-    Delete statuses. Argument is a list of strings (labels)
-    """
+    """Delete statuses. Argument is a list of strings (labels)"""
     statuses = [{'label':l} for l in statuses]
     return self._delValues(t_statuses, statuses)
 
@@ -105,15 +120,15 @@ class RSSConfigurationDB(object):
 
   def addCheckFreq(self, kwargs):
     """
-    Add a new check frequency. Arguments must be: granularity,
-    site_type, status, freq.
+    Add a new check frequency. Arguments must be a dict with fields:
+    granularity, site_type, status, freq.
     """
     return self._addValue(t_checkfreqs, kwargs)
 
   def delCheckFreq(self, kwargs):
     """
-    Delete check frequencies. Arguments must be part or all of:
-    granularity, site_type, status, freq.
+    Delete check frequencies. Arguments must be a dict with fields
+    part or all of: granularity, site_type, status, freq.
     """
     return self._delValue(t_checkfreqs, kwargs)
 
@@ -125,16 +140,17 @@ class RSSConfigurationDB(object):
 
   def addAssigneeGroup(self, kwargs):
     """
-    Add new assignee groups. Argument must be: label, login,
-    granularity, site_type, service_type, resource_type, notification.
+    Add new assignee groups. Argument must be a dict with fields:
+    label, login, granularity, site_type, service_type, resource_type,
+    notification.
     """
     return self._addValue(t_assigneegroups, kwargs)
 
   def delAssigneeGroup(self, kwargs):
     """
-    Delete assignee groups. Argument must be all or part of: label,
-    login, granularity, site_type, service_type, resource_type,
-    notification.
+    Delete assignee groups. Argument must be a dict with fields all or
+    part of: label, login, granularity, site_type, service_type,
+    resource_type, notification.
     """
     return self._delValue(t_assigneegroups, kwargs)
 
@@ -150,16 +166,17 @@ class RSSConfigurationDB(object):
 
   def addPolicy(self, kwargs):
     """
-    Add new policies. Argument must be: label, description, status,
-    former_status, site_type, service_type, resource_type.
+    Add new policies. Argument must be a dict with fiels: label,
+    description, status, former_status, site_type, service_type,
+    resource_type.
     """
     return self._addValue(t_policies, kwargs)
 
   def delPolicy(self, kwargs):
     """
-    Delete policies. Argument must be all or part of: label,
-    description, status, former_status, site_type, service_type,
-    resource_type, or a list of labels.
+    Delete policies. Argument must be a dict with fields all or part
+    of: label, description, status, former_status, site_type,
+    service_type, resource_type, or a list of labels.
     """
     return self._delValue(t_policies, kwargs)
 
