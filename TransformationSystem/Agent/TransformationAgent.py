@@ -17,6 +17,7 @@ class TransformationAgent( AgentModule ):
   def initialize( self ):
     self.pluginLocation = self.am_getOption( 'PluginLocation', 'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
+    self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/ProductionManager
@@ -84,8 +85,12 @@ class TransformationAgent( AgentModule ):
           gLogger.info( "%s.execute: Updated transformation status to 'Active'." % AGENT_NAME )
       return S_OK()
 
+    replicateOrRemove = transDict['Type'].lower() in ["replication", "removal"]
+    # Limit the number of LFNs to be considered for replication or removal as they are treated individually
+    if replicateOrRemove:
+      lfns = lfns[0:self.maxFiles - 1]
     # Check the data is available with replicas
-    res = self.__getDataReplicas( transID, lfns, active = ( transDict['Type'].lower() not in ["replication", "removal"] ) )
+    res = self.__getDataReplicas( transID, lfns, active = not replicateOfRemove )
     if not res['OK']:
       gLogger.error( "%s.processTransformation: Failed to get data replicas" % AGENT_NAME, res['Message'] )
       return res
