@@ -5,7 +5,6 @@ import types
 import os
 import tempfile
 import DIRAC
-from DIRAC.ConfigurationSystem.Client.Helpers import getVO
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
 from DIRAC import gConfig, S_OK, S_ERROR
@@ -16,7 +15,6 @@ class BaseSecurity:
                 server = False,
                 serverCert = False,
                 serverKey = False,
-                voName = False,
                 timeout = False ):
     if timeout:
       self._secCmdTimeout = timeout
@@ -26,10 +24,6 @@ class BaseSecurity:
       self._secServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch" )
     else:
       self._secServer = server
-    if not voName:
-      self._secVO = getVO( "unknown" )
-    else:
-      self._secVO = voName
     ckLoc = Locations.getHostCertificateAndKeyLocation()
     if serverCert:
       self._secCertLoc = serverCert
