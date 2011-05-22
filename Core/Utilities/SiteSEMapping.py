@@ -84,6 +84,23 @@ def getSESiteMapping( gridName = '' ):
             seSiteMapping[se] = []
           seSiteMapping[se].append( candidate )
 
+  # Add Sites from the SiteLocalSEMapping in the CS
+  vo = getVO()
+  setup = getDIRACSetup()
+  cfgLocalSEPath = cfgPath( 'Operations', vo, setup, 'SiteLocalSEMapping' )
+  result = gConfig.getOptionsDict( cfgLocalSEPath )
+  if result['OK']:
+    mapping = result['Value']
+    for site in mapping:
+      ses = gConfig.getValue( cfgPath( cfgLocalSEPath, site ), [] )
+      if not ses:
+        continue
+      if site not in siteSEMapping:
+        siteSEMapping[site] = []
+      for se in ses:
+        if se not in siteSEMapping[site]:
+          siteSEMapping[site].append( se )
+
   return S_OK( seSiteMapping )
 
 #############################################################################
