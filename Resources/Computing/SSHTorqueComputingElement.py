@@ -174,7 +174,7 @@ class SSHTorqueComputingElement( ComputingElement ):
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
 
-      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
+      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
       compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
 
       wrapperContent = """#!/usr/bin/env python
