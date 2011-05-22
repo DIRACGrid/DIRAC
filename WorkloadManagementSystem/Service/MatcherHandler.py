@@ -16,7 +16,7 @@ import getopt
 from   types import *
 import threading
 
-from DIRAC.ConfigurationSystem.Client.Helpers          import getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight         import ClassAd
 from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
@@ -73,8 +73,6 @@ class MatcherHandler( RequestHandler ):
     self.siteJobLimits = self.getCSOption( "SiteJobLimits", False )
     self.checkPilotVersion = self.getCSOption( "CheckPilotVersion", True )
     self.setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    self.vo = getVO()
-    self.pilotVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( self.vo, self.setup ), '' )
 
   def selectJob( self, resourceDescription ):
     """ Main job selection function to find the highest priority job
@@ -109,6 +107,9 @@ class MatcherHandler( RequestHandler ):
       if classAdAgent.lookupAttribute( 'DIRACVersion' ):
         resourceDict['DIRACVersion'] = classAdAgent.getAttributeString( 'DIRACVersion' )
 
+      if classAdAgent.lookupAttribute( 'VirtualOrganization' ):
+        resourceDict['VirtualOrganization'] = classAdAgent.getAttributeString( 'VirtualOrganization' )
+
     else:
       for name in taskQueueDB.getSingleValueTQDefFields():
         if resourceDescription.has_key( name ):
@@ -120,15 +121,32 @@ class MatcherHandler( RequestHandler ):
 
       if resourceDescription.has_key( 'JobID' ):
         resourceDict['JobID'] = resourceDescription['JobID']
+
       if resourceDescription.has_key( 'DIRACVersion' ):
         resourceDict['DIRACVersion'] = resourceDescription['DIRACVersion']
 
+      if resourceDescription.has_key( 'VirtualOrganization' ):
+        resourceDict['VirtualOrganization'] = resourceDescription['VirtualOrganization']
+
     # Check the pilot DIRAC version
     if self.checkPilotVersion:
-      if 'DIRACVersion' in resourceDict:
-        if self.pilotVersion and resourceDict['DIRACVersion'] != self.pilotVersion:
-          return S_ERROR( 'Pilot version does not match the production version %s:%s' % \
-                         ( resourceDict['DIRACVersion'], self.pilotVersion ) )
+      if not 'DIRACVersion' in resourceDict:
+        return S_ERROR( 'Version check requested and not provided by Pilot' )
+
+      # Check if the matching Request provides a VirtualOrganization
+      if 'VirtualOrganization' in resourceDict:
+        vo = resourceDict['VirtualOrganization']
+      # Check if the matching Request provides an OwnerGroup
+      elif 'OwnerGroup' in resourceDict:
+        vo = getVOForGroup( resourceDict['OwnerGroup'] )
+      # else take the default VirtualOrganization for the installation
+      else:
+        vo = getVOForGroup()
+
+      self.pilotVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( vo, self.setup ), '' )
+      if self.pilotVersion and resourceDict['DIRACVersion'] != self.pilotVersion:
+        return S_ERROR( 'Pilot version does not match the production version %s:%s' % \
+                       ( resourceDict['DIRACVersion'], self.pilotVersion ) )
 
     # Get common site mask and check the agent site
     result = jobDB.getSiteMask( siteState = 'Active' )
@@ -221,14 +239,14 @@ class MatcherHandler( RequestHandler ):
     """ Get extra conditions allowing site throttling
     """
     # Find Site job limits
-    grid,siteName,country = site.split('.')
-    siteSection = '/Resources/Sites/%s/%s' % (grid,site)
-    result = gConfig.getSections(siteSection)
+    grid, siteName, country = site.split( '.' )
+    siteSection = '/Resources/Sites/%s/%s' % ( grid, site )
+    result = gConfig.getSections( siteSection )
     if not result['OK']:
       return result
     if not 'JobLimits' in result['Value']:
-      return S_OK({})
-    result = gConfig.getSections('%s/JobLimits' % siteSection)
+      return S_OK( {} )
+    result = gConfig.getSections( '%s/JobLimits' % siteSection )
     if not result['OK']:
       return result
     sections = result['Value']
@@ -249,26 +267,26 @@ class MatcherHandler( RequestHandler ):
     # Check if the site exceeding the given limits
     fields = limitDict.keys()
     for field in fields:
-      for key,value in limitDict[field]:
-        if int(value) > 0:
-          result = jobDB.getCounters('Jobs',['Status'],{'Site':site,field:key})
+      for key, value in limitDict[field]:
+        if int( value ) > 0:
+          result = jobDB.getCounters( 'Jobs', ['Status'], {'Site':site, field:key} )
           if not result['OK']:
             return result
           count = 0
           if result['Value']:
-            for countDict,number in result['Value']:
-              if countDict['Status'] in ["Running","Matched"]:
+            for countDict, number in result['Value']:
+              if countDict['Status'] in ["Running", "Matched"]:
                 count += number
           if count > value:
-            if not resultDict.has_key(field):
+            if not resultDict.has_key( field ):
               resultDict[field] = []
-            resultDict[field].append(key)
-            gLogger.verbose('Job Limit imposed at %s on %s/%s/%d, %d jobs already deployed' % (site,field,key,value,count) )
+            resultDict[field].append( key )
+            gLogger.verbose( 'Job Limit imposed at %s on %s/%s/%d, %d jobs already deployed' % ( site, field, key, value, count ) )
         else:
-          if not resultDict.has_key(field):
+          if not resultDict.has_key( field ):
             resultDict[field] = []
-          resultDict[field].append(key)
-          gLogger.verbose('Jobs prohibited at %s for %s/%s' % (site,field,key) ) 
+          resultDict[field].append( key )
+          gLogger.verbose( 'Jobs prohibited at %s for %s/%s' % ( site, field, key ) )
 
     return S_OK( resultDict )
 

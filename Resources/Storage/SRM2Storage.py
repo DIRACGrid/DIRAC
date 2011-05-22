@@ -4,7 +4,8 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
-from DIRAC.ConfigurationSystem.Client.Helpers           import getVO
+from DIRAC.Core.Security.Misc                           import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess                    import pythonCall
 from DIRAC.Core.Utilities.Pfn                           import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.List                          import breakListIntoChunks
@@ -42,7 +43,10 @@ class SRM2Storage( StorageBase ):
     # setting some variables for use with lcg_utils
     self.nobdii = 1
     self.defaulttype = 2
-    self.vo = getVO( 'lhcb' )
+    self.vo = None
+    ret = getProxyInfo( disableVOMS = True )
+    if ret['OK'] and 'group' in ret['Value']:
+      self.vo = getVOForGroup( ret['Value']['group'] )
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0

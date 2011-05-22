@@ -36,18 +36,19 @@ __RCSID__ = "$Id$"
 
 import string, re, os, time, shutil, types, copy
 
-from DIRAC.Core.Workflow.Parameter                  import *
-from DIRAC.Core.Workflow.Module                     import *
-from DIRAC.Core.Workflow.Step                       import *
-from DIRAC.Core.Workflow.Workflow                   import *
-from DIRAC.Core.Workflow.WorkflowReader             import *
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
-from DIRAC.ConfigurationSystem.Client.Config        import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers       import getVO
-from DIRAC.Core.Utilities.Subprocess                import shellCall
-from DIRAC.Core.Utilities.List                      import uniqueElements
-from DIRAC.Core.Utilities.SiteCEMapping             import getSiteForCE, getSiteCEMapping
-from DIRAC                                          import gLogger
+from DIRAC.Core.Workflow.Parameter                            import *
+from DIRAC.Core.Workflow.Module                               import *
+from DIRAC.Core.Workflow.Step                                 import *
+from DIRAC.Core.Workflow.Workflow                             import *
+from DIRAC.Core.Workflow.WorkflowReader                       import *
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
+from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
+from DIRAC.Core.Security.Misc                                 import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
+from DIRAC.Core.Utilities.Subprocess                          import shellCall
+from DIRAC.Core.Utilities.List                                import uniqueElements
+from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
+from DIRAC                                                    import gLogger
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
@@ -70,7 +71,11 @@ class Job:
     self.name = 'Name'
     self.type = 'User'
     self.priority = 1
-    self.group = getVO( 'lhcb' )
+    vo = ''
+    ret = getProxyInfo( disableVOMS = True )
+    if ret['OK'] and 'group' in ret['Value']:
+      vo = getVOForGroup( ret['Value']['group'] )
+    self.group = vo
     self.site = 'ANY' #ANY
     #self.setup = 'Development'
     self.origin = 'DIRAC'
@@ -250,22 +255,22 @@ class Job:
     kwargs = {'files':files}
     if type( files ) == list and len( files ):
       for file in files:
-        if not file.lower().count("lfn:"):
-          return self._reportError('All files should be LFNs', **kwargs )
+        if not file.lower().count( "lfn:" ):
+          return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( files )
       fileList = string.join( resolvedFiles, ";" )
-      self.parametric['InputSandbox']=fileList
+      self.parametric['InputSandbox'] = fileList
       #self.sandboxFiles=resolvedFiles
     elif type( files ) == type( " " ):
-      if not files.lower().count("lfn:"):
-        return self._reportError('All files should be LFNs', **kwargs )
+      if not files.lower().count( "lfn:" ):
+        return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( [files] )
       fileList = string.join( resolvedFiles, ";" )
-      self.parametric['InputSandbox']=fileList
+      self.parametric['InputSandbox'] = fileList
       #self.sandboxFiles = [files]
     else:
       return self._reportError( 'Expected file string or list of files for input sandbox contents', **kwargs )
-    
+
     return S_OK()
 
   #############################################################################
@@ -327,7 +332,7 @@ class Job:
       return self._reportError( 'Expected lfn string or list of lfns for input data', **kwargs )
 
     return S_OK()
-  
+
   #############################################################################
   def setParametricInputData( self, lfns ):
     """Helper function.
@@ -347,15 +352,15 @@ class Job:
         lfns[i] = lfns[i].replace( 'LFN:', '' )
       inputData = map( lambda x: 'LFN:' + x, lfns )
       inputDataStr = string.join( inputData, ';' )
-      self.parametric['InputData']=inputDataStr
+      self.parametric['InputData'] = inputDataStr
     elif type( lfns ) == type( ' ' ):  #single LFN
-      self.parametric['InputData']=lfns
+      self.parametric['InputData'] = lfns
     else:
       kwargs = {'lfns':lfns}
       return self._reportError( 'Expected lfn string or list of lfns for parametric input data', **kwargs )
-    
+
     return S_OK()
-  
+
   #############################################################################
   def setInputDataPolicy( self, policy, dataScheduling = True ):
     """Helper function.
@@ -862,7 +867,7 @@ class Job:
     """
     self._addParameter( self.workflow, 'JobType', 'JDL', self.type, 'Job Type' )
     self._addParameter( self.workflow, 'Priority', 'JDL', self.priority, 'User Job Priority' )
-    self._addParameter( self.workflow, 'JobGroup', 'JDL', self.group, 'Corresponding VOMS role' )
+    self._addParameter( self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup' )
     self._addParameter( self.workflow, 'JobName', 'JDL', self.name, 'Name of Job' )
     #self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
     self._addParameter( self.workflow, 'SystemConfig', 'JDLReqt', self.systemConfig, 'System configuration for job' )
@@ -1081,30 +1086,30 @@ class Job:
 
     ###Here handle the Parametric values
     if self.parametric:
-      if self.parametric.has_key('InputData'):
-        if paramsDict.has_key('InputData'):
+      if self.parametric.has_key( 'InputData' ):
+        if paramsDict.has_key( 'InputData' ):
           if paramsDict['InputData']['value']:
-            currentFiles = paramsDict['InputData']['value']+";%s"
-            paramsDict['InputData']['value'] =currentFiles
+            currentFiles = paramsDict['InputData']['value'] + ";%s"
+            paramsDict['InputData']['value'] = currentFiles
           else:
             paramsDict['InputData'] = {}
             paramsDict['InputData']['value'] = "%s"
             paramsDict['InputData']['type'] = 'JDL'
-        self.parametric['files']=  self.parametric['InputData']
-        arguments.append(' -p ParametricInputData=%s')
-      elif self.parametric.has_key('InputSandbox'):
+        self.parametric['files'] = self.parametric['InputData']
+        arguments.append( ' -p ParametricInputData=%s' )
+      elif self.parametric.has_key( 'InputSandbox' ):
         if paramsDict.has_key( 'InputSandbox' ):
-          currentFiles = paramsDict['InputSandbox']['value']+";%s"
+          currentFiles = paramsDict['InputSandbox']['value'] + ";%s"
           paramsDict['InputSandbox']['value'] = currentFiles
         else:
           paramsDict['InputSandbox'] = {}
           paramsDict['InputSandbox']['value'] = '%s'
           paramsDict['InputSandbox']['type'] = 'JDL'
-        self.parametric['files']=  self.parametric['InputSandbox']
-        arguments.append(' -p ParametricInputSandbox=%s')
-      if self.parametric.has_key('files'):   
-        paramsDict['Parameters']={}
-        paramsDict['Parameters']['value']=self.parametric['files']
+        self.parametric['files'] = self.parametric['InputSandbox']
+        arguments.append( ' -p ParametricInputSandbox=%s' )
+      if self.parametric.has_key( 'files' ):
+        paramsDict['Parameters'] = {}
+        paramsDict['Parameters']['value'] = self.parametric['files']
         paramsDict['Parameters']['type'] = 'JDL'
 
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed

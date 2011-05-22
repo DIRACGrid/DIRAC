@@ -2,13 +2,13 @@
 
 """
 import DIRAC
-from DIRAC                                      import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers   import getVO
-from DIRAC.Resources.Catalog.FileCatalogueBase  import FileCatalogueBase
-from DIRAC.Core.Utilities.Time                  import fromEpoch
-from DIRAC.Core.Utilities.List                  import sortList, breakListIntoChunks
-from DIRAC.Core.Security.Misc                   import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Security.CS                     import getDNForUsername, getVOMSAttributeForGroup
+from DIRAC                                                    import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
+from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
+from DIRAC.Core.Utilities.Time                                import fromEpoch
+from DIRAC.Core.Utilities.List                                import sortList, breakListIntoChunks
+from DIRAC.Core.Security.Misc                                 import getProxyInfo, formatProxyInfoAsString
+from DIRAC.Core.Security.CS                                   import getDNForUsername, getVOMSAttributeForGroup
 from stat import *
 import os, re, string, commands, types, time
 

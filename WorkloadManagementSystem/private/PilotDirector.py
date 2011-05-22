@@ -28,6 +28,7 @@ DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem',
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 DIRAC_VERSION = 'Production'
 DIRAC_VERSION = 'HEAD'
+DIRAC_PROJECT = ''
 
 MAX_JOBS_IN_FILLMODE = 2
 
@@ -38,6 +39,8 @@ FROM_MAIL = "lhcb-dirac@cern.ch"
 PILOT_DN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
 PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
 PILOT_GROUP = 'lhcb_pilot'
+
+VIRTUAL_ORGANIZATION = 'dirac'
 
 ENABLE_LISTMATCH = 1
 LISTMATCH_DELAY = 5
@@ -92,11 +95,10 @@ class PilotDirector:
     self.pilot = DIRAC_PILOT
     self.extraPilotOptions = []
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = getVO()
-    self.installVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( vo, setup ),
-                                         DIRAC_VERSION )
-    self.installProject = gConfig.getValue( '/Operations/%s/%s/Versions/PilotProject' % ( vo, setup ),
-                                         "" )
+    self.installVersion = DIRAC_VERSION
+    self.installProject = DIRAC_PROJECT
+
+    self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
 
@@ -127,11 +129,10 @@ class PilotDirector:
     self.reloadConfiguration( csSection, submitPool )
 
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = getVO()
-    self.installVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( vo, setup ),
+    self.installVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( self.virtualOrganization, setup ),
                                          self.installVersion )
-    self.installProject = gConfig.getValue( '/Operations/%s/%s/Versions/PilotProject' % ( vo, setup ),
-                                         "" )
+    self.installProject = gConfig.getValue( '/Operations/%s/%s/Versions/PilotProject' % ( self.virtualOrganization, setup ),
+                                         self.installProject )
 
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
@@ -182,6 +183,13 @@ class PilotDirector:
     self.genericPilotDN = gConfig.getValue( mySection + '/GenericPilotDN'       , self.genericPilotDN )
     self.genericPilotGroup = gConfig.getValue( mySection + '/GenericPilotGroup'    , self.genericPilotGroup )
     self.privatePilotFraction = gConfig.getValue( mySection + '/PrivatePilotFraction' , self.privatePilotFraction )
+
+    virtualOrganization = gConfig.getValue( mySection + '/VirtualOrganization' , '' )
+    if not virtualOrganization:
+      virtualOrganization = getVOForGroup( 'NonExistingGroup' )
+      if not virtualOrganization:
+        virtualOrganization = self.virtualOrganization
+    self.virtualOrganization = virtualOrganization
 
   def _resolveCECandidates( self, taskQueueDict ):
     """
@@ -260,7 +268,7 @@ class PilotDirector:
     # For generic pilots this is limited by the number of use of the tokens and the 
     # maximum number of jobs in Filling mode, but for private Jobs we need an extra limitation:
     pilotsToSubmit = min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) )
-    pilotOptions = [ "-V %s" % getVO( "lhcb" ) ]
+    pilotOptions = [ "-V %s" % self.virtualOrganization ]
     privateIfGenericTQ = self.privatePilotFraction > random.random()
     privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
     forceGeneric = 'ForceGeneric' in taskQueueDict

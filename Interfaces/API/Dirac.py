@@ -40,7 +40,8 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection, getServiceURL
-from DIRAC.ConfigurationSystem.Client.Helpers            import getVO
+from DIRAC.Core.Security.Misc                                import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
@@ -83,14 +84,14 @@ class Dirac:
     # Determine the default file catalog
     defaultFC = gConfig.getValue( self.section + '/FileCatalog', '' )
     if not defaultFC:
-      result = gConfig.getSections('Resources/FileCatalogs',[])
+      result = gConfig.getSections( 'Resources/FileCatalogs', [] )
       if result['OK']:
         if result['Value']:
           self.defaultFileCatalog = result['Value'][0]
     else:
       self.defaultFileCatalog = defaultFC
     if not defaultFC:
-      self.defaultFileCatalog = 'FileCatalog'  
+      self.defaultFileCatalog = 'FileCatalog'
 
   def version( self ):
     return S_OK( DIRAC.buildVersion )
@@ -592,7 +593,10 @@ class Dirac:
 
     moduleName = ''
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = getVO()
+    vo = None
+    ret = getProxyInfo( disableVOMS = True )
+    if ret['OK'] and 'group' in ret['Value']:
+      vo = getVOForGroup( ret['Value']['group'] )
     if setup and vo:
       moduleName = gConfig.getValue( 'DIRAC/VOPolicy/%s/%s/%s' % ( vo, setup, module ), '' )
       if not moduleName:

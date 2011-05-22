@@ -54,7 +54,7 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
         attr:    Attributes returned by ldapsearch, default = '*', means return all
         host:    Host used for ldapsearch, default = 'lcg-bdii.cern.ch:2170', can be changed by $LCG_GFAL_INFOSYS
       
-      Return standart DIRAC answer with Value equals to list of ldapsearch responses
+      Return standard DIRAC answer with Value equals to list of ldapsearch responses
       Each element of list is dictionary with keys:
         'dn':                 Distinguished name of ldapsearch response
         'objectClass':        List of classes in response
@@ -123,7 +123,7 @@ def ldapSite( site, attr = None, host = None ):
       Input parameter:
         site:         Site as it defined in GOCDB or part of it with globing
                       for example: "UKI-*"
-      Return standart DIRAC answer with Value equals to list of sites.
+      Return standard DIRAC answer with Value equals to list of sites.
       Each site is dictionary which contains attributes of site.
       For example result['Value'][0]['GlueSiteLocation']
   """
@@ -146,7 +146,7 @@ def ldapCluster( ce, attr = None, host = None ):
       Input parameter:
         ce:           ce or part of it with globing
                       for example  "ce0?.tier2.hep.manchester*"
-      Return standart DIRAC answer with Value equals to list of clusters.
+      Return standard DIRAC answer with Value equals to list of clusters.
       Each cluster is dictionary which contains attributes of ce.
       For example result['Value'][0]['GlueHostBenchmarkSI00']
   """
@@ -169,7 +169,7 @@ def ldapCE( ce, attr = None, host = None ):
       Input parameter:
         ce:           ce or part of it with globing
                       for example  "ce0?.tier2.hep.manchester*"
-      Return standart DIRAC answer with Value equals to list of clusters.
+      Return standard DIRAC answer with Value equals to list of clusters.
       Each cluster is dictionary which contains attributes of ce.
       For example result['Value'][0]['GlueHostBenchmarkSI00']
   """
@@ -208,12 +208,12 @@ def ldapService( ce, attr = None, host = None ):
 
   return S_OK( ss )
 
-def ldapCEState( ce, vo = 'lhcb', attr = None, host = None ):
+def ldapCEState( ce, vo, attr = None, host = None ):
   """ CEState information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
       Input parameter:
         ce:           ce or part of it with globing
                       for example  "ce0?.tier2.hep.manchester*"
-      Return standart DIRAC answer with Value equals to list of ceStates.
+      Return standard DIRAC answer with Value equals to list of ceStates.
       Each ceState is dictionary which contains attributes of ce.
       For example result['Value'][0]['GlueCEStateStatus']
   """
@@ -230,12 +230,12 @@ def ldapCEState( ce, vo = 'lhcb', attr = None, host = None ):
 
   return S_OK( states )
 
-def ldapCEVOView( ce, vo = 'lhcb', attr = None, host = None ):
+def ldapCEVOView( ce, vo, attr = None, host = None ):
   """ CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
       Input parameter:
         ce:           ce or part of it with globing
                       for example  "ce0?.tier2.hep.manchester*"
-      Return standart DIRAC answer with Value equals to list of ceVOViews.
+      Return standard DIRAC answer with Value equals to list of ceVOViews.
       Each ceVOView is dictionary which contains attributes of ce.
       For example result['Value'][0]['GlueCEStateRunningJobs']
   """
@@ -259,12 +259,12 @@ def ldapCEVOView( ce, vo = 'lhcb', attr = None, host = None ):
 
   return S_OK( views )
 
-def ldapSA( site, vo = 'lhcb', attr = None, host = None ):
+def ldapSA( site, vo, attr = None, host = None ):
   """ CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
       Input parameter:
         ce:    ce or part of it with globing
           for example  "ce0?.tier2.hep.manchester*"
-      Return standart DIRAC answer with Value equals to list of ceVOViews.
+      Return standard DIRAC answer with Value equals to list of ceVOViews.
       Each ceVOView is dictionary which contains attributes of ce.
       For example result['Value'][0]['GlueCEStateRunningJobs']
   """

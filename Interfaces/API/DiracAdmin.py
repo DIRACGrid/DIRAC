@@ -18,7 +18,8 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers                 import getVO
+from DIRAC.Core.Security.Misc                                 import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
 from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
 from DIRAC.Core.Utilities.SiteCEMapping                       import getCEsForSite, getSiteCEMapping
@@ -31,7 +32,10 @@ from DIRAC.Core.Utilities.Grid                                import ldapSite, l
 import re, os, sys, string, time, shutil, types
 import pprint
 
-vo = getVO( 'lhcb' )
+vo = ''
+ret = getProxyInfo( disableVOMS = True )
+if ret['OK'] and 'group' in ret['Value']:
+  vo = getVOForGroup( ret['Value']['group'] )
 
 COMPONENT_NAME = '/Interfaces/API/DiracAdmin'
 

@@ -20,7 +20,7 @@ class CE2CSAgent( AgentModule ):
 
   addressTo = ''
   addressFrom = ''
-  vo = getVO()
+  vo = ''
   csAPI = CSAPI()
   subject = "CE2CSAgent"
 
@@ -46,6 +46,10 @@ class CE2CSAgent( AgentModule ):
     # /Operations/Shifter/SAMManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'SAMManager' )
+
+    self.vo = self.am_getOption( 'VirtualOrganization', self.vo )
+    if not self.vo:
+      self.vo = getVO()
 
     if not self.vo:
       self.log.fatal( "VO option not defined for agent" )

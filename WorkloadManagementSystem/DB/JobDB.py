@@ -52,14 +52,14 @@ __RCSID__ = "$Id$"
 import re, os, sys, string, types
 import time, datetime, operator
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from types                                     import *
-from DIRAC                                     import gLogger, S_OK, S_ERROR, Time
-from DIRAC.ConfigurationSystem.Client.Config   import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers  import getVO
-from DIRAC.Core.Base.DB                        import DB
-from DIRAC.Core.Security.CS                    import getUsernameForDN, getDNForUsername
-from DIRAC.WorkloadManagementSystem.Client.JobDescription     import JobDescription
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
+from types                                                   import *
+from DIRAC                                                   import gLogger, S_OK, S_ERROR, Time
+from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
+from DIRAC.Core.Base.DB                                      import DB
+from DIRAC.Core.Security.CS                                  import getUsernameForDN, getDNForUsername
+from DIRAC.WorkloadManagementSystem.Client.JobDescription    import JobDescription
 
 DEBUG = 0
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
@@ -1393,11 +1393,13 @@ class JobDB( DB ):
       Prepare subJDL with Job Requirements
     """
     error = ''
+    vo = getVOForGroup( ownerGroup )
 
     jdlDiracSetup = classAdJob.getAttributeString( 'DIRACSetup' )
     jdlOwner = classAdJob.getAttributeString( 'Owner' )
     jdlOwnerDN = classAdJob.getAttributeString( 'OwnerDN' )
     jdlOwnerGroup = classAdJob.getAttributeString( 'OwnerGroup' )
+    jdlVO = classAdJob.getAttributeString( 'VirtualOrganization' )
 
     # The below is commented out since this is always overwritten by the submitter IDs
     # but the check allows to findout inconsistent client environments
@@ -1409,17 +1411,23 @@ class JobDB( DB ):
       error = 'Wrong Owner DN in JDL'
     elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
       error = 'Wrong Owner Group in JDL'
+    elif jdlVO and jdlVO != vo:
+      error = 'Wrong Virtual Organization in JDL'
+
 
     classAdJob.insertAttributeString( 'Owner', owner )
     classAdJob.insertAttributeString( 'OwnerDN', ownerDN )
     classAdJob.insertAttributeString( 'OwnerGroup', ownerGroup )
+    if vo:
+      classAdJob.insertAttributeString( 'VirtualOrganization', vo )
 
     classAdReq.insertAttributeString( 'Setup', diracSetup )
     classAdReq.insertAttributeString( 'OwnerDN', ownerDN )
     classAdReq.insertAttributeString( 'OwnerGroup', ownerGroup )
+    if vo:
+      classAdReq.insertAttributeString( 'VirtualOrganization', vo )
 
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = getVO()
     voPolicyDict = gConfig.getOptionsDict( '/DIRAC/VOPolicy/%s/%s' % ( vo, setup ) )
     #voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
     if voPolicyDict['OK']:

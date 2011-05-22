@@ -98,7 +98,7 @@ def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % gBaseSecuritySection, [] )
 
 def getVOForGroup( group ):
-  voName = gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+  voName = getVO()
   if voName:
     return voName
   return gConfig.getValue( "%s/Groups/%s/VO" % ( gBaseSecuritySection, group ), "" )

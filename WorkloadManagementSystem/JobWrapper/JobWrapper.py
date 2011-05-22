@@ -22,7 +22,7 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient       import Sandb
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
-from DIRAC.ConfigurationSystem.Client.Helpers                       import getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
@@ -87,7 +87,6 @@ class JobWrapper:
     self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', True )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
-    self.vo = getVO( 'lhcb' )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
     self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', 'LcgFileCatalogCombined' )
@@ -690,9 +689,7 @@ class JobWrapper:
     if missingFiles:
       self.jobReport.setJobParameter( 'OutputSandboxMissingFiles', string.join( missingFiles, ', ' ), sendFlag = False )
 
-    if self.jobArgs.has_key( 'Owner' ):
-      owner = self.jobArgs['Owner']
-    else:
+    if not self.jobArgs.has_key( 'Owner' ):
       msg = 'Job has no owner specified'
       self.log.warn( msg )
       return S_OK( msg )
@@ -712,7 +709,7 @@ class JobWrapper:
           self.log.info( 'Attempting to upload %s as output data' % ( outputSandboxData ) )
           outputData.append( outputSandboxData )
           self.jobReport.setJobParameter( 'OutputSandbox', 'Sandbox uploaded to grid storage', sendFlag = False )
-          self.jobReport.setJobParameter( 'OutputSandboxLFN', self.__getLFNfromOutputFile( owner, outputSandboxData )[0], sendFlag = False )
+          self.jobReport.setJobParameter( 'OutputSandboxLFN', self.__getLFNfromOutputFile( outputSandboxData )[0], sendFlag = False )
         else:
           self.log.info( 'Could not get SandboxFileName to attempt upload to Grid storage' )
           return S_ERROR( 'Output sandbox upload failed and no file name supplied for failover to Grid storage' )
@@ -738,7 +735,7 @@ class JobWrapper:
       if not outputSE and not self.defaultFailoverSE:
         return S_ERROR( 'No output SEs defined in VO configuration' )
 
-      result = self.__transferOutputDataFiles( owner, outputData, outputSE, outputPath )
+      result = self.__transferOutputDataFiles( outputData, outputSE, outputPath )
       if not result['OK']:
         return result
 
@@ -784,7 +781,7 @@ class JobWrapper:
     return S_OK( result )
 
   #############################################################################
-  def __transferOutputDataFiles( self, owner, outputData, outputSE, outputPath ):
+  def __transferOutputDataFiles( self, outputData, outputSE, outputPath ):
     """Performs the upload and registration in the LFC
     """
     self.log.verbose( 'Uploading output data files' )
@@ -820,7 +817,7 @@ class JobWrapper:
     failoverTransfer = FailoverTransfer()
 
     for outputFile in outputData:
-      ( lfn, localfile ) = self.__getLFNfromOutputFile( owner, outputFile, outputPath )
+      ( lfn, localfile ) = self.__getLFNfromOutputFile( outputFile, outputPath )
       if not os.path.exists( localfile ):
         self.log.error( 'Missing specified output data file:', outputFile )
         continue
@@ -889,7 +886,7 @@ class JobWrapper:
     return S_OK( 'OutputData uploaded successfully' )
 
   #############################################################################
-  def __getLFNfromOutputFile( self, owner, outputFile, outputPath = '' ):
+  def __getLFNfromOutputFile( self, outputFile, outputPath = '' ):
     """Provides a generic convention for VO output data
        files if no path is specified.
     """
@@ -900,15 +897,18 @@ class JobWrapper:
 
     if not re.search( '^LFN:', outputFile ):
       localfile = outputFile
-      initial = owner[:1]
+      initial = self.owner[:1]
       subdir = str( self.jobID / 1000 )
       if outputPath:
         # Add output Path if given
         subdir = outputPath + '/' + subdir
-      basePath = '/' + self.vo + '/user/' + initial + '/' + owner
+      vo = getVOForGroup( self.userGroup )
+      if not vo:
+        vo = 'dirac'
+      basePath = '/' + vo + '/user/' + initial + '/' + self.owner
       finalPath = subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
       lfn = os.path.join( basePath, finalPath )
-      # lfn = '/' + self.vo + '/user/' + initial + '/' + owner + '/' + subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
+      # lfn = '/' + vo + '/user/' + initial + '/' + self.owner + '/' + subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
     else:
       localfile = os.path.basename( string.replace( outputFile, "LFN:", "" ) )
       lfn = string.replace( outputFile, "LFN:", "" )

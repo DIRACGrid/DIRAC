@@ -10,7 +10,8 @@
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                         import Script
-from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
+from DIRAC.Core.Security.Misc                                import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
 Script.registerSwitch( "V:", "vo=", "vo" )
@@ -23,21 +24,28 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
-
 if not len( args ) == 1:
   Script.showHelp()
 
 ce = args[0]
 
 host = None
-vo = getVO( 'lhcb' )
+vo = None
+ret = getProxyInfo( disableVOMS = True )
+if ret['OK'] and 'group' in ret['Value']:
+  vo = getVOForGroup( ret['Value']['group'] )
+
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "H", "host" ):
         host = unprocSw[1]
   if unprocSw[0] in ( "V", "vo" ):
         vo = unprocSw[1]
 
+if not vo:
+  Script.gLogger.error( 'Could not determine VO' )
+  Script.showHelp()
+
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 
 result = diracAdmin.getBDIICEState( ce, useVO = vo, host = host )

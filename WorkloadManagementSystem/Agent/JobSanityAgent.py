@@ -16,7 +16,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import getVO
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.Core.Security                                   import CS
@@ -41,7 +40,6 @@ class JobSanityAgent( OptimizerModule ):
     self.inputSandboxCheck = self.am_getOption( 'InputSandboxCheck', 1 )
     self.platformCheck = self.am_getOption( 'PlatformCheck', 0 )
     #Other parameters
-    self.voName = getVO( 'lhcb' )
     self.successStatus = self.am_getOption( 'SuccessfulJobStatus', 'OutputReady' )
     self.maxDataPerJob = self.am_getOption( 'MaxInputDataPerJob', 100 )
     #Sandbox
@@ -85,7 +83,8 @@ class JobSanityAgent( OptimizerModule ):
 
     #Input data check
     if self.inputDataCheck:
-      inputData = self.checkInputData( job, jobType )
+      voName = classAdJob.getAttributeString( "VirtualOrganization" )
+      inputData = self.checkInputData( job, jobType, voName )
       if inputData['OK']:
         number = inputData['Value']
         message += 'InputData: ' + number + ', '
@@ -151,12 +150,11 @@ class JobSanityAgent( OptimizerModule ):
     return self.setNextOptimizer( job )
 
   #############################################################################
-  def checkInputData( self, job, jobType ):
+  def checkInputData( self, job, jobType, voName ):
     """This method checks both the amount of input
        datasets for the job and whether the LFN conventions
        are correct.
     """
-    voName = self.voName
     maxData = int( self.maxDataPerJob )
     totalData = 0
     slashFlag = 0
