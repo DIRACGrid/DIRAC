@@ -419,7 +419,7 @@ class SiteDirector( AgentModule ):
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
       if proxy:
-        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
+        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
         proxyFlag = 'True'
       compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) ).replace( '\n', '' )
       compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) ).replace( '\n', '' )
