@@ -14,7 +14,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess
 
-import sys, os, shutil, tempfile, getpass
+import sys, os, shutil, tempfile, getpass, subprocess
 
 class TarModuleCreator( object ):
 
@@ -79,8 +79,8 @@ class TarModuleCreator( object ):
     def setReleaseNotes( self, opVal ):
       self.relNotes = opVal
       return S_OK()
-    
-    def setOutReleaseNotes(self, opVal ):
+
+    def setOutReleaseNotes( self, opVal ):
       self.outRelNotes = True
       return S_OK()
 
@@ -221,8 +221,38 @@ class TarModuleCreator( object ):
 
     return S_OK()
 
+  @classmethod
+  def replaceKeywordsWithGit( cls, dirToDo ):
+    for fileName in os.listdir( dirToDo ):
+      objPath = os.path.join( dirToDo, fileName )
+      if os.path.isdir( objPath ):
+        TarModuleCreator.replaceKeywordsWithGit( objPath )
+      elif os.path.isfile( objPath ):
+        if fileName.find( '.py', len( fileName ) - 3 ) == len( fileName ) - 3 :
+          fd = open( objPath, "r" )
+          fileContents = fd.read()
+          fd.close()
+          changed = False
+          for keyWord, cmdArgs in ( ( '$Id$', '--pretty="%h (%ad) %an <%aE>" --date=iso' ),
+                                    ( '$SHA1$', '--pretty="%H"' ) ):
+            foundKeyWord = fileContents.find( keyWord )
+            if foundKeyWord > -1 :
+              po2 = subprocess.Popen( "git log -n 1 %s '%s' 2>/dev/null" % ( cmdArgs, fileName ),
+                                       stdout = subprocess.PIPE, cwd = dirToDo, shell = True )
+              exitStatus = po2.wait()
+              if po2.returncode:
+                continue
+              toReplace = po2.stdout.read().strip()
+              fileContents = fileContents.replace( keyWord, toReplace )
+              changed = True
+
+          fd = open( objPath, "w" )
+          fd.write( fileContents )
+          fd.close()
+
+
   def __checkoutFromGit( self ):
-    if self.params.vcsBranch: 
+    if self.params.vcsBranch:
       brCmr = "-b %s" % self.params.vcsBranch
     else:
       brCmr = ""
@@ -236,10 +266,22 @@ class TarModuleCreator( object ):
 
     branchName = "DIRACDistribution-%s" % os.getpid()
 
-    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % ( fDirName, branchName, self.params.version )
+    isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % ( fDirName, self.params.version )
+    if os.system( isTagCmd ):
+      #No tag found, assume branch
+      branchSource = 'origin/%s' % self.params.version
+    else:
+      branchSource = self.params.version
+
+    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % ( fDirName, branchName, branchSource )
 
     gLogger.verbose( "Executing: %s" % cmd )
     exportRes = os.system( cmd )
+
+    #Add the keyword substitution
+    gLogger.notice( "Replacing keywords (can take a while)..." )
+    self.replaceKeywordsWithGit( fDirName )
+
     shutil.rmtree( "%s/.git" % fDirName )
 
     if exportRes:
@@ -367,7 +409,7 @@ class TarModuleCreator( object ):
         continue
       result = self.__compileReleaseNotes( rstFileName )
       if not result[ 'OK' ]:
-        gLogger.error( "Could not compile %s: %s" % ( rstFileName,  result[ 'Message' ] ) )
+        gLogger.error( "Could not compile %s: %s" % ( rstFileName, result[ 'Message' ] ) )
         continue
       gLogger.notice( "Compiled %s file!" % rstFileName )
     return S_OK()
@@ -472,7 +514,7 @@ if __name__ == "__main__":
   Script.registerSwitch( "b:", "branch=", "VCS branch (if needed)", cliParams.setVCSBranch )
   Script.registerSwitch( "p:", "path=", "VCS path (if needed)", cliParams.setVCSPath )
   Script.registerSwitch( "K:", "releasenotes=", "Path to the release notes", cliParams.setReleaseNotes )
-  Script.registerSwitch( "A",  "notesoutside", "Leave a copy of the compiled release notes outside the tarball", cliParams.setOutReleaseNotes )
+  Script.registerSwitch( "A", "notesoutside", "Leave a copy of the compiled release notes outside the tarball", cliParams.setOutReleaseNotes )
 
 
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],

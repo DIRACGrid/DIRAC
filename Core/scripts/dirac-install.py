@@ -940,7 +940,7 @@ def installExternals( externalsVersion ):
     verString = "%s-%s-python%s" % ( cliParams.lcgVer, cliParams.platform, cliParams.pythonVersion )
     #HACK: try to find a more elegant solution for the lcg bundles location
     if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False ):
-      logERROR( "Check that there is a release for your platform: %s" % tarBallName )
+      logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
   return True
 
 def createBashrc():
