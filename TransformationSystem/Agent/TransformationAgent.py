@@ -26,6 +26,7 @@ class TransformationAgent( AgentModule ):
 
     self.transDB = TransformationClient( 'TransformationDB' )
     self.rm = ReplicaManager()
+    self.unusedFiles = {}
     return S_OK()
 
   def execute( self ):
@@ -75,6 +76,7 @@ class TransformationAgent( AgentModule ):
       return res
     transFiles = res['Value']
     lfns = res['LFNs']
+
     if not lfns:
       gLogger.info( "%s.processTransformation: No 'Unused' files found for transformation." % AGENT_NAME )
       if transDict['Status'] == 'Flush':
@@ -84,11 +86,16 @@ class TransformationAgent( AgentModule ):
         else:
           gLogger.info( "%s.execute: Updated transformation status to 'Active'." % AGENT_NAME )
       return S_OK()
+    #Check if something new happened
+    if len( lfns ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush':
+      gLogger.info( "%s.processTransformation: No new 'Unused' files found for transformation." % AGENT_NAME )
+      return S_OK()
 
     replicateOrRemove = transDict['Type'].lower() in ["replication", "removal"]
     # Limit the number of LFNs to be considered for replication or removal as they are treated individually
     if replicateOrRemove:
       lfns = lfns[0:self.maxFiles - 1]
+    unusedFiles = len( lfns )
     # Check the data is available with replicas
     res = self.__getDataReplicas( transID, lfns, active = not replicateOfRemove )
     if not res['OK']:
@@ -125,8 +132,10 @@ class TransformationAgent( AgentModule ):
         allCreated = False
       else:
         created += 1
+        unusedFiles -= len( lfns )
     if created:
       gLogger.info( "%s.processTransformation: Successfully created %d tasks for transformation." % ( AGENT_NAME, created ) )
+    self.unusedFiles[transID] = unusedFiles
 
     # If this production is to Flush
     if transDict['Status'] == 'Flush' and allCreated:
