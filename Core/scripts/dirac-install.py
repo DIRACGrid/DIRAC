@@ -36,7 +36,7 @@ g_GlobalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/gl
 class Params:
 
   def __init__( self ):
-    self.extraPackages = []
+    self.extraModules = []
     self.project = 'DIRAC'
     self.installation = 'DIRAC'
     self.release = ""
@@ -163,10 +163,10 @@ class ReleaseConfig:
       if len( obList ) == 1:
         if obList[0] in self.__data:
           return self.__data[ obList[0] ]
-        raise ValueError( "Missing option %s" % obList[0] )
+        raise KeyError( "Missing option %s" % obList[0] )
       if obList[0] in self.__children:
         return self.__children[ obList[0] ].__get( obList[1:] )
-      raise ValueError( "Missing section %s" % obList[0] )
+      raise KeyError( "Missing section %s" % obList[0] )
 
     def toString( self, tabs = 0 ):
       lines = [ "%s = %s" % ( opName, self.__data[ opName ] ) for opName in self.__data ]
@@ -176,9 +176,9 @@ class ReleaseConfig:
         lines.append( self.__children[ secName ].toString( tabs + 1 ) )
         lines.append( "}" )
       return "\n".join( [ "%s%s" % ( "  " * tabs, line ) for line in lines ] )
-    
+
     def getOptions( self, path = "" ):
-      parentPath = [ sec.strip() for sec in path.split("/") if sec.strip() ][:-1]
+      parentPath = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ][:-1]
       if parentPath:
         parent = getChild( parentPath )
       else:
@@ -186,9 +186,9 @@ class ReleaseConfig:
       if not parent:
         return []
       return tuple( parent.__data )
-    
-    def delPath(self, path ):
-      path = [ sec.strip() for sec in path.split("/") if sec.strip() ]
+
+    def delPath( self, path ):
+      path = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]
       if not path:
         return
       keyName = path[ -1 ]
@@ -253,7 +253,7 @@ class ReleaseConfig:
       self.__dbgMsg( "Loading defaults for %s" % objectName )
       try:
         defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % objectName )
-      except ValueError:
+      except KeyError:
         defaultsLocation = False
         self.__dbgMsg( "No defaults file defined for %s" % objectName )
 
@@ -287,8 +287,8 @@ class ReleaseConfig:
     except Exception, excp :
       return S_ERROR( "Could not load %s: %s" % ( fileName, excp ) )
     return S_OK()
-  
-  def getDefaultCFG(self, objectName = False ):
+
+  def getDefaultCFG( self, objectName = False ):
     if not objectName:
       objectName = self.__defaultObject
     if objectName in self.__defaults:
@@ -428,7 +428,7 @@ class ReleaseConfig:
   def __getOpt( self, objectName, option ):
     try:
       return self.__configs[ objectName ].get( option )
-    except ValueError:
+    except KeyError:
       self.__dbgMsg( "Missing option %s for %s" % ( option, objectName ) )
       return False
 
@@ -505,7 +505,7 @@ class ReleaseConfig:
       releaseVersion = self.__depsLoaded[ 'DIRAC' ]
     try:
       return self.__configs[ 'DIRAC' ].get( 'Releases/%s/Externals' % releaseVersion )
-    except ValueError:
+    except KeyError:
       return False
 
   def getModulesToInstall( self, extraModules = False ):
@@ -517,6 +517,14 @@ class ReleaseConfig:
     for objectName in self.__projectsLoaded:
       if objectName not in self.__depsLoaded:
         continue
+      try:
+        requiredModules = self.__configs[ objectName ].get( "RequiredExtraModules" )
+        requiredModules = [ modName.strip() for modName in requiredModules.split( "/" ) if modName.strip() ]
+      except KeyError:
+        requiredModules = []
+      for modName in requiredModules:
+        if modName not in extraModules:
+          extraModules.append( modName )
       result = self.getTarsLocation( objectName )
       if not result[ 'OK' ]:
         return result
@@ -527,10 +535,11 @@ class ReleaseConfig:
       if not result[ 'OK' ]:
         return result
       modVersions = result[ 'Value' ]
-      modNames = []
-      defaultMods = self.__configs[ objectName ].get( "DefaultModules" )
-      if defaultMods:
-        modNames += [ mod.strip() for mod in defaultMods.split( "," ) if mod.strip() ]
+      try:
+        defaultMods = self.__configs[ objectName ].get( "DefaultModules" )
+        modNames = [ mod.strip() for mod in defaultMods.split( "," ) if mod.strip() ]
+      except KeyError:
+        modNames = []
       for extraMod in extraModules:
         if extraMod in modVersions:
           modNames.append( extraMod )
@@ -748,7 +757,7 @@ def checkPlatformAliasLink():
 
 cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'l:', 'project=', 'Project to install' ),
-            ( 'e:', 'extraPackages=', 'Extra packages to install (comma separated)' ),
+            ( 'e:', 'extraModules=', 'Extra modules to install (comma separated)' ),
             ( 't:', 'installType=', 'Installation type (client/server)' ),
             ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
             ( 'p:', 'platform=', 'Platform to install' ),
@@ -759,7 +768,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
             ( 'd', 'debug', 'Show debug messages' ),
-            ( 'V:', 'VO=', 'Virtual Organization (deprecated, use -l or --project)' ),
+            ( 'V:', 'installation=', 'Virtual Organization (deprecated, use -l or --project)' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
             ( 'h', 'help', 'Show this help' ),
           )
@@ -820,7 +829,7 @@ def loadConfiguration():
   for opName in ( 'release', 'externalsType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraPackages' ):
+                  'project', 'release', 'extraModules' ):
     opVal = releaseConfig.getDefaultValue( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     if opVal == None:
       continue
@@ -837,10 +846,10 @@ def loadConfiguration():
       cliParams.release = v
     elif o in ( '-l', '--project' ):
       cliParams.project = v
-    elif o in ( '-e', '--extraPackages' ):
+    elif o in ( '-e', '--extraModules' ):
       for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-        if pkg not in cliParams.extraPackages:
-          cliParams.extraPackages.append( pkg )
+        if pkg not in cliParams.extraModules:
+          cliParams.extraModules.append( pkg )
     elif o in ( '-t', '--installType' ):
       cliParams.externalsType = v
     elif o in ( '-i', '--pythonVersion' ):
@@ -1012,7 +1021,7 @@ def writeDefaultConfiguration():
     return
   for opName in defaultCFG.getOptions():
     defaultCFG.delPath( opName )
-  
+
   filePath = os.path.join( cliParams.targetPath, "defaults-%s.cfg" % cliParams.installation )
   try:
     fd = open( filePath, "wb" )
@@ -1031,7 +1040,7 @@ if __name__ == "__main__":
   releaseConfig = result[ 'Value' ]
   if not cliParams.externalsOnly:
     logNOTICE( "Discovering modules to install" )
-    result = releaseConfig.getModulesToInstall( cliParams.extraPackages )
+    result = releaseConfig.getModulesToInstall( cliParams.extraModules )
     if not result[ 'OK' ]:
       logERROR( result[ 'Message' ] )
       sys.exit( 1 )
