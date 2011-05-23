@@ -23,8 +23,9 @@ except ImportError:
 globalDistribution = Distribution.Distribution()
 
 g_uploadCmd = {
-  'DIRAC' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
-  'LHCb' : "( cd %TARSLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'DIRAC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/installSource &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'LHCb' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/LHCbDirac_project &&  tar -xvf - && ls *.tar.gz > tars.list'",
+  'ILC' : "( cd %OUTLOCATION% ; tar -cf - *.tar.gz *.md5 *.cfg *.pdf *.html ) | ssh lhcbprod@lxplus.cern.ch 'cd  /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'",
 }
 
 ###
@@ -170,7 +171,7 @@ class DistributionMaker:
     modsToTar = result[ 'Value' ]
     for modName in modsToTar:
       modVersion = modsToTar[ modName ]
-      dctArgs = []
+      dctArgs = [ '-A' ] #Leave a copy of the release notes outside the tarballs
       #Version
       dctArgs.append( "-n '%s'" % modName )
       dctArgs.append( "-v '%s'" % modVersion )
@@ -199,7 +200,7 @@ class DistributionMaker:
       gLogger.verbose( "Executing %s" % cmd )
       if os.system( cmd ):
         return S_ERROR( "Failed creating tarball for module %s. Aborting" % modName )
-      gLogger.info( "Tarball for %s version %s created" % ( modName, modVersion ) )
+      gLogger.notice( "Tarball for %s version %s created" % ( modName, modVersion ) )
     return S_OK()
 
 
@@ -317,13 +318,37 @@ class DistributionMaker:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
       #Check deps
-      if 'DIRAC' != cliParams.projectName:
+      if 'DIRAC' != self.cliParams.projectName:
         deps = self.relConf.getReleaseDependencies( relVersion )
         if 'DIRAC' not in deps:
           gLogger.notice( "Release %s doesn't depend on DIRAC. Check it's what you really want" % relVersion )
         else:
           gLogger.notice( "Release %s depends on DIRAC %s" % ( relVersion, deps[ 'DIRAC'] ) )
     return True
+
+  def getUploadCmd( self ):
+    upCmd = self.relConf.getDefaultValue( "UploadCommand" )
+    if not upCmd:
+      if self.cliParams.projectName in g_uploadCmd:
+        upCmd = g_uploadCmd[ self.cliParams.projectName ]
+      else:
+        upCmd = False
+
+    filesToCopy = []
+    for fileName in os.listdir( cliParams.destination ):
+      for ext in ( ".tar.gz", ".md5", ".cfg", ".html", ".pdf" ):
+        if fileName.find( ext ) == len( fileName ) - len( ext ):
+          filesToCopy.append( os.path.join( cliParams.destination, fileName ) )
+    outFiles = " ".join( filesToCopy )
+    outFileNames = " ".join( [ os.path.basename( filePath ) for filePath in filesToCopy ] )
+
+    if not upCmd:
+      return "Upload to your installation source:\n\t %s\n" % filesToCopy
+    for inRep, outRep in ( ( "%OUTLOCATION%", self.cliParams.destination ),
+                           ( "%OUTFILES%", outFiles ),
+                           ( "%OUTFILENAMES%", outFileNames ) ):
+      upCmd = upCmd.replace( inRep, outRep )
+    return upCmd
 
 if __name__ == "__main__":
   cliParams = Params()
@@ -337,13 +362,5 @@ if __name__ == "__main__":
   if not distMaker.doTheMagic():
     sys.exit( 1 )
   gLogger.notice( "Everything seems ok. Tarballs generated in %s" % cliParams.destination )
-  if cliParams.projectName in g_uploadCmd:
-    gLogger.always( "Please execute:\n%s" % g_uploadCmd[ cliParams.projectName ].replace( "%TARSLOCATION%", cliParams.destination ) )
-  else:
-    gLogger.notice( "Tarballs created in %s" % cliParams.destination )
-    filesToCopy = []
-    for fileName in os.listdir( cliParams.destination ):
-      for ext in ( ".tar.gz", ".md5", ".cfg" ):
-        if fileName.find( ext ) == len( fileName ) - len( ext ):
-          filesToCopy.append( os.path.join( cliParams.destination, fileName ) )
-    gLogger.notice( "Please upload to your installation source:\n\t %s\n" % " ".join( filesToCopy ) )
+  gLogger.always( "Please run:" )
+  gLogger.always( distMaker.getUploadCmd() )

@@ -1,0 +1,28 @@
+[v6r0-pre2]
+
+*Managing multiple VOs
+NEW: JobDB will extract the VO when applying DIRAC/VOPolicy from the proper VO
+FIX: #20 Do not use getVO from the global helpers
+
+*Updated Release Management and Installation tools
+NEW: dirac-compile-externals will try go get a DIRAC-free environment before compiling
+NEW: dirac-disctribution - upload command can be defined via defaults file
+NEW: dirac-disctribution - try to find if the version name is a branch or a tag in git and act accordingly
+NEW: dirac-disctribution - added keyword substitution when creating a a distribution from git
+FIX: Install tools won't write HostDN to the configuration if the Admin username is not set 
+
+[v6r0-pre1]
+
+*Updated DISET Framework
+NEW: modified client/server protocol
+
+*Package base installation tools
+NEW: release preparations and installation tools based om installation packages
+
+*Direct pilot submission to sites with SiteDirector
+CHANGE: Simplified executable generation
+NEW: Few more checks of error conditions 
+
+*Various fixes
+BUGFIX: Mail.py uses SMTP class rather than inheriting it
+FIX: Platform utility will properly discover libc version even for the new Ubuntu

@@ -2,35 +2,36 @@
 
 drop database if exists RSSConfigurationDB;
 create database RSSConfigurationDB;
+grant all privileges on RSSConfigurationDB.* to 'Dirac'@'localhost' identified by 'lhcbMySQL';
 use RSSConfigurationDB;
+
 
 -- ----------------------------------------------------------------
 drop table if exists Users;
-
 create table Users (
  login varchar(32),
  primary key (login)
 );
-
--- insert into Users values
---        ('fstagni'), ('roma'), ('santinel'), ('joel'), ('rsantana'), ('vibernar'), ('ubeda');
 -- ----------------------------------------------------------------
 drop table if exists Status;
-
 create table Status (
- label varchar(32),
+ label    varchar(32),
  priority integer,
  primary key (label)
 );
-
-insert into Status values
-       ('Banned', 0), ('Bad',1), ('Probing', 3), ('Active', 4);
 -- -----------------------------------------------------------------
+
+-- Some predefined values
+
+insert into Status (label, priority) values ('Banned',  0);
+insert into Status (label, priority) values ('Probing', 1);
+insert into Status (label, priority) values ('Bad',     2);
+insert into Status (label, priority) values ('Active',  3);
+
 
 --
 -- Tables for the actual Configurations
 --
-
 
 -- ----------------------------------------------------------------
 drop table if exists PoliciesParams;
@@ -52,6 +53,7 @@ create table CheckFreqs (
 -- ----------------------------------------------------------------
 drop table if exists AssigneeGroups;
 create table AssigneeGroups (
+ id            serial,
  label         varchar(64),
  login         varchar(32),
  granularity   varchar(32),
@@ -59,12 +61,13 @@ create table AssigneeGroups (
  service_type  varchar(32),
  resource_type varchar(32),
  notification  varchar(32),
- primary key (label),
+ primary key (id),
  foreign key (login)         references Users(login)
 );
 -- ----------------------------------------------------------------
 drop table if exists Policies;
 create table Policies (
+ id            serial,
  label         varchar(32),
  description   varchar(255),
  status        varchar(32),
@@ -72,6 +75,8 @@ create table Policies (
  site_type     varchar(32),
  service_type  varchar(32),
  resource_type varchar(32),
- primary key (label),
- foreign key (status)        references Status(label)
+ primary key (id),
+ foreign key (status)        references Status(label),
+ foreign key (former_status) references Status(label)
 );
+-- ----------------------------------------------------------------
