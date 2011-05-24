@@ -19,7 +19,7 @@ class CLIParams:
   proxyStrength = 1024
   limitedProxy = False
   strict = False
-  debug = False
+  summary = False
   certLoc = False
   keyLoc = False
   proxyLoc = False
@@ -159,6 +159,8 @@ def generateProxy( params ):
       certLoc = cakLoc[0]
     if not keyLoc:
       keyLoc = cakLoc[1]
+  params.certLoc = certLoc
+  params.keyLoc = keyLoc
 
   testChain = X509Chain()
   retVal = testChain.loadKeyFromFile( keyLoc, password = params.userPasswd )
