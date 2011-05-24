@@ -294,6 +294,7 @@ class RequestDBFile:
             statusDir = '%s/%s' % ( reqDir, status )
             if os.path.isdir( statusDir ):
               requestNames = os.listdir( statusDir )
+              requestNames.sort()
               if requestName in requestNames:
                 requestPath = '%s/%s' % ( statusDir, requestName )
                 subRequests.append( requestPath )
