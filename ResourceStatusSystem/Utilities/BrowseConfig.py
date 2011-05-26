@@ -20,6 +20,8 @@ def getOptions(path):
     pathdict[k] = pathdict[k].split(',')
     try:
       pathdict[k] = [int(i) for i in pathdict[k]]
+      if len(pathdict[k]) == 1:
+        pathdict[k] = pathdict[k][0]
     except ValueError:
       pass
 
