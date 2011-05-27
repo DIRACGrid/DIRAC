@@ -16,7 +16,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
-from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.Core.Security                                   import CS
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient   import SandboxStoreClient

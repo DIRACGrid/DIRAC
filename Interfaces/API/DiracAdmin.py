@@ -3,18 +3,17 @@
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
-
-from DIRAC.Core.Base import Script
-Script.initialize()
-
 """DIRAC Administrator API Class
 
 All administrative functionality is exposed through the DIRAC Admin API.  Examples include
 site banning and unbanning, WMS proxy uploading etc.
 
 """
-
 __RCSID__ = "$Id$"
+
+from DIRAC.Core.Base import Script
+Script.initialize()
+
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -22,20 +21,21 @@ from DIRAC.Core.Security.Misc                                 import getProxyInf
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
 from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
-from DIRAC.Core.Utilities.SiteCEMapping                       import getCEsForSite, getSiteCEMapping
+from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteCEMapping
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC.Core.Security.X509Chain                            import X509Chain
 from DIRAC.Core.Security                                      import Locations, CS
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService, ldapCEState, ldapCEVOView, ldapSA
+from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService
+from DIRAC.Core.Utilities.Grid                                import ldapCEState, ldapCEVOView, ldapSA
 
-import re, os, sys, string, time, shutil, types
+import os, types
 import pprint
 
-vo = ''
+voName = ''
 ret = getProxyInfo( disableVOMS = True )
 if ret['OK'] and 'group' in ret['Value']:
-  vo = getVOForGroup( ret['Value']['group'] )
+  voName = getVOForGroup( ret['Value']['group'] )
 
 COMPONENT_NAME = '/Interfaces/API/DiracAdmin'
 
@@ -167,7 +167,7 @@ class DiracAdmin:
         bannedSites.append( site )
     bannedSites.sort()
     if printOutput:
-      print string.join( bannedSites, '\n' )
+      print '\n'.join( bannedSites )
     return S_OK( bannedSites )
 
   #############################################################################
@@ -269,11 +269,12 @@ class DiracAdmin:
         print '\nAll Site Mask Logging Info\n'
 
       siteDict = result['Value']
-      for site, tupleList in result['Value'].items():
+      for site, tupleList in siteDict.items():
         if not site:
           print '\n===> %s\n' % site
         for tup in tupleList:
-          print str( tup[0] ).ljust( 8 ) + str( tup[1] ).ljust( 20 ) + '( ' + str( tup[2] ).ljust( len( str( tup[2] ) ) ) + ' )  "' + str( tup[3] ) + '"'
+          print str( tup[0] ).ljust( 8 ) + str( tup[1] ).ljust( 20 ) + \
+               '( ' + str( tup[2] ).ljust( len( str( tup[2] ) ) ) + ' )  "' + str( tup[3] ) + '"'
         print ' '
     return result
 
@@ -360,7 +361,7 @@ class DiracAdmin:
       return S_ERROR( 'Could not get /DIRAC/Setups sections' )
     setupList = setupList['Value']
     if not setup in setupList:
-      return S_ERROR( 'Setup %s is not in allowed list: %s' % ( setup, string.join( setupList, ', ' ) ) )
+      return S_ERROR( 'Setup %s is not in allowed list: %s' % ( setup, ', '.join( setupList ) ) )
 
     serviceSetups = gConfig.getOptionsDict( '/DIRAC/Setups/%s' % setup )
     if not serviceSetups['OK']:
@@ -381,7 +382,7 @@ class DiracAdmin:
           servicesList = servicesList['Value']
           if not servicesList:
             servicesList = []
-          self.log.verbose( 'System: %s ServicesList: %s' % ( system, string.join( servicesList, ', ' ) ) )
+          self.log.verbose( 'System: %s ServicesList: %s' % ( system, ', '.join( servicesList ) ) )
           for service in servicesList:
             spath = '%s/%s/Port' % ( path, service )
             servicePort = gConfig.getValue( spath, 0 )
@@ -476,26 +477,6 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def getJobJDL( self, jobID ):
-    """Retrieve the JDL of an existing job in the WMS.
-
-       >>> print dirac.getJobJDL(12345)
-       {'OK': True, 'Value': [12345]}
-
-       @param job: JobID
-       @type job: integer or string
-       @return: S_OK,S_ERROR
-    """
-    if type( jobID ) == type( " " ):
-      try:
-        jobID = int( jobID )
-      except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
-
-    result = self.monitoring.getJobJDL( jobID )
-    return result
-
-  #############################################################################
   def getJobPilotOutput( self, jobID, directory = '' ):
     """Retrieve the pilot output for an existing job in the WMS.
        The output will be retrieved in a local directory unless
@@ -512,7 +493,7 @@ class DiracAdmin:
       directory = self.currentDir
 
     if not os.path.exists( directory ):
-      self.__report( 'Directory %s does not exist' % directory )
+      return self.__errorReport( 'Directory %s does not exist' % directory )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.getJobPilotOutput( jobID )
@@ -568,14 +549,14 @@ class DiracAdmin:
       directory = self.currentDir
 
     if not os.path.exists( directory ):
-      self.__report( 'Directory %s does not exist' % directory )
+      return self.__errorReport( 'Directory %s does not exist' % directory )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.getPilotOutput( gridReference )
     if not result['OK']:
       return result
 
-    gridReferenceSmall = string.split( gridReference, '/' )[-1]
+    gridReferenceSmall = gridReference.split( '/' )[-1]
     if not gridReferenceSmall:
       gridReferenceSmall = 'reference'
     outputPath = '%s/pilot_%s' % ( directory, gridReferenceSmall )
@@ -711,59 +692,63 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def selectRequests( self, JobID = None, RequestID = None, RequestName = None, RequestType = None, Status = None, Operation = None, OwnerDN = None, OwnerGroup = None, RequestStart = 0, Limit = 100, printOutput = False ):
+  def selectRequests( self, jobID = None, requestID = None, requestName = None,
+                      requestType = None, status = None, operation = None, ownerDN = None,
+                      ownerGroup = None, requestStart = 0, limit = 100, printOutput = False ):
     """ Select requests from the request management system. A few notes on the selection criteria:
-        - RequestID is assigned during submission of the request
-        - JobID is the WMS JobID for the request (if applicable)
-        - RequestName is the corresponding XML file name
-        - RequestType e.g. 'transfer'
-        - Status e.g. Done
-        - Operation e.g. replicateAndRegister
-        - RequestStart e.g. the first request to consider (start from 0 by default)
-        - Limit e.g. selection limit (default 100)
+        - jobID is the WMS JobID for the request (if applicable)
+        - requestID is assigned during submission of the request
+        - requestName is the corresponding XML file name
+        - requestType e.g. 'transfer'
+        - status e.g. Done
+        - operation e.g. replicateAndRegister
+        - requestStart e.g. the first request to consider (start from 0 by default)
+        - limit e.g. selection limit (default 100)
 
-       >>> dirac.selectRequests(JobID='4894')
+       >>> dirac.selectRequests(jobID='4894')
        {'OK': True, 'Value': [[<Requests>]]}
     """
-    options = {'RequestID':RequestID, 'RequestName':RequestName, 'JobID':JobID, 'OwnerDN':OwnerDN,
-               'OwnerGroup':OwnerGroup, 'RequestType':RequestType, 'Status':Status, 'Operation':Operation}
+    options = {'RequestID':requestID, 'RequestName':requestName, 'JobID':jobID, 'OwnerDN':ownerDN,
+               'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
 
     conditions = {}
-    for n, v in options.items():
-      if v:
+    for key, value in options.items():
+      if value:
         try:
-          conditions[n] = str( v )
+          conditions[key] = str( value )
         except Exception, x:
-          return self.__errorReport( str( x ), 'Expected string for %s field' % n )
+          return self.__errorReport( str( x ), 'Expected string for %s field' % key )
 
     try:
-      RequestStart = int( RequestStart )
-      Limit = int( Limit )
+      requestStart = int( requestStart )
+      limit = int( limit )
     except Exception, x:
-      return self.__errorReport( str( x ), 'Expected integer for %s field' % n )
+      return self.__errorReport( str( x ), 'Expected integer for %s field' % limit )
 
     self.log.verbose( 'Will select requests with the following conditions' )
     self.log.verbose( self.pPrint.pformat( conditions ) )
     requestClient = RPCClient( "RequestManagement/centralURL", timeout = 120 )
-    result = requestClient.getRequestSummaryWeb( conditions, [], RequestStart, Limit )
+    result = requestClient.getRequestSummaryWeb( conditions, [], requestStart, limit )
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result
 
     requestIDs = result['Value']
     conds = []
-    for n, v in conditions.items():
-      if v:
-        conds.append( '%s = %s' % ( n, v ) )
-    self.log.verbose( '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ), string.join( conds, ', ' ), Limit ) )
+    for key, value in conditions.items():
+      if value:
+        conds.append( '%s = %s' % ( key, value ) )
+    self.log.verbose( '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ),
+                                                                                   ', '.join( conds ), limit ) )
     if printOutput:
       requests = []
-      if len( requestIDs['Records'] ) > Limit:
+      if len( requestIDs['Records'] ) > limit:
         requestList = requestIDs['Records']
-        requests = requestList[:Limit]
+        requests = requestList[:limit]
       else:
         requests = requestIDs['Records']
-      print '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ), string.join( conds, ', ' ), Limit )
+      print '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ),
+                                                                         ', '.join( conds ), limit )
       print requestIDs['ParameterNames']
       for request in requests:
         print request
@@ -824,7 +809,7 @@ class DiracAdmin:
 
 
     defaultProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
-    gLogger.info( 'Default list of protocols are: %s' % ( string.join( defaultProtocols, ', ' ) ) )
+    gLogger.info( 'Default list of protocols are: %s' % ( ', '.join( defaultProtocols ) ) )
     return S_OK()
 
   #############################################################################
@@ -841,7 +826,7 @@ class DiracAdmin:
       return S_ERROR( 'No SEs found for site %s in section %s' % ( site, siteSection ) )
 
     defaultProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
-    self.log.verbose( 'Default list of protocols are %s' % ( string.join( defaultProtocols, ', ' ) ) )
+    self.log.verbose( 'Default list of protocols are' ', '.join( defaultProtocols ) )
     seInfo = {}
     siteSEs.sort()
     for se in siteSEs:
@@ -860,7 +845,7 @@ class DiracAdmin:
       print '\nSummary of protocols for StorageElements at site %s' % site
       print '\nStorageElement'.ljust( 30 ) + 'ProtocolsList'.ljust( 30 ) + '\n'
       for se, protocols in seInfo.items():
-        print se.ljust( 30 ) + string.join( protocols, ', ' ).ljust( 30 )
+        print se.ljust( 30 ) + ', '.join( protocols ).ljust( 30 )
 
     return S_OK( seInfo )
 
@@ -878,14 +863,16 @@ class DiracAdmin:
       return S_ERROR( 'No SEs found for site %s in section %s' % ( site, siteSection ) )
 
     defaultProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
-    self.log.verbose( 'Default list of protocols are %s' % ( string.join( defaultProtocols, ', ' ) ) )
+    self.log.verbose( 'Default list of protocols are', ', '.join( defaultProtocols ) )
 
     for protocol in protocolsList:
       if not protocol in defaultProtocols:
-        return S_ERROR( 'Requested to set protocol %s in list but %s is not in default list of protocols:\n%s' % ( protocol, protocol, string.join( defaultProtocols, ', ' ) ) )
+        return S_ERROR( 'Requested to set protocol %s in list but %s is not '
+                        'in default list of protocols:\n%s' % ( protocol, protocol, ', '.join( defaultProtocols ) ) )
 
     modifiedCS = False
-    result = self._promptUser( 'Do you want to add the following default protocols: %s for SE(s):\n%s' % ( string.join( protocolsList, ', ' ), string.join( siteSEs, ', ' ) ) )
+    result = self._promptUser( 'Do you want to add the following default protocols:'
+                               ' %s for SE(s):\n%s' % ( ', '.join( protocolsList ), ', '.join( siteSEs ) ) )
     if not result['OK']:
       return result
 
@@ -896,8 +883,8 @@ class DiracAdmin:
       for section in sections['Value']:
         if gConfig.getValue( '/Resources/StorageElements/%s/%s/ProtocolName' % ( se, section ), '' ) == 'SRM2':
           path = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( se, section )
-          self.log.verbose( 'Setting %s to %s' % ( path, string.join( protocolsList, ', ' ) ) )
-          result = self.csSetOption( path, string.join( protocolsList, ', ' ) )
+          self.log.verbose( 'Setting %s to %s' % ( path, ', '.join( protocolsList ) ) )
+          result = self.csSetOption( path, ', '.join( protocolsList ) )
           if not result['OK']:
             return result
           modifiedCS = True
@@ -1051,14 +1038,14 @@ class DiracAdmin:
   def _getCurrentUser( self ):
     """Simple function to return current DIRAC username.
     """
-    self.proxy = Locations.getProxyLocation()
-    if not self.proxy:
+    proxy = Locations.getProxyLocation()
+    if not proxy:
       return S_ERROR( 'No proxy found in local environment' )
     else:
-      self.log.verbose( 'Current proxy is %s' % self.proxy )
+      self.log.verbose( 'Current proxy is %s' % proxy )
 
     chain = X509Chain()
-    result = chain.loadProxyFromFile( self.proxy )
+    result = chain.loadProxyFromFile( proxy )
     if not result[ 'OK' ]:
       return result
 
@@ -1081,7 +1068,7 @@ class DiracAdmin:
     response = raw_input( '%s %s' % ( message, '[yes/no] : ' ) )
     responses = ['yes', 'y', 'n', 'no']
     if not response.strip() or response == '\n':
-      self.log.info( 'Possible responses are: %s' % ( string.join( responses, ', ' ) ) )
+      self.log.info( 'Possible responses are: %s' % ( ', '.join( responses ) ) )
       response = raw_input( '%s %s' % ( message, '[yes/no] : ' ) )
 
     if not response.strip().lower() in responses:
@@ -1118,19 +1105,19 @@ class DiracAdmin:
     return ldapService( ce, host = host )
 
   #############################################################################
-  def getBDIICEState( self, ce, useVO = vo, host = None ):
+  def getBDIICEState( self, ce, useVO = voName, host = None ):
     """Get information about ce state from BDII at host
     """
     return ldapCEState( ce, useVO, host = host )
 
   #############################################################################
-  def getBDIICEVOView( self, ce, useVO = vo, host = None ):
+  def getBDIICEVOView( self, ce, useVO = voName, host = None ):
     """Get information about ce voview from BDII at host
     """
     return ldapCEVOView( ce, useVO, host = host )
 
   #############################################################################
-  def getBDIISA( self, site, useVO = vo, host = None ):
+  def getBDIISA( self, site, useVO = voName, host = None ):
     """Get information about SA  from BDII at host
     """
     return ldapSA( site, useVO, host = host )

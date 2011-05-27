@@ -95,7 +95,9 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
   record = None
   for line in lines:
     if line.find( 'dn:' ) == 0:
-      record = {'dn':line.replace( 'dn:', '' ).strip(), 'objectClass':[], 'attr':{'dn':line.replace( 'dn:', '' ).strip()}}
+      record = {'dn':line.replace( 'dn:', '' ).strip(),
+                'objectClass':[],
+                'attr':{'dn':line.replace( 'dn:', '' ).strip()}}
       response.append( record )
       continue
     if record:

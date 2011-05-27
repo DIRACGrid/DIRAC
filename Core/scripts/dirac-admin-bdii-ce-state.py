@@ -27,37 +27,37 @@ args = Script.getPositionalArgs()
 if not len( args ) == 1:
   Script.showHelp()
 
-ce = args[0]
+ceName = args[0]
 
 host = None
-vo = None
+voName = None
 ret = getProxyInfo( disableVOMS = True )
 if ret['OK'] and 'group' in ret['Value']:
-  vo = getVOForGroup( ret['Value']['group'] )
+  voName = getVOForGroup( ret['Value']['group'] )
 
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "H", "host" ):
-        host = unprocSw[1]
+    host = unprocSw[1]
   if unprocSw[0] in ( "V", "vo" ):
-        vo = unprocSw[1]
+    voName = unprocSw[1]
 
-if not vo:
+if not voName:
   Script.gLogger.error( 'Could not determine VO' )
   Script.showHelp()
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIICEState( ce, useVO = vo, host = host )
+result = diracAdmin.getBDIICEState( ceName, useVO = voName, host = host )
 if not result['OK']:
   print result['Message']
   DIRAC.exit( 2 )
 
 
 ces = result['Value']
-for ce in ces:
-  print "CE: %s {" % ce.get( 'GlueCEUniqueID', 'Unknown' )
-  for item in ce.iteritems():
+for ceObj in ces:
+  print "CE: %s {" % ceObj.get( 'GlueCEUniqueID', 'Unknown' )
+  for item in ceObj.iteritems():
     print "%s: %s" % item
   print "}"
 

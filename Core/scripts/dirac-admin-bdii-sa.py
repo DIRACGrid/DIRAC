@@ -30,25 +30,25 @@ if not len( args ) == 1:
 site = args[0]
 
 host = None
-vo = None
+voName = None
 ret = getProxyInfo( disableVOMS = True )
 if ret['OK'] and 'group' in ret['Value']:
-  vo = getVOForGroup( ret['Value']['group'] )
+  voName = getVOForGroup( ret['Value']['group'] )
 
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "H", "host" ):
     host = unprocSw[1]
   if unprocSw[0] in ( "V", "vo" ):
-    vo = unprocSw[1]
+    voName = unprocSw[1]
 
-if not vo:
+if not voName:
   Script.gLogger.error( 'Could not determine VO' )
   Script.showHelp()
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIISA( site, useVO = vo, host = host )
+result = diracAdmin.getBDIISA( site, useVO = voName, host = host )
 if not ['OK']:
   print result['Message']
   DIRAC.exit( 2 )
