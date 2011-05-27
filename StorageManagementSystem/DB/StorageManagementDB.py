@@ -651,7 +651,7 @@ class StorageManagementDB( DB ):
         gLogger.info( "%s.%s_DB: to_update CacheReplicas =  %s" % ( self._caller(), 'updateReplicaFailure', record ) )
 
       reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
-      resSelect1 = self._query( reqSelect1, connection )
+      resSelect1 = self._query( reqSelect1 )
       if not resSelect1['OK']:
         gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'updateReplicaFailure', reqSelect1, resSelect1['Message'] ) )
 
