@@ -2,9 +2,11 @@
 Access RSSConfiguration from CS easily.
 """
 from DIRAC import gConfig
+from DIRAC.Core.Utilities.CFG import CFG
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
-rssConfigRootPath = "/Operations/RSSConfiguration/"
+rssConfigRootPath = "/Operations/RSSConfiguration"
 
 def getOptions(path):
   """Gives the options of a CS section in a Python dict with values as
@@ -49,7 +51,33 @@ def getDictRootedAt(relpath = "", root = rssConfigRootPath):
       retval[i] = getDictRootedAt(path + "/" + i)
     return retval
 
-  return getDictRootedAt(root + relpath)
+  return getDictRootedAt(root + "/" + relpath)
+
+def createSection(path):
+  """Create a new section in the CS"""
+  def createNewSection(acc, new):
+    if len(new) == 0: return
+    else:
+      if acc == "":
+        cfg.createNewSection(new[0])
+        return createNewSection(new[0], new[1:])
+      else:
+        cfg.createNewSection(acc + "/" + new[0])
+        return createNewSection(acc + "/" + new[0], new[1:])
+
+  pl = [pe for pe in path.split("/") if pe != ""]
+  cfg = CFG()
+  api = CSAPI()
+
+  createNewSection("", pl)
+  res = api.mergeFromCFG(cfg)
+  if res['OK'] == True:
+    api.commit()
+  else:
+    raise RSSException, "Unable to create new section in config" + res['Message']
+
+def setOption(path, value):
+  return gConfig.setOptionValue(path, value)
 
 if __name__ == "__main__":
   import sys

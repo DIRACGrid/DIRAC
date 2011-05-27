@@ -10,11 +10,17 @@ import cmd
 from DIRAC.Core.Base import Script
 Script.parseCommandLine(ignoreErrors = True)
 
-from DIRAC.ResourceStatusSystem.Utilities.BrowseConfig import getDictRootedAt, getSections, getOptions
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Utilities.BrowseConfig import getSections, getOptions, createSection, \
+    rssConfigRootPath, setOption
+
+# Invariants:
+# * root does not end with "/" or root is "/"
+# * root starts with "/"
 
 class RSSConfigCmd(cmd.Cmd):
 
-  root = "/"
+  root = rssConfigRootPath
   prompt = "[cfgedit " + root + " ]% "
 
   def __init__(self):
@@ -39,37 +45,57 @@ class RSSConfigCmd(cmd.Cmd):
       print ""
 
   def do_cd(self, line):
+    # Check if invariant holds
+    assert(self.root == "/" or not self.root.endswith("/"))
+    assert(self.root.startswith("/"))
     secs = getSections(self.root)
     if line == "..":
-      self.root = os.path.split(self.root)[0]
+      self.root = os.path.dirname(self.root)
       self.update_prompt()
     else:
-      if line in secs:
-        if self.root.endswith("/"):
-          self.root = self.root + line
+      if os.path.dirname(line) in secs:
+        if self.root == "/":
+          self.root = os.path.normpath(self.root + os.path.dirname(line))
         else:
-          self.root = self.root + "/" + line
+          self.root = os.path.normpath(self.root + "/" + os.path.dirname(line))
         self.update_prompt()
       else:
         print "cd: no such section: " + line
 
-  def complete_cd(self, text, line, _begidx, _endidx):
+  def complete_cd(self, text, _line, _begidx, _endidx):
     secs = getSections(self.root)
-    return [s for s in secs if s.startswith(text)]
+    return [(s + "/") for s in secs if s.startswith(text)]
 
   def do_cat(self, line):
     opts = getOptions(self.root)
-    print opts[line]
+    if line in opts:
+      print opts[line]
+    else:
+      print "cat: No such option"
 
-  def complete_cat(self, text, line, _begidx, _endidx):
+  def complete_cat(self, text, _line, _begidx, _endidx):
     opts = getOptions(self.root)
     return [o for o in opts if o.startswith(text)]
 
   def do_less(self, line):
     return self.do_cat(line)
 
-  def complete_less(self, text, line, _begidx, _endidx):
-    return self.complete_cat(text, line, _begidx, _endidx)
+  def complete_less(self, text, _line, _begidx, _endidx):
+    return self.complete_cat(text, _line, _begidx, _endidx)
+
+  def do_mkdir(self, line):
+    """Create a new section in the CS"""
+    try:
+      createSection(self.root + "/" + line)
+    except RSSException:
+      print "Unable to create section \"" + line + "\": Not allowed"
+
+  def do_set(self, line):
+    line = line.split(" ")
+    if len(line) != 2:
+      print "Usage: set <key> <value>"
+    else:
+      return setOption(self.root + "/" + line[0], line[1])
 
   def default(self, line):
     """Override [Cmd.default(line)] function."""
