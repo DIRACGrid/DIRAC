@@ -14,7 +14,9 @@ import os, re, string, commands, types, time
 
 global importCorrectly
 try:
-  import lfc
+  import lfcthr as lfc
+  # This is necessary to make the LFC client thread safe.
+  lfc.init()
   importCorrectly = True
   gLogger.debug( "LcgFileCatalogClient.__init__: Successfully imported lfc module." )
 except ImportError, x:

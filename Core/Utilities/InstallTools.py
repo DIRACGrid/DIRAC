@@ -325,19 +325,20 @@ def _getCentralCfg( installCfg ):
                             JOB_ADMINISTRATOR, FULL_DELEGATION,
                             PROXY_MANAGEMENT, OPERATOR ]
 
+  for section in ( cfgPath( 'Registry' ),
+                   cfgPath( 'Registry', 'Users' ),
+                   cfgPath( 'Registry', 'Groups' ),
+                   cfgPath( 'Registry', 'Hosts' ) ):
+    if not centralCfg.isSection( section ):
+      centralCfg.createNewSection( section )
+
   if adminUserName:
     if not ( adminUserDN and adminUserEmail ):
       gLogger.error( 'AdminUserName is given but DN or Mail is missing it will not be configured' )
     else:
-      for section in [cfgPath( 'Registry' ),
-                      cfgPath( 'Registry', 'Users' ),
-                      cfgPath( 'Registry', 'Users', adminUserName ),
-                      cfgPath( 'Registry', 'Groups' ),
-                      cfgPath( 'Registry', 'Groups', defaultGroupName ),
-                      cfgPath( 'Registry', 'Groups', adminGroupName ),
-                      cfgPath( 'Registry', 'Hosts' ),
-                      cfgPath( 'Registry', 'Hosts', host ) ]:
-        section, centralCfg.isSection( section )
+      for section in [ cfgPath( 'Registry', 'Users', adminUserName ),
+                       cfgPath( 'Registry', 'Groups', defaultGroupName ),
+                       cfgPath( 'Registry', 'Groups', adminGroupName ) ]:
         if not centralCfg.isSection( section ):
           centralCfg.createNewSection( section )
 
@@ -375,18 +376,21 @@ def _getCentralCfg( installCfg ):
           properties.append( prop )
           centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % prop )
 
-      # Add the master Host description
-      if hostDN:
-        if centralCfg['Registry']['Hosts'][host].existsKey( 'DN' ):
-          centralCfg['Registry']['Hosts'][host].deleteKey( 'DN' )
-        centralCfg['Registry']['Hosts'][host].addKey( 'DN', hostDN, '' )
-        if not centralCfg['Registry']['Hosts'][host].isOption( 'Properties' ):
-          centralCfg['Registry']['Hosts'][host].addKey( 'Properties', '', '' )
-        properties = centralCfg['Registry']['Hosts'][host].getOption( 'Properties', [] )
-        for prop in defaultHostProperties:
-          if prop not in properties:
-            properties.append( prop )
-            centralCfg['Registry']['Hosts'][host].appendToOption( 'Properties', ', %s' % prop )
+  # Add the master Host description
+  if hostDN:
+    hostSection = cfgPath( 'Registry', 'Hosts', host ) 
+    if not centralCfg.isSection( hostSection ):
+       centralCfg.createNewSection( hostSection )
+    if centralCfg['Registry']['Hosts'][host].existsKey( 'DN' ):
+      centralCfg['Registry']['Hosts'][host].deleteKey( 'DN' )
+    centralCfg['Registry']['Hosts'][host].addKey( 'DN', hostDN, '' )
+    if not centralCfg['Registry']['Hosts'][host].isOption( 'Properties' ):
+      centralCfg['Registry']['Hosts'][host].addKey( 'Properties', '', '' )
+    properties = centralCfg['Registry']['Hosts'][host].getOption( 'Properties', [] )
+    for prop in defaultHostProperties:
+      if prop not in properties:
+        properties.append( prop )
+        centralCfg['Registry']['Hosts'][host].appendToOption( 'Properties', ', %s' % prop )
 
   # Operations
   if adminUserEmail:
