@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 ########################################################################
 # $HeadURL$
 # File :    dirac-distribution-create-tarball
@@ -242,6 +243,7 @@ class TarModuleCreator( object ):
               if po2.returncode:
                 continue
               toReplace = po2.stdout.read().strip()
+              toReplace = "".join( i for i in toReplace if ord( i ) < 128 )
               fileContents = fileContents.replace( keyWord, toReplace )
               changed = True
 
