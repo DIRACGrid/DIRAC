@@ -1,5 +1,5 @@
 ########################################################################
-# $HeadURL: $
+# $HeadURL$
 # File :   SSHTorqueComputingElement.py
 # Author : A.T.
 ########################################################################
@@ -8,7 +8,7 @@
     shared area for the job proxy placement
 """
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -24,79 +24,79 @@ CE_NAME = 'SSHTorque'
 MANDATORY_PARAMETERS = [ 'Queue' ]
 
 class SSH:
-  
-  def __init__(self,user, host, password=None):
-    
+
+  def __init__( self, user, host, password = None ):
+
     self.user = user
     self.host = host
     self.password = password
-    
-  def __ssh_call(self,command,timeout):
-    
+
+  def __ssh_call( self, command, timeout ):
+
     try:
       import pexpect
       expectFlag = True
     except:
       from DIRAC import shellCall
       expectFlag = False
-          
+
     if not timeout:
-      timeout = 999      
-          
-    if expectFlag:    
-      ssh_newkey = 'Are you sure you want to continue connecting'       
-      child = pexpect.spawn(command, timeout=timeout)
-      
-      i = child.expect([pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '])
+      timeout = 999
+
+    if expectFlag:
+      ssh_newkey = 'Are you sure you want to continue connecting'
+      child = pexpect.spawn( command, timeout = timeout )
+
+      i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
       if i == 0: # Timeout        
-          return S_OK((-1,child.before,'SSH login failed'))  
+          return S_OK( ( -1, child.before, 'SSH login failed' ) )
       elif i == 1: # SSH does not have the public key. Just accept it.
-          child.sendline ('yes')
-          child.expect ('password: ')
-          i = child.expect([pexpect.TIMEOUT, 'password: '])
+          child.sendline ( 'yes' )
+          child.expect ( 'password: ' )
+          i = child.expect( [pexpect.TIMEOUT, 'password: '] )
           if i == 0: # Timeout
-            return S_OK((-1,child.before+child.after,'SSH login failed')) 
+            return S_OK( ( -1, child.before + child.after, 'SSH login failed' ) )
           elif i == 1:
-            child.sendline(password)
-            child.expect(pexpect.EOF)
-            return S_OK((0,child.before,''))     
+            child.sendline( password )
+            child.expect( pexpect.EOF )
+            return S_OK( ( 0, child.before, '' ) )
       elif i == 2:
         # Passwordless login, get the output
-        return S_OK((0,child.before,''))        
+        return S_OK( ( 0, child.before, '' ) )
 
-      if self.password:  
-        child.sendline(self.password)
-        child.expect(pexpect.EOF)
-        return S_OK((0,child.before,''))
+      if self.password:
+        child.sendline( self.password )
+        child.expect( pexpect.EOF )
+        return S_OK( ( 0, child.before, '' ) )
       else:
-        return S_ERROR((-1,child.before,''))  
+        return S_ERROR( ( -1, child.before, '' ) )
     else:
       # Try passwordless login
-      result = shellCall(timeout,command) 
-      return result   
-      
-  
-  def sshCall(self, timeout, cmdSeq):
+      result = shellCall( timeout, command )
+      return result
+
+
+  def sshCall( self, timeout, cmdSeq ):
     """ Execute remote command via a ssh remote call
     """
-    
+
     command = cmdSeq
-    if type(cmdSeq) == type( [] ):
-      command = ' '.join(cmdSeq)
-      
-    command = "ssh -l %s %s '%s'" % (self.user, self.host, command)  
-    return self.__ssh_call(command,timeout)  
-    
-  def scpCall(self, timeout, localFile, destinationPath, upload=True ):
+    if type( cmdSeq ) == type( [] ):
+      command = ' '.join( cmdSeq )
+
+    command = "ssh -l %s %s '%s'" % ( self.user, self.host, command )
+    return self.__ssh_call( command, timeout )
+
+  def scpCall( self, timeout, localFile, destinationPath, upload = True ):
     """ Execute scp copy
     """
-      
-    if upload:  
-      command = "scp %s %s@%s:%s" % (localFile, self.user, self.host, destinationPath)
+
+    if upload:
+      command = "scp %s %s@%s:%s" % ( localFile, self.user, self.host, destinationPath )
     else:
-      command = "scp %s@%s:%s %s" % (self.user, self.host, destinationPath, localFile)  
-    return self.__ssh_call(command,timeout)    
-       
+      command = "scp %s@%s:%s %s" % ( self.user, self.host, destinationPath, localFile )
+    return self.__ssh_call( command, timeout )
+
 
 class SSHTorqueComputingElement( ComputingElement ):
 
@@ -105,7 +105,7 @@ class SSHTorqueComputingElement( ComputingElement ):
     """ Standard constructor.
     """
     ComputingElement.__init__( self, ceUniqueID )
-    
+
     self.ceType = CE_NAME
     self.submittedJobs = 0
     self.mandatoryParameters = MANDATORY_PARAMETERS
@@ -118,7 +118,7 @@ class SSHTorqueComputingElement( ComputingElement ):
     ComputingElement._addCEConfigDefaults( self )
     # Now Torque specific ones
     if 'ExecQueue' not in self.ceParameters:
-      self.ceParameters['ExecQueue'] = self.ceParameters.get('Queue','')
+      self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
 
     if 'SharedArea' not in self.ceParameters:
       self.ceParameters['SharedArea'] = ''
@@ -128,16 +128,16 @@ class SSHTorqueComputingElement( ComputingElement ):
 
     if 'BatchError' not in self.ceParameters:
       self.ceParameters['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
-      
+
     if 'ExecutableArea' not in self.ceParameters:
-      self.ceParameters['ExecutableArea'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )  
+      self.ceParameters['ExecutableArea'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
 
 
-  def reset(self):
-        
+  def reset( self ):
+
     self.queue = self.ceParameters['Queue']
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
-      self.ceParameters['ExecQueue'] = self.ceParameters.get('Queue','')
+      self.ceParameters['ExecQueue'] = self.ceParameters.get( 'Queue', '' )
     self.execQueue = self.ceParameters['ExecQueue']
     self.log.info( "Using queue: ", self.queue )
     self.hostname = socket.gethostname()
@@ -148,18 +148,18 @@ class SSHTorqueComputingElement( ComputingElement ):
     self.sshUser = self.ceParameters['SSHUser']
     self.sshHost = self.ceParameters['SSHHost']
     self.sshPassword = ''
-    if 'SSHPassword' in self.ceParameters:  
+    if 'SSHPassword' in self.ceParameters:
       self.sshPassword = self.ceParameters['SSHPassword']
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
       self.submitOptions = self.ceParameters['SubmitOptions']
     self.removeOutput = True
     if 'RemoveOutput' in self.ceParameters:
-      if self.ceParameters['RemoveOutput'].lower()  in ['no','false','0']:
+      if self.ceParameters['RemoveOutput'].lower()  in ['no', 'false', '0']:
         self.removeOutput = False
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, numberOfJobs=1 ):
+  def submitJob( self, executableFile, proxy, numberOfJobs = 1 ):
     """ Method to submit job
     """
 
@@ -174,12 +174,12 @@ class SSHTorqueComputingElement( ComputingElement ):
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
 
-      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
+      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
       compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
 
       wrapperContent = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
-import os, tempfile, sys, base64, bz2
+import os, tempfile, sys, base64, bz2, shutil
 try:
   workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
   os.chdir( workingDirectory )
@@ -191,7 +191,7 @@ try:
 except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
-cmd = "%(executable)s"
+cmd = "./%(executable)s"
 print 'Executing: ', cmd
 sys.stdout.flush()
 os.system( cmd )
@@ -212,11 +212,11 @@ shutil.rmtree( workingDirectory )
     else: # no proxy
       submitFile = executableFile
 
-    ssh = SSH(self.sshUser, self.sshHost, self.sshPassword)
+    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
     # Copy the executable
-    os.chmod(submitFile,stat.S_IRUSR|stat.S_IXUSR)
-    sFile = os.path.basename(submitFile)
-    result = ssh.scpCall(10, submitFile, '%s/%s' % (self.executableArea,os.path.basename(submitFile)) )
+    os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
+    sFile = os.path.basename( submitFile )
+    result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
     # submit submitFile to the batch system
     cmd = "i=0; while [ $i -lt %(numberOfJobs)d ]; do qsub -o %(output)s -e %(error)s -q %(queue)s -N DIRACPilot %(submitOptions)s %(executable)s; let i=i+1; done; rm -f %(executable)s" % \
       {'numberOfJobs': numberOfJobs, \
@@ -224,12 +224,12 @@ shutil.rmtree( workingDirectory )
        'error': self.batchError, \
        'queue': self.queue, \
        'submitOptions': self.submitOptions, \
-       'executable': '%s/%s' % (self.executableArea,os.path.basename(submitFile)) }
+       'executable': '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) }
 
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
 
-    result = ssh.sshCall( 10, cmd)
-    
+    result = ssh.sshCall( 10, cmd )
+
     if not result['OK'] or result['Value'][0] != 0:
       self.log.warn( '===========> SSHTorque CE result NOT OK' )
       self.log.debug( result )
@@ -237,28 +237,28 @@ shutil.rmtree( workingDirectory )
     else:
       self.log.debug( 'Torque CE result OK' )
 
-    batchIDList = result['Value'][1].strip().replace('\r','').split('\n')
+    batchIDList = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
 
     self.submittedJobs += 1
-    
+
     return S_OK( batchIDList )
 
   #############################################################################
   def getDynamicInfo( self ):
     """ Method to return information on running and pending jobs.
     """
-    
+
     result = S_OK()
     result['SubmittedJobs'] = self.submittedJobs
 
-    ssh = SSH(self.sshUser, self.sshHost, self.sshPassword)
+    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
     cmd = ["qstat", "-Q" , self.execQueue ]
     ret = ssh.sshCall( 10, cmd )
 
     if not ret['OK']:
       self.log.error( 'Timeout', ret['Message'] )
       return ret
-    
+
     status = ret['Value'][0]
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
@@ -289,81 +289,81 @@ shutil.rmtree( workingDirectory )
     self.log.verbose( 'Running Jobs: ', runningJobs )
 
     return result
-  
-  def getJobStatus(self,jobIDList):
+
+  def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
     jobDict = {}
     for job in jobIDList:
-      jobNumber = job.split('.')[0]
+      jobNumber = job.split( '.' )[0]
       if jobNumber:
         jobDict[jobNumber] = job
-      
-    cmd = [ 'qstat',' '.join(jobIDList) ]
-    ssh = SSH(self.sshUser, self.sshHost, self.sshPassword)
+
+    cmd = [ 'qstat', ' '.join( jobIDList ) ]
+    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
     result = ssh.sshCall( 10, cmd )
     if not result['OK']:
       return result
-    
+
     resultDict = {}
-    output = result['Value'][1].replace('\r','')
-    lines = output.split('\n')
+    output = result['Value'][1].replace( '\r', '' )
+    lines = output.split( '\n' )
     for job in jobDict:
       resultDict[jobDict[job]] = 'Unknown'
       for line in lines:
-        if line.find(job) != -1:
-          if line.find('Unknown') != -1:
+        if line.find( job ) != -1:
+          if line.find( 'Unknown' ) != -1:
             resultDict[jobDict[job]] = 'Unknown'
           else:
-            torqueStatus = line.split()[4]  
-            if torqueStatus in ['E','C']:
+            torqueStatus = line.split()[4]
+            if torqueStatus in ['E', 'C']:
               resultDict[jobDict[job]] = 'Done'
-            elif torqueStatus in ['R']:    
+            elif torqueStatus in ['R']:
               resultDict[jobDict[job]] = 'Running'
-            elif torqueStatus in ['S','W','Q','H','T']:    
+            elif torqueStatus in ['S', 'W', 'Q', 'H', 'T']:
               resultDict[jobDict[job]] = 'Waiting'
-              
-    return S_OK(resultDict)      
-  
-  def getJobOutput(self,jobID,localDir=None):
+
+    return S_OK( resultDict )
+
+  def getJobOutput( self, jobID, localDir = None ):
     """ Get the specified job standard output and error files. If the localDir is provided,
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 
-    """     
-    jobNumber = jobID.split('.')[0]
-    
+    """
+    jobNumber = jobID.split( '.' )[0]
+
     if not localDir:
       tempDir = tempfile.mkdtemp()
-    else:  
+    else:
       tempDir = localDir
-      
-    ssh = SSH(self.sshUser, self.sshHost, self.sshPassword)
-    result = ssh.scpCall(20,'%s/%s.out' % (tempDir,jobID), '%s/*%s*' % (self.batchOutput,jobNumber), upload=False ) 
+
+    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchOutput, jobNumber ), upload = False )
     if not result['OK']:
       return result
-    if not os.path.exists('%s/%s.out' % (tempDir,jobID)):
-      os.system('touch %s/%s.out' % (tempDir,jobID))
-    result = ssh.scpCall(20,'%s/%s.err' % (tempDir,jobID), '%s/*%s*' % (self.batchError,jobNumber), upload=False )      
+    if not os.path.exists( '%s/%s.out' % ( tempDir, jobID ) ):
+      os.system( 'touch %s/%s.out' % ( tempDir, jobID ) )
+    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchError, jobNumber ), upload = False )
     if not result['OK']:
       return result
-    if not os.path.exists('%s/%s.err' % (tempDir,jobID)):
-      os.system('touch %s/%s.err' % (tempDir,jobID))
-    
+    if not os.path.exists( '%s/%s.err' % ( tempDir, jobID ) ):
+      os.system( 'touch %s/%s.err' % ( tempDir, jobID ) )
+
     # The result is OK, we can remove the output
     if self.removeOutput:
-      result = ssh.sshCall(10,'rm -f %s/*%s* %s/*%s*' % (self.batchOutput,jobNumber,self.batchError,jobNumber) )
-    
+      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
+
     if localDir:
-      return S_OK(('%s/%s.out' % (tempDir,jobID),'%s/%s.err' % (tempDir,jobID)))
+      return S_OK( ( '%s/%s.out' % ( tempDir, jobID ), '%s/%s.err' % ( tempDir, jobID ) ) )
     else:
       # Return the output as a string
-      outputFile = open('%s/%s.out' % (tempDir,jobID),'r')
+      outputFile = open( '%s/%s.out' % ( tempDir, jobID ), 'r' )
       output = outputFile.read()
       outputFile.close()
-      outputFile = open('%s/%s.err' % (tempDir,jobID),'r')
+      outputFile = open( '%s/%s.err' % ( tempDir, jobID ), 'r' )
       error = outputFile.read()
-      outputFile.close()    
-      shutil.rmtree(tempDir)
-      return S_OK((output,error))
+      outputFile.close()
+      shutil.rmtree( tempDir )
+      return S_OK( ( output, error ) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

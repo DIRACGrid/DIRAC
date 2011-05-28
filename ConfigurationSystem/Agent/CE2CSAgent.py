@@ -30,11 +30,11 @@ class CE2CSAgent( AgentModule ):
     self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     # create a list of alternative bdii urls
-    self.alternativeBDIIs = map(lambda x: x.strip(), self.am_getOption( 'AlternativeBDIIs', '').split(','))
+    self.alternativeBDIIs = map( lambda x: x.strip(), self.am_getOption( 'AlternativeBDIIs', '' ).split( ',' ) )
     # check if the bdii url is appended by a port number, if not append the default 2170
-    for index,url in enumerate(self.alternativeBDIIs):
-      if not url.split(':')[-1].isdigit():
-        self.alternativeBDIIs[index] +=':2170'
+    for index, url in enumerate( self.alternativeBDIIs ):
+      if not url.split( ':' )[-1].isdigit():
+        self.alternativeBDIIs[index] += ':2170'
     if self.addressTo and self.addressFrom:
       self.log.info( "MailTo", self.addressTo )
       self.log.info( "MailFrom", self.addressFrom )
@@ -66,14 +66,14 @@ class CE2CSAgent( AgentModule ):
     self.log.info( "End Execution" )
     return S_OK()
 
-  def _checkAlternativeBDIISite(self, fun, *args):
+  def _checkAlternativeBDIISite( self, fun, *args ):
     if self.alternativeBDIIs:
       self.log.warn( "Trying to use alternative bdii sites" )
       for site in self.alternativeBDIIs :
         self.log.info( "Trying to contact alternative bdii ", site )
-        if len(args) == 1 : result = fun( args[0], host=site )
-        elif len(args) == 2 : result = fun( args[0], vo=args[1], host=site)
-        if not result['OK'] : self.log.error ( "Problem contacting alternative bddii", result['Message'])
+        if len( args ) == 1 : result = fun( args[0], host = site )
+        elif len( args ) == 2 : result = fun( args[0], vo = args[1], host = site )
+        if not result['OK'] : self.log.error ( "Problem contacting alternative bddii", result['Message'] )
         elif result['OK'] : return result
       self.log.warn( "Also checking alternative BDII sites failed" )
       return result
@@ -127,7 +127,7 @@ class CE2CSAgent( AgentModule ):
         continue
       clusters = response['Value']
       if len( clusters ) != 1:
-        self.log.warn( "Error in cluster leng", " CE %s Leng %d" % ( ce, len( clusters ) ) )
+        self.log.warn( "Error in cluster length", " CE %s Length %d" % ( ce, len( clusters ) ) )
       if len( clusters ) == 0:
         continue
       cluster = clusters[0]
@@ -229,9 +229,9 @@ class CE2CSAgent( AgentModule ):
 
           result = ldapSite( name )
           if not result['OK']:
-            self.log.warn( "BDII site %s: %s" % (name, result['Message'] ))
+            self.log.warn( "BDII site %s: %s" % ( name, result['Message'] ) )
             result = self._checkAlternativeBDIISite( ldapSite, name )
-            
+
           if result['OK']:
             bdiisites = result['Value']
             if len( bdiisites ) == 0:

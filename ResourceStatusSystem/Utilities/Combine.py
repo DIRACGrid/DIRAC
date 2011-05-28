@@ -1,4 +1,8 @@
 """
+DEPRECATED!!! Not used anymore (never been used actually).  Just here
+for historical/study purpose.  PDP now use a much versatile and better
+system than a hardcoded state machine (see PolicySystem/Status.py).
+
 This module implements the "state machine" and the corresponding
 combination function. It is a generic module that has to be
 complemented by a list of possible states and transitions (i.e. a

@@ -1,9 +1,7 @@
-""" collects:
-
-      - utility functions
-
-      - parameters
 """
+This module collects utility functions
+"""
+
 #############################################################################
 # useful functions
 #############################################################################
@@ -11,12 +9,8 @@
 def where(c, f):
   return "Class " + str(c.__class__.__name__) + ", in Function " + (f.__name__)
 
-#############################################################################
-
 def whoRaised(x):
   return "Exception: " + str(x.__class__.__name__) +", raised by " + str(x)
-
-#############################################################################
 
 def assignOrRaise(value, set_, exc, obj, fun):
   """
@@ -27,8 +21,6 @@ def assignOrRaise(value, set_, exc, obj, fun):
   if value is not None and value not in set_:
     raise exc, where(obj, fun)
   else: return value
-
-#############################################################################
 
 def convertTime(t, inTo = None):
 
@@ -105,3 +97,137 @@ def convertTime(t, inTo = None):
       pass
 
     return hour
+
+############################
+# vibernar utils functions #
+############################
+
+from itertools import imap
+import copy
+
+id_fun = lambda x: x
+
+# (Duck) type checking
+
+def isiterable(obj):
+  import collections
+  return isinstance(obj,collections.Iterable)
+
+# List utils
+
+def list_split(l):
+  return [i[0] for i in l], [i[1] for i in l]
+
+def list_combine(l1, l2):
+  return list(imap(lambda x,y: (x,y), l1, l2))
+
+def list_flatten(l):
+  res = []
+  for e in l:
+    for ee in e:
+      res.append(ee)
+  return res
+
+# Dict utils
+
+def dict_split(d):
+  def dict_one_split(d):
+    def dict_copy(d, k, v):
+      copy_of_d = copy.deepcopy(d)
+      copy_of_d[k] = v
+      return copy_of_d
+
+    for (k,v) in d.items():
+      if type(v) == list:
+        return [dict_copy(d,k,i) for i in v]
+
+    return [d]
+
+  def dict_split(ds):
+    res = [dict_one_split(d) for d in ds]
+    res = list_flatten(res)
+    if res != ds: return dict_split(res)
+    else:         return res
+
+  return dict_split([d])
+
+# CLI stuff
+
+class GetForm(object):
+  """This class asks the user to fill a form inside a CLI. It checks
+  the type of entered values and keep on asking them until the form
+  has the correct type."""
+
+  prompt = "> "
+  form   = None
+
+  def __init__(self, form):
+    """form is a dict in the form label:<type or set of values>"""
+    self.form = form
+
+  def run(self):
+    res = {}
+    for i in self.form:
+      res[i] = self.getval(i, self.form[i])
+    return res
+
+  def getval(self, label, restr, acceptFalse=False):
+    """Restriction can be based on a type, or on a list of acceptable
+    values. If valueTrue, then the value provided"""
+    value = None
+
+    if type(restr) == type:
+      # Checks that the provided value is of type restr.
+      if not acceptFalse:
+        while type(value) != restr or not value:
+          print "Enter value for %s: %s" % (label, str(restr))
+          value = raw_input(self.prompt)
+      else:
+        while type(value) != restr:
+          print "Enter value for %s: %s" % (label, str(restr))
+          value = raw_input(self.prompt)
+
+      return value
+
+    else:
+      # Checks that the provided value(s) are in the iterable
+
+      if not acceptFalse:
+        while not value:
+          print "Enter value for %s: " % label
+          value = self.pickvals(restr)
+      else:
+        print "Enter value for %s: " % label
+        value = self.pickvals(restr)
+
+      return value
+
+  def pickvals(self, iterable, NoneAllowed=False, AllAllowed=True):
+    """Ask the user to pick one or more value(s) in a iterable (list,
+    set). Return the list of chosen values"""
+    res = None
+
+    while res == None:
+      try:
+        self.print_iterable(iterable, NoneAllowed, AllAllowed)
+        res = [int(i) for i in raw_input(self.prompt).split()]
+      except ValueError:
+        pass
+
+    if AllAllowed and (len(iterable) in res or res == []):
+      return iterable
+    elif NoneAllowed and res == [-1]:
+      return []
+    else:
+      return [iterable[i] for i in res if i in range(0, len(iterable))]
+
+  def print_iterable(self, iterable, NoneAllowed=False, AllAllowed=True):
+    """Prints an iterable with numbering to enable a user to pick some
+    or all elements by typing the numbers. To be used by an input function.
+    """
+    if NoneAllowed:
+      print "(-1) [Nothing]"
+    for idx, value in enumerate(iterable):
+      print "(%d) [%s]" % (idx, value)
+    if AllAllowed:
+      print "(%d) [All] (default)" % len(iterable)
