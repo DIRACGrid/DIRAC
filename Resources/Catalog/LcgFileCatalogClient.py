@@ -27,11 +27,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         import lfcthr as lfc
         # This is necessary to make the LFC client thread safe.
         lfc.init()
-        importCorrectly = True
+        importedLFC = True
         gLogger.debug( "LcgFileCatalogClient.__init__: Successfully imported lfc module." )
 
-      except ImportError, x:
-        importCorrectly = False
+      except ImportError:
+        importedLFC = False
         gLogger.exception( "LcgFileCatalogClient.__init__: Failed to import lfc module." )
 
     self.valid = importedLFC
