@@ -13,28 +13,28 @@ from stat import *
 import os, re, types, time
 
 lfc = None
-importCorrectly = None
+importedLFC = None
 
 class LcgFileCatalogClient( FileCatalogueBase ):
 
   def __init__( self, infosys = None, host = None ):
-    global lfc, importCorrectly
+    global lfc, importedLFC
 
     FileCatalogueBase.__init__( self, 'LFC' )
 
-    try:
-      import lfcthr as lfc
-      # This is necessary to make the LFC client thread safe.
-      lfc.init()
-      if importCorrectly == None:
+    if importedLFC == None:
+      try:
+        import lfcthr as lfc
+        # This is necessary to make the LFC client thread safe.
+        lfc.init()
         importCorrectly = True
         gLogger.debug( "LcgFileCatalogClient.__init__: Successfully imported lfc module." )
-      self.valid = True
-    except ImportError, x:
-      if importCorrectly == None:
+
+      except ImportError, x:
         importCorrectly = False
         gLogger.exception( "LcgFileCatalogClient.__init__: Failed to import lfc module." )
-      self.valid = False
+
+    self.valid = importedLFC
 
     if not infosys:
       # if not provided, take if from CS
@@ -1312,7 +1312,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     status = 'U'
     f_type = 'D'
     poolname = ''
-    #Êsetname = ''
+    # setname = ''
     fs = ''
     # r_type = 'S'
     if master:
