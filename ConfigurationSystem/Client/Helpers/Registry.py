@@ -57,6 +57,23 @@ def getHostnameForDN( dn ):
 def getDefaultUserGroup():
   return gConfig.getValue( "/%s/DefaultGroup" % gBaseSecuritySection, "user" )
 
+def findDefaultGroupForDN( dn ):
+  result = getUsernameForDN( dn )
+  if not result[ 'OK' ]:
+    return result
+  return findDefaultGroupForUser( result[ 'Value' ] )
+
+def findDefaultGroupForUser( userName ):
+  defGroups = gConfig.getValue( "/%s/DefaultGroup" % gBaseSecuritySection, [ "user" ] )
+  result = getGroupsForUser( userName )
+  if not result[ 'OK' ]:
+    return result
+  userGroups = result[ 'Value' ]
+  for group in defGroups:
+    if group in userGroups:
+      return S_OK( group )
+  return S_OK( False )
+
 def getAllUsers():
   retVal = gConfig.getSections( "%s/Users" % gBaseSecuritySection )
   if not retVal[ 'OK' ]:
