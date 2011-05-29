@@ -616,3 +616,34 @@ class DirectoryMetadata:
       result = S_OK( {} )
     return result
 
+  def removeMetadataForDirectory( self, dirList, credDict ):
+    """ Remove all the metadata for the given directory list
+    """
+    
+    failed = {}
+    successful = {}
+    dirs = dirList
+    if type(dirList) != types.ListType:
+      dirs = [dirList]
+      
+    dirListString = ','.join( [ str(dir) for dir in dirList ] )
+    
+    # Get the list of metadata fields to inspect
+    result = self.getMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    metaFields = result['Value']
+    
+    for meta in metaFields:
+      req = "DELETE FROM FC_Meta_%s WHERE DirID in ( %s )" % (meta,dirListString)
+      result = self.db._duery(req)
+      if not result['OK']:
+        failed[meta] = result['Message']
+      else:
+        successful[meta] = 'OK'  
+      
+    return S_OK({'Successful':successful,'Failed':failed})  
+      
+      
+      
+      

@@ -475,9 +475,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     statusDict = {}
     for row in selectedRows:
       status = row[statusColumnIndex]
-      if not statusDict.has_key( status ):
-        statusDict[status] = 0
-      statusDict[status] += 1
+      statusDict[status] = statusDict.setdefault( status, 0 ) + 1
     resultDict['Extras'] = statusDict
 
     # Obtain the distinct values of the selection parameters
@@ -529,7 +527,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
     taskStateNames = ['Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled']
     resultDict['ParameterNames'] += ['Jobs_' + x for x in taskStateNames]
     # Add the file states to the ParameterNames entry
-    fileStateNames = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic']
+    fileStateNames = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic', 'ApplicationCrash', 'MaxReset']
     resultDict['ParameterNames'] += ['Files_' + x for x in fileStateNames]
 
     # Get the transformations which are within the selected window
@@ -550,9 +548,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
 
       # Update the status counters
       status = transDict['Status']
-      if not statusDict.has_key( status ):
-        statusDict[status] = 0
-      statusDict[status] += 1
+      statusDict[status] = statusDict.setdefault( status, 0 ) + 1
 
       # Get the statistics on the number of jobs for the transformation
       transID = transDict['TransformationID']
@@ -561,10 +557,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
       if res['OK'] and res['Value']:
         taskDict = res['Value']
       for state in taskStateNames:
-        if taskDict and taskDict.has_key( state ):
-          trans.append( taskDict[state] )
-        else:
-          trans.append( 0 )
+        trans.append( taskDict.get( state, 0 ) )
 
       # Get the statistics for the number of files for the transformation
       fileDict = {}
@@ -579,15 +572,10 @@ class TransformationManagerHandlerBase( RequestHandler ):
           if fileDict['Total'] == 0:
             fileDict['PercentProcessed'] = 0
           else:
-            processed = fileDict.get( 'Processed' )
-            if not processed:
-              processed = 0
+            processed = fileDict.get( 'Processed', 0 )
             fileDict['PercentProcessed'] = "%.1f" % ( int( processed * 1000. / fileDict['Total'] ) / 10. )
       for state in fileStateNames:
-        if fileDict and fileDict.has_key( state ):
-          trans.append( fileDict[state] )
-        else:
-          trans.append( 0 )
+        trans.append( fileDict.get( state, 0 ) )
 
     resultDict['Records'] = transList
     resultDict['Extras'] = statusDict

@@ -13,20 +13,27 @@ from stat import *
 import os, re, types, time
 
 lfc = None
+importCorrectly = None
 
 class LcgFileCatalogClient( FileCatalogueBase ):
 
   def __init__( self, infosys = None, host = None ):
-    global lfc
+    global lfc, importCorrectly
 
     FileCatalogueBase.__init__( self, 'LFC' )
 
     try:
-      import lfc
-      gLogger.debug( "LcgFileCatalogClient.__init__: Successfully imported lfc module." )
+      import lfcthr as lfc
+      # This is necessary to make the LFC client thread safe.
+      lfc.init()
+      if importCorrectly == None:
+        importCorrectly = True
+        gLogger.debug( "LcgFileCatalogClient.__init__: Successfully imported lfc module." )
       self.valid = True
     except ImportError, x:
-      gLogger.exception( "LcgFileCatalogClient.__init__: Failed to import lfc module." )
+      if importCorrectly == None:
+        importCorrectly = False
+        gLogger.exception( "LcgFileCatalogClient.__init__: Failed to import lfc module." )
       self.valid = False
 
     if not infosys:

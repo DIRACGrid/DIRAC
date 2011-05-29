@@ -14,7 +14,7 @@ from types import *
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
 
-MAX_LEVELS = 10
+MAX_LEVELS = 15
 
 class DirectoryLevelTree(DirectoryTreeBase):
   """ Class managing Directory Tree as a simple self-linked structure 
@@ -55,6 +55,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     dirID = result['Value']
     req = "DELETE FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
     result = self.db._update(req)
+    result['DirID'] = dirID
     return result
 
   def __getNumericPath(self,dirID):
@@ -62,7 +63,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """
     
     epaths = []
-    for i in range(1,11,1):
+    for i in range(1,MAX_LEVELS+1,1):
       epaths.append("LPATH%d" % i)
     epathString = ','.join(epaths)  
     
@@ -168,6 +169,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
         dpath = path[1:]  
       elements = dpath.split('/')
       level = len(elements)
+      if level > MAX_LEVELS:
+        return S_ERROR('Too many directory levels: %d' % level)
       dirName = elements[-1]
       result = self.getParent(path)
       if not result['OK']:

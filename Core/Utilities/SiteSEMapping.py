@@ -84,6 +84,25 @@ def getSESiteMapping( gridName = '' ):
             seSiteMapping[se] = []
           seSiteMapping[se].append( candidate )
 
+  # Add Sites from the SiteLocalSEMapping in the CS
+  vo = getVO()
+  setup = getDIRACSetup()
+  cfgLocalSEPath = cfgPath( 'Operations', vo, setup, 'SiteLocalSEMapping' )
+  result = gConfig.getOptionsDict( cfgLocalSEPath )
+  if result['OK']:
+    mapping = result['Value']
+    for site in mapping:
+      ses = gConfig.getValue( cfgPath( cfgLocalSEPath, site ), [] )
+      if not ses:
+        continue
+      if gridName and site not in sites:
+        continue
+      if site not in siteSEMapping:
+        siteSEMapping[site] = []
+      for se in ses:
+        if se not in siteSEMapping[site]:
+          siteSEMapping[site].append( se )
+
   return S_OK( seSiteMapping )
 
 #############################################################################
@@ -92,32 +111,19 @@ def getSitesForSE( storageElement, gridName = '' ):
       Optionally restrict to Grid specified by name.
   """
 
+  result = getSiteSEMapping( gridName )
+  if not result['OK']:
+    return result
+
+  mapping = result['Value']
+
   finalSites = []
-  gridTypes = gConfig.getSections( '/Resources/Sites/' )
-  if not gridTypes['OK']:
-    gLogger.warn( 'Problem retrieving sections in /Resources/Sites' )
-    return gridTypes
 
-  gridTypes = gridTypes['Value']
-  if gridName:
-    if gridName in gridTypes:
-      gridTypes = [gridName]
-    else:
-      return S_ERROR( 'Grid type %s not in list: %s' % ( gridName, ', '.join( gridTypes ) ) )
-
-  for grid in gridTypes:
-    sites = gConfig.getSections( '/Resources/Sites/%s' % grid )
-    if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
-      gLogger.warn( 'Problem retrieving /Resources/Sites/%s section' % grid )
-      return sites
-    if sites:
-      siteList = sites['Value']
-      for candidate in siteList:
-        siteSEs = gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, candidate ), [] )
-        if storageElement in siteSEs:
-          finalSites.append( candidate )
-
+  for site in mapping:
+    if storageElement in mapping[site]:
+      finalSites.append( site )
   return S_OK( finalSites )
+
 
 #############################################################################
 def getSEsForSite( siteName ):

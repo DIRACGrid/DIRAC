@@ -1,3 +1,34 @@
+[v6r0-pre3]
+
+*FileCatalog enhancements
+FIX: DiractoryLevelTree - consistent application of the max directory level using global 
+     MAX_LEVELS variable
+FIX: Directory metadata is deleted together with the directory deletion, issue #40    
+
+*Fix utility to get the user VO
+CHANGE: update when possible to getVOforGroup from getVO
+CHANGE: remove methods from CS, import them from Registry
+
+*dirac-proxy-init modification according to issue #29 
+NEW: -U flag will upload a long lived proxy to the ProxyManager
+NEW: If /Registry/DefaultGroup is defined, try to generate a proxy that has that group
+
+*RSS system refactoring
+CHANGE: First refactoring of RSSÕs PEP. Actions are now function defined in modules 
+        residing in directory "Actions".
+
+*dirac-install functionality enhancement
+CHANGE: Start using the switches as defined in issue #26
+NEW: Write the defaults if any under defaults-.cfg so dirac-configure can pick it up
+
+*LocalSE mapping
+NEW: Added possibility to define LocalSE to any Site using the SiteLocalSEMapping 
+     section on the Operations Section
+
+*TransformationAgent logic enhancement
+CHANGE: Add new file statuses in production monitoring display
+CHANGE: limit the number of files to be treated in TransformationAgent for replication and removal (default 5000)
+
 [v6r0-pre2]
 
 *Managing multiple VOs
