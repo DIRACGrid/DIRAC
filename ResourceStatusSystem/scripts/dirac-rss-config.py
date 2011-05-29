@@ -11,9 +11,9 @@ Script.parseCommandLine(ignoreErrors = True)
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import\
-    ValidRes, ValidSiteType, ValidServiceType, ValidResourceType, ValidStatus
+    ValidSiteType, ValidServiceType, ValidResourceType, ValidStatus
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import GetForm, dict_split
+from DIRAC.ResourceStatusSystem.Utilities.Utils import GetForm
 
 class RSSConfigCmd(cmd.Cmd):
 
@@ -142,14 +142,25 @@ type ::== ["users", "statuses", "frequencies", "groups", "policies"]
                          'former_status':ValidStatus, 'site_type':ValidSiteType,
                          'service_type':ValidServiceType, 'resource_type':ValidResourceType }
         res = GetForm(request_dict).run()
-        res_split = dict_split(res)
-        for p in res_split:
-          res_add = self.S.addPolicy(p)
-          if not res_add['OK']:
-            print "RPC Call failed: %s" % res_add['Message']
-            print str(res_add)
-          else:
-            print "Policy added: " + str(res_add)
+
+        ret = self.S.addPolicy(res)
+
+        if not ret['OK']:
+          print "RPC Call failed: %s" % ret['Message']
+          print str(ret)
+        else:
+          print "Policy added: " + str(ret)
+      elif args[0] == "del":
+        request_dict = { 'label': str, 'description': str, 'status':ValidStatus,
+                         'former_status':ValidStatus, 'site_type':ValidSiteType,
+                         'service_type':ValidServiceType, 'resource_type':ValidResourceType }
+        res = GetForm(request_dict).run()
+        ret = self.S.delPolicy(res)
+        if not ret['OK']:
+          print "RPC Call failed: %s" % ret['Message']
+          print str(ret)
+        else:
+          print "Policy deleted: " + str(ret)
 
   def do_test(self, line):
     print line
