@@ -473,6 +473,14 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
+    
+    # Remove the directory metadata now
+    dirIdList = [ p['DirID'] for p in successful ]
+    result = self.dmeta.removeMetadataForDirectory( dirIdList,credDict )
+    if not result['OK']:
+      return result
+    failed.update(result['Value']['Failed'])
+    successful = result['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   ########################################################################

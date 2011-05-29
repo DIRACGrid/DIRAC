@@ -55,6 +55,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     dirID = result['Value']
     req = "DELETE FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
     result = self.db._update(req)
+    result['DirID'] = dirID
     return result
 
   def __getNumericPath(self,dirID):
