@@ -24,6 +24,7 @@ class CSAPI:
     self.__rpcClient = None
     self.__csMod = None
 
+    self.__initialized = False
     self.__initialized = self.initialize()
 
   def __getProxyID( self ):
@@ -60,6 +61,8 @@ class CSAPI:
     return True
 
   def initialize( self ):
+    if self.__initialized:
+      return True
     if not gConfig.useServerCertificate():
       res = self.__getProxyID()
     else:
@@ -527,3 +530,63 @@ class CSAPI:
     self.__csMod.setComment( optionPath, comment )
     self.__csModified = True
     return S_OK( 'Set option comment %s : %s' % ( optionPath, comment ) )
+
+  def delOption( self, optionPath ):
+    """ Delete an option 
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    if not self.__csMod.removeOption( optionPath ):
+      return S_ERROR( "Couldn't delete option %s" % optionPath )
+    self.__csModified = True
+    return S_OK( 'Deleted option %s' % ( optionPath ) )
+
+  def createSection( self, sectionPath, comment = "" ):
+    """ Create a new section
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    self.__csMod.createSection( sectionPath )
+    self.__csModified = True
+    if comment:
+      self.__csMod.setComment( sectionPath, comment )
+    return S_OK()
+
+  def delSection( self, sectionPath ):
+    """ Delete a section
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    if not self.__csMod.removeSection( sectionPath ):
+      return S_ERROR( "Could not delete section %s " % sectionPath )
+    self.__csModified = True
+    return S_OK()
+
+  def mergeCFGUnderSection( self, sectionPath, cfg ):
+    """ Merge the given cfg under a certain section
+    """
+    result = self.createSection( sectionPath )
+    if not result[ 'OK' ]:
+      return result
+    if not self.__csMod.mergeSectionFromCFG( sectionPath, cfg ):
+      return S_ERROR( "Could not merge cfg into section %s" % sectionPath )
+    self.__csModified = True
+    return S_OK()
+
+  def mergeWithCFG( self, cfg ):
+    """ Merge the given cfg with the current config
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    self.__csMod.mergeFromCFG( cfg )
+    self.__csModified = True
+    return S_OK()
+
+  def getCurrentCFG( self ):
+    """ Get the current CFG as it is
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    return S_OK( self.__csMod.getCFG() )
+
+
