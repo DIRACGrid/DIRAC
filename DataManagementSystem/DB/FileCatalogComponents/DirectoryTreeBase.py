@@ -216,7 +216,7 @@ class DirectoryTreeBase:
       if not result['OK']:
         failed[dir] = result['Message']
       else: 
-        successful[dir] = True  
+        successful[dir] = result['DirID']  
     return S_OK({'Successful':successful,'Failed':failed}) 
 
 #####################################################################
