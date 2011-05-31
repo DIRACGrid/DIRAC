@@ -19,7 +19,7 @@ Script.parseCommandLine()
 # * root does not end with "/" or root is "/"
 # * root starts with "/"
 
-class RSSConfigCmd(cmd.Cmd):
+class CSShellCmd(cmd.Cmd):
 
   def __init__(self):
     cmd.Cmd.__init__(self)
@@ -221,8 +221,8 @@ class RSSConfigCmd(cmd.Cmd):
   do_exit = do_quit
 
 def main():
-  rsscmd = RSSConfigCmd()
-  rsscmd.cmdloop()
+  shell = CSShellCmd()
+  shell.cmdloop()
 
 if __name__ == "__main__":
   sys.exit(main())
