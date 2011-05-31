@@ -2,35 +2,39 @@
 
 """
 import DIRAC
-from DIRAC                                      import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers   import getVO
-from DIRAC.Resources.Catalog.FileCatalogueBase  import FileCatalogueBase
-from DIRAC.Core.Utilities.Time                  import fromEpoch
-from DIRAC.Core.Utilities.List                  import sortList, breakListIntoChunks
-from DIRAC.Core.Security.Misc                   import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Security.CS                     import getDNForUsername, getVOMSAttributeForGroup
+from DIRAC                                                    import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers                 import getVO
+from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
+from DIRAC.Core.Utilities.Time                                import fromEpoch
+from DIRAC.Core.Utilities.List                                import sortList, breakListIntoChunks
+from DIRAC.Core.Security.Misc                                 import getProxyInfo, formatProxyInfoAsString
+from DIRAC.Core.Security.CS                                   import getDNForUsername, getVOMSAttributeForGroup
 from stat import *
-import os, re, string, commands, types, time
+import os, re, types, time
 
-global importCorrectly
-try:
-  import lfcthr as lfc
-  # This is necessary to make the LFC client thread safe.
-  lfc.init()
-  importCorrectly = True
-  gLogger.debug( "LcgFileCatalogClient.__init__: Successfully imported lfc module." )
-except ImportError, x:
-  gLogger.exception( "LcgFileCatalogClient.__init__: Failed to import lfc module." )
-  importCorrectly = False
+lfc = None
+importedLFC = None
 
 class LcgFileCatalogClient( FileCatalogueBase ):
 
   def __init__( self, infosys = None, host = None ):
+    global lfc, importedLFC
 
-    if importCorrectly:
-      self.valid = True
-    else:
-      self.valid = False
+    FileCatalogueBase.__init__( self, 'LFC' )
+
+    if importedLFC == None:
+      try:
+        import lfcthr as lfc
+        # This is necessary to make the LFC client thread safe.
+        lfc.init()
+        importedLFC = True
+        gLogger.debug( "LcgFileCatalogClient.__init__: Successfully imported lfc module." )
+
+      except ImportError:
+        importedLFC = False
+        gLogger.exception( "LcgFileCatalogClient.__init__: Failed to import lfc module." )
+
+    self.valid = importedLFC
 
     if not infosys:
       # if not provided, take if from CS
@@ -59,7 +63,6 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
     self.prefix = '/grid'
     self.session = False
-    self.name = "LFC"
     self.transaction = False
 
   ####################################################################
@@ -83,7 +86,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if self.session:
       return False
     else:
-      sessionName = 'DIRAC_%s.%s at %s at time %s' % ( DIRAC.majorVersion, DIRAC.minorVersion, DIRAC.siteName(), time.time() )
+      sessionName = 'DIRAC_%s.%s at %s at time %s' % ( DIRAC.majorVersion,
+                                                       DIRAC.minorVersion,
+                                                       DIRAC.siteName(),
+                                                       time.time() )
       lfc.lfc_startsess( self.host, sessionName )
       self.session = True
       return True
@@ -97,7 +103,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def __startTransaction( self ):
     """ Begin transaction for one time commit """
     if not self.transaction:
-      transactionName = 'Transaction: DIRAC_%s.%s at %s at time %s' % ( DIRAC.majorVersion, DIRAC.minorVersion, DIRAC.siteName(), time.time() )
+      transactionName = 'Transaction: DIRAC_%s.%s at %s at time %s' % ( DIRAC.majorVersion,
+                                                                        DIRAC.minorVersion,
+                                                                        DIRAC.siteName(),
+                                                                        time.time() )
       lfc.lfc_starttrans( self.host, transactionName )
       self.transaction = True
 
@@ -148,14 +157,16 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           successful[lfn] = False
         else:
           successful[lfn] = self.__getLfnForGUID( guid )['Value']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
   def __getClientCertInfo( self ):
     res = getProxyInfo( False, False )
     if not res['OK']:
-      gLogger.error( "ReplicaManager.__getClientCertGroup: Failed to get client proxy information.", res['Message'] )
+      gLogger.error( "ReplicaManager.__getClientCertGroup: Failed to get client proxy information.",
+                     res['Message'] )
       return res
     proxyInfo = res['Value']
     gLogger.debug( formatProxyInfoAsString( proxyInfo ) )
@@ -172,7 +183,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       errStr = "ReplicaManager.__getClientCertGroup: Error getting known proxies for user."
       gLogger.error( errStr, res['Message'] )
       return S_ERROR( errStr )
-    resDict = {'DN':proxyInfo['identity'], 'Role':proxyInfo['VOMS'], 'User':proxyInfo['username'], 'AllDNs':res['Value']}
+    resDict = { 'DN'       : proxyInfo['identity'],
+                'Role'     : proxyInfo['VOMS'],
+                'User'     : proxyInfo['username'],
+                'AllDNs'   : res['Value']
+              }
     return S_OK( resDict )
 
   def getPathPermissions( self, path ):
@@ -223,7 +238,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
             successful[path] = lfcPerm
 
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -249,7 +265,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[lfn] = True
       else:
         successful[lfn] = False
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -291,7 +308,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             successful[lfn]['OwnerRole'] = res['Value']
           else:
             successful[lfn]['OwnerRole'] = None
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -314,7 +332,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value'].filesize
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -337,7 +356,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -358,7 +378,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[lfn] = res['Message']
       else:
         successful[lfn] = res['Value']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -376,7 +397,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[pfn] = res['Message']
       else:
         successful[pfn] = res['Value']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -406,7 +428,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[lfn] = True
       else:
         successful[lfn] = False
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -445,7 +468,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         else:
           successful[lfn]['OwnerRole'] = None
         successful[lfn]['Mode'] = S_IMODE( fstat.filemode )
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -474,7 +498,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             if ( status != 'P' ) or allStatus:
               pathReplicas[lfn][se] = pfn
         successful[path] = pathReplicas
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -494,7 +519,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[path] = res['Value']
       else:
         failed[path] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -512,7 +538,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[path] = res['Value']
       else:
         failed[path] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -541,7 +568,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[link] = True
       else:
         successful[link] = False
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -562,7 +590,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[link] = res['Value']
       else:
         failed[link] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -592,7 +621,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           target = link
           datasetFiles[target] = fileMetadata['Replicas']
         successful[datasetName] = datasetFiles
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -675,7 +705,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             failed[lfn] = "The supplied GUID is already used by %s" % res['Value']
         else:
           failed[lfn] = lfc.sstrerror( errCode )
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -706,7 +737,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           successful[lfn] = True
         else:
           failed[lfn] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -720,7 +752,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = self.__openSession()
     res = self.exists( lfns )
     if not res['OK']:
-      if created: self.__closeSession()
+      if created:
+        self.__closeSession()
       return res
     failed = res['Value']['Failed']
     successful = {}
@@ -733,7 +766,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           successful[lfn] = True
         else:
           failed[lfn] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -763,7 +797,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       res = self.getReplicas( lfnRemoved, True )
       zeroReplicaFiles = []
       if not res['OK']:
-        if created: self.__closeSession()
+        if created:
+          self.__closeSession()
         return res
       else:
         for lfn, repDict in res['Value']['Successful'].items():
@@ -772,9 +807,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       if len( zeroReplicaFiles ) > 0:
         res = self.removeFile( zeroReplicaFiles )
         if not res['OK']:
-          if created: self.__closeSession()
+          if created:
+            self.__closeSession()
           return res
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -797,7 +834,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[lfn] = True
       else:
         failed[lfn] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -822,7 +860,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[lfn] = True
       else:
         failed[lfn] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -839,7 +878,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     created = self.__openSession()
     res = self.exists( lfns )
     if not res['OK']:
-      if created: self.__closeSession()
+      if created:
+        self.__closeSession()
       return res
     failed = res['Value']['Failed']
     successful = {}
@@ -855,7 +895,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[lfn] = True
       else:
         failed[lfn] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -873,7 +914,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[path] = True
       else:
         failed[path] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -901,7 +943,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           failed[link] = res['Message']
         else:
           successful[link] = target
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -922,7 +965,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[link] = res['Message']
       else:
         successful[link] = True
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -951,7 +995,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       else:
         self.__executeOperation( datasetName, 'removeDataset' )
         failed[datasetName] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -969,7 +1014,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[datasetName] = res['Message']
       else:
         successful[datasetName] = True
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -987,7 +1033,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[datasetName] = res['Message']
       else:
         successful[datasetName] = True
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -1033,7 +1080,6 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     value = lfc.lfc_statr( pfn, fstat )
     if value != 0:
       return S_ERROR( lfc.sstrerror( lfc.cvar.serrno ) )
-    fstat.guid
     return self.__getLfnForGUID( fstat.guid )
 
   def __existsLfn( self, lfn ):
@@ -1067,17 +1113,17 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def __getLfnForGUID( self, guid ):
     """ Resolve the LFN for a supplied GUID
     """
-    list = lfc.lfc_list()
+    linkList = lfc.lfc_list()
     lfnlist = []
-    listlinks = lfc.lfc_listlinks( '', guid, lfc.CNS_LIST_BEGIN, list )
+    listlinks = lfc.lfc_listlinks( '', guid, lfc.CNS_LIST_BEGIN, linkList )
     while listlinks:
       ll = listlinks.path
       if re.search ( '^' + self.prefix, ll ):
         ll = listlinks.path.replace( self.prefix, "", 1 )
       lfnlist.append( ll )
-      listlinks = lfc.lfc_listlinks( '', guid, lfc.CNS_LIST_CONTINUE, list )
+      listlinks = lfc.lfc_listlinks( '', guid, lfc.CNS_LIST_CONTINUE, linkList )
     else:
-      lfc.lfc_listlinks( '', guid, lfc.CNS_LIST_END, list )
+      lfc.lfc_listlinks( '', guid, lfc.CNS_LIST_END, linkList )
     return S_OK( lfnlist[0] )
 
   def __getBasePath( self, path ):
@@ -1100,26 +1146,28 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       gLogger.error( errStr, "%s %s" % ( path, lfc.sstrerror( lfc.cvar.serrno ) ) )
       return S_ERROR( errStr )
     permissionsDict = {}
-    for object in objects:
-      if object.a_type == lfc.CNS_ACL_USER_OBJ:
-        res = self.__getDNFromUID( object.a_id )
+    for obj in objects:
+      if obj.a_type == lfc.CNS_ACL_USER_OBJ:
+        res = self.__getDNFromUID( obj.a_id )
         if not res['OK']:
           return res
         permissionsDict['DN'] = res['Value']
-        permissionsDict['user'] = object.a_perm
-      elif object.a_type == lfc.CNS_ACL_GROUP_OBJ:
-        res = self.__getRoleFromGID( object.a_id )
+        permissionsDict['user'] = obj.a_perm
+      elif obj.a_type == lfc.CNS_ACL_GROUP_OBJ:
+        res = self.__getRoleFromGID( obj.a_id )
         if not res['OK']:
           return res
         role = res['Value']
         permissionsDict['Role'] = role
-        permissionsDict['group'] = object.a_perm
-      elif object.a_type == lfc.CNS_ACL_OTHER:
-        permissionsDict['world'] = object.a_perm
+        permissionsDict['group'] = obj.a_perm
+      elif obj.a_type == lfc.CNS_ACL_OTHER:
+        permissionsDict['world'] = obj.a_perm
       else:
         errStr = "LcgFileCatalogClient.__getACLInformation: ACL type not considered."
-        gLogger.debug( errStr, object.a_type )
-    gLogger.verbose( "LcgFileCatalogClient.__getACLInformation: %s owned by %s:%s." % ( path, permissionsDict['DN'], permissionsDict['Role'] ) )
+        gLogger.debug( errStr, obj.a_type )
+    gLogger.verbose( "LcgFileCatalogClient.__getACLInformation: %s owned by %s:%s." % ( path,
+                                                                                        permissionsDict['DN'],
+                                                                                        permissionsDict['Role'] ) )
     return S_OK( permissionsDict )
 
   def __getPathStat( self, path = '', guid = '' ):
@@ -1133,12 +1181,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return S_ERROR( lfc.sstrerror( lfc.cvar.serrno ) )
 
   def __getDNFromUID( self, userID ):
-    buffer = ""
-    for i in range( 0, lfc.CA_MAXNAMELEN + 1 ):
-      buffer = buffer + " "
-    res = lfc.lfc_getusrbyuid( userID, buffer )
+    buff = " " * ( lfc.CA_MAXNAMELEN + 1 )
+    res = lfc.lfc_getusrbyuid( userID, buff )
     if res == 0:
-      dn = buffer[:buffer.find( '\x00' )]
+      dn = buff[:buff.find( '\x00' )]
       gLogger.debug( "LcgFileCatalogClient.__getDNFromUID: UID %s maps to %s." % ( userID, dn ) )
       return S_OK( dn )
     else:
@@ -1147,12 +1193,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return S_ERROR( errStr )
 
   def __getRoleFromGID( self, groupID ):
-    buffer = ""
-    for i in range( 0, lfc.CA_MAXNAMELEN + 1 ):
-      buffer = buffer + " "
-    res = lfc.lfc_getgrpbygid( groupID, buffer )
+    buff = " " * ( lfc.CA_MAXNAMELEN + 1 )
+    res = lfc.lfc_getgrpbygid( groupID, buff )
     if res == 0:
-      role = buffer[:buffer.find( '\x00' )]
+      role = buff[:buff.find( '\x00' )]
       if role == 'lhcb':
         role = 'lhcb/Role=user'
       gLogger.debug( "LcgFileCatalogClient.__getRoleFromGID: GID %s maps to %s." % ( groupID, role ) )
@@ -1183,7 +1227,6 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     value, replicaObjects = lfc.lfc_getreplica( fullLfn, '', '' )
     if value != 0:
       return S_ERROR( lfc.sstrerror( lfc.cvar.serrno ) )
-    replicas = {}
     for replica in replicaObjects:
       if se == replica.host:
         return S_OK( replica.status )
@@ -1211,7 +1254,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return S_OK( False )
     try:
       size = long( size )
-    except:
+    except Exception:
       return S_ERROR( "The size of the file must be an 'int','long' or 'string'" )
     if not se:
       return S_ERROR( "The SE for the file was not supplied." )
@@ -1259,7 +1302,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       # Remove the file we just attempted to add
       res = self.__unlinkPath( lfn )
       if not res['OK']:
-        gLogger.error( "LcgFileCatalogClient.__addFile: Failed to remove file after failure to add checksum and size." % res['Message'] )
+        gLogger.error( "LcgFileCatalogClient.__addFile: Failed to remove file after failure to add checksum and size.",
+                        res['Message'] )
       return S_ERROR( "LcgFileCatalogClient.__addFile: Failed to set file size: %s" % errStr )
     return S_OK()
 
@@ -1268,12 +1312,13 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     status = 'U'
     f_type = 'D'
     poolname = ''
-    setname = ''
+    # setname = ''
     fs = ''
-    r_type = 'S'
+    # r_type = 'S'
     if master:
       r_type = 'P' # S = secondary, P = primary
-    #value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs,r_type,setname) # not really useful in the end.
+    # value = lfc.lfc_addreplica( guid, fid, se, pfn,
+    #                             status, f_type, poolname, fs, r_type, setname ) # not really useful in the end.
     value = lfc.lfc_addreplica( guid, fid, se, pfn, status, f_type, poolname, fs )
     if value == 0:
       return S_OK()
@@ -1342,19 +1387,19 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def __makeDirs( self, path, mode = 0775 ):
     """  Black magic contained within....
     """
-    dir = os.path.dirname( path )
+    dirName = os.path.dirname( path )
     res = self.__executeOperation( path, 'exists' )
     if not res['OK']:
       return res
     if res['Value']:
       return S_OK()
-    res = self.__executeOperation( dir, 'exists' )
+    res = self.__executeOperation( dirName, 'exists' )
     if not res['OK']:
       return res
     if res['Value']:
       res = self.__makeDirectory( path, mode )
     else:
-      res = self.__makeDirs( dir, mode )
+      res = self.__makeDirs( dirName, mode )
       res = self.__makeDirectory( path, mode )
     return res
 
@@ -1489,9 +1534,9 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         fileSize = entry.filesize
         pathDict['TotalSize'] += fileSize
         pathDict['Files'] += 1
-        replicaDict = {}
         if not fileInfo:
-          gLogger.error( "LcgFileCatalogClient.__getDirectorySize: File found with no replicas", "%s/%s" % ( path, entry.d_name ) )
+          gLogger.error( "LcgFileCatalogClient.__getDirectorySize: File found with no replicas",
+                         "%s/%s" % ( path, entry.d_name ) )
         else:
           for replica in fileInfo:
             if not pathDict['SiteUsage'].has_key( replica.host ):
@@ -1512,12 +1557,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
   def __readLink( self, link ):
     fullLink = '%s%s' % ( self.prefix, link )
-    strBuff = ''
-    for i in range( lfc.CA_MAXPATHLEN ):
-      strBuff += ' '
-    chars = lfc.lfc_readlink( fullLink, strBuff, lfc.CA_MAXPATHLEN )
+    buff = " " * ( lfc.CA_MAXNAMELEN + 1 )
+    chars = lfc.lfc_readlink( fullLink, buff, lfc.CA_MAXPATHLEN )
     if chars > 0:
-      return S_OK( strBuff[:chars].replace( self.prefix, '' ).replace( '\x00', '' ) )
+      return S_OK( buff[:chars].replace( self.prefix, '' ).replace( '\x00', '' ) )
     else:
       return S_ERROR( lfc.sstrerror( lfc.cvar.serrno ) )
 
@@ -1644,7 +1687,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[username] = userDirectory
       else:
         failed[username] = res['Message']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -1670,9 +1714,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       return res
     for directory, error in res['Value']['Failed'].items():
       failed[directoriesToRemove[directory]] = error
-    for directory, success in res['Value']['Successful'].items():
+    for directory in res['Value']['Successful'].keys():
       successful[directoriesToRemove[directory]] = True
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -1697,7 +1742,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           failed[dirPath] = res['Message']
         else:
           successful[dirPath] = True
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -1723,7 +1769,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           failed[userDN] = res['Message']
         else:
           successful[userDN] = res['Value']
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -1733,22 +1780,22 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   #
 
   def __getUserDNs( self, userID ):
-    value, list = lfc.lfc_getusrmap()
+    value, users = lfc.lfc_getusrmap()
     if value != 0:
       return S_ERROR( lfc.sstrerror( lfc.cvar.serrno ) )
     else:
       dns = []
-      for userMap in list:
+      for userMap in users:
         if userMap.userid == userID:
           dns.append( userMap.username )
       return S_OK( dns )
 
   def __getDNUserID( self, dn ):
-    value, list = lfc.lfc_getusrmap()
+    value, users = lfc.lfc_getusrmap()
     if value != 0:
       return S_ERROR( lfc.sstrerror( lfc.cvar.serrno ) )
     else:
-      for userMap in list:
+      for userMap in users:
         if userMap.username == dn:
           return S_OK( userMap.userid )
       return S_ERROR( "DN did not exist" )
@@ -1822,6 +1869,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           se = oReplica.host
           pfn = oReplica.sfn#.strip()
           # replicas[se] = pfn
-    if created: self.__closeSession()
+    if created:
+      self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
