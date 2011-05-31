@@ -38,6 +38,9 @@ class Modificator:
       self.cfgData.loadFromBuffer( zlib.decompress( retVal[ 'Value' ] ) )
     return retVal
 
+  def getCFG( self ):
+    return self.cfgData
+
   def getSections( self, sectionPath ):
     return gConfigurationData.getSectionsFromCFG( sectionPath, self.cfgData )
 
@@ -188,6 +191,19 @@ class Modificator:
 
   def mergeFromCFG( self, cfg ):
     self.cfgData = self.cfgData.mergeWith( cfg )
+
+  def mergeSectionFromCFG( self, sectionPath, cfg ):
+    parentDict = self.cfgData.getRecursive( sectionPath, -1 )
+    parentCFG = parentDict[ 'value' ]
+    secName = [ lev.strip() for lev in sectionPath.split( "/" ) if lev.strip() ][-1]
+    secCFG = parentCFG[ secName ]
+    if not secCFG:
+      return False
+    mergedCFG = secCFG.mergeWith( cfg )
+    parentCFG.deleteKey( secName )
+    parentCFG.createNewSection( secName, parentDict[ 'comment' ], mergedCFG )
+    self.__setCommiter( sectionPath )
+    return True
 
   def __str__( self ):
     return str( self.cfgData )
