@@ -34,7 +34,7 @@ if len( args ) != 2:
 system = args[0]
 agent = args[1]
 
-result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent, getCSExtensions(), overwrite = True )
+result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent, getCSExtensions() )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:
