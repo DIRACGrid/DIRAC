@@ -27,9 +27,9 @@ class LCGPilotDirector( GridPilotDirector ):
     """
      Define some defaults and call parent __init__
     """
-    GridPilotDirector.__init__( self, submitPool )
-
     self.gridMiddleware = 'LCG'
+
+    GridPilotDirector.__init__( self, submitPool )
 
     self.resourceBrokers = BROKERS
 

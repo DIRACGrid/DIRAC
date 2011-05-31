@@ -149,7 +149,7 @@ class BookkeepingDBClient( FileCatalogueBase ):
     lfns = res['Value'].keys()
     return self.__exists( lfns )
 
-  def getFileMetadata( self, path ):
+  def getFileMetadata( self, path, ownership = False ):
     res = self.__checkArgumentFormat( path )
     if not res['OK']:
       return res
