@@ -26,6 +26,7 @@ localCfg.addMandatoryEntry( "Port" )
 #localCfg.addMandatoryEntry( "HandlerPath" )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
+localCfg.addDefaultEntry( "LogLevel", "INFO" )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.initialize( serverName, "/" )
