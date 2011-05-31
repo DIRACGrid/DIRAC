@@ -2,6 +2,110 @@
 import threading, time
 from DIRAC import S_OK, S_ERROR, gLogger
 
+class ExecutorState:
+
+  def __init__( self, log = False ):
+    if log:
+      self.__log = log
+    else:
+      self.__log = gLogger
+    self.__lock = threading.Lock()
+    self.__typeToId = {}
+    self.__maxTasks = {}
+    self.__execTasks = {}
+    self.__taskInExec = {}
+
+  def _internals( self ):
+    return { 't2id' : dict( self.__typeToId ),
+             'maxT' : dict( self.__maxTasks ),
+             'task' : dict( self.__execTasks ),
+             'tine' : dict( self.__taskInExec ), }
+
+  def addExecutor( self, execId, eType, maxTasks = 1 ):
+    self.__lock.acquire()
+    try:
+      self.__maxTasks[ execId ] = maxTasks
+      if execId not in self.__execTasks:
+        self.__execTasks[ execId ] = set()
+      if eType not in self.__typeToId:
+        self.__typeToId[ eType ] = set()
+      self.__typeToId[ eType ].add( execId )
+    finally:
+      self.__lock.release()
+
+  def removeExecutor( self, execId ):
+    self.__lock.acquire()
+    try:
+      for eType in self.__typeToId:
+        if execId in self.__typeToId[ eType ]:
+          self.__typeToId[ eType ].remove( execId )
+      for taskId in self.__execTasks[ execId ]:
+        self.__taskInExec.pop( taskId )
+      self.__execTasks.pop( execId )
+      self.__maxTasks.pop( execId )
+    finally:
+      self.__lock.release()
+
+  def full( self, execId ):
+    try:
+      return len( self.__execTasks[ execId ] ) >= self.__maxTasks[ execId ]
+    except KeyError:
+      return True
+
+  def freeSlots( self, execId ):
+    try:
+      return self.__maxTasks[ execId ] - len( self.__execTasks[ execId ] )
+    except KeyError:
+      return 0
+
+  def getFreeExecutors( self, eType ):
+    execs = {}
+    try:
+      eids = self.__typeToId[ eType ]
+    except KeyError:
+      return execs
+    try:
+      for eid in eids:
+        freeSlots = self.freeSlots( eid )
+        if freeSlots:
+          execs[ eid ] = freeSlots
+    except RuntimeError:
+      pass
+    return execs
+
+  def addTask( self, execId, taskId ):
+    self.__lock.acquire()
+    try:
+      try:
+        self.__taskInExec[ taskId ] = execId
+        self.__execTasks[ execId ].add( taskId )
+        return len( self.__execTasks[ execId ] )
+      except KeyError:
+        return 0
+    finally:
+      self.__lock.release()
+
+  def removeTask( self, taskId, execId = None ):
+    self.__lock.acquire()
+    try:
+      try:
+        if execId == None:
+          execId = self.__taskInExec[ taskId ]
+        self.__execTasks[ execId ].remove( taskId )
+        self.__taskInExec.pop( taskId )
+        return len( self.__execTasks[ execId ] )
+      except KeyError:
+        return 0
+    finally:
+      self.__lock.release()
+
+  def getTasksForExecutor( self, execId ):
+    try:
+      return list( self.__execTasks[ execId ] )
+    except KeyError:
+      return []
+
+
 class ExecutorQueues:
 
   def __init__( self, log = False ):
@@ -94,23 +198,29 @@ class ExecutorMind:
   def __init__( self ):
     self.__executorsLock = threading.Lock()
     self.__executors = {}
+    self.__idMap = {}
     self.__tasksLock = threading.Lock()
     self.__tasks = {}
     self.__log = gLogger.getSubLogger( "ExecMind" )
     self.__dispatchCallback = self.__defaultCallback
     self.__taskFreezer = []
     self.__queues = ExecutorQueues( self.__log )
+    self.__states = ExecutorStates( self.__log )
 
   def __defaultCallback( self, *args ):
     return S_ERROR( "No callback defined" )
 
-  def addExecutor( self, trid, identity, executorName ):
-    self.__log.info( "Adding new %s executor to the pool [%s][%s]" % ( executorName, identity, trid ) )
+  def addExecutor( self, eType, execId ):
+    self.__log.info( "Adding new %s executor to the pool [%s][%s]" % ( eType, execId ) )
     self.__executorsLock.acquire()
     try:
-      if executorName not in self.__executors:
-        self.__executors[ executorName ] = []
-      self.__executors.append( ( trid, identity ) )
+      if eType not in self.__executors:
+        self.__executors[ eType ] = []
+      if exId in self.__idMap:
+        return
+      self.__idMap[ execId ] = exName
+      self.__executors[ eType ].append( execId )
+      self.__states.add( execId )
     finally:
       self.__executorsLock.release()
 
@@ -125,6 +235,23 @@ class ExecutorMind:
       return True
     finally:
       self.__tasksLock.release()
+
+  def __dispatchTask( self, taskId ):
+    result = self.__getNextExecutor( taskId )
+
+    if not result[ 'OK' ]:
+      self.__log.warn( "Error while calling dispatch callback: %s" % result[ 'Message' ] )
+      if self.__addTaskToFreezer( taskId ):
+        return S_OK()
+      return S_ERROR( "Could not add task. Dispatching task failed" )
+
+    eType = result[ 'Value' ]
+    if not eType:
+      self.__log.info( "No more executors for task %s" % taskId )
+      return self.__removeTask( taskId )
+
+    self.__queues.pushTask( eType, taskId )
+    return self.__fillExecutors( eType )
 
   def __getNextExecutor( self, taskId ):
     try:
@@ -158,25 +285,27 @@ class ExecutorMind:
   def addTask( self, taskId, taskObj ):
     if not self.__addTaskIfNew( taskId, taskObj ):
       return S_OK()
+    result = self.__dispatchTask( taskId )
 
 
-  def __dispatchTask( self, taskId ):
-    result = self.__getNextExecutor( taskId )
-
-    if not result[ 'OK' ]:
-      self.__log.warn( "Error while calling dispatch callback: %s" % result[ 'Message' ] )
-      if self.__addTaskToFreezer( taskId ):
-        return S_OK()
-      return S_ERROR( "Could not add task. Dispatching task failed" )
-
-    execName = result[ 'Value' ]
-    if not execName:
-      self.__log.info( "No more executors for task %s" % taskId )
-      return self.__removeTask( taskId )
-
-    self.__queues.pushTask( execName, taskId )
-    return self.__fillExecutors( execName )
-
-  def __fillExecutors( self, execName ):
+  def __fillExecutors( self, eType ):
+    freeExecs = self.__states.getFreeExecIds( eType )
 
 
+
+if __name__ == "__main__":
+  def testExecState():
+    execState = ExecutorState()
+    execState.addExecutor( 1, "type1", 2 )
+    print execState.freeSlots( 1 ) == 2
+    print execState.addTask( 1, "t1" ) == 1
+    print execState.addTask( 1, "t1" ) == 1
+    print execState.addTask( 1, "t2" ) == 2
+    print execState.freeSlots( 1 ) == 0
+    print execState.full( 1 ) == True
+    print execState.removeTask( "t1" ) == 1
+    print execState.freeSlots( 1 ) == 1
+    print execState.getFreeExecutors( "type1" ) == {1:1}
+    print execState.getTasksForExecutor( 1 ) == [ "t2" ]
+    print execState.removeExecutor( 1 )
+    print execState._internals()
