@@ -1,12 +1,12 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import zlib
-import difflib
-from DIRAC.Core.Utilities import List, Time
-from DIRAC.Core.Utilities.CFG import CFG
+import zlib, difflib
+
+from DIRAC.Core.Utilities                               import List, Time
+from DIRAC.Core.Utilities.CFG                           import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Security.Misc import getProxyInfo
+from DIRAC.Core.Security.Misc                           import getProxyInfo
 
 class Modificator:
 
@@ -49,6 +49,35 @@ class Modificator:
 
   def getOptions( self, sectionPath ):
     return gConfigurationData.getOptionsFromCFG( sectionPath, self.cfgData )
+
+  def getOptionsDict(self, sectionPath):
+    """Gives the options of a CS section in a Python dict with values as
+    lists"""
+
+    opts = self.getOptions(sectionPath)
+    pathDict = dict( [ ( o, self.getValue( "%s/%s" % ( sectionPath, o
+                                                       ) ) ) for o in opts ] )
+    for k in pathDict:
+      if pathDict[k].find( "," ) > -1 :
+        pathDict[k] = List.fromChar( pathDict[k] )
+
+    return pathDict
+
+  def getDictRootedAt(self, relpath = "", root = ""):
+    """Gives the configuration rooted at path in a Python dict. The
+    result is a Python dictionnary that reflects the structure of the
+    config file."""
+    def getDictRootedAt(path):
+      retval = {}
+      opts = self.getOptions(path)
+      secs = self.getSections(path)
+      for k in opts:
+        retval[k] = opts[k]
+      for i in secs:
+        retval[i] = getDictRootedAt(path + "/" + i)
+      return retval
+
+    return getDictRootedAt(root + "/" + relpath)
 
   def getValue( self, optionPath ):
     return gConfigurationData.extractOptionFromCFG( optionPath, self.cfgData )

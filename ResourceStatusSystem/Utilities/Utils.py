@@ -130,6 +130,19 @@ def list_flatten(l):
 
 # Dict utils
 
+def dictMatch(dict1, dict2):
+  """Checks if fields of dict1 are in fields of dict2. Returns True if
+  it is the case and False otherwise."""
+  try:
+    for k in dict1:
+      if dict1[k] not in dict2[k]:
+        return False
+    return True
+  except KeyError:
+    # some keys are in dict1 and not in dict2: We don't care (in this
+    # case).
+    pass
+
 def dict_split(d):
   def dict_one_split(d):
     def dict_copy(d, k, v):
