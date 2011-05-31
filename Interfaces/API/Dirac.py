@@ -35,7 +35,6 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient     import SandboxStoreClient
-from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection, getServiceURL
@@ -79,7 +78,6 @@ class Dirac:
         self.jobRepo = False
 
     self.scratchDir = gConfig.getValue( self.section + '/LocalSite/ScratchDir', '/tmp' )
-    self.outputSandboxClient = SandboxClient( 'Output' )
     self.sandboxClient = SandboxStoreClient( useCertificates, sbRPCClient, sbTransferClient )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     self.pPrint = pprint.PrettyPrinter()
@@ -1770,17 +1768,6 @@ class Dirac:
         self.jobRepo.updateJob( jobID, {'Retrieved':1, 'Sandbox':os.path.realpath( dirPath )} )
       return result
     self.log.warn( result[ 'Message' ] )
-
-    #Old download
-    result = self.outputSandboxClient.getSandbox( jobID, dirPath )
-    if result['OK']:
-      self.log.info( 'Files retrieved and extracted in %s' % ( dirPath ) )
-      if self.jobRepo:
-        self.jobRepo.updateJob( jobID, {'Retrieved':1, 'Sandbox':os.path.realpath( dirPath )} )
-      return result
-    self.log.warn( result['Message'] )
-
-    result = self.outputSandboxClient.getSandbox( jobID, dirPath )
 
     if not oversized:
       if self.jobRepo:
