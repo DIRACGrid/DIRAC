@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-CLI to edit RSS Config
+Script that emulates the behaviour of a shell to edit the CS config.
 """
 import sys
 import os.path
@@ -24,6 +24,7 @@ class RSSConfigCmd(cmd.Cmd):
   def __init__(self):
     cmd.Cmd.__init__(self)
     self.serverURL   = ""
+    self.serverName  = ""
     self.modificator = None
     self.connected   = False
     self.dirty       = False
@@ -33,7 +34,7 @@ class RSSConfigCmd(cmd.Cmd):
 
   def update_prompt(self):
     if self.connected:
-      self.prompt = "[" + colorize(self.serverURL, "green") + ":" + self.root + " ]% "
+      self.prompt = "[" + colorize(self.serverName, "green") + ":" + self.root + " ]% "
     else:
       self.prompt = "[" + colorize("disconnected", "red") + ":" + self.root + " ]% "
 
@@ -44,8 +45,14 @@ class RSSConfigCmd(cmd.Cmd):
            connect       (Connect to the default CS URL of your config)
     """
     if line == "":
-      line = gConfigurationData.getMasterServer()
-    self.serverURL   = line
+      self.serverURL  = gConfigurationData.getMasterServer()
+      self.serverName = gConfigurationData.getName()
+    else:
+      self.serverURL  = self.serverName = line
+
+    if self.serverURL == None:
+      print "Unable to connect to the default server. Maybe you don't have a proxy ?"
+      return self.do_disconnect("")
 
     print "Trying to connect to " + self.serverURL + "...",
 
@@ -71,7 +78,7 @@ class RSSConfigCmd(cmd.Cmd):
       if res.lower() in ["y", "yes"]:
         self.do_commit("")
 
-    self.serverURL = ""
+    self.serverURL = self.serverName = ""
     self.modificator = None
     self.connected = False
     self.update_prompt()

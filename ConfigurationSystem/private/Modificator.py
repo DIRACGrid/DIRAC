@@ -1,12 +1,12 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import zlib, difflib, itertools
+import zlib, difflib
 
-from DIRAC.Core.Utilities import List, Time
-from DIRAC.Core.Utilities.CFG import CFG
+from DIRAC.Core.Utilities                               import List, Time
+from DIRAC.Core.Utilities.CFG                           import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Security.Misc import getProxyInfo
+from DIRAC.Core.Security.Misc                           import getProxyInfo
 
 class Modificator:
 
@@ -52,20 +52,16 @@ class Modificator:
 
   def getOptionsDict(self, sectionPath):
     """Gives the options of a CS section in a Python dict with values as
-    lists and converted into integers if needed"""
+    lists"""
 
     opts = self.getOptions(sectionPath)
-    vals = [self.getValue(sectionPath + "/" + o) for o in opts]
-    pathdict = dict(itertools.imap(None, opts, vals))
+    pathDict = dict( [ ( o, self.getValue( "%s/%s" % ( sectionPath, o
+                                                       ) ) ) for o in opts ] )
+    for k in pathDict:
+      if pathDict[k].find( "," ) > -1 :
+        pathDict[k] = List.fromChar( pathDict[k] )
 
-    for k in pathdict:
-      pathdict[k] = pathdict[k].split(',')
-      try:               pathdict[k] = [int(i) for i in pathdict[k]]
-      except ValueError: pass
-      if len(pathdict[k]) == 1:
-        pathdict[k] = pathdict[k][0]
-
-    return pathdict
+    return pathDict
 
   def getDictRootedAt(self, relpath = "", root = ""):
     """Gives the configuration rooted at path in a Python dict. The
