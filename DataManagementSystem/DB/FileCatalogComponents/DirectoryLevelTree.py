@@ -9,7 +9,7 @@
 
 __RCSID__ = "$Id$"
 
-import time, os
+import time, os, types
 from types import *
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
@@ -280,7 +280,29 @@ class DirectoryLevelTree(DirectoryTreeBase):
       return S_ERROR('Directory with id %d not found' % int(dirID) )
     
     return S_OK(result['Value'][0][0])
-  
+
+  def getDirectoryPaths(self,dirIDList):
+    """ Get directory name by directory ID list
+    """
+    dirs = dirIDList
+    if type(dirIDList) != types.ListType:
+      dirs = [dirIDList]
+      
+    dirListString = ','.join( [ str(dir) for dir in dirs ] )
+
+    req = "SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( %s )" % dirListString
+    result = self.db._query(req)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR('Directories not found: %s' % dirListString )
+
+    resultDict = {}
+    for row in result['Value']:
+      resultDict[int(row[0])] = row[1]
+
+    return S_OK(resultDict) 
+ 
   def getDirectoryName(self,dirID):
     """ Get directory name by directory ID
     """
@@ -385,6 +407,34 @@ class DirectoryLevelTree(DirectoryTreeBase):
       resDict[row[1]] = row[0]
       
     return S_OK(resDict)
+  
+  def getAllSubdirectoriesByID(self,dirList):
+    """ Get IDs of all the subdirectories of directories in a given list
+    """
+
+    dirs = dirList
+    if type(dirList) != types.ListType:
+      dirs = [dirList]
+  
+    start = time.time()
+ 
+    resultList = []
+    parentList = dirs
+    while parentList:
+      subResult = []
+      dirListString = ','.join( [ str(dir) for dir in parentList ] )
+      req = 'SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ( %s )' % dirListString
+      result = self.db._query(req)
+      if not result['OK']:
+        return result
+      for row in result['Value']:
+        subResult.append(row[0])
+      if subResult:
+        resultList += subResult
+      parentList = subResult  
+  
+    return S_OK(resultList)  
+      
   
   def getSubdirectories(self,path):
     """ Get subdirectories of the given directory
