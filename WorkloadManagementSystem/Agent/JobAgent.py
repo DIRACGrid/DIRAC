@@ -11,17 +11,19 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft              import TimeLeft
-from DIRAC.Core.Base.AgentModule                         import AgentModule
-from DIRAC.Core.DISET.RPCClient                          import RPCClient
-from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
-from DIRAC                                               import S_OK, S_ERROR, gConfig
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
-from DIRAC.Core.Security.Misc                            import getProxyInfo
-from DIRAC.Core.Security                                 import Properties
-from DIRAC.WorkloadManagementSystem.Client.JobReport     import JobReport
+from DIRAC.Core.Utilities.ModuleFactory                     import ModuleFactory
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight              import ClassAd
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.Resources.Computing.ComputingElementFactory      import ComputingElementFactory
+from DIRAC                                                  import S_OK, S_ERROR, gConfig
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
+from DIRAC.Core.Security.Misc                               import getProxyInfo
+from DIRAC.Core.Security                                    import Properties
+from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
+
 
 import os, sys, re, time
 
@@ -410,6 +412,8 @@ class JobAgent( AgentModule ):
     else:
       self.log.error( 'Job submission failed', jobID )
       self.__setJobParam( jobID, 'ErrorMessage', '%s CE Submission Error' % ( self.ceName ) )
+      if 'ReschedulePayload' in submission:
+        rescheduleFailedJob( jobID, submission['Message'], self.__report )
       return S_ERROR( '%s CE Submission Error: %s' % ( self.ceName, submission['Message'] ) )
 
     return ret
