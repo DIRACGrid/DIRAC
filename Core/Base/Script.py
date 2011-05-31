@@ -14,8 +14,10 @@ scriptName = os.path.basename( sys.argv[0] ).replace( '.py', '' )
 gIsAlreadyInitialized = False
 
 def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = False ):
-  if initialize( script, ignoreErrors, initializeMonitor, True ):
-    gLogger.showHeaders( False )
+  if gIsAlreadyInitialized:
+    return False
+  gLogger.showHeaders( False )
+  return initialize( script, ignoreErrors, initializeMonitor, True )
 
 def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = False ):
   global scriptName, gIsAlreadyInitialized
