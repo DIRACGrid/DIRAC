@@ -113,6 +113,14 @@ def isiterable(obj):
   import collections
   return isinstance(obj,collections.Iterable)
 
+# Type conversion
+
+def bool_of_string(s):
+  """Convert a string into a boolean in a SANE manner."""
+  if s.lower() == "true"    : return True
+  elif s.lower() == "false" : return False
+  else                      : raise ValueError, "Cannot convert %s to a boolean value" % s
+
 # List utils
 
 def list_split(l):

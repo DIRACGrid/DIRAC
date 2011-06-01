@@ -11,8 +11,7 @@ The PDP (Policy Decision Point) module is used to:
 import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where, assignOrRaise
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import *
-from DIRAC.ResourceStatusSystem.PolicySystem.Status         import *
+from DIRAC.ResourceStatusSystem.PolicySystem                import Status,Configurations
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, \
     InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
@@ -59,14 +58,14 @@ class PDP:
 
     self.VOExtension = VOExtension
 
-    self.__granularity  = assignOrRaise(granularity, ValidRes, InvalidRes, self, self.__init__)
+    self.__granularity  = assignOrRaise(granularity, Configurations.ValidRes, InvalidRes, self, self.__init__)
     self.__name         = name
-    self.__status       = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
-    self.__formerStatus = assignOrRaise(formerStatus, ValidStatus, InvalidStatus, self, self.__init__)
+    self.__status       = assignOrRaise(status, Configurations.ValidStatus, InvalidStatus, self, self.__init__)
+    self.__formerStatus = assignOrRaise(formerStatus, Configurations.ValidStatus, InvalidStatus, self, self.__init__)
     self.__reason       = reason
-    self.__siteType     = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
-    self.__serviceType  = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
-    self.__resourceType = assignOrRaise(resourceType, ValidResourceType, InvalidResourceType, self, self.__init__)
+    self.__siteType     = assignOrRaise(siteType, Configurations.ValidSiteType, InvalidSiteType, self, self.__init__)
+    self.__serviceType  = assignOrRaise(serviceType, Configurations.ValidServiceType, InvalidServiceType, self, self.__init__)
+    self.__resourceType = assignOrRaise(resourceType, Configurations.ValidResourceType, InvalidResourceType, self, self.__init__)
 
     cc      = CommandCaller()
     self.pc = PolicyCaller(cc)
@@ -126,8 +125,6 @@ class PDP:
                                   resourceType = self.__resourceType,
                                   useNewRes = self.useNewRes)
 
-    policyCombinedResultsList = []
-
     for policyGroup in EVAL:
 
       policyType = policyGroup['PolicyType']
@@ -150,8 +147,8 @@ class PDP:
       policyCombinedResults = self._policyCombination(singlePolicyResults)
 
       if not policyCombinedResults:
-        return { 'SinglePolicyResults': singlePolicyResults,
-                 'PolicyCombinedResult': [] }
+        return { 'SinglePolicyResults' : singlePolicyResults,
+                 'PolicyCombinedResult': {} }
 
 
       #
@@ -169,17 +166,15 @@ class PDP:
         decision = { 'PolicyType': policyType, 'Action': True, 'Status': newstatus, 'Reason': reason }
         if policyCombinedResults.has_key('EndDate'):
           decision['EndDate'] = policyCombinedResults['EndDate']
-        policyCombinedResultsList.append(decision)
 
       else: # Policies does not satisfy
         reason = policyCombinedResults['Reason']
         decision = { 'PolicyType': policyType, 'Action': False, 'Reason': reason }
         if policyCombinedResults.has_key('EndDate'):
           decision['EndDate'] = policyCombinedResults['EndDate']
-        policyCombinedResultsList.append(decision)
 
     res = { 'SinglePolicyResults' : singlePolicyResults,
-           'PolicyCombinedResult' : policyCombinedResultsList }
+           'PolicyCombinedResult' : decision }
 
     return res
 
@@ -240,37 +235,37 @@ class PDP:
     """
     if policies == []: return {}
 
-    policies.sort(key=value_of_policy)
+    policies.sort(key=Status.value_of_policy)
     newStatus = -1 # First, set an always invalid status
 
     try:
       # We are in a special status, maybe forbidden transitions
-      prio, access_list, gofun = statesInfo[self.__status]
+      _prio, access_list, gofun = Status.statesInfo[self.__status]
       if access_list != set():
         # Restrictions on transitions, checking if one is suitable:
         for p in policies:
-          if value_of_policy(p) in access_list:
-            newStatus = value_of_policy(p)
+          if Status.value_of_policy(p) in access_list:
+            newStatus = Status.value_of_policy(p)
             break
 
         # No status from policies suitable, applying stategy and
         # returning result.
         if newStatus == -1:
           newStatus = gofun(access_list)
-          return { 'Status': status_of_value(newStatus), 'Reason': 'Status forced by PDP' }
+          return { 'Status': Status.status_of_value(newStatus), 'Reason': 'Status forced by PDP' }
 
       else:
         # Special Status, but no restriction on transitions
-        newStatus = value_of_policy(policies[0])
+        newStatus = Status.value_of_policy(policies[0])
 
     except KeyError:
       # We are in a "normal" status: All transitions are possible.
-      newStatus = value_of_policy(policies[0])
+      newStatus = Status.value_of_policy(policies[0])
 
     # At this point, a new status has been chosen. newStatus is an
     # integer.
 
-    worstPolicies = [p for p in policies if value_of_policy(p) == newStatus]
+    worstPolicies = [p for p in policies if Status.value_of_policy(p) == newStatus]
 
     # Concatenate reasons
     def getReason(p):
@@ -296,7 +291,7 @@ class PDP:
 
     # Building and returning result
     res = {}
-    res['Status'] = status_of_value(newStatus)
+    res['Status'] = Status.status_of_value(newStatus)
     if concatenatedRes != '': res['Reason']  = concatenatedRes
     if endDatePolicies != []: res['EndDate'] = endDatePolicies[0]['EndDate']
     return res

@@ -1,12 +1,28 @@
-from DIRAC import S_OK#, S_ERROR
-#from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
+import ast
+
+from DIRAC                                      import S_OK
+from DIRAC.Core.Utilities                       import List
+from DIRAC.ConfigurationSystem.Client.Config    import gConfig
 
 g_BaseRegistrySection = "/Registry"
 g_BaseResourcesSection = "/Resources"
 g_BaseOperationsSection = "/Operations"
 
-#import time
+## Custom version of getOptionsDict. Returns a dict where values are
+## typed instead of a dict where values are strings.
+
+def getOptionsDict(sectionPath):
+  d = gConfig.getOptionsDict(sectionPath)
+  for k in d:
+    if d[k].find(",") > -1:
+      d[k] = [ast.literal_eval(e) for e in List.fromChar(d[k])]
+    else:
+      d[k] = ast.literal_eval(d[k])
+
+## Facilities to import new config from CS
+
+def getGeneralConfig():
+  return getOptionsDict(g_BaseOperationsSection + "/GeneralConfig")
 
 #############################################################################
 
@@ -47,13 +63,13 @@ def getExtensions():
 
 def getExt():
   VOExtension = ''
-  
+
   ext = getExtensions()['Value']
-  
+
   if 'LHCb' in ext:
     VOExtension = 'LHCb'
-  
-  return VOExtension    
+
+  return VOExtension
 
 #############################################################################
 
@@ -61,14 +77,14 @@ def getStorageElementStatus( SE, accessType):
   status = gConfig.getValue("%s/StorageElements/%s/%s" %(g_BaseResourcesSection, SE, accessType) )
   return S_OK(status)
 
-def getSENodes( SE ):  
+def getSENodes( SE ):
   if isinstance(SE, basestring):
     SE = [SE]
   node = []
-  for se in SE: 
-    n = gConfig.getValue("%s/StorageElements/%s/AccessProtocol.1/Host" %( g_BaseResourcesSection, 
+  for se in SE:
+    n = gConfig.getValue("%s/StorageElements/%s/AccessProtocol.1/Host" %( g_BaseResourcesSection,
                                                                           se ) )
-    node = node + [n] 
+    node = node + [n]
   return S_OK(node)
 
 def getSites( grids = None ):
@@ -83,7 +99,7 @@ def getSites( grids = None ):
       return s
     sites = sites + s['Value']
   return S_OK(sites)
-    
+
 def getSiteTier( sites ):
   if isinstance(sites, basestring):
     sites = [sites]
@@ -94,7 +110,7 @@ def getSiteTier( sites ):
   return S_OK(tiers)
 
 def getLFCSites():
-  lfcL = gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined' %g_BaseResourcesSection, 
+  lfcL = gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined' %g_BaseResourcesSection,
                              True)
   return lfcL
 
@@ -129,8 +145,8 @@ def getLFCNode( sites = None, readable = None ):
     readable = [readable]
   node = []
   for site in sites:
-    for r in readable: 
-      n = gConfig.getValue('%s/FileCatalogs/LcgFileCatalogCombined/%s/%s' %(g_BaseResourcesSection, 
+    for r in readable:
+      n = gConfig.getValue('%s/FileCatalogs/LcgFileCatalogCombined/%s/%s' %(g_BaseResourcesSection,
                                                                             site, r))
       if n != None:
         if n not in node:
@@ -157,9 +173,9 @@ def getFTSEndpoint( sites = None ):
         ftsNode = ftsNode + [node]
   return S_OK(ftsNode)
 
-def getCEType( site, ce, grid = None ): 
+def getCEType( site, ce, grid = None ):
   if grid == None:
     grid = 'LCG'
-  ceT = gConfig.getValue('%s/Sites/%s/%s/CEs/%s/CEType' %(g_BaseResourcesSection, 
+  ceT = gConfig.getValue('%s/Sites/%s/%s/CEs/%s/CEType' %(g_BaseResourcesSection,
                                                           grid, site, ce) )
   return S_OK(ceT)
