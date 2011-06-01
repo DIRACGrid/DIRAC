@@ -29,7 +29,7 @@ from DIRAC.Core.Utilities.Subprocess                                import Subpr
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
 from DIRAC.Core.Utilities                                           import List
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List, Time
 from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
 
 import DIRAC
@@ -434,7 +434,7 @@ class JobWrapper:
       lines = len( result['Value'] )
       appStdOut = '\n'.join( result['Value'] )
 
-    header = 'Last %s lines of application output from JobWrapper on %s :' % ( lines, DIRAC.Time.toString() )
+    header = 'Last %s lines of application output from JobWrapper on %s :' % ( lines, Time.toString() )
     border = '=' * len( header )
 
     cpuTotal = 'CPU Total: %s (h:m:s)' % cpuConsumed[1]
