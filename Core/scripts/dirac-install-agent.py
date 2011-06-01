@@ -16,6 +16,14 @@ from DIRAC import gConfig
 InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
+
+overwrite = False
+def setOverwrite( opVal ):
+  global overwrite
+  overwrite = True
+  return S_OK()
+
+Script.registerSwitch( "w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... System Agent|System/Agent' % Script.scriptName,
@@ -34,7 +42,8 @@ if len( args ) != 2:
 system = args[0]
 agent = args[1]
 
-result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent, getCSExtensions() )
+result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent,
+                                             getCSExtensions(), overwrite = overwrite )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:
