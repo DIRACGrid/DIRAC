@@ -21,40 +21,49 @@ class ExecutorState:
              'task' : dict( self.__execTasks ),
              'tine' : dict( self.__taskInExec ), }
 
-  def addExecutor( self, execId, eType, maxTasks = 1 ):
+  def addExecutor( self, eId, eType, maxTasks = 1 ):
     self.__lock.acquire()
     try:
-      self.__maxTasks[ execId ] = maxTasks
-      if execId not in self.__execTasks:
-        self.__execTasks[ execId ] = set()
+      self.__maxTasks[ eId ] = maxTasks
+      if eId not in self.__execTasks:
+        self.__execTasks[ eId ] = set()
       if eType not in self.__typeToId:
         self.__typeToId[ eType ] = set()
-      self.__typeToId[ eType ].add( execId )
+      self.__typeToId[ eType ].add( eId )
     finally:
       self.__lock.release()
 
-  def removeExecutor( self, execId ):
+  def removeExecutor( self, eId ):
     self.__lock.acquire()
     try:
+      tasks = []
       for eType in self.__typeToId:
-        if execId in self.__typeToId[ eType ]:
-          self.__typeToId[ eType ].remove( execId )
-      for taskId in self.__execTasks[ execId ]:
+        if eId in self.__typeToId[ eType ]:
+          self.__typeToId[ eType ].remove( eId )
+      for taskId in self.__execTasks[ eId ]:
         self.__taskInExec.pop( taskId )
-      self.__execTasks.pop( execId )
-      self.__maxTasks.pop( execId )
+        tasks.append( taskId )
+      self.__execTasks.pop( eId )
+      self.__maxTasks.pop( eId )
+      return tasks
     finally:
       self.__lock.release()
 
-  def full( self, execId ):
+  def getTasksForExecutor( self, eId ):
     try:
-      return len( self.__execTasks[ execId ] ) >= self.__maxTasks[ execId ]
+      return set( self.__execTasks[ eId ] )
+    except KeyError:
+      return set()
+
+  def full( self, eId ):
+    try:
+      return len( self.__execTasks[ eId ] ) >= self.__maxTasks[ eId ]
     except KeyError:
       return True
 
-  def freeSlots( self, execId ):
+  def freeSlots( self, eId ):
     try:
-      return self.__maxTasks[ execId ] - len( self.__execTasks[ execId ] )
+      return self.__maxTasks[ eId ] - len( self.__execTasks[ eId ] )
     except KeyError:
       return 0
 
@@ -86,35 +95,41 @@ class ExecutorState:
       pass
     return idleId
 
-  def addTask( self, execId, taskId ):
+  def addTask( self, eId, taskId ):
     self.__lock.acquire()
     try:
       try:
-        self.__taskInExec[ taskId ] = execId
-        self.__execTasks[ execId ].add( taskId )
-        return len( self.__execTasks[ execId ] )
+        self.__taskInExec[ taskId ] = eId
+        self.__execTasks[ eId ].add( taskId )
+        return len( self.__execTasks[ eId ] )
       except KeyError:
         return 0
     finally:
       self.__lock.release()
 
-  def removeTask( self, taskId, execId = None ):
+  def getExecutorOfTask( self, taskId ):
+    try:
+      return self.__taskInExec[ taskId ]
+    except KeyError:
+      return None
+
+  def removeTask( self, taskId, eId = None ):
     self.__lock.acquire()
     try:
       try:
-        if execId == None:
-          execId = self.__taskInExec[ taskId ]
-        self.__execTasks[ execId ].remove( taskId )
+        if eId == None:
+          eId = self.__taskInExec[ taskId ]
+        self.__execTasks[ eId ].remove( taskId )
         self.__taskInExec.pop( taskId )
-        return len( self.__execTasks[ execId ] )
+        return True
       except KeyError:
-        return 0
+        return False
     finally:
       self.__lock.release()
 
-  def getTasksForExecutor( self, execId ):
+  def getTasksForExecutor( self, eId ):
     try:
-      return list( self.__execTasks[ execId ] )
+      return list( self.__execTasks[ eId ] )
     except KeyError:
       return []
 
@@ -135,7 +150,7 @@ class ExecutorQueues:
     return [ eType for eType in self.__queues ]
 
   def pushTask( self, eType, taskId, ahead = False ):
-    self.__log.info( "Pushing task %d into waiting queue for executor %s" % ( jid, eType ) )
+    self.__log.info( "Pushing task %s into waiting queue for executor %s" % ( taskId, eType ) )
     self.__lock.acquire()
     try:
       if taskId in self.__taskInQueue:
@@ -206,36 +221,89 @@ class ExecutorQueues:
     finally:
       self.__lock.release()
 
+class ExecutorMindCallbacks:
+
+  def cbDispatch( self, taskId, taskObj ):
+    return S_ERROR( "No dispatch callback defined" )
+
+  def cbSendTask( self, eId, taskId, taskObj ):
+    return S_ERROR( "No send task callback defined" )
+
+  def cbDisconectExecutor( self, eId ):
+    return S_ERROR( "No disconnect callback defined" )
+
 class ExecutorMind:
 
   def __init__( self ):
     self.__executorsLock = threading.Lock()
-    self.__executors = {}
     self.__idMap = {}
+    self.__execTypes = {}
     self.__tasksLock = threading.Lock()
     self.__tasks = {}
     self.__log = gLogger.getSubLogger( "ExecMind" )
-    self.__dispatchCallback = self.__defaultCallback
     self.__taskFreezer = []
     self.__queues = ExecutorQueues( self.__log )
-    self.__states = ExecutorStates( self.__log )
+    self.__states = ExecutorState( self.__log )
+    self.__cbHolder = ExecutorMindCallbacks()
 
-  def __defaultCallback( self, *args ):
-    return S_ERROR( "No callback defined" )
+  def setCallbacks( self, callbacksObj ):
+    if not isinstance( callbacksObj, ExecutorMindCallbacks ):
+      return S_ERROR( "Callbacks object does not inherit from ExecutorMindCallbacks" )
+    self.__cbHolder = callbacksObj
+    return S_OK()
 
-  def addExecutor( self, eType, execId ):
-    self.__log.info( "Adding new %s executor to the pool [%s][%s]" % ( eType, execId ) )
+  def addExecutor( self, eType, eId ):
+    self.__log.info( "Adding new %s executor to the pool %s" % ( eId, eType ) )
     self.__executorsLock.acquire()
     try:
-      if eType not in self.__executors:
-        self.__executors[ eType ] = []
-      if exId in self.__idMap:
+      if eId in self.__idMap:
         return
-      self.__idMap[ execId ] = eType
-      self.__executors[ eType ].append( execId )
-      self.__states.add( execId )
+      self.__idMap[ eId ] = eType
+      if eType not in self.__execTypes:
+        self.__execTypes[ eType ] = 0
+      self.__execTypes[ eType ] += 1
+      self.__states.addExecutor( eId, eType )
     finally:
       self.__executorsLock.release()
+    self.__fillExecutors( eType )
+
+  def removeExecutor( self, eId ):
+    self.__log.info( "Removing executor %s" % eId )
+    self.__executorsLock.acquire()
+    try:
+      if eId not in self.__idMap:
+        return
+      eType = self.__idMap.pop( eId )
+      self.__execTypes[ eType ] -= 1
+      tasksInExec = self.__states.removeExecutor( eId )
+      for taskId in tasksInExec:
+        self.__queues.pushTask( eType, taskId, ahead = True )
+    finally:
+      self.__executorsLock.release()
+    try:
+      self.__cbHolder.cbDisconectExecutor( eId )
+    except:
+      self.__log.exception( "Exception while disconnecting agent %s" % eId )
+    self.__fillExecutors( eType )
+
+  def __freezeTask( self, taskId, count = 0 ):
+    self.__log.info( "Freezing task %s" % taskId )
+    self.__taskFreezer.append( ( time.time(), taskId, count ) )
+
+  def __unfreezeTasks( self, timeLimit = 0 ):
+    while True:
+      try:
+        frozenTask = self.__taskFreezer.pop()
+      except IndexError:
+        return
+      if timeLimit and time.time() - frozenTask[0] < abs( timeLimit ):
+        self.__taskFreezer.insert( 0, frozenTask )
+        return
+      taskId = frozenTask[1]
+      self.__log.info( "Unfreezed task %s" % taskId )
+      result = self.__dispatchTask( taskId, defrozeIfNeeded = False )
+      if not result[ 'OK' ]:
+        self.__freezeTask( taskId, frozenTask[2] + 1 )
 
   def __addTaskIfNew( self, taskId, taskObj ):
     self.__tasksLock.acquire()
@@ -249,7 +317,7 @@ class ExecutorMind:
     finally:
       self.__tasksLock.release()
 
-  def __dispatchTask( self, taskId ):
+  def __dispatchTask( self, taskId, defrozeIfNeeded = True ):
     result = self.__getNextExecutor( taskId )
 
     if not result[ 'OK' ]:
@@ -261,10 +329,17 @@ class ExecutorMind:
     eType = result[ 'Value' ]
     if not eType:
       self.__log.info( "No more executors for task %s" % taskId )
-      return self.__removeTask( taskId )
+      return self.removeTask( taskId )
+
+    self.__log.info( "Next executor type is %s for task %s" % ( eType, taskId ) )
+    if eType not in self.__execTypes:
+      self.__log.info( "Executor type %s is unknown. Freezing task %s" % ( eType, taskId ) )
+      return self.__freezeTask( taskId )
+
 
     self.__queues.pushTask( eType, taskId )
-    return self.__fillExecutors( eType )
+    self.__fillExecutors( eType, defrozeIfNeeded = defrozeIfNeeded )
+    return S_OK()
 
   def __getNextExecutor( self, taskId ):
     try:
@@ -274,7 +349,7 @@ class ExecutorMind:
       self.__log.error( msg )
       return S_ERROR( msg )
     try:
-      return self.__dispatchCallback( taskId, taskObj )
+      return self.__cbHolder.cbDispatch( taskId, taskObj )
     except:
       self.__log.exception( "Exception while calling dispatch callback" )
       return S_ERROR( "Exception while calling dispatch callback" )
@@ -285,44 +360,73 @@ class ExecutorMind:
       if taskId not in self.__tasks:
         return False
       self.__log.info( "Adding task %s to freezer" % taskId )
-      self.__taskFreezer.append( ( time.time(), taskId ) )
+      self.__freezeTask( taskId )
       return True
     finally:
       self.__tasksLock.release()
 
-  def __removeTask( self, taskId ):
-    #TODO:
-    return S_OK()
-
-
   def addTask( self, taskId, taskObj ):
     if not self.__addTaskIfNew( taskId, taskObj ):
       return S_OK()
-    result = self.__dispatchTask( taskId )
+    return self.__dispatchTask( taskId )
 
+  def removeTask( self, taskId ):
+    try:
+      self.__tasks.pop( taskId )
+    except KeyError:
+      return S_OK()
+    self.__queues.popTask( taskId )
+    self.__states.removeTask( taskId )
+    return S_OK()
 
-  def __fillExecutors( self, eType ):
+  def executorDone( self, eId, taskId, taskObj = False ):
+    if taskId not in self.__tasks:
+      errMsg = "Task %s is not known" % taskId
+      self.__log.error( errMsg )
+      return S_ERROR( errMsg )
+    if eId != self.__states.removeTask( taskId, eId ):
+      errMsg = "Executor %s says it's processed task but it was not sent to it" % eId
+      self.__log.error( errMsg )
+      return S_ERROR( errMsg )
+    if taskObj:
+      self.__tasks[ taskId ] = taskObj
+    return self.__dispatchTask( taskId )
+
+  def __fillExecutors( self, eType, defrozeIfNeeded = True ):
+    self.__log.verbose( "Filling %s executors" % eType )
     eId = self.__states.getIdleExecutor( eType )
-    while idleId:
+    processedTasks = set()
+    while eId:
       taskId = self.__queues.popTask( eType )
       if taskId == None:
+        self.__log.verbose( "No more tasks for %s" % eType )
         break
+      if taskId in processedTasks:
+        self.__queues.pushTask( eType, taskId, ahead = True )
+        self.__log.info( "All tasks in the queue have been gone through" )
+        return
+      processedTasks.add( taskId )
       self.__log.info( "Sending task %s to %s=%s" % ( taskId, eType, eId ) )
       result = self.__sendTaskToExecutor( eId, taskId )
       if not result[ 'OK' ]:
         self.__log.error( "Could not send task", "to %s: %s" % ( eId, result[ 'Message' ] ) )
         self.__queues.pushTask( eType, taskId, ahead = True )
       else:
-        accepted = result[ 'Value' ]
-        if accepted:
-          self.__log.info( "Task %s was accepted by %s" % ( taskId, eId ) )
-          self.__states.addTask( eId, taskId )
-        else:
-          self.__log.info( "Task %s was NOT accepted by %s" % ( taskId, eId ) )
-          self.__queues.pushTask( eType, taskId, ahead = True )
+        self.__log.info( "Task %s was sent to %s" % ( taskId, eId ) )
+        self.__states.addTask( eId, taskId )
       eId = self.__states.getIdleExecutor( eType )
+    self.__log.verbose( "No more idle executors for %s" % eType )
+    if defrozeIfNeeded:
+      self.__unfreezeTasks()
 
   def __sendTaskToExecutor( self, eId, taskId ):
+    try:
+      return self.__cbHolder.cbSendTask( eId, taskId, self.__tasks[ taskId ] )
+    except:
+      self.__log.exception( "Exception while sending task to executor" )
+    self.__log.info( "Disconnecting executor" )
+    self.removeExecutor( eId )
+    return S_ERROR( "Exception while sending task to executor" )
 
 
 
@@ -342,3 +446,4 @@ if __name__ == "__main__":
     print execState.getTasksForExecutor( 1 ) == [ "t2" ]
     print execState.removeExecutor( 1 )
     print execState._internals()
+
