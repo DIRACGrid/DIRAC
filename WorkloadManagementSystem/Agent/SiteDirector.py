@@ -335,7 +335,7 @@ class SiteDirector( AgentModule ):
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
     executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy )
-    result = S_OK(executable)
+    result = S_OK( executable )
     return result
 
 #####################################################################################    
@@ -360,9 +360,9 @@ class SiteDirector( AgentModule ):
       self.log.error( 'PilotVersion is not defined in the configuration' )
       return None
     pilotOptions.append( '-r %s' % diracVersion )
-    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotProject" % ( vo, setup ), "unknown" )
-    if projectName == 'unknown':
-      self.log.info( 'PilotProject is not defined in the configuration' )
+    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotInstallation" % ( vo, setup ), "" )
+    if projectName == '':
+      self.log.info( 'DIRAC installation will be installed by pilots' )
     else:
       pilotOptions.append( '-l %s' % projectName )
 
