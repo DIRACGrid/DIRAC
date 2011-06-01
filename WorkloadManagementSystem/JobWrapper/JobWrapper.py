@@ -1292,7 +1292,6 @@ class ExecutionThread( threading.Thread ):
 
 def rescheduleFailedJob( jobID, message, jobReport = None ):
   try:
-    import DIRAC
 
     gLogger.warn( 'Failure during %s' % ( message ) )
 
@@ -1330,7 +1329,7 @@ def rescheduleFailedJob( jobID, message, jobReport = None ):
     NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
 
     return
-  except Exception, x:
+  except Exception:
     gLogger.exception( 'JobWrapperTemplate failed to reschedule Job' )
     return
 

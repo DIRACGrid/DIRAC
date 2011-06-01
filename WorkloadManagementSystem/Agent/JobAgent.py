@@ -90,7 +90,6 @@ class JobAgent( AgentModule ):
   def execute( self ):
     """The JobAgent execution method.
     """
-    jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     if self.jobCount:
       #Only call timeLeft utility after a job has been picked up
       self.log.info( 'Attempting to check CPU time left for filling mode' )
@@ -202,9 +201,6 @@ class JobAgent( AgentModule ):
 
     if not params.has_key( 'MaxCPUTime' ):
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
-      jobCPUReqt = 0
-    else:
-      jobCPUReqt = params['MaxCPUTime']
 
     self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
     self.log.info( 'Received JobID=%s, JobType=%s, SystemConfig=%s' % ( jobID, jobType, systemConfig ) )
@@ -223,6 +219,7 @@ class JobAgent( AgentModule ):
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
 
+      #ÊIs this necessary at all?
       saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
       #self.__report(jobID,'Matched','Job Prepared to Submit')
 
@@ -249,7 +246,7 @@ class JobAgent( AgentModule ):
         return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'] )
 
       self.log.verbose( 'After %sCE submitJob()' % ( self.ceName ) )
-    except Exception, e:
+    except Exception:
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception' )
 
@@ -432,7 +429,7 @@ class JobAgent( AgentModule ):
     if not os.path.exists( '%s/job/Wrapper' % ( workingDir ) ):
       try:
         os.makedirs( '%s/job/Wrapper' % ( workingDir ) )
-      except Exception, x:
+      except Exception:
         self.log.exception()
         return S_ERROR( 'Could not create directory for wrapper script' )
 

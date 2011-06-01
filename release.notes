@@ -1,4 +1,9 @@
 [v6r0-pre3]
+*glexecComputingElement
+NEW: allow glexecComputingElement to "Reschedule" jobs if the Test of
+    the glexec fails, instead of defaulting to InProcess. Controlled  by
+    RescheduleOnError Option.
+
 *LcgFileCatalog
 FIX: use lfcthr and call lfcthr.init() to allow multithread
      try the import only once and just when LcgFileCatalogClient class is intantiated

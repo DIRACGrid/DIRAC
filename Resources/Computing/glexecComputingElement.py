@@ -11,7 +11,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
-from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
@@ -20,7 +19,7 @@ from DIRAC                                                  import gConfig, S_OK
 
 import DIRAC
 
-import os, sys, string
+import os
 
 MandatoryParameters = [ ]
 
@@ -64,7 +63,9 @@ class glexecComputingElement( ComputingElement ):
     self.log.info( 'Pilot proxy X509_USER_PROXY=%s' % pilotProxy )
     os.environ[ 'GLEXEC_CLIENT_CERT' ] = payloadProxy
     os.environ[ 'GLEXEC_SOURCE_PROXY' ] = payloadProxy
-    self.log.info( 'Set payload proxy variables:\nGLEXEC_CLIENT_CERT=%s\nGLEXEC_SOURCE_PROXY=%s' % ( payloadProxy, payloadProxy ) )
+    self.log.info( '\n'.join( [ 'Set payload proxy variables:',
+                                'GLEXEC_CLIENT_CERT=%s' % payloadProxy,
+                                'GLEXEC_SOURCE_PROXY=%s' % payloadProxy ] ) )
 
     #Determine glexec location (default to standard InProcess behaviour if not found)
     glexecLocation = None
@@ -86,7 +87,7 @@ class glexecComputingElement( ComputingElement ):
       res = self.analyseExitCode( result['Value'] ) #take no action as we currently default to InProcess
       glexecLocation = None
       if 'RescheduleOnError' in self.ceParameters and self.ceParameters['RescheduleOnError']:
-        result = S_ERROR( 'gLexec Test Failed: %' % res['Value'] )
+        result = S_ERROR( 'gLexec Test Failed: %s' % res['Value'] )
         result['ReschedulePayload'] = True
         return result
       self.log.info( 'glexec test failed, will submit payload regardless...' )
@@ -97,7 +98,9 @@ class glexecComputingElement( ComputingElement ):
       os.environ[ 'X509_USER_PROXY' ] = payloadProxy
 
     self.log.verbose( 'Starting process for monitoring payload proxy' )
-    gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy, taskArgs = ( glexecLocation, pilotProxy, payloadProxy ), executions = 0, elapsedTime = 0 )
+    gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
+                                      taskArgs = ( glexecLocation, pilotProxy, payloadProxy ),
+                                      executions = 0, elapsedTime = 0 )
 
     #Submit job
     self.log.info( 'Changing permissions of executable to 0755' )
@@ -158,11 +161,12 @@ class glexecComputingElement( ComputingElement ):
     for dirName, subDirs, files in os.walk( currentDir ):
       try:
         self.log.info( 'Changing file and directory permissions to 0755 for %s' % dirName )
-        if os.stat( '%s' % ( dirName ) )[4] == userID and not os.path.islink( '%s' % ( dirName ) ):
-          os.chmod( '%s' % ( dirName ), 0755 )
+        if os.stat( dirName )[4] == userID and not os.path.islink( dirName ):
+          os.chmod( dirName, 0755 )
         for toChange in files:
-          if os.stat( '%s/%s' % ( dirName, toChange ) )[4] == userID and not os.path.islink( '%s/%s' % ( dirName, toChange ) ):
-            os.chmod( '%s/%s' % ( dirName, toChange ), 0755 )
+          toChange = os.path.join( dirName, toChange )
+          if os.stat( toChange )[4] == userID and not os.path.islink( toChange ):
+            os.chmod( toChange, 0755 )
       except Exception, x:
         self.log.error( 'Problem changing directory permissions', str( x ) )
 
@@ -250,7 +254,7 @@ class glexecComputingElement( ComputingElement ):
     cmds.append( 'date' )
     cmds.append( '%s/scripts/dirac-proxy-info' % DIRAC.rootPath )
     fopen = open( testFile, 'w' )
-    fopen.write( string.join( cmds, '\n' ) )
+    fopen.write( '\n'.join( cmds ) )
     fopen.close()
     self.log.info( 'Changing permissions of test script to 0755' )
     try:
