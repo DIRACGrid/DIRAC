@@ -28,7 +28,7 @@ DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem',
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 DIRAC_VERSION = 'Production'
 DIRAC_VERSION = 'HEAD'
-DIRAC_PROJECT = ''
+DIRAC_INSTALLATION = ''
 
 MAX_JOBS_IN_FILLMODE = 2
 
@@ -99,7 +99,7 @@ class PilotDirector:
     self.pilot = DIRAC_PILOT
     self.extraPilotOptions = []
     self.installVersion = DIRAC_VERSION
-    self.installProject = DIRAC_PROJECT
+    self.installInstallation = DIRAC_INSTALLATION
 
     self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
@@ -135,8 +135,8 @@ class PilotDirector:
     section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
     self.installVersion = gConfig.getValue( cfgPath( section, 'PilotVersion' ),
                                          self.installVersion )
-    self.installProject = gConfig.getValue( cfgPath( section, 'PilotProject' ),
-                                         self.installProject )
+    self.installInstallation = gConfig.getValue( '/Operations/%s/%s/Versions/PilotInstallation' % ( vo, setup ),
+                                         self.installInstallation )
 
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
@@ -144,8 +144,8 @@ class PilotDirector:
     self.log.info( ' Install script: ', self.install )
     self.log.info( ' Pilot script:   ', self.pilot )
     self.log.info( ' Install Ver:    ', self.installVersion )
-    if self.installProject:
-      self.log.info( ' Project:        ', self.installProject )
+    if self.installInstallation:
+      self.log.info( ' Installation:        ', self.installInstallation )
     if self.extraPilotOptions:
       self.log.info( ' Exta Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
@@ -173,7 +173,7 @@ class PilotDirector:
     self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
-    self.installProject = gConfig.getValue( mySection + '/InstallProject'        , self.installProject )
+    self.installInstallation = gConfig.getValue( mySection + '/Installation'        , self.installInstallation )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
 
     self.enableListMatch = gConfig.getValue( mySection + '/EnableListMatch'      , self.enableListMatch )
@@ -325,7 +325,7 @@ class PilotDirector:
     # Requested version of DIRAC
     pilotOptions.append( '-r %s' % self.installVersion )
     # Requested Project to install
-    pilotOptions.append( '-l %s' % self.installProject )
+    pilotOptions.append( '-V %s' % self.installInstallation )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
 
