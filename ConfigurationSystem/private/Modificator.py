@@ -57,10 +57,6 @@ class Modificator:
     opts = self.getOptions(sectionPath)
     pathDict = dict( [ ( o, self.getValue( "%s/%s" % ( sectionPath, o
                                                        ) ) ) for o in opts ] )
-    for k in pathDict:
-      if pathDict[k].find( "," ) > -1 :
-        pathDict[k] = List.fromChar( pathDict[k] )
-
     return pathDict
 
   def getDictRootedAt(self, relpath = "", root = ""):
