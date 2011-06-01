@@ -73,6 +73,19 @@ class ExecutorState:
       pass
     return execs
 
+  def getIdleExecutor( self, eType ):
+    idleId = None
+    maxFreeSlots = 0
+    try:
+      for eId in self.__typeToId[ eType ]:
+        freeSlots = self.freeSlots( eId )
+        if freeSlots > maxFreeSlots:
+          maxFreeSlots = freeSlots
+          idleId = eId
+    except KeyError:
+      pass
+    return idleId
+
   def addTask( self, execId, taskId ):
     self.__lock.acquire()
     try:
@@ -119,33 +132,33 @@ class ExecutorQueues:
     self.__taskInQueue = {}
 
   def getExecutorList( self ):
-    return [ exName for exName in self.__queues ]
+    return [ eType for eType in self.__queues ]
 
-  def pushTask( self, exName, taskId, ahead = False ):
-    self.__log.info( "Pushing task %d into waiting queue for executor %s" % ( jid, exName ) )
+  def pushTask( self, eType, taskId, ahead = False ):
+    self.__log.info( "Pushing task %d into waiting queue for executor %s" % ( jid, eType ) )
     self.__lock.acquire()
     try:
       if taskId in self.__taskInQueue:
-        if self.__taskInQueue[ taskId ] != exName:
+        if self.__taskInQueue[ taskId ] != eType:
           raise Exception( "Task %s cannot be queued because it's already queued" % taskId )
         else:
           return
-      if exName not in self.__queues:
-        self.__queues[ exName ] = []
-      self.__lastUse[ exName ] = time.time()
+      if eType not in self.__queues:
+        self.__queues[ eType ] = []
+      self.__lastUse[ eType ] = time.time()
       if ahead:
-        self.__queues[ exName ].insert( 0, taskId )
+        self.__queues[ eType ].insert( 0, taskId )
       else:
-        self.__queues[ exName ].append( taskId )
-      self.__taskInQueue[ taskId ] = exName
+        self.__queues[ eType ].append( taskId )
+      self.__taskInQueue[ taskId ] = eType
     finally:
       self.__lock.release()
 
-  def popTask( self, exName ):
+  def popTask( self, eType ):
     self.__lock.acquire()
     try:
       try:
-        taskId = self.__queues[ exName ].pop( 0 )
+        taskId = self.__queues[ eType ].pop( 0 )
         del( self.__taskInQueue[ taskId ] )
       except IndexError:
         return None
@@ -153,7 +166,7 @@ class ExecutorQueues:
         return None
     finally:
       self.__lock.release()
-    self.__log.info( "Popped task %s from executor %s waiting queue" % ( taskId, exName ) )
+    self.__log.info( "Popped task %s from executor %s waiting queue" % ( taskId, eType ) )
     return taskId
 
   def getState( self ):
@@ -171,23 +184,23 @@ class ExecutorQueues:
     self.__lock.acquire()
     try:
       try:
-        exName = self.__taskInQueue[ taskId ]
+        eType = self.__taskInQueue[ taskId ]
         del( self.__taskInQueue[ taskId ] )
       except KeyError:
         return
       try:
-        iPos = self.__queues[ exName ].index( taskId )
+        iPos = self.__queues[ eType ].index( taskId )
       except ValueError:
         return
-      del( self.__queues[ exName ][ iPos ] )
+      del( self.__queues[ eType ][ iPos ] )
     finally:
       self.__lock.release()
 
-  def waitingTasks( self, exName ):
+  def waitingTasks( self, eType ):
     self.__lock.acquire()
     try:
       try:
-        return len( self.__queues[ exName ] )
+        return len( self.__queues[ eType ] )
       except KeyError:
         return 0
     finally:
@@ -218,7 +231,7 @@ class ExecutorMind:
         self.__executors[ eType ] = []
       if exId in self.__idMap:
         return
-      self.__idMap[ execId ] = exName
+      self.__idMap[ execId ] = eType
       self.__executors[ eType ].append( execId )
       self.__states.add( execId )
     finally:
@@ -289,7 +302,27 @@ class ExecutorMind:
 
 
   def __fillExecutors( self, eType ):
-    freeExecs = self.__states.getFreeExecIds( eType )
+    eId = self.__states.getIdleExecutor( eType )
+    while idleId:
+      taskId = self.__queues.popTask( eType )
+      if taskId == None:
+        break
+      self.__log.info( "Sending task %s to %s=%s" % ( taskId, eType, eId ) )
+      result = self.__sendTaskToExecutor( eId, taskId )
+      if not result[ 'OK' ]:
+        self.__log.error( "Could not send task", "to %s: %s" % ( eId, result[ 'Message' ] ) )
+        self.__queues.pushTask( eType, taskId, ahead = True )
+      else:
+        accepted = result[ 'Value' ]
+        if accepted:
+          self.__log.info( "Task %s was accepted by %s" % ( taskId, eId ) )
+          self.__states.addTask( eId, taskId )
+        else:
+          self.__log.info( "Task %s was NOT accepted by %s" % ( taskId, eId ) )
+          self.__queues.pushTask( eType, taskId, ahead = True )
+      eId = self.__states.getIdleExecutor( eType )
+
+  def __sendTaskToExecutor( self, eId, taskId ):
 
 
 
