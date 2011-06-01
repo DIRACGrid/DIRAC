@@ -1,5 +1,9 @@
 [v6r0-pre3]
 
+*CS update with dirac-install-agent(service)
+FIX: If the component being installed already has corresponding CS section, it is not
+     overwritten unless explicitly asked for
+
 *New configuration management console (CLI)
 NEW: A configuration script for CS that behaves like an UNIX shell. 
     (CS/scripts/dirac-configuration-shell.py)
