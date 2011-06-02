@@ -5,18 +5,12 @@
 __RCSID__ = "$Id$"
 import base64
 import types
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
-from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security import Locations
+from DIRAC                                     import S_OK, S_ERROR
+from DIRAC.Core.Security.X509Chain             import X509Chain, g_X509ChainType
+from DIRAC.Core.Security.VOMS                  import VOMS
+from DIRAC.Core.Security                       import Locations
 
-__FIRST_IMPORT = True
-if __FIRST_IMPORT:
-  print
-  print 'Deprecation warning: DIRAC.Core.Security.Misc will not be available in next release,'
-  print '                     use DIRAC.Core.Security.ProxyInfo instead.'
-  print
-  __FIRST_IMPORT = False
+from DIRAC.ConfigurationSystem.Client.Helpers  import Registry
 
 
 def getProxyInfo( proxy = False, disableVOMS = False ):
@@ -165,3 +159,16 @@ def formatProxyStepsInfoAsString( infoList ):
                                               for extName, extValue in value ] )
         contentsList.append( "  %s : %s" % ( key.ljust( 10 ).capitalize(), value ) )
   return "\n".join( contentsList )
+
+def getVOfromProxyGroup():
+  """
+  Return the VO associated to the group in the proxy
+  """
+  voName = Registry.getVOForGroup( 'NoneExistingGroup' )
+  ret = getProxyInfo( disableVOMS = True )
+  if not ret['OK']:
+    return S_OK( voName )
+  if 'group' in ret['Value']:
+    voName = Registry.getVOForGroup( ret['Value']['group'] )
+  return S_OK( voName )
+
