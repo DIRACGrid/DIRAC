@@ -385,8 +385,6 @@ class DirectoryMetadata:
       else:
         req = " SELECT DirID FROM FC_Meta_%s WHERE Value='%s' " % ( meta, value )
 
-    print req
-
     result = self.db._query( req )
     if not result['OK']:
       return result
@@ -397,11 +395,16 @@ class DirectoryMetadata:
     for row in result['Value']:
       dirID = row[0]
       dirList.append( dirID )
-      if subdirFlag:
-        result = self.db.dtree.getSubdirectoriesByID( dirID )
-        if not result['OK']:
-          return result
-        dirList += result['Value']
+      #if subdirFlag:
+      #  result = self.db.dtree.getSubdirectoriesByID( dirID )
+      #  if not result['OK']:
+      #    return result
+      #  dirList += result['Value']
+    if subdirFlag:
+      result = self.db.dtree.getAllSubdirectoriesByID( dirList )
+      if not result['OK']:
+        return result
+      dirList += result['Value']
 
     return S_OK( dirList )
 
@@ -457,9 +460,6 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     metaDict = result['Value']
-
-    print "AT >>>", metaDict
-
     dirList = []
     first = True
     for meta, value in metaDict.items():
@@ -480,13 +480,11 @@ class DirectoryMetadata:
             newList.append( d )
         dirList = newList
 
-    dirNameList = [ ]
-    for dir in dirList:
-      result = self.db.dtree.getDirectoryPath( dir )
-      if not result['OK']:
-        return result
-      dirNameList.append( result['Value'] )
-    return S_OK( dirNameList )
+    result = self.db.dtree.getDirectoryPaths( dirList )
+    if not result['OK']:
+      return result
+    dirNameDict = result['Value']
+    return S_OK(dirNameDict)
 
   def findFilesByMetadata( self, metaDict, credDict ):
     """ Find Files satisfying the given metadata
@@ -496,15 +494,14 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
 
-    dirList = result['Value']
+    dirDict = result['Value']
+    dirList = dirDict.keys()
     fileList = []
-    result = self.db.listDirectory( dirList, credDict )
+    result = self.db.dtree.getFilesInDirectory( dirList, credDict )
     if not result['OK']:
       return result
-
-    for dir in result['Value']['Successful']:
-      for fname in result['Value']['Successful'][dir]['Files']:
-        fileList.append( dir + '/' + os.path.basename( fname ) )
+    for fileID,dirID,fname in result['Value']:
+      fileList.append( dirDict[dirID] + '/' + os.path.basename( fname ) )
 
     return S_OK( fileList )
 
@@ -643,7 +640,5 @@ class DirectoryMetadata:
         successful[meta] = 'OK'  
       
     return S_OK({'Successful':successful,'Failed':failed})  
-      
-      
       
       

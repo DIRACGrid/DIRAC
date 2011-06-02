@@ -1,17 +1,37 @@
 [v6r0-pre3]
-*glexecComputingElement
-NEW: allow glexecComputingElement to "Reschedule" jobs if the Test of
-    the glexec fails, instead of defaulting to InProcess. Controlled  by
-    RescheduleOnError Option.
+*CS update with dirac-install-agent(service)
+FIX: If the component being installed already has corresponding CS section, it is not
+     overwritten unless explicitly asked for
 
-*LcgFileCatalog
-FIX: use lfcthr and call lfcthr.init() to allow multithread
-     try the import only once and just when LcgFileCatalogClient class is intantiated
+*New configuration management console (CLI)
+NEW: A configuration script for CS that behaves like an UNIX shell. 
+    (CS/scripts/dirac-configuration-shell.py)
+
+*Ajust pilot directors and SiteDirector to the new installation schema
+CHANGE: Adapt pilot installation to new dirac-install schema
+
+*Cleanup of obsoleted components
+CHANGE: Removed old sandbox and other obsoleted components
+
+*Properly set the log levels and headers based on the type of component
+CHANGE: By default log level for agents and services is INFO
+CHANGE: Disable the log headers by default before initializing
+
+*Sandbox path now includes the group to avoid collisions
+FIX: Create a different SBPath with the group included
+
+*CSAPI
+CHANGE: added more functionality required by updated configuration console
 
 *FileCatalog enhancements
 FIX: DiractoryLevelTree - consistent application of the max directory level using global 
      MAX_LEVELS variable
 FIX: Directory metadata is deleted together with the directory deletion, issue #40    
+CHANGE: The logic of the files query by metadata revisited to increase efficiency 
+
+*LcgFileCatalog
+FIX: use lfcthr and call lfcthr.init() to allow multithread
+     try the import only once and just when LcgFileCatalogClient class is intantiated
 
 *Fix utility to get the user VO
 CHANGE: update when possible to getVOforGroup from getVO
@@ -28,6 +48,7 @@ CHANGE: First refactoring of RSSÕs PEP. Actions are now function defined in modu
 *dirac-install functionality enhancement
 CHANGE: Start using the switches as defined in issue #26
 NEW: Write the defaults if any under defaults-.cfg so dirac-configure can pick it up
+CHANGE: use new dirac_install from gothub/integration branch in install_site.sh
 
 *LocalSE mapping
 NEW: Added possibility to define LocalSE to any Site using the SiteLocalSEMapping 
