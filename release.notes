@@ -1,5 +1,8 @@
 [v6r0-pre3]
 
+*Core install_site.sh
+FIX: Missing option in wget for https download: --no-check-certificate
+
 *CS update with dirac-install-agent(service)
 FIX: If the component being installed already has corresponding CS section, it is not
      overwritten unless explicitly asked for
@@ -43,7 +46,7 @@ NEW: -U flag will upload a long lived proxy to the ProxyManager
 NEW: If /Registry/DefaultGroup is defined, try to generate a proxy that has that group
 
 *RSS system refactoring
-CHANGE: First refactoring of RSSÕs PEP. Actions are now function defined in modules 
+CHANGE: First refactoring of RSSï¿½s PEP. Actions are now function defined in modules 
         residing in directory "Actions".
 
 *dirac-install functionality enhancement
