@@ -1,5 +1,17 @@
 [v6r0-pre3]
 
+*SSHTorque CE enhancement
+FIX: retrieve job status by chunks of 100 jobs to avoid too long
+
+*glexecComputingElement
+NEW: allow glexecComputingElement to "Reschedule" jobs if the Test of
+     the glexec fails, instead of defaulting to InProcess. Controlled by
+     RescheduleOnError Option of the glexecComputingElement
+
+*Moved ProxyInfo scripts
+NEW: move functions in DIRAC.Core.Security.Misc to DIRAC.Core.Security.ProxyInfo
+NEW: add getVOfromProxyGroup
+
 *CS update with dirac-install-agent(service)
 FIX: If the component being installed already has corresponding CS section, it is not
      overwritten unless explicitly asked for
