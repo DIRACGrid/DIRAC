@@ -49,6 +49,7 @@ CHANGE: First refactoring of RSSÕs PEP. Actions are now function defined in modu
 *dirac-install functionality enhancement
 CHANGE: Start using the switches as defined in issue #26
 NEW: Write the defaults if any under defaults-.cfg so dirac-configure can pick it up
+CHANGE: use new dirac_install from gothub/integration branch in install_site.sh
 
 *LocalSE mapping
 NEW: Added possibility to define LocalSE to any Site using the SiteLocalSEMapping 
