@@ -1,4 +1,11 @@
 [v6r0-pre3]
+*Put ProxyInfo functions in a better place
+NEW: move functions in DIRAC.Core.Security.Misc to DIRAC.Core.Security.ProxyInfo
+NEW: add getVOfromProxyGroup
+
+
+*Core install_site.sh
+FIX: Missing option in wget for https download: --no-check-certificate
 
 *SSHTorque CE enhancement
 FIX: retrieve job status by chunks of 100 jobs to avoid too long
@@ -55,7 +62,7 @@ NEW: -U flag will upload a long lived proxy to the ProxyManager
 NEW: If /Registry/DefaultGroup is defined, try to generate a proxy that has that group
 
 *RSS system refactoring
-CHANGE: First refactoring of RSSÕs PEP. Actions are now function defined in modules 
+CHANGE: First refactoring of RSS's PEP. Actions are now function defined in modules 
         residing in directory "Actions".
 
 *dirac-install functionality enhancement
