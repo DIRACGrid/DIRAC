@@ -29,7 +29,9 @@ from DIRAC.Core.Utilities.Subprocess                                import Subpr
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
 from DIRAC.Core.Utilities                                           import List
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List, Time
+from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
+
 import DIRAC
 
 import os, re, sys, time, shutil, threading, tarfile, glob, types
@@ -432,7 +434,7 @@ class JobWrapper:
       lines = len( result['Value'] )
       appStdOut = '\n'.join( result['Value'] )
 
-    header = 'Last %s lines of application output from JobWrapper on %s :' % ( lines, DIRAC.Time.toString() )
+    header = 'Last %s lines of application output from JobWrapper on %s :' % ( lines, Time.toString() )
     border = '=' * len( header )
 
     cpuTotal = 'CPU Total: %s (h:m:s)' % cpuConsumed[1]
@@ -1287,5 +1289,49 @@ class ExecutionThread( threading.Thread ):
       result = S_ERROR( 'No Job output found' )
 
     return result
+
+def rescheduleFailedJob( jobID, message, jobReport = None ):
+  try:
+
+    gLogger.warn( 'Failure during %s' % ( message ) )
+
+    #Setting a job parameter does not help since the job will be rescheduled,
+    #instead set the status with the cause and then another status showing the
+    #reschedule operation.
+
+    if not jobReport:
+      gLogger.info( 'Creating a new JobReport Object' )
+      jobReport = JobReport( int( jobID ), 'JobWrapper' )
+
+    jobReport.setApplicationStatus( 'Failed %s ' % message, sendFlag = False )
+    jobReport.setJobStatus( 'Rescheduled', message, sendFlag = False )
+
+    # We must send Job States and Parameters before it gets reschedule
+    jobReport.sendStoredStatusInfo()
+    jobReport.sendStoredJobParameters()
+
+    gLogger.info( 'Job will be rescheduled after exception during execution of the JobWrapper' )
+
+    jobManager = RPCClient( 'WorkloadManagement/JobManager' )
+    result = jobManager.rescheduleJob( int( jobID ) )
+    if not result['OK']:
+      gLogger.warn( result )
+
+    # Send mail to debug errors
+    mailAddress = DIRAC.alarmMail
+    site = DIRAC.siteName()
+    subject = 'Job rescheduled at %s' % site
+    ret = systemCall( 0, 'hostname' )
+    wn = ret['Value'][1]
+    msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
+    msg += message
+
+    NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
+
+    return
+  except Exception:
+    gLogger.exception( 'JobWrapperTemplate failed to reschedule Job' )
+    return
+
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
