@@ -1,4 +1,8 @@
 [v6r0-pre3]
+*Put ProxyInfo functions in a better place
+NEW: move functions in DIRAC.Core.Security.Misc to DIRAC.Core.Security.ProxyInfo
+NEW: add getVOfromProxyGroup
+
 
 *Core install_site.sh
 FIX: Missing option in wget for https download: --no-check-certificate
