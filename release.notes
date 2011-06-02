@@ -46,7 +46,7 @@ NEW: -U flag will upload a long lived proxy to the ProxyManager
 NEW: If /Registry/DefaultGroup is defined, try to generate a proxy that has that group
 
 *RSS system refactoring
-CHANGE: First refactoring of RSS�s PEP. Actions are now function defined in modules 
+CHANGE: First refactoring of RSS's PEP. Actions are now function defined in modules 
         residing in directory "Actions".
 
 *dirac-install functionality enhancement
