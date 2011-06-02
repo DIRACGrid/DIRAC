@@ -51,7 +51,7 @@ fi
 # Get the latest version of dirac-install
 #
 #wget -O dirac-install 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-install.py' | exit
-wget -O dirac-install 'https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py' | exit
+wget --no-check-certificate -O dirac-install 'https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py' | exit
 #
 # define the target Dir
 #
