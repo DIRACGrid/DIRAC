@@ -23,6 +23,7 @@ if [ $# = 0 ]; then
   usage
 fi
 
+export OPENSSL_CONF=$HOME/.globus
 GLOBUS=$HOME/.globus
 USERCERT_P12_ORIG=$1
 USERCERT_P12=$GLOBUS/`basename $USERCERT_P12_ORIG`
