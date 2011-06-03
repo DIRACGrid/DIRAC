@@ -378,7 +378,7 @@ def _getCentralCfg( installCfg ):
 
   # Add the master Host description
   if hostDN:
-    hostSection = cfgPath( 'Registry', 'Hosts', host ) 
+    hostSection = cfgPath( 'Registry', 'Hosts', host )
     if not centralCfg.isSection( hostSection ):
        centralCfg.createNewSection( hostSection )
     if centralCfg['Registry']['Hosts'][host].existsKey( 'DN' ):
@@ -1164,6 +1164,13 @@ def setupSite( scriptCfg, cfg = None ):
     _addCfgToDiracCfg( cfg )
     cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Master' , 'yes' )
     cfg.setOption( cfgPath( 'DIRAC', 'Configuration', 'Name' ) , setupConfigurationName )
+    serversCfgPath = cfgPath( 'DIRAC', 'Configuration', 'Servers' )
+    if not localCfg.getOption( serversCfgPath , [] ):
+      serverUrl = 'dips://%s:9135/Configuration/Server' % host
+      cfg.setOption( serversCfgPath, serverUrl )
+      from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+      gConfigurationData.setOptionInCFG( serversCfgPath, serverUrl )
+
     _addCfgToDiracCfg( cfg )
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
     if installCfg:

@@ -1005,6 +1005,8 @@ def createBashrc():
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
                      'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
                      'export PYTHONPATH=$DIRAC'] )
+      lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
+                     'export OPENSSL_CONF=/tmp'] )
       lines.append( '' )
       f = open( bashrcFile, 'w' )
       f.write( '\n'.join( lines ) )
