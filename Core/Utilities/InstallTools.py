@@ -1168,6 +1168,9 @@ def setupSite( scriptCfg, cfg = None ):
     if not localCfg.getOption( serversCfgPath , [] ):
       serverUrl = 'dips://%s:9135/Configuration/Server' % host
       cfg.setOption( serversCfgPath, serverUrl )
+      from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+      gConfigurationData.setOptionInCFG( serversCfgPath, serverUrl )
+
     _addCfgToDiracCfg( cfg )
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
     if installCfg:
