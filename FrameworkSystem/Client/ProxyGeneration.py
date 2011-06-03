@@ -162,6 +162,7 @@ def generateProxy( params ):
   params.certLoc = certLoc
   params.keyLoc = keyLoc
 
+  #Load password
   testChain = X509Chain()
   retVal = testChain.loadKeyFromFile( keyLoc, password = params.userPasswd )
   if not retVal[ 'OK' ]:
@@ -172,6 +173,7 @@ def generateProxy( params ):
       userPasswd = getpass.getpass( passwdPrompt )
     params.userPasswd = userPasswd
 
+  #Find location
   proxyLoc = params.proxyLoc
   if not proxyLoc:
     proxyLoc = Locations.getDefaultProxyLocation()
@@ -222,6 +224,10 @@ def generateProxy( params ):
     if params.diracGroup not in groups:
       return S_ERROR( "Requested group %s is not valid for user %s" % ( params.diracGroup, username ) )
     gLogger.info( "Creating proxy for %s@%s (%s)" % ( username, params.diracGroup, userDN ) )
+    #Check if the proxy needs to be uploaded
+    if not params.uploadProxy:
+      params.uploadProxy = Registry.getGroupOption( params.diracGroup, "AutoUploadProxy", False )
+      gLogger.verbose( "Proxy will be uploaded to ProxyManager " )
 
   if params.summary:
     h = int( params.proxyLifeTime / 3600 )

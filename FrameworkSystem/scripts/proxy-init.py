@@ -42,7 +42,7 @@ if not retVal[ 'OK' ]:
   print "Can't create a proxy: %s" % retVal[ 'Message' ]
   sys.exit( 1 )
 
-from DIRAC import gConfig
+from DIRAC import gConfig, gLogger
 from DIRAC.Core.Security import CS, Properties
 from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Security.MyProxy import MyProxy
@@ -54,15 +54,15 @@ def uploadProxyToMyProxy( params, DNAsUsername ):
 
   myProxy = MyProxy()
   if DNAsUsername:
-    params.debugMsg( "Uploading pilot proxy with group %s to %s..." % ( params.getDIRACGroup(), myProxy.getMyProxyServer() ) )
+    gLogger.verbose( "Uploading pilot proxy with group %s to %s..." % ( params.getDIRACGroup(), myProxy.getMyProxyServer() ) )
   else:
-    params.debugMsg( "Uploading user proxy with group %s to %s..." % ( params.getDIRACGroup(), myProxy.getMyProxyServer() ) )
+    gLogger.verbose( "Uploading user proxy with group %s to %s..." % ( params.getDIRACGroup(), myProxy.getMyProxyServer() ) )
   retVal = myProxy.getInfo( proxyInfo[ 'path' ], useDNAsUserName = DNAsUsername )
   if retVal[ 'OK' ]:
     remainingSecs = ( int( params.getProxyRemainingSecs() / 3600 ) * 3600 ) - 7200
     myProxyInfo = retVal[ 'Value' ]
     if 'timeLeft' in myProxyInfo and remainingSecs < myProxyInfo[ 'timeLeft' ]:
-      params.debugMsg( " Already uploaded" )
+      gLogger.verbose( " Already uploaded" )
       return True
   retVal = generateProxy( params )
   if not retVal[ 'OK' ]:
@@ -77,14 +77,14 @@ def uploadProxyToMyProxy( params, DNAsUsername ):
   if not retVal[ 'OK' ]:
     print " Can't upload to myproxy: %s" % retVal[ 'Message' ]
     return False
-  params.debugMsg( " Uploaded" )
+  gLogger.verbose( " Uploaded" )
   return True
 
 def uploadProxyToDIRACProxyManager( params ):
   """ Upload proxy to the DIRAC ProxyManager service
   """
 
-  params.debugMsg( "Uploading user pilot proxy with group %s..." % ( params.getDIRACGroup() ) )
+  gLogger.verbose( "Uploading user pilot proxy with group %s..." % ( params.getDIRACGroup() ) )
   params.onTheFly = True
   retVal = uploadProxy( params )
   if not retVal[ 'OK' ]:
