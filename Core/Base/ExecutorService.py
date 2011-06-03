@@ -235,10 +235,11 @@ class ExecutorMindCallbacks:
 class ExecutorMind:
 
   def __init__( self ):
-    self.__executorsLock = threading.Lock()
     self.__idMap = {}
     self.__execTypes = {}
+    self.__executorsLock = threading.Lock()
     self.__tasksLock = threading.Lock()
+    self.__freezerLock = threading.Lock()
     self.__tasks = {}
     self.__log = gLogger.getSubLogger( "ExecMind" )
     self.__taskFreezer = []
@@ -288,17 +289,28 @@ class ExecutorMind:
 
   def __freezeTask( self, taskId, count = 0 ):
     self.__log.info( "Freezing task %s" % taskId )
-    self.__taskFreezer.append( ( time.time(), taskId, count ) )
+    self.__freezerLock.acquire()
+    try:
+      for tf in self.__taskFreezer:
+        if taskId == tf[1]:
+          return
+      self.__taskFreezer.append( ( time.time(), taskId, count ) )
+    finally:
+      self.__freezerLock.release()
 
   def __unfreezeTasks( self, timeLimit = 0 ):
     while True:
+      self.__freezerLock.acquire()
       try:
-        frozenTask = self.__taskFreezer.pop()
-      except IndexError:
-        return
-      if timeLimit and time.time() - frozenTask[0] < abs( timeLimit ):
-        self.__taskFreezer.insert( 0, frozenTask )
-        return
+        try:
+          frozenTask = self.__taskFreezer.pop()
+        except IndexError:
+          return
+        if timeLimit and time.time() - frozenTask[0] < abs( timeLimit ):
+          self.__taskFreezer.insert( 0, frozenTask )
+          return
+      finally:
+        self.__freezerLock.release()
       taskId = frozenTask[1]
       self.__log.info( "Unfreezed task %s" % taskId )
       result = self.__dispatchTask( taskId, defrozeIfNeeded = False )
@@ -322,7 +334,7 @@ class ExecutorMind:
 
     if not result[ 'OK' ]:
       self.__log.warn( "Error while calling dispatch callback: %s" % result[ 'Message' ] )
-      if self.__addTaskToFreezer( taskId ):
+      if self.__freezeTask( taskId ):
         return S_OK()
       return S_ERROR( "Could not add task. Dispatching task failed" )
 
@@ -367,6 +379,7 @@ class ExecutorMind:
 
   def addTask( self, taskId, taskObj ):
     if not self.__addTaskIfNew( taskId, taskObj ):
+      self.__unfreezeTasks()
       return S_OK()
     return self.__dispatchTask( taskId )
 
@@ -379,17 +392,18 @@ class ExecutorMind:
     self.__states.removeTask( taskId )
     return S_OK()
 
-  def executorDone( self, eId, taskId, taskObj = False ):
+  def taskProcessed( self, eId, taskId, taskObj = False ):
     if taskId not in self.__tasks:
       errMsg = "Task %s is not known" % taskId
       self.__log.error( errMsg )
       return S_ERROR( errMsg )
-    if eId != self.__states.removeTask( taskId, eId ):
+    if not self.__states.removeTask( taskId, eId ):
       errMsg = "Executor %s says it's processed task but it was not sent to it" % eId
       self.__log.error( errMsg )
       return S_ERROR( errMsg )
     if taskObj:
       self.__tasks[ taskId ] = taskObj
+    self.__log.info( "Executor %s processed task %s" % ( eId, taskId ) )
     return self.__dispatchTask( taskId )
 
   def __fillExecutors( self, eType, defrozeIfNeeded = True ):
@@ -407,13 +421,14 @@ class ExecutorMind:
         return
       processedTasks.add( taskId )
       self.__log.info( "Sending task %s to %s=%s" % ( taskId, eType, eId ) )
+      self.__states.addTask( eId, taskId )
       result = self.__sendTaskToExecutor( eId, taskId )
       if not result[ 'OK' ]:
         self.__log.error( "Could not send task", "to %s: %s" % ( eId, result[ 'Message' ] ) )
         self.__queues.pushTask( eType, taskId, ahead = True )
+        self.__states.removeTask( taskId )
       else:
         self.__log.info( "Task %s was sent to %s" % ( taskId, eId ) )
-        self.__states.addTask( eId, taskId )
       eId = self.__states.getIdleExecutor( eType )
     self.__log.verbose( "No more idle executors for %s" % eType )
     if defrozeIfNeeded:
