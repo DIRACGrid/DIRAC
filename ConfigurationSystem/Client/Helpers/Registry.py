@@ -111,6 +111,16 @@ def getPropertiesForEntity( group, name = "", dn = "", defaultValue = None ):
   else:
     return getPropertiesForGroup( group, defaultValue )
 
+def getUserOption( userName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Users/%s/%s" % ( gBaseSecuritySection, userName, optName ), defaultValue )
+
+def getGroupOption( groupName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Groups/%s/%s" % ( gBaseSecuritySection, groupName, optName ), defaultValue )
+
+def getHostOption( hostName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Hosts/%s/%s" % ( gBaseSecuritySection, hostName, optName ), defaultValue )
+
+
 def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % gBaseSecuritySection, [] )
 
