@@ -12,17 +12,22 @@ g_BaseOperationsSection = "/Operations"
 ## typed instead of a dict where values are strings.
 
 def getOptionsDict(sectionPath):
-  d = gConfig.getOptionsDict(sectionPath)
-  for k in d:
-    if d[k].find(",") > -1:
-      d[k] = [ast.literal_eval(e) for e in List.fromChar(d[k])]
-    else:
-      d[k] = ast.literal_eval(d[k])
+  res = gConfig.getOptionsDict(sectionPath)
+  if res['OK'] == False: return res
+  else:
+    d = res['Value']
+    for k in d:
+      if d[k].find(",") > -1:
+        d[k] = [ast.literal_eval(e) for e in List.fromChar(d[k])]
+      else:
+        d[k] = ast.literal_eval(d[k])
+    return { 'OK': True, 'Value':d }
 
 ## Facilities to import new config from CS
 
 def getGeneralConfig():
-  return getOptionsDict(g_BaseOperationsSection + "/GeneralConfig")
+  return getOptionsDict("/Operations")['Value']
+
 
 #############################################################################
 
