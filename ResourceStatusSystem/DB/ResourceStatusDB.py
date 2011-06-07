@@ -124,7 +124,7 @@ class ResourceStatusDB:
                         status = None, siteType = None, resourceType = None,
                         serviceType = None, countries = None, gridSiteName = None):
     """
-    Get Present Sites/Services/Resources/StorageElements lists.
+    Get Present Sites /Services / Resources / StorageElements lists.
 
     :params:
       :attr:`granularity`: a ValidRes
@@ -764,7 +764,7 @@ class ResourceStatusDB:
   def getMonitoredsHistory(self, granularity, paramsList = None, name = None,
                            presentAlso = True, order = 'ASC', limit = None):
     """
-    Get history of sites/services/resources/storageElements in a list
+    Get history of sites / services / resources / storageElements in a list
     (a site name can be specified)
 
     :params:
@@ -865,7 +865,7 @@ class ResourceStatusDB:
 
   def setLastMonitoredCheckTime(self, granularity, name):
     """
-    Set to utcnow() LastCheckTime of table Sites/Services/Resources/StorageElements
+    Set to utcnow() LastCheckTime of table Sites /Services /Resources / StorageElements
 
     :params:
       :attr:`granularity`: a ValidRes

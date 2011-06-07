@@ -192,88 +192,6 @@ class ResourceStatusClient:
 
 #############################################################################
 
-#  def getCachedAccountingResult(self, name, plotType, plotName):
-#    """
-#    Returns a cached accounting plot
-#
-#    :Parameters:
-#      `name`
-#        string, should be the name of the res
-#
-#      `plotType`
-#        string, plot type
-#
-#      `plotName`
-#        string, should be the plot name
-#
-#    :returns:
-#      a plot
-#    """
-#
-#    res = self.rsS.getCachedAccountingResult(name, plotType, plotName)
-#    if not res['OK']:
-#      raise RSSException, where(self, self.getCachedAccountingResult) + " " + res['Message']
-#
-#    return res['Value']
-
-
-#############################################################################
-
-#  def getCachedResult(self, name, commandName, value, opt_ID = 'NULL'):
-#    """
-#    Returns a cached result;
-#
-#    :Parameters:
-#      `name`
-#        string, name of site or resource
-#
-#      `commandName`
-#        string
-#
-#      `value`
-#        string
-#
-#      `opt_ID`
-#        optional string
-#
-#    :returns:
-#      (result, )
-#    """
-#
-#    res = self.rsS.getCachedResult(name, commandName, value, opt_ID)
-#    if not res['OK']:
-#      raise RSSException, where(self, self.getCachedResult) + " " + res['Message']
-#
-#    return res['Value']
-
-
-#############################################################################
-
-#  def getCachedIDs(self, name, commandName):
-#    """
-#    Returns a cached result;
-#
-#    :Parameters:
-#      `name`
-#        string, name of site or resource
-#
-#      `commandName`
-#        string
-#
-#    :returns: (e.g.)
-#      [78805473L, 78805473L, 78805473L, 78805473L]
-#    """
-#
-#    res = self.rsS.getCachedIDs(name, commandName)
-#    if not res['OK']:
-#      raise RSSException, where(self, self.getCachedIDs) + " " + res['Message']
-#
-#    ID_list = [x for x in res['Value']]
-#
-#    return ID_list
-
-#############################################################################
-
   def getGridSiteName(self, granularity, name):
     """
     Returns the grid site name (what is in GOC BD)
@@ -294,24 +212,58 @@ class ResourceStatusClient:
 
 #############################################################################
 
+  def getResourcesList( self ):
+    """
+    Returns the list of resources in the RSS DB
+    
+    """
+  
+    res = self.rsS.getResourcesList( )
+    if not res['OK']:
+      raise RSSException, where( self, self.getResourcesList ) + " " + res['Message'] 
+    
+    return res['Value']
 
-#
-#  def addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, tokenOwner, dateEnd):
-#    try:
-#      server = RPCClient('ResourceStatus/ResourceStatus', useCertificates=self.useCerts, timeout=120)
-#      result = server.addOrModifySite(siteName, siteType, description, status, reason, dateEffective, tokenOwner, dateEnd)
-#      return result
-#    except Exception, x:
-#      errorStr = "ResourceStatusClient.addOrModifySite failed"
-#      gLogger.exception(errorStr,lException=x)
-#      return S_ERROR(errorStr+": "+str(x))
-#
-#  def addOrModifyResource(self, resourceName, resourceType, siteName, status, reason, dateEffective, tokenOwner, dateEnd):
-#    try:
-#      server = RPCClient('ResourceStatus/ResourceStatus', useCertificates=self.useCerts, timeout=120)
-#      result = server.addOrModifyResource(resourceName, resourceType, siteName, status, reason, dateEffective, tokenOwner, dateEnd)
-#      return result
-#    except Exception, x:
-#      errorStr = "ResourceStatusClient.addOrModifyResource failed"
-#      gLogger.exception(errorStr,lException=x)
-#      return S_ERROR(errorStr+": "+str(x))
+#############################################################################
+
+  def getStorageElementsList( self ):
+    """
+    Returns the list of storage elements in the RSS DB
+    
+    """
+  
+    res = self.rsS.getStorageElementsList( )
+    if not res['OK']:
+      raise RSSException, where( self, self.getStorageElementsList ) + " " + res['Message'] 
+    
+    return res['Value']
+
+#############################################################################
+
+  def getServicesList( self ):
+    """
+    Returns the list of services in the RSS DB
+    
+    """
+  
+    res = self.rsS.getServicesList( )
+    if not res['OK']:
+      raise RSSException, where( self, self.getServicesList ) + " " + res['Message'] 
+    
+    return res['Value']
+
+#############################################################################
+
+  def getSitesList( self ):
+    """
+    Returns the list of sites in the RSS DB
+    
+    """
+  
+    res = self.rsS.getSitesList( )
+    if not res['OK']:
+      raise RSSException, where( self, self.getSitesList ) + " " + res['Message'] 
+    
+    return res['Value']
+
+#############################################################################
