@@ -219,7 +219,7 @@ class JobAgent( AgentModule ):
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
 
-      #ÊIs this necessary at all?
+      # Is this necessary at all?
       saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
       #self.__report(jobID,'Matched','Job Prepared to Submit')
 

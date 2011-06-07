@@ -56,12 +56,12 @@ class CliParams:
     self.platform = ""
     self.minDiskSpace = 2560 #MB
     self.jobCPUReq = 900
-    self.pythonVersion = '25'
+    self.pythonVersion = '26'
     self.userGroup = ""
     self.userDN = ""
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
-    self.gridVersion = '2009-08-13'
+    self.gridVersion = '2010-11-20'
     self.pilotReference = ''
     self.releaseVersion = ''
 
