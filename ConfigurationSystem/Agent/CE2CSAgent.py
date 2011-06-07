@@ -30,7 +30,7 @@ class CE2CSAgent( AgentModule ):
   def initialize( self ):
 
     # TODO: Have no default and if no mail is found then use the diracAdmin group 
-    #Êand resolve all associated mail addresses.
+    # and resolve all associated mail addresses.
     self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     # create a list of alternative bdii urls
