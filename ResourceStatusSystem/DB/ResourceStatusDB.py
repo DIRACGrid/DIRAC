@@ -1332,6 +1332,42 @@ class ResourceStatusDB:
 
 #############################################################################
 
+  def getResources( self, resourceName = None, resourceType = None, serviceType = None,
+                    siteName = None, gridSiteName = None, status = None, reason = None,
+                    tokenOwner = None ):
+    
+    req  = "SELECT ResourceName, ResourceType, ServiceType, SiteName, GridSiteName, Status, Reason, TokenOwner"
+    req += " FROM Resources"
+    
+    whereConds = []
+    if resourceName is not None:
+      whereConds.append( " ResourceName = '%s'" % resourceName )    
+    if resourceType is not None:
+      whereConds.append( " ResourceType = '%s'" % resourceType )
+    if serviceType is not None:
+      whereConds.append( " ServiceType = '%s'" % serviceType )
+    if siteName is not None:
+      whereConds.append( " SiteName = '%s'" % siteName )
+    if gridSiteName is not None:
+      whereConds.append( " GridSiteName = '%s'" % gridSiteName )
+    if status is not None:
+      whereConds.append( " Status = '%s'" % status )      
+    if reason is not None:
+      whereConds.append( " Reason = '%s'" % reason )
+    if tokenOwner is not None:
+      whereConds.append( " TokenOwner = '%s'" % tokenOwner )
+      
+    if whereConds:  
+      req += " WHERE " + " AND".join( whereConds )#.replace( " AND", ",", len( whereConds ) - 2 )    
+        
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getResources) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    
+    return resQuery['Value']
+  
   def setResourceStatus(self, resourceName, status, reason, tokenOwner):
     """
     Set a Resource status, effective from now, with no ending
