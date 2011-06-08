@@ -12,7 +12,7 @@ from DIRAC.StorageManagementSystem.DB.StorageManagementDB       import StorageMa
 
 import time, os, sys, re
 from types import *
-#test
+#test 1
 AGENT_NAME = 'StorageManagement/RequestPreparationAgent'
 
 class RequestPreparationAgent( AgentModule ):
