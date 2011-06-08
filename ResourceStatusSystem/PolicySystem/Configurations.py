@@ -9,7 +9,7 @@ provided by VO.
 # general parameters
 #############################################################################
 
-ValidRes = ['Site', 'Service', 'Resource', 'StorageElement']
+ValidRes = ['Site', 'Service', 'Resource', 'StorageElementRead', 'StorageElementWrite']
 ValidStatus = ['Banned', 'Probing', 'Bad', 'Active']
 ValidPolicyResult = ['Error', 'Unknown', 'NeedConfirmation'] + ValidStatus
 PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType', 'RealBan_PolType']
