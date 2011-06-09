@@ -11,10 +11,11 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgfile] ... Token ...' % Script.scriptName,
-                                     'Arguments:',
-                                     '  Token:    Name of the Token' ] ) )
+                                     '\nUsage:',
+                                     '  %s [option|cfgfile] <resource_name> <token_name> <username>' % Script.scriptName,
+                                     '\nArguments:',
+                                     '  resource_name (string): name of the resource, e.g. "lcg.cern.ch"',
+                                     '  token_name (string): name of a token, e.g. "RS_SVC"',                                                      '  username (string): username to reassign the token to\n',] ) )
 Script.parseCommandLine()
 
 hours = 24
@@ -23,16 +24,17 @@ args = Script.getPositionalArgs()
 if not args:
   Script.showHelp()
 
-from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
-from DIRAC.Core.Security.Misc                         import getProxyInfo
-from DIRAC                                            import gConfig, gLogger
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities.CS import getMailForUser
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
+from DIRAC                                           import gLogger
+from DIRAC.Core.DISET.RPCClient                      import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities.CS         import getMailForUser
 
 nc = NotificationClient()
 
 s = RPCClient( "ResourceStatus/ResourceStatus" )
 
+# Check credentials
 res = getProxyInfo()
 if not res['OK']:
   gLogger.error( "Failed to get proxy information", res['Message'] )
@@ -46,7 +48,7 @@ if group not in ( 'diracAdmin', 'lhcb_prod' ):
 
 for arg in args:
   g = s.whatIs( arg )
-  res = s.reAssignToken( g, arg, userName )
+  res = s.reAssignToken( g['Value'], arg, userName )
   if not res['OK']:
     gLogger.error( "Problem with re-assigning token for %s: " % res['Message'] )
     DIRAC.exit( 2 )
