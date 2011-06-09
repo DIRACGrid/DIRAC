@@ -16,31 +16,31 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, Val
 
 #############################################################################
 
-class RSSDBException(RSSException):
+class RSSDBException( RSSException ):
   """
   DB exception
   """
 
-  def __init__(self, message = ""):
+  def __init__( self, message = "" ):
     self.message = message
-    RSSException.__init__(self, message)
+    RSSException.__init__( self, message )
 
-  def __str__(self):
-    return "Exception in the RSS DB: " + repr(self.message)
+  def __str__( self ):
+    return "Exception in the RSS DB: " + repr( self.message )
 
 #############################################################################
 
-class NotAllowedDate(RSSException):
+class NotAllowedDate( RSSException ):
   """
   Exception that signals a not allowed date
   """
 
-  def __init__(self, message = ""):
+  def __init__( self, message = "" ):
     self.message = message
-    RSSException.__init__(self, message)
+    RSSException.__init__( self, message )
 
-  def __str__(self):
-    return "Not allowed date in the RSS DB: " + repr(self.message)
+  def __str__( self ):
+    return "Not allowed date in the RSS DB: " + repr( self.message )
 
 #############################################################################
 
@@ -74,32 +74,32 @@ class ResourceStatusDB:
   """
 
 
-  def __init__(self, *args, **kwargs):
+  def __init__( self, *args, **kwargs ):
 
-    if len(args) == 1:
-      if isinstance(args[0], str):
+    if len( args ) == 1:
+      if isinstance( args[ 0 ], str ):
 #        systemInstance=args[0]
-        maxQueueSize=10
-      if isinstance(args[0], int):
-        maxQueueSize=args[0]
+        maxQueueSize = 10
+      if isinstance( args[ 0 ], int ):
+        maxQueueSize = args[ 0 ]
 #        systemInstance='Default'
-    elif len(args) == 2:
+    elif len( args ) == 2:
 #      systemInstance=args[0]
-      maxQueueSize=args[1]
-    elif len(args) == 0:
+      maxQueueSize = args[ 1 ]
+    elif len( args ) == 0:
 #      systemInstance='Default'
-      maxQueueSize=10
+      maxQueueSize = 10
 
     if 'DBin' in kwargs.keys():
-      DBin = kwargs['DBin']
-      if isinstance(DBin, list):
+      DBin = kwargs[ 'DBin' ]
+      if isinstance( DBin, list ):
         from DIRAC.Core.Utilities.MySQL import MySQL
-        self.db = MySQL('localhost', DBin[0], DBin[1], 'ResourceStatusDB')
+        self.db = MySQL( 'localhost', DBin[ 0 ], DBin[ 1 ], 'ResourceStatusDB' )
       else:
         self.db = DBin
     else:
       from DIRAC.Core.Base.DB import DB
-      self.db = DB('ResourceStatusDB','ResourceStatus/ResourceStatusDB',maxQueueSize)
+      self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
 
 #  def __init__(self, DBin=None, systemInstance='Default', maxQueueSize=10):
 #
@@ -119,10 +119,10 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getMonitoredsList(self, granularity, paramsList = None, siteName = None,
-                        serviceName = None, resourceName = None, storageElementName = None,
-                        status = None, siteType = None, resourceType = None,
-                        serviceType = None, countries = None, gridSiteName = None):
+  def getMonitoredsList( self, granularity, paramsList = None, siteName = None,
+                         serviceName = None, resourceName = None, storageElementName = None,
+                         status = None, siteType = None, resourceType = None,
+                         serviceType = None, countries = None, gridSiteName = None ):
     """
     Get Present Sites /Services / Resources / StorageElements lists.
 
@@ -163,179 +163,179 @@ class ResourceStatusDB:
 
     getInfo = []
 
-    if granularity in ('Site', 'Sites'):
+    if granularity in ( 'Site', 'Sites' ):
       DBname = 'SiteName'
       DBtable = 'PresentSites'
-      getInfo = getInfo + ['SiteName', 'SiteType', 'GridSiteName']
-    elif granularity in ('Service', 'Services'):
+      getInfo = getInfo + [ 'SiteName', 'SiteType', 'GridSiteName' ]
+    elif granularity in ( 'Service', 'Services' ):
       DBname = 'ServiceName'
       DBtable = 'PresentServices'
-      getInfo = getInfo + ['SiteName', 'SiteType', 'ServiceName', 'ServiceType']
-    elif granularity in ('Resource', 'Resources'):
+      getInfo = getInfo + [ 'SiteName', 'SiteType', 'ServiceName', 'ServiceType' ]
+    elif granularity in ( 'Resource', 'Resources' ):
       DBname = 'ResourceName'
       DBtable = 'PresentResources'
-      getInfo = getInfo + ['SiteType', 'ResourceName', 'ResourceType', 'ServiceType', 'GridSiteName']
-    elif granularity in ('StorageElementRead', 'StorageElementsRead'):
+      getInfo = getInfo + [ 'SiteType', 'ResourceName', 'ResourceType', 'ServiceType', 'GridSiteName' ]
+    elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):
       DBname = 'StorageElementName'
       DBtable = 'PresentStorageElementsRead'
-      getInfo = getInfo + ['StorageElementReadName', 'GridSiteName']
-    elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
+      getInfo = getInfo + [ 'StorageElementReadName', 'GridSiteName' ]
+    elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):
       DBname = 'StorageElementName'
       DBtable = 'PresentStorageElementsWrite'
-      getInfo = getInfo + ['StorageElementReadName', 'GridSiteName']
+      getInfo = getInfo + [ 'StorageElementReadName', 'GridSiteName' ]
     else:
-      raise InvalidRes, where(self, self.getMonitoredsList)
+      raise InvalidRes, where( self, self.getMonitoredsList )
 
     #paramsList
-    if (paramsList == None or paramsList == []):
+    if ( paramsList == None or paramsList == [] ):
       params = DBname + ', Status, FormerStatus, DateEffective, LastCheckTime '
     else:
-      if type(paramsList) is not type([]):
-        paramsList = [paramsList]
-      params = ','.join([x.strip()+' ' for x in paramsList])
+      if type( paramsList ) is not type([]):
+        paramsList = [ paramsList ]
+      params = ','.join( [ x.strip()+' ' for x in paramsList ] )
 
     #siteName
     if 'SiteName' in getInfo:
-      if (siteName == None or siteName == []):
+      if ( siteName == None or siteName == [] ):
         r = "SELECT SiteName FROM PresentSites"
-        resQuery = self.db._query(r)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
-        if not resQuery['Value']:
+        resQuery = self.db._query( r )
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.getMonitoredsList ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           siteName = []
-        siteName = [ x[0] for x in resQuery['Value']]
-        siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
+        siteName = [ x[0] for x in resQuery[ 'Value' ] ]
+        siteName = ','.join( [ '"'+x.strip()+'"' for x in siteName ] )
       else:
-        if type(siteName) is not type([]):
-          siteName = [siteName]
-        siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
+        if type( siteName ) is not type( [] ):
+          siteName = [ siteName ]
+        siteName = ','.join( [ '"'+x.strip()+'"' for x in siteName ] )
 
     #gridSiteName
     if 'GridSiteName' in getInfo:
-      if (gridSiteName == None or gridSiteName == []):
+      if ( gridSiteName == None or gridSiteName == [] ):
         r = "SELECT GridSiteName FROM GridSites"
-        resQuery = self.db._query(r)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
-        if not resQuery['Value']:
+        resQuery = self.db._query( r )
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.getMonitoredsList ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           gridSiteName = []
-        gridSiteName = [ x[0] for x in resQuery['Value']]
-        gridSiteName = ','.join(['"'+x.strip()+'"' for x in gridSiteName])
+        gridSiteName = [ x[0] for x in resQuery[ 'Value' ] ]
+        gridSiteName = ','.join( [ '"'+x.strip()+'"' for x in gridSiteName ] )
       else:
-        if type(gridSiteName) is not type([]):
-          gridSiteName = [gridSiteName]
-        gridSiteName = ','.join(['"'+x.strip()+'"' for x in gridSiteName])
+        if type( gridSiteName ) is not type( [] ):
+          gridSiteName = [ gridSiteName ]
+        gridSiteName = ','.join( [ '"'+x.strip()+'"' for x in gridSiteName ] )
 
     #serviceName
     if 'ServiceName' in getInfo:
-      if (serviceName == None or serviceName == []):
+      if ( serviceName == None or serviceName == [] ):
         r = "SELECT ServiceName FROM PresentServices"
-        resQuery = self.db._query(r)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
-        if not resQuery['Value']:
+        resQuery = self.db._query( r )
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.getMonitoredsList ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           serviceName = []
-        serviceName = [ x[0] for x in resQuery['Value']]
-        serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+        serviceName = [ x[0] for x in resQuery[ 'Value' ] ]
+        serviceName = ','.join( [ '"'+x.strip()+'"' for x in serviceName ] )
       else:
-        if type(serviceName) is not type([]):
-          serviceName = [serviceName]
-        serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+        if type( serviceName ) is not type( [] ):
+          serviceName = [ serviceName ]
+        serviceName = ','.join( [ '"'+x.strip()+'"' for x in serviceName ] )
 
     #resourceName
     if 'ResourceName' in getInfo:
-      if (resourceName == None or resourceName == []):
+      if ( resourceName == None or resourceName == [] ):
         r = "SELECT ResourceName FROM PresentResources"
-        resQuery = self.db._query(r)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
-        if not resQuery['Value']:
+        resQuery = self.db._query( r )
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.getMonitoredsList ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           resourceName = []
-        resourceName = [ x[0] for x in resQuery['Value']]
-        resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
+        resourceName = [ x[0] for x in resQuery[ 'Value' ] ]
+        resourceName = ','.join( [ '"'+x.strip()+'"' for x in resourceName ] )
       else:
-        if type(resourceName) is not type([]):
-          resourceName = [resourceName]
-        resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
+        if type( resourceName ) is not type( [] ):
+          resourceName = [ resourceName ]
+        resourceName = ','.join( [ '"'+x.strip()+'"' for x in resourceName ] )
 
     #storageElementReadName
     if 'StorageElementReadName' in getInfo:
-      if (storageElementName == None or storageElementName == []):
+      if ( storageElementName == None or storageElementName == [] ):
         r = "SELECT StorageElementName FROM PresentStorageElementsRead"
-        resQuery = self.db._query(r)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
-        if not resQuery['Value']:
+        resQuery = self.db._query( r )
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.getMonitoredsList ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           storageElementName = []
-        storageElementName = [ x[0] for x in resQuery['Value']]
-        storageElementName = ','.join(['"'+x.strip()+'"' for x in storageElementName])
+        storageElementName = [ x[0] for x in resQuery[ 'Value' ] ]
+        storageElementName = ','.join( [ '"'+x.strip()+'"' for x in storageElementName ] )
       else:
-        if type(storageElementName) is not type([]):
-          storageElementName = [storageElementName]
-        storageElementName = ','.join(['"'+x.strip()+'"' for x in storageElementName])
+        if type( storageElementName ) is not type( [] ):
+          storageElementName = [ storageElementName ]
+        storageElementName = ','.join( [ '"'+x.strip()+'"' for x in storageElementName ] )
 
     #storageElementWriteName
-    if 'StorageElementNameWrite' in getInfo:
-      if (storageElementName == None or storageElementName == []):
+    if 'StorageElementWriteName' in getInfo:
+      if ( storageElementName == None or storageElementName == [] ):
         r = "SELECT StorageElementName FROM PresentStorageElementsWrite"
-        resQuery = self.db._query(r)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
-        if not resQuery['Value']:
+        resQuery = self.db._query( r )
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.getMonitoredsList ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           storageElementName = []
-        storageElementName = [ x[0] for x in resQuery['Value']]
-        storageElementName = ','.join(['"'+x.strip()+'"' for x in storageElementName])
+        storageElementName = [ x[0] for x in resQuery[ 'Value' ] ]
+        storageElementName = ','.join( [ '"'+x.strip()+'"' for x in storageElementName ] )
       else:
-        if type(storageElementName) is not type([]):
-          storageElementName = [storageElementName]
-        storageElementName = ','.join(['"'+x.strip()+'"' for x in storageElementName])
+        if type( storageElementName ) is not type( [] ):
+          storageElementName = [ storageElementName ]
+        storageElementName = ','.join( [ '"'+x.strip()+'"' for x in storageElementName ] )
 
     #status
-    if (status == None or status == []):
+    if ( status == None or status == [] ):
       status = ValidStatus
     else:
-      if type(status) is not type([]):
-        status = [status]
-    status = ','.join(['"'+x.strip()+'"' for x in status])
+      if type( status ) is not type( [] ):
+        status = [ status ]
+    status = ','.join( [ '"'+x.strip()+'"' for x in status ] )
 
     #siteType
     if 'SiteType' in getInfo:
-      if (siteType == None or siteType == []):
+      if ( siteType == None or siteType == [] ):
         siteType = ValidSiteType
       else:
-        if type(siteType) is not type([]):
-          siteType = [siteType]
-      siteType = ','.join(['"'+x.strip()+'"' for x in siteType])
+        if type( siteType ) is not type( [] ):
+          siteType = [ siteType ]
+      siteType = ','.join( [ '"'+x.strip()+'"' for x in siteType ] )
 
     #serviceType
     if 'ServiceType' in getInfo:
-      if (serviceType == None or serviceType == []):
+      if ( serviceType == None or serviceType == [] ):
         serviceType = ValidServiceType
       else:
-        if type(serviceType) is not type([]):
-          serviceType = [serviceType]
-      serviceType = ','.join(['"'+x.strip()+'"' for x in serviceType])
+        if type( serviceType ) is not type( [] ):
+          serviceType = [ serviceType ]
+      serviceType = ','.join( [ '"'+x.strip()+'"' for x in serviceType ] )
 
     #resourceType
     if 'ResourceType' in getInfo:
-      if (resourceType == None or resourceType == []):
+      if ( resourceType == None or resourceType == [] ):
         resourceType = ValidResourceType
       else:
-        if type(resourceType) is not type([]):
-          resourceType = [resourceType]
-      resourceType = ','.join(['"'+x.strip()+'"' for x in resourceType])
+        if type( resourceType ) is not type( [] ):
+          resourceType = [ resourceType ]
+      resourceType = ','.join( [ '"'+x.strip()+'"' for x in resourceType ] )
 
     #countries
-    if (countries == None or countries == []):
-      countries = self.getCountries(granularity)
+    if ( countries == None or countries == [] ):
+      countries = self.getCountries( granularity )
     else:
-      if type(countries) is not type([]):
-        countries = [countries]
+      if type( countries ) is not type( [] ):
+        countries = [ countries ]
     if countries == None:
       countries = " '%%'"
     else:
       str = ' OR %s LIKE ' %DBname
-      countries = str.join(['"%.'+x.strip()+'"' for x in countries])
+      countries = str.join( [ '"%.'+x.strip()+'"' for x in countries ] )
 
 
     #storageElementType
@@ -350,50 +350,55 @@ class ResourceStatusDB:
 
     #query construction
     #base
-    req = "SELECT %s FROM %s WHERE" %(params, DBtable)
+    req = "SELECT %s FROM %s WHERE" %( params, DBtable )
     #what "names"
     if 'SiteName' in getInfo:
       if siteName != [] and siteName != None and siteName is not None and siteName != '':
-        req = req + " SiteName IN (%s) AND" %(siteName)
+        req = req + " SiteName IN (%s) AND" %( siteName )
     if 'GridSiteName' in getInfo:
       if gridSiteName != [] and gridSiteName != None and gridSiteName is not None and gridSiteName != '':
-        req = req + " GridSiteName IN (%s) AND" %(gridSiteName)
+        req = req + " GridSiteName IN (%s) AND" %( gridSiteName )
     if 'ServiceName' in getInfo:
       if serviceName != [] and serviceName != None and serviceName is not None and serviceName != '':
-        req = req + " ServiceName IN (%s) AND" %(serviceName)
+        req = req + " ServiceName IN (%s) AND" %( serviceName )
     if 'ResourceName' in getInfo:
       if resourceName != [] and resourceName != None and resourceName is not None and resourceName != '':
-        req = req + " ResourceName IN (%s) AND" %(resourceName)
-    if 'StorageElementReadName' in getInfo or 'StorageElementWriteName' in getInfo:
+        req = req + " ResourceName IN (%s) AND" %( resourceName )
+    if 'StorageElementReadName' in getInfo:
       if storageElementName != [] and storageElementName != None and storageElementName is not None and storageElementName != '':
-        req = req + " StorageElementName IN (%s) AND" %(storageElementName)
+        req = req + " StorageElementName IN (%s) AND" %( storageElementName )
+    # Added for keeping consistency with 5 granularities
+    if 'StorageElementWriteName' in getInfo:
+      if storageElementName != [] and storageElementName != None and storageElementName is not None and storageElementName != '':
+        req = req + " StorageElementName IN (%s) AND" %( storageElementName )
+
     #status
-    req = req + " Status IN (%s)" % (status)
+    req = req + " Status IN (%s)" % ( status )
     #types
     if 'SiteType' in getInfo:
-      req = req + " AND SiteType IN (%s)" % (siteType)
+      req = req + " AND SiteType IN (%s)" % ( siteType )
     if 'ServiceType' in getInfo:
-      req = req + " AND ServiceType IN (%s)" % (serviceType)
+      req = req + " AND ServiceType IN (%s)" % ( serviceType )
     if 'ResourceType' in getInfo:
-      req = req + " AND ResourceType IN (%s)" % (resourceType)
+      req = req + " AND ResourceType IN (%s)" % ( resourceType )
 #    if 'StorageElementType' in getInfo:
 #      req = req + " WHERE StorageElementName LIKE \'%" + "%s\'" %(storageElementType)
-    if granularity not in ('StorageElementRead', 'StorageElementsRead', 'StorageElementWrite', 'StorageElementsWrite'):
-      req = req + " AND (%s LIKE %s)" % (DBname, countries)
+    if granularity not in ( 'StorageElementRead', 'StorageElementsRead', 'StorageElementWrite', 'StorageElementsWrite' ):
+      req = req + " AND (%s LIKE %s)" % ( DBname, countries )
 
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
-    if not resQuery['Value']:
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.getMonitoredsList ) + resQuery[ 'Message' ]
+    if not resQuery[ 'Value' ]:
       return []
     list = []
-    list = [ x for x in resQuery['Value']]
+    list = [ x for x in resQuery[ 'Value' ] ]
     return list
 
 
 #############################################################################
 
-  def getMonitoredsStatusWeb(self, granularity, selectDict, sortList, startItem, maxItems):
+  def getMonitoredsStatusWeb( self, granularity, selectDict, sortList, startItem, maxItems ):
     """
     Get present sites status list, for the web.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
@@ -425,193 +430,198 @@ class ResourceStatusDB:
       }
     """
 
-    if granularity in ('Site', 'Sites'):
-      paramNames = ['SiteName', 'Tier', 'GridType', 'Country',
-                     'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['SiteName', 'SiteType', 'Status', 'DateEffective',
-                    'FormerStatus', 'Reason']
-    elif granularity in ('Service', 'Services'):
-      paramNames = ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status',
-                    'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status',
-                    'DateEffective', 'FormerStatus', 'Reason']
-    elif granularity in ('Resource', 'Resources'):
-      paramNames = ['ResourceName', 'ServiceType', 'SiteName', 'ResourceType',
-                    'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 'ResourceType',
-                    'Status', 'DateEffective', 'FormerStatus', 'Reason']
-    elif granularity in ('StorageElementRead', 'StorageElementsRead', 'StorageElementWrite', 'StorageElementsWrite'):
-      paramNames = ['StorageElementName', 'ResourceName', 'SiteName',
-                    'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status',
-                    'DateEffective', 'FormerStatus', 'Reason']
+    if granularity in ( 'Site', 'Sites' ):
+      paramNames = [ 'SiteName', 'Tier', 'GridType', 'Country',
+                     'Status', 'DateEffective', 'FormerStatus', 'Reason' ]
+      paramsList = [ 'SiteName', 'SiteType', 'Status', 'DateEffective',
+                     'FormerStatus', 'Reason' ]
+    elif granularity in ( 'Service', 'Services' ):
+      paramNames = [ 'ServiceName', 'ServiceType', 'Site', 'Country', 'Status',
+                     'DateEffective', 'FormerStatus', 'Reason' ]
+      paramsList = [ 'ServiceName', 'ServiceType', 'SiteName', 'Status',
+                     'DateEffective', 'FormerStatus', 'Reason' ]
+    elif granularity in ( 'Resource', 'Resources' ):
+      paramNames = [ 'ResourceName', 'ServiceType', 'SiteName', 'ResourceType',
+                     'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason' ]
+      paramsList = [ 'ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 'ResourceType',
+                     'Status', 'DateEffective', 'FormerStatus', 'Reason' ]
+    elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):
+      paramNames = [ 'StorageElementName', 'ResourceName', 'SiteName',
+                     'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason' ]
+      paramsList = [ 'StorageElementName', 'ResourceName', 'GridSiteName', 'Status',
+                     'DateEffective', 'FormerStatus', 'Reason' ]
+    elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):
+      paramNames = [ 'StorageElementName', 'ResourceName', 'SiteName',
+                     'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason' ]
+      paramsList = [ 'StorageElementName', 'ResourceName', 'GridSiteName', 'Status',
+                     'DateEffective', 'FormerStatus', 'Reason' ]
     else:
-      raise InvalidRes, where(self, self.getMonitoredsStatusWeb)
+      raise InvalidRes, where( self, self.getMonitoredsStatusWeb )
 
 #    resultDict = {}
-    records = []
+    records                = []
 
-    sites_select = []
-    services_select = []
-    resources_select = []
+    sites_select           = []
+    services_select        = []
+    resources_select       = []
     storageElements_select = []
-    status_select = []
-    siteType_select = []
-    serviceType_select = []
-    resourceType_select = []
-    countries_select = []
+    status_select          = []
+    siteType_select        = []
+    serviceType_select     = []
+    resourceType_select    = []
+    countries_select       = []
 #    expand_site_history = ''
 #    expand_service_history = ''
 #    expand_resource_history = ''
 #    expand_storageElements_history = ''
 
     #specify SiteName
-    if selectDict.has_key('SiteName'):
-      sites_select = selectDict['SiteName']
-      if type(sites_select) is not list:
-        sites_select = [sites_select]
-      del selectDict['SiteName']
+    if selectDict.has_key( 'SiteName' ):
+      sites_select = selectDict[ 'SiteName' ]
+      if type( sites_select ) is not list:
+        sites_select = [ sites_select ]
+      del selectDict[ 'SiteName' ]
 
     #specify ServiceName
-    if selectDict.has_key('ServiceName'):
-      services_select = selectDict['ServiceName']
-      if type(services_select) is not list:
-        services_select = [services_select]
-      del selectDict['ServiceName']
+    if selectDict.has_key( 'ServiceName' ):
+      services_select = selectDict[ 'ServiceName' ]
+      if type( services_select ) is not list:
+        services_select = [ services_select ]
+      del selectDict[ 'ServiceName' ]
 
     #ResourceName
-    if selectDict.has_key('ResourceName'):
-      resources_select = selectDict['ResourceName']
-      if type(resources_select) is not list:
-        resources_select = [resources_select]
-      del selectDict['ResourceName']
+    if selectDict.has_key( 'ResourceName' ):
+      resources_select = selectDict[ 'ResourceName' ]
+      if type( resources_select ) is not list:
+        resources_select = [ resources_select ]
+      del selectDict[ 'ResourceName' ]
 
     #StorageElementName
-    if selectDict.has_key('StorageElementName'):
-      storageElements_select = selectDict['StorageElementName']
-      if type(storageElements_select) is not list:
-        storageElements_select = [storageElements_select]
-      del selectDict['StorageElementName']
+    if selectDict.has_key( 'StorageElementName' ):
+      storageElements_select = selectDict[ 'StorageElementName' ]
+      if type( storageElements_select ) is not list:
+        storageElements_select = [ storageElements_select ]
+      del selectDict[ 'StorageElementName' ]
 
     #Status
-    if selectDict.has_key('Status'):
-      status_select = selectDict['Status']
-      if type(status_select) is not list:
-        status_select = [status_select]
-      del selectDict['Status']
+    if selectDict.has_key( 'Status' ):
+      status_select = selectDict[ 'Status' ]
+      if type( status_select ) is not list:
+        status_select = [ status_select ]
+      del selectDict[ 'Status' ]
 
     #SiteType
-    if selectDict.has_key('SiteType'):
-      siteType_select = selectDict['SiteType']
-      if type(siteType_select) is not list:
-        siteType_select = [siteType_select]
-      del selectDict['SiteType']
+    if selectDict.has_key( 'SiteType' ):
+      siteType_select = selectDict[ 'SiteType' ]
+      if type( siteType_select ) is not list:
+        siteType_select =  [siteType_select ]
+      del selectDict[ 'SiteType' ]
 
     #ServiceType
-    if selectDict.has_key('ServiceType'):
-      serviceType_select = selectDict['ServiceType']
-      if type(serviceType_select) is not list:
-        serviceType_select = [serviceType_select]
-      del selectDict['ServiceType']
+    if selectDict.has_key( 'ServiceType' ):
+      serviceType_select = selectDict[ 'ServiceType' ]
+      if type( serviceType_select ) is not list:
+        serviceType_select = [ serviceType_select ]
+      del selectDict[ 'ServiceType' ]
 
     #ResourceType
-    if selectDict.has_key('ResourceType'):
-      resourceType_select = selectDict['ResourceType']
-      if type(resourceType_select) is not list:
-        resourceType_select = [resourceType_select]
-      del selectDict['ResourceType']
+    if selectDict.has_key( 'ResourceType' ):
+      resourceType_select = selectDict[ 'ResourceType' ]
+      if type( resourceType_select ) is not list:
+        resourceType_select = [ resourceType_select ]
+      del selectDict[ 'ResourceType' ]
 
     #Countries
-    if selectDict.has_key('Countries'):
-      countries_select = selectDict['Countries']
-      if type(countries_select) is not list:
-        countries_select = [countries_select]
-      del selectDict['Countries']
+    if selectDict.has_key( 'Countries' ):
+      countries_select = selectDict[ 'Countries' ]
+      if type( countries_select ) is not list:
+        countries_select = [ countries_select ]
+      del selectDict[ 'Countries' ]
 
     #ExpandSiteHistory
-    if selectDict.has_key('ExpandSiteHistory'):
-      paramsList = ['SiteName', 'Status', 'Reason', 'DateEffective']
-      sites_select = selectDict['ExpandSiteHistory']
-      if type(sites_select) is not list:
-        sites_select = [sites_select]
-      sitesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList,
-                                               name = sites_select)
+    if selectDict.has_key( 'ExpandSiteHistory' ):
+      paramsList = [ 'SiteName', 'Status', 'Reason', 'DateEffective' ]
+      sites_select = selectDict[ 'ExpandSiteHistory' ]
+      if type( sites_select ) is not list:
+        sites_select = [ sites_select ]
+      sitesHistory = self.getMonitoredsHistory( granularity, paramsList = paramsList,
+                                               name = sites_select )
       # sitesHistory is a list of tuples
       for site in sitesHistory:
         record = []
-        record.append(site[0]) #SiteName
-        record.append(None) #Tier
-        record.append(None) #GridType
-        record.append(None) #Country
-        record.append(site[1]) #Status
-        record.append(site[3].isoformat(' ')) #DateEffective
-        record.append(None) #FormerStatus
-        record.append(site[2]) #Reason
-        records.append(record)
+        record.append( site[ 0  ] ) #SiteName
+        record.append( None ) #Tier
+        record.append( None ) #GridType
+        record.append( None ) #Country
+        record.append( site[ 1 ] ) #Status
+        record.append( site[ 3 ].isoformat(' ') ) #DateEffective
+        record.append( None ) #FormerStatus
+        record.append( site[ 2 ] ) #Reason
+        records.append( record )
 
     #ExpandServiceHistory
-    elif selectDict.has_key('ExpandServiceHistory'):
-      paramsList = ['ServiceName', 'Status', 'Reason', 'DateEffective']
-      services_select = selectDict['ExpandServiceHistory']
-      if type(services_select) is not list:
-        services_select = [services_select]
-      servicesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList,
-                                                  name = services_select)
+    elif selectDict.has_key( 'ExpandServiceHistory' ):
+      paramsList = [ 'ServiceName', 'Status', 'Reason', 'DateEffective' ]
+      services_select = selectDict[ 'ExpandServiceHistory' ]
+      if type( services_select ) is not list:
+        services_select = [ services_select ]
+      servicesHistory = self.getMonitoredsHistory( granularity, paramsList = paramsList,
+                                                   name = services_select )
       # servicesHistory is a list of tuples
       for service in servicesHistory:
         record = []
-        record.append(service[0]) #ServiceName
-        record.append(None) #ServiceType
-        record.append(None) #Site
-        record.append(None) #Country
-        record.append(service[1]) #Status
-        record.append(service[3].isoformat(' ')) #DateEffective
-        record.append(None) #FormerStatus
-        record.append(service[2]) #Reason
-        records.append(record)
+        record.append( service[ 0 ] ) #ServiceName
+        record.append( None ) #ServiceType
+        record.append( None ) #Site
+        record.append( None ) #Country
+        record.append( service[ 1 ] ) #Status
+        record.append( service[ 3 ].isoformat(' ') ) #DateEffective
+        record.append( None ) #FormerStatus
+        record.append( service[ 2 ] ) #Reason
+        records.append( record )
 
     #ExpandResourceHistory
-    elif selectDict.has_key('ExpandResourceHistory'):
-      paramsList = ['ResourceName', 'Status', 'Reason', 'DateEffective']
-      resources_select = selectDict['ExpandResourceHistory']
-      if type(resources_select) is not list:
-        resources_select = [resources_select]
-      resourcesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList,
-                                                    name = resources_select)
+    elif selectDict.has_key( 'ExpandResourceHistory' ):
+      paramsList = [ 'ResourceName', 'Status', 'Reason', 'DateEffective' ]
+      resources_select = selectDict[ 'ExpandResourceHistory' ]
+      if type( resources_select ) is not list:
+        resources_select = [ resources_select ]
+      resourcesHistory = self.getMonitoredsHistory( granularity, paramsList = paramsList,
+                                                    name = resources_select )
       # resourcesHistory is a list of tuples
       for resource in resourcesHistory:
         record = []
-        record.append(resource[0]) #ResourceName
-        record.append(None) #ServiceName
-        record.append(None) #SiteName
-        record.append(None) #ResourceType
-        record.append(None) #Country
-        record.append(resource[1]) #Status
-        record.append(resource[3].isoformat(' ')) #DateEffective
-        record.append(None) #FormerStatus
-        record.append(resource[2]) #Reason
-        records.append(record)
+        record.append( resource[ 0 ] ) #ResourceName
+        record.append( None ) #ServiceName
+        record.append( None ) #SiteName
+        record.append( None ) #ResourceType
+        record.append( None ) #Country
+        record.append( resource[ 1 ] ) #Status
+        record.append( resource[ 3 ].isoformat(' ')) #DateEffective
+        record.append( None ) #FormerStatus
+        record.append( resource[ 2 ]) #Reason
+        records.append( record )
 
     #ExpandStorageElementHistory
-    elif selectDict.has_key('ExpandStorageElementHistory'):
-      paramsList = ['StorageElementName', 'Status', 'Reason', 'DateEffective']
-      storageElements_select = selectDict['ExpandStorageElementHistory']
-      if type(storageElements_select) is not list:
-        storageElements_select = [storageElements_select]
+    elif selectDict.has_key( 'ExpandStorageElementHistory' ):
+      paramsList = [ 'StorageElementName', 'Status', 'Reason', 'DateEffective' ]
+      storageElements_select = selectDict[ 'ExpandStorageElementHistory' ]
+      if type( storageElements_select ) is not list:
+        storageElements_select = [ storageElements_select ]
       storageElementsHistory = self.getMonitoredsHistory( granularity, paramsList = paramsList,
                                                           name = storageElements_select )
       # storageElementsHistory is a list of tuples
       for storageElement in storageElementsHistory:
         record = []
-        record.append(storageElement[0]) #StorageElementName
-        record.append(None) #ResourceName
-        record.append(None) #SiteName
-        record.append(None) #Country
-        record.append(storageElement[1]) #Status
-        record.append(storageElement[3].isoformat(' ')) #DateEffective
-        record.append(None) #FormerStatus
-        record.append(storageElement[2]) #Reason
-        records.append(record)
+        record.append( storageElement[ 0 ] ) #StorageElementName
+        record.append( None ) #ResourceName
+        record.append( None ) #SiteName
+        record.append( None ) #Country
+        record.append( storageElement[ 1 ] ) #Status
+        record.append( storageElement[ 3 ].isoformat(' ')) #DateEffective
+        record.append( None ) #FormerStatus
+        record.append( storageElement[ 2 ] ) #Reason
+        records.append( record )
 
     else:
       if granularity in ('Site', 'Sites'):
@@ -622,119 +632,127 @@ class ResourceStatusDB:
                                            siteType = siteType_select,
                                            countries = countries_select)
         for site in sitesList:
-          record = []
-          record.append(site[0]) #SiteName
-          record.append(site[1]) #Tier
-          gridType = (site[0]).split('.').pop(0)
-          record.append(gridType) #GridType
-          country = (site[0]).split('.').pop()
-          record.append(country) #Country
-          record.append(site[2]) #Status
-          record.append(site[3].isoformat(' ')) #DateEffective
-          record.append(site[4]) #FormerStatus
-          record.append(site[5]) #Reason
-          records.append(record)
+          record   = []
+          gridType = ( site[ 0 ] ).split( '.' ).pop(0)
+          country  = ( site[ 0 ] ).split( '.' ).pop()
+          
+          record.append( site[ 0 ] ) #SiteName
+          record.append( site[ 1 ] ) #Tier
+          record.append( gridType ) #GridType
+          record.append( country ) #Country
+          record.append( site[ 2 ] ) #Status
+          record.append( site[ 3 ].isoformat(' ') ) #DateEffective
+          record.append( site[ 4 ] ) #FormerStatus
+          record.append( site[ 5 ] ) #Reason
+          records.append( record )
 
-      elif granularity in ('Service', 'Services'):
-        servicesList = self.getMonitoredsList(granularity,
-                                              paramsList = paramsList,
-                                              serviceName = services_select,
-                                              siteName = sites_select,
-                                              status = status_select,
-                                              siteType = siteType_select,
-                                              serviceType = serviceType_select,
-                                              countries = countries_select)
-        for service in servicesList:
-          record = []
-          record.append(service[0]) #ServiceName
-          record.append(service[1]) #ServiceType
-          record.append(service[2]) #Site
-          country = (service[0]).split('.').pop()
-          record.append(country) #Country
-          record.append(service[3]) #Status
-          record.append(service[4].isoformat(' ')) #DateEffective
-          record.append(service[5]) #FormerStatus
-          record.append(service[6]) #Reason
-          records.append(record)
-
-      elif granularity in ('Resource', 'Resources'):
-        if sites_select == []:
-          sites_select = self.getMonitoredsList('Site',
-                                                paramsList = ['SiteName'])
-          sites_select = [x[0] for x in sites_select]
-        gridSites_select = self.getMonitoredsList('Site',
-                                                  paramsList = ['GridSiteName'],
-                                                  siteName = sites_select)
-        gridSites_select = [x[0] for x in gridSites_select]
-        resourcesList = self.getMonitoredsList(granularity,
+      elif granularity in ( 'Service', 'Services' ):
+        servicesList = self.getMonitoredsList( granularity,
                                                paramsList = paramsList,
-                                               resourceName = resources_select,
+                                               serviceName = services_select,
+                                               siteName = sites_select,
                                                status = status_select,
                                                siteType = siteType_select,
-                                               resourceType = resourceType_select,
-                                               countries = countries_select,
-                                               gridSiteName = gridSites_select)
+                                               serviceType = serviceType_select,
+                                               countries = countries_select )
+        for service in servicesList:
+          record  = []
+          country = ( service[ 0 ] ).split( '.' ).pop()
+          
+          record.append( service[ 0 ] ) #ServiceName
+          record.append( service[ 1 ] ) #ServiceType
+          record.append( service[ 2 ] ) #Site
+          record.append( country ) #Country
+          record.append( service[ 3 ] ) #Status
+          record.append( service[ 4 ].isoformat(' ') ) #DateEffective
+          record.append( service[ 5 ] ) #FormerStatus
+          record.append( service[ 6 ] ) #Reason
+          records.append( record )
+
+      elif granularity in ( 'Resource', 'Resources' ):
+        if sites_select == []:
+          sites_select = self.getMonitoredsList( 'Site',
+                                                 paramsList = [ 'SiteName' ] )
+          sites_select = [ x[ 0 ] for x in sites_select ]
+          
+        gridSites_select = self.getMonitoredsList( 'Site',
+                                                   paramsList = [ 'GridSiteName' ],
+                                                   siteName = sites_select )
+        gridSites_select = [ x[ 0 ] for x in gridSites_select ]
+        
+        resourcesList = self.getMonitoredsList( granularity,
+                                                paramsList = paramsList,
+                                                resourceName = resources_select,
+                                                status = status_select,
+                                                siteType = siteType_select,
+                                                resourceType = resourceType_select,
+                                                countries = countries_select,
+                                                gridSiteName = gridSites_select )
 
         for resource in resourcesList:
-          DIRACsite = resource[2]
+          DIRACsite = resource[ 2 ]
 
           if DIRACsite == None:
-            GridSiteName = resource[3]  #self.getGridSiteName(granularity, resource[0])
-            DIRACsites = getDIRACSiteName(GridSiteName)
-            if not DIRACsites['OK']:
+            GridSiteName = resource[ 3 ]  #self.getGridSiteName(granularity, resource[0])
+            DIRACsites = getDIRACSiteName( GridSiteName )
+            if not DIRACsites[ 'OK' ]:
               raise RSSDBException, 'Error executing getDIRACSiteName'
-            DIRACsites = DIRACsites['Value']
+            DIRACsites = DIRACsites[ 'Value' ]
             DIRACsite_comp = ''
             for DIRACsite in DIRACsites:
               if DIRACsite not in sites_select:
                 continue
               DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
-            record = []
-            record.append(resource[0]) #ResourceName
-            record.append(resource[1]) #ServiceType
-            record.append(DIRACsite_comp) #SiteName
-            record.append(resource[4]) #ResourceType
-            country = (resource[0]).split('.').pop()
-            record.append(country) #Country
-            record.append(resource[5]) #Status
-            record.append(resource[6].isoformat(' ')) #DateEffective
-            record.append(resource[7]) #FormerStatus
-            record.append(resource[8]) #Reason
-            records.append(record)
+              
+            record  = []
+            country = ( resource[ 0 ] ).split( '.' ).pop()
+            
+            record.append( resource[ 0 ] ) #ResourceName
+            record.append( resource[ 1 ] ) #ServiceType
+            record.append( DIRACsite_comp ) #SiteName
+            record.append( resource[ 4 ] ) #ResourceType
+            record.append( country ) #Country
+            record.append( resource[ 5 ] ) #Status
+            record.append( resource[ 6 ].isoformat(' ') ) #DateEffective
+            record.append( resource[ 7 ] ) #FormerStatus
+            record.append( resource[ 8 ] ) #Reason
+            records.append( record )
 
           else:
             if DIRACsite not in sites_select:
               continue
-            record = []
-            record.append(resource[0]) #ResourceName
-            record.append(resource[1]) #ServiceType
-            record.append(DIRACsite) #SiteName
-            record.append(resource[4]) #ResourceType
-            country = (resource[0]).split('.').pop()
-            record.append(country) #Country
-            record.append(resource[5]) #Status
-            record.append(resource[6].isoformat(' ')) #DateEffective
-            record.append(resource[7]) #FormerStatus
-            record.append(resource[8]) #Reason
-            records.append(record)
+            record  = []
+            country = ( resource[ 0 ] ).split( '.' ).pop()
+            
+            record.append( resource[ 0 ] ) #ResourceName
+            record.append( resource[ 1 ] ) #ServiceType
+            record.append( DIRACsite ) #SiteName
+            record.append( resource[ 4 ] ) #ResourceType
+            record.append( country ) #Country
+            record.append( resource[ 5 ] ) #Status
+            record.append( resource[ 6 ].isoformat(' ') ) #DateEffective
+            record.append( resource[ 7 ] ) #FormerStatus
+            record.append( resource[ 8 ] ) #Reason
+            records.append( record )
 
 
-      elif granularity in ('StorageElementRead', 'StorageElementsRead', 'StorageElementWrite', 'StorageElementsWrite'):
+      elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):
         if sites_select == []:
-          sites_select = self.getMonitoredsList('Site',
-                                                paramsList = ['SiteName'])
-          sites_select = [x[0] for x in sites_select]
-        gridSites_select = self.getMonitoredsList('Site',
-                                                  paramsList = ['GridSiteName'],
-                                                  siteName = sites_select)
-        gridSites_select = [x[0] for x in gridSites_select]
+          sites_select = self.getMonitoredsList( 'Site',
+                                                paramsList = [ 'SiteName' ] )
+          sites_select = [ x[ 0 ] for x in sites_select ]
+          
+        gridSites_select = self.getMonitoredsList( 'Site',
+                                                   paramsList = [ 'GridSiteName' ],
+                                                   siteName = sites_select )
+        gridSites_select = [ x[ 0 ] for x in gridSites_select ]
 
-        storageElementsList = self.getMonitoredsList(granularity,
-                                                     paramsList = paramsList,
-                                                     storageElementName = storageElements_select,
-                                                     status = status_select,
-                                                     countries = countries_select,
-                                                     gridSiteName = gridSites_select)
+        storageElementsList = self.getMonitoredsList( granularity,
+                                                      paramsList = paramsList,
+                                                      storageElementName = storageElements_select,
+                                                      status = status_select,
+                                                      countries = countries_select,
+                                                      gridSiteName = gridSites_select )
 
 #      paramNames = ['StorageElementName', 'ResourceName', 'SiteName', 'Country',
 #                    'Status', 'DateEffective', 'FormerStatus', 'Reason']
@@ -742,47 +760,95 @@ class ResourceStatusDB:
 #                    'DateEffective', 'FormerStatus', 'Reason']
 
         for storageElement in storageElementsList:
-          DIRACsites = getDIRACSiteName(storageElement[2])
-          if not DIRACsites['OK']:
+          DIRACsites = getDIRACSiteName( storageElement[ 2 ] )
+          if not DIRACsites[ 'OK' ]:
             raise RSSDBException, 'Error executing getDIRACSiteName'
-          DIRACsites = DIRACsites['Value']
+          DIRACsites = DIRACsites[ 'Value' ]
           DIRACsite_comp = ''
           for DIRACsite in DIRACsites:
             if DIRACsite not in sites_select:
               continue
             DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
-          record = []
-          record.append(storageElement[0]) #StorageElementName
-          record.append(storageElement[1]) #ResourceName
-          record.append(DIRACsite_comp) #SiteName
-          country = (storageElement[1]).split('.').pop()
-          record.append(country) #Country
-          record.append(storageElement[3]) #Status
-          record.append(storageElement[4].isoformat(' ')) #DateEffective
-          record.append(storageElement[5]) #FormerStatus
-          record.append(storageElement[6]) #Reason
-          records.append(record)
+          record  = []
+          country = ( storageElement[ 1 ] ).split( '.' ).pop()
+          
+          record.append( storageElement[ 0 ] ) #StorageElementName
+          record.append( storageElement[ 1 ] ) #ResourceName
+          record.append( DIRACsite_comp ) #SiteName
+          record.append( country ) #Country
+          record.append( storageElement[ 3 ] ) #Status
+          record.append( storageElement[ 4 ].isoformat(' ') ) #DateEffective
+          record.append( storageElement[ 5 ] ) #FormerStatus
+          record.append( storageElement[ 6 ] ) #Reason
+          records.append( record )
+
+      elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):
+        if sites_select == []:
+          sites_select = self.getMonitoredsList( 'Site',
+                                                 paramsList = ['SiteName'] )
+          sites_select = [ x[ 0 ] for x in sites_select ]
+          
+        gridSites_select = self.getMonitoredsList( 'Site',
+                                                   paramsList = [ 'GridSiteName' ],
+                                                   siteName = sites_select )
+        gridSites_select = [ x[ 0 ] for x in gridSites_select ]
+
+        storageElementsList = self.getMonitoredsList( granularity,
+                                                      paramsList = paramsList,
+                                                      storageElementName = storageElements_select,
+                                                      status = status_select,
+                                                      countries = countries_select,
+                                                      gridSiteName = gridSites_select )
+
+#      paramNames = ['StorageElementName', 'ResourceName', 'SiteName', 'Country',
+#                    'Status', 'DateEffective', 'FormerStatus', 'Reason']
+#      paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status',
+#                    'DateEffective', 'FormerStatus', 'Reason']
+
+        for storageElement in storageElementsList:
+          DIRACsites = getDIRACSiteName( storageElement[ 2 ] )
+          if not DIRACsites[ 'OK' ]:
+            raise RSSDBException, 'Error executing getDIRACSiteName'
+          DIRACsites = DIRACsites[ 'Value' ]
+          DIRACsite_comp = ''
+          for DIRACsite in DIRACsites:
+            if DIRACsite not in sites_select:
+              continue
+            DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
+          
+          record  = []
+          country = ( storageElement[ 1 ] ).split( '.' ).pop()
+          
+          record.append( storageElement[ 0 ] ) #StorageElementName
+          record.append( storageElement[ 1 ] ) #ResourceName
+          record.append( DIRACsite_comp ) #SiteName
+          record.append( country ) #Country
+          record.append( storageElement[ 3 ] ) #Status
+          record.append( storageElement[ 4 ].isoformat(' ')) #DateEffective
+          record.append( storageElement[ 5 ] ) #FormerStatus
+          record.append( storageElement[ 6 ] ) #Reason
+          records.append( record )
 
 
     finalDict = {}
-    finalDict['TotalRecords'] = len(records)
-    finalDict['ParameterNames'] = paramNames
+    finalDict[ 'TotalRecords' ]   = len( records )
+    finalDict[ 'ParameterNames' ] = paramNames
 
     # Return all the records if maxItems == 0 or the specified number otherwise
     if maxItems:
-      finalDict['Records'] = records[startItem:startItem+maxItems]
+      finalDict[ 'Records' ] = records[ startItem:startItem+maxItems ]
     else:
-      finalDict['Records'] = records
+      finalDict[ 'Records' ] = records
 
-    finalDict['Extras'] = None
+    finalDict[ 'Extras' ] = None
 
     return finalDict
 
 
 #############################################################################
 
-  def getMonitoredsHistory(self, granularity, paramsList = None, name = None,
-                           presentAlso = True, order = 'ASC', limit = None):
+  def getMonitoredsHistory( self, granularity, paramsList = None, name = None,
+                            presentAlso = True, order = 'ASC', limit = None ):
     """
     Get history of sites / services / resources / storageElements in a list
     (a site name can be specified)
@@ -796,91 +862,91 @@ class ResourceStatusDB:
     """
 
     if paramsList is not None:
-      if type(paramsList) is not type([]):
-        paramsList = [paramsList]
-      params = ','.join([x.strip()+' ' for x in paramsList])
+      if type( paramsList ) is not type( [] ):
+        paramsList = [ paramsList ]
+      params = ','.join( [ x.strip()+' ' for x in paramsList ] )
 
-    if granularity in ('Site', 'Sites'):
-      if (paramsList == None or paramsList == []):
+    if granularity in ( 'Site', 'Sites' ):
+      if ( paramsList == None or paramsList == [] ):
         params = 'SiteName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
-      DBtable = 'SitesHistory'
+      DBtable  = 'SitesHistory'
       DBtableP = 'Sites'
-      DBname = 'SiteName'
-      DBid = 'SitesHistoryID'
-    elif granularity in ('Service', 'Services'):
-      if (paramsList == None or paramsList == []):
+      DBname   = 'SiteName'
+      DBid     = 'SitesHistoryID'
+    elif granularity in ( 'Service', 'Services' ):
+      if ( paramsList == None or paramsList == [] ):
         params = 'ServiceName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
-      DBtable = 'ServicesHistory'
+      DBtable  = 'ServicesHistory'
       DBtableP = 'Services'
-      DBname = 'ServiceName'
-      DBid = 'ServicesHistoryID'
-    elif granularity in ('Resource', 'Resources'):
-      if (paramsList == None or paramsList == []):
+      DBname   = 'ServiceName'
+      DBid     = 'ServicesHistoryID'
+    elif granularity in ( 'Resource', 'Resources' ):
+      if ( paramsList == None or paramsList == [] ):
         params = 'ResourceName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
-      DBtable = 'ResourcesHistory'
+      DBtable  = 'ResourcesHistory'
       DBtableP = 'Resources'
-      DBname = 'ResourceName'
-      DBid = 'ResourcesHistoryID'
-    elif granularity in ('StorageElementRead', 'StorageElementsRead'):
-      if (paramsList == None or paramsList == []):
+      DBname   = 'ResourceName'
+      DBid     = 'ResourcesHistoryID'
+    elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):
+      if ( paramsList == None or paramsList == [] ):
         params = 'StorageElementName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
-      DBtable = 'StorageElementsReadHistory'
+      DBtable  = 'StorageElementsReadHistory'
       DBtableP = 'StorageElementsRead'
-      DBname = 'StorageElementName'
-      DBid = 'StorageElementsHistoryID'
-    elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
-      if (paramsList == None or paramsList == []):
+      DBname   = 'StorageElementName'
+      DBid     = 'StorageElementsHistoryID'
+    elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):
+      if ( paramsList == None or paramsList == [] ):
         params = 'StorageElementName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
-      DBtable = 'StorageElementsWriteHistory'
+      DBtable  = 'StorageElementsWriteHistory'
       DBtableP = 'StorageElementsWrite'
-      DBname = 'StorageElementName'
-      DBid = 'StorageElementsHistoryID'
+      DBname   = 'StorageElementName'
+      DBid     = 'StorageElementsHistoryID'
     else:
-      raise InvalidRes, where(self, self.getMonitoredsHistory)
+      raise InvalidRes, where( self, self.getMonitoredsHistory )
 
 
     #take history data
-    if (name == None or name == []):
-      req = "SELECT %s FROM %s ORDER BY %s, %s" %(params, DBtable, DBname, DBid)
+    if ( name == None or name == [] ):
+      req = "SELECT %s FROM %s ORDER BY %s, %s" %( params, DBtable, DBname, DBid )
     else:
-      if type(name) is not type([]):
-        nameM = [name]
+      if type( name ) is not type( [] ):
+        nameM = [ name ]
       else:
         nameM = name
-      nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
-      req = "SELECT %s FROM %s WHERE %s IN (%s) ORDER BY %s" % (params, DBtable, DBname,
-                                                                nameM, DBid)
+      nameM = ','.join( [ '"'+x.strip()+'"' for x in nameM ] )
+      req = "SELECT %s FROM %s WHERE %s IN (%s) ORDER BY %s" % ( params, DBtable, DBname,
+                                                                 nameM, DBid )
       if order == 'DESC':
         req = req + " DESC"
       if limit is not None:
-        req = req + " LIMIT %s" %str(limit)
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
-    if not resQuery['Value']:
+        req = req + " LIMIT %s" %str( limit )
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.getMonitoredsHistory ) + resQuery[ 'Message' ]
+    if not resQuery[ 'Value' ]:
       return []
 #    list_h = []
-    list_h = [ x for x in resQuery['Value']]
+    list_h = [ x for x in resQuery[ 'Value' ] ]
 
     if presentAlso:
       #take present data
-      if (name == None or name == []):
-        req = "SELECT %s FROM %s ORDER BY %s" %(params, DBtableP, DBname)
+      if ( name == None or name == [] ):
+        req = "SELECT %s FROM %s ORDER BY %s" %( params, DBtableP, DBname )
       else:
-        if type(name) is not type([]):
-          nameM = [name]
+        if type( name ) is not type( [] ):
+          nameM = [ name ]
         else:
           nameM = name
-        nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
-        req = "SELECT %s FROM %s WHERE %s IN (%s)" % (params, DBtableP, DBname, nameM)
+        nameM = ','.join( [ '"'+x.strip()+'"' for x in nameM ] )
+        req = "SELECT %s FROM %s WHERE %s IN (%s)" % ( params, DBtableP, DBname, nameM )
 
-      resQuery = self.db._query(req)
-      if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
-      if not resQuery['Value']:
+      resQuery = self.db._query( req )
+      if not resQuery[ 'OK' ]:
+        raise RSSDBException, where( self, self.getMonitoredsHistory ) + resQuery[ 'Message' ]
+      if not resQuery[ 'Value' ]:
         return []
       list_p = []
-      list_p = [ x for x in resQuery['Value']]
+      list_p = [ x for x in resQuery[ 'Value' ] ]
 
       list = list_h + list_p
     else:
@@ -1561,7 +1627,8 @@ class ResourceStatusDB:
     """
 
     if resourceName != None:
-      self.removeStorageElement( resourceName = resourceName )
+      self.removeStorageElement( resourceName = resourceName, access = 'Read' )
+      self.removeStorageElement( resourceName = resourceName, access = 'Write' )
 
       req = "DELETE from Resources WHERE ResourceName = '%s';" % ( resourceName )
       resDel = self.db._update( req )
@@ -1665,15 +1732,21 @@ class ResourceStatusDB:
             req = req + " WHERE ResourceName IN (%s);" %( resourceName )
 
 
-        elif granularity in ('StorageElementRead', 'StorageElementsRead', 'StorageElementWrite', 'StorageElementsWrite'):
+        elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):
           resourceName = self.getGeneralName( name, granularity, monitored )
           resourceName = ','.join( [ '"'+x.strip()+'"' for x in resourceName ] )
 
           req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'"
           req = req + " WHERE ResourceName IN (%s);" %( resourceName )
 
+        elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite'):
+          resourceName = self.getGeneralName( name, granularity, monitored )
+          resourceName = ','.join( [ '"'+x.strip()+'"' for x in resourceName ] )
 
+          req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'"
+          req = req + " WHERE ResourceName IN (%s);" %( resourceName )
 
+      # Put read and write together here... too much fomr copy/paste
       elif monitored in ('StorageElementRead', 'StorageElementsRead', 'StorageElementWrite', 'StorageElementsWrite'):
 
         if monitored in ('StorageElementRead', 'StorageElementsRead'):
@@ -1781,7 +1854,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getStorageElementsStats( self, granularity, name ):
+  def getStorageElementsStats( self, granularity, name, access ):
     """
     Returns simple statistics of active, probing, bad and banned resources of a site or resource;
 
@@ -1790,19 +1863,28 @@ class ResourceStatusDB:
 
       :attr:`name`: string - name of site or resource
 
+      :attr:`access`: string: Read or Write
+
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
+
+    if access == 'Read':
+      SEtable = 'StorageElementsRead'
+    elif access == 'Write':
+      SEtable = 'StorageElementsWrite'
+    else:
+      raise RSSException, where( self, self.getStorageElementsStats ) + 'Invalid access mode'  
 
     res = {'Active':0, 'Probing':0, 'Bad':0, 'Banned':0, 'Total':0}
 
     if granularity in ( 'Site', 'Sites' ):
 #      gridSiteName = self.getGridSiteName(granularity, name)
       req = "SELECT Status, COUNT(*)"
-      req = req + " FROM StorageElements WHERE GridSiteName = '%s' GROUP BY Status" %name
+      req = req + " FROM %s WHERE GridSiteName = '%s' GROUP BY Status" % ( SEtable, name )
     elif granularity in ('Resource', 'Resources'):
       req = "SELECT Status, COUNT(*)"
-      req = req + " FROM StorageElements WHERE ResourceName = '%s' GROUP BY Status" %name
+      req = req + " FROM %s WHERE ResourceName = '%s' GROUP BY Status" % ( SEtable, name )
     resQuery = self.db._query( req )
     if not resQuery[ 'OK' ]:
       raise RSSDBException, where( self, self.getStorageElementsStats ) + resQuery[ 'Message' ]
@@ -1822,7 +1904,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def setStorageElementStatus( self, storageElementName, status, reason, tokenOwner ):
+  def setStorageElementStatus( self, storageElementName, status, reason, tokenOwner, access ):
     """
     Set a StorageElement status, effective from now, with no ending
 
@@ -1835,9 +1917,18 @@ class ResourceStatusDB:
       :attr:`reason`: string
 
       :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
+      
+      :attr:`access`: string Read or Write
     """
 
-    req = "SELECT ResourceName, GridSiteName FROM StorageElements WHERE StorageElementName = "
+    if access == 'Read':
+      SEtable = 'StorageElementsRead'
+    elif access == 'Write':
+      SEtable = 'StorageElementsWrite'
+    else:
+      raise RSSException, where( self, self.setStorageElementsStats ) + 'Invalid access mode'  
+
+    req = "SELECT ResourceName, GridSiteName FROM %s WHERE StorageElementName = " % SEtable
     req = req + "'%s' AND DateEffective < UTC_TIMESTAMP();" %( storageElementName )
     resQuery = self.db._query( req )
     if not resQuery[ 'OK' ]:
@@ -1850,12 +1941,13 @@ class ResourceStatusDB:
 
     self.addOrModifyStorageElement( storageElementName, resourceName, gridSiteName, status,
                                     reason, datetime.datetime.utcnow().replace( microsecond = 0 ),
-                                    tokenOwner, datetime.datetime( 9999, 12, 31, 23, 59, 59 ) )
+                                    tokenOwner, datetime.datetime( 9999, 12, 31, 23, 59, 59 ),
+                                    access )
 
 #############################################################################
 
   def addOrModifyStorageElement( self, storageElementName, resourceName, gridSiteName,
-                                 status, reason, dateEffective, tokenOwner, dateEnd ):
+                                 status, reason, dateEffective, tokenOwner, dateEnd, access ):
     """
     Add or modify a storageElement to the StorageElements table.
 
@@ -1878,12 +1970,21 @@ class ResourceStatusDB:
 
       :attr:`dateEnd`: datetime.datetime -
       date from which the storageElement status ends to be effective
+      
+      :attr:`access`: string - Read or Write
     """
+
+    if access == 'Read':
+      SEtable = 'StorageElementsRead'
+    elif access == 'Write':
+      SEtable = 'StorageElementsWrite'
+    else:
+      raise RSSException, where( self, self.addOrModifyStorageElement ) + 'Invalid access mode'  
 
     dateCreated, dateEffective = self.__addOrModifyInit( dateEffective, dateEnd, status )
 
     #check if the storageElement is already there
-    query = "SELECT StorageElementName FROM StorageElements WHERE "
+    query = "SELECT StorageElementName FROM %s WHERE " % SEtable
     query = query + "StorageElementName='%s'" % storageElementName
     resQuery = self.db._query( query )
     if not resQuery[ 'OK' ]:
@@ -1903,16 +2004,17 @@ class ResourceStatusDB:
         oldStatus = 'Active'
       self._addStorageElementHistoryRow( storageElementName, oldStatus, reason, dateCreated, dateEffective,
                                          datetime.datetime.utcnow().replace( microsecond = 0 ).isoformat( ' ' ),
-                                         tokenOwner )
+                                         tokenOwner, access )
 
     #in any case add a row to present StorageElements table
     self._addStorageElementRow( storageElementName, resourceName, gridSiteName, status,
-                                reason, dateCreated, dateEffective, dateEnd, tokenOwner )
+                                reason, dateCreated, dateEffective, dateEnd, tokenOwner,
+                                access )
 
 #############################################################################
 
   def _addStorageElementRow( self, storageElementName, resourceName, gridSiteName, status,
-                             reason, dateCreated, dateEffective, dateEnd, tokenOwner ):
+                             reason, dateCreated, dateEffective, dateEnd, tokenOwner, access ):
     """
     Add a new storageElement row in StorageElements table
 
@@ -1938,14 +2040,23 @@ class ResourceStatusDB:
       ends to be effective
 
       :attr:`tokenOwner`: string - free
+      
+      :attr:`access`: string - Read or Write
     """
+
+    if access == 'Read':
+      SEtable = 'StorageElementsRead'
+    elif access == 'Write':
+      SEtable = 'StorageElementsWrite'
+    else:
+      raise RSSException, where( self, self._addStorageElementRow ) + 'Invalid access mode'  
 
     dateCreated, dateEffective, dateEnd = self.__usualChecks( dateCreated, dateEffective, dateEnd, status )
 
     if gridSiteName is None:
       gridSiteName = 'NULL'
 
-    req = "INSERT INTO StorageElements (StorageElementName, ResourceName, GridSiteName, "
+    req = "INSERT INTO %s (StorageElementName, ResourceName, GridSiteName, " % SEtable
     req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
     req = req + "VALUES ('%s', '%s', " %( storageElementName, resourceName )
     if gridSiteName == 'NULL':
@@ -1962,7 +2073,7 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addStorageElementHistoryRow( self, storageElementName, status,
-                                    reason, dateCreated, dateEffective, dateEnd, tokenOwner ):
+                                    reason, dateCreated, dateEffective, dateEnd, tokenOwner, access ):
     """
     Add an old storageElement row in the StorageElementsHistory table
 
@@ -1984,11 +2095,20 @@ class ResourceStatusDB:
       date from which the storageElement status ends to be effective
 
       :attr:`tokenOwner`: string - free
+      
+      :attr:`access`: string - Read or Write
     """
+
+    if access == 'Read':
+      SEtable = 'StorageElementsReadHistory'
+    elif access == 'Write':
+      SEtable = 'StorageElementsWriteHistory'
+    else:
+      raise RSSException, where( self, self._addStorageElementHistoryRow ) + 'Invalid access mode'  
 
     dateCreated, dateEffective, dateEnd = self.__usualChecks( dateCreated, dateEffective, dateEnd, status )
 
-    req = "INSERT INTO StorageElementsHistory (StorageElementName, "
+    req = "INSERT INTO %s (StorageElementName, " % SEtable
     req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner) "
     req = req + "VALUES ('%s', '%s', " % ( storageElementName, status )
     req = req + "'%s', '%s', '%s', " %( reason, dateCreated, dateEffective )
@@ -2001,7 +2121,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def removeStorageElement( self, storageElementName = None, resourceName = None ):
+  def removeStorageElement( self, storageElementName = None, resourceName = None, access = None ):
     """
     Completely remove a storageElement from the StorageElements
     and StorageElementsHistory tables
@@ -2010,23 +2130,32 @@ class ResourceStatusDB:
       :attr:`storageElementName`: string
 
       :attr:`resourceName`: string
+      
+      :attr:`access`: string - Read or Write
     """
 
+    if access == 'Read':
+      SEtable = 'StorageElementsRead'
+    elif access == 'Write':
+      SEtable = 'StorageElementsWrite'
+    else:
+      raise RSSException, where( self, self.removeStorageElement ) + 'Invalid access mode'  
+
     if storageElementName != None:
-      req = "DELETE from StorageElements "
+      req = "DELETE from %s " % SEtable
       req = req + "WHERE StorageElementName = '%s';" % ( storageElementName )
       resDel = self.db._update( req )
       if not resDel[ 'OK' ]:
         raise RSSDBException, where( self, self.removeStorageElement ) + resDel[ 'Message' ]
 
-      req = "DELETE from StorageElementsHistory"
+      req = "DELETE from %sHistory" % SEtable
       req = req + " WHERE StorageElementName = '%s';" % ( storageElementName )
       resDel = self.db._update( req )
       if not resDel[ 'OK' ]:
         raise RSSDBException, where( self, self.removeStorageElement ) + resDel[ 'Message' ]
 
     if resourceName != None:
-      req = "DELETE from StorageElements WHERE ResourceName = '%s';" % ( resourceName )
+      req = "DELETE from %s WHERE ResourceName = '%s';" % ( SEtable, resourceName )
       resDel = self.db._update( req )
       if not resDel[ 'OK' ]:
         raise RSSDBException, where( self, self.removeStorageElement ) + resDel[ 'Message' ]
@@ -2288,12 +2417,24 @@ class ResourceStatusDB:
         req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
         req = req + "(SELECT GridSiteName FROM Resources WHERE ResourceName = '%s')" %( name )
 
-    elif from_g in ( 'StorageElement', 'StorageElements' ):
+    elif from_g in ( 'StorageElementRead', 'StorageElementsRead' ):
+
       if to_g in ( 'Resource', 'Resources' ):
-        req = "SELECT ResourceName FROM StorageElements WHERE StorageElementName = '%s'" %name
+        req = "SELECT ResourceName FROM StorageElementsRead WHERE StorageElementName = '%s'" % ( name )
       else:
         req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
-        req = req + "(SELECT GridSiteName FROM StorageElements WHERE StorageElementName = '%s')" %name
+        req = req + "(SELECT GridSiteName FROM StorageElementsRead WHERE StorageElementName = '%s')" % ( name )
+
+        if to_g in ( 'Service', 'Services' ):
+          serviceType = 'Storage'
+
+    elif from_g in ( 'StorageElementWrite', 'StorageElementsWrite' ):
+
+      if to_g in ( 'Resource', 'Resources' ):
+        req = "SELECT ResourceName FROM StorageElementsWrite WHERE StorageElementName = '%s'" % ( name )
+      else:
+        req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
+        req = req + "(SELECT GridSiteName FROM StorageElementsWrite WHERE StorageElementName = '%s')" % ( name )
 
         if to_g in ( 'Service', 'Services' ):
           serviceType = 'Storage'
@@ -2394,8 +2535,10 @@ class ResourceStatusDB:
       req = "SELECT DateEffective FROM Services WHERE ServiceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
     elif granularity in ( 'Resource', 'Resources' ):
       req = "SELECT DateEffective FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
-    elif granularity in ( 'StorageElement', 'StorageElements' ):
-      req = "SELECT DateEffective FROM StorageElements WHERE StorageElementName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
+    elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):     
+      req = "SELECT DateEffective FROM StorageElementsRead WHERE StorageElementName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
+    elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):     
+      req = "SELECT DateEffective FROM StorageElementsWrite WHERE StorageElementName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
 
     resQuery = self.db._query( req )
     if not resQuery[ 'OK' ]:
@@ -2426,8 +2569,11 @@ class ResourceStatusDB:
       elif granularity in ('Service', 'Services'):
         req = "SELECT DateEffective, DateEnd FROM ServicesHistory WHERE "
         req = req + "ServiceName = '%s' AND Status = '%s'" %(name, status)
-      elif granularity in ('StorageElement', 'StorageElements'):
-        req = "SELECT DateEffective, DateEnd FROM StorageElementsHistory "
+      elif granularity in ('StorageElementRead', 'StorageElementsRead'):
+        req = "SELECT DateEffective, DateEnd FROM StorageElementsReadHistory "
+        req = req + "WHERE StorageElementName = '%s' AND Status = '%s'" %(name, status)
+      elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
+        req = "SELECT DateEffective, DateEnd FROM StorageElementsWriteHistory "
         req = req + "WHERE StorageElementName = '%s' AND Status = '%s'" %(name, status)
 
       resQuery = self.db._query(req)
@@ -2497,7 +2643,7 @@ class ResourceStatusDB:
 #############################################################################
 
 
-  def transact2History(self, *args):
+  def transact2History( self, *args ):
     """
     Transact a row from a Sites or Service or Resources table to history.
     Does not do a real transaction in terms of DB.
@@ -2525,188 +2671,252 @@ class ResourceStatusDB:
         trasact2History(('StorageElement', 523)) - the number if the StorageElementID
     """
 
-    if args[0] in ('Site', 'Sites'):
+    if args[ 0 ] in ('Site', 'Sites'):
       #get row to be put in history Sites table
-      if len(args) == 3:
+      if len( args ) == 3:
         req = "SELECT Status, Reason, DateCreated, "
         req = req + "DateEffective, DateEnd, TokenOwner from Sites "
-        req = req + "WHERE (SiteName='%s' AND DateEffective < '%s');" % (args[1], args[2])
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
-        if not resQuery['Value']:
+        req = req + "WHERE (SiteName='%s' AND DateEffective < '%s');" % ( args[ 1 ], args[ 2 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           return None
-        oldStatus = resQuery['Value'][0][0]
-        oldReason = resQuery['Value'][0][1]
-        oldDateCreated = resQuery['Value'][0][2]
-        oldDateEffective = resQuery['Value'][0][3]
-        oldDateEnd = resQuery['Value'][0][4]
-        oldTokenOwner = resQuery['Value'][0][5]
+        oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateEffective = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 5 ]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addSiteHistoryRow(args[1], oldStatus, oldReason, oldDateCreated,
-                                oldDateEffective, oldDateEnd, oldTokenOwner)
-        self.removeRow(args[0], args[1], oldDateEffective)
+        self._addSiteHistoryRow( args[ 1 ], oldStatus, oldReason, oldDateCreated,
+                                 oldDateEffective, oldDateEnd, oldTokenOwner )
+        self.removeRow( args[ 0 ], args[ 1 ], oldDateEffective )
 
-      elif len(args) == 2:
+      elif len( args ) == 2:
         req = "SELECT SiteName, Status, Reason, DateCreated, "
         req = req + "DateEffective, DateEnd, TokenOwner from Sites "
-        req = req + "WHERE (SiteID='%s');" % (args[1])
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
-        if not resQuery['Value']:
+        req = req + "WHERE (SiteID='%s');" % ( args[ 1 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           return None
-        siteName = resQuery['Value'][0][0]
-        oldStatus = resQuery['Value'][0][1]
-        oldReason = resQuery['Value'][0][2]
-        oldDateCreated = resQuery['Value'][0][3]
-        oldDateEffective = resQuery['Value'][0][4]
-        oldDateEnd = resQuery['Value'][0][5]
-        oldTokenOwner = resQuery['Value'][0][6]
+        
+        siteName         = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldStatus        = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldReason        = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEffective = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 5 ]
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 6 ]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addSiteHistoryRow(siteName, oldStatus, oldReason, oldDateCreated,
-                                oldDateEffective, oldDateEnd, oldTokenOwner)
-        self.removeRow(args[0], siteName, oldDateEffective)
+        self._addSiteHistoryRow( siteName, oldStatus, oldReason, oldDateCreated,
+                                 oldDateEffective, oldDateEnd, oldTokenOwner )
+        self.removeRow( args[ 0 ], siteName, oldDateEffective )
 
 
-    if args[0] in ('Service', 'Services'):
+    if args[ 0 ] in ( 'Service', 'Services' ):
       #get row to be put in history Services table
-      if len(args) == 3:
+      if len( args ) == 3:
         req = "SELECT Status, Reason, DateCreated, "
         req = req + "DateEffective, DateEnd, TokenOwner from Services "
-        req = req + "WHERE (ServiceName='%s' AND DateEffective < '%s');" % (args[1], args[2])
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
-        if not resQuery['Value']:
+        req = req + "WHERE (ServiceName='%s' AND DateEffective < '%s');" % ( args[ 1 ], args[ 2 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           return None
-        oldStatus = resQuery['Value'][0][0]
-        oldReason = resQuery['Value'][0][1]
-        oldDateCreated = resQuery['Value'][0][2]
-        oldDateEffective = resQuery['Value'][0][3]
-        oldDateEnd = resQuery['Value'][0][4]
-        oldTokenOwner = resQuery['Value'][0][5]
+        
+        oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateEffective = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 5 ]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addServiceHistoryRow(args[1], oldStatus, oldReason,
-                                   oldDateCreated, oldDateEffective, oldDateEnd,
-                                   oldTokenOwner)
-        self.removeRow(args[0], args[1], oldDateEffective)
+        self._addServiceHistoryRow( args[ 1 ], oldStatus, oldReason,
+                                    oldDateCreated, oldDateEffective, oldDateEnd,
+                                    oldTokenOwner )
+        self.removeRow( args[ 0 ], args[ 1 ], oldDateEffective )
 
-      elif len(args) == 2:
+      elif len( args ) == 2:
         req = "SELECT ServiceName, Status, Reason, DateCreated, "
         req = req + "DateEffective, DateEnd, TokenOwner from Services "
-        req = req + "WHERE (ServiceID='%s');" % (args[1])
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
-        if not resQuery['Value']:
+        req = req + "WHERE (ServiceID='%s');" % ( args[ 1 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           return None
-        serviceName = resQuery['Value'][0][0]
-        oldStatus = resQuery['Value'][0][1]
-        oldReason = resQuery['Value'][0][2]
-        oldDateCreated = resQuery['Value'][0][3]
-        oldDateEffective = resQuery['Value'][0][4]
-        oldDateEnd = resQuery['Value'][0][5]
-        oldTokenOwner = resQuery['Value'][0][6]
+        
+        serviceName      = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldStatus        = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldReason        = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEffective = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 5 ]
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 6 ]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addServiceHistoryRow(serviceName, oldStatus, oldReason,
-                                   oldDateCreated, oldDateEffective, oldDateEnd,
-                                   oldTokenOwner)
-        self.removeRow(args[0], serviceName, oldDateEffective)
+        self._addServiceHistoryRow( serviceName, oldStatus, oldReason,
+                                    oldDateCreated, oldDateEffective, oldDateEnd,
+                                    oldTokenOwner )
+        self.removeRow( args[ 0 ], serviceName, oldDateEffective )
 
 
-    if args[0] in ('Resource', 'Resources'):
-      if len(args) == 3:
+    if args[ 0 ] in ( 'Resource', 'Resources' ):
+      if len( args ) == 3:
         req = "SELECT Status, Reason, DateCreated, "
         req = req + "DateEffective, DateEnd, TokenOwner from Resources "
-        req = req + "WHERE (ResourceName='%s' AND DateEffective < '%s' );" % (args[1], args[2])
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
-        if not resQuery['Value']:
+        req = req + "WHERE (ResourceName='%s' AND DateEffective < '%s' );" % ( args[ 1 ], args[ 2 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           return None
-        oldStatus = resQuery['Value'][0][0]
-        oldReason = resQuery['Value'][0][1]
-        oldDateCreated = resQuery['Value'][0][2]
-        oldDateEffective = resQuery['Value'][0][3]
-        oldDateEnd = resQuery['Value'][0][4]
-        oldTokenOwner = resQuery['Value'][0][5]
+        
+        oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateEffective = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 5 ] 
 
-        self._addResourcesHistoryRow(args[1], oldStatus, oldReason,
-                                     oldDateCreated, oldDateEffective, oldDateEnd,
-                                     oldTokenOwner)
-        self.removeRow(args[0], args[1], oldDateEffective)
+        self._addResourcesHistoryRow( args[ 1 ], oldStatus, oldReason,
+                                      oldDateCreated, oldDateEffective, oldDateEnd,
+                                      oldTokenOwner )
+        self.removeRow( args[ 0 ], args[ 1 ], oldDateEffective )
 
-      elif len(args) == 2:
+      elif len( args ) == 2:
         req = "SELECT ResourceName, Status, Reason, DateCreated, "
         req = req + "DateEffective, DateEnd, TokenOwner from Resources "
-        req = req + "WHERE (ResourceID='%s');" % (args[1])
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
-        if not resQuery['Value']:
+        req = req + "WHERE (ResourceID='%s');" % ( args[ 1 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           return None
-        resourceName = resQuery['Value'][0][0]
-        oldStatus = resQuery['Value'][0][1]
-        oldReason = resQuery['Value'][0][2]
-        oldDateCreated = resQuery['Value'][0][3]
-        oldDateEffective = resQuery['Value'][0][4]
-        oldDateEnd = resQuery['Value'][0][5]
-        oldTokenOwner = resQuery['Value'][0][6]
+        
+        resourceName     = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldStatus        = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldReason        = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEffective = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 5 ]
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 6 ]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addResourcesHistoryRow(resourceName, oldStatus,
-                                     oldReason, oldDateCreated, oldDateEffective,
-                                     oldDateEnd, oldTokenOwner)
-        self.removeRow(args[0], resourceName, oldDateEffective)
+        self._addResourcesHistoryRow( resourceName, oldStatus,
+                                      oldReason, oldDateCreated, oldDateEffective,
+                                      oldDateEnd, oldTokenOwner )
+        self.removeRow( args[ 0 ], resourceName, oldDateEffective )
 
-    if args[0] in ('StorageElement', 'StorageElements'):
-      if len(args) == 3:
+    if args[ 0 ] in ( 'StorageElementRead', 'StorageElementsRead' ):
+      if len( args ) == 3:
         req = "SELECT Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, TokenOwner from StorageElements "
-        req = req + "WHERE (StorageElementName='%s' AND DateEffective < '%s' );" % (args[1], args[2])
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
-        if not resQuery['Value']:
+        req = req + "DateEffective, DateEnd, TokenOwner from StorageElementsRead "
+        req = req + "WHERE (StorageElementName='%s' AND DateEffective < '%s' );" % ( args[ 1 ], args[ 2 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           return None
-        oldStatus = resQuery['Value'][0][0]
-        oldReason = resQuery['Value'][0][1]
-        oldDateCreated = resQuery['Value'][0][2]
-        oldDateEffective = resQuery['Value'][0][3]
-        oldDateEnd = resQuery['Value'][0][4]
-        oldTokenOwner = resQuery['Value'][0][5]
+        
+        oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateEffective = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 5 ]
 
-        self._addStorageElementHistoryRow(args[1], oldStatus, oldReason,
-                                          oldDateCreated, oldDateEffective, oldDateEnd,
-                                          oldTokenOwner)
-        self.removeRow(args[0], args[1], oldDateEffective)
+        self._addStorageElementHistoryRow( args[ 1 ], oldStatus, oldReason,
+                                           oldDateCreated, oldDateEffective, oldDateEnd,
+                                           oldTokenOwner, 'Read' )
+        self.removeRow( args[ 0 ], args[ 1 ], oldDateEffective )
 
-      elif len(args) == 2:
+      elif len( args ) == 2:
         req = "SELECT StorageElementName, Status, Reason, "
-        req = req + "DateCreated, DateEffective, DateEnd, TokenOwner from StorageElements "
-        req = req + "WHERE (StorageElementID='%s');" % (args[1])
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
-        if not resQuery['Value']:
+        req = req + "DateCreated, DateEffective, DateEnd, TokenOwner from StorageElementsRead "
+        req = req + "WHERE (StorageElementID='%s');" % ( args[ 1 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
           return None
-        storageElementName = resQuery['Value'][0][0]
-        oldStatus = resQuery['Value'][0][1]
-        oldReason = resQuery['Value'][0][2]
-        oldDateCreated = resQuery['Value'][0][3]
-        oldDateEffective = resQuery['Value'][0][4]
-        oldDateEnd = resQuery['Value'][0][5]
-        oldTokenOwner = resQuery['Value'][0][6]
+        
+        storageElementName = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldStatus          = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldReason          = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateCreated     = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEffective   = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldDateEnd         = resQuery[ 'Value' ][ 0 ][ 5 ]
+        oldTokenOwner      = resQuery[ 'Value' ][ 0 ][ 6 ]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addStorageElementHistoryRow(storageElementName, oldStatus, oldReason, oldDateCreated,
-                                          oldDateEffective, oldDateEnd, oldTokenOwner)
-        self.removeRow(args[0], storageElementName, oldDateEffective)
+        self._addStorageElementHistoryRow( storageElementName, oldStatus, oldReason, oldDateCreated,
+                                           oldDateEffective, oldDateEnd, oldTokenOwner, 'Read' )
+        self.removeRow( args[ 0 ], storageElementName, oldDateEffective )
+
+    if args[ 0 ] in ( 'StorageElementWrite', 'StorageElementsWrite' ):
+      if len( args ) == 3:
+        req = "SELECT Status, Reason, DateCreated, "
+        req = req + "DateEffective, DateEnd, TokenOwner from StorageElementsWrite "
+        req = req + "WHERE (StorageElementName='%s' AND DateEffective < '%s' );" % ( args[ 1 ], args[ 2 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
+          return None
+        
+        oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateEffective = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 5 ]
+
+        self._addStorageElementHistoryRow( args[ 1 ], oldStatus, oldReason,
+                                           oldDateCreated, oldDateEffective, oldDateEnd,
+                                           oldTokenOwner, 'Write' )
+        self.removeRow( args[ 0 ], args[ 1 ], oldDateEffective )
+
+      elif len( args ) == 2:
+        req = "SELECT StorageElementName, Status, Reason, "
+        req = req + "DateCreated, DateEffective, DateEnd, TokenOwner from StorageElementsWrite "
+        req = req + "WHERE (StorageElementID='%s');" % ( args[ 1 ] )
+        resQuery = self.db._query( req )
+        
+        if not resQuery[ 'OK' ]:
+          raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
+        if not resQuery[ 'Value' ]:
+          return None
+        
+        storageElementName = resQuery[ 'Value' ][ 0 ][ 0 ]
+        oldStatus          = resQuery[ 'Value' ][ 0 ][ 1 ]
+        oldReason          = resQuery[ 'Value' ][ 0 ][ 2 ]
+        oldDateCreated     = resQuery[ 'Value' ][ 0 ][ 3 ]
+        oldDateEffective   = resQuery[ 'Value' ][ 0 ][ 4 ]
+        oldDateEnd         = resQuery[ 'Value' ][ 0 ][ 5 ]
+        oldTokenOwner      = resQuery[ 'Value' ][ 0 ][ 6 ]
+
+        #start "transaction" to history -- should be better to use a real transaction
+        self._addStorageElementHistoryRow( storageElementName, oldStatus, oldReason, oldDateCreated,
+                                           oldDateEffective, oldDateEnd, oldTokenOwner, 'Write' )
+        self.removeRow( args[ 0 ], storageElementName, oldDateEffective )
+
 
 #############################################################################
 
@@ -2778,7 +2988,7 @@ class ResourceStatusDB:
 
     DBtable, DBname = self.__DBchoice( granularity )
 
-    if granularity in ( 'StorageElement', 'StorageElements' ):
+    if granularity in ( 'StorageElementRead', 'StorageElementsRead', 'StorageElementWrite', 'StorageElementsWrite' ):
       DBname = "SiteName"
       DBtable = "Sites"
 
@@ -2946,8 +3156,10 @@ class ResourceStatusDB:
       req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType, TokenOwner FROM PresentServices"
     elif granularity in ( 'Resource', 'Resources' ):
       req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType, TokenOwner FROM PresentResources"
-    elif granularity in ( 'StorageElement', 'StorageElements' ):
-      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, TokenOwner FROM PresentStorageElements"
+    elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):
+      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, TokenOwner FROM PresentStorageElementsRead"
+    elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):
+      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, TokenOwner FROM PresentStorageElementsWrite"
     else:
       raise InvalidRes, where(self, self.getStuffToCheck)
     if name is None:
@@ -2974,7 +3186,7 @@ class ResourceStatusDB:
         req = req + " ServiceName = '%s'" %name
       elif granularity in ( 'Resource', 'Resources' ):
         req = req + " ResourceName = '%s'" %name
-      elif granularity in ( 'StorageElement', 'StorageElements' ):
+      elif granularity in ( 'StorageElementRead', 'StorageElementsRead', 'StorageElementWrite', 'StorageElementsWrite' ):
         req = req + " StorageElementName = '%s'" %name
     if maxN != None:
       req = req + " LIMIT %d" %maxN
@@ -3021,7 +3233,9 @@ class ResourceStatusDB:
       resList = self.getMonitoredsList( granularity, paramsList = [ 'ServiceName' ] )
     if granularity in ( 'Resource', 'Resources' ):
       resList = self.getMonitoredsList( granularity, paramsList = [ 'ResourceName' ] )
-    if granularity in ( 'StorageElement', 'StorageElements' ):
+    if granularity in ( 'StorageElementRead', 'StorageElementsRead' ):
+      resList = self.getMonitoredsList( granularity, paramsList = [ 'StorageElementName' ] )
+    if granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):
       resList = self.getMonitoredsList( granularity, paramsList = [ 'StorageElementName' ] )
 
     rankList        = []
