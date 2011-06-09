@@ -1,33 +1,33 @@
-import ast
+from DIRAC                                   import S_OK
+from DIRAC.Core.Utilities                    import List
+from DIRAC.ResourceStatusSystem.Utilities    import Utils
+from DIRAC import gConfig
 
-from DIRAC                                      import S_OK
-from DIRAC.Core.Utilities                       import List
-from DIRAC.ConfigurationSystem.Client.Config    import gConfig
-
-g_BaseRegistrySection = "/Registry"
-g_BaseResourcesSection = "/Resources"
+g_BaseRegistrySection   = "/Registry"
+g_BaseResourcesSection  = "/Resources"
 g_BaseOperationsSection = "/Operations"
+
+class CSError(Exception):
+  pass
 
 ## Custom version of getOptionsDict. Returns a dict where values are
 ## typed instead of a dict where values are strings.
 
-def getOptionsDict(sectionPath):
-  res = gConfig.getOptionsDict(sectionPath)
-  if res['OK'] == False: return res
-  else:
-    d = res['Value']
+def getTypedDict(sectionPath, prefix = "/Operations/RSSConfiguration/"):
+  def typed_dict_of_dict(d):
     for k in d:
-      if d[k].find(",") > -1:
-        d[k] = [ast.literal_eval(e) for e in List.fromChar(d[k])]
+      if type(d[k]) == dict:
+        d[k] = typed_dict_of_dict(d[k])
       else:
-        d[k] = ast.literal_eval(d[k])
-    return { 'OK': True, 'Value':d }
+        if d[k].find(",") > -1:
+          d[k] = [Utils.typedobj_of_string(e) for e in List.fromChar(d[k])]
+        else:
+          d[k] = Utils.typedobj_of_string(d[k])
+    return d
 
-## Facilities to import new config from CS
-
-def getGeneralConfig():
-  return getOptionsDict("/Operations")['Value']
-
+  res = gConfig.getOptionsDict(prefix + sectionPath)
+  if res['OK'] == False: raise CSError, res['Message']
+  else:                  return typed_dict_of_dict(res['Value'])
 
 #############################################################################
 

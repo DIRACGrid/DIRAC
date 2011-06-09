@@ -109,21 +109,21 @@ class PDP:
             'EndDate: datetime.datetime (in a string)}
     """
 
-    self.args = argsIn
-    self.policy = policyIn
+    self.args      = argsIn
+    self.policy    = policyIn
     self.knownInfo = knownInfo
 
 
     self.ig = InfoGetter(self.VOExtension)
 
     EVAL = self.ig.getInfoToApply(('policy', 'policyType'),
-                                  granularity = self.__granularity,
-                                  status = self.__status,
+                                  granularity  = self.__granularity,
+                                  status       = self.__status,
                                   formerStatus = self.__formerStatus,
-                                  siteType = self.__siteType,
-                                  serviceType = self.__serviceType,
+                                  siteType     = self.__siteType,
+                                  serviceType  = self.__serviceType,
                                   resourceType = self.__resourceType,
-                                  useNewRes = self.useNewRes)
+                                  useNewRes    = self.useNewRes)
 
     for policyGroup in EVAL:
 
@@ -135,16 +135,17 @@ class PDP:
         singlePolicyResults = self.policy.evaluate()
       else:
         if policyGroup['Policies'] is None:
-          return {'SinglePolicyResults' : [],
-                  'PolicyCombinedResult' : [{'PolicyType': policyType,
+          return { 'SinglePolicyResults' : [],
+                   'PolicyCombinedResult' : {'PolicyType': policyType,
                                              'Action': False,
-                                             'Reason':'No policy results'}]}
+                                             'Reason':'No policy results'}}
         else:
           singlePolicyResults = self._invocation(self.VOExtension, self.__granularity,
                                                  self.__name, self.__status, self.policy,
                                                  self.args, policyGroup['Policies'])
 
       policyCombinedResults = self._policyCombination(singlePolicyResults)
+      assert(type(policyCombinedResults) == dict)
 
       if not policyCombinedResults:
         return { 'SinglePolicyResults' : singlePolicyResults,
@@ -174,8 +175,9 @@ class PDP:
           decision['EndDate'] = policyCombinedResults['EndDate']
 
     res = { 'SinglePolicyResults' : singlePolicyResults,
-           'PolicyCombinedResult' : decision }
+            'PolicyCombinedResult' : decision }
 
+    assert(type(res) == dict)
     return res
 
 #############################################################################
@@ -227,6 +229,8 @@ class PDP:
 
   def _policyCombination(self, policies):
     """
+    INPUT: list type
+    OUTPUT: dict type
     * Compute a new status, and store it in variable newStatus, of type integer.
     * Make a list of policies that have the worst result.
     * Concatenate the Reason fields

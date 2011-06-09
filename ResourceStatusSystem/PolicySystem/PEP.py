@@ -191,16 +191,17 @@ class PEP:
     ###################
 
     resDecisions = pdp.takeDecision(knownInfo=knownInfo)
-    res          = resDecisions['PolicyCombinedResult']
-    policyType   = res['PolicyType']
+    if resDecisions != {}:
+      res          = resDecisions['PolicyCombinedResult']
+      policyType   = res['PolicyType']
 
-    if 'Resource_PolType' in policyType:
-      ResourcePolTypeActions(self.__granularity, self.__name, resDecisions, res, rsDB, rmDB)
+      if 'Resource_PolType' in policyType:
+        ResourcePolTypeActions(self.__granularity, self.__name, resDecisions, res, rsDB, rmDB)
 
-    if 'Alarm_PolType' in policyType:
-      AlarmPolTypeActions(self.__granularity, self.__name,
-                          self.__siteType, self.__serviceType, self.__resourceType,
-                          res, nc, setup, rsDB)
+      if 'Alarm_PolType' in policyType:
+        AlarmPolTypeActions(self.__granularity, self.__name,
+                            self.__siteType, self.__serviceType, self.__resourceType,
+                            res, nc, setup, rsDB)
 
-    if 'RealBan_PolType' in policyType and self.__realBan == True:
-      RealBanPolTypeActions(self.__granularity, self.__name, res, da, csAPI, setup)
+      if 'RealBan_PolType' in policyType and self.__realBan == True:
+        RealBanPolTypeActions(self.__granularity, self.__name, res, da, csAPI, setup)

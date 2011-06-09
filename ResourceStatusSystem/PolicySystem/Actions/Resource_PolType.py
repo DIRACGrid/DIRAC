@@ -6,10 +6,11 @@ def ResourcePolTypeActions(granularity, name, resDecisions, res, rsDB, rmDB):
 
   token = 'RS_SVC'
 
-  if res['Status'] == 'Probing':
-    token = 'RS_Hold'
-
   if res['Action']:
+
+    if res['Status'] == 'Probing':
+      token = 'RS_Hold'
+
     if granularity == 'Site':
       # Sites are hammered once they are in the Probing state
       rsDB.setSiteStatus(name, res['Status'], res['Reason'], token)

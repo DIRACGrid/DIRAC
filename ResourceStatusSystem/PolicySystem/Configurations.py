@@ -1,13 +1,12 @@
 """
-Generic DIRAC configuration regarding the Policy System. Custom VO
-configurations are in the corresponding VO-specific modules, this
-module is used as a fallback only if custom configurations are not
-provided by VO.
+Backward compatibility. This module will probably will be removed in
+the future.
 """
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
 
-gencfg            = CS.getGeneralConfig()
+gencfg            = CS.getTypedDict("GeneralConfig")
+
 ValidRes          = gencfg['Resource']
 ValidStatus       = gencfg['Status']
 ValidPolicyResult = gencfg['PolicyResult'] + gencfg['Status']

@@ -5,6 +5,9 @@ import sys
 import unittest
 import datetime
 
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 from DIRAC import S_OK, S_ERROR
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
@@ -14,8 +17,6 @@ from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Command.MacroCommand import MacroCommand
 from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
-#from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
-#from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -28,7 +29,6 @@ class ClientsCommandsTestCase( unittest.TestCase ):
   def setUp( self ):
 
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -175,7 +175,7 @@ class CommandCallerSuccess( ClientsCommandsTestCase ):
 
 #  def test_commandInvocation(self):
 #    cc = CommandCaller()
-#    for comm in (('SAMResults_Command', 'SAMResults_Command'), 
+#    for comm in (('SAMResults_Command', 'SAMResults_Command'),
 #                 ('GGUSTickets_Command', 'GGUSTickets_Open')):
 #      res = cc.commandInvocation(comm = comm)
 
@@ -208,7 +208,7 @@ class ClientsInvokerSuccess( ClientsCommandsTestCase ):
 #############################################################################
 
 #class ClientsInvokerFailure(ClientsCommandsTestCase):
-#  
+#
 #  def test_badArgs(self):
 #    self.failUnlessRaises(Exception, self.ci.doCommand)
 #    self.failUnlessRaises(Exception, self.ci.doCommand)
@@ -519,7 +519,7 @@ class JobsStats_CommandFailure( ClientsCommandsTestCase ):
 #############################################################################
 
 #class SystemCharge_CommandSuccess(ClientsCommandsTestCase):
-#  
+#
 #  def test_doCommand(self):
 #
 #    self.mock_client.getSystemCharge.return_value =  {'LastHour': 50, 'anHourBefore': 30}
@@ -670,9 +670,9 @@ class SAMResults_CommandFailure( ClientsCommandsTestCase ):
       self.assertEqual( res['Result'], 'Unknown' )
 
 #    self.mock_client.getStatus.side_effect = NoSAMTests()
-#    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'), 
-#                 ('Resource', 'XX'), ('Resource', 'XX', 'XXX'), 
-#                 ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']), 
+#    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'),
+#                 ('Resource', 'XX'), ('Resource', 'XX', 'XXX'),
+#                 ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']),
 #                 ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])):
 #      self.SAMR_C.setArgs(args)
 #      self.SAMR_C.setClient(self.mock_client)
@@ -1174,12 +1174,12 @@ class TransferQualityCached_CommandFailure( ClientsCommandsTestCase ):
 
 
 #class Macros_CommandSuccess(ClientsCommandsTestCase):
-#  
+#
 #  def test_doCommand(self):
-#    
+#
 #    self.mock_client.getJobsSimpleEff.return_value =  {'JobsEff':'Good'}
 #    self.mock_client_2.getStatus.return_value =  {'DT':'OUTAGE', 'Enddate':''}
-#    
+#
 #    macroC = MacroCommand()
 
 #############################################################################
@@ -1273,7 +1273,7 @@ class DTEveryResources_CommandFailure( ClientsCommandsTestCase ):
 #############################################################################
 
 #class DTCached_CommandSuccess(ClientsCommandsTestCase):
-#  
+#
 #  def test_doCommand(self):
 #
 #    for g in ('Site', 'Resource'):
@@ -1282,16 +1282,16 @@ class DTEveryResources_CommandFailure( ClientsCommandsTestCase ):
 #      self.DTC_C.setClient(self.mock_client)
 #      self.DTC_C.setArgs((g, 'XX'))
 #      self.DTC_C.doCommand()
-#      
-#      
+#
+#
 #      self.mock_client.getCachedIDs = ((78805473L,), (78805481L,), (78805480L,), (78705450L,))
 #      self.mock_client.getCachedResult = (('AT_RISK',),)
 
 
 ##############################################################################
-#   
+#
 #class DTSitesCached_CommandFailure(ClientsCommandsTestCase):
-#  
+#
 #  def test_clientFail(self):
 #    self.mock_client.getCachedResult.side_effect = Exception()
 #    for pe in ('100.0', '75.0', '0.0'):
@@ -1299,7 +1299,7 @@ class DTEveryResources_CommandFailure( ClientsCommandsTestCase ):
 #      self.TQC_C.setClient(self.mock_client)
 #      res = self.TQC_C.doCommand()
 #      self.assertEqual(res['Result'], 'Unknown')
-#    
+#
 ##############################################################################
 
 class TransferQualityByDestSplitted_CommandSuccess( ClientsCommandsTestCase ):
@@ -1463,49 +1463,49 @@ class FailedTransfersBySourceSplitted_CommandSuccess( ClientsCommandsTestCase ):
 #    self.assertEqual( res, {'DataOperation':{}} )
 #    res = self.FTBSS_C.doCommand(sources)
 #    self.assertEqual( res, {'DataOperation':{
-#                                             'LCG.IN2P3.fr': 
-#                                              {'data': {'LCG.IN2P3.fr': 
-#                                                                  {1279778400: 0, 
-#                                                                   1279774800L: 0.76959831980000004, 
-#                                                                   1279775700L: 2.0923019758999999, 
-#                                                                   1279776600L: 0.69743871280000003, 
+#                                             'LCG.IN2P3.fr':
+#                                              {'data': {'LCG.IN2P3.fr':
+#                                                                  {1279778400: 0,
+#                                                                   1279774800L: 0.76959831980000004,
+#                                                                   1279775700L: 2.0923019758999999,
+#                                                                   1279776600L: 0.69743871280000003,
 #                                                                   1279777500: 0
-#                                                                   }}, 
-#                                              'granularity': 900}, 
+#                                                                   }},
+#                                              'granularity': 900},
 #                                            'LCG.PIC.es':
-#                                              {'data': {'LCG.PIC.es': 
-#                                                                  {1279778400: 0, 
-#                                                                   1279774800: 0, 
-#                                                                   1279775700L: 0.0, 
-#                                                                   1279776600: 0, 
+#                                              {'data': {'LCG.PIC.es':
+#                                                                  {1279778400: 0,
+#                                                                   1279774800: 0,
+#                                                                   1279775700L: 0.0,
+#                                                                   1279776600: 0,
 #                                                                   1279777500: 0
-#                                                                   }}, 
+#                                                                   }},
 #                                                'granularity': 900}
-#                                            } 
-#                            } 
+#                                            }
+#                            }
 #                      )
 #    res = self.FTBSS_C.doCommand()
 #    self.assertEqual( res, {'DataOperation':{
-#                                             'LCG.IN2P3.fr': 
-#                                              {'data': {'LCG.IN2P3.fr': 
-#                                                                  {1279778400: 0, 
-#                                                                   1279774800L: 0.76959831980000004, 
-#                                                                   1279775700L: 2.0923019758999999, 
-#                                                                   1279776600L: 0.69743871280000003, 
+#                                             'LCG.IN2P3.fr':
+#                                              {'data': {'LCG.IN2P3.fr':
+#                                                                  {1279778400: 0,
+#                                                                   1279774800L: 0.76959831980000004,
+#                                                                   1279775700L: 2.0923019758999999,
+#                                                                   1279776600L: 0.69743871280000003,
 #                                                                   1279777500: 0
-#                                                                   }}, 
-#                                              'granularity': 900}, 
+#                                                                   }},
+#                                              'granularity': 900},
 #                                            'LCG.PIC.es':
-#                                              {'data': {'LCG.PIC.es': 
-#                                                                  {1279778400: 0, 
-#                                                                   1279774800: 0, 
-#                                                                   1279775700L: 0.0, 
-#                                                                   1279776600: 0, 
+#                                              {'data': {'LCG.PIC.es':
+#                                                                  {1279778400: 0,
+#                                                                   1279774800: 0,
+#                                                                   1279775700L: 0.0,
+#                                                                   1279776600: 0,
 #                                                                   1279777500: 0
-#                                                                   }}, 
+#                                                                   }},
 #                                                'granularity': 900}
-#                                            } 
-#                            } 
+#                                            }
+#                            }
 #                      )
 
 #############################################################################
