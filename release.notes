@@ -1,12 +1,56 @@
 [v6r0-pre3]
-*LcgFileCatalog
-FIX: use lfcthr and call lfcthr.init() to allow multithread
-     try the import only once and just when LcgFileCatalogClient class is intantiated
+
+*InstallTools.py
+FIX: Properly set /DIRAC/Configuration/Servers when installing a CS Master
+
+*Put ProxyInfo functions in a better place
+NEW: move functions in DIRAC.Core.Security.Misc to DIRAC.Core.Security.ProxyInfo
+NEW: add getVOfromProxyGroup
+
+*Core install_site.sh
+FIX: Missing option in wget for https download: --no-check-certificate
+
+*SSHTorque CE enhancement
+FIX: retrieve job status by chunks of 100 jobs to avoid too long
+
+*glexecComputingElement
+NEW: allow glexecComputingElement to "Reschedule" jobs if the Test of
+     the glexec fails, instead of defaulting to InProcess. Controlled by
+     RescheduleOnError Option of the glexecComputingElement
+
+*CS update with dirac-install-agent(service)
+FIX: If the component being installed already has corresponding CS section, it is not
+     overwritten unless explicitly asked for
+
+*New configuration management console (CLI)
+NEW: A configuration script for CS that behaves like an UNIX shell. 
+    (CS/scripts/dirac-configuration-shell.py)
+
+*Ajust pilot directors and SiteDirector to the new installation schema
+CHANGE: Adapt pilot installation to new dirac-install schema
+
+*Cleanup of obsoleted components
+CHANGE: Removed old sandbox and other obsoleted components
+
+*Properly set the log levels and headers based on the type of component
+CHANGE: By default log level for agents and services is INFO
+CHANGE: Disable the log headers by default before initializing
+
+*Sandbox path now includes the group to avoid collisions
+FIX: Create a different SBPath with the group included
+
+*CSAPI
+CHANGE: added more functionality required by updated configuration console
 
 *FileCatalog enhancements
 FIX: DiractoryLevelTree - consistent application of the max directory level using global 
      MAX_LEVELS variable
 FIX: Directory metadata is deleted together with the directory deletion, issue #40    
+CHANGE: The logic of the files query by metadata revisited to increase efficiency 
+
+*LcgFileCatalog
+FIX: use lfcthr and call lfcthr.init() to allow multithread
+     try the import only once and just when LcgFileCatalogClient class is intantiated
 
 *Fix utility to get the user VO
 CHANGE: update when possible to getVOforGroup from getVO
@@ -15,14 +59,20 @@ CHANGE: remove methods from CS, import them from Registry
 *dirac-proxy-init modification according to issue #29 
 NEW: -U flag will upload a long lived proxy to the ProxyManager
 NEW: If /Registry/DefaultGroup is defined, try to generate a proxy that has that group
+FIX: Replaced params.debugMessageby gLogger.verbose. Closes #65
+NEW: Can define via CS if the proxy has to be automatically uploaded. 
+     If AutoUploadProxy = true in the CS, the proxy will automatically be uploaded
 
 *RSS system refactoring
-CHANGE: First refactoring of RSSÕs PEP. Actions are now function defined in modules 
+CHANGE: First refactoring of RSS's PEP. Actions are now function defined in modules 
         residing in directory "Actions".
 
 *dirac-install functionality enhancement
 CHANGE: Start using the switches as defined in issue #26
 NEW: Write the defaults if any under defaults-.cfg so dirac-configure can pick it up
+CHANGE: use new dirac_install from gothub/integration branch in install_site.sh
+FIX: new OpenSSL version require OPENSSL_CONF to point to some
+     accessible location
 
 *LocalSE mapping
 NEW: Added possibility to define LocalSE to any Site using the SiteLocalSEMapping 
