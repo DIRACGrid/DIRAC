@@ -1,12 +1,13 @@
 import sys
+
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 from DIRAC import gConfig
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
-
-from DIRAC.Core.Base import Script
-Script.parseCommandLine()
 
 VO = gConfig.getValue("DIRAC/Extensions")
 if 'LHCb' in VO:

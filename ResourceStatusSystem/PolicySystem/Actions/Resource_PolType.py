@@ -4,9 +4,16 @@
 def ResourcePolTypeActions(granularity, name, resDecisions, res, rsDB, rmDB):
   # Update the DB
 
+  token = 'RS_SVC'
+
   if res['Action']:
+
+    if res['Status'] == 'Probing':
+      token = 'RS_Hold'
+
     if granularity == 'Site':
-      rsDB.setSiteStatus(name, res['Status'], res['Reason'], 'RS_SVC')
+      # Sites are hammered once they are in the Probing state
+      rsDB.setSiteStatus(name, res['Status'], res['Reason'], token)
       rsDB.setMonitoredToBeChecked(['Service', 'Resource', 'StorageElement'], 'Site', name)
 
     elif granularity == 'Service':
