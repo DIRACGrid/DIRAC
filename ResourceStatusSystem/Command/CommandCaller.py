@@ -44,16 +44,27 @@ class CommandCaller:
 
     moduleBase = "DIRAC.ResourceStatusSystem.Command."
     
+    ext = getExt()
+    
+    # TRY FIRST TO IMPORT FROM DIRAC. AS IT IS NOW, THERE ARE MUCH MORE COMMANDS IN
+    # DIRAC THAN IN THE EXTENSION. IT MIGHT CHANGE.
+    
     try:
       cModule = comm[0]
       cClass = comm[1]
       module = moduleBase + cModule
       commandModule = __import__(module, globals(), locals(), ['*'])
-    except ImportError:
-      cModule = "Command"
-      cClass = "Command"
-      module = moduleBase + cModule
-      commandModule = __import__(module, globals(), locals(), ['*'])
+    except ImportError:  
+      try:
+        cModule = comm[0]
+        cClass = comm[1]
+        module = ext + moduleBase + cModule
+        commandModule = __import__(module, globals(), locals(), ['*'])
+      except ImportError:
+        cModule = "Command"
+        cClass = "Command"
+        module = moduleBase + cModule
+        commandModule = __import__(module, globals(), locals(), ['*'])
       
     c = getattr(commandModule, cClass)()
 
