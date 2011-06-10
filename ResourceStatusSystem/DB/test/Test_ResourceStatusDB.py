@@ -4,6 +4,10 @@
 import sys
 import datetime
 import unittest
+
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes,ValidStatus
 from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
@@ -22,7 +26,6 @@ class ResourceStatusDBTestCase(unittest.TestCase):
     self.mock_DB._update.return_value = {'OK': True, 'Value': ''}
 
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
