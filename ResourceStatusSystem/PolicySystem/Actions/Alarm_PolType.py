@@ -2,46 +2,50 @@
 AlarmPolType Actions
 """
 
-import copy
+from DIRAC.ResourceStatusSystem.Utilities import CS
+from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getMailForUser
+def getUsersToNotify(setup, kwargs):
+  """Get a list of users to notify (helper function for AlarmPolTypeActions
+  Optional keyword arguments:
+  - Granularity
+  - SiteType
+  - ServiceType
+  - ResourceType
+  """
 
-configModule = __import__("LHCbDIRAC.ResourceStatusSystem.Policy.Configurations",
-                          globals(), locals(), ['*'])
-AssigneeGroups = copy.deepcopy(configModule.AssigneeGroups)
+  notifications = []
+  groups = CS.getTypedDict("AssigneeGroups/" + setup)
 
-def getUsersToNotify(granularity, setup, siteType = None, serviceType = None,
-                     resourceType = None):
+  for k in groups:
+    if Utils.dictMatch(kwargs, groups[k]):
+      notifications.append({'Users':groups[k]['Users'],
+                            'Notifications':groups[k]['Notifications']})
 
-  NOTIF = []
+  return notifications
 
-  for ag in AssigneeGroups.keys():
-
-    if setup in AssigneeGroups[ag]['Setup'] \
-          and granularity in AssigneeGroups[ag]['Granularity']:
-      if siteType is not None and siteType not in AssigneeGroups[ag]['SiteType']:
-        continue
-      if serviceType is not None and serviceType not in AssigneeGroups[ag]['ServiceType']:
-        continue
-      if resourceType is not None and resourceType not in AssigneeGroups[ag]['ResourceType']:
-        continue
-      NOTIF.append( {'Users':AssigneeGroups[ag]['Users'],
-                     'Notifications':AssigneeGroups[ag]['Notifications']} )
-
-  return NOTIF
-
-def AlarmPolTypeActions(granularity, name, siteType, serviceType, resourceType, res, nc, setup, rsDB):
+def AlarmPolTypeActions(name, res, nc, setup, rsDB, **kwargs):
+  """ Do actions required to notify users.
+  Mandatory keyword arguments:
+  - Granularity
+  Optional keyword arguments:
+  - SiteType
+  - ServiceType
+  - ResourceType
+  """
   # raise alarms, right now makes a simple notification
+
+  if 'Granularity' not in kwargs.keys():
+    raise ValueError, "You have to provide a argument Granularity=<desired_granularity>"
+
+  granularity = kwargs['Granularity']
 
   if res['Action']:
 
-    notif = "%s %s is perceived as" %(granularity, name)
+    notif = "%s %s is perceived as" % (granularity, name)
     notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
 
-    NOTIF_D = getUsersToNotify(granularity,
-                                      setup, siteType,
-                                      serviceType,
-                                      resourceType)
+    NOTIF_D = getUsersToNotify(setup, kwargs)
 
     for notification in NOTIF_D:
       for user in notification['Users']:
@@ -62,5 +66,5 @@ def AlarmPolTypeActions(granularity, name, siteType, serviceType, resourceType, 
 
           mailMessage = mailMessage + "Setup = %s\n" % setup
 
-          nc.sendMail(getMailForUser(user)['Value'][0],
+          nc.sendMail(CS.getMailForUser(user)['Value'][0],
                       '%s: %s' % (name, res['Status']), mailMessage)
