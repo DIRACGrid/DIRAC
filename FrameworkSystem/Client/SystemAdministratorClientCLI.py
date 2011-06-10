@@ -377,6 +377,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       result = client.getInfo()
       if not result['OK']:
         print "Error:", result['Message']
+        return 
       hostSetup = result['Value']['Setup']
       result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, getCSExtensions(), hostSetup )
       if not result['OK']:
