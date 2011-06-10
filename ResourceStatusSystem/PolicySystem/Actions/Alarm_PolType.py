@@ -6,7 +6,7 @@ from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 def getUsersToNotify(setup, kwargs):
-  """Get a list of users to notify (helper function for AlarmPolTypeActions
+  """Get a list of users to notify (helper function for AlarmPolTypeActions)
   Optional keyword arguments:
   - Granularity
   - SiteType
