@@ -1,12 +1,16 @@
 import unittest
 import sys
 
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 from DIRAC.ResourceStatusSystem.Utilities.mock       import Mock
+
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils      import *
 from DIRAC.ResourceStatusSystem.PolicySystem.Status import *
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import *
-from DIRAC                                           import S_OK, S_ERROR
+
+
+
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
 import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
@@ -14,7 +18,6 @@ import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP          import PEP
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP          import PDP
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
-
 
 #############################################################################
 
@@ -24,8 +27,6 @@ class PolicySystemTestCase(unittest.TestCase):
 #############################################################################
 
   def setUp(self):
-#    from DIRAC.Core.Base import Script
-#    Script.parseCommandLine()
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -88,18 +89,16 @@ class PEPSuccess(PolicySystemTestCase):
                     for user in ("RS_SVC", "Federico"):
                       for setup in ("LHCb-Production", "LHCb-Development", "LHCb-Certification"):
 
-                        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
+                        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': {'PolicyType':[policyType, newPolicyType],
                                                                                              'Action':True, 'Status':status,
-                                                                                             'Reason':'testReason'}],
+                                                                                             'Reason':'testReason'},
                                                                    'SinglePolicyResults': [{'Status': 'Active',
                                                                                             'PolicyName': 'SAM_CE_Policy',
-                                                                                            'Reason': 'SAM:ok',
-                                                                                            'SAT': True},
+                                                                                            'Reason': 'SAM:ok'},
                                                                                             {'Status': 'Banned',
                                                                                              'PolicyName': 'DT_Policy_Scheduled',
                                                                                              'Reason': 'DT:OUTAGE in 1 hours',
-                                                                                             'EndDate': '2010-02-16 15:00:00',
-                                                                                             'SAT': True}] }
+                                                                                             'EndDate': '2010-02-16 15:00:00'}]}
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
 
 
@@ -128,17 +127,15 @@ class PEPSuccess(PolicySystemTestCase):
                         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc,
                                           setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
                         self.assertEqual(res, None)
-                        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
-                                                                                             'Action':False, 'Reason':'testReason'}],
+                        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': {'PolicyType':[policyType, newPolicyType],
+                                                                                             'Action':False, 'Reason':'testReason'},
                                                                    'SinglePolicyResults': [{'Status': 'Active',
                                                                                             'PolicyName': 'SAM_CE_Policy',
-                                                                                            'Reason': 'SAM:ok',
-                                                                                            'SAT': True},
+                                                                                            'Reason': 'SAM:ok'},
                                                                                             {'Status': 'Banned',
                                                                                              'PolicyName': 'DT_Policy_Scheduled',
                                                                                              'Reason': 'DT:OUTAGE in 1 hours',
-                                                                                             'EndDate': '2010-02-16 15:00:00',
-                                                                                             'SAT': True}] }
+                                                                                             'EndDate': '2010-02-16 15:00:00'}]}
                         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc,
                                           setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
                         self.assertEqual(res, None)
@@ -271,16 +268,15 @@ class PDPSuccess(PolicySystemTestCase):
           pdp = PDP(self.VO, granularity, 'XX', oldStatus, None, 'XX')
           res = pdp.takeDecision(policyIn = self.mock_p)
           res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
+          self.assert_(res['Action'])
+
           res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
           res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
+          self.assert_(res['Action'])
+
           res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
           res = res['PolicyCombinedResult']
-          for r in res:
-            self.assert_(r['Action'])
+          self.assert_(res['Action'])
 
   def test__policyCombination(self):
 
@@ -471,15 +467,14 @@ class PolicyInvokerFailure(PolicySystemTestCase):
 
 #############################################################################
 
-
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PolicySystemTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerFailure))
-  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPSuccess))
-  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))

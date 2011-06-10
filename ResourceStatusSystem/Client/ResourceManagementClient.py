@@ -19,6 +19,26 @@ class ResourceManagementClient:
       self.rsM = RPCClient("ResourceStatus/ResourceManagement", timeout = timeout)
     else:
       self.rsM = serviceIn
+
+#############################################################################
+  
+  def getEnvironmentCache( self, hash, siteName ):
+    
+    res = self.rsM.getEnvironmentCache( hash, siteName )
+    if not res['OK']:
+      raise RSSException, where( self, self.getEnvironmentCache) + " " + res['Message']
+    
+    return res['Value'] 
+
+#############################################################################
+  
+  def addOrModifyEnvironmentCache( self, hash, siteName, environment ):
+    
+    res = self.rsM.addOrModifyEnvironmentCache( hash, siteName, environment )
+    if not res['OK']:
+      raise RSSException, where( self, self.addOrModifyEnvironmentCache) + " " + res['Message']
+    
+    return res['Value'] 
    
 #############################################################################
 

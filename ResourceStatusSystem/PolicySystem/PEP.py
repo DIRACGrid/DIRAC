@@ -12,9 +12,9 @@
        c. other....
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup
-
+from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities.Utils import assignOrRaise
+
 from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, \
     ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
 
@@ -61,13 +61,11 @@ class PEP:
 
   def __init__(self, VOExtension, granularity = None, name = None, status = None, formerStatus = None,
                reason = None, siteType = None, serviceType = None, resourceType = None,
-               tokenOwner = None, #futureEnforcement = None,
-               useNewRes = False):
+               tokenOwner = None, useNewRes = False):
 
     self.VOExtension = VOExtension
 
     try:
-#      granularity = presentEnforcement['Granularity']
       self.__granularity = assignOrRaise(granularity, ValidRes, InvalidRes, self, self.__init__)
     except NameError:
       pass
@@ -84,16 +82,6 @@ class PEP:
     if tokenOwner is not None:
       if tokenOwner == 'RS_SVC':
         self.__realBan = True
-
-#    if futureEnforcement is not None:
-#      try:
-#        futureGranularity = futureEnforcement['Granularity']
-#        if futureGranularity is not None:
-#          if futureGranularity not in ValidRes:
-#            raise InvalidRes, where(self, self.__init__)
-#        self.__futureGranularity = futureGranularity
-#      except NameError:
-#        pass
 
     self.useNewRes = useNewRes
 
@@ -175,7 +163,7 @@ class PEP:
       setup = setupIn
     else:
       # get present setup
-      setup = getSetup()['Value']
+      setup = CS.getSetup()['Value']
 
     #notification client
     if ncIn is not None:
@@ -198,51 +186,22 @@ class PEP:
       from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
       csAPI = CSAPI()
 
+    ###################
+    # policy decision #
+    ###################
 
-    # policy decision
     resDecisions = pdp.takeDecision(knownInfo=knownInfo)
+    if resDecisions != {}:
+      res          = resDecisions['PolicyCombinedResult']
+      policyType   = res['PolicyType']
 
+      if 'Resource_PolType' in policyType:
+        ResourcePolTypeActions(self.__granularity, self.__name, resDecisions, res, rsDB, rmDB)
 
-#    if self.__name == 'CERN-RAW':
-#      print resDecisions
-
-
-    for res in resDecisions['PolicyCombinedResult']:
-
-      self.__policyType = res['PolicyType']
-
-      #if self.__realBan == False:
-      #  continue
-
-      if 'Resource_PolType' in self.__policyType:
-        # If token != RS_SVC, we do not update the token, just the LastCheckedTime
-
-        if self.__realBan == False:
-          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
-        else:
-          ResourcePolTypeActions(self.__granularity, self.__name, resDecisions, res, rsDB, rmDB)
-
-      if 'Alarm_PolType' in self.__policyType:
+      if 'Alarm_PolType' in policyType:
         AlarmPolTypeActions(self.__granularity, self.__name,
                             self.__siteType, self.__serviceType, self.__resourceType,
                             res, nc, setup, rsDB)
 
-      if 'RealBan_PolType' in self.__policyType and self.__realBan == True:
+      if 'RealBan_PolType' in policyType and self.__realBan == True:
         RealBanPolTypeActions(self.__granularity, self.__name, res, da, csAPI, setup)
-
-      if 'Collective_PolType' in self.__policyType:
-        # do something
-        pass
-
-#
-#      if res['Action']:
-#        try:
-#          if self.__futureGranularity != self.__granularity:
-#            self.__name = rsDB.getGeneralName(self.__name, self.__granularity,
-#                                              self.__futureGranularity)
-#          newPEP = PEP(granularity = self.__futureGranularity, name = self.__name,
-#                       status = self.__status, formerStatus = self.__formerStatus,
-#                       reason = self.__reason)
-#          newPEP.enforce(pdpIn = pdp, rsDBIn = rsDB)
-#        except AttributeError:
-#          pass

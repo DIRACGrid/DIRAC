@@ -486,7 +486,7 @@ class CE2CSAgent( AgentModule ):
                 self.csAPI.modifyValue( section, newsi00 )
               changed = True
 
-    if False and changed:
+    if changed:
       self.log.info( body )
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()

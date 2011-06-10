@@ -1,11 +1,13 @@
 import unittest
+
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-#from DIRAC.ResourceStatusSystem.Client.SLSClient import *
 from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-#from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 

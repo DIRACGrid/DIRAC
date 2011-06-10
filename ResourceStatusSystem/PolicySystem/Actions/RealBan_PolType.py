@@ -70,58 +70,57 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
           if not sendMail['OK']:
             raise RSSException, where(self, self.enforce) + sendMail['Message']
 
+    elif granularity == 'StorageElement':
 
-  elif granularity == 'StorageElement':
+      presentReadStatus = getStorageElementStatus( name, 'ReadAccess')['Value']
 
-    presentReadStatus = getStorageElementStatus( name, 'ReadAccess')['Value']
+      if res['Status'] == 'Banned':
 
-    if res['Status'] == 'Banned':
+        if presentReadStatus != 'InActive':
+          banSE = csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(name), "InActive")
+          if not banSE['OK']:
+            raise RSSException, where(self, self.enforce) + banSE['Message']
+          banSE = csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(name), "InActive")
+          if not banSE['OK']:
+            raise RSSException, where(self, self.enforce) + banSE['Message']
+          commit = csAPI.commit()
+          if not commit['OK']:
+            raise RSSException, where(self, self.enforce) + commit['Message']
+          if 'Production' in setup:
+            address = getSetup()['Value']
+          else:
+            address = 'fstagni@cern.ch'
 
-      if presentReadStatus != 'InActive':
-        banSE = csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(name), "InActive")
-        if not banSE['OK']:
-          raise RSSException, where(self, self.enforce) + banSE['Message']
-        banSE = csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(name), "InActive")
-        if not banSE['OK']:
-          raise RSSException, where(self, self.enforce) + banSE['Message']
-        commit = csAPI.commit()
-        if not commit['OK']:
-          raise RSSException, where(self, self.enforce) + commit['Message']
-        if 'Production' in setup:
-          address = getSetup()['Value']
-        else:
-          address = 'fstagni@cern.ch'
+          subject = '%s is banned for %s setup' %(name, setup)
+          body = 'SE %s is removed from mask for %s ' %(name, setup)
+          body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+          body += 'Comment:\n%s' %res['Reason']
+          sendMail = da.sendMail(address,subject,body)
+          if not sendMail['OK']:
+            raise RSSException, where(self, self.enforce) + sendMail['Message']
 
-        subject = '%s is banned for %s setup' %(name, setup)
-        body = 'SE %s is removed from mask for %s ' %(name, setup)
-        body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
-        body += 'Comment:\n%s' %res['Reason']
-        sendMail = da.sendMail(address,subject,body)
-        if not sendMail['OK']:
-          raise RSSException, where(self, self.enforce) + sendMail['Message']
+      else:
 
-    else:
+        if presentReadStatus == 'InActive':
 
-      if presentReadStatus == 'InActive':
+          allowSE = csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(name), "Active")
+          if not allowSE['OK']:
+            raise RSSException, where(self, self.enforce) + allowSE['Message']
+          allowSE = csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(name), "Active")
+          if not allowSE['OK']:
+            raise RSSException, where(self, self.enforce) + allowSE['Message']
+          commit = csAPI.commit()
+          if not commit['OK']:
+            raise RSSException, where(self, self.enforce) + commit['Message']
+          if setup == 'LHCb-Production':
+            address = getSetup()['Value']
+          else:
+            address = 'fstagni@cern.ch'
 
-        allowSE = csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(name), "Active")
-        if not allowSE['OK']:
-          raise RSSException, where(self, self.enforce) + allowSE['Message']
-        allowSE = csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(name), "Active")
-        if not allowSE['OK']:
-          raise RSSException, where(self, self.enforce) + allowSE['Message']
-        commit = csAPI.commit()
-        if not commit['OK']:
-          raise RSSException, where(self, self.enforce) + commit['Message']
-        if setup == 'LHCb-Production':
-          address = getSetup()['Value']
-        else:
-          address = 'fstagni@cern.ch'
-
-        subject = '%s is allowed for %s setup' %(name, setup)
-        body = 'SE %s is added to the mask for %s ' %(name, setup)
-        body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
-        body += 'Comment:\n%s' %res['Reason']
-        sendMail = da.sendMail(address,subject,body)
-        if not sendMail['OK']:
-          raise RSSException, where(self, self.enforce) + sendMail['Message']
+          subject = '%s is allowed for %s setup' %(name, setup)
+          body = 'SE %s is added to the mask for %s ' %(name, setup)
+          body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+          body += 'Comment:\n%s' %res['Reason']
+          sendMail = da.sendMail(address,subject,body)
+          if not sendMail['OK']:
+            raise RSSException, where(self, self.enforce) + sendMail['Message']
