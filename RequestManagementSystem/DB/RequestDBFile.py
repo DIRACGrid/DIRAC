@@ -122,7 +122,7 @@ class RequestDBFile:
       reqDir = os.path.join( self.root, requestType, "ToDo" )
       self.getIdLock.acquire()
       if os.path.exists( reqDir ):
-        for requestName in sorted( os.listdir( reqDir ) ):
+        for requestName in sorted( filter( os.path.isfile, os.listdir(reqDir) ), key=os.path.getctime ):
           requestPath = os.path.join( reqDir, requestName ) 
           if os.path.isfile( requestPath ):
             candidateRequests.append( requestName )
