@@ -122,12 +122,10 @@ class RequestDBFile:
       reqDir = os.path.join( self.root, requestType, "ToDo" )
       self.getIdLock.acquire()
       if os.path.exists( reqDir ):
-        requestNames = [ os.path.basename(requestFile) for requestFile in 
+        candidateRequests = [ os.path.basename(requestFile) for requestFile in 
                          sorted( filter( os.path.isfile, 
                                          [ os.path.join( reqDir, requestName ) for requestName in os.listdir( reqDir ) ] ), 
                                  key=os.path.getctime ) ]
-        for requestName in requestFiles:
-          candidateRequests.append( requestName )
       if not len( candidateRequests ) > 0:
         self.getIdLock.release()
         gLogger.info( "RequestDBFile._getRequest: No request of type %s found." % requestType )
