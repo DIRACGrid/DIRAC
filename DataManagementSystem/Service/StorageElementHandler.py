@@ -79,17 +79,24 @@ class StorageElementHandler( RequestHandler ):
     return ( min( dsize, maxStorageSizeBytes ) > size )
 
   def __resolveFileID( self, fileID ):
-    port = str( self.serviceInfoDict['Port'] )
+    
+    port = self.getCSOption('Port','')
+    if not port:
+      return ''
+    
     loc = fileID.find( port )
     if loc >= 0:
       fileID = fileID[loc + len( port ):]
+      
     serviceName = self.serviceInfoDict['serviceName']
     loc = fileID.find( serviceName )
     if loc >= 0:
       fileID = fileID[loc + len( serviceName ):]
+      
     loc = fileID.find( '?=' )
     if loc >= 0:
       fileID = fileID[loc + 2:]
+      
     if fileID.find( base_path ) == 0:
       return fileID
     while fileID[0] == '/':
