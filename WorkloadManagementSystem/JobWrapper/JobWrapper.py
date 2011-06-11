@@ -927,7 +927,7 @@ class JobWrapper:
       basePath = '/' + vo + '/user/' + initial + '/' + self.owner
       finalPath = subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
       lfn = os.path.join( basePath, finalPath )
-      #Êlfn = '/' + vo + '/user/' + initial + '/' + self.owner + '/' + subdir + '/' + \
+      # lfn = '/' + vo + '/user/' + initial + '/' + self.owner + '/' + subdir + '/' + \
       #       str( self.jobID ) + '/' + os.path.basename( localfile )
     else:
       localfile = os.path.basename( outputFile.replace( "LFN:", "" ) )
