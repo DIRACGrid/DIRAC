@@ -50,7 +50,9 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if not result['OK']:
       return result   
     if not result['Value']:
-      return S_OK()
+      res = S_OK()
+      res["DirID"] = 0
+      return res
     
     dirID = result['Value']
     req = "DELETE FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
