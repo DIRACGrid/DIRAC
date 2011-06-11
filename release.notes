@@ -1,5 +1,8 @@
 [v6r0-pre4]
 
+*StorageElement
+FIX: StorageElement - get service CS options with getCSOption() method ( closes #97 )
+
 *ResourceStatusSystem enhancements
 NEW: methods to store cached environment on a DB and ge them.
 CHANGE: command caller looks on the extension for commands.
@@ -16,6 +19,7 @@ FIX: removed old 'vo' var. This is not a final fix
 
 *FileCatalog
 CHANGE: allow up to 15 levels of directories in the File Catalog
+BUGFIX: Bug fixes in the directory removal methods (closes #98)
 
 *SiteDirector
 FIX: limit the queue max length to the value of MaxQueueLengthOption ( 3 days be default )
