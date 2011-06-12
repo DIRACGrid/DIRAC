@@ -1,11 +1,17 @@
+#############################################################################
+# $HeadURL$
+#############################################################################
+
 """ RequestDBFile is the plug in for the file backend.
 """
+
+__RCSID__ = "$Id"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-import os
+import os, os.path
 import threading, random
 from types import *
 
@@ -42,11 +48,11 @@ class RequestDBFile:
       summaryDict = {}
       for requestType in requestTypes:
         summaryDict[requestType] = {}
-        reqTypeDir = '%s/%s' % ( self.root, requestType )
+        reqTypeDir = os.path.join( self.root, requestType )
         if os.path.isdir( reqTypeDir ):
           statusList = os.listdir( reqTypeDir )
           for status in statusList:
-            reqTypeStatusDir = '%s/%s' % ( reqTypeDir, status )
+            reqTypeStatusDir = os.path.join( reqTypeDir, status )
             requests = os.listdir( reqTypeStatusDir )
             summaryDict[requestType][status] = len( requests )
       gLogger.info( "RequestDBFile._getDBSummary: Successfully obtained database summary." )
@@ -72,10 +78,10 @@ class RequestDBFile:
             status = 'ToDo'
           else:
             status = 'Done'
-          subRequestDir = '%s/%s/%s' % ( self.root, requestType, status )
+          subRequestDir = os.path.join( self.root, requestType, status )
           if not os.path.exists( subRequestDir ):
             os.makedirs( subRequestDir )
-          subRequestPath = '%s/%s' % ( subRequestDir, requestName )
+          subRequestPath = os.path.join( subRequestDir, requestName )
           subRequestFile = open( subRequestPath, 'w' )
           subRequestFile.write( subRequestString )
           subRequestFile.close()
@@ -113,14 +119,13 @@ class RequestDBFile:
     try:
       # Determine the request name to be obtained
       candidateRequests = []
-      reqDir = '%s/%s/ToDo' % ( self.root, requestType )
+      reqDir = os.path.join( self.root, requestType, "ToDo" )
       self.getIdLock.acquire()
       if os.path.exists( reqDir ):
-        requestNames = os.listdir( reqDir )
-        for requestName in requestNames:
-          requestPath = "%s/%s" % ( reqDir, requestName )
-          if os.path.isfile( requestPath ):
-            candidateRequests.append( requestName )
+        candidateRequests = [ os.path.basename(requestFile) for requestFile in 
+                         sorted( filter( os.path.isfile, 
+                                         [ os.path.join( reqDir, requestName ) for requestName in os.listdir( reqDir ) ] ), 
+                                 key=os.path.getctime ) ]
       if not len( candidateRequests ) > 0:
         self.getIdLock.release()
         gLogger.info( "RequestDBFile._getRequest: No request of type %s found." % requestType )
@@ -291,11 +296,11 @@ class RequestDBFile:
           if not assigned and 'Assigned' in statusList:
             statusList.remove( 'Assigned' )
           for status in statusList:
-            statusDir = '%s/%s' % ( reqDir, status )
+            statusDir = os.path.join( reqDir, status )
             if os.path.isdir( statusDir ):
               requestNames = os.listdir( statusDir )
               if requestName in requestNames:
-                requestPath = '%s/%s' % ( statusDir, requestName )
+                requestPath = os.path.join( statusDir, requestName )
                 subRequests.append( requestPath )
       gLogger.info( "RequestDBFile.__locateRequest: Successfully located %s." % requestName )
       return S_OK( subRequests )

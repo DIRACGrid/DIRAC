@@ -7,7 +7,8 @@ ResourceStatusClient class is a client for requesting info from the ResourceStat
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, \
+    ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType, PolicyTypes
 
 class ResourceStatusClient:
 

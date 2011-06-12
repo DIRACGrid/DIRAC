@@ -126,7 +126,6 @@ class CLIParams:
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
     Script.registerSwitch( "U", "upload", "Upload a long lived proxy to the ProxyManager", self.setUploadProxy )
-    Script.addDefaultOptionValue( "LogLevel", "always" )
 
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -162,6 +161,7 @@ def generateProxy( params ):
   params.certLoc = certLoc
   params.keyLoc = keyLoc
 
+  #Load password
   testChain = X509Chain()
   retVal = testChain.loadKeyFromFile( keyLoc, password = params.userPasswd )
   if not retVal[ 'OK' ]:
@@ -172,6 +172,7 @@ def generateProxy( params ):
       userPasswd = getpass.getpass( passwdPrompt )
     params.userPasswd = userPasswd
 
+  #Find location
   proxyLoc = params.proxyLoc
   if not proxyLoc:
     proxyLoc = Locations.getDefaultProxyLocation()
@@ -222,6 +223,10 @@ def generateProxy( params ):
     if params.diracGroup not in groups:
       return S_ERROR( "Requested group %s is not valid for user %s" % ( params.diracGroup, username ) )
     gLogger.info( "Creating proxy for %s@%s (%s)" % ( username, params.diracGroup, userDN ) )
+    #Check if the proxy needs to be uploaded
+    if not params.uploadProxy:
+      params.uploadProxy = Registry.getGroupOption( params.diracGroup, "AutoUploadProxy", False )
+      gLogger.verbose( "Proxy will be uploaded to ProxyManager " )
 
   if params.summary:
     h = int( params.proxyLifeTime / 3600 )

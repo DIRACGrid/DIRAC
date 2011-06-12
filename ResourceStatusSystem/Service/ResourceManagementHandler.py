@@ -98,6 +98,49 @@ class ResourceManagementHandler(RequestHandler):
 
 #############################################################################
 
+  types_getEnvironmentCache = [StringType, StringType]
+  def export_getEnvironmentCache( self, hash, siteName ):
+    """ get Policy Result
+    """
+    try:
+      gLogger.info("ResourceManagementHandler.getEnvironmentCache: Attempting to get environment of %s for %s" % ( siteName, hash ))
+      try:
+        res = rmDB.getEnvironmentCache( hash, siteName )
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceManagementHandler.getEnvironmentCache: got environment of %s for %s" % ( siteName, hash ))
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getEnvironmentCache)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+    
+#############################################################################
+
+  types_addOrModifyEnvironmentCache = [StringType, StringType, StringType]
+  def export_addOrModifyEnvironmentCache( self, hash, siteName, environment ):
+    """ get Policy Result
+    """
+    
+    try:
+      gLogger.info("ResourceManagementHandler.addOrModifyEnvironmentCache: Attempting to add/modify environment of %s for %s" % ( siteName, hash ))
+      try:
+        res = rmDB.addOrModifyEnvironmentCache( hash, siteName, environment )
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceManagementHandler.addOrModifyEnvironmentCache: add/modify environment of %s for %s" % ( siteName, hash ))
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_addOrModifyEnvironmentCache)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+    
+#############################################################################
+
   types_getPolicyRes = [StringType, StringType, BooleanType]
   def export_getPolicyRes(self, name, policyName, lastCheckTime):
     """ get Policy Result
