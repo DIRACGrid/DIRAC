@@ -633,7 +633,7 @@ class DirectoryMetadata:
     
     for meta in metaFields:
       req = "DELETE FROM FC_Meta_%s WHERE DirID in ( %s )" % (meta,dirListString)
-      result = self.db._duery(req)
+      result = self.db._query(req)
       if not result['OK']:
         failed[meta] = result['Message']
       else:

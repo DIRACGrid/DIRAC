@@ -94,6 +94,54 @@ class ResourceManagementDB:
 
 #############################################################################
 
+  def addOrModifyEnvironmentCache( self, hash, siteName, environment ):
+    
+    req  = "SELECT SiteName, Hash FROM EnvironmentCache "
+    req += "WHERE SiteName = '%s' AND Hash = '%s'" % ( siteName, hash )
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSManagementDBException, where(self, self.addOrModifyEnvironmentCache) + resQuery['Message']
+    
+    now = datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')
+    
+    if resQuery['Value']: 
+      req  = "UPDATE EnvironmentCache SET "
+      req += "Environment = '%s', DateEffective = '%s' " % ( environment, now )
+      req += "WHERE SiteName = '%s' AND Hash = '%s'" % ( siteName, hash )     
+      
+      resUpdate = self.db._update(req)
+      if not resUpdate['OK']:
+        raise RSSManagementDBException, where(self, self.addOrModifyEnvironmentCache) + resUpdate['Message']
+    else:
+      req  = "INSERT INTO EnvironmentCache ( SiteName, Hash, DateEffective, Environment ) "
+      req += "VALUES ( '%s', '%s', '%s', '%s' )" %( siteName, hash, now, environment )
+      
+      resInsert = self.db._update(req)
+      if not resInsert['OK']:
+        raise RSSManagementDBException, where(self, self.addOrModifyEnvironmentCache) + resInsert['Message']
+    
+#############################################################################
+
+  def getEnvironmentCache( self, hash, siteName ):
+    
+    req  = "SELECT DateEffective, Environment "  
+    req += "FROM EnvironmentCache WHERE "
+    req += "Hash = '%s' AND SiteName = '%s'"  % ( hash, siteName )
+
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSManagementDBException, where(self, self.getEnvironmentCache) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    
+    return resQuery['Value'][0]
+  
+#############################################################################
+# Policy functions
+#############################################################################
+
+#############################################################################
+
   def addOrModifyPolicyRes(self, granularity, name, policyName, 
                            status, reason, dateEffective = None):
     """
@@ -176,7 +224,7 @@ class ResourceManagementDB:
       return []
     
     return resQuery['Value'][0]
-    
+
 #############################################################################
 
 #############################################################################

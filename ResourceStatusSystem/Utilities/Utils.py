@@ -103,7 +103,7 @@ def convertTime(t, inTo = None):
 ############################
 
 from itertools import imap
-import copy
+import copy, ast
 
 id_fun = lambda x: x
 
@@ -112,6 +112,20 @@ id_fun = lambda x: x
 def isiterable(obj):
   import collections
   return isinstance(obj,collections.Iterable)
+
+# Type conversion
+
+def bool_of_string(s):
+  """Convert a string into a boolean in a SANE manner."""
+  if s.lower() == "true"    : return True
+  elif s.lower() == "false" : return False
+  else                      : raise ValueError, "Cannot convert %s to a boolean value" % s
+
+def typedobj_of_string(s):
+  try:
+    return ast.literal_eval(s)
+  except ValueError: # Probably it's just a string
+    return s
 
 # List utils
 
@@ -133,6 +147,9 @@ def list_flatten(l):
 def dictMatch(dict1, dict2):
   """Checks if fields of dict1 are in fields of dict2. Returns True if
   it is the case and False otherwise."""
+  if type(dict1) != type(dict2) != dict:
+    raise TypeError, "dictMatch expect dicts for both arguments"
+
   try:
     for k in dict1:
       if dict1[k] not in dict2[k]:

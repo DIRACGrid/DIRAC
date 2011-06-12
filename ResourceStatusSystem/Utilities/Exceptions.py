@@ -3,8 +3,10 @@
       - exceptions
 """
 
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, \
-    ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType, PolicyTypes
+from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import \
+    ValidRes, ValidStatus, ValidSiteType, \
+    ValidServiceType, ValidResourceType, PolicyTypes
+
 
 #############################################################################
 

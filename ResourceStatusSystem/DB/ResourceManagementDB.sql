@@ -71,3 +71,15 @@ CREATE TABLE AccountingCache(
   LastCheckTime DATETIME NOT NULL,
   PRIMARY KEY(acID)
 ) Engine=InnoDB;
+
+
+DROP TABLE IF EXISTS EnvironmentCache;
+CREATE TABLE EnvironmentCache(
+  Hash VARCHAR(128) NOT NULL,
+  INDEX (Hash),
+  SiteName VARCHAR(64) NOT NULL,
+  INDEX (SiteName),
+  DateEffective DATETIME NOT NULL,
+  Environment BLOB,
+  PRIMARY KEY(Hash)
+) Engine=InnoDB;

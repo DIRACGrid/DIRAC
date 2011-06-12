@@ -5,8 +5,9 @@
 __RCSID__ = "$Id:  $"
 
 import copy
-from DIRAC.ResourceStatusSystem.Utilities.BrowseConfig import getDictRootedAt
-from DIRAC.ResourceStatusSystem.Utilities.Utils        import dictMatch
+
+from DIRAC.ResourceStatusSystem.Utilities.CS    import getTypedDict
+from DIRAC.ResourceStatusSystem.Utilities.Utils import dictMatch
 
 class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations
@@ -112,7 +113,7 @@ class InfoGetter:
 
   def __getPolToEval(self, useNewRes = False, **kwargs):
 
-    pConfig = getDictRootedAt("Policies")
+    pConfig = getTypedDict("Policies")
     pol_to_eval = []
 
     for p in pConfig:
@@ -159,7 +160,7 @@ class InfoGetter:
   def __getPolTypes(self, **kwargs):
     """Get Policy Types from config that match the given keyword
     arguments"""
-    pTconfig = getDictRootedAt("PolicyTypes")
+    pTconfig = getTypedDict("PolicyTypes")
 
     pTypes = []
 

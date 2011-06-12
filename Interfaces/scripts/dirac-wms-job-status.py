@@ -43,6 +43,6 @@ if result['OK']:
     print
 else:
   exitCode = 2
-  print "ERROR: %s" % error
+  print "ERROR: %s" % result['Message']
 
 DIRAC.exit( exitCode )

@@ -1021,7 +1021,7 @@ class Dirac:
     print >> fd, message
 
   #############################################################################
-  #Êdef listCatalog( self, directory, printOutput = False ):
+  # def listCatalog( self, directory, printOutput = False ):
   #   """ Under development.
   #       Obtain listing of the specified directory.
   #   """
