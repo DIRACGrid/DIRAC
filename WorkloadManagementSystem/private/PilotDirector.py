@@ -135,7 +135,7 @@ class PilotDirector:
     section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
     self.installVersion = gConfig.getValue( cfgPath( section, 'PilotVersion' ),
                                          self.installVersion )
-    self.installInstallation = gConfig.getValue( '/Operations/%s/%s/Versions/PilotInstallation' % ( vo, setup ),
+    self.installInstallation = gConfig.getValue( cfgPath( section, 'PilotInstallation' ),
                                          self.installInstallation )
 
     self.log.info( '===============================================' )

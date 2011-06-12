@@ -475,7 +475,7 @@ class FileCatalogDB(DB):
     successful = res['Value']['Successful']
     
     # Remove the directory metadata now
-    dirIdList = [ p['DirID'] for p in successful ]
+    dirIdList = [ successful[p]['DirID'] for p in successful ]
     result = self.dmeta.removeMetadataForDirectory( dirIdList,credDict )
     if not result['OK']:
       return result

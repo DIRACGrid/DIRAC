@@ -1,3 +1,31 @@
+[v6r0-pre4]
+
+*ResourceStatusSystem enhancements
+NEW: methods to store cached environment on a DB and ge them.
+CHANGE: command caller looks on the extension for commands.
+CHANGE: RSS use now the CS instead of getting info from Python modules.
+
+*dirac-wms-job-status
+BUGFIX: in the error printing
+
+*proxy-init
+FIX: Set proxy-init loglevel to default level
+
+*PilotDirector
+FIX: removed old 'vo' var. This is not a final fix
+
+*FileCatalog
+CHANGE: allow up to 15 levels of directories in the File Catalog
+
+*SiteDirector
+FIX: limit the queue max length to the value of MaxQueueLengthOption ( 3 days be default )
+
+*SysAdmin CLI
+FIX: add return after an error in client.getInfo() call
+
+*RequestDBFile
+FIX: Getting request in chronological order (closes issue #84)
+
 [v6r0-pre3]
 
 *InstallTools.py
