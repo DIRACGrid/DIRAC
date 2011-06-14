@@ -226,6 +226,7 @@ def generateProxy( params ):
     #Check if the proxy needs to be uploaded
     if not params.uploadProxy:
       params.uploadProxy = Registry.getGroupOption( params.diracGroup, "AutoUploadProxy", False )
+    if params.uploadProxy:
       gLogger.verbose( "Proxy will be uploaded to ProxyManager " )
 
   if params.summary:
