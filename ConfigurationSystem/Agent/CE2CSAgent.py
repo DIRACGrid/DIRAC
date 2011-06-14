@@ -18,8 +18,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 class CE2CSAgent( AgentModule ):
 
-  def __init__( self, agentName, baseAgentName, properties ):
-    AgentModule.__init__( self, agentName, baseAgentName, properties )
+  def __init__( self, *args ):
+    AgentModule.__init__( self, *args )
     self.addressTo = ''
     self.addressFrom = ''
     self.voName = ''
