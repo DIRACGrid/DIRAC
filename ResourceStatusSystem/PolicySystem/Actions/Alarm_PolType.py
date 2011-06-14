@@ -1,9 +1,23 @@
 """
 AlarmPolType Actions
 """
+import urllib
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
+
+def getUsersToNotifyShiftDB():
+
+  def email_of_fullname(fullname):
+    return fullname.lower().replace(" ", ".") + "@cern.ch"
+
+  url = urllib.urlopen("http://lbshiftdb.cern.ch/shiftdb_report.php")
+  lines = [l.split('|')[1:-1] for l in  url.readlines()]
+  lines = [ {'Date': e[0].strip(), 'Function': e[1].strip(), 'Phone':e[2].strip(), 'Morning':e[3].strip(),
+             'Evening':e[4].strip(), 'Night':e[5].strip() } for e in lines[1:]]
+
+  lines = [ e for e in lines if e['Function'] == "Grid Expert" or e['Function'] == "Production" ]
+  return  [ email_of_fullname(e['Morning']) for e in lines ]
 
 def getUsersToNotify(setup, kwargs):
   """Get a list of users to notify (helper function for AlarmPolTypeActions)
@@ -68,3 +82,7 @@ def AlarmPolTypeActions(name, res, nc, setup, rsDB, **kwargs):
 
           nc.sendMail(CS.getMailForUser(user)['Value'][0],
                       '%s: %s' % (name, res['Status']), mailMessage)
+
+
+if __name__ == "__main__":
+  getUsersToNotifyShiftDB()
