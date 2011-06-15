@@ -7,17 +7,17 @@ from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 def getUsersToNotifyShiftDB():
-
-  def email_of_fullname(fullname):
-    return fullname.lower().replace(" ", ".") + "@cern.ch"
-
   url = urllib.urlopen("http://lbshiftdb.cern.ch/shiftdb_report.php")
   lines = [l.split('|')[1:-1] for l in  url.readlines()]
   lines = [ {'Date': e[0].strip(), 'Function': e[1].strip(), 'Phone':e[2].strip(), 'Morning':e[3].strip(),
              'Evening':e[4].strip(), 'Night':e[5].strip() } for e in lines[1:]]
 
   lines = [ e for e in lines if e['Function'] == "Grid Expert" or e['Function'] == "Production" ]
-  return  [ email_of_fullname(e['Morning']) for e in lines ]
+  # Warning: The getMailForName function might not return what you
+  # want! There is no guarantee that it’s possible to correctly infer
+  # mail from username, but it has been reported to work on some cases
+  # :DD (Maybe use lxplus command "phonebook" ?)
+  return  [ CS.getMailForName(e['Morning']) for e in lines ]
 
 def getUsersToNotify(setup, kwargs):
   """Get a list of users to notify (helper function for AlarmPolTypeActions)
