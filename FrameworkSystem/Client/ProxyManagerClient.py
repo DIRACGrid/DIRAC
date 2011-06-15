@@ -142,9 +142,9 @@ class ProxyManagerClient:
       else:
         return S_ERROR( "Can't find a valid proxy" )
       chain = X509Chain()
-      retVal = chain.loadProxyFromFile( proxyLocation )
-      if not retVal[ 'OK' ]:
-        return S_ERROR( "Can't load %s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
+      result = chain.loadProxyFromFile( proxyLocation )
+      if not result[ 'OK' ]:
+        return S_ERROR( "Can't load %s: %s " % ( proxyLocation, result[ 'Message' ] ) )
 
     if not chainToConnect:
       chainToConnect = chain
@@ -156,13 +156,16 @@ class ProxyManagerClient:
     #rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
     rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     #Get a delegation request
-    retVal = rpcClient.requestDelegationUpload( chain.getRemainingSecs()['Value'], diracGroup )
-    if not retVal[ 'OK' ]:
-      return retVal
+    result = rpcClient.requestDelegationUpload( chain.getRemainingSecs()['Value'], diracGroup )
+    if not result[ 'OK' ]:
+      return result
     #Check if the delegation has been granted
-    if 'Value' not in retVal or not retVal[ 'Value' ]:
-      return S_OK()
-    reqDict = retVal[ 'Value' ]
+    if 'Value' not in result or not result[ 'Value' ]:
+      if 'proxies' in result:
+        return S_OK( result[ 'proxies' ] )
+      else:
+        return S_OK()
+    reqDict = result[ 'Value' ]
     #Generate delegated chain
     chainLifeTime = chain.getRemainingSecs()[ 'Value' ] - 60
     if restrictLifeTime and restrictLifeTime < chainLifeTime:
@@ -173,7 +176,13 @@ class ProxyManagerClient:
     if not retVal[ 'OK' ]:
       return retVal
     #Upload!
-    return rpcClient.completeDelegationUpload( reqDict[ 'id' ], retVal[ 'Value' ] )
+    result = rpcClient.completeDelegationUpload( reqDict[ 'id' ], retVal[ 'Value' ] )
+    if not result[ 'OK' ]:
+      return result
+    if 'proxies' in result:
+      return S_OK( result[ 'proxies' ] )
+    return S_OK()
+
 
   @gProxiesSync
   def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, proxyToConnect = False, token = False ):
