@@ -1425,7 +1425,6 @@ class ResourceStatusDB:
 
 #############################################################################
 
-<<<<<<< HEAD
   def getResources( self, resourceName = None, resourceType = None, serviceType = None,
                     siteName = None, gridSiteName = None, status = None, reason = None,
                     tokenOwner = None ):
@@ -1462,10 +1461,8 @@ class ResourceStatusDB:
     
     return resQuery['Value']
   
-  def setResourceStatus(self, resourceName, status, reason, tokenOwner):
-=======
   def setResourceStatus( self, resourceName, status, reason, tokenOwner ):
->>>>>>> ses
+
     """
     Set a Resource status, effective from now, with no ending
 

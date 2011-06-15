@@ -22,9 +22,9 @@ from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagemen
 
 __RCSID__ = "$Id:  $"
 
-AGENT_NAME = 'ResourceStatus/StElInspectorAgent'
+AGENT_NAME = 'ResourceStatus/StElRInspectorAgent'
 
-class StElInspectorAgent(AgentModule):
+class StElRInspectorAgent(AgentModule):
   """ Class StElInspectorAgent is in charge of going through StorageElements
       table, and pass StorageElement and Status to the PEP
   """
@@ -71,7 +71,7 @@ class StElInspectorAgent(AgentModule):
       return S_OK()
 
     except Exception:
-      errorStr = "StElInspectorAgent initialization"
+      errorStr = "StElRInspectorAgent initialization"
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
@@ -86,7 +86,7 @@ class StElInspectorAgent(AgentModule):
     
     try:
 
-      res = self.rsDB.getStuffToCheck('StorageElements', self.StorageElements_check_freq) 
+      res = self.rsDB.getStuffToCheck('StorageElementsRead', self.StorageElements_check_freq) 
    
       for resourceTuple in res:
         if resourceTuple[0] in self.StorageElementInCheck:
@@ -139,7 +139,7 @@ class StElInspectorAgent(AgentModule):
         self.StorageElementInCheck.remove(toBeChecked[1])
 
       except Exception:
-        gLogger.exception('StElInspector._executeCheck')
+        gLogger.exception('StElRInspector._executeCheck')
         try:
           self.StorageElementInCheck.remove(storageElementName)
         except IndexError:
