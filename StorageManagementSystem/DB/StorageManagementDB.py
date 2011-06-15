@@ -772,6 +772,32 @@ class StorageManagementDB( DB ):
     gLogger.debug( "StorageManagementDB.setStageComplete: Successfully updated %s StageRequests table with StageStatus=Staged for ReplicaIDs: %s." % ( res['Value'], replicaIDs ) )
     return res
 
+  def wakeupOldRequests( self, replicaIDs , connection = False ):
+    req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted';" % intListToString( replicaIDs ) #add condition forStageRequestSubmitTime
+    res = self._query( req )
+    if not res['OK']:
+      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'wakeupOldRequests', reqSelect, resSelect['Message'] ) )
+    old_replicaIDs = []
+    for record in res['Value']: #this is wrong here
+      old_replicaIDs.append( record[0] )
+
+    req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+    res = self._update( req, connection )
+    if not res['OK']:
+      gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to roll CacheReplicas back to Status=New.", res['Message'] )
+      return res
+
+    req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+    res = self._update( req, connection )
+    if not res['OK']:
+      gLogger.error( "StorageManagementDB.wakeupOldRequests. Problem removing entries from StageRequests." )
+      return res
+
+    # get only StageRequests with StageRequestSubmitTime older than two days
+    # delete these requests
+    # reset Replicas with corresponding ReplicaIDs to Status='New'
+    return S_OK()
+
   ####################################################################
   #
   # This code handles the finalization of stage tasks
