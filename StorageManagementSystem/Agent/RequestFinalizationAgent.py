@@ -71,6 +71,9 @@ class RequestFinalizationAgent( AgentModule ):
         res = self.__performCallback( 'Done', callback, sourceTask )
         if not res['OK']:
           stagedTasks.pop( taskID )
+        else:
+          gLogger.info( "RequestFinalization.callbackStagedTasks, Task = %s: %s" % ( sourceTask, res['Message'] ) )
+
     if not stagedTasks:
       gLogger.info( "RequestFinalization.callbackStagedTasks: No tasks to update to Done." )
       return S_OK()
