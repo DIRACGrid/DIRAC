@@ -29,10 +29,38 @@ def getTypedDict(sectionPath, prefix = "/Operations/RSSConfiguration/"):
   if res['OK'] == False: raise CSError, res['Message']
   else:                  return typed_dict_of_dict(res['Value'])
 
+def getUserNames():
+  return gConfig.getSections("%s/Users" % g_BaseRegistrySection)['Value']
+
+def getMailForName(user):
+  """Try to guess the username of a user specified as a string. The
+  string is normally Firstname + Lastname, but cannot guarantee it
+  formally. This function relies on luck to work. You'd better be a
+  lucky person :D"""
+
+  candidates = getUserNames()
+  def score(S1, S2, alpha=1., beta=1.):
+    return alpha*len(Utils.LongestCommonSubstring(S1, S2)) + beta*Utils.CountCommonLetters(S1, S2)
+
+  name = user.strip().lower().split()
+  if len(name) == 1:
+    # Strategy one: Lastname
+    scores = [score(name[0], c) for c in candidates]
+  elif len(name) == 2:
+    # Stategy two: Firstname + Lastname
+    name = name[0][0] + name[1][0:7]
+    scores = [score(name, c) for c in candidates]
+  else:
+    # Strategy three: Multiple names
+    scores = [score(name[-1], c) for c in candidates]
+
+  highscore = max(scores)
+  return candidates[scores.index(highscore)]
+
 #############################################################################
 
 def getMailForUser( users ):
-  if isinstance(users, basestring):
+  if type(users) != list:
     users = [users]
   mails = []
   for user in users:
