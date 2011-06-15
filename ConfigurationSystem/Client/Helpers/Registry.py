@@ -57,6 +57,23 @@ def getHostnameForDN( dn ):
 def getDefaultUserGroup():
   return gConfig.getValue( "/%s/DefaultGroup" % gBaseSecuritySection, "user" )
 
+def findDefaultGroupForDN( dn ):
+  result = getUsernameForDN( dn )
+  if not result[ 'OK' ]:
+    return result
+  return findDefaultGroupForUser( result[ 'Value' ] )
+
+def findDefaultGroupForUser( userName ):
+  defGroups = gConfig.getValue( "/%s/DefaultGroup" % gBaseSecuritySection, [ "user" ] )
+  result = getGroupsForUser( userName )
+  if not result[ 'OK' ]:
+    return result
+  userGroups = result[ 'Value' ]
+  for group in defGroups:
+    if group in userGroups:
+      return S_OK( group )
+  return S_OK( False )
+
 def getAllUsers():
   retVal = gConfig.getSections( "%s/Users" % gBaseSecuritySection )
   if not retVal[ 'OK' ]:
@@ -94,11 +111,21 @@ def getPropertiesForEntity( group, name = "", dn = "", defaultValue = None ):
   else:
     return getPropertiesForGroup( group, defaultValue )
 
+def getUserOption( userName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Users/%s/%s" % ( gBaseSecuritySection, userName, optName ), defaultValue )
+
+def getGroupOption( groupName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Groups/%s/%s" % ( gBaseSecuritySection, groupName, optName ), defaultValue )
+
+def getHostOption( hostName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Hosts/%s/%s" % ( gBaseSecuritySection, hostName, optName ), defaultValue )
+
+
 def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % gBaseSecuritySection, [] )
 
 def getVOForGroup( group ):
-  voName = gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+  voName = getVO()
   if voName:
     return voName
   return gConfig.getValue( "%s/Groups/%s/VO" % ( gBaseSecuritySection, group ), "" )

@@ -25,22 +25,21 @@ Script.initialize()
 
 __RCSID__ = "$Id$"
 
-import re, os, sys, string, time, shutil, types, tempfile, glob
+import re, os, sys, time, shutil, types, tempfile, glob, tarfile
 import pprint
 import DIRAC
 
-from DIRAC.Interfaces.API.Job                            import Job
 from DIRAC.Interfaces.API.JobRepository                  import JobRepository
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient     import SandboxStoreClient
-from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection, getServiceURL
-from DIRAC.ConfigurationSystem.Client.Helpers            import getVO
+from DIRAC.Core.Security.Misc                                import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
@@ -56,9 +55,12 @@ from DIRAC                                               import gConfig, gLogger
 COMPONENT_NAME = 'DiracAPI'
 
 class Dirac:
+  """
+   DIRAC API Class
+  """
 
   #############################################################################
-  def __init__( self, WithRepo = False, RepoLocation = '', jobManagerClient = False,
+  def __init__( self, withRepo = False, repoLocation = '', jobManagerClient = False,
                 sbRPCClient = False, sbTransferClient = False, useCertificates = False ):
     """Internal initialization of the DIRAC API.
     """
@@ -69,30 +71,31 @@ class Dirac:
     self.diracInfo = getCurrentVersion()['Value']
 
     self.jobRepo = False
-    if WithRepo:
-      self.jobRepo = JobRepository( RepoLocation )
+    if withRepo:
+      self.jobRepo = JobRepository( repoLocation )
       if not self.jobRepo.isOK():
         gLogger.error( "Unable to write to supplied repository location" )
         self.jobRepo = False
 
     self.scratchDir = gConfig.getValue( self.section + '/LocalSite/ScratchDir', '/tmp' )
-    self.outputSandboxClient = SandboxClient( 'Output' )
     self.sandboxClient = SandboxStoreClient( useCertificates, sbRPCClient, sbTransferClient )
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     self.pPrint = pprint.PrettyPrinter()
     # Determine the default file catalog
     defaultFC = gConfig.getValue( self.section + '/FileCatalog', '' )
     if not defaultFC:
-      result = gConfig.getSections('Resources/FileCatalogs',[])
+      result = gConfig.getSections( 'Resources/FileCatalogs', [] )
       if result['OK']:
         if result['Value']:
           self.defaultFileCatalog = result['Value'][0]
     else:
       self.defaultFileCatalog = defaultFC
     if not defaultFC:
-      self.defaultFileCatalog = 'FileCatalog'  
+      self.defaultFileCatalog = 'FileCatalog'
 
   def version( self ):
+    """ Report DIRAC version
+    """
     return S_OK( DIRAC.buildVersion )
 
   #############################################################################
@@ -149,7 +152,7 @@ class Dirac:
       print self.pPrint.pformat( statusDict )
     return S_OK( statusDict )
 
-  def retrieveRepositorySandboxes( self, requestedStates = ['Done', 'Failed'], destinationDirectory = '' ):
+  def retrieveRepositorySandboxes( self, requestedStates = None, destinationDirectory = '' ):
     """ Obtain the output sandbox for the jobs in requested states in the repository
 
        Example Usage:
@@ -166,15 +169,18 @@ class Dirac:
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
+    if requestedStates == None:
+      requestedStates = ['Done', 'Failed']
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sortList( jobs.keys() ):
       jobDict = jobs[jobID]
       if jobDict.has_key( 'State' ) and ( jobDict['State'] in requestedStates ):
-        if ( jobDict.has_key( 'Retrieved' ) and ( not int( jobDict['Retrieved'] ) ) ) or ( not jobDict.has_key( 'Retrieved' ) ):
+        if ( jobDict.has_key( 'Retrieved' ) and ( not int( jobDict['Retrieved'] ) ) ) \
+           or ( not jobDict.has_key( 'Retrieved' ) ):
           self.getOutputSandbox( jobID, destinationDirectory )
     return S_OK()
 
-  def retrieveRepositoryData( self, requestedStates = ['Done'], destinationDirectory = '' ):
+  def retrieveRepositoryData( self, requestedStates = None, destinationDirectory = '' ):
     """ Obtain the output data for the jobs in requested states in the repository
 
        Example Usage:
@@ -184,18 +190,21 @@ class Dirac:
 
        @param requestedStates: List of jobs states to be considered
        @type requestedStates: list of strings
-       @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
+       @param destinationDirectory: The target directory to place sandboxes (a directory is created for each JobID)
        @type destinationDirectory: string
        @return: S_OK,S_ERROR
     """
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
+    if requestedStates == None:
+      requestedStates = ['Done']
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sortList( jobs.keys() ):
       jobDict = jobs[jobID]
       if jobDict.has_key( 'State' ) and ( jobDict['State'] in requestedStates ):
-        if ( jobDict.has_key( 'OutputData' ) and ( not int( jobDict['OutputData'] ) ) ) or ( not jobDict.has_key( 'OutputData' ) ):
+        if ( jobDict.has_key( 'OutputData' ) and ( not int( jobDict['OutputData'] ) ) ) \
+           or ( not jobDict.has_key( 'OutputData' ) ):
           destDir = jobID
           if destinationDirectory:
             destDir = "%s/%s" % ( destinationDirectory, jobID )
@@ -221,15 +230,15 @@ class Dirac:
       if jobDict.has_key( 'Sandbox' ) and os.path.exists( jobDict['Sandbox'] ):
         shutil.rmtree( jobDict['Sandbox'], ignore_errors = True )
       if jobDict.has_key( 'OutputFiles' ):
-        for file in eval( jobDict['OutputFiles'] ):
-          if os.path.exists( file ):
-            os.remove( file )
+        for fileName in eval( jobDict['OutputFiles'] ):
+          if os.path.exists( fileName ):
+            os.remove( fileName )
     self.delete( sortList( jobs.keys() ) )
     os.remove( self.jobRepo.getLocation()['Value'] )
     self.jobRepo = False
     return S_OK()
 
-  def resetRepository( self, jobIDs = [] ):
+  def resetRepository( self, jobIDs = None ):
     """ Reset all the status of the (optionally supplied) jobs in the repository
 
        Example Usage:
@@ -242,6 +251,8 @@ class Dirac:
     if not self.jobRepo:
       gLogger.warn( "No repository is initialised" )
       return S_OK()
+    if jobIDs == None:
+      jobIDs = []
     if not type( jobIDs ) == types.ListType:
       return self.__errorReport( 'The jobIDs must be a list of (strings or ints).' )
     self.jobRepo.resetRepository( jobIDs = jobIDs )
@@ -296,7 +307,7 @@ class Dirac:
 
       if formulationErrors:
         for method, errorList in formulationErrors.items():
-          self.log.error( '>>>> Error in %s() <<<<\n%s' % ( method, string.join( errorList, '\n' ) ) )
+          self.log.error( '>>>> Error in %s() <<<<\n%s' % ( method, '\n'.join( errorList ) ) )
         return S_ERROR( formulationErrors )
 
       #Run any VO specific checks if desired prior to submission, this may or may not be overidden
@@ -342,7 +353,9 @@ class Dirac:
           stopCallback = True
 
         self.log.info( 'Executing at', os.getcwd() )
-        result = self.runLocal( jdl, jobDescription, curDir, disableCopies = stopCopies, disableCallback = stopCallback )
+        result = self.runLocal( jdl, jobDescription, curDir,
+                                disableCopies = stopCopies,
+                                disableCallback = stopCallback )
         os.chdir( curDir )
       if mode.lower() == 'agent':
         self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
@@ -445,7 +458,8 @@ class Dirac:
         Currently must unset CMTPROJECTPATH to get this to work.
     """
     agentName = 'WorkloadManagement/JobAgent'
-    self.log.verbose( 'In case being booted from a DIRAC script, now resetting sys arguments to null from: \n%s' % ( sys.argv ) )
+    self.log.verbose( 'In case being booted from a DIRAC script,'
+                      ' now resetting sys arguments to null from: \n%s' % ( sys.argv ) )
     sys.argv = []
     localCfg = LocalConfiguration()
     ceType = gConfig.getValue( '/LocalSite/LocalCE', 'InProcess' )
@@ -498,14 +512,14 @@ class Dirac:
   def __getCurrentGroup( self ):
     """Simple function to return current DIRAC group.
     """
-    self.proxy = Locations.getProxyLocation()
-    if not self.proxy:
+    proxy = Locations.getProxyLocation()
+    if not proxy:
       return S_ERROR( 'No proxy found in local environment' )
     else:
-      self.log.verbose( 'Current proxy is %s' % self.proxy )
+      self.log.verbose( 'Current proxy is %s' % proxy )
 
     chain = X509Chain()
-    result = chain.loadProxyFromFile( self.proxy )
+    result = chain.loadProxyFromFile( proxy )
     if not result[ 'OK' ]:
       return result
 
@@ -520,14 +534,14 @@ class Dirac:
   def __getCurrentDN( self ):
     """Simple function to return current DN.
     """
-    self.proxy = Locations.getProxyLocation()
-    if not self.proxy:
+    proxy = Locations.getProxyLocation()
+    if not proxy:
       return S_ERROR( 'No proxy found in local environment' )
     else:
-      self.log.verbose( 'Current proxy is %s' % self.proxy )
+      self.log.verbose( 'Current proxy is %s' % proxy )
 
     chain = X509Chain()
-    result = chain.loadProxyFromFile( self.proxy )
+    result = chain.loadProxyFromFile( proxy )
     if not result[ 'OK' ]:
       return result
 
@@ -582,7 +596,8 @@ class Dirac:
       current = time.time()
       if current - start > maxWaitingTime:
         finalState = True
-        return S_ERROR( 'Exceeded max waiting time of %s seconds for job %s to enter Waiting state, exiting.' % ( maxWaitingTime, jobID ) )
+        return S_ERROR( 'Exceeded max waiting time of %s seconds for job %s to enter Waiting state,'
+                        ' exiting.' % ( maxWaitingTime, jobID ) )
       time.sleep( pollingTime )
 
   #############################################################################
@@ -592,7 +607,10 @@ class Dirac:
 
     moduleName = ''
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = getVO()
+    vo = None
+    ret = getProxyInfo( disableVOMS = True )
+    if ret['OK'] and 'group' in ret['Value']:
+      vo = getVOForGroup( ret['Value']['group'] )
     if setup and vo:
       moduleName = gConfig.getValue( 'DIRAC/VOPolicy/%s/%s/%s' % ( vo, setup, module ), '' )
       if not moduleName:
@@ -652,7 +670,7 @@ class Dirac:
 
     catalogFailed = {}
     self.log.info( 'Attempting to resolve data for %s' % siteName )
-    self.log.verbose( '%s' % ( string.join( lfns, '\n' ) ) )
+    self.log.verbose( '%s' % ( '\n'.join( lfns ) ) )
     replicaDict = self.getReplicas( lfns )
     if not replicaDict['OK']:
       return replicaDict
@@ -668,7 +686,13 @@ class Dirac:
     diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
     tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
     #Add catalog path / name here as well as site name to override the standard policy of resolving automatically
-    configDict = {'JobID':None, 'LocalSEList':localSEList['Value'], 'DiskSEList':diskSE, 'TapeSEList':tapeSE, 'SiteName':siteName, 'CatalogName':fileName}
+    configDict = { 'JobID':None,
+                   'LocalSEList':localSEList['Value'],
+                   'DiskSEList':diskSE,
+                   'TapeSEList':tapeSE,
+                   'SiteName':siteName,
+                   'CatalogName':fileName
+                 }
 
     self.log.verbose( configDict )
     argumentsDict = {'FileCatalog':resolvedData, 'Configuration':configDict, 'InputData':lfns}
@@ -687,12 +711,12 @@ class Dirac:
     self.log.debug( result )
     if not result['OK']:
       if result.has_key( 'Failed' ):
-        self.log.error( 'Input data resolution failed for the following files:\n%s' % ( string.join( result['Failed'], '\n' ) ) )
+        self.log.error( 'Input data resolution failed for the following files:\n', '\n'.join( result['Failed'] ) )
 
     if catalogFailed:
       self.log.error( 'Replicas not found for the following files:' )
-      for n, v in catalogFailed.items():
-        self.log.error( '%s %s' % ( n, v ) )
+      for key, value in catalogFailed.items():
+        self.log.error( '%s %s' % ( key, value ) )
       if result.has_key( 'Failed' ):
         failedKeys = catalogFailed.keys()
         result['Failed'] = failedKeys
@@ -716,7 +740,7 @@ class Dirac:
       return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
 
     self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
-    self.log.verbose( '%s' % ( string.join( inputData, '\n' ) ) )
+    self.log.verbose( '\n'.join( inputData ) )
     replicaDict = self.getReplicas( inputData )
     if not replicaDict['OK']:
       return replicaDict
@@ -749,8 +773,8 @@ class Dirac:
 
     if catalogFailed:
       self.log.error( 'Replicas not found for the following files:' )
-      for n, v in catalogFailed.items():
-        self.log.error( '%s %s' % ( n, v ) )
+      for key, value in catalogFailed.items():
+        self.log.error( '%s %s' % ( key, value ) )
       if result.has_key( 'Failed' ):
         failedKeys = catalogFailed.keys()
         result['Failed'] = failedKeys
@@ -809,7 +833,7 @@ class Dirac:
         return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/InputDataModule for VO' )
 
       self.log.info( 'Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName() )
-      self.log.verbose( '%s' % ( string.join( inputData, '\n' ) ) )
+      self.log.verbose( '\n'.join( inputData ) )
       replicaDict = self.getReplicas( inputData )
       if not replicaDict['OK']:
         return replicaDict
@@ -821,9 +845,17 @@ class Dirac:
       resolvedData = guidDict
       diskSE = gConfig.getValue( self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'] )
       tapeSE = gConfig.getValue( self.section + '/TapeSE', ['-tape', '-RDST', '-RAW'] )
-      configDict = {'JobID':None, 'LocalSEList':localSEList, 'DiskSEList':diskSE, 'TapeSEList':tapeSE}
+      configDict = { 'JobID':        None,
+                     'LocalSEList':  localSEList,
+                     'DiskSEList':   diskSE,
+                     'TapeSEList':   tapeSE
+                   }
       self.log.verbose( configDict )
-      argumentsDict = {'FileCatalog':resolvedData, 'Configuration':configDict, 'InputData':inputData, 'Job':parameters['Value']}
+      argumentsDict = { 'FileCatalog':   resolvedData,
+                        'Configuration': configDict,
+                        'InputData':     inputData,
+                        'Job':           parameters['Value']
+                      }
       self.log.verbose( argumentsDict )
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule( inputDataPolicy, argumentsDict )
@@ -983,27 +1015,27 @@ class Dirac:
     return S_OK( 'Execution completed successfully' )
 
   #############################################################################
-  def __printOutput( self, fd, message ):
+  def __printOutput( self, fd = None, message = '' ):
     """Internal callback function to return standard output when running locally.
     """
-    print message
+    print >> fd, message
 
   #############################################################################
-  def listCatalog( self, directory, printOutput = False ):
-    """ Under development.
-        Obtain listing of the specified directory.
-    """
-    rm = ReplicaManager()
-    listing = rm.listCatalogDirectory( directory )
-    if re.search( '\/$', directory ):
-      directory = directory[:-1]
-
-    if printOutput:
-      for fileKey, metaDict in listing['Value']['Successful'][directory]['Files'].items():
-        print '#' * len( fileKey )
-        print fileKey
-        print '#' * len( fileKey )
-        print self.pPrint.pformat( metaDict )
+  # def listCatalog( self, directory, printOutput = False ):
+  #   """ Under development.
+  #       Obtain listing of the specified directory.
+  #   """
+  #   rm = ReplicaManager()
+  #   listing = rm.listCatalogDirectory( directory )
+  #   if re.search( '\/$', directory ):
+  #     directory = directory[:-1]
+  # 
+  #   if printOutput:
+  #     for fileKey, metaDict in listing['Value']['Successful'][directory]['Files'].items():
+  #       print '#' * len( fileKey )
+  #       print fileKey
+  #       print '#' * len( fileKey )
+  #       print self.pPrint.pformat( metaDict )
 
   #############################################################################
   def getReplicas( self, lfns, active = True, printOutput = False ):
@@ -1023,11 +1055,9 @@ class Dirac:
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    bulkQuery = False
     if type( lfns ) == type( " " ):
       lfns = lfns.replace( 'LFN:', '' )
     elif type( lfns ) == type( [] ):
-      bulkQuery = True
       try:
         lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
       except Exception, x:
@@ -1074,11 +1104,9 @@ class Dirac:
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    bulkQuery = False
     if type( lfns ) == type( " " ):
       lfns = lfns.replace( 'LFN:', '' )
     elif type( lfns ) == type( [] ):
-      bulkQuery = True
       try:
         lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
       except Exception, x:
@@ -1184,7 +1212,6 @@ class Dirac:
     if type( lfns ) == type( " " ):
       lfns = lfns.replace( 'LFN:', '' )
     elif type( lfns ) == type( [] ):
-      bulkQuery = True
       try:
         lfns = [str( lfn.replace( 'LFN:', '' ) ) for lfn in lfns]
       except Exception, x:
@@ -1608,9 +1635,11 @@ class Dirac:
       if len( str( i[3] ) ) > sourceAdj:
         sourceAdj = len( str( i[3] ) ) + 4
 
-    print '\n' + headers[0].ljust( statAdj ) + headers[1].ljust( mStatAdj ) + headers[2].ljust( dtAdj ) + headers[3].ljust( sourceAdj ) + '\n'
+    print '\n' + headers[0].ljust( statAdj ) + headers[1].ljust( mStatAdj ) + \
+                 headers[2].ljust( dtAdj ) + headers[3].ljust( sourceAdj ) + '\n'
     for i in loggingTupleList:
-      line = i[0].ljust( statAdj ) + i[1].ljust( mStatAdj ) + toString( i[2] ).ljust( dtAdj ) + i[3].ljust( sourceAdj )
+      line = i[0].ljust( statAdj ) + i[1].ljust( mStatAdj ) + \
+             toString( i[2] ).ljust( dtAdj ) + i[3].ljust( sourceAdj )
       print line
 
     return result
@@ -1740,17 +1769,6 @@ class Dirac:
       return result
     self.log.warn( result[ 'Message' ] )
 
-    #Old download
-    result = self.outputSandboxClient.getSandbox( jobID, dirPath )
-    if result['OK']:
-      self.log.info( 'Files retrieved and extracted in %s' % ( dirPath ) )
-      if self.jobRepo:
-        self.jobRepo.updateJob( jobID, {'Retrieved':1, 'Sandbox':os.path.realpath( dirPath )} )
-      return result
-    self.log.warn( result['Message'] )
-
-    result = self.outputSandboxClient.getSandbox( jobID, dirPath )
-
     if not oversized:
       if self.jobRepo:
         self.jobRepo.updateJob( jobID, {'Retrieved':1, 'Sandbox':os.path.realpath( dirPath )} )
@@ -1782,7 +1800,6 @@ class Dirac:
     fileName = os.path.basename( oversizedSandbox )
     try:
       result = S_OK()
-      import tarfile
       if tarfile.is_tarfile( fileName ):
         tarFile = tarfile.open( fileName, 'r' )
         for member in tarFile.getmembers():
@@ -2036,7 +2053,7 @@ class Dirac:
     if not outputData:
       return S_ERROR( 'No output data files found' )
 
-    self.log.verbose( 'Found the following output data LFNs:\n%s' % ( string.join( outputData, '\n' ) ) )
+    self.log.verbose( 'Found the following output data LFNs:\n', '\n'.join( outputData ) )
     return S_OK( outputData )
 
   #############################################################################
@@ -2086,7 +2103,7 @@ class Dirac:
           return self.__errorReport( str( x ), 'Expected strings for output file names' )
       else:
         return self.__errorReport( 'Expected strings for output file names' )
-      self.log.info( 'Found specific outputFiles to download: %s' % ( string.join( outputFiles, ', ' ) ) )
+      self.log.info( 'Found specific outputFiles to download:', ', '.join( outputFiles ) )
       newOutputData = []
       for outputFile in outputData:
         if os.path.basename( outputFile ) in outputFiles:
@@ -2115,61 +2132,62 @@ class Dirac:
     return S_OK( outputData )
 
   #############################################################################
-  def selectJobs( self, Status = None, MinorStatus = None, ApplicationStatus = None, Site = None, Owner = None, JobGroup = None, Date = None ):
+  def selectJobs( self, status = None, minorStatus = None, applicationStatus = None,
+                  site = None, owner = None, jobGroup = None, date = None ):
     """Options correspond to the web-page table columns. Returns the list of JobIDs for
        the specified conditions.  A few notes on the formatting:
-        - Date must be specified as yyyy-mm-dd.  By default, the date is today.
-        - JobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
-        - Site is the DIRAC site name, e.g. LCG.CERN.ch
-        - Owner is the immutable nickname, e.g. paterson
+        - date must be specified as yyyy-mm-dd.  By default, the date is today.
+        - jobGroup corresponds to the name associated to a group of jobs, e.g. productionID / job names.
+        - site is the DIRAC site name, e.g. LCG.CERN.ch
+        - owner is the immutable nickname, e.g. paterson
 
        Example Usage:
 
-       >>> dirac.selectJobs(Status='Failed',Owner='paterson',Site='LCG.CERN.ch')
+       >>> dirac.selectJobs( status='Failed', owner='paterson', site='LCG.CERN.ch')
        {'OK': True, 'Value': ['25020', '25023', '25026', '25027', '25040']}
 
-       @param Status: Job status
-       @type Status: string
-       @param MinorStatus: Job minor status
-       @type MinorStatus: string
-       @param ApplicationStatus: Job application status
-       @type ApplicationStatus: string
-       @param Site: Job execution site
-       @type Site: string
-       @param Owner: Job owner
-       @type Owner: string
-       @param JobGroup: Job group
-       @type JobGroup: string
-       @param Date: Selection date
-       @type Date: string
+       @param status: Job status
+       @type status: string
+       @param minorStatus: Job minor status
+       @type minorStatus: string
+       @param applicationStatus: Job application status
+       @type applicationStatus: string
+       @param site: Job execution site
+       @type site: string
+       @param owner: Job owner
+       @type owner: string
+       @param jobGroup: Job group
+       @type jobGroup: string
+       @param date: Selection date
+       @type date: string
        @return: S_OK,S_ERROR
     """
-    options = {'Status':Status, 'MinorStatus':MinorStatus, 'ApplicationStatus':ApplicationStatus, 'Owner':Owner,
-               'Site':Site, 'JobGroup':JobGroup}
+    options = {'Status':status, 'MinorStatus':minorStatus, 'ApplicationStatus':applicationStatus, 'Owner':owner,
+               'Site':site, 'JobGroup':jobGroup}
     conditions = {}
-    for n, v in options.items():
-      if v:
+    for key, value in options.items():
+      if value:
         try:
-          conditions[n] = str( v )
+          conditions[key] = str( value )
         except Exception, x:
-          return self.__errorReport( str( x ), 'Expected string for %s field' % n )
+          return self.__errorReport( str( x ), 'Expected string for %s field' % key )
 
-    if not type( Date ) == type( " " ):
+    if not type( date ) == type( " " ):
       try:
-        if Date:
-          Date = str( Date )
+        if date:
+          date = str( date )
       except Exception, x:
-        return self.__errorReport( str( x ), 'Expected yyyy-mm-dd string for Date' )
+        return self.__errorReport( str( x ), 'Expected yyyy-mm-dd string for date' )
 
-    if not Date:
+    if not date:
       now = time.gmtime()
-      Date = '%s-%s-%s' % ( now[0], str( now[1] ).zfill( 2 ), str( now[2] ).zfill( 2 ) )
-      self.log.verbose( 'Setting date to %s' % ( Date ) )
+      date = '%s-%s-%s' % ( now[0], str( now[1] ).zfill( 2 ), str( now[2] ).zfill( 2 ) )
+      self.log.verbose( 'Setting date to %s' % ( date ) )
 
-    self.log.verbose( 'Will select jobs with last update %s and following conditions' % Date )
+    self.log.verbose( 'Will select jobs with last update %s and following conditions' % date )
     self.log.verbose( self.pPrint.pformat( conditions ) )
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
-    result = monitoring.getJobs( conditions, Date )
+    result = monitoring.getJobs( conditions, date )
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result
@@ -2378,18 +2396,19 @@ class Dirac:
     except Exception, x:
       msg.append( 'CPU Profile: Not Available' )
 
-    self.log.info( 'Summary of debugging outputs for job %s retrieved in directory:\n%s\n%s' % ( jobID, debugDir, string.join( msg, '\n' ) ) )
+    self.log.info( 'Summary of debugging outputs for job %s retrieved in directory:\n%s\n' % ( jobID, debugDir ),
+                  '\n'.join( msg ) )
     return S_OK( debugDir )
 
   #############################################################################
-  def __writeFile( self, object, fileName ):
+  def __writeFile( self, pObject, fileName ):
     """Internal function.  Writes a python object to a specified file path.
     """
     fopen = open( fileName, 'w' )
-    if not type( object ) == type( " " ):
-      fopen.write( '%s\n' % self.pPrint.pformat( object ) )
+    if not type( pObject ) == type( " " ):
+      fopen.write( '%s\n' % self.pPrint.pformat( pObject ) )
     else:
-      fopen.write( object )
+      fopen.write( pObject )
     fopen.close()
 
   #############################################################################
@@ -2725,7 +2744,9 @@ class Dirac:
     if not type( numberOfRecords ) == type( 1 ):
       return self.__errorReport( 'Expected integer for number of records' )
     logger = LoggerClient()
-    result = logger.getGroupedMessages( groupField = 'FixedTextString', orderList = [['recordCount', 'DESC']], maxRecords = numberOfRecords )
+    result = logger.getGroupedMessages( groupField = 'FixedTextString',
+                                        orderList = [['recordCount', 'DESC']],
+                                        maxRecords = numberOfRecords )
     if printOutput:
       print self.pPrint.pformat( result )
     return result

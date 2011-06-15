@@ -53,10 +53,10 @@ class JobStateUpdateHandler( RequestHandler ):
       return result
     if not result['Value']:
       # if there is no matching Job it returns an empty dictionary
-      return S_ERROR( 'No Matching Job' )
+      return S_OK( 'No Matching Job' )
     status = result['Value']['Status']
     if status != 'Staging':
-      return S_ERROR( 'Job is not in Staging' )
+      return S_OK( 'Job is not in Staging' )
 
     result = self.__setJobStatus( int( jobID ), jobStatus, minorStatus, 'StagerSystem', None )
     if not result['OK']:

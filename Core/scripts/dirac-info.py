@@ -9,11 +9,11 @@
 """
 __RCSID__ = "$Id$"
 
-from pprint import pprint
 import DIRAC
-from DIRAC import gConfig
-from DIRAC.Core.Base import Script
-from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
+from DIRAC                                                   import gConfig
+from DIRAC.Core.Base                                         import Script
+from DIRAC.Core.Security.Misc                                import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
@@ -25,7 +25,11 @@ infoDict = {}
 
 infoDict['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'Unknown' )
 infoDict['ConfigurationServer'] = gConfig.getValue( '/DIRAC/Configuration/Servers', [] )
-infoDict['VirtualOrganization'] = getVO( 'Unknown' )
+ret = getProxyInfo( disableVOMS = True )
+if ret['OK'] and 'group' in ret['Value']:
+  infoDict['VirtualOrganization'] = getVOForGroup( ret['Value']['group'] )
+else:
+  infoDict['VirtualOrganization'] = getVOForGroup( '' )
 
 print 'DIRAC version'.rjust( 20 ), ':', DIRAC.version
 

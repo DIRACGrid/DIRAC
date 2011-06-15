@@ -42,16 +42,14 @@ for switch in Script.getUnprocessedSwitches():
     emptyDirsFlag = True
 
 import DIRAC
-from DIRAC import gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
-from DIRAC.Core.Security.Misc import getProxyInfo
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Core.Utilities.List import sortList
+from DIRAC                                                   import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
+from DIRAC.Core.Security.Misc                                import getProxyInfo
+from DIRAC.DataManagementSystem.Client.ReplicaManager        import ReplicaManager
+from DIRAC.Core.Utilities.List                               import sortList
 from datetime import datetime, timedelta
 import sys, os, time, fnmatch
 rm = ReplicaManager()
-
-vo = getVO( 'lhcb' )
 
 def isOlderThan( cTimeStruct, days ):
   timeDelta = timedelta( days = days )
@@ -77,9 +75,14 @@ if not res['OK']:
   DIRAC.exit( 2 )
 proxyInfo = res['Value']
 username = proxyInfo['username']
-userBase = '/%s/user/%s/%s' % ( vo, username[0], username )
 if not baseDir:
-  baseDir = userBase
+  vo = ''
+  if 'group' in proxyInfo:
+    vo = getVOForGroup( proxyInfo['group'] )
+  if not vo:
+    gLogger.error( 'Could not determine VO' )
+    Script.showHelp()
+  baseDir = '/%s/user/%s/%s' % ( vo, username[0], username )
 
 gLogger.info( 'Will search for files in %s' % baseDir )
 activeDirs = [baseDir]

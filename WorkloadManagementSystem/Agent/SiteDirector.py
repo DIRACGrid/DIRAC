@@ -62,6 +62,7 @@ class SiteDirector( AgentModule ):
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
+    self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400*3 )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -223,6 +224,8 @@ class SiteDirector( AgentModule ):
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
       else:
         return S_ERROR( 'CPU time limit is not specified for queue %s' % queue )
+      if queueCPUTime > self.maxQueueLength:
+        queueCPUTime = self.maxQueueLength
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
@@ -335,7 +338,7 @@ class SiteDirector( AgentModule ):
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
     executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy )
-    result = S_OK(executable)
+    result = S_OK( executable )
     return result
 
 #####################################################################################    
@@ -360,9 +363,9 @@ class SiteDirector( AgentModule ):
       self.log.error( 'PilotVersion is not defined in the configuration' )
       return None
     pilotOptions.append( '-r %s' % diracVersion )
-    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotProject" % ( vo, setup ), "unknown" )
-    if projectName == 'unknown':
-      self.log.info( 'PilotProject is not defined in the configuration' )
+    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotInstallation" % ( vo, setup ), "" )
+    if projectName == '':
+      self.log.info( 'DIRAC installation will be installed by pilots' )
     else:
       pilotOptions.append( '-l %s' % projectName )
 

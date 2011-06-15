@@ -2,11 +2,12 @@
 # $HeadURL:  $
 ########################################################################
 
-#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-import copy
-
 __RCSID__ = "$Id:  $"
 
+import copy
+
+from DIRAC.ResourceStatusSystem.Utilities.CS    import getTypedDict
+from DIRAC.ResourceStatusSystem.Utilities.Utils import dictMatch
 
 class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations
@@ -15,56 +16,54 @@ class InfoGetter:
 #############################################################################
 
   def __init__(self, VOExtension):
-    """ 
+    """
     Standard constructor
-  
+
     :params:
       :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
     """
-    configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+    configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
                               globals(), locals(), ['*'])
 
     self.C_Policies = copy.deepcopy(configModule.Policies)
-    self.C_Policy_Types = copy.deepcopy(configModule.Policy_Types)
     self.C_views_panels = copy.deepcopy(configModule.views_panels)
 
-  
 #############################################################################
 
-  def getInfoToApply(self, args, granularity, status = None, formerStatus = None, 
+  def getInfoToApply(self, args, granularity, status = None, formerStatus = None,
                      siteType = None, serviceType = None, resourceType = None, useNewRes = False):
     """ Main method. Use internal methods to parse information regarding:
         policies to be applied, policy types, panel and view info.
-        
+
         :params:
           :attr:`args`: a tuple. Can contain: 'policy', 'policyType', 'panel_info', 'view_info'
-          
+
           :attr:`granularity`: a ValidRes
-          
+
           :attr:`status`: a ValidStatus
-          
+
           :attr:`formerStatus`: a ValidStatus
-          
+
           :attr:`siteType`: a ValidSiteType
 
           :attr:`serviceType`: a ValidServiceType
 
           :attr:`resourceType`: a ValidSiteType
     """
-    
+
     EVAL = {}
 
     if 'policy' in args:
-      EVAL['Policies'] = self.__getPolToEval(granularity = granularity, status = status, 
-                                             formerStatus = formerStatus, siteType = siteType, 
-                                             serviceType = serviceType, resourceType = resourceType, 
+      EVAL['Policies'] = self.__getPolToEval(granularity = granularity, status = status,
+                                             formerStatus = formerStatus, siteType = siteType,
+                                             serviceType = serviceType, resourceType = resourceType,
                                              useNewRes = useNewRes)
-    
+
     if 'policyType' in args:
-      EVAL['PolicyType'] = self.__getPolTypes(granularity = granularity, status = status, 
+      EVAL['PolicyType'] = self.__getPolTypes(granularity = granularity, status = status,
                                               formerStatus = formerStatus, siteType = siteType,
                                               serviceType = serviceType, resourceType = resourceType)
-      
+
     if 'panel_info' in args:
       if granularity in ('Site', 'Sites'):
         info = 'Site_Panel'
@@ -85,10 +84,10 @@ class InfoGetter:
                                           formerStatus = formerStatus, siteType = siteType,
                                           serviceType = serviceType, resourceType = resourceType,
                                           panel_name = info, useNewRes = useNewRes)
-    
+
     if 'view_info' in args:
       panels_info_dict = {}
-      
+
       if granularity in ('Site', 'Sites'):
         granularity = None
 
@@ -99,65 +98,30 @@ class InfoGetter:
                                           serviceType = serviceType, resourceType = resourceType,
                                           panel_name = panel, useNewRes = useNewRes)
         panels_info_dict[panel] = panel_info
-      
+
       EVAL['Panels'] = panels_info_dict
-    
+
     return [EVAL]
-  
-      
+
+
 #############################################################################
-  
+
   def getNewPolicyType(self, granularity, newStatus):
     return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
-    
+
 #############################################################################
 
-  def __getPolToEval(self, granularity, status = None, formerStatus = None, 
-                     siteType = None, serviceType = None, resourceType = None,
-                     useNewRes = False):
-  
-#    self.C_Policies = copy.deepcopy(Policies)
+  def __getPolToEval(self, useNewRes = False, **kwargs):
 
+    pConfig = getTypedDict("Policies")
     pol_to_eval = []
-    
-    for p in self.C_Policies.keys():
-      if granularity in self.C_Policies[p]['Granularity']:
+
+    for p in pConfig:
+      if dictMatch(kwargs, pConfig[p]):
         pol_to_eval.append(p)
-        
-        if status is not None:
-          if status not in self.C_Policies[p]['Status']:
-            pol_to_eval.remove(p)
-        
-        if formerStatus is not None:
-          if formerStatus not in self.C_Policies[p]['FormerStatus']:
-            try:
-              pol_to_eval.remove(p)
-            except Exception:
-              continue
-            
-        if siteType is not None:
-          if siteType not in self.C_Policies[p]['SiteType']:
-            try:
-              pol_to_eval.remove(p)
-            except Exception:
-              continue
-            
-        if serviceType is not None:
-          if serviceType not in self.C_Policies[p]['ServiceType']:
-            try:
-              pol_to_eval.remove(p)
-            except Exception:
-              continue
-            
-        if resourceType is not None:
-          if resourceType not in self.C_Policies[p]['ResourceType']:
-            try:
-              pol_to_eval.remove(p)
-            except Exception:
-              continue
-    
+
     polToEval_Args = []
-    
+
     for p in pol_to_eval:
       try:
         moduleName = self.C_Policies[p]['module']
@@ -183,84 +147,41 @@ class InfoGetter:
           args = self.C_Policies[p]['args']
       else:
         args = self.C_Policies[p]['args']
-     
-      polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args, 
+
+      polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args,
                              'ConfirmationPolicy' : ConfirmationPolicy,
                              'commandIn' : commandIn})
-    
+
     return polToEval_Args
-  
-  
+
+
 #############################################################################
 
-  def __getPolTypes(self, granularity, status = None, formerStatus = None, newStatus = None,  
-                    siteType = None, serviceType = None, resourceType = None):
-          
-#    self.C_Policy_Types = copy.deepcopy(Policy_Types)
+  def __getPolTypes(self, **kwargs):
+    """Get Policy Types from config that match the given keyword
+    arguments"""
+    pTconfig = getTypedDict("PolicyTypes")
 
-    pTypes = [] 
-    
-    for pt in self.C_Policy_Types.keys():
-      if granularity in self.C_Policy_Types[pt]['Granularity']:
-        pTypes.append(pt)  
-    
-        if status is not None:
-          if status not in self.C_Policy_Types[pt]['Status']:
-            pTypes.remove(pt)
-        
-        if formerStatus is not None:
-          if formerStatus not in self.C_Policy_Types[pt]['FormerStatus']:
-            try:
-              pTypes.remove(pt)
-            except Exception:
-              continue
-            
-        if newStatus is not None:
-          if newStatus not in self.C_Policy_Types[pt]['NewStatus']:
-            try:
-              pTypes.remove(pt)
-            except Exception:
-              continue
-            
-        if siteType is not None:
-          if siteType not in self.C_Policy_Types[pt]['SiteType']:
-            try:
-              pTypes.remove(pt)
-            except Exception:
-              continue
-            
-        if serviceType is not None:
-          if serviceType not in self.C_Policy_Types[pt]['ServiceType']:
-            try:
-              pTypes.remove(pt)
-            except Exception:
-              continue
-            
-        if resourceType is not None:
-          if resourceType not in self.C_Policy_Types[pt]['ResourceType']:
-            try:
-              pTypes.remove(pt)
-            except Exception:
-              continue
-              
+    pTypes = []
+
+    for pt in pTconfig:
+      if dictMatch(kwargs, pTconfig[pt]):
+        pTypes.append(pt)
+
     for pt_name in pTypes:
       if 'Alarm_PolType' in pt_name:
         pTypes.remove(pt_name)
         pTypes.append('Alarm_PolType')
 
-    
     return pTypes
- 
+
 #############################################################################
 
   def __getPanelsInfo(self, granularity, status = None, formerStatus = None, siteType = None,
                       serviceType = None, resourceType = None, panel_name = None, useNewRes = False):
-  
-  
-#    self.C_Policies = copy.deepcopy(Policies)
-    
+
     info = []
-    
+
     for p in self.C_Policies.keys():
       if panel_name in self.C_Policies[p].keys():
 
@@ -269,7 +190,7 @@ class InfoGetter:
         if not useNewRes:
           for i in range(len(toAppend)):
             for info_type in toAppend[i].keys():
-              
+
               try:
                 command = toAppend[i][info_type]['CommandIn']
                 toAppend[i][info_type]['CommandIn'] = command
@@ -282,7 +203,7 @@ class InfoGetter:
                 del toAppend[i][info_type]['argsNewRes']
               except:
                 pass
-        
+
         else:
           for i in range(len(toAppend)):
             for info_type in toAppend[i].keys():
@@ -294,17 +215,17 @@ class InfoGetter:
                 except:
                   command = toAppend[i][info_type]['CommandIn']
                 toAppend[i][info_type]['CommandIn'] = command
-                
-                
+
+
                 try:
                   args = toAppend[i][info_type]['argsNewRes']
                   del toAppend[i][info_type]['argsNewRes']
                 except:
                   args = toAppend[i][info_type]['args']
                 toAppend[i][info_type]['args'] = args
-        
+
         info.append({p:toAppend})
-        
+
         if granularity is not None:
           if granularity not in self.C_Policies[p]['Granularity']:
             try:
@@ -314,7 +235,7 @@ class InfoGetter:
               info.remove(toRemove)
             except Exception:
               continue
-        
+
         if status is not None:
           if status not in self.C_Policies[p]['Status']:
             try:
@@ -324,7 +245,7 @@ class InfoGetter:
               info.remove(toRemove)
             except Exception:
               continue
-        
+
         if formerStatus is not None:
           if formerStatus not in self.C_Policies[p]['FormerStatus']:
             try:
@@ -334,7 +255,7 @@ class InfoGetter:
               info.remove(toRemove)
             except Exception:
               continue
-            
+
         if siteType is not None:
           if siteType not in self.C_Policies[p]['SiteType']:
             try:
@@ -344,7 +265,7 @@ class InfoGetter:
               info.remove(toRemove)
             except Exception:
               continue
-            
+
         if serviceType is not None:
           if serviceType not in self.C_Policies[p]['ServiceType']:
             try:
@@ -354,7 +275,7 @@ class InfoGetter:
               info.remove(toRemove)
             except Exception:
               continue
-            
+
         if resourceType is not None:
           if resourceType not in self.C_Policies[p]['ResourceType']:
             try:
@@ -364,9 +285,9 @@ class InfoGetter:
               info.remove(toRemove)
             except Exception:
               continue
-    
+
     return info
-  
+
 #############################################################################
 
   def __getViewPanels(self, granularity):
@@ -375,4 +296,3 @@ class InfoGetter:
     return self.C_views_panels[granularity]
 
 #############################################################################
-  

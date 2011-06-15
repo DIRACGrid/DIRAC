@@ -22,7 +22,6 @@ from DIRAC.Core.Utilities.SiteSEMapping                        import getSEsForS
 from DIRAC.Core.Utilities.Time                                 import fromString, toEpoch
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement                    import StorageElement
-from DIRAC.Core.Utilities.SiteSEMapping                        import getSEsForSite
 
 
 from DIRAC                                                     import S_OK, S_ERROR, List

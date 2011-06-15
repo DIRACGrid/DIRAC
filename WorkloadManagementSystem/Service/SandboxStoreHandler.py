@@ -67,7 +67,7 @@ class SandboxStoreHandler( RequestHandler ):
     if Properties.JOB_SHARING in credDict[ 'properties' ]:
       idField = credDict[ 'group' ]
     else:
-      idField = credDict[ 'username' ]
+      idField = "%s.%s" % ( credDict[ 'username' ], credDict[ 'group' ] )
     pathItems = [ "/", prefix, idField[0], idField ]
     pathItems.extend( [ md5[0:3], md5[3:6], md5 ] )
     return os.path.join( *pathItems )

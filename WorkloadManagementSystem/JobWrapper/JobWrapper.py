@@ -13,28 +13,28 @@ __RCSID__ = "$Id$"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
-from DIRAC.Resources.Catalog.PoolXMLCatalog                         import PoolXMLCatalog
 from DIRAC.Resources.Catalog.PoolXMLFile                            import getGUID
 from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
-from DIRAC.RequestManagementSystem.Client.DISETSubRequest           import DISETSubRequest
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient       import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
-from DIRAC.ConfigurationSystem.Client.Helpers                       import getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
-from DIRAC.Core.Utilities.Subprocess                                import systemCall, shellCall
+from DIRAC.Core.Utilities.Subprocess                                import systemCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
 from DIRAC.Core.Utilities                                           import List
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List, Time
+from DIRAC.FrameworkSystem.Client.NotificationClient                import NotificationClient
+
 import DIRAC
 
-import os, re, sys, string, time, shutil, threading, tarfile, glob, types
+import os, re, sys, time, shutil, threading, tarfile, glob, types
 
 EXECUTION_RESULT = {}
 
@@ -77,7 +77,8 @@ class JobWrapper:
     else:
       self.diracVersion = 'DIRAC version %s' % DIRAC.buildVersion
     self.maxPeekLines = gConfig.getValue( self.section + '/MaxJobPeekLines', 20 )
-    if self.maxPeekLines < 0: self.maxPeekLines = 0
+    if self.maxPeekLines < 0:
+      self.maxPeekLines = 0
     self.defaultCPUTime = gConfig.getValue( self.section + '/DefaultCPUTime', 600 )
     self.defaultOutputFile = gConfig.getValue( self.section + '/DefaultOutputFile', 'std.out' )
     self.defaultErrorFile = gConfig.getValue( self.section + '/DefaultErrorFile', 'std.err' )
@@ -87,7 +88,6 @@ class JobWrapper:
     self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', True )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
-    self.vo = getVO( 'lhcb' )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
     self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', 'LcgFileCatalogCombined' )
@@ -107,13 +107,13 @@ class JobWrapper:
     self.currentPGID = os.getpgid( self.currentPID )
     self.log.verbose( 'Job Wrapper process group ID: %s' % self.currentPGID )
     self.log.verbose( '==========================================================================' )
-    self.log.verbose( 'sys.path is: \n%s' % ( string.join( sys.path, '\n' ) ) )
+    self.log.verbose( 'sys.path is: \n%s' % '\n'.join( sys.path ) )
     self.log.verbose( '==========================================================================' )
     if not os.environ.has_key( 'PYTHONPATH' ):
       self.log.verbose( 'PYTHONPATH is: null' )
     else:
       pypath = os.environ['PYTHONPATH']
-      self.log.verbose( 'PYTHONPATH is: \n%s' % ( string.join( string.split( pypath, ':' ), '\n' ) ) )
+      self.log.verbose( 'PYTHONPATH is: \n%s' % '\n'.join( pypath.split( ':' ) ) )
       self.log.verbose( '==========================================================================' )
     if os.environ.has_key( 'LD_LIBRARY_PATH_SAVE' ):
       if os.environ.has_key( 'LD_LIBRARY_PATH' ):
@@ -125,7 +125,7 @@ class JobWrapper:
       self.log.verbose( 'LD_LIBRARY_PATH is: null' )
     else:
       ldpath = os.environ['LD_LIBRARY_PATH']
-      self.log.verbose( 'LD_LIBRARY_PATH is: \n%s' % ( string.join( string.split( ldpath, ':' ), '\n' ) ) )
+      self.log.verbose( 'LD_LIBRARY_PATH is: \n%s' % '\n'.join( ldpath.split( ':' ) ) )
       self.log.verbose( '==========================================================================' )
     if not self.cleanUpFlag:
       self.log.verbose( 'CleanUp Flag is disabled by configuration' )
@@ -146,6 +146,10 @@ class JobWrapper:
     self.outputDataSize = 0
     self.processedEvents = 0
     self.wmsAccountingSent = False
+
+    self.jobArgs = {}
+    self.optArgs = {}
+    self.ceArgs = {}
 
   #############################################################################
   def initialize( self, arguments ):
@@ -205,9 +209,9 @@ class JobWrapper:
     """
     parameters = []
     if self.ceArgs.has_key( 'LocalSE' ):
-      parameters.append( ( 'AgentLocalSE', string.join( self.ceArgs['LocalSE'], ',' ) ) )
+      parameters.append( ( 'AgentLocalSE', ','.join( self.ceArgs['LocalSE'] ) ) )
     if self.ceArgs.has_key( 'CompatiblePlatforms' ):
-      parameters.append( ( 'AgentCompatiblePlatforms', string.join( self.ceArgs['CompatiblePlatforms'], ',' ) ) )
+      parameters.append( ( 'AgentCompatiblePlatforms', ','.join( self.ceArgs['CompatiblePlatforms'] ) ) )
     if self.ceArgs.has_key( 'PilotReference' ):
       parameters.append( ( 'Pilot_Reference', self.ceArgs['PilotReference'] ) )
     if self.ceArgs.has_key( 'CPUScalingFactor' ):
@@ -270,7 +274,8 @@ class JobWrapper:
     if self.jobArgs.has_key( 'MaxCPUTime' ):
       jobCPUTime = int( self.jobArgs['MaxCPUTime'] )
     else:
-      self.log.info( 'Job %s has no CPU time limit specified, applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
+      self.log.info( 'Job %s has no CPU time limit specified, '
+                     'applying default of %s' % ( self.jobID, self.defaultCPUTime ) )
       jobCPUTime = self.defaultCPUTime
 
     if self.jobArgs.has_key( 'Executable' ):
@@ -301,7 +306,7 @@ class JobWrapper:
     if not os.access( executable, os.X_OK ):
       try:
         os.chmod( executable, 0775 )
-      except Exception, x:
+      except Exception:
         self.log.warn( 'Failed to change mode to 775 for the executable', executable )
 
     exeEnv = dict( os.environ )
@@ -429,10 +434,9 @@ class JobWrapper:
       lines = len( result['Value'] )
       appStdOut = '\n'.join( result['Value'] )
 
-    header = 'Last %s lines of application output from JobWrapper on %s :' % ( lines, DIRAC.Time.toString() )
-    border = ''
-    for i in xrange( len( header ) ):
-      border += '='
+    header = 'Last %s lines of application output from JobWrapper on %s :' % ( lines, Time.toString() )
+    border = '=' * len( header )
+
     cpuTotal = 'CPU Total: %s (h:m:s)' % cpuConsumed[1]
     cpuTotal += " Normalized CPU Total %.1f s @ HEP'06" % normCPU
     header = '\n%s\n%s\n%s\n%s\n' % ( border, header, cpuTotal, border )
@@ -508,13 +512,12 @@ class JobWrapper:
     else:
       inputDataPolicy = self.jobArgs['InputDataModule']
 
-    self.log.verbose( 'Job input data requirement is \n%s' % ( string.join( inputData, ',\n' ) ) )
+    self.log.verbose( 'Job input data requirement is \n%s' % ',\n'.join( inputData ) )
     self.log.verbose( 'Job input data resolution policy module is %s' % ( inputDataPolicy ) )
-    self.log.info( 'Site has the following local SEs: %s' % ( string.join( localSEList, ', ' ) ) )
-    lfns = [string.replace( fname, 'LFN:', '' ) for fname in inputData]
+    self.log.info( 'Site has the following local SEs: %s' % ', '.join( localSEList ) )
+    lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
 
     optReplicas = {}
-    optGUIDs = {}
     if self.optArgs:
       optDict = None
       try:
@@ -595,7 +598,7 @@ class JobWrapper:
         failedGUIDs.append( lfn )
 
     if failedGUIDs:
-      self.log.info( 'The following file(s) were found not to have a GUID:\n%s' % ( string.join( failedGUIDs, ',\n' ) ) )
+      self.log.info( 'The following file(s) were found not to have a GUID:\n%s' % ',\n'.join( failedGUIDs ) )
 
     if failedGUIDs:
       return S_ERROR( 'File metadata is not available' )
@@ -632,9 +635,9 @@ class JobWrapper:
 
     if badLFNCount:
       self.log.warn( 'Job Wrapper found %s problematic LFN(s) for job %s' % ( badLFNCount, self.jobID ) )
-      param = string.join( badLFNs, '\n' )
+      param = '\n'.join( badLFNs )
       self.log.info( param )
-      result = self.__setJobParam( 'MissingLFNs', param )
+      self.__setJobParam( 'MissingLFNs', param )
       return S_ERROR( 'Input Data Not Available' )
 
     #Must retrieve GUIDs from LFC for files
@@ -670,13 +673,13 @@ class JobWrapper:
       outputSandbox = self.jobArgs['OutputSandbox']
       if not type( outputSandbox ) == type( [] ):
         outputSandbox = [ outputSandbox ]
-      self.log.verbose( 'OutputSandbox files are: %s' % ( string.join( outputSandbox, ', ' ) ) )
+      self.log.verbose( 'OutputSandbox files are: %s' % ', '.join( outputSandbox ) )
     outputData = []
     if self.jobArgs.has_key( 'OutputData' ):
       outputData = self.jobArgs['OutputData']
       if not type( outputData ) == type( [] ):
-        outputData = string.split( outputData, ';' )
-      self.log.verbose( 'OutputData files are: %s' % ( string.join( outputData, ', ' ) ) )
+        outputData = outputData.split( ';' )
+      self.log.verbose( 'OutputData files are: %s' % ', '.join( outputData ) )
 
     #First resolve any wildcards for output files and work out if any files are missing
     resolvedSandbox = self.__resolveOutputSandboxFiles( outputSandbox )
@@ -688,23 +691,23 @@ class JobWrapper:
     fileList = resolvedSandbox['Value']['Files']
     missingFiles = resolvedSandbox['Value']['Missing']
     if missingFiles:
-      self.jobReport.setJobParameter( 'OutputSandboxMissingFiles', string.join( missingFiles, ', ' ), sendFlag = False )
+      self.jobReport.setJobParameter( 'OutputSandboxMissingFiles', ', '.join( missingFiles ), sendFlag = False )
 
-    if self.jobArgs.has_key( 'Owner' ):
-      owner = self.jobArgs['Owner']
-    else:
+    if not self.jobArgs.has_key( 'Owner' ):
       msg = 'Job has no owner specified'
       self.log.warn( msg )
       return S_OK( msg )
 
     # Do not overwrite in case of Error
-    if not self.failedFlag: self.__report( 'Completed', 'Uploading Output Sandbox' )
+    if not self.failedFlag:
+      self.__report( 'Completed', 'Uploading Output Sandbox' )
 
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize( fileList )
       self.log.info( 'Attempting to upload Sandbox with limit:', self.sandboxSizeLimit )
       sandboxClient = SandboxStoreClient()
-      result = sandboxClient.uploadFilesAsSandboxForJob( fileList, self.jobID, 'Output', self.sandboxSizeLimit ) # 1024*1024*10
+      result = sandboxClient.uploadFilesAsSandboxForJob( fileList, self.jobID,
+                                                         'Output', self.sandboxSizeLimit ) # 1024*1024*10
       if not result['OK']:
         self.log.error( 'Output sandbox upload failed with message', result['Message'] )
         if result.has_key( 'SandboxFileName' ):
@@ -712,13 +715,15 @@ class JobWrapper:
           self.log.info( 'Attempting to upload %s as output data' % ( outputSandboxData ) )
           outputData.append( outputSandboxData )
           self.jobReport.setJobParameter( 'OutputSandbox', 'Sandbox uploaded to grid storage', sendFlag = False )
-          self.jobReport.setJobParameter( 'OutputSandboxLFN', self.__getLFNfromOutputFile( owner, outputSandboxData )[0], sendFlag = False )
+          self.jobReport.setJobParameter( 'OutputSandboxLFN',
+                                          self.__getLFNfromOutputFile( outputSandboxData )[0], sendFlag = False )
         else:
           self.log.info( 'Could not get SandboxFileName to attempt upload to Grid storage' )
           return S_ERROR( 'Output sandbox upload failed and no file name supplied for failover to Grid storage' )
       else:
         # Do not overwrite in case of Error
-        if not self.failedFlag: self.__report( 'Completed', 'Output Sandbox Uploaded' )
+        if not self.failedFlag:
+          self.__report( 'Completed', 'Output Sandbox Uploaded' )
         self.log.info( 'Sandbox uploaded successfully' )
 
     if outputData and not self.failedFlag:
@@ -738,7 +743,7 @@ class JobWrapper:
       if not outputSE and not self.defaultFailoverSE:
         return S_ERROR( 'No output SEs defined in VO configuration' )
 
-      result = self.__transferOutputDataFiles( owner, outputData, outputSE, outputPath )
+      result = self.__transferOutputDataFiles( outputData, outputSE, outputPath )
       if not result['OK']:
         return result
 
@@ -784,12 +789,12 @@ class JobWrapper:
     return S_OK( result )
 
   #############################################################################
-  def __transferOutputDataFiles( self, owner, outputData, outputSE, outputPath ):
+  def __transferOutputDataFiles( self, outputData, outputSE, outputPath ):
     """Performs the upload and registration in the LFC
     """
     self.log.verbose( 'Uploading output data files' )
     self.__report( 'Completed', 'Uploading Output Data' )
-    self.log.info( 'Output data files %s to be uploaded to %s SE' % ( string.join( outputData, ', ' ), outputSE ) )
+    self.log.info( 'Output data files %s to be uploaded to %s SE' % ( ', '.join( outputData ), outputSE ) )
     missing = []
     uploaded = []
 
@@ -805,14 +810,16 @@ class JobWrapper:
     # Check whether list of outputData has a globbable pattern    
     globbedOutputList = List.uniqueElements( getGlobbedFiles( nonlfnList ) )
     if not globbedOutputList == nonlfnList and globbedOutputList:
-      self.log.info( 'Found a pattern in the output data file list, files to upload are: %s' % ( string.join( globbedOutputList, ', ' ) ) )
+      self.log.info( 'Found a pattern in the output data file list, files to upload are:',
+                     ', '.join( globbedOutputList ) )
       nonlfnList = globbedOutputList
     outputData = lfnList + nonlfnList
 
     pfnGUID = {}
     result = getGUID( outputData )
     if not result['OK']:
-      self.log.warn( 'Failed to determine POOL GUID(s) for output file list (OK if not POOL files)', result['Message'] )
+      self.log.warn( 'Failed to determine POOL GUID(s) for output file list (OK if not POOL files)',
+                     result['Message'] )
     else:
       pfnGUID = result['Value']
 
@@ -820,7 +827,7 @@ class JobWrapper:
     failoverTransfer = FailoverTransfer()
 
     for outputFile in outputData:
-      ( lfn, localfile ) = self.__getLFNfromOutputFile( owner, outputFile, outputPath )
+      ( lfn, localfile ) = self.__getLFNfromOutputFile( outputFile, outputPath )
       if not os.path.exists( localfile ):
         self.log.error( 'Missing specified output data file:', outputFile )
         continue
@@ -833,21 +840,30 @@ class JobWrapper:
         self.log.verbose( 'Found GUID for file from POOL XML catalogue %s' % localfile )
 
       outputSEList = List.randomize( outputSE )
-      upload = failoverTransfer.transferAndRegisterFile( localfile, outputFilePath, lfn, outputSEList, fileGUID, self.defaultCatalog )
+      upload = failoverTransfer.transferAndRegisterFile( localfile, outputFilePath, lfn,
+                                                         outputSEList, fileGUID, self.defaultCatalog )
       if upload['OK']:
-        self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile, upload['Value']['uploadedSE'], lfn ) )
+        self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile,
+                                                                            upload['Value']['uploadedSE'],
+                                                                            lfn ) )
         uploaded.append( lfn )
         continue
 
-      self.log.error( 'Could not putAndRegister file %s with LFN %s to %s with GUID %s trying failover storage' % ( localfile, lfn, string.join( outputSEList, ',' ), fileGUID ) )
+      self.log.error( 'Could not putAndRegister file',
+                      '%s with LFN %s to %s with GUID %s trying failover storage' % ( localfile, lfn,
+                                                                                      ', '.join( outputSEList ),
+                                                                                      fileGUID ) )
       if not self.defaultFailoverSE:
-        self.log.info( 'No failover SEs defined for JobWrapper, cannot try to upload output file %s anywhere else.' % outputFile )
+        self.log.info( 'No failover SEs defined for JobWrapper,',
+                       'cannot try to upload output file %s anywhere else.' % outputFile )
         missing.append( outputFile )
         continue
 
       failoverSEs = List.randomize( self.defaultFailoverSE )
       targetSE = outputSEList[0]
-      result = failoverTransfer.transferAndRegisterFileFailover( localfile, outputFilePath, lfn, targetSE, failoverSEs, fileGUID, self.defaultCatalog )
+      result = failoverTransfer.transferAndRegisterFileFailover( localfile, outputFilePath,
+                                                                 lfn, targetSE, failoverSEs,
+                                                                 fileGUID, self.defaultCatalog )
       if not result['OK']:
         self.log.error( 'Completely failed to upload file to failover SEs with result:\n%s' % result )
         missing.append( outputFile )
@@ -858,7 +874,7 @@ class JobWrapper:
 
     #For files correctly uploaded must report LFNs to job parameters
     if uploaded:
-      report = string.join( uploaded, ', ' )
+      report = ', '.join( uploaded )
       #In case the VO payload has also uploaded data using the same parameter 
       #name this should be checked prior to setting. 
       monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
@@ -881,7 +897,7 @@ class JobWrapper:
 
     #TODO Notify the user of any output data / output sandboxes
     if missing:
-      self.__setJobParam( 'OutputData', 'MissingFiles: %s' % ( string.join( missing, ', ' ) ) )
+      self.__setJobParam( 'OutputData', 'MissingFiles: %s' % ', '.join( missing ) )
       self.__report( 'Failed', 'Uploading Job OutputData' )
       return S_ERROR( 'Failed to upload OutputData' )
 
@@ -889,7 +905,7 @@ class JobWrapper:
     return S_OK( 'OutputData uploaded successfully' )
 
   #############################################################################
-  def __getLFNfromOutputFile( self, owner, outputFile, outputPath = '' ):
+  def __getLFNfromOutputFile( self, outputFile, outputPath = '' ):
     """Provides a generic convention for VO output data
        files if no path is specified.
     """
@@ -900,18 +916,22 @@ class JobWrapper:
 
     if not re.search( '^LFN:', outputFile ):
       localfile = outputFile
-      initial = owner[:1]
+      initial = self.owner[:1]
       subdir = str( self.jobID / 1000 )
       if outputPath:
         # Add output Path if given
         subdir = outputPath + '/' + subdir
-      basePath = '/' + self.vo + '/user/' + initial + '/' + owner
+      vo = getVOForGroup( self.userGroup )
+      if not vo:
+        vo = 'dirac'
+      basePath = '/' + vo + '/user/' + initial + '/' + self.owner
       finalPath = subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
       lfn = os.path.join( basePath, finalPath )
-      # lfn = '/' + self.vo + '/user/' + initial + '/' + owner + '/' + subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
+      # lfn = '/' + vo + '/user/' + initial + '/' + self.owner + '/' + subdir + '/' + \
+      #       str( self.jobID ) + '/' + os.path.basename( localfile )
     else:
-      localfile = os.path.basename( string.replace( outputFile, "LFN:", "" ) )
-      lfn = string.replace( outputFile, "LFN:", "" )
+      localfile = os.path.basename( outputFile.replace( "LFN:", "" ) )
+      lfn = outputFile.replace( "LFN:", "" )
 
     return ( lfn, localfile )
 
@@ -935,7 +955,7 @@ class JobWrapper:
           sandboxFiles.append( os.path.basename( isb ) )
 
 
-    self.log.info( 'Downloading InputSandbox for job %s: %s' % ( self.jobID, string.join( sandboxFiles ) ) )
+    self.log.info( 'Downloading InputSandbox for job %s: %s' % ( self.jobID, ', '.join( sandboxFiles ) ) )
     if os.path.exists( '%s/inputsandbox' % ( self.root ) ):
       # This is a debugging tool, get the file from local storage to debug Job Wrapper
       sandboxFiles.append( 'jobDescription.xml' )
@@ -987,7 +1007,8 @@ class JobWrapper:
 
     if userFiles:
       self.inputSandboxSize = getGlobbedTotalSize( userFiles )
-      self.log.info( "Total size of input sandbox: %0.2f MiB (%s bytes)" % ( self.inputSandboxSize / 1048576.0, self.inputSandboxSize ) )
+      self.log.info( "Total size of input sandbox:",
+                     "%0.2f MiB (%s bytes)" % ( self.inputSandboxSize / 1048576.0, self.inputSandboxSize ) )
 
     return S_OK( 'InputSandbox downloaded' )
 
@@ -1083,7 +1104,8 @@ class JobWrapper:
       #To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
       if type( jobName ) == type( ' ' ) and jobName:
-        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' ).replace( '.', '' ).replace( '{', '' ).replace( '}', '' ).replace( ':', '' )
+        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' )
+        jobName = jobName.replace( '.', '' ).replace( '{', '' ).replace( '}', '' ).replace( ':', '' )
         requestName = '%s_%s' % ( jobName, requestName )
 
     request.setRequestName( requestName )
@@ -1127,7 +1149,7 @@ class JobWrapper:
       if result['OK']:
         resDigest = request.getDigest()
         digest = resDigest['Value']
-        resultSet = self.jobReport.setJobParameter( 'PendingRequest', digest )
+        self.jobReport.setJobParameter( 'PendingRequest', digest )
       else:
         self.__report( 'Failed', 'Failover Request Failed' )
         self.log.error( 'Failed to set failover request', result['Message'] )
@@ -1267,5 +1289,49 @@ class ExecutionThread( threading.Thread ):
       result = S_ERROR( 'No Job output found' )
 
     return result
+
+def rescheduleFailedJob( jobID, message, jobReport = None ):
+  try:
+
+    gLogger.warn( 'Failure during %s' % ( message ) )
+
+    #Setting a job parameter does not help since the job will be rescheduled,
+    #instead set the status with the cause and then another status showing the
+    #reschedule operation.
+
+    if not jobReport:
+      gLogger.info( 'Creating a new JobReport Object' )
+      jobReport = JobReport( int( jobID ), 'JobWrapper' )
+
+    jobReport.setApplicationStatus( 'Failed %s ' % message, sendFlag = False )
+    jobReport.setJobStatus( 'Rescheduled', message, sendFlag = False )
+
+    # We must send Job States and Parameters before it gets reschedule
+    jobReport.sendStoredStatusInfo()
+    jobReport.sendStoredJobParameters()
+
+    gLogger.info( 'Job will be rescheduled after exception during execution of the JobWrapper' )
+
+    jobManager = RPCClient( 'WorkloadManagement/JobManager' )
+    result = jobManager.rescheduleJob( int( jobID ) )
+    if not result['OK']:
+      gLogger.warn( result )
+
+    # Send mail to debug errors
+    mailAddress = DIRAC.alarmMail
+    site = DIRAC.siteName()
+    subject = 'Job rescheduled at %s' % site
+    ret = systemCall( 0, 'hostname' )
+    wn = ret['Value'][1]
+    msg = 'Job %s rescheduled at %s, wn=%s\n' % ( jobID, site, wn )
+    msg += message
+
+    NotificationClient().sendMail( mailAddress, subject, msg, fromAddress = "lhcb-dirac@cern.ch", localAttempt = False )
+
+    return
+  except Exception:
+    gLogger.exception( 'JobWrapperTemplate failed to reschedule Job' )
+    return
+
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

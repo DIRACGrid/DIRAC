@@ -11,17 +11,19 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft              import TimeLeft
-from DIRAC.Core.Base.AgentModule                         import AgentModule
-from DIRAC.Core.DISET.RPCClient                          import RPCClient
-from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
-from DIRAC                                               import S_OK, S_ERROR, gConfig
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
-from DIRAC.Core.Security.Misc                            import getProxyInfo
-from DIRAC.Core.Security                                 import Properties
-from DIRAC.WorkloadManagementSystem.Client.JobReport     import JobReport
+from DIRAC.Core.Utilities.ModuleFactory                     import ModuleFactory
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight              import ClassAd
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft                 import TimeLeft
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.Resources.Computing.ComputingElementFactory      import ComputingElementFactory
+from DIRAC                                                  import S_OK, S_ERROR, gConfig
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
+from DIRAC.Core.Security.Misc                               import getProxyInfo
+from DIRAC.Core.Security                                    import Properties
+from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
+
 
 import os, sys, re, time
 
@@ -88,7 +90,6 @@ class JobAgent( AgentModule ):
   def execute( self ):
     """The JobAgent execution method.
     """
-    jobManager = RPCClient( 'WorkloadManagement/JobManager' )
     if self.jobCount:
       #Only call timeLeft utility after a job has been picked up
       self.log.info( 'Attempting to check CPU time left for filling mode' )
@@ -200,9 +201,6 @@ class JobAgent( AgentModule ):
 
     if not params.has_key( 'MaxCPUTime' ):
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
-      jobCPUReqt = 0
-    else:
-      jobCPUReqt = params['MaxCPUTime']
 
     self.log.verbose( 'Job request successful: \n %s' % ( jobRequest['Value'] ) )
     self.log.info( 'Received JobID=%s, JobType=%s, SystemConfig=%s' % ( jobID, jobType, systemConfig ) )
@@ -221,6 +219,7 @@ class JobAgent( AgentModule ):
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
 
+      # Is this necessary at all?
       saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
       #self.__report(jobID,'Matched','Job Prepared to Submit')
 
@@ -247,7 +246,7 @@ class JobAgent( AgentModule ):
         return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'] )
 
       self.log.verbose( 'After %sCE submitJob()' % ( self.ceName ) )
-    except Exception, e:
+    except Exception:
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception' )
 
@@ -410,6 +409,8 @@ class JobAgent( AgentModule ):
     else:
       self.log.error( 'Job submission failed', jobID )
       self.__setJobParam( jobID, 'ErrorMessage', '%s CE Submission Error' % ( self.ceName ) )
+      if 'ReschedulePayload' in submission:
+        rescheduleFailedJob( jobID, submission['Message'], self.__report )
       return S_ERROR( '%s CE Submission Error: %s' % ( self.ceName, submission['Message'] ) )
 
     return ret
@@ -428,7 +429,7 @@ class JobAgent( AgentModule ):
     if not os.path.exists( '%s/job/Wrapper' % ( workingDir ) ):
       try:
         os.makedirs( '%s/job/Wrapper' % ( workingDir ) )
-      except Exception, x:
+      except Exception:
         self.log.exception()
         return S_ERROR( 'Could not create directory for wrapper script' )
 

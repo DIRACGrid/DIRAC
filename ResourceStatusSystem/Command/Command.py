@@ -23,8 +23,8 @@ class Command( object ):
 
         - `args[1]` should be the name of the ValidRes
     """
-    if not isinstance( argsIn, tuple ):
-      raise TypeError, "`Args` of commands should be in a tuple."
+    if type(argsIn) != tuple:
+      raise TypeError("`Args` of commands should be in a tuple.")
 
     self.args = argsIn
 
@@ -48,7 +48,7 @@ class Command( object ):
 
   def setTimeOut( self, timeout = None ):
     """
-    set `self.timeout`. If not set, a standard RPC will be instantiated.
+    set `self.timeout`. If not set, a standard timeout will be instantiated.
 
     :params:
       :attr:`timeout`: a client object

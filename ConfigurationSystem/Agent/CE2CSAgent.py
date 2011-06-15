@@ -6,31 +6,35 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC                                                    import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Base.AgentModule                              import AgentModule
-from DIRAC.Core.Utilities                                     import List
-from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapService
-from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
-from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
-from DIRAC.Core.Security.Misc                                 import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Path            import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals       import getVO
+from DIRAC                                              import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Base.AgentModule                        import AgentModule
+from DIRAC.Core.Utilities                               import List
+from DIRAC.Core.Utilities.Grid                          import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapService
+from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
+from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
+from DIRAC.Core.Security.Misc                           import getProxyInfo, formatProxyInfoAsString
+from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 class CE2CSAgent( AgentModule ):
 
-  addressTo = ''
-  addressFrom = ''
-  vo = getVO()
-  csAPI = CSAPI()
-  subject = "CE2CSAgent"
+  def __init__( self, agentName, baseAgentName, properties ):
+    AgentModule.__init__( self, agentName, baseAgentName, properties )
+    self.addressTo = ''
+    self.addressFrom = ''
+    self.voName = ''
+    self.csAPI = CSAPI()
+    self.subject = "CE2CSAgent"
+    self.alternativeBDIIs = []
 
   def initialize( self ):
 
-    # TODO: Have no default and if no mail is found then use the diracAdmin group and resolve all associated mail addresses.
+    # TODO: Have no default and if no mail is found then use the diracAdmin group 
+    # and resolve all associated mail addresses.
     self.addressTo = self.am_getOption( 'MailTo', self.addressTo )
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     # create a list of alternative bdii urls
-    self.alternativeBDIIs = map( lambda x: x.strip(), self.am_getOption( 'AlternativeBDIIs', '' ).split( ',' ) )
+    self.alternativeBDIIs = self.am_getOption( 'AlternativeBDIIs', [] )
     # check if the bdii url is appended by a port number, if not append the default 2170
     for index, url in enumerate( self.alternativeBDIIs ):
       if not url.split( ':' )[-1].isdigit():
@@ -47,7 +51,11 @@ class CE2CSAgent( AgentModule ):
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'SAMManager' )
 
-    if not self.vo:
+    self.voName = self.am_getOption( 'VirtualOrganization', self.voName )
+    if not self.voName:
+      self.voName = getVO()
+
+    if not self.voName:
       self.log.fatal( "VO option not defined for agent" )
       return S_ERROR()
     return S_OK()
@@ -61,24 +69,28 @@ class CE2CSAgent( AgentModule ):
     infoDict = result[ 'Value' ]
     self.log.info( formatProxyInfoAsString( infoDict ) )
 
-    self._lookForCE()
-    self._infoFromCE()
+    self.__lookForCE()
+    self.__infoFromCE()
     self.log.info( "End Execution" )
     return S_OK()
 
-  def _checkAlternativeBDIISite( self, fun, *args ):
+  def __checkAlternativeBDIISite( self, fun, *args ):
     if self.alternativeBDIIs:
       self.log.warn( "Trying to use alternative bdii sites" )
       for site in self.alternativeBDIIs :
         self.log.info( "Trying to contact alternative bdii ", site )
-        if len( args ) == 1 : result = fun( args[0], host = site )
-        elif len( args ) == 2 : result = fun( args[0], vo = args[1], host = site )
-        if not result['OK'] : self.log.error ( "Problem contacting alternative bddii", result['Message'] )
-        elif result['OK'] : return result
+        if len( args ) == 1 :
+          result = fun( args[0], host = site )
+        elif len( args ) == 2 :
+          result = fun( args[0], vo = args[1], host = site )
+        if not result['OK'] :
+          self.log.error ( "Problem contacting alternative bddii", result['Message'] )
+        elif result['OK'] :
+          return result
       self.log.warn( "Also checking alternative BDII sites failed" )
       return result
 
-  def _lookForCE( self ):
+  def __lookForCE( self ):
 
     knownces = self.am_getOption( 'BannedCEs', [] )
 
@@ -99,10 +111,10 @@ class CE2CSAgent( AgentModule ):
         ces = List.fromChar( opt.get( 'CE', '' ) )
         knownces += ces
 
-    response = ldapCEState( '', vo = self.vo )
+    response = ldapCEState( '', vo = self.voName )
     if not response['OK']:
       self.log.error( "Error during BDII request", response['Message'] )
-      response = self._checkAlternativeBDIISite( ldapCEState, '', self.vo )
+      response = self.__checkAlternativeBDIISite( ldapCEState, '', self.voName )
       return response
 
     newces = {}
@@ -123,7 +135,7 @@ class CE2CSAgent( AgentModule ):
       response = ldapCluster( ce )
       if not response['OK']:
         self.log.warn( "Error during BDII request", response['Message'] )
-        response = self._checkAlternativeBDIISite( ldapCluster, ce )
+        response = self.__checkAlternativeBDIISite( ldapCluster, ce )
         continue
       clusters = response['Value']
       if len( clusters ) != 1:
@@ -148,7 +160,7 @@ class CE2CSAgent( AgentModule ):
       response = ldapCE( ce )
       if not response['OK']:
         self.log.warn( "Error during BDII request", response['Message'] )
-        response = self._checkAlternativeBDIISite( ldapCE, ce )
+        response = self.__checkAlternativeBDIISite( ldapCE, ce )
         continue
 
       ceinfos = response['Value']
@@ -165,10 +177,10 @@ class CE2CSAgent( AgentModule ):
       osstring = "SystemName: %s, SystemVersion: %s, SystemRelease: %s" % ( systemName, systemVersion, systemRelease )
       self.log.info( osstring )
 
-      response = ldapCEState( ce, vo = self.vo )
+      response = ldapCEState( ce, vo = self.voName )
       if not response['OK']:
         self.log.warn( "Error during BDII request", response['Message'] )
-        response = self._checkAlternativeBDIISite( ldapCEState, ce, self.vo )
+        response = self.__checkAlternativeBDIISite( ldapCEState, ce, self.voName )
         continue
 
       newcestring = "\n\n%s\n%s" % ( cestring, osstring )
@@ -187,7 +199,7 @@ class CE2CSAgent( AgentModule ):
         body += newcestring
         possibleNewSites.append( 'dirac-admin-add-site DIRACSiteName %s %s' % ( nameBDII, ce ) )
     if body:
-      body = "We are glade to inform You about new CE(s) possibly suitable for %s:\n" % self.vo + body
+      body = "We are glade to inform You about new CE(s) possibly suitable for %s:\n" % self.voName + body
       body += "\n\nTo suppress information about CE add its name to BannedCEs list."
       for  possibleNewSite in  possibleNewSites:
         body = "%s\n%s" % ( body, possibleNewSite )
@@ -198,7 +210,7 @@ class CE2CSAgent( AgentModule ):
 
     return S_OK()
 
-  def _infoFromCE( self ):
+  def __infoFromCE( self ):
 
     sitesSection = cfgPath( 'Resources', 'Sites' )
     result = gConfig.getSections( sitesSection )
@@ -230,7 +242,7 @@ class CE2CSAgent( AgentModule ):
           result = ldapSite( name )
           if not result['OK']:
             self.log.warn( "BDII site %s: %s" % ( name, result['Message'] ) )
-            result = self._checkAlternativeBDIISite( ldapSite, name )
+            result = self.__checkAlternativeBDIISite( ldapSite, name )
 
           if result['OK']:
             bdiisites = result['Value']
@@ -307,7 +319,7 @@ class CE2CSAgent( AgentModule ):
           result = ldapCE( ce )
           if not result['OK']:
             self.log.warn( 'Error in bdii for %s' % ce, result['Message'] )
-            result = self._checkAlternativeBDIISite( ldapCE, ce )
+            result = self.__checkAlternativeBDIISite( ldapCE, ce )
             continue
           try:
             bdiice = result['Value'][0]
@@ -342,7 +354,9 @@ class CE2CSAgent( AgentModule ):
               changed = True
 
             try:
-              newos = '_'.join( ( bdiice['GlueHostOperatingSystemName'], bdiice['GlueHostOperatingSystemVersion'], bdiice['GlueHostOperatingSystemRelease'] ) )
+              newos = '_'.join( ( bdiice['GlueHostOperatingSystemName'],
+                                  bdiice['GlueHostOperatingSystemVersion'],
+                                  bdiice['GlueHostOperatingSystemRelease'] ) )
             except:
               newos = 'Unknown'
             if os != newos and newos != 'Unknown':
@@ -370,7 +384,7 @@ class CE2CSAgent( AgentModule ):
 
             try:
               rte = bdiice['GlueHostApplicationSoftwareRunTimeEnvironment']
-              if self.vo == 'lhcb':
+              if self.voName == 'lhcb':
                 if 'VO-lhcb-pilot' in rte:
                   newpilot = 'True'
                 else:
@@ -390,7 +404,7 @@ class CE2CSAgent( AgentModule ):
 
           result = ldapService( ce )
           if not result['OK'] :
-            result = self._checkAlternativeBDIISite( ldapService, ce )
+            result = self.__checkAlternativeBDIISite( ldapService, ce )
           if result['OK']:
             services = result['Value']
             newcetype = 'LCG'
@@ -409,10 +423,10 @@ class CE2CSAgent( AgentModule ):
               self.csAPI.modifyValue( section, newcetype )
             changed = True
 
-          result = ldapCEState( ce, vo = self.vo )        #getBDIICEVOView
+          result = ldapCEState( ce, vo = self.voName )        #getBDIICEVOView
           if not result['OK']:
             self.log.warn( 'Error in bdii for queue %s' % ce, result['Message'] )
-            result = self._checkAlternativeBDIISite( ldapCEState, ce, self.vo )
+            result = self.__checkAlternativeBDIISite( ldapCEState, ce, self.voName )
             continue
           try:
             queues = result['Value']
@@ -472,7 +486,7 @@ class CE2CSAgent( AgentModule ):
                 self.csAPI.modifyValue( section, newsi00 )
               changed = True
 
-    if False and changed:
+    if changed:
       self.log.info( body )
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()

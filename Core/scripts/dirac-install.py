@@ -36,11 +36,12 @@ g_GlobalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/gl
 class Params:
 
   def __init__( self ):
-    self.extraPackages = []
+    self.extraModules = []
     self.project = 'DIRAC'
+    self.installation = 'DIRAC'
     self.release = ""
     self.externalsType = 'client'
-    self.pythonVersion = '25'
+    self.pythonVersion = '26'
     self.platform = ""
     self.targetPath = os.getcwd()
     self.buildExternals = False
@@ -78,7 +79,11 @@ class ReleaseConfig:
 
     def getChild( self, path ):
       child = self
-      for childName in [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]:
+      if type( path ) in ( types.ListType, types.TupleType ):
+        pathList = path
+      else:
+        pathList = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]
+      for childName in pathList:
         if childName not in child.__children:
           return False
         child = child.__children[ childName ]
@@ -158,10 +163,10 @@ class ReleaseConfig:
       if len( obList ) == 1:
         if obList[0] in self.__data:
           return self.__data[ obList[0] ]
-        raise ValueError( "Missing option %s" % obList[0] )
+        raise KeyError( "Missing option %s" % obList[0] )
       if obList[0] in self.__children:
         return self.__children[ obList[0] ].__get( obList[1:] )
-      raise ValueError( "Missing section %s" % obList[0] )
+      raise KeyError( "Missing section %s" % obList[0] )
 
     def toString( self, tabs = 0 ):
       lines = [ "%s = %s" % ( opName, self.__data[ opName ] ) for opName in self.__data ]
@@ -172,9 +177,32 @@ class ReleaseConfig:
         lines.append( "}" )
       return "\n".join( [ "%s%s" % ( "  " * tabs, line ) for line in lines ] )
 
+    def getOptions( self, path = "" ):
+      parentPath = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ][:-1]
+      if parentPath:
+        parent = getChild( parentPath )
+      else:
+        parent = self
+      if not parent:
+        return []
+      return tuple( parent.__data )
+
+    def delPath( self, path ):
+      path = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ]
+      if not path:
+        return
+      keyName = path[ -1 ]
+      parentPath = path[:-1]
+      if parentPath:
+        parent = getChild( parentPath )
+      else:
+        parent = self
+      if parent:
+        parent.__data.pop( keyName )
+
     #END OF CFG CLASS
 
-  def __init__( self, projectName ):
+  def __init__( self, defaultObjectName ):
     self.__configs = {}
     self.__globalDefaults = ReleaseConfig.CFG()
     self.__localDefaults = ReleaseConfig.CFG()
@@ -182,7 +210,7 @@ class ReleaseConfig:
     self.__depsLoaded = {}
     self.__projectsLoaded = []
     self.__debugCB = False
-    self.__projectName = projectName
+    self.__defaultObject = defaultObjectName
     self.__projectRelease = {
         'DIRAC' : "http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/DIRAC/releases.cfg",
         'LHCb' : "http://svnweb.cern.ch/guest/lbdirac/LHCbDIRAC/trunk/LHCbDIRAC/releases.cfg"
@@ -192,11 +220,11 @@ class ReleaseConfig:
         'LHCb' : "http://lhcbproject.web.cern.ch/lhcbproject/dist/LHCbDirac_project"
         }
 
-  def getProject( self ):
-    return self.__projectName
+  def getDefaultObject( self ):
+    return self.__defaultObject
 
-  def setProject( self, projectName ):
-    self.__projectName = projectName
+  def setDefaultObject( self, objectName ):
+    self.__defaultObject = objectName
 
   def setDebugCB( self, debFunc ):
     self.__debugCB = debFunc
@@ -212,42 +240,42 @@ class ReleaseConfig:
       return result
     self.__globalDefaults = result[ 'Value' ]
     self.__dbgMsg( "Loaded global defaults" )
-    return self.__loadProjectDefaults( self.__projectName )
+    return self.__loadObjectDefaults( self.__defaultObject )
 
-  def __loadProjectDefaults( self, projectName ):
-    if projectName in self.__defaults:
+  def __loadObjectDefaults( self, objectName ):
+    if objectName in self.__defaults:
       return S_OK()
-    self.__defaults[ projectName ] = ReleaseConfig.CFG()
+    self.__defaults[ objectName ] = ReleaseConfig.CFG()
 
-    aliasTo = self.getDefaultValue( "Alias", projectName )
-    #If not link to project then load defaults
+    aliasTo = self.getDefaultValue( "Alias", objectName )
+    #If not link to then load defaults
     if not aliasTo:
-      self.__dbgMsg( "Loading defaults for project %s" % projectName )
+      self.__dbgMsg( "Loading defaults for %s" % objectName )
       try:
-        defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % projectName )
-      except ValueError:
+        defaultsLocation = self.__globalDefaults.get( "%s/DefaultsLocation" % objectName )
+      except KeyError:
         defaultsLocation = False
-        self.__dbgMsg( "No defaults file defined for project %s" % projectName )
+        self.__dbgMsg( "No defaults file defined for %s" % objectName )
 
       if defaultsLocation:
-        self.__dbgMsg( "Defaults for project %s are in %s" % ( projectName, defaultsLocation ) )
+        self.__dbgMsg( "Defaults for %s are in %s" % ( objectName, defaultsLocation ) )
         result = self.__loadCFGFromURL( defaultsLocation )
         if not result[ 'OK' ]:
           return result
-        self.__defaults[ projectName ] = result[ 'Value' ]
-        self.__dbgMsg( "Loaded defaults for project %s" % projectName )
-        #Update link to project var
-        aliasTo = self.getDefaultValue( "Alias", projectName )
+        self.__defaults[ objectName ] = result[ 'Value' ]
+        self.__dbgMsg( "Loaded defaults for %s" % objectName )
+        #Update link to var
+        aliasTo = self.getDefaultValue( "Alias", objectName )
 
     if aliasTo:
-      if self.__projectName == projectName:
-        self.__projectName = aliasTo
-      return self.__loadProjectDefaults( aliasTo )
+      if self.__defaultObject == objectName:
+        self.__defaultObject = aliasTo
+      return self.__loadObjectDefaults( aliasTo )
 
-    #If a default project is there, load the defaults
-    defaultProject = self.getDefaultValue( "LocalInstallation/Project", projectName )
+    #If a default is there, load the defaults
+    defaultProject = self.getDefaultValue( "LocalInstallation/Project", objectName )
     if defaultProject:
-      return self.__loadProjectDefaults( defaultProject )
+      return self.__loadObjectDefaults( defaultProject )
 
     return S_OK()
 
@@ -260,25 +288,32 @@ class ReleaseConfig:
       return S_ERROR( "Could not load %s: %s" % ( fileName, excp ) )
     return S_OK()
 
-  def getDefaultValue( self, opName, projectName = False ):
+  def getDefaultCFG( self, objectName = False ):
+    if not objectName:
+      objectName = self.__defaultObject
+    if objectName in self.__defaults:
+      return self.__defaults[ objectName ]
+    return None
+
+  def getDefaultValue( self, opName, objectName = False ):
     try:
       return self.__localDefaults.get( opName )
     except:
       pass
-    if not projectName:
-      projectName = self.__projectName
+    if not objectName:
+      objectName = self.__defaultObject
     try:
-      return self.__defaults[ projectName ].get( opName )
+      return self.__defaults[ objectName ].get( opName )
     except:
       pass
     try:
-      return self.__globalDefaults.get( "%s/%s" % ( projectName, opName ) )
+      return self.__globalDefaults.get( "%s/%s" % ( objectName, opName ) )
     except:
       pass
     return None
 
-  def isProjectLoaded( self, projectName ):
-    return projectName in self.__configs
+  def isProjectLoaded( self, objectName ):
+    return objectName in self.__configs
 
   #HERE!
 
@@ -306,83 +341,83 @@ class ReleaseConfig:
     return S_OK( cfg )
 
   def loadProjectForRelease( self, releasesLocation = False ):
-    if self.__projectName in self.__configs:
+    if self.__defaultObject in self.__configs:
       return S_OK()
     if releasesLocation:
       releasesLocation = "file://%s" % os.path.realpath( releasesLocation )
     elif self.getDefaultValue( "Releases" ):
       releasesLocation = self.getDefaultValue( "Releases" )
-    elif self.__projectName not in self.__projectRelease:
-      return S_ERROR( "Don't know how to find releases.cfg for project %s" % self.__projectName )
+    elif self.__defaultObject not in self.__projectRelease:
+      return S_ERROR( "Don't know how to find releases.cfg for %s" % self.__defaultObject )
     else:
-      releasesLocation = self.__projectRelease[ self.__projectName ]
+      releasesLocation = self.__projectRelease[ self.__defaultObject ]
     self.__dbgMsg( "Releases definition is %s" % releasesLocation )
     #Load it
     result = self.__loadCFGFromURL( releasesLocation )
     if not result[ 'OK' ]:
       return result
-    self.__configs[ self.__projectName ] = result[ 'Value' ]
-    self.__projectsLoaded.append( self.__projectName )
+    self.__configs[ self.__defaultObject ] = result[ 'Value' ]
+    self.__projectsLoaded.append( self.__defaultObject )
     self.__dbgMsg( "Loaded %s" % releasesLocation )
     return S_OK()
 
-  def getTarsLocation( self, projectName = "" ):
-    if not projectName:
-      projectName = self.__projectName
-    defLoc = self.getDefaultValue( "LocalInstallation/BaseURL", projectName )
+  def getTarsLocation( self, objectName = "" ):
+    if not objectName:
+      objectName = self.__defaultObject
+    defLoc = self.getDefaultValue( "LocalInstallation/BaseURL", objectName )
     if defLoc:
       return S_OK( defLoc )
-    elif projectName in self.__projectTarLocation:
-      return S_OK( self.__projectTarLocation[ projectName ] )
-    return S_ERROR( "Don't know how to find the installation tarballs for project %s" % projectName )
+    elif objectName in self.__projectTarLocation:
+      return S_OK( self.__projectTarLocation[ objectName ] )
+    return S_ERROR( "Don't know how to find the installation tarballs for %s" % objectName )
 
 
-  def loadProjectForInstall( self, releaseVersion, projectName = "", sourceURL = False ):
-    if not projectName:
+  def loadProjectForInstall( self, releaseVersion, objectName = "", sourceURL = False ):
+    if not objectName:
       defProject = self.getDefaultValue( "LocalInstallation/Project" )
       if defProject:
-        projectName = defProject
+        objectName = defProject
       else:
-        projectName = self.__projectName
+        objectName = self.__defaultObject
 
     #Check what's loaded
-    if projectName not in self.__depsLoaded:
-      self.__depsLoaded[ projectName ] = releaseVersion
-    elif self.__depsLoaded[ projectName ] != releaseVersion:
-      S_ERROR( "Oops. Project %s (%s) is required already in a different version (%s)!" % ( projectName,
+    if objectName not in self.__depsLoaded:
+      self.__depsLoaded[ objectName ] = releaseVersion
+    elif self.__depsLoaded[ objectName ] != releaseVersion:
+      S_ERROR( "Oops. Project %s (%s) is required already in a different version (%s)!" % ( objectName,
                                                                                             releaseVersion,
-                                                                                            self.__depsLoaded[ projectName ] ) )
+                                                                                            self.__depsLoaded[ objectName ] ) )
     else:
       return S_OK()
     #Load defaults
-    result = self.__loadProjectDefaults( projectName )
+    result = self.__loadObjectDefaults( objectName )
     if not result[ 'OK' ]:
-      self.__dbgMsg( "Could not load defaults for project %s" % projectName )
+      self.__dbgMsg( "Could not load defaults for %s" % objectName )
       return result
-    #Load the project release definitions
-    self.__dbgMsg( "Loading release definition for project %s version %s" % ( projectName, releaseVersion ) )
-    if projectName not in self.__configs:
+    #Load the release definitions
+    self.__dbgMsg( "Loading release definition for %s version %s" % ( objectName, releaseVersion ) )
+    if objectName not in self.__configs:
       if not sourceURL:
-        result = self.getTarsLocation( projectName )
+        result = self.getTarsLocation( objectName )
         if not result[ 'OK' ]:
           return result
         siu = result[ 'Value' ]
       else:
         siu = sourceURL
-      relcfgLoc = "%s/release-%s-%s.cfg" % ( siu, projectName, releaseVersion )
+      relcfgLoc = "%s/release-%s-%s.cfg" % ( siu, objectName, releaseVersion )
       self.__dbgMsg( "Releases file is %s" % relcfgLoc )
       result = self.__loadCFGFromURL( relcfgLoc, checkHash = True )
       if not result[ 'OK' ]:
         return result
-      self.__configs[ projectName ] = result[ 'Value' ]
+      self.__configs[ objectName ] = result[ 'Value' ]
       self.__dbgMsg( "Loaded %s" % relcfgLoc )
-      self.__projectsLoaded.append( projectName )
-    deps = self.getReleaseDependencies( releaseVersion, projectName )
+      self.__projectsLoaded.append( objectName )
+    deps = self.getReleaseDependencies( releaseVersion, objectName )
     if deps:
       self.__dbgMsg( "Depends on %s" % ", ".join( [ "%s:%s" % ( k, deps[k] ) for k in deps ] ) )
     for dProj in deps:
       dVer = deps[ dProj ]
-      self.__dbgMsg( "%s:%s requires on %s:%s to be installed" % ( projectName, releaseVersion, dProj, dVer ) )
+      self.__dbgMsg( "%s:%s requires on %s:%s to be installed" % ( objectName, releaseVersion, dProj, dVer ) )
       dVer = deps[ dProj ]
       result = self.loadProjectForInstall( dVer, dProj, sourceURL = sourceURL )
       if not result[ 'OK' ]:
@@ -390,23 +425,23 @@ class ReleaseConfig:
 
     return S_OK()
 
-  def __getOpt( self, projectName, option ):
+  def __getOpt( self, objectName, option ):
     try:
-      return self.__configs[ projectName ].get( option )
-    except ValueError:
-      self.__dbgMsg( "Missing option %s for project %s" % ( option, projectName ) )
+      return self.__configs[ objectName ].get( option )
+    except KeyError:
+      self.__dbgMsg( "Missing option %s for %s" % ( option, objectName ) )
       return False
 
-  def getCFG( self, projectName ):
-    return self.__configs[ projectName ]
+  def getCFG( self, objectName ):
+    return self.__configs[ objectName ]
 
-  def getReleaseDependencies( self, releaseVersion, projectName = False ):
-    if not projectName:
-      projectName = self.__projectName
-    if not self.__configs[ projectName ].isOption( "Releases/%s/Depends" % releaseVersion ):
+  def getReleaseDependencies( self, releaseVersion, objectName = False ):
+    if not objectName:
+      objectName = self.__defaultObject
+    if not self.__configs[ objectName ].isOption( "Releases/%s/Depends" % releaseVersion ):
       return {}
     deps = {}
-    for field in self.__configs[ projectName ].get( "Releases/%s/Depends" % releaseVersion ).split( "," ):
+    for field in self.__configs[ objectName ].get( "Releases/%s/Depends" % releaseVersion ).split( "," ):
       field = field.strip()
       if not field:
         continue
@@ -417,16 +452,16 @@ class ReleaseConfig:
         deps[ pv[0].strip() ] = ":".join( pv[1:] ).strip()
     return deps
 
-  def getModulesForRelease( self, releaseVersion, projectName = False ):
-    if not projectName:
-      projectName = self.__projectName
-    if not projectName in self.__configs:
-      return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % projectName )
-    config = self.__configs[ projectName ]
+  def getModulesForRelease( self, releaseVersion, objectName = False ):
+    if not objectName:
+      objectName = self.__defaultObject
+    if not objectName in self.__configs:
+      return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % objectName )
+    config = self.__configs[ objectName ]
     if not config.isSection( "Releases/%s" % releaseVersion ):
-      return S_ERROR( "Release %s is not defined for project %s" % ( releaseVersion, projectName ) )
+      return S_ERROR( "Release %s is not defined for project %s" % ( releaseVersion, objectName ) )
     #Defined Modules explicitly in the release
-    modules = self.__getOpt( projectName, "Releases/%s/Modules" % releaseVersion )
+    modules = self.__getOpt( objectName, "Releases/%s/Modules" % releaseVersion )
     if modules:
       dMods = {}
       for entry in [ entry.split( ":" ) for entry in modules.split( "," ) if entry.strip() ]:
@@ -437,23 +472,23 @@ class ReleaseConfig:
       modules = dMods
     else:
       #Default modules with the same version as the release version
-      modules = self.__getOpt( projectName, "DefaultModules" )
+      modules = self.__getOpt( objectName, "DefaultModules" )
       if modules:
         modules = dict( [ ( modName.strip() , releaseVersion ) for modName in modules.split( "," ) if modName.strip() ] )
       else:
-        #Mod = projectName and same version
-        modules = { projectName : releaseVersion }
-    #Check projectName is in the modNames if not DIRAC
-    if projectName != "DIRAC":
+        #Mod = objectName and same version
+        modules = { objectName : releaseVersion }
+    #Check objectName is in the modNames if not DIRAC
+    if objectName != "DIRAC":
       for modName in modules:
-        if modName.find( projectName ) != 0:
-          S_ERROR( "Module %s does not start with the project name %s" ( modName, projectName ) )
+        if modName.find( objectName ) != 0:
+          S_ERROR( "Module %s does not start with the name %s" ( modName, objectName ) )
     return S_OK( modules )
 
   def getModSource( self, modName ):
-    if not self.__projectName in self.__configs:
-      return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__projectName )
-    modLocation = self.__getOpt( self.__projectName, "Sources/%s" % modName )
+    if not self.__defaultObject in self.__configs:
+      return S_ERROR( "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % self.__defaultObject )
+    modLocation = self.__getOpt( self.__defaultObject, "Sources/%s" % modName )
     if not modLocation:
       return S_ERROR( "Source origin for module %s is not defined" % modName )
     modTpl = [ field.strip() for field in modLocation.split( "|" ) if field.strip() ]
@@ -470,7 +505,7 @@ class ReleaseConfig:
       releaseVersion = self.__depsLoaded[ 'DIRAC' ]
     try:
       return self.__configs[ 'DIRAC' ].get( 'Releases/%s/Externals' % releaseVersion )
-    except ValueError:
+    except KeyError:
       return False
 
   def getModulesToInstall( self, extraModules = False ):
@@ -479,34 +514,43 @@ class ReleaseConfig:
     extraFound = []
     modsToInstall = {}
     modsOrder = []
-    for projectName in self.__projectsLoaded:
-      if projectName not in self.__depsLoaded:
+    for objectName in self.__projectsLoaded:
+      if objectName not in self.__depsLoaded:
         continue
-      result = self.getTarsLocation( projectName )
+      try:
+        requiredModules = self.__configs[ objectName ].get( "RequiredExtraModules" )
+        requiredModules = [ modName.strip() for modName in requiredModules.split( "/" ) if modName.strip() ]
+      except KeyError:
+        requiredModules = []
+      for modName in requiredModules:
+        if modName not in extraModules:
+          extraModules.append( modName )
+      result = self.getTarsLocation( objectName )
       if not result[ 'OK' ]:
         return result
       tarsPath = result[ 'Value' ]
-      relVersion = self.__depsLoaded[ projectName ]
-      self.__dbgMsg( "Discovering modules to install for project %s (%s)" % ( projectName, relVersion ) )
-      result = self.getModulesForRelease( relVersion, projectName )
+      relVersion = self.__depsLoaded[ objectName ]
+      self.__dbgMsg( "Discovering modules to install for %s (%s)" % ( objectName, relVersion ) )
+      result = self.getModulesForRelease( relVersion, objectName )
       if not result[ 'OK' ]:
         return result
       modVersions = result[ 'Value' ]
-      modNames = []
-      defaultMods = self.__configs[ projectName ].get( "DefaultModules" )
-      if defaultMods:
-        modNames += [ mod.strip() for mod in defaultMods.split( "," ) if mod.strip() ]
+      try:
+        defaultMods = self.__configs[ objectName ].get( "DefaultModules" )
+        modNames = [ mod.strip() for mod in defaultMods.split( "," ) if mod.strip() ]
+      except KeyError:
+        modNames = []
       for extraMod in extraModules:
         if extraMod in modVersions:
           modNames.append( extraMod )
           extraFound.append( extraMod )
-        if projectName != 'DIRAC':
+        if objectName != 'DIRAC':
           dExtraMod = "%sDIRAC" % extraMod
           if dExtraMod in modVersions:
             modNames.append( dExtraMod )
             extraFound.append( extraMod )
       modNameVer = [ "%s:%s" % ( modName, modVersions[ modName ] ) for modName in modNames ]
-      self.__dbgMsg( "Modules to be installed for project %s are: %s" % ( projectName, ", ".join( modNameVer ) ) )
+      self.__dbgMsg( "Modules to be installed for %s are: %s" % ( objectName, ", ".join( modNameVer ) ) )
       for modName in modNames:
         modsToInstall[ modName ] = ( tarsPath, modVersions[ modName ] )
         modsOrder.insert( 0, modName )
@@ -713,7 +757,7 @@ def checkPlatformAliasLink():
 
 cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'l:', 'project=', 'Project to install' ),
-            ( 'e:', 'extraPackages=', 'Extra packages to install (comma separated)' ),
+            ( 'e:', 'extraModules=', 'Extra modules to install (comma separated)' ),
             ( 't:', 'installType=', 'Installation type (client/server)' ),
             ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
             ( 'p:', 'platform=', 'Platform to install' ),
@@ -724,7 +768,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
             ( 'd', 'debug', 'Show debug messages' ),
-            ( 'V:', 'VO=', 'Virtual Organization (deprecated, use -l or --project)' ),
+            ( 'V:', 'installation=', 'Virtual Organization (deprecated, use -l or --project)' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
             ( 'h', 'help', 'Show this help' ),
           )
@@ -756,18 +800,16 @@ def loadConfiguration():
                                "".join( [ opt[0] for opt in cmdOpts ] ),
                                [ opt[1] for opt in cmdOpts ] )
 
-  # First check if the project name is defined
+  # First check if the name is defined
   for o, v in optList:
     if o in ( '-h', '--help' ):
       usage()
-    elif o in ( '-l', '--project' ):
-      cliParams.project = v
-    elif o in ( '-V', '--VO' ):
-      cliParams.project = v
+    elif o in ( '-V', '--installation' ):
+      cliParams.installation = v
     elif o in ( "-d", "--debug" ):
       cliParams.debug = True
 
-  releaseConfig = ReleaseConfig( cliParams.project )
+  releaseConfig = ReleaseConfig( cliParams.installation )
   if cliParams.debug:
     releaseConfig.setDebugCB( logDEBUG )
 
@@ -787,7 +829,7 @@ def loadConfiguration():
   for opName in ( 'release', 'externalsType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraPackages' ):
+                  'project', 'release', 'extraModules' ):
     opVal = releaseConfig.getDefaultValue( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     if opVal == None:
       continue
@@ -802,10 +844,12 @@ def loadConfiguration():
   for o, v in optList:
     if o in ( '-r', '--release' ):
       cliParams.release = v
-    elif o in ( '-e', '--extraPackages' ):
+    elif o in ( '-l', '--project' ):
+      cliParams.project = v
+    elif o in ( '-e', '--extraModules' ):
       for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-        if pkg not in cliParams.extraPackages:
-          cliParams.extraPackages.append( pkg )
+        if pkg not in cliParams.extraModules:
+          cliParams.extraModules.append( pkg )
     elif o in ( '-t', '--installType' ):
       cliParams.externalsType = v
     elif o in ( '-i', '--pythonVersion' ):
@@ -848,7 +892,7 @@ def loadConfiguration():
 
   logNOTICE( "Destination path for installation is %s" % cliParams.targetPath )
 
-  result = releaseConfig.loadProjectForInstall( cliParams.release, sourceURL = cliParams.installSource )
+  result = releaseConfig.loadProjectForInstall( cliParams.release, cliParams.project, sourceURL = cliParams.installSource )
   if not result[ 'OK' ]:
     return result
 
@@ -961,6 +1005,8 @@ def createBashrc():
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
                      'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
                      'export PYTHONPATH=$DIRAC'] )
+      lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
+                     'export OPENSSL_CONF=/tmp'] )
       lines.append( '' )
       f = open( bashrcFile, 'w' )
       f.write( '\n'.join( lines ) )
@@ -971,6 +1017,21 @@ def createBashrc():
 
   return True
 
+def writeDefaultConfiguration():
+  defaultCFG = releaseConfig.getDefaultCFG()
+  if not defaultCFG:
+    return
+  for opName in defaultCFG.getOptions():
+    defaultCFG.delPath( opName )
+
+  filePath = os.path.join( cliParams.targetPath, "defaults-%s.cfg" % cliParams.installation )
+  try:
+    fd = open( filePath, "wb" )
+    fd.write( defaultCFG.toString() )
+    fd.close()
+  except Exception, excp:
+    logERROR( "Could not write %s: %s" % ( filePath, excp ) )
+  logNOTICE( "Defaults written to %s" % filePath )
 
 if __name__ == "__main__":
   logNOTICE( "Processing installation requirements" )
@@ -981,7 +1042,7 @@ if __name__ == "__main__":
   releaseConfig = result[ 'Value' ]
   if not cliParams.externalsOnly:
     logNOTICE( "Discovering modules to install" )
-    result = releaseConfig.getModulesToInstall( cliParams.extraPackages )
+    result = releaseConfig.getModulesToInstall( cliParams.extraModules )
     if not result[ 'OK' ]:
       logERROR( result[ 'Message' ] )
       sys.exit( 1 )
@@ -1011,5 +1072,6 @@ if __name__ == "__main__":
     sys.exit( 1 )
   if not createBashrc():
     sys.exit( 1 )
-  logNOTICE( "%s properly installed" % releaseConfig.getProject() )
+  writeDefaultConfiguration()
+  logNOTICE( "%s properly installed" % releaseConfig.getDefaultObject() )
   sys.exit( 0 )

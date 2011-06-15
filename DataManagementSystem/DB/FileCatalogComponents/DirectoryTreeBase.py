@@ -216,7 +216,7 @@ class DirectoryTreeBase:
       if not result['OK']:
         failed[dir] = result['Message']
       else: 
-        successful[dir] = True  
+        successful[dir] = result
     return S_OK({'Successful':successful,'Failed':failed}) 
 
 #####################################################################
@@ -477,26 +477,26 @@ class DirectoryTreeBase:
     resultDict['Execute'] = (owner and mode&stat.S_IXUSR>0) or (group and mode&stat.S_IXGRP>0) or mode&stat.S_IXOTH>0
     return S_OK(resultDict)
   
-  def __getFilesInDirectory(self,dirID):
+  def getFilesInDirectory(self,dirID,credDict):
     """ Get file IDs for the given directory
     """
-    req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID=%d" % dirID
+    dirs = dirID
+    if type(dirID) != ListType:
+      dirs = [dirID]
+      
+    dirListString = ','.join( [ str(dir) for dir in dirs ] )
+
+    req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( %s )" % dirListString
     result = self.db._query(req)
-    if not result['OK']:
-      return result
-    fileList = [ row[0] for row in result['Value'] ]
-    path = '/some/path'
-    return S_OK(fileList)
-  
+    return result
+ 
   def __getDirectoryContents(self,path,details=False):
     """ Get contents of a given directory
     """
-    
     result = self.findDir(path)
     if not result['OK']:
       return result
     directoryID = result['Value']
-    
     directories = {}
     files = {}
     links = {}
@@ -519,12 +519,12 @@ class DirectoryTreeBase:
           directories[dirName] = result['Value']
       else:    
         directories[dirName] = True
-
     res = self.db.fileManager.getFilesInDirectory(directoryID,path,verbose=details)
     if not res['OK']:
       return res
     files = res['Value']
-    pathDict = {'Files': files,'SubDirs':directories,'Links':links}    
+    pathDict = {'Files': files,'SubDirs':directories,'Links':links} 
+  
     return S_OK(pathDict)           
 
   def listDirectory(self,lfns,verbose=False):
@@ -644,4 +644,4 @@ class DirectoryTreeBase:
         else:
           successful[path] = {} 
           
-    return S_OK({'Successful':successful,'Failed':failed})          
+    return S_OK({'Successful':successful,'Failed':failed}) 
