@@ -66,23 +66,21 @@ def AlarmPolTypeActions(name, res, nc, setup, rsDB, **kwargs):
         if 'Web' in notification['Notifications']:
           nc.addNotificationForUser(user, notif)
         if 'Mail' in notification['Notifications']:
-          mailMessage = "Granularity = %s \n" % granularity
-          mailMessage = mailMessage + "Name = %s\n" % name
-          mailMessage = mailMessage + "New perceived status = %s\n" % res['Status']
-          mailMessage = mailMessage + "Reason for status change = %s\n" % res['Reason']
-
           was = rsDB.getMonitoredsHistory(granularity,
                                           ['Status', 'Reason', 'DateEffective'],
                                           name, False, 'DESC', 1)[0]
 
-          mailMessage = mailMessage + "Was in status \"%s\", " % (was[0])
-          mailMessage = mailMessage + "with reason \"%s\", since %s\n" % (was[1], was[2])
-
-          mailMessage = mailMessage + "Setup = %s\n" % setup
+          mailMessage = """Granularity = %s
+Name = %s
+New perceived status = %s
+Reason for status change = %s
+Was in status "%s", with reason "%s", since %s
+Setup = %s
+""" % granularity, name, res['Status'], res['Reason'], was[0], was[1], was[2], setup
 
           nc.sendMail(CS.getMailForUser(user)['Value'][0],
                       '%s: %s' % (name, res['Status']), mailMessage)
 
 
 if __name__ == "__main__":
-  getUsersToNotifyShiftDB()
+  print getUsersToNotifyShiftDB()
