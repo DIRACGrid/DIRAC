@@ -1974,9 +1974,10 @@ class ResourceStatusHandler( RequestHandler ):
     try:
       
       try:
-        token           = rsDB.getTokens( granularity, name )
-        tokenOwner      = token[ 0 ][ 1 ]
-        tokenExpiration = token[ 0 ][ 2 ]
+        token              = rsDB.getTokens( granularity, name )
+        tokenOwner         = token[ 0 ][ 1 ]
+        tokenExpiration    = token[ 0 ][ 2 ]
+        tokenNewExpiration = tokenExpiration 
         try:
           tokenNewExpiration = tokenExpiration + datetime.timedelta( hours = hrs )
         except OverflowError:
