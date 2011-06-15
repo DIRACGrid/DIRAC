@@ -474,5 +474,13 @@ class ProxyManagerClient:
         return S_OK( max( 0, secondsLeft ) )
     return S_OK( 0 )
 
+  def getUserProxiesInfo( self ):
+    """ Get the user proxies uploaded info
+    """
+    result = RPCClient( "Framework/ProxyManager", timeout = 120 ).getUserProxiesInfo()
+    if 'rpcStub' in result:
+      result.pop( 'rpcStub' )
+    return result
+
 
 gProxyManager = ProxyManagerClient()

@@ -40,11 +40,8 @@ class ProxyManagerHandler( RequestHandler ):
 
   __maxExtraLifeFactor = 1.5
 
-  def __addKnownUserProxiesInfo( self, retDict ):
-    """ Given a S_OK/S_ERR add a proxies entry with info of all the proxies a user has uploaded
-    """
+  def __generateUserProxiesInfo( self ):
     proxiesInfo = {}
-    retDict[ 'proxies' ] = proxiesInfo
     credDict = self.getRemoteCredentials()
     result = Registry.getDNForUsername( credDict[ 'username' ] )
     if not result[ 'OK' ]:
@@ -63,7 +60,20 @@ class ProxyManagerHandler( RequestHandler ):
         proxiesInfo[ userDN ] = {}
       userGroup = record[ userGroupIndex ]
       proxiesInfo[ userDN ][ userGroup ] = record[ expirationIndex  ]
+    return proxiesInfo
+
+  def __addKnownUserProxiesInfo( self, retDict ):
+    """ Given a S_OK/S_ERR add a proxies entry with info of all the proxies a user has uploaded
+    """
+    retDict[ 'proxies' ] = self.__generateUserProxiesInfo()
     return retDict
+
+  auth_getUserProxiesInfo = [ 'authenticated' ]
+  types_getUserProxiesInfo = []
+  def export_getUserProxiesInfo( self ):
+    """ Get the info about the user proxies in the system
+    """
+    return S_OK( self.__generateUserProxiesInfo() )
 
   types_requestDelegationUpload = [ ( types.IntType, types.LongType ), ( types.StringType, types.BooleanType ) ]
   def export_requestDelegationUpload( self, requestedUploadTime, userGroup ):
