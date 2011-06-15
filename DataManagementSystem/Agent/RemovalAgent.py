@@ -112,10 +112,13 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
     sourceServer = res['Value']['Server']
+   
+    jobID = 0
     try:
       jobID = int( res['Value']['JobID'] )
-    except ValueError:
-      jobID = 0
+    except:
+      gLogger.warn("RemovalAgent.execute: JobID not present or malformed in request '%s', will use 0 instead." % requestName )
+  
     gLogger.info( "RemovalAgent.execute: Obtained request %s" % requestName )
 
     result = self.requestDBClient.getCurrentExecutionOrder( requestName, sourceServer )
