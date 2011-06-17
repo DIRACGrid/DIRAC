@@ -234,7 +234,7 @@ class ExecutorQueues:
     finally:
       self.__lock.release()
 
-class ExecutorMindCallbacks:
+class ExecutorDispatcherCallbacks:
 
   def cbDispatch( self, taskId, taskObj ):
     return S_ERROR( "No dispatch callback defined" )
@@ -248,7 +248,7 @@ class ExecutorMindCallbacks:
   def cbTaskError( self, taskId, errorMsg ):
     return S_ERROR( "No error callback defined" )
 
-class ExecutorMind:
+class ExecutorDispatcher:
 
   class ETask:
 
@@ -281,17 +281,17 @@ class ExecutorMind:
     self.__taskFreezer = []
     self.__queues = ExecutorQueues( self.__log )
     self.__states = ExecutorState( self.__log )
-    self.__cbHolder = ExecutorMindCallbacks()
+    self.__cbHolder = ExecutorDispatcherCallbacks()
 
   def _internals( self ):
     return { 'idMap' : dict( self.__idMap ),
              'execTypes' : dict( self.__execTypes ),
-             'tasks' : dict( self.__tasks ),
+             'tasks' : sorted( self.__tasks ),
              'freezer' : list( self.__taskFreezer ) }
 
   def setCallbacks( self, callbacksObj ):
-    if not isinstance( callbacksObj, ExecutorMindCallbacks ):
-      return S_ERROR( "Callbacks object does not inherit from ExecutorMindCallbacks" )
+    if not isinstance( callbacksObj, ExecutorDispatcherCallbacks ):
+      return S_ERROR( "Callbacks object does not inherit from ExecutorDispatcherCallbacks" )
     self.__cbHolder = callbacksObj
     return S_OK()
 
@@ -392,7 +392,7 @@ class ExecutorMind:
       if taskId in self.__tasks:
         self.__log.verbose( "Task %s was already known" % taskId )
         return False
-      self.__tasks[ taskId ] = ExecutorMind.ETask( taskId, taskObj )
+      self.__tasks[ taskId ] = ExecutorDispatcher.ETask( taskId, taskObj )
       self.__log.verbose( "Added task %s" % taskId )
       return True
     finally:
