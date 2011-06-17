@@ -2012,9 +2012,11 @@ class ResourceStatusDB:
     """
 
     if access == 'Read':
-      SEtable = 'StorageElementsRead'
+      SEtable     = 'StorageElementsRead'
+      granularity = 'StorageElementRead'
     elif access == 'Write':
       SEtable = 'StorageElementsWrite'
+      granularity = 'StorageElementWrite'
     else:
       raise RSSException, where( self, self.addOrModifyStorageElement ) + 'Invalid access mode'  
 
@@ -2030,10 +2032,10 @@ class ResourceStatusDB:
     if resQuery[ 'Value' ]:
       if dateEffective <= ( dateCreated + datetime.timedelta( minutes=2 ) ):
         #storageElement modification, effective in less than 2 minutes
-        self.setDateEnd( 'StorageElement', storageElementName, dateEffective )
-        self.transact2History( 'StorageElement', storageElementName, dateEffective )
+        self.setDateEnd( granularity, storageElementName, dateEffective )
+        self.transact2History( granularity, storageElementName, dateEffective )
       else:
-        self.setDateEnd( 'StorageElement', storageElementName, dateEffective )
+        self.setDateEnd( granularity, storageElementName, dateEffective )
     else:
       if status in ( 'Active', 'Probing', 'Bad' ):
         oldStatus = 'Banned'

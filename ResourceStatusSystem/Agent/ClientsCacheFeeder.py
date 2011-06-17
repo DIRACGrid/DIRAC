@@ -40,7 +40,7 @@ class ClientsCacheFeeder( AgentModule ):
       VOExtension = getExt()
 
       configModule = __import__( VOExtension + "DIRAC.ResourceStatusSystem.Policy.Configurations",
-                                globals(), locals(), ['*'] )
+                                 globals(), locals(), ['*'] )
       commandsList_ClientsCache = copy.deepcopy( configModule.Commands_ClientsCache )
 
       commandsList_AccountingCache = copy.deepcopy( configModule.Commands_AccountingCache )

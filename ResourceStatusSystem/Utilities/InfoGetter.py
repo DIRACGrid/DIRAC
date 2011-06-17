@@ -22,8 +22,15 @@ class InfoGetter:
     :params:
       :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
     """
-    configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
-                              globals(), locals(), ['*'])
+    
+    module = "DIRAC.ResourceStatusSystem."
+    
+    try:
+      submodule    = 'Policy.Configurations'
+      configModule = __import__( VOExtension + module + submodule , globals(), locals(), ['*'])
+    except ImportError:
+      submodule    = 'PolicySystem.Configurations'
+      configModule = __import__( module + submodule , globals(), locals(), ['*'])
 
     self.C_Policies = copy.deepcopy(configModule.Policies)
     self.C_views_panels = copy.deepcopy(configModule.views_panels)
@@ -54,10 +61,10 @@ class InfoGetter:
     EVAL = {}
 
     if 'policy' in args:
-      EVAL['Policies'] = self.__getPolToEval(granularity = granularity, status = status,
-                                             formerStatus = formerStatus, siteType = siteType,
-                                             serviceType = serviceType, resourceType = resourceType,
-                                             useNewRes = useNewRes)
+      EVAL['Policies'] = self.__getPolToEval( granularity = granularity, status = status,
+                                              formerStatus = formerStatus, siteType = siteType,
+                                              serviceType = serviceType, resourceType = resourceType,
+                                              useNewRes = useNewRes)
 
     if 'policyType' in args:
       EVAL['PolicyType'] = self.__getPolTypes(granularity = granularity, status = status,

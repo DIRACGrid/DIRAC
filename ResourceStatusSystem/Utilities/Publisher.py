@@ -46,8 +46,17 @@ class Publisher:
       (see :class: `DIRAC.Core.DISET.RPCClient.RPCClient`)
     """
 
-    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
-                                   globals(), locals(), ['*'])
+#    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
+#                                   globals(), locals(), ['*'])
+
+    module = "DIRAC.ResourceStatusSystem."
+    
+    try:
+      submodule    = 'Policy.Configurations'
+      configModule = __import__( VOExtension + module + submodule , globals(), locals(), ['*'])
+    except ImportError:
+      submodule    = 'PolicySystem.Configurations'
+      configModule = __import__( module + submodule , globals(), locals(), ['*'])
 
     if rsDBIn is not None:
       self.rsDB = rsDBIn

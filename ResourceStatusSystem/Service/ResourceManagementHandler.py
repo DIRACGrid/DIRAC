@@ -105,7 +105,6 @@ class ResourceManagementHandler( RequestHandler ):
 
 #############################################################################
 
-<<<<<<< HEAD
   types_getEnvironmentCache = [StringType, StringType]
   def export_getEnvironmentCache( self, hash, siteName ):
     """ get Policy Result
@@ -149,12 +148,8 @@ class ResourceManagementHandler( RequestHandler ):
     
 #############################################################################
 
-  types_getPolicyRes = [StringType, StringType, BooleanType]
-  def export_getPolicyRes(self, name, policyName, lastCheckTime):
-=======
   types_getPolicyRes = [ StringType, StringType, BooleanType ]
   def export_getPolicyRes( self, name, policyName, lastCheckTime ):
->>>>>>> ses
     """ get Policy Result
     """
     
