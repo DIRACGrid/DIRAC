@@ -47,6 +47,8 @@ class JobsEffSimpleEveryOne_Command( Command ):
 
     try:
       res = self.client.getJobsSimpleEff( sites, self.RPC )
+      if res is None:
+        res = []
     except:
       gLogger.exception( "Exception when calling JobsClient." )
       return {}
@@ -95,6 +97,8 @@ class PilotsEffSimpleEverySites_Command( Command ):
 
     try:
       res = self.client.getPilotsSimpleEff( 'Site', sites, None, self.RPC )
+      if res is None:
+        res = []
     except:
       gLogger.exception( "Exception when calling PilotsClient." )
       return {}

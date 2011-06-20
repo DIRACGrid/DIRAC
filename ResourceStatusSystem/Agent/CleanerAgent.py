@@ -53,8 +53,10 @@ class CleanerAgent( AgentModule ):
     """
     
     try:
+        
       # update Resource Status history tables.
       for table in self.tablesWithHistory:
+          
         res = self.rsDB.getEndings( table )
         
         for row in res:

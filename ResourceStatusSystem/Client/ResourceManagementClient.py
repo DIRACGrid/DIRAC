@@ -27,8 +27,9 @@ class ResourceManagementClient:
     res = self.rsM.getEnvironmentCache( hash, siteName )
     if not res['OK']:
       raise RSSException, where( self, self.getEnvironmentCache) + " " + res['Message']
-    
-    return res['Value'] 
+#    
+#    return res['Value'] 
+    return res
 
 #############################################################################
   
@@ -37,8 +38,8 @@ class ResourceManagementClient:
     res = self.rsM.addOrModifyEnvironmentCache( hash, siteName, environment )
     if not res['OK']:
       raise RSSException, where( self, self.addOrModifyEnvironmentCache) + " " + res['Message']
-    
-    return res['Value'] 
+
+    return res 
    
 #############################################################################
 
@@ -63,8 +64,8 @@ class ResourceManagementClient:
     res = self.rsM.getCachedAccountingResult(name, plotType, plotName)
     if not res['OK']:
       raise RSSException, where(self, self.getCachedAccountingResult) + " " + res['Message'] 
-  
-    return res['Value']
+
+    return res     
   
 #############################################################################
 
@@ -92,8 +93,8 @@ class ResourceManagementClient:
     res = self.rsM.getCachedResult(name, commandName, value, opt_ID)
     if not res['OK']:
       raise RSSException, where(self, self.getCachedResult) + " " + res['Message'] 
-  
-    return res['Value']  
+
+    return res
 
 #############################################################################
 
@@ -116,8 +117,9 @@ class ResourceManagementClient:
     if not res['OK']:
       raise RSSException, where(self, self.getCachedIDs) + " " + res['Message'] 
   
-    ID_list = [x for x in res['Value']]
+#    ID_list = [x for x in res['Value']]
   
-    return ID_list
+#    return ID_list
+    return res   
   
 #############################################################################

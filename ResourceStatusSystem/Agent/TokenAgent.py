@@ -62,6 +62,7 @@ class TokenAgent( AgentModule ):
       #notify token owners
       in2Hours = datetime.datetime.utcnow() + datetime.timedelta( hours = 2 )
       for g in self.ELEMENTS:
+          
         tokensExpiring = self.rsDB.getTokens( g, None, in2Hours )
         for token in tokensExpiring:
           name = token[ 0 ]

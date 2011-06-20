@@ -7,17 +7,15 @@ import datetime
 from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Command.Command import *
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
-#from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 
 #############################################################################
 
-class TransferQualityByDestSplitted_Command(Command):
+class TransferQualityByDestSplitted_Command( Command ):
   
-  def doCommand(self, sources = None, SEs = None):
+  def doCommand( self, sources = None, SEs = None ):
     """ 
     Returns transfer quality using the DIRAC accounting system for every SE 
     for the last self.args[0] hours 
@@ -33,60 +31,61 @@ class TransferQualityByDestSplitted_Command(Command):
 
     if SEs is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC_RSS.getStorageElementsList()
-      if not SEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = RPC_RSS.getStorageElementsList( 'Write' )
+      if not SEs[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs['Value']
+        SEs = SEs[ 'Value' ]
     
     if sources is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
       sources = RPC_RSS.getSitesList()
-      if not sources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sources['Message'] 
+      if not sources[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources['Value']
+        sources = sources[ 'Value' ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
       
     if self.client is None:
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+      self.client = ReportsClient( rpcClient = self.RPC )
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
+    fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
     toD = datetime.datetime.utcnow()
 
     try:
-      qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
-                                         {'OperationType':'putAndRegister', 
-                                          'Source':sources + SEs, 'Destination':sources + SEs}, 
-                                          'Destination')
-      if not qualityAll['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + qualityAll['Message'] 
+      qualityAll = self.client.getReport( 'DataOperation', 'Quality', fromD, toD, 
+                                          { 'OperationType':'putAndRegister', 
+                                          'Source': sources + SEs, 'Destination': sources + SEs }, 
+                                          'Destination' )
+      
+      if not qualityAll[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + qualityAll[ 'Message' ] 
       else:
-        qualityAll = qualityAll['Value']
+        qualityAll = qualityAll[ 'Value' ]
 
     except:
-      gLogger.exception("Exception when calling TransferQualityByDestSplitted_Command")
+      gLogger.exception( "Exception when calling TransferQualityByDestSplitted_Command" ) 
       return {}
     
-    listOfDestSEs = qualityAll['data'].keys()
+    listOfDestSEs = qualityAll[ 'data' ].keys()
     
-    plotGran = qualityAll['granularity']
+    plotGran = qualityAll[ 'granularity' ]
     
     singlePlots = {}
     
     for SE in listOfDestSEs:
-      plot = {}
-      plot['data'] = {SE: qualityAll['data'][SE]}
-      plot['granularity'] = plotGran
-      singlePlots[SE] = plot
+      plot                  = {}
+      plot[ 'data' ]        = { SE: qualityAll[ 'data' ][ SE ] }
+      plot[ 'granularity' ] = plotGran
+      singlePlots[ SE ]     = plot
     
-    resToReturn = {'DataOperation': singlePlots}
+    resToReturn = { 'DataOperation': singlePlots }
 
     return resToReturn
 
@@ -95,9 +94,9 @@ class TransferQualityByDestSplitted_Command(Command):
 
 #############################################################################
 
-class TransferQualityByDestSplittedSite_Command(Command):
+class TransferQualityByDestSplittedSite_Command( Command ):
   
-  def doCommand(self, sources = None, SEs = None):
+  def doCommand( self, sources = None, SEs = None ):
     """ 
     Returns transfer quality using the DIRAC accounting system for every SE
     of a single site for the last self.args[0] hours 
@@ -113,92 +112,94 @@ class TransferQualityByDestSplittedSite_Command(Command):
 
     if SEs is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC_RSS.getStorageElementsList()
-      if not SEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = RPC_RSS.getStorageElementsList( 'Write' )
+      if not SEs[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs['Value']
+        SEs = SEs[ 'Value' ]
     
     if sources is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
       sources = RPC_RSS.getSitesList()
-      if not sources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sources['Message'] 
+      if not sources[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources['Value']
+        sources = sources[ 'Value' ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
       
     if self.client is None:
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+      self.client = ReportsClient( rpcClient = self.RPC )
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
+    fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
     toD = datetime.datetime.utcnow()
 
     try:
-      qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
-                                         {'OperationType':'putAndRegister', 
-                                          'Source':sources + SEs, 'Destination':sources + SEs}, 
-                                          'Destination')
-      if not qualityAll['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + qualityAll['Message'] 
+      qualityAll = self.client.getReport( 'DataOperation', 'Quality', fromD, toD, 
+                                          {'OperationType':'putAndRegister', 
+                                        'Source':sources + SEs, 'Destination':sources + SEs }, 
+                                        'Destination' )
+      if not qualityAll[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + qualityAll[ 'Message' ] 
       else:
-        qualityAll = qualityAll['Value']
+        qualityAll = qualityAll[ 'Value' ]
 
     except:
-      gLogger.exception("Exception when calling TransferQualityByDestSplittedSite_Command")
+      gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
       return {}
     
-    listOfDest = qualityAll['data'].keys()
+    listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb({'StorageElementName':listOfDest}, [], 0, 300)
+      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
+                                                             [], 0, 300, 'Write' )
     except NameError:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb({'StorageElementName':listOfDest}, [], 0, 300)
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
+                                                             [], 0, 300, 'Write' )
     
-    if not storSitesWeb['OK']:
-      raise RSSException, where(self, self.doCommand) + " " + storSitesWeb['Message'] 
+    if not storSitesWeb[ 'OK' ]:
+      raise RSSException, where( self, self.doCommand ) + " " + storSitesWeb[ 'Message' ] 
     else:
-      storSitesWeb = storSitesWeb['Value']['Records']
+      storSitesWeb = storSitesWeb[ 'Value' ][ 'Records' ]
     
     SESiteMapping = {}
     siteSEMapping = {}
     
     for r in storSitesWeb:
-      sites = r[2].split(' ')[:-1]
-      SESiteMapping[r[0]] = sites
+      sites               = r[ 2 ].split( ' ' )[ :-1 ]
+      SESiteMapping[ r[ 0 ] ] = sites
       
     for SE in SESiteMapping.keys():
-      for site in SESiteMapping[SE]:
+      for site in SESiteMapping[ SE ]:
         try:
-          l = siteSEMapping[site]
-          l.append(SE)
-          siteSEMapping[site] = l
+          l = siteSEMapping[ site ]
+          l.append( SE )
+          siteSEMapping[ site ] = l
         except KeyError:
-          siteSEMapping[site] = [SE]
+          siteSEMapping[ site ] = [ SE ]
    
     
-    plotGran = qualityAll['granularity']
+    plotGran = qualityAll[ 'granularity' ]
     
     singlePlots = {}
     
     for site in siteSEMapping.keys():
-      plot = {}
-      plot['data'] = {}
+      plot           = {}
+      plot[ 'data' ] = {}
       for SE in siteSEMapping[site]:
-        plot['data'][SE] = qualityAll['data'][SE]
-      plot['granularity'] = plotGran
+        plot[ 'data' ][ SE ] = qualityAll[ 'data' ][ SE ]
+      plot[ 'granularity' ] = plotGran
     
-      singlePlots[site] = plot
+      singlePlots[ site ] = plot
     
-    resToReturn = {'DataOperation': singlePlots}
+    resToReturn = { 'DataOperation': singlePlots }
 
     return resToReturn
 
@@ -206,9 +207,9 @@ class TransferQualityByDestSplittedSite_Command(Command):
 
 #############################################################################
 
-class TransferQualityBySourceSplittedSite_Command(Command):
+class TransferQualityBySourceSplittedSite_Command( Command ):
   
-  def doCommand(self, sources = None, SEs = None):
+  def doCommand( self, sources = None, SEs = None ):
     """ 
     Returns transfer quality using the DIRAC accounting system for every SE
     of a single site and for the site itself for the last self.args[0] hours 
@@ -224,92 +225,94 @@ class TransferQualityBySourceSplittedSite_Command(Command):
 
     if SEs is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC_RSS.getStorageElementsList()
-      if not SEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = RPC_RSS.getStorageElementsList( 'Read' )
+      if not SEs[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs['Value']
+        SEs = SEs[ 'Value' ]
     
     if sources is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
       sources = RPC_RSS.getSitesList()
-      if not sources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sources['Message'] 
+      if not sources[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources['Value']
+        sources = sources[ 'Value' ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
       
     if self.client is None:
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+      self.client = ReportsClient( rpcClient = self.RPC )
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
+    fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
     toD = datetime.datetime.utcnow()
 
     try:
-      qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
-                                         {'OperationType':'putAndRegister', 
-                                          'Source':sources + SEs, 'Destination':sources + SEs}, 
+      qualityAll = self.client.getReport( 'DataOperation', 'Quality', fromD, toD, 
+                                          { 'OperationType':'putAndRegister', 
+                                            'Source': sources + SEs, 'Destination': sources + SEs }, 
                                           'Destination')
-      if not qualityAll['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + qualityAll['Message'] 
+      if not qualityAll[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + qualityAll[ 'Message' ] 
       else:
-        qualityAll = qualityAll['Value']
+        qualityAll = qualityAll[ 'Value' ]
 
     except:
-      gLogger.exception("Exception when calling TransferQualityByDestSplittedSite_Command")
+      gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
       return {}
     
-    listOfDest = qualityAll['data'].keys()
+    listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb({'StorageElementName':listOfDest}, [], 0, 300)
+      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
+                                                             [], 0, 300, 'Read' )
     except NameError:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb({'StorageElementName':listOfDest}, [], 0, 300)
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
+                                                             [], 0, 300, 'Read' )
     
-    if not storSitesWeb['OK']:
-      raise RSSException, where(self, self.doCommand) + " " + storSitesWeb['Message'] 
+    if not storSitesWeb[ 'OK' ]:
+      raise RSSException, where( self, self.doCommand ) + " " + storSitesWeb[ 'Message' ] 
     else:
-      storSitesWeb = storSitesWeb['Value']['Records']
+      storSitesWeb = storSitesWeb[ 'Value' ][ 'Records' ]
     
     SESiteMapping = {}
     siteSEMapping = {}
     
     for r in storSitesWeb:
-      sites = r[2].split(' ')[:-1]
-      SESiteMapping[r[0]] = sites
+      sites                   = r[ 2 ].split( ' ' )[ :-1 ]
+      SESiteMapping[ r[ 0 ] ] = sites
       
     for SE in SESiteMapping.keys():
-      for site in SESiteMapping[SE]:
+      for site in SESiteMapping[ SE ]:
         try:
-          l = siteSEMapping[site]
-          l.append(SE)
-          siteSEMapping[site] = l
+          l = siteSEMapping[ site ]
+          l.append( SE )
+          siteSEMapping[ site ] = l
         except KeyError:
-          siteSEMapping[site] = [SE]
+          siteSEMapping[ site ] = [ SE ]
    
     
-    plotGran = qualityAll['granularity']
+    plotGran = qualityAll[ 'granularity' ]
     
     singlePlots = {}
     
     for site in siteSEMapping.keys():
-      plot = {}
-      plot['data'] = {}
-      for SE in siteSEMapping[site]:
-        plot['data'][SE] = qualityAll['data'][SE]
-      plot['granularity'] = plotGran
+      plot           = {}
+      plot[ 'data' ] = {}
+      for SE in siteSEMapping[ site ]:
+        plot[ 'data' ][ SE ] = qualityAll[ 'data' ][ SE ]
+      plot[ 'granularity' ] = plotGran
     
-      singlePlots[site] = plot
+      singlePlots[ site ] = plot
     
-    resToReturn = {'DataOperation': singlePlots}
+    resToReturn = { 'DataOperation': singlePlots }
 
     return resToReturn
 
@@ -317,9 +320,9 @@ class TransferQualityBySourceSplittedSite_Command(Command):
 
 #############################################################################
 
-class FailedTransfersBySourceSplitted_Command(Command):
+class FailedTransfersBySourceSplitted_Command( Command ):
   
-  def doCommand(self, sources = None, SEs = None):
+  def doCommand( self, sources = None, SEs = None ):
     """ 
     Returns failed transfer using the DIRAC accounting system for every SE 
     for the last self.args[0] hours 
@@ -335,72 +338,71 @@ class FailedTransfersBySourceSplitted_Command(Command):
 
     if SEs is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC_RSS.getStorageElementsList()
-      if not SEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = RPC_RSS.getStorageElementsList( 'Read' )
+      if not SEs[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs['Value']
+        SEs = SEs[ 'Value' ]
     
     if sources is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
       sources = RPC_RSS.getSitesList()
-      if not sources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sources['Message'] 
+      if not sources[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources['Value']
+        sources = sources[ 'Value' ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
       
     if self.client is None:
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+      self.client = ReportsClient( rpcClient = self.RPC )
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
+    fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
     toD = datetime.datetime.utcnow()
 
     try:
-      ft_source = self.client.getReport('DataOperation', 'FailedTransfers', 
+      ft_source = self.client.getReport( 'DataOperation', 'FailedTransfers', 
                                          fromD, toD, 
-                                         {'OperationType':'putAndRegister', 
-                                          'Source':sources + SEs, 'Destination':sources + SEs,
-                                          'FinalStatus':['Failed']}, 
-                                         'Source')
-      if not ft_source['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + ft_source['Message'] 
+                                         { 'OperationType':'putAndRegister', 
+                                           'Source': sources + SEs, 'Destination': sources + SEs,
+                                         'FinalStatus':[ 'Failed' ] }, 
+                                         'Source' )
+      if not ft_source[ 'OK' ]:
+        raise RSSException, where( self, self.doCommand ) + " " + ft_source[ 'Message' ] 
       else:
-        ft_source = ft_source['Value']
+        ft_source = ft_source[ 'Value' ]
 
     except:
-      gLogger.exception("Exception when calling FailedTransfersBySourceSplitted_Command")
+      gLogger.exception( "Exception when calling FailedTransfersBySourceSplitted_Command" )
       return {}
     
-    listOfSources = ft_source['data'].keys()
+    listOfSources = ft_source[ 'data' ].keys()
     
-    plotGran = ft_source['granularity']
+    plotGran = ft_source[ 'granularity' ]
     
     singlePlots = {}
     
     for source in listOfSources:
       if source in sources:
-        plot = {}
-        plot['data'] = {source: ft_source['data'][source]}
-        plot['granularity'] = plotGran
-        singlePlots[source] = plot
+        plot                  = {}
+        plot[ 'data' ]        = { source: ft_source[ 'data' ][ source ] }
+        plot[ 'granularity' ] = plotGran
+        singlePlots[ source ] = plot
     
-    resToReturn = {'DataOperation': singlePlots}
+    resToReturn = { 'DataOperation': singlePlots }
 
     return resToReturn
-
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################
 
-class SuccessfullJobsBySiteSplitted_Command(Command):
+class SuccessfullJobsBySiteSplitted_Command( Command ):
   
   def doCommand(self, sites = None):
     """ 

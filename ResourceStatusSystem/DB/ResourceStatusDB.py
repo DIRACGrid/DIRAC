@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes, InvalidStatus
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where, convertTime
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, ValidStatus, ValidSiteType, \
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, ValidStatus, ValidSiteType, \
     ValidResourceType, ValidServiceType
 
 #############################################################################
@@ -3092,7 +3092,7 @@ class ResourceStatusDB:
 
     DBtable, DBname = self.__DBchoice( granularity )
 
-    req = "SELECT %s, TokenOwner, TokenExpiration FROM %s WHERE " %( DBname, DBtable )
+    req = "SELECT %s, TokenOwner, TokenExpiration FROM %s WHERE " % ( DBname, DBtable )
     if name is not None:
       req = req + "%s = '%s' " % ( DBname, name )
       if dateExpiration is not None:

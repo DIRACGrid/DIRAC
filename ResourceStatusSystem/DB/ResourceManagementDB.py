@@ -171,8 +171,10 @@ class ResourceManagementDB:
     
     req = "SELECT Granularity, Name, PolicyName, Status, Reason FROM PolicyRes "
     req = req + "WHERE Granularity = '%s' AND Name = '%s' AND " %(granularity, name)
-    req = req + "PolicyName = '%s'" %(policyName)
+    req = req + "PolicyName = '%s'" %(policyName) 
+    
     resQuery = self.db._query(req)
+    
     if not resQuery['OK']:
       raise RSSManagementDBException, where(self, self.addOrModifyPolicyRes) + resQuery['Message']
 
@@ -186,13 +188,16 @@ class ResourceManagementDB:
       req = req + "AND Name = '%s' AND PolicyName = '%s'" %(name, policyName)
       
       resUpdate = self.db._update(req)
+      
       if not resUpdate['OK']:
         raise RSSManagementDBException, where(self, self.addOrModifyPolicyRes) + resUpdate['Message']
     else:
       req = "INSERT INTO PolicyRes (Granularity, Name, PolicyName, Status, Reason, DateEffective, "
       req = req + "LastCheckTime) VALUES ('%s', '%s', '%s', " %(granularity, name, policyName)
       req = req + "'%s', '%s', '%s', '%s')" %(status, reason, dateEffective, now)
+      
       resUpdate = self.db._update(req)
+      
       if not resUpdate['OK']:
         raise RSSManagementDBException, where(self, self.addOrModifyPolicyRes) + resUpdate['Message']
     

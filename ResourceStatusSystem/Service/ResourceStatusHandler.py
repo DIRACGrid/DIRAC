@@ -69,6 +69,32 @@ class ResourceStatusHandler( RequestHandler ):
 
 #############################################################################
 
+  types_getSite = [ StringType ]
+  def export_getSite( self, name ):
+      
+    gLogger.info( "ResourceStatusHandler.getSite: Attempting to get Site" )
+
+    try:
+      
+      res = []
+      
+      try:
+        res = rsDB.getMonitoredsList( 'Site', siteName = name )
+      except RSSDBException, x:
+        gLogger.error( whoRaised( x ) )
+      except RSSException, x:
+        gLogger.error( whoRaised( x ) )
+        
+      gLogger.info( "ResourceStatusHandler.getSite: got Site" )
+      return S_OK( res )
+    
+    except Exception:
+      errorStr = where( self, self.export_getSite )
+      gLogger.exception( errorStr )
+      return S_ERROR( errorStr )
+
+#############################################################################
+
   types_getSitesList = []
   def export_getSitesList( self ):
     """
@@ -387,6 +413,32 @@ class ResourceStatusHandler( RequestHandler ):
 
 #############################################################################
 
+  types_getService = [ StringType ]
+  def export_getService( self, name ):
+      
+    gLogger.info( "ResourceStatusHandler.getService: Attempting to get Service" )
+
+    try:
+      
+      res = []
+      
+      try:
+        res = rsDB.getMonitoredsList( 'Service', serviceName = name )
+      except RSSDBException, x:
+        gLogger.error( whoRaised( x ) )
+      except RSSException, x:
+        gLogger.error( whoRaised( x ) )
+        
+      gLogger.info( "ResourceStatusHandler.getService: got Service" )
+      return S_OK( res )
+    
+    except Exception:
+      errorStr = where( self, self.export_getService )
+      gLogger.exception( errorStr )
+      return S_ERROR( errorStr )
+
+#############################################################################
+
   types_getServicesList = []
   def export_getServicesList( self ):
     """
@@ -698,6 +750,32 @@ class ResourceStatusHandler( RequestHandler ):
 #############################################################################
 # Resources functions
 #############################################################################
+
+#############################################################################
+
+  types_getResource = [ StringType ]
+  def export_getResource( self, name ):
+      
+    gLogger.info( "ResourceStatusHandler.getResource: Attempting to get Resource" )
+
+    try:
+      
+      res = []
+      
+      try:
+        res = rsDB.getMonitoredsList( 'Resource', resourceName = name )
+      except RSSDBException, x:
+        gLogger.error( whoRaised( x ) )
+      except RSSException, x:
+        gLogger.error( whoRaised( x ) )
+        
+      gLogger.info( "ResourceStatusHandler.getResource: got Resource" )
+      return S_OK( res )
+    
+    except Exception:
+      errorStr = where( self, self.export_getResource )
+      gLogger.exception( errorStr )
+      return S_ERROR( errorStr )
 
 #############################################################################
 
@@ -1057,6 +1135,39 @@ class ResourceStatusHandler( RequestHandler ):
 #############################################################################
 # StorageElements functions
 #############################################################################
+
+#############################################################################
+
+  types_getStoragElement = [ StringType, StringType ]
+  def export_getStorageElement( self, name, access ):
+      
+    gLogger.info( "ResourceStatusHandler.getStorageElement: Attempting to get SE" )
+
+    if access == 'Read':
+      granularity = 'StorageElementRead'
+    elif access == 'Write':
+      granularity = 'StorageElementWrite'
+    else:
+      return S_ERROR( 'Invalid access mode' )
+
+    try:
+      
+      res = []
+      
+      try:
+        res = rsDB.getMonitoredsList( granularity, storageElementName = name )
+      except RSSDBException, x:
+        gLogger.error( whoRaised( x ) )
+      except RSSException, x:
+        gLogger.error( whoRaised( x ) )
+        
+      gLogger.info( "ResourceStatusHandler.getStorageElement: got SE" )
+      return S_OK( res )
+    
+    except Exception:
+      errorStr = where( self, self.export_getStorageElement )
+      gLogger.exception( errorStr )
+      return S_ERROR( errorStr )
 
 #############################################################################
 

@@ -10,7 +10,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
 
 class PilotsClient:
 
@@ -148,11 +148,15 @@ class PilotsClient:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
         rsc = ResourceStatusClient()
         siteName = rsc.getGeneralName(granularity, name, 'Site')
-        if siteName is None or siteName == []:
+        if not siteName[ 'OK' ]:
+          raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
+        if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
+          return None    
+#        if siteName is None or siteName == []:
 #          gLogger.info('%s is not a resource in DIRAC' %name)
-          return None
+#          return None
 
-      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
+      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName[ 'Value' ]},[],0,50)
     else:
       raise InvalidRes, where(self, self.getPilotsSimpleEff)
 

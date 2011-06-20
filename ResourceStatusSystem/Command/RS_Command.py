@@ -7,7 +7,7 @@ from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Command.Command import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, ValidStatus
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, ValidStatus
 
 #############################################################################
 
@@ -152,11 +152,16 @@ class StorageElementsStats_Command( Command ):
       self.client = ResourceStatusClient( timeout = self.timeout )
 
     try:
-      res = self.client.getStorageElementsStats( granularity, name )
+      resR = self.client.getStorageElementsStats( granularity, name, 'Read' )
+      resW = self.client.getStorageElementsStats( granularity, name, 'Write' )
     except:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( granularity, name ) )
       return {'Result':'Unknown'}
 
+    res = {}
+    for key in ValidStatus:
+      res[ key ] = resR[ key ] + resW[ key ]      
+      
     return {'Result':res}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
