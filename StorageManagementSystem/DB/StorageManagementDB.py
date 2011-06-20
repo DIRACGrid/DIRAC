@@ -79,13 +79,14 @@ class StorageManagementDB( DB ):
       taskIDs.append( record[0] )
       gLogger.info( "%s.%s_DB: to_update Tasks =  %s" % ( self._caller(), '__updateTaskStatus', record ) )
 
-    reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString( taskIDs )
-    resSelect1 = self._query( reqSelect1, connection )
-    if not resSelect1["OK"]:
-      gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), '__updateTaskStatus', reqSelect1, resSelect1['Message'] ) )
+    if len( taskIDs ) > 0:
+      reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString( taskIDs )
+      resSelect1 = self._query( reqSelect1, connection )
+      if not resSelect1["OK"]:
+        gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), '__updateTaskStatus', reqSelect1, resSelect1['Message'] ) )
 
-    for record in resSelect1['Value']:
-      gLogger.info( "%s.%s_DB: updated Tasks = %s" % ( self._caller(), '__updateTaskStatus', record ) )
+      for record in resSelect1['Value']:
+        gLogger.info( "%s.%s_DB: updated Tasks = %s" % ( self._caller(), '__updateTaskStatus', record ) )
 
     return S_OK( toUpdate )
 
@@ -773,6 +774,9 @@ class StorageManagementDB( DB ):
     return res
 
   def wakeupOldRequests( self, replicaIDs , connection = False ):
+    # get only StageRequests with StageRequestSubmitTime older than two days
+    # delete these requests
+    # reset Replicas with corresponding ReplicaIDs to Status='New'
     req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted';" % intListToString( replicaIDs ) #add condition forStageRequestSubmitTime
     res = self._query( req )
     if not res['OK']:
@@ -793,9 +797,7 @@ class StorageManagementDB( DB ):
       gLogger.error( "StorageManagementDB.wakeupOldRequests. Problem removing entries from StageRequests." )
       return res
 
-    # get only StageRequests with StageRequestSubmitTime older than two days
-    # delete these requests
-    # reset Replicas with corresponding ReplicaIDs to Status='New'
+
     return S_OK()
 
   ####################################################################

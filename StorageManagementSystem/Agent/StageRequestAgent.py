@@ -121,6 +121,7 @@ class StageRequestAgent( AgentModule ):
       res = self.storageDB.insertStageRequest( stageRequestMetadata, self.pinLifetime )
       if not res['OK']:
         gLogger.error( "StageRequest.__issuePrestageRequests: Failed to insert stage request metadata.", res['Message'] )
+        return res
       res = self.storageDB.updateReplicaStatus( updatedPfnIDs, 'StageSubmitted' )
       if not res['OK']:
         gLogger.error( "StageRequest.__issuePrestageRequests: Failed to insert replica status.", res['Message'] )
