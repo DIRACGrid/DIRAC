@@ -317,6 +317,7 @@ class DTInfo_Cached_Command(Command):
         commandName = 'DTEveryResources'
 
       res = self.client.getCachedIDs(name, commandName)
+       
       if len(res) == 0:
         return {'Result':{'DT':None}}
 

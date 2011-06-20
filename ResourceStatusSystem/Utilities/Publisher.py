@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import getStorageElementStatus
 
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes
 
@@ -46,8 +46,15 @@ class Publisher:
       (see :class: `DIRAC.Core.DISET.RPCClient.RPCClient`)
     """
 
-    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
-                                   globals(), locals(), ['*'])
+#    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
+#                                   globals(), locals(), ['*'])
+
+    module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
+    
+    try:
+      configModule = __import__( VOExtension + module , globals(), locals(), ['*'])
+    except ImportError:
+      configModule = __import__( module , globals(), locals(), ['*'])
 
     if rsDBIn is not None:
       self.rsDB = rsDBIn

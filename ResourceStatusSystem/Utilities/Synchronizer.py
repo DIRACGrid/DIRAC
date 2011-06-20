@@ -13,7 +13,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRAC
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import getSites, getSiteTier, getSENodes, getLFCSites, getLFCNode, getFTSSites, getVOMSEndpoints, getFTSEndpoint, getCEType, getStorageElements
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidStatus, \
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidStatus, \
     ValidSiteType, ValidServiceType, ValidResourceType
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 
@@ -470,40 +470,44 @@ class Synchronizer:
 
   def _syncStorageElements( self ):
 
-    storageElementsIn = self.rsDB.getMonitoredsList( 'StorageElement',
-                                                    paramsList = ['StorageElementName'] )
-    try:
-      storageElementsIn = [x[0] for x in storageElementsIn]
-    except IndexError:
-      pass
-
+    # Get StorageElements from the CS
     SEs = getStorageElements()
     if not SEs['OK']:
       raise RSSException, SEs['Message']
     SEs = SEs['Value']
 
-    #remove storageElements no more in the CS
-    for se in storageElementsIn:
-      if se not in SEs:
-        self.rsDB.removeStorageElement( storageElementName = se )
+    for access in ( 'Read', 'Write' ):
 
-    #Add new storage Elements
-    for SE in SEs:
-      srm = getSENodes( SE )['Value'][0]
-      if srm == None:
-        continue
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm )
-      if not siteInGOCDB['OK']:
-        raise RSSException, siteInGOCDB['Message']
-      if siteInGOCDB['Value'] == []:
-        continue
-      siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      storageElementsIn = self.rsDB.getMonitoredsList( 'StorageElement' + access,
+                                                       paramsList = [ 'StorageElementName' ] )
+      try:
+        storageElementsIn = [ x[ 0 ] for x in storageElementsIn ]
+      except IndexError:
+        pass
 
-      if SE not in storageElementsIn:
-        self.rsDB.addOrModifyStorageElement( SE, srm, siteInGOCDB, 'Active', 'init',
-                                            datetime.datetime.utcnow().replace( microsecond = 0 ),
-                                            'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ) )
-        storageElementsIn.append( SE )
+      #remove storageElements no more in the CS
+      for se in storageElementsIn:
+        if se not in SEs:
+          self.rsDB.removeStorageElement( storageElementName = se, access = access )
+
+      #Add new storage Elements
+      for SE in SEs:
+        srm = getSENodes( SE )[ 'Value' ][ 0 ]
+        if srm == None:
+          continue
+        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm )
+        if not siteInGOCDB[ 'OK' ]:
+          raise RSSException, siteInGOCDB[ 'Message' ]
+        if siteInGOCDB[ 'Value' ] == []:
+          continue
+        siteInGOCDB = siteInGOCDB[ 'Value' ][ 0 ][ 'SITENAME' ]
+
+        if SE not in storageElementsIn:
+          self.rsDB.addOrModifyStorageElement( SE, srm, siteInGOCDB, 'Active', 'init',
+                                               datetime.datetime.utcnow().replace( microsecond = 0 ),
+                                              'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ),
+                                               access = access )
+          storageElementsIn.append( SE )
 
 #############################################################################
 

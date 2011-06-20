@@ -22,10 +22,16 @@ class InfoGetter:
     :params:
       :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
     """
-    configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
-                              globals(), locals(), ['*'])
+    
+    module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
+    
+    try:
+      configModule = __import__( VOExtension + module, globals(), locals(), ['*'] )
+    except ImportError:
+      configModule = __import__( module, globals(), locals(), ['*'] )
 
-    self.C_Policies = copy.deepcopy(configModule.Policies)
+    self.C_Policies     = copy.deepcopy(configModule.Policies)
+    self.C_Policy_Types = copy.deepcopy(configModule.Policy_Types)
     self.C_views_panels = copy.deepcopy(configModule.views_panels)
 
 #############################################################################
@@ -54,10 +60,10 @@ class InfoGetter:
     EVAL = {}
 
     if 'policy' in args:
-      EVAL['Policies'] = self.__getPolToEval(granularity = granularity, status = status,
-                                             formerStatus = formerStatus, siteType = siteType,
-                                             serviceType = serviceType, resourceType = resourceType,
-                                             useNewRes = useNewRes)
+      EVAL['Policies'] = self.__getPolToEval( granularity = granularity, status = status,
+                                              formerStatus = formerStatus, siteType = siteType,
+                                              serviceType = serviceType, resourceType = resourceType,
+                                              useNewRes = useNewRes)
 
     if 'policyType' in args:
       EVAL['PolicyType'] = self.__getPolTypes(granularity = granularity, status = status,
@@ -113,12 +119,58 @@ class InfoGetter:
 
   def __getPolToEval(self, useNewRes = False, **kwargs):
 
-    pConfig = getTypedDict("Policies")
+#    pConfig = getTypedDict("Policies")
     pol_to_eval = []
 
-    for p in pConfig:
-      if dictMatch(kwargs, pConfig[p]):
+#    for p in pConfig:
+#      if dictMatch(kwargs, pConfig[p]):
+#        pol_to_eval.append(p)
+
+    granularity = kwargs[ 'granularity' ]
+    status      = kwargs[ 'status' ]
+    formerStatus      = kwargs[ 'formerStatus' ]
+    siteType = kwargs['siteType']
+    serviceType = kwargs['serviceType']
+    resourceType = kwargs['resourceType']
+    #panel_name = kwargs[ 'panel_name' ]
+    #useNewRes = kwargs[ 'useNewRes' ]
+
+    for p in self.C_Policies.keys():
+      if granularity in self.C_Policies[p]['Granularity']:
         pol_to_eval.append(p)
+        
+        if status is not None:
+          if status not in self.C_Policies[p]['Status']:
+            pol_to_eval.remove(p)
+        
+        if formerStatus is not None:
+          if formerStatus not in self.C_Policies[p]['FormerStatus']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if siteType is not None:
+          if siteType not in self.C_Policies[p]['SiteType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if serviceType is not None:
+          if serviceType not in self.C_Policies[p]['ServiceType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if resourceType is not None:
+          if resourceType not in self.C_Policies[p]['ResourceType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+
 
     polToEval_Args = []
 
@@ -160,13 +212,86 @@ class InfoGetter:
   def __getPolTypes(self, **kwargs):
     """Get Policy Types from config that match the given keyword
     arguments"""
-    pTconfig = getTypedDict("PolicyTypes")
 
-    pTypes = []
+#    pTconfig = getTypedDict("PolicyTypes")
 
-    for pt in pTconfig:
-      if dictMatch(kwargs, pTconfig[pt]):
-        pTypes.append(pt)
+    pTypes = []  
+    
+    try:
+      granularity = kwargs[ 'granularity' ]
+    except:
+      granularity = None
+    try:
+      status = kwargs[ 'status' ]
+    except:
+      status = None    
+    try:
+      newStatus = kwargs[ 'newStatus' ]
+    except:
+      newStatus = None    
+    try:
+      formerStatus      = kwargs[ 'formerStatus' ]
+    except:
+      formerStatus = None    
+    try:
+      siteType      = kwargs[ 'siteType' ]
+    except:
+      siteType = None    
+    try:
+      serviceType      = kwargs[ 'serviceType' ]
+    except:
+      serviceType = None    
+    try:
+      resourceType      = kwargs[ 'resourceType' ]
+    except:
+      resourceType = None    
+      
+    for pt in self.C_Policy_Types.keys():
+      if granularity in self.C_Policy_Types[pt]['Granularity']:
+        pTypes.append(pt)  
+    
+        if status is not None:
+          if status not in self.C_Policy_Types[pt]['Status']:
+            pTypes.remove(pt)
+        
+        if formerStatus is not None:
+          if formerStatus not in self.C_Policy_Types[pt]['FormerStatus']:
+            try:
+              pTypes.remove(pt)
+            except Exception:
+              continue
+            
+        if newStatus is not None:
+          if newStatus not in self.C_Policy_Types[pt]['NewStatus']:
+            try:
+              pTypes.remove(pt)
+            except Exception:
+              continue
+            
+        if siteType is not None:
+          if siteType not in self.C_Policy_Types[pt]['SiteType']:
+            try:
+              pTypes.remove(pt)
+            except Exception:
+              continue
+            
+        if serviceType is not None:
+          if serviceType not in self.C_Policy_Types[pt]['ServiceType']:
+            try:
+              pTypes.remove(pt)
+            except Exception:
+              continue
+            
+        if resourceType is not None:
+          if resourceType not in self.C_Policy_Types[pt]['ResourceType']:
+            try:
+              pTypes.remove(pt)
+            except Exception:
+              continue
+              
+#    for pt in pTconfig:
+#      if dictMatch(kwargs, pTconfig[pt]):
+#        pTypes.append(pt)
 
     for pt_name in pTypes:
       if 'Alarm_PolType' in pt_name:

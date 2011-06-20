@@ -10,7 +10,7 @@ import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import *
+from DIRAC.ResourceStatusSystem.Policy.Configurations import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 
 class UtilitiesTestCase(unittest.TestCase):
