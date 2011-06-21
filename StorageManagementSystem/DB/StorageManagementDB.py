@@ -777,7 +777,7 @@ class StorageManagementDB( DB ):
     # get only StageRequests with StageRequestSubmitTime older than 1 day AND are still not staged
     # delete these requests
     # reset Replicas with corresponding ReplicaIDs to Status='New'
-    req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted AND DATE_ADD( StageRequestSubmitTime, INTERVAL 1 DAY ) < NOW()';" % intListToString( replicaIDs ) #add condition forStageRequestSubmitTime
+    req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL 1 DAY ) < NOW();" % intListToString( replicaIDs )
     res = self._query( req )
     if not res['OK']:
       gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'wakeupOldRequests', reqSelect, resSelect['Message'] ) )

@@ -157,6 +157,9 @@ class StageRequestAgent( AgentModule ):
     # Check the integrity of the files to ensure they are available
     terminalReplicaIDs = {}
     gLogger.info( "StageRequest.__checkIntegrity: Checking the integrity of %s replicas at %s." % ( len( pfnRepIDs ), storageElement ) )
+    if len( pfnRepIDs ) == 0:
+      gLogger.info( "StageRequest.__checkIntegrity: No replicas to be checked" )
+      return S_OK( pfnRepIDs )
     res = self.replicaManager.getStorageFileMetadata( pfnRepIDs.keys(), storageElement )
     if not res['OK']:
       gLogger.error( "StageRequest.__checkIntegrity: Completely failed to obtain metadata for replicas.", res['Message'] )
