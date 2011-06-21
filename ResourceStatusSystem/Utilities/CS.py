@@ -6,14 +6,14 @@ from DIRAC import gConfig
 g_BaseRegistrySection   = "/Registry"
 g_BaseResourcesSection  = "/Resources"
 g_BaseOperationsSection = "/Operations"
+g_BaseConfigSection     = "/Operations/RSSConfiguration"
 
 class CSError(Exception):
   pass
 
-## Custom version of getOptionsDict. Returns a dict where values are
-## typed instead of a dict where values are strings.
-
-def getTypedDict(sectionPath, prefix = "/Operations/RSSConfiguration/"):
+def getTypedDict(sectionPath):
+  """Wrapper around gConfig.getOptionsDict. Returns a dict where
+  values are typed instead of a dict where values are strings."""
   def typed_dict_of_dict(d):
     for k in d:
       if type(d[k]) == dict:
@@ -25,9 +25,31 @@ def getTypedDict(sectionPath, prefix = "/Operations/RSSConfiguration/"):
           d[k] = Utils.typedobj_of_string(d[k])
     return d
 
-  res = gConfig.getOptionsDict(prefix + sectionPath)
+  res = gConfig.getOptionsDict(g_BaseConfigSection + "/" + sectionPath)
   if res['OK'] == False: raise CSError, res['Message']
   else:                  return typed_dict_of_dict(res['Value'])
+
+def getTypedDictRootedAt(relpath = "", root = ""):
+  """Gives the configuration rooted at path in a Python dict. The
+  result is a Python dictionnary that reflects the structure of the
+  config file."""
+  def getTypedDictRootedAt(path):
+    retval = {}
+    opts = gConfig.getOptions(path)
+    secs = gConfig.getSections(path)
+    for k in opts:
+      retval[k] = opts[k]
+    for i in secs:
+      retval[i] = getTypedDictRootedAt(path + "/" + i)
+    return retval
+
+  return getTypedDictRootedAt(root + "/" + relpath)
+
+def getPolicies():
+  """Return a dict that contains all the policies"""
+  pols = gConfig.getSections(g_BaseConfigSection + "/" + "Policies")['Value']
+  pols = [(p,getTypedDict("Policies" + "/" + p)) for p in pols]
+  return dict(pols)
 
 def getUserNames():
   return gConfig.getSections("%s/Users" % g_BaseRegistrySection)['Value']

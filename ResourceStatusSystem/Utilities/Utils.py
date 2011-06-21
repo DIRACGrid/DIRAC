@@ -122,6 +122,8 @@ def bool_of_string(s):
   else                      : raise ValueError, "Cannot convert %s to a boolean value" % s
 
 def typedobj_of_string(s):
+  if s == "":
+    return s
   try:
     return ast.literal_eval(s)
   except ValueError: # Probably it's just a string
