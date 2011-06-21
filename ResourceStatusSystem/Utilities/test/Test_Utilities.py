@@ -48,7 +48,7 @@ class UtilitiesTestCase(unittest.TestCase):
     self.p = Publisher(self.VO, rsDBIn = None, commandCallerIn = self.mockCC, infoGetterIn = self.mockIG,
                        WMSAdminIn = self.mockWMSA)
 
-    self.configModule = __import__(self.VO+"DIRAC.ResourceStatusSystem.Policy.Configurations",
+    self.configModule = __import__("LHCbDIRAC.ResourceStatusSystem.Policy.Configurations",
                                    globals(), locals(), ['*'])
 
     self.syncC = Synchronizer()
