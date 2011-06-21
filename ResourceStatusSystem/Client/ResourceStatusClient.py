@@ -4,6 +4,7 @@ ResourceStatusClient class is a client for requesting info from the ResourceStat
 # it crashes epydoc
 # __docformat__ = "restructuredtext en"
 
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where

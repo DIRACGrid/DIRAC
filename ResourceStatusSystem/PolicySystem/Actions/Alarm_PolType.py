@@ -14,7 +14,7 @@ def getUsersToNotifyShiftDB():
 
   lines = [ e for e in lines if e['Function'] == "Grid Expert" or e['Function'] == "Production" ]
   # Warning: The getMailForName function might not return what you
-  # want! There is no guarantee that it’s possible to correctly infer
+  # want! There is no guarantee that it's possible to correctly infer
   # mail from username, but it has been reported to work on some cases
   # :DD (Maybe use lxplus command "phonebook" ?)
   return  [ CS.getMailForName(e['Morning']) for e in lines ]

@@ -84,7 +84,9 @@ class InfoGetter:
           info = 'Service_VOMS_Panel'
       elif granularity in ('Resource', 'Resources'):
         info = 'Resource_Panel'
-      elif granularity in ('StorageElement', 'StorageElements'):
+      elif granularity in ('StorageElementRead', 'StorageElementsRead'):
+        info = 'SE_Panel'
+      elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
         info = 'SE_Panel'
       EVAL['Info'] = self.__getPanelsInfo(granularity = granularity, status = status,
                                           formerStatus = formerStatus, siteType = siteType,

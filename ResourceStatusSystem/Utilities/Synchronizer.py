@@ -487,8 +487,8 @@ class Synchronizer:
 
       #remove storageElements no more in the CS
       for se in storageElementsIn:
-        if se not in SEs:
-          self.rsDB.removeStorageElement( storageElementName = se, access = access )
+        if se not in SEs:  
+          self.rsDB.removeStorageElement( storageElementName = se, resourceName = None, access = access )
 
       #Add new storage Elements
       for SE in SEs:
