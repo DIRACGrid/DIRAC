@@ -16,8 +16,6 @@ from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes
 
-
-
 class Publisher:
   """
   Class Publisher is in charge of getting dispersed information, to be published on the web.
@@ -52,15 +50,18 @@ class Publisher:
     module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
     
     try:
-      configModule = __import__( VOExtension + module , globals(), locals(), ['*'])
+      self.configModule = __import__( VOExtension + module , globals(), locals(), ['*'] )
     except ImportError:
-      configModule = __import__( module , globals(), locals(), ['*'])
+      self.configModule = __import__( module , globals(), locals(), ['*'] )
 
     if rsDBIn is not None:
       self.rsDB = rsDBIn
     else:
       from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
       self.rsDB = ResourceStatusDB()
+
+    from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+    self.rmDB = ResourceManagementDB()
 
     if commandCallerIn is not None:
       self.cc = commandCallerIn
@@ -205,7 +206,7 @@ class Publisher:
 
     #get single RSS policy results
     policyResToGet = info.keys()[0]
-    pol_res = self.rsDB.getPolicyRes(nameForPanel, policyResToGet)
+    pol_res = self.rmDB.getPolicyRes(nameForPanel, policyResToGet)
     if pol_res != []:
       pol_res_dict = {'Status' : pol_res[0], 'Reason' : pol_res[1]}
     else:

@@ -126,22 +126,22 @@ class ResourceStatusDB:
   def getResourceStats(self, granularity, name):
     return []
     
-  def setStorageElementStatus(self, storageElementName, status, reason, tokenOwner):
+  def setStorageElementStatus(self, storageElementName, status, reason, tokenOwner, access):
     pass
 
   def addOrModifyStorageElement(self, storageElementName, resourceName, siteName, 
-                                status, reason, dateEffective, tokenOwner, dateEnd):
+                                status, reason, dateEffective, tokenOwner, dateEnd, access):
     pass
 
   def _addStorageElementRow(self, storageElementName, resourceName, siteName, status, 
-                            reason, dateCreated, dateEffective, dateEnd, tokenOwner):
+                            reason, dateCreated, dateEffective, dateEnd, tokenOwner, access):
     pass
 
   def _addStorageElementHistoryRow(self, storageElementName, resourceName, siteName,
-                                    status, reason, dateCreated, dateEffective, dateEnd, tokenOwner):
+                                    status, reason, dateCreated, dateEffective, dateEnd, tokenOwner, access):
     pass
 
-  def removeStorageElement(self, storageElementName = None, resourceName = None, siteName = None):
+  def removeStorageElement(self, storageElementName = None, resourceName = None, siteName = None, access = None):
     pass
 
   def removeRow(self, granularity, name, dateEffective):
