@@ -207,9 +207,11 @@ class PEP:
           ResourcePolTypeActions( self.__granularity, self.__name, resDecisions, res, rsDB, rmDB )
 
         if 'Alarm_PolType' in policyType:
-          AlarmPolTypeActions( self.__granularity, self.__name,
-                               self.__siteType, self.__serviceType, self.__resourceType,
-                               res, nc, setup, rsDB )
+          AlarmPolTypeActions(self.__name, res, nc, setup, rsDB,
+                              Granularity=self.__granularity,
+                              SiteType=self.__siteType,
+                              ServiceType=self.__serviceType,
+                              ResourceType=self.__resourceType)
 
         if 'RealBan_PolType' in policyType and self.__realBan == True:
           RealBanPolTypeActions( self.__granularity, self.__name, res, da, csAPI, setup )
