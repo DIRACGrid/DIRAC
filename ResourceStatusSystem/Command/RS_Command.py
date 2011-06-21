@@ -32,7 +32,7 @@ class RSPeriods_Command( Command ):
       self.client = ResourceStatusClient()
 
     try:
-      res = self.client.getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )
+      res = self.client.getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
     except:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
@@ -69,7 +69,7 @@ class ServiceStats_Command( Command ):
       self.client = ResourceStatusClient( timeout = self.timeout )
 
     try:
-      res = self.client.getServiceStats( self.args[0], self.args[1] )
+      res = self.client.getServiceStats( self.args[0], self.args[1] )['Value']
     except:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
@@ -106,7 +106,7 @@ class ResourceStats_Command( Command ):
       self.client = ResourceStatusClient( timeout = self.timeout )
 
     try:
-      res = self.client.getResourceStats( self.args[0], self.args[1] )
+      res = self.client.getResourceStats( self.args[0], self.args[1] )['Value']
     except:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
@@ -152,8 +152,8 @@ class StorageElementsStats_Command( Command ):
       self.client = ResourceStatusClient( timeout = self.timeout )
 
     try:
-      resR = self.client.getStorageElementsStats( granularity, name, 'Read' )
-      resW = self.client.getStorageElementsStats( granularity, name, 'Write' )
+      resR = self.client.getStorageElementsStats( granularity, name, 'Read' )['Value']
+      resW = self.client.getStorageElementsStats( granularity, name, 'Write' )['Value']
     except:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( granularity, name ) )
       return {'Result':'Unknown'}
@@ -200,12 +200,25 @@ class MonitoredStatus_Command( Command ):
       if len( self.args ) == 3:
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
           raise InvalidRes, where( self, self.doCommand )
-        toBeFound = self.client.getGeneralName( self.args[0], self.args[1], self.args[2] )[0]
+      
+        toBeFound = self.client.getGeneralName( self.args[0], self.args[1], self.args[2] )
+        if not toBeFound[ 'OK' ]:
+          return {'Result' : 'Unknown'}
+        toBeFound = toBeFound['Value']
+               
         statuses = self.client.getMonitoredStatus( self.args[2], toBeFound )
+        if not statuses['OK']:
+          return {'Result' : 'Unknown'}
+        statuses = statuses['Value']
+        
       else:
         toBeFound = self.args[1]
         statuses = self.client.getMonitoredStatus( self.args[0], toBeFound )
-
+        
+        if not statuses['OK']:
+          return {'Result' : 'Unknown'}
+        statuses = statuses['Value']
+        
       if not statuses:
         gLogger.warn( "No status found for %s" % toBeFound )
         return {'Result':'Unknown'}
@@ -218,6 +231,10 @@ class MonitoredStatus_Command( Command ):
       res = statuses[0]
     else:
       i = 0
+      
+      gLogger.info( ValidStatus )
+      gLogger.info( statuses )
+      
       for status in statuses:
         ind = ValidStatus.index( status )
         if ind > i:

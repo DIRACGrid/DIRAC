@@ -276,6 +276,9 @@ class TransferQualityFromCachedPlot_Command(Command):
     
     try:
       res = self.client.getCachedAccountingResult(name, plotType, plotName)
+
+      res = res[ 'Value' ]
+
       if res == []:
         return {'Result':None}
       res = eval(res[0])
