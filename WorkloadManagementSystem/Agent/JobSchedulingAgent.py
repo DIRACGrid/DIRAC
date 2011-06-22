@@ -376,7 +376,7 @@ class JobSchedulingAgent( OptimizerModule ):
       stageSEs = sorted( [ ( len( stageLfns[se] ), se ) for se in stageLfns.keys() ] )
       for lfn in stageSURLs:
         lfnFound = False
-        for ( se, numberOfLfns ) in reversed( stageSEs ):
+        for ( numberOfLfns, se ) in reversed( stageSEs ):
           if lfnFound and lfn in stageLfns[se]:
             stageLfns[se].remove( lfn )
           if lfn in stageLfns[se]:
