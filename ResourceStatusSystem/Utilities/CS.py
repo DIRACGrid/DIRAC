@@ -29,27 +29,24 @@ def getTypedDict(sectionPath):
   if res['OK'] == False: raise CSError, res['Message']
   else:                  return typed_dict_of_dict(res['Value'])
 
-def getTypedDictRootedAt(relpath = "", root = ""):
+def getTypedDictRootedAt(relpath = "", root = g_BaseConfigSection):
   """Gives the configuration rooted at path in a Python dict. The
   result is a Python dictionnary that reflects the structure of the
   config file."""
   def getTypedDictRootedAt(path):
     retval = {}
-    opts = gConfig.getOptions(path)
-    secs = gConfig.getSections(path)
+    opts = gConfig.getOptionsDict(path)['Value']
+    secs = gConfig.getSections(path)['Value']
     for k in opts:
-      retval[k] = opts[k]
+      if opts[k].find(",") > -1:
+        retval[k] = [Utils.typedobj_of_string(e) for e in List.fromChar(opts[k])]
+      else:
+        retval[k] = Utils.typedobj_of_string(opts[k])
     for i in secs:
       retval[i] = getTypedDictRootedAt(path + "/" + i)
     return retval
 
   return getTypedDictRootedAt(root + "/" + relpath)
-
-def getPolicies():
-  """Return a dict that contains all the policies"""
-  pols = gConfig.getSections(g_BaseConfigSection + "/" + "Policies")['Value']
-  pols = [(p,getTypedDict("Policies" + "/" + p)) for p in pols]
-  return dict(pols)
 
 def getUserNames():
   return gConfig.getSections("%s/Users" % g_BaseRegistrySection)['Value']
