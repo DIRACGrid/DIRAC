@@ -21,8 +21,8 @@ class AgentsTestCase( unittest.TestCase ):
     sys.modules["DIRAC.Interfaces.API.DiracAdmin"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ConfigurationSystem.Client.CSAPI"] = DIRAC.ResourceStatusSystem.test.fake_Logger
 
-    from DIRAC.ResourceStatusSystem.Agent.ClientsCacheFeeder import ClientsCacheFeeder
-    self.ccFeeder = ClientsCacheFeeder( "", "" )
+    from DIRAC.ResourceStatusSystem.Agent.ClientsCacheFeederAgent import ClientsCacheFeederAgent
+    self.ccFeeder = ClientsCacheFeederAgent( "", "" )
 
     from DIRAC.ResourceStatusSystem.Agent.CleanerAgent import CleanerAgent
     self.clAgent = CleanerAgent( "", "" )
@@ -39,9 +39,11 @@ class AgentsTestCase( unittest.TestCase ):
     from DIRAC.ResourceStatusSystem.Agent.SeSInspectorAgent import SeSInspectorAgent
     self.sesIAgent = SeSInspectorAgent( "", "" )
 
-    from DIRAC.ResourceStatusSystem.Agent.StElInspectorAgent import StElInspectorAgent
-    self.stelIAgent = StElInspectorAgent( "", "" )
+    from DIRAC.ResourceStatusSystem.Agent.StElReadInspectorAgent import StElReadInspectorAgent
+    self.stelReadIAgent = StElReadInspectorAgent( "", "" )
 
+    from DIRAC.ResourceStatusSystem.Agent.StElWriteInspectorAgent import StElWriteInspectorAgent
+    self.stelWriteIAgent = StElWriteInspectorAgent( "", "" )
 
 class ClientsCacheFeederSuccess( AgentsTestCase ):
 
@@ -110,18 +112,27 @@ class SeSInspectorSuccess( AgentsTestCase ):
     self.assert_( res['OK'] )
 
 
-class StElInspectorSuccess( AgentsTestCase ):
+class StElReadInspectorSuccess( AgentsTestCase ):
 
   def test_initialize( self ):
-    res = self.stelIAgent.initialize()
+    res = self.stelReadIAgent.initialize()
     self.assert_( res['OK'] )
 
   def test_execute( self ):
-    self.stelIAgent.initialize()
-    res = self.stelIAgent.execute()
+    self.stelReadIAgent.initialize()
+    res = self.stelReadIAgent.execute()
     self.assert_( res['OK'] )
 
+class StElWriteInspectorSuccess( AgentsTestCase ):
 
+  def test_initialize( self ):
+    res = self.stelWriteIAgent.initialize()
+    self.assert_( res['OK'] )
+
+  def test_execute( self ):
+    self.stelWriteIAgent.initialize()
+    res = self.stelWriteIAgent.execute()
+    self.assert_( res['OK'] )
 
 
 if __name__ == '__main__':
@@ -132,5 +143,6 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( RSInspectorSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SSInspectorSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SeSInspectorSuccess ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( StElInspectorSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( StElReadInspectorSuccess ) )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( StElReadInspectorSuccess ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
