@@ -3,13 +3,16 @@ import unittest
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
-from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Utilities.mock                  import Mock
+from DIRAC.ResourceStatusSystem.Client.JobsClient               import JobsClient
+from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+
+from DIRAC.ResourceStatusSystem.Utilities                       import CS
+
+ValidRes = CS.getTypedDictRootedAt("GeneralConfig")['Resource']
+ValidStatus = CS.getTypedDictRootedAt("GeneralConfig")['Status']
 
 #############################################################################
 
@@ -50,9 +53,9 @@ class ResourceStatusClientSuccess( ClientsTestCase ):
 
   def test_getStorageElementsStats( self ):
     self.mockRSS.getStorageElementsStats.return_value = {'OK':True, 'Value':[]}
-    res = self.RSCli.getStorageElementsStats( 'Site', '' )
+    res = self.RSCli.getStorageElementsStats( 'Site', '', "Read" )
     self.assertEqual( res, [] )
-    res = self.RSCli.getStorageElementsStats( 'Resource', '' )
+    res = self.RSCli.getStorageElementsStats( 'Resource', '', "Read")
     self.assertEqual( res, [] )
 
   def test_getMonitoredStatus( self ):
