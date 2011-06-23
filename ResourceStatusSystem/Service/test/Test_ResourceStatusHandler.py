@@ -155,34 +155,51 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_setStorageElementStatus(self):
     for status in ValidStatus:
-      res = self.rsh.export_setStorageElementStatus('XX', status, 'reason', 'Op')
+      res = self.rsh.export_setStorageElementStatus('XX', status, 'reason', 'Op', "Read")
+      self.assert_(res['OK'])
+      res = self.rsh.export_setStorageElementStatus('XX', status, 'reason', 'Op', "Write")
       self.assert_(res['OK'])
 
   def test_export_addOrModifyStorageElement(self):
     for status in ValidStatus:
-      res = self.rsh.export_addOrModifyStorageElement('XX', 'XX', 'XX', status, 'reason', 'dateEffective', 'OP', '')
+      res = self.rsh.export_addOrModifyStorageElement('XX', 'XX', 'XX', status, 'reason', 'dateEffective', 'OP', '', "Read")
+      self.assert_(res['OK'])
+      res = self.rsh.export_addOrModifyStorageElement('XX', 'XX', 'XX', status, 'reason', 'dateEffective', 'OP', '', "Write")
       self.assert_(res['OK'])
 
   def test_export_removeStorageElement(self):
-    res = self.rsh.export_removeStorageElement('')
+    res = self.rsh.export_removeStorageElement('', "Read")
+    self.assert_(res['OK'])
+    res = self.rsh.export_removeStorageElement('', "Write")
     self.assert_(res['OK'])
 
   def test_export_getStorageElementsHistory(self):
-    res = self.rsh.export_getStorageElementsHistory('')
+    res = self.rsh.export_getStorageElementsHistory('', "Read")
+    self.assert_(res['OK'])
+    res = self.rsh.export_getStorageElementsHistory('', "Write")
     self.assert_(res['OK'])
 
+
   def test_export_getStorageElementsList(self):
-    res = self.rsh.export_getStorageElementsList()
+    res = self.rsh.export_getStorageElementsList("Read")
+    self.assert_(res['OK'])
+    res = self.rsh.export_getStorageElementsList("Write")
     self.assert_(res['OK'])
 
   def test_export_getStorageElementsStatusWeb(self):
-    res = self.rsh.export_getStorageElementsStatusWeb({}, [], 0, 500)
+    res = self.rsh.export_getStorageElementsStatusWeb({}, [], 0, 500, "Read")
+    self.assert_(res['OK'])
+    res = self.rsh.export_getStorageElementsStatusWeb({}, [], 0, 500, "Write")
     self.assert_(res['OK'])
 
   def test_export_getStorageElementsStats(self):
-    res = self.rsh.export_getStorageElementsStats('Service', 'ZZ')
+    res = self.rsh.export_getStorageElementsStats('Service', 'ZZ', "Read")
     self.assert_(res['OK'])
-    res = self.rsh.export_getStorageElementsStats('Resource', 'ZZ')
+    res = self.rsh.export_getStorageElementsStats('Resource', 'ZZ', "Read")
+    self.assert_(res['OK'])
+    res = self.rsh.export_getStorageElementsStats('Service', 'ZZ', "Write")
+    self.assert_(res['OK'])
+    res = self.rsh.export_getStorageElementsStats('Resource', 'ZZ', "Write")
     self.assert_(res['OK'])
 
 
