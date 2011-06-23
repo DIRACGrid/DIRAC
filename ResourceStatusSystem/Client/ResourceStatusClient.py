@@ -286,7 +286,7 @@ class ResourceStatusClient:
       
     res = self.rsS.getStorageElement( name, access )
     if not res['OK'] or not res['Value']:
-      raise RSSException, where( self, self.getStorateElement ) + " " + res[ 'Message' ]
+      raise RSSException, where( self, self.getStorageElement ) + " " + res[ 'Message' ]
   
     #if res['Value']:
     return S_OK( res[ 'Value' ][ 0 ] )
