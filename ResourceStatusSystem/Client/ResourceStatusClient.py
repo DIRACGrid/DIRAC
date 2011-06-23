@@ -285,17 +285,24 @@ class ResourceStatusClient:
   def getStorageElement( self, name, access ):
       
     res = self.rsS.getStorageElement( name, access )
-    if not res['OK'] or not res['Value']:
+    if not res['OK']:
       raise RSSException, where( self, self.getStorageElement ) + " " + res[ 'Message' ]
   
-    #if res['Value']:
-    return S_OK( res[ 'Value' ][ 0 ] )
-  
-    #else:
-    #  return S_ERROR( 'Unknown SE' )
-  
-#    return res  
+    if res['Value']:
+      return S_OK( res[ 'Value' ][ 0 ] )
+    else:
+      return S_ERROR( 'Unknown SE' )
 
+#############################################################################
+  
+  def setStorageElementStatus( self, name, status, reason, token, access ):
+     
+    res = self.rsS.setStorageElementStatus( name, status, reason, token, access )      
+    if not res['OK']:
+      raise RSSException, where( self, self.setStorageElementStatus ) + " " + res[ 'Message' ]
+  
+    return S_OK()
+  
 #############################################################################
 
 #  def updateStorageElement( self, name , access, status ):
@@ -314,7 +321,6 @@ class ResourceStatusClient:
 
     if res['Value']:
       return S_OK( res[ 'Value' ][ 0 ] )
-  
     else:
       return S_ERROR( 'Unknown Resource' )
 
@@ -329,7 +335,6 @@ class ResourceStatusClient:
  
     if res['Value']:
       return S_OK( res[ 'Value' ][ 0 ] )
-  
     else:
       return S_ERROR( 'Unknown Service' )
  
