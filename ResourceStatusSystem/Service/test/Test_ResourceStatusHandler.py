@@ -193,11 +193,11 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     self.assert_(res['OK'])
 
   def test_export_getStorageElementsStats(self):
-    res = self.rsh.export_getStorageElementsStats('Service', 'ZZ', "Read")
+    res = self.rsh.export_getStorageElementsStats('Site', 'ZZ', "Read")
     self.assert_(res['OK'])
     res = self.rsh.export_getStorageElementsStats('Resource', 'ZZ', "Read")
     self.assert_(res['OK'])
-    res = self.rsh.export_getStorageElementsStats('Service', 'ZZ', "Write")
+    res = self.rsh.export_getStorageElementsStats('Site', 'ZZ', "Write")
     self.assert_(res['OK'])
     res = self.rsh.export_getStorageElementsStats('Resource', 'ZZ', "Write")
     self.assert_(res['OK'])

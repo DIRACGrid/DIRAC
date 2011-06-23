@@ -1520,7 +1520,7 @@ class ResourceStatusHandler( RequestHandler ):
         gLogger.error( whoRaised( x ) )
 
       gLogger.info( "StorageElementsStatusHandler.getStorageElementsStats: got storageElements stats" )
-      return S_OK( res )
+      return S_OK(res)
 
     except Exception:
       errorStr = where( self, self.export_getStorageElementsStats )
