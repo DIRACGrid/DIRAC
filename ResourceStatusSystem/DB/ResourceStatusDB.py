@@ -286,7 +286,7 @@ class ResourceStatusDB:
         storageElementName = [ x[0] for x in resQuery[ 'Value' ] ]
         storageElementName = ','.join( [ '"'+x.strip()+'"' for x in storageElementName ] )
       else:
-        if type( storageElementName ) is not type( [] ):
+        if type( storageElementName ) != list:
           storageElementName = [ storageElementName ]
         storageElementName = ','.join( [ '"'+x.strip()+'"' for x in storageElementName ] )
 
@@ -334,8 +334,8 @@ class ResourceStatusDB:
     if countries == None:
       countries = " '%%'"
     else:
-      str = ' OR %s LIKE ' %DBname
-      countries = str.join( [ '"%.'+x.strip()+'"' for x in countries ] )
+      str_ = ' OR %s LIKE ' %DBname
+      countries = str_.join( [ '"%.'+x.strip()+'"' for x in countries ] )
 
 
     #storageElementType
@@ -391,14 +391,14 @@ class ResourceStatusDB:
       raise RSSDBException, where( self, self.getMonitoredsList ) + resQuery[ 'Message' ]
     if not resQuery[ 'Value' ]:
       return []
-    list = []
-    list = [ x for x in resQuery[ 'Value' ] ]
-    return list
+    list_ = []
+    list_ = [ x for x in resQuery[ 'Value' ] ]
+    return list_
 
 
 #############################################################################
 
-  def getMonitoredsStatusWeb( self, granularity, selectDict, sortList, startItem, maxItems ):
+  def getMonitoredsStatusWeb( self, granularity, selectDict, _sortList, startItem, maxItems ):
     """
     Get present sites status list, for the web.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
@@ -635,7 +635,7 @@ class ResourceStatusDB:
           record   = []
           gridType = ( site[ 0 ] ).split( '.' ).pop(0)
           country  = ( site[ 0 ] ).split( '.' ).pop()
-          
+
           record.append( site[ 0 ] ) #SiteName
           record.append( site[ 1 ] ) #Tier
           record.append( gridType ) #GridType
@@ -658,7 +658,7 @@ class ResourceStatusDB:
         for service in servicesList:
           record  = []
           country = ( service[ 0 ] ).split( '.' ).pop()
-          
+
           record.append( service[ 0 ] ) #ServiceName
           record.append( service[ 1 ] ) #ServiceType
           record.append( service[ 2 ] ) #Site
@@ -674,12 +674,12 @@ class ResourceStatusDB:
           sites_select = self.getMonitoredsList( 'Site',
                                                  paramsList = [ 'SiteName' ] )
           sites_select = [ x[ 0 ] for x in sites_select ]
-          
+
         gridSites_select = self.getMonitoredsList( 'Site',
                                                    paramsList = [ 'GridSiteName' ],
                                                    siteName = sites_select )
         gridSites_select = [ x[ 0 ] for x in gridSites_select ]
-        
+
         resourcesList = self.getMonitoredsList( granularity,
                                                 paramsList = paramsList,
                                                 resourceName = resources_select,
@@ -703,10 +703,10 @@ class ResourceStatusDB:
               if DIRACsite not in sites_select:
                 continue
               DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
-              
+
             record  = []
             country = ( resource[ 0 ] ).split( '.' ).pop()
-            
+
             record.append( resource[ 0 ] ) #ResourceName
             record.append( resource[ 1 ] ) #ServiceType
             record.append( DIRACsite_comp ) #SiteName
@@ -723,7 +723,7 @@ class ResourceStatusDB:
               continue
             record  = []
             country = ( resource[ 0 ] ).split( '.' ).pop()
-            
+
             record.append( resource[ 0 ] ) #ResourceName
             record.append( resource[ 1 ] ) #ServiceType
             record.append( DIRACsite ) #SiteName
@@ -741,7 +741,7 @@ class ResourceStatusDB:
           sites_select = self.getMonitoredsList( 'Site',
                                                 paramsList = [ 'SiteName' ] )
           sites_select = [ x[ 0 ] for x in sites_select ]
-          
+
         gridSites_select = self.getMonitoredsList( 'Site',
                                                    paramsList = [ 'GridSiteName' ],
                                                    siteName = sites_select )
@@ -771,7 +771,7 @@ class ResourceStatusDB:
             DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
           record  = []
           country = ( storageElement[ 1 ] ).split( '.' ).pop()
-          
+
           record.append( storageElement[ 0 ] ) #StorageElementName
           record.append( storageElement[ 1 ] ) #ResourceName
           record.append( DIRACsite_comp ) #SiteName
@@ -787,7 +787,7 @@ class ResourceStatusDB:
           sites_select = self.getMonitoredsList( 'Site',
                                                  paramsList = ['SiteName'] )
           sites_select = [ x[ 0 ] for x in sites_select ]
-          
+
         gridSites_select = self.getMonitoredsList( 'Site',
                                                    paramsList = [ 'GridSiteName' ],
                                                    siteName = sites_select )
@@ -815,10 +815,10 @@ class ResourceStatusDB:
             if DIRACsite not in sites_select:
               continue
             DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
-          
+
           record  = []
           country = ( storageElement[ 1 ] ).split( '.' ).pop()
-          
+
           record.append( storageElement[ 0 ] ) #StorageElementName
           record.append( storageElement[ 1 ] ) #ResourceName
           record.append( DIRACsite_comp ) #SiteName
@@ -948,11 +948,11 @@ class ResourceStatusDB:
       list_p = []
       list_p = [ x for x in resQuery[ 'Value' ] ]
 
-      list = list_h + list_p
+      list_ = list_h + list_p
     else:
-      list = list_h
+      list_ = list_h
 
-    return list
+    return list_
 
 #############################################################################
 
@@ -1428,13 +1428,13 @@ class ResourceStatusDB:
   def getResources( self, resourceName = None, resourceType = None, serviceType = None,
                     siteName = None, gridSiteName = None, status = None, reason = None,
                     tokenOwner = None ):
-    
+
     req  = "SELECT ResourceName, ResourceType, ServiceType, SiteName, GridSiteName, Status, Reason, TokenOwner"
     req += " FROM Resources"
-    
+
     whereConds = []
     if resourceName is not None:
-      whereConds.append( " ResourceName = '%s'" % resourceName )    
+      whereConds.append( " ResourceName = '%s'" % resourceName )
     if resourceType is not None:
       whereConds.append( " ResourceType = '%s'" % resourceType )
     if serviceType is not None:
@@ -1444,23 +1444,23 @@ class ResourceStatusDB:
     if gridSiteName is not None:
       whereConds.append( " GridSiteName = '%s'" % gridSiteName )
     if status is not None:
-      whereConds.append( " Status = '%s'" % status )      
+      whereConds.append( " Status = '%s'" % status )
     if reason is not None:
       whereConds.append( " Reason = '%s'" % reason )
     if tokenOwner is not None:
       whereConds.append( " TokenOwner = '%s'" % tokenOwner )
-      
-    if whereConds:  
-      req += " WHERE " + " AND".join( whereConds )#.replace( " AND", ",", len( whereConds ) - 2 )    
-        
+
+    if whereConds:
+      req += " WHERE " + " AND".join( whereConds )#.replace( " AND", ",", len( whereConds ) - 2 )
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getResources) + resQuery['Message']
     if not resQuery['Value']:
       return []
-    
+
     return resQuery['Value']
-  
+
   def setResourceStatus( self, resourceName, status, reason, tokenOwner ):
 
     """
@@ -1911,7 +1911,7 @@ class ResourceStatusDB:
     elif access == 'Write':
       SEtable = 'StorageElementsWrite'
     else:
-      raise RSSException, where( self, self.getStorageElementsStats ) + 'Invalid access mode'  
+      raise RSSException, where( self, self.getStorageElementsStats ) + 'Invalid access mode'
 
     res = {'Active':0, 'Probing':0, 'Bad':0, 'Banned':0, 'Total':0}
 
@@ -1954,7 +1954,7 @@ class ResourceStatusDB:
       :attr:`reason`: string
 
       :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
-      
+
       :attr:`access`: string Read or Write
     """
 
@@ -1963,7 +1963,7 @@ class ResourceStatusDB:
     elif access == 'Write':
       SEtable = 'StorageElementsWrite'
     else:
-      raise RSSException, where( self, self.setStorageElementsStats ) + 'Invalid access mode'  
+      raise RSSException, where( self, self.setStorageElementStatus ) + 'Invalid access mode'
 
     req = "SELECT ResourceName, GridSiteName FROM %s WHERE StorageElementName = " % SEtable
     req = req + "'%s' AND DateEffective < UTC_TIMESTAMP();" %( storageElementName )
@@ -2007,7 +2007,7 @@ class ResourceStatusDB:
 
       :attr:`dateEnd`: datetime.datetime -
       date from which the storageElement status ends to be effective
-      
+
       :attr:`access`: string - Read or Write
     """
 
@@ -2018,7 +2018,7 @@ class ResourceStatusDB:
       SEtable = 'StorageElementsWrite'
       granularity = 'StorageElementWrite'
     else:
-      raise RSSException, where( self, self.addOrModifyStorageElement ) + 'Invalid access mode'  
+      raise RSSException, where( self, self.addOrModifyStorageElement ) + 'Invalid access mode'
 
     dateCreated, dateEffective = self.__addOrModifyInit( dateEffective, dateEnd, status )
 
@@ -2079,7 +2079,7 @@ class ResourceStatusDB:
       ends to be effective
 
       :attr:`tokenOwner`: string - free
-      
+
       :attr:`access`: string - Read or Write
     """
 
@@ -2088,7 +2088,7 @@ class ResourceStatusDB:
     elif access == 'Write':
       SEtable = 'StorageElementsWrite'
     else:
-      raise RSSException, where( self, self._addStorageElementRow ) + 'Invalid access mode'  
+      raise RSSException, where( self, self._addStorageElementRow ) + 'Invalid access mode'
 
     dateCreated, dateEffective, dateEnd = self.__usualChecks( dateCreated, dateEffective, dateEnd, status )
 
@@ -2134,7 +2134,7 @@ class ResourceStatusDB:
       date from which the storageElement status ends to be effective
 
       :attr:`tokenOwner`: string - free
-      
+
       :attr:`access`: string - Read or Write
     """
 
@@ -2143,7 +2143,7 @@ class ResourceStatusDB:
     elif access == 'Write':
       SEtable = 'StorageElementsWriteHistory'
     else:
-      raise RSSException, where( self, self._addStorageElementHistoryRow ) + 'Invalid access mode'  
+      raise RSSException, where( self, self._addStorageElementHistoryRow ) + 'Invalid access mode'
 
     dateCreated, dateEffective, dateEnd = self.__usualChecks( dateCreated, dateEffective, dateEnd, status )
 
@@ -2169,7 +2169,7 @@ class ResourceStatusDB:
       :attr:`storageElementName`: string
 
       :attr:`resourceName`: string
-      
+
       :attr:`access`: string - Read or Write
     """
 
@@ -2178,7 +2178,7 @@ class ResourceStatusDB:
     elif access == 'Write':
       SEtable = 'StorageElementsWrite'
     else:
-      raise RSSException, where( self, self.removeStorageElement ) + 'Invalid access mode'  
+      raise RSSException, where( self, self.removeStorageElement ) + 'Invalid access mode'
 
     if storageElementName != None:
       req = "DELETE from %s " % SEtable
@@ -2207,7 +2207,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def addType( self, granularity, type, description = '' ):
+  def addType( self, granularity, type_, description = '' ):
     """
     Add a site, service or resource type
     (T1, Computing, CE (different types also), SE, ...)
@@ -2223,7 +2223,7 @@ class ResourceStatusDB:
     DBtype, DBtable = self.__DBchoiceType( granularity )
 
     req = "INSERT INTO %s (%s, Description)" %( DBtable, DBtype )
-    req = req + "VALUES ('%s', '%s');" % ( type, description )
+    req = req + "VALUES ('%s', '%s');" % ( type_, description )
 
     resUpdate = self.db._update( req )
     if not resUpdate[ 'OK' ]:
@@ -2324,9 +2324,9 @@ class ResourceStatusDB:
       raise RSSDBException, where( self, self.getMonitoredsList )+resQuery[ 'Message' ]
     if not resQuery[ 'Value' ]:
       return []
-    list = []
-    list = [ x for x in resQuery[ 'Value' ] ]
-    return list
+    list_ = []
+    list_ = [ x for x in resQuery[ 'Value' ] ]
+    return list_
 
 ##############################################################################
 
@@ -2358,7 +2358,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getTypesList( self, granularity, type=None ):
+  def getTypesList( self, granularity, type_=None ):
     """
     Get list of site, resource, service types with description
 
@@ -2368,11 +2368,11 @@ class ResourceStatusDB:
 
     DBtype, DBtable = self.__DBchoiceType(granularity)
 
-    if type == None:
+    if type_ == None:
       req = "SELECT %s FROM %s" %( DBtype, DBtable )
     else:
       req = "SELECT %s, Description FROM %s " %( DBtype, DBtable )
-      req = req + "WHERE %s = '%s'" % ( DBtype, type )
+      req = req + "WHERE %s = '%s'" % ( DBtype, type_ )
 
     resQuery = self.db._query( req )
     if not resQuery[ 'OK' ]:
@@ -2385,7 +2385,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def removeType( self, granularity, type ):
+  def removeType( self, granularity, type_ ):
     """
     Remove a type from the DB
 
@@ -2395,7 +2395,7 @@ class ResourceStatusDB:
 
     DBtype, DBtable = self.__DBchoiceType( granularity )
 
-    req = "DELETE from %s WHERE %s = '%s';" % ( DBtable, DBtype, type )
+    req = "DELETE from %s WHERE %s = '%s';" % ( DBtable, DBtype, type_ )
     resDel = self.db._update( req )
     if not resDel[ 'OK' ]:
       raise RSSDBException, where( self, self.removeType ) + resDel[ 'Message' ]
@@ -2477,6 +2477,8 @@ class ResourceStatusDB:
 
         if to_g in ( 'Service', 'Services' ):
           serviceType = 'Storage'
+    else:
+      raise ValueError
 
     resQuery = self.db._query( req )
     if not resQuery[ 'OK' ]:
@@ -2536,9 +2538,9 @@ class ResourceStatusDB:
       if not resQuery[ 'OK' ]:
         raise RSSDBException, where( self, self.getEndings ) + resQuery[ 'Message' ]
       else:
-        list = []
-        list = [ int(x[0]) for x in resQuery['Value'] ]
-        return list
+        list_ = []
+        list_ = [ int(x[0]) for x in resQuery['Value'] ]
+        return list_
 
 
 #############################################################################
@@ -2574,9 +2576,9 @@ class ResourceStatusDB:
       req = "SELECT DateEffective FROM Services WHERE ServiceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
     elif granularity in ( 'Resource', 'Resources' ):
       req = "SELECT DateEffective FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
-    elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):     
+    elif granularity in ( 'StorageElementRead', 'StorageElementsRead' ):
       req = "SELECT DateEffective FROM StorageElementsRead WHERE StorageElementName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
-    elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):     
+    elif granularity in ( 'StorageElementWrite', 'StorageElementsWrite' ):
       req = "SELECT DateEffective FROM StorageElementsWrite WHERE StorageElementName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %( name, status )
 
     resQuery = self.db._query( req )
@@ -2717,7 +2719,7 @@ class ResourceStatusDB:
         req = req + "DateEffective, DateEnd, TokenOwner from Sites "
         req = req + "WHERE (SiteName='%s' AND DateEffective < '%s');" % ( args[ 1 ], args[ 2 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
@@ -2739,12 +2741,12 @@ class ResourceStatusDB:
         req = req + "DateEffective, DateEnd, TokenOwner from Sites "
         req = req + "WHERE (SiteID='%s');" % ( args[ 1 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         siteName         = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldStatus        = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldReason        = resQuery[ 'Value' ][ 0 ][ 2 ]
@@ -2766,12 +2768,12 @@ class ResourceStatusDB:
         req = req + "DateEffective, DateEnd, TokenOwner from Services "
         req = req + "WHERE (ServiceName='%s' AND DateEffective < '%s');" % ( args[ 1 ], args[ 2 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
@@ -2790,12 +2792,12 @@ class ResourceStatusDB:
         req = req + "DateEffective, DateEnd, TokenOwner from Services "
         req = req + "WHERE (ServiceID='%s');" % ( args[ 1 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         serviceName      = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldStatus        = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldReason        = resQuery[ 'Value' ][ 0 ][ 2 ]
@@ -2817,18 +2819,18 @@ class ResourceStatusDB:
         req = req + "DateEffective, DateEnd, TokenOwner from Resources "
         req = req + "WHERE (ResourceName='%s' AND DateEffective < '%s' );" % ( args[ 1 ], args[ 2 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
         oldDateEffective = resQuery[ 'Value' ][ 0 ][ 3 ]
         oldDateEnd       = resQuery[ 'Value' ][ 0 ][ 4 ]
-        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 5 ] 
+        oldTokenOwner    = resQuery[ 'Value' ][ 0 ][ 5 ]
 
         self._addResourcesHistoryRow( args[ 1 ], oldStatus, oldReason,
                                       oldDateCreated, oldDateEffective, oldDateEnd,
@@ -2840,12 +2842,12 @@ class ResourceStatusDB:
         req = req + "DateEffective, DateEnd, TokenOwner from Resources "
         req = req + "WHERE (ResourceID='%s');" % ( args[ 1 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         resourceName     = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldStatus        = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldReason        = resQuery[ 'Value' ][ 0 ][ 2 ]
@@ -2866,12 +2868,12 @@ class ResourceStatusDB:
         req = req + "DateEffective, DateEnd, TokenOwner from StorageElementsRead "
         req = req + "WHERE (StorageElementName='%s' AND DateEffective < '%s' );" % ( args[ 1 ], args[ 2 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
@@ -2889,12 +2891,12 @@ class ResourceStatusDB:
         req = req + "DateCreated, DateEffective, DateEnd, TokenOwner from StorageElementsRead "
         req = req + "WHERE (StorageElementID='%s');" % ( args[ 1 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         storageElementName = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldStatus          = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldReason          = resQuery[ 'Value' ][ 0 ][ 2 ]
@@ -2914,12 +2916,12 @@ class ResourceStatusDB:
         req = req + "DateEffective, DateEnd, TokenOwner from StorageElementsWrite "
         req = req + "WHERE (StorageElementName='%s' AND DateEffective < '%s' );" % ( args[ 1 ], args[ 2 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         oldStatus        = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldReason        = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldDateCreated   = resQuery[ 'Value' ][ 0 ][ 2 ]
@@ -2937,12 +2939,12 @@ class ResourceStatusDB:
         req = req + "DateCreated, DateEffective, DateEnd, TokenOwner from StorageElementsWrite "
         req = req + "WHERE (StorageElementID='%s');" % ( args[ 1 ] )
         resQuery = self.db._query( req )
-        
+
         if not resQuery[ 'OK' ]:
           raise RSSDBException, where( self, self.transact2History ) + resQuery[ 'Message' ]
         if not resQuery[ 'Value' ]:
           return None
-        
+
         storageElementName = resQuery[ 'Value' ][ 0 ][ 0 ]
         oldStatus          = resQuery[ 'Value' ][ 0 ][ 1 ]
         oldReason          = resQuery[ 'Value' ][ 0 ][ 2 ]
@@ -3364,7 +3366,7 @@ class ResourceStatusDB:
       DBname  = 'StorageElementName'
     elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
       DBtable = 'StorageElementsWrite'
-      DBname  = 'StorageElementName'  
+      DBname  = 'StorageElementName'
 #    elif granularity in ('Cache', 'ClientsCache', 'ClientCache'):
 #      DBtable = 'ClientsCache'
 #      DBname = 'Name'

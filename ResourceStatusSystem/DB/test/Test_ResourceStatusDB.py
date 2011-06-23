@@ -9,10 +9,10 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes,ValidStatus
-from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes,ValidStatus,ValidSiteType
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus
+from DIRAC.ResourceStatusSystem.Utilities import CS
 import DIRAC.ResourceStatusSystem.test.fake_Logger
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 
 class ResourceStatusDBTestCase(unittest.TestCase):
   """ Base class for the ResourceStatusDB test cases
@@ -29,10 +29,6 @@ class ResourceStatusDBTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-
-    from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
-   #from DIRAC.ResourceStatusSystem.DB.test.FakeResourceStatusDB import FakeResourceStatusDB
-
     from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
 
     # setting mock interface
@@ -135,30 +131,30 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   ###############################
 
   def test__addStorageElementRow(self):
-    res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', 'Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
+    res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', 'Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico', "Read")
     self.assertEqual(res, None)
-    res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', None, 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
+    res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', None, 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico', "Read")
     self.assertEqual(res, None)
-    res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', 'NULL', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
+    res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', 'NULL', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico', "Read")
     self.assertEqual(res, None)
 
   def test__addStorageElementHistoryRow(self):
-    res = self.rsDB._addStorageElementHistoryRow('xxx', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
+    res = self.rsDB._addStorageElementHistoryRow('xxx', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico', "Read")
     self.assertEqual(res, None)
 
   def test_setStorageElementStatus(self):
-    res = self.rsDB.setStorageElementStatus('SE', 'Active', 'reasons', 'Federico')
+    res = self.rsDB.setStorageElementStatus('SE', 'Active', 'reasons', 'Federico', "Read")
     self.assertEqual(res, None)
 
   def test_addOrModifyStorageElement(self):
     for status in ValidStatus:
-      res = self.rsDB.addOrModifyStorageElement('se', 'xxx.Ferrara.it', 'CNAF', status, 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() + datetime.timedelta(minutes=10))
+      res = self.rsDB.addOrModifyStorageElement('se', 'xxx.Ferrara.it', 'CNAF', status, 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() + datetime.timedelta(minutes=10), "Read")
       self.assertEqual(res, None)
 
   def test_removeStorageElement(self):
-    res = self.rsDB.removeStorageElement('XX')
+    res = self.rsDB.removeStorageElement('XX', None, "Read")
     self.assertEqual(res, None)
-    res = self.rsDB.removeStorageElement('XX', 'XX')
+    res = self.rsDB.removeStorageElement('XX', 'XX', "Read")
     self.assertEqual(res, None)
 
   ##########################
@@ -215,9 +211,9 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getMonitoredsList('Resource', paramsList = ['ResourceName', 'Status'], siteName = ['xx', 'ss'], status = ['xx'], resourceType = ['xx', 'cc'], countries = 'a')
     self.assertEqual(res, [])
 
-    res = self.rsDB.getMonitoredsList('StorageElement', storageElementName = ['CNAF', 'Ferrara'], countries = 'a')
+    res = self.rsDB.getMonitoredsList('StorageElementRead', storageElementName = ['CNAF', 'Ferrara'], countries = 'a')
     self.assertEqual(res, [])
-    res = self.rsDB.getMonitoredsList('StorageElement', paramsList = ['ResourceName', 'Status'], storageElementName = ['xx', 'ss'], status = ['xx'], resourceType = ['xx', 'cc'], countries = 'a')
+    res = self.rsDB.getMonitoredsList('StorageElementRead', paramsList = ['ResourceName', 'Status'], storageElementName = ['xx', 'ss'], status = ['xx'], resourceType = ['xx', 'cc'], countries = 'a')
     self.assertEqual(res, [])
 
 
@@ -363,13 +359,13 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 #        ((datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54)), (datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime.datetime.datetime(2009, 9, 22, 7, 8, 4)), (datetime.datetime.datetime.datetime(2009, 9, 22, 7, 8, 4), datetime.datetime.datetime.datetime(2009, 9, 22, 10, 48, 26)), (datetime.datetime.datetime.datetime(2009, 9, 22, 10, 48, 26), datetime.datetime.datetime.datetime(2009, 9, 24, 12, 12, 33)), (datetime.datetime.datetime.datetime(2009, 9, 24, 12, 12, 33), datetime.datetime.datetime.datetime(2009, 9, 24, 13, 5, 41)))
 
   def test_getGeneralName(self):
-    for g1 in ('Service', 'Resource', 'StorageElement'):
+    for g1 in ('Service', 'Resource', 'StorageElementRead', 'StorageElementWrite'):
       for g2 in ('Site', 'Service', 'Resource'):
         if g1 == g2:
           continue
         res = self.rsDB_1.getGeneralName('XX', g1, g2)
         if g2 == 'Service':
-          if g1 == 'StorageElement':
+          if g1 == 'StorageElementRead' or g1 == 'StorageElementWrite':
             self.assertEqual(res, ['Storage@VOMS'])
           else:
             self.assertEqual(res, ['VOMS@VOMS'])
@@ -389,17 +385,17 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
 
   def test_getStorageElementsStats(self):
-    res = self.rsDB.getStorageElementsStats('Resource', 'XX')
+    res = self.rsDB.getStorageElementsStats('Resource', 'XX', "Read")
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
-    res = self.rsDB.getStorageElementsStats('Site', 'XX')
+    res = self.rsDB.getStorageElementsStats('Site', 'XX', "Read")
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
 
 
   def test_getStuffToCheck(self):
     for g in ValidRes:
-      res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq,3)
+      res = self.rsDB.getStuffToCheck(g,CS.getTypedDictRootedAt("CheckingFreqs/SitesFreqs"),3)
       self.assertEqual(res, [])
-      res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq)
+      res = self.rsDB.getStuffToCheck(g,CS.getTypedDictRootedAt("CheckingFreqs/SitesFreqs"))
       self.assertEqual(res, [])
       res = self.rsDB.getStuffToCheck(g,None,None,'aaa')
       self.assertEqual(res, [])
@@ -465,7 +461,7 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.rankRes, 'Site', 30)
     self.assertRaises(RSSDBException, self.rsDB.getServiceStats, 'xxx')
     self.assertRaises(RSSDBException, self.rsDB.getResourceStats, 'Site', 'xxx')
-    self.assertRaises(RSSDBException, self.rsDB.getStorageElementsStats, 'Site', 'xxx')
+    self.assertRaises(RSSDBException, self.rsDB.getStorageElementsStats, 'Site', 'xxx', "Read")
     self.assertRaises(RSSDBException, self.rsDB.getCountries, 'Site')
     #print self.defaultTestResult()
 
@@ -475,7 +471,7 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
 
     for g in ValidRes:
       self.assertRaises(RSSDBException, self.rsDB.getMonitoredsList, g)
-      self.assertRaises(RSSDBException, self.rsDB.getStuffToCheck, g,Configurations.Sites_check_freq,3)
+      self.assertRaises(RSSDBException, self.rsDB.getStuffToCheck, g,CS.getTypedDictRootedAt("CheckingFreqs/SitesFreqs"),3)
       self.assertRaises(RSSDBException, self.rsDB.removeRow, g, 'xx', datetime.datetime.utcnow())
       self.assertRaises(RSSDBException, self.rsDB.setLastMonitoredCheckTime, g, 'xxx')
       self.assertRaises(RSSDBException, self.rsDB.setMonitoredReason, g, 'xxx', 'x', 'x')
