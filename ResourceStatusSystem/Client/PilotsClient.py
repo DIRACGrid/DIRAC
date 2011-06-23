@@ -1,21 +1,12 @@
 """ PilotsClient class is a client for to get pilots stats.
 """
-# it crashes epydoc
-# __docformat__ = "restructuredtext en"
-
-#import datetime
-
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
-#from DIRAC.Core.DISET.RPCClient import RPCClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
 
 class PilotsClient:
-
-#  def __init__(self):
-#    self.rc = ReportsClient()
 
 #############################################################################
 
@@ -151,12 +142,10 @@ class PilotsClient:
         if not siteName[ 'OK' ]:
           raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
         if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
-          return None    
-#        if siteName is None or siteName == []:
-#          gLogger.info('%s is not a resource in DIRAC' %name)
-#          return None
+          return None
+        siteName = siteName['Value']
 
-      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName[ 'Value' ]},[],0,50)
+      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
     else:
       raise InvalidRes, where(self, self.getPilotsSimpleEff)
 
