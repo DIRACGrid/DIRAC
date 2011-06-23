@@ -1118,7 +1118,7 @@ class ResourceStatusHandler( RequestHandler ):
 
 #############################################################################
 
-  types_getStoragElement = [ str, str ]
+  types_getStorageElement = [ str, str ]
   def export_getStorageElement( self, name, access ):
 
     gLogger.info( "ResourceStatusHandler.getStorageElement: Attempting to get SE" )
