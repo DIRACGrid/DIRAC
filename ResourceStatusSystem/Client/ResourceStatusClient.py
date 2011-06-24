@@ -283,13 +283,29 @@ class ResourceStatusClient:
 #############################################################################
 
   def getStorageElement( self, name, access ):
+    
+    subaccess = access
       
-    res = self.rsS.getStorageElement( name, access )
+    if access == 'Remove':
+      subaccess = 'Read'  
+          
+    res = self.rsS.getStorageElement( name, subaccess )
     if not res['OK']:
       raise RSSException, where( self, self.getStorageElement ) + " " + res[ 'Message' ]
   
     if res['Value']:
-      return S_OK( res[ 'Value' ][ 0 ] )
+      
+      res = res[ 'Value' ]
+      
+      if res[ 0 ].endswith( 'ARCHIVE' ) and ( access == 'Read' or access == 'Remove' ):
+        status = gConfig.getValue( '/Resources/StorageElements/%s/%sAccess' % ( name, access ) )        
+        
+        if status:
+          res[ 1 ] = status
+        else:
+          return S_ERROR( 'StorageElement %s, access %s not found' % ( name, access ) )    
+        
+      return S_OK( res )
     else:
       return S_ERROR( 'Unknown SE' )
 
