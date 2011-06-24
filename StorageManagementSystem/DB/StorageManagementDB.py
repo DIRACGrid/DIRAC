@@ -30,7 +30,8 @@ class StorageManagementDB( DB ):
     self.TASKPARAMS = ['TaskID', 'Status', 'Source', 'SubmitTime', 'LastUpdate', 'CompleteTime', 'CallBackMethod', 'SourceTaskID']
     self.REPLICAPARAMS = ['ReplicaID', 'Type', 'Status', 'SE', 'LFN', 'PFN', 'Size', 'FileChecksum', 'GUID', 'SubmitTime', 'LastUpdate', 'Reason', 'Links']
     self.STAGEPARAMS = ['ReplicaID', 'StageStatus', 'RequestID', 'StageRequestSubmitTime', 'StageRequestCompletedTime', 'PinLength', 'PinExpiryTime']
-
+    self.STATES= ['Failed','New','Waiting','StageSubmitted','Staged']
+    
   def __getConnection( self, connection ):
     if connection:
       return connection
@@ -154,19 +155,50 @@ class StorageManagementDB( DB ):
     for record in resSelect1['Value']:
       gLogger.info( "%s.%s_DB: updated CacheReplicas = %s" % ( self._caller(), 'updateReplicaStatus', record ) )
 
-    # Now update the tasks associated to the replicaIDs
-    # Daniela: what if some of the replicas are still in Staging state for a task?
-    newTaskStatus = self.__getTaskStateFromReplicaState( newReplicaStatus )
-    res = self._getReplicaTasks( toUpdate, connection = connection )
+    res = self._updateTasksForReplica( replicaIDs, connection = connection )
     if not res['OK']:
       return res
-    taskIDs = res['Value']
-    if taskIDs:
-      res = self.__updateTaskStatus( taskIDs, newTaskStatus, True, connection = connection )
-      if not res['OK']:
-        gLogger.warn( "Failed to update tasks associated to replicas", res['Message'] )
     return S_OK( toUpdate )
 
+  def _updateTasksForReplica(self, replicaIDs, connection = False):
+    tasksInStatus = {}
+    for state in self.STATES:
+      tasksInStatus[state]=[]
+      
+    req = "SELECT TaskID,Status FROM Tasks WHERE TaskID in (SELECT DISTINCT(TaskID) FROM TaskReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+    res = self._query( req, False )
+    if not res['OK']:
+      return res
+    
+    for taskId,status in res['Value']:
+      subreq = "SELECT Status from CacheReplicas WHERE ReplicaID in (SELECT ReplicaID from TaskReplicas where TaskID=%s);" %taskId    
+      subres = self._query( subreq,False)
+      if not subres['OK']:
+        return subres
+      
+      statesForTask = [row[0] for row in subres['Value']]
+      if not statesForTask:
+        tasksInStatus['Failed'].append(taskId)
+      elif 'Failed' in statesForTask and status!='Failed':
+        tasksInStatus['Failed'].append(taskId)
+      elif 'New' in statesForTask and status!='New':
+        tasksInStatus['New'].append(taskId)
+      elif 'Waiting' in statesForTask and status!='Waiting':
+        tasksInStatus['Waiting'].append(taskId)
+      elif 'StageSubmitted' in statesForTask and status!='StageSubmitted':
+        tasksInStatus['StageSubmitted'].append(taskId)
+      elif 'Staged' in statesForTask and status!='Staged':
+        tasksInStatus['Staged'].append(taskId)
+      else:
+        tasksInStatus['Failed'].append(taskId)
+        
+      for newStatus in tasksInStatus.keys():
+        if tasksInStatus[newStatus]:
+          res = self.__updateTaskStatus( tasksInStatus[status], newStatus, True, connection = connection )
+          if not res['OK']:
+            gLogger.warn( "Failed to update tasks associated to replicas", res['Message'] )
+            return res
+            
   def _getReplicaTasks( self, replicaIDs, connection = False ):
     connection = self.__getConnection( connection )
     #Daniela: should select only tasks with complete replicaID sets
@@ -176,15 +208,14 @@ class StorageManagementDB( DB ):
     if not res['OK']:
       return res
     taskIDs = [row[0] for row in res['Value']]
-
     # fix
     finalTaskIDs = []
     for taskID in taskIDs:
-      subreq = "SELECT ReplicaID FROM CacheReplicas WHERE Status = (SELECT Status FROM Tasks WHERE TaskID = %s);" % taskID
+      subreq = "SELECT Status from CacheReplicas where ReplicaID in (SELECT ReplicaID from TaskReplicas where TaskID=%s);" % taskID
       subres = self._query( subreq, connection )
       if not subres['OK']:
         return subres
-      replicaIDsForTask = [row[0] for row in subres['Value']]
+      statesForTask = [row[0] for row in subres['Value']]
       setOriginalReplicaIDs = Set( replicaIDs )
       setReplicaIDsForTask = Set( replicaIDsForTask )
       if setReplicaIDsForTask <= setOriginalReplicaIDs:
