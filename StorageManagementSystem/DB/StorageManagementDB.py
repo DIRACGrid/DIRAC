@@ -194,7 +194,7 @@ class StorageManagementDB( DB ):
         
       for newStatus in tasksInStatus.keys():
         if tasksInStatus[newStatus]:
-          res = self.__updateTaskStatus( tasksInStatus[status], newStatus, True, connection = connection )
+          res = self.__updateTaskStatus( tasksInStatus[newStatus], newStatus, True, connection = connection )
           if not res['OK']:
             gLogger.warn( "Failed to update tasks associated to replicas", res['Message'] )
             return res
