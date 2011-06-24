@@ -15,6 +15,7 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManage
 from DIRAC.DataManagementSystem.Client.DataLoggingClient    import DataLoggingClient
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL        import RequestDBMySQL
 from DIRAC.RequestManagementSystem.Client.RequestContainer  import RequestContainer
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.Resources.Storage.StorageFactory                 import StorageFactory
 from DIRAC.Core.Utilities.SiteSEMapping                     import getSitesForSE
 from DIRAC.Core.Utilities.SiteSEMapping                     import getSEsForSite
@@ -679,9 +680,15 @@ class StrategyHandler:
   def __getActiveSEs( self, selist, access = "Read" ):
     activeSE = []
     for se in selist:
-      res = gConfig.getOption( '/Resources/StorageElements/%s/%sAccess' % ( se, access ), 'Unknown' )
-      if res['OK'] and res['Value'] == 'Active':
+      
+      rssClient = ResourceStatusClient()
+      res       = rssClient.getStorageElement( se, access )  
+      if res['OK'] and ( res['Value'][1] == 'Active' or res['Value'][1] == 'Bad' ):
         activeSE.append( se )
+      
+      #res = gConfig.getOption( '/Resources/StorageElements/%s/%sAccess' % ( se, access ), 'Unknown' )
+      #if res['OK'] and res['Value'] == 'Active':
+      #  activeSE.append( se )
     return activeSE
 
   def __getChannelSitesForSE( self, se ):
