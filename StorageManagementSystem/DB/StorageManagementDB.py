@@ -146,11 +146,11 @@ class StorageManagementDB( DB ):
     for record in resSelect['Value']:
       replicaIDs.append( record[0] )
       gLogger.info( "%s.%s_DB: to_update CacheReplicas =  %s" % ( self._caller(), 'updateReplicaStatus', record ) )
-
-    reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
-    resSelect1 = self._query( reqSelect1, connection )
-    if not resSelect1['OK']:
-      gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'updateReplicaStatus', reqSelect1, resSelect1['Message'] ) )
+    if len( replicaIDs ) > 0:
+      reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+      resSelect1 = self._query( reqSelect1, connection )
+      if not resSelect1['OK']:
+        gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'updateReplicaStatus', reqSelect1, resSelect1['Message'] ) )
 
     for record in resSelect1['Value']:
       gLogger.info( "%s.%s_DB: updated CacheReplicas = %s" % ( self._caller(), 'updateReplicaStatus', record ) )
@@ -165,42 +165,44 @@ class StorageManagementDB( DB ):
     for state in self.STATES:
       tasksInStatus[state]=[]
       
-    req = "SELECT TaskID,Status FROM Tasks WHERE TaskID in (SELECT DISTINCT(TaskID) FROM TaskReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+    req = "SELECT T.TaskID,T.Status FROM Tasks AS T, TaskReplicas AS R WHERE R.ReplicaID IN ( %s ) AND R.TaskID = T.TaskID GROUP BY T.TaskID;" % intListToString( replicaIDs )
     res = self._query( req, False )
     if not res['OK']:
       return res
     
     for taskId,status in res['Value']:
-      subreq = "SELECT Status from CacheReplicas WHERE ReplicaID in (SELECT ReplicaID from TaskReplicas where TaskID=%s);" %taskId    
+      subreq = "SELECT DISTINCT(C.Status) FROM TaskReplicas AS R, CacheReplicas AS C WHERE R.TaskID=%s AND R.ReplicaID = C.ReplicaID;" %taskId    
       subres = self._query( subreq,False)
       if not subres['OK']:
         return subres
       
-      statesForTask = [row[0] for row in subres['Value']]
-      if not statesForTask:
+      cacheStatesForTask = [row[0] for row in subres['Value']]
+      if not cacheStatesForTask:
         tasksInStatus['Failed'].append(taskId)
-      elif 'Failed' in statesForTask and status!='Failed':
-        tasksInStatus['Failed'].append(taskId)
-      elif 'New' in statesForTask and status!='New':
-        tasksInStatus['New'].append(taskId)
-      elif 'Waiting' in statesForTask and status!='Waiting':
-        tasksInStatus['Waiting'].append(taskId)
-      elif 'StageSubmitted' in statesForTask and status!='StageSubmitted':
-        tasksInStatus['StageSubmitted'].append(taskId)
-      elif 'Staged' in statesForTask and status!='Staged':
-        tasksInStatus['Staged'].append(taskId)
-      else:
-        tasksInStatus['Failed'].append(taskId)
-        
-      for newStatus in tasksInStatus.keys():
-        if tasksInStatus[newStatus]:
-          res = self.__updateTaskStatus( tasksInStatus[newStatus], newStatus, True, connection = connection )
-          if not res['OK']:
-            gLogger.warn( "Failed to update task associated to replicas", res['Message'] )
-            #return res
-      return S_OK(tasksInStatus)
+        continue
+    
+      wrongState = False
+      for state in cacheStatesForTask:
+        if state not in self.STATES:
+           wrongState = True
+        if wrongState:
+          tasksInStatus['Failed'].append(taskId)
+          continue
+      for state in self.STATES:
+        if state in cacheStatesForTask and status != state:
+          tasksInStatus[state].append(taskId)
+          break
+      
+    for newStatus in tasksInStatus.keys():
+      if tasksInStatus[newStatus]:
+        res = self.__updateTaskStatus( tasksInStatus[newStatus], newStatus, True, connection = connection )
+        if not res['OK']:
+          gLogger.warn( "Failed to update task associated to replicas", res['Message'] )
+          #return res
+    return S_OK(tasksInStatus)
             
   def _getReplicaTasks( self, replicaIDs, connection = False ):
+    """ no longer used """
     connection = self.__getConnection( connection )
     #Daniela: should select only tasks with complete replicaID sets
     #only if ALL Replicas belonging to a Task have a certain state, the task should be selected for state update
@@ -806,17 +808,19 @@ class StorageManagementDB( DB ):
     return res
 
   def wakeupOldRequests( self, replicaIDs , connection = False ):
-    # get only StageRequests with StageRequestSubmitTime older than 1 day AND are still not staged
-    # delete these requests
-    # reset Replicas with corresponding ReplicaIDs to Status='New'
-    req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL 1 DAY ) < NOW();" % intListToString( replicaIDs )
+    """ 
+    get only StageRequests with StageRequestSubmitTime older than 1 day AND are still not staged
+    delete these requests
+    reset Replicas with corresponding ReplicaIDs to Status='New'
+    """
+    
+    req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL 1 DAY ) < UTC_TIMESTAMP();" % intListToString( replicaIDs )
     res = self._query( req )
     if not res['OK']:
       gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'wakeupOldRequests', reqSelect, resSelect['Message'] ) )
       return res
-    old_replicaIDs = []
-    for record in res['Value']: #this is wrong here
-      old_replicaIDs.append( record[0] )
+    
+    old_replicaIDs = [ row[0] for row in res['Value'] ]
 
     req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
     res = self._update( req, connection )
@@ -874,7 +878,7 @@ class StorageManagementDB( DB ):
       gLogger.info( "%s.%s_DB: to_update Tasks =  %s" % ( self._caller(), 'setTasksDone', record ) )
       #fix, no individual queries
     reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString( taskIDs )
-    resSelect1 = self._query( reqSelect1, connection )
+    resSelect1 = self._query( reqSelect1 )
     if not resSelect1['OK']:
       gLogger.info( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'setTasksDone', reqSelect1, resSelect1['Message'] ) )
 
