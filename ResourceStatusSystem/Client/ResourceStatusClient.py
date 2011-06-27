@@ -283,19 +283,42 @@ class ResourceStatusClient:
 #############################################################################
 
   def getStorageElement( self, name, access ):
+    
+    subaccess = access
       
-    res = self.rsS.getStorageElement( name, access )
-    if not res['OK'] or not res['Value']:
+    if access == 'Remove':
+      subaccess = 'Read'  
+          
+    res = self.rsS.getStorageElement( name, subaccess )
+    if not res['OK']:
       raise RSSException, where( self, self.getStorageElement ) + " " + res[ 'Message' ]
   
-    #if res['Value']:
-    return S_OK( res[ 'Value' ][ 0 ] )
-  
-    #else:
-    #  return S_ERROR( 'Unknown SE' )
-  
-#    return res  
+    if res['Value']:
+      
+      res = res[ 'Value' ]
+      
+      if res[ 0 ].endswith( 'ARCHIVE' ) and ( access == 'Read' or access == 'Remove' ):
+        status = gConfig.getValue( '/Resources/StorageElements/%s/%sAccess' % ( name, access ) )        
+        
+        if status:
+          res[ 1 ] = status
+        else:
+          return S_ERROR( 'StorageElement %s, access %s not found' % ( name, access ) )    
+        
+      return S_OK( res )
+    else:
+      return S_ERROR( 'Unknown SE' )
 
+#############################################################################
+  
+  def setStorageElementStatus( self, name, status, reason, token, access ):
+     
+    res = self.rsS.setStorageElementStatus( name, status, reason, token, access )      
+    if not res['OK']:
+      raise RSSException, where( self, self.setStorageElementStatus ) + " " + res[ 'Message' ]
+  
+    return S_OK()
+  
 #############################################################################
 
 #  def updateStorageElement( self, name , access, status ):
@@ -314,7 +337,6 @@ class ResourceStatusClient:
 
     if res['Value']:
       return S_OK( res[ 'Value' ][ 0 ] )
-  
     else:
       return S_ERROR( 'Unknown Resource' )
 
@@ -329,7 +351,6 @@ class ResourceStatusClient:
  
     if res['Value']:
       return S_OK( res[ 'Value' ][ 0 ] )
-  
     else:
       return S_ERROR( 'Unknown Service' )
  
