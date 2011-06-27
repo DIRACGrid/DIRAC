@@ -34,71 +34,87 @@ class ClientsCommandsTestCase( unittest.TestCase ):
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Interfaces.API.DiracAdmin"] = DIRAC.ResourceStatusSystem.test.fake_Admin
 
-    from DIRAC.ResourceStatusSystem.Command.GOCDBStatus_Command import GOCDBStatus_Command, DTInfo_Cached_Command, DTCached_Command
-    from DIRAC.ResourceStatusSystem.Command.Pilots_Command import PilotsEffSimpleCached_Command, PilotsEffSimple_Command, PilotsEff_Command, PilotsStats_Command
-    from DIRAC.ResourceStatusSystem.Command.Jobs_Command import JobsStats_Command, JobsEff_Command, SystemCharge_Command, JobsEffSimple_Command, JobsEffSimpleCached_Command
-    from DIRAC.ResourceStatusSystem.Command.SAMResults_Command import SAMResults_Command
-    from DIRAC.ResourceStatusSystem.Command.GGUSTickets_Command import GGUSTickets_Open, GGUSTickets_Link, GGUSTickets_Info
-    from DIRAC.ResourceStatusSystem.Command.RS_Command import RSPeriods_Command, ServiceStats_Command, ResourceStats_Command, StorageElementsStats_Command, MonitoredStatus_Command
-    from DIRAC.ResourceStatusSystem.Command.DIRACAccounting_Command import DIRACAccounting_Command, TransferQuality_Command, TransferQualityCached_Command, CachedPlot_Command, TransferQualityFromCachedPlot_Command
-    from DIRAC.ResourceStatusSystem.Command.SLS_Command import SLSStatus_Command, SLSServiceInfo_Command, SLSLink_Command
-    from DIRAC.ResourceStatusSystem.Command.ClientsCache_Command import JobsEffSimpleEveryOne_Command, PilotsEffSimpleEverySites_Command, TransferQualityEverySEs_Command, DTEverySites_Command, DTEveryResources_Command
-    from DIRAC.ResourceStatusSystem.Command.AccountingCache_Command import TransferQualityByDestSplitted_Command, TransferQualityByDestSplittedSite_Command, FailedTransfersBySourceSplitted_Command, SuccessfullJobsBySiteSplitted_Command, FailedJobsBySiteSplitted_Command, SuccessfullPilotsBySiteSplitted_Command, FailedPilotsBySiteSplitted_Command, SuccessfullPilotsByCESplitted_Command, FailedPilotsByCESplitted_Command, RunningJobsBySiteSplitted_Command
+    from DIRAC.ResourceStatusSystem.Command.GOCDBStatus_Command     import \
+        GOCDBStatus_Command, DTInfo_Cached_Command, DTCached_Command
+    from DIRAC.ResourceStatusSystem.Command.Pilots_Command          import \
+        PilotsEffSimpleCached_Command, PilotsEff_Command, PilotsEffSimple_Command, PilotsStats_Command
+    from DIRAC.ResourceStatusSystem.Command.Jobs_Command            import \
+        JobsStats_Command, JobsEff_Command, SystemCharge_Command, JobsEffSimple_Command, JobsEffSimpleCached_Command
+    from DIRAC.ResourceStatusSystem.Command.SAMResults_Command      import \
+        SAMResults_Command
+    from DIRAC.ResourceStatusSystem.Command.GGUSTickets_Command     import \
+        GGUSTickets_Open, GGUSTickets_Link, GGUSTickets_Info
+    from DIRAC.ResourceStatusSystem.Command.RS_Command              import \
+        RSPeriods_Command, ServiceStats_Command, ResourceStats_Command, StorageElementsStats_Command, MonitoredStatus_Command
+    from DIRAC.ResourceStatusSystem.Command.DIRACAccounting_Command import \
+        DIRACAccounting_Command, TransferQuality_Command, TransferQualityCached_Command, \
+        CachedPlot_Command, TransferQualityFromCachedPlot_Command
+    from DIRAC.ResourceStatusSystem.Command.SLS_Command             import \
+        SLSStatus_Command, SLSServiceInfo_Command, SLSLink_Command
+    from DIRAC.ResourceStatusSystem.Command.ClientsCache_Command    import \
+        JobsEffSimpleEveryOne_Command, PilotsEffSimpleEverySites_Command, \
+        TransferQualityEverySEs_Command, DTEverySites_Command, DTEveryResources_Command
+    from DIRAC.ResourceStatusSystem.Command.AccountingCache_Command import \
+        TransferQualityByDestSplitted_Command, TransferQualityByDestSplittedSite_Command, FailedTransfersBySourceSplitted_Command, \
+        SuccessfullJobsBySiteSplitted_Command, FailedJobsBySiteSplitted_Command, SuccessfullPilotsBySiteSplitted_Command, \
+        FailedPilotsBySiteSplitted_Command, SuccessfullPilotsByCESplitted_Command, \
+        FailedPilotsByCESplitted_Command, RunningJobsBySiteSplitted_Command
 
     self.mock_command = Mock()
     self.mock_rsClient = Mock()
     self.mock_rsClient.getGeneralName.return_value = ['LCG.CERN.ch', 'LCG.CERN-MPP.ch']
+    self.mock_rsClient.getGridSiteName.return_value = {'OK': True, 'Value':""}
 
-    self.co = Command()
-    self.mco = MacroCommand()
-    self.ci = ClientsInvoker()
-    self.mock_client = Mock()
+    self.co            = Command()
+    self.mco           = MacroCommand()
+    self.ci            = ClientsInvoker()
+    self.mock_client   = Mock()
     self.mock_client_2 = Mock()
-    self.GOCDBS_C = GOCDBStatus_Command()
-#    self.GOCDBI_C = GOCDBInfo_Command()
-    self.PE_C = PilotsEff_Command()
-    self.PS_C = PilotsStats_Command()
-    self.JE_C = JobsEff_Command()
-    self.JS_C = JobsStats_Command()
-    self.SC_C = SystemCharge_Command()
-    self.JES_C = JobsEffSimple_Command()
-    self.JESC_C = JobsEffSimpleCached_Command()
-    self.PES_C = PilotsEffSimple_Command()
-    self.PESC_C = PilotsEffSimpleCached_Command()
-    self.SAMR_C = SAMResults_Command()
-    self.RSP_C = RSPeriods_Command()
-    self.GGUS_O_C = GGUSTickets_Open()
-    self.GGUS_L_C = GGUSTickets_Link()
-    self.GGUS_I_C = GGUSTickets_Info()
-    self.SeSt_C = ServiceStats_Command()
-    self.ReSt_C = ResourceStats_Command()
-    self.StElSt_C = StorageElementsStats_Command()
-    self.MS_C = MonitoredStatus_Command()
-    self.DQ_C = TransferQuality_Command()
-    self.DA_C = DIRACAccounting_Command()
-    self.SLSS_C = SLSStatus_Command()
-    self.SLSSI_C = SLSServiceInfo_Command()
-    self.SLSL_C = SLSLink_Command()
-    self.JSEO_C = JobsEffSimpleEveryOne_Command()
-    self.PSES_C = PilotsEffSimpleEverySites_Command()
-    self.TQES_C = TransferQualityEverySEs_Command()
-    self.TQC_C = TransferQualityCached_Command()
-    self.DTES_C = DTEverySites_Command()
-    self.DTER_C = DTEveryResources_Command()
-    self.DTC_C = DTCached_Command()
-    self.DTIC_C = DTInfo_Cached_Command()
-    self.TQBDS_C = TransferQualityByDestSplitted_Command()
-    self.TQBDSS_C = TransferQualityByDestSplittedSite_Command()
-    self.FTBSS_C = FailedTransfersBySourceSplitted_Command()
-    self.SJBSS_C = SuccessfullJobsBySiteSplitted_Command()
-    self.FJBSS_C = FailedJobsBySiteSplitted_Command()
-    self.SPBSS_C = SuccessfullPilotsBySiteSplitted_Command()
-    self.FPBSS_C = FailedPilotsBySiteSplitted_Command()
-    self.SPBCS_C = SuccessfullPilotsByCESplitted_Command()
-    self.FPBCS_C = FailedPilotsByCESplitted_Command()
-    self.RJBSS_C = RunningJobsBySiteSplitted_Command()
-    self.CP_C = CachedPlot_Command()
-    self.TQFCP_C = TransferQualityFromCachedPlot_Command()
+    self.GOCDBS_C      = GOCDBStatus_Command()
+#    self.GOCDBI_C     = GOCDBInfo_Command()
+    self.PE_C          = PilotsEff_Command()
+    self.PS_C          = PilotsStats_Command()
+    self.JE_C          = JobsEff_Command()
+    self.JS_C          = JobsStats_Command()
+    self.SC_C          = SystemCharge_Command()
+    self.JES_C         = JobsEffSimple_Command()
+    self.JESC_C        = JobsEffSimpleCached_Command()
+    self.PES_C         = PilotsEffSimple_Command()
+    self.PESC_C        = PilotsEffSimpleCached_Command()
+    self.SAMR_C        = SAMResults_Command()
+    self.RSP_C         = RSPeriods_Command()
+    self.GGUS_O_C      = GGUSTickets_Open()
+    self.GGUS_L_C      = GGUSTickets_Link()
+    self.GGUS_I_C      = GGUSTickets_Info()
+    self.SeSt_C        = ServiceStats_Command()
+    self.ReSt_C        = ResourceStats_Command()
+    self.StElSt_C      = StorageElementsStats_Command()
+    self.MS_C          = MonitoredStatus_Command()
+    self.DQ_C          = TransferQuality_Command()
+    self.DA_C          = DIRACAccounting_Command()
+    self.SLSS_C        = SLSStatus_Command()
+    self.SLSSI_C       = SLSServiceInfo_Command()
+    self.SLSL_C        = SLSLink_Command()
+    self.JSEO_C        = JobsEffSimpleEveryOne_Command()
+    self.PSES_C        = PilotsEffSimpleEverySites_Command()
+    self.TQES_C        = TransferQualityEverySEs_Command()
+    self.TQC_C         = TransferQualityCached_Command()
+    self.DTES_C        = DTEverySites_Command()
+    self.DTER_C        = DTEveryResources_Command()
+    self.DTC_C         = DTCached_Command()
+    self.DTIC_C        = DTInfo_Cached_Command()
+    self.TQBDS_C       = TransferQualityByDestSplitted_Command()
+    self.TQBDSS_C      = TransferQualityByDestSplittedSite_Command()
+    self.FTBSS_C       = FailedTransfersBySourceSplitted_Command()
+    self.SJBSS_C       = SuccessfullJobsBySiteSplitted_Command()
+    self.FJBSS_C       = FailedJobsBySiteSplitted_Command()
+    self.SPBSS_C       = SuccessfullPilotsBySiteSplitted_Command()
+    self.FPBSS_C       = FailedPilotsBySiteSplitted_Command()
+    self.SPBCS_C       = SuccessfullPilotsByCESplitted_Command()
+    self.FPBCS_C       = FailedPilotsByCESplitted_Command()
+    self.RJBSS_C       = RunningJobsBySiteSplitted_Command()
+    self.CP_C          = CachedPlot_Command()
+    self.TQFCP_C       = TransferQualityFromCachedPlot_Command()
 
     self.GOCDBS_C.setArgs( ( 'Site', ) )
 #    self.GOCDBI_C.setArgs(('Site', ))
@@ -405,7 +421,7 @@ class PilotsStats_CommandSuccess( ClientsCommandsTestCase ):
 class PilotsStats_CommandFailure( ClientsCommandsTestCase ):
 
   def test_clientFail( self ):
-    self.mock_client.getPilotsStats .side_effect = Exception()
+    self.mock_client.getPilotsStats.side_effect = Exception()
     for g in ValidRes:
       for pe in ( 0, 20, 40, 60, 80 ):
         self.PS_C.setArgs( ( g, 'XX', [] ) )
@@ -428,7 +444,7 @@ class PilotsEffSimple_CommandSuccess( ClientsCommandsTestCase ):
       self.assertEqual( res['Result'], pe )
 
     mockRSC = Mock()
-    mockRSC.getGeneralName.return_value = ['XX']
+    mockRSC.getGeneralName.return_value = { 'OK': True, 'Value': ['XX'] }
     args = ( 'Service', 'XX' )
     for pe in ( 'Good', 'Fair', 'Poor', 'Bad', 'Idle' ):
       self.mock_client.getPilotsSimpleEff.return_value = {'XX':pe}
@@ -542,7 +558,7 @@ class JobsEffSimple_CommandSuccess( ClientsCommandsTestCase ):
       self.assertEqual( res['Result'], pe )
 
     mockRSC = Mock()
-    mockRSC.getGeneralName.return_value = ['XX']
+    mockRSC.getGeneralName.return_value = {'OK': True, 'Value':['XX']}
     args = ( 'Service', 'XX' )
     for pe in ( 'Good', 'Fair', 'Poor', 'Bad', 'Idle' ):
       self.mock_client.getJobsSimpleEff.return_value = {'XX':pe}
@@ -571,9 +587,9 @@ class JobsEffSimpleCached_CommandSuccess( ClientsCommandsTestCase ):
   def test_doCommand( self ):
 
     args = ( 'Site', 'XX' )
-    self.mock_client.getGeneralName.return_value = ['XX']
+    self.mock_client.getGeneralName.return_value = {'OK': True, 'Value':['XX']}
     for pe in ( 'Good', 'Fair', 'Poor', 'Bad', 'Idle' ):
-      self.mock_client.getCachedResult.return_value = ( pe, )
+      self.mock_client.getCachedResult.return_value = {'OK': True, 'Value': ( pe, ) }
       self.JESC_C.setArgs( args )
       self.JESC_C.setClient( self.mock_client )
       res = self.JESC_C.doCommand()
@@ -599,8 +615,9 @@ class PilotsEffSimpleCached_CommandSuccess( ClientsCommandsTestCase ):
   def test_doCommand( self ):
 
     args = ( 'Site', 'XX' )
+    self.mock_client.getGeneralName.return_value = {'OK': True, 'Value':['XX']}
     for pe in ( 'Good', 'Fair', 'Poor', 'Bad', 'Idle' ):
-      self.mock_client.getCachedResult.return_value = ( pe, )
+      self.mock_client.getCachedResult.return_value = {'OK': True, 'Value': ( pe, ) }
       self.PESC_C.setArgs( args )
       self.PESC_C.setClient( self.mock_client )
       res = self.PESC_C.doCommand()
@@ -632,6 +649,7 @@ class SAMResults_CommandSuccess( ClientsCommandsTestCase ):
                  ( 'Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'] ) ):
       self.mock_client.getStatus.return_value = {'OK':True,
                                                   'Value': {'Status':None}}
+
       self.SAMR_C.setArgs( args )
       self.SAMR_C.setClient( self.mock_client )
       res = self.SAMR_C.doCommand( rsClientIn = self.mock_rsClient )
@@ -779,7 +797,7 @@ class ServiceStats_CommandSuccess( ClientsCommandsTestCase ):
 
   def test_doCommand( self ):
 
-    self.mock_client.getServiceStats.return_value = {}
+    self.mock_client.getServiceStats.return_value = {'OK': True, 'Value':{}}
     for g in ValidRes:
       self.SeSt_C.setArgs( ( g, '' ) )
       self.SeSt_C.setClient( self.mock_client )
@@ -807,7 +825,7 @@ class ResourceStats_CommandSuccess( ClientsCommandsTestCase ):
 
   def test_doCommand( self ):
 
-    self.mock_client.getResourceStats.return_value = {}
+    self.mock_client.getResourceStats.return_value = {'OK': True, 'Value':{}}
     self.ReSt_C.setArgs( ( 'Site', '' ) )
     self.ReSt_C.setClient( self.mock_client )
     res = self.ReSt_C.doCommand()
@@ -837,15 +855,17 @@ class StorageElementsStats_CommandSuccess( ClientsCommandsTestCase ):
 
   def test_doCommand( self ):
 
-    self.mock_client.getStorageElementsStats.return_value = {}
+    self.mock_client.getStorageElementsStats.return_value = {'OK': True, 'Value':
+                                                             {'Active': 0, 'Probing': 0, 'Banned':0, 'Bad':0, 'Total':0}}
     self.StElSt_C.setArgs( ( 'Site', '' ) )
     self.StElSt_C.setClient( self.mock_client )
     res = self.StElSt_C.doCommand()
-    self.assertEqual( res, {'Result': {}} )
+    self.assertEqual( res, {'Result': {'Active': 0, 'Probing': 0, 'Banned':0, 'Bad':0}} )
+
     self.StElSt_C.setArgs( ( 'Resource', '' ) )
     self.StElSt_C.setClient( self.mock_client )
     res = self.StElSt_C.doCommand()
-    self.assertEqual( res, {'Result': {}} )
+    self.assertEqual( res, {'Result': {'Active': 0, 'Probing': 0, 'Banned':0, 'Bad':0}} )
 
 #############################################################################
 
@@ -867,21 +887,21 @@ class MonitoredStatus_CommandSuccess( ClientsCommandsTestCase ):
 
   def test_doCommand( self ):
 
-    self.mock_client.getMonitoredStatus.return_value = ['Active']
+    self.mock_client.getMonitoredStatus.return_value = {'OK': True, 'Value': ['Active']}
     for g in ValidRes:
       self.MS_C.setArgs( ( g, '' ) )
       self.MS_C.setClient( self.mock_client )
       res = self.MS_C.doCommand()
       self.assertEqual( res, {'Result':'Active'} )
 
-    self.mock_client.getMonitoredStatus.return_value = ['Active', 'Probing']
+    self.mock_client.getMonitoredStatus.return_value = {'OK': True, 'Value': ['Active', 'Probing']}
     for g in ValidRes:
       self.MS_C.setArgs( ( g, '' ) )
       self.MS_C.setClient( self.mock_client )
       res = self.MS_C.doCommand()
       self.assertEqual( res, {'Result':'Probing'} )
 
-    self.mock_client.getMonitoredStatus.return_value = ['Active', 'Probing', 'Banned']
+    self.mock_client.getMonitoredStatus.return_value = {'OK': True, 'Value': ['Active', 'Probing', 'Banned']}
     for g in ValidRes:
       self.MS_C.setArgs( ( g, '' ) )
       self.MS_C.setClient( self.mock_client )
@@ -947,7 +967,12 @@ class SLSStatus_CommandSuccess( ClientsCommandsTestCase ):
     for ret in ( 80, 10, 1, None ):
       self.mock_client.getAvailabilityStatus.return_value = {'OK':True, 'Value': ret}
       for SE in ( 'CNAF-RAW', 'CNAF_MC_M-DST' ):
-        self.SLSS_C.setArgs( ( 'StorageElement', SE ) )
+        self.SLSS_C.setArgs( ( 'StorageElementRead', SE ) )
+        self.SLSS_C.setClient( self.mock_client )
+        res = self.SLSS_C.doCommand()
+        self.assertEqual( res['Result'], ret )
+      for SE in ( 'CNAF-RAW', 'CNAF_MC_M-DST' ):
+        self.SLSS_C.setArgs( ( 'StorageElementWrite', SE ) )
         self.SLSS_C.setClient( self.mock_client )
         res = self.SLSS_C.doCommand()
         self.assertEqual( res['Result'], ret )
@@ -974,7 +999,12 @@ class SLSStatus_CommandFailure( ClientsCommandsTestCase ):
 
     self.mock_client.getAvailabilityStatus.side_effect = Exception()
     SE = 'CNAF-RAW'
-    self.SLSS_C.setArgs( ( 'StorageElement', SE ) )
+    self.SLSS_C.setArgs( ( 'StorageElementRead', SE ) )
+    self.SLSS_C.setClient( self.mock_client )
+    res = self.SLSS_C.doCommand()
+    self.assertEqual( res['Result'], 'Unknown' )
+    SE = 'CNAF-RAW'
+    self.SLSS_C.setArgs( ( 'StorageElementWrite', SE ) )
     self.SLSS_C.setClient( self.mock_client )
     res = self.SLSS_C.doCommand()
     self.assertEqual( res['Result'], 'Unknown' )
@@ -992,11 +1022,11 @@ class SLSServiceInfo_CommandSuccess( ClientsCommandsTestCase ):
     ret = {'Free space': 33.0}
     self.mock_client.getServiceInfo.return_value = {'OK':True, 'Value': ret}
     for SE in ( 'CNAF-RAW', 'CNAF_MC_M-DST' ):
-      self.SLSSI_C.setArgs( ( 'StorageElement', SE, ['Free space'] ) )
+      self.SLSSI_C.setArgs( ( 'StorageElementRead', SE, ['Free space'] ) )
       self.SLSSI_C.setClient( self.mock_client )
       res = self.SLSSI_C.doCommand()
       self.assertEqual( res['Result'], ret )
-    self.SLSSI_C.setArgs( ( 'StorageElement', SE, ['Free space'] ) )
+    self.SLSSI_C.setArgs( ( 'StorageElementRead', SE, ['Free space'] ) )
     self.SLSSI_C.setClient( self.mock_client )
     res = self.SLSSI_C.doCommand()
     self.assertEqual( res['Result'], ret )
@@ -1008,14 +1038,14 @@ class SLSServiceInfo_CommandFailure( ClientsCommandsTestCase ):
   def test_clientFail( self ):
 #    self.mock_client.getServiceInfo.side_effect = NoServiceException()
 #    SE = 'CNAF-RAW'
-#    self.SLSSI_C.setArgs(('StorageElement', SE, ['Free space']))
+#    self.SLSSI_C.setArgs(('StorageElementRead', SE, ['Free space']))
 #    self.SLSSI_C.setClient(self.mock_client)
 #    res = self.SLSSI_C.doCommand()
 #    self.assertEqual(res['Result'], None)
 
     self.mock_client.getServiceInfo.side_effect = Exception()
     SE = 'CNAF-RAW'
-    self.SLSSI_C.setArgs( ( 'StorageElement', SE, ['Free space'] ) )
+    self.SLSSI_C.setArgs( ( 'StorageElementRead', SE, ['Free space'] ) )
     self.SLSSI_C.setClient( self.mock_client )
     res = self.SLSSI_C.doCommand()
     self.assertEqual( res['Result'], 'Unknown' )
@@ -1033,7 +1063,7 @@ class SLSLink_CommandSuccess( ClientsCommandsTestCase ):
     ret = 'https://sls.cern.ch/sls/service.php?id=CERN-LHCb_RAW'
     self.mock_client.getLink.return_value = {'OK':True, 'Value': ret}
     SE = 'CNAF-RAW'
-    self.SLSL_C.setArgs( ( 'StorageElement', SE ) )
+    self.SLSL_C.setArgs( ( 'StorageElementRead', SE ) )
     self.SLSL_C.setClient( self.mock_client )
     res = self.SLSL_C.doCommand()
     self.assertEqual( res['Result'], ret )
@@ -1045,7 +1075,7 @@ class SLSLink_CommandFailure( ClientsCommandsTestCase ):
 #  def test_clientFail(self):
 #    self.mock_client.getLink.side_effect = NoServiceException()
 #    SE = 'CNAF-RAW'
-#    self.SLSL_C.setArgs(('StorageElement', SE))
+#    self.SLSL_C.setArgs(('StorageElementRead', SE))
 #    self.SLSL_C.setClient(self.mock_client)
 #    res = self.SLSL_C.doCommand()
 #    self.assertEqual(res['Result'], 'Unknown')
@@ -1150,7 +1180,7 @@ class TransferQualityCached_CommandSuccess( ClientsCommandsTestCase ):
 
   def test_doCommand( self ):
 
-    args = ( 'StorageElement', 'XX' )
+    args = ( 'StorageElementRead', 'XX' )
     for pe in ( '100.0', '75.0', '0.0' ):
       self.mock_client.getCachedResult.return_value = ( pe, )
       self.TQC_C.setArgs( args )
@@ -1165,7 +1195,7 @@ class TransferQualityCached_CommandFailure( ClientsCommandsTestCase ):
   def test_clientFail( self ):
     self.mock_client.getCachedResult.side_effect = Exception()
     for pe in ( '100.0', '75.0', '0.0' ):
-      self.TQC_C.setArgs( ( 'StorageElement', 'XX' ) )
+      self.TQC_C.setArgs( ( 'StorageElementRead', 'XX' ) )
       self.TQC_C.setClient( self.mock_client )
       res = self.TQC_C.doCommand()
       self.assertEqual( res['Result'], 'Unknown' )
@@ -1295,7 +1325,7 @@ class DTEveryResources_CommandFailure( ClientsCommandsTestCase ):
 #  def test_clientFail(self):
 #    self.mock_client.getCachedResult.side_effect = Exception()
 #    for pe in ('100.0', '75.0', '0.0'):
-#      self.TQC_C.setArgs(('StorageElement', 'XX'))
+#      self.TQC_C.setArgs(('StorageElementRead', 'XX'))
 #      self.TQC_C.setClient(self.mock_client)
 #      res = self.TQC_C.doCommand()
 #      self.assertEqual(res['Result'], 'Unknown')
@@ -2107,7 +2137,7 @@ class CachedPlot_CommandSuccess( ClientsCommandsTestCase ):
 
   def test_doCommand( self ):
 
-    args = ( 'StorageElement', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted' )
+    args = ( 'StorageElementRead', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted' )
     plot = "{'data': { 'CERN-RAW': {800L: 100.0, 700L: 100.0} }, 'granularity':900}"
     self.mock_client.getCachedAccountingResult.return_value = ( plot, )
     self.CP_C.setArgs( args )
@@ -2121,7 +2151,7 @@ class CachedPlot_CommandFailure( ClientsCommandsTestCase ):
 
   def test_clientFail( self ):
     self.mock_client.getCachedAccountingResult.side_effect = Exception()
-    self.CP_C.setArgs( ( 'StorageElement', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted' ) )
+    self.CP_C.setArgs( ( 'StorageElementRead', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted' ) )
     self.CP_C.setClient( self.mock_client )
     res = self.CP_C.doCommand()
     self.assertEqual( res['Result'], 'Unknown' )
@@ -2132,16 +2162,16 @@ class TransferQualityFromCachedPlot_CommandSuccess( ClientsCommandsTestCase ):
 
   def test_doCommand( self ):
 
-    args = ( 'StorageElement', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted' )
+    args = ( 'StorageElementRead', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted' )
     plot = "{'data': { 'CERN-RAW': {800L: 100.0, 700L: 60.0} }, 'granularity':900}"
-    self.mock_client.getCachedAccountingResult.return_value = ( plot, )
+    self.mock_client.getCachedAccountingResult.return_value = {'OK': True, 'Value': ( plot, )}
     self.TQFCP_C.setArgs( args )
     self.TQFCP_C.setClient( self.mock_client )
     res = self.TQFCP_C.doCommand()
     self.assertEqual( res['Result'], 80.0 )
 
     plot = []
-    self.mock_client.getCachedAccountingResult.return_value = plot
+    self.mock_client.getCachedAccountingResult.return_value = {'OK': True, 'Value': plot}
     self.TQFCP_C.setArgs( args )
     self.TQFCP_C.setClient( self.mock_client )
     res = self.TQFCP_C.doCommand()
@@ -2153,7 +2183,7 @@ class TransferQualityFromCachedPlot_CommandFailure( ClientsCommandsTestCase ):
 
   def test_clientFail( self ):
     self.mock_client.getCachedAccountingResult.side_effect = Exception()
-    self.TQFCP_C.setArgs( ( 'StorageElement', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted' ) )
+    self.TQFCP_C.setArgs( ( 'StorageElementRead', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted' ) )
     self.TQFCP_C.setClient( self.mock_client )
     res = self.TQFCP_C.doCommand()
     self.assertEqual( res['Result'], 'Unknown' )
@@ -2171,8 +2201,8 @@ if __name__ == '__main__':
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( GOCDBStatus_CommandFailure ) )
 ##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
 ##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsEff_CommandSuccess ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsEff_CommandFailure ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsEff_CommandSuccess ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsEff_CommandFailure ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsStats_CommandSuccess ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsStats_CommandFailure ) )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsEffSimple_CommandSuccess ) )

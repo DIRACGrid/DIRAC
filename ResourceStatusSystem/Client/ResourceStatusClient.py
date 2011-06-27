@@ -4,12 +4,11 @@ ResourceStatusClient class is a client for requesting info from the ResourceStat
 # it crashes epydoc
 # __docformat__ = "restructuredtext en"
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, \
-    ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType, PolicyTypes
+from DIRAC                                            import S_OK, S_ERROR, gConfig
+from DIRAC.Core.DISET.RPCClient                       import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes, RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
 
 class ResourceStatusClient:
 
@@ -100,7 +99,7 @@ class ResourceStatusClient:
 
     #return res[ 'Value' ]
     return res
- 
+
 #############################################################################
 
 
@@ -193,7 +192,7 @@ class ResourceStatusClient:
       else:
         try:
           if granularity in ( 'Resource', 'Resources' ):
-            statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 5 ] ) 
+            statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 5 ] )
           else:
             statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 4 ] )
         except IndexError:
@@ -227,12 +226,12 @@ class ResourceStatusClient:
   def getResourcesList( self ):
     """
     Returns the list of resources in the RSS DB
-    
+
     """
-  
+
     res = self.rsS.getResourcesList()
     if not res[ 'OK' ]:
-      raise RSSException, where( self, self.getResourcesList ) + " " + res[ 'Message' ] 
+      raise RSSException, where( self, self.getResourcesList ) + " " + res[ 'Message' ]
     #
     #return res[ 'Value' ]
     return res
@@ -242,12 +241,12 @@ class ResourceStatusClient:
   def getStorageElementsList( self, access ):
     """
     Returns the list of storage elements in the RSS DB
-    
+
     """
-  
+
     res = self.rsS.getStorageElementsList( access )
     if not res[ 'OK' ]:
-      raise RSSException, where( self, self.getStorageElementsList ) + " " + res[ 'Message' ] 
+      raise RSSException, where( self, self.getStorageElementsList ) + " " + res[ 'Message' ]
     #
     #return res[ 'Value' ]
     return res
@@ -257,12 +256,12 @@ class ResourceStatusClient:
   def getServicesList( self ):
     """
     Returns the list of services in the RSS DB
-    
+
     """
-  
+
     res = self.rsS.getServicesList()
     if not res[ 'OK' ]:
-      raise RSSException, where( self, self.getServicesList ) + " " + res[ 'Message' ] 
+      raise RSSException, where( self, self.getServicesList ) + " " + res[ 'Message' ]
 
     return res
 
@@ -271,66 +270,66 @@ class ResourceStatusClient:
   def getSitesList( self ):
     """
     Returns the list of sites in the RSS DB
-    
+
     """
-  
+
     res = self.rsS.getSitesList()
     if not res[ 'OK' ]:
-      raise RSSException, where( self, self.getSitesList ) + " " + res[ 'Message' ] 
+      raise RSSException, where( self, self.getSitesList ) + " " + res[ 'Message' ]
 
     return res
 
 #############################################################################
 
   def getStorageElement( self, name, access ):
-    
+
     subaccess = access
-      
+
     if access == 'Remove':
-      subaccess = 'Read'  
-          
+      subaccess = 'Read'
+
     res = self.rsS.getStorageElement( name, subaccess )
     if not res['OK']:
       raise RSSException, where( self, self.getStorageElement ) + " " + res[ 'Message' ]
-  
+
     if res['Value']:
-      
+
       res = res[ 'Value' ]
-      
+
       if res[ 0 ].endswith( 'ARCHIVE' ) and ( access == 'Read' or access == 'Remove' ):
-        status = gConfig.getValue( '/Resources/StorageElements/%s/%sAccess' % ( name, access ) )        
-        
+        status = gConfig.getValue( '/Resources/StorageElements/%s/%sAccess' % ( name, access ) )
+
         if status:
           res[ 1 ] = status
         else:
-          return S_ERROR( 'StorageElement %s, access %s not found' % ( name, access ) )    
-        
+          return S_ERROR( 'StorageElement %s, access %s not found' % ( name, access ) )
+
       return S_OK( res )
     else:
       return S_ERROR( 'Unknown SE' )
 
 #############################################################################
-  
+
   def setStorageElementStatus( self, name, status, reason, token, access ):
-     
-    res = self.rsS.setStorageElementStatus( name, status, reason, token, access )      
+
+    res = self.rsS.setStorageElementStatus( name, status, reason, token, access )
     if not res['OK']:
       raise RSSException, where( self, self.setStorageElementStatus ) + " " + res[ 'Message' ]
-  
+
     return S_OK()
-  
+
 #############################################################################
 
 #  def updateStorageElement( self, name , access, status ):
-      
-#    se = self.rsS.getStorageElement( name, access )     
+
+#    se = self.rsS.getStorageElement( name, access )
 
 #    self.addOrModifyStorageElement(  )
 
 #############################################################################
 
-  def getResource( self, name ):
-      
+  def getResource( self, name, access ):
+
     res = self.rsS.getResource( name, access )
     if not res['OK']:
       raise RSSException, where( self, self.getResource ) + " " + res[ 'Message' ]
@@ -343,30 +342,30 @@ class ResourceStatusClient:
 
 #############################################################################
 
-  def getService( self, name ):
-      
+  def getService( self, name, access ):
+
     res = self.rsS.getService( name, access )
     if not res['OK']:
       raise RSSException, where( self, self.getService ) + " " + res[ 'Message' ]
- 
+
     if res['Value']:
       return S_OK( res[ 'Value' ][ 0 ] )
     else:
       return S_ERROR( 'Unknown Service' )
- 
- 
+
+
 #############################################################################
 
-  def getSite( self, name ):
-      
+  def getSite( self, name, access ):
+
     res = self.rsS.getSite( name, access )
     if not res['OK']:
       raise RSSException, where( self, self.getSite ) + " " + res[ 'Message' ]
- 
+
     if res[ 'OK' ] and res['Value']:
       return S_OK( res[ 'Value' ][ 0 ] )
-  
+
     else:
       return S_ERROR( 'Unknown Site' )
-  
+
 #############################################################################

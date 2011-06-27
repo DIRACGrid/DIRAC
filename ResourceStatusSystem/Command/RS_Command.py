@@ -4,7 +4,7 @@
 
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, ValidStatus
@@ -160,8 +160,8 @@ class StorageElementsStats_Command( Command ):
 
     res = {}
     for key in ValidStatus:
-      res[ key ] = resR[ key ] + resW[ key ]      
-      
+      res[ key ] = resR[ key ] + resW[ key ]
+
     return {'Result':res}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
@@ -200,25 +200,25 @@ class MonitoredStatus_Command( Command ):
       if len( self.args ) == 3:
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
           raise InvalidRes, where( self, self.doCommand )
-      
+
         toBeFound = self.client.getGeneralName( self.args[0], self.args[1], self.args[2] )
         if not toBeFound[ 'OK' ]:
           return {'Result' : 'Unknown'}
         toBeFound = toBeFound['Value']
-               
+
         statuses = self.client.getMonitoredStatus( self.args[2], toBeFound )
         if not statuses['OK']:
           return {'Result' : 'Unknown'}
         statuses = statuses['Value']
-        
+
       else:
         toBeFound = self.args[1]
         statuses = self.client.getMonitoredStatus( self.args[0], toBeFound )
-        
+
         if not statuses['OK']:
           return {'Result' : 'Unknown'}
         statuses = statuses['Value']
-        
+
       if not statuses:
         gLogger.warn( "No status found for %s" % toBeFound )
         return {'Result':'Unknown'}
@@ -227,14 +227,19 @@ class MonitoredStatus_Command( Command ):
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
+    #
+    # CODE BELOW IS INCORRECT, AND DO NOT WORK ANYMORE ON NEW PEP/PDP
+    #
+
+
     if len( statuses ) == 1:
       res = statuses[0]
     else:
       i = 0
-      
+
       gLogger.info( ValidStatus )
       gLogger.info( statuses )
-      
+
       for status in statuses:
         ind = ValidStatus.index( status )
         if ind > i:

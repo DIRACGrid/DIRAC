@@ -10,7 +10,7 @@ class PilotsClient:
 
 #############################################################################
 
-  def getPilotStats(self, granularity, name, periods):
+  def getPilotsStats(self, granularity, name, periods):
     """
     Return pilot stats
 
@@ -33,7 +33,7 @@ class PilotsClient:
     """
 
     if granularity.capitalize() not in ValidRes:
-      raise InvalidRes, where(self, self.getPilotStats)
+      raise InvalidRes, where(self, self.getPilotsStats)
 
     if granularity == 'Site':
       entity = getGOCSiteName(name)
