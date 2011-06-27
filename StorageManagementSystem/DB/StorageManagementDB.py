@@ -166,13 +166,13 @@ class StorageManagementDB( DB ):
       tasksInStatus[state]=[]
       
     req = "SELECT T.TaskID,T.Status FROM Tasks AS T, TaskReplicas AS R WHERE R.ReplicaID IN ( %s ) AND R.TaskID = T.TaskID GROUP BY T.TaskID;" % intListToString( replicaIDs )
-    res = self._query( req, False )
+    res = self._query( req, connection )
     if not res['OK']:
       return res
     
     for taskId,status in res['Value']:
       subreq = "SELECT DISTINCT(C.Status) FROM TaskReplicas AS R, CacheReplicas AS C WHERE R.TaskID=%s AND R.ReplicaID = C.ReplicaID;" %taskId    
-      subres = self._query( subreq,False)
+      subres = self._query( subreq, connection )
       if not subres['OK']:
         return subres
       
@@ -184,10 +184,11 @@ class StorageManagementDB( DB ):
       wrongState = False
       for state in cacheStatesForTask:
         if state not in self.STATES:
-           wrongState = True
-        if wrongState:
-          tasksInStatus['Failed'].append(taskId)
-          continue
+          wrongState = True
+          break
+      if wrongState:
+        tasksInStatus['Failed'].append(taskId)
+        continue
       for state in self.STATES:
         if state in cacheStatesForTask and status != state:
           tasksInStatus[state].append(taskId)
