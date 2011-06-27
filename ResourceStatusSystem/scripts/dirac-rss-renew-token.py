@@ -55,6 +55,9 @@ if group not in ( 'diracAdmin', 'lhcb_prod' ):
 
 for arg in args:
   g = s.whatIs( arg )
+  if not res['OK']:
+    raise Exception, res['Message']
+
   res = s.extendToken( g['Value'], arg, hours )
 
   if not res['OK']:
