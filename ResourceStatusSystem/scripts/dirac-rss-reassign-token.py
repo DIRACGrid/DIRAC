@@ -15,7 +15,8 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  %s [option|cfgfile] <resource_name> <token_name> <username>' % Script.scriptName,
                                      '\nArguments:',
                                      '  resource_name (string): name of the resource, e.g. "lcg.cern.ch"',
-                                     '  token_name (string): name of a token, e.g. "RS_SVC"',                                                      '  username (string): username to reassign the token to\n',] ) )
+                                     '  token_name (string): name of a token, e.g. "RS_SVC"',
+                                     '  username (string): username to reassign the token to\n',] ) )
 Script.parseCommandLine()
 
 hours = 24
