@@ -118,13 +118,24 @@ class InfoGetter:
 
 #############################################################################
 
-  def __getPolToEval(self, useNewRes = False, **kwargs):
+  def __getPolToEval(self, granularity, status=None, formerStatus=None, siteType=None,
+                     serviceType=None, resourceType=None, useNewRes=False):
+
+    # This dict is constructed to be used with function dictMatch that
+    # helps selecting policies. **kwargs are not used due to the fact
+    # that it's too dangerous here.
+    argsdict = {'Granularity': granularity,
+                'Status': status,
+                'FormerStatus': formerStatus,
+                'SiteType': siteType,
+                'ServiceType': serviceType,
+                'ResourceType': resourceType}
 
     pConfig = getTypedDictRootedAt("Policies")
     pol_to_eval = []
 
     for p in pConfig:
-      if dictMatch(kwargs, pConfig[p]):
+      if dictMatch(argsdict, pConfig[p]):
         pol_to_eval.append(p)
 
     polToEval_Args = []
@@ -164,16 +175,28 @@ class InfoGetter:
 
 #############################################################################
 
-  def __getPolTypes(self, **kwargs):
+  def __getPolTypes(self, granularity, status=None, formerStatus=None, newStatus=None,
+                    siteType=None, serviceType=None, resourceType=None):
     """Get Policy Types from config that match the given keyword
     arguments"""
+
+    # This dict is constructed to be used with function dictMatch that
+    # helps selecting policies. **kwargs are not used due to the fact
+    # that it's too dangerous here.
+    argsdict = {'Granularity': granularity,
+                'Status': status,
+                'FormerStatus': formerStatus,
+                'NewStatus': newStatus,
+                'SiteType': siteType,
+                'ServiceType': serviceType,
+                'ResourceType': resourceType}
 
     pTconfig = getTypedDictRootedAt("PolicyTypes")
 
     pTypes = []
 
     for pt in pTconfig:
-      if dictMatch(kwargs, pTconfig[pt]):
+      if dictMatch(argsdict, pTconfig[pt]):
         pTypes.append(pt)
 
     for pt_name in pTypes:
