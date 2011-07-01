@@ -178,15 +178,18 @@ def dictMatch(dict1, dict2):
   if type(dict1) != type(dict2) != dict:
     raise TypeError, "dictMatch expect dicts for both arguments"
 
-  try:
-    for k in dict1:
+  numMatch = False
+
+  for k in dict1:
+    try:
       if dict1[k] != None and dict1[k] not in dict2[k]:
         return False
-    return True
-  except KeyError:
-    # some keys are in dict1 and not in dict2: We don't care (in this
-    # case).
-    pass
+      else:
+        numMatch = True
+    except KeyError:
+      pass
+
+  return numMatch
 
 def dict_split(d):
   def dict_one_split(d):
