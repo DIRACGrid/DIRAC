@@ -231,8 +231,9 @@ class MonitoredStatus_Command( Command ):
     # statuses is a list of statuses. We take the worst returned
     # status.
 
-    print statuses
+    assert(type(statuses) == list)
     statuses.sort(key=value_of_status)
+
     res = statuses[0]
 
     if len(statuses) > 1:
@@ -240,6 +241,7 @@ class MonitoredStatus_Command( Command ):
       gLogger.info( statuses )
 
     return {'Result':res}
+
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
