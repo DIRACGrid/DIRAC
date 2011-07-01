@@ -182,7 +182,9 @@ def dictMatch(dict1, dict2):
 
   for k in dict1:
     try:
-      if dict1[k] != None and dict1[k] not in dict2[k]:
+      if dict1[k] == None:
+        continue
+      if dict1[k] not in dict2[k]:
         return False
       else:
         numMatch = True
