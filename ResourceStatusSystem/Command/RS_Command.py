@@ -2,12 +2,13 @@
     present pilots efficiency
 """
 
-from DIRAC import gLogger
+from DIRAC                                            import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Command.Command       import Command
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
 from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, ValidStatus
+from DIRAC.ResourceStatusSystem.PolicySystem.Status   import value_of_status
 
 #############################################################################
 
@@ -227,24 +228,16 @@ class MonitoredStatus_Command( Command ):
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
-    #
-    # CODE BELOW IS INCORRECT, AND DO NOT WORK ANYMORE ON NEW PEP/PDP
-    #
+    # statuses is a list of statuses. We take the worst returned
+    # status.
 
+    print statuses
+    statuses.sort(key=value_of_status)
+    res = statuses[0]
 
-    if len( statuses ) == 1:
-      res = statuses[0]
-    else:
-      i = 0
-
+    if len(statuses) > 1:
       gLogger.info( ValidStatus )
       gLogger.info( statuses )
-
-      for status in statuses:
-        ind = ValidStatus.index( status )
-        if ind > i:
-          i = ind
-      res = ValidStatus[i]
 
     return {'Result':res}
 
