@@ -31,7 +31,6 @@ class InfoGetter:
       configModule = __import__( module, globals(), locals(), ['*'] )
 
     self.C_Policies     = copy.deepcopy(configModule.Policies)
-    self.C_Policy_Types = copy.deepcopy(configModule.Policy_Types)
     self.C_views_panels = copy.deepcopy(configModule.views_panels)
 
 #############################################################################

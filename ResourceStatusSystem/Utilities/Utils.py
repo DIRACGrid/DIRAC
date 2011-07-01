@@ -180,7 +180,7 @@ def dictMatch(dict1, dict2):
 
   try:
     for k in dict1:
-      if dict1[k] not in dict2[k]:
+      if dict1[k] not None and dict1[k] not in dict2[k]:
         return False
     return True
   except KeyError:
