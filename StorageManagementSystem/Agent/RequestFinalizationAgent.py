@@ -124,6 +124,7 @@ class RequestFinalizationAgent( AgentModule ):
     return S_OK()
 
   def setOldTasksAsFailed( self, daysOld ):
+    gLogger.debug( "RequestFinalization.setOldTasksAsFailed: Attempting...." )
     res = self.storageDB.setOldTasksAsFailed( daysOld )
     if not res['OK']:
       gLogger.error( "RequestFinalization.setOldTasksAsFailed: Failed to set old tasks to a Failed state.", res['Message'] )

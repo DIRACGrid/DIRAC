@@ -920,8 +920,12 @@ class StorageManagementDB( DB ):
     return res
 
   def setOldTasksAsFailed( self, daysOld, connection = False ):
+    """
+    Set Tasks older than "daysOld" number of days to Failed
+    These tasks have already been retried every day for staging
+    """
     req = "UPDATE Tasks SET Status='Failed' WHERE DATE_ADD(SubmitTime, INTERVAL %s DAY ) < UTC_TIMESTAMP();" % ( daysOld )
-    res = self._query( req, connection )
+    res = self._update( req, connection )
     if not res['OK']:
       gLogger.error( "StorageManagementDB.setOldTasksAsFailed. Problem setting old Tasks to Failed." )
       return res
