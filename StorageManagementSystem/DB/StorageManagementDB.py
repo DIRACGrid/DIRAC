@@ -828,18 +828,18 @@ class StorageManagementDB( DB ):
 
     old_replicaIDs = [ row[0] for row in res['Value'] ]
 
-    req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
-    res = self._update( req, connection )
-    if not res['OK']:
-      gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to roll CacheReplicas back to Status=New.", res['Message'] )
-      return res
+    if( old_replicaIDs ) > 0:
+      req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+      res = self._update( req, connection )
+      if not res['OK']:
+        gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to roll CacheReplicas back to Status=New.", res['Message'] )
+        return res
 
-    req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
-    res = self._update( req, connection )
-    if not res['OK']:
-      gLogger.error( "StorageManagementDB.wakeupOldRequests. Problem removing entries from StageRequests." )
-      return res
-
+      req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+      res = self._update( req, connection )
+      if not res['OK']:
+        gLogger.error( "StorageManagementDB.wakeupOldRequests. Problem removing entries from StageRequests." )
+        return res
 
     return S_OK()
 
