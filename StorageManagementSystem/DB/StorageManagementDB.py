@@ -919,6 +919,14 @@ class StorageManagementDB( DB ):
     #gLogger.info( "%s_DB:%s" % ('removeTasks',req))
     return res
 
+  def setOldTasksAsFailed( self, daysOld, connection = False ):
+    req = "UPDATE Tasks SET Status='Failed' WHERE DATE_ADD(SubmitTime, INTERVAL %s DAY ) < UTC_TIMESTAMP();" % ( daysOld )
+    res = self._query( req, connection )
+    if not res['OK']:
+      gLogger.error( "StorageManagementDB.setOldTasksAsFailed. Problem setting old Tasks to Failed." )
+      return res
+    return res
+
   def removeUnlinkedReplicas( self, connection = False ):
     """ This will remove from the CacheReplicas tables where there are no associated links. """
     connection = self.__getConnection( connection )

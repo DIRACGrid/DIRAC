@@ -30,6 +30,7 @@ class RequestFinalizationAgent( AgentModule ):
     res = self.clearFailedTasks()
     res = self.callbackStagedTasks()
     res = self.removeUnlinkedReplicas()
+    res = self.setOldTasksAsFailed( 3 )
     return res
 
   def clearFailedTasks( self ):
@@ -120,4 +121,11 @@ class RequestFinalizationAgent( AgentModule ):
       gLogger.error( "RequestFinalization.clearReleasedTasks: Failed to remove tasks.", res['Message'] )
       return res
     gLogger.info( "RequestFinalization.clearReleasedTasks: ...removed." )
+    return S_OK()
+
+  def setOldTasksAsFailed( self, daysOld ):
+    res = self.storageDB.setOldTasksAsFailed( daysOld )
+    if not res['OK']:
+      gLogger.error( "RequestFinalization.setOldTasksAsFailed: Failed to set old tasks to a Failed state.", res['Message'] )
+      return res
     return S_OK()
