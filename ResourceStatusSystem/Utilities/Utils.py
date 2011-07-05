@@ -126,7 +126,7 @@ def typedobj_of_string(s):
     return s
   try:
     return ast.literal_eval(s)
-  except ValueError: # Probably it's just a string
+  except (ValueError, SyntaxError): # Probably it's just a string
     return s
 
 # String utils

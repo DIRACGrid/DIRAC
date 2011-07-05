@@ -83,3 +83,11 @@ CREATE TABLE EnvironmentCache(
   Environment BLOB,
   PRIMARY KEY(Hash)
 ) Engine=InnoDB;
+
+DROP TABLE IF EXISTS UserRegistryCache;
+CREATE TABLE UserRegistryCache(
+  login VARCHAR(16),
+  name VARCHAR(64) NOT NULL,
+  email VARCHAR(64) UNIQUE NOT NULL,
+  PRIMARY KEY(login)
+) Engine=InnoDB;

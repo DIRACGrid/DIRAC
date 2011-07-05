@@ -39,13 +39,15 @@ class ClientsCommandsTestCase( unittest.TestCase ):
     from DIRAC.ResourceStatusSystem.Command.Pilots_Command          import \
         PilotsEffSimpleCached_Command, PilotsEff_Command, PilotsEffSimple_Command, PilotsStats_Command
     from DIRAC.ResourceStatusSystem.Command.Jobs_Command            import \
-        JobsStats_Command, JobsEff_Command, SystemCharge_Command, JobsEffSimple_Command, JobsEffSimpleCached_Command
+        JobsStats_Command, JobsEff_Command, SystemCharge_Command, \
+        JobsEffSimple_Command, JobsEffSimpleCached_Command
     from DIRAC.ResourceStatusSystem.Command.SAMResults_Command      import \
         SAMResults_Command
     from DIRAC.ResourceStatusSystem.Command.GGUSTickets_Command     import \
         GGUSTickets_Open, GGUSTickets_Link, GGUSTickets_Info
     from DIRAC.ResourceStatusSystem.Command.RS_Command              import \
-        RSPeriods_Command, ServiceStats_Command, ResourceStats_Command, StorageElementsStats_Command, MonitoredStatus_Command
+        RSPeriods_Command, ServiceStats_Command, ResourceStats_Command, \
+        StorageElementsStats_Command, MonitoredStatus_Command
     from DIRAC.ResourceStatusSystem.Command.DIRACAccounting_Command import \
         DIRACAccounting_Command, TransferQuality_Command, TransferQualityCached_Command, \
         CachedPlot_Command, TransferQualityFromCachedPlot_Command
@@ -55,8 +57,10 @@ class ClientsCommandsTestCase( unittest.TestCase ):
         JobsEffSimpleEveryOne_Command, PilotsEffSimpleEverySites_Command, \
         TransferQualityEverySEs_Command, DTEverySites_Command, DTEveryResources_Command
     from DIRAC.ResourceStatusSystem.Command.AccountingCache_Command import \
-        TransferQualityByDestSplitted_Command, TransferQualityByDestSplittedSite_Command, FailedTransfersBySourceSplitted_Command, \
-        SuccessfullJobsBySiteSplitted_Command, FailedJobsBySiteSplitted_Command, SuccessfullPilotsBySiteSplitted_Command, \
+        TransferQualityByDestSplitted_Command, TransferQualityByDestSplittedSite_Command, \
+        FailedTransfersBySourceSplitted_Command, \
+        SuccessfullJobsBySiteSplitted_Command, FailedJobsBySiteSplitted_Command, \
+        SuccessfullPilotsBySiteSplitted_Command, \
         FailedPilotsBySiteSplitted_Command, SuccessfullPilotsByCESplitted_Command, \
         FailedPilotsByCESplitted_Command, RunningJobsBySiteSplitted_Command
 

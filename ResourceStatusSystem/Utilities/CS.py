@@ -12,8 +12,12 @@ class CSError(Exception):
   pass
 
 def getTypedDict(sectionPath):
-  """Wrapper around gConfig.getOptionsDict. Returns a dict where
-  values are typed instead of a dict where values are strings."""
+  """
+  DEPRECATED: use getTypedDictRootedAt instead. This function does
+  probably not do what you want.
+
+  Wrapper around gConfig.getOptionsDict. Returns a dict where values are
+  typed instead of a dict where values are strings."""
   def typed_dict_of_dict(d):
     for k in d:
       if type(d[k]) == dict:
@@ -54,41 +58,18 @@ def getTypedDictRootedAt(relpath = "", root = g_BaseConfigSection):
 def getUserNames():
   return gConfig.getSections("%s/Users" % g_BaseRegistrySection)['Value']
 
-def getMailForName(user):
-  """Try to guess the username of a user specified as a string. The
-  string is normally Firstname + Lastname, but cannot guarantee it
-  formally. This function relies on luck to work. You'd better be a
-  lucky person :D"""
-
-  candidates = getUserNames()
-  def score(S1, S2, alpha=1., beta=1.):
-    return alpha*len(Utils.LongestCommonSubstring(S1, S2)) + beta*Utils.CountCommonLetters(S1, S2)
-
-  name = user.strip().lower().split()
-  if len(name) == 1:
-    # Strategy one: Lastname
-    scores = [score(name[0], c) for c in candidates]
-  elif len(name) == 2:
-    # Stategy two: Firstname + Lastname
-    name = name[0][0] + name[1][0:7]
-    scores = [score(name, c) for c in candidates]
-  else:
-    # Strategy three: Multiple names
-    scores = [score(name[-1], c) for c in candidates]
-
-  highscore = max(scores)
-  return candidates[scores.index(highscore)]
-
 #############################################################################
 
-def getMailForUser( users ):
-  if type(users) != list:
+def getMailForUser(users):
+  from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+  rmDB = ResourceManagementDB()
+
+  if type(users) == str:
     users = [users]
-  mails = []
-  for user in users:
-    mail = gConfig.getValue("%s/Users/%s/Email" %(g_BaseRegistrySection, user))
-    mails.append(mail)
-  return S_OK(mails)
+  else:
+    raise ValueError
+
+  return S_OK([rmDB.registryGetMailFromLogin(u) for u in users])
 
 #############################################################################
 

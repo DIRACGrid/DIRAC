@@ -21,29 +21,29 @@ class Synchronizer:
 
 #############################################################################
 
-  def __init__( self, rsDBin = None ):
+  def __init__( self, rsDBin = None, rmDBin = None ):
 
     self.rsDB = rsDBin
+    self.rmDB = rmDBin
 
-    if self.rsDB == None:
+    if self.rsDB == None and self.rmDB == None:
       from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+      from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
       self.rsDB = ResourceStatusDB()
+      self.rmDB = ResourceManagementDB()
 
     self.GOCDBClient = GOCDBClient()
 
 #############################################################################
 
 #  def sync(self, thingsToSync = None, fake_param = None):
-  def sync( self, a, b ):
+  def sync( self, _a, _b ):
     """
     :params:
       :attr:`thingsToSync`: list of things to sync
     """
 
-#    if thingsToSync == None:
-#      thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements'],
-
-    thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements']
+    thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements', 'RegistryUsers']
 
     gLogger.info( "!!! Sync DB content with CS content for %s !!!" % ( ' '.join( x for x in thingsToSync ) ) )
 
@@ -487,7 +487,7 @@ class Synchronizer:
 
       #remove storageElements no more in the CS
       for se in storageElementsIn:
-        if se not in SEs:  
+        if se not in SEs:
           self.rsDB.removeStorageElement( storageElementName = se, resourceName = None, access = access )
 
       #Add new storage Elements
@@ -543,3 +543,10 @@ class Synchronizer:
     return gt
 
 #############################################################################
+
+  def _syncRegistryUsers(self):
+    from DIRAC.ResourceStatusSystem.Utilities import CS
+    users = CS.getTypedDictRootedAt("Users", root= "/Registry")
+    for u in users:
+      users[u]['DN'] = users[u]['DN'].split('=')[-1]
+      self.rmDB.registryAddUser(u, users['DN'].lower(), users['Email'].lower())

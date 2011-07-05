@@ -31,8 +31,10 @@ def initializeResourceStatusHandler( _serviceInfo ):
   global VOExtension
   VOExtension = getExt()
 
-  sync_O = Synchronizer( rsDB )
-  gConfig.addListenerToNewVersionEvent( sync_O.sync )
+  # Now done in ResourceManagementHandler, that handles the 2 DBs.
+
+  # sync_O = Synchronizer( rsDBin=rsDB )
+  # gConfig.addListenerToNewVersionEvent( sync_O.sync )
 
   return S_OK()
 
