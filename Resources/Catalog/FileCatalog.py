@@ -201,7 +201,7 @@ class FileCatalog:
     return S_OK()
 
   def _getCatalogs( self ):
-    res = gConfig.getSections( self.rootConfigPath )
+    res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
     if not res['OK']:
       errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
       gLogger.error( errStr, res['Message'] )

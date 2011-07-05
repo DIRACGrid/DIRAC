@@ -181,6 +181,7 @@ class JobSchedulingAgent( OptimizerModule ):
       siteDict['tape'] = 0
 
       optInfo['SiteCandidates'][stagingSite] = siteDict
+      self.log.verbose( 'Updating %s Optimizer Info for Job %s:' % ( self.dataAgentName, job ), optInfo )
       result = self.setOptimizerJobInfo( job, self.dataAgentName, optInfo )
       if not result['OK']:
         return result
@@ -210,6 +211,7 @@ class JobSchedulingAgent( OptimizerModule ):
       Files are declared local
     """
     updated = False
+    seDict = {}
     for site, siteDict in optInfo['SiteCandidates'].items():
       if stagingSite == site:
         continue
@@ -219,8 +221,14 @@ class JobSchedulingAgent( OptimizerModule ):
       closeSEs = closeSEs['Value']
       siteDiskSEs = []
       for se in closeSEs:
-        storageElement = StorageElement( se )
-        seStatus = storageElement.getStatus()['Value']
+        if se not in seDict:
+          try:
+            storageElement = StorageElement( se )
+            seDict[se] = storageElement.getStatus()['Value']
+          except Exception:
+            self.log.exception( 'Failed to instantiate StorageElement( %s )' % se )
+            continue
+        seStatus = seDict[se]
         if seStatus['Read'] and seStatus['DiskSE']:
           siteDiskSEs.append( se )
 
@@ -241,6 +249,7 @@ class JobSchedulingAgent( OptimizerModule ):
             break
 
     if updated:
+      self.log.verbose( 'Updating %s Optimizer Info for Job %s:' % ( self.dataAgentName, job ), optInfo )
       self.setOptimizerJobInfo( job, self.dataAgentName, optInfo )
 
   #############################################################################
@@ -251,7 +260,7 @@ class JobSchedulingAgent( OptimizerModule ):
     #Check input data agent result and limit site candidates accordingly
     dataResult = self.getOptimizerJobInfo( job, self.dataAgentName )
     if dataResult['OK'] and len( dataResult['Value'] ):
-      self.log.verbose( dataResult )
+      self.log.verbose( 'Retrieved from %s Optimizer Info for Job %s:' % ( self.dataAgentName, job ), dataResult )
       if 'SiteCandidates' in dataResult['Value']:
         return S_OK( dataResult['Value'] )
 
@@ -364,6 +373,9 @@ class JobSchedulingAgent( OptimizerModule ):
         if se in siteDiskSEs:
           # this File is on Disk, we can ignore it
           break
+        if se not in siteTapeSEs:
+          # this File is not being staged
+          continue
         if not lfn in stageSURLs.keys():
           stageSURLs[lfn] = {}
           stageSURLs[lfn].update( {se:surl} )
@@ -376,7 +388,7 @@ class JobSchedulingAgent( OptimizerModule ):
       stageSEs = sorted( [ ( len( stageLfns[se] ), se ) for se in stageLfns.keys() ] )
       for lfn in stageSURLs:
         lfnFound = False
-        for ( se, numberOfLfns ) in reversed( stageSEs ):
+        for ( numberOfLfns, se ) in reversed( stageSEs ):
           if lfnFound and lfn in stageLfns[se]:
             stageLfns[se].remove( lfn )
           if lfn in stageLfns[se]:
