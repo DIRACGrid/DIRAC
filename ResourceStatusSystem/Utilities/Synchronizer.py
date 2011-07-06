@@ -548,5 +548,10 @@ class Synchronizer:
     from DIRAC.ResourceStatusSystem.Utilities import CS
     users = CS.getTypedDictRootedAt("Users", root= "/Registry")
     for u in users:
+      if type(users[u]['DN']) == list:
+        users[u]['DN'] = users[u]['DN'][0]
+      if type(users[u]['Email']) == list:
+        users[u]['Email'] = users[u]['Email'][0]
+
       users[u]['DN'] = users[u]['DN'].split('=')[-1]
-      self.rmDB.registryAddUser(u, users['DN'].lower(), users['Email'].lower())
+      self.rmDB.registryAddUser(u, users[u]['DN'].lower(), users[u]['Email'].lower())
