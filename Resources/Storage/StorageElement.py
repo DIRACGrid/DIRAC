@@ -56,7 +56,6 @@ class StorageElement:
                            'exists',
                            'isFile',
                            'getFile',
-                           'getFileMetadata',
                            'getFileSize',
                            'getAccessUrl',
                            'getTransportURL',
@@ -79,6 +78,9 @@ class StorageElement:
                            'removeFile',
                            'removeDirectory',
                           ]
+    self.checkMethods = [
+                         'getFileMetadata'
+                         ]
 
   def dump( self ):
     """
@@ -156,13 +158,17 @@ class StorageElement:
     return S_OK( retDict )
 
   def isValid( self, operation = '' ):
+    gLogger.debug( "StorageElement.isValid: Determining whether the StorageElement %s is valid for %s" % ( self.name, operation ) )
     if self.overwride:
       return S_OK()
     gLogger.verbose( "StorageElement.isValid: Determining whether the StorageElement %s is valid for use." % self.name )
     if not self.valid:
       gLogger.error( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
       return S_ERROR( self.errorReason )
-    # Determine wheter the StorageElement is valid for reading and writing
+    # Determine whether the StorageElement is valid for checking, reading, writing
+    checking = True
+    if self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] != 'Active':
+      checking = False
     reading = True
     if self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active':
       reading = False
@@ -186,10 +192,17 @@ class StorageElement:
       operation = 'Write'
     elif operation in self.removeMethods or ( operation.lower() == 'remove' ):
       operation = 'Remove'
+    elif operation in self.checkMethods or ( operation.lower() == 'check' ):
+      operation = 'Check'
     else:
       gLogger.error( "StorageElement.isValid: The supplied operation is not known.", operation )
       return S_ERROR( "StorageElement.isValid: The supplied operation is not known." )
+    gLogger.debug( "in isValid check the operation: %s " % operation )
     # Check if the operation is valid
+    if operation == 'Check':
+      if not checking:
+        gLogger.error( "StorageElement.isValid: Check access not currently permitted." )
+        return S_ERROR( "StorageElement.isValid: Check access not currently permitted." )
     if operation == 'Read':
       if not reading:
         gLogger.error( "StorageElement.isValid: Read access not currently permitted." )
