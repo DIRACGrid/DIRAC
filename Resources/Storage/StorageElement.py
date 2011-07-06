@@ -200,9 +200,10 @@ class StorageElement:
     gLogger.debug( "in isValid check the operation: %s " % operation )
     # Check if the operation is valid
     if operation == 'Check':
-      if not checking:
-        gLogger.error( "StorageElement.isValid: Check access not currently permitted." )
-        return S_ERROR( "StorageElement.isValid: Check access not currently permitted." )
+      if not reading:
+        if not checking:
+          gLogger.error( "StorageElement.isValid: Check access not currently permitted." )
+          return S_ERROR( "StorageElement.isValid: Check access not currently permitted." )
     if operation == 'Read':
       if not reading:
         gLogger.error( "StorageElement.isValid: Read access not currently permitted." )
