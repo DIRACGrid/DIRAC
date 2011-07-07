@@ -2,7 +2,6 @@
 # $HeadURL:  $
 ########################################################################
 
-import copy
 import Queue
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -34,14 +33,14 @@ class RSInspectorAgent( AgentModule ):
   def initialize( self ):
     """ Standard constructor
     """
-    
+
     try:
       self.rsDB = ResourceStatusDB()
       self.rmDB = ResourceManagementDB()
-      
+
       self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
-      
+
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
       self.threadPool         = ThreadPool( self.maxNumberOfThreads,
                                             self.maxNumberOfThreads )
@@ -49,17 +48,17 @@ class RSInspectorAgent( AgentModule ):
       if not self.threadPool:
         self.log.error( 'Can not create Thread Pool' )
         return S_ERROR( 'Can not create Thread Pool' )
-      
+
       self.setup          = getSetup()[ 'Value' ]
       self.VOExtension    = getExt()
       self.ResourcesFreqs = CheckingFreqs[ 'ResourcesFreqs' ]
       self.nc             = NotificationClient()
       self.diracAdmin     = DiracAdmin()
-      self.csAPI          = CSAPI()      
-      
-      for i in xrange( self.maxNumberOfThreads ):
-        self.threadPool.generateJobAndQueueIt( self._executeCheck, args = (None, ) )  
-        
+      self.csAPI          = CSAPI()
+
+      for _i in xrange( self.maxNumberOfThreads ):
+        self.threadPool.generateJobAndQueueIt( self._executeCheck )
+
       return S_OK()
 
     except Exception:
@@ -70,16 +69,16 @@ class RSInspectorAgent( AgentModule ):
 #############################################################################
 
   def execute( self ):
-    """ 
+    """
     The main RSInspectorAgent execution method.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and 
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getStuffToCheck` and
     put result in self.ResourcesToBeChecked (a Queue) and in self.ResourceNamesInCheck (a list)
     """
-    
+
     try:
 
-      res = self.rsDB.getStuffToCheck( 'Resources', self.ResourcesFreqs ) 
-   
+      res = self.rsDB.getStuffToCheck( 'Resources', self.ResourcesFreqs )
+
       for resourceTuple in res:
         if resourceTuple[ 0 ] in self.ResourceNamesInCheck:
           break
@@ -95,22 +94,22 @@ class RSInspectorAgent( AgentModule ):
       errorStr = where( self, self.execute )
       gLogger.exception( errorStr,lException=x )
       return S_ERROR( errorStr )
-      
-        
+
+
 #############################################################################
 
-  def _executeCheck( self, arg ):
-    """ 
+  def _executeCheck( self ):
+    """
     Create instance of a PEP, instantiated popping a resource from lists.
     """
-    
-    
+
+
     while True:
-      
+
       try:
-      
+
         toBeChecked  = self.ResourcesToBeChecked.get()
-      
+
         granularity  = toBeChecked[ 0 ]
         resourceName = toBeChecked[ 1 ]
         status       = toBeChecked[ 2 ]
@@ -118,16 +117,16 @@ class RSInspectorAgent( AgentModule ):
         siteType     = toBeChecked[ 4 ]
         resourceType = toBeChecked[ 5 ]
         tokenOwner   = toBeChecked[ 6 ]
-        
+
         gLogger.info( "Checking Resource %s, with status %s" % ( resourceName, status ) )
-        
-        newPEP = PEP( self.VOExtension, granularity = granularity, name = resourceName, 
-                      status = status, formerStatus = formerStatus, siteType = siteType, 
+
+        newPEP = PEP( self.VOExtension, granularity = granularity, name = resourceName,
+                      status = status, formerStatus = formerStatus, siteType = siteType,
                       resourceType = resourceType, tokenOwner = tokenOwner )
-        
-        newPEP.enforce( rsDBIn = self.rsDB, rmDBIn = self.rmDB, setupIn = self.setup, 
+
+        newPEP.enforce( rsDBIn = self.rsDB, rmDBIn = self.rmDB, setupIn = self.setup,
                         ncIn = self.nc, daIn = self.diracAdmin, csAPIIn = self.csAPI )
-    
+
         # remove from InCheck list
         self.ResourceNamesInCheck.remove( toBeChecked[ 1 ] )
 
@@ -138,4 +137,4 @@ class RSInspectorAgent( AgentModule ):
         except IndexError:
           pass
 
-#############################################################################    
+#############################################################################
