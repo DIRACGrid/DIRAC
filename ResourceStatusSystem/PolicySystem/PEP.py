@@ -192,26 +192,26 @@ class PEP:
     ###################
 
     resDecisions = pdp.takeDecision( knownInfo = knownInfo )
+    assert(type(resDecisions) == dict and resDecisions != {})
 
-    if resDecisions != {}:
-      res          = resDecisions[ 'PolicyCombinedResult' ]
+    res          = resDecisions[ 'PolicyCombinedResult' ]
 
-      # Security mechanism in case there is no PolicyType retourned
-      if res == {}:
-        EmptyPolTypeActions( self.__granularity, self.__name, resDecisions, res )
+    # Security mechanism in case there is no PolicyType returned
+    if res == {}:
+      EmptyPolTypeActions( self.__granularity, self.__name, resDecisions, res )
 
-      else:
-        policyType   = res[ 'PolicyType' ]
+    else:
+      policyType   = res[ 'PolicyType' ]
 
-        if 'Resource_PolType' in policyType:
-          ResourcePolTypeActions( self.__granularity, self.__name, resDecisions, res, rsDB, rmDB )
+      if 'Resource_PolType' in policyType:
+        ResourcePolTypeActions( self.__granularity, self.__name, resDecisions, res, rsDB, rmDB )
 
-        if 'Alarm_PolType' in policyType:
-          AlarmPolTypeActions(self.__name, res, nc, setup, rsDB,
-                              Granularity=self.__granularity,
-                              SiteType=self.__siteType,
-                              ServiceType=self.__serviceType,
-                              ResourceType=self.__resourceType)
+      if 'Alarm_PolType' in policyType:
+        AlarmPolTypeActions(self.__name, res, nc, setup, rsDB,
+                            Granularity=self.__granularity,
+                            SiteType=self.__siteType,
+                            ServiceType=self.__serviceType,
+                            ResourceType=self.__resourceType)
 
-        if 'RealBan_PolType' in policyType and self.__realBan == True:
-          RealBanPolTypeActions( self.__granularity, self.__name, res, da, csAPI, setup )
+      if 'RealBan_PolType' in policyType and self.__realBan == True:
+        RealBanPolTypeActions( self.__granularity, self.__name, res, da, csAPI, setup )
