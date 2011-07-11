@@ -107,6 +107,14 @@ import copy, ast
 
 id_fun = lambda x: x
 
+# Import utils
+
+def voimport(base_mod, voext="LHCb"):
+  try:
+    return  __import__(voext + base_mod, globals(), locals(), ['*'])
+  except ImportError:
+    return  __import__(base_mod, globals(), locals(), ['*'])
+
 # (Duck) type checking
 
 def isiterable(obj):

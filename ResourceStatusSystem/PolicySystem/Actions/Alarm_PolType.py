@@ -1,23 +1,11 @@
 """
 AlarmPolType Actions
 """
-import urllib
-
 from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 rmDB = ResourceManagementDB()
-
-def getUsersToNotifyShiftDB():
-  url = urllib.urlopen("http://lbshiftdb.cern.ch/shiftdb_report.php")
-  lines = [l.split('|')[1:-1] for l in  url.readlines()]
-  lines = [ {'Date': e[0].strip(), 'Function': e[1].strip(), 'Phone':e[2].strip(), 'Morning':e[3].strip(),
-             'Evening':e[4].strip(), 'Night':e[5].strip() } for e in lines[1:]]
-
-  lines = [ e for e in lines if e['Function'] == "Grid Expert" or e['Function'] == "Production" ]
-
-  return  [ rmDB.registryGetLoginFromName(e['Morning']) for e in lines ]
 
 def getUsersToNotify(setup, kwargs):
   """Get a list of users to notify (helper function for AlarmPolTypeActions)
@@ -35,9 +23,6 @@ def getUsersToNotify(setup, kwargs):
     if Utils.dictMatch(kwargs, groups[k]):
       notifications.append({'Users':groups[k]['Users'],
                             'Notifications':groups[k]['Notifications']})
-
-  # Adding people to notify from shiftdb
-  notifications += getUsersToNotifyShiftDB()
 
   return notifications
 
@@ -83,7 +68,3 @@ Setup = %s
 
           nc.sendMail(rmDB.registryGetMailFromLogin(user),
                       '%s: %s' % (name, res['Status']), mailMessage)
-
-
-if __name__ == "__main__":
-  print getUsersToNotifyShiftDB()
