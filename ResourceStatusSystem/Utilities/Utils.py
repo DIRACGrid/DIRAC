@@ -109,7 +109,7 @@ id_fun = lambda x: x
 
 # Import utils
 
-def voimport(base_mod, voext="LHCb"):
+def voimport(base_mod, voext):
   try:
     return  __import__(voext + base_mod, globals(), locals(), ['*'])
   except ImportError:

@@ -202,11 +202,11 @@ class PEP:
       policyType   = res[ 'PolicyType' ]
 
       if 'Resource_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".Resource_PolType")
+        m = Utils.voimport(actionBaseMod + ".Resource_PolType", self.VOExtension)
         m.ResourcePolTypeActions( self.__granularity, self.__name, resDecisions, res, rsDB, rmDB )
 
       if 'Alarm_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".AlarmPolTypeActions")
+        m = Utils.voimport(actionBaseMod + ".AlarmPolTypeActions", self.VOExtension)
         m.AlarmPolTypeActions(self.__name, res, nc, setup, rsDB,
                             Granularity=self.__granularity,
                             SiteType=self.__siteType,
