@@ -60,7 +60,7 @@ class StorageElement:
                            'getAccessUrl',
                            'getTransportURL',
                            'isDirectory',
-                           'getDirectoryMetadata',
+                           #'getDirectoryMetadata',
                            'getDirectorySize',
                            'listDirectory',
                            'getDirectory']
@@ -79,6 +79,7 @@ class StorageElement:
                            'removeDirectory',
                           ]
     self.checkMethods = [
+                         'getDirectoryMetadata',
                          'getFileMetadata'
                          ]
 
