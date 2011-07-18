@@ -43,26 +43,9 @@ class StorageElement:
       self.protocolOptions = factoryDict['ProtocolOptions']
       self.turlProtocols = factoryDict['TurlProtocols']
 
-    self.readMethods = [  'getStorageElementName',
-                           'getProtocols',
-                           'getRemoteProtocols',
-                           'getLocalProtocols',
-                           'getStorageElementOption',
-                           'getStorageParameters',
-                           'isLocalSE',
-                           'getPfnForProtocol',
-                           'getPfnPath',
-                           'getPfnForLfn',
-                           'exists',
-                           'isFile',
-                           'getFile',
-                           'getFileSize',
+    self.readMethods = [   'getFile',
                            'getAccessUrl',
                            'getTransportURL',
-                           'isDirectory',
-                           #'getDirectoryMetadata',
-                           'getDirectorySize',
-                           'listDirectory',
                            'getDirectory']
     self.writeMethods = [  'retransferOnlineFile',
                            'putFile',
@@ -79,8 +62,24 @@ class StorageElement:
                            'removeDirectory',
                           ]
     self.checkMethods = [
+                         'exists',
                          'getDirectoryMetadata',
-                         'getFileMetadata'
+                         'getDirectorySize',
+                         'getFileSize',
+                         'getFileMetadata',
+                         'getLocalProtocols',
+                         'getPfnForProtocol',
+                         'getPfnForLfn',
+                         'getPfnPath',
+                         'getProtocols',
+                         'getRemoteProtocols',
+                         'getStorageElementName',
+                         'getStorageElementOption',
+                         'getStorageParameters',
+                         'listDirectory',
+                         'isDirectory',
+                         'isFile',
+                         'isLocalSE'
                          ]
 
   def dump( self ):
