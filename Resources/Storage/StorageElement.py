@@ -172,22 +172,19 @@ class StorageElement:
       gLogger.error( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
       return S_ERROR( self.errorReason )
     # Determine whether the StorageElement is valid for checking, reading, writing
-    checking = True
-    if self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] != 'Active':
-      checking = False
-    reading = True
-    if self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active':
-      reading = False
-    writing = True
-    if self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active':
-      writing = False
-    removing = True
-    if self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active':
-      removing = False
+    res = self.getStatus()
+    if not res[ 'OK' ]:
+      gLogger.error( "Could not call getStatus" )
+      return S_ERROR( "StorageElement.isValid could not call the getStatus method" )
+    checking = res[ 'Value' ][ 'Check' ]
+    reading = res[ 'Value' ][ 'Read' ]
+    writing = res[ 'Value' ][ 'Write' ]
+    removing = res[ 'Value' ][ 'Remove' ]
+
     # Determine whether the requested operation can be fulfilled    
-    if ( not operation ) and ( not reading ) and ( not writing ):
-      gLogger.error( "StorageElement.isValid: Read and write access not permitted." )
-      return S_ERROR( "StorageElement.isValid: Read and write access not permitted." )
+    if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
+      gLogger.error( "StorageElement.isValid: Read, write and check access not permitted." )
+      return S_ERROR( "StorageElement.isValid: Read, write and check access not permitted." )
     if not operation:
       gLogger.warn( "StorageElement.isValid: The 'operation' argument is not supplied. It should be supplied in the future." )
       return S_OK()
