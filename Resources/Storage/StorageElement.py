@@ -126,6 +126,7 @@ class StorageElement:
       retDict['Read'] = False
       retDict['Write'] = False
       retDict['Remove'] = False
+      retDict['Check'] = False
       retDict['DiskSE'] = False
       retDict['TapeSE'] = False
       retDict['TotalCapacityTB'] = -1
@@ -137,6 +138,7 @@ class StorageElement:
     retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
     retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
     retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active' )
+    retDict['Check'] = not ( self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] != 'Active' )
     diskSE = True
     tapeSE = False
     if self.options.has_key( 'SEType' ):
