@@ -932,9 +932,9 @@ class StorageManagementDB( DB ):
     return res
 
   def removeUnlinkedReplicas( self, connection = False ):
-    """ This will remove from the CacheReplicas tables where there are no associated links. """
+    """ This will remove from the CacheReplicas and StageRequest tables where there are no associated links AND the pinning is expired. """
     connection = self.__getConnection( connection )
-    req = "SELECT ReplicaID from CacheReplicas WHERE Links = 0;"
+    req = "select SR.ReplicaID from CacheReplicas CR,StageRequests SR WHERE CR.Links = 0 and CR.ReplicaID=SR.ReplicaID group by SR.ReplicaID HAVING max(SR.PinExpiryTime) < UTC_TIMESTAMP();"
     res = self._query( req, connection )
     if not res['OK']:
       gLogger.error( "StorageManagementDB.removeUnlinkedReplicas. Problem selecting entries from CacheReplicas where Links = 0." )
@@ -944,7 +944,6 @@ class StorageManagementDB( DB ):
       replicaIDs.append( tuple[0] )
     if not replicaIDs:
       return S_OK()
-
 
     reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
     resSelect = self._query( reqSelect )
