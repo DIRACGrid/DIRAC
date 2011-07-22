@@ -819,27 +819,27 @@ class StorageManagementDB( DB ):
     delete these requests
     reset Replicas with corresponding ReplicaIDs to Status='New'
     """
-
-    req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL 1 DAY ) < UTC_TIMESTAMP();" % intListToString( replicaIDs )
-    res = self._query( req )
-    if not res['OK']:
-      gLogger.error( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'wakeupOldRequests', reqSelect, resSelect['Message'] ) )
-      return res
-
-    old_replicaIDs = [ row[0] for row in res['Value'] ]
-
-    if( old_replicaIDs ) > 0:
-      req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
-      res = self._update( req, connection )
+    if( replicaIDs ) > 0:
+      req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL 1 DAY ) < UTC_TIMESTAMP();" % intListToString( replicaIDs )
+      res = self._query( req )
       if not res['OK']:
-        gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to roll CacheReplicas back to Status=New.", res['Message'] )
+        gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to select old StageRequests.", res['Message'] )
         return res
 
-      req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
-      res = self._update( req, connection )
-      if not res['OK']:
-        gLogger.error( "StorageManagementDB.wakeupOldRequests. Problem removing entries from StageRequests." )
-        return res
+      old_replicaIDs = [ row[0] for row in res['Value'] ]
+
+      if( old_replicaIDs ) > 0:
+        req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+        res = self._update( req, connection )
+        if not res['OK']:
+          gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to roll CacheReplicas back to Status=New.", res['Message'] )
+          return res
+
+        req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+        res = self._update( req, connection )
+        if not res['OK']:
+          gLogger.error( "StorageManagementDB.wakeupOldRequests. Problem removing entries from StageRequests." )
+          return res
 
     return S_OK()
 
