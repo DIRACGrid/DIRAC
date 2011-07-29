@@ -11,6 +11,14 @@ g_BaseConfigSection     = "/Operations/RSSConfiguration"
 class CSError(Exception):
   pass
 
+def getValue(v):
+  """Wrapper around gConfig.getValue. Returns typed values instead of
+  a string value"""
+  res = gConfig.getValue(v)
+  if res.find(",") > -1: # res is a list of values
+    return [Utils.typedobj_of_string(e) for e in List.fromChar(res)]
+  else: return Utils.typedobj_of_string(res)
+
 def getTypedDict(sectionPath):
   """
   DEPRECATED: use getTypedDictRootedAt instead. This function does

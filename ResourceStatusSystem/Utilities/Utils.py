@@ -165,6 +165,11 @@ def CountCommonLetters(S1, S2):
 
 # List utils
 
+def list_(a):
+  """Same as list() except if arg is a string, in this case, return
+  [a]"""
+  return (list(a) if type(a) != str else [a])
+
 def list_split(l):
   return [i[0] for i in l], [i[1] for i in l]
 
@@ -221,6 +226,19 @@ def dict_split(d):
     else:         return res
 
   return dict_split([d])
+
+def dict_invert(dict_):
+  res = {}
+  for k in dict_:
+    if not isiterable(dict_[k]):
+      dict_[k] = [dict_[k]]
+    for i in dict_[k]:
+      try:
+        res[i].append(k)
+      except KeyError:
+        res[i] = [k]
+
+  return res
 
 # CLI stuff
 
