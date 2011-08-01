@@ -290,7 +290,7 @@ class InputDataAgent( OptimizerModule ):
               if lfn not in siteResult[site]['disk']:
                 siteResult[site]['disk'].append( lfn )
                 if lfn in siteResult[site]['tape']:
-                  del siteResult[site]['tape'][lfn]
+                  siteResult[site]['tape'].remove( lfn )
             if seDict[se]['Status']['Read'] and seDict[se]['Status']['TapeSE']:
               if lfn not in siteResult[site]['tape'] and lfn not in siteResult[site]['disk']:
                 siteResult[site]['tape'].append( lfn )
