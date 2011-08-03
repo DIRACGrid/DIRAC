@@ -248,6 +248,7 @@ class ExecutorDispatcherCallbacks:
   def cbTaskError( self, taskId, errorMsg ):
     return S_ERROR( "No error callback defined" )
 
+
 class ExecutorDispatcher:
 
   class ETask:

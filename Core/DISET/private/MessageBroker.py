@@ -406,11 +406,18 @@ class MessageBroker:
 
 class MessageSender:
 
-  def __init__( self, msgBroker ):
+  def __init__( self, serviceName, msgBroker ):
+    self.__serviceName = serviceName
     self.__msgBroker = msgBroker
 
-  def sendMessage( self, trid, msgName, *msgArgs ):
-    return self.__msgBroker.sendMessage( trid, msgName, msgArgs )
+  def getServiceName( self ):
+    return self.__serviceName
+
+  def sendMessage( self, trid, msgObj ):
+    return self.__msgBroker.sendMessage( trid, msgObj )
+
+  def createMessage( self, msgName ):
+    return self.__msgBroker.__msgFactory.createMessage( self.__serviceName, msgName )
 
 gMessageBroker = False
 def getGlobalMessageBroker():

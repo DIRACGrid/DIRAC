@@ -82,7 +82,7 @@ class Service:
                                'URL' : self._cfg.getURL(),
                                'systemSectionPath' : self._cfg.getSystemPath(),
                                'serviceSectionPath' : self._cfg.getServicePath(),
-                               'messageSender' : MessageSender( self._msgBroker )
+                               'messageSender' : MessageSender( self.__name, self._msgBroker )
                              }
     #Call static initialization function
     try:
