@@ -338,7 +338,7 @@ class TransformationCleaningAgent( AgentModule ):
         gLogger.error( "Failed to determine transformation type" )
         return res
       transType = res['Value']
-      if transType == 'Replication':
+      if transType in [ 'Replication', 'Removal' ]:
         res = self.__removeRequests( externalIDs )
       else:
         res = self.__removeWMSTasks( externalIDs )
@@ -364,6 +364,19 @@ class TransformationCleaningAgent( AgentModule ):
   def __removeWMSTasks( self, jobIDs ):
     allRemove = True
     for jobList in breakListIntoChunks( jobIDs, 500 ):
+
+      res = self.wmsClient.killJob( jobList )
+      if res['OK']:
+        gLogger.info( "Successfully killed %d jobs from WMS" % len( jobList ) )
+      elif ( res.has_key( 'InvalidJobIDs' ) ) and ( not res.has_key( 'NonauthorizedJobIDs' ) ) and ( not res.has_key( 'FailedJobIDs' ) ):
+        gLogger.info( "Found %s jobs which did not exist in the WMS" % len( res['InvalidJobIDs'] ) )
+      elif res.has_key( 'NonauthorizedJobIDs' ):
+        gLogger.error( "Failed to kill %s jobs because not authorized" % len( res['NonauthorizedJobIDs'] ) )
+        allRemove = False
+      elif res.has_key( 'FailedJobIDs' ):
+        gLogger.error( "Failed to kill %s jobs" % len( res['FailedJobIDs'] ) )
+        allRemove = False
+
       res = self.wmsClient.deleteJob( jobList )
       if res['OK']:
         gLogger.info( "Successfully removed %d jobs from WMS" % len( jobList ) )
@@ -375,6 +388,7 @@ class TransformationCleaningAgent( AgentModule ):
       elif res.has_key( 'FailedJobIDs' ):
         gLogger.error( "Failed to remove %s jobs" % len( res['FailedJobIDs'] ) )
         allRemove = False
+
     if not allRemove:
       return S_ERROR( "Failed to remove all remnants from WMS" )
     gLogger.info( "Successfully removed all tasks from the WMS" )
