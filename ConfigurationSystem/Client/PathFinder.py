@@ -56,7 +56,10 @@ def getServiceURL( serviceName, serviceTuple = False, setup = False ):
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
-  return gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
+  url = gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
+  if len( url.split( "/" ) ) < 5:
+    url = "%s/%s" % ( url, serviceName )
+  return url
 
 def getGatewayURLs( serviceName = "" ):
   siteName = gConfigurationData.extractOptionFromCFG( "/LocalSite/Site" )
