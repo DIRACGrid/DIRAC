@@ -66,11 +66,13 @@ class ExecutorMindHandler( RequestHandler ):
     msgObj.taskStub = taskStub
     return self.srv_msgSend( eId, msgObj )
 
+  auth_conn_new = [ 'all' ]
   def conn_new( self, trid, identity, kwargs ):
     if 'executorName' not in kwargs or not kwargs[ 'executorName']:
       return S_ERROR( "Only executors are allowed to connect" )
     return S_OK()
 
+  auth_conn_connected = [ 'all' ]
   def conn_connected( self, trid, identity, kwargs ):
     try:
       numTasks = max( 1, int( kwargs[ 'maxTasks' ] ) )

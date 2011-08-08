@@ -428,10 +428,9 @@ class Service:
                                                    trid,
                                                    self._lockManager,
                                                    self._msgBroker )
-      handlerInstance.initialize()
     except Exception, e:
-      gLogger.exception( S_ERROR( "Server error while initializing handler: %s" % str( e ) ) )
-      return S_ERROR( "Server error while intializing handler" )
+      gLogger.exception( "Server error while loading handler: %s" % str( e ) )
+      return S_ERROR( "Server error while loading handler" )
     return S_OK( handlerInstance )
 
   def _processProposal( self, trid, proposalTuple, handlerObj ):

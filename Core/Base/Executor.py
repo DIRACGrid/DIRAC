@@ -1,7 +1,8 @@
 
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Base.Utilities import ThreadPool, ProcessPool
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 
 class Executor( AgentModule ):
 
@@ -23,10 +24,10 @@ class Executor( AgentModule ):
     result = self._setShifterProxy()
     if not result[ 'OK' ]:
       return result
-    cpuStats = self.__startReportToMonitoring()
+    cpuStats = self._startReportToMonitoring()
     #Do statistics??
     if cpuStats:
-      self.__endReportToMonitoring( *cpuStats )
+      self._endReportToMonitoring( *cpuStats )
     return S_OK()
 
   def __queueTask( self, msgObj ):

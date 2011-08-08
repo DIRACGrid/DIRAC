@@ -173,7 +173,7 @@ class AgentModule:
     agentName = self.am_getModuleParam( 'fullName' )
     result = self.initialize( *initArgs )
     if result == None:
-      return S_ERROR( "Error while initializing %s module: initialize must return S_OK/S_ERROR" % agentName )
+      return S_ERROR( "initialize must return S_OK/S_ERROR" )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
     _checkDir( self.am_getControlDirectory() )
@@ -335,10 +335,10 @@ class AgentModule:
       self.log.notice( "Remaining %s of %s cycles" % ( mD - cD, mD ) )
     self.log.notice( "-"*40 )
     elapsedTime = time.time()
-    cpuStats = self.__startReportToMonitoring()
+    cpuStats = self._startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
     if cpuStats:
-      self.__endReportToMonitoring( *cpuStats )
+      self._endReportToMonitoring( *cpuStats )
     #Increment counters
     self.__moduleProperties[ 'cyclesDone' ] += 1
     #Show status
@@ -362,7 +362,7 @@ class AgentModule:
     self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )
     return cycleResult
 
-  def __startReportToMonitoring( self ):
+  def _startReportToMonitoring( self ):
     try:
       now = time.time()
       stats = os.times()
@@ -380,7 +380,7 @@ class AgentModule:
     except Exception:
       return False
 
-  def __endReportToMonitoring( self, initialWallTime, initialCPUTime ):
+  def _endReportToMonitoring( self, initialWallTime, initialCPUTime ):
     wallTime = time.time() - initialWallTime
     stats = os.times()
     cpuTime = stats[0] + stats[2] - initialCPUTime
