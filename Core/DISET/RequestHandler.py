@@ -12,7 +12,7 @@ from DIRAC.Core.DISET.private.MessageBroker import getGlobalMessageBroker
 from DIRAC.Core.Utilities import Time
 import DIRAC
 
-class RequestHandler:
+class RequestHandler( object ):
 
   def __init__( self, serviceInfoDict,
                 trid,
@@ -35,10 +35,11 @@ class RequestHandler:
     self.__msgBroker = msgBroker
     self.__trPool = msgBroker.getTransportPool()
 
-  def initialize( self ):
+  @classmethod
+  def initialize( self, serviceInfoDict ):
     """
     Dummy function to be inherited by real handlers. This function will be called when initializing
-    the server.
+    the server. HAS TO BE EITHER A CLASSMETHOD OR A STATICMETHOD!!!
     """
     pass
 
@@ -497,7 +498,7 @@ class RequestHandler:
   def srv_msgSend( self, trid, msgObj ):
     return self.__msgBroker.sendMessage( trid, msgObj )
 
-  def srm_msgCreate( self, msgName ):
+  def srv_msgCreate( self, msgName ):
     return self.__msgBroker.getMsgFactory().createMessage( self.__svcName, msgName )
 
   def srv_msgDisconnectClient( self, trid ):

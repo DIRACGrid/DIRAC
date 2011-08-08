@@ -25,7 +25,7 @@ class ExecutorState:
   def addExecutor( self, eId, eType, maxTasks = 1 ):
     self.__lock.acquire()
     try:
-      self.__maxTasks[ eId ] = maxTasks
+      self.__maxTasks[ eId ] = max( 1, maxTasks )
       if eId not in self.__execTasks:
         self.__execTasks[ eId ] = set()
       if eType not in self.__typeToId:
@@ -261,6 +261,7 @@ class ExecutorDispatcher:
       self.frozenCount = 0
       self.frozenMsg = False
       self.eType = False
+      self.retries = 0
 
     def __repr__( self ):
       rS = "<ETask %s" % self.taskId
@@ -296,7 +297,7 @@ class ExecutorDispatcher:
     self.__cbHolder = callbacksObj
     return S_OK()
 
-  def addExecutor( self, eType, eId ):
+  def addExecutor( self, eType, eId, maxTasks = 1 ):
     self.__log.info( "Adding new %s executor to the pool %s" % ( eId, eType ) )
     self.__executorsLock.acquire()
     try:
@@ -306,7 +307,7 @@ class ExecutorDispatcher:
       if eType not in self.__execTypes:
         self.__execTypes[ eType ] = 0
       self.__execTypes[ eType ] += 1
-      self.__states.addExecutor( eId, eType )
+      self.__states.addExecutor( eId, eType, maxTasks )
     finally:
       self.__executorsLock.release()
     self.__fillExecutors( eType )
@@ -482,6 +483,19 @@ class ExecutorDispatcher:
     if taskObj:
       self.__tasks[ taskId ].taskObj = taskObj
     self.__log.info( "Executor %s processed task %s" % ( eId, taskId ) )
+    return self.__dispatchTask( taskId )
+
+  def retryTask( self, eId, taskId ):
+    if taskId not in self.__tasks:
+      errMsg = "Task %s is not known" % taskId
+      self.__log.error( errMsg )
+      return S_ERROR( errMsg )
+    if not self.__states.removeTask( taskId, eId ):
+      errMsg = "Executor %s says it's processed task but it was not sent to it" % eId
+      self.__log.error( errMsg )
+      return S_ERROR( errMsg )
+    self.__log.info( "Executor %s did NOT process task %s, retrying" % ( eId, taskId ) )
+    self.__tasks[ taskId ].retries += 1
     return self.__dispatchTask( taskId )
 
   def __fillExecutors( self, eType, defrozeIfNeeded = True ):

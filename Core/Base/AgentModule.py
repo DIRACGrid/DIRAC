@@ -312,14 +312,21 @@ class AgentModule:
       self.log.exception( "Exception while calling %s method" % name )
       return S_ERROR( "Exception while calling %s method: %s" % ( name, str( e ) ) )
 
-  def am_go( self ):
-    #Set the shifter proxy if required
+
+  def _setShifterProxy( self ):
     if self.__moduleProperties[ 'shifterProxy' ]:
       result = setupShifterProxyInEnv( self.__moduleProperties[ 'shifterProxy' ],
                                        self.am_getShifterProxyLocation() )
       if not result[ 'OK' ]:
         self.log.error( result['Message'] )
         return result
+    return S_OK()
+
+  def am_go( self ):
+    #Set the shifter proxy if required
+    result = self._setShifterProxy()
+    if not result[ 'OK' ]:
+      return result
     self.log.notice( "-"*40 )
     self.log.notice( "Starting cycle for module %s" % self.__moduleProperties[ 'fullName' ] )
     mD = self.am_getMaxCycles()

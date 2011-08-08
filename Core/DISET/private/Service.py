@@ -82,14 +82,16 @@ class Service:
                                'URL' : self._cfg.getURL(),
                                'systemSectionPath' : self._cfg.getSystemPath(),
                                'serviceSectionPath' : self._cfg.getServicePath(),
-                               'messageSender' : MessageSender( self.__name, self._msgBroker )
+                               'messageSender' : MessageSender( self._name, self._msgBroker )
                              }
     #Call static initialization function
     try:
       if self._handler[ 'init' ]:
-        result = self._handler[ 'init' ]( dict( self._serviceInfoDict ) )
+        for initFunc in self._handler[ 'init' ]:
+          gLogger.verbose( "Executing initialization function %s" % initFunc )
+          result = initFunc( dict( self._serviceInfoDict ) )
         if not isReturnStructure( result ):
-          return S_ERROR( "Service initialization function must return S_OK/S_ERROR" )
+          return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
         if not result[ 'OK' ]:
           return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
     except Exception, e:
@@ -123,6 +125,14 @@ class Service:
       gLogger.debug( "%s is not a valid file" % filePath )
     return False
 
+  def __searchInitFunctions( self, handlerClass ):
+    initFuncs = []
+    for ancestor in handlerClass.__bases__:
+      initFuncs += self.__searchInitFunctions( ancestor )
+    if 'initialize' in dir( handlerClass ):
+      initFuncs.append( getattr( handlerClass, 'initialize' ) )
+    return initFuncs
+
   def _loadHandler( self ):
     handlerLocation = self._handlerLocation.replace( ".py", "" )
     lServicePath = List.fromChar( handlerLocation, "/" )
@@ -137,18 +147,20 @@ class Service:
       return S_ERROR( "Can't import handler: %s" % str( e ) )
     if not issubclass( handlerClass, RequestHandler ):
       return S_ERROR( "Handler class is not a request handler" )
+    handlerInitMethods = self.__searchInitFunctions( handlerClass )
     try:
-      handlerInitMethod = getattr( handlerModule, "initialize%s" % handlerName )
-      gLogger.debug( "Found initialization function for service" )
+      handlerInitMethods += getattr( handlerModule, "initialize%s" % handlerName )
     except:
-      handlerInitMethod = False
-      gLogger.debug( "Not found initialization function for service" )
+      gLogger.debug( "Not found global initialization function for service" )
+
+    if handlerInitMethods:
+      gLogger.info( "Found %s initialization methods" % len( handlerInitMethods ) )
 
     handlerInfo = {}
     handlerInfo[ "name" ] = handlerName
     handlerInfo[ "module" ] = handlerModule
     handlerInfo[ "class" ] = handlerClass
-    handlerInfo[ "init" ] = handlerInitMethod
+    handlerInfo[ "init" ] = handlerInitMethods
 
     gLogger.info( "Loaded %s" % self._handlerLocation )
     return S_OK( handlerInfo )
