@@ -331,10 +331,10 @@ class JobWrapper:
       maxPeekLines = self.maxPeekLines
       exeThread = ExecutionThread( spObject, command, maxPeekLines, outputFile, errorFile, exeEnv )
       exeThread.start()
-      time.sleep( 5 )
+      time.sleep( 10 )
       payloadPID = spObject.getChildPID()
       if not payloadPID:
-        return S_ERROR( 'Payload process could not start after 5 seconds' )
+        return S_ERROR( 'Payload process could not start after 10 seconds' )
     else:
       return S_ERROR( 'Path to executable %s not found' % ( executable ) )
 
