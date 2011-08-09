@@ -86,9 +86,12 @@ class Service:
                              }
     #Call static initialization function
     try:
+      self._handler[ 'class' ]._rh__initializeClass( dict( self._serviceInfoDict ),
+                                                     self._lockManager,
+                                                     self._msgBroker )
       if self._handler[ 'init' ]:
         for initFunc in self._handler[ 'init' ]:
-          gLogger.verbose( "Executing initialization function %s" % initFunc )
+          gLogger.verbose( "Executing initialization function" )
           result = initFunc( dict( self._serviceInfoDict ) )
         if not isReturnStructure( result ):
           return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
@@ -125,12 +128,19 @@ class Service:
       gLogger.debug( "%s is not a valid file" % filePath )
     return False
 
-  def __searchInitFunctions( self, handlerClass ):
+  def __searchInitFunctions( self, handlerClass, currentClass = False ):
+    if not currentClass:
+      currentClass = handlerClass
     initFuncs = []
-    for ancestor in handlerClass.__bases__:
-      initFuncs += self.__searchInitFunctions( ancestor )
-    if 'initialize' in dir( handlerClass ):
-      initFuncs.append( getattr( handlerClass, 'initialize' ) )
+    ancestorHasInit = False
+    for ancestor in currentClass.__bases__:
+      initFuncs += self.__searchInitFunctions( handlerClass, ancestor )
+      if 'initialize' in dir( ancestor ):
+        ancestorHasInit = True
+    if ancestorHasInit:
+      initFuncs.append( super( currentClass, handlerClass ).initialize )
+    if currentClass == handlerClass and 'initialize' in dir( handlerClass ):
+      initFuncs.append( handlerClass.initialize )
     return initFuncs
 
   def _loadHandler( self ):
@@ -424,10 +434,7 @@ class Service:
       handlerInitDict[ key ] = clientParams[ key ]
     #Instantiate and initialize
     try:
-      handlerInstance = self._handler[ 'class' ]( handlerInitDict,
-                                                   trid,
-                                                   self._lockManager,
-                                                   self._msgBroker )
+      handlerInstance = self._handler[ 'class' ]( handlerInitDict, trid )
     except Exception, e:
       gLogger.exception( "Server error while loading handler: %s" % str( e ) )
       return S_ERROR( "Server error while loading handler" )

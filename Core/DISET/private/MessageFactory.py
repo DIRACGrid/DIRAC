@@ -63,6 +63,7 @@ class MessageFactory:
     if not msgDefs:
       return S_ERROR( "%s does not have messages defined" % serviceName )
     self.__definitions[ serviceName ] = msgDefs
+    return S_OK()
 
   def __loadMessagesForAncestry( self, handlerClass ):
     print "LOADING MESSAGES FOR %s" % handlerClass.__name__
@@ -194,7 +195,10 @@ class Message( object ):
     if k not in self.__order:
       raise AttributeError( "%s is not valid for message %s" % ( k, self.__name ) )
     if self.__fDef[ k ] != None and type( v ) not in self.__fDef[ k ]:
-      raise AttributeError( "%s is to be of type %s for attr %s" % ( v, self.__fDef[k], k ) )
+      raise AttributeError( "%s is to be of type %s for attr %s, and is of type %s" % ( v,
+                                                                                        self.__fDef[k],
+                                                                                        k,
+                                                                                        type( v ) ) )
     self.__values[ k ] = v
 
   def __getattr__( self, k ):

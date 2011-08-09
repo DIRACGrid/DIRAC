@@ -120,7 +120,8 @@ class AgentModule:
                                 'standalone' : standaloneModule,
                                 'cyclesDone' : 0,
                                 'totalElapsedTime' : 0,
-                                'setup' : gConfig.getValue( "/DIRAC/Setup", "Unknown" ) }
+                                'setup' : gConfig.getValue( "/DIRAC/Setup", "Unknown" ),
+                                'alive' : True }
     self.__moduleProperties[ 'system' ], self.__moduleProperties[ 'agentName' ] = agentName.split( "/" )
     self.__configDefaults = {}
     self.__configDefaults[ 'MonitoringEnabled'] = True
@@ -142,7 +143,6 @@ class AgentModule:
       for key in properties:
         self.__moduleProperties[ key ] = properties[ key ]
       self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
-      self.__moduleProperties[ 'alive' ] = True
       self.__moduleProperties[ 'shifterProxy' ] = False
 
     self.__monitorLastStatsUpdate = -1

@@ -14,10 +14,7 @@ import DIRAC
 
 class RequestHandler( object ):
 
-  def __init__( self, serviceInfoDict,
-                trid,
-                lockManager,
-                msgBroker ):
+  def __init__( self, handlerInitDict, trid ):
     """
     Constructor
 
@@ -28,20 +25,30 @@ class RequestHandler( object ):
     @type lockManager: object
     @param lockManager: Lock manager to use
     """
-    self.serviceInfoDict = serviceInfoDict
-    self.__svcName = self.serviceInfoDict[ 'serviceName' ]
+    #Initially serviceInfoDict is the one base to the RequestHandler
+    # the one created in _rh_initializeClass
+    #FSM help me for I have made a complex stuff that I will forget in 5 mins :P
+    handlerInitDict.update( self.serviceInfoDict )
+    self.serviceInfoDict = handlerInitDict
     self.__trid = trid
-    self.__lockManager = lockManager
-    self.__msgBroker = msgBroker
-    self.__trPool = msgBroker.getTransportPool()
 
   @classmethod
-  def initialize( self, serviceInfoDict ):
+  def _rh__initializeClass( cls, serviceInfoDict, lockManager, msgBroker ):
     """
-    Dummy function to be inherited by real handlers. This function will be called when initializing
-    the server. HAS TO BE EITHER A CLASSMETHOD OR A STATICMETHOD!!!
+    Class initialization (not to be called by hand or overwritten!!)
+    
+    @type serviceInfoDict: dictionary
+    @param serviceInfoDict: Information vars for the service
+    @type msgBroker: object
+    @param msgBroker: Message delivery
+    @type lockManager: object
+    @param lockManager: Lock manager to use
     """
-    pass
+    cls.serviceInfoDict = serviceInfoDict
+    cls.__svcName = cls.serviceInfoDict[ 'serviceName' ]
+    cls.__lockManager = lockManager
+    cls.__msgBroker = msgBroker
+    cls.__trPool = msgBroker.getTransportPool()
 
   def getRemoteAddress( self ):
     """
@@ -59,13 +66,14 @@ class RequestHandler( object ):
     """
     return self.__trPool.get( self.__trid ).getConnectingCredentials()
 
-  def getCSOption( self, optionName, defaultValue = False ):
+  @classmethod
+  def getCSOption( cls, optionName, defaultValue = False ):
     """
     Get an option from the CS section of the services
 
     @return : Value for serviceSection/optionName in the CS being defaultValue the default
     """
-    return gConfig.getValue( "%s/%s" % ( self.serviceInfoDict[ 'serviceSectionPath' ], optionName ),
+    return gConfig.getValue( "%s/%s" % ( cls.serviceInfoDict[ 'serviceSectionPath' ], optionName ),
                              defaultValue )
 
   def _rh_executeAction( self, proposalTuple ):
@@ -349,7 +357,8 @@ class RequestHandler( object ):
 #
 ####
 
-  def __authQuery( self, method ):
+  @classmethod
+  def __authQuery( cls, method ):
     """
     Check if connecting user is allowed to perform an action
 
@@ -357,7 +366,7 @@ class RequestHandler( object ):
     @param method: Method to check
     @return: S_OK/S_ERROR
     """
-    return self.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
+    return cls.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
 
   def __logRemoteQuery( self, method, args ):
     """
@@ -462,44 +471,55 @@ class RequestHandler( object ):
       return tr.getFormattedCredentials()
     return "unknown"
 
-  def srv_getCSOption( self, optionName, defaultValue = False ):
+  @classmethod
+  def srv_getCSOption( cls, optionName, defaultValue = False ):
     """
     Get an option from the CS section of the services
 
     @return : Value for serviceSection/optionName in the CS being defaultValue the default
     """
-    return gConfig.getValue( "%s/%s" % ( self.serviceInfoDict[ 'serviceSectionPath' ], optionName ),
+    return gConfig.getValue( "%s/%s" % ( cls.serviceInfoDict[ 'serviceSectionPath' ], optionName ),
                              defaultValue )
-
-  def srv_getClientSetup( self ):
-    return self.serviceInfoDict[ 'clientSetup' ]
-
-  def srv_getClientVO( self ):
-    return self.serviceInfoDict[ 'clientVO' ]
 
   def srv_getTransportID( self ):
     return self.__trid
 
+  @classmethod
+  def srv_getClientSetup( self ):
+    return self.serviceInfoDict[ 'clientSetup' ]
+
+  @classmethod
+  def srv_getClientVO( self ):
+    return self.serviceInfoDict[ 'clientVO' ]
+
+  @classmethod
   def srv_getURL( self ):
     return self.serviceInfoDict[ 'URL' ]
 
+  @classmethod
   def srv_getServiceName( self ):
     return self.serviceInfoDict[ 'serviceName' ]
 
+  @classmethod
   def srv_getCSSystemPath( self ):
     return self.serviceInfoDict[ 'systemSectionPath' ]
 
+  @classmethod
   def srv_getCSServicePath( self ):
     return self.serviceInfoDict[ 'serviceSectionPath' ]
 
+  @classmethod
   def srv_msgReply( self, msgObj ):
     return self.__msgBroker.sendMessage( self.__trid, msgObj )
 
+  @classmethod
   def srv_msgSend( self, trid, msgObj ):
     return self.__msgBroker.sendMessage( trid, msgObj )
 
+  @classmethod
   def srv_msgCreate( self, msgName ):
     return self.__msgBroker.getMsgFactory().createMessage( self.__svcName, msgName )
 
+  @classmethod
   def srv_msgDisconnectClient( self, trid ):
     return self.__msgBroker.removeTransport( trid )

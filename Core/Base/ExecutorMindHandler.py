@@ -1,5 +1,6 @@
 
 import types
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, ExecutorDispatcherCallbacks
@@ -7,13 +8,13 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 
 class ExecutorMindHandler( RequestHandler ):
 
-  MSG_DEFINITIONS = { 'ProcessTask' : { 'taskId' : types.LongType,
+  MSG_DEFINITIONS = { 'ProcessTask' : { 'taskId' : ( types.IntType, types.LongType ),
                                         'taskStub' : types.StringType },
-                      'TaskDone' : { 'taskId' : types.LongType,
+                      'TaskDone' : { 'taskId' : ( types.IntType, types.LongType ),
                                      'taskStub' : types.StringType },
-                      'TaskError' : { 'taskId': types.LongType,
+                      'TaskError' : { 'taskId': ( types.IntType, types.LongType ),
                                       'errorMsg' : types.StringType },
-                      'ExecutorError' : { 'taskId': types.LongType,
+                      'ExecutorError' : { 'taskId': ( types.IntType, types.LongType ),
                                           'errorMsg' : types.StringType } }
 
   class MindCallbacks( ExecutorDispatcherCallbacks ):
@@ -42,14 +43,16 @@ class ExecutorMindHandler( RequestHandler ):
   ###
 
   @classmethod
-  def initialize( self, serviceInfoDict ):
-    self.__eDispatch = ExecutorDispatcher()
-    self.__callbacks = ExecutorMindHandler.MindCallbacks( self.__sendTask,
-                                                          self.exec_dispatch,
-                                                          self.exec_disconnectExecutor,
-                                                          self.exec_taskError )
-    self.__eDispatch.setCallbacks( self.__callbacks )
+  def initialize( cls, serviceInfoDict ):
+    gLogger.notice( "Initializing Executor dispatcher" )
+    cls.__eDispatch = ExecutorDispatcher()
+    cls.__callbacks = ExecutorMindHandler.MindCallbacks( cls.__sendTask,
+                                                         cls.exec_dispatch,
+                                                         cls.exec_disconnectExecutor,
+                                                         cls.exec_taskError )
+    cls.__eDispatch.setCallbacks( cls.__callbacks )
 
+  @classmethod
   def __sendTask( self, eId, taskId, taskObj ):
     try:
       result = self.exec_serializeTask( taskObj )
@@ -61,7 +64,10 @@ class ExecutorMindHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     taskStub = result[ 'Value' ]
-    msgObj = self.srv_msgCreate( "ProcessTask" )
+    result = self.srv_msgCreate( "ProcessTask" )
+    if not result[ 'OK' ]:
+      return result
+    msgObj = result[ 'Value' ]
     msgObj.taskId = taskId
     msgObj.taskStub = taskStub
     return self.srv_msgSend( eId, msgObj )
@@ -81,10 +87,17 @@ class ExecutorMindHandler( RequestHandler ):
     self.__eDispatch.addExecutor( kwargs[ 'executorName' ], trid )
     return S_OK()
 
+  auth_conn_drop = [ 'all' ]
+  def conn_drop( self, trid ):
+    self.__eDispatch.removeExecutor( trid )
+    return S_OK()
+
+
   auth_msg_taskDone = [ 'all' ]
   def msg_taskDone( self, msgObj ):
+    taskId = msgObj.taskId
     try:
-      result = self.exec_deserializeTask( taskObj )
+      result = self.exec_deserializeTask( msgObj.taskStub )
     except Exception, excp:
       gLogger.exception( "Exception while deserializing task %s" % taskId )
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
@@ -119,6 +132,7 @@ class ExecutorMindHandler( RequestHandler ):
   # Methods that can be overwritten
   #######
 
+  @classmethod
   def exec_disconnectExecutor( self, trid ):
     return self.srv_msgDisconnectClient( trid )
 
@@ -126,6 +140,7 @@ class ExecutorMindHandler( RequestHandler ):
   #  Methods to be used by the real services
   ########
 
+  @classmethod
   def executeTask( self, taskId, taskObj ):
     return self.__eDispatch.addTask( taskId, taskObj )
 
@@ -133,16 +148,20 @@ class ExecutorMindHandler( RequestHandler ):
   #  Methods that need to be overwritten
   ########
 
+  @classmethod
   def exec_dispatch( self, taskId, taskObj ):
-    raise Exception( "No exec_dispatch defined!!" )
+    raise Exception( "No exec_dispatch defined or it is not a classmethod!!" )
 
-  def exec_serializeTask( self, taskId, taskObj ):
-    raise Exception( "No exec_serializeTask defined!!" )
+  @classmethod
+  def exec_serializeTask( self, taskObj ):
+    raise Exception( "No exec_serializeTask defined or it is not a classmethod!!" )
 
+  @classmethod
   def exec_deserializeTask( self, taskStub ):
-    raise Exception( "No exec_deserializeTask defined!!" )
+    raise Exception( "No exec_deserializeTask defined or it is not a classmethod!!" )
 
+  @classmethod
   def exec_taskError( self, taskId, errorMsg ):
-    raise Exception( "No exec_taskError defined!!" )
+    raise Exception( "No exec_taskError defined or it is not a classmethod!!" )
 
 

@@ -532,6 +532,7 @@ class ExecutorDispatcher:
       result = self.__cbHolder.cbSendTask( eId, taskId, self.__tasks[ taskId ].taskObj )
     except:
       self.__log.exception( "Exception while sending task to executor" )
+      return S_ERROR( "Exception while sending task to executor" )
     if isReturnStructure( result ):
       return result
     else:
