@@ -1139,7 +1139,7 @@ class Job:
         if not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
           classadJob.insertAttributeString( name, value )
         else:
-          classadJob.insertAttributeVectorString( name, ';'.split( value ) )
+          classadJob.insertAttributeVectorString( name, value.split( ';' ) )
 
     if not requirements:
       reqtsDict = self.reqParams
