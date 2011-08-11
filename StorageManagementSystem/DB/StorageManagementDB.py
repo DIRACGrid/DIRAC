@@ -22,6 +22,19 @@ import string, threading, types
 import inspect
 from sets import Set
 
+# Stage Request are issue with a length of "PinLength"
+# However, once Staged, the entry in the StageRequest will set a PinExpiryTime only for "PinLength" / THROTTLING_STEPS
+# As PinExpiryTime arrives, StageRequest and their corresponding CacheReplicas entries are cleaned
+# This allows to throttle the submission of Stage Requests up to a maximum of "DiskCacheTB" per "PinLength"
+# After "PinLength" / THROTTLING_STEPS seconds, entries are removed, so new requests for the same replica will trigger
+# a new Stage Request to the SE, and thus an update of the Pinning on the SE.
+#
+#  - "PinLength" is an Option of the StageRequest Agent that defaults to THROTTLING_TIME
+#  - "DiskCacheTB" is an Option of the StorageElement that defaults to 1 (TB)
+
+THROTTLING_TIME = 86400
+THROTTLING_STEPS = 12
+
 class StorageManagementDB( DB ):
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
@@ -742,8 +755,8 @@ class StorageManagementDB( DB ):
 
   def getSubmittedStagePins( self ):
     # change the query to take into account pin expiry time
-    #req = "SELECT SE,COUNT(*),SUM(Size) from CacheReplicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY SE;"
-    req = "SELECT SE,Count(*),SUM(Size) from CacheReplicas,StageRequests WHERE Status NOT IN ('New','Waiting','Failed') and CacheReplicas.ReplicaID=StageRequests.ReplicaID and PinExpiryTime>Now() GROUP BY SE;"
+    req = "SELECT SE,COUNT(*),SUM(Size) from CacheReplicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY SE;"
+    #req = "SELECT SE,Count(*),SUM(Size) from CacheReplicas,StageRequests WHERE Status NOT IN ('New','Waiting','Failed') and CacheReplicas.ReplicaID=StageRequests.ReplicaID and PinExpiryTime>Now() GROUP BY SE;"
     res = self._query( req )
     if not res['OK']:
       gLogger.error( 'StorageManagementDB.getSubmittedStagePins: Failed to obtain submitted requests.', res['Message'] )
@@ -792,8 +805,9 @@ class StorageManagementDB( DB ):
     resSelect = self._query( reqSelect )
     if not resSelect['OK']:
       gLogger.info( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'setStageComplete', reqSelect, resSelect['Message'] ) )
+      return resSelect
 
-    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP(),PinExpiryTime = DATE_ADD(UTC_TIMESTAMP(),INTERVAL 86400 SECOND) WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP(),PinExpiryTime = DATE_ADD(UTC_TIMESTAMP(),INTERVAL ( PinLength / %s ) SECOND) WHERE ReplicaID IN (%s);" % ( THROTTLING_STEPS, intListToString( replicaIDs ) )
     res = self._update( req )
     if not res['OK']:
       gLogger.error( "StorageManagementDB.setStageComplete: Failed to set StageRequest completed.", res['Message'] )
@@ -828,7 +842,7 @@ class StorageManagementDB( DB ):
 
       old_replicaIDs = [ row[0] for row in res['Value'] ]
 
-      if( old_replicaIDs ) > 0:
+      if len( old_replicaIDs ) > 0:
         req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
         res = self._update( req, connection )
         if not res['OK']:
