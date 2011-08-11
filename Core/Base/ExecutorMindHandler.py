@@ -29,8 +29,8 @@ class ExecutorMindHandler( RequestHandler ):
     def cbSendTask( self, eId, taskId, taskObj ):
       return self.__sendTaskCB( eId, taskId, taskObj )
 
-    def cbDispatch( self, taskId, taskObj ):
-      return self.__dispatchCB( taskId, taskObj )
+    def cbDispatch( self, taskId, taskObj, pathExecuted ):
+      return self.__dispatchCB( taskId, taskObj, pathExecuted )
 
     def cbDisconectExecutor( self, eId ):
       return self.__disconnectCB( eId )
@@ -93,8 +93,8 @@ class ExecutorMindHandler( RequestHandler ):
     return S_OK()
 
 
-  auth_msg_taskDone = [ 'all' ]
-  def msg_taskDone( self, msgObj ):
+  auth_msg_TaskDone = [ 'all' ]
+  def msg_TaskDone( self, msgObj ):
     taskId = msgObj.taskId
     try:
       result = self.exec_deserializeTask( msgObj.taskStub )
@@ -106,10 +106,10 @@ class ExecutorMindHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     taskObj = result[ 'Value' ]
-    return self.__eDispatch.taskProcessed( self.srv_getTransportID(), taskObj.taskId, taskObj )
+    return self.__eDispatch.taskProcessed( self.srv_getTransportID(), msgObj.taskId, taskObj )
 
-  auth_msg_taskError = [ 'all' ]
-  def msg_taskError( self, msgObj ):
+  auth_msg_TaskError = [ 'all' ]
+  def msg_TaskError( self, msgObj ):
     #TODO: Check the executor has privileges over the task
     self.__eDispatch.removeTask( msgObj.taskId )
     try:
@@ -149,7 +149,7 @@ class ExecutorMindHandler( RequestHandler ):
   ########
 
   @classmethod
-  def exec_dispatch( self, taskId, taskObj ):
+  def exec_dispatch( self, taskId, taskObj, pathExecuted ):
     raise Exception( "No exec_dispatch defined or it is not a classmethod!!" )
 
   @classmethod

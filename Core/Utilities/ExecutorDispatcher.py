@@ -236,7 +236,7 @@ class ExecutorQueues:
 
 class ExecutorDispatcherCallbacks:
 
-  def cbDispatch( self, taskId, taskObj ):
+  def cbDispatch( self, taskId, taskObj, pathExecuted ):
     return S_ERROR( "No dispatch callback defined" )
 
   def cbSendTask( self, eId, taskId, taskObj ):
@@ -256,6 +256,7 @@ class ExecutorDispatcher:
     def __init__( self, taskId, taskObj ):
       self.taskId = taskId
       self.taskObj = taskObj
+      self.pathExecuted = []
       self.frozenTime = 0
       self.frozenSince = 0
       self.frozenCount = 0
@@ -432,7 +433,7 @@ class ExecutorDispatcher:
       self.__log.error( msg )
       return S_ERROR( msg )
     try:
-      result = self.__cbHolder.cbDispatch( taskId, eTask.taskObj )
+      result = self.__cbHolder.cbDispatch( taskId, eTask.taskObj, tuple( eTask.pathExecuted ) )
     except:
       self.__log.exception( "Exception while calling dispatch callback" )
       return S_ERROR( "Exception while calling dispatch callback" )
@@ -480,8 +481,18 @@ class ExecutorDispatcher:
       errMsg = "Executor %s says it's processed task but it was not sent to it" % eId
       self.__log.error( errMsg )
       return S_ERROR( errMsg )
-    if taskObj:
-      self.__tasks[ taskId ].taskObj = taskObj
+    try:
+      eType = self.__idMap[ eId ]
+    except KeyError:
+      gLogger.error( "Executor type unknown for %s. Redoing task %s" % ( eId, taskId ) )
+      return self.__dispatchTask( taskId )
+    try:
+      if taskObj:
+        self.__tasks[ taskId ].taskObj = taskObj
+      self.__tasks[ taskId ].pathExecuted.append( eType )
+    except KeyError:
+      gLogger.error( "Task %s seems to have been removed while being processed!" % taskId )
+      return S_OK()
     self.__log.info( "Executor %s processed task %s" % ( eId, taskId ) )
     return self.__dispatchTask( taskId )
 
@@ -495,7 +506,11 @@ class ExecutorDispatcher:
       self.__log.error( errMsg )
       return S_ERROR( errMsg )
     self.__log.info( "Executor %s did NOT process task %s, retrying" % ( eId, taskId ) )
-    self.__tasks[ taskId ].retries += 1
+    try:
+      self.__tasks[ taskId ].retries += 1
+    except KeyError:
+      gLogger.error( "Task %s seems to have been removed while waiting for retry!" % taskId )
+      return S_OK()
     return self.__dispatchTask( taskId )
 
   def __fillExecutors( self, eType, defrozeIfNeeded = True ):
