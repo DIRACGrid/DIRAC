@@ -17,6 +17,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities import Time, MemStat
 
 def _checkDir( path ):
@@ -305,8 +306,8 @@ class AgentModule:
       name = str( functor )
     try:
       result = functor( *args )
-      if result == None:
-        return S_ERROR( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
+      if not isReturnStructure( result ):
+        raise Exception( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
       return result
     except Exception, e:
       self.log.exception( "Exception while calling %s method" % name )
