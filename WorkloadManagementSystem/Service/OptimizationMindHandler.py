@@ -11,10 +11,10 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return S_OK()
 
   @classmethod
-  def exec_dispatch( self, taskId, taskObj ):
-    print "WE GOT HERE!!"
+  def exec_dispatch( self, taskId, taskObj, pathExecuted ):
+    print "PATH IS", pathExecuted
     next = 'WorkloadManagement/WhateverAgent'
-    if next in taskObj[ 'path' ]:
+    if next in pathExecuted:
       return S_OK()
     return S_OK( next )
 
