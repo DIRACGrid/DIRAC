@@ -154,16 +154,15 @@ class DiracAdmin:
 
     """
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
-    result = wmsAdmin.getSiteMask()
     bannedSites = []
     totalList = []
 
+    result = wmsAdmin.getSiteMask()
     if not result['OK']:
       self.log.warn( result['Message'] )
       return result
     sites = result['Value']
     
-    ###totalList = gConfig.getSections( '/Resources/Sites/%s' % gridType )['Value']
     result = gConfig.getSections('/Resources/Sites')
     if not result['OK']:
       return result
