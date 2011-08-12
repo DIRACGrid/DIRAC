@@ -299,6 +299,7 @@ class RequestDBFile:
             statusDir = os.path.join( reqDir, status )
             if os.path.isdir( statusDir ):
               requestNames = os.listdir( statusDir )
+              requestNames.sort()
               if requestName in requestNames:
                 requestPath = os.path.join( statusDir, requestName )
                 subRequests.append( requestPath )
