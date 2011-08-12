@@ -122,10 +122,38 @@ def bool_of_string(s):
   else                      : raise ValueError, "Cannot convert %s to a boolean value" % s
 
 def typedobj_of_string(s):
+  if s == "":
+    return s
   try:
     return ast.literal_eval(s)
-  except ValueError: # Probably it's just a string
+  except (ValueError, SyntaxError): # Probably it's just a string
     return s
+
+# String utils
+
+# http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Longest_common_substring#Python
+def LongestCommonSubstring(S1, S2):
+  M = [[0]*(1+len(S2)) for i in xrange(1+len(S1))]
+  longest, x_longest = 0, 0
+  for x in xrange(1,1+len(S1)):
+    for y in xrange(1,1+len(S2)):
+      if S1[x-1] == S2[y-1]:
+        M[x][y] = M[x-1][y-1] + 1
+        if M[x][y]>longest:
+          longest = M[x][y]
+          x_longest  = x
+      else:
+        M[x][y] = 0
+  return S1[x_longest-longest: x_longest]
+
+def CountCommonLetters(S1, S2):
+  count = 0
+  target = S2
+  for l in S1:
+    if l in S2:
+      count = count+1
+      target = target.strip(l)
+  return count
 
 # List utils
 
@@ -150,15 +178,20 @@ def dictMatch(dict1, dict2):
   if type(dict1) != type(dict2) != dict:
     raise TypeError, "dictMatch expect dicts for both arguments"
 
-  try:
-    for k in dict1:
+  numMatch = False
+
+  for k in dict1:
+    try:
+      if dict1[k] == None:
+        continue
       if dict1[k] not in dict2[k]:
         return False
-    return True
-  except KeyError:
-    # some keys are in dict1 and not in dict2: We don't care (in this
-    # case).
-    pass
+      else:
+        numMatch = True
+    except KeyError:
+      pass
+
+  return numMatch
 
 def dict_split(d):
   def dict_one_split(d):

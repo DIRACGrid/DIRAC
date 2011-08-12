@@ -1,6 +1,6 @@
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import id_fun
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations  import ValidStatus
+from DIRAC.ResourceStatusSystem.Policy.Configurations  import ValidStatus
 
 statesInfo = {
   'Banned'  : (0, set([0,1]), max),

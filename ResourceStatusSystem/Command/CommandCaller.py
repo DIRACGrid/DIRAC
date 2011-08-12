@@ -4,6 +4,7 @@
 """
 
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Utilities.CS import getExt
 
 class CommandCaller:
 

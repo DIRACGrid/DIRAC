@@ -8,9 +8,10 @@ from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
+import DIRAC.ResourceStatusSystem.test.fake_rmDB
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import *
+from DIRAC.ResourceStatusSystem.Policy.Configurations import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 
 class UtilitiesTestCase(unittest.TestCase):
@@ -24,6 +25,7 @@ class UtilitiesTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
+    sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceManagementDB"] = DIRAC.ResourceStatusSystem.test.fake_rmDB
     sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 
     from DIRAC import gConfig
@@ -48,7 +50,7 @@ class UtilitiesTestCase(unittest.TestCase):
     self.p = Publisher(self.VO, rsDBIn = None, commandCallerIn = self.mockCC, infoGetterIn = self.mockIG,
                        WMSAdminIn = self.mockWMSA)
 
-    self.configModule = __import__(self.VO+"DIRAC.ResourceStatusSystem.Policy.Configurations",
+    self.configModule = __import__("LHCbDIRAC.ResourceStatusSystem.Policy.Configurations",
                                    globals(), locals(), ['*'])
 
     self.syncC = Synchronizer()
@@ -200,7 +202,7 @@ class PublisherSuccess(UtilitiesTestCase):
 
     self.mockIG.getInfoToApply.return_value = igR
 
-    res = self.p.getInfo('StorageElement', 'CERN-RAW')
+    res = self.p.getInfo('StorageElementRead', 'CERN-RAW')
 
     for record in res['Records']:
       self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
@@ -257,9 +259,10 @@ class InfoGetterSuccess(UtilitiesTestCase):
                 panel = 'Service_VOMS_Panel'
             if g in ('Resource', 'Resources'):
               panel = 'Resource_Panel'
-            if g in ('StorageElement', 'StorageElements'):
+            if g in ('StorageElementRead', 'StorageElementsRead'):
               panel = 'SE_Panel'
-
+            if g in ('StorageElementWrite', 'StorageElementsWrite'):
+              panel = 'SE_Panel'
 
             for resource_t in ValidResourceType:
 

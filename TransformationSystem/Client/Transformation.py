@@ -8,7 +8,8 @@ import string, os, shutil, types, pprint
 
 from DIRAC                                                        import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.API                                          import API
-from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC.TransformationSystem.Client.TransformationClient       import TransformationClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStautsClient       import ResourceStatusClient
 
 COMPONENT_NAME = 'Transformation'
 
@@ -53,6 +54,7 @@ class Transformation( API ):
       self.transClient = TransformationClient()
     else:
       self.transClient = transClient
+    self.rssClient = ResourceStatusClient()
     self.serverURL = self.transClient.getServer()
     self.exists = False
     if transID:
@@ -385,7 +387,8 @@ class Transformation( API ):
     return S_OK()
 
   def __checkSEs( self, seList ):
-    res = gConfig.getSections( '/Resources/StorageElements' )
+    #res = gConfig.getSections( '/Resources/StorageElements' )
+    res = getStorageElementsList( 'Read' )
     if not res['OK']:
       return self._errorReport( res, 'Failed to get possible StorageElements' )
     missing = []

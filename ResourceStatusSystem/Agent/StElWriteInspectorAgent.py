@@ -4,7 +4,7 @@
 
 import copy
 import Queue
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -22,11 +22,11 @@ from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagemen
 
 __RCSID__ = "$Id:  $"
 
-AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
+AGENT_NAME = 'ResourceStatus/StElWriteInspectorAgent'
 
-class RSInspectorAgent( AgentModule ):
-  """ Class RSInspectorAgent is in charge of going through Resources
-      table, and pass Resource and Status to the PEP
+class StElWriteInspectorAgent( AgentModule ):
+  """ Class StElWriteInspectorAgent is in charge of going through StorageElements
+      table, and pass StorageElement and Status to the PEP
   """
 
 #############################################################################
@@ -39,8 +39,8 @@ class RSInspectorAgent( AgentModule ):
       self.rsDB = ResourceStatusDB()
       self.rmDB = ResourceManagementDB()
       
-      self.ResourcesToBeChecked = Queue.Queue()
-      self.ResourceNamesInCheck = []
+      self.StorageElementToBeChecked = Queue.Queue()
+      self.StorageElementInCheck     = []
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
       self.threadPool         = ThreadPool( self.maxNumberOfThreads,
@@ -50,20 +50,20 @@ class RSInspectorAgent( AgentModule ):
         self.log.error( 'Can not create Thread Pool' )
         return S_ERROR( 'Can not create Thread Pool' )
       
-      self.setup          = getSetup()[ 'Value' ]
-      self.VOExtension    = getExt()
-      self.ResourcesFreqs = CheckingFreqs[ 'ResourcesFreqs' ]
-      self.nc             = NotificationClient()
-      self.diracAdmin     = DiracAdmin()
-      self.csAPI          = CSAPI()      
+      self.setup                = getSetup()[ 'Value' ]
+      self.VOExtension          = getExt()
+      self.StorageElsWriteFreqs = CheckingFreqs[ 'StorageElsWriteFreqs' ]          
+      self.nc                   = NotificationClient()
+      self.diracAdmin           = DiracAdmin()
+      self.csAPI                = CSAPI()      
       
       for i in xrange( self.maxNumberOfThreads ):
-        self.threadPool.generateJobAndQueueIt( self._executeCheck, args = (None, ) )  
+        self.threadPool.generateJobAndQueueIt( self._executeCheck, args = ( None, ) )  
         
       return S_OK()
 
     except Exception:
-      errorStr = "RSInspectorAgent initialization"
+      errorStr = "StElWriteInspectorAgent initialization"
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
@@ -73,29 +73,28 @@ class RSInspectorAgent( AgentModule ):
     """ 
     The main RSInspectorAgent execution method.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and 
-    put result in self.ResourcesToBeChecked (a Queue) and in self.ResourceNamesInCheck (a list)
+    put result in self.StorageElementToBeChecked (a Queue) and in self.StorageElementInCheck (a list)
     """
     
     try:
 
-      res = self.rsDB.getStuffToCheck( 'Resources', self.ResourcesFreqs ) 
+      res = self.rsDB.getStuffToCheck( 'StorageElementsWrite', self.StorageElsWriteFreqs ) 
    
       for resourceTuple in res:
-        if resourceTuple[ 0 ] in self.ResourceNamesInCheck:
+        if resourceTuple[ 0 ] in self.StorageElementInCheck:
           break
-        resourceL = [ 'Resource' ]
+        resourceL = [ 'StorageElementWrite' ]
         for x in resourceTuple:
           resourceL.append( x )
-        self.ResourceNamesInCheck.insert( 0, resourceL[ 1 ] )
-        self.ResourcesToBeChecked.put( resourceL )
+        self.StorageElementInCheck.insert( 0, resourceL[ 1 ] )
+        self.StorageElementToBeChecked.put( resourceL )
 
       return S_OK()
 
     except Exception, x:
       errorStr = where( self, self.execute )
-      gLogger.exception( errorStr,lException=x )
+      gLogger.exception( errorStr, lException = x )
       return S_ERROR( errorStr )
-      
         
 #############################################################################
 
@@ -104,38 +103,36 @@ class RSInspectorAgent( AgentModule ):
     Create instance of a PEP, instantiated popping a resource from lists.
     """
     
-    
     while True:
       
       try:
       
-        toBeChecked  = self.ResourcesToBeChecked.get()
-      
-        granularity  = toBeChecked[ 0 ]
-        resourceName = toBeChecked[ 1 ]
-        status       = toBeChecked[ 2 ]
-        formerStatus = toBeChecked[ 3 ]
-        siteType     = toBeChecked[ 4 ]
-        resourceType = toBeChecked[ 5 ]
-        tokenOwner   = toBeChecked[ 6 ]
+        toBeChecked        = self.StorageElementToBeChecked.get()
+     
+        granularity        = toBeChecked[ 0 ]
+        storageElementName = toBeChecked[ 1 ]
+        status             = toBeChecked[ 2 ]
+        formerStatus       = toBeChecked[ 3 ]
+        siteType           = toBeChecked[ 4 ]
+        tokenOwner         = toBeChecked[ 5 ]
+       
+        gLogger.info( "Checking StorageElement %s, with status %s" % ( storageElementName, status ) )
         
-        gLogger.info( "Checking Resource %s, with status %s" % ( resourceName, status ) )
-        
-        newPEP = PEP( self.VOExtension, granularity = granularity, name = resourceName, 
+        newPEP = PEP( self.VOExtension, granularity = granularity, name = storageElementName, 
                       status = status, formerStatus = formerStatus, siteType = siteType, 
-                      resourceType = resourceType, tokenOwner = tokenOwner )
+                      tokenOwner = tokenOwner )
         
-        newPEP.enforce( rsDBIn = self.rsDB, rmDBIn = self.rmDB, setupIn = self.setup, 
-                        ncIn = self.nc, daIn = self.diracAdmin, csAPIIn = self.csAPI )
+        newPEP.enforce( rsDBIn = self.rsDB, rmDBIn = self.rmDB, setupIn = self.setup, ncIn = self.nc, 
+                        daIn = self.diracAdmin, csAPIIn = self.csAPI )
     
         # remove from InCheck list
-        self.ResourceNamesInCheck.remove( toBeChecked[ 1 ] )
+        self.StorageElementInCheck.remove( toBeChecked[ 1 ] )
 
       except Exception:
-        gLogger.exception( 'RSInspector._executeCheck' )
+        gLogger.exception( 'StElWriteInspector._executeCheck' )
         try:
-          self.ResourceNamesInCheck.remove( resourceName )
+          self.StorageElementInCheck.remove( storageElementName )
         except IndexError:
           pass
 
-#############################################################################    
+#############################################################################

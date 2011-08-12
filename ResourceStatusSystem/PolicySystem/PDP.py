@@ -11,7 +11,8 @@ The PDP (Policy Decision Point) module is used to:
 import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where, assignOrRaise
-from DIRAC.ResourceStatusSystem.PolicySystem                import Status,Configurations
+from DIRAC.ResourceStatusSystem.PolicySystem                import Status
+from DIRAC.ResourceStatusSystem.Policy                      import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, \
     InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
