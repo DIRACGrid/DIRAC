@@ -61,7 +61,12 @@ class TransformationCleaningAgent( AgentModule ):
     res = self.transClient.getTransformations( {'Status':'Cleaning', 'Type':self.transformationTypes} )
     if res['OK']:
       for transDict in res['Value']:
-        self.cleanTransformation( transDict['TransformationID'] )
+        # If transformation is of type `Replication` or `Removal`, there is nothing to clean.
+        # We just archive
+        if transDict[ 'Type' ] in [ 'Replication', 'Removal' ]:
+          self.archiveTransformation( transDict['TransformationID'] )
+        else:      
+          self.cleanTransformation( transDict['TransformationID'] )
 
     # Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
     res = self.transClient.getTransformations( {'Status':'RemovingFiles', 'Type':self.transformationTypes} )
