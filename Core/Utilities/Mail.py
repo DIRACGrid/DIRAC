@@ -43,7 +43,7 @@ class Mail:
     try:
       #smtp.connect( self._hostname )
       smtp.connect()
-      self.sendmail( self._fromAddress, self._mailAddress, text )
+      smtp.sendmail( self._fromAddress, self._mailAddress, text )
     except Exception, x:
       gLogger.error( "Sending mail failed", str( x ) )
       return S_ERROR( "Sending mail failed %s" % str( x ) )
