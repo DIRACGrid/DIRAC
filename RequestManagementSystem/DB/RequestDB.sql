@@ -19,7 +19,7 @@ CREATE TABLE Requests (
    Status varchar(32) DEFAULT 'Receiving',
    INDEX(Status),
    RequestName varchar(128) NOT NULL,
-   JobID int(11) DEFAULT NULL,
+   JobID int(11) NOT NULL DEFAULT 0,
    OwnerDN varchar(255) DEFAULT NULL,
    OwnerGroup varchar(32) DEFAULT NULL,
    DIRACSetup varchar(32) DEFAULT NULL,
