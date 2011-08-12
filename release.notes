@@ -44,6 +44,9 @@ FIX: -V switch was being used inconsistently in the pilotDirector
 *StorageElement
 FIX: StorageElement - get service CS options with getCSOption() method ( closes #97 )
 
+*FileCatalogs
+FIX: retrieve FileCatalogs as ordered list, to have a proper default.
+
 *ResourceStatusSystem enhancements
 NEW: methods to store cached environment on a DB and ge them.
 CHANGE: command caller looks on the extension for commands.

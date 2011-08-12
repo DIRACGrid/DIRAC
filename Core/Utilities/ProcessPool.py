@@ -35,17 +35,17 @@ class WorkingProcess( multiprocessing.Process ):
     self.start()
 
   def isWorking( self ):
-    return self.__working == 1
+    return self.__working.value == 1
 
   def kill( self ):
-    self.__alive = 0
+    self.__alive.value = 0
 
   def run( self ):
-    while self.__alive:
-      self.__working = 0
+    while self.__alive.value:
+      self.__working.value = 0
       task = self.__pendingQueue.get( block = True )
-      self.__working = 1
-      if not self.__alive:
+      self.__working.value = 1
+      if not self.__alive.value:
         self.__pendingQueue.put( task )
         break
       task.process()

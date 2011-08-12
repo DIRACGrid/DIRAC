@@ -286,7 +286,7 @@ class Subprocess:
         self.child.stderr.close()
       except Exception:
         pass
-      retDict = S_ERROR( v )
+      retDict = S_ERROR( x )
       retDict['Value'] = ( -1, '' , str( x ) )
       return retDict
 

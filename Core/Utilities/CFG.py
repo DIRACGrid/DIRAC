@@ -414,8 +414,8 @@ class CFG:
     """
     Get the contents below a give path as a dict
 
-    @type secPath: string
-    @param secPath: Path to retrieve as dict
+    @type path: string
+    @param path: Path to retrieve as dict
     @return : Dictionary containing the data
     """
     resVal = {}
