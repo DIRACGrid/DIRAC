@@ -18,15 +18,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 class CE2CSAgent( AgentModule ):
 
-  def __init__( self, agentName, baseAgentName, properties ):
-    AgentModule.__init__( self, agentName, baseAgentName, properties )
-    self.addressTo = ''
-    self.addressFrom = ''
-    self.voName = ''
-    self.csAPI = CSAPI()
-    self.subject = "CE2CSAgent"
-    self.alternativeBDIIs = []
-
   def initialize( self ):
 
     # TODO: Have no default and if no mail is found then use the diracAdmin group 
