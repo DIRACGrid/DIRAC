@@ -12,7 +12,7 @@ from DIRAC.Core.Base import Script
 
 class CLIParams:
 
-  proxyLifeTime = 0
+  proxyLifeTime = 2592000
   diracGroup = False
   debug = False
   certLoc = False
@@ -86,7 +86,7 @@ class CLIParams:
       print msg
 
   def registerCLISwitches( self ):
-    Script.registerSwitch( "v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime )
+    Script.registerSwitch( "v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime )
     Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
     Script.registerSwitch( "V", "verbose", "Enable extra output", self.setDebug )
     Script.registerSwitch( "C:", "Cert=", "File to use as user certificate", self.setCertLocation )
