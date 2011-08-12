@@ -1669,6 +1669,8 @@ class JobDB( DB ):
     site = classAdJob.getAttributeString( 'Site' )
     if not site:
       site = 'ANY'
+    elif site.find(',') > 0:
+      site = "Multiple"  
     jobAttrNames.append( 'Site' )
     jobAttrValues.append( site )
 
