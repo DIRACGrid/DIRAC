@@ -27,7 +27,7 @@ bodyTestApp = """class TestAppModule:
         return 1"""
 
 md1 = ModuleDefinition('TestAppModule')
-md1.appendParameter( Parameter("enable","True","bool","","",True,False,"If False execution is disabled"))
+md1.addParameter( Parameter("enable","True","bool","","",True,False,"If False execution is disabled"))
 md1.setBody(bodyTestApp)
 md1.setDescrShort('Empty Module')
 md1.setDescription('Empty Module to do some testing')
