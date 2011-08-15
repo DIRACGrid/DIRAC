@@ -93,8 +93,8 @@ class VOMS( BaseSecurity ):
           2. Proxy Certificate Timeleft in seconds (the output is an int)
           3. DN
           4. voms group (if any)
-        @type  proxy_file: a string
-        @param proxy_file: the proxy certificate location.
+        @type  proxy: a string
+        @param proxy: the proxy certificate location.
         @type  option: a string
         @param option: None is the default value. Other option available are:
           - timeleft

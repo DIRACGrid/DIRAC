@@ -25,7 +25,6 @@ class CLIParams:
   proxyLoc = False
   checkWithCS = True
   stdinPasswd = False
-  uploadProxy = False
   userPasswd = ""
   checkClock = True
 
@@ -107,10 +106,6 @@ class CLIParams:
     self.checkClock = False
     return S_OK()
 
-  def setUploadProxy( self, arg ):
-    self.uploadProxy = True
-    return S_OK()
-
   def registerCLISwitches( self ):
     Script.registerSwitch( "v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime )
     Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
@@ -125,7 +120,6 @@ class CLIParams:
     Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
-    Script.registerSwitch( "U", "upload", "Upload a long lived proxy to the ProxyManager", self.setUploadProxy )
 
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -223,10 +217,6 @@ def generateProxy( params ):
     if params.diracGroup not in groups:
       return S_ERROR( "Requested group %s is not valid for user %s" % ( params.diracGroup, username ) )
     gLogger.info( "Creating proxy for %s@%s (%s)" % ( username, params.diracGroup, userDN ) )
-    #Check if the proxy needs to be uploaded
-    if not params.uploadProxy:
-      params.uploadProxy = Registry.getGroupOption( params.diracGroup, "AutoUploadProxy", False )
-      gLogger.verbose( "Proxy will be uploaded to ProxyManager " )
 
   if params.summary:
     h = int( params.proxyLifeTime / 3600 )

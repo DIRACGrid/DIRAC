@@ -23,8 +23,8 @@ class RequestHandler:
 
     @type serviceInfoDict: dictionary
     @param serviceInfoDict: Information vars for the service
-    @type transport: object
-    @param transport: Transport to use
+    @type trid: object
+    @param trid: Transport to use
     @type lockManager: object
     @param lockManager: Lock manager to use
     """
@@ -71,8 +71,8 @@ class RequestHandler:
     """
     Execute an action.
 
-    @type actionTuple: tuple
-    @param actionTuple: Type of action to execute. First position of the tuple must be the type
+    @type proposalTuple: tuple
+    @param proposalTuple: Type of action to execute. First position of the tuple must be the type
                         of action to execute. The second position is the action itself.
     """
     actionTuple = proposalTuple[1]
@@ -225,7 +225,7 @@ class RequestHandler:
     @type method: string
     @param method: Method to check against
     @type args: tuple
-    @params args: Arguments to check
+    @param args: Arguments to check
     @return: S_OK/S_ERROR
     """
     sListName = "types_%s" % method

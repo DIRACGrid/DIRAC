@@ -13,8 +13,8 @@ from DIRAC import S_OK
 
 def _parseSingleElement( element, attributes = None ):
   """
-  Given a minidom element, return a dictionary of its 
-  child elements and values (as strings). 
+  Given a minidom element, return a dictionary of its
+  child elements and values (as strings).
   """
 
   handler = {}
@@ -41,39 +41,39 @@ class GOCDBClient:
 
   def getStatus( self, granularity, name = None, startDate = None,
                 startingInHours = None, timeout = None ):
-    """  
+    """
     Return actual GOCDB status of entity in `name`
-        
+
     :params:
       :attr:`granularity`: string: should be a ValidRes
-      
-      :attr:`name`: should be the name(s) of the ValidRes. 
-      Could be a list of basestring or simply one basestring. 
-      If not given, fetches the complete list. 
-      
+
+      :attr:`name`: should be the name(s) of the ValidRes.
+      Could be a list of basestring or simply one basestring.
+      If not given, fetches the complete list.
+
       :attr:`startDate`: if not given, takes only ongoing DownTimes.
-      if given, could be a datetime or a string ("YYYY-MM-DD"), and download 
+      if given, could be a datetime or a string ("YYYY-MM-DD"), and download
       DownTimes starting after that date.
-      
-      :attr:`startingInHours`: optional integer. If given, donwload 
-      DownTimes starting in the next given hours (startDate is then useless)  
+
+      :attr:`startingInHours`: optional integer. If given, donwload
+      DownTimes starting in the next given hours (startDate is then useless)
 
     :return: (example)
-      {'OK': True, 
-      'Value': {'78305448': 
+      {'OK': True,
+      'Value': {'78305448':
                   {
-                  'SITENAME': 'UKI-LT2-QMUL', 
-                  'FORMATED_END_DATE': '2010-06-22 19:00', 
-                  'SEVERITY': 'OUTAGE', 
-                  'FORMATED_START_DATE': '2010-06-18 09:00', 
+                  'SITENAME': 'UKI-LT2-QMUL',
+                  'FORMATED_END_DATE': '2010-06-22 19:00',
+                  'SEVERITY': 'OUTAGE',
+                  'FORMATED_START_DATE': '2010-06-18 09:00',
                   'DESCRIPTION': 'Electrical work in the building housing the cluster.'
-                  }, 
-                '78905446': 
+                  },
+                '78905446':
                   {
-                  'SITENAME': 'NCP-LCG2', 
-                  'FORMATED_END_DATE': '2010-06-22 19:40', 
-                  'SEVERITY': 'OUTAGE', 
-                  'FORMATED_START_DATE': '2010-06-20 19:43', 
+                  'SITENAME': 'NCP-LCG2',
+                  'FORMATED_END_DATE': '2010-06-22 19:40',
+                  'SEVERITY': 'OUTAGE',
+                  'FORMATED_START_DATE': '2010-06-20 19:43',
                   'DESCRIPTION': "Problem at Service provider's end"
                   }
                 }
@@ -103,7 +103,7 @@ class GOCDBClient:
     if startingInHours is not None:
     # make 2 queries and later merge the results
 
-      # first call: pass the startDate argument as None, 
+      # first call: pass the startDate argument as None,
       # so the curlDownload method will search for only ongoing DTs
       resXML_ongoing = self._downTimeCurlDonwload( name )
       if resXML_ongoing is None:
@@ -136,7 +136,7 @@ class GOCDBClient:
     # Common: build URL
 #    if res is None or res == []:
 #      return S_OK(None)
-#      
+#
 #    self.buildURL(res)
 
 
@@ -151,11 +151,11 @@ class GOCDBClient:
   def getServiceEndpointInfo( self, granularity, entity ):
     """
     Get service endpoint info (in a dictionary)
-    
+
     :params:
-      :attr:`granularity` : a string. Could be in ('hostname', 'sitename', 'roc', 
+      :attr:`granularity` : a string. Could be in ('hostname', 'sitename', 'roc',
       'country', 'service_type', 'monitored')
-      
+
       :attr:`entity` : a string. Actual name of the entity.
     """
 
@@ -167,11 +167,11 @@ class GOCDBClient:
 #  def getSiteInfo(self, site):
 #    """
 #    Get site info (in a dictionary)
-#    
+#
 #    :params:
 #      :attr:`entity` : a string. Actual name of the site.
 #    """
-#    
+#
 #    siteXML = self._getSiteCurlDonwload(site)
 #    return S_OK(self._siteXMLParsing(siteXML))
 
@@ -179,7 +179,7 @@ class GOCDBClient:
 
 #  def buildURL(self, DTList):
 #    '''build the URL relative to the DT '''
-#    baseURL = "https://goc.gridops.org/downtime/list?id="
+#    baseURL = "https://goc.egi.eu/downtime/list?id="
 #    for dt in DTList:
 #      id = str(dt['id'])
 #      url = baseURL + id
@@ -194,7 +194,7 @@ class GOCDBClient:
     #GOCDB-PI url and method settings
     #
     # Set the GOCDB URL
-    gocdbpi_url = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_downtime"
+    gocdbpi_url = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime"
     # Set the desidered start date
     if startDate is None:
       when = "&ongoing_only=yes"
@@ -220,18 +220,18 @@ class GOCDBClient:
 #############################################################################
 
   def _getServiceEndpointCurlDonwload( self, granularity, entity ):
-    """ 
+    """
     Calls method `get_service_endpoint` from the GOC DB programmatic interface.
-    
+
     :params:
-      :attr:`granularity` : a string. Could be in ('hostname', 'sitename', 'roc', 
+      :attr:`granularity` : a string. Could be in ('hostname', 'sitename', 'roc',
       'country', 'service_type', 'monitored')
-      
+
       :attr:`entity` : a string. Actual name of the entity.
     """
 
     # GOCDB-PI query
-    gocdb_ep = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_service_endpoint&" + granularity + '=' + entity
+    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" + granularity + '=' + entity
 
     req = urllib2.Request( gocdb_ep )
     service_endpoint_page = urllib2.urlopen( req )
@@ -241,15 +241,15 @@ class GOCDBClient:
 #############################################################################
 
 #  def _getSiteCurlDonwload(self, site):
-#    """ 
+#    """
 #    Calls method `get_site` from the GOC DB programmatic interface.
-#    
+#
 #    :params:
 #      :attr:`site` : a string. Actual name of the site.
 #    """
-#    
+#
 #    # GOCDB-PI query
-#    gocdb_ep = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_site&sitename="+site
+#    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_site&sitename="+site
 #
 #    req = urllib2.Request(gocdb_ep)
 #    site_page = urllib2.urlopen(req)
@@ -324,4 +324,3 @@ class GOCDBClient:
     return servicesList
 
 #############################################################################
-
