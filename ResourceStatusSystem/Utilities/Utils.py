@@ -240,6 +240,20 @@ def dict_invert(dict_):
 
   return res
 
+# XML utils
+
+def xml_append(doc, tag, value=None, elt=None, **kw):
+  new_elt = doc.createElement(tag)
+  for k in kw:
+    new_elt.setAttribute(k, kw[k])
+  if value != None:
+    textnode = doc.createTextNode(str(value))
+    new_elt.appendChild(textnode)
+  if elt != None:
+    return elt.appendChild(new_elt)
+  else:
+    return doc.documentElement.appendChild(new_elt)
+
 # CLI stuff
 
 class GetForm(object):
