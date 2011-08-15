@@ -4,9 +4,6 @@ class to interact with the ResourceManagement DB.
 """
 
 import datetime
-#from types import *
-
-#from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import *
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
@@ -27,14 +24,14 @@ class RSSManagementDBException(RSSException):
 
 #############################################################################
 
-class ResourceManagementDB:
+class ResourceManagementDB(object):
   """
   The ResourceManagementDB class is a front-end to the Resource Management Database.
 
   The simplest way to instantiate an object of type :class:`ResourceManagementDB`
   is simply by calling
 
-   >>> rpDB = ResourceManagementDB()
+   >>> rmDB = ResourceManagementDB()
 
   This way, it will use the standard :mod:`DIRAC.Core.Base.DB`.
   But there's the possibility to use other DB classes.
