@@ -39,6 +39,9 @@ FIX: allow any grid type sites in getBannedSites()
 NEW: Extensions can request custom external dependencies to be installed via pip when installing DIRAC.
 FIX: -V switch was being used inconsistently in the pilotDirector
 
+*RemovalAgent
+BUGFIX: TypeError when getting JobID in RemovalAgent
+
 [v6r0-pre4]
 
 *StorageElement
