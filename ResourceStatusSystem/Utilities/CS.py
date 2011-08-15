@@ -47,11 +47,18 @@ def getTypedDictRootedAt(relpath = "", root = g_BaseConfigSection):
   config file."""
   def getTypedDictRootedAt(path):
     retval = {}
-    try:
-      opts = gConfig.getOptionsDict(path)['Value']
-      secs = gConfig.getSections(path)['Value']
-    except KeyError:
-      raise CSError, "Unable to access CS."
+
+    opts = gConfig.getOptionsDict(path)
+    secs = gConfig.getSections(path)
+
+    if not opts['OK']:
+      raise CSError, opts['Message']
+    if not secs['OK']:
+      raise CSError, secs['Message']
+
+    opts = opts['Value']
+    secs = secs['Value']
+
     for k in opts:
       if opts[k].find(",") > -1:
         retval[k] = [Utils.typedobj_of_string(e) for e in List.fromChar(opts[k])]
