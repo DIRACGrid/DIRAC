@@ -120,8 +120,8 @@ CREATE TABLE Resources(
   PRIMARY KEY (ResourceID)
 ) Engine = InnoDB ;
 
-DROP TABLE IF EXISTS StorageElements;
-CREATE TABLE StorageElements(
+DROP TABLE IF EXISTS StorageElementsRead;
+CREATE TABLE StorageElementsRead(
   StorageElementID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   StorageElementName VARCHAR(64) NOT NULL,
   INDEX (StorageElementName),
@@ -143,6 +143,28 @@ CREATE TABLE StorageElements(
   PRIMARY KEY (StorageElementID)
 ) Engine = InnoDB ;
 
+DROP TABLE IF EXISTS StorageElementsWrite;
+CREATE TABLE StorageElementsWrite(
+  StorageElementID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  StorageElementName VARCHAR(64) NOT NULL,
+  INDEX (StorageElementName),
+  ResourceName VARCHAR(64) NOT NULL,
+  INDEX (ResourceName),
+  GridSiteName VARCHAR(64),
+  INDEX (GridSiteName),
+  Status VARCHAR(8) NOT NULL,
+  INDEX (Status),
+  Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
+  DateCreated DATETIME NOT NULL,
+  DateEffective DATETIME NOT NULL,
+  INDEX (DateEffective),
+  DateEnd DATETIME,
+  LastCheckTime DATETIME NOT NULL,
+  TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
+  TokenExpiration DATETIME NOT NULL,
+  FOREIGN KEY (Status) REFERENCES Status(Status),
+  PRIMARY KEY (StorageElementID)
+) Engine = InnoDB ;
 
 DROP TABLE IF EXISTS SitesHistory;
 CREATE TABLE SitesHistory(
@@ -186,8 +208,22 @@ CREATE TABLE ResourcesHistory(
   PRIMARY KEY (ResourcesHistoryID)
 ) Engine=InnoDB;
 
-DROP TABLE IF EXISTS StorageElementsHistory;
-CREATE TABLE StorageElementsHistory(
+DROP TABLE IF EXISTS StorageElementsReadHistory;
+CREATE TABLE StorageElementsReadHistory(
+  StorageElementsHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  StorageElementName VARCHAR(64) NOT NULL,
+  INDEX (StorageElementName),
+  Status VARCHAR(8) NOT NULL,
+  Reason VARCHAR(255) NOT NULL,
+  DateCreated DATETIME NOT NULL,
+  DateEffective DATETIME NOT NULL,
+  DateEnd DATETIME NOT NULL,
+  TokenOwner VARCHAR(64) NOT NULL,
+  PRIMARY KEY (StorageElementsHistoryID)
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS StorageElementsWriteHistory;
+CREATE TABLE StorageElementsWriteHistory(
   StorageElementsHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   StorageElementName VARCHAR(64) NOT NULL,
   INDEX (StorageElementName),
@@ -209,26 +245,48 @@ CREATE TABLE GridSites(
   PRIMARY KEY(gsID)
 ) Engine=InnoDB;
 
-DROP VIEW IF EXISTS PresentStorageElements;
-CREATE VIEW PresentStorageElements AS SELECT 
-  StorageElements.StorageElementName, 
-  StorageElements.ResourceName,
-  StorageElements.GridSiteName, 
+DROP VIEW IF EXISTS PresentStorageElementsRead;
+CREATE VIEW PresentStorageElementsRead AS SELECT 
+  StorageElementsRead.StorageElementName, 
+  StorageElementsRead.ResourceName,
+  StorageElementsRead.GridSiteName, 
   GridSites.GridTier AS SiteType,
-  StorageElements.Status,
-  StorageElements.DateEffective, 
-  StorageElementsHistory.Status AS FormerStatus,
-  StorageElements.Reason,
-  StorageElements.LastCheckTime,
-  StorageElements.TokenOwner,
-  StorageElements.TokenExpiration
+  StorageElementsRead.Status,
+  StorageElementsRead.DateEffective, 
+  StorageElementsReadHistory.Status AS FormerStatus,
+  StorageElementsRead.Reason,
+  StorageElementsRead.LastCheckTime,
+  StorageElementsRead.TokenOwner,
+  StorageElementsRead.TokenExpiration
 FROM ( 
-  (StorageElements INNER JOIN GridSites ON 
-   StorageElements.GridSiteName = GridSites.GridSiteName)
-    INNER JOIN StorageElementsHistory ON 
-      StorageElements.StorageElementName = StorageElementsHistory.StorageElementName AND 
-      StorageElements.DateEffective = StorageElementsHistory.DateEnd 
-) WHERE StorageElements.DateEffective < UTC_TIMESTAMP()
+  (StorageElementsRead INNER JOIN GridSites ON 
+   StorageElementsRead.GridSiteName = GridSites.GridSiteName)
+    INNER JOIN StorageElementsReadHistory ON 
+      StorageElementsRead.StorageElementName = StorageElementsReadHistory.StorageElementName AND 
+      StorageElementsRead.DateEffective = StorageElementsReadHistory.DateEnd 
+) WHERE StorageElementsRead.DateEffective < UTC_TIMESTAMP()
+ORDER BY StorageElementName;
+
+DROP VIEW IF EXISTS PresentStorageElementsWrite;
+CREATE VIEW PresentStorageElementsWrite AS SELECT 
+  StorageElementsWrite.StorageElementName, 
+  StorageElementsWrite.ResourceName,
+  StorageElementsWrite.GridSiteName, 
+  GridSites.GridTier AS SiteType,
+  StorageElementsWrite.Status,
+  StorageElementsWrite.DateEffective, 
+  StorageElementsWriteHistory.Status AS FormerStatus,
+  StorageElementsWrite.Reason,
+  StorageElementsWrite.LastCheckTime,
+  StorageElementsWrite.TokenOwner,
+  StorageElementsWrite.TokenExpiration
+FROM ( 
+  (StorageElementsWrite INNER JOIN GridSites ON 
+   StorageElementsWrite.GridSiteName = GridSites.GridSiteName)
+    INNER JOIN StorageElementsWriteHistory ON 
+      StorageElementsWrite.StorageElementName = StorageElementsWriteHistory.StorageElementName AND 
+      StorageElementsWrite.DateEffective = StorageElementsWriteHistory.DateEnd 
+) WHERE StorageElementsWrite.DateEffective < UTC_TIMESTAMP()
 ORDER BY StorageElementName;
 
 DROP VIEW IF EXISTS PresentResources;

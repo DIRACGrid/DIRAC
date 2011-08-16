@@ -28,9 +28,10 @@ class StateMachine(object):
 
   def __init__(self, VOExtension, currentState):
 
+    module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
+
     try:
-      module = VOExtension + "DIRAC.ResourceStatusSystem.Policy.Configurations"
-      self.__M = __import__(module, locals(), globals(), ['*'])
+      self.__M = __import__( VOExtension + module, locals(), globals(), ['*'])
 
       # TODO: Develop a real plugin architecture and get rid of that
       # kind of hack. Here: verify that the module has the following
@@ -40,8 +41,7 @@ class StateMachine(object):
       getattr(self.__M, "ValidStatus")
 
     except (ImportError, AttributeError):
-      self.__M = __import__("DIRAC.ResourceStatusSystem.PolicySystem.Configurations",
-                            locals(), globals(), ['*'])
+      self.__M = __import__(module,locals(), globals(), ['*'])
 
     if currentState in self.__M.ValidStatus:
       self.__currentState = currentState

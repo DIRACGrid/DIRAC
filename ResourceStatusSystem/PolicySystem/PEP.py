@@ -13,17 +13,15 @@
 """
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
-from DIRAC.ResourceStatusSystem.Utilities.Utils import assignOrRaise
+from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes, \
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, \
     ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import \
     InvalidRes, InvalidStatus, InvalidResourceType, InvalidServiceType, InvalidSiteType
 
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Resource_PolType import ResourcePolTypeActions
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Alarm_PolType    import AlarmPolTypeActions
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.RealBan_PolType  import RealBanPolTypeActions
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Empty_PolType    import EmptyPolTypeActions
 
 class PEP:
 #############################################################################
@@ -59,24 +57,24 @@ class PEP:
 
   """
 
-  def __init__(self, VOExtension, granularity = None, name = None, status = None, formerStatus = None,
-               reason = None, siteType = None, serviceType = None, resourceType = None,
-               tokenOwner = None, useNewRes = False):
+  def __init__( self, VOExtension, granularity = None, name = None, status = None, formerStatus = None,
+                reason = None, siteType = None, serviceType = None, resourceType = None,
+                tokenOwner = None, useNewRes = False ):
 
     self.VOExtension = VOExtension
 
     try:
-      self.__granularity = assignOrRaise(granularity, ValidRes, InvalidRes, self, self.__init__)
+      self.__granularity = Utils.assignOrRaise( granularity, ValidRes, InvalidRes, self, self.__init__ )
     except NameError:
       pass
 
     self.__name         = name
-    self.__status       = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
-    self.__formerStatus = assignOrRaise(formerStatus, ValidStatus, InvalidStatus, self, self.__init__)
+    self.__status       = Utils.assignOrRaise( status, ValidStatus, InvalidStatus, self, self.__init__ )
+    self.__formerStatus = Utils.assignOrRaise( formerStatus, ValidStatus, InvalidStatus, self, self.__init__ )
     self.__reason       = reason
-    self.__siteType     = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
-    self.__serviceType  = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
-    self.__resourceType = assignOrRaise(resourceType, ValidResourceType, InvalidResourceType, self, self.__init__)
+    self.__siteType     = Utils.assignOrRaise( siteType, ValidSiteType, InvalidSiteType, self, self.__init__ )
+    self.__serviceType  = Utils.assignOrRaise( serviceType, ValidServiceType, InvalidServiceType, self, self.__init__ )
+    self.__resourceType = Utils.assignOrRaise( resourceType, ValidResourceType, InvalidResourceType, self, self.__init__ )
 
     self.__realBan = False
     if tokenOwner is not None:
@@ -87,8 +85,8 @@ class PEP:
 
 #############################################################################
 
-  def enforce(self, pdpIn = None, rsDBIn = None, rmDBIn = None, ncIn = None, setupIn = None,
-              daIn = None, csAPIIn = None, knownInfo = None):
+  def enforce( self, pdpIn = None, rsDBIn = None, rmDBIn = None, ncIn = None, setupIn = None,
+               daIn = None, csAPIIn = None, knownInfo = None ):
     """
     enforce policies, using a PDP  (Policy Decision Point), based on
 
@@ -138,10 +136,10 @@ class PEP:
     else:
       # Use standard DIRAC PDP
       from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
-      pdp = PDP(self.VOExtension, granularity = self.__granularity, name = self.__name,
-                status = self.__status, formerStatus = self.__formerStatus, reason = self.__reason,
-                siteType = self.__siteType, serviceType = self.__serviceType,
-                resourceType = self.__resourceType, useNewRes = self.useNewRes)
+      pdp = PDP( self.VOExtension, granularity = self.__granularity, name = self.__name,
+                 status = self.__status, formerStatus = self.__formerStatus, reason = self.__reason,
+                 siteType = self.__siteType, serviceType = self.__serviceType,
+                 resourceType = self.__resourceType, useNewRes = self.useNewRes )
 
     #DB
     if rsDBIn is not None:
@@ -163,7 +161,7 @@ class PEP:
       setup = setupIn
     else:
       # get present setup
-      setup = CS.getSetup()['Value']
+      setup = CS.getSetup()[ 'Value' ]
 
     #notification client
     if ncIn is not None:
@@ -190,18 +188,31 @@ class PEP:
     # policy decision #
     ###################
 
-    resDecisions = pdp.takeDecision(knownInfo=knownInfo)
-    if resDecisions != {}:
-      res          = resDecisions['PolicyCombinedResult']
-      policyType   = res['PolicyType']
+    resDecisions = pdp.takeDecision( knownInfo = knownInfo )
+    assert(type(resDecisions) == dict and resDecisions != {})
+
+    res          = resDecisions[ 'PolicyCombinedResult' ]
+    actionBaseMod = "DIRAC.ResourceStatusSystem.PolicySystem.Actions"
+
+    # Security mechanism in case there is no PolicyType returned
+    if res == {}:
+      EmptyPolTypeActions( self.__granularity, self.__name, resDecisions, res )
+
+    else:
+      policyType   = res[ 'PolicyType' ]
 
       if 'Resource_PolType' in policyType:
-        ResourcePolTypeActions(self.__granularity, self.__name, resDecisions, res, rsDB, rmDB)
+        m = Utils.voimport(actionBaseMod + ".Resource_PolType", self.VOExtension)
+        m.ResourcePolTypeActions( self.__granularity, self.__name, resDecisions, res, rsDB, rmDB )
 
       if 'Alarm_PolType' in policyType:
-        AlarmPolTypeActions(self.__granularity, self.__name,
-                            self.__siteType, self.__serviceType, self.__resourceType,
-                            res, nc, setup, rsDB)
+        m = Utils.voimport(actionBaseMod + ".AlarmPolTypeActions", self.VOExtension)
+        m.AlarmPolTypeActions(self.__name, res, nc, setup, rsDB,
+                            Granularity=self.__granularity,
+                            SiteType=self.__siteType,
+                            ServiceType=self.__serviceType,
+                            ResourceType=self.__resourceType)
 
       if 'RealBan_PolType' in policyType and self.__realBan == True:
-        RealBanPolTypeActions(self.__granularity, self.__name, res, da, csAPI, setup)
+        m = Utils.voimport(actionBaseMod + ".RealBanPolTypeActions")
+        m.RealBanPolTypeActions( self.__granularity, self.__name, res, da, csAPI, setup )
