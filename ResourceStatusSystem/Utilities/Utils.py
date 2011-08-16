@@ -254,83 +254,47 @@ def xml_append(doc, tag, value=None, elt=None, **kw):
   else:
     return doc.documentElement.appendChild(new_elt)
 
-# CLI stuff
+# SQL Utils
+# These module generate ad-hoc SQL queries given a table and kwargs
 
-class GetForm(object):
-  """This class asks the user to fill a form inside a CLI. It checks
-  the type of entered values and keep on asking them until the form
-  has the correct type."""
+import re
 
-  prompt = "> "
-  form   = None
+class SQLParam(str):
+  pass
 
-  def __init__(self, form):
-    """form is a dict in the form label:<type or set of values>"""
-    self.form = form
+class SQLValues(object):
+  null = SQLParam("NULL")
+  now  = SQLParam("NOW()")
 
-  def run(self):
-    res = {}
-    for i in self.form:
-      res[i] = self.getval(i, self.form[i])
-    return res
+def sql_update_(table, kw):
+  if kw == {}: return ""
+  res = "UPDATE %s SET " % table
+  for k in kw:
+    res += ("%s=%s, " % (k, str(kw[k]))) if type(kw[k]) != str else ("%s='%s', " % (k, kw[k]))
+  return res[:-2]
 
-  def getval(self, label, restr, acceptFalse=False):
-    """Restriction can be based on a type, or on a list of acceptable
-    values. If valueTrue, then the value provided"""
-    value = None
+def sql_update(table, **kw):
+  return sql_update_(table, kw)
 
-    if type(restr) == type:
-      # Checks that the provided value is of type restr.
-      if not acceptFalse:
-        while type(value) != restr or not value:
-          print "Enter value for %s: %s" % (label, str(restr))
-          value = raw_input(self.prompt)
-      else:
-        while type(value) != restr:
-          print "Enter value for %s: %s" % (label, str(restr))
-          value = raw_input(self.prompt)
+def sql_insert_(table, kw):
+  if kw == {}: return ""
+  res = "INSERT INTO %s " % table
+  res += "(" + reduce(lambda acc, k: acc + k + ", ", kw.keys(), "") + ") "
+  res += "VALUES (" + reduce(lambda acc, k: acc + (str(k) if type(k) != str else "'" + k +"'") + ", ", kw.values(), "") + ")"
+  return re.sub(r", \)", ")", res)
 
-      return value
+def sql_insert(table, **kw):
+  return sql_instert_(table, kw)
 
-    else:
-      # Checks that the provided value(s) are in the iterable
+def sql_insert_update_(table, keys, kw):
+  if type(keys) != list:
+    raise TypeError, "keys argument has to be a list"
+  res1 = sql_insert_(table, kw)
+  res2 = " ON DUPLICATE KEY UPDATE "
+  for k in kw:
+    if k not in keys:
+      res2 += ("%s=%s, " % (k, str(kw[k]))) if type(kw[k]) != str else ("%s='%s', " % (k, kw[k]))
+  return (res1 + res2)[:-2]
 
-      if not acceptFalse:
-        while not value:
-          print "Enter value for %s: " % label
-          value = self.pickvals(restr)
-      else:
-        print "Enter value for %s: " % label
-        value = self.pickvals(restr)
-
-      return value
-
-  def pickvals(self, iterable, NoneAllowed=False, AllAllowed=True):
-    """Ask the user to pick one or more value(s) in a iterable (list,
-    set). Return the list of chosen values"""
-    res = None
-
-    while res == None:
-      try:
-        self.print_iterable(iterable, NoneAllowed, AllAllowed)
-        res = [int(i) for i in raw_input(self.prompt).split()]
-      except ValueError:
-        pass
-
-    if AllAllowed and (len(iterable) in res or res == []):
-      return iterable
-    elif NoneAllowed and res == [-1]:
-      return []
-    else:
-      return [iterable[i] for i in res if i in range(0, len(iterable))]
-
-  def print_iterable(self, iterable, NoneAllowed=False, AllAllowed=True):
-    """Prints an iterable with numbering to enable a user to pick some
-    or all elements by typing the numbers. To be used by an input function.
-    """
-    if NoneAllowed:
-      print "(-1) [Nothing]"
-    for idx, value in enumerate(iterable):
-      print "(%d) [%s]" % (idx, value)
-    if AllAllowed:
-      print "(%d) [All] (default)" % len(iterable)
+def sql_insert_update(table, keys, **kw):
+  return sql_insert_update_(table, keys, kw)
