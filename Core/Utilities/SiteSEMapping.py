@@ -12,9 +12,10 @@
 
 __RCSID__ = "$Id$"
 
-import re
-
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDIRACSetup
+from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 
 #############################################################################
 def getSiteSEMapping( gridName = '' ):
@@ -46,6 +47,25 @@ def getSiteSEMapping( gridName = '' ):
         siteSEMapping[candidate] = candidateSEs
       else:
         gLogger.debug( 'No SEs defined for site %s' % candidate )
+
+  # Add Sites from the SiteLocalSEMapping in the CS
+  vo = getVO()
+  setup = getDIRACSetup()
+  cfgLocalSEPath = cfgPath( 'Operations', vo, setup, 'SiteLocalSEMapping' )
+  result = gConfig.getOptionsDict( cfgLocalSEPath )
+  if result['OK']:
+    mapping = result['Value']
+    for site in mapping:
+      ses = gConfig.getValue( cfgPath( cfgLocalSEPath, site ), [] )
+      if not ses:
+        continue
+      if gridName and site not in sites:
+        continue
+      if site not in siteSEMapping:
+        siteSEMapping[site] = []
+      for se in ses:
+        if se not in siteSEMapping[site]:
+          siteSEMapping[site].append( se )
 
   return S_OK( siteSEMapping )
 
@@ -84,25 +104,6 @@ def getSESiteMapping( gridName = '' ):
             seSiteMapping[se] = []
           seSiteMapping[se].append( candidate )
 
-  # Add Sites from the SiteLocalSEMapping in the CS
-  vo = getVO()
-  setup = getDIRACSetup()
-  cfgLocalSEPath = cfgPath( 'Operations', vo, setup, 'SiteLocalSEMapping' )
-  result = gConfig.getOptionsDict( cfgLocalSEPath )
-  if result['OK']:
-    mapping = result['Value']
-    for site in mapping:
-      ses = gConfig.getValue( cfgPath( cfgLocalSEPath, site ), [] )
-      if not ses:
-        continue
-      if gridName and site not in sites:
-        continue
-      if site not in siteSEMapping:
-        siteSEMapping[site] = []
-      for se in ses:
-        if se not in siteSEMapping[site]:
-          siteSEMapping[site].append( se )
-
   return S_OK( seSiteMapping )
 
 #############################################################################
@@ -129,12 +130,15 @@ def getSitesForSE( storageElement, gridName = '' ):
 def getSEsForSite( siteName ):
   """ Given a DIRAC site name this method returns a list of corresponding SEs.
   """
-  if not re.search( '.', siteName ):
-    return S_ERROR( '%s is not a valid site name' % siteName )
-  gridName = siteName.split( '.' )[0]
-  siteSection = '/Resources/Sites/%s/%s/SE' % ( gridName, siteName )
-  ses = gConfig.getValue( siteSection, [] )
-  return S_OK( ses )
+  result = getSiteSEMapping()
+  if not result['OK']:
+    return result
+
+  mapping = result['Value']
+  if siteName in mapping:
+    return S_OK( mapping[siteName] )
+
+  return S_OK( [] )
 
 #############################################################################
 def isSameSiteSE( se1, se2 ):
@@ -184,10 +188,9 @@ def hasCommonSiteSE( seList1, seList2 ):
   seSites1 = {}
   for se2 in l2:
     res = getSitesForSE( se2 )
-    if res['OK']:
-      sites2 = res['Value']
-    else:
+    if not res['OK']:
       continue
+    sites2 = res['Value']
     for se1 in l1:
       # cache se1's sites
       if not seSites1.has_key( se1 ):

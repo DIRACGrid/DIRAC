@@ -1,4 +1,54 @@
+[v6r0-pre5]
+
+*Workflow
+NEW: allow modules to define Input and Output parameters that can be
+used instead of the step_commons/workflow_commons (Workflow.py, Step.py, Module.py)
+
+*JobDB
+FIX: properly treat Site parameter in the job JDL while rescheduling in the JobDB
+
+*Stager
+FIX: updateJobFromStager(): only return S_ERROR if the Status sent is not
+recognized or if a state update fails. If the jobs has been removed or
+has moved forward to another status, the Stager will get an S_OK and
+should forget about the job.
+
+*CE2CSAgent
+FIX: Removed wrong init. Agents shouldn't have an init method
+
+*ProxyManagement
+CHANGE: Proxy upload by default is one month with dirac-proxy-upload
+NEW: Added upload of proxies to the proxy manager automatically
+NEW: Added upload of pilot proxies automatically
+NEW: Print info after creating a proxy
+NEW: Added setting VOMS extensions automatically
+NEW: dirac-proxy-info can also print the information of the uploaded proxies
+CHANGE: Security->CS to Configuration->Helpers->Registry
+
+*SiteDirector
+BUGFIX: do not download pilot output if the flag getPilotOutput is not set
+
+*TransformationCleaningAgent
+BUGFIX: archiving instead of cleaning Removal and Replication transformations 
+FIX: kill jobs before deleting them
+
+*DiracAdmin
+FIX: allow any grid type sites in getBannedSites()
+
+*Externals
+NEW: Extensions can request custom external dependencies to be installed via pip when installing DIRAC.
+FIX: -V switch was being used inconsistently in the pilotDirector
+
+*RemovalAgent
+BUGFIX: TypeError when getting JobID in RemovalAgent
+
 [v6r0-pre4]
+
+*StorageElement
+FIX: StorageElement - get service CS options with getCSOption() method ( closes #97 )
+
+*FileCatalogs
+FIX: retrieve FileCatalogs as ordered list, to have a proper default.
 
 *ResourceStatusSystem enhancements
 NEW: methods to store cached environment on a DB and ge them.
@@ -16,6 +66,7 @@ FIX: removed old 'vo' var. This is not a final fix
 
 *FileCatalog
 CHANGE: allow up to 15 levels of directories in the File Catalog
+BUGFIX: Bug fixes in the directory removal methods (closes #98)
 
 *SiteDirector
 FIX: limit the queue max length to the value of MaxQueueLengthOption ( 3 days be default )

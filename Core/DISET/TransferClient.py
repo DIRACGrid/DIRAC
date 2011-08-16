@@ -15,8 +15,8 @@ class TransferClient( BaseClient ):
     """
     Send the header of the transfer
 
-    @type action: string
-    @param action: Action to execute
+    @type actionName: string
+    @param actionName: Action to execute
     @type fileInfo: tuple
     @param fileInfo: Information of the target file/bulk
     @return: S_OK/S_ERROR
@@ -152,8 +152,8 @@ class TransferClient( BaseClient ):
     """
     Receive a bulk of files from server
 
-    @type fileList : list of ( string / file descriptor / file object )
-    @param fileList : Files to receive from server
+    @type destDir : list of ( string / file descriptor / file object )
+    @param destDir : Files to receive from server
     @type bulkId : any
     @param bulkId : Identification of the files being received
     @type token : string

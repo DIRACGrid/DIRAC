@@ -127,7 +127,7 @@ class SEManagerDB(SEManagerBase):
   def getSEName(self,seID):
     if seID in self.db.seids.keys():
       return S_OK(self.db.seids[seID])
-    return S_ERROR('SE id %d not found' % seid)
+    return S_ERROR('SE id %d not found' % seID)
 
   def deleteSE(self,seName,force=True):
     # ToDo: Check first if there are replicas using this SE
