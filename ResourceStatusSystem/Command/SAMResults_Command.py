@@ -56,6 +56,10 @@ class SAMResults_Command(Command):
     elif granularity in ('Resource', 'Resources'):
       if siteName is None:
         siteName = rsc.getGridSiteName(granularity, name)
+        if not siteName['OK']:
+          raise RSSException, siteName['Message']    
+        else:
+          siteName = siteName[ 'Value' ]
       else:
         siteName = getGOCSiteName(siteName)
         if not siteName['OK']:

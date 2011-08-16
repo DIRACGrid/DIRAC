@@ -6,7 +6,7 @@ __RCSID__ = "$Id:  $"
 
 import copy
 
-from DIRAC.ResourceStatusSystem.Utilities.CS    import getTypedDict
+from DIRAC.ResourceStatusSystem.Utilities.CS    import getTypedDictRootedAt
 from DIRAC.ResourceStatusSystem.Utilities.Utils import dictMatch
 
 class InfoGetter:
@@ -22,10 +22,15 @@ class InfoGetter:
     :params:
       :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
     """
-    configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
-                              globals(), locals(), ['*'])
 
-    self.C_Policies = copy.deepcopy(configModule.Policies)
+    module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
+
+    try:
+      configModule = __import__( VOExtension + module, globals(), locals(), ['*'] )
+    except ImportError:
+      configModule = __import__( module, globals(), locals(), ['*'] )
+
+    self.C_Policies     = copy.deepcopy(configModule.Policies)
     self.C_views_panels = copy.deepcopy(configModule.views_panels)
 
 #############################################################################
@@ -54,10 +59,10 @@ class InfoGetter:
     EVAL = {}
 
     if 'policy' in args:
-      EVAL['Policies'] = self.__getPolToEval(granularity = granularity, status = status,
-                                             formerStatus = formerStatus, siteType = siteType,
-                                             serviceType = serviceType, resourceType = resourceType,
-                                             useNewRes = useNewRes)
+      EVAL['Policies'] = self.__getPolToEval( granularity = granularity, status = status,
+                                              formerStatus = formerStatus, siteType = siteType,
+                                              serviceType = serviceType, resourceType = resourceType,
+                                              useNewRes = useNewRes)
 
     if 'policyType' in args:
       EVAL['PolicyType'] = self.__getPolTypes(granularity = granularity, status = status,
@@ -78,7 +83,9 @@ class InfoGetter:
           info = 'Service_VOMS_Panel'
       elif granularity in ('Resource', 'Resources'):
         info = 'Resource_Panel'
-      elif granularity in ('StorageElement', 'StorageElements'):
+      elif granularity in ('StorageElementRead', 'StorageElementsRead'):
+        info = 'SE_Panel'
+      elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
         info = 'SE_Panel'
       EVAL['Info'] = self.__getPanelsInfo(granularity = granularity, status = status,
                                           formerStatus = formerStatus, siteType = siteType,
@@ -111,13 +118,24 @@ class InfoGetter:
 
 #############################################################################
 
-  def __getPolToEval(self, useNewRes = False, **kwargs):
+  def __getPolToEval(self, granularity, status=None, formerStatus=None, siteType=None,
+                     serviceType=None, resourceType=None, useNewRes=False):
 
-    pConfig = getTypedDict("Policies")
+    # This dict is constructed to be used with function dictMatch that
+    # helps selecting policies. **kwargs are not used due to the fact
+    # that it's too dangerous here.
+    argsdict = {'Granularity': granularity,
+                'Status': status,
+                'FormerStatus': formerStatus,
+                'SiteType': siteType,
+                'ServiceType': serviceType,
+                'ResourceType': resourceType}
+
+    pConfig = getTypedDictRootedAt("Policies")
     pol_to_eval = []
 
     for p in pConfig:
-      if dictMatch(kwargs, pConfig[p]):
+      if dictMatch(argsdict, pConfig[p]):
         pol_to_eval.append(p)
 
     polToEval_Args = []
@@ -157,15 +175,28 @@ class InfoGetter:
 
 #############################################################################
 
-  def __getPolTypes(self, **kwargs):
+  def __getPolTypes(self, granularity, status=None, formerStatus=None, newStatus=None,
+                    siteType=None, serviceType=None, resourceType=None):
     """Get Policy Types from config that match the given keyword
     arguments"""
-    pTconfig = getTypedDict("PolicyTypes")
+
+    # This dict is constructed to be used with function dictMatch that
+    # helps selecting policies. **kwargs are not used due to the fact
+    # that it's too dangerous here.
+    argsdict = {'Granularity': granularity,
+                'Status': status,
+                'FormerStatus': formerStatus,
+                'NewStatus': newStatus,
+                'SiteType': siteType,
+                'ServiceType': serviceType,
+                'ResourceType': resourceType}
+
+    pTconfig = getTypedDictRootedAt("PolicyTypes")
 
     pTypes = []
 
     for pt in pTconfig:
-      if dictMatch(kwargs, pTconfig[pt]):
+      if dictMatch(argsdict, pTconfig[pt]):
         pTypes.append(pt)
 
     for pt_name in pTypes:

@@ -1,72 +1,74 @@
-""" The Pilots_Command class is a command class to know about 
+""" The Pilots_Command class is a command class to know about
     present pilots efficiency
 """
 
+import sys
+
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.Command      import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
 #############################################################################
 
 class PilotsStats_Command(Command):
-  
+
   def doCommand(self):
-    """ 
-    Return getPilotStats from Pilots Client  
+    """
+    Return getPilotStats from Pilots Client
     """
     super(PilotsStats_Command, self).doCommand()
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
+      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
       self.client = PilotsClient()
-      
+
     try:
       res = self.client.getPilotsStats(self.args[0], self.args[1], self.args[2])
     except:
       gLogger.exception("Exception when calling PilotsClient for %s %s" %(self.args[0], self.args[1]))
       return {'Result':'Unknown'}
-  
+
     return {'Result':res}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
-    
+
 #############################################################################
 
 class PilotsEff_Command(Command):
-  
+
   def doCommand(self):
-    """ 
-    Return getPilotsEff from Pilots Client  
+    """
+    Return getPilotsEff from Pilots Client
     """
     super(PilotsEff_Command, self).doCommand()
-    
+
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
+      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
       self.client = PilotsClient()
-    
-    try:  
+
+    try:
       res = self.client.getPilotsEff(self.args[0], self.args[1], self.args[2])
     except:
       gLogger.exception("Exception when calling PilotsClient for %s %s" %(self.args[0], self.args[1]))
       return {'Result':'Unknown'}
-  
+
     return {'Result':res}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
-    
+
 #############################################################################
 
 class PilotsEffSimple_Command(Command):
-  
+
   def doCommand(self, RSClientIn = None):
-    """ 
+    """
     Returns simple pilots efficiency
-    
+
     :attr:`args`:
         - args[0]: string - should be a ValidRes
-        
+
         - args[1]: string - should be the name of the ValidRes
 
     returns:
@@ -80,26 +82,26 @@ class PilotsEffSimple_Command(Command):
       if RSClientIn is not None:
         rsc = RSClientIn
       else:
-        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
         rsc = ResourceStatusClient()
 
       try:
-        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')[0]
+        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("PilotsEffSimple_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
-        return {'Result':'Unknown'}      
+        return {'Result':'Unknown'}
       granularity = 'Site'
-    
+
     elif self.args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
       name = self.args[1]
       granularity = self.args[0]
     else:
       raise InvalidRes, where(self, self.doCommand)
-    
+
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
+      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
       self.client = PilotsClient()
-      
+
     try:
       res = self.client.getPilotsSimpleEff(granularity, name, timeout = self.timeout)
       if res is None:
@@ -109,22 +111,22 @@ class PilotsEffSimple_Command(Command):
     except:
       gLogger.exception("Exception when calling PilotsClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
-    
-    return {'Result':res[name]} 
+
+    return {'Result':res[name]}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
-    
+
 #############################################################################
 
 class PilotsEffSimpleCached_Command(Command):
-  
+
   def doCommand(self):
-    """ 
+    """
     Returns simple pilots efficiency
 
-    :attr:`args`: 
+    :attr:`args`:
        - args[0]: string: should be a ValidRes
-  
+
        - args[1]: string should be the name of the ValidRes
 
     returns:
@@ -139,26 +141,26 @@ class PilotsEffSimpleCached_Command(Command):
     if client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       self.client = ResourceStatusClient(timeout = self.timeout)
-      
+
     if self.args[0] in ('Service', 'Services'):
       try:
-        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')[0]
+        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("PilotsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
-        return {'Result':'Unknown'}      
+        return {'Result':'Unknown'}
       granularity = 'Site'
     elif self.args[0] in ('Site', 'Sites'):
       name = self.args[1]
       granularity = self.args[0]
     else:
       raise InvalidRes, where(self, self.doCommand)
-    
+
     try:
-        
-      if client is None:  
+
+      if client is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-        self.client = ResourceManagementClient(timeout = self.timeout) 
-      res = self.client.getCachedResult(name, 'PilotsEffSimpleEverySites', 'PE_S', 'NULL')
+        self.client = ResourceManagementClient(timeout = self.timeout)
+      res = self.client.getCachedResult(name, 'PilotsEffSimpleEverySites', 'PE_S', 'NULL')['Value']
       if res == None:
         return {'Result':'Idle'}
       if res == []:
@@ -166,9 +168,9 @@ class PilotsEffSimpleCached_Command(Command):
     except:
       gLogger.exception("Exception when calling ResourceManagementClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
-    
+
     return {'Result':res[0]}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
-    
+
 #############################################################################

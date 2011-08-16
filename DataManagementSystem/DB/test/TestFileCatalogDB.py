@@ -3,6 +3,7 @@ Script.parseCommandLine()
 
 import unittest,types,time
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 testUser  = 'testuser'
 testGroup = 'testgroup'
@@ -55,9 +56,13 @@ class FileCase(FileCatalogDBTestCase):
     """ 
     from DIRAC import gConfig
     testSE = 'testSE'
-    result = gConfig.getSections( '/Resources/StorageElements' )
-    if result['OK'] and result['Value']:
-      testSE = result['Value'][0]
+    rssClient = ResourceStatusClient()
+    result = rssClient.getStorageElementsList( 'Read' )
+    #result = gConfig.getSections( '/Resources/StorageElements' )
+    #if result['OK'] and result['Value']:
+    #  testSE = result['Value'][0]
+    if result['Ok']:
+      testSE = result['Value'][ 0 ] 
       
     result = self.fc.addFile( { testFile: { 'PFN': 'testfile', 
                                          'SE': testSE , 

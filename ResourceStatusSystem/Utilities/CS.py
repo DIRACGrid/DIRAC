@@ -6,14 +6,26 @@ from DIRAC import gConfig
 g_BaseRegistrySection   = "/Registry"
 g_BaseResourcesSection  = "/Resources"
 g_BaseOperationsSection = "/Operations"
+g_BaseConfigSection     = "/Operations/RSSConfiguration"
 
 class CSError(Exception):
   pass
 
-## Custom version of getOptionsDict. Returns a dict where values are
-## typed instead of a dict where values are strings.
+def getValue(v):
+  """Wrapper around gConfig.getValue. Returns typed values instead of
+  a string value"""
+  res = gConfig.getValue(v)
+  if res.find(",") > -1: # res is a list of values
+    return [Utils.typedobj_of_string(e) for e in List.fromChar(res)]
+  else: return Utils.typedobj_of_string(res)
 
-def getTypedDict(sectionPath, prefix = "/Operations/RSSConfiguration/"):
+def getTypedDict(sectionPath):
+  """
+  DEPRECATED: use getTypedDictRootedAt instead. This function does
+  probably not do what you want.
+
+  Wrapper around gConfig.getOptionsDict. Returns a dict where values are
+  typed instead of a dict where values are strings."""
   def typed_dict_of_dict(d):
     for k in d:
       if type(d[k]) == dict:
@@ -25,20 +37,54 @@ def getTypedDict(sectionPath, prefix = "/Operations/RSSConfiguration/"):
           d[k] = Utils.typedobj_of_string(d[k])
     return d
 
-  res = gConfig.getOptionsDict(prefix + sectionPath)
+  res = gConfig.getOptionsDict(g_BaseConfigSection + "/" + sectionPath)
   if res['OK'] == False: raise CSError, res['Message']
   else:                  return typed_dict_of_dict(res['Value'])
 
+def getTypedDictRootedAt(relpath = "", root = g_BaseConfigSection):
+  """Gives the configuration rooted at path in a Python dict. The
+  result is a Python dictionnary that reflects the structure of the
+  config file."""
+  def getTypedDictRootedAt(path):
+    retval = {}
+
+    opts = gConfig.getOptionsDict(path)
+    secs = gConfig.getSections(path)
+
+    if not opts['OK']:
+      raise CSError, opts['Message']
+    if not secs['OK']:
+      raise CSError, secs['Message']
+
+    opts = opts['Value']
+    secs = secs['Value']
+
+    for k in opts:
+      if opts[k].find(",") > -1:
+        retval[k] = [Utils.typedobj_of_string(e) for e in List.fromChar(opts[k])]
+      else:
+        retval[k] = Utils.typedobj_of_string(opts[k])
+    for i in secs:
+      retval[i] = getTypedDictRootedAt(path + "/" + i)
+    return retval
+
+  return getTypedDictRootedAt(root + "/" + relpath)
+
+def getUserNames():
+  return gConfig.getSections("%s/Users" % g_BaseRegistrySection)['Value']
+
 #############################################################################
 
-def getMailForUser( users ):
-  if isinstance(users, basestring):
+def getMailForUser(users):
+  from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+  rmDB = ResourceManagementDB()
+
+  if type(users) == str:
     users = [users]
-  mails = []
-  for user in users:
-    mail = gConfig.getValue("%s/Users/%s/Email" %(g_BaseRegistrySection, user))
-    mails.append(mail)
-  return S_OK(mails)
+  else:
+    raise ValueError
+
+  return S_OK([rmDB.registryGetMailFromLogin(u) for u in users])
 
 #############################################################################
 

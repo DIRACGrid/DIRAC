@@ -31,12 +31,14 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
-from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
+#from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
 from DIRAC.Core.Security.Misc                         import getProxyInfo
 from DIRAC                                            import gConfig, gLogger
 from DIRAC.Core.Utilities.List                        import intListToString
-csAPI = CSAPI()
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#csAPI = CSAPI()
+rssClient = ResourceStausClient()
 
 res = getProxyInfo()
 if not res['OK']:
@@ -61,31 +63,62 @@ if not ses:
 
 readBanned = []
 writeBanned = []
-storageCFGBase = "/Resources/StorageElements"
+#storageCFGBase = "/Resources/StorageElements"
 for se in ses:
-  res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
-  if not res['OK']:
-    gLogger.error( "Storage Element %s does not exist" % se )
-    continue
-  existingOptions = res['Value']
-  if read and existingOptions['ReadAccess'] == "Active":
-    res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
+
+  resR = rssClient.getStorageElement( se, 'Read' )
+  if resR[ 'OK' ]:
+    resR = resR[ 'Value' ]    
+    if not resR:
+      gLogger.error( "Storage Element (R) %s does not exist" % se )      
+      continue    
+  
+  resW = rssClient.getStorageElement( se, 'Write' )
+  if resW[ 'OK' ]:
+    resW = resW[ 'Value' ]    
+    if not resW:
+      gLogger.error( "Storage Element (W) %s does not exist" % se )      
+      continue    
+
+  if read and ( resR[1] == 'Active' or resR[1] == 'Bad' ):
+    res = rssClient.setStorageElementStatus( se, 'Banned', 'dirac-admin-allow-se', userName, 'Read')     
     if not res['OK']:
-      gLogger.error( "Failed to update %s read access to InActive" % se )
+      gLogger.error( "Failed to update %s read access to Banned" % se )
     else:
-      gLogger.debug( "Successfully updated %s read access to InActive" % se )
-      readBanned.append( se )
-  if write and existingOptions['WriteAccess'] == "Active":
-    res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
+      gLogger.debug( "Successfully updated %s read access to Banned" % se )
+      readAllowed.append( se )
+
+  if write and ( resW[1] == 'Active' or resW[1] == 'Bad' ):
+    res = rssClient.setStorageElementStatus( se, 'Banned', 'dirac-admin-allow-se', userName, 'Write')     
     if not res['OK']:
-      gLogger.error( "Failed to update %s write access to InActive" % se )
+      gLogger.error( "Failed to update %s write access to Banned" % se )
     else:
-      gLogger.debug( "Successfully updated %s write access to InActive" % se )
-      writeBanned.append( se )
-res = csAPI.commitChanges()
-if not res['OK']:
-  gLogger.error( "Failed to commit changes to CS", res['Message'] )
-  DIRAC.exit( -1 )
+      gLogger.debug( "Successfully updated %s write access to Banned" % se )
+      writeAllowed.append( se )
+    
+#  res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
+#  if not res['OK']:
+#    gLogger.error( "Storage Element %s does not exist" % se )
+#    continue
+#  existingOptions = res['Value']
+#  if read and existingOptions['ReadAccess'] == "Active":
+#    res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
+#    if not res['OK']:
+#      gLogger.error( "Failed to update %s read access to InActive" % se )
+#    else:
+#      gLogger.debug( "Successfully updated %s read access to InActive" % se )
+#      readBanned.append( se )
+#  if write and existingOptions['WriteAccess'] == "Active":
+#    res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
+#    if not res['OK']:
+#      gLogger.error( "Failed to update %s write access to InActive" % se )
+#    else:
+#      gLogger.debug( "Successfully updated %s write access to InActive" % se )
+#      writeBanned.append( se )
+#res = csAPI.commitChanges()
+#if not res['OK']:
+#  gLogger.error( "Failed to commit changes to CS", res['Message'] )
+#  DIRAC.exit( -1 )
 
 if not ( writeBanned or readBanned ):
   gLogger.notice( "No storage elements were banned" )
