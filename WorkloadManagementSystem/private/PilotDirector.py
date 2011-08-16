@@ -272,7 +272,7 @@ class PilotDirector:
     # For generic pilots this is limited by the number of use of the tokens and the 
     # maximum number of jobs in Filling mode, but for private Jobs we need an extra limitation:
     pilotsToSubmit = min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) )
-    pilotOptions = [ "-V %s" % self.virtualOrganization ]
+    pilotOptions = []
     privateIfGenericTQ = self.privatePilotFraction > random.random()
     privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
     forceGeneric = 'ForceGeneric' in taskQueueDict
@@ -325,7 +325,10 @@ class PilotDirector:
     # Requested version of DIRAC
     pilotOptions.append( '-r %s' % self.installVersion )
     # Requested Project to install
-    pilotOptions.append( '-V %s' % self.installInstallation )
+    if self.installInstallation:
+      pilotOptions.append( '-V %s' % self.installInstallation )
+    elif self.virtualOrganization:
+      pilotOptions.append( '-V %s' % self.virtualOrganization )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
 

@@ -976,10 +976,12 @@ def runsvctrlComponent( system, component, mode ):
     return S_ERROR( 'Unknown runsvctrl mode "%s"' % mode )
 
   startCompDirs = glob.glob( os.path.join( startDir, '%s_%s' % ( system, component ) ) )
-  result = execCommand( 0, ['runsvctrl', mode] + startCompDirs )
-  if not result['OK']:
-    return result
-  time.sleep( 1 )
+  startCompList = [ [k] for k in startCompDirs]
+  for startComp in startCompList:
+    result = execCommand( 0, ['runsvctrl', mode] + startComp )
+    if not result['OK']:
+      return result
+    time.sleep( 1 )
 
   # Check the runsv status
   if system == '*' or component == '*':
