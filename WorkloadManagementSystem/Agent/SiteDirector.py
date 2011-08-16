@@ -588,20 +588,21 @@ EOF
         self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
         continue
       pilotDict = result['Value']
-      for pRef in pilotRefs:
-        self.log.info( 'Retrieving output for pilot %s' % pRef )
-        pilotStamp = pilotDict[pRef]['PilotStamp']
-        pRefStamp = pRef
-        if pilotStamp:
-          pRefStamp = pRef + ':::' + pilotStamp
-        result = ce.getJobOutput( pRefStamp )
-        if not result['OK']:
-          self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
-        else:
-          output, error = result['Value']
-          result = pilotAgentsDB.storePilotOutput( pRef, output, error )
+      if self.getOutput:
+        for pRef in pilotRefs:
+          self.log.info( 'Retrieving output for pilot %s' % pRef )
+          pilotStamp = pilotDict[pRef]['PilotStamp']
+          pRefStamp = pRef
+          if pilotStamp:
+            pRefStamp = pRef + ':::' + pilotStamp
+          result = ce.getJobOutput( pRefStamp )
           if not result['OK']:
-            self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
+            self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
+          else:
+            output, error = result['Value']
+            result = pilotAgentsDB.storePilotOutput( pRef, output, error )
+            if not result['OK']:
+              self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
 
       # Check if the accounting is to be sent
       if self.sendAccounting:

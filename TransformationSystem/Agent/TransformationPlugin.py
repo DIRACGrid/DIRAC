@@ -80,12 +80,14 @@ class TransformationPlugin( object ):
     sourceSEs = eval( self.params['SourceSE'] )
     if targetseParam.count( '[' ):
       targetSEs = eval( targetseParam )
+    elif type(targetseParam)==type([]):
+      targetSEs = targetseParam
     else:
       targetSEs = [targetseParam]
     #sourceSEs = eval(self.params['SourceSE'])
     #targetSEs = eval(self.params['TargetSE'])
     destinations = int( self.params.get( 'Destinations', 0 ) )
-    if destinations and ( destinations >= targetSEs ):
+    if destinations and ( destinations >= len(targetSEs) ):
       destinations = 0
 
     fileGroups = self._getFileGroups( self.data )

@@ -84,7 +84,7 @@ class Dirac:
     # Determine the default file catalog
     defaultFC = gConfig.getValue( self.section + '/FileCatalog', '' )
     if not defaultFC:
-      result = gConfig.getSections( 'Resources/FileCatalogs', [] )
+      result = gConfig.getSections( 'Resources/FileCatalogs', listOrdered = True )
       if result['OK']:
         if result['Value']:
           self.defaultFileCatalog = result['Value'][0]

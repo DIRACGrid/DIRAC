@@ -750,6 +750,18 @@ def checkPlatformAliasLink():
     os.symlink( os.path.join( cliParams.targetPath, platformAlias[ cliParams.platform ] ),
                 os.path.join( cliParams.targetPath, cliParams.platform ) )
 
+def installExternalRequirements( extType ):
+  """ Install the extension requirements if any
+  """
+  reqScript = os.path.join( cliParams.targetPath, "scripts", 'dirac-externals-requirements' )
+  if os.path.isfile( reqScript ):
+    os.chmod( reqScript , executablePerms )
+    logNOTICE( "Executing %s..." % reqScript )
+    if os.system( "python '%s' -t '%s' > '%s.out' 2> '%s.err'" % ( reqScript, extType,
+                                                                   reqScript, reqScript ) ):
+      logERROR( "Requirements installation script %s failed. Check %s.err" % ( reqScript,
+                                                                               reqScript ) )
+  return True
 
 ####
 # End of helper functions
@@ -1073,5 +1085,6 @@ if __name__ == "__main__":
   if not createBashrc():
     sys.exit( 1 )
   writeDefaultConfiguration()
+  installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % releaseConfig.getDefaultObject() )
   sys.exit( 0 )

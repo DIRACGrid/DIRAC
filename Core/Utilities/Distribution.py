@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities import CFG, File, List
 
 class Distribution:
 
-  cernAnonRoot = 'http://svnweb.cern.ch/guest/dirac'
+  cernAnonRoot = 'http://svn.cern.ch/guest/dirac'
   googleAnonRoot = 'http://dirac-grid.googlecode.com/svn'
 
   cernDevRoot = 'svn+ssh://svn.cern.ch/reps/dirac'

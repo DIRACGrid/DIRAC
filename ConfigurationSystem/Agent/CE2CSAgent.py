@@ -18,14 +18,12 @@ from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 class CE2CSAgent( AgentModule ):
 
-  def __init__( self, *args ):
-    AgentModule.__init__( self, *args )
-    self.addressTo = ''
-    self.addressFrom = ''
-    self.voName = ''
-    self.csAPI = CSAPI()
-    self.subject = "CE2CSAgent"
-    self.alternativeBDIIs = []
+  addressTo = ''
+  addressFrom = ''
+  voName = ''
+  csAPI = CSAPI()
+  subject = "CE2CSAgent"
+  alternativeBDIIs = []
 
   def initialize( self ):
 
