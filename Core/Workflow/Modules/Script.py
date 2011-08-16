@@ -72,8 +72,6 @@ class Script( object ):
       cmd = '%s/%s' % ( os.getcwd(), self.executable )
     if re.search( '.py$', self.executable ):
       cmd = '%s %s' % ( sys.executable, self.executable )
-    if re.search( '.sh$', self.executable ) or re.search( '.csh$', self.executable ):
-      cmd = './%s' % ( self.executable )
     if self.arguments:
       cmd = '%s %s' % ( cmd, self.arguments )
 
