@@ -137,7 +137,7 @@ class CREAMComputingElement( ComputingElement ):
       result = S_ERROR('No pilot references obtained from the glite job submission')  
     return result
 
-  #############################################################################
+#############################################################################
   def getDynamicInfo( self ):
     """ Method to return information on running and pending jobs.
     """
@@ -149,6 +149,11 @@ class CREAMComputingElement( ComputingElement ):
     resultDict = {}
     if not result['OK']:
       return result
+    if result['Value'][0]:
+      if result['Value'][2]:
+        return S_ERROR(result['Value'][2])
+      else:
+        return S_ERROR('Error while interrogating CE status')
     if result['Value'][1]:
       resultDict = self.__parseJobStatus( result['Value'][1] )
 
@@ -185,8 +190,16 @@ class CREAMComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.error('Failed to get job status',result['Message'])
       return result
+    if result['Value'][0]:
+      if result['Value'][2]:
+        return S_ERROR(result['Value'][2])
+      else:
+        return S_ERROR('Error while interrogating job statuses')
     if result['Value'][1]:
       resultDict = self.__parseJobStatus( result['Value'][1] )
+     
+    if not resultDict:
+      return  S_ERROR('No job statuses returned')
 
     # If CE does not know about a job, set the status to Unknown
     for job in jobIDList:
