@@ -191,7 +191,7 @@ class SystemAdministratorHandler( RequestHandler ):
 # General purpose methods
 #
   types_updateSoftware = [ StringTypes ]
-  def export_updateSoftware( self, version, rootPath = "", gridVersion = "2009-08-13" ):
+  def export_updateSoftware( self, version, rootPath = "", gridVersion = "2010-11-20" ):
     """ Update the local DIRAC software installation to version
     """
 
