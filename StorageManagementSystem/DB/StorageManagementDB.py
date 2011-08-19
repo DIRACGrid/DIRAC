@@ -203,8 +203,9 @@ class StorageManagementDB( DB ):
         tasksInStatus['Failed'].append( taskId )
         continue
       for state in self.STATES:
-        if state in cacheStatesForTask and status != state:
-          tasksInStatus[state].append( taskId )
+        if state in cacheStatesForTask:
+          if status != state:
+            tasksInStatus[state].append( taskId )
           break
 
     for newStatus in tasksInStatus.keys():
@@ -541,7 +542,7 @@ class StorageManagementDB( DB ):
             taskState = self.__getTaskStateFromReplicaState( newFileState )
 
         if not taskState in taskStates:
-            taskStates.append( taskState )
+          taskStates.append( taskState )
 
       allReplicaIDs.extend( existingReplicas.values() )
     # Insert all the replicas into the TaskReplicas table
