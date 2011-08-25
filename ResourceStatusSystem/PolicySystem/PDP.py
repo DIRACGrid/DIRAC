@@ -11,7 +11,8 @@ The PDP (Policy Decision Point) module is used to:
 import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where, assignOrRaise
-from DIRAC.ResourceStatusSystem.PolicySystem                import Status,Configurations
+from DIRAC.ResourceStatusSystem.PolicySystem                import Status
+from DIRAC.ResourceStatusSystem.Policy                      import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, \
     InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
@@ -227,7 +228,7 @@ class PDP:
 
 #############################################################################
 
-  def _policyCombination(self, policies):
+  def _policyCombination(self, pol_results):
     """
     INPUT: list type
     OUTPUT: dict type
@@ -237,9 +238,9 @@ class PDP:
     * Take the first EndDate field that exists (FIXME: Do something more clever)
     * Finally, return the result
     """
-    if policies == []: return {}
+    if pol_results == []: return {}
 
-    policies.sort(key=Status.value_of_policy)
+    pol_results.sort(key=Status.value_of_policy)
     newStatus = -1 # First, set an always invalid status
 
     try:
@@ -247,7 +248,7 @@ class PDP:
       _prio, access_list, gofun = Status.statesInfo[self.__status]
       if access_list != set():
         # Restrictions on transitions, checking if one is suitable:
-        for p in policies:
+        for p in pol_results:
           if Status.value_of_policy(p) in access_list:
             newStatus = Status.value_of_policy(p)
             break
@@ -256,20 +257,22 @@ class PDP:
         # returning result.
         if newStatus == -1:
           newStatus = gofun(access_list)
-          return { 'Status': Status.status_of_value(newStatus), 'Reason': 'Status forced by PDP' }
+          return { 'Status': Status.status_of_value(newStatus),
+                   'Reason': 'Status forced by PDP' }
 
       else:
         # Special Status, but no restriction on transitions
-        newStatus = Status.value_of_policy(policies[0])
+        newStatus = Status.value_of_policy(pol_results[0])
 
     except KeyError:
       # We are in a "normal" status: All transitions are possible.
-      newStatus = Status.value_of_policy(policies[0])
+      newStatus = Status.value_of_policy(pol_results[0])
 
     # At this point, a new status has been chosen. newStatus is an
     # integer.
 
-    worstPolicies = [p for p in policies if Status.value_of_policy(p) == newStatus]
+    worstResults = [p for p in pol_results
+                     if Status.value_of_policy(p) == newStatus]
 
     # Concatenate reasons
     def getReason(p):
@@ -279,7 +282,7 @@ class PDP:
         res = ''
       return res
 
-    worstPoliciesReasons = [getReason(p) for p in worstPolicies]
+    worstResultsReasons = [getReason(p) for p in worstResults]
 
     def catRes(x, y):
       if x and y : return x + ' |###| ' + y
@@ -288,10 +291,10 @@ class PDP:
         else: return y
       else       : return ''
 
-    concatenatedRes = reduce(catRes, worstPoliciesReasons, '')
+    concatenatedRes = reduce(catRes, worstResultsReasons, '')
 
     # Handle EndDate
-    endDatePolicies = [p for p in worstPolicies if p.has_key('EndDate')]
+    endDatePolicies = [p for p in worstResults if p.has_key('EndDate')]
 
     # Building and returning result
     res = {}

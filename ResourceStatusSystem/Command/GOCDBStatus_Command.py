@@ -200,19 +200,23 @@ class DTCached_Command(Command):
         commandName = 'DTEveryResources'
 
       res = self.client.getCachedIDs(name, commandName)
-      if len(res) == 0:
+      
+      if not res['OK']:
+        raise RSSException, commandName
+      res = res['Value']
+      if res is None or len( res ) == 0:
         return {'Result':{'DT':None}}
-
-      if len(res) > 1:
+      
+      if len( res ) > 1:
         #there's more than one DT
         
         dt_ID_startingSoon = res[0]
         startSTR_startingSoon = self.client.getCachedResult(name, commandName, 
-                                                            'StartDate', dt_ID_startingSoon)[0]
+                                                            'StartDate', dt_ID_startingSoon)['Value'][0]
         start_datetime_startingSoon = datetime.datetime( *time.strptime(startSTR_startingSoon,
                                                                 "%Y-%m-%d %H:%M")[0:5] )
         endSTR_startingSoon = self.client.getCachedResult(name, commandName, 
-                                                          'EndDate', dt_ID_startingSoon)[0]
+                                                          'EndDate', dt_ID_startingSoon)['Value'][0]
         end_datetime_startingSoon = datetime.datetime( *time.strptime(endSTR_startingSoon,
                                                              "%Y-%m-%d %H:%M")[0:5] )
         
@@ -226,9 +230,9 @@ class DTCached_Command(Command):
         except:
           for dt_ID in res[1:]:
             #looking for an ongoing one
-            startSTR = self.client.getCachedResult(name, commandName, 'StartDate', dt_ID)[0]
+            startSTR = self.client.getCachedResult(name, commandName, 'StartDate', dt_ID)['Value'][0]
             start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-            endSTR = self.client.getCachedResult(name, commandName, 'EndDate', dt_ID)[0]
+            endSTR = self.client.getCachedResult(name, commandName, 'EndDate', dt_ID)['Value'][0]
             end_datetime = datetime.datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
 
             if start_datetime < now:
@@ -250,15 +254,16 @@ class DTCached_Command(Command):
 
       DT_dict_result = {}
 
-      endSTR = self.client.getCachedResult(name, commandName, 'EndDate', DT_ID)[0]
+      endSTR = self.client.getCachedResult(name, commandName, 'EndDate', DT_ID)[ 'Value' ][0]
       end_datetime = datetime.datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
+      
       if end_datetime < now:
         return {'Result': {'DT':None}}
       DT_dict_result['EndDate'] = endSTR
-      DT_dict_result['DT'] = self.client.getCachedResult(name, commandName, 'Severity', DT_ID)[0]
-      startSTR = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)[0]
+      DT_dict_result['DT'] = self.client.getCachedResult(name, commandName, 'Severity', DT_ID)[ 'Value' ][0]
+
+      startSTR = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)[ 'Value' ][0]
       start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-      
       
       if start_datetime > now:
         try:
@@ -305,10 +310,10 @@ class DTInfo_Cached_Command(Command):
     name = self.args[1]
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.client = ResourceManagementClient( timeout = self.timeout )
 
-    now = datetime.datetime.utcnow().replace(microsecond = 0, second = 0)
+    now = datetime.datetime.utcnow().replace( microsecond = 0, second = 0 )
     
     try:
       if granularity in ('Site', 'Sites'):
@@ -316,7 +321,13 @@ class DTInfo_Cached_Command(Command):
       elif self.args[0] in ('Resource', 'Resources'):
         commandName = 'DTEveryResources'
 
-      res = self.client.getCachedIDs(name, commandName)
+      res = self.client.getCachedIDs( name, commandName )
+      
+      if res[ 'OK' ]:
+        res = res[ 'Value' ]    
+      else:
+        res = []
+       
       if len(res) == 0:
         return {'Result':{'DT':None}}
 
@@ -325,11 +336,13 @@ class DTInfo_Cached_Command(Command):
         
         dt_ID_startingSoon = res[0]
         startSTR_startingSoon = self.client.getCachedResult(name, commandName, 
-                                                            'StartDate', dt_ID_startingSoon)[0]
+                                                            'StartDate', dt_ID_startingSoon)[ 'Value' ][0]
+                                                            
+                                                            
         start_datetime_startingSoon = datetime.datetime( *time.strptime(startSTR_startingSoon,
                                                                 "%Y-%m-%d %H:%M")[0:5] )
         endSTR_startingSoon = self.client.getCachedResult(name, commandName, 
-                                                          'EndDate', dt_ID_startingSoon)[0]
+                                                          'EndDate', dt_ID_startingSoon)[ 'Value' ][0]
         end_datetime_startingSoon = datetime.datetime( *time.strptime(endSTR_startingSoon,
                                                              "%Y-%m-%d %H:%M")[0:5] )
         
@@ -343,9 +356,9 @@ class DTInfo_Cached_Command(Command):
         except:
           for dt_ID in res[1:]:
             #looking for an ongoing one
-            startSTR = self.client.getCachedResult(name, commandName, 'StartDate', dt_ID)[0]
+            startSTR = self.client.getCachedResult(name, commandName, 'StartDate', dt_ID)['Value'][0]
             start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-            endSTR = self.client.getCachedResult(name, commandName, 'EndDate', dt_ID)[0]
+            endSTR = self.client.getCachedResult(name, commandName, 'EndDate', dt_ID)['Value'][0]
             end_datetime = datetime.datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
 
             if start_datetime < now:
@@ -367,16 +380,16 @@ class DTInfo_Cached_Command(Command):
 
       DT_dict_result = {}
 
-      endSTR = self.client.getCachedResult(name, commandName, 'EndDate', DT_ID)[0]
+      endSTR = self.client.getCachedResult(name, commandName, 'EndDate', DT_ID)['Value'][0]
       end_datetime = datetime.datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
       if end_datetime < now:
         return {'Result': {'DT':None}}
       DT_dict_result['EndDate'] = endSTR
-      DT_dict_result['DT'] = self.client.getCachedResult(name, commandName, 'Severity', DT_ID)[0]
-      DT_dict_result['StartDate'] = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)[0]
-      DT_dict_result['Description'] = self.client.getCachedResult(name, commandName, 'Description', DT_ID)[0]
-      DT_dict_result['Link'] = self.client.getCachedResult(name, commandName, 'Link', DT_ID)[0]
-      startSTR = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)[0]
+      DT_dict_result['DT'] = self.client.getCachedResult(name, commandName, 'Severity', DT_ID)['Value'][0]
+      DT_dict_result['StartDate'] = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)['Value'][0]
+      DT_dict_result['Description'] = self.client.getCachedResult(name, commandName, 'Description', DT_ID)['Value'][0]
+      DT_dict_result['Link'] = self.client.getCachedResult(name, commandName, 'Link', DT_ID)['Value'][0]
+      startSTR = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)['Value'][0]
       start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
       
       

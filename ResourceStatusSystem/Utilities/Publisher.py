@@ -7,16 +7,14 @@ __RCSID__ = "$Id:  $"
 import copy
 import threading
 
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping      import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getStorageElementStatus
+from DIRAC.ResourceStatusSystem.Utilities.CS          import getStorageElementStatus
 
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes
-
-
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import RSSException, InvalidRes
 
 class Publisher:
   """
@@ -46,14 +44,24 @@ class Publisher:
       (see :class: `DIRAC.Core.DISET.RPCClient.RPCClient`)
     """
 
-    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
-                                   globals(), locals(), ['*'])
+#    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
+#                                   globals(), locals(), ['*'])
+
+    module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
+
+    try:
+      self.configModule = __import__( VOExtension + module , globals(), locals(), ['*'] )
+    except ImportError:
+      self.configModule = __import__( module , globals(), locals(), ['*'] )
 
     if rsDBIn is not None:
       self.rsDB = rsDBIn
     else:
       from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
       self.rsDB = ResourceStatusDB()
+
+    from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+    self.rmDB = ResourceManagementDB()
 
     if commandCallerIn is not None:
       self.cc = commandCallerIn
@@ -198,7 +206,7 @@ class Publisher:
 
     #get single RSS policy results
     policyResToGet = info.keys()[0]
-    pol_res = self.rsDB.getPolicyRes(nameForPanel, policyResToGet)
+    pol_res = self.rmDB.getPolicyRes(nameForPanel, policyResToGet)
     if pol_res != []:
       pol_res_dict = {'Status' : pol_res[0], 'Reason' : pol_res[1]}
     else:
@@ -220,12 +228,12 @@ class Publisher:
     info_res = {}
 
     for oi in othersInfo:
-      format = oi.keys()[0]
+      format_ = oi.keys()[0]
       what = oi.values()[0]
 
-      info_bit_got = self._getInfo(granularityForPanel, nameForPanel, format, what)
+      info_bit_got = self._getInfo(granularityForPanel, nameForPanel, format_, what)
 
-      info_res[format] = info_bit_got
+      info_res[format_] = info_bit_got
 
     self.lockObj.acquire()
     try:
@@ -266,9 +274,9 @@ class Publisher:
 
 #############################################################################
 
-  def _getInfo(self, granularity, name, format, what):
+  def _getInfo(self, granularity, name, format_, what):
 
-    if format == 'RSS':
+    if format_ == 'RSS':
       info_bit_got = self._getInfoFromRSSDB(name, what)
     else:
       if isinstance(what, dict):

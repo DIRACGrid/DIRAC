@@ -1,25 +1,16 @@
 """ PilotsClient class is a client for to get pilots stats.
 """
-# it crashes epydoc
-# __docformat__ = "restructuredtext en"
-
-#import datetime
-
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
-#from DIRAC.Core.DISET.RPCClient import RPCClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
 
 class PilotsClient:
 
-#  def __init__(self):
-#    self.rc = ReportsClient()
-
 #############################################################################
 
-  def getPilotStats(self, granularity, name, periods):
+  def getPilotsStats(self, granularity, name, periods):
     """
     Return pilot stats
 
@@ -42,7 +33,7 @@ class PilotsClient:
     """
 
     if granularity.capitalize() not in ValidRes:
-      raise InvalidRes, where(self, self.getPilotStats)
+      raise InvalidRes, where(self, self.getPilotsStats)
 
     if granularity == 'Site':
       entity = getGOCSiteName(name)
@@ -148,9 +139,11 @@ class PilotsClient:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
         rsc = ResourceStatusClient()
         siteName = rsc.getGeneralName(granularity, name, 'Site')
-        if siteName is None or siteName == []:
-#          gLogger.info('%s is not a resource in DIRAC' %name)
+        if not siteName[ 'OK' ]:
+          raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
+        if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
           return None
+        siteName = siteName['Value']
 
       res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
     else:

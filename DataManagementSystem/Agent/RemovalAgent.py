@@ -82,6 +82,8 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
     # Set the ThreadPool in daemon mode to process new ThreadedJobs as they are inserted
     self.threadPool.daemonize()
 
+    self.maxRequests = self.am_getOption( 'MaxRequestsPerCycle', 1200. )
+
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -94,7 +96,12 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
     Fill the TreadPool with ThreadJobs
     """
     self.pendingRequests = True
+    self.maxRequests = min( 10000., self.am_getOption( 'MaxRequestsPerCycle', self.maxRequests ) )
+    requestCounter = 0
     while self.pendingRequests:
+      if requestCounter > self.maxRequests:
+        break
+      requestCounter += 1
       requestExecutor = ThreadedJob( self.executeRequest )
       ret = self.threadPool.queueJob( requestExecutor )
       if not ret['OK']:
@@ -124,13 +131,13 @@ class RemovalAgent( AgentModule, RequestAgentMixIn ):
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
     sourceServer = res['Value']['Server']
-   
+
     jobID = 0
     try:
       jobID = int( res['Value']['JobID'] )
     except:
-      gLogger.warn("RemovalAgent.execute: JobID not present or malformed in request '%s', will use 0 instead." % requestName )
-  
+      gLogger.warn( "RemovalAgent.execute: JobID not present or malformed in request '%s', will use 0 instead." % requestName )
+
     gLogger.info( "RemovalAgent.execute: Obtained request %s" % requestName )
 
     try:
