@@ -22,6 +22,19 @@ import string, threading, types
 import inspect
 from sets import Set
 
+# Stage Request are issue with a length of "PinLength"
+# However, once Staged, the entry in the StageRequest will set a PinExpiryTime only for "PinLength" / THROTTLING_STEPS
+# As PinExpiryTime arrives, StageRequest and their corresponding CacheReplicas entries are cleaned
+# This allows to throttle the submission of Stage Requests up to a maximum of "DiskCacheTB" per "PinLength"
+# After "PinLength" / THROTTLING_STEPS seconds, entries are removed, so new requests for the same replica will trigger
+# a new Stage Request to the SE, and thus an update of the Pinning on the SE.
+#
+#  - "PinLength" is an Option of the StageRequest Agent that defaults to THROTTLING_TIME
+#  - "DiskCacheTB" is an Option of the StorageElement that defaults to 1 (TB)
+
+THROTTLING_TIME = 86400
+THROTTLING_STEPS = 12
+
 class StorageManagementDB( DB ):
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
@@ -30,6 +43,7 @@ class StorageManagementDB( DB ):
     self.TASKPARAMS = ['TaskID', 'Status', 'Source', 'SubmitTime', 'LastUpdate', 'CompleteTime', 'CallBackMethod', 'SourceTaskID']
     self.REPLICAPARAMS = ['ReplicaID', 'Type', 'Status', 'SE', 'LFN', 'PFN', 'Size', 'FileChecksum', 'GUID', 'SubmitTime', 'LastUpdate', 'Reason', 'Links']
     self.STAGEPARAMS = ['ReplicaID', 'StageStatus', 'RequestID', 'StageRequestSubmitTime', 'StageRequestCompletedTime', 'PinLength', 'PinExpiryTime']
+    self.STATES = ['Failed', 'New', 'Waiting', 'StageSubmitted', 'Staged']
 
   def __getConnection( self, connection ):
     if connection:
@@ -79,13 +93,14 @@ class StorageManagementDB( DB ):
       taskIDs.append( record[0] )
       gLogger.info( "%s.%s_DB: to_update Tasks =  %s" % ( self._caller(), '__updateTaskStatus', record ) )
 
-    reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString( taskIDs )
-    resSelect1 = self._query( reqSelect1, connection )
-    if not resSelect1["OK"]:
-      gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), '__updateTaskStatus', reqSelect1, resSelect1['Message'] ) )
+    if len( taskIDs ) > 0:
+      reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString( taskIDs )
+      resSelect1 = self._query( reqSelect1, connection )
+      if not resSelect1["OK"]:
+        gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), '__updateTaskStatus', reqSelect1, resSelect1['Message'] ) )
 
-    for record in resSelect1['Value']:
-      gLogger.info( "%s.%s_DB: updated Tasks = %s" % ( self._caller(), '__updateTaskStatus', record ) )
+      for record in resSelect1['Value']:
+        gLogger.info( "%s.%s_DB: updated Tasks = %s" % ( self._caller(), '__updateTaskStatus', record ) )
 
     return S_OK( toUpdate )
 
@@ -144,29 +159,65 @@ class StorageManagementDB( DB ):
     for record in resSelect['Value']:
       replicaIDs.append( record[0] )
       gLogger.info( "%s.%s_DB: to_update CacheReplicas =  %s" % ( self._caller(), 'updateReplicaStatus', record ) )
-
-    reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
-    resSelect1 = self._query( reqSelect1, connection )
-    if not resSelect1['OK']:
-      gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'updateReplicaStatus', reqSelect1, resSelect1['Message'] ) )
+    if len( replicaIDs ) > 0:
+      reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+      resSelect1 = self._query( reqSelect1, connection )
+      if not resSelect1['OK']:
+        gLogger.info( "%s.%s_DB: problem retrieving records: %s. %s" % ( self._caller(), 'updateReplicaStatus', reqSelect1, resSelect1['Message'] ) )
 
     for record in resSelect1['Value']:
       gLogger.info( "%s.%s_DB: updated CacheReplicas = %s" % ( self._caller(), 'updateReplicaStatus', record ) )
 
-    # Now update the tasks associated to the replicaIDs
-    # Daniela: what if some of the replicas are still in Staging state for a task?
-    newTaskStatus = self.__getTaskStateFromReplicaState( newReplicaStatus )
-    res = self._getReplicaTasks( toUpdate, connection = connection )
+    res = self._updateTasksForReplica( replicaIDs, connection = connection )
     if not res['OK']:
       return res
-    taskIDs = res['Value']
-    if taskIDs:
-      res = self.__updateTaskStatus( taskIDs, newTaskStatus, True, connection = connection )
-      if not res['OK']:
-        gLogger.warn( "Failed to update tasks associated to replicas", res['Message'] )
     return S_OK( toUpdate )
 
+  def _updateTasksForReplica( self, replicaIDs, connection = False ):
+    tasksInStatus = {}
+    for state in self.STATES:
+      tasksInStatus[state] = []
+
+    req = "SELECT T.TaskID,T.Status FROM Tasks AS T, TaskReplicas AS R WHERE R.ReplicaID IN ( %s ) AND R.TaskID = T.TaskID GROUP BY T.TaskID;" % intListToString( replicaIDs )
+    res = self._query( req, connection )
+    if not res['OK']:
+      return res
+
+    for taskId, status in res['Value']:
+      subreq = "SELECT DISTINCT(C.Status) FROM TaskReplicas AS R, CacheReplicas AS C WHERE R.TaskID=%s AND R.ReplicaID = C.ReplicaID;" % taskId
+      subres = self._query( subreq, connection )
+      if not subres['OK']:
+        return subres
+
+      cacheStatesForTask = [row[0] for row in subres['Value']]
+      if not cacheStatesForTask:
+        tasksInStatus['Failed'].append( taskId )
+        continue
+
+      wrongState = False
+      for state in cacheStatesForTask:
+        if state not in self.STATES:
+          wrongState = True
+          break
+      if wrongState:
+        tasksInStatus['Failed'].append( taskId )
+        continue
+      for state in self.STATES:
+        if state in cacheStatesForTask:
+          if status != state:
+            tasksInStatus[state].append( taskId )
+          break
+
+    for newStatus in tasksInStatus.keys():
+      if tasksInStatus[newStatus]:
+        res = self.__updateTaskStatus( tasksInStatus[newStatus], newStatus, True, connection = connection )
+        if not res['OK']:
+          gLogger.warn( "Failed to update task associated to replicas", res['Message'] )
+          #return res
+    return S_OK( tasksInStatus )
+
   def _getReplicaTasks( self, replicaIDs, connection = False ):
+    """ no longer used """
     connection = self.__getConnection( connection )
     #Daniela: should select only tasks with complete replicaID sets
     #only if ALL Replicas belonging to a Task have a certain state, the task should be selected for state update
@@ -175,15 +226,14 @@ class StorageManagementDB( DB ):
     if not res['OK']:
       return res
     taskIDs = [row[0] for row in res['Value']]
-
     # fix
     finalTaskIDs = []
     for taskID in taskIDs:
-      subreq = "SELECT ReplicaID FROM CacheReplicas WHERE Status = (SELECT Status FROM Tasks WHERE TaskID = %s);" % taskID
+      subreq = "SELECT Status from CacheReplicas where ReplicaID in (SELECT ReplicaID from TaskReplicas where TaskID=%s);" % taskID
       subres = self._query( subreq, connection )
       if not subres['OK']:
         return subres
-      replicaIDsForTask = [row[0] for row in subres['Value']]
+      statesForTask = [row[0] for row in subres['Value']]
       setOriginalReplicaIDs = Set( replicaIDs )
       setReplicaIDsForTask = Set( replicaIDsForTask )
       if setReplicaIDsForTask <= setOriginalReplicaIDs:
@@ -480,8 +530,7 @@ class StorageManagementDB( DB ):
           gLogger.verbose( 'StorageManagementDB.setRequest: Replica already exists in CacheReplicas table %s @ %s' % ( lfn, se ) )
           existingFileState = existingReplicas[lfn][1]
           taskState = self.__getTaskStateFromReplicaState( existingFileState )
-          if not taskState in taskStates:
-            taskStates.append( taskState )
+
         else:
           res = self._insertReplicaInformation( lfn, se, 'Stage', connection = connection )
           if not res['OK']:
@@ -489,6 +538,12 @@ class StorageManagementDB( DB ):
             return res
           else:
             existingReplicas[lfn] = ( res['Value'], 'New' )
+            newFileState = existingReplicas[lfn][1]
+            taskState = self.__getTaskStateFromReplicaState( newFileState )
+
+        if not taskState in taskStates:
+          taskStates.append( taskState )
+
       allReplicaIDs.extend( existingReplicas.values() )
     # Insert all the replicas into the TaskReplicas table
     res = self._insertTaskReplicaInformation( taskID, allReplicaIDs, connection = connection )
@@ -701,8 +756,8 @@ class StorageManagementDB( DB ):
 
   def getSubmittedStagePins( self ):
     # change the query to take into account pin expiry time
-    #req = "SELECT SE,COUNT(*),SUM(Size) from CacheReplicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY SE;"
-    req = "SELECT SE,Count(*),SUM(Size) from CacheReplicas,StageRequests WHERE Status NOT IN ('New','Waiting','Failed') and CacheReplicas.ReplicaID=StageRequests.ReplicaID and PinExpiryTime>Now() GROUP BY SE;"
+    req = "SELECT SE,COUNT(*),SUM(Size) from CacheReplicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY SE;"
+    #req = "SELECT SE,Count(*),SUM(Size) from CacheReplicas,StageRequests WHERE Status NOT IN ('New','Waiting','Failed') and CacheReplicas.ReplicaID=StageRequests.ReplicaID and PinExpiryTime>Now() GROUP BY SE;"
     res = self._query( req )
     if not res['OK']:
       gLogger.error( 'StorageManagementDB.getSubmittedStagePins: Failed to obtain submitted requests.', res['Message'] )
@@ -751,8 +806,9 @@ class StorageManagementDB( DB ):
     resSelect = self._query( reqSelect )
     if not resSelect['OK']:
       gLogger.info( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'setStageComplete', reqSelect, resSelect['Message'] ) )
+      return resSelect
 
-    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP(),PinExpiryTime = DATE_ADD(UTC_TIMESTAMP(),INTERVAL 86400 SECOND) WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP(),PinExpiryTime = DATE_ADD(UTC_TIMESTAMP(),INTERVAL ( PinLength / %s ) SECOND) WHERE ReplicaID IN (%s);" % ( THROTTLING_STEPS, intListToString( replicaIDs ) )
     res = self._update( req )
     if not res['OK']:
       gLogger.error( "StorageManagementDB.setStageComplete: Failed to set StageRequest completed.", res['Message'] )
@@ -771,6 +827,36 @@ class StorageManagementDB( DB ):
 
     gLogger.debug( "StorageManagementDB.setStageComplete: Successfully updated %s StageRequests table with StageStatus=Staged for ReplicaIDs: %s." % ( res['Value'], replicaIDs ) )
     return res
+
+  def wakeupOldRequests( self, replicaIDs , connection = False ):
+    """
+    get only StageRequests with StageRequestSubmitTime older than 1 day AND are still not staged
+    delete these requests
+    reset Replicas with corresponding ReplicaIDs to Status='New'
+    """
+    if( replicaIDs ) > 0:
+      req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL 1 DAY ) < UTC_TIMESTAMP();" % intListToString( replicaIDs )
+      res = self._query( req )
+      if not res['OK']:
+        gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to select old StageRequests.", res['Message'] )
+        return res
+
+      old_replicaIDs = [ row[0] for row in res['Value'] ]
+
+      if len( old_replicaIDs ) > 0:
+        req = "UPDATE CacheReplicas SET Status='New' WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+        res = self._update( req, connection )
+        if not res['OK']:
+          gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to roll CacheReplicas back to Status=New.", res['Message'] )
+          return res
+
+        req = "DELETE FROM StageRequests WHERE ReplicaID in (%s);" % intListToString( old_replicaIDs )
+        res = self._update( req, connection )
+        if not res['OK']:
+          gLogger.error( "StorageManagementDB.wakeupOldRequests. Problem removing entries from StageRequests." )
+          return res
+
+    return S_OK()
 
   ####################################################################
   #
@@ -813,7 +899,7 @@ class StorageManagementDB( DB ):
       gLogger.info( "%s.%s_DB: to_update Tasks =  %s" % ( self._caller(), 'setTasksDone', record ) )
       #fix, no individual queries
     reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString( taskIDs )
-    resSelect1 = self._query( reqSelect1, connection )
+    resSelect1 = self._query( reqSelect1 )
     if not resSelect1['OK']:
       gLogger.info( "%s.%s_DB: problem retrieving record: %s. %s" % ( self._caller(), 'setTasksDone', reqSelect1, resSelect1['Message'] ) )
 
@@ -848,10 +934,22 @@ class StorageManagementDB( DB ):
     #gLogger.info( "%s_DB:%s" % ('removeTasks',req))
     return res
 
+  def setOldTasksAsFailed( self, daysOld, connection = False ):
+    """
+    Set Tasks older than "daysOld" number of days to Failed
+    These tasks have already been retried every day for staging
+    """
+    req = "UPDATE Tasks SET Status='Failed' WHERE DATE_ADD(SubmitTime, INTERVAL %s DAY ) < UTC_TIMESTAMP();" % ( daysOld )
+    res = self._update( req, connection )
+    if not res['OK']:
+      gLogger.error( "StorageManagementDB.setOldTasksAsFailed. Problem setting old Tasks to Failed." )
+      return res
+    return res
+
   def removeUnlinkedReplicas( self, connection = False ):
-    """ This will remove from the CacheReplicas tables where there are no associated links. """
+    """ This will remove from the CacheReplicas and StageRequest tables where there are no associated links AND the pinning is expired. """
     connection = self.__getConnection( connection )
-    req = "SELECT ReplicaID from CacheReplicas WHERE Links = 0;"
+    req = "select SR.ReplicaID from CacheReplicas CR,StageRequests SR WHERE CR.Links = 0 and CR.ReplicaID=SR.ReplicaID group by SR.ReplicaID HAVING max(SR.PinExpiryTime) < UTC_TIMESTAMP();"
     res = self._query( req, connection )
     if not res['OK']:
       gLogger.error( "StorageManagementDB.removeUnlinkedReplicas. Problem selecting entries from CacheReplicas where Links = 0." )
@@ -861,7 +959,6 @@ class StorageManagementDB( DB ):
       replicaIDs.append( tuple[0] )
     if not replicaIDs:
       return S_OK()
-
 
     reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
     resSelect = self._query( reqSelect )
