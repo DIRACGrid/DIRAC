@@ -52,6 +52,7 @@ class StageMonitorAgent( AgentModule ):
 
   def __monitorStorageElementStageRequests( self, storageElement, seReplicaIDs, replicaIDs ):
     terminalReplicaIDs = {}
+    oldRequests = []
     stagedReplicas = []
     pfnRepIDs = {}
     pfnReqIDs = {}
@@ -75,6 +76,9 @@ class StageMonitorAgent( AgentModule ):
     for pfn, staged in prestageStatus['Successful'].items():
       if staged and 'Cached' in staged and staged['Cached']:
         stagedReplicas.append( pfnRepIDs[pfn] )
+      if staged and 'Cached' in staged and not staged['Cached']:
+        oldRequests.append( pfnRepIDs[pfn] ); #only ReplicaIDs
+    #here take the old requests which are still not Cached should be removed, new ones submitted
 
     # Update the states of the replicas in the database
     if terminalReplicaIDs:
@@ -90,6 +94,11 @@ class StageMonitorAgent( AgentModule ):
       res = self.storageDB.updateReplicaStatus( stagedReplicas, 'Staged' )
       if not res['OK']:
         gLogger.error( "StageRequest.__monitorStorageElementStageRequests: Failed to insert replica status.", res['Message'] )
+    if oldRequests:
+      gLogger.info( "StageMonitor.__monitorStorageElementStageRequests: %s old requests will be retried." % len( oldRequests ) )
+      res = self.__wakeupOldRequests( oldRequests )
+      if not res['OK']:
+        gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Failed to wakeup old requests.", res['Message'] )
     return
 
   def __getStageSubmittedReplicas( self ):
@@ -136,3 +145,12 @@ class StageMonitorAgent( AgentModule ):
     if res['Value']['Failed']:
       gLogger.info( "RequestPreparation.__reportProblematicFiles: Failed to report %s problematic files." % len( res['Value']['Failed'] ) )
     return res
+
+  def __wakeupOldRequests( self, oldRequests ):
+    res = self.storageDB.wakeupOldRequests( oldRequests )
+    if not res['OK']:
+      gLogger.error( "StageMonitor.__wakeupOldRequests: Failed to resubmit old requests.", res['Message'] )
+      return res
+    return S_OK()
+
+

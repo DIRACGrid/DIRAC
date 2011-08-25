@@ -9,6 +9,7 @@ from DIRAC.Core.Utilities.List                                    import sortLis
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB       import StorageManagementDB
+from DIRAC.StorageManagementSystem.DB.StorageManagementDB         import THROTTLING_STEPS, THROTTLING_TIME
 
 import time, os, sys, re
 from types import *
@@ -23,7 +24,7 @@ class StageRequestAgent( AgentModule ):
     self.dataIntegrityClient = DataIntegrityClient()
     self.storageDB = StorageManagementDB()
     # pin lifetime = 1 day
-    self.pinLifetime = self.am_getOption( 'PinLifetime', 60 * 60 * 24 )
+    self.pinLifetime = self.am_getOption( 'PinLifetime', THROTTLING_TIME )
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
@@ -44,8 +45,9 @@ class StageRequestAgent( AgentModule ):
       gLogger.info( "StageRequest.execute: Active stage/pin requests found at the following sites:" )
       for storageElement in sortList( self.storageElementUsage.keys() ):
         seDict = self.storageElementUsage[storageElement]
-        # Daniela: fishy? Changed it to GB and division by 1024 instead of 1000
-        gLogger.info( "StageRequest.execute: %s: %s replicas with a size of %.3f GB." % ( storageElement.ljust( 15 ), str( seDict['Replicas'] ).rjust( 6 ), seDict['TotalSize'] / ( 1024 * 1024 * 1024.0 ) ) )
+        # Convert to GB for printout
+        seDict['TotalSize'] = seDict['TotalSize'] / ( 1000 * 1000 * 1000.0 )
+        gLogger.info( "StageRequest.execute: %s: %s replicas with a size of %.3f GB." % ( storageElement.ljust( 15 ), str( seDict['Replicas'] ).rjust( 6 ), seDict['TotalSize'] ) )
     if not self.storageElementUsage:
       gLogger.info( "StageRequest.execute: No active stage/pin requests found." )
     res = self.submitStageRequests()
@@ -73,23 +75,25 @@ class StageRequestAgent( AgentModule ):
     usedSpace = 0
     if self.storageElementUsage.has_key( storageElement ):
       usedSpace = self.storageElementUsage[storageElement]['TotalSize']
-    totalSpace = gConfig.getValue( "/Resources/StorageElements/%s/CacheSize" % storageElement, 0 )
+
+    # Convert to GB for printout
+    totalSpace = gConfig.getValue( "/Resources/StorageElements/%s/DiskCacheTB" % storageElement, 1. ) * 1000. / THROTTLING_STEPS
     if not totalSpace:
-      gLogger.info( "StageRequest__issuePrestageRequests: No space restriction at %s" % ( storageElement ) )
+      gLogger.info( "StageRequest.__issuePrestageRequests: No space restriction at %s" % ( storageElement ) )
       selectedReplicaIDs = seReplicaIDs
     elif ( totalSpace > usedSpace ):
-      gLogger.debug( "StageRequest__issuePrestageRequests: total space = %s, used space = %s" % ( totalSpace, usedSpace ) )
-      gLogger.info( "StageRequest__issuePrestageRequests: %.4f GB available at %s" % ( ( totalSpace - usedSpace ) / ( 1024 * 1024 * 1024.0 ), storageElement ) )
+      gLogger.debug( "StageRequest.__issuePrestageRequests: total space = %s, used space = %s" % ( totalSpace, usedSpace ) )
+      gLogger.info( "StageRequest.__issuePrestageRequests: %.2f GB available at %s" % ( totalSpace - usedSpace , storageElement ) )
       selectedReplicaIDs = []
       #logic was bad here, before the first comparison test, the single selected file for staging could be larger than the available space
       for replicaID in seReplicaIDs:
         if ( totalSpace - usedSpace ) > allReplicaInfo[replicaID]['Size']:
-          usedSpace += allReplicaInfo[replicaID]['Size']
+          usedSpace += allReplicaInfo[replicaID]['Size'] / ( 1000 * 1000 * 1000.0 )
           selectedReplicaIDs.append( replicaID )
     else:
-      gLogger.info( "StageRequest__issuePrestageRequests: %.2f GB used at %s (limit %2.f GB)" % ( ( usedSpace ) / ( 1024 * 1024 * 1024.0 ), storageElement, totalSpace / ( 1024 * 1024 * 1024.0 ) ) )
+      gLogger.info( "StageRequest.__issuePrestageRequests: %.2f GB used at %s (limit %2.f GB)" % ( usedSpace , storageElement, totalSpace ) )
       return
-    gLogger.info( "StageRequest__issuePrestageRequests: Selected %s files eligible for staging at %s." % ( len( selectedReplicaIDs ), storageElement ) )
+    gLogger.info( "StageRequest.__issuePrestageRequests: Selected %s files eligible for staging at %s." % ( len( selectedReplicaIDs ), storageElement ) )
     # Now check that the integrity of the eligible files
     pfnRepIDs = {}
     for replicaID in selectedReplicaIDs:
@@ -121,6 +125,7 @@ class StageRequestAgent( AgentModule ):
       res = self.storageDB.insertStageRequest( stageRequestMetadata, self.pinLifetime )
       if not res['OK']:
         gLogger.error( "StageRequest.__issuePrestageRequests: Failed to insert stage request metadata.", res['Message'] )
+        return res
       res = self.storageDB.updateReplicaStatus( updatedPfnIDs, 'StageSubmitted' )
       if not res['OK']:
         gLogger.error( "StageRequest.__issuePrestageRequests: Failed to insert replica status.", res['Message'] )
@@ -145,7 +150,7 @@ class StageRequestAgent( AgentModule ):
       storageElement = info['SE']
       size = info['Size']
       pfn = info['PFN']
-#      lfn,storageElement,size,pfn = info
+      #      lfn,storageElement,size,pfn = info
       replicaIDs[replicaID] = {'LFN':lfn, 'PFN':pfn, 'Size':size, 'StorageElement':storageElement}
       if not seReplicas.has_key( storageElement ):
         seReplicas[storageElement] = []
@@ -156,6 +161,9 @@ class StageRequestAgent( AgentModule ):
     # Check the integrity of the files to ensure they are available
     terminalReplicaIDs = {}
     gLogger.info( "StageRequest.__checkIntegrity: Checking the integrity of %s replicas at %s." % ( len( pfnRepIDs ), storageElement ) )
+    if len( pfnRepIDs ) == 0:
+      gLogger.info( "StageRequest.__checkIntegrity: No replicas to be checked" )
+      return S_OK( pfnRepIDs )
     res = self.replicaManager.getStorageFileMetadata( pfnRepIDs.keys(), storageElement )
     if not res['OK']:
       gLogger.error( "StageRequest.__checkIntegrity: Completely failed to obtain metadata for replicas.", res['Message'] )

@@ -20,14 +20,14 @@ from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
 
 __RCSID__ = "$Id:  $"
 
-AGENT_NAME = 'ResourceStatus/ClientsCacheFeeder'
+AGENT_NAME = 'ResourceStatus/ClientsCacheFeederAgent'
 
-class ClientsCacheFeeder( AgentModule ):
+class ClientsCacheFeederAgent( AgentModule ):
 
 #############################################################################
 
   def initialize( self ):
-    """ ClientsCacheFeeder initialization
+    """ ClientsCacheFeederAgent initialization
     """
 
     try:
@@ -39,8 +39,15 @@ class ClientsCacheFeeder( AgentModule ):
 
       VOExtension = getExt()
 
-      configModule = __import__( VOExtension + "DIRAC.ResourceStatusSystem.Policy.Configurations",
-                                globals(), locals(), ['*'] )
+      module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
+
+#      try:
+#          
+#        configModule = __import__( VOExtension + "DIRAC.ResourceStatusSystem.Policy.Configurations",
+#                                   globals(), locals(), ['*'] )
+#      except:
+      configModule = __import__( module, globals(), locals(), ['*'] )
+            
       commandsList_ClientsCache = copy.deepcopy( configModule.Commands_ClientsCache )
 
       commandsList_AccountingCache = copy.deepcopy( configModule.Commands_AccountingCache )
@@ -55,6 +62,7 @@ class ClientsCacheFeeder( AgentModule ):
       RPCAccounting = RPCClient( "Accounting/ReportGenerator" )
 
       for command in commandsList_ClientsCache:
+          
         cObj = cc.setCommandObject( command )
         cc.setCommandClient( command, cObj, RPCWMSAdmin = RPCWMSAdmin,
                             RPCAccounting = RPCAccounting )
@@ -72,14 +80,14 @@ class ClientsCacheFeeder( AgentModule ):
       return S_OK()
 
     except Exception:
-      errorStr = "ClientsCacheFeeder initialization"
+      errorStr = "ClientsCacheFeederAgent initialization"
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
 #############################################################################
 
   def execute( self ):
-    """ The main ClientsCacheFeeder execution method
+    """ The main ClientsCacheFeederAgent execution method
     """
 
     try:
@@ -116,19 +124,19 @@ class ClientsCacheFeeder( AgentModule ):
           co[1].setArgs( co[2] )
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()
-          plotType = res.keys()[0]
-          for name in res[plotType].keys():
+          plotType = res.keys()[ 0 ]
+          for name in res[ plotType ].keys():
             plotName = co[0][1].split( '_' )[0] + '_' + str( co[2][0] )
             self.rmDB.addOrModifyAccountingCacheRes( name, plotType, plotName,
                                                     res[plotType][name] )
         except:
-          gLogger.exception( "Exception when executing " + co[0][1] )
+          gLogger.exception( "Exception when executing " + co[ 0 ][ 1 ] )
           continue
 
       return S_OK()
 
     except Exception:
-      errorStr = "ClientsCacheFeeder execution"
+      errorStr = "ClientsCacheFeederAgent execution"
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 

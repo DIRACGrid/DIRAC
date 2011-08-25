@@ -6,7 +6,7 @@ import zlib, difflib
 from DIRAC.Core.Utilities                               import List, Time
 from DIRAC.Core.Utilities.CFG                           import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Security.Misc                           import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 
 class Modificator:
 
@@ -65,7 +65,7 @@ class Modificator:
     config file."""
     def getDictRootedAt(path):
       retval = {}
-      opts = self.getOptions(path)
+      opts = self.getOptionsDict(path)
       secs = self.getSections(path)
       for k in opts:
         retval[k] = opts[k]

@@ -23,13 +23,14 @@ class RequestFinalizationAgent( AgentModule ):
     self.am_setOption( 'shifterProxy', 'DataManager' )
     self.storageDB = StorageManagementDB()
     #self.stagerClient = StorageManagerClient()
-
+    self.oldTaskDays = self.am_getOption( 'oldTaskDays', 3 )
     return S_OK()
 
   def execute( self ):
     res = self.clearFailedTasks()
     res = self.callbackStagedTasks()
     res = self.removeUnlinkedReplicas()
+    res = self.setOldTasksAsFailed( self.oldTaskDays )
     return res
 
   def clearFailedTasks( self ):
@@ -71,6 +72,9 @@ class RequestFinalizationAgent( AgentModule ):
         res = self.__performCallback( 'Done', callback, sourceTask )
         if not res['OK']:
           stagedTasks.pop( taskID )
+        else:
+          gLogger.info( "RequestFinalization.callbackStagedTasks, Task = %s: %s" % ( sourceTask, res['Value'] ) )
+
     if not stagedTasks:
       gLogger.info( "RequestFinalization.callbackStagedTasks: No tasks to update to Done." )
       return S_OK()
@@ -117,4 +121,12 @@ class RequestFinalizationAgent( AgentModule ):
       gLogger.error( "RequestFinalization.clearReleasedTasks: Failed to remove tasks.", res['Message'] )
       return res
     gLogger.info( "RequestFinalization.clearReleasedTasks: ...removed." )
+    return S_OK()
+
+  def setOldTasksAsFailed( self, daysOld ):
+    gLogger.debug( "RequestFinalization.setOldTasksAsFailed: Attempting...." )
+    res = self.storageDB.setOldTasksAsFailed( daysOld )
+    if not res['OK']:
+      gLogger.error( "RequestFinalization.setOldTasksAsFailed: Failed to set old tasks to a Failed state.", res['Message'] )
+      return res
     return S_OK()

@@ -169,13 +169,13 @@ class ReleaseConfig:
       raise KeyError( "Missing section %s" % obList[0] )
 
     def toString( self, tabs = 0 ):
-      lines = [ "%s = %s" % ( opName, self.__data[ opName ] ) for opName in self.__data ]
+      lines = [ "%s%s = %s" % ( "  " * tabs, opName, self.__data[ opName ] ) for opName in self.__data ]
       for secName in self.__children:
-        lines.append( "%s" % secName )
-        lines.append( "{" )
+        lines.append( "%s%s" % ( "  " * tabs, secName ) )
+        lines.append( "%s{" % ( "  " * tabs ) )
         lines.append( self.__children[ secName ].toString( tabs + 1 ) )
-        lines.append( "}" )
-      return "\n".join( [ "%s%s" % ( "  " * tabs, line ) for line in lines ] )
+        lines.append( "%s}" % ( "  " * tabs ) )
+      return "\n".join( lines )
 
     def getOptions( self, path = "" ):
       parentPath = [ sec.strip() for sec in path.split( "/" ) if sec.strip() ][:-1]
@@ -507,6 +507,14 @@ class ReleaseConfig:
       return self.__configs[ 'DIRAC' ].get( 'Releases/%s/Externals' % releaseVersion )
     except KeyError:
       return False
+
+  def getLCGVersion( self, lcgVersion = False ):
+    for objName in self.__projectsLoaded:
+      try:
+        return self.__configs[ objName ].get( "Releases/%s/LcgVer" % self.__depsLoaded[ objName ] )
+      except KeyError:
+        pass
+    return lcgVersion
 
   def getModulesToInstall( self, extraModules = False ):
     if not extraModules:
@@ -925,7 +933,12 @@ def compileExternals( extVersion ):
     return False
   return True
 
-def installExternals( externalsVersion ):
+def installExternals( releaseConfig ):
+  externalsVersion = releaseConfig.getExtenalsVersion()
+  if not externalsVersion:
+    logERROR( "No externals defined" )
+    return False
+
   if not cliParams.platform:
     platformPath = os.path.join( cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py" )
     try:
@@ -957,8 +970,9 @@ def installExternals( externalsVersion ):
   checkPlatformAliasLink()
   #lcg utils?
   #LCG utils if required
-  if cliParams.lcgVer:
-    verString = "%s-%s-python%s" % ( cliParams.lcgVer, cliParams.platform, cliParams.pythonVersion )
+  lcgVer = releaseConfig.getLCGVersion( cliParams.lcgVer )
+  if lcgVer:
+    verString = "%s-%s-python%s" % ( lcgVer, cliParams.platform, cliParams.pythonVersion )
     #HACK: try to find a more elegant solution for the lcg bundles location
     if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False ):
       logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
@@ -1076,11 +1090,7 @@ if __name__ == "__main__":
   else:
     logNOTICE( "Skipping installing DIRAC" )
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
-  externalsVersion = releaseConfig.getExtenalsVersion()
-  if not externalsVersion:
-    logERROR( "No externals defined" )
-    sys.exit( 1 )
-  if not installExternals( externalsVersion ):
+  if not installExternals( releaseConfig ):
     sys.exit( 1 )
   if not createBashrc():
     sys.exit( 1 )

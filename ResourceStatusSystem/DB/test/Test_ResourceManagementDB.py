@@ -8,7 +8,7 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import ValidRes,ValidStatus
+from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes,ValidStatus
 
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 

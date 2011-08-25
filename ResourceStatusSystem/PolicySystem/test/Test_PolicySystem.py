@@ -9,8 +9,6 @@ from DIRAC.ResourceStatusSystem.Utilities.mock       import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.PolicySystem.Status import *
 
-
-
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
 import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
@@ -374,7 +372,8 @@ class PolicyCallerSuccess(PolicySystemTestCase):
     policies_modules = {'Site':['DT_Policy', 'GGUSTickets_Policy'],
                         'Service': ['PilotsEfficiency_Simple_Policy', 'JobsEfficiency_Simple_Policy'],
                         'Resource':['SAMResults_Policy', 'DT_Policy'],
-                        'StorageElement':['SEOccupancy_Policy', 'TransferQuality_Policy']
+                        'StorageElementRead':['SEOccupancy_Policy', 'TransferQuality_Policy'],
+                        'StorageElementWrite':['SEOccupancy_Policy', 'TransferQuality_Policy']
                         }
 
     for g in ValidRes:

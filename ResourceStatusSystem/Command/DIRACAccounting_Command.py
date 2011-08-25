@@ -194,7 +194,7 @@ class TransferQualityCached_Command(Command):
       if res == []:
         return {'Result':None}
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
+      gLogger.exception("Exception when calling ResourceManagementClient for %s" %(name))
       return {'Result':'Unknown'}
     
     return {'Result':float(res[0])}
@@ -276,6 +276,9 @@ class TransferQualityFromCachedPlot_Command(Command):
     
     try:
       res = self.client.getCachedAccountingResult(name, plotType, plotName)
+
+      res = res[ 'Value' ]
+
       if res == []:
         return {'Result':None}
       res = eval(res[0])

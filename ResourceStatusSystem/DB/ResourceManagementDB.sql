@@ -29,7 +29,7 @@ CREATE TABLE Status(
 DROP TABLE IF EXISTS PolicyRes;
 CREATE TABLE PolicyRes(
   prID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  Granularity VARCHAR(16) NOT NULL,
+  Granularity VARCHAR(32) NOT NULL,
   Name VARCHAR(64) NOT NULL,
   INDEX (Name),
   PolicyName VARCHAR(64) NOT NULL,
@@ -82,4 +82,12 @@ CREATE TABLE EnvironmentCache(
   DateEffective DATETIME NOT NULL,
   Environment BLOB,
   PRIMARY KEY(Hash)
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS UserRegistryCache;
+CREATE TABLE UserRegistryCache(
+  login VARCHAR(16),
+  name VARCHAR(64) NOT NULL,
+  email VARCHAR(64) UNIQUE NOT NULL,
+  PRIMARY KEY(login)
 ) Engine=InnoDB;

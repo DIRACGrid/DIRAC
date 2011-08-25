@@ -107,6 +107,14 @@ import copy, ast
 
 id_fun = lambda x: x
 
+# Import utils
+
+def voimport(base_mod, voext):
+  try:
+    return  __import__(voext + base_mod, globals(), locals(), ['*'])
+  except ImportError:
+    return  __import__(base_mod, globals(), locals(), ['*'])
+
 # (Duck) type checking
 
 def isiterable(obj):
@@ -122,12 +130,45 @@ def bool_of_string(s):
   else                      : raise ValueError, "Cannot convert %s to a boolean value" % s
 
 def typedobj_of_string(s):
+  if s == "":
+    return s
   try:
     return ast.literal_eval(s)
-  except ValueError: # Probably it's just a string
+  except (ValueError, SyntaxError): # Probably it's just a string
     return s
 
+# String utils
+
+# http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Longest_common_substring#Python
+def LongestCommonSubstring(S1, S2):
+  M = [[0]*(1+len(S2)) for i in xrange(1+len(S1))]
+  longest, x_longest = 0, 0
+  for x in xrange(1,1+len(S1)):
+    for y in xrange(1,1+len(S2)):
+      if S1[x-1] == S2[y-1]:
+        M[x][y] = M[x-1][y-1] + 1
+        if M[x][y]>longest:
+          longest = M[x][y]
+          x_longest  = x
+      else:
+        M[x][y] = 0
+  return S1[x_longest-longest: x_longest]
+
+def CountCommonLetters(S1, S2):
+  count = 0
+  target = S2
+  for l in S1:
+    if l in S2:
+      count = count+1
+      target = target.strip(l)
+  return count
+
 # List utils
+
+def list_(a):
+  """Same as list() except if arg is a string, in this case, return
+  [a]"""
+  return (list(a) if type(a) != str else [a])
 
 def list_split(l):
   return [i[0] for i in l], [i[1] for i in l]
@@ -150,15 +191,20 @@ def dictMatch(dict1, dict2):
   if type(dict1) != type(dict2) != dict:
     raise TypeError, "dictMatch expect dicts for both arguments"
 
-  try:
-    for k in dict1:
+  numMatch = False
+
+  for k in dict1:
+    try:
+      if dict1[k] == None:
+        continue
       if dict1[k] not in dict2[k]:
         return False
-    return True
-  except KeyError:
-    # some keys are in dict1 and not in dict2: We don't care (in this
-    # case).
-    pass
+      else:
+        numMatch = True
+    except KeyError:
+      pass
+
+  return numMatch
 
 def dict_split(d):
   def dict_one_split(d):
@@ -181,83 +227,74 @@ def dict_split(d):
 
   return dict_split([d])
 
-# CLI stuff
-
-class GetForm(object):
-  """This class asks the user to fill a form inside a CLI. It checks
-  the type of entered values and keep on asking them until the form
-  has the correct type."""
-
-  prompt = "> "
-  form   = None
-
-  def __init__(self, form):
-    """form is a dict in the form label:<type or set of values>"""
-    self.form = form
-
-  def run(self):
-    res = {}
-    for i in self.form:
-      res[i] = self.getval(i, self.form[i])
-    return res
-
-  def getval(self, label, restr, acceptFalse=False):
-    """Restriction can be based on a type, or on a list of acceptable
-    values. If valueTrue, then the value provided"""
-    value = None
-
-    if type(restr) == type:
-      # Checks that the provided value is of type restr.
-      if not acceptFalse:
-        while type(value) != restr or not value:
-          print "Enter value for %s: %s" % (label, str(restr))
-          value = raw_input(self.prompt)
-      else:
-        while type(value) != restr:
-          print "Enter value for %s: %s" % (label, str(restr))
-          value = raw_input(self.prompt)
-
-      return value
-
-    else:
-      # Checks that the provided value(s) are in the iterable
-
-      if not acceptFalse:
-        while not value:
-          print "Enter value for %s: " % label
-          value = self.pickvals(restr)
-      else:
-        print "Enter value for %s: " % label
-        value = self.pickvals(restr)
-
-      return value
-
-  def pickvals(self, iterable, NoneAllowed=False, AllAllowed=True):
-    """Ask the user to pick one or more value(s) in a iterable (list,
-    set). Return the list of chosen values"""
-    res = None
-
-    while res == None:
+def dict_invert(dict_):
+  res = {}
+  for k in dict_:
+    if not isiterable(dict_[k]):
+      dict_[k] = [dict_[k]]
+    for i in dict_[k]:
       try:
-        self.print_iterable(iterable, NoneAllowed, AllAllowed)
-        res = [int(i) for i in raw_input(self.prompt).split()]
-      except ValueError:
-        pass
+        res[i].append(k)
+      except KeyError:
+        res[i] = [k]
 
-    if AllAllowed and (len(iterable) in res or res == []):
-      return iterable
-    elif NoneAllowed and res == [-1]:
-      return []
-    else:
-      return [iterable[i] for i in res if i in range(0, len(iterable))]
+  return res
 
-  def print_iterable(self, iterable, NoneAllowed=False, AllAllowed=True):
-    """Prints an iterable with numbering to enable a user to pick some
-    or all elements by typing the numbers. To be used by an input function.
-    """
-    if NoneAllowed:
-      print "(-1) [Nothing]"
-    for idx, value in enumerate(iterable):
-      print "(%d) [%s]" % (idx, value)
-    if AllAllowed:
-      print "(%d) [All] (default)" % len(iterable)
+# XML utils
+
+def xml_append(doc, tag, value=None, elt=None, **kw):
+  new_elt = doc.createElement(tag)
+  for k in kw:
+    new_elt.setAttribute(k, kw[k])
+  if value != None:
+    textnode = doc.createTextNode(str(value))
+    new_elt.appendChild(textnode)
+  if elt != None:
+    return elt.appendChild(new_elt)
+  else:
+    return doc.documentElement.appendChild(new_elt)
+
+# SQL Utils
+# These module generate ad-hoc SQL queries given a table and kwargs
+
+import re
+
+class SQLParam(str):
+  pass
+
+class SQLValues(object):
+  null = SQLParam("NULL")
+  now  = SQLParam("NOW()")
+
+def sql_update_(table, kw):
+  if kw == {}: return ""
+  res = "UPDATE %s SET " % table
+  for k in kw:
+    res += ("%s=%s, " % (k, str(kw[k]))) if type(kw[k]) != str else ("%s='%s', " % (k, kw[k]))
+  return res[:-2]
+
+def sql_update(table, **kw):
+  return sql_update_(table, kw)
+
+def sql_insert_(table, kw):
+  if kw == {}: return ""
+  res = "INSERT INTO %s " % table
+  res += "(" + reduce(lambda acc, k: acc + k + ", ", kw.keys(), "") + ") "
+  res += "VALUES (" + reduce(lambda acc, k: acc + (str(k) if type(k) != str else "'" + k +"'") + ", ", kw.values(), "") + ")"
+  return re.sub(r", \)", ")", res)
+
+def sql_insert(table, **kw):
+  return sql_instert_(table, kw)
+
+def sql_insert_update_(table, keys, kw):
+  if type(keys) != list:
+    raise TypeError, "keys argument has to be a list"
+  res1 = sql_insert_(table, kw)
+  res2 = " ON DUPLICATE KEY UPDATE "
+  for k in kw:
+    if k not in keys:
+      res2 += ("%s=%s, " % (k, str(kw[k]))) if type(kw[k]) != str else ("%s='%s', " % (k, kw[k]))
+  return (res1 + res2)[:-2]
+
+def sql_insert_update(table, keys, **kw):
+  return sql_insert_update_(table, keys, kw)
