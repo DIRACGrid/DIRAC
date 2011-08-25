@@ -1,3 +1,17 @@
+[v6r0-pre6]
+
+*RemovalAgent
+BUGFIX: put a limit to be sure the execute method will end after a certain number of iterations
+
+*StorageManagement
+FIX: Requests older than 1 day, which haven't been staged are retried. Tasks older than "daysOld" 
+     number of days are set to Failed. These tasks have already been retried "daysOld" times for staging.
+FIX: CacheReplicas and StageRequests records are kept until the pin has expired. This way the 
+     StageRequest agent will have proper accounting of the amount of staged data in cache.
+     
+*ReleaseManagement
+NEW: LCG bundle version can be defined on a per release basis in the releases.cfg     
+
 [v6r0-pre5]
 
 *Workflow
@@ -41,6 +55,25 @@ FIX: -V switch was being used inconsistently in the pilotDirector
 
 *RemovalAgent
 BUGFIX: TypeError when getting JobID in RemovalAgent
+
+*DownloadInputData
+FIX: when files have been uploaded with lcg_util, the PFN filename
+might not match the LFN file name
+
+*StorageElement
+NEW: new option in the StorageElement configuration "CheckAccess"
+
+*ResourceStatusSystem
+BUGFIX: Cleaned RSS scripts, they are still prototypes
+CHANGE: PEP actions now reside in separate modules outside PEP module.
+NEW: RSS CS module add facilities to extract info from CS.
+CHANGE: Updating various RSS tests to make them compatible with
+changes in the system.
+NEW: CS is used instead of ad-hoc configuration module in most places.
+NEW: Adding various helper functions in RSS Utils module. These are
+functions used by RSS developers, including mainly myself, and are
+totally independant from the rest of DIRAC.
+CHANGE: Mostly trivial changes, typos, etc in various files in RSS
 
 [v6r0-pre4]
 
