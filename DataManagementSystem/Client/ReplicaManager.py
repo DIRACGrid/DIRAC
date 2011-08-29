@@ -2,7 +2,7 @@
 
 __RCSID__ = "$Id$"
 
-import time, os, fnmatch
+import re, time, commands, random, os, fnmatch
 import types
 from datetime import datetime, timedelta
 import DIRAC
@@ -16,7 +16,6 @@ from DIRAC.Core.Utilities.List                           import sortList, random
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite, isSameSiteSE, getSEsForCountry
 from DIRAC.Resources.Storage.StorageElement              import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                 import FileCatalog
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 class CatalogBase:
 
@@ -941,26 +940,26 @@ class ReplicaManager( CatalogToStorage ):
       lfnDir = [lfnDir]
     successful = {}
     failed = {}
-    for dir_ in lfnDir:
-      res = self.__cleanDirectory( dir_ )
+    for dir in lfnDir:
+      res = self.__cleanDirectory( dir )
       if not res['OK']:
-        gLogger.error( "Failed to clean directory.", "%s %s" % ( dir_, res['Message'] ) )
+        gLogger.error( "Failed to clean directory.", "%s %s" % ( dir, res['Message'] ) )
         failed[dir] = res['Message']
       else:
-        gLogger.info( "Successfully removed directory.", dir_ )
-        successful[dir_] = res['Value']
+        gLogger.info( "Successfully removed directory.", dir )
+        successful[dir] = res['Value']
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def __cleanDirectory( self, dir_ ):
-    res = self.__verifyOperationPermission( dir_ )
+  def __cleanDirectory( self, dir ):
+    res = self.__verifyOperationPermission( dir )
     if not res['OK']:
       return res
     if not res['Value']:
       errStr = "ReplicaManager.__cleanDirectory: Write access not permitted for this credential."
-      gLogger.error( errStr, dir_ )
+      gLogger.error( errStr, dir )
       return S_ERROR( errStr )
-    res = self.__getCatalogDirectoryContents( [dir_] )
+    res = self.__getCatalogDirectoryContents( [dir] )
     if not res['OK']:
       return res
     replicaDict = {}
@@ -981,12 +980,12 @@ class ReplicaManager( CatalogToStorage ):
     storageElements = gConfig.getValue( 'Resources/StorageElementGroups/SE_Cleaning_List', [] )
     failed = False
     for storageElement in sortList( storageElements ):
-      res = self.__removeStorageDirectory( dir_, storageElement )
+      res = self.__removeStorageDirectory( dir, storageElement )
       if not res['OK']:
         failed = True
     if failed:
       return S_ERROR( "Failed to clean storage directory at all SEs" )
-    res = self.removeCatalogDirectory( dir_, recursive = True, singleFile = True )
+    res = self.removeCatalogDirectory( dir, recursive = True, singleFile = True )
     if not res['OK']:
       return res
     return S_OK()
@@ -1180,7 +1179,7 @@ class ReplicaManager( CatalogToStorage ):
         sortedSEs.append( se )
     return S_OK( sortedSEs )
 
-  def putAndRegister( self, lfn, file_, diracSE, guid = None, path = None, checksum = None, catalog = None, ancestors = [] ):
+  def putAndRegister( self, lfn, file, diracSE, guid = None, path = None, checksum = None, catalog = None, ancestors = [] ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
         'lfn' is the file LFN
@@ -1202,25 +1201,25 @@ class ReplicaManager( CatalogToStorage ):
     else:
       self.fileCatalogue = FileCatalog()
     # Check that the local file exists
-    if not os.path.exists( file_ ):
+    if not os.path.exists( file ):
       errStr = "ReplicaManager.putAndRegister: Supplied file does not exist."
-      gLogger.error( errStr, file_ )
+      gLogger.error( errStr, file )
       return S_ERROR( errStr )
     # If the path is not provided then use the LFN path
     if not path:
       path = os.path.dirname( lfn )
     # Obtain the size of the local file
-    size = getSize( file_ )
+    size = getSize( file )
     if size == 0:
       errStr = "ReplicaManager.putAndRegister: Supplied file is zero size."
-      gLogger.error( errStr, file_ )
+      gLogger.error( errStr, file )
       return S_ERROR( errStr )
     # If the GUID is not given, generate it here
     if not guid:
-      guid = makeGuid( file_ )
+      guid = makeGuid( file )
     if not checksum:
       gLogger.info( "ReplicaManager.putAndRegister: Checksum information not provided. Calculating adler32." )
-      checksum = fileAdler( file_ )
+      checksum = fileAdler( file )
       gLogger.info( "ReplicaManager.putAndRegister: Checksum calculated to be %s." % checksum )
     res = self.fileCatalogue.exists( {lfn:guid} )
     if not res['OK']:
@@ -1242,7 +1241,7 @@ class ReplicaManager( CatalogToStorage ):
     # If the local file name is not the same as the LFN filename then use the LFN file name
     alternativeFile = None
     lfnFileName = os.path.basename( lfn )
-    localFileName = os.path.basename( file_ )
+    localFileName = os.path.basename( file )
     if not lfnFileName == localFileName:
       alternativeFile = lfnFileName
 
@@ -1261,7 +1260,7 @@ class ReplicaManager( CatalogToStorage ):
       gLogger.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     destPfn = res['Value']
-    fileDict = {destPfn:file_}
+    fileDict = {destPfn:file}
 
     successful = {}
     failed = {}
@@ -1283,7 +1282,7 @@ class ReplicaManager( CatalogToStorage ):
       startTime = time.time()
       gDataStoreClient.commit()
       gLogger.info( 'ReplicaManager.putAndRegister: Sending accounting took %.1f seconds' % ( time.time() - startTime ) )
-      gLogger.error( errStr, "%s: %s" % ( file_, res['Message'] ) )
+      gLogger.error( errStr, "%s: %s" % ( file, res['Message'] ) )
       return S_ERROR( "%s %s" % ( errStr, res['Message'] ) )
     successful[lfn] = {'put': putTime}
 
@@ -1530,30 +1529,28 @@ class ReplicaManager( CatalogToStorage ):
     gLogger.info( "ReplicaManager.__initializeReplication: File size determined to be %s." % catalogueSize )
     ###########################################################
     # Check whether the destination storage element is banned
-#    gLogger.verbose( "ReplicaManager.__initializeReplication: Determining whether %s is banned." % destSE )
-#    configStr = '/Resources/StorageElements/BannedTarget'
-#    bannedTargets = gConfig.getValue( configStr, [] )
-#    bannedTargets = []
-#    if destSE in bannedTargets:
-#      infoStr = "ReplicaManager.__initializeReplication: Destination Storage Element is currently banned."
-#      gLogger.info( infoStr, destSE )
-#      return S_ERROR( infoStr )
-#    gLogger.info( "ReplicaManager.__initializeReplication: Destination site not banned." )
+    gLogger.verbose( "ReplicaManager.__initializeReplication: Determining whether %s is banned." % destSE )
+    configStr = '/Resources/StorageElements/BannedTarget'
+    bannedTargets = gConfig.getValue( configStr, [] )
+    if destSE in bannedTargets:
+      infoStr = "ReplicaManager.__initializeReplication: Destination Storage Element is currently banned."
+      gLogger.info( infoStr, destSE )
+      return S_ERROR( infoStr )
+    gLogger.info( "ReplicaManager.__initializeReplication: Destination site not banned." )
     ###########################################################
     # Check whether the supplied source SE is sane
     gLogger.verbose( "ReplicaManager.__initializeReplication: Determining whether source Storage Element is sane." )
-#    configStr = '/Resources/StorageElements/BannedSource'
-#    bannedSources = gConfig.getValue( configStr, [] )
-#    bannedSources = []
+    configStr = '/Resources/StorageElements/BannedSource'
+    bannedSources = gConfig.getValue( configStr, [] )
     if sourceSE:
       if not lfnReplicas.has_key( sourceSE ):
         errStr = "ReplicaManager.__initializeReplication: LFN does not exist at supplied source SE."
         gLogger.error( errStr, "%s %s" % ( lfn, sourceSE ) )
         return S_ERROR( errStr )
-#      elif sourceSE in bannedSources:
-#        infoStr = "ReplicaManager.__initializeReplication: Supplied source Storage Element is currently banned."
-#        gLogger.info( infoStr, sourceSE )
-#        return S_ERROR( errStr )
+      elif sourceSE in bannedSources:
+        infoStr = "ReplicaManager.__initializeReplication: Supplied source Storage Element is currently banned."
+        gLogger.info( infoStr, sourceSE )
+        return S_ERROR( errStr )
     gLogger.info( "ReplicaManager.__initializeReplication: Replication initialization successful." )
     resDict = {'DestStorage':destStorageElement, 'DestSE':destSE, 'Replicas':lfnReplicas, 'CatalogueSize':catalogueSize}
     return S_OK( resDict )
@@ -1561,9 +1558,8 @@ class ReplicaManager( CatalogToStorage ):
   def __resolveBestReplicas( self, sourceSE, lfnReplicas, catalogueSize ):
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
-#    configStr = '/Resources/StorageElements/BannedSource'
-#    bannedSources = gConfig.getValue( configStr, [] )
-    bannedSources = []
+    configStr = '/Resources/StorageElements/BannedSource'
+    bannedSources = gConfig.getValue( configStr, [] )
     gLogger.info( "ReplicaManager.__resolveBestReplicas: Obtained current banned sources." )
     replicaPreference = []
     for diracSE, pfn in lfnReplicas.items():
@@ -1666,7 +1662,7 @@ class ReplicaManager( CatalogToStorage ):
             pfn = physicalFile
           else:
             pfn = res['Value']
-          tuple_ = ( lfn, pfn, fileSize, storageElementName, fileGuid, checksum )
+          tuple = ( lfn, pfn, fileSize, storageElementName, fileGuid, checksum )
           fileDict[lfn] = {'PFN':pfn, 'Size':fileSize, 'SE':storageElementName, 'GUID':fileGuid, 'Checksum':checksum}
     gLogger.verbose( "ReplicaManager.__registerFile: Resolved %s files for registration." % len( fileDict.keys() ) )
     if catalog:
@@ -2092,7 +2088,7 @@ class ReplicaManager( CatalogToStorage ):
   # File transfer methods
   #
 
-  def put( self, lfn, file_, diracSE, path = None ):
+  def put( self, lfn, file, diracSE, path = None ):
     """ Put a local file to a Storage Element
 
         'lfn' is the file LFN
@@ -2101,23 +2097,23 @@ class ReplicaManager( CatalogToStorage ):
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
     # Check that the local file exists
-    if not os.path.exists( file_ ):
+    if not os.path.exists( file ):
       errStr = "ReplicaManager.put: Supplied file does not exist."
-      gLogger.error( errStr, file_ )
+      gLogger.error( errStr, file )
       return S_ERROR( errStr )
     # If the path is not provided then use the LFN path
     if not path:
       path = os.path.dirname( lfn )
     # Obtain the size of the local file
-    size = getSize( file_ )
+    size = getSize( file )
     if size == 0:
       errStr = "ReplicaManager.put: Supplied file is zero size."
-      gLogger.error( errStr, file_ )
+      gLogger.error( errStr, file )
       return S_ERROR( errStr )
     # If the local file name is not the same as the LFN filename then use the LFN file name
     alternativeFile = None
     lfnFileName = os.path.basename( lfn )
-    localFileName = os.path.basename( file_ )
+    localFileName = os.path.basename( file )
     if not lfnFileName == localFileName:
       alternativeFile = lfnFileName
 
@@ -2136,7 +2132,7 @@ class ReplicaManager( CatalogToStorage ):
       gLogger.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     destPfn = res['Value']
-    fileDict = {destPfn:file_}
+    fileDict = {destPfn:file}
 
     successful = {}
     failed = {}
@@ -2148,7 +2144,7 @@ class ReplicaManager( CatalogToStorage ):
     if not res['OK']:
       errStr = "ReplicaManager.put: Failed to put file to Storage Element."
       failed[lfn] = res['Message']
-      gLogger.error( errStr, "%s: %s" % ( file_, res['Message'] ) )
+      gLogger.error( errStr, "%s: %s" % ( file, res['Message'] ) )
     else:
       gLogger.info( "ReplicaManager.put: Put file to storage in %s seconds." % putTime )
       successful[lfn] = destPfn
@@ -2200,30 +2196,15 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( replicaDict )
 
   def __SEActive( self, se ):
-#    storageCFGBase = "/Resources/StorageElements"
-#    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
-    rssClient = ResourceStatusClient()
-    resR = rssClient.getStorageElement( se, 'Read' )
-    resW = rssClient.getStorageElement( se, 'Write' )
-
-    if not resR['Ok'] or not resW['Ok']:
+    storageCFGBase = "/Resources/StorageElements"
+    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
+    if not res['OK']:
       return S_ERROR( "SE not known" )
-
     seStatus = {'Read':True, 'Write':True}
-
-    if not ( resR['Value'][1] == 'Active' or resR['Value'][1] == 'Bad' ) :
-      seStatus[ 'Read' ] = False
-    if not ( resW['Value'][1] == 'Active' or resW['Value'][1] == 'Bad' ) :
-      seStatus[ 'Write' ] = False
-
-
-    #if not res['OK']:
-    #  return S_ERROR( "SE not known" )
-    #seStatus = {'Read':True, 'Write':True}
-    #if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
-    #  seStatus['Read'] = False
-    #if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
-    #  seStatus['Write'] = False
+    if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
+      seStatus['Read'] = False
+    if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
+      seStatus['Write'] = False
     return S_OK( seStatus )
 
   def __initialiseAccountingObject( self, operation, se, files ):
@@ -2264,3 +2245,4 @@ class ReplicaManager( CatalogToStorage ):
 
   def getFileSize( self, lfn ):
     return self.getCatalogFileSize( lfn )
+
