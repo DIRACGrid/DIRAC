@@ -68,6 +68,17 @@ class ResourceManagementHandler( RequestHandler ):
   def initialize( self ):
     pass
 
+##
+# Methods needed to inherit without messing up global variables
+##  
+  def setResourceStatusDatabase( self, oDatabase ):
+    global rsDB
+    rsDB = oDatabase
+
+  def setResourceManagementDatabase( self, oDatabase ):
+    global rmDB
+    rmDB = oDatabase
+
 #############################################################################
 
 #############################################################################
