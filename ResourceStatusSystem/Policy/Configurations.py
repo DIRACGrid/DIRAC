@@ -6,7 +6,6 @@
 __RCSID__ = "$Id: "
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
-from DIRAC.ResourceStatusSystem import ValidStatus, ValidSiteType, ValidResourceType, ValidServiceType
 
 pp = CS.getTypedDictRootedAt("PolicyParameters")
 
@@ -34,7 +33,7 @@ Policies = {
 
   'AlwaysFalse' :
     {
-      'Description' : "A Policy that always returns false"
+      'Description' : "A Policy that always returns false",
       'commandIn'   : None,
       'args'        : None
     }
