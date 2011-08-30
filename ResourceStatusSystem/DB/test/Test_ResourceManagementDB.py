@@ -28,7 +28,6 @@ class ResourceManagementDBTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
 
-    from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
     from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
     # setting mock interface
