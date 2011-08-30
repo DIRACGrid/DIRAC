@@ -74,34 +74,32 @@ class PEPSuccess(PolicySystemTestCase):
     for policyType in PolicyTypes:
       for granularity in ValidRes:
         for status in ValidStatus:
-          for oldStatus in ValidStatus:
-            if status == oldStatus:
+          oldStatus = status # oldStatus never used by anything, let's reduce by 2 the duration of this lengthy test!!
+          for newPolicyType in PolicyTypes:
+            if policyType == newPolicyType:
               continue
-            for newPolicyType in PolicyTypes:
-              if policyType == newPolicyType:
-                continue
 #              for newGranularity in ValidRes:
-              for siteType in ValidSiteType:
-                for serviceType in ValidServiceType:
-                  for resourceType in ValidResourceType:
-                    for user in ("RS_SVC", "Federico"):
-                      for setup in ("LHCb-Production", "LHCb-Development", "LHCb-Certification"):
+            for siteType in ValidSiteType:
+              for serviceType in ValidServiceType:
+                for resourceType in ValidResourceType:
+                  for user in ("RS_SVC", "Federico"):
+                    for setup in ("LHCb-Production", "LHCb-Development", "LHCb-Certification"):
 
-                        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': {'PolicyType':[policyType, newPolicyType],
-                                                                                             'Action':True, 'Status':status,
-                                                                                             'Reason':'testReason'},
-                                                                   'SinglePolicyResults': [{'Status': 'Active',
-                                                                                            'PolicyName': 'SAM_CE_Policy',
-                                                                                            'Reason': 'SAM:ok'},
-                                                                                            {'Status': 'Banned',
-                                                                                             'PolicyName': 'DT_Policy_Scheduled',
-                                                                                             'Reason': 'DT:OUTAGE in 1 hours',
-                                                                                             'EndDate': '2010-02-16 15:00:00'}]}
+                      self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': {'PolicyType':[policyType, newPolicyType],
+                                                                                          'Action':True, 'Status':status,
+                                                                                          'Reason':'testReason'},
+                                                                 'SinglePolicyResults': [{'Status': 'Active',
+                                                                                          'PolicyName': 'SAM_CE_Policy',
+                                                                                          'Reason': 'SAM:ok'},
+                                                                                         {'Status': 'Banned',
+                                                                                          'PolicyName': 'DT_Policy_Scheduled',
+                                                                                          'Reason': 'DT:OUTAGE in 1 hours',
+                                                                                          'EndDate': '2010-02-16 15:00:00'}]}
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
 
 
-                        pep = PEP(self.VO, granularity, 'XX', status, oldStatus, 'XX', siteType,
-                                  serviceType, resourceType, user)
+                      pep = PEP(self.VO, granularity, 'XX', status, oldStatus, 'XX', siteType,
+                                serviceType, resourceType, user)
 
 
         #                self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
@@ -121,11 +119,11 @@ class PEPSuccess(PolicySystemTestCase):
         #                                                                                     'SAT': True}] }
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
         #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', user)
-                        self.mock_rsDB.getMonitoredsHistory.return_value = ('Active', 'Reason', '2010-04-09 09:54:52')
-                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc,
-                                          setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
-                        self.assertEqual(res, None)
-                        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': {'PolicyType':[policyType, newPolicyType],
+                      self.mock_rsDB.getMonitoredsHistory.return_value = ('Active', 'Reason', '2010-04-09 09:54:52')
+                      res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc,
+                                        setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
+                      self.assertEqual(res, None)
+                      self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': {'PolicyType':[policyType, newPolicyType],
                                                                                              'Action':False, 'Reason':'testReason'},
                                                                    'SinglePolicyResults': [{'Status': 'Active',
                                                                                             'PolicyName': 'SAM_CE_Policy',
@@ -134,9 +132,9 @@ class PEPSuccess(PolicySystemTestCase):
                                                                                              'PolicyName': 'DT_Policy_Scheduled',
                                                                                              'Reason': 'DT:OUTAGE in 1 hours',
                                                                                              'EndDate': '2010-02-16 15:00:00'}]}
-                        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc,
-                                          setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
-                        self.assertEqual(res, None)
+                      res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, rmDBIn = self.mock_rmDB, ncIn = self.mock_nc,
+                                        setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
+                      self.assertEqual(res, None)
 
 
         #            self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],

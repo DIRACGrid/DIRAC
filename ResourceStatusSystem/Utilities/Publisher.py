@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping      import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.CS          import getStorageElementStatus
 
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem                       import ValidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import RSSException, InvalidRes
 

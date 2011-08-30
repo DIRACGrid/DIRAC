@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes, InvalidStatus
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where, convertTime
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, ValidStatus, ValidSiteType, \
+from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
     ValidResourceType, ValidServiceType
 
 #############################################################################

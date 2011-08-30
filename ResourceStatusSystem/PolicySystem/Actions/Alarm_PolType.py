@@ -4,9 +4,6 @@ AlarmPolType Actions
 from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-rmDB = ResourceManagementDB()
-
 def getUsersToNotify(setup, kwargs):
   """Get a list of users to notify (helper function for AlarmPolTypeActions)
   Optional keyword arguments:
@@ -26,7 +23,7 @@ def getUsersToNotify(setup, kwargs):
 
   return notifications
 
-def AlarmPolTypeActions(name, res, nc, setup, rsDB, **kwargs):
+def AlarmPolTypeActions(name, res, nc, setup, rsDB, rmDB, **kwargs):
   """ Do actions required to notify users.
   Mandatory keyword arguments:
   - Granularity
@@ -64,7 +61,7 @@ New perceived status = %s
 Reason for status change = %s
 Was in status "%s", with reason "%s", since %s
 Setup = %s
-""" % granularity, name, res['Status'], res['Reason'], was[0], was[1], was[2], setup
+""" % (granularity, name, res['Status'], res['Reason'], was[0], was[1], was[2], setup)
 
           nc.sendMail(rmDB.registryGetMailFromLogin(user),
                       '%s: %s' % (name, res['Status']), mailMessage)

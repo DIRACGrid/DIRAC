@@ -15,8 +15,7 @@
 from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, \
-    ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import \
     InvalidRes, InvalidStatus, InvalidResourceType, InvalidServiceType, InvalidSiteType
@@ -206,13 +205,13 @@ class PEP:
         m.ResourcePolTypeActions( self.__granularity, self.__name, resDecisions, res, rsDB, rmDB )
 
       if 'Alarm_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".AlarmPolTypeActions", self.VOExtension)
-        m.AlarmPolTypeActions(self.__name, res, nc, setup, rsDB,
+        m = Utils.voimport(actionBaseMod + ".Alarm_PolType", self.VOExtension)
+        m.AlarmPolTypeActions(self.__name, res, nc, setup, rsDB, rmDB,
                             Granularity=self.__granularity,
                             SiteType=self.__siteType,
                             ServiceType=self.__serviceType,
                             ResourceType=self.__resourceType)
 
       if 'RealBan_PolType' in policyType and self.__realBan == True:
-        m = Utils.voimport(actionBaseMod + ".RealBanPolTypeActions")
+        m = Utils.voimport(actionBaseMod + ".RealBan_PolType", self.VOExtension)
         m.RealBanPolTypeActions( self.__granularity, self.__name, res, da, csAPI, setup )

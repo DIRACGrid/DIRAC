@@ -1,10 +1,10 @@
 """ PilotsClient class is a client for to get pilots stats.
 """
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+from DIRAC.ResourceStatusSystem                      import ValidRes
 
 class PilotsClient:
 
