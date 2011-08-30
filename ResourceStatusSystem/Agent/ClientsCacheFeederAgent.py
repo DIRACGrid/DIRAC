@@ -4,19 +4,17 @@
 """ This agents feeds the ClientsCache table.
 """
 
-import copy, datetime
+import datetime
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC import gLogger
+from DIRAC                                              import S_OK, S_ERROR
+from DIRAC                                              import gLogger
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getExt
-
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+from DIRAC.Core.Base.AgentModule                        import AgentModule
+from DIRAC.Core.DISET.RPCClient                         import RPCClient
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
-from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.CommandCaller   import CommandCaller
+from DIRAC.ResourceStatusSystem.Command.ClientsInvoker  import ClientsInvoker
 
 __RCSID__ = "$Id:  $"
 
@@ -37,23 +35,30 @@ class ClientsCacheFeederAgent( AgentModule ):
 
       self.clientsInvoker = ClientsInvoker()
 
-      VOExtension = getExt()
+      commandsList_ClientsCache = [
+        ( 'ClientsCache_Command', 'JobsEffSimpleEveryOne_Command' ),
+        ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
+        ( 'ClientsCache_Command', 'DTEverySites_Command' ),
+        ( 'ClientsCache_Command', 'DTEveryResources_Command' )
+        ]
 
-      module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
-
-#      try:
-#          
-#        configModule = __import__( VOExtension + "DIRAC.ResourceStatusSystem.Policy.Configurations",
-#                                   globals(), locals(), ['*'] )
-#      except:
-      configModule = __import__( module, globals(), locals(), ['*'] )
-            
-      commandsList_ClientsCache = copy.deepcopy( configModule.Commands_ClientsCache )
-
-      commandsList_AccountingCache = copy.deepcopy( configModule.Commands_AccountingCache )
+      commandsList_AccountingCache =  [
+        ( 'AccountingCache_Command', 'TransferQualityByDestSplitted_Command', ( 2, ), 'Always' ),
+        ( 'AccountingCache_Command', 'FailedTransfersBySourceSplitted_Command', ( 2, ), 'Always' ),
+        ( 'AccountingCache_Command', 'TransferQualityByDestSplittedSite_Command', ( 24, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'SuccessfullJobsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'FailedJobsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'SuccessfullPilotsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'FailedPilotsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'SuccessfullPilotsByCESplitted_Command', ( 24, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'FailedPilotsByCESplitted_Command', ( 24, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command', ( 168, ), 'Hourly' ),
+        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command', ( 720, ), 'Daily' ),
+        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command', ( 8760, ), 'Daily' ),
+        ]
 
       self.commandObjectsList_ClientsCache = []
-
       self.commandObjectsList_AccountingCache = []
 
       cc = CommandCaller()
@@ -62,7 +67,7 @@ class ClientsCacheFeederAgent( AgentModule ):
       RPCAccounting = RPCClient( "Accounting/ReportGenerator" )
 
       for command in commandsList_ClientsCache:
-          
+
         cObj = cc.setCommandObject( command )
         cc.setCommandClient( command, cObj, RPCWMSAdmin = RPCWMSAdmin,
                             RPCAccounting = RPCAccounting )
