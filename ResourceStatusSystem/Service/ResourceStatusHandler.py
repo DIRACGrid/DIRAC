@@ -15,13 +15,19 @@ import datetime
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.DISET.RequestHandler             import RequestHandler
+from DIRAC.Core.Utilities                        import Time
 
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import RSSDBException, ResourceStatusDB
-from DIRAC.ResourceStatusSystem.Utilities.CS import getExt
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import whoRaised, where
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import RSSDBException, ResourceStatusDB
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+from DIRAC.ResourceStatusSystem.Utilities.CS            import getExt
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions    import RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Utils         import whoRaised, where
+
+from DIRAC.ResourceStatusSystem.Utilities.Publisher    import Publisher
+from DIRAC.ResourceStatusSystem.Command.CommandCaller  import CommandCaller
+from DIRAC.Core.DISET.RPCClient                        import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter   import InfoGetter
 from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
 rsDB = False
@@ -31,13 +37,23 @@ def initializeResourceStatusHandler( _serviceInfo ):
   global rsDB
   rsDB = ResourceStatusDB()
 
+  rmDB = ResourceManagementDB()
+
+  cc = CommandCaller()
+
   global VOExtension
   VOExtension = getExt()
 
-  # Now done in ResourceManagementHandler, that handles the 2 DBs.
+  ig = InfoGetter( VOExtension )
 
-  # sync_O = Synchronizer( rsDBin=rsDB )
-  # gConfig.addListenerToNewVersionEvent( sync_O.sync )
+  WMSAdmin = RPCClient( "WorkloadManagement/WMSAdministrator" )
+
+  global publisher
+  publisher = Publisher( VOExtension, rsDBIn = rsDB, commandCallerIn = cc,
+                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
+
+  sync_O = Synchronizer(rsDBin=rsDB, rmDBin=rmDB)
+  gConfig.addListenerToNewVersionEvent( sync_O.sync )
 
   return S_OK()
 

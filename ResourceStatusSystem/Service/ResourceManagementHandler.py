@@ -28,11 +28,11 @@ from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagemen
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB, RSSDBException
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils import whoRaised, where, convertTime
-from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
-from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
-from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
+#from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
+#from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
+#from DIRAC.Core.DISET.RPCClient import RPCClient
+#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+#from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
 
 rmDB = False
@@ -45,21 +45,21 @@ def initializeResourceManagementHandler( _serviceInfo ):
   global rmDB
   rmDB = ResourceManagementDB()
 
-  cc = CommandCaller()
+#  cc = CommandCaller()
 
   global VOExtension
   VOExtension = getExt()
 
-  ig = InfoGetter( VOExtension )
+#  ig = InfoGetter( VOExtension )
 
-  WMSAdmin = RPCClient( "WorkloadManagement/WMSAdministrator" )
+#  WMSAdmin = RPCClient( "WorkloadManagement/WMSAdministrator" )
 
-  global publisher
-  publisher = Publisher( VOExtension, rsDBIn = rsDB, commandCallerIn = cc,
-                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
+#  global publisher
+#  publisher = Publisher( VOExtension, rsDBIn = rsDB, commandCallerIn = cc,
+#                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
 
-  sync_O = Synchronizer(rsDBin=rsDB, rmDBin=rmDB)
-  gConfig.addListenerToNewVersionEvent( sync_O.sync )
+#  sync_O = Synchronizer(rsDBin=rsDB, rmDBin=rmDB)
+#  gConfig.addListenerToNewVersionEvent( sync_O.sync )
 
   return S_OK()
 
