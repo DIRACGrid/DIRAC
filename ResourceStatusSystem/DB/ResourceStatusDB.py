@@ -4,7 +4,6 @@ class to interact with the ResourceStatus DB.
 """
 
 import datetime
-#from types import *
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 
@@ -78,16 +77,12 @@ class ResourceStatusDB:
 
     if len( args ) == 1:
       if isinstance( args[ 0 ], str ):
-#        systemInstance=args[0]
         maxQueueSize = 10
       if isinstance( args[ 0 ], int ):
         maxQueueSize = args[ 0 ]
-#        systemInstance='Default'
     elif len( args ) == 2:
-#      systemInstance=args[0]
       maxQueueSize = args[ 1 ]
     elif len( args ) == 0:
-#      systemInstance='Default'
       maxQueueSize = 10
 
     if 'DBin' in kwargs.keys():
@@ -100,16 +95,6 @@ class ResourceStatusDB:
     else:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
-
-#  def __init__(self, DBin=None, systemInstance='Default', maxQueueSize=10):
-#
-#    if not isinstance(DBin, Mock):
-#      from DIRAC.Core.Base.DB import DB
-#      self.db = DB('ResourceStatusDB','ResourceStatus/ResourceStatusDB',maxQueueSize)
-#    else:
-#      self.db = DBin
-#    self.lock = threading.Lock()
-
 
 #############################################################################
 
