@@ -6,8 +6,9 @@ __RCSID__ = "$Id:  $"
 
 import copy
 
-from DIRAC.ResourceStatusSystem.Utilities.CS    import getTypedDictRootedAt
-from DIRAC.ResourceStatusSystem.Utilities.Utils import dictMatch
+from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAt
+from DIRAC.ResourceStatusSystem.Utilities    import Utils
+from DIRAC.ResourceStatusSystem              import views_panels
 
 class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations
@@ -23,15 +24,8 @@ class InfoGetter:
       :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
     """
 
-    module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
-
-    try:
-      configModule = __import__( VOExtension + module, globals(), locals(), ['*'] )
-    except ImportError:
-      configModule = __import__( module, globals(), locals(), ['*'] )
-
-    self.C_Policies     = copy.deepcopy(configModule.Policies)
-    self.C_views_panels = copy.deepcopy(configModule.views_panels)
+    configModule    = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations", VOExtension)
+    self.C_Policies = copy.deepcopy(configModule.Policies)
 
 #############################################################################
 
@@ -135,7 +129,7 @@ class InfoGetter:
     pol_to_eval = []
 
     for p in pConfig:
-      if dictMatch(argsdict, pConfig[p]):
+      if Utils.dictMatch(argsdict, pConfig[p]):
         pol_to_eval.append(p)
 
     polToEval_Args = []
@@ -196,7 +190,7 @@ class InfoGetter:
     pTypes = []
 
     for pt in pTconfig:
-      if dictMatch(argsdict, pTconfig[pt]):
+      if Utils.dictMatch(argsdict, pTconfig[pt]):
         pTypes.append(pt)
 
     for pt_name in pTypes:
@@ -324,6 +318,6 @@ class InfoGetter:
   def __getViewPanels(self, granularity):
     if granularity is None:
       granularity = 'Site'
-    return self.C_views_panels[granularity]
+    return views_panels[granularity]
 
 #############################################################################

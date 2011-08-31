@@ -17,3 +17,14 @@ ValidService      = ValidServiceType
 PolicyTypes       = __gencfg[ 'PolicyTypes' ]
 
 CheckingFreqs     = CS.getTypedDictRootedAt("CheckingFreqs")
+
+#############################################################################
+# Web views
+#############################################################################
+
+views_panels = {
+  'Site' : ['Site_Panel', 'Service_Computing_Panel', 'Service_Storage_Panel',
+            'Service_VOMS_Panel', 'Service_VO-BOX_Panel'],
+  'Resource' : ['Resource_Panel'],
+  'StorageElement' : ['SE_Panel']
+}
