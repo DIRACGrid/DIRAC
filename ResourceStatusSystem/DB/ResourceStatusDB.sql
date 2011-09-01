@@ -23,12 +23,13 @@ USE ResourceStatusDB;
 -- GRID TABLES
 --
 
-DROP TABLE IF EXISTS GridSites;
-CREATE TABLE GridSites(
+DROP TABLE IF EXISTS GridSite;
+CREATE TABLE GridSite(
   gsID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
   GridTier VARCHAR(4) NOT NULL,
+  MTime DATETIME NOT NULL,
   PRIMARY KEY(gsID)
 ) Engine=InnoDB;
 
@@ -36,41 +37,40 @@ CREATE TABLE GridSites(
 -- SITES TABLES
 --
 
-DROP TABLE IF EXISTS Sites;
-CREATE TABLE Sites(
-  SiteID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS Site;
+CREATE TABLE Site(
   SiteName VARCHAR(64) NOT NULL,
-  INDEX (SiteName),
   SiteType VARCHAR(8) NOT NULL,
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
-  PRIMARY KEY(SiteID)
+  MTime DATETIME NOT NULL,
+  PRIMARY KEY(SiteName)
 ) Engine=InnoDB;
 
-DROP TABLE IF EXISTS SitesStatus;
-CREATE TABLE SitesStatus(
+DROP TABLE IF EXISTS SiteStatus;
+CREATE TABLE SiteStatus(
   SiteStatusID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   SiteName VARCHAR(64) NOT NULL,
   INDEX (SiteName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
-  Index(StatusType), 
+  INDEX (StatusType),
   Status VARCHAR(8) NOT NULL,
   INDEX (Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   INDEX (DateEffective),
-  DateEnd DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (SiteName) REFERENCES Sites(SiteName),
+  FOREIGN KEY (SiteName) REFERENCES Site(SiteName),
+  UNIQUE KEY(SiteName,StatusType),
   PRIMARY KEY (SiteStatusID)
 ) Engine = InnoDB;
 
-DROP TABLE IF EXISTS SitesHistory;
-CREATE TABLE SitesHistory(
-  SitesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS SiteHistory;
+CREATE TABLE SiteHistory(
+  SiteHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   SiteName VARCHAR(64) NOT NULL,
   INDEX (SiteName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
@@ -80,81 +80,82 @@ CREATE TABLE SitesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
+  INDEX (DateEnd),
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
-  FOREIGN KEY (SiteName) REFERENCES Sites(SiteName),
-  PRIMARY KEY(SitesHistoryID)
+  FOREIGN KEY (SiteName) REFERENCES Site(SiteName),
+  UNIQUE KEY(SiteName,StatusType,DateEnd),
+  PRIMARY KEY(SiteHistoryID)
 ) Engine = InnoDB;
 
-DROP VIEW IF EXISTS PresentSites;
-CREATE VIEW PresentSites AS SELECT 
-  Sites.SiteName, 
-  Sites.SiteType,
-  Sites.GridSiteName,
-  GridSites.GridTier,
-  SitesStatus.StatusType,
-  SitesStatus.Status,
-  SitesStatus.DateEffective, 
-  SitesStatus.Reason,
-  SitesStatus.LastCheckTime,
-  SitesStatus.TokenOwner,
-  SitesStatus.TokenExpiration,
-  SitesHistory.Status AS FormerStatus
+DROP VIEW IF EXISTS PresentSite;
+CREATE VIEW PresentSite AS SELECT 
+  Site.SiteName, 
+  Site.SiteType,
+  Site.GridSiteName,
+  GridSite.GridTier,
+  SiteStatus.StatusType,
+  SiteStatus.Status,
+  SiteStatus.DateEffective, 
+  SiteStatus.Reason,
+  SiteStatus.LastCheckTime,
+  SiteStatus.TokenOwner,
+  SiteStatus.TokenExpiration,
+  SiteHistory.Status AS FormerStatus
 FROM ( 
   (
-    ( Sites 
-        INNER JOIN GridSites ON 
-          Sites.GridSiteName = GridSites.GridSiteName
+    ( Site 
+        INNER JOIN GridSite ON 
+          Site.GridSiteName = GridSite.GridSiteName
     )
-    INNER JOIN SitesHistory ON 
-      Sites.SiteName = SitesHistory.SiteName
+    INNER JOIN SiteHistory ON 
+      Site.SiteName = SiteHistory.SiteName
   )
-  INNER JOIN SitesStatus ON
-    Sites.SiteName = SitesStatus.SiteName AND
-    SitesHistory.DateEnd = SitesStatus.DateEffective AND
-    SitesHistory.StatusType = SitesStatus.StatusType 
-) WHERE SitesStatus.DateEffective < UTC_TIMESTAMP()
+  INNER JOIN SiteStatus ON
+    Site.SiteName = SiteStatus.SiteName AND
+    SiteHistory.DateEnd = SiteStatus.DateEffective AND
+    SiteHistory.StatusType = SiteStatus.StatusType 
+) WHERE SiteStatus.DateEffective < UTC_TIMESTAMP()
 ORDER BY SiteName, DateEffective;
 
 --
 -- SERVICES TABLES
 --
 
-DROP TABLE IF EXISTS Services;
-CREATE TABLE Services(
-  ServiceID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS Service;
+CREATE TABLE Service(
   ServiceName VARCHAR(64) NOT NULL,
-  INDEX (ServiceName),
   ServiceType VARCHAR(32) NOT NULL,
   INDEX (ServiceType),
   SiteName VARCHAR(64) NOT NULL,
   INDEX (SiteName),
-  PRIMARY KEY(ServiceID)
+  MTime DATETIME NOT NULL,
+  PRIMARY KEY(ServiceName)
 ) Engine=InnoDB;
 
-DROP TABLE IF EXISTS ServicesStatus;
-CREATE TABLE ServicesStatus(
+DROP TABLE IF EXISTS ServiceStatus;
+CREATE TABLE ServiceStatus(
   ServiceStatusID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ServiceName VARCHAR(64) NOT NULL,
   INDEX (ServiceName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
-  Index(StatusType), 
+  INDEX (StatusType),
   Status VARCHAR(8) NOT NULL,
   INDEX (Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   INDEX (DateEffective),
-  DateEnd DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (ServiceName) REFERENCES Services(ServiceName),
+  FOREIGN KEY (ServiceName) REFERENCES Service(ServiceName),
+  UNIQUE KEY (ServiceName,StatusType),
   PRIMARY KEY (ServiceStatusID)
 ) Engine = InnoDB;
 
-DROP TABLE IF EXISTS ServicesHistory;
-CREATE TABLE ServicesHistory(
-  ServicesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS ServiceHistory;
+CREATE TABLE ServiceHistory(
+  ServiceHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ServiceName VARCHAR(64) NOT NULL,
   INDEX (ServiceName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
@@ -164,50 +165,50 @@ CREATE TABLE ServicesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
+  INDEX (DateEnd),
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
-  FOREIGN KEY (ServiceName) REFERENCES Services(ServiceName),
-  PRIMARY KEY(ServicesHistoryID)
+  FOREIGN KEY (ServiceName) REFERENCES Service(ServiceName),
+  UNIQUE KEY(ServiceName,StatusType,DateEnd),
+  PRIMARY KEY(ServiceHistoryID)
 ) Engine=InnoDB;
 
-DROP VIEW IF EXISTS PresentServices;
-CREATE VIEW PresentServices AS SELECT 
-  Services.ServiceName,
-  Services.SiteName, 
-  Sites.SiteType,
-  Services.ServiceType, 
-  ServicesStatus.StatusType,
-  ServicesStatus.Status,
-  ServicesStatus.DateEffective, 
-  ServicesStatus.Reason,
-  ServicesStatus.LastCheckTime,
-  ServicesStatus.TokenOwner, 
-  ServicesStatus.TokenExpiration,
-  ServicesHistory.Status AS FormerStatus
+DROP VIEW IF EXISTS PresentService;
+CREATE VIEW PresentService AS SELECT 
+  Service.ServiceName,
+  Service.SiteName, 
+  Site.SiteType,
+  Service.ServiceType, 
+  ServiceStatus.StatusType,
+  ServiceStatus.Status,
+  ServiceStatus.DateEffective, 
+  ServiceStatus.Reason,
+  ServiceStatus.LastCheckTime,
+  ServiceStatus.TokenOwner, 
+  ServiceStatus.TokenExpiration,
+  ServiceHistory.Status AS FormerStatus
   FROM ( 
   (
-    ( Services 
-        INNER JOIN Sites ON 
-          Services.SiteName = Sites.SiteName
+    ( Service 
+        INNER JOIN Site ON 
+          Service.SiteName = Site.SiteName
     )
-    INNER JOIN ServicesHistory ON 
-      Services.ServiceName = ServicesHistory.ServiceName
+    INNER JOIN ServiceHistory ON 
+      Service.ServiceName = ServiceHistory.ServiceName
   )
-  INNER JOIN ServicesStatus ON
-    Services.ServiceName = ServicesStatus.ServiceName AND
-    ServicesHistory.DateEnd = ServicesStatus.DateEffective AND
-    ServicesHistory.StatusType = ServicesStatus.StatusType 
-) WHERE ServicesStatus.DateEffective < UTC_TIMESTAMP()
+  INNER JOIN ServiceStatus ON
+    Service.ServiceName = ServiceStatus.ServiceName AND
+    ServiceHistory.DateEnd = ServiceStatus.DateEffective AND
+    ServiceHistory.StatusType = ServiceStatus.StatusType 
+) WHERE ServiceStatus.DateEffective < UTC_TIMESTAMP()
 ORDER BY ServiceName, DateEffective;
 
 --
 -- RESOURCES TABLES
 --
 
-DROP TABLE IF EXISTS Resources;
-CREATE TABLE Resources(
-  ResourceID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS Resource;
+CREATE TABLE Resource(
   ResourceName VARCHAR(64) NOT NULL,
-  INDEX (ResourceName),
   ResourceType VARCHAR(8) NOT NULL,
   ServiceType VARCHAR(32) NOT NULL,
   INDEX (ServiceType),
@@ -215,33 +216,34 @@ CREATE TABLE Resources(
   INDEX (SiteName),
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
-  PRIMARY KEY (ResourceID)
+  MTime DATETIME NOT NULL,
+  PRIMARY KEY (ResourceName)
 ) Engine = InnoDB;
 
-DROP TABLE IF EXISTS ResourcesStatus;
-CREATE TABLE ResourcesStatus(
+DROP TABLE IF EXISTS ResourceStatus;
+CREATE TABLE ResourceStatus(
   ResourceStatusID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ResourceName VARCHAR(64) NOT NULL,
   INDEX (ResourceName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
-  Index(StatusType), 
+  INDEX (StatusType),
   Status VARCHAR(8) NOT NULL,
   INDEX (Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   INDEX (DateEffective),
-  DateEnd DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (ResourceName) REFERENCES Resources(ResourceName),
+  FOREIGN KEY (ResourceName) REFERENCES Resource(ResourceName),
+  UNIQUE KEY (ResourceName,StatusType),
   PRIMARY KEY (ResourceStatusID)
 ) Engine = InnoDB;
 
-DROP TABLE IF EXISTS ResourcesHistory;
-CREATE TABLE ResourcesHistory(
-  ResourcesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS ResourceHistory;
+CREATE TABLE ResourceHistory(
+  ResourceHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ResourceName VARCHAR(64) NOT NULL,
   INDEX (ResourceName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
@@ -251,82 +253,84 @@ CREATE TABLE ResourcesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
+  INDEX (DateEnd),
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
-  FOREIGN KEY (ResourceName) REFERENCES Resources(ResourceName),
-  PRIMARY KEY (ResourcesHistoryID)
+  FOREIGN KEY (ResourceName) REFERENCES Resource(ResourceName),
+  UNIQUE KEY(ResourceName,StatusType,DateEnd),
+  PRIMARY KEY (ResourceHistoryID)
 ) Engine=InnoDB;
 
-DROP VIEW IF EXISTS PresentResources;
+DROP VIEW IF EXISTS PresentResource;
 CREATE VIEW PresentResources AS SELECT 
-  Resources.ResourceName, 
-  Resources.SiteName, 
-  Resources.ServiceType,
-  Resources.GridSiteName, 
-  GridSites.GridTier AS SiteType, 
-  Resources.ResourceType,
-  ResourcesStatus.StatusType,
-  ResourcesStatus.Status,
-  ResourcesStatus.DateEffective, 
-  ResourcesStatus.Reason,
-  ResourcesStatus.LastCheckTime,
-  ResourcesStatus.TokenOwner, 
-  ResourcesStatus.TokenExpiration,
-  ResourcesHistory.Status AS FormerStatus
+  Resource.ResourceName, 
+  Resource.SiteName, 
+  Resource.ServiceType,
+  Resource.GridSiteName, 
+  GridSite.GridTier AS SiteType, 
+  Resource.ResourceType,
+  ResourceStatus.StatusType,
+  ResourceStatus.Status,
+  ResourceStatus.DateEffective, 
+  ResourceStatus.Reason,
+  ResourceStatus.LastCheckTime,
+  ResourceStatus.TokenOwner, 
+  ResourceStatus.TokenExpiration,
+  ResourceHistory.Status AS FormerStatus
 FROM (
   (
-    ( Resources 
-        INNER JOIN GridSites ON 
-          Resources.GridSiteName = GridSites.GridSiteName
+    ( Resource 
+        INNER JOIN GridSite ON 
+          Resource.GridSiteName = GridSite.GridSiteName
     )
-    INNER JOIN ResourcesHistory ON 
-      Resources.ResourceName = ResourcesHistory.ResourceName
+    INNER JOIN ResourceHistory ON 
+      Resource.ResourceName = ResourceHistory.ResourceName
   )
-  INNER JOIN ResourcesStatus ON
-    Resources.ResourceName = ResourcesStatus.ResourceName AND
-    ResourcesHistory.DateEnd = ResourcesStatus.DateEffective AND
-    ResourcesHistory.StatusType = ResourcesStatus.StatusType 
-) WHERE ResourcesStatus.DateEffective < UTC_TIMESTAMP()
+  INNER JOIN ResourceStatus ON
+    Resource.ResourceName = ResourceStatus.ResourceName AND
+    ResourceHistory.DateEnd = ResourceStatus.DateEffective AND
+    ResourceHistory.StatusType = ResourceStatus.StatusType 
+) WHERE ResourceStatus.DateEffective < UTC_TIMESTAMP()
 ORDER BY ResourceName, DateEffective;
 
 --
 -- STORAGE ELEMENTS TABLES
 --
 
-DROP TABLE IF EXISTS StorageElements;
-CREATE TABLE StorageElements(
+DROP TABLE IF EXISTS StorageElement;
+CREATE TABLE StorageElement(
   StorageElementName VARCHAR(64) NOT NULL,
-  INDEX (StorageElementName),
   ResourceName VARCHAR(64) NOT NULL,
   INDEX (ResourceName),
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
+  MTime DATETIME NOT NULL,
   PRIMARY KEY (StorageElementName)
 ) Engine = InnoDB;
 
-DROP TABLE IF EXISTS StorageElementsStatus;
-CREATE TABLE StorageElementsStatus(
+DROP TABLE IF EXISTS StorageElementStatus;
+CREATE TABLE StorageElementStatus(
   StorageElementStatusID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   StorageElementName VARCHAR(64) NOT NULL,
   INDEX (StorageElementName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
-  Index(StatusType), 
+  INDEX (StatusType),
   Status VARCHAR(8) NOT NULL,
   INDEX (Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   INDEX (DateEffective),
-  DateEnd DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (StorageElementName) REFERENCES StorageElements(StorageElementName),
+  FOREIGN KEY (StorageElementName) REFERENCES StorageElement(StorageElementName),
+  UNIQUE KEY (StorageElementName,StatusType),
   PRIMARY KEY (StorageElementStatusID)
 ) Engine = InnoDB;
 
-DROP TABLE IF EXISTS StorageElementsHistory;
-CREATE TABLE StorageElementsHistory(
-  StorageElementsHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS StorageElementHistory;
+CREATE TABLE StorageElementHistory(
+  StorageElementHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   StorageElementName VARCHAR(64) NOT NULL,
   INDEX (StorageElementName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
@@ -336,37 +340,39 @@ CREATE TABLE StorageElementsHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
+  INDEX (DateEnd),
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
-  FOREIGN KEY (StorageElementName) REFERENCES StorageElements(StorageElementName),
-  PRIMARY KEY (StorageElementsHistoryID)
+  FOREIGN KEY (StorageElementName) REFERENCES StorageElement(StorageElementName),
+  UNIQUE KEY(StorageElementName,StatusType,DateEnd),
+  PRIMARY KEY (StorageElementHistoryID)
 ) Engine=InnoDB;
 
-DROP VIEW IF EXISTS PresentStorageElements;
-CREATE VIEW PresentStorageElements AS SELECT 
-  StorageElements.StorageElementName, 
-  StorageElements.ResourceName,
-  StorageElements.GridSiteName, 
-  GridSites.GridTier AS SiteType,
-  StorageElementsStatus.StatusType,
-  StorageElementsStatus.Status,
-  StorageElementsStatus.DateEffective, 
-  StorageElementsStatus.Reason,
-  StorageElementsStatus.LastCheckTime,
-  StorageElementsStatus.TokenOwner,
-  StorageElementsStatus.TokenExpiration,
-  StorageElementsHistory.Status AS FormerStatus
+DROP VIEW IF EXISTS PresentStorageElement;
+CREATE VIEW PresentStorageElement AS SELECT 
+  StorageElement.StorageElementName, 
+  StorageElement.ResourceName,
+  StorageElement.GridSiteName, 
+  GridSite.GridTier AS SiteType,
+  StorageElementStatus.StatusType,
+  StorageElementStatus.Status,
+  StorageElementStatus.DateEffective, 
+  StorageElementStatus.Reason,
+  StorageElementStatus.LastCheckTime,
+  StorageElementStatus.TokenOwner,
+  StorageElementStatus.TokenExpiration,
+  StorageElementHistory.Status AS FormerStatus
 FROM ( 
   (
-    ( StorageElements 
-        INNER JOIN GridSites ON 
-          StorageElements.GridSiteName = GridSites.GridSiteName
+    ( StorageElement 
+        INNER JOIN GridSite ON 
+          StorageElement.GridSiteName = GridSite.GridSiteName
     )
-    INNER JOIN StorageElementsHistory ON 
-      StorageElements.StorageElementName = StorageElementsHistory.StorageElementName
+    INNER JOIN StorageElementHistory ON 
+      StorageElement.StorageElementName = StorageElementHistory.StorageElementName
   )
-  INNER JOIN StorageElementsStatus ON
-    StorageElements.StorageElementName = StorageElementsStatus.StorageElementName AND
-    StorageElementsHistory.DateEnd = StorageElementsStatus.DateEffective AND
-    StorageElementsHistory.StatusType = StorageElementsStatus.StatusType 
-) WHERE StorageElementsStatus.DateEffective < UTC_TIMESTAMP()
+  INNER JOIN StorageElementStatus ON
+    StorageElement.StorageElementName = StorageElementStatus.StorageElementName AND
+    StorageElementHistory.DateEnd = StorageElementStatus.DateEffective AND
+    StorageElementHistory.StatusType = StorageElementStatus.StatusType 
+) WHERE StorageElementStatus.DateEffective < UTC_TIMESTAMP()
 ORDER BY StorageElementName, DateEffective;
