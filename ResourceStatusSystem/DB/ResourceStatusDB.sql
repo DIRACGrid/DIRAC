@@ -29,7 +29,6 @@ CREATE TABLE GridSite(
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
   GridTier VARCHAR(4) NOT NULL,
-  MTime DATETIME NOT NULL,
   PRIMARY KEY(gsID)
 ) Engine=InnoDB;
 
@@ -43,7 +42,6 @@ CREATE TABLE Site(
   SiteType VARCHAR(8) NOT NULL,
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
-  MTime DATETIME NOT NULL,
   PRIMARY KEY(SiteName)
 ) Engine=InnoDB;
 
@@ -151,7 +149,6 @@ CREATE TABLE Service(
   INDEX (ServiceType),
   SiteName VARCHAR(64) NOT NULL,
   INDEX (SiteName),
-  MTime DATETIME NOT NULL,
   PRIMARY KEY(ServiceName)
 ) Engine=InnoDB;
 
@@ -262,7 +259,6 @@ CREATE TABLE Resource(
   INDEX (SiteName),
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
-  MTime DATETIME NOT NULL,
   PRIMARY KEY (ResourceName)
 ) Engine = InnoDB;
 
@@ -372,7 +368,6 @@ CREATE TABLE StorageElement(
   INDEX (ResourceName),
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
-  MTime DATETIME NOT NULL,
   PRIMARY KEY (StorageElementName)
 ) Engine = InnoDB;
 
