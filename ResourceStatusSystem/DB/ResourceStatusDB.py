@@ -1021,3 +1021,81 @@ class ResourceStatusDB:
 
     return S_OK( 'Unknown' )    
     
+  def getStuffToCheck( self, granularity, checkFrequency = None, maxN = None, name = None ):
+    """
+    Get Sites, Services, Resources, StorageElements to be checked using Present-x views.
+
+    :params:
+      :attr:`granularity`: a ValidRes
+
+      :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
+
+      :attr:`maxN`: integer - maximum number of lines in output
+    """
+
+    self.__validateRes( granularity )
+
+    if checkFrequency is not None:
+
+      now = datetime.datetime.utcnow().replace(microsecond = 0)
+      toCheck = {}
+
+      for name, freq in checkFrequency.items():
+        toCheck[ name ] = ( now - datetime.timedelta(minutes=freq)).isoformat(' ')
+
+    if granularity == 'Site':
+      req = "SELECT SiteName, Status, FormerStatus, SiteType, TokenOwner FROM PresentSites"
+    elif granularity == 'Service':
+      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType, TokenOwner FROM PresentServices"
+    elif granularity == 'Resource':
+      req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType, TokenOwner FROM PresentResources"
+    elif granularity == 'StorageElement':
+      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, TokenOwner FROM PresentStorageElements"
+    else:
+      raise InvalidRes, where(self, self.getStuffToCheck)
+    if name is None:
+      if checkFrequency is not None:
+        req = req + " WHERE"
+        
+        for k,v in toCheck.items():
+          
+          siteType, status = k.replace( '_CHECK_FREQUENCY', '' ).split( '_' )
+          status = status[0] + status[1:].lower()
+          req += " (Status = '%s' AND SiteType = '%s' AND LastCheckTime < '%s') OR" %( status, siteType, v )
+        
+        # Remove the last OR
+        req = req[:-2] + " ORDER BY LastCheckTime"
+    else:
+      req = req + " WHERE"
+      if granularity == 'Site':
+        req = req + " SiteName = '%s'" %name
+      elif granularity == 'Service':
+        req = req + " ServiceName = '%s'" %name
+      elif granularity == 'Resource':
+        req = req + " ResourceName = '%s'" %name
+      elif granularity == 'StorageElement':
+        req = req + " StorageElementName = '%s'" %name
+    if maxN != None:
+      req = req + " LIMIT %d" %maxN
+
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.getStuffToCheck ) + resQuery[ 'Message' ]
+    if not resQuery[ 'Value' ]:
+      return S_OK( [] )
+
+    stuffList = [ x for x in resQuery[ 'Value' ]]
+
+    return S_OK( stuffList )   
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
