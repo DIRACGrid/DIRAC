@@ -116,6 +116,10 @@ class SSInspectorAgent( AgentModule ):
         siteType     = toBeChecked[ 4 ]
         tokenOwner   = toBeChecked[ 5 ]
 
+        # Ignore all elements with token != RS_SVC
+        if tokenOwner != 'RS_SVC':
+          continue
+
         gLogger.info( "Checking Site %s, with status %s" % ( siteName, status ) )
 
         newPEP = PEP( self.VOExtension, granularity = granularity, name = siteName, status = status,
