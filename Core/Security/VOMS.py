@@ -246,7 +246,7 @@ class VOMS( BaseSecurity ):
 
     if not result['OK']:
       self._unlinkFiles( newProxyLocation )
-      return S_ERROR( 'Failed to call voms-proxy-init' )
+      return S_ERROR( 'Failed to call voms-proxy-init: %s' % result['Message'] )
 
     status, output, error = result['Value']
 
