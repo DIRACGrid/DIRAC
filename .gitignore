@@ -23,5 +23,5 @@ pip-log.txt
 .pydevproject
 .pyproject
 .settings
-
+.metadata
 

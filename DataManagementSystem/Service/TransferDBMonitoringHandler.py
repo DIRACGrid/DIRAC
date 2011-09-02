@@ -1,7 +1,14 @@
-""" TransferDBMonitoringHandler is the implementation of the TransferDB monitoring service in the DISET framework
+####################################################################
+# $HeadURL$
+################################################################### 
+
+"""  TransferDBMonitoringHandler is the implementation of the TransferDB 
+     monitoring service in the DISET framework.
 """
 
-from types import *
+__RCSID__ = "$Id"
+
+from types import IntType, StringType, DictType, ListType
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
@@ -11,41 +18,89 @@ import os
 
 # These are global instances of the DB classes
 transferDB = False
-#this should also select the SourceSite,DestinationSite
-SUMMARY = ['Status', 'NumberOfFiles', 'PercentageComplete', 'TotalSize', 'SubmitTime', 'LastMonitor']
 
+# this should also select the SourceSite,DestinationSite
+SUMMARY = [ 'Status', 
+            'NumberOfFiles', 
+            'PercentageComplete', 
+            'TotalSize', 
+            'SubmitTime', 
+            'LastMonitor' ]
 
-RequestsColumns = ['RequestID', 'RequestName', 'JobID', 'OwnerDN', 'DIRACInstance', 'Status', 'CreationTime', 'SubmissionTime']
-SubRequestsColumns = ['RequestID', 'SubRequestID', 'RequestType', 'Status', 'Operation', 'SourceSE', 'TargetSE', 'Catalogue', 'SubmissionTime', 'LastUpdate']
-FilesColumns = ['SubRequestID', 'FileID', 'LFN', 'Size', 'PFN', 'GUID', 'Md5', 'Addler', 'Attempt', 'Status']
-DatasetColumns = ['SubRequestID', 'Dataset', 'Status']
+RequestsColumns = [ 'RequestID', 
+                    'RequestName', 
+                    'JobID', 
+                    'OwnerDN', 
+                    'DIRACInstance', 
+                    'Status', 
+                    'CreationTime', 
+                    'SubmissionTime' ]
+
+SubRequestsColumns = [ 'RequestID', 
+                       'SubRequestID', 
+                       'RequestType', 
+                       'Status', 
+                       'Operation', 
+                       'SourceSE', 
+                       'TargetSE', 
+                       'Catalogue', 
+                       'SubmissionTime', 
+                       'LastUpdate' ]
+
+FilesColumns = [ 'SubRequestID', 
+                 'FileID', 
+                 'LFN', 
+                 'Size', 
+                 'PFN', 
+                 'GUID', 
+                 'Md5', 
+                 'Addler', 
+                 'Attempt', 
+                 'Status' ]
+
+DatasetColumns = [ 'SubRequestID', 
+                   'Dataset', 
+                   'Status' ]
 
 def initializeTransferDBMonitoringHandler( serviceInfo ):
+  """ handler initialization
+
+  :param tuple serviceInfo: service info
+  """
 
   global transferDB
   transferDB = TransferDB()
 
-  monitoringSection = PathFinder.getServiceSection( "DataManagement/TransferDBMonitoring", 'FileCache' )
+  monitoringSection = PathFinder.getServiceSection( "DataManagement/TransferDBMonitoring" )
   #Get data location
   retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection )
-  if not retDict[ 'OK' ]:
+  if not retDict["OK"]:
     return retDict
-  dataPath = retDict[ 'Value' ].strip()
+  dataPath = retDict["Value"].strip()
   if "/" != dataPath[0]:
     dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
-  gLogger.info( "Data will be written into %s" % dataPath )
+  gLogger.info( "Data will be written into %s path" % dataPath )
+
+  ## check data path 
   try:
-    os.makedirs( dataPath )
-  except:
-    pass
-  try:
-    testFile = "%s/mon.jarl.test" % dataPath
-    fd = file( testFile, "w" )
-    fd.close()
-    os.unlink( testFile )
-  except IOError:
-    gLogger.fatal( "Can't write to %s" % dataPath )
-    return S_ERROR( "Data location is not writable" )
+    ## exists??   
+    if os.path.exists( dataPath ):
+      ## and it's a dir??
+      if os.path.isdir( dataPath):
+        ## and writable??
+        if os.access( dataPath, os.W_OK ):
+          return S_OK()
+        else:
+          return S_ERROR( "Data path %s exists, but it is not writable!" % dataPath )
+      else:
+        return S_ERROR( "Data path %s exists, but points to a file!" % dataPath  )
+    else:
+      ## create 
+      os.makedirs( dataPath )
+
+  except ( OSError, IOError ) , anError:
+    return S_ERROR( str(anError) )
+    
   return S_OK()
 
 class TransferDBMonitoringHandler( RequestHandler ):
@@ -56,13 +111,13 @@ class TransferDBMonitoringHandler( RequestHandler ):
     """
     return transferDB.getChannels()
 
-  types_increaseChannelFiles = [IntType]
+  types_increaseChannelFiles = [ IntType ]
   def export_increaseChannelFiles( self, channelID ):
-    """ Increase the numner of files on a channel
+    """ Increase the number of files on a channel
     """
     return transferDB.increaseChannelFiles( channelID )
 
-  types_decreaseChannelFiles = [IntType]
+  types_decreaseChannelFiles = [ IntType ]
   def export_decreaseChannelFiles( self, channelID ):
     """ Decrease the numner of files on a channel
     """
@@ -74,7 +129,7 @@ class TransferDBMonitoringHandler( RequestHandler ):
     """
     return transferDB.getSites()
 
-  types_getFTSInfo = [IntType]
+  types_getFTSInfo = [ IntType ]
   def export_getFTSInfo( self, ftsReqID ):
     """ Get the details of a particular FTS job
     """
@@ -86,14 +141,14 @@ class TransferDBMonitoringHandler( RequestHandler ):
     """
     return transferDB.getFTSJobs()
 
-  types_getChannelObservedThroughput = [IntType]
+  types_getChannelObservedThroughput = [ IntType ]
   def export_getChannelObservedThroughput( self, interval ):
     """ Get the observed throughput on the channels defined
     """
     return transferDB.getChannelObservedThroughput( interval )
 
 ##############################################################################
-  types_getReqPageSummary = [DictType, StringType, IntType, IntType]
+  types_getReqPageSummary = [ DictType, StringType, IntType, IntType ]
   def export_getReqPageSummary( self, attrDict, orderAttribute, pageNumber, numberPerPage ):
     """ Get the summary of the fts req information for a given page in the fts monitor
     """
