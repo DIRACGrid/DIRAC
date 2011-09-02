@@ -7,7 +7,7 @@ from DIRAC                                            import gLogger
 from DIRAC.ResourceStatusSystem.Command.Command       import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes, ValidStatus
+from DIRAC.ResourceStatusSystem                       import ValidRes, ValidStatus
 from DIRAC.ResourceStatusSystem.PolicySystem.Status   import value_of_status
 
 #############################################################################

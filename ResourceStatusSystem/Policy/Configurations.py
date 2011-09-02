@@ -1,48 +1,40 @@
+""" DIRAC.ResourceStatusSystem.Policy.Configurations Module
+
+    collects everything needed to configure policies
 """
-Backward compatibility. This module will probably will be removed in
-the future.
-"""
+
+__RCSID__ = "$Id: "
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
 
-gencfg            = CS.getTypedDictRootedAt( "GeneralConfig" )
+pp = CS.getTypedDictRootedAt("PolicyParameters")
 
-ValidRes          = gencfg[ 'Resource' ]
-ValidStatus       = gencfg[ 'Status' ]
-ValidPolicyResult = gencfg[ 'PolicyResult' ] + gencfg[ 'Status' ]
-ValidSiteType     = gencfg[ 'SiteType' ]
-ValidServiceType  = gencfg[ 'ServiceType' ]
-ValidResourceType = gencfg[ 'ResourceType' ]
-ValidService      = ValidServiceType
-PolicyTypes       = gencfg[ 'PolicyTypes' ]
+Policies = {
+  'DT_OnGoing_Only' :
+    {
+      'Description' : "Ongoing down-times",
+      'module'      : 'DT_Policy',
+      'commandIn'   : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
+      'args'        : None
+    },
 
-CheckingFreqs     = CS.getTypedDictRootedAt("CheckingFreqs")
+  'DT_Scheduled' :
+    {
+      'Description'     : "Ongoing and scheduled down-times",
+      'module'          : 'DT_Policy',
+      'commandInNewRes' : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
+      'commandIn'       : ( 'GOCDBStatus_Command', 'DTCached_Command' ),
+      'args'            : ( pp["DTinHours"], ),
+      'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
+                                         'args': None}},],
+      'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
+                                         'args': None}}]
+    },
 
-#############################################################################
-# Clients cache
-#############################################################################
-
-Commands_ClientsCache = [
- ( 'ClientsCache_Command', 'JobsEffSimpleEveryOne_Command' ),
- ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
- #('ClientsCache_Command', 'TransferQualityEverySEs_Command'),
- ( 'ClientsCache_Command', 'DTEverySites_Command' ),
- ( 'ClientsCache_Command', 'DTEveryResources_Command' )
- ]
-
-Commands_AccountingCache = [
- ( 'AccountingCache_Command', 'TransferQualityByDestSplitted_Command', ( 2, ), 'Always' ),
- ( 'AccountingCache_Command', 'FailedTransfersBySourceSplitted_Command', ( 2, ), 'Always' ),
- ( 'AccountingCache_Command', 'TransferQualityByDestSplittedSite_Command', ( 24, ), 'Hourly' ),
- #('AccountingCache_Command', 'TransferQualityBySourceSplittedSite_Command', (24, ), 'Hourly'),
- ( 'AccountingCache_Command', 'SuccessfullJobsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
- ( 'AccountingCache_Command', 'FailedJobsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
- ( 'AccountingCache_Command', 'SuccessfullPilotsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
- ( 'AccountingCache_Command', 'FailedPilotsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
- ( 'AccountingCache_Command', 'SuccessfullPilotsByCESplitted_Command', ( 24, ), 'Hourly' ),
- ( 'AccountingCache_Command', 'FailedPilotsByCESplitted_Command', ( 24, ), 'Hourly' ),
- ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command', ( 24, ), 'Hourly' ),
- ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command', ( 168, ), 'Hourly' ),
- ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command', ( 720, ), 'Daily' ),
- ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command', ( 8760, ), 'Daily' ),
- ]
+  'AlwaysFalse' :
+    {
+      'Description' : "A Policy that always returns false",
+      'commandIn'   : None,
+      'args'        : None
+    }
+  }

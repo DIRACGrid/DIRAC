@@ -9,7 +9,7 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes,ValidStatus,ValidSiteType
+from DIRAC.ResourceStatusSystem import ValidRes,ValidStatus,ValidSiteType
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus
 from DIRAC.ResourceStatusSystem.Utilities import CS
 import DIRAC.ResourceStatusSystem.test.fake_Logger

@@ -11,7 +11,7 @@ import DIRAC.ResourceStatusSystem.test.fake_rsDB
 import DIRAC.ResourceStatusSystem.test.fake_rmDB
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Policy.Configurations import *
+from DIRAC.ResourceStatusSystem import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 
 class UtilitiesTestCase(unittest.TestCase):
@@ -50,8 +50,7 @@ class UtilitiesTestCase(unittest.TestCase):
     self.p = Publisher(self.VO, rsDBIn = None, commandCallerIn = self.mockCC, infoGetterIn = self.mockIG,
                        WMSAdminIn = self.mockWMSA)
 
-    self.configModule = __import__("LHCbDIRAC.ResourceStatusSystem.Policy.Configurations",
-                                   globals(), locals(), ['*'])
+    self.configModule = voimport("DIRAC.ResourceStatusSystem.Policy.Configurations", self.VO)
 
     self.syncC = Synchronizer()
 
@@ -268,7 +267,7 @@ class InfoGetterSuccess(UtilitiesTestCase):
 
               res = ig.getInfoToApply(('policyType', ), g, s, None, site_t, service_t, resource_t)
               for p_res in res[0]['PolicyType']:
-                self.assert_(p_res in self.configModule.Policy_Types.keys())
+                self.assert_(p_res in ['Resource_PolType', 'Alarm_PolType', 'Alarm_PolType_SE'])
 
               for useNewRes in (False, True):
 
