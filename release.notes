@@ -1,3 +1,24 @@
+[v6r0-pre7]
+
+*FTSCleaningAgent
+NEW: FTSCleaningAgent will allow to fix transient errors in RequestDB. At the moment it's 
+     only fixing Requests for which SourceTURL is equal to TargetSURL.
+
+*OracleDB:
+NEW: Added Array type 
+
+*TransferDBMonitoring
+FIX: putting FTSMonitor web page back
+
+*RSS/TokenAgent
+CHANGE: TokenAgent sends e-mails with current status
+
+*MySQL
+NEW: Allow definition of the port number in the configuration
+
+*RSS
+NEW: Major code refactoring 
+
 [v6r0-pre6]
 
 *RemovalAgent
