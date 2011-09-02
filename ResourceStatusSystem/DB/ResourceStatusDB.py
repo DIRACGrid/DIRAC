@@ -447,7 +447,7 @@ class ResourceStatusDB:
   def getSitesStatus( self, siteName, statusType ):
         
     rDict = self.__generateRowDict( locals() )
-    return self.__getElementsStatus( 'Site', rDict)   
+    return self.__getElementsStatus( 'Site', rDict )   
 
   def deleteSites( self, siteName ):
     
@@ -965,15 +965,6 @@ class ResourceStatusDB:
 
     resQuery = self.__getElementRow( '%sStatus' % granularity , dict, columns)
 
-#    req = "SELECT %s, TokenOwner, TokenExpiration FROM %s WHERE " % ( DBname, DBtable )
-#    if name is not None:
-#      req = req + "%s = '%s' " % ( DBname, name )
-#      if dateExpiration is not None:
-#        req = req + "AND "
-#    if dateExpiration is not None:
-#      req = req + "TokenExpiration < '%s'" % ( dateExpiration )
-
-#    resQuery = self.db._query( req )
     if not resQuery[ 'OK' ]:
       raise RSSDBException, where( self, self.getTokens ) + resQuery[ 'Message' ]
     if not resQuery[ 'Value' ]:
@@ -985,3 +976,48 @@ class ResourceStatusDB:
       tokenList = [ x for x in resQuery[ 'Value' ] if x[2] < str( dateExpiration ) ]
     
     return S_OK( tokenList )
+  
+  def setToken( self, granularity, name, reason, newTokenOwner, dateExpiration, statusType ):
+    """
+    (re)Set token properties.
+    """
+
+    self.__validateRes(granularity)
+    self.__validateElementStatusTypes(granularity, statusType )
+
+    rDict = {
+             '%sName'     : name,
+             'StatusType' : statusType
+             }
+    
+    elementStatus = self.__getElementRow( '%sStatus' % granularity, rDict, 'Status')
+    if not elementStatus[ 'OK' ]:
+      raise RSSDBException, where( self, self.setToken ) + elementStatus[ 'Message' ]
+    if not elementStatus[ 'Value' ]:
+      message = 'Not found entry with name %s and type %s of granularity %s' % ( name, statusType, granularity )
+      raise RSSDBException, where( self, self.setToken ) + message
+    
+    status = elementStatus[ 'Value' ][ 0 ]
+    
+    tokenSetter = getattr( self, 'set%sStatus' % granularity )
+    tokenSetter( name, statusType, status, reason, newTokenOwner, tokenExpiration = dateExpiration,
+                 dateEnd = dateExpiration )
+    
+  def whatIs( self, name ):
+    """
+    Find which is the granularity of name.
+    """
+
+    for g in ValidRes:
+      
+      resQuery = self.__getElementRow( g, { '%sName' % g : name }, '%sName' % g )
+
+      if not resQuery[ 'OK' ]:
+        raise RSSDBException, where( self, self.whatIs ) + resQuery[ 'Message' ]
+      if not resQuery[ 'Value' ]:
+        continue
+      else:
+        return S_OK( g )
+
+    return S_OK( 'Unknown' )    
+    
