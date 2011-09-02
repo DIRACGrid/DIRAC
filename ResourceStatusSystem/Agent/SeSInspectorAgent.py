@@ -117,6 +117,10 @@ class SeSInspectorAgent( AgentModule ):
         siteType     = toBeChecked[ 4 ]
         serviceType  = toBeChecked[ 5 ]
         tokenOwner   = toBeChecked[ 6 ]
+
+        # Ignore all elements with token != RS_SVC
+        if tokenOwner != 'RS_SVC':
+          continue
         
         gLogger.info( "Checking Service %s, with status %s" % ( serviceName, status ) )
         

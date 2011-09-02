@@ -118,6 +118,10 @@ class RSInspectorAgent( AgentModule ):
         resourceType = toBeChecked[ 5 ]
         tokenOwner   = toBeChecked[ 6 ]
 
+        # Ignore all elements with token != RS_SVC
+        if tokenOwner != 'RS_SVC':
+          continue
+
         gLogger.info( "Checking Resource %s, with status %s" % ( resourceName, status ) )
 
         newPEP = PEP( self.VOExtension, granularity = granularity, name = resourceName,
