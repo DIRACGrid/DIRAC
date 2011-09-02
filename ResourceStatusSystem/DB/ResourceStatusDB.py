@@ -5,6 +5,8 @@ class to interact with the ResourceStatus DB.
 
 from datetime import datetime
 
+from DIRAC import S_OK
+
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes, InvalidStatus
@@ -101,24 +103,48 @@ class ResourceStatusDB:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
 
-################################################################################
-# ELEMENT FUNCTIONS
-################################################################################
+  '''
+  ##############################################################################
+  # ELEMENT FUNCTIONS
+  ##############################################################################
+  '''
 
-  def __validateElementTableName( self, element ):
-    
-    element = element.replace('Status','').replace('History','')
-    
-    if not element in ValidRes:
-      message = '%s is not a valid element' % element
-      raise RSSDBException, where( self, self.__validateElementTableName ) + message
-               
   def __validateStatus( self, status ):
     
     if not status in ValidStatus:              
       message = '%s is not a valid status' % status
       raise RSSDBException, where( self, self.__validateStatus ) + message
-                     
+
+  def __validateRes( self, res ):
+    
+    if not res in ValidRes:              
+      message = '%s is not a valid res' % res
+      raise InvalidRes, where( self, self.__validateRes ) + message
+
+  def __validateSiteType( self, siteType ):
+    
+    if not siteType in ValidSiteType:
+      message = '%s is not a valid site type' % siteType
+      raise InvalidRes, where( self, self.__validateSiteType ) + message
+          
+  def __validateServiceType( self, serviceType ):
+    
+    if not serviceType in ValidServiceType:
+      message = '%s is not a valid service type' % serviceType
+      raise InvalidRes, where( self, self.__validateServiceType ) + message
+
+  def __validateResourceType( self, resourceType ):
+    
+    if not resourceType in ValidResourceType:
+      message = '%s is not a valid resource type' % resourceType
+      raise InvalidRes, where( self, self.__validateResourceType ) + message
+
+
+  def __validateElementTableName( self, element ):
+    
+    element = element.replace('Status','').replace('History','')
+    self.__validateRes( element )
+                                   
   def __validateElementStatusTypes( self, element, statusTypes ):
     
     if not isinstance( statusTypes, list ):
@@ -128,21 +154,22 @@ class ResourceStatusDB:
       if not statusType in self.ValidStatusTypes[ element ]:
         message = '%s is not a valid statusType for %s' % ( statusType, element )
         raise RSSDBException, where( self, self.__validateElementStatusTypes ) + message
-                                  
-#  def __getWhereElements( self, element, dict ):
-#    
-#    if element in ValidRes:
-#      elements = [ '%sName' % element ]
-#    elif element.replace( 'Status', '' ) in ValidRes:
-#      elements = [ '%sName' % element.replace( 'Status', '' ), 'StatusType' ]
-#    elif element.replace( 'History', '') in ValidRes:
-#      elements = [ '%sName' % element.replace( 'History', '' ), 'StatusType', 'DateEnd' ]     
-#    else:
-#      message = '%s is a wrong element' % element
-#      raise RSSDBException, where( self, self.__getWhereElements ) + message
-#
-#    whereElements = ' AND '.join("%s='%s'" % ( el, dict[el] ) for el in elements) 
-#    return whereElements 
+
+
+  def __getWhereElements( self, element, dict ):
+    
+    if element in ValidRes:
+      elements = [ '%sName' % element ]
+    elif element.replace( 'Status', '' ) in ValidRes:
+      elements = [ '%sName' % element.replace( 'Status', '' ), 'StatusType' ]
+    elif element.replace( 'History', '') in ValidRes:
+      elements = [ '%sName' % element.replace( 'History', '' ), 'StatusType', 'DateEnd' ]     
+    else:
+      message = '%s is a wrong element' % element
+      raise RSSDBException, where( self, self.__getWhereElements ) + message
+
+    whereElements = ' AND '.join("%s='%s'" % ( el, dict[el] ) for el in elements) 
+    return whereElements 
    
   def __getMultipleWhereElements( self, dict ):
    
@@ -185,6 +212,19 @@ class ResourceStatusDB:
     
     return rDict
         
+  def __getColumns( self, columns ):
+    
+    cols = ""
+    
+    if columns is None:
+      cols = "*"
+    else:
+      if not isinstance( columns, list):
+        columns = [ columns ]
+      cols = ','.join( col for col in columns )  
+      
+    return cols        
+        
   def __addElementRow( self, element, dict ):
     
     self.__validateElementTableName( element )
@@ -199,37 +239,39 @@ class ResourceStatusDB:
     if not resUpdate[ 'OK' ]:
       raise RSSDBException, where( self, self.__addElementRow ) + resUpdate[ 'Message' ]
 
-#  def __getElementRow( self, element, dict ):
-#
-#    self.__validateElementTableName( element )
-#        
-#    whereElements = self.__getWhereElements( element, dict )    
-#        
-#    req = "SELECT * from %s" % element
-#    if whereElements:
-#      req += " WHERE %s" % whereElements 
-#
-#    resQuery = self.db._query( req )
-#    if not resQuery[ 'OK' ]:
-#      raise RSSDBException, where( self, self.__getElementRow ) + resQuery[ 'Message' ]
-#
-#    return resQuery
-
-  def __getElementRows( self, element, dict ):
+  def __getElementRow( self, element, dict, columns ):
 
     self.__validateElementTableName( element )
         
     whereElements = self.__getMultipleWhereElements( dict )    
+    cols          = self.__getColumns( columns )      
         
-    req = "SELECT * from %s" % element
+    req = "SELECT %s from %s" % ( cols, element )
     if whereElements:
       req += " WHERE %s" % whereElements
 
     resQuery = self.db._query( req )
     if not resQuery[ 'OK' ]:
-      raise RSSDBException, where( self, self.__getElementRows ) + resQuery[ 'Message' ]
+      raise RSSDBException, where( self, self.__getElementRow ) + resQuery[ 'Message' ]
 
     return resQuery
+
+  def __getElementStatusRowCount( self, element, dict ):
+
+    self.__validateRes( element )
+
+    whereElements = self.__getMultipleWhereElements( dict )    
+        
+    req = "SELECT Status, COUNT(*) from %sStatus" % element
+    if whereElements:
+      req += " WHERE %s" % whereElements
+    req += " GROUP BY Status"
+
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.__getElementStatusRowCount ) + resQuery[ 'Message' ]
+
+    return resQuery  
 
   def __updateElementRow( self, element, dict ):
 
@@ -245,18 +287,7 @@ class ResourceStatusDB:
     if not resUpdate[ 'OK' ]:
       raise RSSDBException, where( self, self.__updateElementRow ) + resUpdate[ 'Message' ]
 
-#  def __deleteElementRow( self, element, dict ):
-#    
-#    self.__validateElementTableName( element )
-#            
-#    req = "DELETE from %s WHERE " % element
-#    req += self.__getWhereElements( element, dict )
-#    
-#    resDel = self.db._update( req )
-#    if not resDel[ 'OK' ]:
-#      raise RSSDBException, where( self, self.__deleteElementRow ) + resDel[ 'Message' ]     
-
-  def __deleteElementRows( self, element, dict ):
+  def __deleteElementRow( self, element, dict ):
     
     self.__validateElementTableName( element )
             
@@ -265,449 +296,546 @@ class ResourceStatusDB:
     
     resDel = self.db._update( req )
     if not resDel[ 'OK' ]:
-      raise RSSDBException, where( self, self.__deleteElementRows ) + resDel[ 'Message' ]  
-    
-################################################################################
-# SITE DB FUNCTIONS
-################################################################################
-
-  def _addSiteRow( self, siteName, siteType, gridSiteName ):
-    """
-    Add a new site row in Sites table
-
-    :params:
-      :attr:`siteName`: string - name of the site (DIRAC name)
-
-      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-
-      :attr:`gridSiteName`: string - name of the site in GOC DB
-    """
-
-    MTime = str(datetime.utcnow().replace( microsecond = 0 ))
-    rDict = self.__generateRowDict( locals() )
-
-    self.__addElementRow( 'Site', rDict )
-
-#  def _getSiteRow( self, siteName ):
-#    """
-#    Get a site from the Sites table
-#
-#    :params:
-#      :attr:`siteName`: string
-#    """
-#    
-#    rDict = self.__generateRowDict( locals() )
-#    
-#    return self.__getElementRow( 'Site', rDict )
- 
-  def _getSiteRows( self, siteName = None, siteType = None, gridSiteName = None ):
-      
-    rDict = self.__generateRowDict( locals() )  
-    
-    return self.__getElementRows( 'Site', rDict )
- 
-  def _updateSiteRow( self, siteName, siteType, gridSiteName ):
-    """
-    Update a site row in Sites table
-
-    :params:
-      :attr:`siteName`: string - name of the site (DIRAC name)
-
-      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-
-      :attr:`gridSiteName`: string - name of the site in GOC DB
-    """
-    
-    MTime = str(datetime.utcnow().replace( microsecond = 0 ))
-    rDict = self.__generateRowDict( locals() )
-    
-    self.__updateElementRow( 'Site', rDict )
-
-#  def _deleteSiteRow( self, siteName ):
-#    """
-#    Remove a site from the Sites table
-#
-#    :params:
-#      :attr:`siteName`: string
-#    """
-# 
-#    rDict = self.__generateRowDict( locals() )
-# 
-#    self.__deleteElementRow( 'Site', rDict )
-
-  def _deleteSiteRows( self, siteName, siteType, gridSiteName ):
-    """
-    Remove a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
- 
-    rDict = self.__generateRowDict( locals() )
- 
-    self.__deleteElementRows( 'Site', rDict )
-
-################################################################################
-# SITE STATUS DB FUNCTIONS
-################################################################################
-         
-  def _addSiteStatusRow( self, siteName, statusType, status, reason, dateCreated,
-                         dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                         tokenExpiration ):
-    """
-    Add a new site row in Sites table
-
-    :params:
-      :attr:`siteName`: string - name of the site (DIRAC name)
-
-      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-
-      :attr:`gridSiteName`: string - name of the site in GOC DB
-    """
-
-    self.__validateStatus( status )
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-
-    self.__addElementRow( 'SiteStatus', rDict )
-
-  def _getSiteStatusRow( self, siteName, statusType ):
-    """
-    Get a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
-    
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-    
-    return self.__getElementRow( 'SiteStatus', rDict )
- 
-  def _getSiteStatusRows( self, siteName = None, statusType = None, status = None,
-                          reason = None, dateCreated = None, dateEffective = None,
-                          dateEnd = None, lastCheckTime = None, tokenOwner = None,
-                          tokenExpiration = None ):
-    
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-    
-    return self.__getElementRows( 'SiteStatus', rDict )
- 
-  def _updateSiteStatusRow( self, siteName, statusType, status, reason, 
-                            dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                            tokenOwner, tokenExpiration ):
-    """
-    We do not want to modify statuses
-    """
-
-    self.__validateStatus( status )
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-
-    self.__updateElementRow( 'SiteStatus', rDict )
+      raise RSSDBException, where( self, self.__deleteElementRow ) + resDel[ 'Message' ]  
   
-  def _deleteSiteStatusRow( self, siteName, statusType ):
-    """
-    Remove a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
- 
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
- 
-    self.__deleteElementRow( 'SiteStatus', rDict )        
-
-  def _deleteSiteStatusRows( self, siteName = None, statusType = None, status = None, 
-                             reason = None, dateCreated = None, dateEffective = None, 
-                             dateEnd = None, lastCheckTime = None, tokenOwner = None, 
-                             tokenExpiration = None ):
-    """
-    Remove a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
- 
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
- 
-    self.__deleteElementRows( 'SiteStatus', rDict )      
-       
-################################################################################
-# SITE SCHEDULED STATUS DB FUNCTIONS
-################################################################################          
-         
-  def _addSiteScheduledStatusRow( self, siteName, statusType, status, reason, dateCreated,
-                         dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                         tokenExpiration ):
-    """
-    Add a new site row in Sites table
-
-    :params:
-      :attr:`siteName`: string - name of the site (DIRAC name)
-
-      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-
-      :attr:`gridSiteName`: string - name of the site in GOC DB
-    """
-
-    self.__validateStatus( status )
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-
-    self.__addElementRow( 'SiteScheduledStatus', rDict )
-
-  def _getSiteScheduledStatusRow( self, siteName, statusType ):
-    """
-    Get a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
+  def __addOrModifyElement( self, element, dict ):
     
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
+    self.__validateRes( element )
     
-    return self.__getElementRow( 'SiteScheduledStatus', rDict )
- 
-  def _getSiteScheduledStatusRows( self, siteName = None, statusType = None, 
-                                   status = None, reason = None, dateCreated = None, 
-                                   dateEffective = None, dateEnd = None, lastCheckTime = None, 
-                                   tokenOwner = None, tokenExpiration = None ):
-    
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-    
-    return self.__getElementRows( 'SiteScheduledStatus', rDict )
- 
-  def _updateSiteScheduledStatusRow( self, siteName, statusType, status, reason, 
-                                     dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                     tokenOwner, tokenExpiration ):
-    """
-    We do not want to modify statuses
-    """
+    elemnt = self.__getElementRow( element, 
+                                   { 
+                                    '%sName' % element : dict[ '%sName' % element ] 
+                                    } 
+                                  )
+    if not elemnt[ 'OK' ]:
+      raise RSSDBException, where( self, self.__addOrModifyElement ) + elemnt[ 'Message' ]
 
-    self.__validateStatus( status )
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-
-    self.__updateElementRow( 'SiteScheduledStatus', rDict )
-  
-  def _deleteSiteScheduledStatusRow( self, siteName, statusType ):
-    """
-    Remove a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
- 
-    self.__validateElementStatusTypes( 'Site', statusType )
- 
-    rDict = self.__generateRowDict( locals() )
- 
-    self.__deleteElementRow( 'SiteScheduledStatus', rDict )
-    
-  def _deleteSiteScheduledStatusRows( self, siteName = None, statusType = None, 
-                                      status = None, reason = None, dateCreated = None, 
-                                      dateEffective = None, dateEnd = None, lastCheckTime = None, 
-                                      tokenOwner = None, tokenExpiration = None ):
-    """
-    Remove a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
- 
-    self.__validateElementStatusTypes( 'Site', statusType )
- 
-    rDict = self.__generateRowDict( locals() )
- 
-    self.__deleteElementRows( 'SiteScheduledStatus', rDict )                     
-         
-################################################################################
-# SITE HISTORY DB FUNCTIONS
-################################################################################   
-
-  def _addSiteHistoryRow( self, siteName, statusType, status, reason, dateCreated,
-                         dateEffective, dateEnd, lastCheckTime, tokenOwner ):
-    """
-    Add a new site row in Sites table
-
-    :params:
-      :attr:`siteName`: string - name of the site (DIRAC name)
-
-      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-
-      :attr:`gridSiteName`: string - name of the site in GOC DB
-    """
-
-    self.__validateStatus( status )
-    self.__validateElementStatusTypes( 'Site', statusType )
-
-    rDict = self.__generateRowDict( locals() )
-
-    self.__addElementRow( 'SiteHitory', rDict )
-
-  def _getSiteHistoryRow( self, siteName, statusType, dateEnd ):
-    """
-    Get a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
-    
-    self.__validateElementStatusTypes( 'Site', statusType )
-    
-    rDict = self.__generateRowDict( locals() )
-    
-    return self.__getElementRow( 'SiteHitory', rDict )
-
-  def _getSiteHistoryRows( self, siteName = None, statusType = None, status = None,
-                           reason = None, dateCreated = None, dateEffective = None,
-                           dateEnd = None, tokenOwner = None ):
-    """
-    Get a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
-    
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-    
-    return self.__getElementRows( 'SiteHitory', rDict )
- 
-  def _updateSiteHistoryRow( self, siteName, statusType, status, reason, 
-                            dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                            tokenOwner ):
-    """
-    We do not want to modify statuses
-    """
-
-    self.__validateStatus( status )
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
-
-    self.__updateElementRow( 'SiteHitory', rDict )
-  
-  def _deleteSiteHistoryRow( self, siteName, statusType, dateEnd ):
-    """
-    Remove a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
- 
-    self.__deleteElementRow( 'SiteHistory', rDict )    
-
-  def _deleteSiteHistoryRows( self, siteName = None, statusType = None, status = None,
-                              reason = None, dateCreated = None, dateEffective = None,
-                              dateEnd = None, tokenOwner = None ):
-    """
-    Remove a site from the Sites table
-
-    :params:
-      :attr:`siteName`: string
-    """
-    self.__validateElementStatusTypes( 'Site', statusType )
-    rDict = self.__generateRowDict( locals() )
- 
-    self.__deleteElementRows( 'SiteHistory', rDict )  
-
-################################################################################
-# SITE FUNCTIONS
-################################################################################
-
-  def addOrModifySite( self, siteName, siteType, gridSiteName ):
-    
-    site = self._getSiteRow( siteName )
-    if not site[ 'OK' ]:
-      raise RSSDBException, where( self, self.addOrModifySite ) + site[ 'Message' ]
-    
-    if site[ 'Value' ]:
-      self._updateSiteRow( siteName, siteType, gridSiteName )
+    if elemnt[ 'Value' ]:
+      self.__updateElementRow( element, dict )
     else:
       # If we add a new site, we set the new Site with status 'Banned' 
-      self._addSiteRow( siteName, siteType, gridSiteName )
+      self.__addElementRow( element, dict )
       
       defaultStatus = 'Banned'
       defaultReason = 'Added to DB'
       tokenOwner    = 'RS_SVC'
       
-      for statusType in self.ValidStatusTypes[ 'Site' ]:
+      for statusType in self.ValidStatusTypes[ element ]:
         
-        self.setSiteStatus( siteName, statusType, defaultStatus, 
-                            defaultReason, tokenOwner )
-
-
-  def setSiteStatus( self, siteName, statusType, status, reason, tokenOwner, 
-                     tokenExpiration = None, dateCreated = None, 
-                     dateEffective = None, dateEnd = None ):
+        setStatus = getattr( self, 'set%sStatus' % element)
+        setStatus( dict[ '%sName' % element ], statusType, defaultStatus, 
+                   defaultReason, tokenOwner )
     
-    currentStatus = self._getSiteStatusRow( siteName, statusType )
+  def __setElementStatus( self, element, dict ):
+    
+    # START VALIDATION #
+    self.__validateRes( element )
+    self.__validateElementStatusTypes( element, dict['StatusType'])
+    self.__validateStatus( dict['Status'] )
+    # If elementName does not exist, the DB will complain with missing FK.
+    # END VALIDATION #
+    
+    currentStatus = self.__getElementRow( '%sStatus' % element, 
+                                          {
+                                           '%sName' % element : dict[ '%sName' % element ],
+                                           'StatusType'       : dict[ 'StatusType' ]
+                                           }
+                                         )
     if not currentStatus[ 'OK' ]:
-      raise RSSDBException, where( self, self.setSiteStatus ) + currentStatus[ 'Message' ]
+      raise RSSDBException, where( self, self.__setElementStatus ) + currentStatus[ 'Message' ]
     
     now   = datetime.utcnow()
     never = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 )
     
-    tokenExpiration = ( 1 and tokenExpiration ) or never 
-    dateCreated     = ( 1 and dateCreated )     or now
-    dateEffective   = ( 1 and dateEffective )   or now
-    dateEnd         = ( 1 and dateEnd )         or never
-    lastCheckTime = now  
+    dict[ 'TokenExpiration' ] = ( 1 and ( dict.has_key['TokenExpiration'] and dict['TokenExpiration'] ) ) or never 
+    dict[ 'DateCreated' ]     = ( 1 and ( dict.has_key['DateCreated']     and dict['DateCreated']     ) ) or now
+    dict[ 'DateEffective' ]   = ( 1 and ( dict.has_key['DateEffective']   and dict['DateEffective']   ) ) or now
+    dict[ 'DateEnd' ]         = ( 1 and ( dict.has_key['DateEnd']         and dict['DateEnd']         ) ) or never
+    dict[ 'LastCheckTime' ]   = now  
         
     if currentStatus[ 'Value' ]:
     
-      self._updateSiteStatusRow( siteName, statusType, status, reason, dateCreated, 
-                                 dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                                 tokenExpiration )  
+      self.__updateElementRow( '%sStatus' % element , dict )
       
       cS            = currentStatus[ 0 ]
-      status        = cS[ 2 ]
-      reason        = cS[ 3 ]
-      dateCreated   = cS[ 4 ]
-      dateEffective = cS[ 5 ]
-      dateEnd       = cS[ 6 ]
-      lastCheckTime = cS[ 7 ]
-      tokenOwner    = cS[ 8 ]
-      
-      self._addSiteHistoryRow( siteName, statusType, status, reason, dateCreated, 
-                               dateEffective, dateEnd, lastCheckTime, tokenOwner)
+      dict[ 'Status' ]        = cS[ 2 ]
+      dict[ 'Reason' ]        = cS[ 3 ]
+      dict[ 'DateCreated' ]   = cS[ 4 ]
+      dict[ 'DateEffective' ] = cS[ 5 ]
+      dict[ 'DateEnd' ]       = cS[ 6 ]
+      dict[ 'LastCheckTime' ] = cS[ 7 ]
+      dict[ 'TokenOwner' ]    = cS[ 8 ]
+ 
+      self.__addElementRow( '%sHistory' % element , dict)
       
     else:
-
-      self._addSiteStatusRow( siteName, statusType, status, reason, dateCreated, 
-                              dateEffective, dateEnd, lastCheckTime, 
-                              tokenOwner, tokenExpiration )  
-
-  def getSites( self, siteNames ):
+      self.__addElementRow( '%sStatus' % element , dict )
     
-    sites = self._getSiteRows( siteNames )
-    if not sites[ 'OK' ]:
-      raise RSSDBException, where( self, self.getSites ) + sites[ 'Message' ]
+  def __getElements( self, element, dict, columns = None ):    
     
-    return sites
-
-  def getSitesStatus( self, siteNames, statusTypes ):
+    # START VALIDATION #
+    self.__validateRes( element )
+    # END VALIDATION #    
     
-    sitesStatus = self._getSiteStatusRows( siteNames, statusTypes )
-    if not sitesStatus[ 'OK' ]:
-      raise RSSDBException, where( self, self.getSitesStatus ) + sitesStatus[ 'Message' ]
-
-    return sitesStatus
-
-  def removeSite( self, siteName ):
+    elements = self.__getElementRow( element, dict, columns )
     
-    self._deleteSiteHistoryRows( siteName = siteName )
-    self._deleteSiteScheduledStatusRows( siteName = siteName )
-    self._deleteSiteStatusRows( siteName = siteName )
-    self._deleteSiteRow( siteName )
+    if not elements[ 'OK' ]:
+      raise RSSDBException, where( self, self.__getElements ) + elements[ 'Message' ]
+    
+    return elements
+    
+  def __getElementsStatus( self, element, dict ):    
+
+    # START VALIDATION #
+    self.__validateRes( element )
+    self.__validateElementStatusTypes( element, dict['StatusType'] )
+    # END VALIDATION #    
+    
+    elementsStatus = self.__getElementRow( '%sStatus' % element, dict )
+    
+    if not elementsStatus[ 'OK' ]:
+      raise RSSDBException, where( self, self.getSitesStatus ) + elementsStatus[ 'Message' ]
+    
+    return elementsStatus
+    
+  def __deleteElements( self, element, dict ):
+
+    # START VALIDATION #
+    self.__validateRes( element )
+    # END VALIDATION #    
+    self.__deleteElementRow( '%sHistory' % element, dict)
+    self.__deleteElementRow( '%sScheduled' % element, dict)
+    self.__deleteElementRow( '%sStatus' % element, dict)
+    self.__deleteElementRow( '%s' % element, dict)
+    
+
+  '''    
+  ##############################################################################
+  # SITE FUNCTIONS
+  ##############################################################################
+  '''
+
+  def addOrModifySite( self, siteName, siteType, gridSiteName ):
+  
+    rDict = self.__generateRowDict( locals() )
+    
+    # START VALIDATION #
+    self.__validateSiteType( siteType )
+      
+    gridSite = self.getGridSitesList( gridSiteName = gridSiteName )
+    if not gridSite[ 'OK' ]:
+      raise RSSDBException, where( self, self.addOrModifySite ) + gridSite[ 'Message' ]
+    if not gridSite[ 'Value' ]:
+      message = '%s is not a known gridSiteName' % gridSiteName
+      raise RSSDBException, where( self, self.addOrModifySite ) + message   
+    # END VALIDATION #    
+    
+    self.__addOrModifyElement( 'Site', rDict)
+    
+  def setSiteStatus( self, siteName, statusType, status, reason, tokenOwner, 
+                     tokenExpiration = None, dateCreated = None, 
+                     dateEffective = None, dateEnd = None, lastCheckTime = None ):
+    
+    rDict = self.__generateRowDict( locals() )
+    self.__setElementStatus( 'Site', rDict )
+
+  def getSites( self, siteName ):
+    
+    rDict = self.__generateRowDict( locals() )
+    return self.__getElements( 'Site', rDict )
+
+  def getSitesStatus( self, siteName, statusType ):
+        
+    rDict = self.__generateRowDict( locals() )
+    return self.__getElementsStatus( 'Site', rDict)   
+
+  def deleteSites( self, siteName ):
+    
+    rDict = self.__generateRowDict( locals() )  
+    self.__deleteElements( 'Site', rDict)
+
+  '''
+  ##############################################################################
+  # SERVICE FUNCTIONS
+  ##############################################################################
+  '''
+
+  def addOrModifyService( self, serviceName, serviceType, siteName ):
+ 
+    rDict = self.__generateRowDict( locals() )
+    
+    # START VALIDATION #
+    self.__validateServiceType( serviceType )
+    
+    site = self.__getElementRow( 'Site', {'SiteName' : siteName } )
+    if not site[ 'OK' ]:
+      raise RSSDBException, where( self, self.addOrModifyService ) + site[ 'Message' ]
+    if not site[ 'Value' ]:
+      message = '%s is not a known siteName' % siteName
+      raise RSSDBException, where( self, self.addOrModifyService ) + message
+    # END VALIDATION #    
+    
+    self.__addOrModifyElement( 'Service', rDict)
+       
+  def setServiceStatus( self, serviceName, statusType, status, reason, tokenOwner, 
+                        tokenExpiration = None, dateCreated = None, 
+                        dateEffective = None, dateEnd = None, lastCheckTime = None ):
+
+    rDict = self.__generateRowDict( locals() )
+    self.__setElementStatus( 'Service', rDict )
+
+  def getServices( self, serviceName ):
+    
+    rDict    = self.__generateRowDict( locals() )
+    return self.__getElements( 'Service', rDict )
+  
+  def getServicesStatus( self, serviceName, statusType ):
+    
+    rDict          = self.__generateRowDict( locals() )   
+    return self.__getElementsStatus( 'Service', rDict)   
+
+  def getServiceStats( self, siteName, statusType = None ):
+    """
+    Returns simple statistics of active, probing, bad and banned services of a site;
+
+    :params:
+      :attr:`siteName`: string - a site name
+
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Bad':vv, 'Banned':zz, 'Total':xyz }
+    """
+
+    res = { 'Total' : 0 }
+    for validStatus in ValidStatus:
+      res[ validStatus ] = 0
+
+    rDict = {}
+    
+    if statusType is not None:
+      self.__validateElementStatusTypes( 'Service', statusType )
+      rDict[ 'StatusType'] = statusType
+    
+    count = self.__getElementStatusRowCount( 'Service', rDict )
+
+    if not count[ 'OK' ]:
+      raise RSSDBException, where( self, self.getServiceStats ) + count[ 'Message' ]
+    else:
+      for x in count[ 'Value' ]:
+        res[x[0]] = int(x[1])
+
+    res['Total'] = sum( res.values() )
+
+    return S_OK( res )
+    
+  def deleteServices( self, siteName ):
+    
+    rDict = self.__generateRowDict( locals() )  
+    self.__deleteElements( 'Service', rDict)
+
+  '''
+  ##############################################################################
+  # RESOURCE FUNCTIONS
+  ##############################################################################
+  '''
+  
+  def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName,
+                           gridSiteName ):
+
+    rDict = self.__generateRowDict( locals() )
+    
+    # START VALIDATION #
+    self.__validateResourceType( resourceType )
+    self.__validateServiceType( serviceType )
+    
+    site = self.__getElementRow( 'Site', {'SiteName' : siteName } )
+    if not site[ 'OK' ]:
+      raise RSSDBException, where( self, self.addOrModifyService ) + site[ 'Message' ]
+    if not site[ 'Value' ]:
+      message = '%s is not a known siteName' % siteName
+      raise RSSDBException, where( self, self.addOrModifyService ) + message
+    
+    gridSite = self.getGridSitesList( gridSiteName = gridSiteName )
+    if not gridSite[ 'OK' ]:
+      raise RSSDBException, where( self, self.addOrModifySite ) + gridSite[ 'Message' ]
+    if not gridSite[ 'Value' ]:
+      message = '%s is not a known gridSiteName' % gridSiteName
+      raise RSSDBException, where( self, self.addOrModifySite ) + message 
+    # END VALIDATION #    
+    
+    self.__addOrModifyElement( 'Resource', rDict)
+  
+  def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
+                         tokenExpiration = None, dateCreated = None, 
+                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
+    
+    rDict = self.__generateRowDict( locals() )
+    self.__setElementStatus( 'Resource', rDict )
+  
+  def getResources( self, resourceName ):
+
+    rDict     = self.__generateRowDict( locals() )
+    return self.__getElements( 'Resource', rDict )
+  
+  def getResourcesStatus( self, resourceName, statusType ):
+    
+    rDict           = self.__generateRowDict( locals() )   
+    return self.__getElementsStatus( 'Resource', rDict)   
+
+  def getResourceStats( self, element, name, statusType = None ):
+    """
+    Returns simple statistics of active, probing, bad and banned services of a site;
+
+    :params:
+      :attr:`siteName`: string - a site name
+
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Bad':vv, 'Banned':zz, 'Total':xyz }
+    """
+    
+    res = { 'Total' : 0 }
+    for validStatus in ValidStatus:
+      res[ validStatus ] = 0
+
+    rDict = {}
+    
+    if statusType is not None:
+      self.__validateElementStatusTypes( 'Service', statusType )
+      rDict[ 'StatusType'] = statusType
+
+    if element == 'Site':
+      name   = self.getGridSiteName( element, name )[ 'Value' ]
+      rDict[ 'GridSiteName' ] = name
+
+    elif element == 'Service':
+      serviceType = name.split( '@' )[ 0 ]
+      name        = name.split( '@' )[ 1 ]
+      if serviceType == 'Computing':
+        rDict[ 'SiteName' ] = name
+      else:
+        name = self.getGridSiteName( 'Site', name )[ 'Value' ]
+        rDict[ 'GridSiteName' ] = name
+        rDict[ 'ServiceType' ]  = serviceType
+    else:
+      message = '%s is non accepted element. Only Site or Service' % element
+      raise RSSDBException, where( self, self.getResourceStats ) + message
+
+    count = self.__getElementStatusRowCount( 'Resource', rDict )
+
+    if not count[ 'OK' ]:
+      raise RSSDBException, where( self, self.getResourceStats ) + count[ 'Message' ]
+    else:
+      for x in count[ 'Value' ]:
+        res[ x[ 0 ] ] = int( x[ 1 ] )
+
+    res[ 'Total' ] = sum( res.values() )
+
+    return S_OK( res )
+    
+  def deleteResources( self, resourceName ):
+    
+    rDict = self.__generateRowDict( locals() )  
+    self.__deleteElements( 'Resource', rDict)
+
+  '''
+  ##############################################################################
+  # STORAGE ELEMENT FUNCTIONS
+  ##############################################################################
+  '''
+
+  def addOrModifyStorageElement( self, storageElementName, resourceName, 
+                                 gridSiteName ):
+    
+    rDict = self.__generateRowDict( locals() )
+    
+    # START VALIDATION #
+    
+    resource = self.__getElementRow( 'Resource', {'ResourceName' : resourceName } )
+    if not resource[ 'OK' ]:
+      raise RSSDBException, where( self, self.addOrModifyResource ) + resource[ 'Message' ]
+    if not resource[ 'Value' ]:
+      message = '%s is not a known resourceName' % resourceName
+      raise RSSDBException, where( self, self.addOrModifyResource ) + message
+    
+    gridSite = self.getGridSitesList( gridSiteName = gridSiteName )
+    if not gridSite[ 'OK' ]:
+      raise RSSDBException, where( self, self.addOrModifySite ) + gridSite[ 'Message' ]
+    if not gridSite[ 'Value' ]:
+      message = '%s is not a known gridSiteName' % gridSiteName
+      raise RSSDBException, where( self, self.addOrModifySite ) + message 
+    # END VALIDATION #    
+    
+    self.__addOrModifyElement( 'StorageElement', rDict)
+  
+  def setStorageElementStatus( self, storageElementName, statusType, status, 
+                               reason, tokenOwner, tokenExpiration = None, 
+                               dateCreated = None, dateEffective = None, dateEnd = None, 
+                               lastCheckTime = None ):
+    
+    rDict = self.__generateRowDict( locals() )
+    self.__setElementStatus( 'StorageElement', rDict )
+  
+  def getStorageElements( self, storageElementName ):
+    
+    rDict     = self.__generateRowDict( locals() )
+    return self.__getElements( 'StorageElementName', rDict )
+  
+  def getStorageElementsStatus( self, storageElementName, statusType  ):
+    
+    rDict           = self.__generateRowDict( locals() )   
+    return self.__getElementsStatus( 'StorageElement', rDict) 
+
+  def getStorageElementStats( self, element, name, statusType = None ):
+    
+    res = { 'Total' : 0 }
+    for validStatus in ValidStatus:
+      res[ validStatus ] = 0
+
+    rDict = {}
+    
+    if statusType is not None:
+      self.__validateElementStatusTypes( 'StorageElement', statusType )
+      rDict[ 'StatusType'] = statusType
+    
+    if element == 'Site':
+      rDict[ 'GridSiteName' ] = self.getGridSiteName( element, name )[ 'Value' ]
+    elif element == 'Resource':
+      rDict[ 'ResourceName' ] = name
+    
+    count = self.__getElementStatusRowCount( 'StorageElement', rDict )
+
+    if not count[ 'OK' ]:
+      raise RSSDBException, where( self, self.getStorageElementStats ) + count[ 'Message' ]
+    else:
+      for x in count[ 'Value' ]:
+        res[x[0]] = int(x[1])
+
+    res['Total'] = sum( res.values() )
+
+    return S_OK( res )   
+    
+  def deleteStorageElements( self, storageElementName ):
+    
+    rDict = self.__generateRowDict( locals() )  
+    self.__deleteElements( 'StorageElement', rDict)
+
+  '''
+  ##############################################################################
+  # GRID SITE FUNCTIONS
+  ##############################################################################
+  Hardcoded SQL queries, bad bad.. to be fixed.
+  '''
+
+  def addOrModifyGridSite( self, name, tier  ):
+    """
+    Add or modify a Grid Site to the GridSites table.
+
+    :params:
+      :attr:`name`: string - name of the site in GOC DB
+
+      :attr:`tier`: string - tier of the site
+    """
+
+    if tier not in ValidSiteType:
+      raise RSSDBException, "Not the right SiteType"
+
+    req = "SELECT GridSiteName, GridTier FROM GridSites "
+    req = req + "WHERE GridSiteName = '%s'" %( name )
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.addOrModifyGridSite ) + resQuery[ 'Message' ]
+
+    if resQuery[ 'Value' ]:
+      req = "UPDATE GridSites SET GridTier = '%s' WHERE GridSiteName = '%s'" %( tier, name )
+
+      resUpdate = self.db._update( req )
+      if not resUpdate[ 'OK' ]:
+        raise RSSDBException, where( self, self.addOrModifyGridSite ) + resUpdate[ 'Message' ]
+    else:
+      req = "INSERT INTO GridSites (GridSiteName, GridTier) VALUES ('%s', '%s')" %( name, tier )
+
+      resUpdate = self.db._update( req )
+      if not resUpdate[ 'OK' ]:
+        raise RSSDBException, where( self, self.addOrModifyGridSite ) + resUpdate[ 'Message' ]
+  
+  def getGridSitesList( self, paramsList = None, gridSiteName = None, gridTier = None ):
+    """
+    Get grid site lists.
+
+    :params:
+      :attr:`paramsList`: a list of parameters can be entered. If not given,
+      a custom list is used.
+
+      :attr:`gridSiteName` grid site name. If not given, fetch all.
+
+      :attr:`gridTier`: a string or a list representing the site type.
+      If not given, fetch all.
+
+    :return:
+      list of gridSites paramsList's values
+    """
+
+    #paramsList
+    if (paramsList == None or paramsList == []):
+      params = 'GridSiteName, GridTier'
+    else:
+      if type( paramsList ) is not type( [] ):
+        paramsList = [ paramsList ]
+      params = ','.join( [ x.strip()+' ' for x in paramsList ] )
+
+    #gridSiteName
+    if ( gridSiteName == None or gridSiteName == [] ):
+      r = "SELECT GridSiteName FROM GridSites"
+      resQuery = self.db._query( r )
+      if not resQuery[ 'OK' ]:
+        raise RSSDBException, where( self, self.getGridSitesList )+resQuery[ 'Message' ]
+      if not resQuery[ 'Value' ]:
+        gridSiteName = []
+      gridSiteName = [ x[0] for x in resQuery['Value'] ]
+      gridSiteName = ','.join( [ '"'+x.strip()+'"' for x in gridSiteName ] )
+    else:
+      if type( gridSiteName ) is not type( [] ):
+        gridSiteName = [ gridSiteName ]
+      gridSiteName = ','.join( [ '"'+x.strip()+'"' for x in gridSiteName ] )
+
+    #gridTier
+    if ( gridTier == None or gridTier == [] ):
+      gridTier = ValidSiteType
+    else:
+      if type( gridTier ) is not type([]):
+        gridTier = [ gridTier ]
+    gridTier = ','.join( [ '"'+x.strip()+'"' for x in gridTier ] )
+
+    #query construction
+    req = "SELECT %s FROM GridSites WHERE" %( params )
+    if gridSiteName != [] and gridSiteName != None and gridSiteName is not None and gridSiteName != '':
+      req = req + " GridSiteName IN (%s) " %( gridSiteName )
+    req = req + " AND GridTier IN (%s)" % ( gridTier )
+
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.getGridSitesList )+resQuery[ 'Message' ]
+
+    if not resQuery[ 'Value' ]:
+      return S_OK( [] )
+    list_ = [ x for x in resQuery[ 'Value' ] ]
+    return S_OK( list_ )
+
+  def getGridSiteName( self, granularity, name ):
+
+    #DBtable, DBname = self.__DBchoice( granularity )
+    self.__validateRes( granularity )
+
+    req = "SELECT GridSiteName FROM %s WHERE %sName = '%s'" %( granularity, granularity, name )
+
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.getGridSiteName ) + resQuery[ 'Message' ]
+    if not resQuery[ 'Value' ]:
+      return S_OK( [] )
+
+    return S_OK( resQuery[ 'Value' ][ 0 ][ 0 ] )
+
+
 
 #################################################################################
 #  def addOrModifySite( self, siteName, siteType, gridSiteName ):#, statusType, 
@@ -4202,3 +4330,75 @@ class ResourceStatusDB:
 #    return ( dateCreated, dateEffective )
 #
 ##############################################################################
+
+  '''
+  ##############################################################################
+  # MISC FUNCTIONS
+  ##############################################################################
+  '''
+
+  def getGeneralName( self, name, from_element, to_element ):
+    """
+    Get name of res, of granularity `from_g`, to the name of res with granularity `to_g`
+
+    For a StorageElement, get the Site name, or the Service name, or the Resource name.
+    For a Resource, get the Site name, or the Service name.
+    For a Service name, get the Site name
+
+    :params:
+      :attr:`name`: a string with a name
+
+      :attr:`from_g`: a string with a valid granularity
+      (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+
+      :attr:`to_g`: a string with a valid granularity
+      (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+
+    :return:
+      a string with the resulting name
+    """
+
+    self.__validateRes( from_element )
+    self.__validateRes( to_element )
+
+    if from_element == 'Service':
+      req = "SELECT SiteName FROM Services WHERE ServiceName = '%s'" %( name )
+
+    elif from_element == 'Resource':
+      reqType = "SELECT ServiceType FROM Resources WHERE ResourceName = '%s'" %( name )
+      resQuery = self.db._query( reqType )
+      if not resQuery[ 'OK' ]:
+        raise RSSDBException, where( self, self.getGeneralName ) + resQuery[ 'Message' ]
+      serviceType = resQuery[ 'Value' ][ 0 ][ 0 ]
+
+      if serviceType == 'Computing':
+        req = "SELECT SiteName FROM Resources WHERE ResourceName = '%s'" %( name )
+      else:
+        req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
+        req = req + "(SELECT GridSiteName FROM Resources WHERE ResourceName = '%s')" %( name )
+
+    elif from_element == 'StorageElement':
+
+      if to_element == 'Resource':
+        req = "SELECT ResourceName FROM StorageElements WHERE StorageElementName = '%s'" % ( name )
+      else:
+        req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
+        req = req + "(SELECT GridSiteName FROM StorageElements WHERE StorageElementName = '%s')" % ( name )
+
+        if to_element == 'Service':
+          serviceType = 'Storage'
+
+    else:
+      raise ValueError
+
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.getGeneralName ) + resQuery[ 'Message' ]
+    if not resQuery[ 'Value' ]:
+      return []
+    newNames = [ x[0] for x in resQuery[ 'Value' ] ]
+
+    if to_element == 'Service':
+      return [ serviceType + '@' + x for x in newNames ]
+    else:
+      return newNames
