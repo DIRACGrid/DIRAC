@@ -90,7 +90,7 @@ class DB( MySQL ):
     #self.log.info("SystemInstance: "+self.system)
     self.log.info( "User:           " + self.dbUser )
     self.log.info( "Host:           " + self.dbHost )
-    self.log.info( "Port:           " + self.dbPort )
+    self.log.info( "Port:           " + str(self.dbPort) )
     #self.log.info("Password:       "+self.dbPass)
     self.log.info( "DBName:         " + self.dbName )
     self.log.info( "MaxQueue:       " + str(self.maxQueueSize) )
