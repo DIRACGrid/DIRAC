@@ -12,8 +12,8 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping      import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.CS          import getStorageElementStatus
 
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
-from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
+from DIRAC.ResourceStatusSystem                       import ValidRes
+from DIRAC.ResourceStatusSystem.Utilities             import Utils
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import RSSException, InvalidRes
 
 class Publisher:
@@ -44,15 +44,7 @@ class Publisher:
       (see :class: `DIRAC.Core.DISET.RPCClient.RPCClient`)
     """
 
-#    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations",
-#                                   globals(), locals(), ['*'])
-
-    module = "DIRAC.ResourceStatusSystem.Policy.Configurations"
-
-    try:
-      self.configModule = __import__( VOExtension + module , globals(), locals(), ['*'] )
-    except ImportError:
-      self.configModule = __import__( module , globals(), locals(), ['*'] )
+    self.configModule = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations", VOExtension)
 
     if rsDBIn is not None:
       self.rsDB = rsDBIn
@@ -107,7 +99,7 @@ class Publisher:
     """
 
     if granularity not in ValidRes:
-      raise InvalidRes, where(self, self.getInfo)
+      raise InvalidRes, Utils.where(self, self.getInfo)
 
     self.infoForPanel_res = {}
 
@@ -257,7 +249,7 @@ class Publisher:
         if DIRACStatus['OK']:
           DIRACStatus = DIRACStatus['Value'][name].pop()[0]
         else:
-          raise RSSException, where(self, self._getStatus)
+          raise RSSException, Utils.where(self, self._getStatus)
 
       elif panel == 'SE_Panel':
         ra = getStorageElementStatus(name, 'ReadAccess')['Value']
