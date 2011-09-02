@@ -115,6 +115,10 @@ class StElWriteInspectorAgent( AgentModule ):
         formerStatus       = toBeChecked[ 3 ]
         siteType           = toBeChecked[ 4 ]
         tokenOwner         = toBeChecked[ 5 ]
+
+        # Ignore all elements with token != RS_SVC
+        if tokenOwner != 'RS_SVC':
+          continue
        
         gLogger.info( "Checking StorageElement %s, with status %s" % ( storageElementName, status ) )
         
