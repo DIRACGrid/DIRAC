@@ -1088,7 +1088,82 @@ class ResourceStatusDB:
 
     return S_OK( stuffList )   
     
+  def getMonitoredsHistory( self, granularity, paramsList = None, name = None,
+                            presentAlso = True, order = 'ASC', limit = None ):
+    """
+    Get history of sites / services / resources / storageElements in a list
+    (a site name can be specified)
+
+    :params:
+      :attr:`granularity`: a ValidRes
+
+      :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
+
+      :attr:`name`: list of strings. If not given, fetches the complete list
+    """
+
+    self.__validateRes( granularity )
+
+    if paramsList is not None:
+      if type( paramsList ) is not type( [] ):
+        paramsList = [ paramsList ]
+      params = ','.join( [ x.strip()+' ' for x in paramsList ] )
+
+    if ( paramsList == None or paramsList == [] ):
+      params   = '%sName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner ' % granularity
+      DBtable  = '%sHistory' 
+      DBtableP = '%s' % granularity
+      DBname   = '%sName' % granularity
+      DBid     = '%sHistoryID' % granularity
+
+    #take history data
+    if ( name == None or name == [] ):
+      req = "SELECT %s FROM %s ORDER BY %s, %s" %( params, DBtable, DBname, DBid )
+    else:
+      if type( name ) is not type( [] ):
+        nameM = [ name ]
+      else:
+        nameM = name
+      nameM = ','.join( [ '"'+x.strip()+'"' for x in nameM ] )
+      req = "SELECT %s FROM %s WHERE %s IN (%s) ORDER BY %s" % ( params, DBtable, DBname,
+                                                                 nameM, DBid )
+      if order == 'DESC':
+        req = req + " DESC"
+      if limit is not None:
+        req = req + " LIMIT %s" %str( limit )
+    resQuery = self.db._query( req )
+    if not resQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.getMonitoredsHistory ) + resQuery[ 'Message' ]
+    if not resQuery[ 'Value' ]:
+      return []
     
+    list_h = [ x for x in resQuery[ 'Value' ] ]
+
+    if presentAlso:
+      #take present data
+      if ( name == None or name == [] ):
+        req = "SELECT %s FROM %s ORDER BY %s" %( params, DBtableP, DBname )
+      else:
+        if type( name ) is not type( [] ):
+          nameM = [ name ]
+        else:
+          nameM = name
+        nameM = ','.join( [ '"'+x.strip()+'"' for x in nameM ] )
+        req = "SELECT %s FROM %s WHERE %s IN (%s)" % ( params, DBtableP, DBname, nameM )
+
+      resQuery = self.db._query( req )
+      if not resQuery[ 'OK' ]:
+        raise RSSDBException, where( self, self.getMonitoredsHistory ) + resQuery[ 'Message' ]
+      if not resQuery[ 'Value' ]:
+        return []
+      list_p = []
+      list_p = [ x for x in resQuery[ 'Value' ] ]
+
+      list_ = list_h + list_p
+    else:
+      list_ = list_h
+
+    return list_    
     
     
     
