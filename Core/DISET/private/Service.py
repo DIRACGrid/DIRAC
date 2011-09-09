@@ -391,10 +391,10 @@ class Service:
 
         if methodName in hardcodedRulesByType:
           hardcodedMethodAuth = hardcodedRulesByType[ methodName ]
-    #Get the identity string
-    identity = self._createIdentityString( credDict )
     #Auth time!
     if not self._authMgr.authQuery( csAuthPath, credDict, hardcodedMethodAuth ):
+      #Get the identity string
+      identity = self._createIdentityString( credDict )
       gLogger.warn( "Unauthorized query", "to %s:%s by %s" % ( self._name,
                                                                "/".join( actionTuple ),
                                                                identity ) )
@@ -407,6 +407,7 @@ class Service:
     if not tr:
       return S_ERROR( "Client disconnected" )
     sourceAddress = tr.getRemoteAddress()
+    identity = self._createIdentityString( credDict )
     Service.SVC_SECLOG_CLIENT.addMessage( result[ 'OK' ], sourceAddress[0], sourceAddress[1], identity,
                                       self._cfg.getHostname(),
                                       self._cfg.getPort(),
