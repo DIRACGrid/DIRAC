@@ -324,16 +324,21 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
     retCode, CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
   if not retCode:
     cliParams.ceName = CE.split( ':' )[0]
-    cliParams.queueName = CE.split( '/' )[1]
+    cliParams.queueName = ''
+    if CE.count('/'):
+      cliParams.queueName = CE.split( '/' )[1]
     configureOpts.append( '-N "%s"' % cliParams.ceName )
   else:
     logERROR( "There was an error executing brokerinfo. Setting ceName to local " )
 elif cliParams.flavour == "CREAM":
   if os.environ.has_key( 'CE_ID' ):
     cliParams.ceName = os.environ['CE_ID'].split( ':' )[0]
-    cliParams.queueName = os.environ['CE_ID'].split( '/' )[1]
+    cliParams.queueName = ''
+    if os.environ['CE_ID'].count("/"):
+      cliParams.queueName = os.environ['CE_ID'].split( '/' )[1]
     configureOpts.append( '-N "%s"' % cliParams.ceName )
-    configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
+    #if cliParams.queueName:
+    #  configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
 
 if cliParams.queueName:
   configureOpts.append( '-o /LocalSite/CEQueue=%s' % cliParams.queueName )
