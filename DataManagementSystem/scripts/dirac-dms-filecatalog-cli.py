@@ -22,10 +22,9 @@ import sys,os
 import DIRAC
 from DIRAC import gLogger, gConfig
 
-res = gConfig.getSections("/Resources/FileCatalogs/")
+res = gConfig.getOption("/LocalSite/FileCatalog","")
 if res['OK']:
-  ##Take catalog -1 as default as it seems that the list returned is reversed compared to CS web interface
-  fcType = res['Value'][0]
+  fcType = res['Value']
 
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "f" or switch[0].lower() == "file-catalog":
