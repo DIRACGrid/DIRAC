@@ -26,6 +26,11 @@ res = gConfig.getOption("/LocalSite/FileCatalog","")
 if res['OK']:
   fcType = res['Value']
 
+if not fcType:
+  res = gConfig.getSections("/Resources/FileCatalogs",listOrdered = True)
+  if res['OK']:
+    fcType = res['Value'][0]
+
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "f" or switch[0].lower() == "file-catalog":
     fcType = switch[1]
