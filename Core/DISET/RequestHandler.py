@@ -96,7 +96,7 @@ class RequestHandler( object ):
       retVal = self.__doConnection( actionTuple[1] )
     else:
       raise Exception( "Unknown action (%s)" % actionType )
-    if not retVal:
+    if  not isReturnStructure( retVal ):
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
       retVal = S_ERROR( message )
@@ -260,7 +260,9 @@ class RequestHandler( object ):
           mismatch = True
         #Has there been a mismatch?
         if mismatch:
-          sError = "Type mismatch in parameter %d (starting with param 0)" % iIndex
+          sError = "Type mismatch in parameter %d (starting with param 0) Received %s, expected %s" % ( iIndex,
+                                                                                                        type( args[ iIndex ] ),
+                                                                                                        str( oTypesList[ iIndex ] ) )
           return S_ERROR( sError )
       if len( args ) < len( oTypesList ):
         return S_ERROR( "Function %s expects at least %s arguments" % ( method, len( oTypesList ) ) )
