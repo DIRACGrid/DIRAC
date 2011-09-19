@@ -562,7 +562,7 @@ class ResourceStatusDB:
       raise RSSDBException, where( self, self.addOrModifySite ) + message 
     # END VALIDATION #    
     
-    self.__addOrModifyElement( 'Resource', rDict)
+    self.__addOrModifyElement( 'Resource', rDict )
   
   def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
                          tokenExpiration = None, dateCreated = None, 
