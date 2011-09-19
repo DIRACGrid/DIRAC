@@ -1910,8 +1910,8 @@ class ReplicaManager( CatalogToStorage ):
     for pfn, error in res['Value']['Failed'].items():
       failed[pfnDict[pfn]] = error
     replicaTuples = []
-    for pfn in res['Value']['Successful'].keys():
-      replicaTuple = ( pfnDict[pfn], pfn, storageElementName )
+    for pfn,surl in res['Value']['Successful'].items():
+      replicaTuple = ( pfnDict[pfn], surl, storageElementName )
       replicaTuples.append( replicaTuple )
     successful = {}
     res = self.__removeCatalogReplica( replicaTuples )
@@ -2081,6 +2081,12 @@ class ReplicaManager( CatalogToStorage ):
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued accounting removal request."
       gLogger.info( infoStr )
+      for surl,value in res['Value']['Successful'].items():
+        ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
+        if not ret['OK']:
+          res['Value']['Successful'][surl] = surl
+        else:
+          res['Value']['Successful'][surl] = ret['Value']
       return res
 
   #########################################################################
