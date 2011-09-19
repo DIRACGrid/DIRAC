@@ -25,11 +25,10 @@ USE ResourceStatusDB;
 
 DROP TABLE IF EXISTS GridSite;
 CREATE TABLE GridSite(
-  gsID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  GridSiteName VARCHAR(64) NOT NULL,
+  GridSiteName VARCHAR(64) UNIQUE NOT NULL,
   INDEX (GridSiteName),
   GridTier VARCHAR(4) NOT NULL,
-  PRIMARY KEY(gsID)
+  PRIMARY KEY(GridSiteName)
 ) Engine=InnoDB;
 
 --
