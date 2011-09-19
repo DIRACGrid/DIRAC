@@ -7,7 +7,7 @@ from DIRAC.ResourceStatusSystem.Utilities import CS
 
 __gencfg            = CS.getTypedDictRootedAt( "GeneralConfig" )
 
-ValidRes          = __gencfg[ 'Resource' ]
+ValidRes          = __gencfg[ 'Resources' ].keys()
 ValidStatus       = __gencfg[ 'Status' ]
 ValidPolicyResult = __gencfg[ 'PolicyResult' ] + __gencfg[ 'Status' ]
 ValidSiteType     = __gencfg[ 'SiteType' ]
