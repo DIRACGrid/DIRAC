@@ -25,10 +25,11 @@ USE ResourceStatusDB;
 
 DROP TABLE IF EXISTS GridSite;
 CREATE TABLE GridSite(
-  GridSiteName VARCHAR(64) UNIQUE NOT NULL,
+  gsID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
   GridTier VARCHAR(4) NOT NULL,
-  PRIMARY KEY(GridSiteName)
+  PRIMARY KEY(gsID)
 ) Engine=InnoDB;
 
 --
@@ -61,7 +62,6 @@ CREATE TABLE SiteStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (SiteName) REFERENCES Site(SiteName),
   UNIQUE KEY(SiteName,StatusType),
   PRIMARY KEY (SiteStatusID)
 ) Engine = InnoDB;
@@ -83,7 +83,6 @@ CREATE TABLE SiteScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (SiteName) REFERENCES Site(SiteName),
   UNIQUE KEY(SiteName,StatusType),
   PRIMARY KEY (SiteScheduledStatusID)
 ) Engine = InnoDB;
@@ -101,9 +100,10 @@ CREATE TABLE SiteHistory(
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
   INDEX (DateEnd),
+  LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
-  FOREIGN KEY (SiteName) REFERENCES Site(SiteName),
-  UNIQUE KEY(SiteName,StatusType,DateEnd),
+  TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY(SiteName,StatusType,DateEffective),
   PRIMARY KEY(SiteHistoryID)
 ) Engine = InnoDB;
 
@@ -168,7 +168,6 @@ CREATE TABLE ServiceStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (ServiceName) REFERENCES Service(ServiceName),
   UNIQUE KEY (ServiceName,StatusType),
   PRIMARY KEY (ServiceStatusID)
 ) Engine = InnoDB;
@@ -190,7 +189,6 @@ CREATE TABLE ServiceScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (ServiceName) REFERENCES Service(ServiceName),
   UNIQUE KEY (ServiceName,StatusType),
   PRIMARY KEY (ServiceScheduledStatusID)
 ) Engine = InnoDB;
@@ -208,9 +206,10 @@ CREATE TABLE ServiceHistory(
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
   INDEX (DateEnd),
+  LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
-  FOREIGN KEY (ServiceName) REFERENCES Service(ServiceName),
-  UNIQUE KEY(ServiceName,StatusType,DateEnd),
+  TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY(ServiceName,StatusType,DateEffective),
   PRIMARY KEY(ServiceHistoryID)
 ) Engine=InnoDB;
 
@@ -278,7 +277,6 @@ CREATE TABLE ResourceStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (ResourceName) REFERENCES Resource(ResourceName),
   UNIQUE KEY (ResourceName,StatusType),
   PRIMARY KEY (ResourceStatusID)
 ) Engine = InnoDB;
@@ -300,7 +298,6 @@ CREATE TABLE ResourceScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (ResourceName) REFERENCES Resource(ResourceName),
   UNIQUE KEY (ResourceName,StatusType),
   PRIMARY KEY (ResourceScheduledStatusID)
 ) Engine = InnoDB;
@@ -318,14 +315,15 @@ CREATE TABLE ResourceHistory(
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
   INDEX (DateEnd),
+  LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
-  FOREIGN KEY (ResourceName) REFERENCES Resource(ResourceName),
-  UNIQUE KEY(ResourceName,StatusType,DateEnd),
+  TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY(ResourceName,StatusType,DateEffective),
   PRIMARY KEY (ResourceHistoryID)
 ) Engine=InnoDB;
 
 DROP VIEW IF EXISTS PresentResource;
-CREATE VIEW PresentResources AS SELECT 
+CREATE VIEW PresentResource AS SELECT 
   Resource.ResourceName, 
   Resource.SiteName, 
   Resource.ServiceType,
@@ -387,7 +385,6 @@ CREATE TABLE StorageElementStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (StorageElementName) REFERENCES StorageElement(StorageElementName),
   UNIQUE KEY (StorageElementName,StatusType),
   PRIMARY KEY (StorageElementStatusID)
 ) Engine = InnoDB;
@@ -409,7 +406,6 @@ CREATE TABLE StorageElementScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  FOREIGN KEY (StorageElementName) REFERENCES StorageElement(StorageElementName),
   UNIQUE KEY (StorageElementName,StatusType),
   PRIMARY KEY (StorageElementScheduledStatusID)
 ) Engine = InnoDB;
@@ -427,9 +423,10 @@ CREATE TABLE StorageElementHistory(
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
   INDEX (DateEnd),
+  LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
-  FOREIGN KEY (StorageElementName) REFERENCES StorageElement(StorageElementName),
-  UNIQUE KEY(StorageElementName,StatusType,DateEnd),
+  TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY(StorageElementName,StatusType,DateEffective),
   PRIMARY KEY (StorageElementHistoryID)
 ) Engine=InnoDB;
 
