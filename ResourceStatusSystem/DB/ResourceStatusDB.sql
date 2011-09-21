@@ -25,11 +25,10 @@ USE ResourceStatusDB;
 
 DROP TABLE IF EXISTS GridSite;
 CREATE TABLE GridSite(
-  gsID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   GridSiteName VARCHAR(64) NOT NULL,
   INDEX (GridSiteName),
   GridTier VARCHAR(4) NOT NULL,
-  PRIMARY KEY(gsID)
+  PRIMARY KEY(GridSiteName)
 ) Engine=InnoDB;
 
 --
@@ -103,7 +102,7 @@ CREATE TABLE SiteHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(SiteName,StatusType,DateEffective),
+  UNIQUE KEY(SiteName,StatusType,Reason,DateEffective),
   PRIMARY KEY(SiteHistoryID)
 ) Engine = InnoDB;
 
@@ -209,7 +208,7 @@ CREATE TABLE ServiceHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(ServiceName,StatusType,DateEffective),
+  UNIQUE KEY(ServiceName,StatusType,Reason,DateEffective),
   PRIMARY KEY(ServiceHistoryID)
 ) Engine=InnoDB;
 
@@ -318,7 +317,7 @@ CREATE TABLE ResourceHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(ResourceName,StatusType,DateEffective),
+  UNIQUE KEY(ResourceName,StatusType,Reason,DateEffective),
   PRIMARY KEY (ResourceHistoryID)
 ) Engine=InnoDB;
 
@@ -426,7 +425,7 @@ CREATE TABLE StorageElementHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(StorageElementName,StatusType,DateEffective),
+  UNIQUE KEY(StorageElementName,StatusType,Reason,DateEffective),
   PRIMARY KEY (StorageElementHistoryID)
 ) Engine=InnoDB;
 
