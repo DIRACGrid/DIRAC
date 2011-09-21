@@ -8,15 +8,20 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+
 class ResourceManagementClient:
   
 #############################################################################
 
-  def __init__(self, serviceIn = None, timeout = None):
+  def __init__(self, serviceIn = None ):
     """ Constructor of the ResourceManagementClient class
     """
     if serviceIn == None:
-      self.rsM = RPCClient("ResourceStatus/ResourceManagement", timeout = timeout)
+      try:
+        self.rsM = ResourceManagementDB()
+      except:
+        self.rsM = RPCClient( "ResourceStatus/ResourceManagement" )
     else:
       self.rsM = serviceIn
 
