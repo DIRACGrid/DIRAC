@@ -10,6 +10,8 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes, RSSExce
 from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
 from DIRAC.ResourceStatusSystem                       import ValidRes
 
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB   import ResourceStatusDB 
+
 class ResourceStatusClient:
 
 #############################################################################
@@ -18,7 +20,10 @@ class ResourceStatusClient:
     """ Constructor of the ResourceStatusClient class
     """
     if serviceIn == None:
-      self.rsS = RPCClient( "ResourceStatus/ResourceStatus", timeout = timeout )
+      try:
+        self.rsS = ResourceStatusDB()
+      except:  
+        self.rsS = RPCClient( "ResourceStatus/ResourceStatus", timeout = timeout )
     else:
       self.rsS = serviceIn
 
