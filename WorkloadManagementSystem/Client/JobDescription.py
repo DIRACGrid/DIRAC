@@ -12,7 +12,7 @@ class JobDescription:
     self.__description = CFG()
     self.__dirty = False
 
-  def isDirty(self):
+  def isDirty( self ):
     return self.__dirty
 
   def loadDescription( self, dataString ):
@@ -43,7 +43,7 @@ class JobDescription:
     try:
       self.__description.loadFromBuffer( cfgString )
     except Exception, e:
-      return S_ERROR( "Can't load description from cfg: %s" % str(e) )
+      return S_ERROR( "Can't load description from cfg: %s" % str( e ) )
     return S_OK()
 
   def dumpDescriptionAsCFG( self ):
@@ -182,12 +182,14 @@ class JobDescription:
 
   def getOptionList( self, section = "" ):
     cfg = self.__description.getRecursive( section )
-    if not cfg:
+    if not cfg or 'value' not in cfg:
       return []
+    cfg = cfg[ 'value' ]
     return cfg.listOptions()
 
   def getSectionList( self, section = "" ):
     cfg = self.__description.getRecursive( section )
-    if not cfg:
+    if not cfg or 'value' not in cfg:
       return []
+    cfg = cfg[ 'value' ]
     return cfg.listSections()
