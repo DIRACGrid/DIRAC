@@ -6,7 +6,7 @@ from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 class OptimizationMindHandler( ExecutorMindHandler ):
 
   @classmethod
-  def initialize( self, serviceInfoDict ):
+  def initializeHandler( self, serviceInfoDict ):
     self.executeTask( 1, { 'path' : [], 'data' : "" } )
     return S_OK()
 

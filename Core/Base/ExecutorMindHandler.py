@@ -43,7 +43,7 @@ class ExecutorMindHandler( RequestHandler ):
   ###
 
   @classmethod
-  def initialize( cls, serviceInfoDict ):
+  def initializeHandler( cls, serviceInfoDict ):
     gLogger.notice( "Initializing Executor dispatcher" )
     cls.__eDispatch = ExecutorDispatcher()
     cls.__callbacks = ExecutorMindHandler.MindCallbacks( cls.__sendTask,

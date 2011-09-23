@@ -135,12 +135,12 @@ class Service:
     ancestorHasInit = False
     for ancestor in currentClass.__bases__:
       initFuncs += self.__searchInitFunctions( handlerClass, ancestor )
-      if 'initialize' in dir( ancestor ):
+      if 'initializeHandler' in dir( ancestor ):
         ancestorHasInit = True
     if ancestorHasInit:
-      initFuncs.append( super( currentClass, handlerClass ).initialize )
-    if currentClass == handlerClass and 'initialize' in dir( handlerClass ):
-      initFuncs.append( handlerClass.initialize )
+      initFuncs.append( super( currentClass, handlerClass ).initializeHandler )
+    if currentClass == handlerClass and 'initializeHandler' in dir( handlerClass ):
+      initFuncs.append( handlerClass.initializeHandler )
     return initFuncs
 
   def _loadHandler( self ):
@@ -436,6 +436,7 @@ class Service:
     #Instantiate and initialize
     try:
       handlerInstance = self._handler[ 'class' ]( handlerInitDict, trid )
+      handlerInstance.intialize()
     except Exception, e:
       gLogger.exception( "Server error while loading handler: %s" % str( e ) )
       return S_ERROR( "Server error while loading handler" )
