@@ -436,7 +436,7 @@ class Service:
     #Instantiate and initialize
     try:
       handlerInstance = self._handler[ 'class' ]( handlerInitDict, trid )
-      handlerInstance.intialize()
+      handlerInstance.initialize()
     except Exception, e:
       gLogger.exception( "Server error while loading handler: %s" % str( e ) )
       return S_ERROR( "Server error while loading handler" )
