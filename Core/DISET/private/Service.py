@@ -159,7 +159,7 @@ class Service:
       return S_ERROR( "Handler class is not a request handler" )
     handlerInitMethods = self.__searchInitFunctions( handlerClass )
     try:
-      handlerInitMethods += getattr( handlerModule, "initialize%s" % handlerName )
+      handlerInitMethods.append( getattr( handlerModule, "initialize%s" % handlerName ) )
     except:
       gLogger.debug( "Not found global initialization function for service" )
 
