@@ -120,31 +120,6 @@ class ResourceStatusHandler( RequestHandler ):
 
 #############################################################################
 
-  types_getGridSitesList = []
-  def export_getGridSitesList( self ):
-    """
-    Get sites list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getGridSitesList`
-    """
-
-    gLogger.info( "ResourceStatusHandler.getGridSitesList: Attempting to get sites list" )
-
-    try:
-      resQuery = rsDB.getGridSitesList()
-      gLogger.info( "ResourceStatusHandler.getGridSitesList: got sites list" )
-      return resQuery
-    except RSSDBException, x:
-      errorStr = whoRaised( x )
-    except RSSException, x:
-      errorStr = whoRaised( x )
-    except Exception, x:
-      errorStr = whoRaised( x )
-
-    errorStr += '\n ' + where( self, self.export_getGridSitesList )
-    return S_ERROR( errorStr )
-
-#############################################################################
-
   types_getSitesStatusWeb = [ dict, int, int ]
   def export_getSitesStatusWeb( self, selectDict, startItem, maxItems ):
     """ get present sites status list, for the web
@@ -350,6 +325,33 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( "ResourceStatusHandler.getSiteTypeList: got SiteType list" )
     return S_OK( ValidSiteType )
+
+#############################################################################
+
+  types_getSitesStatusList = []
+  def export_getSitesStatusList( self ):
+    """
+    Get sites list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    """
+
+    gLogger.info( "ResourceStatusHandler.getSitesList: Attempting to get sites list" )
+
+    try:
+      r = rsDB.getMonitoredsList( 'Site', paramsList = [ 'SiteName', 'Status' ] )
+      for x in r:
+        res.append( x )
+      gLogger.info( "ResourceStatusHandler.getSitesList: got sites and status list" )
+      return S_OK( res )
+    except RSSDBException, x:
+      errorStr = whoRaised( x )
+    except RSSException, x:
+      errorStr = whoRaised( x )
+    except Exception, x:
+      errorStr = whoRaised( x )
+              
+    errorStr += '\n ' + where( self, self.export_getSitesStatusList )
+    return S_ERROR( errorStr )
 
 #############################################################################
 
@@ -862,43 +864,6 @@ class ResourceStatusHandler( RequestHandler ):
 
 #############################################################################
 
-  types_getResourceTypeList = []
-  def export_getResourceTypeList( self ):
-    """
-    Get resource type list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getResourceTypeList`
-    """
-
-    gLogger.info( "ResourceStatusHandler.getResourceTypeList: got ResourceType list" )
-    return S_OK( ValidResourceType )
-
-#############################################################################
-
-  types_getCEsList = []
-  def export_getCEsList( self ):
-    """
-    Get CEs list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-    """
-
-    gLogger.info( "ResourceStatusHandler.getCEsList: Attempting to get CEs list" )
-
-    try:
-      resQuery = rsDB.getResources( resourceType = [ 'CE', 'CREAMCE' ] )
-      gLogger.info( "ResourceStatusHandler.getCEsList: got CEs list" )
-      return resQuery
-    except RSSDBException, x:
-      errorStr = whoRaised( x )
-    except RSSException, x:
-      errorStr = whoRaised( x )
-    except Exception, x:
-      errorStr = whoRaised( x )  
-        
-    errorStr += '\n ' + where( self, self.export_getCEsList )
-    return S_ERROR( errorStr )
-
-#############################################################################
-
   types_getResourcesHistory = [ str ]
   def export_getResourcesHistory( self, resourceName ):
     """ get resources history
@@ -919,6 +884,18 @@ class ResourceStatusHandler( RequestHandler ):
 
     errorStr += '\n ' + where( self, self.export_getResourcesHistory )
     return S_ERROR( errorStr )
+
+#############################################################################
+
+  types_getResourceTypeList = []
+  def export_getResourceTypeList( self ):
+    """
+    Get resource type list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getResourceTypeList`
+    """
+
+    gLogger.info( "ResourceStatusHandler.getResourceTypeList: got ResourceType list" )
+    return S_OK( ValidResourceType )
 
 #############################################################################
 
@@ -953,6 +930,31 @@ class ResourceStatusHandler( RequestHandler ):
       errorStr = whoRaised( x )
 
     errorStr += '\n ' + where( self, self.export_getResourceStats )
+    return S_ERROR( errorStr )
+
+#############################################################################
+
+  types_getCEsList = []
+  def export_getCEsList( self ):
+    """
+    Get CEs list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    """
+
+    gLogger.info( "ResourceStatusHandler.getCEsList: Attempting to get CEs list" )
+
+    try:
+      resQuery = rsDB.getResources( resourceType = [ 'CE', 'CREAMCE' ] )
+      gLogger.info( "ResourceStatusHandler.getCEsList: got CEs list" )
+      return resQuery
+    except RSSDBException, x:
+      errorStr = whoRaised( x )
+    except RSSException, x:
+      errorStr = whoRaised( x )
+    except Exception, x:
+      errorStr = whoRaised( x )  
+        
+    errorStr += '\n ' + where( self, self.export_getCEsList )
     return S_ERROR( errorStr )
 
 #############################################################################
@@ -1011,53 +1013,6 @@ class ResourceStatusHandler( RequestHandler ):
       
     errorStr += '\n ' + where( self, self.export_getStorageElementsList )
     return S_ERROR( errorStr )
-
-#############################################################################
-
-  types_getSESitesList = [ ]
-  def export_getSESitesList( self ):
-    """
-    Get sites list of the storage elements from the ResourceStatusDB.
-
-        :Parameters:
-
-          `access` : string - Read or Write
-
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-    """
-
-    gLogger.info( "ResourceStatusHandler.getSESitesList: Attempting to get SE sites list" )
-
-    try:
-
-      res = []
-
-      try:
-        resQuery = rsDB.getStorageElements()
-        for se in resQuery[ 'Value' ]:
-          gridSite = se[ 4 ]  
-          
-          DIRACsites = getDIRACSiteName( gridSite[ 0 ] )
-          if not DIRACsites[ 'OK' ]:
-            raise RSSException, "No DIRAC site name" + where( self, self.export_getSESitesList )
-          DIRACsites = DIRACsites[ 'Value' ]
-          for DIRACsite in DIRACsites:
-            if DIRACsite not in res:
-              res.append( DIRACsite )
-          
-
-      except RSSDBException, x:
-        gLogger.error( whoRaised( x ) )
-      except RSSException, x:
-        gLogger.error( whoRaised( x ) )
-
-      gLogger.info( "ResourceStatusHandler.getSESitesList: got SE sites list" )
-      return S_OK( res )
-
-    except Exception:
-      errorStr = where( self, self.export_getSitesList )
-      gLogger.exception( errorStr )
-      return S_ERROR( errorStr )
 
 #############################################################################
 
@@ -1162,7 +1117,7 @@ class ResourceStatusHandler( RequestHandler ):
 
     errorStr += '\n ' + where( self, self.export_setStorageElementStatus )
     return S_ERROR( errorStr )
-        
+      
 #############################################################################
 
   types_addOrModifyStorageElement = [ str, str, str ]
@@ -1302,7 +1257,110 @@ class ResourceStatusHandler( RequestHandler ):
 
     errorStr += '\n ' + where( self, self.export_getStorageElementStats )
     return S_ERROR( errorStr )
+
+#############################################################################
+
+  types_getSESitesList = [ ]
+  def export_getSESitesList( self ):
+    """
+    Get sites list of the storage elements from the ResourceStatusDB.
+
+        :Parameters:
+
+          `access` : string - Read or Write
+
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    """
+
+    gLogger.info( "ResourceStatusHandler.getSESitesList: Attempting to get SE sites list" )
+
+    try:
+
+      res = []
+
+      try:
+        resQuery = rsDB.getStorageElements()
+        for se in resQuery[ 'Value' ]:
+          gridSite = se[ 4 ]  
+          
+          DIRACsites = getDIRACSiteName( gridSite[ 0 ] )
+          if not DIRACsites[ 'OK' ]:
+            raise RSSException, "No DIRAC site name" + where( self, self.export_getSESitesList )
+          DIRACsites = DIRACsites[ 'Value' ]
+          for DIRACsite in DIRACsites:
+            if DIRACsite not in res:
+              res.append( DIRACsite )
+          
+
+      except RSSDBException, x:
+        gLogger.error( whoRaised( x ) )
+      except RSSException, x:
+        gLogger.error( whoRaised( x ) )
+
+      gLogger.info( "ResourceStatusHandler.getSESitesList: got SE sites list" )
+      return S_OK( res )
+
+    except Exception:
+      errorStr = where( self, self.export_getSitesList )
+      gLogger.exception( errorStr )
+      return S_ERROR( errorStr )
+  
+#############################################################################
+
+#############################################################################
+# GridSites functions
+#############################################################################
+
+#############################################################################  
       
+  types_getGridSitesList = []
+  def export_getGridSitesList( self ):
+    """
+    Get sites list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getGridSitesList`
+    """
+
+    gLogger.info( "ResourceStatusHandler.getGridSitesList: Attempting to get sites list" )
+
+    try:
+      resQuery = rsDB.getGridSitesList()
+      gLogger.info( "ResourceStatusHandler.getGridSitesList: got sites list" )
+      return resQuery
+    except RSSDBException, x:
+      errorStr = whoRaised( x )
+    except RSSException, x:
+      errorStr = whoRaised( x )
+    except Exception, x:
+      errorStr = whoRaised( x )
+
+    errorStr += '\n ' + where( self, self.export_getGridSitesList )
+    return S_ERROR( errorStr )      
+      
+#############################################################################
+
+  types_getGridSiteName = [ str, str ]
+  def export_getGridSiteName( self, granularity, name ):
+    """
+    Get Grid Site Name, given granularity and a name.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getGridSiteName`
+    """
+
+    gLogger.info( "ResourceStatusHandler.getGridSiteName: Attempting to get the Grid Site Name" )
+
+    try:
+      resQuery = rsDB.getGridSiteName( granularity, name )
+      gLogger.info( "ResourceStatusHandler.getGridSiteName: got GridSiteName list" )
+      return resQuery
+    except RSSDBException, x:
+      errorStr = whoRaised( x )
+    except RSSException, x:
+      errorStr = whoRaised( x )
+    except Exception, x:
+      errorStr = whoRaised( x )
+
+    errorStr += '\n ' + where( self, self.export_getGridSiteName )
+    return S_ERROR( errorStr )
+           
 #############################################################################
 
 #############################################################################
@@ -1750,58 +1808,6 @@ class ResourceStatusHandler( RequestHandler ):
       errorStr = whoRaised( x )
         
     errorStr += '\n ' + where( self, self.export_whatIs )
-    return S_ERROR( errorStr )
-
-#############################################################################
-
-  types_getGridSiteName = [ str, str ]
-  def export_getGridSiteName( self, granularity, name ):
-    """
-    Get Grid Site Name, given granularity and a name.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getGridSiteName`
-    """
-
-    gLogger.info( "ResourceStatusHandler.getGridSiteName: Attempting to get the Grid Site Name" )
-
-    try:
-      resQuery = rsDB.getGridSiteName( granularity, name )
-      gLogger.info( "ResourceStatusHandler.getGridSiteName: got GridSiteName list" )
-      return resQuery
-    except RSSDBException, x:
-      errorStr = whoRaised( x )
-    except RSSException, x:
-      errorStr = whoRaised( x )
-    except Exception, x:
-      errorStr = whoRaised( x )
-
-    errorStr += '\n ' + where( self, self.export_getGridSiteName )
-    return S_ERROR( errorStr )
-
-#############################################################################
-
-  types_getSitesStatusList = []
-  def export_getSitesStatusList( self ):
-    """
-    Get sites list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-    """
-
-    gLogger.info( "ResourceStatusHandler.getSitesList: Attempting to get sites list" )
-
-    try:
-      r = rsDB.getMonitoredsList( 'Site', paramsList = [ 'SiteName', 'Status' ] )
-      for x in r:
-        res.append( x )
-      gLogger.info( "ResourceStatusHandler.getSitesList: got sites and status list" )
-      return S_OK( res )
-    except RSSDBException, x:
-      errorStr = whoRaised( x )
-    except RSSException, x:
-      errorStr = whoRaised( x )
-    except Exception, x:
-      errorStr = whoRaised( x )
-              
-    errorStr += '\n ' + where( self, self.export_getSitesStatusList )
     return S_ERROR( errorStr )
 
 #############################################################################
