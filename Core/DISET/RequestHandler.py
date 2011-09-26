@@ -32,6 +32,11 @@ class RequestHandler( object ):
     self.serviceInfoDict = handlerInitDict
     self.__trid = trid
 
+  def initialize( self ):
+    """Initialize this instance of the handler (to be overwritten)
+    """
+    pass
+
   @classmethod
   def _rh__initializeClass( cls, serviceInfoDict, lockManager, msgBroker ):
     """
