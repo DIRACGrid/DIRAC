@@ -885,6 +885,19 @@ class CFG:
           currentlyParsedString += line[ index ]
     return self
 
+  @gCFGSynchro
+  def loadFromDict( self, data ):
+    for k in data:
+      value = data[ k ]
+      vType = type( value )
+      if type( value ) == types.DictType:
+        self.createNewSection( k , "", CFG().loadFromDict( value ) )
+      elif vType in ( types.ListType, types.TupleType ):
+        self.setOption( k , ", ".join( value ), "" )
+      else:
+        self.setOption( k , str( value ), "" )
+    return self
+
   def writeToFile( self, fileName ):
     """
     Write the contents of the cfg to file
