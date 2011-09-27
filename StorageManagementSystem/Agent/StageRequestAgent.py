@@ -86,7 +86,7 @@ class StageRequestAgent( AgentModule ):
       gLogger.info( "StageRequest.__issuePrestageRequests: %.2f GB available at %s" % ( totalSpace - usedSpace , storageElement ) )
       selectedReplicaIDs = []
       #logic was bad here, before the first comparison test, the single selected file for staging could be larger than the available space
-      for replicaID in seReplicaIDs:
+      for replicaID in sorted( seReplicaIDs ):
         if ( totalSpace - usedSpace ) > allReplicaInfo[replicaID]['Size']:
           usedSpace += allReplicaInfo[replicaID]['Size'] / ( 1000 * 1000 * 1000.0 )
           selectedReplicaIDs.append( replicaID )
