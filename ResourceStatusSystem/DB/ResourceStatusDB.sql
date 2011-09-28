@@ -82,7 +82,6 @@ CREATE TABLE SiteScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(SiteName,StatusType),
   PRIMARY KEY (SiteScheduledStatusID)
 ) Engine = InnoDB;
 
@@ -102,12 +101,12 @@ CREATE TABLE SiteHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(SiteName,StatusType,Reason,DateEffective),
+  UNIQUE KEY(SiteName,StatusType,DateEnd),
   PRIMARY KEY(SiteHistoryID)
 ) Engine = InnoDB;
 
-DROP VIEW IF EXISTS PresentSite;
-CREATE VIEW PresentSite AS SELECT 
+DROP VIEW IF EXISTS SitePresent;
+CREATE VIEW SitePresent AS SELECT 
   Site.SiteName, 
   Site.SiteType,
   Site.GridSiteName,
@@ -188,7 +187,6 @@ CREATE TABLE ServiceScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY (ServiceName,StatusType),
   PRIMARY KEY (ServiceScheduledStatusID)
 ) Engine = InnoDB;
 
@@ -208,12 +206,12 @@ CREATE TABLE ServiceHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(ServiceName,StatusType,Reason,DateEffective),
+  UNIQUE KEY(ServiceName,StatusType,DateEnd),
   PRIMARY KEY(ServiceHistoryID)
 ) Engine=InnoDB;
 
-DROP VIEW IF EXISTS PresentService;
-CREATE VIEW PresentService AS SELECT 
+DROP VIEW IF EXISTS ServicePresent;
+CREATE VIEW ServicePresent AS SELECT 
   Service.ServiceName,
   Service.SiteName, 
   Site.SiteType,
@@ -297,7 +295,6 @@ CREATE TABLE ResourceScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY (ResourceName,StatusType),
   PRIMARY KEY (ResourceScheduledStatusID)
 ) Engine = InnoDB;
 
@@ -317,12 +314,12 @@ CREATE TABLE ResourceHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(ResourceName,StatusType,Reason,DateEffective),
+  UNIQUE KEY(ResourceName,StatusType,DateEnd),
   PRIMARY KEY (ResourceHistoryID)
 ) Engine=InnoDB;
 
-DROP VIEW IF EXISTS PresentResource;
-CREATE VIEW PresentResource AS SELECT 
+DROP VIEW IF EXISTS ResourcePresent;
+CREATE VIEW ResourcePresent AS SELECT 
   Resource.ResourceName, 
   Resource.SiteName, 
   Resource.ServiceType,
@@ -384,7 +381,6 @@ CREATE TABLE StorageElementStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY (StorageElementName,StatusType),
   PRIMARY KEY (StorageElementStatusID)
 ) Engine = InnoDB;
 
@@ -425,12 +421,12 @@ CREATE TABLE StorageElementHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(StorageElementName,StatusType,Reason,DateEffective),
+  UNIQUE KEY(StorageElementName,StatusType,DateEnd),
   PRIMARY KEY (StorageElementHistoryID)
 ) Engine=InnoDB;
 
-DROP VIEW IF EXISTS PresentStorageElement;
-CREATE VIEW PresentStorageElement AS SELECT 
+DROP VIEW IF EXISTS StorageElementPresent;
+CREATE VIEW StorageElementPresent AS SELECT 
   StorageElement.StorageElementName, 
   StorageElement.ResourceName,
   StorageElement.GridSiteName, 
