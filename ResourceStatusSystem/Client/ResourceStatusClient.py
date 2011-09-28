@@ -209,6 +209,87 @@ class ResourceStatusClient:
     pass
 
 ################################################################################
+# Resources
+################################################################################
+
+  @LazyExecutor  
+  def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName,
+                           gridSiteName ):
+    pass
+  
+  @LazyExecutor      
+  def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
+                         tokenExpiration = None, dateCreated = None, 
+                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
+    pass
+  
+  @LazyExecutor      
+  def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
+                                  tokenOwner, tokenExpiration = None, dateCreated = None, 
+                                  dateEffective = None, dateEnd = None, lastCheckTime = None ):
+    pass
+  
+  @LazyExecutor          
+  def updateResourceStatus( self, resourceName, statusType = None, status = None, reason = None, 
+                         tokenOwner = None, tokenExpiration = None, dateCreated = None, 
+                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
+    pass
+  
+  @LazyExecutor      
+  def getResources( self, resourceName = None, resourceType = None, 
+                    serviceType = None, siteName = None, gridSiteName = None, 
+                    **kwargs ):
+    pass
+  
+  @LazyExecutor      
+  def getResourcesStatus( self, resourceName = None, statusType = None, status = None,
+                          reason = None, tokenOwner = None, tokenExpiration = None, 
+                          dateCreated = None, dateEffective = None, dateEnd = None, 
+                          lastCheckTime = None, **kwargs ):
+    pass
+  
+  @LazyExecutor      
+  def getResourcesHistory( self, resourceName = None, statusType = None, status = None,
+                           reason = None, tokenOwner = None, tokenExpiration = None, 
+                           dateCreated = None, dateEffective = None, dateEnd = None, 
+                           lastCheckTime = None, **kwargs ):
+    pass
+  
+  @LazyExecutor        
+  def getResourcesScheduledStatus( self, resourceName = None, statusType = None, status = None,
+                                  reason = None, tokenOwner = None, tokenExpiration = None, 
+                                  dateCreated = None, dateEffective = None, dateEnd = None, 
+                                  lastCheckTime = None, **kwargs):
+    pass
+  
+  @LazyExecutor      
+  def getResourcesPresent( self, resourceName = None, siteName = None, serviceType = None,
+                           gridSiteName = None, siteType = None, resourceType = None,
+                           statusType = None, status = None, dateEffective = None, 
+                           reason = None, lastCheckTime = None, tokenOwner = None, 
+                           tokenExpiration = None, formerStatus = None, **kwargs ):
+    pass
+  
+  @LazyExecutor     
+  def deleteResources( self, resourceName ):
+    pass
+  
+  @LazyExecutor      
+  def deleteResourcesScheduledStatus( self, resourceName = None, statusType = None, 
+                                      status = None, reason = None, tokenOwner = None, 
+                                      tokenExpiration = None, dateCreated = None, 
+                                      dateEffective = None, dateEnd = None, 
+                                      lastCheckTime = None):
+    pass
+  
+  @LazyExecutor      
+  def deleteResourcesHistory( self, resourceName = None, statusType = None, status = None, 
+                              reason = None, tokenOwner = None, tokenExpiration = None, 
+                              dateCreated = None, dateEffective = None, dateEnd = None, 
+                              lastCheckTime = None, **kwargs ):
+    pass
+          
+################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
 
 ##############################################################################
