@@ -126,7 +126,7 @@ class SandboxStoreClient:
   ##############
   # Download sandbox
 
-  def downloadSandbox( self, sbLocation, destinationDir = "", inMemory = False ):
+  def downloadSandbox( self, sbLocation, destinationDir = "", inMemory = False, unpack = True ):
     """
     Download a sandbox file and keep it in bundled form
     """
@@ -174,6 +174,10 @@ class SandboxStoreClient:
         os.rmdir( tmpSBDir )
         return S_ERROR( 'Failed to read the sandbox archive: %s' % str( e ) )
       return S_OK( data )
+
+    if not unpack:
+      result[ 'Value' ] = tarFileName
+      return result
 
     try:
       sandboxSize = 0
