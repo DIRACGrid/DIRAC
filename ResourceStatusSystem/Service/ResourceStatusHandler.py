@@ -10,15 +10,13 @@
 
 __RCSID__ = "$Id:  $"
 
-import datetime
-
+from datetime import datetime, timedelta
 from types import NoneType
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 from DIRAC.Core.DISET.RequestHandler             import RequestHandler
-#from DIRAC.Core.Utilities                        import Time
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import RSSDBException, ResourceStatusDB
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
@@ -66,11 +64,255 @@ class ResourceStatusHandler( RequestHandler ):
   def initialize( self ):
     pass
 
-#############################################################################
+################################################################################
 
-#############################################################################
+################################################################################
 # Sites functions
-#############################################################################
+################################################################################
+
+################################################################################
+
+  types_addOrModifySite = [ str, str, str ]
+
+  def export_addOrModifySite( self, siteName, siteType, gridSiteName ):
+    """
+    Add or modify a site to the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
+
+    :Parameters
+      `siteName`
+        string - name of the site (DIRAC name)
+
+      `siteType`
+        string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+
+      `gridSiteName`
+        string - name of the site in the GOC DB
+    """
+
+    gLogger.info( "addOrModifySite: Attempting to add or modify site %s" % siteName )
+    resQuery = rsDB.addOrModifySite( siteName, siteType, gridSiteName )
+    gLogger.info( "addOrModifySite: Added (or modified) site %s." % siteName )
+    return resQuery
+
+################################################################################
+
+  types_setSiteStatus = [ str, str, str, str, str, ( datetime, NoneType ),
+                          ( datetime, NoneType ),( datetime, NoneType ),
+                          ( datetime, NoneType ),( datetime, NoneType ) ]    
+
+  def export_setSiteStatus( self, siteName, statusType, status, reason, tokenOwner,
+                            tokenExpiration, dateCreated, dateEffective, dateEnd,
+                            lastCheckTime ):
+    """
+    Set Site status to the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setSiteStatus`
+
+    :Parameters
+      `siteName`
+        a string representing the site name
+
+      `status`
+        a string representing the status
+
+      `reason`
+        a string representing the reason
+
+      `tokenOwner`
+        a string representing the operator Code
+        (can be a user name, or ``RS_SVC`` for the service itself)
+    """
+
+    gLogger.info( "setSiteStatus: Attempting to set site %s status" % siteName )
+    resQuery = rsDB.setSiteStatus( siteName, statusType, status, reason, tokenOwner, 
+                        tokenExpiration, dateCreated, dateEffective, dateEnd,
+                        lastCheckTime )
+    gLogger.info( "setSiteStatus: Set site %s status." % siteName )
+    return resQuery
+
+################################################################################
+    
+  types_setSiteScheduledStatus = [ str, str, str, str, str, ( datetime, NoneType ),
+                                  ( datetime, NoneType ), ( datetime, NoneType ),
+                                  ( datetime, NoneType ), ( datetime, NoneType ) ]
+    
+  def export_setSiteScheduledStatus( self, siteName, statusType, status, reason, 
+                                     tokenOwner, tokenExpiration, dateCreated, 
+                                     dateEffective, dateEnd, lastCheckTime ):
+
+    gLogger.info( "setSiteScheduledStatus: Attempting to set site %s scheduledStatus" % siteName )
+    resQuery = rsDB.setSiteStatus( siteName, statusType, status, reason, tokenOwner, 
+                        tokenExpiration, dateCreated, dateEffective, dateEnd,
+                        lastCheckTime )
+    gLogger.info( "setSiteScheduledStatus: Set site %s scheduledStatus." % siteName )
+    return resQuery
+
+################################################################################
+      
+  types_updateSiteStatus = [ str, ( str, NoneType),( str, NoneType), ( str, NoneType),
+                            ( str, NoneType),( datetime, NoneType),( datetime, NoneType),
+                            ( datetime, NoneType),( datetime, NoneType),
+                            ( datetime, NoneType) ]  
+    
+  def export_updateSiteStatus( self, siteName, statusType, status, reason, 
+                               tokenOwner, tokenExpiration, dateCreated, 
+                               dateEffective, dateEnd, lastCheckTime):
+
+    gLogger.info( "updateSiteStatus_1" )
+    resQuery = rsDB.updateSiteStatus( siteName, statusType, status, reason, 
+                                      tokenOwner, tokenExpiration, dateCreated, 
+                                      dateEffective, dateEnd, lastCheckTime )
+    gLogger.info( "updateSiteStatus_2" )
+    return resQuery
+      
+################################################################################
+
+  types_getSites = [ ( str, NoneType ), ( str, NoneType ), ( str, NoneType ), dict ]
+  
+  def export_getSites( self, siteName, siteType, gridSiteName, kwargs ):
+    
+    gLogger.info( "getSites_1" )
+    resQuery = rsDB.getSites( siteName, siteType, gridSiteName, **kwargs )
+    gLogger.info( "getSites_2" )
+    return resQuery
+
+################################################################################
+
+  types_getSitesStatus = [ str, str, str, str, str, ( datetime, NoneType ),
+                          ( datetime, NoneType ), ( datetime, NoneType ),
+                          ( datetime, NoneType ), ( datetime, NoneType ), dict ]
+
+  def export_getSitesStatus( self, siteName, statusType, status, reason, 
+                             tokenOwner, tokenExpiration, dateCreated, 
+                             dateEffective, dateEnd, lastCheckTime, kwargs ):
+
+    gLogger.info( "getSitesStatus_1" )
+    resQuery = rsDB.getSitesStatus( siteName, statusType, status, reason, tokenOwner, 
+                                    tokenExpiration, dateCreated, dateEffective, 
+                                    dateEnd, lastCheckTime, **kwargs )
+    gLogger.info( "getSitesStatus_2" )
+    return resQuery
+  
+################################################################################  
+  
+  types_getSitesHistory = [ str, str, str, str, str,( datetime, NoneType ),
+                          ( datetime, NoneType ), ( datetime, NoneType ),
+                          ( datetime, NoneType ), ( datetime, NoneType ), dict ]
+
+  def export_getSitesHistory( self, siteName, statusType, status, reason, 
+                              tokenOwner, tokenExpiration, dateCreated, 
+                              dateEffective, dateEnd, lastCheckTime, kwargs ):
+
+    gLogger.info( "getSitesHistory_1" )
+    resQuery = rsDB.getSitesHistory( siteName, statusType, status, reason, tokenOwner, 
+                                     tokenExpiration, dateCreated, dateEffective, 
+                                     dateEnd, lastCheckTime, **kwargs )
+    gLogger.info( "getSitesHistory_2" )
+    return resQuery
+
+################################################################################
+
+  types_getSitesScheduledStatus = [ str, str, str, str, str,( datetime, NoneType ),
+                                    ( datetime, NoneType ), ( datetime, NoneType ),
+                                    ( datetime, NoneType ), ( datetime, NoneType ), 
+                                    dict ]
+
+  def export_getSitesScheduledStatus( self, siteName, statusType, status, reason, 
+                                      tokenOwner, tokenExpiration, dateCreated, 
+                                      dateEffective, dateEnd, lastCheckTime, 
+                                      kwargs ):
+
+    gLogger.info( "getSitesScheduledStatus_1" )
+    resQuery = rsDB.getSitesScheduledStatus( siteName, statusType, status, reason, 
+                                             tokenOwner, tokenExpiration, dateCreated, 
+                                             dateEffective, dateEnd, lastCheckTime, 
+                                             **kwargs )
+    gLogger.info( "getSitesScheduledStatus_2" )
+    return resQuery
+
+################################################################################
+
+  types_getSitesPresent = [ str, str, str, str, str, str, ( datetime, NoneType),
+                            str, ( datetime, NoneType), str, ( datetime, NoneType),
+                            str, dict ]
+
+  def export_getSitesPresent( self, siteName, siteType, gridSiteName, gridTier, 
+                              statusType, status, dateEffective, reason, 
+                              lastCheckTime, tokenOwner, tokenExpiration, 
+                              formerStatus, kwargs ):
+
+    gLogger.info( "getSitesPresent_1" )
+    resQuery = rsDB.getSitesPresent( siteName, siteType, gridSiteName, gridTier, 
+                                     statusType, status, dateEffective, reason, 
+                                     lastCheckTime, tokenOwner, tokenExpiration, 
+                                     formerStatus, **kwargs )
+    gLogger.info( "getSitesPresent_2" )
+    return resQuery
+
+################################################################################    
+
+  types_deleteSites = [ str ]
+
+  def export_deleteSites( self, siteName ):
+    
+    gLogger.info( "deleteSites_1" )
+    resQuery = rsDB.deleteSites( siteName )
+    gLogger.info( "deleteSites_2" )
+    return resQuery
+
+################################################################################
+
+  types_deleteSitesScheduledStatus = [ str, str, str, str, str, ( datetime, NoneType),
+                                      ( datetime, NoneType),( datetime, NoneType),
+                                      ( datetime, NoneType),( datetime, NoneType)]
+
+  def export_deleteSitesScheduledStatus( self, siteName, statusType, status, 
+                                         reason, tokenOwner, tokenExpiration, 
+                                         dateCreated, dateEffective, dateEnd, 
+                                         lastCheckTime ):
+
+    gLogger.info( "deleteSitesScheduledStatus_1" )
+    resQuery = rsDB.deleteSitesScheduledStatus( siteName, statusType, status, 
+                                                reason, tokenOwner, tokenExpiration, 
+                                                dateCreated, dateEffective, dateEnd, 
+                                                lastCheckTime )
+    gLogger.info( "deleteSitesScheduledStatus_2" )
+    return resQuery
+
+################################################################################
+
+  types_deleteSitesHistory = [ str, str, str, str, str, ( datetime, NoneType),
+                              ( datetime, NoneType),( datetime, NoneType),
+                              ( datetime, NoneType),( datetime, NoneType), dict ]
+
+  def export_deleteSitesHistory( self, siteName, statusType, status, reason, 
+                                 tokenOwner, tokenExpiration, dateCreated, 
+                                 dateEffective, dateEnd, lastCheckTime, kwargs ):
+
+    gLogger.info( "deleteSitesHistory_1" )
+    resQuery = rsDB.deleteSitesHistory( siteName, statusType, status, reason, 
+                                        tokenOwner, tokenExpiration, dateCreated, 
+                                        dateEffective, dateEnd, lastCheckTime, 
+                                        **kwargs )
+    gLogger.info( "deleteSitesHistory_2" )
+    return resQuery
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+
 
 #############################################################################
 
@@ -178,92 +420,10 @@ class ResourceStatusHandler( RequestHandler ):
 
 #############################################################################
 
-  types_setSiteStatus = [ str, str, str, str, str ]
-  def export_setSiteStatus( self, siteName, statusType, status, reason, tokenOwner ):
-    """
-    Set Site status to the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setSiteStatus`
-
-    :Parameters
-      `siteName`
-        a string representing the site name
-
-      `status`
-        a string representing the status
-
-      `reason`
-        a string representing the reason
-
-      `tokenOwner`
-        a string representing the operator Code
-        (can be a user name, or ``RS_SVC`` for the service itself)
-    """
-
-    gLogger.info( "ResourceStatusHandler.setSiteStatus: Attempting to modify site %s status" % siteName )
-
-    try:
-      rsDB.setSiteStatus( siteName, statusType, status, reason, tokenOwner )
-      gLogger.info( "ResourceStatusHandler.setSiteStatus: Set site %s status." % siteName )
-      return S_OK()
-    except RSSDBException, x:
-      errorStr = whoRaised( x )
-    except RSSException, x:
-      errorStr = whoRaised( x )
-    except Exception, x:
-      errorStr = whoRaised( x )
-              
-    errorStr += '\n ' + where( self, self.export_setSiteStatus )
-    return S_ERROR( errorStr )
 
 #############################################################################
 
-  types_addOrModifySite = [ str, str, str ]
-  def export_addOrModifySite( self, siteName, siteType, gridSiteName ):
-    """
-    Add or modify a site to the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
 
-    :Parameters
-      `siteName`
-        string - name of the site (DIRAC name)
-
-      `siteType`
-        string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-
-      `gridSiteName`
-        string - name of the site in the GOC DB
-
-      `status`
-        string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-
-      `reason`
-        string - free
-
-      `dateEffective`
-        datetime.datetime - date from which the site status is effective
-
-      `tokenOwner`
-        string - free
-
-      `dateEnd`
-        datetime.datetime - date from which the site status ends to be effective
-    """
-
-    gLogger.info( "ResourceStatusHandler.addOrModifySite: Attempting to add or modify site %s" % siteName )
-
-    try:
-      rsDB.addOrModifySite( siteName, siteType, gridSiteName )
-      gLogger.info( "ResourceStatusHandler.addOrModifySite: Added (or modified) site %s." % siteName )
-      return S_OK()
-    except RSSDBException, x:
-      errorStr = whoRaised( x )
-    except RSSException, x:
-      errorStr = whoRaised( x )
-    except Exception, x:
-      errorStr = whoRaised( x )
-              
-    errorStr += '\n ' + where( self, self.export_addOrModifySite )
-    return S_ERROR( errorStr )
 
 #############################################################################
 
@@ -293,16 +453,16 @@ class ResourceStatusHandler( RequestHandler ):
 #############################################################################
 
   types_getSitesHistory = [ str ]
-  def export_getSitesHistory( self, site ):
+  def export_getSitesHistory( self, siteName ):
     """
     Get sites history
     """
 
-    gLogger.info( "ResourceStatusHandler.getSitesHistory: Attempting to get site %s history" % site )
+    gLogger.info( "ResourceStatusHandler.getSitesHistory: Attempting to get site %s history" % siteName )
 
     try:
-      resQuery = rsDB.getMonitoredsHistory( 'Site', name = site )
-      gLogger.info( "ResourceStatusHandler.getSitesHistory: got site %s history" % site )
+      resQuery = rsDB.getSitesHistory( siteName = siteName )  
+      gLogger.info( "ResourceStatusHandler.getSitesHistory: got site %s history" % siteName )
       return resQuery
     except RSSDBException, x:
       errorStr = whoRaised( x )
@@ -337,8 +497,12 @@ class ResourceStatusHandler( RequestHandler ):
 
     gLogger.info( "ResourceStatusHandler.getSitesList: Attempting to get sites list" )
 
+    res = []
+
     try:
-      r = rsDB.getMonitoredsList( 'Site', paramsList = [ 'SiteName', 'Status' ] )
+      kwargs = { 'columns' : [ 'SiteName', 'Status' ] } 
+      r = rsDB.getSitesPresent( **kwargs )  
+      #r = rsDB.getMonitoredsList( 'Site', paramsList = [ 'SiteName', 'Status' ] )
       for x in r:
         res.append( x )
       gLogger.info( "ResourceStatusHandler.getSitesList: got sites and status list" )
@@ -441,7 +605,7 @@ class ResourceStatusHandler( RequestHandler ):
     try:
       resQuery = rsDB.getMonitoredsStatusWeb( 'Service', selectDict, startItem, maxItems )
       gLogger.info( "ResourceStatusHandler.getServicesStatusWeb: got services list" )
-      return res
+      return resQuery
     except RSSDBException, x:
       errorStr = whoRaised( x )
     except RSSException, x:
@@ -579,7 +743,7 @@ class ResourceStatusHandler( RequestHandler ):
     gLogger.info( "ResourceStatusHandler.getServicesHistory: Attempting to get service %s history" %  serviceName )
 
     try:
-      resQuery = rsDB.getMonitoredsHistory( 'Service', name = serviceName )
+      resQuery = rsDB.getServicesHistory( serviceName = serviceName )  
       gLogger.info( "ResourceStatusHandler.getServicesHistory: got service %s history" % serviceName )
       return resQuery
     except RSSDBException, x:
@@ -872,7 +1036,7 @@ class ResourceStatusHandler( RequestHandler ):
     gLogger.info( "ResourceStatusHandler.getResourcesHistory: Attempting to get resource %s history" % resourceName )
 
     try:
-      resQuery = rsDB.getMonitoredsHistory( 'Resource', name = resourceName )
+      resQuery = rsDB.getResourcesHistory( resourceName = resourceName )  
       gLogger.info( "ResourceStatusHandler.getResourcesHistory: got resource %s history" % resourceName )
       return resQuery    
     except RSSDBException, x:
@@ -1063,7 +1227,7 @@ class ResourceStatusHandler( RequestHandler ):
     gLogger.info( "ResourceStatusHandler.getStorageElementsStatusWeb: Attempting to get SEs list" )
 
     try:
-      resQuery = rsDB.getMonitoredsStatusWeb( granularity, selectDict, startItem, maxItems )
+      resQuery = rsDB.getMonitoredsStatusWeb( 'StorageElement', selectDict, startItem, maxItems )
       gLogger.info( "ResourceStatusHandler.getStorageElementsStatusWeb: got SEs list" )
       return resQuery
     except RSSDBException, x:
@@ -1207,7 +1371,7 @@ class ResourceStatusHandler( RequestHandler ):
     gLogger.info( "ResourceStatusHandler.getStorageElementsHistory: Attempting to get SE %s history" % se )
 
     try:
-      resQuery = rsDB.getMonitoredsHistory( 'StorageElement', name = se )
+      resQuery = rsDB.getStorageElementsHistory( storageElementName = se )  
       gLogger.info( "ResourceStatusHandler.getStorageElementsHistory: got SE %s history" % se )
       return resQuery
     except RSSDBException, x:
@@ -1736,9 +1900,9 @@ class ResourceStatusHandler( RequestHandler ):
       tokenOwner = token[ 0 ][ 1 ]
       if tokenOwner == 'RS_SVC':
         if requester != 'RS_SVC':
-          rsDB.setToken( granularity, name, requester, datetime.datetime.utcnow() + datetime.timedelta( hours = 24 ) )
+          rsDB.setToken( granularity, name, requester, datetime.utcnow() + timedelta( hours = 24 ) )
       else:
-        rsDB.setToken( granularity, name, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ) )
+        rsDB.setToken( granularity, name, 'RS_SVC', datetime( 9999, 12, 31, 23, 59, 59 ) )
 
       gLogger.info( "ResourceStatusHandler.reAssignToken: re-assigned token %s: %s: %s" % ( granularity, name, requester ) )
       return S_OK()
@@ -1770,7 +1934,7 @@ class ResourceStatusHandler( RequestHandler ):
       tokenExpiration    = token[ 0 ][ 2 ]
       tokenNewExpiration = tokenExpiration
       try:
-        tokenNewExpiration = tokenExpiration + datetime.timedelta( hours = hrs )
+        tokenNewExpiration = tokenExpiration + timedelta( hours = hrs )
       except OverflowError:
         pass
       rsDB.setToken( granularity, name, tokenOwner, tokenNewExpiration )
