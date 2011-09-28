@@ -22,14 +22,14 @@ import string, threading, types
 import inspect
 from sets import Set
 
-# Stage Request are issue with a length of "PinLength"
-# However, once Staged, the entry in the StageRequest will set a PinExpiryTime only for "PinLength" / THROTTLING_STEPS
+# Stage Request are issue with a length of "PinLifetime"
+# However, once Staged, the entry in the StageRequest will set a PinExpiryTime only for "PinLifetime" / THROTTLING_STEPS
 # As PinExpiryTime arrives, StageRequest and their corresponding CacheReplicas entries are cleaned
-# This allows to throttle the submission of Stage Requests up to a maximum of "DiskCacheTB" per "PinLength"
-# After "PinLength" / THROTTLING_STEPS seconds, entries are removed, so new requests for the same replica will trigger
+# This allows to throttle the submission of Stage Requests up to a maximum of "DiskCacheTB" per "PinLifetime"
+# After "PinLifetime" / THROTTLING_STEPS seconds, entries are removed, so new requests for the same replica will trigger
 # a new Stage Request to the SE, and thus an update of the Pinning on the SE.
 #
-#  - "PinLength" is an Option of the StageRequest Agent that defaults to THROTTLING_TIME
+#  - "PinLifetime" is an Option of the StageRequest Agent that defaults to THROTTLING_TIME
 #  - "DiskCacheTB" is an Option of the StorageElement that defaults to 1 (TB)
 
 THROTTLING_TIME = 86400
