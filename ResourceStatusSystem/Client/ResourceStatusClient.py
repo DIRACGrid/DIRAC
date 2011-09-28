@@ -178,7 +178,7 @@ class ResourceStatusClient:
                                  status = None, reason = None, tokenOwner = None, 
                                  tokenExpiration = None, dateCreated = None, 
                                  dateEffective = None, dateEnd = None, 
-                                 slastCheckTime = None, **kwargs ):
+                                 lastCheckTime = None, **kwargs ):
     pass
   
   @LazyExecutor  
