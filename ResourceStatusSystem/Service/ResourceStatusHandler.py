@@ -149,10 +149,10 @@ class ResourceStatusHandler( RequestHandler ):
 
 ################################################################################
       
-  types_updateSiteStatus = [ str, ( str, NoneType),( str, NoneType), ( str, NoneType),
-                            ( str, NoneType),( datetime, NoneType),( datetime, NoneType),
-                            ( datetime, NoneType),( datetime, NoneType),
-                            ( datetime, NoneType) ]  
+  types_updateSiteStatus = [ str, ( str, NoneType ), ( str, NoneType ), ( str, NoneType ),
+                            ( str, NoneType ),( datetime, NoneType ),( datetime, NoneType ),
+                            ( datetime, NoneType ), ( datetime, NoneType ),
+                            ( datetime, NoneType ) ]  
     
   def export_updateSiteStatus( self, siteName, statusType, status, reason, 
                                tokenOwner, tokenExpiration, dateCreated, 
@@ -232,8 +232,8 @@ class ResourceStatusHandler( RequestHandler ):
 
 ################################################################################
 
-  types_getSitesPresent = [ str, str, str, str, str, str, ( datetime, NoneType),
-                            str, ( datetime, NoneType), str, ( datetime, NoneType),
+  types_getSitesPresent = [ str, str, str, str, str, str, ( datetime, NoneType ),
+                            str, ( datetime, NoneType ), str, ( datetime, NoneType ),
                             str, dict ]
 
   def export_getSitesPresent( self, siteName, siteType, gridSiteName, gridTier, 
@@ -262,9 +262,9 @@ class ResourceStatusHandler( RequestHandler ):
 
 ################################################################################
 
-  types_deleteSitesScheduledStatus = [ str, str, str, str, str, ( datetime, NoneType),
-                                      ( datetime, NoneType),( datetime, NoneType),
-                                      ( datetime, NoneType),( datetime, NoneType)]
+  types_deleteSitesScheduledStatus = [ str, str, str, str, str, ( datetime, NoneType ),
+                                      ( datetime, NoneType ),( datetime, NoneType ),
+                                      ( datetime, NoneType ),( datetime, NoneType )]
 
   def export_deleteSitesScheduledStatus( self, siteName, statusType, status, 
                                          reason, tokenOwner, tokenExpiration, 
@@ -281,9 +281,9 @@ class ResourceStatusHandler( RequestHandler ):
 
 ################################################################################
 
-  types_deleteSitesHistory = [ str, str, str, str, str, ( datetime, NoneType),
-                              ( datetime, NoneType),( datetime, NoneType),
-                              ( datetime, NoneType),( datetime, NoneType), dict ]
+  types_deleteSitesHistory = [ str, str, str, str, str, ( datetime, NoneType ),
+                              ( datetime, NoneType ),( datetime, NoneType ),
+                              ( datetime, NoneType ),( datetime, NoneType ), dict ]
 
   def export_deleteSitesHistory( self, siteName, statusType, status, reason, 
                                  tokenOwner, tokenExpiration, dateCreated, 
@@ -316,9 +316,9 @@ class ResourceStatusHandler( RequestHandler ):
   
 ################################################################################  
   
-  types_setServiceStatus = [ str, str, str, str, str, ( datetime, NoneType),
-                            ( datetime, NoneType),( datetime, NoneType),
-                            ( datetime, NoneType),( datetime, NoneType) ]  
+  types_setServiceStatus = [ str, str, str, str, str, ( datetime, NoneType ),
+                            ( datetime, NoneType ),( datetime, NoneType ),
+                            ( datetime, NoneType ),( datetime, NoneType ) ]  
     
   def export_setServiceStatus( self, serviceName, statusType, status, reason, 
                                tokenOwner, tokenExpiration, dateCreated, 
@@ -333,9 +333,9 @@ class ResourceStatusHandler( RequestHandler ):
    
 ################################################################################   
     
-  types_setServiceScheduledStatus = [ str, str, str, str, str, ( datetime, NoneType),
-                                      ( datetime, NoneType),( datetime, NoneType),
-                                      ( datetime, NoneType),( datetime, NoneType) ]  
+  types_setServiceScheduledStatus = [ str, str, str, str, str, ( datetime, NoneType ),
+                                      ( datetime, NoneType ),( datetime, NoneType ),
+                                      ( datetime, NoneType ),( datetime, NoneType ) ]  
           
   def export_setServiceScheduledStatus( self, serviceName, statusType, status, 
                                         reason, tokenOwner, tokenExpiration, 
@@ -383,7 +383,7 @@ class ResourceStatusHandler( RequestHandler ):
 ################################################################################  
     
   types_getServicesStatus = [ ( str, NoneType ), ( str, NoneType ), ( str, NoneType ),
-                              ( str, NoneType ), ( str, NoneType ), (datetime, NoneType),
+                              ( str, NoneType ), ( str, NoneType ), ( datetime, NoneType ),
                               ( str, NoneType ), ( str, NoneType ), ( str, NoneType ),
                               ( str, NoneType ), dict ]  
     
@@ -402,7 +402,7 @@ class ResourceStatusHandler( RequestHandler ):
 ################################################################################  
 
   types_getServicesHistory = [ ( str, NoneType ), ( str, NoneType ), ( str, NoneType ),
-                               ( str, NoneType ), ( str, NoneType ), (datetime, NoneType),
+                               ( str, NoneType ), ( str, NoneType ), ( datetime, NoneType ),
                                ( str, NoneType ), ( str, NoneType ), ( str, NoneType ),
                                ( str, NoneType ), dict ] 
       
@@ -422,7 +422,7 @@ class ResourceStatusHandler( RequestHandler ):
 
   types_getServicesScheduledStatus = [ ( str, NoneType ), ( str, NoneType ), 
                                        ( str, NoneType ), ( str, NoneType ), 
-                                       ( str, NoneType ), (datetime, NoneType),
+                                       ( str, NoneType ), ( datetime, NoneType ),
                                        ( str, NoneType ), ( str, NoneType ), 
                                        ( str, NoneType ), ( str, NoneType ), dict ] 
     
@@ -475,7 +475,7 @@ class ResourceStatusHandler( RequestHandler ):
     
   types_deleteServicesScheduledStatus = [ ( str, NoneType ), ( str, NoneType ), 
                                           ( str, NoneType ), ( str, NoneType ), 
-                                          ( str, NoneType ), (datetime, NoneType),
+                                          ( str, NoneType ), ( datetime, NoneType ),
                                           ( str, NoneType ), ( str, NoneType ), 
                                           ( str, NoneType ), ( str, NoneType ) ]  
     
@@ -495,7 +495,7 @@ class ResourceStatusHandler( RequestHandler ):
 ################################################################################
     
   types_deleteServicesHistory = [ ( str, NoneType ), ( str, NoneType ), ( str, NoneType ), 
-                                  ( str, NoneType ), ( str, NoneType ), (datetime, NoneType),
+                                  ( str, NoneType ), ( str, NoneType ), ( datetime, NoneType ),
                                   ( str, NoneType ), ( str, NoneType ), ( str, NoneType ), 
                                   ( str, NoneType ), dict ]  
     
@@ -510,6 +510,234 @@ class ResourceStatusHandler( RequestHandler ):
                                            **kwargs )
     gLogger.info( "deleteServicesHistory_2" )  
     return resQuery  
+
+################################################################################
+
+################################################################################
+# Resources functions
+################################################################################
+
+################################################################################
+
+  types_addOrModifyResource = [ str, str, str, str, str ]
+
+  def export_addOrModifyResource( self, resourceName, resourceType, serviceType, 
+                                  siteName, gridSiteName ):
+
+    gLogger.info( "addOrModifyResource_1" )
+    resQuery = rsDB.addOrModifyResource( resourceName, resourceType, serviceType, 
+                                         siteName, gridSiteName )
+    gLogger.info( "addOrModifyResource_2" )  
+    return resQuery  
+  
+################################################################################
+  
+  types_setResourceStatus = [ str, str, str, str, str, ( datetime, NoneType ),
+                              ( datetime, NoneType ), ( datetime, NoneType ),
+                              ( datetime, NoneType ), ( datetime, NoneType ) ]
+      
+  def export_setResourceStatus( self, resourceName, statusType, status, reason, 
+                                tokenOwner, tokenExpiration, dateCreated, 
+                                dateEffective, dateEnd, lastCheckTime ):
+
+    gLogger.info( "setResourceStatus_1" )
+    resQuery = rsDB.setResourceStatus( resourceName, statusType, status, reason, 
+                                       tokenOwner, tokenExpiration, dateCreated, 
+                                       dateEffective, dateEnd, lastCheckTime )
+    gLogger.info( "setResourceStatus_2" )  
+    return resQuery  
+  
+################################################################################
+   
+  types_setResourceScheduledStatus = [ str, str, str, str, str, 
+                                      ( datetime, NoneType ), ( datetime, NoneType ), 
+                                      ( datetime, NoneType ), ( datetime, NoneType ), 
+                                      ( datetime, NoneType ) ]    
+       
+  def export_setResourceScheduledStatus( self, resourceName, statusType, status, 
+                                         reason, tokenOwner, tokenExpiration, 
+                                         dateCreated, dateEffective, dateEnd, 
+                                         lastCheckTime ):
+
+    gLogger.info( "setResourceScheduledStatus_1" )
+    resQuery = rsDB.setResourceScheduledStatus( resourceName, statusType, status, 
+                                                reason, tokenOwner, tokenExpiration, 
+                                                dateCreated, dateEffective, dateEnd, 
+                                                lastCheckTime )
+    gLogger.info( "setResourceScheduledStatus_2" )  
+    return resQuery  
+         
+################################################################################         
+         
+  types_updateResourceStatus = [ str, ( str, NoneType ), ( str, NoneType ), 
+                                ( str, NoneType ), ( str, NoneType ), 
+                                ( datetime, NoneType ), ( datetime, NoneType ), 
+                                ( datetime, NoneType ), ( datetime, NoneType ), 
+                                ( datetime, NoneType ) ]   
+         
+  def export_updateResourceStatus( self, resourceName, statusType, status, reason, 
+                                   tokenOwner, tokenExpiration, dateCreated, 
+                                   dateEffective, dateEnd, lastCheckTime ):
+
+    gLogger.info( "updateResourceStatus_1" )
+    resQuery = rsDB.updateResourceStatus( resourceName, statusType, status, reason, 
+                                          tokenOwner, tokenExpiration, dateCreated, 
+                                          dateEffective, dateEnd, lastCheckTime )
+    gLogger.info( "updateResourceStatus_2" )  
+    return resQuery  
+  
+################################################################################
+        
+  types_getResources = [ ( str, NoneType ), ( str, NoneType ), ( str, NoneType ),
+                         ( str, NoneType ), ( str, NoneType ), dict ]      
+        
+  def export_getResources( self, resourceName, resourceType, serviceType, 
+                           siteName, gridSiteName, kwargs ):
+
+    gLogger.info( "getResources_1" )
+    resQuery = rsDB.getResources( resourceName, resourceType, serviceType, 
+                                  siteName, gridSiteName, **kwargs )
+    gLogger.info( "getResources_2" )  
+    return resQuery  
+  
+################################################################################
+     
+  types_getResourcesStatus = [ ( str, NoneType ), ( str, NoneType ), 
+                               ( str, NoneType ), ( str, NoneType ), 
+                               ( str, NoneType ), ( datetime, NoneType ), 
+                               ( datetime, NoneType ), ( datetime, NoneType ), 
+                               ( datetime, NoneType ), ( datetime, NoneType ),
+                               dict ]    
+      
+  def export_getResourcesStatus( self, resourceName, statusType, status, reason, 
+                                 tokenOwner, tokenExpiration, dateCreated, 
+                                 dateEffective, dateEnd, lastCheckTime, kwargs ):
+
+    gLogger.info( "getResourcesStatus_1" )
+    resQuery = rsDB.getResourcesStatus( resourceName, statusType, status, reason, 
+                                        tokenOwner, tokenExpiration, dateCreated, 
+                                        dateEffective, dateEnd, lastCheckTime, 
+                                        **kwargs )
+    gLogger.info( "getResourcesStatus_2" )  
+    return resQuery  
+  
+################################################################################
+      
+  types_getResourcesHistory = [ ( str, NoneType ), ( str, NoneType ), 
+                                ( str, NoneType ), ( str, NoneType ), 
+                                ( str, NoneType ), ( datetime, NoneType ), 
+                                ( datetime, NoneType ), ( datetime, NoneType ), 
+                                ( datetime, NoneType ), ( datetime, NoneType ),
+                                dict ]    
+               
+  def export_getResourcesHistory( self, resourceName, statusType, status, reason, 
+                                  tokenOwner, tokenExpiration, dateCreated, 
+                                  dateEffective, dateEnd, lastCheckTime, kwargs ):
+
+    gLogger.info( "getResourcesHistory_1" )
+    resQuery = rsDB.getResourcesHistory( resourceName, statusType, status, reason, 
+                                         tokenOwner, tokenExpiration, dateCreated, 
+                                         dateEffective, dateEnd, lastCheckTime, 
+                                         **kwargs )
+    gLogger.info( "getResourcesHistory_2" )  
+    return resQuery  
+    
+################################################################################
+        
+  types_getResourcesScheduledStatus = [ ( str, NoneType ), ( str, NoneType ), 
+                                        ( str, NoneType ), ( str, NoneType ), 
+                                        ( str, NoneType ), ( datetime, NoneType ), 
+                                        ( datetime, NoneType ), ( datetime, NoneType ), 
+                                        ( datetime, NoneType ), ( datetime, NoneType ),
+                                        dict ]      
+        
+  def export_getResourcesScheduledStatus( self, resourceName, statusType, status,
+                                          reason, tokenOwner, tokenExpiration, 
+                                          dateCreated, dateEffective, dateEnd, 
+                                          lastCheckTime, kwargs ):
+    
+    gLogger.info( "getResourcesScheduledStatus_1" )
+    resQuery = rsDB.getResourcesScheduledStatus( resourceName, statusType, status,
+                                                 reason, tokenOwner, tokenExpiration, 
+                                                 dateCreated, dateEffective, dateEnd, 
+                                                 lastCheckTime, **kwargs )
+    gLogger.info( "getResourcesScheduledStatus_2" )  
+    return resQuery  
+  
+################################################################################
+      
+  types_getResourcesPresent = [ ( str, NoneType ), ( str, NoneType ), ( str, NoneType ), 
+                                ( str, NoneType ), ( str, NoneType ), ( str, NoneType ),
+                                ( str, NoneType ), ( str, NoneType ), ( datetime, NoneType ),
+                                ( str, NoneType ), ( datetime, NoneType ), ( str, NoneType ),
+                                ( datetime, NoneType ), ( str, NoneType ), dict ]    
+      
+  def export_getResourcesPresent( self, resourceName, siteName, serviceType, gridSiteName, 
+                                  siteType, resourceType, statusType, status, 
+                                  dateEffective, reason, lastCheckTime, tokenOwner, 
+                                  tokenExpiration, formerStatus, kwargs ):
+
+    gLogger.info( "getResourcesPresent_1" )
+    resQuery = rsDB.getResourcesPresent( resourceName, siteName, serviceType, 
+                                         gridSiteName, siteType, resourceType, 
+                                         statusType, status, dateEffective, 
+                                         reason, lastCheckTime, tokenOwner, 
+                                         tokenExpiration, formerStatus, **kwargs )
+    gLogger.info( "getResourcesPresent_2" )  
+    return resQuery  
+  
+################################################################################
+     
+  types_deleteResources = [ str ]   
+     
+  def export_deleteResources( self, resourceName ):
+    
+    gLogger.info( "deleteResources_1" )
+    resQuery = rsDB.deleteResources( resourceName )
+    gLogger.info( "deleteResources_2" )  
+    return resQuery    
+  
+################################################################################
+      
+  types_deleteResourcesScheduledStatus = [ ( str, NoneType ), ( str, NoneType ), 
+                                           ( str, NoneType ), ( str, NoneType ), 
+                                           ( str, NoneType ), ( datetime, NoneType ), 
+                                           ( datetime, NoneType ), ( datetime, NoneType ), 
+                                           ( datetime, NoneType ), ( datetime, NoneType ) ]    
+      
+  def export_deleteResourcesScheduledStatus( self, resourceName, statusType, status, 
+                                             reason, tokenOwner, tokenExpiration, 
+                                             dateCreated, dateEffective, dateEnd, 
+                                             lastCheckTime ):
+
+    gLogger.info( "deleteResourcesScheduledStatus_1" )
+    resQuery = rsDB.deleteResourcesScheduledStatus( resourceName, statusType, status, 
+                                                    reason, tokenOwner, tokenExpiration, 
+                                                    dateCreated, dateEffective, 
+                                                    dateEnd, lastCheckTime )
+    gLogger.info( "deleteResourcesScheduledStatus_2" )  
+    return resQuery    
+  
+################################################################################
+      
+  types_deleteResourcesHistory = [ ( str, NoneType ), ( str, NoneType ), 
+                                   ( str, NoneType ), ( str, NoneType ), 
+                                   ( str, NoneType ), ( datetime, NoneType ), 
+                                   ( datetime, NoneType ), ( datetime, NoneType ), 
+                                   ( datetime, NoneType ), ( datetime, NoneType ), 
+                                   dict ]    
+      
+  def export_deleteResourcesHistory( self, resourceName, statusType, status, reason, 
+                                     tokenOwner, tokenExpiration, dateCreated, 
+                                     dateEffective, dateEnd, lastCheckTime, kwargs ):
+
+    gLogger.info( "deleteResourcesHistory_1" )
+    resQuery = rsDB.deleteResourcesHistory( resourceName, statusType, status, reason, 
+                                            tokenOwner, tokenExpiration, dateCreated, 
+                                            dateEffective, dateEnd, lastCheckTime, 
+                                            **kwargs )
+    gLogger.info( "deleteResourcesHistory_2" )  
+    return resQuery    
 
 ################################################################################
 ################################################################################
