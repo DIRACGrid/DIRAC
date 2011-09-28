@@ -765,38 +765,44 @@ class ResourceStatusDB:
     return S_OK()
 
   @CheckExecution
-  def updateServiceStatus( self, serviceName, statusType = None, status = None, reason = None, 
-                        tokenOwner = None, tokenExpiration = None, dateCreated = None, 
-                        dateEffective = None, dateEnd = None, lastCheckTime = None ):
-
-  def updateServiceStatus( self, serviceName, statusType = None, status = None, reason = None, 
-                        tokenOwner = None, tokenExpiration = None, dateCreated = None, 
-                        dateEffective = None, dateEnd = None, lastCheckTime = None ):
+  def updateServiceStatus( self, serviceName, statusType, status, reason, 
+                           tokenOwner, tokenExpiration, dateCreated, 
+                           dateEffective, dateEnd, lastCheckTime ):
+#  def updateServiceStatus( self, serviceName, statusType = None, status = None, reason = None, 
+#                        tokenOwner = None, tokenExpiration = None, dateCreated = None, 
+#                        dateEffective = None, dateEnd = None, lastCheckTime = None ):
 
     rDict = self.__generateRowDict( locals() )
     self.__updateElementStatus( 'Service', rDict )
     return S_OK()
 
   @CheckExecution
-  def getServices( self, serviceName = None, serviceType = None, siteName = None, **kwargs ):
+  def getServices( self, serviceName, serviceType, siteName, **kwargs ):
+#  def getServices( self, serviceName = None, serviceType = None, siteName = None, **kwargs ):    
     
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Service', rDict, **kwargs )
 
   @CheckExecution
-  def getServicesStatus( self, serviceName = None, statusType = None, status = None, 
-                         reason = None, tokenOwner = None, tokenExpiration = None, 
-                         dateCreated = None, dateEffective = None, dateEnd = None, 
-                         lastCheckTime = None, **kwargs ):
+  def getServicesStatus( self, serviceName, statusType, status, reason, 
+                         tokenOwner, tokenExpiration, dateCreated, dateEffective, 
+                         dateEnd, lastCheckTime, **kwargs ):
+  #def getServicesStatus( self, serviceName = None, statusType = None, status = None, 
+  #                       reason = None, tokenOwner = None, tokenExpiration = None, 
+  #                       dateCreated = None, dateEffective = None, dateEnd = None, 
+  #                       lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Service', rDict, table = 'Status', **kwargs )
 
   @CheckExecution
-  def getServicesHistory( self, serviceName = None, statusType = None, status = None, 
-                          reason = None, tokenOwner = None, tokenExpiration = None, 
-                          dateCreated = None, dateEffective = None, dateEnd = None, 
-                          lastCheckTime = None, **kwargs ):
+  def getServicesHistory( self, serviceName, statusType, status, reason, 
+                          tokenOwner, tokenExpiration, dateCreated, dateEffective, 
+                          dateEnd, lastCheckTime, **kwargs ):
+#  def getServicesHistory( self, serviceName = None, statusType = None, status = None, 
+#                          reason = None, tokenOwner = None, tokenExpiration = None, 
+#                          dateCreated = None, dateEffective = None, dateEnd = None, 
+#                          lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -804,21 +810,27 @@ class ResourceStatusDB:
     return self.__getElements( 'Service', rDict, table = 'History', **kwargs )
 
   @CheckExecution
-  def getServicesScheduledStatus( self, serviceName = None, statusType = None, 
-                                 status = None, reason = None, tokenOwner = None, 
-                                 tokenExpiration = None, dateCreated = None, 
-                                 dateEffective = None, dateEnd = None, 
-                                 slastCheckTime = None, **kwargs ):
+  def getServicesScheduledStatus( self, serviceName, statusType, status, reason, 
+                                  tokenOwner, tokenExpiration, dateCreated, 
+                                  dateEffective, dateEnd, lastCheckTime, **kwargs ):
+#  def getServicesScheduledStatus( self, serviceName = None, statusType = None, 
+#                                 status = None, reason = None, tokenOwner = None, 
+#                                 tokenExpiration = None, dateCreated = None, 
+#                                 dateEffective = None, dateEnd = None, 
+#                                 slastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Service', rDict, table = 'ScheduledStatus', **kwargs )
 
   @CheckExecution
-  def getServicesPresent( self, serviceName = None, siteName = None, siteType = None, 
-                          serviceType = None, statusType = None, status = None, 
-                          dateEffective = None, reason = None, lastCheckTime = None, 
-                          tokenOwner = None, tokenExpiration = None, 
-                          formerStatus = None, **kwargs ):
+  def getServicesPresent( self, serviceName, siteName, siteType, serviceType, 
+                          statusType, status, dateEffective, reason, lastCheckTime, 
+                          tokenOwner, tokenExpiration, formerStatus, **kwargs ):
+#  def getServicesPresent( self, serviceName = None, siteName = None, siteType = None, 
+#                          serviceType = None, statusType = None, status = None, 
+#                          dateEffective = None, reason = None, lastCheckTime = None, 
+#                          tokenOwner = None, tokenExpiration = None, 
+#                          formerStatus = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'columns' ):
@@ -867,21 +879,27 @@ class ResourceStatusDB:
     return S_OK()
 
   @CheckExecution
-  def deleteServicesScheduledStatus( self, serviceName = None, statusType = None, 
-                                     status = None, reason = None, tokenOwner = None, 
-                                     tokenExpiration = None, dateCreated = None, 
-                                     dateEffective = None, dateEnd = None, lastCheckTime = None):
-
+  def deleteServicesScheduledStatus( self, serviceName, statusType, status, 
+                                     reason, tokenOwner, tokenExpiration, dateCreated, 
+                                     dateEffective, dateEnd, lastCheckTime ):
+#  def deleteServicesScheduledStatus( self, serviceName = None, statusType = None, 
+#                                     status = None, reason = None, tokenOwner = None, 
+#                                     tokenExpiration = None, dateCreated = None, 
+#                                     dateEffective = None, dateEnd = None, lastCheckTime = None):
+    
     rDict = self.__generateRowDict( locals() )
     self.__deleteElementsScheduledStatus( 'Service', rDict )
     return S_OK()
 
   @CheckExecution
-  def deleteServicesHistory( self, serviceName = None, statusType = None, status = None, 
-                          reason = None, tokenOwner = None, tokenExpiration = None, 
-                          dateCreated = None, dateEffective = None, dateEnd = None, 
-                          lastCheckTime = None, **kwargs ):
-      
+  def deleteServicesHistory( self, serviceName, statusType, status, reason, 
+                             tokenOwner, tokenExpiration, dateCreated, dateEffective, 
+                             dateEnd, lastCheckTime, **kwargs ):
+#  def deleteServicesHistory( self, serviceName = None, statusType = None, status = None, 
+#                          reason = None, tokenOwner = None, tokenExpiration = None, 
+#                          dateCreated = None, dateEffective = None, dateEnd = None, 
+#                          lastCheckTime = None, **kwargs ):      
+
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'Service', rDict, **kwargs )
     return S_OK()
