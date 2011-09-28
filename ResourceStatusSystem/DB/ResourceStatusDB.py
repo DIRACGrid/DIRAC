@@ -935,53 +935,75 @@ class ResourceStatusDB:
     # END VALIDATION #    
     
     self.__addOrModifyElement( 'Resource', rDict )
+    return S_OK()
   
   @CheckExecution
   def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
-                         tokenExpiration = None, dateCreated = None, 
-                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
+                         tokenExpiration, dateCreated, dateEffective, dateEnd, 
+                         lastCheckTime ):
+#  def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
+#                         tokenExpiration = None, dateCreated = None, 
+#                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
+
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementStatus( 'Resource', rDict )
-
-  @CheckExecution
-  def updateResourceStatus( self, resourceName, statusType = None, status = None, reason = None, 
-                         tokenOwner = None, tokenExpiration = None, dateCreated = None, 
-                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
-    
-    rDict = self.__generateRowDict( locals() )
-    self.__updateElementStatus( 'Resource', rDict )
+    return S_OK()
 
   @CheckExecution
   def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
-                                  tokenOwner, tokenExpiration = None, dateCreated = None, 
-                                  dateEffective = None, dateEnd = None, lastCheckTime = None ):
+                                  tokenOwner, tokenExpiration, dateCreated, 
+                                  dateEffective, dateEnd, lastCheckTime ):
+#  def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
+#                                  tokenOwner, tokenExpiration = None, dateCreated = None, 
+#                                  dateEffective = None, dateEnd = None, lastCheckTime = None ):
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementScheduledStatus( 'Resource', rDict )
-  
+    return S_OK()
+
   @CheckExecution
-  def getResources( self, resourceName = None, resourceType = None, 
-                    serviceType = None, siteName = None, gridSiteName = None, 
-                    **kwargs ):
+  def updateResourceStatus( self, resourceName, statusType, status, reason, 
+                           tokenOwner, tokenExpiration, dateCreated, dateEffective, 
+                           dateEnd, lastCheckTime ):
+#  def updateResourceStatus( self, resourceName, statusType = None, status = None, reason = None, 
+#                         tokenOwner = None, tokenExpiration = None, dateCreated = None, 
+#                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
+        
+    rDict = self.__generateRowDict( locals() )
+    self.__updateElementStatus( 'Resource', rDict )
+    return S_OK()
+ 
+  @CheckExecution
+  def getResources( self, resourceName, resourceType, serviceType, siteName, 
+                    gridSiteName, **kwargs ):
+#  def getResources( self, resourceName = None, resourceType = None, 
+#                    serviceType = None, siteName = None, gridSiteName = None, 
+#                    **kwargs ):
     
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Resource', rDict, **kwargs )
 
   @CheckExecution
-  def getResourcesStatus( self, resourceName = None, statusType = None, status = None,
-                          reason = None, tokenOwner = None, tokenExpiration = None, 
-                          dateCreated = None, dateEffective = None, dateEnd = None, 
-                          lastCheckTime = None, **kwargs ):
+  def getResourcesStatus( self, resourceName, statusType, status, reason, 
+                          tokenOwner, tokenExpiration, dateCreated, dateEffective, 
+                          dateEnd, lastCheckTime, **kwargs ):
+#  def getResourcesStatus( self, resourceName = None, statusType = None, status = None,
+#                          reason = None, tokenOwner = None, tokenExpiration = None, 
+#                          dateCreated = None, dateEffective = None, dateEnd = None, 
+#                          lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Resource', rDict, table = 'Status', **kwargs )
 
   @CheckExecution
-  def getResourcesHistory( self, resourceName = None, statusType = None, status = None,
-                           reason = None, tokenOwner = None, tokenExpiration = None, 
-                           dateCreated = None, dateEffective = None, dateEnd = None, 
-                           lastCheckTime = None, **kwargs ):
+  def getResourcesHistory( self, resourceName, statusType, status, reason, 
+                           tokenOwner, tokenExpiration, dateCreated, dateEffective, 
+                           dateEnd, lastCheckTime, **kwargs ):
+#  def getResourcesHistory( self, resourceName = None, statusType = None, status = None,
+#                           reason = None, tokenOwner = None, tokenExpiration = None, 
+#                           dateCreated = None, dateEffective = None, dateEnd = None, 
+#                           lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -989,20 +1011,27 @@ class ResourceStatusDB:
     return self.__getElements( 'Resource', rDict, table = 'History', **kwargs )
 
   @CheckExecution
-  def getResourcesScheduledStatus( self, resourceName = None, statusType = None, status = None,
-                                  reason = None, tokenOwner = None, tokenExpiration = None, 
-                                  dateCreated = None, dateEffective = None, dateEnd = None, 
-                                  lastCheckTime = None, **kwargs):
+  def getResourcesScheduledStatus( self, resourceName, statusType, status, reason, 
+                                   tokenOwner, tokenExpiration, dateCreated, 
+                                   dateEffective, dateEnd, lastCheckTime, **kwargs ):
+#  def getResourcesScheduledStatus( self, resourceName = None, statusType = None, status = None,
+#                                  reason = None, tokenOwner = None, tokenExpiration = None, 
+#                                  dateCreated = None, dateEffective = None, dateEnd = None, 
+#                                  lastCheckTime = None, **kwargs):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Resource', rDict, table = 'ScheduledStatus', **kwargs )  
 
   @CheckExecution
-  def getResourcesPresent( self, resourceName = None, siteName = None, serviceType = None,
-                           gridSiteName = None, siteType = None, resourceType = None,
-                           statusType = None, status = None, dateEffective = None, 
-                           reason = None, lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, formerStatus = None, **kwargs ):
+  def getResourcesPresent( self, resourceName, siteName, serviceType, gridSiteName, 
+                           siteType, resourceType, statusType, status, dateEffective, 
+                           reason, lastCheckTime, tokenOwner, tokenExpiration, 
+                           formerStatus, **kwargs ):
+#  def getResourcesPresent( self, resourceName = None, siteName = None, serviceType = None,
+#                           gridSiteName = None, siteType = None, resourceType = None,
+#                           statusType = None, status = None, dateEffective = None, 
+#                           reason = None, lastCheckTime = None, tokenOwner = None, 
+#                           tokenExpiration = None, formerStatus = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'columns' ):
@@ -1072,25 +1101,35 @@ class ResourceStatusDB:
     
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElements( 'Resource', rDict)
+    return S_OK()
 
   @CheckExecution
-  def deleteResourcesScheduledStatus( self, resourceName = None, statusType = None, 
-                                      status = None, reason = None, tokenOwner = None, 
-                                      tokenExpiration = None, dateCreated = None, 
-                                      dateEffective = None, dateEnd = None, 
-                                      lastCheckTime = None):
+  def deleteResourcesScheduledStatus( self, resourceName, statusType, status, 
+                                      reason, tokenOwner, tokenExpiration, 
+                                      dateCreated, dateEffective, dateEnd, 
+                                      lastCheckTime ):
+#  def deleteResourcesScheduledStatus( self, resourceName = None, statusType = None, 
+#                                      status = None, reason = None, tokenOwner = None, 
+#                                      tokenExpiration = None, dateCreated = None, 
+#                                      dateEffective = None, dateEnd = None, 
+#                                      lastCheckTime = None):
 
     rDict = self.__generateRowDict( locals() )
     self.__deleteElementsScheduledStatus( 'Resource', rDict )
+    return S_OK()
 
   @CheckExecution
-  def deleteResourcesHistory( self, resourceName = None, statusType = None, status = None, 
-                              reason = None, tokenOwner = None, tokenExpiration = None, 
-                              dateCreated = None, dateEffective = None, dateEnd = None, 
-                              lastCheckTime = None, **kwargs ):
+  def deleteResourcesHistory( self, resourceName, statusType, status, reason, 
+                              tokenOwner, tokenExpiration, dateCreated, dateEffective, 
+                              dateEnd, lastCheckTime, **kwargs ):
+#  def deleteResourcesHistory( self, resourceName = None, statusType = None, status = None, 
+#                              reason = None, tokenOwner = None, tokenExpiration = None, 
+#                              dateCreated = None, dateEffective = None, dateEnd = None, 
+#                              lastCheckTime = None, **kwargs ):
       
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'Resource', rDict, **kwargs )
+    return S_OK()
 
   '''
   ##############################################################################
