@@ -14,24 +14,42 @@ from DIRAC.ResourceStatusSystem                       import ValidRes, ValidStat
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB   import ResourceStatusDB 
 
 import types
+import inspect
 
-class LazyExecutor( object ):
+class ClientExecutor( object ):
   
   def __init__( self, f ):
     self.f = f
-  def __get__( self, obj, objtype=None ):
-    return types.MethodType( self, obj, objtype )  
-  def __call__( self, *args, **kwargs ):
     
-    gate  = args[ 0 ].gate
-    fname = self.f.__name__
+  def __get__( self, obj, objtype = None ):
+    return types.MethodType( self, obj, objtype )
     
+  def __call__( self, *args, **kwargs ):  
+ 
+    ins = inspect.getargspec( self.f )
+    newArgs = ins.defaults
+
+    if newArgs:
+      #Keyword arguments on function self.f
+      funkwargs = ins.args[ -len( ins.defaults ): ]
+      
+      kw      = dict(zip( funkwargs, ins.defaults ) )
+      kw.update( kwargs ) 
+      newArgs = [ kw[k] for k in funkwargs ]
+      
+      for fk in funkwargs:
+        kwargs.pop( fk, None )  
+      
+    gate  = args[ 0 ].gate  
+    fname = self.f.__name__  
+    args = tuple( list(args)[1:] + list( newArgs )) 
+       
     try:
       gateFunction = getattr( gate, fname )
       return gateFunction( *args, **kwargs )  
     except Exception, x:
-      return S_ERROR( x )
-        
+      return S_ERROR( x )  
+       
 class ResourceStatusClient:
 
 ################################################################################
@@ -57,47 +75,47 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @LazyExecutor
+  @ClientExecutor
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
     pass
 
-  @LazyExecutor
+  @ClientExecutor
   def setSiteStatus( self, siteName, statusType, status, reason, tokenOwner, 
                      tokenExpiration = None, dateCreated = None, 
                      dateEffective = None, dateEnd = None, lastCheckTime = None ):
     pass
 
-  @LazyExecutor
+  @ClientExecutor
   def setSiteScheduledStatus( self, siteName, statusType, status, reason, tokenOwner, 
                               tokenExpiration = None, dateCreated = None, 
                               dateEffective = None, dateEnd = None, lastCheckTime = None):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def updateSiteStatus( self, siteName, statusType = None, status = None, reason = None, 
                         tokenOwner = None, tokenExpiration = None, dateCreated = None, 
                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
     pass
 
-  @LazyExecutor
+  @ClientExecutor
   def getSites( self, siteName = None, siteType = None, gridSiteName = None, **kwargs ):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def getSitesStatus( self, siteName = None, statusType = None, status = None, 
                       reason = None, tokenOwner = None, tokenExpiration = None, 
                       dateCreated = None, dateEffective = None, dateEnd = None, 
                       lastCheckTime = None, **kwargs ):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def getSitesHistory( self, siteName = None, statusType = None, status = None, 
                        reason = None, tokenOwner = None, tokenExpiration = None, 
                        dateCreated = None, dateEffective = None, dateEnd = None, 
                        lastCheckTime = None, **kwargs ):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def getSitesScheduledStatus( self, siteName = None, statusType = None, 
                                status = None, reason = None, tokenOwner = None, 
                                tokenExpiration = None, dateCreated = None, 
@@ -105,18 +123,18 @@ class ResourceStatusClient:
                                lastCheckTime = None, **kwargs):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def getSitesPresent( self, siteName = None, siteType = None, gridSiteName = None,
                        gridTier = None, statusType = None, status = None, dateEffective = None,
                        reason = None, lastCheckTime = None, tokenOwner = None,
                        tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def deleteSites( self, siteName ):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def deleteSitesScheduledStatus( self, siteName = None, statusType = None, 
                                   status = None, reason = None, tokenOwner = None, 
                                   tokenExpiration = None, dateCreated = None, 
@@ -124,7 +142,7 @@ class ResourceStatusClient:
                                   lastCheckTime = None):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def deleteSitesHistory( self, siteName = None, statusType = None, status = None, 
                           reason = None, tokenOwner = None, tokenExpiration = None, 
                           dateCreated = None, dateEffective = None, dateEnd = None, 
@@ -139,50 +157,50 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @LazyExecutor
+  @ClientExecutor
   def addOrModifyService( self, serviceName, serviceType, siteName ):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def setServiceStatus( self, serviceName, statusType, status, reason, tokenOwner, 
                         tokenExpiration = None, dateCreated = None, dateEffective = None, 
                         dateEnd = None, lastCheckTime = None ):
     pass
    
-  @LazyExecutor  
+  @ClientExecutor  
   def setServiceScheduledStatus( self, serviceName, statusType, status, reason, 
                                  tokenOwner, tokenExpiration = None, dateCreated = None, 
                                  dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None ):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def updateServiceStatus( self, serviceName, statusType = None, status = None, 
                            reason = None, tokenOwner = None, tokenExpiration = None, 
                            dateCreated = None, dateEffective = None, dateEnd = None, 
                            lastCheckTime = None ):
     pass
   
-  @LazyExecutor
+  @ClientExecutor
   def getServices( self, serviceName = None, serviceType = None, siteName = None, 
                    **kwargs ):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def getServicesStatus( self, serviceName = None, statusType = None, status = None, 
                          reason = None, tokenOwner = None, tokenExpiration = None, 
                          dateCreated = None, dateEffective = None, dateEnd = None, 
                          lastCheckTime = None, **kwargs ):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def getServicesHistory( self, serviceName = None, statusType = None, status = None, 
                           reason = None, tokenOwner = None, tokenExpiration = None, 
                           dateCreated = None, dateEffective = None, dateEnd = None, 
                           lastCheckTime = None, **kwargs ):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def getServicesScheduledStatus( self, serviceName = None, statusType = None, 
                                  status = None, reason = None, tokenOwner = None, 
                                  tokenExpiration = None, dateCreated = None, 
@@ -190,7 +208,7 @@ class ResourceStatusClient:
                                  lastCheckTime = None, **kwargs ):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def getServicesPresent( self, serviceName = None, siteName = None, siteType = None, 
                           serviceType = None, statusType = None, status = None, 
                           dateEffective = None, reason = None, lastCheckTime = None, 
@@ -198,11 +216,11 @@ class ResourceStatusClient:
                           formerStatus = None, **kwargs ):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def deleteServices( self, serviceName ):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def deleteServicesScheduledStatus( self, serviceName = None, statusType = None, 
                                      status = None, reason = None, tokenOwner = None, 
                                      tokenExpiration = None, dateCreated = None, 
@@ -210,7 +228,7 @@ class ResourceStatusClient:
                                      lastCheckTime = None):
     pass
   
-  @LazyExecutor  
+  @ClientExecutor  
   def deleteServicesHistory( self, serviceName = None, statusType = None, status = None, 
                           reason = None, tokenOwner = None, tokenExpiration = None, 
                           dateCreated = None, dateEffective = None, dateEnd = None, 
@@ -225,57 +243,57 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @LazyExecutor  
+  @ClientExecutor  
   def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName,
                            gridSiteName ):
     pass
   
-  @LazyExecutor      
+  @ClientExecutor      
   def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
                          tokenExpiration = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, lastCheckTime = None ):
     pass
   
-  @LazyExecutor      
+  @ClientExecutor      
   def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
                                   tokenOwner, tokenExpiration = None, dateCreated = None, 
                                   dateEffective = None, dateEnd = None, lastCheckTime = None ):
     pass
   
-  @LazyExecutor          
+  @ClientExecutor          
   def updateResourceStatus( self, resourceName, statusType = None, status = None, reason = None, 
                          tokenOwner = None, tokenExpiration = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, lastCheckTime = None ):
     pass
   
-  @LazyExecutor      
+  @ClientExecutor      
   def getResources( self, resourceName = None, resourceType = None, 
                     serviceType = None, siteName = None, gridSiteName = None, 
                     **kwargs ):
     pass
   
-  @LazyExecutor      
+  @ClientExecutor      
   def getResourcesStatus( self, resourceName = None, statusType = None, status = None,
                           reason = None, tokenOwner = None, tokenExpiration = None, 
                           dateCreated = None, dateEffective = None, dateEnd = None, 
                           lastCheckTime = None, **kwargs ):
     pass
   
-  @LazyExecutor      
+  @ClientExecutor      
   def getResourcesHistory( self, resourceName = None, statusType = None, status = None,
                            reason = None, tokenOwner = None, tokenExpiration = None, 
                            dateCreated = None, dateEffective = None, dateEnd = None, 
                            lastCheckTime = None, **kwargs ):
     pass
   
-  @LazyExecutor        
+  @ClientExecutor        
   def getResourcesScheduledStatus( self, resourceName = None, statusType = None, status = None,
                                   reason = None, tokenOwner = None, tokenExpiration = None, 
                                   dateCreated = None, dateEffective = None, dateEnd = None, 
                                   lastCheckTime = None, **kwargs):
     pass
   
-  @LazyExecutor      
+  @ClientExecutor      
   def getResourcesPresent( self, resourceName = None, siteName = None, serviceType = None,
                            gridSiteName = None, siteType = None, resourceType = None,
                            statusType = None, status = None, dateEffective = None, 
@@ -283,11 +301,11 @@ class ResourceStatusClient:
                            tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
   
-  @LazyExecutor     
+  @ClientExecutor     
   def deleteResources( self, resourceName ):
     pass
   
-  @LazyExecutor      
+  @ClientExecutor      
   def deleteResourcesScheduledStatus( self, resourceName = None, statusType = None, 
                                       status = None, reason = None, tokenOwner = None, 
                                       tokenExpiration = None, dateCreated = None, 
@@ -295,7 +313,7 @@ class ResourceStatusClient:
                                       lastCheckTime = None):
     pass
   
-  @LazyExecutor      
+  @ClientExecutor      
   def deleteResourcesHistory( self, resourceName = None, statusType = None, status = None, 
                               reason = None, tokenOwner = None, tokenExpiration = None, 
                               dateCreated = None, dateEffective = None, dateEnd = None, 
@@ -310,38 +328,38 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @LazyExecutor   
+  @ClientExecutor   
   def addOrModifyStorageElement( self, storageElementName, resourceName, 
                                  gridSiteName ):
     pass
   
-  @LazyExecutor       
+  @ClientExecutor       
   def setStorageElementStatus( self, storageElementName, statusType, status, 
                                reason, tokenOwner, tokenExpiration = None, 
                                dateCreated = None, dateEffective = None, dateEnd = None, 
                                lastCheckTime = None ):
     pass
       
-  @LazyExecutor       
+  @ClientExecutor       
   def setStorageElementScheduledStatus( self, storageElementName, statusType, status, 
                                         reason, tokenOwner, tokenExpiration = None, 
                                         dateCreated = None, dateEffective = None, 
                                         dateEnd = None, lastCheckTime = None ):
     pass
       
-  @LazyExecutor       
+  @ClientExecutor       
   def updateStorageElementStatus( self, storageElementName, statusType = None, status = None, 
                                  reason = None , tokenOwner = None, tokenExpiration = None, 
                                  dateCreated = None, dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None ):
     pass
       
-  @LazyExecutor       
+  @ClientExecutor       
   def getStorageElements( self, storageElementName = None, resourceName = None, 
                           gridSiteName = None, **kwargs ):
     pass
       
-  @LazyExecutor       
+  @ClientExecutor       
   def getStorageElementsStatus( self, storageElementName = None, statusType = None, 
                                 status = None, reason = None, tokenOwner = None, 
                                 tokenExpiration = None, dateCreated = None, 
@@ -349,7 +367,7 @@ class ResourceStatusClient:
                                 lastCheckTime = None, **kwargs ):
     pass    
     
-  @LazyExecutor       
+  @ClientExecutor       
   def getStorageElementsHistory( self, storageElementName = None, statusType = None, 
                                  status = None, reason = None, tokenOwner = None, 
                                  tokenExpiration = None, dateCreated = None, 
@@ -357,7 +375,7 @@ class ResourceStatusClient:
                                  lastCheckTime = None, **kwargs ):
     pass
       
-  @LazyExecutor       
+  @ClientExecutor       
   def getStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
                                          status = None, reason = None, tokenOwner = None, 
                                          tokenExpiration = None, dateCreated = None, 
@@ -365,7 +383,7 @@ class ResourceStatusClient:
                                          lastCheckTime = None, **kwargs ):
     pass
       
-  @LazyExecutor      
+  @ClientExecutor      
   def getStorageElementsPresent( self, storageElementName = None, resourceName = None, 
                                  gridSiteName = None, siteType = None, statusType = None, 
                                  status = None, dateEffective = None, reason = None, 
@@ -373,11 +391,11 @@ class ResourceStatusClient:
                                  tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
       
-  @LazyExecutor                                    
+  @ClientExecutor                                    
   def deleteStorageElements( self, storageElementName ):
     pass
       
-  @LazyExecutor  
+  @ClientExecutor  
   def deleteStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
                                             status = None, reason = None, tokenOwner = None, 
                                             tokenExpiration = None, dateCreated = None, 
@@ -385,7 +403,7 @@ class ResourceStatusClient:
                                             lastCheckTime = None ):
     pass
       
-  @LazyExecutor
+  @ClientExecutor
   def deleteStorageElementsHistory( self, storageElementName = None, statusType = None, 
                                     status = None, reason = None, tokenOwner = None, 
                                     tokenExpiration = None, dateCreated = None, 
@@ -401,15 +419,15 @@ class ResourceStatusClient:
 
 ################################################################################
   
-  @LazyExecutor
+  @ClientExecutor
   def getServiceStats( self, siteName, statusType = None ):
     pass
     
-  @LazyExecutor  
+  @ClientExecutor  
   def getResourceStats( self, element, name, statusType = None ):
     pass
     
-  @LazyExecutor  
+  @ClientExecutor  
   def getStorageElementStats( self, element, name, statusType = None ):      
     pass
 
@@ -421,15 +439,15 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @LazyExecutor
+  @ClientExecutor
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
     pass
   
-  @LazyExecutor    
+  @ClientExecutor    
   def getGridSites( self, gridSiteName = None, gridTier = None, **kwargs ):
     pass
 
-  @LazyExecutor    
+  @ClientExecutor    
   def deleteGridSites( self, gridSiteName ):        
     pass
 
@@ -441,33 +459,33 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @LazyExecutor 
+  @ClientExecutor 
   def getGeneralName( self, from_element, name, to_element ):
     pass
     
-  @LazyExecutor     
+  @ClientExecutor     
   def getGridSiteName( self, granularity, name ):
     pass
     
-  @LazyExecutor     
+  @ClientExecutor     
   def getTokens( self, granularity, name = None, tokenExpiration = None, 
                  statusType = None, **kwargs ): 
     pass
    
-  @LazyExecutor    
+  @ClientExecutor    
   def setToken( self, granularity, name, statusType, reason, tokenOwner, 
                 tokenExpiration ):
     pass
     
-  @LazyExecutor     
+  @ClientExecutor     
   def setReason( self, granularity, name, statusType, reason ):     
     pass
     
-  @LazyExecutor     
+  @ClientExecutor     
   def whatIs( self, name ):  
     pass
   
-  @LazyExecutor   
+  @ClientExecutor   
   def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
     pass    
         
