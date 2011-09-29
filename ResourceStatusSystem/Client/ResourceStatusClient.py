@@ -4,11 +4,12 @@ ResourceStatusClient class is a client for requesting info from the ResourceStat
 # it crashes epydoc
 # __docformat__ = "restructuredtext en"
 
-from DIRAC                                            import S_OK, S_ERROR, gConfig
+from DIRAC                                            import S_OK, S_ERROR#, gConfig
 from DIRAC.Core.DISET.RPCClient                       import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
-from DIRAC.ResourceStatusSystem                       import ValidRes
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes, RSSException
+#from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
+from DIRAC.ResourceStatusSystem                       import ValidRes, ValidStatus, \
+  ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB   import ResourceStatusDB 
 
@@ -49,7 +50,11 @@ class ResourceStatusClient:
       self.gate = serviceIn
 
 ################################################################################
-# Sites
+
+################################################################################
+# Sites functions
+################################################################################
+
 ################################################################################
 
   @LazyExecutor
@@ -125,9 +130,13 @@ class ResourceStatusClient:
                           dateCreated = None, dateEffective = None, dateEnd = None, 
                           lastCheckTime = None, **kwargs ):
     pass
+  
+################################################################################
 
 ################################################################################
-# Services
+# Services functions
+################################################################################
+
 ################################################################################
 
   @LazyExecutor
@@ -207,9 +216,13 @@ class ResourceStatusClient:
                           dateCreated = None, dateEffective = None, dateEnd = None, 
                           lastCheckTime = None, **kwargs ):                                              
     pass
+  
+################################################################################
 
 ################################################################################
-# Resources
+# Resources functions
+################################################################################
+
 ################################################################################
 
   @LazyExecutor  
@@ -288,7 +301,204 @@ class ResourceStatusClient:
                               dateCreated = None, dateEffective = None, dateEnd = None, 
                               lastCheckTime = None, **kwargs ):
     pass
-          
+
+################################################################################
+
+################################################################################
+# StorageElements functions
+################################################################################
+
+################################################################################
+
+  @LazyExecutor   
+  def addOrModifyStorageElement( self, storageElementName, resourceName, 
+                                 gridSiteName ):
+    pass
+  
+  @LazyExecutor       
+  def setStorageElementStatus( self, storageElementName, statusType, status, 
+                               reason, tokenOwner, tokenExpiration = None, 
+                               dateCreated = None, dateEffective = None, dateEnd = None, 
+                               lastCheckTime = None ):
+    pass
+      
+  @LazyExecutor       
+  def setStorageElementScheduledStatus( self, storageElementName, statusType, status, 
+                                        reason, tokenOwner, tokenExpiration = None, 
+                                        dateCreated = None, dateEffective = None, 
+                                        dateEnd = None, lastCheckTime = None ):
+    pass
+      
+  @LazyExecutor       
+  def updateStorageElementStatus( self, storageElementName, statusType = None, status = None, 
+                                 reason = None , tokenOwner = None, tokenExpiration = None, 
+                                 dateCreated = None, dateEffective = None, dateEnd = None, 
+                                 lastCheckTime = None ):
+    pass
+      
+  @LazyExecutor       
+  def getStorageElements( self, storageElementName = None, resourceName = None, 
+                          gridSiteName = None, **kwargs ):
+    pass
+      
+  @LazyExecutor       
+  def getStorageElementsStatus( self, storageElementName = None, statusType = None, 
+                                status = None, reason = None, tokenOwner = None, 
+                                tokenExpiration = None, dateCreated = None, 
+                                dateEffective = None, dateEnd = None, 
+                                lastCheckTime = None, **kwargs ):
+    pass    
+    
+  @LazyExecutor       
+  def getStorageElementsHistory( self, storageElementName = None, statusType = None, 
+                                 status = None, reason = None, tokenOwner = None, 
+                                 tokenExpiration = None, dateCreated = None, 
+                                 dateEffective = None, dateEnd = None, 
+                                 lastCheckTime = None, **kwargs ):
+    pass
+      
+  @LazyExecutor       
+  def getStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
+                                         status = None, reason = None, tokenOwner = None, 
+                                         tokenExpiration = None, dateCreated = None, 
+                                         dateEffective = None, dateEnd = None, 
+                                         lastCheckTime = None, **kwargs ):
+    pass
+      
+  @LazyExecutor      
+  def getStorageElementsPresent( self, storageElementName = None, resourceName = None, 
+                                 gridSiteName = None, siteType = None, statusType = None, 
+                                 status = None, dateEffective = None, reason = None, 
+                                 lastCheckTime = None, tokenOwner = None,
+                                 tokenExpiration = None, formerStatus = None, **kwargs ):
+    pass
+      
+  @LazyExecutor                                    
+  def deleteStorageElements( self, storageElementName ):
+    pass
+      
+  @LazyExecutor  
+  def deleteStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
+                                            status = None, reason = None, tokenOwner = None, 
+                                            tokenExpiration = None, dateCreated = None, 
+                                            dateEffective = None, dateEnd = None, 
+                                            lastCheckTime = None ):
+    pass
+      
+  @LazyExecutor
+  def deleteStorageElementsHistory( self, storageElementName = None, statusType = None, 
+                                    status = None, reason = None, tokenOwner = None, 
+                                    tokenExpiration = None, dateCreated = None, 
+                                    dateEffective = None, dateEnd = None, 
+                                    lastCheckTime = None, **kwargs ):          
+    pass
+
+################################################################################
+
+################################################################################
+# Stats functions
+################################################################################
+
+################################################################################
+  
+  @LazyExecutor
+  def getServiceStats( self, siteName, statusType = None ):
+    pass
+    
+  @LazyExecutor  
+  def getResourceStats( self, element, name, statusType = None ):
+    pass
+    
+  @LazyExecutor  
+  def getStorageElementStats( self, element, name, statusType = None ):      
+    pass
+
+################################################################################
+
+################################################################################
+# GridSites functions
+################################################################################
+
+################################################################################
+
+  @LazyExecutor
+  def addOrModifyGridSite( self, gridSiteName, gridTier ):
+    pass
+  
+  @LazyExecutor    
+  def getGridSites( self, gridSiteName = None, gridTier = None, **kwargs ):
+    pass
+
+  @LazyExecutor    
+  def deleteGridSites( self, gridSiteName ):        
+    pass
+
+################################################################################
+
+################################################################################
+# Misc functions
+################################################################################
+
+################################################################################
+
+  @LazyExecutor 
+  def getGeneralName( self, from_element, name, to_element ):
+    pass
+    
+  @LazyExecutor     
+  def getGridSiteName( self, granularity, name ):
+    pass
+    
+  @LazyExecutor     
+  def getTokens( self, granularity, name = None, tokenExpiration = None, 
+                 statusType = None, **kwargs ): 
+    pass
+   
+  @LazyExecutor    
+  def setToken( self, granularity, name, statusType, reason, tokenOwner, 
+                tokenExpiration ):
+    pass
+    
+  @LazyExecutor     
+  def setReason( self, granularity, name, statusType, reason ):     
+    pass
+    
+  @LazyExecutor     
+  def whatIs( self, name ):  
+    pass
+  
+  @LazyExecutor   
+  def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
+    pass    
+        
+################################################################################
+
+################################################################################
+# General config valid elements functions
+################################################################################
+
+################################################################################
+
+  def getValidElements( self ):
+    return S_OK( ValidRes )
+  
+  def getValidStatuses( self ):
+    return S_OK( ValidStatus )
+  
+  def getValidStatusTypes( self ):  
+    return S_OK( ValidStatusTypes )
+
+  def getValidSiteTypes( self ):
+    return S_OK( ValidSiteType )
+  
+  def getValidServiceTypes( self ):
+    return S_OK( ValidServiceType )
+  
+  def getValidResourceTypes( self ):
+    return S_OK( ValidResourceType )
+
+################################################################################
+            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
 
