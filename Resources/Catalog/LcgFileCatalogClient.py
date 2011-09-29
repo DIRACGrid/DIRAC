@@ -208,7 +208,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[path] = res['Message']
       else:
         basePath = res['Value']
-        res = self.__getACLInformation( basePath )
+        res = self.__getACLInformation( basePath ) # to be modified!
         if not res['OK']:
           failed[path] = res['Message']
         else:
@@ -229,19 +229,23 @@ class LcgFileCatalogClient( FileCatalogueBase ):
               print 'DEBUG: DN returned by LFC matches the proxys DN'
               if groupMatch:
                 perms = lfcPerm['user']
+                print '--->DEBUG: assigned used permissions'
               else:
                 perms = lfcPerm['world']
+                print '--->DEBUG: assigned world permissions'
             else:
               print 'DEBUG: DN returned by LFC does NOT match the proxys DN'
               if groupMatch:
                 perms = lfcPerm['group']
+                print '--->DEBUG: assigned group permissions'
               else:
                 perms = lfcPerm['world']
-
+                print '--->DEBUG: assigned world permissions'
+            print 'DEBUG: perms: ', perms
             lfcPerm['Write'] = ( perms & 2 ) != 0
             lfcPerm['Read'] = ( perms & 4 ) != 0
             lfcPerm['Execute'] = ( perms & 1 ) != 0
-            print 'DEBUG: lfcPerm: ', lfcPerm
+            print 'DEBUG: Finally-> lfcPerm: ', lfcPerm
             successful[path] = lfcPerm
 
     if created:
