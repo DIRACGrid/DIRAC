@@ -193,9 +193,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getPathPermissions( self, path ):
     """ Determine the VOMs based ACL information for a supplied path
     """
+    print 'DEBUG: execute the getPathPermissions'
     res = self.__checkArgumentFormat( path )
     if not res['OK']:
       return res
+    print 'DEBUG: result of __checkArgumentFormat: ', res
     lfns = res['Value']
     created = self.__openSession()
     failed = {}
@@ -212,21 +214,25 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         else:
           # Evaluate access rights
           lfcPerm = res['Value']
+          print 'DEBUG: lfcPerm: ', lfcPerm
           resClient = self.__getClientCertInfo()
           if not resClient['OK']:
             failed[path] = resClient['Message']
           else:
             clientInfo = resClient['Value']
+            print 'DEBUG: clientInfo: ', clientInfo
             groupMatch = False
             for vomsRole in clientInfo['Role']:
               if vomsRole.endswith( lfcPerm['Role'] ):
                 groupMatch = True
             if ( lfcPerm['DN'] in clientInfo['AllDNs'] ):
+              print 'DEBUG: DN returned by LFC matches the proxys DN'
               if groupMatch:
                 perms = lfcPerm['user']
               else:
                 perms = lfcPerm['world']
             else:
+              print 'DEBUG: DN returned by LFC does NOT match the proxys DN'
               if groupMatch:
                 perms = lfcPerm['group']
               else:
@@ -235,7 +241,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
             lfcPerm['Write'] = ( perms & 2 ) != 0
             lfcPerm['Read'] = ( perms & 4 ) != 0
             lfcPerm['Execute'] = ( perms & 1 ) != 0
-
+            print 'DEBUG: lfcPerm: ', lfcPerm
             successful[path] = lfcPerm
 
     if created:
