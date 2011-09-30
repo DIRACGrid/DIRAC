@@ -14,7 +14,6 @@ class CLIParams:
 
   proxyLifeTime = 2592000
   diracGroup = False
-  debug = False
   certLoc = False
   keyLoc = False
   proxyLoc = False
@@ -50,11 +49,6 @@ class CLIParams:
   def getDIRACGroup( self ):
     return self.diracGroup
 
-  def setDebug( self, arg ):
-    print "Enabling debug output"
-    self.debug = True
-    return DIRAC.S_OK()
-
   def setCertLocation( self, arg ):
     self.certLoc = arg
     return DIRAC.S_OK()
@@ -81,14 +75,9 @@ class CLIParams:
     sys.exit( 0 )
     return DIRAC.S_OK()
 
-  def debugMsg( self, msg ):
-    if self.debug:
-      print msg
-
   def registerCLISwitches( self ):
     Script.registerSwitch( "v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime )
     Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
-    Script.registerSwitch( "V", "verbose", "Enable extra output", self.setDebug )
     Script.registerSwitch( "C:", "Cert=", "File to use as user certificate", self.setCertLocation )
     Script.registerSwitch( "K:", "Key=", "File to use as user key", self.setKeyLocation )
     Script.registerSwitch( "P:", "Proxy=", "File to use as proxy", self.setProxyLocation )
@@ -103,7 +92,7 @@ from DIRAC.Core.Security import Locations, CS
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 def uploadProxy( params ):
-  params.debugMsg( "Loading user proxy" )
+  DIRAC.gLogger.info( "Loading user proxy" )
   proxyLoc = params.proxyLoc
   if not proxyLoc:
     proxyLoc = Locations.getDefaultProxyLocation()
@@ -116,7 +105,7 @@ def uploadProxy( params ):
     return S_ERROR( "Can't load proxy file %s: %s" % ( params.proxyLoc, retVal[ 'Message' ] ) )
 
   if params.onTheFly:
-    params.debugMsg( "Uploading proxy on-the-fly" )
+    DIRAC.gLogger.info( "Uploading proxy on-the-fly" )
     certLoc = params.certLoc
     keyLoc = params.keyLoc
     if not certLoc or not keyLoc:
@@ -128,8 +117,8 @@ def uploadProxy( params ):
       if not keyLoc:
         keyLoc = cakLoc[1]
 
-    params.debugMsg( "Cert file %s" % certLoc )
-    params.debugMsg( "Key file  %s" % keyLoc )
+    DIRAC.gLogger.info( "Cert file %s" % certLoc )
+    DIRAC.gLogger.info( "Key file  %s" % keyLoc )
 
     testChain = X509Chain()
     retVal = testChain.loadKeyFromFile( keyLoc, password = params.userPasswd )
@@ -141,7 +130,7 @@ def uploadProxy( params ):
         userPasswd = getpass.getpass( passwdPrompt )
       params.userPasswd = userPasswd
 
-    params.debugMsg( "Loading cert and key" )
+    DIRAC.gLogger.info( "Loading cert and key" )
     chain = X509Chain()
     #Load user cert and key
     retVal = chain.loadChainFromFile( certLoc )
@@ -150,7 +139,7 @@ def uploadProxy( params ):
     retVal = chain.loadKeyFromFile( keyLoc, password = params.userPasswd )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't load %s" % keyLoc )
-    params.debugMsg( "User credentials loaded" )
+    DIRAC.gLogger.info( "User credentials loaded" )
 
     diracGroup = params.diracGroup
     if not diracGroup:
@@ -162,5 +151,5 @@ def uploadProxy( params ):
     diracGroup = False
     restrictLifeTime = 0
 
-  params.debugMsg( " Uploading..." )
+  DIRAC.gLogger.info( " Uploading..." )
   return gProxyManager.uploadProxy( chain, diracGroup, restrictLifeTime = restrictLifeTime )
