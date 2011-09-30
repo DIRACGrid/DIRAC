@@ -70,6 +70,21 @@ class ProxyInit:
     self.__issuerCert = result[ 'Value' ]
     return self.__issuerCert
 
+  def certLifeTimeCheck( self ):
+    minLife = Registry.getGroupOption( self.__piParams.diracGroup, "FafeCertificateLifeTime", 2592000 )
+    issuerCert = self.getIssuerCert()
+    result = issuerCert.getRemainingSecs()
+    if not result[ 'OK' ]:
+      gLogger.error( "Could not retrieve certificate expiration time", result[ 'Message' ] )
+      return
+    lifeLeft = result[ 'Value' ]
+    if minLife * 100 > lifeLeft:
+      daysLeft = int( lifeLeft / 86400 )
+      msg = "Your certificate will expire in less than %d days. Please renew it!" % daysLeft
+      sep = "=" * ( len( msg ) + 4 )
+      msg = "%s\n  %s  \n%s" % ( sep, msg, sep )
+      gLogger.notice( msg )
+
   def getPilotGroupsToUpload( self ):
     pilotUpload = Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadPilotProxy", self.__piParams.uploadPilot )
     if not pilotUpload:
@@ -182,6 +197,7 @@ if __name__ == "__main__":
     gLogger.error( result[ 'Message' ] )
     sys.exit( 1 )
 
+  pI.certLifeTimeCheck()
   pI.addVOMSExtIfNeeded()
 
   if piParams.uploadProxy:
