@@ -238,6 +238,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
               LFCPerm['user'] = val['user']
               LFCPerm['group'] = val['group']
               LFCPerm['world'] = val['world']
+              LFCPerm['DN'] = val['DN']
+              LFCPerm['Role'] = val['Role']
             except KeyError:
               print 'key not found: __getACLInformation returned incomplete dictionary', KeyError
               failed[path] = LFCPerm
