@@ -190,14 +190,31 @@ class LcgFileCatalogClient( FileCatalogueBase ):
               }
     return S_OK( resDict )
 
+  def __getPathAccess( self, path ):
+    """ Determine the permissions using the lfc function lfc_access """
+    fullLfn = '%s%s' % ( self.prefix, path )
+    permDict = { 'Read': 1,
+                 'Write': 2,
+                 'Execute': 4}
+    resDict = {}
+    for p in permDict.keys():
+
+      code = permDict[ p ]
+      value = lfc.lfc_access( fullLfn, code )
+      if value == 0:
+        resDict[ p ] = True
+      else:
+        resDict[ p ] = False
+        #errno = lfc.cvar.serrno
+    #print "DEBUG: resDict %s " % resDict
+    return S_OK( resDict )
+
   def getPathPermissions( self, path ):
     """ Determine the VOMs based ACL information for a supplied path
     """
-    print 'DEBUG: execute the getPathPermissions'
     res = self.__checkArgumentFormat( path )
     if not res['OK']:
       return res
-    print 'DEBUG: result of __checkArgumentFormat: ', res
     lfns = res['Value']
     created = self.__openSession()
     failed = {}
@@ -208,45 +225,28 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[path] = res['Message']
       else:
         basePath = res['Value']
-        res = self.__getACLInformation( basePath ) # to be modified!
+        res = self.__getPathAccess( basePath )
         if not res['OK']:
           failed[path] = res['Message']
         else:
-          # Evaluate access rights
-          lfcPerm = res['Value']
-          print 'DEBUG: lfcPerm: ', lfcPerm
-          resClient = self.__getClientCertInfo()
-          if not resClient['OK']:
-            failed[path] = resClient['Message']
+          LFCPerm = res['Value']
+          print 'DEBUG: LFCPerm: ', LFCPerm
+          res = self.__getACLInformation( basePath )
+          print 'DEBUG: res of getACL', res
+          if not res['OK']:
+            failed[path] = res['Message']
           else:
-            clientInfo = resClient['Value']
-            print 'DEBUG: clientInfo: ', clientInfo
-            groupMatch = False
-            for vomsRole in clientInfo['Role']:
-              if vomsRole.endswith( lfcPerm['Role'] ):
-                groupMatch = True
-            if ( lfcPerm['DN'] in clientInfo['AllDNs'] ):
-              print 'DEBUG: DN returned by LFC matches the proxys DN'
-              if groupMatch:
-                perms = lfcPerm['user']
-                print '--->DEBUG: assigned used permissions'
-              else:
-                perms = lfcPerm['world']
-                print '--->DEBUG: assigned world permissions'
-            else:
-              print 'DEBUG: DN returned by LFC does NOT match the proxys DN'
-              if groupMatch:
-                perms = lfcPerm['group']
-                print '--->DEBUG: assigned group permissions'
-              else:
-                perms = lfcPerm['world']
-                print '--->DEBUG: assigned world permissions'
-            print 'DEBUG: perms: ', perms
-            lfcPerm['Write'] = ( perms & 2 ) != 0
-            lfcPerm['Read'] = ( perms & 4 ) != 0
-            lfcPerm['Execute'] = ( perms & 1 ) != 0
-            print 'DEBUG: Finally-> lfcPerm: ', lfcPerm
-            successful[path] = lfcPerm
+          # Evaluate access rights
+            val = res['Value']
+            try:
+              LFCPerm['user'] = val['user']
+              LFCPerm['group'] = val['group']
+              LFCPerm['world'] = val['world']
+            except KeyError:
+              print 'key not found: __getACLInformation returned incomplete dictionary', KeyError
+              failed[path] = LFCPerm
+              continue
+          successful[path] = LFCPerm
 
     if created:
       self.__closeSession()
