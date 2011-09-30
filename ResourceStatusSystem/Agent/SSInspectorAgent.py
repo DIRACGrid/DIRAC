@@ -1,23 +1,17 @@
-########################################################################
+################################################################################
 # $HeadURL:  $
-########################################################################
+################################################################################
 
 import Queue
-from DIRAC                                              import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                        import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                    import ThreadPool
-from DIRAC.Interfaces.API.DiracAdmin                    import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
-from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
+from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem.Utilities.CS            import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils         import where
-
-from DIRAC.ResourceStatusSystem                         import CheckingFreqs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP        import PEP
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-
+from DIRAC.ResourceStatusSystem                             import CheckingFreqs
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
 __RCSID__ = "$Id:  $"
 
@@ -28,34 +22,29 @@ class SSInspectorAgent( AgentModule ):
       table, and pass Site and Status to the PEP
   """
 
-#############################################################################
+################################################################################
 
   def initialize( self ):
     """ Standard constructor
     """
 
     try:
-      self.rsDB = ResourceStatusDB()
-      self.rmDB = ResourceManagementDB()
-
+      
+      self.VOExtension = getExt()
+      self.setup       = getSetup()[ 'Value' ]
+      
+      self.rsClient         = ResourceStatusClient()
+      self.SitesFreqs       = CheckingFreqs[ 'SitesFreqs' ]
       self.SitesToBeChecked = Queue.Queue()
       self.SiteNamesInCheck = []
 
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
       self.threadPool         = ThreadPool( self.maxNumberOfThreads,
                                             self.maxNumberOfThreads )
-
       if not self.threadPool:
         self.log.error( 'Can not create Thread Pool' )
-        return S_ERROR( 'Can not create Thread Pool' )
-
-      self.setup       = getSetup()['Value']
-      self.VOExtension = getExt()
-      self.SitesFreqs  = CheckingFreqs[ 'ServicesFreqs' ]
-      self.nc          = NotificationClient()
-      self.diracAdmin  = DiracAdmin()
-      self.csAPI        = CSAPI()
-
+        return S_ERROR( 'Can not create Thread Pool' )  
+      
       for _i in xrange( self.maxNumberOfThreads ):
         self.threadPool.generateJobAndQueueIt( self._executeCheck, args = ( None, ) )
 
@@ -66,7 +55,7 @@ class SSInspectorAgent( AgentModule ):
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
-#############################################################################
+################################################################################
 
   def execute( self ):
     """
@@ -76,16 +65,24 @@ class SSInspectorAgent( AgentModule ):
     """
 
     try:
+      
+      kwargs = { 'columns' : ['SiteName', 'StatusType', 'Status', 'FormerStatus',\
+                               'SiteType', 'TokenOwner'] }
+      resQuery = self.rsClient.getStuffToCheck( 'Site', self.SitesFreqs, **kwargs )
 
-      res = self.rsDB.getStuffToCheck( 'Sites', self.SitesFreqs )
+      for siteTuple in resQuery[ 'Value' ]:
+        
+        #THIS IS IMPORTANT !!
+        #Ignore all elements with token != RS_SVC
+        if siteTuple[ 5 ] != 'RS_SVC':
+          continue
+        
+        if ( siteTuple[ 0 ],siteTuple[ 1 ] ) in self.SiteNamesInCheck:
+          continue
+        
+        resourceL = [ 'Site' ] + siteTuple
 
-      for resourceTuple in res:
-        if resourceTuple[ 0 ] in self.SiteNamesInCheck:
-          break
-        resourceL = [ 'Site' ]
-        for x in resourceTuple:
-          resourceL.append( x )
-        self.SiteNamesInCheck.insert( 0, resourceL[ 1 ] )
+        self.SiteNamesInCheck.insert( 0, ( siteTuple[ 0 ], siteTuple[ 1 ] ) )
         self.SitesToBeChecked.put( resourceL )
 
       return S_OK()
@@ -95,12 +92,14 @@ class SSInspectorAgent( AgentModule ):
       gLogger.exception( errorStr, lException = x )
       return S_ERROR( errorStr )
 
-#############################################################################
+################################################################################
 
   def _executeCheck( self, _arg ):
     """
     Create instance of a PEP, instantiated popping a resource from lists.
     """
+    
+    pep = PEP( self.VOExtension, setup = self.setup )
 
     while True:
 
@@ -108,34 +107,28 @@ class SSInspectorAgent( AgentModule ):
 
         toBeChecked  = self.SitesToBeChecked.get()
 
+        pepDict = { 'granularity'  : toBeChecked[ 0 ],
+                    'name'         : toBeChecked[ 1 ],
+                    'statusType'   : toBeChecked[ 2 ],
+                    'status'       : toBeChecked[ 3 ],
+                    'formerStatus' : toBeChecked[ 4 ],
+                    'siteType'     : toBeChecked[ 5 ],
+                    'tokenOwner'   : toBeChecked[ 6 ] }
 
-        granularity  = toBeChecked[ 0 ]
-        siteName     = toBeChecked[ 1 ]
-        status       = toBeChecked[ 2 ]
-        formerStatus = toBeChecked[ 3 ]
-        siteType     = toBeChecked[ 4 ]
-        tokenOwner   = toBeChecked[ 5 ]
-
-        # Ignore all elements with token != RS_SVC
-        if tokenOwner != 'RS_SVC':
-          continue
-
-        gLogger.info( "Checking Site %s, with status %s" % ( siteName, status ) )
-
-        newPEP = PEP( self.VOExtension, granularity = granularity, name = siteName, status = status,
-                      formerStatus = formerStatus, siteType = siteType, tokenOwner = tokenOwner )
-
-        newPEP.enforce( rsDBIn = self.rsDB, rmDBIn = self.rmDB, setupIn = self.setup, ncIn = self.nc,
-                        daIn = self.diracAdmin, csAPIIn = self.csAPI )
+        gLogger.info( "Checking Site %s, with type/status: %s/%s" % \
+                      ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
+     
+        pep.enforce( **pepDict )
 
         # remove from InCheck list
-        self.SiteNamesInCheck.remove( toBeChecked[ 1 ] )
+        self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )       
 
       except Exception:
         gLogger.exception( 'SSInspector._executeCheck' )
         try:
-          self.SiteNamesInCheck.remove( siteName )
+          self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
 
-#############################################################################
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
