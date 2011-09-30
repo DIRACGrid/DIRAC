@@ -28,8 +28,6 @@ class CLIParams:
   userPasswd = ""
   checkClock = True
 
-  def debugMsg( self, m ):
-    pass
 
   def setProxyLifeTime( self, arg ):
     try:
