@@ -13,7 +13,6 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
-
 __RCSID__ = "$Id: $"
 
 AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
