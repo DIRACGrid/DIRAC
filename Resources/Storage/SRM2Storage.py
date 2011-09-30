@@ -359,6 +359,9 @@ class SRM2Storage( StorageBase ):
         if urlDict['status'] == 0:
           gLogger.debug( "SRM2Storage.prestageFile: Issued stage request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
+        elif urlDict['status'] == 1:
+          gLogger.debug( "SRM2Storage.prestageFile: File found to be already staged.", pathSURL )
+          successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
           errMessage = "SRM2Storage.prestageFile: File does not exist."
           gLogger.error( errMessage, pathSURL )
