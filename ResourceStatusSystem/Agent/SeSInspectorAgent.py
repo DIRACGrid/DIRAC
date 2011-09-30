@@ -6,17 +6,13 @@ import Queue
 from DIRAC                                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
-from DIRAC.Interfaces.API.DiracAdmin                        import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
-from DIRAC.FrameworkSystem.Client.NotificationClient        import NotificationClient
 
+from DIRAC.ResourceStatusSystem                             import CheckingFreqs
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
-from DIRAC.ResourceStatusSystem                             import CheckingFreqs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB     import ResourceManagementDB
 
 __RCSID__ = "$Id: $"
 
