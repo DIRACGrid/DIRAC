@@ -205,8 +205,6 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         resDict[ p ] = True
       else:
         resDict[ p ] = False
-        #errno = lfc.cvar.serrno
-    #print "DEBUG: resDict %s " % resDict
     return S_OK( resDict )
 
   def getPathPermissions( self, path ):
@@ -230,9 +228,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
           failed[path] = res['Message']
         else:
           LFCPerm = res['Value']
-          print 'DEBUG: LFCPerm: ', LFCPerm
           res = self.__getACLInformation( basePath )
-          print 'DEBUG: res of getACL', res
           if not res['OK']:
             failed[path] = res['Message']
           else:
