@@ -21,6 +21,17 @@ class CLIParams:
   stdinPasswd = False
   userPasswd = ""
 
+  def __str__( self ):
+    data = []
+    for k in ( 'proxyLifeTime', 'diracGroup', 'certLoc', 'keyLoc', 'proxyLoc',
+               'onTheFly', 'stdinPasswd', 'userPasswd' ):
+      if k == 'userPasswd':
+        data.append( "userPasswd = *****" )
+      else:
+        data.append( "%s=%s" % ( k, getattr( self, k ) ) )
+    msg = "<UploadCLIParams %s>" % " ".join( data )
+    return msg
+
   def setProxyLifeTime( self, arg ):
     try:
       fields = [ f.strip() for f in arg.split( ":" ) ]
