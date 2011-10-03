@@ -32,14 +32,18 @@ class JobsEffSimpleEveryOne_Command( Command ):
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
       self.client = JobsClient()
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if sites is None:
 #      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient( "ResourceStatus/ResourceStatus" )
-      sites = RPC.getSitesList()
+      #RPC = RPCClient( "ResourceStatus/ResourceStatus" )
+      sites = self.rsClient.getSitesList()
       if not sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
 
     if self.RPC is None:
 #      from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -82,14 +86,18 @@ class PilotsEffSimpleEverySites_Command( Command ):
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
       self.client = PilotsClient()
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if sites is None:
 #      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient( "ResourceStatus/ResourceStatus" )
-      sites = RPC.getSitesList()
+      #RPC = RPCClient( "ResourceStatus/ResourceStatus" )
+      sites = self.rsClient.getSitesList()
       if not sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
 
     if self.RPC is None:
 #      from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -130,10 +138,14 @@ class TransferQualityEverySEs_Command( Command ):
       {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if SEs is None:
 #      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList()
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = self.rsClient.getStorageElementsList()
       if not SEs['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + SEs['Message']
       else:
@@ -218,16 +230,20 @@ class DTEverySites_Command( Command ):
       from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
       self.client = GOCDBClient()
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if sites is None:
 #      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient( "ResourceStatus/ResourceStatus" )
-      GOC_sites = RPC.getGridSitesList()
+      #RPC = RPCClient( "ResourceStatus/ResourceStatus" )
+      GOC_sites = self.rsClient.getGridSitesList()
       if not GOC_sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
-        GOC_sites = GOC_sites['Value']
+        GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
     else:
-      GOC_sites = [getGOCSiteName( x )['Value'] for x in sites]
+      GOC_sites = [ getGOCSiteName( x )['Value'] for x in sites ]
 
     try:
       res = self.client.getStatus( 'Site', GOC_sites, None, 120 )
@@ -247,13 +263,14 @@ class DTEverySites_Command( Command ):
 
     for dt_ID in res:
       try:
-        dt = {}
-        dt['ID'] = dt_ID
-        dt['StartDate'] = res[dt_ID]['FORMATED_START_DATE']
-        dt['EndDate'] = res[dt_ID]['FORMATED_END_DATE']
-        dt['Severity'] = res[dt_ID]['SEVERITY']
+        dt                = {}
+        dt['ID']          = dt_ID
+        dt['StartDate']   = res[dt_ID]['FORMATED_START_DATE']
+        dt['EndDate']     = res[dt_ID]['FORMATED_END_DATE']
+        dt['Severity']    = res[dt_ID]['SEVERITY']
         dt['Description'] = res[dt_ID]['DESCRIPTION'].replace( '\'', '' )
-        dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
+        dt['Link']        = res[dt_ID]['GOCDB_PORTAL_URL']
+        
         DIRACnames = getDIRACSiteName( res[dt_ID]['SITENAME'] )
         if not DIRACnames['OK']:
           raise RSSException, DIRACnames['Message']
@@ -288,14 +305,18 @@ class DTEveryResources_Command( Command ):
       from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
       self.client = GOCDBClient()
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if resources is None:
 #      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient( "ResourceStatus/ResourceStatus" )
-      resources = RPC.getResourcesList()
+      #RPC = RPCClient( "ResourceStatus/ResourceStatus" )
+      resources = self.rsClient.getResourcesList()
       if not resources['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + resources['Message']
       else:
-        resources = resources['Value']
+        resources = [ re[0] for re in resources['Value'] ]
 
     try:
       res = self.client.getStatus( 'Resource', resources, None, 120 )
@@ -314,17 +335,18 @@ class DTEveryResources_Command( Command ):
     resToReturn = {}
 
     for dt_ID in res:
-      dt = {}
-      dt['ID'] = dt_ID
-      dt['StartDate'] = res[dt_ID]['FORMATED_START_DATE']
-      dt['EndDate'] = res[dt_ID]['FORMATED_END_DATE']
-      dt['Severity'] = res[dt_ID]['SEVERITY']
-      dt['Description'] = res[dt_ID]['DESCRIPTION'].replace( '\'', '' )
-      dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
+      dt                 = {}
+      dt['ID']           = dt_ID
+      dt['StartDate']    = res[dt_ID]['FORMATED_START_DATE']
+      dt['EndDate']      = res[dt_ID]['FORMATED_END_DATE']
+      dt['Severity']     = res[dt_ID]['SEVERITY']
+      dt['Description']  = res[dt_ID]['DESCRIPTION'].replace( '\'', '' )
+      dt['Link']         = res[dt_ID]['GOCDB_PORTAL_URL']
       resToReturn[dt_ID] = dt
 
     return resToReturn
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

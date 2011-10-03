@@ -3,17 +3,19 @@ The ResourcesStatusDB module contains a couple of exception classes, and a
 class to interact with the ResourceStatus DB.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
-
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes, InvalidStatus
-
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where, convertTime
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, InvalidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
     ValidResourceType, ValidServiceType, ValidStatusTypes
+
+from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
+from DIRAC.ResourceStatusSystem.Utilities.Validator import ResourceStatusValidator
+
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution
 
 import types
 
@@ -51,19 +53,19 @@ class NotAllowedDate( RSSException ):
   Decorator that try / catches all API functions ( the ones expossed on the
   client) and makes a reasonable Exception handling.
 '''
-class CheckExecution( object ):
-  
-  def __init__( self, f ):
-    self.f = f
-    
-  def __get__( self, obj, objtype=None ):
-    return types.MethodType( self, obj, objtype ) 
-    
-  def __call__( self, *args, **kwargs ):
-    try:
-      return self.f( *args, **kwargs )     
-    except Exception, x:
-      return S_ERROR( x )
+#class CheckExecution( object ):
+#  
+#  def __init__( self, f ):
+#    self.f = f
+#    
+#  def __get__( self, obj, objtype=None ):
+#    return types.MethodType( self, obj, objtype ) 
+#    
+#  def __call__( self, *args, **kwargs ):
+##    try:
+#      return self.f( *args, **kwargs )     
+#    except Exception, x:
+#      return S_ERROR( x )
         
 ################################################################################
 
@@ -118,6 +120,9 @@ class ResourceStatusDB:
     else:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
+      
+    self.mm    = MySQLMonkey()  
+    self.rsVal = ResourceStatusValidator()
 
   '''
   ##############################################################################
@@ -125,53 +130,11 @@ class ResourceStatusDB:
   ##############################################################################
   '''
 
-  def __validateStatus( self, status ):
-    
-    if not status in ValidStatus:              
-        message = '%s is not a valid status' % status
-        raise RSSDBException, where( self, self.__validateStatus ) + message
-
-  def __validateRes( self, res ):
-    
-    if not res in ValidRes:              
-      message = '%s is not a valid res' % res
-      raise InvalidRes, where( self, self.__validateRes ) + message
-
-  def __validateSiteType( self, siteType ):
-    
-    if not siteType in ValidSiteType:
-      message = '%s is not a valid site type' % siteType
-      raise InvalidRes, where( self, self.__validateSiteType ) + message
-          
-  def __validateServiceType( self, serviceType ):
-    
-    if not serviceType in ValidServiceType:
-      message = '%s is not a valid service type' % serviceType
-      raise InvalidRes, where( self, self.__validateServiceType ) + message
-
-  def __validateResourceType( self, resourceType ):
-    
-    if not resourceType in ValidResourceType:
-      message = '%s is not a valid resource type' % resourceType
-      raise InvalidRes, where( self, self.__validateResourceType ) + message
-
-
   def __validateElementTableName( self, element ):
     
     element = element.replace('Status','').replace('History','').replace('Scheduled','').replace('Present','')
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
                                    
-  def __validateElementStatusTypes( self, element, statusTypes ):
-    
-    if not isinstance( statusTypes, list ):
-      statusTypes = [ statusTypes ]
-    
-    for statusType in statusTypes: 
-      if not statusType in ValidStatusTypes[ element ][ 'StatusType' ]:
-        message = '%s is not a valid statusType for %s' % ( statusType, element )
-        raise RSSDBException, where( self, self.__validateElementStatusTypes ) + message
-
-
   def __getWhereElements( self, element, dict ):
     
     if element in ValidRes:
@@ -199,28 +162,7 @@ class ResourceStatusDB:
    
   def __getMultipleWhereElements( self, dict, **kwargs ):
    
-    items = []
-
-    for k,v in dict.items():
-      if v is None:
-        pass
-      elif isinstance( v, list ):
-        if len(v) > 1:
-          items.append( '%s IN %s' % ( k, tuple(v) ) )
-        elif len(v):
-          items.append( "%s='%s'" % ( k, v[0] ) )
-        else:
-          raise NameError( dict )      
-      else:
-        items.append( "%s='%s'" % ( k, v ) )
-                
-    if kwargs.has_key( 'minor' ):
-      for k,v in kwargs[ 'minor' ].items():
-        if v is not None:  
-          items.append( "%s < '%s'" % ( k, v ) )                  
-                
-    whereElements = ' AND '.join( item for item in items ) 
-    return whereElements 
+    return self.mm.getWhereElements( dict, **kwargs ) 
              
   def __getElementUniqueKeys( self, element ):        
         
@@ -247,17 +189,7 @@ class ResourceStatusDB:
     return rDict
         
   def __getColumns( self, columns ):
-    
-    cols = ""
-    
-    if columns is None:
-      cols = "*"
-    else:
-      if not isinstance( columns, list):
-        columns = [ columns ]
-      cols = ','.join( col for col in columns )  
-      
-    return cols        
+    return self.mm.getColumns( columns )  
   
   def __addRow( self, element, dict ):      
 
@@ -338,23 +270,21 @@ class ResourceStatusDB:
   def __getElementStatusCountRow( self, element, whereElements ):
 
     #self.__validateRes( element )
-
-    #whereElements = self.__getMultipleWhereElements( dict )    
         
-    req = "SELECT Status, COUNT(*) from Present%s" % element
+    req = "SELECT Status, COUNT(*) from %sPresent" % element
     if whereElements:
       req += " WHERE %s" % whereElements
     req += " GROUP BY Status"
 
     resQuery = self.db._query( req )
     if not resQuery[ 'OK' ]:
-      raise RSSDBException, where( self, self.__getElementStatusRowCount ) + resQuery[ 'Message' ]
+      raise RSSDBException, where( self, self.__getElementStatusCountRow ) + resQuery[ 'Message' ]
 
     return resQuery  
 
   def __getElementStatusCount( self, element, dict ):
     
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
     
     whereElements = self.__getMultipleWhereElements( dict )   
     
@@ -415,7 +345,7 @@ class ResourceStatusDB:
   
   def __addOrModifyElement( self, element, dict ):
     
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
     
     kwargs = { 'columns' : [ '%sName' % element ] }
     elemnt = self.__getElementRow( element, 
@@ -435,8 +365,6 @@ class ResourceStatusDB:
       defaultStatus  = 'Banned'
       defaultReasons = [ 'Added to DB', 'Init' ]
       tokenOwner     = 'RS_SVC'
-      
-      setStatus = getattr( self, 'set%sStatus' % element)
        
       # This three lines make not much sense, but sometimes statusToSet is '',
       # and we need it as a list to work properly 
@@ -444,13 +372,20 @@ class ResourceStatusDB:
       if not isinstance( statusToSet, list ):
         statusToSet = [ statusToSet ]   
            
+      rDict = { '%sName' % element : dict[ '%sName' % element ],
+                'Status'           : defaultStatus,
+                'TokenOwner'       : tokenOwner }     
+           
       for statusType in statusToSet:
+        
+        rDict[ 'StatusType' ] = statusType
         
         # Trick to populate ElementHistory table with one entry. This allows
         # us to use PresentElement views ( otherwise they do not work ).
-        for defaultReason in defaultReasons: 
-          setStatus( dict[ '%sName' % element ], statusType, defaultStatus, 
-                     defaultReason, tokenOwner )
+        for defaultReason in defaultReasons:
+          
+          rDict[ 'Reason' ] = defaultReason 
+          self.__setElementStatus( element, rDict )
 
   def __addOrModifyGridElement( self, dict ):
     
@@ -464,9 +399,9 @@ class ResourceStatusDB:
   def __setElementStatus( self, element, dict ):
     
     # START VALIDATION #
-    self.__validateRes( element )
-    self.__validateElementStatusTypes( element, dict['StatusType'])
-    self.__validateStatus( dict['Status'] )
+    self.rsVal.validateRes( element )
+    self.rsVal.validateElementStatusTypes( element, dict['StatusType'] )
+    self.rsVal.validateStatus( dict['Status'] )
     
     el = self.__getElementRow( element, { '%sName' % element : dict[ '%sName' % element ] } )#, None )
     if not el[ 'Value' ]:
@@ -519,7 +454,7 @@ class ResourceStatusDB:
     now = datetime.utcnow()
 
     # START VALIDATION #
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
 #    self.__validateElementStatusTypes( element, dict['StatusType'])
 
     el = self.__getElementRow( element, { '%sName' % element : dict[ '%sName' % element ] } )#, None )
@@ -560,9 +495,9 @@ class ResourceStatusDB:
   def __setElementScheduledStatus( self, element, dict ):
 
     # START VALIDATION #
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
     self.__validateElementStatusTypes( element, dict['StatusType'])
-    self.__validateStatus( dict['Status'] )
+    self.rsVal.validateStatus( dict['Status'] )
     
     el = self.__getElementRow( element, { '%sName' % element : dict[ '%sName' % element ] } )#, None )
     if not el[ 'Value' ]:
@@ -575,7 +510,7 @@ class ResourceStatusDB:
   def __getElements( self, element, dict, table = None, **kwargs ):    
     
     # START VALIDATION #
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
     # END VALIDATION #    
     
     if table is not None:  
@@ -586,7 +521,7 @@ class ResourceStatusDB:
   def __deleteElements( self, element, dict ):
 
     # START VALIDATION #
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
     # END VALIDATION #    
     self.__deleteElementRow( '%sHistory' % element,         dict)
     self.__deleteElementRow( '%sScheduledStatus' % element, dict)
@@ -596,13 +531,13 @@ class ResourceStatusDB:
   def __deleteElementHistory( self, element, dict, **kwargs ):
     
     # START VALIDATION #
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
     # END VALIDATION #    
     self.__deleteElementRow( '%sHistory' % element, dict, **kwargs )
     
   def __deleteElementsScheduledStatus( self, element, dict ):
     # START VALIDATION #
-    self.__validateRes( element )
+    self.rsVal.validateRes( element )
     # END VALIDATION #    
     self.__deleteElementRow( '%sScheduledStatus' % element, dict)
     
@@ -617,7 +552,7 @@ class ResourceStatusDB:
   
     rDict = self.__generateRowDict( locals() )
     
-    self.__validateSiteType( siteType ) 
+    self.rsVal.validateSiteType( siteType ) 
     self.__addOrModifyElement( 'Site', rDict )
     return S_OK()   
   
@@ -625,10 +560,6 @@ class ResourceStatusDB:
   def setSiteStatus( self, siteName, statusType, status, reason, tokenOwner, 
                      tokenExpiration, dateCreated, dateEffective, dateEnd, 
                      lastCheckTime ):
-#  def setSiteStatus( self, siteName, statusType, status, reason, tokenOwner, 
-#                     tokenExpiration = None, dateCreated = None, 
-#                     dateEffective = None, dateEnd = None, lastCheckTime = None ):
-
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementStatus( 'Site', rDict )
@@ -638,9 +569,6 @@ class ResourceStatusDB:
   def setSiteScheduledStatus( self, siteName, statusType, status, reason, tokenOwner, 
                               tokenExpiration, dateCreated, dateEffective, 
                               dateEnd, lastCheckTime ):
-#  def setSiteScheduledStatus( self, siteName, statusType, status, reason, tokenOwner, 
-#                              tokenExpiration = None, dateCreated = None, 
-#                              dateEffective = None, dateEnd = None, lastCheckTime = None):
 
     rDict = self.__generateRowDict( locals() )
     self.__setElementScheduledStatus( 'Site', rDict )
@@ -650,9 +578,6 @@ class ResourceStatusDB:
   def updateSiteStatus( self, siteName, statusType, status, reason, tokenOwner, 
                         tokenExpiration, dateCreated, dateEffective, dateEnd, 
                         lastCheckTime ):
-#  def updateSiteStatus( self, siteName, statusType = None, status = None, reason = None, 
-#                        tokenOwner = None, tokenExpiration = None, dateCreated = None, 
-#                        dateEffective = None, dateEnd = None, lastCheckTime = None ):
 
     rDict = self.__generateRowDict( locals() )
     self.__updateElementStatus( 'Site' , rDict )
@@ -660,8 +585,6 @@ class ResourceStatusDB:
 
   @CheckExecution
   def getSites( self, siteName, siteType, gridSiteName, **kwargs ):
-#  def getSites( self, siteName = None, siteType = None, gridSiteName = None, **kwargs ):
-
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Site', rDict, **kwargs )
 
@@ -669,11 +592,6 @@ class ResourceStatusDB:
   def getSitesStatus( self, siteName, statusType, status, reason, tokenOwner, 
                       tokenExpiration, dateCreated, dateEffective, dateEnd, 
                       lastCheckTime, **kwargs ):
-#  def getSitesStatus( self, siteName = None, statusType = None, status = None, 
-#                      reason = None, tokenOwner = None, tokenExpiration = None, 
-#                      dateCreated = None, dateEffective = None, dateEnd = None, 
-#                      lastCheckTime = None, **kwargs ):
-
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Site', rDict, table = 'Status', **kwargs )
@@ -682,10 +600,6 @@ class ResourceStatusDB:
   def getSitesHistory( self, siteName, statusType, status, reason, tokenOwner, 
                        tokenExpiration, dateCreated, dateEffective, dateEnd, 
                        lastCheckTime, **kwargs ):
-#  def getSitesHistory( self, siteName = None, statusType = None, status = None, 
-#                       reason = None, tokenOwner = None, tokenExpiration = None, 
-#                       dateCreated = None, dateEffective = None, dateEnd = None, 
-#                       lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -697,12 +611,6 @@ class ResourceStatusDB:
                                tokenOwner, tokenExpiration, dateCreated, 
                                dateEffective, dateEnd, lastCheckTime, **kwargs ):
 
-#  def getSitesScheduledStatus( self, siteName = None, statusType = None, 
-#                               status = None, reason = None, tokenOwner = None, 
-#                               tokenExpiration = None, dateCreated = None, 
-#                               dateEffective = None, dateEnd = None, 
-#                               lastCheckTime = None, **kwargs):
-
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Site', rDict, table = 'ScheduledStatus', **kwargs )
 
@@ -710,14 +618,8 @@ class ResourceStatusDB:
   def getSitesPresent( self, siteName, siteType, gridSiteName, gridTier, 
                        statusType, status, dateEffective, reason, lastCheckTime, 
                        tokenOwner, tokenExpiration, formerStatus, **kwargs ):
-#  def getSitesPresent( self, siteName = None, siteType = None, gridSiteName = None,
-#                       gridTier = None, statusType = None, status = None, dateEffective = None,
-#                       reason = None, lastCheckTime = None, tokenOwner = None,
-#                       tokenExpiration = None, formerStatus = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
-#    if not kwargs.has_key( 'columns' ):
-#      kwargs[ 'columns' ] = [ 'SiteName', 'StatusType', 'Status', 'FormerStatus', 'DateEffective', 'LastCheckTime' ]
     return self.__getElements( 'Site', rDict, table = 'Present', **kwargs )
 
   @CheckExecution
@@ -731,12 +633,6 @@ class ResourceStatusDB:
   def deleteSitesScheduledStatus( self, siteName, statusType, status, reason, 
                                   tokenOwner, tokenExpiration, dateCreated, 
                                   dateEffective, dateEnd, lastCheckTime ):
-#  def deleteSitesScheduledStatus( self, siteName = None, statusType = None, 
-#                                  status = None, reason = None, tokenOwner = None, 
-#                                  tokenExpiration = None, dateCreated = None, 
-#                                  dateEffective = None, dateEnd = None, 
-#                                  lastCheckTime = None):
-
     
     rDict = self.__generateRowDict( locals() )
     self.__deleteElementsScheduledStatus( 'Site', rDict )
@@ -746,10 +642,6 @@ class ResourceStatusDB:
   def deleteSitesHistory( self, siteName, statusType, status, reason, tokenOwner, 
                           tokenExpiration, dateCreated, dateEffective, dateEnd, 
                           lastCheckTime, **kwargs ):
-#  def deleteSitesHistory( self, siteName = None, statusType = None, status = None, 
-#                          reason = None, tokenOwner = None, tokenExpiration = None, 
-#                          dateCreated = None, dateEffective = None, dateEnd = None, 
-#                          lastCheckTime = None, **kwargs ):
       
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'Site', rDict, **kwargs )
@@ -767,7 +659,7 @@ class ResourceStatusDB:
     rDict = self.__generateRowDict( locals() )
     
     # START VALIDATION #
-    self.__validateServiceType( serviceType )
+    self.rsVal.validateServiceType( serviceType )
     
 #    site = self.__getElementRow( 'Site', { 'SiteName' : siteName }, 'SiteName' )
 #    if not site[ 'Value' ]:
@@ -782,9 +674,7 @@ class ResourceStatusDB:
   def setServiceStatus( self, serviceName, statusType, status, reason, tokenOwner, 
                         tokenExpiration, dateCreated, dateEffective, dateEnd, 
                         lastCheckTime ):
-  #def setServiceStatus( self, serviceName, statusType, status, reason, tokenOwner, 
-  #                      tokenExpiration = None, dateCreated = None, 
-  #                      dateEffective = None, dateEnd = None, lastCheckTime = None ):
+
     rDict = self.__generateRowDict( locals() )
     self.__setElementStatus( 'Service', rDict )
     return S_OK()
@@ -793,9 +683,7 @@ class ResourceStatusDB:
   def setServiceScheduledStatus( self, serviceName, statusType, status, reason, 
                                  tokenOwner, tokenExpiration, dateCreated, 
                                  dateEffective, dateEnd, lastCheckTime ):
-  #def setServiceScheduledStatus( self, serviceName, statusType, status, reason, tokenOwner, 
-  #                      tokenExpiration = None, dateCreated = None, 
-  #                      dateEffective = None, dateEnd = None, lastCheckTime = None ):
+
     rDict = self.__generateRowDict( locals() )
     self.__setElementScheduledStatus( 'Service', rDict )
     return S_OK()
@@ -804,17 +692,13 @@ class ResourceStatusDB:
   def updateServiceStatus( self, serviceName, statusType, status, reason, 
                            tokenOwner, tokenExpiration, dateCreated, 
                            dateEffective, dateEnd, lastCheckTime ):
-#  def updateServiceStatus( self, serviceName, statusType = None, status = None, reason = None, 
-#                        tokenOwner = None, tokenExpiration = None, dateCreated = None, 
-#                        dateEffective = None, dateEnd = None, lastCheckTime = None ):
 
     rDict = self.__generateRowDict( locals() )
     self.__updateElementStatus( 'Service', rDict )
     return S_OK()
 
   @CheckExecution
-  def getServices( self, serviceName, serviceType, siteName, **kwargs ):
-#  def getServices( self, serviceName = None, serviceType = None, siteName = None, **kwargs ):    
+  def getServices( self, serviceName, serviceType, siteName, **kwargs ):  
     
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Service', rDict, **kwargs )
@@ -823,10 +707,6 @@ class ResourceStatusDB:
   def getServicesStatus( self, serviceName, statusType, status, reason, 
                          tokenOwner, tokenExpiration, dateCreated, dateEffective, 
                          dateEnd, lastCheckTime, **kwargs ):
-  #def getServicesStatus( self, serviceName = None, statusType = None, status = None, 
-  #                       reason = None, tokenOwner = None, tokenExpiration = None, 
-  #                       dateCreated = None, dateEffective = None, dateEnd = None, 
-  #                       lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Service', rDict, table = 'Status', **kwargs )
@@ -835,10 +715,6 @@ class ResourceStatusDB:
   def getServicesHistory( self, serviceName, statusType, status, reason, 
                           tokenOwner, tokenExpiration, dateCreated, dateEffective, 
                           dateEnd, lastCheckTime, **kwargs ):
-#  def getServicesHistory( self, serviceName = None, statusType = None, status = None, 
-#                          reason = None, tokenOwner = None, tokenExpiration = None, 
-#                          dateCreated = None, dateEffective = None, dateEnd = None, 
-#                          lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -849,11 +725,6 @@ class ResourceStatusDB:
   def getServicesScheduledStatus( self, serviceName, statusType, status, reason, 
                                   tokenOwner, tokenExpiration, dateCreated, 
                                   dateEffective, dateEnd, lastCheckTime, **kwargs ):
-#  def getServicesScheduledStatus( self, serviceName = None, statusType = None, 
-#                                 status = None, reason = None, tokenOwner = None, 
-#                                 tokenExpiration = None, dateCreated = None, 
-#                                 dateEffective = None, dateEnd = None, 
-#                                 slastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Service', rDict, table = 'ScheduledStatus', **kwargs )
@@ -862,15 +733,8 @@ class ResourceStatusDB:
   def getServicesPresent( self, serviceName, siteName, siteType, serviceType, 
                           statusType, status, dateEffective, reason, lastCheckTime, 
                           tokenOwner, tokenExpiration, formerStatus, **kwargs ):
-#  def getServicesPresent( self, serviceName = None, siteName = None, siteType = None, 
-#                          serviceType = None, statusType = None, status = None, 
-#                          dateEffective = None, reason = None, lastCheckTime = None, 
-#                          tokenOwner = None, tokenExpiration = None, 
-#                          formerStatus = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
-#    if not kwargs.has_key( 'columns' ):
-#      kwargs[ 'columns' ] = [ 'ServiceName', 'StatusType', 'Status', 'FormerStatus', 'DateEffective', 'LastCheckTime' ]
     return self.__getElements( 'Service', rDict, table = 'Present', **kwargs )
    
   @CheckExecution  
@@ -884,10 +748,6 @@ class ResourceStatusDB:
   def deleteServicesScheduledStatus( self, serviceName, statusType, status, 
                                      reason, tokenOwner, tokenExpiration, dateCreated, 
                                      dateEffective, dateEnd, lastCheckTime ):
-#  def deleteServicesScheduledStatus( self, serviceName = None, statusType = None, 
-#                                     status = None, reason = None, tokenOwner = None, 
-#                                     tokenExpiration = None, dateCreated = None, 
-#                                     dateEffective = None, dateEnd = None, lastCheckTime = None):
     
     rDict = self.__generateRowDict( locals() )
     self.__deleteElementsScheduledStatus( 'Service', rDict )
@@ -897,10 +757,6 @@ class ResourceStatusDB:
   def deleteServicesHistory( self, serviceName, statusType, status, reason, 
                              tokenOwner, tokenExpiration, dateCreated, dateEffective, 
                              dateEnd, lastCheckTime, **kwargs ):
-#  def deleteServicesHistory( self, serviceName = None, statusType = None, status = None, 
-#                          reason = None, tokenOwner = None, tokenExpiration = None, 
-#                          dateCreated = None, dateEffective = None, dateEnd = None, 
-#                          lastCheckTime = None, **kwargs ):      
 
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'Service', rDict, **kwargs )
@@ -919,8 +775,8 @@ class ResourceStatusDB:
     rDict = self.__generateRowDict( locals() )
     
     # START VALIDATION #
-    self.__validateResourceType( resourceType )
-    self.__validateServiceType( serviceType )
+    self.rsVal.validateResourceType( resourceType )
+    self.rsVal.validateServiceType( serviceType )
     
 #   Check commented. Some Resources are not assigned to a site    
 #    site = self.__getElementRow( 'Site', {'SiteName' : siteName }, 'SiteName' )
@@ -943,10 +799,6 @@ class ResourceStatusDB:
   def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
                          tokenExpiration, dateCreated, dateEffective, dateEnd, 
                          lastCheckTime ):
-#  def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
-#                         tokenExpiration = None, dateCreated = None, 
-#                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
-
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementStatus( 'Resource', rDict )
@@ -956,9 +808,6 @@ class ResourceStatusDB:
   def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
                                   tokenOwner, tokenExpiration, dateCreated, 
                                   dateEffective, dateEnd, lastCheckTime ):
-#  def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
-#                                  tokenOwner, tokenExpiration = None, dateCreated = None, 
-#                                  dateEffective = None, dateEnd = None, lastCheckTime = None ):
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementScheduledStatus( 'Resource', rDict )
@@ -968,9 +817,6 @@ class ResourceStatusDB:
   def updateResourceStatus( self, resourceName, statusType, status, reason, 
                            tokenOwner, tokenExpiration, dateCreated, dateEffective, 
                            dateEnd, lastCheckTime ):
-#  def updateResourceStatus( self, resourceName, statusType = None, status = None, reason = None, 
-#                         tokenOwner = None, tokenExpiration = None, dateCreated = None, 
-#                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
         
     rDict = self.__generateRowDict( locals() )
     self.__updateElementStatus( 'Resource', rDict )
@@ -979,9 +825,6 @@ class ResourceStatusDB:
   @CheckExecution
   def getResources( self, resourceName, resourceType, serviceType, siteName, 
                     gridSiteName, **kwargs ):
-#  def getResources( self, resourceName = None, resourceType = None, 
-#                    serviceType = None, siteName = None, gridSiteName = None, 
-#                    **kwargs ):
     
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Resource', rDict, **kwargs )
@@ -990,10 +833,6 @@ class ResourceStatusDB:
   def getResourcesStatus( self, resourceName, statusType, status, reason, 
                           tokenOwner, tokenExpiration, dateCreated, dateEffective, 
                           dateEnd, lastCheckTime, **kwargs ):
-#  def getResourcesStatus( self, resourceName = None, statusType = None, status = None,
-#                          reason = None, tokenOwner = None, tokenExpiration = None, 
-#                          dateCreated = None, dateEffective = None, dateEnd = None, 
-#                          lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Resource', rDict, table = 'Status', **kwargs )
@@ -1002,10 +841,6 @@ class ResourceStatusDB:
   def getResourcesHistory( self, resourceName, statusType, status, reason, 
                            tokenOwner, tokenExpiration, dateCreated, dateEffective, 
                            dateEnd, lastCheckTime, **kwargs ):
-#  def getResourcesHistory( self, resourceName = None, statusType = None, status = None,
-#                           reason = None, tokenOwner = None, tokenExpiration = None, 
-#                           dateCreated = None, dateEffective = None, dateEnd = None, 
-#                           lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -1016,10 +851,6 @@ class ResourceStatusDB:
   def getResourcesScheduledStatus( self, resourceName, statusType, status, reason, 
                                    tokenOwner, tokenExpiration, dateCreated, 
                                    dateEffective, dateEnd, lastCheckTime, **kwargs ):
-#  def getResourcesScheduledStatus( self, resourceName = None, statusType = None, status = None,
-#                                  reason = None, tokenOwner = None, tokenExpiration = None, 
-#                                  dateCreated = None, dateEffective = None, dateEnd = None, 
-#                                  lastCheckTime = None, **kwargs):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Resource', rDict, table = 'ScheduledStatus', **kwargs )  
@@ -1029,15 +860,8 @@ class ResourceStatusDB:
                            siteType, resourceType, statusType, status, dateEffective, 
                            reason, lastCheckTime, tokenOwner, tokenExpiration, 
                            formerStatus, **kwargs ):
-#  def getResourcesPresent( self, resourceName = None, siteName = None, serviceType = None,
-#                           gridSiteName = None, siteType = None, resourceType = None,
-#                           statusType = None, status = None, dateEffective = None, 
-#                           reason = None, lastCheckTime = None, tokenOwner = None, 
-#                           tokenExpiration = None, formerStatus = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
-#    if not kwargs.has_key( 'columns' ):
-#      kwargs[ 'columns' ] = [ 'ResourceName', 'StatusType', 'Status', 'FormerStatus', 'DateEffective', 'LastCheckTime' ]
     return self.__getElements( 'Resource', rDict, table = 'Present', **kwargs )
      
   @CheckExecution  
@@ -1052,11 +876,6 @@ class ResourceStatusDB:
                                       reason, tokenOwner, tokenExpiration, 
                                       dateCreated, dateEffective, dateEnd, 
                                       lastCheckTime ):
-#  def deleteResourcesScheduledStatus( self, resourceName = None, statusType = None, 
-#                                      status = None, reason = None, tokenOwner = None, 
-#                                      tokenExpiration = None, dateCreated = None, 
-#                                      dateEffective = None, dateEnd = None, 
-#                                      lastCheckTime = None):
 
     rDict = self.__generateRowDict( locals() )
     self.__deleteElementsScheduledStatus( 'Resource', rDict )
@@ -1066,10 +885,6 @@ class ResourceStatusDB:
   def deleteResourcesHistory( self, resourceName, statusType, status, reason, 
                               tokenOwner, tokenExpiration, dateCreated, dateEffective, 
                               dateEnd, lastCheckTime, **kwargs ):
-#  def deleteResourcesHistory( self, resourceName = None, statusType = None, status = None, 
-#                              reason = None, tokenOwner = None, tokenExpiration = None, 
-#                              dateCreated = None, dateEffective = None, dateEnd = None, 
-#                              lastCheckTime = None, **kwargs ):
       
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'Resource', rDict, **kwargs )
@@ -1107,11 +922,6 @@ class ResourceStatusDB:
   def setStorageElementStatus( self, storageElementName, statusType, status, 
                                reason, tokenOwner, tokenExpiration, dateCreated, 
                                dateEffective, dateEnd, lastCheckTime ):
-#  def setStorageElementStatus( self, storageElementName, statusType, status, 
-#                               reason, tokenOwner, tokenExpiration = None, 
-#                               dateCreated = None, dateEffective = None, dateEnd = None, 
-#                               lastCheckTime = None ):
-
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementStatus( 'StorageElement', rDict )
@@ -1122,10 +932,6 @@ class ResourceStatusDB:
                                         reason, tokenOwner, tokenExpiration, 
                                         dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime ):
-#  def setStorageElementScheduledStatus( self, storageElementName, statusType, status, 
-#                                        reason, tokenOwner, tokenExpiration = None, 
-#                                        dateCreated = None, dateEffective = None, 
-#                                        dateEnd = None, lastCheckTime = None ):
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementScheduledStatus( 'StorageElement', rDict )
@@ -1135,10 +941,6 @@ class ResourceStatusDB:
   def updateStorageElementStatus( self, storageElementName, statusTypes, status, 
                                   reason, tokenOwner, tokenExpiration, dateCreated, 
                                   dateEffective, dateEnd, lastCheckTime ):
-#  def updateStorageElementStatus( self, storageElementName, statusType = None, status = None, 
-#                                 reason = None , tokenOwner = None, tokenExpiration = None, 
-#                                 dateCreated = None, dateEffective = None, dateEnd = None, 
-#                                 lastCheckTime = None ):
     
     rDict = self.__generateRowDict( locals() )
     self.__updateElementStatus( 'StorageElement', rDict )
@@ -1146,8 +948,6 @@ class ResourceStatusDB:
 
   @CheckExecution
   def getStorageElements( self, storageElementName, resourceName, gridSiteName, **kwargs ):
-#  def getStorageElements( self, storageElementName = None, resourceName = None, 
-#                          gridSiteName = None, **kwargs ):
     
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'StorageElement', rDict, **kwargs )
@@ -1156,11 +956,6 @@ class ResourceStatusDB:
   def getStorageElementsStatus( self, storageElementName, statusType, status, 
                                 reason, tokenOwner, tokenExpiration, dateCreated, 
                                 dateEffective, dateEnd, lastCheckTime, **kwargs ):
-#  def getStorageElementsStatus( self, storageElementName = None, statusType = None, 
-#                                status = None, reason = None, tokenOwner = None, 
-#                                tokenExpiration = None, dateCreated = None, 
-#                                dateEffective = None, dateEnd = None, 
-#                                lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'StorageElement', rDict, table = 'Status', **kwargs )
@@ -1169,11 +964,6 @@ class ResourceStatusDB:
   def getStorageElementsHistory( self, storageElementName, statusType, status, 
                                  reason, tokenOwner, tokenExpiration, dateCreated, 
                                  dateEffective, dateEnd, lastCheckTime, **kwargs ):
-#  def getStorageElementsHistory( self, storageElementName = None, statusType = None, 
-#                                 status = None, reason = None, tokenOwner = None, 
-#                                 tokenExpiration = None, dateCreated = None, 
-#                                 dateEffective = None, dateEnd = None, 
-#                                 lastCheckTime = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -1185,11 +975,6 @@ class ResourceStatusDB:
                                          status, reason, tokenOwner, tokenExpiration, 
                                          dateCreated, dateEffective, dateEnd, 
                                          lastCheckTime, **kwargs ):
-#  def getStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
-#                                         status = None, reason = None, tokenOwner = None, 
-#                                         tokenExpiration = None, dateCreated = None, 
-#                                         dateEffective = None, dateEnd = None, 
-#                                         lastCheckTime = None, **kwargs ):
     '''
       **kwargs can be:
           columns <list> column names
@@ -1205,15 +990,8 @@ class ResourceStatusDB:
                                  gridSiteName, siteType, statusType, status, 
                                  dateEffective, reason, lastCheckTime, tokenOwner,
                                  tokenExpiration, formerStatus, **kwargs ):
-#  def getStorageElementsPresent( self, storageElementName = None, resourceName = None, 
-#                                 gridSiteName = None, siteType = None, statusType = None, 
-#                                 status = None, dateEffective = None, reason = None, 
-#                                 lastCheckTime = None, tokenOwner = None,
-#                                 tokenExpiration = None, formerStatus = None, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
-#    if not kwargs.has_key( 'columns' ):
-#      kwargs[ 'columns' ] = [ 'StorageElementName', 'StatusType', 'Status', 'FormerStatus', 'DateEffective', 'LastCheckTime' ]
     return self.__getElements( 'StorageElement', rDict, table = 'Present', **kwargs )
    
   @CheckExecution  
@@ -1228,12 +1006,6 @@ class ResourceStatusDB:
                                             status, reason, tokenOwner, 
                                             tokenExpiration, dateCreated, 
                                             dateEffective, dateEnd, lastCheckTime ):
-#  def deleteStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
-#                                            status = None, reason = None, tokenOwner = None, 
-#                                            tokenExpiration = None, dateCreated = None, 
-#                                            dateEffective = None, dateEnd = None, 
-#                                            lastCheckTime = None ):
-
 
     rDict = self.__generateRowDict( locals() )
     self.__deleteElementsScheduledStatus( 'StorageElement', rDict )
@@ -1244,11 +1016,6 @@ class ResourceStatusDB:
                                     status, reason, tokenOwner, tokenExpiration, 
                                     dateCreated, dateEffective, dateEnd, 
                                     lastCheckTime, **kwargs ):
-#  def deleteStorageElementsHistory( self, storageElementName = None, statusType = None, 
-#                                    status = None, reason = None, tokenOwner = None, 
-#                                    tokenExpiration = None, dateCreated = None, 
-#                                    dateEffective = None, dateEnd = None, 
-#                                    lastCheckTime = None, **kwargs ):
       
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'StorageElement', rDict, **kwargs )
@@ -1286,13 +1053,17 @@ class ResourceStatusDB:
     rDict = {}
     
     if statusType is not None:
-      self.__validateElementStatusTypes( 'Service', statusType )
+      self.rsVal.validateElementStatusTypes( 'Service', statusType )
       rDict[ 'StatusType'] = statusType
+
+#    resourceDict = {}
+    resourceName, resourceType, serviceType, siteName, gridSiteName = None, None, None, None, None
 
     if element == 'Site':
       #name   = self.getGridSiteName( element, name )[ 'Value' ]
       #rDict[ 'GridSiteName' ] = name
-      resourceDict = { 'siteName' : name }
+#      resourceDict = { 'siteName' : name }
+      siteName = name
       #resourceNames = [ sn[0] for sn in self.getResources( siteName = name )[ 'Value' ] ]
 ##      rDict[ 'ResourceName' ] = resourceNames
 
@@ -1302,15 +1073,19 @@ class ResourceStatusDB:
       siteName    = name.split( '@' )[ 1 ]
 
       if serviceType == 'Computing':
-        resourceDict = { 'siteName' : siteName }
-        #resourceNames = [ sn[0] for sn in self.getResources( siteName = siteName )[ 'Value' ] ]
+#        resourceDict = { 'siteName' : siteName }
+        siteName = siteName
+        #resourceName = [ sn[0] for sn in self.getResources( siteName = siteName )[ 'Value' ] ]
 ##        rDict[ 'ResourceName' ] = resourceNames
         #rDict[ 'SiteName' ] = name
       else:
-        gridSiteName = self.getGridSiteName( 'Site', siteName )[ 'Value' ]
+        #gridSiteName = 
         #rDict[ 'GridSiteName' ] = gridSiteName
-        resourceDict = { 'gridSiteName' : gridSiteName, 'serviceType' : serviceType }
-        #resourceNames = [ sn[0] for sn in self.getResources( gridSiteName = gridSiteName, serviceType = serviceType )[ 'Value' ] ]
+#        resourceDict = { 'gridSiteName' : gridSiteName, 'serviceType' : serviceType }
+        gridSiteName = [ gs[0] for gs in self.getGridSiteName( 'Site', siteName )[ 'Value' ] ]
+        #serviceType  = serviceType
+        siteName = None
+        #resourceName = [ sn[0] for sn in self.getResources( None, None, serviceType, None,gridSiteName )[ 'Value' ] ]
         #rDict[ 'SiteName' ] = siteNames
 ##        rDict[ 'ResourceName' ] = resourceNames
         #rDict[ 'ServiceType' ]  = serviceType
@@ -1320,7 +1095,8 @@ class ResourceStatusDB:
       return S_ERROR( message )
 #      raise RSSDBException, where( self, self.getResourceStats ) + message
 
-    rDict[ 'ResourceName' ] = [ re[0] for re in self.getResources( **resourceDict )[ 'Value' ] ]
+    resourceArgs = ( resourceName, resourceType, serviceType, siteName, gridSiteName )
+    rDict[ 'ResourceName' ] = [ re[0] for re in self.getResources( *resourceArgs )[ 'Value' ] ]
 
     return self.__getElementStatusCount( 'Resource', rDict )
 
@@ -1330,13 +1106,15 @@ class ResourceStatusDB:
     rDict = {}
     
     if statusType is not None:
-      self.__validateElementStatusTypes( 'StorageElement', statusType )
+      self.rsVal.validateElementStatusTypes( 'StorageElement', statusType )
       rDict[ 'StatusType'] = statusType
+    
+    storageElementName, resourceName, gridSiteName = None, None, None 
     
     if element == 'Site':
       #rDict[ 'GridSiteName' ] = self.getGridSiteName( element, name )[ 'Value' ]
-      gridSiteName = self.getGridSiteName( element, name )[ 'Value' ]
-      seDict = { 'gridSiteName' : gridSiteName }
+      gridSiteName = [ gs[0] for gs in self.getGridSiteName( element, name )[ 'Value' ] ]
+#      seDict = { 'gridSiteName' : gridSiteName }
       ##siteNames = [ sn[0] for sn in self.getSites( gridSiteName = gridSiteName )[ 'Value' ] ]
       ##rDict[ 'SiteName' ] = siteNames
       #seNames = [ sn[0] for sn in self.getStorageElements( gridSiteName = gridSiteName )[ 'Value' ] ]
@@ -1344,7 +1122,8 @@ class ResourceStatusDB:
       
     elif element == 'Resource':
       #rDict[ 'ResourceName' ] = name
-      seDict = { 'resourceName' : name }
+#      seDict = { 'resourceName' : name }
+      resourceName = name
       #seNames = [ sn[0] for sn in self.getStorageElements( resourceName = name )[ 'Value' ] ]
 #      rDict[ 'StorageElementName' ] = seNames            
 
@@ -1352,8 +1131,8 @@ class ResourceStatusDB:
       message = '%s is non accepted element. Only Site or Resource' % element
       return S_ERROR( message )
     
-    
-    rDict[ 'StorageElementName' ] = [ se[0] for se in self.getStorageElements( **seDict )[ 'Value' ] ]
+    seArgs = ( storageElementName, resourceName, gridSiteName )
+    rDict[ 'StorageElementName' ] = [ se[0] for se in self.getStorageElements( *seArgs )[ 'Value' ] ]
     
     return self.__getElementStatusCount( 'StorageElement', rDict )
   
@@ -1366,15 +1145,14 @@ class ResourceStatusDB:
   @CheckExecution 
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
 
-    self.__validateSiteType( gridTier )
+    self.rsVal.validateSiteType( gridTier )
 
     rDict = self.__generateRowDict( locals() )
     self.__addOrModifyGridElement( rDict )
     return S_OK()
   
   @CheckExecution
-  def getGridSites( self, gridSiteName, gridTier, **kwargs ):
-#  def getGridSites( self, gridSiteName = None, gridTier = None, **kwargs ):   
+  def getGridSites( self, gridSiteName, gridTier, **kwargs ): 
    
     rDict = self.__generateRowDict( locals() )
     return self.__getGridElementRow( rDict, **kwargs )
@@ -1392,374 +1170,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''
   
-  @CheckExecution
-  def getGeneralName( self, from_element, name, to_element ):
-    """
-    Get name of res, of granularity `from_g`, to the name of res with granularity `to_g`
-
-    For a StorageElement, get the Site name, or the Service name, or the Resource name.
-    For a Resource, get the Site name, or the Service name.
-    For a Service name, get the Site name
-
-    :params:
-      :attr:`name`: a string with a name
-
-      :attr:`from_g`: a string with a valid granularity
-      (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
-
-      :attr:`to_g`: a string with a valid granularity
-      (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
-
-    :return:
-      a string with the resulting name
-    """
-
-    self.__validateRes( from_element )
-    self.__validateRes( to_element )
-
-    if from_element == 'Service':
-      kwargs = { 'columns' : [ 'SiteName' ] }  
-      resQuery = self.__getElements( from_element, { '%sName' % from_element : name }, **kwargs )#'SiteName' )
-
-    elif from_element == 'Resource':
-      kwargs = { 'columns' : [ 'ServiceType' ] }    
-      resQuery = self.__getElements( from_element, { '%sName' % from_element : name }, **kwargs )#'ServiceType' )
-      serviceType = resQuery[ 'Value' ][ 0 ][ 0 ]
-
-      if serviceType == 'Computing':
-        kwargs = { 'columns' : [ 'SiteName' ] }  
-        resQuery = self.__getElements( from_element, { '%sName' % from_element : name }, **kwargs )#'SiteName' )
-      else:
-        kwargs = { 'columns' : [ 'GridSiteName' ] }    
-        gridSiteNames = self.__getElements( from_element, { '%sName' % from_element : name }, **kwargs )#'GridSiteName' )
-        kwargs = { 'columns' : [ 'SiteName' ] }  
-        resQuery = self.__getElements( 'Site', {'GridSiteName' : list( gridSiteNames[ 'Value' ] )}, **kwargs )#'SiteName')
-        
-    elif from_element == 'StorageElement':
-
-      if to_element == 'Resource':
-        kwargs = { 'columns' : [ 'ResourceName' ] }    
-        resQuery = self.__getElements( from_element, { '%sName' % from_element : name }, **kwargs )#'ResourceName' )
-      else:
-        kwargs = { 'columns' : [ 'GridSiteName' ] }  
-        gridSiteNames = self.__getElements( from_element, { '%sName' % from_element : name }, **kwargs )#'GridSiteName' )
-        kwargs = { 'columns' : [ 'SiteName' ] }
-        resQuery = self.__getElements( 'Site', {'GridSiteName' : list( gridSiteNames[ 'Value' ] )}, **kwargs )#'SiteName')
-
-        if to_element == 'Service':
-          serviceType = 'Storage'
-
-    else:
-      raise ValueError
-
-    if not resQuery[ 'Value' ]:
-      return resQuery
-
-    newNames = [ x[0] for x in resQuery[ 'Value' ] ]
-
-    if to_element == 'Service':
-      return S_OK( [ serviceType + '@' + x for x in newNames ] )
-      #return S_OK( [ serviceType + '@' + x[0] for x in resQuery[ 'Value' ] ] )
-    else:
-      return S_OK( newNames )
-      #return resQuery
-
-  @CheckExecution
-  def getGridSiteName( self, granularity, name ):
-
-    self.__validateRes( granularity )
-
-    kwargs = { 'columns' : [ 'GridSiteName' ] }
-    rDict  = { '%sName' % granularity : name }
-
-    return self.__getElements( granularity, rDict, **kwargs )
-      
-#  @CheckExecution
-#  def getCountries( self, granularity ):
-#    """
-#    Get countries of resources in granularity
-#
-#    :params:
-#      :attr:`granularity`: string - a ValidRes
-#    """
-#
-#    self.__validateRes( granularity )
-#
-#    if granularity == 'StorageElement':
-#      granularity = "Site"
-#
-#    kwargs = { 'columns' : [ '%sName' % granularity ] }
-#    resQuery = self.__getElementRow( granularity, {}, **kwargs )#'%sName' % granularity )
-#    if not resQuery[ 'Value' ]:
-#      return S_OK( None )
-#
-#    countries = []
-#
-#    for name in resQuery[ 'Value' ]:
-#      country = name[0].split('.').pop()
-#      if country not in countries:
-#        countries.append( country )
-#
-#    return S_OK( countries )
-  
-  @CheckExecution
-  def getTokens( self, granularity, name = None, tokenExpiration = None, 
-                 statusType = None, **kwargs ):
-    """
-    Get tokens, either by name, those expiring or expired
-
-    :params:
-      :attr:`granularity`: a ValidRes
-
-      :attr:`granularity`: optional name of the res
-
-      :attr:`dateExpiration`: optional, datetime.datetime - date from which to consider
-    """
-
-    self.__validateRes( granularity )  
-
-    dict = {}
-    if name is not None:
-      dict[ '%sName' % granularity ] = name
-      
-    if statusType is not None:
-      self.__validateElementStatusTypes( granularity, statusType )
-      dict[ 'StatusType' ] = statusType
-
-    kw = {}
-    kw[ 'columns' ] = kwargs.pop( 'columns', None )
-#    kwargs[ 'columns' ] = [ '%sName' % granularity, 'StatusType', 'TokenOwner', 'TokenExpiration']
-    if tokenExpiration is not None:
-      kw[ 'minor' ]   = { 'TokenExpiration' : tokenExpiration }
-     
-    return self.__getElementRow( '%sStatus' % granularity , dict, **kw )#columns)
-
-#    if not resQuery[ 'Value' ]:
-#      return S_OK( [] )
-
-#    if dateExpiration is None:
-#      tokenList = [ x for x in resQuery[ 'Value' ] ]
-#    else:
-#      tokenList = [ x for x in resQuery[ 'Value' ] if x[3] < dateExpiration ]
-    
-#    return S_OK( tokenList )
-  
-  @CheckExecution
-  def setToken( self, granularity, name, statusType, reason, tokenOwner, tokenExpiration ):
-    """
-    (re)Set token properties.
-    """
-
-    self.__validateRes(granularity)
-    self.__validateElementStatusTypes(granularity, statusType )
-
-#    rDict = {
-#             '%sName' % granularity : name,
-#             'StatusType'           : statusType
-#             }
- 
-    '''
-      By design, any element must have at least one Status per statusType !! 
-    '''
-    
-#    kwargs = { 'columns': [ 'Status' ] }
-#    elementStatus = self.__getElementRow( '%sStatus' % granularity, rDict, **kwargs )#'Status')
-
-#    if not elementStatus[ 'Value' ]:
-#      message = 'Not found entry with name %s and type %s of granularity %s' % ( name, statusType, granularity )
-#      raise RSSDBException, where( self, self.setToken ) + message
-    
-#    status = elementStatus[ 'Value' ][ 0 ][ 0 ]
- 
-    updatter = getattr( self, 'update%sStatus' % granularity )
-    updatter( name, statusType, None, reason, tokenOwner, tokenExpiration,
-                   None, None, None, None, None )
-    return S_OK()
-    
-#    siteName, statusType, status, reason, tokenOwner, 
-#                        tokenExpiration, dateCreated, dateEffective, dateEnd, 
-#                        lastCheckTime
-    
-#    tokenSetter = getattr( self, 'set%sStatus' % granularity )
-#    tokenSetter( name, statusType, status, reason, newTokenOwner, tokenExpiration = tokenExpiration,
-#                 dateEnd = tokenExpiration )
-    
-  @CheckExecution
-  def setReason( self, granularity, name, statusType, reason ):
-    
-    self.__validateRes( granularity )
-    
-    updatter = getattr( self, 'update%sStatus' % granularity )
-    updatter( name, statusType, None, reason, None, None,
-              None, None, None, None, None )
-    
-    return S_OK()
-  
-    
-  @CheckExecution  
-  def whatIs( self, name ):
-    """
-    Find which is the granularity of name.
-    """
-
-    for g in ValidRes:
-      
-      #kwargs = { 'columns' : [ '%sName' % g ] }
-      rDict  = { '%sName' % g : name }
-      
-      resQuery = self.__getElements( g, rDict )
-      
-      #resQuery = self.__getElementRow( g, { '%sName' % g : name }, **kwargs )#'%sName' % g )
-
-      if not resQuery[ 'Value' ]:
-        continue
-      else:
-        return S_OK( g )
-
-    return S_OK( 'Unknown' )    
-    
-  @CheckExecution  
-  def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
-  #def getStuffToCheck( self, granularity, checkFrequency = None, maxN = None, name = None ):
-    """
-    Get Sites, Services, Resources, StorageElements to be checked using Present-x views.
-
-    :params:
-      :attr:`granularity`: a ValidRes
-
-      :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
-
-      :attr:`maxN`: integer - maximum number of lines in output
-    """
-
-    self.__validateRes( granularity )
-
-    toCheck = {}
-
-    now = datetime.utcnow().replace( microsecond = 0 )
-
-    for freqName, freq in checkFrequency.items():
-      toCheck[ freqName ] = ( now - timedelta( minutes = freq ) ).isoformat(' ')
-
-    # PARAMS PROCESSED FROM KWARGS !!!    
-    sort    = kwargs.pop( 'sort',    'LastCheckTime' )    
-    order   = kwargs.pop( 'order',   None )
-    limit   = kwargs.pop( 'limit',   None )
-    columns = kwargs.pop( 'columns', None )
-
-#    if granularity == 'Site':
-#      cols = ['SiteName', 'StatusType', 'Status', 'FormerStatus', 'SiteType', 'TokenOwner']
-#    elif granularity == 'Service':
-#      cols = [ 'ServiceName', 'StatusType', 'Status', 'FormerStatus', 'SiteType', 'ServiceType', 'TokenOwner' ]
-#    elif granularity == 'Resource':
-#      cols = [ 'ResourceName', 'StatusType', 'Status', 'FormerStatus', 'SiteType', 'ResourceType', 'TokenOwner' ]
-#    elif granularity == 'StorageElement':
-#      cols = [ 'StorageElementName', 'StatusType', 'Status', 'FormerStatus', 'SiteType', 'TokenOwner' ]
-
-    cols = self.__getColumns( columns )
-
-    whereElements = ""
-        
-    for k,v in toCheck.items():
-          
-      siteType, status = k.replace( '_CHECK_FREQUENCY', '' ).split( '_' )
-      status = status[0] + status[1:].lower()
-        
-      dict = { 'Status' : status, 'SiteType' : siteType }
-      kw   = { 'minor' : { 'LastCheckTime' : v } }
-                
-      whereElements += " ( %s ) OR" % self.__getMultipleWhereElements( dict, **kw)
-        
-        #whereElements += " (Status = '%s' AND SiteType = '%s' AND LastCheckTime < '%s') OR" %( status, siteType, v )
-        
-    # Remove the last OR
-    if whereElements:
-      whereElements = whereElements[:-2] 
-    
-    return self.__getElement( 'Present%s' % granularity , cols, whereElements, sort, order, limit )
-
-#    if not resQuery[ 'Value' ]:
-#      return S_OK( [] )
-#    stuffList = [ x for x in resQuery[ 'Value' ]]
-#    return S_OK( stuffList )   
-
-  
-#  def getMonitoredsList( self, granularity, paramsList = None, siteName = None,
-#                         serviceName = None, resourceName = None, storageElementName = None,
-#                         statusType = None,
-#                         status = None, siteType = None, resourceType = None,
-#                         serviceType = None, 
-#                         gridSiteName = None ):
-#    """
-#    Get Present Sites /Services / Resources / StorageElements lists.
-#
-#    :params:
-#      :attr:`granularity`: a ValidRes
-#
-#      :attr:`paramsList`: a list of parameters can be entered. If not given,
-#      a custom list is used.
-#
-#      :attr:`siteName`, `serviceName`, `resourceName`, `storageElementName`:
-#      a string or a list representing the site/service/resource/storageElement name.
-#      If not given, fetch all.
-#
-#      :attr:`status`: a string or a list representing the status. If not given, fetch all.
-#
-#      :attr:`siteType`: a string or a list representing the site type.
-#      If not given, fetch all.
-#
-#      :attr:`serviceType`: a string or a list representing the service type.
-#      If not given, fetch all.
-#
-#      :attr:`resourceType`: a string or a list representing the resource type.
-#      If not given, fetch all.
-#
-#      :attr:`countries`: a string or a list representing the countries extensions.
-#      If not given, fetch all.
-#
-#      :attr:`gridSiteName`: a string or a list representing the grid site name.
-#      If not given, fetch all.
-#
-#      See :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils` for these parameters.
-#
-#    :return:
-#      list of monitored paramsList's values
-#    """
-#
-#    self.__validateRes( granularity )
-#
-#    if ( paramsList == None or paramsList == [] ):
-#      paramsList = [ '%sName' % granularity, 'StatusType', 'Status', 'FormerStatus', 'DateEffective', 'LastCheckTime' ]
-#
-#    dict = {}
-#    if siteName is not None:
-#      dict[ 'SiteName']           = siteName
-#    if serviceName is not None:
-#      dict[ 'ServiceName']        = serviceName
-#    if resourceName is not None:
-#      dict[ 'ResourceName']       = resourceName
-#    if storageElementName is not None:
-#      dict[ 'storageElementName'] = storageElementName
-#    if statusType is not None:
-#      dict[ 'StatusType' ]        = statusType
-#    if status is not None:
-#      dict[ 'Status' ]            = status
-#    if siteType is not None:
-#      dict[ 'SiteType']           = siteType  
-#    if serviceType is not None:
-#      dict[ 'ServiceType']        = serviceType
-#    if resourceType is not None:
-#      dict[ 'ResourceType']       = resourceType   
-#    if gridSiteName is not None:
-#      dict[ 'GridSiteName']       = gridSiteName      
-#   
-#    kwargs = { 'columns' : paramsList }
-#    resQuery = self.__getElementRow( 'Present%s' % granularity, dict, **kwargs )#paramsList )   
-#    if not resQuery[ 'Value' ]:
-#      return S_OK( [] )
-#    
-#    return resQuery
-
+  # Check the booster ResourceStatusSystem.Utilities.ResourceStatusBooster
 #  def setMonitoredToBeChecked( self, monitoreds, granularity, name ):
 #    """
 #    Set LastCheckTime to 0 to monitored(s)
@@ -1877,319 +1288,6 @@ class ResourceStatusDB:
 ##            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for service %s" %name
 #          #else:
 #            SEName = [ x[0] for x in SEName ]
-#            self.updateStorageElementStatus( storageElementName = SEName, lastCheckTime = znever )   
-    
-  ## Hasta la vista baby
-  ## Nr of hours spent trying to rewrite this method:
-  ## 2 ( increase this counter when needed )
-#  @CheckExecution
-#  def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, maxItems ):
-#    """
-#    Get present sites status list, for the web.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-#    and :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsHistory`
-#
-#    Example of parameters:
-#
-#    :params:
-#      :attr:`selectDict`: { 'SiteName':['XX', ...] , 'ExpandSiteHistory': ['XX', ...],
-#      'Status': ['XX', ...]}
-#      and equivalents for the other monitoreds
-#
-#      :attr:`sortList`
-#
-#      :attr:`startItem`
-#
-#      :attr:`maxItems`
-#
-#    :return: {
-#      :attr:`ParameterNames`: ['SiteName', 'Tier', 'GridType', 'Country',
-#      'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'],
-#
-#      :attr:'Records': [[], [], ...],
-#
-#      :attr:'TotalRecords': X,
-#
-#      :attr:'Extras': {}
-#
-#      }
-#    """
-#
-#    if granularity == 'Site':
-#      paramNames = [ 'SiteName', 'Tier', 'GridType', 'Country',
-#                     'StatusType','Status', 'DateEffective', 'FormerStatus', 'Reason' ]
-#      paramsList = [ 'SiteName', 'SiteType', 'StatusType','Status', 'DateEffective',
-#                     'FormerStatus', 'Reason' ]
-#    elif granularity == 'Service':
-#      paramNames = [ 'ServiceName', 'ServiceType', 'Site', 'Country', 'StatusType','Status',
-#                     'DateEffective', 'FormerStatus', 'Reason' ]
-#      paramsList = [ 'ServiceName', 'ServiceType', 'SiteName', 'StatusType','Status',
-#                     'DateEffective', 'FormerStatus', 'Reason' ]
-#    elif granularity == 'Resource':
-#      paramNames = [ 'ResourceName', 'ServiceType', 'SiteName', 'ResourceType',
-#                     'Country', 'StatusType','Status', 'DateEffective', 'FormerStatus', 'Reason' ]
-#      paramsList = [ 'ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 'ResourceType',
-#                     'StatusType','Status', 'DateEffective', 'FormerStatus', 'Reason' ]
-#    elif granularity == 'StorageElement':
-#      paramNames = [ 'StorageElementName', 'ResourceName', 'SiteName',
-#                     'Country', 'StatusType','Status', 'DateEffective', 'FormerStatus', 'Reason' ]
-#      paramsList = [ 'StorageElementName', 'ResourceName', 'GridSiteName', 'StatusType','Status',
-#                     'DateEffective', 'FormerStatus', 'Reason' ]
-#    else:
-#      raise InvalidRes, where( self, self.getMonitoredsStatusWeb )
-#
-#    records                = []
-#
-#    rDict = { 'SiteName'                    : None,
-#              'ServiceName'                 : None,
-#              'ResourceName'                : None,
-#              'StorageElementName'          : None,
-#              'StatusType'                  : None,
-#              'Status'                      : None,
-#              'SiteType'                    : None,
-#              'ServiceType'                 : None,
-#              'ResourceType'                : None,
-##              'Countries'                   : None,
-#              'ExpandSiteHistory'           : None,
-#              'ExpandServiceHistory'        : None,
-#              'ExpandResourceHistory'       : None,
-#              'ExpandStorageElementHistory' : None }
-#
-#
-#    for k in rDict.keys():
-#      if selectDict.has_key( k ):
-#        rDict[ k ] = selectDict[ k ]
-#        if not isinstance( rDict, list ):
-#          rDict[ k ] = [ rDict[ k ] ]
-#
-#    if selectDict.has_key( 'Expanded%sHistory' % granularity ):
-#      paramsList = [ '%sName', 'StatusType', 'Status', 'Reason', 'DateEffective' ]
-#      elements   = rDict[ 'Expanded%sHistory' % granularity ]
-#      hgetter    = getattr( self, 'get%ssHhistory' )
-#      kwargs     = { '%sName' % granularity : elements, 'columns' : paramsList }  
-#      elementsH  = hgetter( **kwargs )
-#      #elementsH  = self.getMonitoredsHistory( granularity, paramsList = paramsList,
-#      #                                        name = elements )
-#
-#      for elementH in elementsH[ 'Value' ]:
-#        record = []
-#        record.append( elementH[ 0 ] )  #%sName % granularity
-#        record.append( None )           #Tier
-#        record.append( None )           #GridType
-#        record.append( None )           #Country
-#        record.append( elementH[ 1 ] )  #StatusType 
-#        record.append( elementH[ 2 ] )  #Status
-#        record.append( elementH[ 4 ].isoformat(' ') ) #DateEffective
-#        record.append( None )           #FormerStatus
-#        record.append( elementH[ 3 ] )  #Reason
-#        records.append( record )        
-#
-#    else:
-#      kwargs = { 'columns' : paramsList }  
-#      if granularity == 'Site':
-#          
-#        sitesList = self.getSitesPresent( siteName = rDict['SiteName'], 
-#                                          status   = rDict['Status'],
-#                                          siteType   = rDict['SiteType'],
-#                                          **kwargs )  
-#        #sitesList = self.getMonitoredsList(granularity,
-#        #                                   paramsList = paramsList,
-#        #                                   siteName   = rDict['SiteName'], #sites_select,
-#        #                                   status     = rDict['Status'],   #status_select,
-#        #                                   siteType   = rDict['SiteType'])#, #siteType_select,
-#        #                                   #countries  = rDict['Countries'])#countries_select)
-#        for site in sitesList[ 'Value' ]:
-#          record   = []
-#          gridType = ( site[ 0 ] ).split( '.' ).pop(0)
-#          country  = ( site[ 0 ] ).split( '.' ).pop()
-#
-#          record.append( site[ 0 ] ) #SiteName
-#          record.append( site[ 1 ] ) #Tier
-#          record.append( gridType ) #GridType
-#          record.append( country ) #Country
-#          record.append( site[ 2 ] ) #StatusType
-#          record.append( site[ 3 ] ) #Status
-#          record.append( site[ 4 ].isoformat(' ') ) #DateEffective
-#          record.append( site[ 5 ] ) #FormerStatus
-#          record.append( site[ 6 ] ) #Reason
-#          records.append( record )
-#
-#      elif granularity == 'Service':
-#        
-#        servicesList = self.getServicesPresent( serviceName = rDict['ServiceName'],
-#                                                siteName    = rDict['SiteName'],
-#                                                status      = rDict['Status'],
-#                                                siteType    = rDict['SiteType'],
-#                                                serviceType = rDict['ServiceType'],
-#                                                **kwargs )         
-#        
-#        #servicesList = self.getMonitoredsList( granularity,
-#        #                                       paramsList  = paramsList,
-#        #                                       serviceName = rDict['ServiceName'], #services_select,
-#        #                                       siteName    = rDict['SiteName'], #sites_select,
-#        #                                       status      = rDict['Status'], #status_select,
-#        #                                       siteType    = rDict['SiteType'], #siteType_select,
-#        #                                       serviceType = rDict['ServiceType'])#, #serviceType_select,
-#        #                                     #  countries   = rDict['Countries']) #countries_select )
-#        for service in servicesList[ 'Value' ]:
-#          record  = []
-#          country = ( service[ 0 ] ).split( '.' ).pop()
-#
-#          record.append( service[ 0 ] ) #ServiceName
-#          record.append( service[ 1 ] ) #ServiceType
-#          record.append( service[ 2 ] ) #Site
-#          record.append( country ) #Country
-#          record.append( service[ 3 ] ) #StatusType
-#          record.append( service[ 4 ] ) #Status
-#          record.append( service[ 5 ].isoformat(' ') ) #DateEffective
-#          record.append( service[ 6 ] ) #FormerStatus
-#          record.append( service[ 7 ] ) #Reason
-#          records.append( record )
-#
-#      elif granularity == 'Resource':
-#        if rDict[ 'SiteName' ] == None:
-#          kw = { 'columns' : [ 'SiteName' ] }
-#          sites_select = self.getSitesPresent( **kw )
-#          #sites_select = self.getMonitoredsList( 'Site',
-#          #                                       paramsList = [ 'SiteName' ] )
-#          rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ] 
-#          
-#        kw = { 'columns' : [ 'GridSiteName' ] }
-#        gridSites_select = self.getSitesPresent( siteName = rDict[ 'SiteName'], **kw )
-#        #gridSites_select = self.getMonitoredsList( 'Site',
-#        #                                           paramsList = [ 'GridSiteName' ],
-#        #                                           siteName = rDict[ 'SiteName' ] )
-#        
-#        gridSites_select = [ x[ 0 ] for x in gridSites_select[ 'Value' ] ]
-#
-#        resourcesList = self.getResourcesPresent( resourceName = rDict['ResourceName'],
-#                                                  status       = rDict['Status'],
-#                                                  siteType     = rDict['SiteType'],
-#                                                  resourceType = rDict['ResourceType'],
-#                                                  gridSiteName = gridSites_select,
-#                                                  **kwargs )
-#
-#        #resourcesList = self.getMonitoredsList( granularity,
-#        #                                        paramsList   = paramsList,
-#        #                                        resourceName = rDict['ResourceName'],#resources_select,
-#        #                                        status       = rDict['Status'],#status_select,
-#        #                                        siteType     = rDict['SiteType'],#siteType_select,
-#        #                                        resourceType = rDict['ResourceType'],#resourceType_select,
-#        #                                        #countries    = rDict['Countries'],#countries_select,
-#        #                                        gridSiteName = gridSites_select )
-#
-#        for resource in resourcesList[ 'Value' ]:
-#          DIRACsite = resource[ 2 ]
-#
-#          if DIRACsite == 'NULL':
-#            GridSiteName = resource[ 3 ]  #self.getGridSiteName(granularity, resource[0])
-#            DIRACsites = getDIRACSiteName( GridSiteName )
-#            if not DIRACsites[ 'OK' ]:
-#              raise RSSDBException, 'Error executing getDIRACSiteName'
-#            DIRACsites = DIRACsites[ 'Value' ]
-#            DIRACsite_comp = ''
-#            for DIRACsite in DIRACsites:
-#              if DIRACsite not in rDict[ 'SiteName' ]:#sites_select:
-#                continue
-#              DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
-#
-#            record  = []
-#            country = ( resource[ 0 ] ).split( '.' ).pop()
-#
-#            record.append( resource[ 0 ] ) #ResourceName
-#            record.append( resource[ 1 ] ) #ServiceType
-#            record.append( DIRACsite_comp ) #SiteName
-#            record.append( resource[ 4 ] ) #ResourceType
-#            record.append( country ) #Country
-#            record.append( resource[ 5 ] ) #StatusType
-#            record.append( resource[ 6 ] ) #Status
-#            record.append( resource[ 7 ].isoformat(' ') ) #DateEffective
-#            record.append( resource[ 8 ] ) #FormerStatus
-#            record.append( resource[ 9 ] ) #Reason
-#            records.append( record )
-#
-#          else:
-#            if DIRACsite not in rDict[ 'SiteName' ]: #sites_select:
-#              continue
-#            record  = []
-#            country = ( resource[ 0 ] ).split( '.' ).pop()
-#
-#            record.append( resource[ 0 ] ) #ResourceName
-#            record.append( resource[ 1 ] ) #ServiceType
-#            record.append( DIRACsite ) #SiteName
-#            record.append( resource[ 4 ] ) #ResourceType
-#            record.append( country ) #Country
-#            record.append( resource[ 5 ] ) #StatusType
-#            record.append( resource[ 6 ] ) #Status
-#            record.append( resource[ 7 ].isoformat(' ') ) #DateEffective
-#            record.append( resource[ 8 ] ) #FormerStatus
-#            record.append( resource[ 9 ] ) #Reason
-#            records.append( record )
-#
-#
-#      elif granularity == 'StorageElement':
-#        if rDict[ 'SiteName' ] == []:#sites_select == []:
-#          kw = { 'columns' : [ 'SiteName' ] }
-#          sites_select = self.getSitesPresent( **kw )
-#          #sites_select = self.getMonitoredsList( 'Site',
-#          #                                      paramsList = [ 'SiteName' ] )
-#          rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ]
-#
-#        kw = { 'columns' : [ 'GridSiteName' ] }
-#        gridSites_select = self.getSitesPresent( siteName = rDict[ 'SiteName' ], **kw )
-#        #gridSites_select = self.getMonitoredsList( 'Site',
-#        #                                           paramsList = [ 'GridSiteName' ],
-#        #                                           siteName = rDict[ 'SiteName' ] )
-#        gridSites_select = [ x[ 0 ] for x in gridSites_select[ 'Value' ] ]
-#
-#        storageElementsList = self.getStorageElementsPresent( storageElementName = rDict[ 'StorageElementName' ],
-#                                                              status             = rDict[ 'Status' ],
-#                                                              gridSiteName       = gridSites_select,
-#                                                              **kwargs
-#                                                              )
-#        #storageElementsList = self.getMonitoredsList( granularity,
-#        #                                              paramsList         = paramsList,
-#        #                                              storageElementName = rDict[ 'StorageElementName' ],#storageElements_select,
-#        #                                              status             = rDict[ 'Status' ],#status_select,
-#        #                                         #     countries          = rDict[ 'Countries' ],#countries_select,
-#        #                                              gridSiteName       = gridSites_select )
-#
-#        for storageElement in storageElementsList[ 'Value' ]:
-#          DIRACsites = getDIRACSiteName( storageElement[ 2 ] )
-#          if not DIRACsites[ 'OK' ]:
-#            raise RSSDBException, 'Error executing getDIRACSiteName'
-#          DIRACsites = DIRACsites[ 'Value' ]
-#          DIRACsite_comp = ''
-#          for DIRACsite in DIRACsites:
-#            if DIRACsite not in rDict[ 'SiteName' ]:
-#              continue
-#            DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp
-#          record  = []
-#          country = ( storageElement[ 1 ] ).split( '.' ).pop()
-#
-#          record.append( storageElement[ 0 ] ) #StorageElementName
-#          record.append( storageElement[ 1 ] ) #ResourceName
-#          record.append( DIRACsite_comp ) #SiteName
-#          record.append( country ) #Country
-#          record.append( storageElement[ 3 ] ) #StatusType
-#          record.append( storageElement[ 4 ] ) #Status
-#          record.append( storageElement[ 5 ].isoformat(' ') ) #DateEffective
-#          record.append( storageElement[ 6 ] ) #FormerStatus
-#          record.append( storageElement[ 7 ] ) #Reason
-#          records.append( record )
-#
-#    finalDict = {}
-#    finalDict[ 'TotalRecords' ]   = len( records )
-#    finalDict[ 'ParameterNames' ] = paramNames
-#
-#    # Return all the records if maxItems == 0 or the specified number otherwise
-#    if maxItems:
-#      finalDict[ 'Records' ] = records[ startItem:startItem+maxItems ]
-#    else:
-#      finalDict[ 'Records' ] = records
-#
-#    finalDict[ 'Extras' ] = None
-#
-#    return S_OK( finalDict )    
-    
+#            self.updateStorageElementStatus( storageElementName = SEName, lastCheckTime = znever )  
+################################################################################ 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

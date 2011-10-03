@@ -30,6 +30,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagemen
 #from DIRAC.ResourceStatusSystem.Command.CommandCaller  import CommandCaller
 #from DIRAC.Core.DISET.RPCClient                        import RPCClient
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter   import InfoGetter
+
 from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
 rsDB = False
@@ -54,8 +55,8 @@ def initializeResourceStatusHandler( _serviceInfo ):
 #  publisher = Publisher( VOExtension, rsDBIn = rsDB, commandCallerIn = cc,
 #                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
 
-  sync_O = Synchronizer( rsDBin = rsDB, rmDBin = rmDB )
-  gConfig.addListenerToNewVersionEvent( sync_O.sync )
+#  sync_O = Synchronizer( rsDBin = rsDB, rmDBin = rmDB )
+#  gConfig.addListenerToNewVersionEvent( sync_O.sync )
 
   return S_OK()
 
@@ -1054,85 +1055,85 @@ class ResourceStatusHandler( RequestHandler ):
 ################################################################################
 
 ################################################################################
-
-  types_getGeneralName = [ str, str, str ]
- 
-  def export_getGeneralName( self, from_element, name, to_element ):
-    
-    gLogger.info( "getGeneralName_1" )
-    resQuery = rsDB.getGeneralName( from_element, name, to_element )
-    gLogger.info( "getGeneralName_2" )  
-    return resQuery
-
-################################################################################
-
-  types_getGridSiteName = [ str, str ]       
-         
-  def export_getGridSiteName( self, granularity, name ):
-
-    gLogger.info( "getGridSiteName_1" )
-    resQuery = rsDB.getGridSiteName( granularity, name )
-    gLogger.info( "getGridSiteName_2" )  
-    return resQuery
-
-################################################################################
-
-  types_getTokens = [ str, ( str, NoneType ), ( datetime, NoneType ),
-                      ( str, NoneType ), dict ]       
-         
-  def export_getTokens( self, granularity, name, tokenExpiration, statusType, kwargs ): 
-
-    gLogger.info( "getTokens_1" )
-    resQuery = rsDB.getTokens( granularity, name, tokenExpiration, statusType, **kwargs )
-    gLogger.info( "getTokens_2" )  
-    return resQuery
-
-################################################################################
-       
-  types_setToken = [ str, str, str, str, str, datetime ]    
-       
-  def export_setToken( self, granularity, name, statusType, reason, tokenOwner, 
-                       tokenExpiration ):
-
-    gLogger.info( "setToken_1" )
-    resQuery = rsDB.setToken( granularity, name, statusType, reason, tokenOwner, 
-                              tokenExpiration )
-    gLogger.info( "setToken_2" )  
-    return resQuery
-
-
-################################################################################
-
-  types_setReason = [ str, str, str, str ]
-         
-  def export_setReason( self, granularity, name, statusType, reason ):     
-
-    gLogger.info( "setReason_1" )
-    resQuery = rsDB.setReason( granularity, name, statusType, reason )
-    gLogger.info( "setReason_2" )  
-    return resQuery
-
-################################################################################
-
-  types_whatIs = [ str ]
-         
-  def export_whatIs( self, name ):  
-
-    gLogger.info( "whatIs_1" )
-    resQuery = rsDB.whatIs( name )
-    gLogger.info( "whatIs_2" )  
-    return resQuery
-
-################################################################################
-
-  types_getStuffToCheck = [ str, dict, dict ]       
-     
-  def export_getStuffToCheck( self, granularity, checkFrequency, kwargs ):
-
-    gLogger.info( "getStuffToCheck_1" )
-    resQuery = rsDB.getStuffToCheck( granularity, checkFrequency, kwargs )
-    gLogger.info( "getStuffToCheck_2" )  
-    return resQuery
+#
+#  types_getGeneralName = [ str, str, str ]
+# 
+#  def export_getGeneralName( self, from_element, name, to_element ):
+#    
+#    gLogger.info( "getGeneralName_1" )
+#    resQuery = rsDB.getGeneralName( from_element, name, to_element )
+#    gLogger.info( "getGeneralName_2" )  
+#    return resQuery
+#
+#################################################################################
+#
+#  types_getGridSiteName = [ str, str ]       
+#         
+#  def export_getGridSiteName( self, granularity, name ):
+#
+#    gLogger.info( "getGridSiteName_1" )
+#    resQuery = rsDB.getGridSiteName( granularity, name )
+#    gLogger.info( "getGridSiteName_2" )  
+#    return resQuery
+#
+#################################################################################
+#
+#  types_getTokens = [ str, ( str, NoneType ), ( datetime, NoneType ),
+#                      ( str, NoneType ), dict ]       
+#         
+#  def export_getTokens( self, granularity, name, tokenExpiration, statusType, kwargs ): 
+#
+#    gLogger.info( "getTokens_1" )
+#    resQuery = rsDB.getTokens( granularity, name, tokenExpiration, statusType, **kwargs )
+#    gLogger.info( "getTokens_2" )  
+#    return resQuery
+#
+#################################################################################
+#       
+#  types_setToken = [ str, str, str, str, str, datetime ]    
+#       
+#  def export_setToken( self, granularity, name, statusType, reason, tokenOwner, 
+#                       tokenExpiration ):
+#
+#    gLogger.info( "setToken_1" )
+#    resQuery = rsDB.setToken( granularity, name, statusType, reason, tokenOwner, 
+#                              tokenExpiration )
+#    gLogger.info( "setToken_2" )  
+#    return resQuery
+#
+#
+#################################################################################
+#
+#  types_setReason = [ str, str, str, str ]
+#         
+#  def export_setReason( self, granularity, name, statusType, reason ):     
+#
+#    gLogger.info( "setReason_1" )
+#    resQuery = rsDB.setReason( granularity, name, statusType, reason )
+#    gLogger.info( "setReason_2" )  
+#    return resQuery
+#
+#################################################################################
+#
+#  types_whatIs = [ str ]
+#         
+#  def export_whatIs( self, name ):  
+#
+#    gLogger.info( "whatIs_1" )
+#    resQuery = rsDB.whatIs( name )
+#    gLogger.info( "whatIs_2" )  
+#    return resQuery
+#
+#################################################################################
+#
+#  types_getStuffToCheck = [ str, dict, dict ]       
+#     
+#  def export_getStuffToCheck( self, granularity, checkFrequency, kwargs ):
+#
+#    gLogger.info( "getStuffToCheck_1" )
+#    resQuery = rsDB.getStuffToCheck( granularity, checkFrequency, kwargs )
+#    gLogger.info( "getStuffToCheck_2" )  
+#    return resQuery
     
 ################################################################################
 ################################################################################

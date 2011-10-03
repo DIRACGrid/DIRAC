@@ -9,7 +9,7 @@ class PolicyCaller:
 
 #############################################################################
 
-  def __init__(self, commandCallerIn = None):
+  def __init__(self, commandCallerIn = None, **clients ):
 
     if commandCallerIn is not None:
       self.cc = commandCallerIn
@@ -17,6 +17,7 @@ class PolicyCaller:
       from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
       self.cc = CommandCaller()
 
+    self.clients       = clients
     self.policyInvoker = PolicyInvoker()
 
 #############################################################################
@@ -68,7 +69,10 @@ class PolicyCaller:
         a = argsList
 
     if commandIn is not None:
-      commandIn = self.cc.setCommandObject(commandIn)
+      commandIn = self.cc.setCommandObject( commandIn )
+
+      for clientName, clientInstance in self.clients.items():
+        self.cc.setClient( commandIn, clientName, clientInstance )
 
     res = self._innerEval(p, a, commandIn = commandIn)
 

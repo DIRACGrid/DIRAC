@@ -1,17 +1,19 @@
-########################################################################
+################################################################################
 # $HeadURL$
-########################################################################
+################################################################################
 """ CleanerAgent is in charge of different cleanings
 """
 
-import datetime
+from datetime                                           import datetime,timedelta
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC import gLogger
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB, RSSDBException
+from DIRAC                                              import S_OK, S_ERROR
+from DIRAC                                              import gLogger
+
+from DIRAC.Core.Base.AgentModule                        import AgentModule
+from DIRAC.ResourceStatusSytem                          import ValidRes  
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB, RSSDBException
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Utilities.Utils         import where
 
 __RCSID__ = "$Id$"
 
@@ -19,7 +21,7 @@ AGENT_NAME = 'ResourceStatus/CleanerAgent'
 
 class CleanerAgent( AgentModule ):
 
-#############################################################################
+################################################################################
 
   def initialize( self ):
     """ CleanerAgent initialization
@@ -27,10 +29,9 @@ class CleanerAgent( AgentModule ):
     
     try:
 
-      self.rsDB = ResourceStatusDB()
-      self.rmDB = ResourceManagementDB()  
-      self.tablesWithHistory = self.rsDB.getTablesWithHistory()
-      self.historyTables = [ x + 'History' for x in self.tablesWithHistory ]
+      self.rsDB              = ResourceStatusDB()
+      self.rmDB              = ResourceManagementDB()  
+      self.historyTables     = [ '%sHistory' % x for x in ValidRes ]
       
       return S_OK()
 
@@ -39,7 +40,7 @@ class CleanerAgent( AgentModule ):
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
-#############################################################################
+################################################################################
 
   def execute( self ):
     """ 
@@ -53,30 +54,33 @@ class CleanerAgent( AgentModule ):
     """
     
     try:
-        
+       
+      #it is automatically done !  
       # update Resource Status history tables.
-      for table in self.tablesWithHistory:
-          
-        res = self.rsDB.getEndings( table )
-        
-        for row in res:
-          if not self.rsDB.unique( table, row ):
-            self.rsDB.transact2History( table, row )
+      #for table in self.tablesWithHistory:
+      #    
+      #  res = self.rsDB.getEndings( table )
+      #  
+      #  for row in res:
+      #    if not self.rsDB.unique( table, row ):
+      #      self.rsDB.transact2History( table, row )
+
+      # Tidies up History tables, deleting  entries with same dateCreated
+      # just keeps the last one
 
       # Cleans history tables from entries older than 6 months.
-      sixMonthsAgo = str( ( datetime.datetime.utcnow() ).replace( microsecond = 0, 
-                                    second = 0 ) - datetime.timedelta( days = 180 ) )
+      sixMonthsAgo = datetime.utcnow().replace( microsecond = 0, 
+                                    second = 0 ) - timedelta( days = 180 )
       
-      for table in self.historyTables:
-        req = "DELETE FROM %s WHERE DateEnd < '%s'" % ( table, sixMonthsAgo )
-        resDel = self.rsDB.db._update( req )
-        if not resDel[ 'OK' ]:
-          raise RSSDBException, where( self, self.execute ) + resDel[ 'Message' ]       
+      for g in ValidRes:
+        deleter = getattr( rsDB, 'delete%ssHistory' % g )
+        kwargs = { 'minor' : { 'DateEnd' : sixMonthsAgo } }
+        deleter( **kwargs )    
 
       
       # Cleans ClientsCache table from DownTimes older than a day.
-      aDayAgo = str( ( datetime.datetime.utcnow() ).replace( microsecond = 0, 
-                               second = 0 ) - datetime.timedelta( days = 1 ) )
+      aDayAgo = str( datetime.utcnow().replace( microsecond = 0, 
+                               second = 0 ) - timedelta( days = 1 ) )
       
       req = "SELECT Opt_ID FROM ClientsCache WHERE Value = 'EndDate' AND Result < '%s'" % aDayAgo
       resQuery = self.rmDB.db._query( req )
@@ -108,5 +112,5 @@ class CleanerAgent( AgentModule ):
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
-#############################################################################
-      
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      

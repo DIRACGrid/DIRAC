@@ -108,7 +108,7 @@ class SystemCharge_Command(Command):
 
 class JobsEffSimple_Command(Command):
   
-  def doCommand(self, RSClientIn = None):
+  def doCommand(self ):
     """ 
     Returns simple jobs efficiency
 
@@ -124,19 +124,17 @@ class JobsEffSimple_Command(Command):
     """
     super (JobsEffSimple_Command, self).doCommand()
 
-    if self.args[0] in ('Service', 'Services'):
-      if RSClientIn is not None:
-        rsc = RSClientIn
-      else:
+    if self.args[0] == 'Service':
+      if self.rsClient is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-        rsc = ResourceStatusClient()
+        self.rsClient = ResourceStatusClient()
       try:
-        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.rsClient.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("JobsEffSimple_Command: Can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
       granularity = 'Site'
-    elif self.args[0] in ('Site', 'Sites'):
+    elif self.args[0] == 'Site':
       name = self.args[1]
       granularity = self.args[0]
     else:
@@ -180,18 +178,18 @@ class JobsEffSimpleCached_Command(Command):
 
     client = self.client
 
-    if client is None:
+    if self.rsClient is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
+      self.rsClient = ResourceStatusClient()
       
-    if self.args[0] in ('Service', 'Services'):
+    if self.args[0] == 'Service':
       try:
-        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )['Value'][0]
       except:
         gLogger.error("JobsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
       granularity = 'Site'
-    elif self.args[0] in ('Site', 'Sites'):
+    elif self.args[0] == 'Site':
       name = self.args[1]
       granularity = self.args[0]
     else:

@@ -4,7 +4,7 @@ ResourceStatusClient class is a client for requesting info from the ResourceStat
 # it crashes epydoc
 # __docformat__ = "restructuredtext en"
 
-from DIRAC                                            import S_OK, S_ERROR#, gConfig
+from DIRAC                                            import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                       import RPCClient
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes, RSSException
 #from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
@@ -12,43 +12,52 @@ from DIRAC.ResourceStatusSystem                       import ValidRes, ValidStat
   ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB   import ResourceStatusDB 
+from DIRAC.ResourceStatusSystem.Utilities.ResourceStatusBooster import ResourceStatusBooster
 
-import types
-import inspect
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientExecutor
 
-class ClientExecutor( object ):
-  
-  def __init__( self, f ):
-    self.f = f
-    
-  def __get__( self, obj, objtype = None ):
-    return types.MethodType( self, obj, objtype )
-    
-  def __call__( self, *args, **kwargs ):  
- 
-    ins = inspect.getargspec( self.f )
-    newArgs = ins.defaults
+#import types
+#import inspect
 
-    if newArgs:
-      #Keyword arguments on function self.f
-      funkwargs = ins.args[ -len( ins.defaults ): ]
-      
-      kw      = dict(zip( funkwargs, ins.defaults ) )
-      kw.update( kwargs ) 
-      newArgs = [ kw[k] for k in funkwargs ]
-      
-      for fk in funkwargs:
-        kwargs.pop( fk, None )  
-      
-    gate  = args[ 0 ].gate  
-    fname = self.f.__name__  
-    args = tuple( list(args)[1:] + list( newArgs )) 
-       
-    try:
-      gateFunction = getattr( gate, fname )
-      return gateFunction( *args, **kwargs )  
-    except Exception, x:
-      return S_ERROR( x )  
+#class ClientExecutor( object ):
+#  
+#  def __init__( self, f ):
+#    self.f = f
+#    
+#  def __get__( self, obj, objtype = None ):
+#    return types.MethodType( self, obj, objtype )
+#    
+#  def __call__( self, *args, **kwargs ):  
+# 
+#    ins = inspect.getargspec( self.f )
+#    newArgs = ( 1 and ins.defaults ) or ()
+#
+#    if newArgs:
+#      #Keyword arguments on function self.f
+#      funkwargs = ins.args[ -len( ins.defaults ): ]
+#      
+#      kw      = dict(zip( funkwargs, ins.defaults ) )
+#      kw.update( kwargs ) 
+#      newArgs = [ kw[k] for k in funkwargs ]
+#      
+#      for fk in funkwargs:
+#        kwargs.pop( fk, None )  
+#      
+#    gate    = args[ 0 ].gate  
+#    booster = args[ 0 ].booster
+#     
+#    fname   = self.f.__name__  
+#    args    = tuple( list(args)[1:] + list( newArgs )) 
+#       
+#    try:
+#      gateFunction = getattr( gate, fname )
+#    except AttributeError:
+#      gateFunction = getattr( booster, fname )  
+#    except Exception, x:
+#      return S_ERROR( x )    
+#
+#    return gateFunction( *args, **kwargs )
+
        
 class ResourceStatusClient:
 
@@ -60,12 +69,14 @@ class ResourceStatusClient:
  
     if serviceIn == None:
       try:
-        self.gate    = ResourceStatusDB()
+        self.gate = ResourceStatusDB()
       except:  
         self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
         
     else:
       self.gate = serviceIn
+      
+    self.booster = ResourceStatusBooster( self )  
 
 ################################################################################
 
@@ -454,7 +465,7 @@ class ResourceStatusClient:
 ################################################################################
 
 ################################################################################
-# Misc functions
+# BOOSTER functions
 ################################################################################
 
 ################################################################################
@@ -480,6 +491,10 @@ class ResourceStatusClient:
   @ClientExecutor     
   def setReason( self, granularity, name, statusType, reason ):     
     pass
+  
+  @ClientExecutor     
+  def setDateEnd( self, granularity, name, statusType, dateEnd ):     
+    pass 
     
   @ClientExecutor     
   def whatIs( self, name ):  
@@ -672,7 +687,7 @@ class ResourceStatusClient:
 #
 #    for name in names:
 #      if granularity == 'Site':
-#        res = self.rsS.getSitesStatusWeb( { 'SiteName' : name }, 0, 1 )
+#        res = self.rsS.g( { 'SiteName' : name }, 0, 1 )
 #      elif granularity == 'Service':
 #        res = self.rsS.getServicesStatusWeb( { 'ServiceName' : name }, 0, 1 )
 #      elif granularity  == 'Resource':

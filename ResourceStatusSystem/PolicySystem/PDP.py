@@ -5,7 +5,7 @@ The PDP (Policy Decision Point) module is used to:
 
 2. Invokes an evaluation of the policies, and returns the result (to a PEP)
 """
-#############################################################################
+################################################################################
 
 #import time
 import datetime
@@ -19,7 +19,7 @@ from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller   import PolicyCaller
 from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
 
-#############################################################################
+################################################################################
 
 
 class PDP:
@@ -29,57 +29,54 @@ class PDP:
   Used to invoke policies and to take decision based on the polict results combination.
   """
 
-#############################################################################
+################################################################################
 
-  def __init__(self, VOExtension, granularity = None, name = None, status = None, formerStatus = None,
-               reason = None, siteType = None, serviceType = None, resourceType = None,
-               useNewRes = False):
+  def __init__( self, **clients ): #VOExtension, granularity = None, name = None, 
+                #statusType = None, status = None, formerStatus = None, 
+                #reason = None, siteType = None, serviceType = None, 
+                #resourceType = None, useNewRes = False ):
+
+
+    cc             = CommandCaller()
+    self.pc        = PolicyCaller( cc, **clients )
+
+  def setup( self, VOExtension, granularity = None, name = None, statusType = None, 
+             status = None, formerStatus = None, reason = None, siteType = None, 
+             serviceType = None, resourceType = None, useNewRes = False ):
+
     """
     PDP (Policy Decision Point) initialization
 
     :params:
       :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
-
       :attr:`granularity`: string - a ValidRes
-
       :attr:`name`: string - name (e.g. of a site)
-
       :attr:`status`: string - status
-
       :attr:`formerStatus`: string - former status
-
       :attr:`reason`: string - optional reason for last status change
-
       :attr:`siteType`: string - optional site type
-
       :attr:`serviceType`: string - optional service type
-
       :attr:`resourceType`: string - optional resource type
     """
 
-    self.VOExtension = VOExtension
-
-    self.__granularity  = assignOrRaise(granularity, ValidRes, InvalidRes, self, self.__init__)
+    self.VOExtension    = VOExtension
+    self.__granularity  = granularity
     self.__name         = name
-    self.__status       = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
-    self.__formerStatus = assignOrRaise(formerStatus, ValidStatus, InvalidStatus, self, self.__init__)
+    self.__statusType   = statusType
+    self.__status       = status
+    self.__formerStatus = formerStatus
     self.__reason       = reason
-    self.__siteType     = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
-    self.__serviceType  = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
-    self.__resourceType = assignOrRaise(resourceType, ValidResourceType, InvalidResourceType, self, self.__init__)
-
-    cc      = CommandCaller()
-    self.pc = PolicyCaller(cc)
-
-    self.useNewRes = useNewRes
+    self.__siteType     = siteType
+    self.__serviceType  = serviceType
+    self.__resourceType = resourceType
+    self.__useNewRes    = useNewRes
 
     self.args      = None
     self.policy    = None
     self.knownInfo = None
     self.ig        = None
 
-
-#############################################################################
+################################################################################
 
   def takeDecision(self, policyIn=None, argsIn=None, knownInfo=None):
     """ PDP MAIN FUNCTION
@@ -119,12 +116,13 @@ class PDP:
 
     EVAL = self.ig.getInfoToApply(('policy', 'policyType'),
                                   granularity  = self.__granularity,
+                                  statusType   = self.__statusType,
                                   status       = self.__status,
                                   formerStatus = self.__formerStatus,
                                   siteType     = self.__siteType,
                                   serviceType  = self.__serviceType,
                                   resourceType = self.__resourceType,
-                                  useNewRes    = self.useNewRes)
+                                  useNewRes    = self.__useNewRes)
 
     for policyGroup in EVAL:
 
@@ -141,9 +139,9 @@ class PDP:
                                              'Action': False,
                                              'Reason':'No policy results'}}
         else:
-          singlePolicyResults = self._invocation(self.VOExtension, self.__granularity,
-                                                 self.__name, self.__status, self.policy,
-                                                 self.args, policyGroup['Policies'])
+          singlePolicyResults = self._invocation( self.VOExtension, self.__granularity,
+                                                  self.__name, self.__status, self.policy,
+                                                  self.args, policyGroup['Policies'])
 
       policyCombinedResults = self._policyCombination(singlePolicyResults)
       assert(type(policyCombinedResults) == dict)
@@ -181,7 +179,7 @@ class PDP:
     assert(type(res) == dict)
     return res
 
-#############################################################################
+################################################################################
 
   def _invocation(self, VOExtension, granularity, name, status, policy, args, policies):
     """ One by one, use the PolicyCaller to invoke the policies, and putting
@@ -196,9 +194,9 @@ class PDP:
       pModule = p['Module']
       extraArgs = p['args']
       commandIn = p['commandIn']
-      res = self.pc.policyInvocation(VOExtension, granularity = granularity, name = name,
-                                     status = status, policy = policy, args = args, pName = pName,
-                                     pModule = pModule, extraArgs = extraArgs, commandIn = commandIn)
+      res = self.pc.policyInvocation( VOExtension, granularity = granularity, name = name,
+                                      status = status, policy = policy, args = args, pName = pName,
+                                      pModule = pModule, extraArgs = extraArgs, commandIn = commandIn )
 
       # If res is empty, return immediately
       if not res: return policyResults
@@ -226,7 +224,7 @@ class PDP:
 
     return policyResults
 
-#############################################################################
+################################################################################
 
   def _policyCombination(self, pol_results):
     """
@@ -303,7 +301,7 @@ class PDP:
     if endDatePolicies != []: res['EndDate'] = endDatePolicies[0]['EndDate']
     return res
 
-#############################################################################
+################################################################################
 
   def __useOldPolicyRes(self, name, policyName):
     """ Use the RSS Service to get an old policy result.
@@ -338,4 +336,4 @@ class PDP:
 
     return result
 
-#############################################################################
+################################################################################

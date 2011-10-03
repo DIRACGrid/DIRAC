@@ -14,14 +14,14 @@ class ResourceManagementClient:
   
 #############################################################################
 
-  def __init__(self, serviceIn = None ):
+  def __init__(self, serviceIn = None, timeout = None ):
     """ Constructor of the ResourceManagementClient class
     """
     if serviceIn == None:
-      try:
-        self.rsM = ResourceManagementDB()
-      except:
-        self.rsM = RPCClient( "ResourceStatus/ResourceManagement" )
+#      try:
+#        self.rsM = ResourceManagementDB()
+#      except:
+      self.rsM = RPCClient( "ResourceStatus/ResourceManagement", timeout = timeout )
     else:
       self.rsM = serviceIn
 

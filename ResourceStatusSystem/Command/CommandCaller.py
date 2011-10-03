@@ -71,7 +71,7 @@ class CommandCaller:
 
     return c
   
-#############################################################################
+################################################################################
   
 #  def setCommandArgs(self, comm):
 #
@@ -81,7 +81,13 @@ class CommandCaller:
 #    else:
 #      return None
   
-#############################################################################
+################################################################################
+
+  def setClient( self, cObj, clientName, clientInstance ):
+    
+    cObj.setClient( clientName, clientInstance )
+
+################################################################################
 
   def setCommandClient(self, comm, cObj, RPCWMSAdmin = None, RPCAccounting = None):
     
@@ -102,7 +108,7 @@ class CommandCaller:
       client = ReportsClient(rpcClient = RPCAccounting)
       cObj.setRPC(RPCAccounting)
       
-    cObj.setClient(client)
+    cObj.setCommandClient(client)
 
 #############################################################################
   

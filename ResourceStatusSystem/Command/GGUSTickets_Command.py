@@ -20,7 +20,6 @@ def callClient(args, clientIn = None):
     c = GGUSTicketsClient()
     
   name = args[1]
-  
   name = getGOCSiteName(name)
   if not name['OK']:
     raise RSSException, name['Message']

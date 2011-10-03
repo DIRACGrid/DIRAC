@@ -11,7 +11,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
-#############################################################################
+################################################################################
 
 class TransferQualityByDestSplitted_Command( Command ):
   
@@ -29,23 +29,27 @@ class TransferQualityByDestSplitted_Command( Command ):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList( 'Write' )
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = self.rsClient.getStorageElementsList()
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs[ 'Value' ]
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      sources = RPC_RSS.getSitesList()
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      sources = self.rsClient.getSitesList()
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources[ 'Value' ]
+        sources = [ s[0] for s in sources[ 'Value' ] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -56,7 +60,7 @@ class TransferQualityByDestSplitted_Command( Command ):
       self.client = ReportsClient( rpcClient = self.RPC )
 
     fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.datetime.utcnow()
 
     try:
       qualityAll = self.client.getReport( 'DataOperation', 'Quality', fromD, toD, 
@@ -92,7 +96,7 @@ class TransferQualityByDestSplitted_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class TransferQualityByDestSplittedSite_Command( Command ):
   
@@ -110,23 +114,27 @@ class TransferQualityByDestSplittedSite_Command( Command ):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList( 'Write' )
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = self.rsClient.getStorageElementsList()
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs[ 'Value' ]
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      sources = RPC_RSS.getSitesList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      sources = self.rsClient.getSitesList()
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources[ 'Value' ]
+        sources = [ si[0] for si in sources[ 'Value' ] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -156,13 +164,11 @@ class TransferQualityByDestSplittedSite_Command( Command ):
     listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
-                                                             [], 0, 300, 'Write' )
+      storSitesWeb = self.rsClient.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest }, 0, 300 )
     except NameError:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
-                                                             [], 0, 300, 'Write' )
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      storSitesWeb = self.rsClient.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest }, 0, 300 )
     
     if not storSitesWeb[ 'OK' ]:
       raise RSSException, where( self, self.doCommand ) + " " + storSitesWeb[ 'Message' ] 
@@ -205,7 +211,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class TransferQualityBySourceSplittedSite_Command( Command ):
   
@@ -223,19 +229,23 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList( 'Read' )
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = self.rsClient.getStorageElementsList( 'Read' )
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
         SEs = SEs[ 'Value' ]
     
     if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      sources = RPC_RSS.getSitesList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      sources = self.rsClient.getSitesList()
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
@@ -269,12 +279,12 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
     listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
+      storSitesWeb = self.rsClient.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
                                                              [], 0, 300, 'Read' )
     except NameError:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      storSitesWeb = self.rsClient.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
                                                              [], 0, 300, 'Read' )
     
     if not storSitesWeb[ 'OK' ]:
@@ -318,7 +328,7 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class FailedTransfersBySourceSplitted_Command( Command ):
   
@@ -336,23 +346,27 @@ class FailedTransfersBySourceSplitted_Command( Command ):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList( 'Read' )
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      SEs = self.rsClient.getStorageElementsList()
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs[ 'Value' ]
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      sources = RPC_RSS.getSitesList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
+      sources = self.rsClient.getSitesList()
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources[ 'Value' ]
+        sources = [ si[0] for si in sources[ 'Value' ] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -400,7 +414,7 @@ class FailedTransfersBySourceSplitted_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class SuccessfullJobsBySiteSplitted_Command( Command ):
   
@@ -416,14 +430,18 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      sites = self.rsClient.getSitesList()
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -434,7 +452,7 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
       self.client = ReportsClient(rpcClient = self.RPC)
 
     fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.datetime.utcnow()
 
     try:
       succ_jobs = self.client.getReport('Job', 'NumberOfJobs', fromD, toD, 
@@ -468,7 +486,7 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class FailedJobsBySiteSplitted_Command(Command):
   
@@ -484,14 +502,18 @@ class FailedJobsBySiteSplitted_Command(Command):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      sites = self.rsClient.getSitesList()
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -502,7 +524,7 @@ class FailedJobsBySiteSplitted_Command(Command):
       self.client = ReportsClient(rpcClient = self.RPC)
 
     fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.datetime.utcnow()
 
     try:
       failed_jobs = self.client.getReport('Job', 'NumberOfJobs', fromD, toD, 
@@ -535,7 +557,7 @@ class FailedJobsBySiteSplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class SuccessfullPilotsBySiteSplitted_Command(Command):
   
@@ -551,14 +573,18 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      sites = self.rsClient.getSitesList()
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -569,7 +595,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       self.client = ReportsClient(rpcClient = self.RPC)
 
     fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.datetime.utcnow()
 
     try:
       succ_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
@@ -603,7 +629,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class FailedPilotsBySiteSplitted_Command(Command):
   
@@ -620,13 +646,13 @@ class FailedPilotsBySiteSplitted_Command(Command):
     """
 
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      sites = self.rsClient.getSitesList()
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -637,7 +663,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
       self.client = ReportsClient(rpcClient = self.RPC)
 
     fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.datetime.utcnow()
 
     try:
       failed_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
@@ -670,7 +696,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class SuccessfullPilotsByCESplitted_Command(Command):
   
@@ -686,14 +712,18 @@ class SuccessfullPilotsByCESplitted_Command(Command):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if CEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      CEs = RPC_RSS.getCEsList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      CEs = self.rsClient.getCEsList()
       if not CEs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + CEs['Message'] 
       else:
-        CEs = CEs['Value']
+        CEs = [ ce[0] for ce in CEs['Value'] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -704,7 +734,7 @@ class SuccessfullPilotsByCESplitted_Command(Command):
       self.client = ReportsClient(rpcClient = self.RPC)
 
     fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.datetime.utcnow()
 
     try:
       succ_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
@@ -738,7 +768,7 @@ class SuccessfullPilotsByCESplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class FailedPilotsByCESplitted_Command(Command):
   
@@ -754,14 +784,18 @@ class FailedPilotsByCESplitted_Command(Command):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if CEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      CEs = RPC_RSS.getCEsList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      CEs = self.rsClient.getCEsList()
       if not CEs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + CEs['Message'] 
       else:
-        CEs = CEs['Value']
+        CEs = [ ce[0] for ce in CEs['Value'] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -772,7 +806,7 @@ class FailedPilotsByCESplitted_Command(Command):
       self.client = ReportsClient(rpcClient = self.RPC)
 
     fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.datetime.utcnow()
 
     try:
       failed_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
@@ -805,7 +839,7 @@ class FailedPilotsByCESplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
 
 class RunningJobsBySiteSplitted_Command(Command):
   
@@ -821,14 +855,18 @@ class RunningJobsBySiteSplitted_Command(Command):
       
     """
 
+    if self.rsClient is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
+
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      #from DIRAC.Core.DISET.RPCClient import RPCClient
+      #RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      sites = self.rsClient.getSitesList()
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -839,7 +877,7 @@ class RunningJobsBySiteSplitted_Command(Command):
       self.client = ReportsClient(rpcClient = self.RPC)
 
     fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.datetime.utcnow()
 
     try:
       run_jobs = self.client.getReport('WMSHistory', 'NumberOfJobs', fromD, toD, 
@@ -873,5 +911,5 @@ class RunningJobsBySiteSplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
-
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

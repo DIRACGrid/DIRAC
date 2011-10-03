@@ -1,6 +1,6 @@
-########################################################################
+################################################################################
 # $HeadURL:  $
-########################################################################
+################################################################################
 """ 
 TokenAgent is in charge of checking tokens assigned on resources.
 Notifications are sent to those users owning expiring tokens. 
@@ -13,6 +13,7 @@ from DIRAC                                           import gLogger
 from DIRAC.Core.Base.AgentModule                     import AgentModule
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
+from DIRAC.ResourceStatusSystem                      import ValidRes   
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.Utilities.CS         import getMailForUser
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP     import PDP 
@@ -25,14 +26,15 @@ AGENT_NAME = 'ResourceStatus/TokenAgent'
 
 class TokenAgent( AgentModule ):
 
-#############################################################################
+################################################################################
 
   def initialize( self ):
     """ 
     TokenAgent initialization
     """
     
-    self.ELEMENTS    = [ 'Site', 'StorageElementRead', 'StorageElementWrite' ]
+    # Why only Site and StorageElement ??
+    # self.ELEMENTS    = [ 'Site', 'StorageElement' ]
     self.notifyHours = self.am_getOption( 'notifyHours', 10 )
     
     try:
@@ -47,7 +49,7 @@ class TokenAgent( AgentModule ):
       return S_ERROR( errorStr )
 
 
-#############################################################################
+################################################################################
 
   def execute( self ):
     """ 
@@ -60,41 +62,52 @@ class TokenAgent( AgentModule ):
     
     try:
       
+      reason = 'Out of date token'
+      
       #reAssign the token to RS_SVC
-      for g in self.ELEMENTS:
-        tokensExpired = self.rsDB.getTokens( g, None, datetime.datetime.utcnow() )
+      #for g in self.ELEMENTS:
+      for g in ValidRes:
+        tokensExpired = self.rsDB.getTokens( g, dateExpiration = datetime.datetime.utcnow() )
         
-        if tokensExpired:
-          adminMail += '\nLIST OF EXPIRED TOKENS\n'
+        if tokensExpired[ 'Value' ]:
+          adminMail += '\nLIST OF EXPIRED %s TOKENS\n' % g
+          adminMail += '%s|%s|%s\n' % ( 'user'.ljust(20),'name'.ljust(15),'status type')
                 
-        for token in tokensExpired:
+        for token in tokensExpired[ 'Value' ]:
           
-          name = token[ 0 ]
-          user = token[ 1 ]
+          name  = token[ 0 ]
+          stype = token[ 1 ]
+          user  = token[ 2 ]
           
-          self.rsDB.setToken( g, name, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ) )
-          adminMail += ' %s %s\n' %( user.ljust(20), name )
+          gLogger.info( ( g, name, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ), stype ))
+          self.rsDB.setToken( g, name, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ), stype )
+          adminMail += ' %s %s %s\n' %( user.ljust(20), name.ljust(15), stype )
 
       #notify token owners
       inNHours = datetime.datetime.utcnow() + datetime.timedelta( hours = self.notifyHours )
-      for g in self.ELEMENTS:
+      #for g in self.ELEMENTS:
+      for g in ValidRes:
           
-        tokensExpiring = self.rsDB.getTokens( g, None, inNHours )
+        tokensExpiring = self.rsDB.getTokens( g, dateExpiration = inNHours )
         
-        if tokensExpiring:
-          adminMail += '\nLIST OF EXPIRING TOKENS\n'
+        if tokensExpiring[ 'Value' ]:
+          adminMail += '\nLIST OF EXPIRING %s TOKENS\n' % g
+          adminMail += '%s|%s|%s\n' % ( 'user'.ljust(20),'name'.ljust(15),'status type')
                   
-        for token in tokensExpiring:
+        for token in tokensExpiring[ 'Value' ]:
           
-          name = token[ 0 ]
-          user = token[ 1 ]
+          name  = token[ 0 ]
+          stype = token[ 1 ]
+          user  = token[ 2 ]
           
-          adminMail += '\n %s %s\n' %( user.ljust(20), name )
+          adminMail += '\n %s %s\n' %( user.ljust(20), name.ljust(15), stype )
           
+          #If user is RS_SVC, we ignore this, whenever the token is out, this
+          #agent will set again the token to RS_SVC
           if user == 'RS_SVC':
             continue
           
-          pdp = PDP( self.VOExt, granularity = g, name = name )
+          pdp = PDP( self.VOExt, granularity = g, name = name, statusType = stype )
           
           decision = pdp.takeDecision()
           pcresult = decision[ 'PolicyCombinedResult' ]
@@ -102,7 +115,7 @@ class TokenAgent( AgentModule ):
        
           expiration = token[ 2 ]
           
-          mailMessage = "The token for %s %s " % ( g, name )
+          mailMessage = "The token for %s %s %s" % ( g, name, stype )
           mailMessage = mailMessage + "will expire on %s\n\n" % expiration
           mailMessage = mailMessage + "You can renew it with command 'dirac-rss-renew-token'.\n"
           mailMessage = mailMessage + "If you don't take any action, RSS will take control of the resource.\n\n"
@@ -133,4 +146,6 @@ class TokenAgent( AgentModule ):
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
-#############################################################################
+################################################################################
+
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -34,12 +34,9 @@ class SAMResults_Command(Command):
       from DIRAC.Core.LCG.SAMResultsClient import SAMResultsClient
       self.client = SAMResultsClient()
 
-    if rsClientIn is not None:
-      rsc = rsClientIn
-    else:
-      # use standard RS Client
+    if self.rsClient is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      rsc = ResourceStatusClient()
+      self.rsClient = ResourceStatusClient()
 
     granularity = self.args[0]
     name = self.args[1]
@@ -55,7 +52,7 @@ class SAMResults_Command(Command):
       siteName = siteName['Value']
     elif granularity in ('Resource', 'Resources'):
       if siteName is None:
-        siteName = rsc.getGridSiteName(granularity, name)
+        siteName = self.rsClient.getGridSiteName(granularity, name)
         if not siteName['OK']:
           raise RSSException, siteName['Message']    
         else:
@@ -93,3 +90,5 @@ class SAMResults_Command(Command):
     return {'Result':res['Value']}
   
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

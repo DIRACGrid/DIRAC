@@ -78,21 +78,20 @@ class PilotsEffSimple_Command(Command):
     """
     super(PilotsEffSimple_Command, self).doCommand()
 
-    if self.args[0] in ('Service', 'Services'):
-      if RSClientIn is not None:
-        rsc = RSClientIn
-      else:
+    if self.args[0] == 'Service':
+      
+      if self.rsClient is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-        rsc = ResourceStatusClient()
+        self.rsClient = ResourceStatusClient()
 
       try:
-        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.rsClient.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("PilotsEffSimple_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}
       granularity = 'Site'
 
-    elif self.args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
+    elif self.args[0] in [ 'Site', 'Resource' ]:
       name = self.args[1]
       granularity = self.args[0]
     else:
@@ -136,15 +135,13 @@ class PilotsEffSimpleCached_Command(Command):
     """
     super(PilotsEffSimpleCached_Command, self).doCommand()
 
-    client = self.client
-
-    if client is None:
+    if self.rsClient is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
+      self.rsClient = ResourceStatusClient()
 
-    if self.args[0] in ('Service', 'Services'):
+    if self.args[0] == 'Service':
       try:
-        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.rsClient.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("PilotsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}
@@ -157,7 +154,7 @@ class PilotsEffSimpleCached_Command(Command):
 
     try:
 
-      if client is None:
+      if self.client is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
         self.client = ResourceManagementClient(timeout = self.timeout)
       res = self.client.getCachedResult(name, 'PilotsEffSimpleEverySites', 'PE_S', 'NULL')['Value']
@@ -174,3 +171,4 @@ class PilotsEffSimpleCached_Command(Command):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

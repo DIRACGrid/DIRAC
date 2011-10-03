@@ -7,10 +7,10 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 class Command( object ):
 
   def __init__( self ):
-    self.args = None
-    self.client = None
-    self.RPC = None
-    self.timeout = 10
+    self.args     = None
+    self.client   = None
+    self.RPC      = None
+    self.timeout  = 10
 
   def setArgs( self, argsIn ):
     """
@@ -28,7 +28,12 @@ class Command( object ):
 
     self.args = argsIn
 
-  def setClient( self, clientIn = None ):
+  def setRSSClients( self, rsClient, rmClient ):
+    
+    self.rsClient = rsClient
+    self.rmClient = rmClient
+
+  def setCommandClient( self, clientIn = None ):
     """
     set `self.client`. If not set, a standard client will be instantiated.
 
@@ -36,6 +41,9 @@ class Command( object ):
       :attr:`clientIn`: a client object
     """
     self.client = clientIn
+
+  def setClient( self, clientName, clientInstance ):
+    setattr( self, clientName, clientInstance )
 
   def setRPC( self, RPCIn = None ):
     """

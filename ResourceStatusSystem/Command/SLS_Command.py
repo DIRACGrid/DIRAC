@@ -90,7 +90,7 @@ class SLSStatus_Command(Command):
       from DIRAC.Core.LCG.SLSClient import SLSClient   
       self.client = SLSClient()
       
-    if self.args[0] in ( 'StorageElementRead', 'StorageElementWrite' ):
+    if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
       SLSName = _getSESLSName(self.args[1])
     elif self.args[0] == 'Service':
@@ -135,7 +135,7 @@ class SLSServiceInfo_Command(Command):
       from DIRAC.Core.LCG.SLSClient import SLSClient   
       self.client = SLSClient()
       
-    if self.args[0] in ( 'StorageElementRead', 'StorageElementWrite' ):
+    if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
       SLSName = _getCastorSESLSName(self.args[1])
     elif self.args[0] == 'Service':
@@ -182,7 +182,7 @@ class SLSLink_Command(Command):
       from DIRAC.Core.LCG.SLSClient import SLSClient   
       self.client = SLSClient()
       
-    if self.args[0] in ( 'StorageElementRead', 'StorageElementWrite' ):
+    if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
       SLSName = _getSESLSName(self.args[1])
     elif self.args[0] == 'Service':
@@ -207,4 +207,4 @@ class SLSLink_Command(Command):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
   
 #############################################################################
-
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

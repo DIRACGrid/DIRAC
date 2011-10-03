@@ -23,7 +23,7 @@ def getUsersToNotify(setup, kwargs):
 
   return notifications
 
-def AlarmPolTypeActions(name, res, nc, setup, rsDB, rmDB, **kwargs):
+def AlarmPolTypeActions(name, res, statusType, nc, setup, rsClient, rmDB, **kwargs):
   """ Do actions required to notify users.
   Mandatory keyword arguments:
   - Granularity
@@ -51,9 +51,20 @@ def AlarmPolTypeActions(name, res, nc, setup, rsDB, rmDB, **kwargs):
         if 'Web' in notification['Notifications']:
           nc.addNotificationForUser(user, notif)
         if 'Mail' in notification['Notifications']:
-          was = rsDB.getMonitoredsHistory(granularity,
-                                          ['Status', 'Reason', 'DateEffective'],
-                                          name, False, 'DESC', 1)[0]
+          
+          histGetter = getattr( rsClient, 'get%ssHistory' % granularity )
+          
+          kwargs = { '%sName'     : name,
+                     'statusType' : statusType,
+                     'columns'    : ['Status', 'Reason', 'DateEffective'], 
+                     'order'      : 'DESC',
+                     'limit'      : 1 }
+          
+          was = histGetter( **kwargs )[ 'Value' ][ 0 ]
+          
+          #was = rsClient.getMonitoredsHistory( granularity,
+          #                                 paramsList = ['Status', 'Reason', 'DateEffective'],
+          #                                 name = name, presentAlso = False, order = 'DESC', limit = 1 )['Value'][0]
 
           mailMessage = """Granularity = %s
 Name = %s
@@ -63,5 +74,5 @@ Was in status "%s", with reason "%s", since %s
 Setup = %s
 """ % (granularity, name, res['Status'], res['Reason'], was[0], was[1], was[2], setup)
 
-          nc.sendMail(rmDB.registryGetMailFromLogin(user),
+          nc.sendMail('aebeda3@gmail.com',#rmDB.registryGetMailFromLogin(user),
                       '%s: %s' % (name, res['Status']), mailMessage)

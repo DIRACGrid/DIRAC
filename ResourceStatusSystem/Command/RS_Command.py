@@ -28,12 +28,12 @@ class RSPeriods_Command( Command ):
     """
     super( RSPeriods_Command, self ).doCommand()
 
-    if self.client is None:
+    if self.rsClient is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient()
+      self.rsClient = ResourceStatusClient()
 
     try:
-      res = self.client.getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
+      res = self.rslient.getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
     except:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
@@ -65,17 +65,21 @@ class ServiceStats_Command( Command ):
     """
     super( ServiceStats_Command, self ).doCommand()
 
-    if self.client is None:
+    if self.rsClient is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient( timeout = self.timeout )
+      self.rsClient = ResourceStatusClient()
 
     try:
-      res = self.client.getServiceStats( self.args[0], self.args[1] )['Value']
+      res = self.rsClient.getServiceStats( self.args[1], statusType = None )# self.args[0], self.args[1] )['Value']
     except:
-      gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
+      gLogger.exception( "ServiceStats: Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
-    return {'Result':res}
+    if not res[ 'OK' ]:
+      gLogger.error( "ServiceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
+#      return { 'Result' : None }    
+
+    return { 'Result' : res[ 'Value' ] }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -102,17 +106,21 @@ class ResourceStats_Command( Command ):
     """
     super( ResourceStats_Command, self ).doCommand()
 
-    if self.client is None:
+    if self.rsClient is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient( timeout = self.timeout )
+      self.rsClient = ResourceStatusClient()
 
     try:
-      res = self.client.getResourceStats( self.args[0], self.args[1] )['Value']
+      res = self.rsClient.getResourceStats( self.args[0], self.args[1], statusType = None )
     except:
-      gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
+      gLogger.exception( "ResourceStats: Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
-    return {'Result':res}
+    if not res[ 'OK' ]:
+      gLogger.error( "ResourceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
+#      return { 'Result' : None }
+
+    return { 'Result' : res[ 'Value' ] }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -126,7 +134,7 @@ class StorageElementsStats_Command( Command ):
 
   def doCommand( self ):
     """
-    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getStorageElementsStats`
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getStorageElementStats`
 
     :params:
       :attr:`args`: a tuple
@@ -139,31 +147,30 @@ class StorageElementsStats_Command( Command ):
     """
     super( StorageElementsStats_Command, self ).doCommand()
 
-    if self.args[0] in ( 'Service', 'Services' ):
+    if self.args[0] == 'Service':
       granularity = 'Site'
-      name = self.args[1].split( '@' )[1]
-    elif self.args[0] in ( 'Site', 'Sites', 'Resource', 'Resources' ):
+      name        = self.args[1].split( '@' )[1]
+    elif self.args[0] in [ 'Site', 'Resource' ]:
       granularity = self.args[0]
-      name = self.args[1]
+      name        = self.args[1]
     else:
       raise InvalidRes, where( self, self.doCommand )
 
-    if self.client is None:
+    if self.rsClient is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient( timeout = self.timeout )
+      self.rsClient = ResourceStatusClient()
 
     try:
-      resR = self.client.getStorageElementsStats( granularity, name, 'Read' )['Value']
-      resW = self.client.getStorageElementsStats( granularity, name, 'Write' )['Value']
+      res = self.rsClient.getStorageElementStats( granularity, name, statusType = None )
     except:
-      gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( granularity, name ) )
+      gLogger.exception( "StorageElementsStats: Exception when calling ResourceStatusClient for %s %s" % ( granularity, name ) )
       return {'Result':'Unknown'}
 
-    res = {}
-    for key in ValidStatus:
-      res[ key ] = resR[ key ] + resW[ key ]
+    if not res[ 'OK' ]:
+      gLogger.error( "StorageElementsStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], granularity, name ) )
+#      return { 'Result' : None }
 
-    return {'Result':res}
+    return { 'Result' : res[ 'Value' ] }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -193,28 +200,31 @@ class MonitoredStatus_Command( Command ):
     """
     super( MonitoredStatus_Command, self ).doCommand()
 
-    if self.client is None:
+    if self.rsClient is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient( timeout = self.timeout )
+      self.rsClient = ResourceStatusClient()
 
     try:
       if len( self.args ) == 3:
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
           raise InvalidRes, where( self, self.doCommand )
 
-        toBeFound = self.client.getGeneralName( self.args[0], self.args[1], self.args[2] )
+        toBeFound = self.rsClient.getGeneralName( self.args[0], self.args[1], self.args[2] )
         if not toBeFound[ 'OK' ]:
           return {'Result' : 'Unknown'}
         toBeFound = toBeFound['Value']
 
-        statuses = self.client.getMonitoredStatus( self.args[2], toBeFound )
+        statuses = self.rsClient.getMonitoredStatus( self.args[2], toBeFound )
         if not statuses['OK']:
           return {'Result' : 'Unknown'}
         statuses = statuses['Value']
 
       else:
+          
+        print self.args  
+          
         toBeFound = self.args[1]
-        statuses = self.client.getMonitoredStatus( self.args[0], toBeFound )
+        statuses = self.rsClient.getMonitoredStatus( self.args[0], toBeFound )
 
         if not statuses['OK']:
           return {'Result' : 'Unknown'}
@@ -246,3 +256,4 @@ class MonitoredStatus_Command( Command ):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

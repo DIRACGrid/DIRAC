@@ -304,3 +304,4 @@ class TransferQualityFromCachedPlot_Command(Command):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 #############################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -1,6 +1,6 @@
-########################################################################
+################################################################################
 # $HeadURL:  $
-########################################################################
+################################################################################
 """ This agents feeds the ClientsCache table.
 """
 
@@ -11,7 +11,7 @@ from DIRAC                                              import gLogger
 
 from DIRAC.Core.Base.AgentModule                        import AgentModule
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
+#from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 from DIRAC.ResourceStatusSystem.Command.CommandCaller   import CommandCaller
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker  import ClientsInvoker
@@ -22,7 +22,7 @@ AGENT_NAME = 'ResourceStatus/ClientsCacheFeederAgent'
 
 class ClientsCacheFeederAgent( AgentModule ):
 
-#############################################################################
+################################################################################
 
   def initialize( self ):
     """ ClientsCacheFeederAgent initialization
@@ -30,7 +30,7 @@ class ClientsCacheFeederAgent( AgentModule ):
 
     try:
 
-      self.rsDB = ResourceStatusDB()
+      #self.rsDB = ResourceStatusDB()
       self.rmDB = ResourceManagementDB()
 
       self.clientsInvoker = ClientsInvoker()
@@ -89,7 +89,7 @@ class ClientsCacheFeederAgent( AgentModule ):
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
-#############################################################################
+################################################################################
 
   def execute( self ):
     """ The main ClientsCacheFeederAgent execution method
@@ -117,7 +117,8 @@ class ClientsCacheFeederAgent( AgentModule ):
           gLogger.exception( "Exception when executing " + co[0][1] )
           continue
 
-      for co in self.commandObjectsList_AccountingCache:
+      for co in self.commandObjectsList_AccountingCache: 
+        print co  
         if co[0][3] == 'Hourly':
           if now.minute >= 10:
             continue
@@ -129,6 +130,7 @@ class ClientsCacheFeederAgent( AgentModule ):
           co[1].setArgs( co[2] )
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()
+          print res
           plotType = res.keys()[ 0 ]
           for name in res[ plotType ].keys():
             plotName = co[0][1].split( '_' )[0] + '_' + str( co[2][0] )
@@ -145,4 +147,6 @@ class ClientsCacheFeederAgent( AgentModule ):
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
-#############################################################################
+################################################################################
+
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
