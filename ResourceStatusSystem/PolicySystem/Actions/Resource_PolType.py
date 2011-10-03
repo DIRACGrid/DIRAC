@@ -1,8 +1,18 @@
 """ ResourcePolType Actions
 """
 
-def ResourcePolTypeActions( granularity, name, statusType, resDecisions, res, rsClient, rmDB ):
-  # Update the DB
+def ResourcePolTypeActions( granularity, name, statusType, resDecisions, rsClient, rmDB ):
+  """
+  Action that updates the RSS DBs. Fields are:
+  - granularity  : Granularity of the resource that have been tested
+  - name         : Name of the resource that have been tested
+  - statusType   : Class of status of the resource that have been tested (NEW)
+  - resDecisions : Dict {PolicyCombinedResult:..., SinglePolicyResults:...}
+  - rsClient     :
+  - rmDB         :
+  """
+
+  res = resDecisions['PolicyCombinedResult']
 
   token = 'RS_SVC'
 

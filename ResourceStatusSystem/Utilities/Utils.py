@@ -256,8 +256,7 @@ def xml_append(doc, tag, value=None, elt=None, **kw):
 
 # SQL Utils
 # These module generate ad-hoc SQL queries given a table and kwargs
-
-import re
+# WARNING: Not SQL injection free!!! Use at your own risk.
 
 class SQLParam(str):
   pass
@@ -266,35 +265,72 @@ class SQLValues(object):
   null = SQLParam("NULL")
   now  = SQLParam("NOW()")
 
+def sql_protect(f):
+  """Protect from SQL injections"""
+  def sql_protect_string(s):
+    if not s.isalnum(): raise ValueError
+    return s
+  def sql_protect_list(l):
+    return [sql_protect_string(s) for s in l]
+  def sql_protect_dict(d):
+    for k in d:
+      if not (k.isalnum() and d[k].isalnum()): raise ValueError
+    return d
+  try:
+    return sql_protect_string(f)
+  except AttributeError:
+    if type(f) == list: return sql_protect_list(f)
+    if type(f) == dict: return sql_protect_dict(f)
+    else:               return ValueError, "Argument has to be a string, a dict or a list."
+
+def sql_normalize(f):
+  """Tranform a python value into a MySQL value to be used in a SQL
+  statement."""
+  def normalize_str(f):
+    return str(f) if type(f) != str else "'"+f+"'"
+  def normalize_assoclist(l):
+    return [(a, normalize_str(b)) for (a, b) in l]
+  def normalize_dict(d):
+    return dict(normalize_assoclist(d.items()))
+
+  try:
+    return normalize_dict(f)
+  except AttributeError:
+    if type(f) == str:  return normalize_str(f)
+    if type(f) == list: return normalize_assoclist(f)
+    else:               raise ValueError, "Argument has to be a string, a dict or a list."
+
 def sql_update_(table, kw):
   if kw == {}: return ""
+  kw = sql_normalize(kw)
   res = "UPDATE %s SET " % table
-  for k in kw:
-    res += ("%s=%s, " % (k, str(kw[k]))) if type(kw[k]) != str else ("%s='%s', " % (k, kw[k]))
-  return res[:-2]
+  res += ", ".join([("%s=%s" % (a, b)) for (a, b) in kw.items()])
+  return res
 
 def sql_update(table, **kw):
+  """Generate a SQL UPDATE query. Uses the table name and a dict for
+  specifying the values to update.
+  """
   return sql_update_(table, kw)
 
 def sql_insert_(table, kw):
   if kw == {}: return ""
+  kw = sql_normalize(kw)
   res = "INSERT INTO %s " % table
-  res += "(" + reduce(lambda acc, k: acc + k + ", ", kw.keys(), "") + ") "
-  res += "VALUES (" + reduce(lambda acc, k: acc + (str(k) if type(k) != str else "'" + k +"'") + ", ", kw.values(), "") + ")"
-  return re.sub(r", \)", ")", res)
+  res += "(" + ", ".join(kw.keys()) + ") "
+  res += "VALUES (" + ", ".join(kw.values()) + ")"
+  return res
 
 def sql_insert(table, **kw):
-  return sql_instert_(table, kw)
+  return sql_insert_(table, kw)
 
 def sql_insert_update_(table, keys, kw):
   if type(keys) != list:
     raise TypeError, "keys argument has to be a list"
   res1 = sql_insert_(table, kw)
-  res2 = " ON DUPLICATE KEY UPDATE "
-  for k in kw:
-    if k not in keys:
-      res2 += ("%s=%s, " % (k, str(kw[k]))) if type(kw[k]) != str else ("%s='%s', " % (k, kw[k]))
-  return (res1 + res2)[:-2]
+  kw_without_keys = [(a, b) for (a, b) in kw.items() if a not in keys]
+  res2 = " ON DUPLICATE KEY UPDATE " + ", ".join(kw_without_keys)
+  return res1 + res2
 
 def sql_insert_update(table, keys, **kw):
   return sql_insert_update_(table, keys, kw)

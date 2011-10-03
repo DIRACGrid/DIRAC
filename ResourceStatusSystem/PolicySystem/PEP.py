@@ -59,7 +59,7 @@ class PEP:
 
   """
 
-  def __init__( self, VOExtension, pdp = None, rsClient = None, rmDB = None, nc = None, 
+  def __init__( self, VOExtension, pdp = None, rsClient = None, rmDB = None, nc = None,
                 setup = None, da = None, csAPI = None, knownInfo = None):
 
     """
@@ -112,7 +112,7 @@ class PEP:
       # Use standard DIRAC DB
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       rsClient = ResourceStatusClient()
-    self.rsClient = rsClient    
+    self.rsClient = rsClient
 
     if rmDB is None:
       # Use standard DIRAC DB
@@ -142,18 +142,18 @@ class PEP:
     if csAPI is None:
       from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
       csAPI = CSAPI()
-    self.csAPI = csAPI  
+    self.csAPI = csAPI
 
     if pdp is None:
       clients = { 'rsClient' : self.rsClient, 'rmClient' : self.rmDB }
       self.pdp = PDP( **clients )
-      
+
 
 #############################################################################
 
-  def enforce( self, granularity = None, name = None, statusType = None, 
-                status = None, formerStatus = None, reason = None, siteType = None, 
-                serviceType = None, resourceType = None, tokenOwner = None, 
+  def enforce( self, granularity = None, name = None, statusType = None,
+                status = None, formerStatus = None, reason = None, siteType = None,
+                serviceType = None, resourceType = None, tokenOwner = None,
                 useNewRes = False, knownInfo = None  ):
 
     ###################
@@ -178,12 +178,12 @@ class PEP:
     serviceType  = Utils.assignOrRaise( serviceType, ValidServiceType, InvalidServiceType, self, self.enforce )
     resourceType = Utils.assignOrRaise( resourceType, ValidResourceType, InvalidResourceType, self, self.enforce )
 
-    self.pdp.setup( self.VOExtension, granularity = granularity, name = name, 
-                    statusType = statusType, status = status, 
-                    formerStatus = formerStatus, reason = reason, siteType = siteType, 
-                    serviceType = serviceType, resourceType = resourceType, 
+    self.pdp.setup( self.VOExtension, granularity = granularity, name = name,
+                    statusType = statusType, status = status,
+                    formerStatus = formerStatus, reason = reason, siteType = siteType,
+                    serviceType = serviceType, resourceType = resourceType,
                     useNewRes = useNewRes )
-        
+
     ###################
     # policy decision #
     ###################
@@ -204,7 +204,7 @@ class PEP:
       if 'Resource_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Resource_PolType", self.VOExtension)
         m.ResourcePolTypeActions( granularity, name, statusType,
-                                  resDecisions, res, self.rsClient, self.rmDB )
+                                  resDecisions, self.rsClient, self.rmDB )
 
       if 'Alarm_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Alarm_PolType", self.VOExtension)

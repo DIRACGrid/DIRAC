@@ -35,7 +35,7 @@ class PolicySystemTestCase(unittest.TestCase):
 
     from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
     from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
-    from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
+#    from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
 
     from DIRAC import gConfig
     self.VO = gConfig.getValue("DIRAC/Extensions")
@@ -47,7 +47,7 @@ class PolicySystemTestCase(unittest.TestCase):
     self.mock_p = Mock()
     self.mock_args = Mock()
     self.pb = PolicyBase()
-    self.pi = PolicyInvoker()
+#    self.pi = PolicyInvoker()
     self.mock_pdp = Mock()
     self.mock_rsDB = Mock()
     self.mock_rmDB = Mock()
@@ -322,7 +322,7 @@ class PDPSuccess(PolicySystemTestCase):
               # all different policies
               def make_polres(status):
                 return { 'Status': status, 'Reason': 'Because of ' + status }
-              all_polres = map(make_polres, ValidStatus)
+              all_polres = [make_polres(s) for s in ValidStatus]
 
               res = pdp._policyCombination(all_polres)
               self.assertEqual(res['Status'], 'Banned')
@@ -434,33 +434,33 @@ class PolicyBaseFailure(PolicySystemTestCase):
 
 #############################################################################
 
-class PolicyInvokerSuccess(PolicySystemTestCase):
+# class PolicyInvokerSuccess(PolicySystemTestCase):
 
-  def test_setPolicy(self):
-    self.pi.setPolicy(self.mock_policy)
-    self.assertEqual(self.pi.policy, self.mock_policy)
+#   def test_setPolicy(self):
+#     self.pi.setPolicy(self.mock_policy)
+#     self.assertEqual(self.pi.policy, self.mock_policy)
 
-  def test_evaluatePolicy(self):
+#   def test_evaluatePolicy(self):
 
-    self.mock_policy.evaluate.return_value = {'Result':'Satisfied', 'Status':'Banned', 'Reason':"reason"}
-    self.pi.setPolicy(self.mock_policy)
-    for granularity in ValidRes:
-      res = self.pi.evaluatePolicy()
-      self.assertEqual(res['Result'], 'Satisfied')
-    self.mock_policy.evaluate.return_value = {'Result':'Un-Satisfied'}
-    self.pi.setPolicy(self.mock_policy)
-    for granularity in ValidRes:
-      res = self.pi.evaluatePolicy()
-      self.assertEqual(res['Result'], 'Un-Satisfied')
+#     self.mock_policy.evaluate.return_value = {'Result':'Satisfied', 'Status':'Banned', 'Reason':"reason"}
+#     self.pi.setPolicy(self.mock_policy)
+#     for granularity in ValidRes:
+#       res = self.pi.evaluatePolicy()
+#       self.assertEqual(res['Result'], 'Satisfied')
+#     self.mock_policy.evaluate.return_value = {'Result':'Un-Satisfied'}
+#     self.pi.setPolicy(self.mock_policy)
+#     for granularity in ValidRes:
+#       res = self.pi.evaluatePolicy()
+#       self.assertEqual(res['Result'], 'Un-Satisfied')
 
-#############################################################################
+# #############################################################################
 
-class PolicyInvokerFailure(PolicySystemTestCase):
+# class PolicyInvokerFailure(PolicySystemTestCase):
 
-  def test_policyFail(self):
-    self.mock_policy.evaluate.side_effect = RSSException()
-    for granularity in ValidRes:
-      self.failUnlessRaises(Exception, self.pi.evaluatePolicy)
+#   def test_policyFail(self):
+#     self.mock_policy.evaluate.side_effect = RSSException()
+#     for granularity in ValidRes:
+#       self.failUnlessRaises(Exception, self.pi.evaluatePolicy)
 
 #############################################################################
 
@@ -468,8 +468,8 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PolicySystemTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))

@@ -2,15 +2,8 @@
     Module used for calling policies. Its class is used for invoking
     real policies, based on the policy name
 """
-
-from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
-
 class PolicyCaller:
-
-#############################################################################
-
   def __init__(self, commandCallerIn = None, **clients ):
-
     if commandCallerIn is not None:
       self.cc = commandCallerIn
     else:
@@ -18,9 +11,6 @@ class PolicyCaller:
       self.cc = CommandCaller()
 
     self.clients       = clients
-    self.policyInvoker = PolicyInvoker()
-
-#############################################################################
 
   def policyInvocation(self, VOExtension, granularity = None, name = None, status = None, policy = None,
                        args = None, pName = None, pModule = None, extraArgs = None, commandIn = None):
@@ -75,25 +65,12 @@ class PolicyCaller:
         self.cc.setClient( commandIn, clientName, clientInstance )
 
     res = self._innerEval(p, a, commandIn = commandIn)
-
+    # Just adding the PolicyName to the result of the evaluation of the policy
     res['PolicyName'] = pName
-
     return res
 
-
-#############################################################################
-
-  def _innerEval(self, p, a, commandIn = None, knownInfo = None):
-    """ policy evaluation
-    """
-
-    self.policyInvoker.setPolicy(p)
-
-    p.setArgs(a)
-    p.setCommand(commandIn)
-#    p.setInfoName('Result')
-
-    res = self.policyInvoker.evaluatePolicy()
-    return res
-
-#############################################################################
+  def _innerEval(self, policy, arguments, commandIn = None):
+    """Policy evaluation"""
+    policy.setArgs(arguments)
+    policy.setCommand(commandIn)
+    return policy.evaluate()
