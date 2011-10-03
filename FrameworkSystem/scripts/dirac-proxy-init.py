@@ -9,11 +9,12 @@ __RCSID__ = "$Id$"
 import sys
 import datetime
 import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
 
 class Params( ProxyGeneration.CLIParams ):
 
@@ -71,14 +72,14 @@ class ProxyInit:
     return self.__issuerCert
 
   def certLifeTimeCheck( self ):
-    minLife = Registry.getGroupOption( self.__piParams.diracGroup, "FafeCertificateLifeTime", 2592000 )
+    minLife = Registry.getGroupOption( self.__piParams.diracGroup, "SafeCertificateLifeTime", 2592000 )
     issuerCert = self.getIssuerCert()
     result = issuerCert.getRemainingSecs()
     if not result[ 'OK' ]:
       gLogger.error( "Could not retrieve certificate expiration time", result[ 'Message' ] )
       return
     lifeLeft = result[ 'Value' ]
-    if minLife * 100 > lifeLeft:
+    if minLife > lifeLeft:
       daysLeft = int( lifeLeft / 86400 )
       msg = "Your certificate will expire in less than %d days. Please renew it!" % daysLeft
       sep = "=" * ( len( msg ) + 4 )
@@ -154,7 +155,6 @@ class ProxyInit:
     upParams.diracGroup = userGroup
     for k in ( 'certLoc', 'keyLoc', 'userPasswd' ):
       setattr( upParams, k , getattr( self.__piParams, k ) )
-
     result = ProxyUpload.uploadProxy( upParams )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
@@ -190,6 +190,7 @@ if __name__ == "__main__":
 
   Script.disableCS()
   Script.parseCommandLine( ignoreErrors = True )
+  DIRAC.gConfig.setOptionValue( "/DIRAC/Security/UseServerCertificate", "False" )
 
   pI = ProxyInit( piParams )
   result = pI.createProxy()
