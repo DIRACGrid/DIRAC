@@ -1,5 +1,5 @@
 ########################################################################
-# $HeadURL$
+# $HeadURL: $
 # File :   JobSchedulingAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@
       meaningfully.
 
 """
-__RCSID__ = "$Id$"
+__RCSID__ = "$Id: $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule      import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight                 import ClassAd
@@ -189,11 +189,18 @@ class JobSchedulingAgent( OptimizerModule ):
 
       # Site is selected for staging, report it
       self.log.verbose( 'Staging site candidate for job %s is %s' % ( job, stagingSite ) )
-      if len( destinationSites ) == 1:
+
+      result = self.__getStagingSites(stagingSite,destinationSites)
+      if not result['OK']:
+        stagingSites = [stagingSite]
+      else:
+        stagingSites = result['Value']  
+
+      if len( stagingSites ) == 1:
         self.jobDB.setJobAttribute( job, 'Site', stagingSite )
       else:
         # Get the name of the site group
-        result = self.__getSiteGroup(destinationSites)
+        result = self.__getSiteGroup(stagingSites)
         if result['OK']:
           groupName = result['Value']
           if groupName:
@@ -214,14 +221,37 @@ class JobSchedulingAgent( OptimizerModule ):
     #Finally send job to TaskQueueAgent
     return self.__sendJobToTaskQueue( job, classAdJob, destinationSites, userBannedSites )
 
-  def __getSiteGroup(self,destinationSites):
+  def __getStagingSites(self,stagingSite,destinationSites):
+    """ Get a list of sites where the staged data will be available
+    """
+
+    result = getSEsForSite(stagingSite)
+    if not result['OK']:
+      return result
+    stagingSEs = result['Value']
+    stagingSites = [stagingSite]
+    for s in destinationSites:
+      if s != stagingSite:
+        result = getSEsForSite(s)
+        if not result['OK']:
+          continue
+        for se in result['Value']:
+          if se in stagingSEs:
+            stagingSites.append(s)
+            break
+
+    stagingSites.sort()
+    return S_OK(stagingSites)
+    
+
+  def __getSiteGroup(self,stagingSites):
     """ Get the name of the site group if applicable. Later can be replaced by site groups defined in the CS
     """
     tier1 = ''
     groupName = ''
-    result = getSiteTier(destinationSites)
+    result = getSiteTier(stagingSites)
     if result['OK']:
-      tierDict = dict(zip(destinationSites,result['Value']))
+      tierDict = dict(zip(stagingSites,result['Value']))
       for tsite in tierDict:
         if tierDict[tsite] in [0,1]:
           tier1 = tsite
@@ -439,7 +469,7 @@ class JobSchedulingAgent( OptimizerModule ):
     else:
       self.log.info( 'Staging request successfully sent' )
 
-    result = self.updateJobStatus( job, self.stagingStatus, self.stagingMinorStatus )
+    result = self.updateJobStatus( job, self.stagingStatus, self.stagingMinorStatus, "Unknown" )
     if not result['OK']:
       return result
     return S_OK( stageLfns )
@@ -600,4 +630,3 @@ def applySiteRequirements( sites, activeSites = None, bannedSites = None ):
 
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
-
