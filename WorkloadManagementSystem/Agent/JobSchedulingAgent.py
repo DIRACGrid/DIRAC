@@ -22,6 +22,7 @@ from DIRAC.Core.Utilities.SiteSEMapping                        import getSEsForS
 from DIRAC.Core.Utilities.Time                                 import fromString, toEpoch
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement                    import StorageElement
+from DIRAC.ResourceStatusSystem.Utilities.CS                   import getSiteTier
 
 
 from DIRAC                                                     import S_OK, S_ERROR, List
@@ -191,7 +192,16 @@ class JobSchedulingAgent( OptimizerModule ):
       if len( destinationSites ) == 1:
         self.jobDB.setJobAttribute( job, 'Site', stagingSite )
       else:
-        self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
+        # Get the name of the site group
+        result = self.__getSiteGroup(destinationSites)
+        if result['OK']:
+          groupName = result['Value']
+          if groupName:
+            self.jobDB.setJobAttribute( job, 'Site', groupName )
+          else:    
+            self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
+        else:
+          self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )    
 
       stagerDict = self.__setStagingRequest( job, stagingSite, optInfo )
       if not stagerDict['OK']:
@@ -203,6 +213,28 @@ class JobSchedulingAgent( OptimizerModule ):
       self.log.verbose( 'Job %s does not require staging of input data' % ( job ) )
     #Finally send job to TaskQueueAgent
     return self.__sendJobToTaskQueue( job, classAdJob, destinationSites, userBannedSites )
+
+  def __getSiteGroup(self,destinationSites):
+    """ Get the name of the site group if applicable. Later can be replaced by site groups defined in the CS
+    """
+    tier1 = ''
+    groupName = ''
+    result = getSiteTier(destinationSites)
+    if result['OK']:
+      tierDict = dict(zip(destinationSites,result['Value']))
+      for tsite in tierDict:
+        if tierDict[tsite] in [0,1]:
+          tier1 = tsite
+        if tierDict[tsite] == 0:
+          break
+    else:
+      return result
+        
+    if tier1:
+      grid,sname,ccode = tier1.split('.')
+      groupName = '.'.join(['Group',sname,ccode])
+    
+    return S_OK(groupName)
 
   #############################################################################
   def __updateOtherSites( self, job, stagingSite, stagedLFNsPerSE, optInfo ):
@@ -430,11 +462,16 @@ class JobSchedulingAgent( OptimizerModule ):
     bannedSites = bannedSites.replace( '{', '' ).replace( '}', '' )
     bannedSites = List.fromChar( bannedSites )
 
-    if not 'ANY' in site and not 'Unknown' in site and not 'Multiple' in site:
+    groupFlag = False
+    for s in site:
+      if "Group" in s:
+        groupFlag = True
+
+    if not 'ANY' in site and not 'Unknown' in site and not 'Multiple' in site and not groupFlag:
       if len( site ) == 1:
         self.log.info( 'Job %s has single chosen site %s specified in JDL' % ( job, site[0] ) )
       result['Sites'] = site
-    elif 'Multiple' in site:
+    elif 'Multiple' in site or groupFlag:
       result['Sites'] = classAdJob.getListFromExpression( 'Site' )
       # We might also be here after a Staging Request where several Sites are allowed
       if 'ANY' in result['Sites'] or '' in result['Sites']:
@@ -535,7 +572,7 @@ class JobSchedulingAgent( OptimizerModule ):
             self.jobDB.setJobAttribute( job, 'Site', remainingSites[0] )
           else:
             self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( remainingSites ) ) )
-            self.jobDB.setJobAttribute( job, 'Site', 'ANY' )
+            self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
       else:
         self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( siteCandidates ) ) )
         self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
