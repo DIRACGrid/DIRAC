@@ -475,7 +475,7 @@ class JobWrapper:
   def resolveInputData( self ):
     """Input data is resolved here using a VO specific plugin module.
     """
-    self.__report( 'Running', 'Input Data Resolution' )
+    self.__report( 'Running', 'Input Data Resolution', sendFlag = True )
 
     if self.ceArgs.has_key( 'LocalSE' ):
       localSEList = self.ceArgs['LocalSE']
