@@ -1,6 +1,8 @@
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, InvalidGridSite
+#import DIRAC.ResourceStatusSystem.Utilities.Exceptions as RSSExceptions
 
-import DIRAC.ResourceStatusSystem.Utilities.Exceptions as RSSExceptions
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus, InvalidRes, InvalidSiteType,InvalidSiteType,InvalidServiceType,\
+  InvalidResourceType, InvalidStatus, InvalidFormat, InvalidSite, InvalidGridSite, InvalidDate
 
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
     ValidResourceType, ValidServiceType, ValidStatusTypes
@@ -23,37 +25,37 @@ class ResourceStatusValidator:
     
     if not status in ValidStatus:              
       message = '%s is not a valid status' % status
-      raise RSSExceptions.InvalidStatus, where( self, self.validateStatus ) + message
+      raise InvalidStatus, where( self, self.validateStatus ) + message
 
   def validateRes( self, res ):
     
     if not res in ValidRes:              
       message = '%s is not a valid res' % res
-      raise RSSExceptions.InvalidRes, where( self, self.validateRes ) + message
+      raise InvalidRes, where( self, self.validateRes ) + message
 
   def validateSiteType( self, siteType ):
     
     if not siteType in ValidSiteType:
       message = '%s is not a valid site type' % siteType
-      raise RSSExceptions.InvalidSiteType, where( self, self.validateSiteType ) + message
+      raise InvalidSiteType, where( self, self.validateSiteType ) + message
           
   def validateServiceType( self, serviceType ):
     
     if not serviceType in ValidServiceType:
       message = '%s is not a valid service type' % serviceType
-      raise RSSExceptions.InvalidServiceType, where( self, self.validateServiceType ) + message
+      raise InvalidServiceType, where( self, self.validateServiceType ) + message
 
   def validateResourceType( self, resourceType ):
     
     if not resourceType in ValidResourceType:
       message = '%s is not a valid resource type' % resourceType
-      raise RSSExceptions.InvalidResourceType, where( self, self.validateResourceType ) + message
+      raise InvalidResourceType, where( self, self.validateResourceType ) + message
 
   def validateSingleElementStatusType( self, element, statusType ):
 
     if not statusType in ValidStatusTypes[ element ][ 'StatusType' ]:
       message = '%s is not a valid statusType for %s' % ( statusType, element )
-      raise RSSExceptions.InvalidStatus, where( self, self.validateSingleElementStatusType ) + message
+      raise InvalidStatus, where( self, self.validateSingleElementStatusType ) + message
     
   def validateElementStatusTypes( self, element, statusTypes ):
     
@@ -69,19 +71,19 @@ class ResourceStatusValidator:
     
     if type( siteName ) != str:
       message = '%s is not string, as expected' % siteName
-      raise RSSExceptions.InvalidFormat, where( self, self.validateSite ) + message
+      raise InvalidFormat, where( self, self.validateSite ) + message
     
     res = self.rsGate.getSites( siteName, None, None )
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known siteName' % siteName
-      raise RSSExceptions.InvalidSite, where( self, self.validateSite ) + message
+      raise InvalidSite, where( self, self.validateSite ) + message
       
   def validateGridSite( self, gridSiteName ):
     
     res = self.rsGate.getGridSites( gridSiteName, None )
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known GridSiteName' % gridSiteName
-      raise RSSExceptions.InvalidGridSite, where( self, self.validateGridSite ) + message        
+      raise InvalidGridSite, where( self, self.validateGridSite ) + message        
       
 ################################################################################
 
@@ -89,7 +91,7 @@ class ResourceStatusValidator:
     
     if type( singleDate ) != datetime:
       message = '%s is not an accepted date' % singleDate
-      raise RSSExceptions.InvalidDate, where( self, self.__validateSingleDate ) + message 
+      raise InvalidDate, where( self, self.__validateSingleDate ) + message 
       
   def validateSingleDates( self, rDict ):
         
