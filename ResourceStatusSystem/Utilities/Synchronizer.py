@@ -12,40 +12,44 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRACSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import getSites, getSiteTier, getSENodes, getLFCSites, getLFCNode, getFTSSites, getVOMSEndpoints, getFTSEndpoint, getCEType, getStorageElements
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, unpack
 #from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import RSSDBException
 #from DIRAC.ResourceStatusSystem import ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 
-class Synchronizer:
+class Synchronizer(object):
 
 #############################################################################
 
   def __init__( self, rsClient = None, rmDBin = None ):
 
-    self.rsClient = rsClient
-    self.rmDB     = rmDBin
-
-    if self.rsClient == None and self.rmDB == None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-      self.rsClient = ResourceStatusClient()
-      self.rmDB     = ResourceManagementDB()
-
+    self.rsClient    = rsClient
+    self.rmDB        = rmDBin
     self.GOCDBClient = GOCDBClient()
 
-#############################################################################
+    if self.rsClient == None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsClient = ResourceStatusClient()
 
-#  def sync(self, thingsToSync = None, fake_param = None):
+    if self.rmDB == None:
+      from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+      self.rmDB = ResourceManagementDB()
+
+
+
+#############################################################################
   def sync( self, _a, _b ):
     """
     :params:
       :attr:`thingsToSync`: list of things to sync
     """
 
-    thingsToSync = [ 'Sites', 'VOBOX', 'Resources', 'StorageElements', 'RegistryUsers' ]
+    # FIXME: VOBOX not generic
+    # FIXME: Add DIRACSites
+    # FIXME: Add CONDDB
 
-    gLogger.info( "!!! Sync DB content with CS content for %s !!!" % ( ' '.join( x for x in thingsToSync ) ) )
+    thingsToSync = [ 'Sites', 'VOBOX', 'Resources', 'StorageElements', 'RegistryUsers' ]
+    gLogger.info( "!!! Sync DB content with CS content for %s !!!" % ( ", ".join(thingsToSync) ) )
 
     for thing in thingsToSync:
       getattr( self, '_sync' + thing )()
@@ -58,68 +62,45 @@ class Synchronizer:
     """
     Sync DB content with sites that are in the CS
     """
+    def getGOCTier(sitesList):
+      return "T" + str(min([int(v) for v in unpack(getSiteTier(sitesList))]))
 
     # sites in the DB now
-    #sitesIn = self.rsClient.getMonitoredsList( 'Site', paramsList = ['SiteName'] )
-    sitesIn = self.rsClient.getSites()
-    if sitesIn[ 'OK' ]:
-      sitesIn = sitesIn[ 'Value' ]
-    sitesIn = [ s[0] for s in sitesIn ]
+    sitesDB = unpack(self.rsClient.getSites())[0]
 
     # sites in CS now
-    sitesList = getSites()['Value']
+    sitesCS = unpack(getSites())
 
-    try:
-      sitesList.remove( 'LCG.Dummy.ch' )
-    except ValueError:
-      pass
+    # remove sites from the DB that are not in the CS
+    sitesToDelete = set(sitesDB) - set(sitesCS)
+    for s in sitesToDelete:
+      self.rsClient.deleteSites(s)
 
-    # remove sites from the DB not more in the CS
-    for site in sitesIn:
-      if site not in sitesList:
-        self.rsClient.deleteSites( site )
+    # add to DB what is missing
+    for site in set(sitesCS) - set(sitesDB):
+      # DIRAC Tier
+      tier = "T" + str(unpack(getSiteTier( site )))
 
-    # add to DB what is in CS now and wasn't before
-    for site in sitesList:
-      if site not in sitesIn:
-        # DIRAC Tier
-        tier = getSiteTier( site )['Value'][0]
-        if tier == 0 or tier == '0':
-          t = 'T0'
-        elif tier == 1 or tier == '1':
-          t = 'T1'
-        elif tier == 3 or tier == '3':
-          t = 'T3'
-        else:
-          t = 'T2'
+      # Grid Name of the site
+      gridSiteName = unpack(getGOCSiteName(site))
 
-        #Grid Name of the site
-        gridSiteName = getGOCSiteName( site )
-        if not gridSiteName['OK']:
-          raise RSSException, gridSiteName['Message']
-        gridSiteName = gridSiteName['Value']
+      # Grid Tier (with a workaround!)
+      DIRACSitesOfGridSites = unpack(getDIRACSiteName(gridSiteName))
+      if len( DIRACSitesOfGridSites ) == 1:
+        gt = tier
+      else:
+        gt = getGOCTier( DIRACSitesOfGridSites )
 
-        #Grid Tier (with a workaround!)
-        DIRACSitesOfGridSites = getDIRACSiteName( gridSiteName )
-        if not DIRACSitesOfGridSites['OK']:
-          raise RSSException, DIRACSitesOfGridSites['Message']
-        DIRACSitesOfGridSites = DIRACSitesOfGridSites['Value']
-        if len( DIRACSitesOfGridSites ) == 1:
-          gt = t
-        else:
-          gt = self.__getGOCTier( DIRACSitesOfGridSites )
-
-        self.rsClient.addOrModifyGridSite( gridSiteName, gt )
-
-        self.rsClient.addOrModifySite( site, t, gridSiteName )
-
-        sitesIn.append( site )
+      self.rsClient.addOrModifyGridSite( gridSiteName, gt )
+      self.rsClient.addOrModifySite( site, tier, gridSiteName )
+      sitesDB.append( site )
 
 #############################################################################
 
   def _syncVOBOX( self ):
     """
     Sync DB content with VOBoxes
+    LHCb specific
     """
 
     # services in the DB now
@@ -130,7 +111,7 @@ class Synchronizer:
 
     for site in ['LCG.CNAF.it', 'LCG.IN2P3.fr', 'LCG.PIC.es',
                  'LCG.RAL.uk', 'LCG.GRIDKA.de', 'LCG.NIKHEF.nl']:
-      
+
       service = 'VO-BOX@' + site
       if service not in servicesIn:
         self.rsClient.addOrModifyService( service, 'VO-BOX', site )
@@ -224,7 +205,7 @@ class Synchronizer:
         sesToBeDel = self.rsClient.getStorageElementsPresent( resourceName = res, **kwargs )
         #sesToBeDel = self.rsClient.getMonitoredsList( 'StorageElement', ['StorageElementName'], resourceName = res )
         if sesToBeDel[ 'OK' ]:
-          for seToBeDel in sesToBeDel[ 'Value' ]:  
+          for seToBeDel in sesToBeDel[ 'Value' ]:
             self.rsClient.deleteStorageElements( seToBeDel[ 0 ] )
 
     # add to DB what is in CS now and wasn't before
@@ -245,7 +226,7 @@ class Synchronizer:
             siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName )
           except socket.gaierror:
             gLogger.info( '%s returns socket.gaiaerror' % ce )
-            print '%s returns socket.gaiaerror' % ce 
+            print '%s returns socket.gaiaerror' % ce
         try:
           siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
         except IndexError:
@@ -293,9 +274,9 @@ class Synchronizer:
           servicesIn.append( service )
 
       if srm not in resourcesIn and srm is not None:
-        
+
         self.rsClient.addOrModifyResource( srm, 'SE', serviceType, 'NULL', siteInGOCDB )
-        resourcesIn.append( srm )   
+        resourcesIn.append( srm )
 
     # LFC_C
     for lfc in LFCNodeList_C:
@@ -408,9 +389,9 @@ class Synchronizer:
         if service not in servicesIn:
           self.rsClient.addOrModifyService( service, serviceType, site )
           servicesIn.append( service )
-          
+
       if voms not in resourcesIn and voms is not None:
-        
+
         self.rsClient.addOrModifyResource( voms, 'VOMS', serviceType, 'NULL', siteInGOCDB )
         resourcesIn.append( voms )
 
@@ -424,14 +405,14 @@ class Synchronizer:
           #if resToBeDel[ 'OK' ]:
           #  for reToBeDel in resToBeDel[ 'Value' ]:
           #    self.rsClient.deleteResources( reToBeDel[ 0 ] )
-          try:    
+          try:
             site = ser.split( '@' )[1]
           except:
-            print ( ser,site )  
-            
+            print ( ser,site )
+
           if serType == 'Storage':
             kwargs = { 'columns' : [ 'StorageElementName' ] }
-            sesToBeDel = self.rsClient.getStorageElementsPresent( gridSiteName = site, **kwargs )  
+            sesToBeDel = self.rsClient.getStorageElementsPresent( gridSiteName = site, **kwargs )
             #sesToBeDel = self.rsClient.getMonitoredsList('StorageElement', ['StorageElementName'], gridSiteName = site )
             if sesToBeDel[ 'OK' ]:
               for seToBeDel in sesToBeDel[ 'Value' ]:
@@ -478,39 +459,9 @@ class Synchronizer:
       if SE not in storageElementsIn:
         self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
         storageElementsIn.append( SE )
-        
+
 #############################################################################
 
-  def __getGOCTier( self, sitesList ):
-
-    gridTier = 3
-
-    for site in sitesList:
-
-      tier = getSiteTier( site )['Value'][0]
-
-      if tier == 0 or tier == '0':
-        tn = 0
-      elif tier == 1 or tier == '1':
-        tn = 1
-      elif tier == 3 or tier == '3':
-        tn = 3
-      else:
-        tn = 2
-
-      if tn < gridTier:
-        gridTier = tn
-
-    if gridTier == 0:
-      gt = 'T0'
-    elif gridTier == 1:
-      gt = 'T1'
-    elif gridTier == 3:
-      gt = 'T3'
-    else:
-      gt = 'T2'
-
-    return gt
 
 #############################################################################
 

@@ -1,7 +1,7 @@
 from DIRAC                                   import S_OK
 from DIRAC.Core.Utilities                    import List
 from DIRAC.ResourceStatusSystem.Utilities    import Utils
-from DIRAC import gConfig
+from DIRAC                                   import gConfig
 
 g_BaseRegistrySection   = "/Registry"
 g_BaseResourcesSection  = "/Resources"
@@ -79,68 +79,56 @@ def getMailForUser(users):
   from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
   rmDB = ResourceManagementDB()
 
-  if type(users) == str:
+  if isinstance(users, basestring):
     users = [users]
-  else:
-    raise ValueError
 
   return S_OK([rmDB.registryGetMailFromLogin(u) for u in users])
 
 #############################################################################
 
 def getVOMSEndpoints():
-  voms_S = gConfig.getSections("%s/VOMS/Servers/lhcb/" %(g_BaseRegistrySection) ,'')
-  return voms_S
+  return gConfig.getSections("%s/VOMS/Servers/lhcb/" %(g_BaseRegistrySection) ,'')
 
 #############################################################################
 
 def getOperationMails( op ):
-  mail = gConfig.getValue("%s/EMail/%s" %(g_BaseOperationsSection, op) ,'')
-  return S_OK(mail)
+  return gConfig.getOption("%s/EMail/%s" %(g_BaseOperationsSection, op) ,'')
 
 #############################################################################
 
 def getSetup():
-  setup = gConfig.getValue("DIRAC/Setup")
-  return S_OK(setup)
+  return gConfig.getOption("DIRAC/Setup")
 
 #############################################################################
 
 def getExtensions():
-  ext = gConfig.getValue("DIRAC/Extensions")
-  return S_OK(ext)
+  return gConfig.getOption("DIRAC/Extensions")
 
 #############################################################################
 
 def getExt():
+  """FIXME: Only works for LHCb. """
   VOExtension = ''
-
   ext = getExtensions()['Value']
-
   if 'LHCb' in ext:
     VOExtension = 'LHCb'
-
   return VOExtension
 
 #############################################################################
 
-def getStorageElementStatus( SE, accessType):
-  status = gConfig.getValue("%s/StorageElements/%s/%s" %(g_BaseResourcesSection, SE, accessType) )
-  return S_OK(status)
+def getStorageElementStatus(SE, accessType):
+  return gConfig.getOption("%s/StorageElements/%s/%s" %
+                           (g_BaseResourcesSection, SE, accessType))
 
-def getSENodes( SE ):
-  if isinstance(SE, basestring):
+def getSENodes( SEIn ):
+  if isinstance(SEIn, basestring):
     SE = [SE]
-  node = []
-  for se in SE:
-    n = gConfig.getValue("%s/StorageElements/%s/AccessProtocol.1/Host" %( g_BaseResourcesSection,
-                                                                          se ) )
-    node = node + [n]
-  return S_OK(node)
+  node = [gConfig.getValue("%s/StorageElements/%s/AccessProtocol.1/Host"
+                           %( g_BaseResourcesSection, se ) ) for se in SE]
+  if isinstance(SEIn, basestring): return S_OK(node[0])
+  else:                            return S_OK(node)
 
-def getSites( grids = None ):
-  if grids == None:
-    grids = ['LCG']
+def getSites( grids = 'LCG' ):
   if isinstance(grids, basestring):
     grids = [grids]
   sites = []
@@ -151,36 +139,34 @@ def getSites( grids = None ):
     sites = sites + s['Value']
   return S_OK(sites)
 
-def getSiteTier( sites ):
-  if isinstance(sites, basestring):
-    sites = [sites]
-  tiers = []
-  for site in sites:
-    t = gConfig.getValue("%s/Sites/LCG/%s/MoUTierLevel" %( g_BaseResourcesSection, site ) )
-    tiers = tiers + [t]
-  return S_OK(tiers)
+def getSiteTier( sitesIn ):
+  if isinstance(sitesIn, basestring):
+    sites = [sitesIn]
+  tiers = [gConfig.getValue("%s/Sites/LCG/%s/MoUTierLevel" % (g_BaseResourcesSection, site)) for site in sites]
+  if isinstance(sitesIn, basestring): return S_OK(tiers[0])
+  else:                               return S_OK(tiers)
 
 def getLFCSites():
-  lfcL = gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined' %g_BaseResourcesSection,
-                             True)
-  return lfcL
+  return gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined' %g_BaseResourcesSection, True)
+
+def getHostByToken(space_token):
+  return gConfig.getValue('%s/StorageElements/%s/AccessProtocol.1/Host'
+                          % (g_BaseResourcesSection, space_token))
 
 def getStorageElements( hostName = None ):
   SEs = gConfig.getSections('%s/StorageElements' %g_BaseResourcesSection)
-  if not SEs['OK']:
-    return SEs
+  if not SEs['OK']: return SEs
   SEs = SEs['Value']
-  if hostName != None:
-    removeSEs = []
+  if hostName == None: return SEs
+
+  else:
     if isinstance(hostName, basestring):
-      hostName = [hostName]
-    for SE in SEs:
-      host = gConfig.getValue('%s/StorageElements/%s/AccessProtocol.1/Host' %(g_BaseResourcesSection, SE) )
-      if host not in hostName:
-        removeSEs.append(SE)
-    for SE in removeSEs:
-      SEs.remove(SE)
-  return S_OK(SEs)
+      hostName = [hostName.tolower()]
+    else:
+      hostName = [h.tolower() for h in hostName]
+
+    hosts_to_SE_assoc_list = [(getHostByToken(SE), SE) for SE in SEs]
+    return S_OK([token for (url, token) in hosts_to_SE_assoc_list if url.tolower() in hostName])
 
 def getLFCNode( sites = None, readable = None ):
   if sites == None:
@@ -205,8 +191,7 @@ def getLFCNode( sites = None, readable = None ):
   return S_OK(node)
 
 def getFTSSites():
-  FTS = gConfig.getOptions("%s/FTSEndpoints" %g_BaseResourcesSection)
-  return FTS
+  return gConfig.getOptions("%s/FTSEndpoints" %g_BaseResourcesSection)
 
 def getFTSEndpoint( sites = None ):
   if sites == None:
@@ -224,9 +209,5 @@ def getFTSEndpoint( sites = None ):
         ftsNode = ftsNode + [node]
   return S_OK(ftsNode)
 
-def getCEType( site, ce, grid = None ):
-  if grid == None:
-    grid = 'LCG'
-  ceT = gConfig.getValue('%s/Sites/%s/%s/CEs/%s/CEType' %(g_BaseResourcesSection,
-                                                          grid, site, ce) )
-  return S_OK(ceT)
+def getCEType( site, ce, grid = 'LCG' ):
+  return S_OK(gConfig.getValue('%s/Sites/%s/%s/CEs/%s/CEType' % (g_BaseResourcesSection, grid, site, ce)))

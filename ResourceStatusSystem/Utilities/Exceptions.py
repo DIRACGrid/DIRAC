@@ -6,6 +6,15 @@
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
     ValidServiceType, ValidResourceType, PolicyTypes
 
+def unpack(dirac_value):
+  if type(dirac_value) != dict:
+    raise ValueError, "Not a DIRAC value."
+  if 'OK' not in dirac_value.keys():
+    raise ValueError, "Not a DIRAC value."
+  try:
+    return dirac_value['Value']
+  except KeyError:
+    raise RSSException, dirac_value['Message']
 
 #############################################################################
 
