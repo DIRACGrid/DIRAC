@@ -101,7 +101,6 @@ CREATE TABLE SiteHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(SiteName,StatusType,DateEnd),
   PRIMARY KEY(SiteHistoryID)
 ) Engine = InnoDB;
 
@@ -206,7 +205,6 @@ CREATE TABLE ServiceHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(ServiceName,StatusType,DateEnd),
   PRIMARY KEY(ServiceHistoryID)
 ) Engine=InnoDB;
 
@@ -314,7 +312,6 @@ CREATE TABLE ResourceHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(ResourceName,StatusType,DateEnd),
   PRIMARY KEY (ResourceHistoryID)
 ) Engine=InnoDB;
 
@@ -421,7 +418,6 @@ CREATE TABLE StorageElementHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY(StorageElementName,StatusType,DateEnd),
   PRIMARY KEY (StorageElementHistoryID)
 ) Engine=InnoDB;
 

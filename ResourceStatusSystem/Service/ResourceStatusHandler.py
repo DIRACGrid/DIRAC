@@ -19,7 +19,7 @@ from DIRAC import gLogger, gConfig, S_OK#, S_ERROR
 from DIRAC.Core.DISET.RequestHandler             import RequestHandler
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB#RSSDBException, ResourceStatusDB
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+#from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 #from DIRAC.ResourceStatusSystem.Utilities.CS            import getExt
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions    import RSSException
 #from DIRAC.ResourceStatusSystem.Utilities.Utils         import whoRaised, where
@@ -33,6 +33,8 @@ from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagemen
 
 from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import HandlerExecution
+
 rsDB = False
 
 def initializeResourceStatusHandler( _serviceInfo ):
@@ -40,7 +42,7 @@ def initializeResourceStatusHandler( _serviceInfo ):
   global rsDB
   rsDB = ResourceStatusDB()
 
-  rmDB = ResourceManagementDB()
+#  rmDB = ResourceManagementDB()
 
 #  cc = CommandCaller()
 
@@ -55,8 +57,8 @@ def initializeResourceStatusHandler( _serviceInfo ):
 #  publisher = Publisher( VOExtension, rsDBIn = rsDB, commandCallerIn = cc,
 #                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
 
-#  sync_O = Synchronizer( rsDBin = rsDB, rmDBin = rmDB )
-#  gConfig.addListenerToNewVersionEvent( sync_O.sync )
+  sync_O = Synchronizer()
+  gConfig.addListenerToNewVersionEvent( sync_O.sync )
 
   return S_OK()
 
@@ -75,210 +77,168 @@ class ResourceStatusHandler( RequestHandler ):
 
   types_addOrModifySite = [ str, str, str ]
 
+  @HandlerExecution
   def export_addOrModifySite( self, siteName, siteType, gridSiteName ):
-    """
-    Add or modify a site to the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
-
-    :Parameters
-      `siteName`
-        string - name of the site (DIRAC name)
-
-      `siteType`
-        string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-
-      `gridSiteName`
-        string - name of the site in the GOC DB
-    """
-
-    gLogger.info( "addOrModifySite: Attempting to add or modify site %s" % siteName )
-    resQuery = rsDB.addOrModifySite( siteName, siteType, gridSiteName )
-    gLogger.info( "addOrModifySite: Added (or modified) site %s." % siteName )
-    return resQuery
+    return rsDB  
+#    """
+#    Add or modify a site to the ResourceStatusDB.
+#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
+#
+#    :Parameters
+#      `siteName`
+#        string - name of the site (DIRAC name)
+#
+#      `siteType`
+#        string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+#
+#      `gridSiteName`
+#        string - name of the site in the GOC DB
+#    """
 
 ################################################################################
 
-  types_setSiteStatus = [ str, str, str, str, str, ( datetime, NoneType ),
-                          ( datetime, NoneType ),( datetime, NoneType ),
-                          ( datetime, NoneType ),( datetime, NoneType ) ]    
-
-  def export_setSiteStatus( self, siteName, statusType, status, reason, tokenOwner,
-                            tokenExpiration, dateCreated, dateEffective, dateEnd,
-                            lastCheckTime ):
-
-    gLogger.info( "setSiteStatus: Attempting to set site %s status" % siteName )
-    resQuery = rsDB.setSiteStatus( siteName, statusType, status, reason, tokenOwner, 
-                        tokenExpiration, dateCreated, dateEffective, dateEnd,
-                        lastCheckTime )
-    gLogger.info( "setSiteStatus: Set site %s status." % siteName )
-    return resQuery
-
-################################################################################
-    
-  types_setSiteScheduledStatus = [ str, str, str, str, str, ( datetime, NoneType ),
-                                  ( datetime, NoneType ), ( datetime, NoneType ),
-                                  ( datetime, NoneType ), ( datetime, NoneType ) ]
-    
-  def export_setSiteScheduledStatus( self, siteName, statusType, status, reason, 
-                                     tokenOwner, tokenExpiration, dateCreated, 
-                                     dateEffective, dateEnd, lastCheckTime ):
-
-    gLogger.info( "setSiteScheduledStatus: Attempting to set site %s scheduledStatus" % siteName )
-    resQuery = rsDB.setSiteStatus( siteName, statusType, status, reason, tokenOwner, 
-                        tokenExpiration, dateCreated, dateEffective, dateEnd,
-                        lastCheckTime )
-    gLogger.info( "setSiteScheduledStatus: Set site %s scheduledStatus." % siteName )
-    return resQuery
-
-################################################################################
-      
-  types_updateSiteStatus = [ str, ( str, NoneType ), ( str, NoneType ), ( str, NoneType ),
-                            ( str, NoneType ),( datetime, NoneType ),( datetime, NoneType ),
-                            ( datetime, NoneType ), ( datetime, NoneType ),
-                            ( datetime, NoneType ) ]  
-    
-  def export_updateSiteStatus( self, siteName, statusType, status, reason, 
-                               tokenOwner, tokenExpiration, dateCreated, 
-                               dateEffective, dateEnd, lastCheckTime):
-
-    gLogger.info( "updateSiteStatus_1" )
-    resQuery = rsDB.updateSiteStatus( siteName, statusType, status, reason, 
-                                      tokenOwner, tokenExpiration, dateCreated, 
-                                      dateEffective, dateEnd, lastCheckTime )
-    gLogger.info( "updateSiteStatus_2" )
-    return resQuery
-      
-################################################################################
-
-  types_getSites = [ ( str, NoneType ), ( str, NoneType ), ( str, NoneType ), dict ]
-  
-  def export_getSites( self, siteName, siteType, gridSiteName, kwargs ):
-    
-    gLogger.info( "getSites_1" )
-    resQuery = rsDB.getSites( siteName, siteType, gridSiteName, **kwargs )
-    gLogger.info( "getSites_2" )
-    return resQuery
-
-################################################################################
-
-  types_getSitesStatus = [ str, str, str, str, str, ( datetime, NoneType ),
+  types_setSiteStatus = [ str, str, str, str, ( datetime, NoneType ),
                           ( datetime, NoneType ), ( datetime, NoneType ),
-                          ( datetime, NoneType ), ( datetime, NoneType ), dict ]
+                          ( datetime, NoneType ), str, ( datetime, NoneType ) ]    
 
-  def export_getSitesStatus( self, siteName, statusType, status, reason, 
-                             tokenOwner, tokenExpiration, dateCreated, 
-                             dateEffective, dateEnd, lastCheckTime, kwargs ):
+  @HandlerExecution
+  def export_setSiteStatus( self, siteName, statusType, status, reason, dateCreated, 
+                            dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                            tokenExpiration ):
+    return rsDB
 
-    gLogger.info( "getSitesStatus_1" )
-    resQuery = rsDB.getSitesStatus( siteName, statusType, status, reason, tokenOwner, 
-                                    tokenExpiration, dateCreated, dateEffective, 
-                                    dateEnd, lastCheckTime, **kwargs )
-    gLogger.info( "getSitesStatus_2" )
-    return resQuery
+################################################################################
+    
+  types_setSiteScheduledStatus = [ str, str, str, str, ( datetime, NoneType ),
+                                   ( datetime, NoneType ), ( datetime, NoneType ),
+                                   ( datetime, NoneType ), str, ( datetime, NoneType ) ]
+    
+  @HandlerExecution
+  def export_setSiteScheduledStatus( self, siteName, statusType, status, reason, 
+                                     dateCreated, dateEffective, dateEnd, 
+                                     lastCheckTime, tokenOwner, tokenExpiration ):
+    return rsDB
+
+################################################################################
+      
+  types_updateSiteStatus = [ str, ( str, NoneType ), ( str, NoneType ), 
+                            ( str, NoneType ),
+                            ( datetime, NoneType ), ( datetime, NoneType ), 
+                            ( datetime, NoneType ), ( datetime, NoneType ),
+                            ( str, NoneType ), ( datetime, NoneType ) ]  
+
+  @HandlerExecution    
+  def export_updateSiteStatus( self, siteName, statusType, status, reason, 
+                               dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                               tokenOwner, tokenExpiration ):
+    return rsDB
+      
+################################################################################
+
+  types_getSites = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                     ( str, list, NoneType ), dict ]
   
+  @HandlerExecution    
+  def export_getSites( self, siteName, siteType, gridSiteName, kwargs ):
+    return rsDB
+
+################################################################################
+
+  types_getSitesStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                          ( str, list, NoneType ), ( str, list, NoneType ), 
+                          ( datetime, list, NoneType ), 
+                          ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
+                          ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                          ( datetime, list, NoneType ), dict ]
+
+  @HandlerExecution
+  def export_getSitesStatus( self, siteName, statusType, status, reason, 
+                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                             tokenOwner, tokenExpiration, kwargs ):
+    return rsDB
+    
 ################################################################################  
   
-  types_getSitesHistory = [ str, str, str, str, str,( datetime, NoneType ),
-                          ( datetime, NoneType ), ( datetime, NoneType ),
-                          ( datetime, NoneType ), ( datetime, NoneType ), dict ]
+  types_getSitesHistory = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                            ( str, list, NoneType ), ( str, list, NoneType ), 
+                            ( datetime, list, NoneType ), 
+                            ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
+                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                            ( datetime, list, NoneType ), dict ]
 
+  @HandlerExecution
   def export_getSitesHistory( self, siteName, statusType, status, reason, 
-                              tokenOwner, tokenExpiration, dateCreated, 
-                              dateEffective, dateEnd, lastCheckTime, kwargs ):
-
-    gLogger.info( "getSitesHistory_1" )
-    resQuery = rsDB.getSitesHistory( siteName, statusType, status, reason, tokenOwner, 
-                                     tokenExpiration, dateCreated, dateEffective, 
-                                     dateEnd, lastCheckTime, **kwargs )
-    gLogger.info( "getSitesHistory_2" )
-    return resQuery
+                              dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                              tokenOwner, tokenExpiration, kwargs ):
+    return rsDB
 
 ################################################################################
 
-  types_getSitesScheduledStatus = [ str, str, str, str, str,( datetime, NoneType ),
-                                    ( datetime, NoneType ), ( datetime, NoneType ),
-                                    ( datetime, NoneType ), ( datetime, NoneType ), 
-                                    dict ]
+  types_getSitesScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                                    ( str, list, NoneType ), ( str, list, NoneType ), 
+                                    ( datetime, list, NoneType ), 
+                                    ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
+                                    ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                                    ( datetime, list, NoneType ), dict ]
 
+  @HandlerExecution
   def export_getSitesScheduledStatus( self, siteName, statusType, status, reason, 
-                                      tokenOwner, tokenExpiration, dateCreated, 
-                                      dateEffective, dateEnd, lastCheckTime, 
-                                      kwargs ):
-
-    gLogger.info( "getSitesScheduledStatus_1" )
-    resQuery = rsDB.getSitesScheduledStatus( siteName, statusType, status, reason, 
-                                             tokenOwner, tokenExpiration, dateCreated, 
-                                             dateEffective, dateEnd, lastCheckTime, 
-                                             **kwargs )
-    gLogger.info( "getSitesScheduledStatus_2" )
-    return resQuery
+                                      dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                      tokenOwner, tokenExpiration, kwargs ):
+    return rsDB
 
 ################################################################################
 
-  types_getSitesPresent = [ str, str, str, str, str, str, ( datetime, NoneType ),
-                            str, ( datetime, NoneType ), str, ( datetime, NoneType ),
-                            str, dict ]
+  types_getSitesPresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                            ( str, list, NoneType ), ( str, list, NoneType ), 
+                            ( str, list, NoneType ), ( str, list, NoneType ), 
+                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                            dict ]
 
+  @HandlerExecution
   def export_getSitesPresent( self, siteName, siteType, gridSiteName, gridTier, 
                               statusType, status, dateEffective, reason, 
                               lastCheckTime, tokenOwner, tokenExpiration, 
                               formerStatus, kwargs ):
-
-    gLogger.info( "getSitesPresent_1" )
-    resQuery = rsDB.getSitesPresent( siteName, siteType, gridSiteName, gridTier, 
-                                     statusType, status, dateEffective, reason, 
-                                     lastCheckTime, tokenOwner, tokenExpiration, 
-                                     formerStatus, **kwargs )
-    gLogger.info( "getSitesPresent_2" )
-    return resQuery
+    return rsDB
 
 ################################################################################    
 
-  types_deleteSites = [ str ]
+  types_deleteSites = [ ( str, list, NoneType ) ]
 
+  @HandlerExecution
   def export_deleteSites( self, siteName ):
+    return rsDB
     
-    gLogger.info( "deleteSites_1" )
-    resQuery = rsDB.deleteSites( siteName )
-    gLogger.info( "deleteSites_2" )
-    return resQuery
-
 ################################################################################
 
-  types_deleteSitesScheduledStatus = [ str, str, str, str, str, ( datetime, NoneType ),
-                                      ( datetime, NoneType ),( datetime, NoneType ),
-                                      ( datetime, NoneType ),( datetime, NoneType )]
+  types_deleteSitesScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                                       ( str, list, NoneType ), ( str, list, NoneType ),
+                                       ( datetime, list, NoneType ), ( datetime, list, NoneType ),
+                                       ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
+                                       ( str, list, NoneType ), ( datetime, list, NoneType )]
 
+  @HandlerExecution
   def export_deleteSitesScheduledStatus( self, siteName, statusType, status, 
-                                         reason, tokenOwner, tokenExpiration, 
-                                         dateCreated, dateEffective, dateEnd, 
-                                         lastCheckTime ):
-
-    gLogger.info( "deleteSitesScheduledStatus_1" )
-    resQuery = rsDB.deleteSitesScheduledStatus( siteName, statusType, status, 
-                                                reason, tokenOwner, tokenExpiration, 
-                                                dateCreated, dateEffective, dateEnd, 
-                                                lastCheckTime )
-    gLogger.info( "deleteSitesScheduledStatus_2" )
-    return resQuery
+                                         reason, dateCreated, dateEffective, dateEnd, 
+                                         lastCheckTime, tokenOwner, tokenExpiration ):
+    return rsDB
 
 ################################################################################
 
-  types_deleteSitesHistory = [ str, str, str, str, str, ( datetime, NoneType ),
-                              ( datetime, NoneType ),( datetime, NoneType ),
-                              ( datetime, NoneType ),( datetime, NoneType ), dict ]
+  types_deleteSitesHistory = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                               ( str, list, NoneType ), ( str, list, NoneType ),
+                               ( datetime, list, NoneType ), ( datetime, list, NoneType ),
+                               ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
+                               ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]
 
-  def export_deleteSitesHistory( self, siteName, statusType, status, reason, 
-                                 tokenOwner, tokenExpiration, dateCreated, 
-                                 dateEffective, dateEnd, lastCheckTime, kwargs ):
-
-    gLogger.info( "deleteSitesHistory_1" )
-    resQuery = rsDB.deleteSitesHistory( siteName, statusType, status, reason, 
-                                        tokenOwner, tokenExpiration, dateCreated, 
-                                        dateEffective, dateEnd, lastCheckTime, 
-                                        **kwargs )
-    gLogger.info( "deleteSitesHistory_2" )
-    return resQuery
+  @HandlerExecution
+  def export_deleteSitesHistory( self, siteName, statusType, status, 
+                                 reason, dateCreated, dateEffective, dateEnd, 
+                                 lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
+    return rsDB
 
 ################################################################################
 
@@ -1019,34 +979,25 @@ class ResourceStatusHandler( RequestHandler ):
   
   types_addOrModifyGridSite = [ str, str ]
   
+  @HandlerExecution
   def export_addOrModifyGridSite( self, gridSiteName, gridTier ):
-
-    gLogger.info( "addOrModifyGridSite_1" )
-    resQuery = rsDB.addOrModifyGridSite( gridSiteName, gridTier )
-    gLogger.info( "addOrModifyGridSite_2" )  
-    return resQuery
+    return rsDB
 
 ################################################################################
       
-  types_getGridSites = [ ( str, NoneType ), ( str, NoneType ), dict ]    
+  types_getGridSites = [ ( str, list, NoneType ), ( str, list, NoneType ), dict ]    
       
+  @HandlerExecution    
   def export_getGridSites( self, gridSiteName, gridTier, kwargs ):
-
-    gLogger.info( "getGridSites_1" )
-    resQuery = rsDB.getGridSites( gridSiteName, gridTier, **kwargs )
-    gLogger.info( "getGridSites_2" )  
-    return resQuery
+    return rsDB
 
 ################################################################################
   
-  types_deleteGridSites = [ str ]
+  types_deleteGridSites = [ ( str, list ) ]
     
+  @HandlerExecution  
   def export_deleteGridSites( self, gridSiteName ):         
-
-    gLogger.info( "deleteGridSites_1" )
-    resQuery = rsDB.deleteGridSites( gridSiteName )
-    gLogger.info( "deleteGridSites_2" )  
-    return resQuery
+    return rsDB
 
 ################################################################################
 
@@ -1055,85 +1006,8 @@ class ResourceStatusHandler( RequestHandler ):
 ################################################################################
 
 ################################################################################
-#
-#  types_getGeneralName = [ str, str, str ]
-# 
-#  def export_getGeneralName( self, from_element, name, to_element ):
-#    
-#    gLogger.info( "getGeneralName_1" )
-#    resQuery = rsDB.getGeneralName( from_element, name, to_element )
-#    gLogger.info( "getGeneralName_2" )  
-#    return resQuery
-#
-#################################################################################
-#
-#  types_getGridSiteName = [ str, str ]       
-#         
-#  def export_getGridSiteName( self, granularity, name ):
-#
-#    gLogger.info( "getGridSiteName_1" )
-#    resQuery = rsDB.getGridSiteName( granularity, name )
-#    gLogger.info( "getGridSiteName_2" )  
-#    return resQuery
-#
-#################################################################################
-#
-#  types_getTokens = [ str, ( str, NoneType ), ( datetime, NoneType ),
-#                      ( str, NoneType ), dict ]       
-#         
-#  def export_getTokens( self, granularity, name, tokenExpiration, statusType, kwargs ): 
-#
-#    gLogger.info( "getTokens_1" )
-#    resQuery = rsDB.getTokens( granularity, name, tokenExpiration, statusType, **kwargs )
-#    gLogger.info( "getTokens_2" )  
-#    return resQuery
-#
-#################################################################################
-#       
-#  types_setToken = [ str, str, str, str, str, datetime ]    
-#       
-#  def export_setToken( self, granularity, name, statusType, reason, tokenOwner, 
-#                       tokenExpiration ):
-#
-#    gLogger.info( "setToken_1" )
-#    resQuery = rsDB.setToken( granularity, name, statusType, reason, tokenOwner, 
-#                              tokenExpiration )
-#    gLogger.info( "setToken_2" )  
-#    return resQuery
-#
-#
-#################################################################################
-#
-#  types_setReason = [ str, str, str, str ]
-#         
-#  def export_setReason( self, granularity, name, statusType, reason ):     
-#
-#    gLogger.info( "setReason_1" )
-#    resQuery = rsDB.setReason( granularity, name, statusType, reason )
-#    gLogger.info( "setReason_2" )  
-#    return resQuery
-#
-#################################################################################
-#
-#  types_whatIs = [ str ]
-#         
-#  def export_whatIs( self, name ):  
-#
-#    gLogger.info( "whatIs_1" )
-#    resQuery = rsDB.whatIs( name )
-#    gLogger.info( "whatIs_2" )  
-#    return resQuery
-#
-#################################################################################
-#
-#  types_getStuffToCheck = [ str, dict, dict ]       
-#     
-#  def export_getStuffToCheck( self, granularity, checkFrequency, kwargs ):
-#
-#    gLogger.info( "getStuffToCheck_1" )
-#    resQuery = rsDB.getStuffToCheck( granularity, checkFrequency, kwargs )
-#    gLogger.info( "getStuffToCheck_2" )  
-#    return resQuery
+
+# Check ResourceStatusBooster.py
     
 ################################################################################
 ################################################################################

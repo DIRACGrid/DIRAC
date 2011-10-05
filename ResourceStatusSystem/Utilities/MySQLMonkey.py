@@ -26,7 +26,7 @@ class MySQLMonkey( object ):
         pass
       elif isinstance( v, list ):
         if len(v) > 1:
-          items.append( '%s IN %s' % ( k, tuple(v) ) )
+          items.append( '%s IN %s' % ( k, tuple( [ str(vv) for vv in v ] ) ) )
         elif len(v):
           items.append( "%s='%s'" % ( k, v[0] ) )
         else:
@@ -49,5 +49,8 @@ class MySQLMonkey( object ):
                 
       items.append( ' OR '. join( orItem for orItem in orItems ) )          
                 
-    whereElements = ' AND '.join( item for item in items ) 
+    whereElements = ' AND '.join( item for item in items )
     return whereElements         
+  
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

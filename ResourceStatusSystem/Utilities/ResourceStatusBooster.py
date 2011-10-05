@@ -5,7 +5,7 @@ enough to be added to a generic API, but still quite convenient.
 Note that all interaction is done though the Client with its generic API !!
 """
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities.Validator import ResourceStatusValidator
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
@@ -19,10 +19,10 @@ from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution
 
 from datetime import datetime, timedelta
 
-class ResourceStatusBooster:
+class ResourceStatusBooster( object ):
   
   def __init__( self, rsClient ):
-    self.rsClient = rsClient
+    self.rsClient   = rsClient
     self.rsVal      = ResourceStatusValidator( ) 
 
 ################################################################################    
@@ -244,6 +244,32 @@ class ResourceStatusBooster:
     return getter( **kwargs )      
 
 ################################################################################    
+  
+  @CheckExecution
+  def getMonitoredStatus( self, granularity, name ):
+ 
+    getter = getattr( self.rsClient, 'get%ssPresent' % granularity )
+    kwargs = { '%sName' % granularity : name, 'columns' : [ 'Status' ] }
+    
+    return getter( **kwargs )
+    
+#    statusList = []
+    
+#    res = self.getMonitoredsStatusWeb( granularity, { '%sName' % granularity : name }, 0, 1 )
+#    if not res[ 'OK' ]:
+#      return res
+    
+#    try:
+#      if granularity == 'Resource':
+#        statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 6 ] )
+#      else:
+#        statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 5 ] )
+#    except IndexError:
+#      return S_ERROR( None )
+
+#    return S_OK( statusList )
+  
+################################################################################  
   
   @CheckExecution
   def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, maxItems ):

@@ -74,5 +74,5 @@ Was in status "%s", with reason "%s", since %s
 Setup = %s
 """ % (granularity, name, res['Status'], res['Reason'], was[0], was[1], was[2], setup)
 
-          nc.sendMail('aebeda3@gmail.com',#rmDB.registryGetMailFromLogin(user),
+          nc.sendMail(rmDB.registryGetMailFromLogin(user),
                       '%s: %s' % (name, res['Status']), mailMessage)

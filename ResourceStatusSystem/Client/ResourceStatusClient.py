@@ -4,60 +4,15 @@ ResourceStatusClient class is a client for requesting info from the ResourceStat
 # it crashes epydoc
 # __docformat__ = "restructuredtext en"
 
-from DIRAC                                            import S_OK, S_ERROR
+from DIRAC                                            import S_OK#, S_ERROR
 from DIRAC.Core.DISET.RPCClient                       import RPCClient
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes, RSSException
-#from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
 from DIRAC.ResourceStatusSystem                       import ValidRes, ValidStatus, \
   ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB   import ResourceStatusDB 
 from DIRAC.ResourceStatusSystem.Utilities.ResourceStatusBooster import ResourceStatusBooster
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientExecutor
-
-#import types
-#import inspect
-
-#class ClientExecutor( object ):
-#  
-#  def __init__( self, f ):
-#    self.f = f
-#    
-#  def __get__( self, obj, objtype = None ):
-#    return types.MethodType( self, obj, objtype )
-#    
-#  def __call__( self, *args, **kwargs ):  
-# 
-#    ins = inspect.getargspec( self.f )
-#    newArgs = ( 1 and ins.defaults ) or ()
-#
-#    if newArgs:
-#      #Keyword arguments on function self.f
-#      funkwargs = ins.args[ -len( ins.defaults ): ]
-#      
-#      kw      = dict(zip( funkwargs, ins.defaults ) )
-#      kw.update( kwargs ) 
-#      newArgs = [ kw[k] for k in funkwargs ]
-#      
-#      for fk in funkwargs:
-#        kwargs.pop( fk, None )  
-#      
-#    gate    = args[ 0 ].gate  
-#    booster = args[ 0 ].booster
-#     
-#    fname   = self.f.__name__  
-#    args    = tuple( list(args)[1:] + list( newArgs )) 
-#       
-#    try:
-#      gateFunction = getattr( gate, fname )
-#    except AttributeError:
-#      gateFunction = getattr( booster, fname )  
-#    except Exception, x:
-#      return S_ERROR( x )    
-#
-#    return gateFunction( *args, **kwargs )
-
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientExecution
        
 class ResourceStatusClient:
 
@@ -86,78 +41,76 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @ClientExecutor
+  @ClientExecution
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
     pass
 
-  @ClientExecutor
-  def setSiteStatus( self, siteName, statusType, status, reason, tokenOwner, 
-                     tokenExpiration = None, dateCreated = None, 
-                     dateEffective = None, dateEnd = None, lastCheckTime = None ):
+  @ClientExecution
+  def setSiteStatus( self, siteName, statusType, status, reason = None, 
+                     dateCreated = None, dateEffective = None, dateEnd = None, 
+                     lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
     pass
 
-  @ClientExecutor
-  def setSiteScheduledStatus( self, siteName, statusType, status, reason, tokenOwner, 
-                              tokenExpiration = None, dateCreated = None, 
-                              dateEffective = None, dateEnd = None, lastCheckTime = None):
+  @ClientExecution
+  def setSiteScheduledStatus( self, siteName, statusType, status, reason = None, 
+                              dateCreated = None, dateEffective = None, dateEnd = None, 
+                              lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
     pass
   
-  @ClientExecutor
+  @ClientExecution
   def updateSiteStatus( self, siteName, statusType = None, status = None, reason = None, 
-                        tokenOwner = None, tokenExpiration = None, dateCreated = None, 
-                        dateEffective = None, dateEnd = None, lastCheckTime = None ):
+                        dateCreated = None, dateEffective = None, dateEnd = None, 
+                        lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
     pass
 
-  @ClientExecutor
+  @ClientExecution
   def getSites( self, siteName = None, siteType = None, gridSiteName = None, **kwargs ):
     pass
   
-  @ClientExecutor
+  @ClientExecution
   def getSitesStatus( self, siteName = None, statusType = None, status = None, 
-                      reason = None, tokenOwner = None, tokenExpiration = None, 
-                      dateCreated = None, dateEffective = None, dateEnd = None, 
-                      lastCheckTime = None, **kwargs ):
+                      reason = None, dateCreated = None, dateEffective = None, 
+                      dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                      tokenExpiration = None, **kwargs ):
     pass
   
-  @ClientExecutor
+  @ClientExecution
   def getSitesHistory( self, siteName = None, statusType = None, status = None, 
-                       reason = None, tokenOwner = None, tokenExpiration = None, 
-                       dateCreated = None, dateEffective = None, dateEnd = None, 
-                       lastCheckTime = None, **kwargs ):
+                      reason = None, dateCreated = None, dateEffective = None, 
+                      dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                      tokenExpiration = None, **kwargs ):
     pass
   
-  @ClientExecutor
-  def getSitesScheduledStatus( self, siteName = None, statusType = None, 
-                               status = None, reason = None, tokenOwner = None, 
-                               tokenExpiration = None, dateCreated = None, 
-                               dateEffective = None, dateEnd = None, 
-                               lastCheckTime = None, **kwargs):
+  @ClientExecution
+  def getSitesScheduledStatus( self, siteName = None, statusType = None, status = None, 
+                               reason = None, dateCreated = None, dateEffective = None, 
+                               dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                               tokenExpiration = None, **kwargs):
     pass
   
-  @ClientExecutor
+  @ClientExecution
   def getSitesPresent( self, siteName = None, siteType = None, gridSiteName = None,
                        gridTier = None, statusType = None, status = None, dateEffective = None,
                        reason = None, lastCheckTime = None, tokenOwner = None,
                        tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
   
-  @ClientExecutor
+  @ClientExecution
   def deleteSites( self, siteName ):
     pass
   
-  @ClientExecutor
-  def deleteSitesScheduledStatus( self, siteName = None, statusType = None, 
-                                  status = None, reason = None, tokenOwner = None, 
-                                  tokenExpiration = None, dateCreated = None, 
-                                  dateEffective = None, dateEnd = None, 
-                                  lastCheckTime = None):
+  @ClientExecution
+  def deleteSitesScheduledStatus( self, siteName = None, statusType = None, status = None, 
+                                  reason = None, dateCreated = None, dateEffective = None, 
+                                  dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                                  tokenExpiration = None, **kwargs):
     pass
   
-  @ClientExecutor
+  @ClientExecution
   def deleteSitesHistory( self, siteName = None, statusType = None, status = None, 
-                          reason = None, tokenOwner = None, tokenExpiration = None, 
-                          dateCreated = None, dateEffective = None, dateEnd = None, 
-                          lastCheckTime = None, **kwargs ):
+                          reason = None, dateCreated = None, dateEffective = None, 
+                          dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                          tokenExpiration = None, **kwargs ):
     pass
   
 ################################################################################
@@ -168,50 +121,50 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @ClientExecutor
+  @ClientExecution
   def addOrModifyService( self, serviceName, serviceType, siteName ):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def setServiceStatus( self, serviceName, statusType, status, reason, tokenOwner, 
                         tokenExpiration = None, dateCreated = None, dateEffective = None, 
                         dateEnd = None, lastCheckTime = None ):
     pass
    
-  @ClientExecutor  
+  @ClientExecution  
   def setServiceScheduledStatus( self, serviceName, statusType, status, reason, 
                                  tokenOwner, tokenExpiration = None, dateCreated = None, 
                                  dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None ):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def updateServiceStatus( self, serviceName, statusType = None, status = None, 
                            reason = None, tokenOwner = None, tokenExpiration = None, 
                            dateCreated = None, dateEffective = None, dateEnd = None, 
                            lastCheckTime = None ):
     pass
   
-  @ClientExecutor
+  @ClientExecution
   def getServices( self, serviceName = None, serviceType = None, siteName = None, 
                    **kwargs ):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def getServicesStatus( self, serviceName = None, statusType = None, status = None, 
                          reason = None, tokenOwner = None, tokenExpiration = None, 
                          dateCreated = None, dateEffective = None, dateEnd = None, 
                          lastCheckTime = None, **kwargs ):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def getServicesHistory( self, serviceName = None, statusType = None, status = None, 
                           reason = None, tokenOwner = None, tokenExpiration = None, 
                           dateCreated = None, dateEffective = None, dateEnd = None, 
                           lastCheckTime = None, **kwargs ):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def getServicesScheduledStatus( self, serviceName = None, statusType = None, 
                                  status = None, reason = None, tokenOwner = None, 
                                  tokenExpiration = None, dateCreated = None, 
@@ -219,7 +172,7 @@ class ResourceStatusClient:
                                  lastCheckTime = None, **kwargs ):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def getServicesPresent( self, serviceName = None, siteName = None, siteType = None, 
                           serviceType = None, statusType = None, status = None, 
                           dateEffective = None, reason = None, lastCheckTime = None, 
@@ -227,11 +180,11 @@ class ResourceStatusClient:
                           formerStatus = None, **kwargs ):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def deleteServices( self, serviceName ):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def deleteServicesScheduledStatus( self, serviceName = None, statusType = None, 
                                      status = None, reason = None, tokenOwner = None, 
                                      tokenExpiration = None, dateCreated = None, 
@@ -239,7 +192,7 @@ class ResourceStatusClient:
                                      lastCheckTime = None):
     pass
   
-  @ClientExecutor  
+  @ClientExecution  
   def deleteServicesHistory( self, serviceName = None, statusType = None, status = None, 
                           reason = None, tokenOwner = None, tokenExpiration = None, 
                           dateCreated = None, dateEffective = None, dateEnd = None, 
@@ -254,57 +207,57 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @ClientExecutor  
+  @ClientExecution  
   def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName,
                            gridSiteName ):
     pass
   
-  @ClientExecutor      
+  @ClientExecution      
   def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
                          tokenExpiration = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, lastCheckTime = None ):
     pass
   
-  @ClientExecutor      
+  @ClientExecution      
   def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
                                   tokenOwner, tokenExpiration = None, dateCreated = None, 
                                   dateEffective = None, dateEnd = None, lastCheckTime = None ):
     pass
   
-  @ClientExecutor          
+  @ClientExecution          
   def updateResourceStatus( self, resourceName, statusType = None, status = None, reason = None, 
                          tokenOwner = None, tokenExpiration = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, lastCheckTime = None ):
     pass
   
-  @ClientExecutor      
+  @ClientExecution      
   def getResources( self, resourceName = None, resourceType = None, 
                     serviceType = None, siteName = None, gridSiteName = None, 
                     **kwargs ):
     pass
   
-  @ClientExecutor      
+  @ClientExecution      
   def getResourcesStatus( self, resourceName = None, statusType = None, status = None,
                           reason = None, tokenOwner = None, tokenExpiration = None, 
                           dateCreated = None, dateEffective = None, dateEnd = None, 
                           lastCheckTime = None, **kwargs ):
     pass
   
-  @ClientExecutor      
+  @ClientExecution      
   def getResourcesHistory( self, resourceName = None, statusType = None, status = None,
                            reason = None, tokenOwner = None, tokenExpiration = None, 
                            dateCreated = None, dateEffective = None, dateEnd = None, 
                            lastCheckTime = None, **kwargs ):
     pass
   
-  @ClientExecutor        
+  @ClientExecution        
   def getResourcesScheduledStatus( self, resourceName = None, statusType = None, status = None,
                                   reason = None, tokenOwner = None, tokenExpiration = None, 
                                   dateCreated = None, dateEffective = None, dateEnd = None, 
                                   lastCheckTime = None, **kwargs):
     pass
   
-  @ClientExecutor      
+  @ClientExecution      
   def getResourcesPresent( self, resourceName = None, siteName = None, serviceType = None,
                            gridSiteName = None, siteType = None, resourceType = None,
                            statusType = None, status = None, dateEffective = None, 
@@ -312,11 +265,11 @@ class ResourceStatusClient:
                            tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
   
-  @ClientExecutor     
+  @ClientExecution     
   def deleteResources( self, resourceName ):
     pass
   
-  @ClientExecutor      
+  @ClientExecution      
   def deleteResourcesScheduledStatus( self, resourceName = None, statusType = None, 
                                       status = None, reason = None, tokenOwner = None, 
                                       tokenExpiration = None, dateCreated = None, 
@@ -324,7 +277,7 @@ class ResourceStatusClient:
                                       lastCheckTime = None):
     pass
   
-  @ClientExecutor      
+  @ClientExecution      
   def deleteResourcesHistory( self, resourceName = None, statusType = None, status = None, 
                               reason = None, tokenOwner = None, tokenExpiration = None, 
                               dateCreated = None, dateEffective = None, dateEnd = None, 
@@ -339,38 +292,38 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @ClientExecutor   
+  @ClientExecution   
   def addOrModifyStorageElement( self, storageElementName, resourceName, 
                                  gridSiteName ):
     pass
   
-  @ClientExecutor       
+  @ClientExecution       
   def setStorageElementStatus( self, storageElementName, statusType, status, 
                                reason, tokenOwner, tokenExpiration = None, 
                                dateCreated = None, dateEffective = None, dateEnd = None, 
                                lastCheckTime = None ):
     pass
       
-  @ClientExecutor       
+  @ClientExecution       
   def setStorageElementScheduledStatus( self, storageElementName, statusType, status, 
                                         reason, tokenOwner, tokenExpiration = None, 
                                         dateCreated = None, dateEffective = None, 
                                         dateEnd = None, lastCheckTime = None ):
     pass
       
-  @ClientExecutor       
+  @ClientExecution       
   def updateStorageElementStatus( self, storageElementName, statusType = None, status = None, 
                                  reason = None , tokenOwner = None, tokenExpiration = None, 
                                  dateCreated = None, dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None ):
     pass
       
-  @ClientExecutor       
+  @ClientExecution       
   def getStorageElements( self, storageElementName = None, resourceName = None, 
                           gridSiteName = None, **kwargs ):
     pass
       
-  @ClientExecutor       
+  @ClientExecution       
   def getStorageElementsStatus( self, storageElementName = None, statusType = None, 
                                 status = None, reason = None, tokenOwner = None, 
                                 tokenExpiration = None, dateCreated = None, 
@@ -378,7 +331,7 @@ class ResourceStatusClient:
                                 lastCheckTime = None, **kwargs ):
     pass    
     
-  @ClientExecutor       
+  @ClientExecution       
   def getStorageElementsHistory( self, storageElementName = None, statusType = None, 
                                  status = None, reason = None, tokenOwner = None, 
                                  tokenExpiration = None, dateCreated = None, 
@@ -386,7 +339,7 @@ class ResourceStatusClient:
                                  lastCheckTime = None, **kwargs ):
     pass
       
-  @ClientExecutor       
+  @ClientExecution       
   def getStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
                                          status = None, reason = None, tokenOwner = None, 
                                          tokenExpiration = None, dateCreated = None, 
@@ -394,7 +347,7 @@ class ResourceStatusClient:
                                          lastCheckTime = None, **kwargs ):
     pass
       
-  @ClientExecutor      
+  @ClientExecution      
   def getStorageElementsPresent( self, storageElementName = None, resourceName = None, 
                                  gridSiteName = None, siteType = None, statusType = None, 
                                  status = None, dateEffective = None, reason = None, 
@@ -402,11 +355,11 @@ class ResourceStatusClient:
                                  tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
       
-  @ClientExecutor                                    
+  @ClientExecution                                    
   def deleteStorageElements( self, storageElementName ):
     pass
       
-  @ClientExecutor  
+  @ClientExecution  
   def deleteStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
                                             status = None, reason = None, tokenOwner = None, 
                                             tokenExpiration = None, dateCreated = None, 
@@ -414,7 +367,7 @@ class ResourceStatusClient:
                                             lastCheckTime = None ):
     pass
       
-  @ClientExecutor
+  @ClientExecution
   def deleteStorageElementsHistory( self, storageElementName = None, statusType = None, 
                                     status = None, reason = None, tokenOwner = None, 
                                     tokenExpiration = None, dateCreated = None, 
@@ -430,15 +383,15 @@ class ResourceStatusClient:
 
 ################################################################################
   
-  @ClientExecutor
+  @ClientExecution
   def getServiceStats( self, siteName, statusType = None ):
     pass
     
-  @ClientExecutor  
+  @ClientExecution  
   def getResourceStats( self, element, name, statusType = None ):
     pass
     
-  @ClientExecutor  
+  @ClientExecution  
   def getStorageElementStats( self, element, name, statusType = None ):      
     pass
 
@@ -450,15 +403,15 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @ClientExecutor
+  @ClientExecution
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
     pass
   
-  @ClientExecutor    
+  @ClientExecution    
   def getGridSites( self, gridSiteName = None, gridTier = None, **kwargs ):
     pass
 
-  @ClientExecutor    
+  @ClientExecution    
   def deleteGridSites( self, gridSiteName ):        
     pass
 
@@ -470,40 +423,48 @@ class ResourceStatusClient:
 
 ################################################################################
 
-  @ClientExecutor 
+  @ClientExecution 
   def getGeneralName( self, from_element, name, to_element ):
     pass
     
-  @ClientExecutor     
+  @ClientExecution     
   def getGridSiteName( self, granularity, name ):
     pass
     
-  @ClientExecutor     
+  @ClientExecution     
   def getTokens( self, granularity, name = None, tokenExpiration = None, 
                  statusType = None, **kwargs ): 
     pass
    
-  @ClientExecutor    
+  @ClientExecution    
   def setToken( self, granularity, name, statusType, reason, tokenOwner, 
                 tokenExpiration ):
     pass
     
-  @ClientExecutor     
+  @ClientExecution     
   def setReason( self, granularity, name, statusType, reason ):     
     pass
   
-  @ClientExecutor     
+  @ClientExecution     
   def setDateEnd( self, granularity, name, statusType, dateEnd ):     
     pass 
     
-  @ClientExecutor     
+  @ClientExecution     
   def whatIs( self, name ):  
     pass
   
-  @ClientExecutor   
+  @ClientExecution   
   def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
     pass    
-        
+  
+  @ClientExecution      
+  def getMonitoredStatus( self, granularity, name ):
+    pass
+    
+  @ClientExecution  
+  def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, maxItems ):
+    pass
+              
 ################################################################################
 
 ################################################################################
@@ -529,354 +490,6 @@ class ResourceStatusClient:
   
   def getValidResourceTypes( self ):
     return S_OK( ValidResourceType )
-
-################################################################################
             
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
-
-##############################################################################
-#
-#  def getServiceStats( self, siteName, statusType ):
-#    """
-#    Returns simple statistics of active, probing and banned services of a site;
-#
-#    :Parameters:
-#      `granularity`
-#        string, has to be 'Site'
-#
-#      `name`
-#        string - a service name
-#
-#    :returns:
-#      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-#    """
-#
-##    if granularity not in ( 'Site', 'Sites' ):
-##      raise InvalidRes, where( self, self.getServiceStats )
-#
-#    return self.rsS.getServiceStats( siteName, statusType )
-##    if not res[ 'OK' ]:
-##      raise RSSException, where( self, self.getServiceStats ) + " " + res[ 'Message' ]
-#
-##    return res
-#
-##############################################################################
-#
-#  def getResourceStats( self, granularity, name, statusType ):
-#    """
-#    Returns simple statistics of active, probing and banned resources of a site or a service;
-#
-#    :Parameters:
-#      `granularity`
-#        string, should be in ('Site', 'Service')
-#
-#      `name`
-#        string, name of site or service
-#
-#    :returns:
-#      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-#    """
-#
-#    res = self.rsS.getResourceStats( granularity, name, statusType )
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getResourceStats ) + " " + res[ 'Message' ]
-#
-#    #return res[ 'Value' ]
-#    return res
-#
-##############################################################################
-#
-#  def getStorageElementStats(self, granularity, name, statusType ):
-#    """
-#    Returns simple statistics of active, probing and banned storageElements of a site or a resource;
-#
-#    :Parameters:
-#      `granularity`
-#        string, should be in ['Site', 'Resource']
-#
-#      `name`
-#        string, name of site or resource
-#
-#      `access`
-#        string, either Read or Write
-#
-#    :returns:
-#      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-#    """
-#
-#    res = self.rsS.getStorageElementStats( granularity, name, statusType )
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getStorageElementStats ) + " " + res[ 'Message' ]
-#
-#    #return res[ 'Value' ]
-#    return res
-#
-##############################################################################
-#
-#
-#  def getPeriods( self, granularity, name, status, hours ):
-#    """
-#    Returns a list of periods of time where name was in status
-#
-#    :returns:
-#      {
-#        'Periods':[list of periods]
-#      }
-#    """
-#    #da migliorare!
-#
-#    if granularity not in ValidRes:
-#      raise InvalidRes, where( self, self.getPeriods )
-#
-#    res = self.rsS.getPeriods( granularity, name, status, hours )
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getPeriods ) + " " + res[ 'Message' ]
-#
-#    #return { 'Periods' : res[ 'Value' ] }
-#    return res
-#
-##############################################################################
-#
-#  def getGeneralName( self, granularity, name, toGranularity ):
-#    """
-#    Returns simple statistics of active, probing and banned storageElements of a site or a resource;
-#
-#    :Parameters:
-#      `granularity`
-#        string, should be a ValidRes
-#
-#      `name`
-#        string, name of site or resource
-#
-#      `toGranularity`
-#        string, should be a ValidRes
-#
-#    :returns:
-#      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-#    """
-#
-#    res = self.rsS.getGeneralName( granularity, name, toGranularity )
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getGeneralName ) + " " + res[ 'Message' ]
-#
-#    #return res[ 'Value' ]
-#    return res
-#
-##############################################################################
-#
-#  def getMonitoredStatus( self, granularity, names ):
-#    """
-#    Returns RSS status of names (could be a string or a list of strings)
-#
-#    :Parameters:
-#      `granularity`
-#        string, should be a ValidRes
-#
-#      `names`
-#        string or dict, name(s) of the ValidRes
-#
-#    :returns:
-#      'Active'|'Probing'|'Banned'|None
-#    """
-#
-#    if not isinstance( names, list ):
-#      names = [ names ]
-#
-#    statusList = []
-#
-#    for name in names:
-#      if granularity == 'Site':
-#        res = self.rsS.g( { 'SiteName' : name }, 0, 1 )
-#      elif granularity == 'Service':
-#        res = self.rsS.getServicesStatusWeb( { 'ServiceName' : name }, 0, 1 )
-#      elif granularity  == 'Resource':
-#        res = self.rsS.getResourcesStatusWeb( { 'ResourceName' : name }, 0, 1 )
-#      elif granularity == 'StorageElement':
-#        res = self.rsS.getStorageElementsStatusWeb( { 'StorageElementName' : name }, 0, 1 )
-#      else:
-#        raise InvalidRes, where( self, self.getMonitoredStatus )
-#
-#      if not res[ 'OK' ]:
-#        raise RSSException, where( self, self.getMonitoredStatus ) + " " + res[ 'Message' ]
-#      else:
-#        try:
-#            
-#          if granularity == 'Resource':
-#            statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 6 ] )
-#          else:
-#            statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 5 ] )
-#        except IndexError:
-#          return S_ERROR( None )
-#
-#    return S_OK( statusList )
-#
-##############################################################################
-#
-#  def getGridSiteName( self, granularity, name ):
-#    """
-#    Returns the grid site name (what is in GOC BD)
-#
-#    :Parameters:
-#      `granularity`
-#        string, should be a ValidRes
-#
-#      `name`
-#        string, name of site or resource
-#    """
-#
-#    res = self.rsS.getGridSiteName( granularity, name )
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getGridSiteName ) + " " + res[ 'Message' ]
-#
-#    #return res[ 'Value' ]
-#    return res
-#
-##############################################################################
-#
-#  def getResourcesList( self ):
-#    """
-#    Returns the list of resources in the RSS DB
-#
-#    """
-#
-#    res = self.rsS.getResourcesList()
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getResourcesList ) + " " + res[ 'Message' ]
-#    #
-#    #return res[ 'Value' ]
-#    return res
-#
-##############################################################################
-#
-#  def getStorageElementsList( self, access ):
-#    """
-#    Returns the list of storage elements in the RSS DB
-#
-#    """
-#
-#    res = self.rsS.getStorageElementsList( access )
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getStorageElementsList ) + " " + res[ 'Message' ]
-#    #
-#    #return res[ 'Value' ]
-#    return res
-#
-##############################################################################
-#
-#  def getServicesList( self ):
-#    """
-#    Returns the list of services in the RSS DB
-#
-#    """
-#
-#    res = self.rsS.getServicesList()
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getServicesList ) + " " + res[ 'Message' ]
-#
-#    return res
-#
-##############################################################################
-#
-#  def getSitesList( self ):
-#    """
-#    Returns the list of sites in the RSS DB
-#
-#    """
-#
-#    res = self.rsS.getSitesList()
-#    if not res[ 'OK' ]:
-#      raise RSSException, where( self, self.getSitesList ) + " " + res[ 'Message' ]
-#
-#    return res
-#
-##############################################################################
-#
-#  def getStorageElement( self, name, access ):
-#
-#    subaccess = access
-#
-#    if access == 'Remove':
-#      subaccess = 'Read'
-#
-#    res = self.rsS.getStorageElement( name, subaccess )
-#    if not res['OK']:
-#      raise RSSException, where( self, self.getStorageElement ) + " " + res[ 'Message' ]
-#
-#    if res['Value']:
-#
-#      res = res[ 'Value' ]
-#
-#      if res[ 0 ].endswith( 'ARCHIVE' ) and ( access == 'Read' or access == 'Remove' ):
-#        status = gConfig.getValue( '/Resources/StorageElements/%s/%sAccess' % ( name, access ) )
-#
-#        if status:
-#          res[ 1 ] = status
-#        else:
-#          return S_ERROR( 'StorageElement %s, access %s not found' % ( name, access ) )
-#
-#      return S_OK( res )
-#    else:
-#      return S_ERROR( 'Unknown SE' )
-#
-##############################################################################
-#
-#  def setStorageElementStatus( self, name, status, reason, token, access ):
-#
-#    res = self.rsS.setStorageElementStatus( name, status, reason, token, access )
-#    if not res['OK']:
-#      raise RSSException, where( self, self.setStorageElementStatus ) + " " + res[ 'Message' ]
-#
-#    return S_OK()
-#
-##############################################################################
-#
-##  def updateStorageElement( self, name , access, status ):
-#
-##    se = self.rsS.getStorageElement( name, access )
-#
-##    self.addOrModifyStorageElement(  )
-#
-##############################################################################
-#
-#  def getResource( self, name, access ):
-#
-#    res = self.rsS.getResource( name, access )
-#    if not res['OK']:
-#      raise RSSException, where( self, self.getResource ) + " " + res[ 'Message' ]
-#
-#    if res['Value']:
-#      return S_OK( res[ 'Value' ][ 0 ] )
-#    else:
-#      return S_ERROR( 'Unknown Resource' )
-#
-#
-##############################################################################
-#
-#  def getService( self, name, access ):
-#
-#    res = self.rsS.getService( name, access )
-#    if not res['OK']:
-#      raise RSSException, where( self, self.getService ) + " " + res[ 'Message' ]
-#
-#    if res['Value']:
-#      return S_OK( res[ 'Value' ][ 0 ] )
-#    else:
-#      return S_ERROR( 'Unknown Service' )
-#
-#
-##############################################################################
-#
-#  def getSite( self, name, access ):
-#
-#    res = self.rsS.getSite( name, access )
-#    if not res['OK']:
-#      raise RSSException, where( self, self.getSite ) + " " + res[ 'Message' ]
-#
-#    if res[ 'OK' ] and res['Value']:
-#      return S_OK( res[ 'Value' ][ 0 ] )
-#
-#    else:
-#      return S_ERROR( 'Unknown Site' )
-#
-##############################################################################
