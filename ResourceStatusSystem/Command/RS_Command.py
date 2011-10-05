@@ -212,7 +212,7 @@ class MonitoredStatus_Command( Command ):
         toBeFound = self.rsClient.getGeneralName( self.args[0], self.args[1], self.args[2] )
         if not toBeFound[ 'OK' ]:
           return {'Result' : 'Unknown'}
-        toBeFound = toBeFound['Value']
+        toBeFound = toBeFound['Value'][ 0 ]
 
         statuses = self.rsClient.getMonitoredStatus( self.args[2], toBeFound )
         if not statuses['OK']:
