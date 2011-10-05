@@ -93,11 +93,11 @@ class ClientExecution( object ):
     booster = args[ 0 ].booster
      
     fname   = self.f.__name__  
-    args    = tuple( list(args)[1:] + list( newArgs )) 
+    args    = tuple( list(args)[1:] + list( newArgs ))    
        
     try:
       gateFunction = getattr( gate, fname )
-    except AttributeError:
+    except AttributeError, x:
       gateFunction = getattr( booster, fname )  
     except Exception, x:
       return S_ERROR( x )    
