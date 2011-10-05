@@ -23,7 +23,7 @@ class ResourceStatusBooster( object ):
   
   def __init__( self, rsClient ):
     self.rsClient   = rsClient
-    self.rsVal      = ResourceStatusValidator( ) 
+    self.rsVal      = ResourceStatusValidator( rsGate = rsClient ) 
 
 ################################################################################    
 
