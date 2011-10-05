@@ -37,4 +37,4 @@ def ResourcePolTypeActions( granularity, name, statusType, resDecisions, res, rs
                                  resP['PolicyName'], resP['Status'], resP['Reason'] )
 
   if res.has_key( 'EndDate' ):
-    rsClient.setDateEnd( granularity, name, res['EndDate'] )
+    rsClient.setDateEnd( granularity, name, statusType, res['EndDate'] )
