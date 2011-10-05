@@ -80,20 +80,6 @@ class ResourceStatusHandler( RequestHandler ):
   @HandlerExecution
   def export_addOrModifySite( self, siteName, siteType, gridSiteName ):
     return rsDB  
-#    """
-#    Add or modify a site to the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
-#
-#    :Parameters
-#      `siteName`
-#        string - name of the site (DIRAC name)
-#
-#      `siteType`
-#        string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-#
-#      `gridSiteName`
-#        string - name of the site in the GOC DB
-#    """
 
 ################################################################################
 
