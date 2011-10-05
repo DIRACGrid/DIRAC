@@ -147,7 +147,8 @@ class StageMonitorAgent( AgentModule ):
     return res
 
   def __wakeupOldRequests( self, oldRequests ):
-    res = self.storageDB.wakeupOldRequests( oldRequests )
+    retryInterval = self.am_getOption( 'RetryIntervalHour', 2 )
+    res = self.stagerClient.wakeupOldRequests( oldRequests, retryInterval )
     if not res['OK']:
       gLogger.error( "StageMonitor.__wakeupOldRequests: Failed to resubmit old requests.", res['Message'] )
       return res
