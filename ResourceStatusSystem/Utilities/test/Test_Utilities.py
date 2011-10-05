@@ -19,14 +19,14 @@ class UtilitiesTestCase(unittest.TestCase):
   """
   def setUp(self):
 
-    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
-    sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceManagementDB"] = DIRAC.ResourceStatusSystem.test.fake_rmDB
-    sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
+    # sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
+    # sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceManagementDB"] = DIRAC.ResourceStatusSystem.test.fake_rmDB
+    # sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 
     from DIRAC import gConfig
 
@@ -351,12 +351,6 @@ class InfoGetterSuccess(UtilitiesTestCase):
 #############################################################################
 
 class SynchronizerSuccess(UtilitiesTestCase):
-
-
-
-  def test__syncUtils(self):
-    self.syncC._syncUtils()
-
   def test__syncSites(self):
     self.syncC._syncSites()
 
@@ -373,8 +367,9 @@ class SynchronizerSuccess(UtilitiesTestCase):
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SynchronizerSuccess))
+  # suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
+  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
+  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
+  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SynchronizerSuccess))
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(SynchronizerSuccess)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

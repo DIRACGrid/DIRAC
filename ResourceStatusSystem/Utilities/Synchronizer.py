@@ -66,7 +66,8 @@ class Synchronizer(object):
       return "T" + str(min([int(v) for v in unpack(getSiteTier(sitesList))]))
 
     # sites in the DB now
-    sitesDB = unpack(self.rsClient.getSites())[0]
+    sitesDB = unpack(self.rsClient.getSites())
+    sitesDB = [s[0] for s in sitesDB]
 
     # sites in CS now
     sitesCS = unpack(getSites())
@@ -154,7 +155,7 @@ class Synchronizer(object):
     # SE Nodes in CS now
     SENodeList = []
     for SE in SEList:
-      node = getSENodes( SE )['Value'][0]
+      node = unpack(getSENodes( SE ))
       if node is None:
         continue
       if node not in SENodeList:
@@ -424,41 +425,34 @@ class Synchronizer(object):
   def _syncStorageElements( self ):
 
     # Get StorageElements from the CS
-    SEs = getStorageElements()
-    if not SEs['OK']:
-      raise RSSException, SEs['Message']
-    SEs = SEs['Value']
+    CSSEs = unpack(getStorageElements())
 
     kwargs = { 'columns' : [ 'StorageElementName' ] }
-    storageElementsIn = self.rsClient.getStorageElementsPresent( **kwargs )
-    #storageElementsIn = self.rsClient.getMonitoredsList( 'StorageElement',
+    DBSEs = self.rsClient.getStorageElementsPresent( **kwargs )
+    #DBSEs = self.rsClient.getMonitoredsList( 'StorageElement',
     #                                                   paramsList = [ 'StorageElementName' ] )
     try:
-      storageElementsIn = [ x[ 0 ] for x in storageElementsIn ]
+      DBSEs = [ x[ 0 ] for x in DBSEs ]
     except IndexError:
       pass
 
-    #remove storageElements no more in the CS
-    for se in storageElementsIn:
-      if se not in SEs:
-        #self.rsClient.removeStorageElement( storageElementName = se, resourceName = None )
-        self.rsClient.deleteStorageElements( se )
+    # Remove storageElements that are in DB but not in CS
+    for se in set(DBSEs) - set(CSSEs):
+      #self.rsClient.removeStorageElement( storageElementName = se, resourceName = None )
+      self.rsClient.deleteStorageElements( se )
 
-    #Add new storage Elements
-    for SE in SEs:
-      srm = getSENodes( SE )[ 'Value' ][ 0 ]
+    # Add new storage Elements
+    for SE in CSSEs:
+      srm = unpack(getSENodes( SE ))
       if srm == None:
         continue
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm )
-      if not siteInGOCDB[ 'OK' ]:
-        raise RSSException, siteInGOCDB[ 'Message' ]
-      if siteInGOCDB[ 'Value' ] == []:
-        continue
-      siteInGOCDB = siteInGOCDB[ 'Value' ][ 0 ][ 'SITENAME' ]
+      siteInGOCDB = unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
+      if siteInGOCDB == []: continue
+      siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
 
-      if SE not in storageElementsIn:
+      if SE not in DBSEs:
         self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
-        storageElementsIn.append( SE )
+        DBSEs.append( SE )
 
 #############################################################################
 

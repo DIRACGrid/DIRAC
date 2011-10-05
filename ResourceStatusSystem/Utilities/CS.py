@@ -1,4 +1,4 @@
-from DIRAC                                   import S_OK
+from DIRAC                                   import S_OK, S_ERROR
 from DIRAC.Core.Utilities                    import List
 from DIRAC.ResourceStatusSystem.Utilities    import Utils
 from DIRAC                                   import gConfig
@@ -121,8 +121,10 @@ def getStorageElementStatus(SE, accessType):
                            (g_BaseResourcesSection, SE, accessType))
 
 def getSENodes( SEIn ):
+  if not SEIn:
+    return S_ERROR("Invalid empty argument for function getSENodes")
   if isinstance(SEIn, basestring):
-    SE = [SE]
+    SE = [SEIn]
   node = [gConfig.getValue("%s/StorageElements/%s/AccessProtocol.1/Host"
                            %( g_BaseResourcesSection, se ) ) for se in SE]
   if isinstance(SEIn, basestring): return S_OK(node[0])
@@ -140,9 +142,12 @@ def getSites( grids = 'LCG' ):
   return S_OK(sites)
 
 def getSiteTier( sitesIn ):
+  sites = sitesIn
   if isinstance(sitesIn, basestring):
     sites = [sitesIn]
   tiers = [gConfig.getValue("%s/Sites/LCG/%s/MoUTierLevel" % (g_BaseResourcesSection, site)) for site in sites]
+  # All sites that have no tier information are considered tier2
+  tiers = [t if t else "2" for t in tiers]
   if isinstance(sitesIn, basestring): return S_OK(tiers[0])
   else:                               return S_OK(tiers)
 
@@ -155,11 +160,9 @@ def getHostByToken(space_token):
 
 def getStorageElements( hostName = None ):
   SEs = gConfig.getSections('%s/StorageElements' %g_BaseResourcesSection)
-  if not SEs['OK']: return SEs
-  SEs = SEs['Value']
-  if hostName == None: return SEs
-
+  if not SEs['OK'] or hostName == None: return SEs
   else:
+    SEs = SEs['Value']
     if isinstance(hostName, basestring):
       hostName = [hostName.tolower()]
     else:
