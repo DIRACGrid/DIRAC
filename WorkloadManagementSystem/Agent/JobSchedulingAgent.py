@@ -603,10 +603,20 @@ class JobSchedulingAgent( OptimizerModule ):
             self.jobDB.setJobAttribute( job, 'Site', remainingSites[0] )
           else:
             self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( remainingSites ) ) )
-            self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
+            result = self.jobDB.getJobAttribute(job,'Site')
+            siteGroup = "Multiple"  
+            if result['OK']:
+              if result['Value'].startswith('Group'):
+                siteGroup = result['Value']              
+            self.jobDB.setJobAttribute( job, 'Site', siteGroup )
       else:
         self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( siteCandidates ) ) )
-        self.jobDB.setJobAttribute( job, 'Site', 'Multiple' )
+        result = self.jobDB.getJobAttribute(job,'Site')
+        siteGroup = "Multiple"  
+        if result['OK']:
+          if result['Value'].startswith('Group'):
+            siteGroup = result['Value']              
+        self.jobDB.setJobAttribute( job, 'Site', siteGroup )
     else:
       self.log.verbose( 'All sites are eligible for job %s' % job )
       self.jobDB.setJobAttribute( job, 'Site', 'ANY' )
