@@ -16,7 +16,7 @@ def pfnunparse( pfnDict ):
       fullPath = "%s/%s" % ( pfnDict['Path'], pfnDict['FileName'] )
     else:
       fullPath = pfnDict['FileName']
-    fullPath = os.path.realpath( fullPath )
+    fullPath = os.path.normalPath( fullPath )
 
     port = pfnDict.get( 'Port' )
     wsUrl = pfnDict.get( 'WSUrl' )

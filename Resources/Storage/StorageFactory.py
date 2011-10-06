@@ -289,6 +289,9 @@ class StorageFactory:
                               host = None, port = None, spaceToken = None, wsUrl = None ):
     moduleRootPaths = getInstalledExtensions()
     moduleLoaded = False
+    path = path.rstrip( '/' )
+    if not path:
+      path = '/'
     for moduleRootPath in moduleRootPaths:
       if moduleLoaded:
         break

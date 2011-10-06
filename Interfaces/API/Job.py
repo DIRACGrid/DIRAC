@@ -790,7 +790,7 @@ class Job:
        Example usage:
 
        >>> job = Job()
-       >>> job.setExecutionEnviroment({'<MYVARIABLE>':'<VALUE>'})
+       >>> job.setExecutionEnv({'<MYVARIABLE>':'<VALUE>'})
 
        @param environmentDict: Environment variables
        @type environmentDict: dictionary
