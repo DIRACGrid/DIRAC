@@ -103,7 +103,7 @@ def convertTime(t, inTo = None):
 ############################
 
 from itertools import imap
-import copy, ast
+import copy, ast, socket
 
 id_fun = lambda x: x
 
@@ -114,6 +114,15 @@ def voimport(base_mod, voext):
     return  __import__(voext + base_mod, globals(), locals(), ['*'])
   except ImportError:
     return  __import__(base_mod, globals(), locals(), ['*'])
+
+# socket utils
+
+def canonicalURL(url):
+  try:
+    canonical = socket.gethostbyname_ex(url)[0]
+    return canonical
+  except socket.gaierror:
+    return url
 
 # RPC utils
 

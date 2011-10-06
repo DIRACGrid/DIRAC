@@ -2,8 +2,6 @@
 This module contains a class to synchronize the content of the DataBase with what is the CS
 """
 
-import socket
-
 from DIRAC                                           import gLogger, S_OK
 from DIRAC.Core.Utilities.SiteCEMapping              import getSiteCEMapping
 from DIRAC.Core.Utilities.SiteSEMapping              import getSiteSEMapping
@@ -11,7 +9,6 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName, getD
 
 from DIRAC.ResourceStatusSystem.Utilities.CS         import getSites, getSiteTier, getSENodes, getLFCSites, getLFCNode, getFTSSites, getVOMSEndpoints, getFTSEndpoint, getCEType, getStorageElements
 from DIRAC.ResourceStatusSystem.Utilities            import Utils
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 from DIRAC.Core.LCG.GOCDBClient                      import GOCDBClient
 
 class Synchronizer(object):
@@ -195,6 +192,10 @@ class Synchronizer(object):
     # CEs = Utils.list_flatten(siteCE.values())
     # CEs = [ce for ce in CEs if ce]
     # siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', ce )) for ce in CEs]
+    # siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(ce) ))
+    #                for ce in CEs if ce == []]
+    # siteInGOCDB = [s for s in siteInGOCDB if len(s) > 0]
+    # siteInGOCDB = [siteInGOCDB[0]['SITENAME'] for s in siteInGOCDB]
 
     for site in siteCE.keys():
       if site == 'LCG.Dummy.ch':
@@ -204,12 +205,7 @@ class Synchronizer(object):
           continue
         siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', ce ))
         if siteInGOCDB == []:
-          try:
-            trueName = socket.gethostbyname_ex( ce )[0]
-            siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName ))
-          except socket.gaierror:
-            gLogger.info( '%s returns socket.gaierror' % ce )
-            print '%s returns socket.gaierror' % ce
+          siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(ce) ))
         try:
           siteInGOCDB = siteInGOCDB[0]['SITENAME']
         except IndexError:
@@ -233,20 +229,14 @@ class Synchronizer(object):
 
     # SRMs
     for srm in SENodeList:
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm )
-      if not siteInGOCDB['OK']:
-        raise RSSException, siteInGOCDB['Message']
-      if siteInGOCDB['Value'] == []:
-        trueName = socket.gethostbyname_ex( srm )[0]
-        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName )
+      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
+      if siteInGOCDB == []:
+        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(srm) ))
       try:
-        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+        siteInGOCDB = siteInGOCDB[0]['SITENAME']
       except IndexError:
         continue
-      siteInDIRAC = getDIRACSiteName( siteInGOCDB )
-      if not siteInDIRAC['OK']:
-        raise RSSException, siteInDIRAC['Message']
-      sites = siteInDIRAC['Value']
+      sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
       serviceType = 'Storage'
       for site in sites:
         service = serviceType + '@' + site
@@ -257,26 +247,19 @@ class Synchronizer(object):
           servicesIn.append( service )
 
       if srm not in resourcesIn and srm is not None:
-
         self.rsClient.addOrModifyResource( srm, 'SE', serviceType, 'NULL', siteInGOCDB )
         resourcesIn.append( srm )
 
     # LFC_C
     for lfc in LFCNodeList_C:
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', lfc )
-      if not siteInGOCDB['OK']:
-        raise RSSException, siteInGOCDB['Message']
-      if siteInGOCDB['Value'] == []:
-        trueName = socket.gethostbyname_ex( lfc )[0]
-        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName )
+      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', lfc ))
+      if siteInGOCDB == []:
+        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(lfc) ))
       try:
-        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+        siteInGOCDB = siteInGOCDB[0]['SITENAME']
       except IndexError:
         continue
-      siteInDIRAC = getDIRACSiteName( siteInGOCDB )
-      if not siteInDIRAC['OK']:
-        raise RSSException, siteInDIRAC['Message']
-      sites = siteInDIRAC['Value']
+      sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
       serviceType = 'Storage'
       for site in sites:
         service = serviceType + '@' + site
@@ -292,20 +275,14 @@ class Synchronizer(object):
 
     # LFC_L
     for lfc in LFCNodeList_L:
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', lfc )
-      if not siteInGOCDB['OK']:
-        raise RSSException, siteInGOCDB['Message']
-      if siteInGOCDB['Value'] == []:
-        trueName = socket.gethostbyname_ex( lfc )[0]
-        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName )
+      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', lfc ))
+      if siteInGOCDB == []:
+        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(lfc) ))
       try:
-        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+        siteInGOCDB = siteInGOCDB[0]['SITENAME']
       except IndexError:
         continue
-      siteInDIRAC = getDIRACSiteName( siteInGOCDB )
-      if not siteInDIRAC['OK']:
-        raise RSSException, siteInDIRAC['Message']
-      sites = siteInDIRAC['Value']
+      sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
       serviceType = 'Storage'
       for site in sites:
         service = serviceType + '@' + site
@@ -322,20 +299,14 @@ class Synchronizer(object):
 
     # FTSs
     for fts in FTSNodeList:
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', fts )
-      if not siteInGOCDB['OK']:
-        raise RSSException, siteInGOCDB['Message']
-      if siteInGOCDB['Value'] == []:
-        trueName = socket.gethostbyname_ex( fts )[0]
-        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName )
+      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', fts ))
+      if siteInGOCDB == []:
+        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(fts) ))
       try:
-        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+        siteInGOCDB = siteInGOCDB[0]['SITENAME']
       except IndexError:
         continue
-      siteInDIRAC = getDIRACSiteName( siteInGOCDB )
-      if not siteInDIRAC['OK']:
-        raise RSSException, siteInDIRAC['Message']
-      sites = siteInDIRAC['Value']
+      sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
       serviceType = 'Storage'
       for site in sites:
         service = serviceType + '@' + site
@@ -350,20 +321,14 @@ class Synchronizer(object):
 
     # VOMSs
     for voms in VOMSNodeList:
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', voms )
-      if not siteInGOCDB['OK']:
-        raise RSSException, siteInGOCDB['Message']
-      if siteInGOCDB['Value'] == []:
-        trueName = socket.gethostbyname_ex( voms )[0]
-        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName )
+      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', voms ))
+      if siteInGOCDB == []:
+        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(voms) ))
       try:
-        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+        siteInGOCDB = siteInGOCDB[0]['SITENAME']
       except IndexError:
         continue
-      siteInDIRAC = getDIRACSiteName( siteInGOCDB )
-      if not siteInDIRAC['OK']:
-        raise RSSException, siteInDIRAC['Message']
-      site = siteInDIRAC['Value']
+      sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
       serviceType = 'VOMS'
       for site in sites:
         service = serviceType + '@' + site
@@ -379,27 +344,26 @@ class Synchronizer(object):
         resourcesIn.append( voms )
 
     #remove services no more in the CS
-    for ser in servicesIn:
-      if ser not in servicesList:
-        serType = ser.split( '@' )[0]
-        if serType != 'VO-BOX':
-          self.rsClient.deleteServices( ser )
+    for ser in set(servicesIn) - set(servicesList):
+      serType = ser.split( '@' )[0]
+      if serType != 'VO-BOX':
+        self.rsClient.deleteServices( ser )
           #resToBeDel = self.rsClient.getMonitoredsList('Resource', ['ResourceName'], serviceName = ser )
           #if resToBeDel[ 'OK' ]:
           #  for reToBeDel in resToBeDel[ 'Value' ]:
           #    self.rsClient.deleteResources( reToBeDel[ 0 ] )
-          try:
-            site = ser.split( '@' )[1]
-          except:
-            print ( ser,site )
+        try:
+          site = ser.split( '@' )[1]
+        except:
+          print ( ser,site )
 
-          if serType == 'Storage':
-            kwargs = { 'columns' : [ 'StorageElementName' ] }
-            sesToBeDel = self.rsClient.getStorageElementsPresent( gridSiteName = site, **kwargs )
+        if serType == 'Storage':
+          kwargs = { 'columns' : [ 'StorageElementName' ] }
+          sesToBeDel = self.rsClient.getStorageElementsPresent( gridSiteName = site, **kwargs )
             #sesToBeDel = self.rsClient.getMonitoredsList('StorageElement', ['StorageElementName'], gridSiteName = site )
-            if sesToBeDel[ 'OK' ]:
-              for seToBeDel in sesToBeDel[ 'Value' ]:
-                self.rsClient.deleteStorageElements( seToBeDel )
+          if sesToBeDel[ 'OK' ]:
+            for seToBeDel in sesToBeDel[ 'Value' ]:
+              self.rsClient.deleteStorageElements( seToBeDel )
 
 
 #############################################################################
