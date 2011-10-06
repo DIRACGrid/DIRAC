@@ -18,9 +18,14 @@ from DIRAC.Core.Security.X509Request import X509Request
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security import CS
+from DIRAC.Core.Security import Properties
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+
 
 class ProxyDB( DB ):
+
+  NOTIFICATION_TIMES = [ 2592000, 1296000 ]
 
   def __init__( self, requireVoms = False,
                useMyProxy = False,
@@ -33,6 +38,7 @@ class ProxyDB( DB ):
     self.__vomsRequired = requireVoms
     self.__useMyProxy = useMyProxy
     self._minSecsToAllowStore = 3600
+    self.__notifClient = NotificationClient()
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ] )
@@ -98,6 +104,15 @@ class ProxyDB( DB ):
                                                  },
                                       'PrimaryKey' : 'Token'
                                   }
+    if 'ProxyDB_ExpNotifs' not in tablesInDB:
+      tablesD[ 'ProxyDB_ExpNotifs' ] = { 'Fields' : { 'UserDN' : 'VARCHAR(255) NOT NULL',
+                                                      'UserGroup' : 'VARCHAR(255) NOT NULL',
+                                                      'LifeLimit' : 'INTEGER UNSIGNED DEFAULT 0',
+                                                      'ExpirationTime' : 'DATETIME NOT NULL',
+                                                    },
+                                         'PrimaryKey' : [ 'UserDN', 'UserGroup' ]
+                                       }
+
     return self._createTables( tablesD )
 
   def generateDelegationRequest( self, proxyChain, userDN ):
@@ -194,7 +209,7 @@ class ProxyDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     attr = retVal[ 'Value' ]
-    validVOMSAttr = CS.getVOMSAttributeForGroup( userGroup )
+    validVOMSAttr = Registry.getVOMSAttributeForGroup( userGroup )
     if len( attr ) == 0 or attr[0] == validVOMSAttr:
       return S_OK( 'OK' )
     msg = "VOMS attributes are not aligned with dirac group"
@@ -230,9 +245,9 @@ class ProxyDB( DB ):
       return retVal
     userGroup = retVal[ 'Value' ]
     if not userGroup:
-      userGroup = CS.getDefaultUserGroup()
+      userGroup = Registry.getDefaultUserGroup()
 
-    retVal = CS.getGroupsForDN( userDN )
+    retVal = Registry.getGroupsForDN( userDN )
     if not retVal[ 'OK' ]:
       return retVal
     if not userGroup in retVal[ 'Value' ]:
@@ -278,7 +293,7 @@ class ProxyDB( DB ):
       return retVal
     proxyGroup = retVal[ 'Value' ]
     if not proxyGroup:
-      proxyGroup = CS.getDefaultUserGroup()
+      proxyGroup = Registry.getDefaultUserGroup()
     if not userGroup == proxyGroup:
       msg = "Mismatch in the user group"
       vMsg = "Proxy says %s and credentials are %s" % ( proxyGroup, userGroup )
@@ -322,12 +337,21 @@ class ProxyDB( DB ):
     self.logAction( "store proxy", userDN, userGroup, userDN, userGroup )
     return self._update( cmd )
 
-  def purgeExpiredProxies( self ):
+  def purgeExpiredProxies( self, sendNotifications = True ):
     """
     Purge expired requests from the db
     """
-    cmd = "DELETE FROM `ProxyDB_Proxies` WHERE ExpirationTime < UTC_TIMESTAMP() and PersistentFlag = 'False'"
-    return self._update( cmd )
+    cmd = "DELETE FROM `ProxyDB_Proxies` WHERE ExpirationTime < UTC_TIMESTAMP()"
+    result = self._update( cmd )
+    if not result[ 'OK' ]:
+      return result
+    purged = result[ 'Value' ]
+    if sendNotifications:
+      result = self.sendExpirationNotifications()
+      if not result[ 'OK' ]:
+        return result
+    return S_OK( purged )
+
 
   def deleteProxy( self, userDN, userGroup ):
     """ Remove proxy of the given user from the repository
@@ -452,13 +476,13 @@ class ProxyDB( DB ):
   def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
 
     if requiredVOMSAttribute:
-      return S_OK( { 'attribute' : requiredVOMSAttribute, 'VOMSVO' : CS.getVOMSVOForGroup( userGroup ) } )
+      return S_OK( { 'attribute' : requiredVOMSAttribute, 'VOMSVO' : Registry.getVOMSVOForGroup( userGroup ) } )
 
-    csVOMSMapping = CS.getVOMSAttributeForGroup( userGroup )
+    csVOMSMapping = Registry.getVOMSAttributeForGroup( userGroup )
     if not csVOMSMapping:
       return S_ERROR( "No mapping defined for group %s in the CS" % userGroup )
 
-    return S_OK( { 'attribute' : csVOMSMapping, 'VOMSVO' : CS.getVOMSVOForGroup( userGroup ) } )
+    return S_OK( { 'attribute' : csVOMSMapping, 'VOMSVO' : Registry.getVOMSVOForGroup( userGroup ) } )
 
   def getVOMSProxy( self, userDN, userGroup, requiredLifeTime = False, requestedVOMSAttr = False ):
     """ Get proxy string from the Proxy Repository for use with userDN
@@ -772,3 +796,95 @@ class ProxyDB( DB ):
     if not result[ 'OK' ]:
       return result
     return S_OK( result[ 'Value' ] > 0 )
+
+  def __cleanExpNotifs( self ):
+    cmd = "DELETE FROM `ProxyDB_ExpNotifs` WHERE ExpirationTime < UTC_TIMESTAMP()"
+    return self._update( cmd )
+
+  def sendExpirationNotifications( self ):
+    result = self.__cleanExpNotifs()
+    if not result[ 'OK' ]:
+      return result
+    cmd = "SELECT UserDN, UserGroup, LifeLimit FROM `ProxyDB_ExpNotifs`"
+    result = self._query( cmd )
+    if not result[ 'OK' ]:
+      return result
+    notifDone = dict( [ ( ( row[0], row[1] ), row[2] ) for row in result[ 'Value' ] ] )
+    notifLimits = sorted( [ int( x ) for x in self.getCSOption( "NotificationTimes", ProxyDB.NOTIFICATION_TIMES ) ] )
+    sqlSel = "UserDN, UserGroup, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime )"
+    sqlCond = "TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) < %d" % max( notifLimits )
+    cmd = "SELECT %s FROM `ProxyDB_Proxies` WHERE %s" % ( sqlSel, sqlCond )
+    result = self._query( cmd )
+    if not result[ 'OK' ]:
+      return result
+    pilotProps = ( Properties.GENERIC_PILOT, Properties.PILOT )
+    data = result[ 'Value' ]
+    sent = []
+    for row in data:
+      userDN, group, lTime = row
+      #If it's a pilot proxy, skip it
+      if Registry.groupHasProperties( group, pilotProps ):
+        continue
+      notKey = ( userDN, group )
+      for notifLimit in notifLimits:
+        if notifLimit < lTime:
+          #Not yet in this notification limit
+          continue
+        if notKey in notifDone and notifDone[ notKey ] <= notifLimit:
+          #Already notified for this notification limit
+          break
+        if not self.__notifyProxyAboutToExpire( userDN, group, lTime, notifLimit ):
+          #Cannot send notification, retry later
+          break
+        if notKey not in notifDone:
+          values = "( '%s', '%s', %d, TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN, group, notifLimit, lTime )
+          cmd = "INSERT INTO `ProxyDB_ExpNotifs` ( UserDN, UserGroup, LifeLimit, ExpirationTime ) VALUES %s" % values
+          result = self._update( cmd )
+          if not result[ 'OK' ]:
+            gLogger.error( "Could not mark notification as sent", result[ 'Message' ] )
+        else:
+          values = "LifeLimit = %d, ExpirationTime = TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % ( notifLimit, lTime )
+          cmd = "UPDATE `ProxyDB_ExpNotifs` SET %s WHERE UserDN = '%s' AND UserGroup = '%s'" % ( values, userDN, group )
+          result = self._update( cmd )
+          if not result[ 'OK' ]:
+            gLogger.error( "Could not mark notification as sent", result[ 'Message' ] )
+        sent.append( ( userDN, group, lTime ) )
+        notifDone[ notKey ] = notifLimit
+    return S_OK( sent )
+
+  def __notifyProxyAboutToExpire( self, userDN, userGroup, lTime, notifLimit ):
+    result = Registry.getUsernameForDN( userDN )
+    if not result[ 'OK' ]:
+      return False
+    userName = result[ 'Value' ]
+    userEMail = Registry.getUserOption( userName, "Email", "" )
+    if not userEMail:
+      gLogger.error( "Could not discover %s's email" % userName )
+      return False
+    daysLeft = int( lTime / 86400 )
+    msgSubject = "Your proxy uploaded to DIRAC will expire in %d days" % daysLeft
+    msgBody = """\
+Dear %s,
+
+  The proxy you uploaded to DIRAC will expire in aproximately %d days. The proxy 
+  information is:
+  
+  DN:    %s
+  Group: %s 
+  
+  If you plan on keep using this credentials please upload a newer proxy to 
+  DIRAC by executing:
+  
+  $ dirac-proxy-info -UP -g %s
+  
+  If you have been issued different certificate, please make sure you have a 
+  proxy uploaded with that certificate.
+  
+Cheers,
+ DIRAC's Proxy Manager
+""" % ( userName, daysLeft, userDN, userGroup, userGroup )
+    result = self.__notifClient.sendMail( userEMail, msgSubject, msgBody, fromAddress = 'proxymanager@diracgrid.org' )
+    if not result[ 'OK' ]:
+      gLogger.error( "Could not send email", result[ 'Message' ] )
+      return False
+    return True
