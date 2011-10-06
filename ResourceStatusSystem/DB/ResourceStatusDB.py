@@ -7,7 +7,7 @@ from datetime import datetime
 
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidStatusTypes
 
@@ -15,34 +15,6 @@ from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
 from DIRAC.ResourceStatusSystem.Utilities.Validator import ResourceStatusValidator
 
 from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution
-
-################################################################################
-
-class RSSDBException( RSSException ):
-  """
-  DB exception
-  """
-
-  def __init__( self, message = "" ):
-    self.message = message
-    RSSException.__init__( self, message )
-
-  def __str__( self ):
-    return "Exception in the RSS DB: " + repr( self.message )
-
-################################################################################
-
-class NotAllowedDate( RSSException ):
-  """
-  Exception that signals a not allowed date
-  """
-
-  def __init__( self, message = "" ):
-    self.message = message
-    RSSException.__init__( self, message )
-
-  def __str__( self ):
-    return "Not allowed date in the RSS DB: " + repr( self.message )
         
 ################################################################################
 
@@ -525,12 +497,14 @@ class ResourceStatusDB:
     
     # START VALIDATION #
     self.rsVal.validateRes( element )
+    self.rsVal.validateDates(rDict)
     # END VALIDATION #    
     self.__deleteElementRow( '%sHistory' % element, rDict, **kwargs )
     
   def __deleteElementsScheduledStatus( self, element, rDict ):
     # START VALIDATION #
     self.rsVal.validateRes( element )
+    self.rsVal.validateDates(rDict)
     # END VALIDATION #    
     self.__deleteElementRow( '%sScheduledStatus' % element, rDict)
     
@@ -667,11 +641,7 @@ class ResourceStatusDB:
     
     # START VALIDATION #
     self.rsVal.validateServiceType( serviceType )
-    
-#    site = self.__getElementRow( 'Site', { 'SiteName' : siteName }, 'SiteName' )
-#    if not site[ 'Value' ]:
-#      message = '"%s" is not a known siteName' % siteName
-#      raise RSSDBException, where( self, self.addOrModifyService ) + message
+    self.rsVal.validateSite( siteName )
     # END VALIDATION #    
     
     self.__addOrModifyElement( 'Service', rDict)
