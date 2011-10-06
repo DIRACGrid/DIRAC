@@ -16,6 +16,34 @@ class RSSException(Exception):
 
 ################################################################################
 
+class RSSDBException( RSSException ):
+  """
+  DB exception
+  """
+
+  def __init__( self, message = "" ):
+    self.message = message
+    RSSException.__init__( self, message )
+
+  def __str__( self ):
+    return "Exception in the RSS DB: " + repr( self.message )
+
+################################################################################
+
+class NotAllowedDate( RSSException ):
+  """
+  Exception that signals a not allowed date
+  """
+
+  def __init__( self, message = "" ):
+    self.message = message
+    RSSException.__init__( self, message )
+
+  def __str__( self ):
+    return "Not allowed date in the RSS DB: " + repr( self.message )
+
+################################################################################
+
 class InvalidRes(RSSException):
   def __init__(self, message = ""):
     self.message = message
