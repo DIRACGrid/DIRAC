@@ -115,6 +115,21 @@ def voimport(base_mod, voext):
   except ImportError:
     return  __import__(base_mod, globals(), locals(), ['*'])
 
+# RPC utils
+
+class RPCError(Exception):
+  pass
+
+def unpack(dirac_value):
+  if type(dirac_value) != dict:
+    raise ValueError, "Not a DIRAC value."
+  if 'OK' not in dirac_value.keys():
+    raise ValueError, "Not a DIRAC value."
+  try:
+    return dirac_value['Value']
+  except KeyError:
+    raise RPCError, dirac_value['Message']
+
 # (Duck) type checking
 
 def isiterable(obj):
@@ -177,11 +192,7 @@ def list_combine(l1, l2):
   return list(imap(lambda x,y: (x,y), l1, l2))
 
 def list_flatten(l):
-  res = []
-  for e in l:
-    for ee in e:
-      res.append(ee)
-  return res
+  return [ee for e in l for ee in e]
 
 # Dict utils
 

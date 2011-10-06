@@ -5,16 +5,16 @@ DIRAC.ResourceStatusSystem package
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
 
-__gencfg            = CS.getTypedDictRootedAt( "GeneralConfig" )
+gencfg            = CS.getTypedDictRootedAt( "GeneralConfig" )
 
-ValidRes          = __gencfg[ 'Resources' ].keys()
-ValidStatus       = __gencfg[ 'Status' ]
-ValidStatusTypes  = __gencfg[ 'Resources' ]
-ValidPolicyResult = __gencfg[ 'PolicyResult' ] + __gencfg[ 'Status' ]
-ValidSiteType     = __gencfg[ 'SiteType' ]
-ValidServiceType  = __gencfg[ 'ServiceType' ]
-ValidResourceType = __gencfg[ 'ResourceType' ]
-PolicyTypes       = __gencfg[ 'PolicyTypes' ]
+ValidRes          = gencfg[ 'Resources' ].keys()
+ValidStatus       = gencfg[ 'Status' ]
+ValidStatusTypes  = gencfg[ 'Resources' ]
+ValidPolicyResult = gencfg[ 'PolicyResult' ] + gencfg[ 'Status' ]
+ValidSiteType     = gencfg[ 'SiteType' ]
+ValidServiceType  = gencfg[ 'ServiceType' ]
+ValidResourceType = gencfg[ 'ResourceType' ]
+PolicyTypes       = gencfg[ 'PolicyTypes' ]
 
 CheckingFreqs     = CS.getTypedDictRootedAt("CheckingFreqs")
 
@@ -28,4 +28,3 @@ views_panels = {
   'Resource' : ['Resource_Panel'],
   'StorageElement' : ['SE_Panel']
 }
-

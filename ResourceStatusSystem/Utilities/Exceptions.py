@@ -6,18 +6,7 @@
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
     ValidServiceType, ValidResourceType, PolicyTypes
 
-def unpack(dirac_value):
-  if type(dirac_value) != dict:
-    raise ValueError, "Not a DIRAC value."
-  if 'OK' not in dirac_value.keys():
-    raise ValueError, "Not a DIRAC value."
-  try:
-    return dirac_value['Value']
-  except KeyError:
-    raise RSSException, dirac_value['Message']
-
 class RSSException(Exception):
-
   def __init__(self, message = ""):
     self.message = message
     Exception.__init__(self, message)
@@ -28,7 +17,6 @@ class RSSException(Exception):
 ################################################################################
 
 class InvalidRes(RSSException):
-
   def __init__(self, message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -39,7 +27,6 @@ class InvalidRes(RSSException):
 ################################################################################
 
 class InvalidStatus(RSSException):
-
   def __init__(self, message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -50,7 +37,6 @@ class InvalidStatus(RSSException):
 ################################################################################
 
 class InvalidSiteType(RSSException):
-
   def __init__(self, message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -61,7 +47,6 @@ class InvalidSiteType(RSSException):
 ################################################################################
 
 class InvalidServiceType(RSSException):
-
   def __init__(self, message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -72,7 +57,6 @@ class InvalidServiceType(RSSException):
 ################################################################################
 
 class InvalidResourceType(RSSException):
-
   def __init__(self, message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -83,7 +67,6 @@ class InvalidResourceType(RSSException):
 ################################################################################
 
 class InvalidPolicyType(RSSException):
-
   def __init__(self, message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -94,7 +77,6 @@ class InvalidPolicyType(RSSException):
 ################################################################################
 
 class InvalidStateValueDict(RSSException):
-
   def __init__(self,  message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -105,7 +87,6 @@ class InvalidStateValueDict(RSSException):
 ################################################################################
 
 class InvalidSite(RSSException):
-
   def __init__(self,  message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -116,7 +97,6 @@ class InvalidSite(RSSException):
 ################################################################################
 
 class InvalidGridSite(RSSException):
-
   def __init__(self,  message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -127,7 +107,6 @@ class InvalidGridSite(RSSException):
 ################################################################################
 
 class InvalidDate(RSSException):
-
   def __init__(self,  message = ""):
     self.message = message
     RSSException.__init__(self, message)
@@ -138,7 +117,6 @@ class InvalidDate(RSSException):
 ################################################################################
 
 class InvalidFormat(RSSException):
-
   def __init__(self,  message = ""):
     self.message = message
     RSSException.__init__(self, message)

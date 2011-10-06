@@ -4,18 +4,15 @@ This module contains a class to synchronize the content of the DataBase with wha
 
 import socket
 
-#import datetime
+from DIRAC                                           import gLogger, S_OK
+from DIRAC.Core.Utilities.SiteCEMapping              import getSiteCEMapping
+from DIRAC.Core.Utilities.SiteSEMapping              import getSiteSEMapping
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName, getDIRACSiteName
 
-from DIRAC import gLogger, S_OK
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
-from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRACSiteName
-
-from DIRAC.ResourceStatusSystem.Utilities.CS import getSites, getSiteTier, getSENodes, getLFCSites, getLFCNode, getFTSSites, getVOMSEndpoints, getFTSEndpoint, getCEType, getStorageElements
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException, unpack
-#from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import RSSDBException
-#from DIRAC.ResourceStatusSystem import ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
-from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
+from DIRAC.ResourceStatusSystem.Utilities.CS         import getSites, getSiteTier, getSENodes, getLFCSites, getLFCNode, getFTSSites, getVOMSEndpoints, getFTSEndpoint, getCEType, getStorageElements
+from DIRAC.ResourceStatusSystem.Utilities            import Utils
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.Core.LCG.GOCDBClient                      import GOCDBClient
 
 class Synchronizer(object):
 
@@ -63,14 +60,14 @@ class Synchronizer(object):
     Sync DB content with sites that are in the CS
     """
     def getGOCTier(sitesList):
-      return "T" + str(min([int(v) for v in unpack(getSiteTier(sitesList))]))
+      return "T" + str(min([int(v) for v in Utils.unpack(getSiteTier(sitesList))]))
 
     # sites in the DB now
-    sitesDB = unpack(self.rsClient.getSites())
+    sitesDB = Utils.unpack(self.rsClient.getSites())
     sitesDB = [s[0] for s in sitesDB]
 
     # sites in CS now
-    sitesCS = unpack(getSites())
+    sitesCS = Utils.unpack(getSites())
 
     # remove sites from the DB that are not in the CS
     sitesToDelete = set(sitesDB) - set(sitesCS)
@@ -80,13 +77,13 @@ class Synchronizer(object):
     # add to DB what is missing
     for site in set(sitesCS) - set(sitesDB):
       # DIRAC Tier
-      tier = "T" + str(unpack(getSiteTier( site )))
+      tier = "T" + str(Utils.unpack(getSiteTier( site )))
 
       # Grid Name of the site
-      gridSiteName = unpack(getGOCSiteName(site))
+      gridSiteName = Utils.unpack(getGOCSiteName(site))
 
       # Grid Tier (with a workaround!)
-      DIRACSitesOfGridSites = unpack(getDIRACSiteName(gridSiteName))
+      DIRACSitesOfGridSites = Utils.unpack(getDIRACSiteName(gridSiteName))
       if len( DIRACSitesOfGridSites ) == 1:
         gt = tier
       else:
@@ -134,39 +131,29 @@ class Synchronizer(object):
     servicesIn = [s[0] for s in servicesIn]
 
     # Site-CE mapping in CS now
-    siteCE = getSiteCEMapping( 'LCG' )['Value']
+    siteCE = Utils.unpack(getSiteCEMapping( 'LCG' ))
     # Site-SE mapping in CS now
-    siteSE = getSiteSEMapping( 'LCG' )['Value']
+    siteSE = Utils.unpack(getSiteSEMapping( 'LCG' ))
 
     # CEs in CS now
-    CEList = []
-    for i in siteCE.values():
-      for ce in i:
-        if ce is None:
-          continue
-        CEList.append( ce )
+    # http://stackoverflow.com/questions/952914/making-a-flat-list-out-of-list-of-lists-in-python
+    CEList = [CE for celist in siteCE.values() for CE in celist] # [[a], [b]] -> [a, b], super fast
 
     # SEs in CS now
-    SEList = []
-    for i in siteSE.values():
-      for x in i:
-        SEList.append( x )
+    SEList = [SE for selist in siteSE.values() for SE in selist]
 
     # SE Nodes in CS now
-    SENodeList = []
-    for SE in SEList:
-      node = unpack(getSENodes( SE ))
-      if node is None:
-        continue
-      if node not in SENodeList:
-        SENodeList.append( node )
+    SENodeList = [Utils.unpack(getSENodes( SE )) for SE in SEList]
+    SENodeList = [n for n in SENodeList if n]                # Filter out None results
+    SENodeList = list(set(SENodeList))                       # Filter out doublons
 
     # LFC Nodes in CS now
+    # FIXME: Refactor.
     LFCNodeList_L = []
     LFCNodeList_C = []
-    for site in getLFCSites()['Value']:
+    for site in Utils.unpack(getLFCSites()):
       for readable in ( 'ReadOnly', 'ReadWrite' ):
-        LFCNode = getLFCNode( site, readable )['Value']
+        LFCNode = Utils.unpack(getLFCNode( site, readable ))
         if LFCNode is None or LFCNode == []:
           continue
         LFCNode = LFCNode[0]
@@ -178,19 +165,13 @@ class Synchronizer(object):
             LFCNodeList_L.append( LFCNode )
 
     # FTS Nodes in CS now
-    FTSNodeList = []
-    sitesWithFTS = getFTSSites()
-    for site in sitesWithFTS['Value']:
-      fts = getFTSEndpoint( site )['Value']
-      if fts is None or fts == []:
-        continue
-      fts = fts[0]
-      if fts not in FTSNodeList:
-        FTSNodeList.append( fts )
+    FTSNodeList = Utils.unpack(getFTSSites())
+    FTSNodeList = [Utils.unpack(getFTSEndpoint(site)) for site in FTSNodeList]
+    FTSNodeList = [e for e in FTSNodeList if e]
+    FTSNodeList = [e[0] for e in FTSNodeList]
 
     # VOMS Nodes in CS now
-    VOMSNodeList = getVOMSEndpoints()['Value']
-
+    VOMSNodeList = Utils.unpack(getVOMSEndpoints())
 
     # complete list of resources in CS now
     resourcesList = CEList + SENodeList + LFCNodeList_L + LFCNodeList_C + FTSNodeList + VOMSNodeList
@@ -199,37 +180,38 @@ class Synchronizer(object):
     servicesList = []
 
     #remove resources no more in the CS
-    for res in resourcesIn:
-      if res not in resourcesList:
-        self.rsClient.deleteResources( res )
-        kwargs = { 'columns' : [ 'StorageElementName' ] }
-        sesToBeDel = self.rsClient.getStorageElementsPresent( resourceName = res, **kwargs )
-        #sesToBeDel = self.rsClient.getMonitoredsList( 'StorageElement', ['StorageElementName'], resourceName = res )
-        if sesToBeDel[ 'OK' ]:
-          for seToBeDel in sesToBeDel[ 'Value' ]:
-            self.rsClient.deleteStorageElements( seToBeDel[ 0 ] )
+    for res in set(resourcesIn) - set(resourcesList):
+      self.rsClient.deleteResources( res )
+      kwargs = { 'columns' : [ 'StorageElementName' ] }
+      sesToBeDel = self.rsClient.getStorageElementsPresent( resourceName = res, **kwargs )
+     #sesToBeDel = self.rsClient.getMonitoredsList( 'StorageElement', ['StorageElementName'], resourceName = res )
+      if sesToBeDel[ 'OK' ]:
+        for seToBeDel in sesToBeDel[ 'Value' ]:
+          self.rsClient.deleteStorageElements( seToBeDel[ 0 ] )
 
     # add to DB what is in CS now and wasn't before
 
     # CEs
+    # CEs = Utils.list_flatten(siteCE.values())
+    # CEs = [ce for ce in CEs if ce]
+    # siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', ce )) for ce in CEs]
+
     for site in siteCE.keys():
       if site == 'LCG.Dummy.ch':
         continue
       for ce in siteCE[site]:
         if ce is None:
           continue
-        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', ce )
-        if not siteInGOCDB['OK']:
-          raise RSSException, siteInGOCDB['Message']
-        if siteInGOCDB['Value'] == []:
+        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', ce ))
+        if siteInGOCDB == []:
           try:
             trueName = socket.gethostbyname_ex( ce )[0]
-            siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName )
+            siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', trueName ))
           except socket.gaierror:
-            gLogger.info( '%s returns socket.gaiaerror' % ce )
-            print '%s returns socket.gaiaerror' % ce
+            gLogger.info( '%s returns socket.gaierror' % ce )
+            print '%s returns socket.gaierror' % ce
         try:
-          siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+          siteInGOCDB = siteInGOCDB[0]['SITENAME']
         except IndexError:
           continue
         serviceType = 'Computing'
@@ -425,7 +407,7 @@ class Synchronizer(object):
   def _syncStorageElements( self ):
 
     # Get StorageElements from the CS
-    CSSEs = unpack(getStorageElements())
+    CSSEs = Utils.unpack(getStorageElements())
 
     kwargs = { 'columns' : [ 'StorageElementName' ] }
     DBSEs = self.rsClient.getStorageElementsPresent( **kwargs )
@@ -443,19 +425,16 @@ class Synchronizer(object):
 
     # Add new storage Elements
     for SE in CSSEs:
-      srm = unpack(getSENodes( SE ))
+      srm = Utils.unpack(getSENodes( SE ))
       if srm == None:
         continue
-      siteInGOCDB = unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
+      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
       if siteInGOCDB == []: continue
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
 
       if SE not in DBSEs:
         self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
         DBSEs.append( SE )
-
-#############################################################################
-
 
 #############################################################################
 
