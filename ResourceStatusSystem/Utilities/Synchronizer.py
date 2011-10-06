@@ -113,7 +113,16 @@ class Synchronizer(object):
 
 #############################################################################
 
+  def __updateService(self, site, type_, servicesList, servicesIn):
+    service = type_ + '@' + site
+    if service not in servicesList:
+      servicesList.append( service )
+    if service not in servicesIn:
+      self.rsClient.addOrModifyService( service, type_, site )
+      servicesIn.append( service )
+
   def _syncResources( self ):
+    gLogger.info("Starting sync of Resources")
 
     # resources in the DB now
     #resourcesIn = self.rsClient.getMonitoredsList( 'Resource', paramsList = ['ResourceName'] )
@@ -197,6 +206,7 @@ class Synchronizer(object):
     # siteInGOCDB = [s for s in siteInGOCDB if len(s) > 0]
     # siteInGOCDB = [siteInGOCDB[0]['SITENAME'] for s in siteInGOCDB]
 
+    gLogger.info("Syncing CEs")
     for site in siteCE.keys():
       if site == 'LCG.Dummy.ch':
         continue
@@ -210,45 +220,34 @@ class Synchronizer(object):
           siteInGOCDB = siteInGOCDB[0]['SITENAME']
         except IndexError:
           continue
-        serviceType = 'Computing'
-        service = serviceType + '@' + site
-
-        if service not in servicesList:
-          servicesList.append( service )
-        if service not in servicesIn:
-          self.rsClient.addOrModifyService( service, serviceType, site )
-          servicesIn.append( service )
+        self.__updateService(site, "Computing", servicesList, servicesIn)
 
         if ce not in resourcesIn:
-          CEType = getCEType( site, ce )['Value']
+          CEType = Utils.unpack(getCEType( site, ce ))
           ceType = 'CE'
           if CEType == 'CREAM':
             ceType = 'CREAMCE'
-          self.rsClient.addOrModifyResource( ce, ceType, serviceType, site, siteInGOCDB )
+          self.rsClient.addOrModifyResource( ce, ceType, "Computing", site, siteInGOCDB )
           resourcesIn.append( ce )
 
-    # SRMs
-    for srm in SENodeList:
-      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
-      if siteInGOCDB == []:
-        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(srm) ))
-      try:
-        siteInGOCDB = siteInGOCDB[0]['SITENAME']
-      except IndexError:
-        continue
-      sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
-      serviceType = 'Storage'
-      for site in sites:
-        service = serviceType + '@' + site
-        if service not in servicesList:
-          servicesList.append( service )
-        if service not in servicesIn:
-          self.rsClient.addOrModifyService( service, serviceType, site )
-          servicesIn.append( service )
+    # Add SRMs to Services on DB #################
+    gLogger.info("Syncing SRMs")
+    siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
+                   for srm in SENodeList]
+    siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(srm) ))
+                   for srm in siteInGOCDB if srm == []]
+    siteInGOCDB = [s for s in siteInGOCDB if len(s) > 0]
+    siteInGOCDB = [s[0]['SITENAME'] for s in siteInGOCDB]
+    sites       = [Utils.unpack(getDIRACSiteName( s )) for s in siteInGOCDB]
+    for site in sites:
+      self.__updateService(site, 'Storage', servicesList, servicesIn)
 
-      if srm not in resourcesIn and srm is not None:
-        self.rsClient.addOrModifyResource( srm, 'SE', serviceType, 'NULL', siteInGOCDB )
+    # Add SRM to Resources on DB #################
+    def addSRMTODB(srm, resourcesIn):
+      if srm and srm not in resourcesIn:
+        self.rsClient.addOrModifyResource( srm, 'SE', "Storage", 'NULL', siteInGOCDB )
         resourcesIn.append( srm )
+    _ = [addSRMTODB(srm, resourcesIn) for srm in SENodeList]
 
     # LFC_C
     for lfc in LFCNodeList_C:
@@ -260,17 +259,11 @@ class Synchronizer(object):
       except IndexError:
         continue
       sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
-      serviceType = 'Storage'
       for site in sites:
-        service = serviceType + '@' + site
-        if service not in servicesList:
-          servicesList.append( service )
-        if service not in servicesIn:
-          self.rsClient.addOrModifyService( service, serviceType, site )
-          servicesIn.append( service )
-      if lfc not in resourcesIn and lfc is not None:
+        self.__updateService(site, "Storage", servicesList, servicesIn)
 
-        self.rsClient.addOrModifyResource( lfc, 'LFC_C', serviceType, 'NULL', siteInGOCDB )
+      if lfc not in resourcesIn and lfc is not None:
+        self.rsClient.addOrModifyResource( lfc, 'LFC_C', "Storage", 'NULL', siteInGOCDB )
         resourcesIn.append( lfc )
 
     # LFC_L
@@ -283,19 +276,12 @@ class Synchronizer(object):
       except IndexError:
         continue
       sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
-      serviceType = 'Storage'
       for site in sites:
-        service = serviceType + '@' + site
-        if service not in servicesList:
-          servicesList.append( service )
-        if service not in servicesIn:
-          self.rsClient.addOrModifyService( service, serviceType, site )
-          servicesIn.append( service )
+        self.__updateService(site, "Storage", servicesList, servicesIn)
+
       if lfc not in resourcesIn and lfc is not None:
-
-        self.rsClient.addOrModifyResource( lfc, 'LFC_L', serviceType, 'NULL', siteInGOCDB )
+        self.rsClient.addOrModifyResource( lfc, 'LFC_L', "Storage", 'NULL', siteInGOCDB )
         resourcesIn.append( lfc )
-
 
     # FTSs
     for fts in FTSNodeList:
@@ -307,16 +293,11 @@ class Synchronizer(object):
       except IndexError:
         continue
       sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
-      serviceType = 'Storage'
       for site in sites:
-        service = serviceType + '@' + site
-        if service not in servicesList:
-          servicesList.append( service )
-        if service not in servicesIn:
-          self.rsClient.addOrModifyService( service, serviceType, site )
-          servicesIn.append( service )
+        self.__updateService(site, "Storage", servicesList, servicesIn)
+
       if fts not in resourcesIn and fts is not None:
-        self.rsClient.addOrModifyResource( fts, 'FTS', serviceType, 'NULL', siteInGOCDB )
+        self.rsClient.addOrModifyResource( fts, 'FTS', "Storage", 'NULL', siteInGOCDB )
         resourcesIn.append( fts )
 
     # VOMSs
@@ -329,18 +310,11 @@ class Synchronizer(object):
       except IndexError:
         continue
       sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
-      serviceType = 'VOMS'
       for site in sites:
-        service = serviceType + '@' + site
-        if service not in servicesList:
-          servicesList.append( service )
-        if service not in servicesIn:
-          self.rsClient.addOrModifyService( service, serviceType, site )
-          servicesIn.append( service )
+        self.__updateService(site, "VOMS", servicesList, servicesIn)
 
       if voms not in resourcesIn and voms is not None:
-
-        self.rsClient.addOrModifyResource( voms, 'VOMS', serviceType, 'NULL', siteInGOCDB )
+        self.rsClient.addOrModifyResource( voms, 'VOMS', "VOMS", 'NULL', siteInGOCDB )
         resourcesIn.append( voms )
 
     #remove services no more in the CS
