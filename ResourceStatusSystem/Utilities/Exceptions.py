@@ -30,20 +30,6 @@ class RSSDBException( RSSException ):
 
 ################################################################################
 
-class NotAllowedDate( RSSException ):
-  """
-  Exception that signals a not allowed date
-  """
-
-  def __init__( self, message = "" ):
-    self.message = message
-    RSSException.__init__( self, message )
-
-  def __str__( self ):
-    return "Not allowed date in the RSS DB: " + repr( self.message )
-
-################################################################################
-
 class InvalidRes(RSSException):
   def __init__(self, message = ""):
     self.message = message
@@ -51,6 +37,16 @@ class InvalidRes(RSSException):
 
   def __str__(self):
     return "Invalid resource type: \nshould be in " + repr(ValidRes) + repr(self.message)
+
+################################################################################
+
+class InvalidName(RSSException):
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+
+  def __str__(self):
+    return "Invalid name" + repr(self.message)
 
 ################################################################################
 
@@ -64,13 +60,23 @@ class InvalidStatus(RSSException):
 
 ################################################################################
 
+class InvalidGridSiteType(RSSException):
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+
+  def __str__(self):
+    return "Invalid grid site type: \nshould be in " + repr(ValidSiteType) + repr(self.message)
+  
+################################################################################
+
 class InvalidSiteType(RSSException):
   def __init__(self, message = ""):
     self.message = message
     RSSException.__init__(self, message)
 
   def __str__(self):
-    return "Invalid resource type: \nshould be in " + repr(ValidSiteType) + repr(self.message)
+    return "Invalid site type: \nshould be in " + repr(ValidSiteType) + repr(self.message)
 
 ################################################################################
 
@@ -131,6 +137,16 @@ class InvalidGridSite(RSSException):
 
   def __str__(self):
     return "Invalid GridSite. " + repr(self.message)
+
+################################################################################
+
+class InvalidResource(RSSException):
+  def __init__(self,  message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+
+  def __str__(self):
+    return "Invalid Resource. " + repr(self.message)
 
 ################################################################################
 
