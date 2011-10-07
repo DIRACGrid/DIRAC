@@ -126,23 +126,22 @@ class ResourceStatusClient:
     pass
   
   @ClientExecution  
-  def setServiceStatus( self, serviceName, statusType, status, reason, tokenOwner, 
-                        tokenExpiration = None, dateCreated = None, dateEffective = None, 
-                        dateEnd = None, lastCheckTime = None ):
+  def setServiceStatus( self, serviceName, statusType, status, reason, 
+                        dateCreated = None, dateEffective = None, dateEnd = None, 
+                        lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
     pass
    
   @ClientExecution  
   def setServiceScheduledStatus( self, serviceName, statusType, status, reason, 
-                                 tokenOwner, tokenExpiration = None, dateCreated = None, 
-                                 dateEffective = None, dateEnd = None, 
-                                 lastCheckTime = None ):
+                                 dateCreated = None, dateEffective = None, dateEnd = None, 
+                                 lastCheckTime = None, tokenOwner = None, tokenExpiration = None  ):
     pass
   
   @ClientExecution  
   def updateServiceStatus( self, serviceName, statusType = None, status = None, 
-                           reason = None, tokenOwner = None, tokenExpiration = None, 
-                           dateCreated = None, dateEffective = None, dateEnd = None, 
-                           lastCheckTime = None ):
+                           reason = None, dateCreated = None, dateEffective = None, 
+                           dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                           tokenExpiration = None ):
     pass
   
   @ClientExecution
@@ -152,24 +151,23 @@ class ResourceStatusClient:
   
   @ClientExecution  
   def getServicesStatus( self, serviceName = None, statusType = None, status = None, 
-                         reason = None, tokenOwner = None, tokenExpiration = None, 
-                         dateCreated = None, dateEffective = None, dateEnd = None, 
-                         lastCheckTime = None, **kwargs ):
+                         reason = None, dateCreated = None, dateEffective = None, 
+                         dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                         tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution  
   def getServicesHistory( self, serviceName = None, statusType = None, status = None, 
-                          reason = None, tokenOwner = None, tokenExpiration = None, 
-                          dateCreated = None, dateEffective = None, dateEnd = None, 
-                          lastCheckTime = None, **kwargs ):
+                          reason = None, dateCreated = None, dateEffective = None, 
+                          dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                          tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution  
   def getServicesScheduledStatus( self, serviceName = None, statusType = None, 
-                                 status = None, reason = None, tokenOwner = None, 
-                                 tokenExpiration = None, dateCreated = None, 
-                                 dateEffective = None, dateEnd = None, 
-                                 lastCheckTime = None, **kwargs ):
+                                 status = None, reason = None, dateCreated = None, 
+                                 dateEffective = None, dateEnd = None, lastCheckTime = None, 
+                                 tokenOwner = None, tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution  
@@ -186,17 +184,17 @@ class ResourceStatusClient:
   
   @ClientExecution  
   def deleteServicesScheduledStatus( self, serviceName = None, statusType = None, 
-                                     status = None, reason = None, tokenOwner = None, 
-                                     tokenExpiration = None, dateCreated = None, 
+                                     status = None, reason = None, dateCreated = None, 
                                      dateEffective = None, dateEnd = None, 
-                                     lastCheckTime = None):
+                                     lastCheckTime = None, tokenOwner = None, 
+                                     tokenExpiration = None, **kwargs):
     pass
   
   @ClientExecution  
   def deleteServicesHistory( self, serviceName = None, statusType = None, status = None, 
-                          reason = None, tokenOwner = None, tokenExpiration = None, 
-                          dateCreated = None, dateEffective = None, dateEnd = None, 
-                          lastCheckTime = None, **kwargs ):                                              
+                            reason = None, dateCreated = None, dateEffective = None, 
+                            dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                            tokenExpiration = None, **kwargs ):                                              
     pass
   
 ################################################################################
@@ -213,48 +211,49 @@ class ResourceStatusClient:
     pass
   
   @ClientExecution      
-  def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
-                         tokenExpiration = None, dateCreated = None, 
-                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
+  def setResourceStatus( self, resourceName, statusType, status, reason,  dateCreated = None, 
+                         dateEffective = None, dateEnd = None, lastCheckTime = None,
+                         tokenOwner = None, tokenExpiration = None ):
     pass
   
   @ClientExecution      
   def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
-                                  tokenOwner, tokenExpiration = None, dateCreated = None, 
-                                  dateEffective = None, dateEnd = None, lastCheckTime = None ):
+                                  dateCreated = None, dateEffective = None, dateEnd = None, 
+                                  lastCheckTime = None, tokenOwner = None, 
+                                  tokenExpiration = None ):
     pass
   
   @ClientExecution          
-  def updateResourceStatus( self, resourceName, statusType = None, status = None, reason = None, 
-                         tokenOwner = None, tokenExpiration = None, dateCreated = None, 
-                         dateEffective = None, dateEnd = None, lastCheckTime = None ):
+  def updateResourceStatus( self, resourceName, statusType = None, status = None, 
+                            reason = None, dateCreated = None, dateEffective = None, 
+                            dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                            tokenExpiration = None ):
     pass
   
   @ClientExecution      
-  def getResources( self, resourceName = None, resourceType = None, 
-                    serviceType = None, siteName = None, gridSiteName = None, 
-                    **kwargs ):
+  def getResources( self, resourceName = None, resourceType = None, serviceType = None, 
+                    siteName = None, gridSiteName = None, **kwargs ):
     pass
   
   @ClientExecution      
   def getResourcesStatus( self, resourceName = None, statusType = None, status = None,
-                          reason = None, tokenOwner = None, tokenExpiration = None, 
-                          dateCreated = None, dateEffective = None, dateEnd = None, 
-                          lastCheckTime = None, **kwargs ):
+                          reason = None, dateCreated = None, dateEffective = None, 
+                          dateEnd = None, lastCheckTime = None,tokenOwner = None, 
+                          tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution      
   def getResourcesHistory( self, resourceName = None, statusType = None, status = None,
-                           reason = None, tokenOwner = None, tokenExpiration = None, 
-                           dateCreated = None, dateEffective = None, dateEnd = None, 
-                           lastCheckTime = None, **kwargs ):
+                           reason = None, dateCreated = None, dateEffective = None, 
+                           dateEnd = None, lastCheckTime = None,tokenOwner = None, 
+                           tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution        
-  def getResourcesScheduledStatus( self, resourceName = None, statusType = None, status = None,
-                                  reason = None, tokenOwner = None, tokenExpiration = None, 
-                                  dateCreated = None, dateEffective = None, dateEnd = None, 
-                                  lastCheckTime = None, **kwargs):
+  def getResourcesScheduledStatus( self, resourceName = None, statusType = None, 
+                                   status = None, reason = None, dateCreated = None, 
+                                   dateEffective = None, dateEnd = None, lastCheckTime = None,
+                                   tokenOwner = None, tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution      
@@ -271,17 +270,17 @@ class ResourceStatusClient:
   
   @ClientExecution      
   def deleteResourcesScheduledStatus( self, resourceName = None, statusType = None, 
-                                      status = None, reason = None, tokenOwner = None, 
-                                      tokenExpiration = None, dateCreated = None, 
+                                      status = None, reason = None, dateCreated = None, 
                                       dateEffective = None, dateEnd = None, 
-                                      lastCheckTime = None):
+                                      lastCheckTime = None,tokenOwner = None, 
+                                      tokenExpiration = None, **kwargs):
     pass
   
   @ClientExecution      
   def deleteResourcesHistory( self, resourceName = None, statusType = None, status = None, 
-                              reason = None, tokenOwner = None, tokenExpiration = None, 
-                              dateCreated = None, dateEffective = None, dateEnd = None, 
-                              lastCheckTime = None, **kwargs ):
+                              reason = None, dateCreated = None, dateEffective = None, 
+                              dateEnd = None, lastCheckTime = None,tokenOwner = None, 
+                              tokenExpiration = None, **kwargs ):
     pass
 
 ################################################################################
@@ -299,23 +298,24 @@ class ResourceStatusClient:
   
   @ClientExecution       
   def setStorageElementStatus( self, storageElementName, statusType, status, 
-                               reason, tokenOwner, tokenExpiration = None, 
-                               dateCreated = None, dateEffective = None, dateEnd = None, 
-                               lastCheckTime = None ):
+                               reason, dateCreated = None, dateEffective = None, 
+                               dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                               tokenExpiration = None ):
     pass
       
   @ClientExecution       
   def setStorageElementScheduledStatus( self, storageElementName, statusType, status, 
-                                        reason, tokenOwner, tokenExpiration = None, 
-                                        dateCreated = None, dateEffective = None, 
-                                        dateEnd = None, lastCheckTime = None ):
+                                        reason, dateCreated = None, dateEffective = None, 
+                                        dateEnd = None, lastCheckTime = None, 
+                                        tokenOwner = None, tokenExpiration = None ):
     pass
       
   @ClientExecution       
-  def updateStorageElementStatus( self, storageElementName, statusType = None, status = None, 
-                                 reason = None , tokenOwner = None, tokenExpiration = None, 
-                                 dateCreated = None, dateEffective = None, dateEnd = None, 
-                                 lastCheckTime = None ):
+  def updateStorageElementStatus( self, storageElementName, statusType = None, 
+                                  status = None, reason = None, dateCreated = None, 
+                                  dateEffective = None, dateEnd = None,
+                                  lastCheckTime = None, tokenOwner = None, 
+                                  tokenExpiration = None ):
     pass
       
   @ClientExecution       
@@ -325,10 +325,10 @@ class ResourceStatusClient:
       
   @ClientExecution       
   def getStorageElementsStatus( self, storageElementName = None, statusType = None, 
-                                status = None, reason = None, tokenOwner = None, 
-                                tokenExpiration = None, dateCreated = None, 
+                                status = None, reason = None, dateCreated = None, 
                                 dateEffective = None, dateEnd = None, 
-                                lastCheckTime = None, **kwargs ):
+                                lastCheckTime = None, tokenOwner = None, 
+                                tokenExpiration = None, **kwargs ):
     pass    
     
   @ClientExecution       
@@ -341,10 +341,10 @@ class ResourceStatusClient:
       
   @ClientExecution       
   def getStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
-                                         status = None, reason = None, tokenOwner = None, 
-                                         tokenExpiration = None, dateCreated = None, 
+                                         status = None, reason = None, dateCreated = None, 
                                          dateEffective = None, dateEnd = None, 
-                                         lastCheckTime = None, **kwargs ):
+                                         lastCheckTime = None, tokenOwner = None, 
+                                         tokenExpiration = None, **kwargs ):
     pass
       
   @ClientExecution      
@@ -361,18 +361,18 @@ class ResourceStatusClient:
       
   @ClientExecution  
   def deleteStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
-                                            status = None, reason = None, tokenOwner = None, 
-                                            tokenExpiration = None, dateCreated = None, 
+                                            status = None, reason = None, dateCreated = None, 
                                             dateEffective = None, dateEnd = None, 
-                                            lastCheckTime = None ):
+                                            lastCheckTime = None, tokenOwner = None, 
+                                            tokenExpiration = None, **kwargs ):
     pass
       
   @ClientExecution
   def deleteStorageElementsHistory( self, storageElementName = None, statusType = None, 
-                                    status = None, reason = None, tokenOwner = None, 
-                                    tokenExpiration = None, dateCreated = None, 
+                                    status = None, reason = None, dateCreated = None, 
                                     dateEffective = None, dateEnd = None, 
-                                    lastCheckTime = None, **kwargs ):          
+                                    lastCheckTime = None, tokenOwner = None, 
+                                    tokenExpiration = None, **kwargs ):          
     pass
 
 ################################################################################
