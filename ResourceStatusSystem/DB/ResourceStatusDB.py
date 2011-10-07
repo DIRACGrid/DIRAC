@@ -367,7 +367,6 @@ class ResourceStatusDB:
                                            'StatusType'       : rDict[ 'StatusType' ]
                                            } )
     
-#    znever = datetime.min
     now    = datetime.utcnow()
     never  = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 ) 
     
@@ -375,7 +374,7 @@ class ResourceStatusDB:
     rDict[ 'DateCreated' ]     = ( 1 and ( rDict.has_key('DateCreated')     and rDict['DateCreated']     ) ) or now
     rDict[ 'DateEffective' ]   = ( 1 and ( rDict.has_key('DateEffective')   and rDict['DateEffective']   ) ) or now
     rDict[ 'DateEnd' ]         = ( 1 and ( rDict.has_key('DateEnd')         and rDict['DateEnd']         ) ) or never
-    rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now #znever          
+    rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now        
             
     rDict[ 'TokenOwner' ]      = ( 1 and ( rDict.has_key('TokenOwner')      and rDict['TokenOwner']      ) ) or 'RS_SVC'        
             
@@ -389,10 +388,10 @@ class ResourceStatusDB:
       rDict[ 'Reason' ]          = cS[ 4 ]
       rDict[ 'DateCreated' ]     = cS[ 5 ]
       rDict[ 'DateEffective' ]   = cS[ 6 ]
-      rDict[ 'DateEnd' ]         = now # cS[ 7 ]
+      rDict[ 'DateEnd' ]         = now
       rDict[ 'LastCheckTime' ]   = cS[ 8 ]
       rDict[ 'TokenOwner' ]      = cS[ 9 ]
-      rDict[ 'TokenExpiration' ] = cS[ 10 ] # now
+      rDict[ 'TokenExpiration' ] = cS[ 10 ]
    
       self.__addElementRow( '%sHistory' % element , rDict)
       
@@ -411,7 +410,6 @@ class ResourceStatusDB:
       self.rsVal.validateStatus( dict['Status'] )
     self.rsVal.validateSingleElementStatusType( element, dict[ 'StatusType'] )
     self.rsVal.validateSingleDates( dict )
-#    self.__validateElementStatusTypes( element, dict['StatusType'])
 
     el = self.__getElementRow( element, { '%sName' % element : dict[ '%sName' % element ] } )#, None )
     if not el[ 'Value' ]:
@@ -422,13 +420,8 @@ class ResourceStatusDB:
     rDict = { '%sName' % element : dict[ '%sName' % element ] }
     if dict.has_key( 'StatusType' ):
       rDict[ 'StatusType' ] = dict[ 'StatusType' ]
-           
-#    dict[ 'DateEffective' ] = now       
+                 
     dict[ 'LastCheckTime'] = now
-           
-#    if not currentStatus[ 'Value' ]:
-#      message = '%s %s has no status of type %s to be updated' % ( element, dict[ '%sName' % element ], dict[ 'StatusType' ] )
-#      raise RSSDBException, where( self, self.__updateElementStatus ) + message
 
     self.__updateElementRow( '%sStatus' % element, dict )
 
@@ -457,7 +450,7 @@ class ResourceStatusDB:
     self.rsVal.validateName( rDict['Reason'] )
     self.rsVal.validateSingleDates( rDict )
     
-    el = self.__getElementRow( element, { '%sName' % element : rDict[ '%sName' % element ] } )#, None )
+    el = self.__getElementRow( element, { '%sName' % element : rDict[ '%sName' % element ] } )
     if not el[ 'Value' ]:
       message = '%s "%s" does not exist' % ( element, rDict[ '%sName' % element ] )
       raise RSSDBException, where( self, self.__setElementStatus ) + message
@@ -472,7 +465,7 @@ class ResourceStatusDB:
     rDict[ 'DateCreated' ]     = ( 1 and ( rDict.has_key('DateCreated')     and rDict['DateCreated']     ) ) or now
     rDict[ 'DateEffective' ]   = ( 1 and ( rDict.has_key('DateEffective')   and rDict['DateEffective']   ) ) or now
     rDict[ 'DateEnd' ]         = ( 1 and ( rDict.has_key('DateEnd')         and rDict['DateEnd']         ) ) or never
-    rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now #znever  
+    rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now  
     
     rDict[ 'TokenOwner' ]      = ( 1 and ( rDict.has_key('TokenOwner')      and rDict['TokenOwner']      ) ) or 'RS_SVC'
 
@@ -539,11 +532,6 @@ class ResourceStatusDB:
                      tokenExpiration ):
     
     rDict = self.__generateRowDict( locals() )
-    # VALIDATION #
-    self.rsVal.validateSite( siteName )
-    #self.rsVal.validateStatusType( statusType )
-    #self.rsVal.validateStatus( status ) 
-    # END VALIDATION #   
     self.__setElementStatus( 'Site', rDict )
     return S_OK()
 
@@ -553,9 +541,6 @@ class ResourceStatusDB:
                               tokenExpiration ):
 
     rDict = self.__generateRowDict( locals() )
-    # VALIDATION #
-    self.rsVal.validateSite( siteName )
-    # END VALIDATION #
     self.__setElementScheduledStatus( 'Site', rDict )
     return S_OK()
 
@@ -565,9 +550,6 @@ class ResourceStatusDB:
                         tokenExpiration ):
 
     rDict = self.__generateRowDict( locals() )
-    # VALIDATION #
-    self.rsVal.validateSite( siteName )
-    # END VALIDATION #
     self.__updateElementStatus( 'Site' , rDict )
     return S_OK()
 
@@ -773,19 +755,8 @@ class ResourceStatusDB:
     # START VALIDATION #
     self.rsVal.validateResourceType( resourceType )
     self.rsVal.validateServiceType( serviceType )
-    
-#   Check commented. Some Resources are not assigned to a site    
-#    site = self.__getElementRow( 'Site', {'SiteName' : siteName }, 'SiteName' )
-#    if not site[ 'Value' ]:
-#      message = '"%s" is not a known siteName' % siteName
-#      raise RSSDBException, where( self, self.addOrModifyService ) + message
-    
-#    gridSite = self.getGridSitesList( gridSiteName = gridSiteName )
-#    if not gridSite[ 'OK' ]:
-#      raise RSSDBException, where( self, self.addOrModifySite ) + gridSite[ 'Message' ]
-#    if not gridSite[ 'Value' ]:
-#      message = '%s is not a known gridSiteName' % gridSiteName
-#      raise RSSDBException, where( self, self.addOrModifySite ) + message 
+    self.rsVal.validateSite( siteName )
+    self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION #    
     
     self.__addOrModifyElement( 'Resource', rDict )
@@ -902,16 +873,8 @@ class ResourceStatusDB:
     rDict = self.__generateRowDict( locals() )
     
     # START VALIDATION #
-    
-#    resource = self.__getElementRow( 'Resource', {'ResourceName' : resourceName }, 'ResourceName' )
-#    if not resource[ 'Value' ]:
-#      message = '"%s" is not a known resourceName' % resourceName
-#      raise RSSDBException, where( self, self.addOrModifyResource ) + message
-    
-#    gridSite = self.getGridSitesList( gridSiteName = gridSiteName )
-#    if not gridSite[ 'Value' ]:
-#      message = '%s is not a known gridSiteName' % gridSiteName
-#      raise RSSDBException, where( self, self.addOrModifySite ) + message 
+    self.rsVal.validateResource( resourceName )
+    self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION #    
     
     self.__addOrModifyElement( 'StorageElement', rDict )
@@ -973,13 +936,7 @@ class ResourceStatusDB:
                                          status, reason, dateCreated, dateEffective, 
                                          dateEnd, lastCheckTime, tokenOwner, 
                                          tokenExpiration, **kwargs ):
-    '''
-      **kwargs can be:
-          columns <list> column names
-          sort    <list> column names
-          order   'ASC' || 'DESC' 
-          limit   <integer>
-    '''
+
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'StorageElement', rDict, table = 'ScheduledStatus', **kwargs )  
 
