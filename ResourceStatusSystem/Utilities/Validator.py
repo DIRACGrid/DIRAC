@@ -2,7 +2,7 @@
 #import DIRAC.ResourceStatusSystem.Utilities.Exceptions as RSSExceptions
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidName, InvalidStatus, InvalidRes, \
   InvalidGridSiteType, InvalidSiteType,InvalidSiteType,InvalidServiceType,\
-  InvalidResourceType, InvalidStatus, InvalidFormat, InvalidSite, InvalidGridSite, InvalidDate
+  InvalidResourceType, InvalidStatus, InvalidFormat, InvalidSite, InvalidGridSite, InvalidResource, InvalidDate
 
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
     ValidResourceType, ValidServiceType, ValidStatusTypes
@@ -92,7 +92,8 @@ class ResourceStatusValidator:
       message = '%s is not string, as expected' % siteName
       raise InvalidFormat, where( self, self.validateSite ) + message
     
-    res = self.rsGate.getSites( siteName = siteName )
+    res = self.rsGate.getSites( siteName, None, None )
+
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known siteName' % siteName
       raise InvalidSite, where( self, self.validateSite ) + message
@@ -103,7 +104,7 @@ class ResourceStatusValidator:
       message = '%s is not string, as expected' % resourceName
       raise InvalidFormat, where( self, self.validateSite ) + message
     
-    res = self.rsGate.getResources( resourceName = resourceName )
+    res = self.rsGate.getResources( resourceName, None, None, None, None )
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known resourceName' % resourceName
       raise InvalidResource, where( self, self.validateSite ) + message
