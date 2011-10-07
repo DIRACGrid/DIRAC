@@ -1,7 +1,7 @@
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, InvalidGridSite
 #import DIRAC.ResourceStatusSystem.Utilities.Exceptions as RSSExceptions
-
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus, InvalidRes, InvalidSiteType,InvalidSiteType,InvalidServiceType,\
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidName, InvalidStatus, InvalidRes, \
+  InvalidGridSiteType, InvalidSiteType,InvalidSiteType,InvalidServiceType,\
   InvalidResourceType, InvalidStatus, InvalidFormat, InvalidSite, InvalidGridSite, InvalidDate
 
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
@@ -21,6 +21,19 @@ class ResourceStatusValidator:
     else:
       self.rsGate = rsGate  
 
+  def validateName( self, name ):
+    
+    if not type( name ) == str:
+      message = '%s is not a valid name' % name
+      raise InvalidName, where( self, self.validateName ) + message
+
+  def validateMultipleNames( self, names ):
+    
+    if not isinstance( names, list ):
+      names = [ names ]
+    for name in names:
+      self.validateName( name )
+    
   def validateStatus( self, status ):
     
     if not status in ValidStatus:              
@@ -38,6 +51,12 @@ class ResourceStatusValidator:
     if not siteType in ValidSiteType:
       message = '%s is not a valid site type' % siteType
       raise InvalidSiteType, where( self, self.validateSiteType ) + message
+
+  def validateGridSiteType( self, gridSiteType ):
+    
+    if not gridSiteType in ValidSiteType:
+      message = '%s is not a valid grid site type' % gridSiteType
+      raise InvalidGridSiteType, where( self, self.validateGridSiteType ) + message
           
   def validateServiceType( self, serviceType ):
     
@@ -73,10 +92,21 @@ class ResourceStatusValidator:
       message = '%s is not string, as expected' % siteName
       raise InvalidFormat, where( self, self.validateSite ) + message
     
-    res = self.rsGate.getSites( siteName, None, None )
+    res = self.rsGate.getSites( siteName = siteName )
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known siteName' % siteName
       raise InvalidSite, where( self, self.validateSite ) + message
+
+  def validateResource( self, resourceName ):
+    
+    if type( resourceName ) != str:
+      message = '%s is not string, as expected' % resourceName
+      raise InvalidFormat, where( self, self.validateSite ) + message
+    
+    res = self.rsGate.getResources( resourceName = resourceName )
+    if not res[ 'OK' ] or not res[ 'Value' ]:
+      message = '%s is not a known resourceName' % resourceName
+      raise InvalidResource, where( self, self.validateSite ) + message
       
   def validateGridSite( self, gridSiteName ):
     
