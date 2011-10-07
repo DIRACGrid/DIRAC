@@ -830,7 +830,7 @@ class TransformationDB( DB ):
       resultDict[taskID] = taskDict
       if not site:
         if taskDict['InputData']:
-          res = getSitesForSE( se, 'LCG' )
+          res = getSitesForSE( se )
           if not res['OK']:
             continue
           usedSite = res['Value']
