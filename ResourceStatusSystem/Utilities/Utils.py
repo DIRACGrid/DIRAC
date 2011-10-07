@@ -103,7 +103,7 @@ def convertTime(t, inTo = None):
 ############################
 
 from itertools import imap
-import copy, ast
+import copy, ast, socket
 
 id_fun = lambda x: x
 
@@ -114,6 +114,17 @@ def voimport(base_mod, voext):
     return  __import__(voext + base_mod, globals(), locals(), ['*'])
   except ImportError:
     return  __import__(base_mod, globals(), locals(), ['*'])
+
+# socket utils
+
+def canonicalURL(url):
+  try:
+    canonical = socket.gethostbyname_ex(url)[0]
+    return canonical
+  except socket.gaierror:
+    return url
+
+# time utils
 
 # RPC utils
 
@@ -192,7 +203,17 @@ def list_combine(l1, l2):
   return list(imap(lambda x,y: (x,y), l1, l2))
 
 def list_flatten(l):
-  return [ee for e in l for ee in e]
+  try:
+    return [ee for e in l for ee in e]
+  except TypeError:
+    return l
+
+def list_sanitize(l):
+  """Remove doublons and results that evaluate to false"""
+  try:
+    return list(set([i for i in l if i]))
+  except TypeError:
+    return [i for i in l if i]
 
 # Dict utils
 

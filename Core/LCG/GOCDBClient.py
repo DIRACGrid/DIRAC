@@ -311,7 +311,8 @@ class GOCDBClient(object):
 #############################################################################
 
   def _serviceEndpointXMLParsing( self, serviceXML ):
-    """ Performs xml parsing from the service endpoint string (returns a dictionary)
+    """ Performs xml parsing from the service endpoint string
+    Returns a list.
     """
     doc = minidom.parseString( serviceXML )
     services = doc.getElementsByTagName( "SERVICE_ENDPOINT" )

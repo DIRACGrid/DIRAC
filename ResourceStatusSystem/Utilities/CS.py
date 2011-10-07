@@ -211,5 +211,11 @@ def getFTSEndpoint( sites = None ):
 # CE functions ######################
 
 def getCEType( site, ce, grid = 'LCG' ):
-  return S_OK(gConfig.getValue('%s/Sites/%s/%s/CEs/%s/CEType'
-                               % (g_BaseResourcesSection, grid, site, ce)))
+  res = gConfig.getOption('%s/Sites/%s/%s/CEs/%s/CEType'
+                             % (g_BaseResourcesSection, grid, site, ce))
+  try:
+    res = Utils.unpack(res)
+    if res == "CREAM": return "CREAMCE"
+    else:              return "CE"
+  except Utils.RPCError:
+    return "CE"
