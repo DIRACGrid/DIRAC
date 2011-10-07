@@ -156,9 +156,9 @@ class ResourceStatusDB:
     self.__validateElementTableName( element )
     self.__addRow( element, dict ) 
 
-  def __addGridRow( self, dict ):
+  def __addGridRow( self, rDict ):   
          
-    self.__addRow( 'GridSite', dict )
+    self.__addRow( 'GridSite', rDict )
 
   def __getElement( self, element, cols, whereElements, sort, order, limit ):
 
@@ -279,7 +279,7 @@ class ResourceStatusDB:
     req = "DELETE from %s" % element
     if whereElements is not None:
       req += " WHERE %s" % whereElements
-        
+    
     resDel = self.db._update( req )
     if not resDel[ 'OK' ]:
       raise RSSDBException, where( self, self.__deleteRow ) + resDel[ 'Message' ]  
@@ -335,67 +335,70 @@ class ResourceStatusDB:
           rDict[ 'Reason' ] = defaultReason 
           self.__setElementStatus( element, rDict )
 
-  def __addOrModifyGridElement( self, dict ):
+  def __addOrModifyGridElement( self, rDict ):
     
-    gridSite = self.__getGridElementRow( { 'GridSiteName' : dict[ 'GridSiteName' ] } )
+    gridSite = self.__getGridElementRow( { 'GridSiteName' : rDict[ 'GridSiteName' ] } )
     
     if gridSite[ 'Value' ]:
-      self.__updateGridRow( dict )
+      self.__updateGridRow( rDict )
     else:
-      self.__addGridRow( dict )
+      self.__addGridRow( rDict )
       
-  def __setElementStatus( self, element, dict ):
+  def __setElementStatus( self, element, rDict ):
     
     # START VALIDATION #
     self.rsVal.validateRes( element )
-    self.rsVal.validateSingleElementStatusType( element, dict['StatusType'] )
-    self.rsVal.validateStatus( dict['Status'] )
-    self.rsVal.validateSingleDates( dict )
+    self.rsVal.validateSingleElementStatusType( element, rDict['StatusType'] )
+    self.rsVal.validateStatus( rDict['Status'] )
+    self.rsVal.validateName( rDict['Reason'] )
+    self.rsVal.validateSingleDates( rDict )
     # END VALIDATION #
     
-    el = self.__getElementRow( element, { '%sName' % element : dict[ '%sName' % element ] } )#, None )
+    el = self.__getElementRow( element, { '%sName' % element : rDict[ '%sName' % element ] } )#, None )
     if not el[ 'Value' ]:
-      message = '%s "%s" does not exist' % ( element, dict[ '%sName' % element ] )
+      message = '%s "%s" does not exist' % ( element, rDict[ '%sName' % element ] )
       raise RSSDBException, where( self, self.__setElementStatus ) + message
     
     # END VALIDATION #
     
     currentStatus = self.__getElementRow( '%sStatus' % element, 
                                           {
-                                           '%sName' % element : dict[ '%sName' % element ],
-                                           'StatusType'       : dict[ 'StatusType' ]
+                                           '%sName' % element : rDict[ '%sName' % element ],
+                                           'StatusType'       : rDict[ 'StatusType' ]
                                            } )
     
-    znever = datetime.min
+#    znever = datetime.min
     now    = datetime.utcnow()
     never  = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 ) 
     
-    dict[ 'TokenExpiration' ] = ( 1 and ( dict.has_key('TokenExpiration') and dict['TokenExpiration'] ) ) or never 
-    dict[ 'DateCreated' ]     = ( 1 and ( dict.has_key('DateCreated')     and dict['DateCreated']     ) ) or now
-    dict[ 'DateEffective' ]   = ( 1 and ( dict.has_key('DateEffective')   and dict['DateEffective']   ) ) or now
-    dict[ 'DateEnd' ]         = ( 1 and ( dict.has_key('DateEnd')         and dict['DateEnd']         ) ) or never
-    dict[ 'LastCheckTime' ]   = ( 1 and ( dict.has_key('LastCheckTime')   and dict['LastCheckTime']   ) ) or now #znever          
+    rDict[ 'TokenExpiration' ] = ( 1 and ( rDict.has_key('TokenExpiration') and rDict['TokenExpiration'] ) ) or never 
+    rDict[ 'DateCreated' ]     = ( 1 and ( rDict.has_key('DateCreated')     and rDict['DateCreated']     ) ) or now
+    rDict[ 'DateEffective' ]   = ( 1 and ( rDict.has_key('DateEffective')   and rDict['DateEffective']   ) ) or now
+    rDict[ 'DateEnd' ]         = ( 1 and ( rDict.has_key('DateEnd')         and rDict['DateEnd']         ) ) or never
+    rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now #znever          
+            
+    rDict[ 'TokenOwner' ]      = ( 1 and ( rDict.has_key('TokenOwner')      and rDict['TokenOwner']      ) ) or 'RS_SVC'        
             
     if currentStatus[ 'Value' ]:
   
-      self.__updateElementRow( '%sStatus' % element , dict )
+      self.__updateElementRow( '%sStatus' % element , rDict )
       
       cS            = currentStatus[ 'Value' ][ 0 ]
       
-      dict[ 'Status' ]          = cS[ 3 ]
-      dict[ 'Reason' ]          = cS[ 4 ]
-      dict[ 'DateCreated' ]     = cS[ 5 ]
-      dict[ 'DateEffective' ]   = cS[ 6 ]
-      dict[ 'DateEnd' ]         = now # cS[ 7 ]
-      dict[ 'LastCheckTime' ]   = cS[ 8 ]
-      dict[ 'TokenOwner' ]      = cS[ 9 ]
-      dict[ 'TokenExpiration' ] = cS[ 10 ] # now
+      rDict[ 'Status' ]          = cS[ 3 ]
+      rDict[ 'Reason' ]          = cS[ 4 ]
+      rDict[ 'DateCreated' ]     = cS[ 5 ]
+      rDict[ 'DateEffective' ]   = cS[ 6 ]
+      rDict[ 'DateEnd' ]         = now # cS[ 7 ]
+      rDict[ 'LastCheckTime' ]   = cS[ 8 ]
+      rDict[ 'TokenOwner' ]      = cS[ 9 ]
+      rDict[ 'TokenExpiration' ] = cS[ 10 ] # now
    
-      self.__addElementRow( '%sHistory' % element , dict)
+      self.__addElementRow( '%sHistory' % element , rDict)
       
     else:
       
-      self.__addElementRow( '%sStatus' % element , dict )
+      self.__addElementRow( '%sStatus' % element , rDict )
 
   def __updateElementStatus( self, element, dict ):
 
@@ -407,6 +410,7 @@ class ResourceStatusDB:
     if dict.has_key( 'Status' ):
       self.rsVal.validateStatus( dict['Status'] )
     self.rsVal.validateSingleElementStatusType( element, dict[ 'StatusType'] )
+    self.rsVal.validateSingleDates( dict )
 #    self.__validateElementStatusTypes( element, dict['StatusType'])
 
     el = self.__getElementRow( element, { '%sName' % element : dict[ '%sName' % element ] } )#, None )
@@ -450,6 +454,7 @@ class ResourceStatusDB:
     self.rsVal.validateRes( element )
     self.rsVal.validateSingleElementStatusType( element, rDict['StatusType'])
     self.rsVal.validateStatus( rDict['Status'] )
+    self.rsVal.validateName( rDict['Reason'] )
     self.rsVal.validateSingleDates( rDict )
     
     el = self.__getElementRow( element, { '%sName' % element : rDict[ '%sName' % element ] } )#, None )
@@ -468,6 +473,8 @@ class ResourceStatusDB:
     rDict[ 'DateEffective' ]   = ( 1 and ( rDict.has_key('DateEffective')   and rDict['DateEffective']   ) ) or now
     rDict[ 'DateEnd' ]         = ( 1 and ( rDict.has_key('DateEnd')         and rDict['DateEnd']         ) ) or never
     rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now #znever  
+    
+    rDict[ 'TokenOwner' ]      = ( 1 and ( rDict.has_key('TokenOwner')      and rDict['TokenOwner']      ) ) or 'RS_SVC'
 
     self.__addElementRow( '%sScheduledStatus' % element , rDict )
   
@@ -501,12 +508,12 @@ class ResourceStatusDB:
     # END VALIDATION #    
     self.__deleteElementRow( '%sHistory' % element, rDict, **kwargs )
     
-  def __deleteElementsScheduledStatus( self, element, rDict ):
+  def __deleteElementsScheduledStatus( self, element, rDict, **kwargs ):
     # START VALIDATION #
     self.rsVal.validateRes( element )
     self.rsVal.validateDates(rDict)
     # END VALIDATION #    
-    self.__deleteElementRow( '%sScheduledStatus' % element, rDict)
+    self.__deleteElementRow( '%sScheduledStatus' % element, rDict, **kwargs)
     
   '''    
   ##############################################################################
@@ -519,6 +526,7 @@ class ResourceStatusDB:
   
     rDict = self.__generateRowDict( locals() )
     # VALIDATION #
+    self.rsVal.validateName(siteName)
     self.rsVal.validateSiteType( siteType )
     self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION # 
@@ -606,6 +614,10 @@ class ResourceStatusDB:
   @CheckExecution
   def deleteSites( self, siteName ):
     
+    #VALIDATION#
+    self.rsVal.validateMultipleNames( siteName )
+    # END VALIDATION #
+    
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElements( 'Site', rDict)
     return S_OK()
@@ -613,10 +625,11 @@ class ResourceStatusDB:
   @CheckExecution
   def deleteSitesScheduledStatus( self, siteName, statusType, status, reason, 
                                   dateCreated, dateEffective, dateEnd, 
-                                  lastCheckTime, tokenOwner, tokenExpiration ):
+                                  lastCheckTime, tokenOwner, tokenExpiration, 
+                                  **kwargs ):
     
     rDict = self.__generateRowDict( locals() )
-    self.__deleteElementsScheduledStatus( 'Site', rDict )
+    self.__deleteElementsScheduledStatus( 'Site', rDict, **kwargs )
     return S_OK()
     
   @CheckExecution    
@@ -648,18 +661,18 @@ class ResourceStatusDB:
     return S_OK()
        
   @CheckExecution     
-  def setServiceStatus( self, serviceName, statusType, status, reason, tokenOwner, 
-                        tokenExpiration, dateCreated, dateEffective, dateEnd, 
-                        lastCheckTime ):
+  def setServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
+                        dateEffective, dateEnd, lastCheckTime,tokenOwner,
+                        tokenExpiration ):
 
     rDict = self.__generateRowDict( locals() )
     self.__setElementStatus( 'Service', rDict )
     return S_OK()
 
   @CheckExecution
-  def setServiceScheduledStatus( self, serviceName, statusType, status, reason, 
-                                 tokenOwner, tokenExpiration, dateCreated, 
-                                 dateEffective, dateEnd, lastCheckTime ):
+  def setServiceScheduledStatus( self, serviceName, statusType, status, 
+                                 reason, dateCreated, dateEffective, dateEnd, 
+                                 lastCheckTime, tokenOwner, tokenExpiration ):
 
     rDict = self.__generateRowDict( locals() )
     self.__setElementScheduledStatus( 'Service', rDict )
@@ -667,8 +680,8 @@ class ResourceStatusDB:
 
   @CheckExecution
   def updateServiceStatus( self, serviceName, statusType, status, reason, 
-                           tokenOwner, tokenExpiration, dateCreated, 
-                           dateEffective, dateEnd, lastCheckTime ):
+                           dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                           tokenOwner, tokenExpiration ):
 
     rDict = self.__generateRowDict( locals() )
     self.__updateElementStatus( 'Service', rDict )
@@ -681,17 +694,17 @@ class ResourceStatusDB:
     return self.__getElements( 'Service', rDict, **kwargs )
 
   @CheckExecution
-  def getServicesStatus( self, serviceName, statusType, status, reason, 
-                         tokenOwner, tokenExpiration, dateCreated, dateEffective, 
-                         dateEnd, lastCheckTime, **kwargs ):
+  def getServicesStatus( self, serviceName, statusType, status, reason, dateCreated, 
+                         dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                         tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Service', rDict, table = 'Status', **kwargs )
 
   @CheckExecution
-  def getServicesHistory( self, serviceName, statusType, status, reason, 
-                          tokenOwner, tokenExpiration, dateCreated, dateEffective, 
-                          dateEnd, lastCheckTime, **kwargs ):
+  def getServicesHistory( self, serviceName, statusType, status, reason, dateCreated, 
+                          dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                          tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -700,8 +713,8 @@ class ResourceStatusDB:
 
   @CheckExecution
   def getServicesScheduledStatus( self, serviceName, statusType, status, reason, 
-                                  tokenOwner, tokenExpiration, dateCreated, 
-                                  dateEffective, dateEnd, lastCheckTime, **kwargs ):
+                                  dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                  tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Service', rDict, table = 'ScheduledStatus', **kwargs )
@@ -717,23 +730,28 @@ class ResourceStatusDB:
   @CheckExecution  
   def deleteServices( self, serviceName ):
     
+    #VALIDATION#
+    self.rsVal.validateMultipleNames( serviceName )
+    # END VALIDATION #
+    
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElements( 'Service', rDict)
     return S_OK()
 
   @CheckExecution
   def deleteServicesScheduledStatus( self, serviceName, statusType, status, 
-                                     reason, tokenOwner, tokenExpiration, dateCreated, 
-                                     dateEffective, dateEnd, lastCheckTime ):
+                                     reason, dateCreated, dateEffective, dateEnd, 
+                                     lastCheckTime, tokenOwner, tokenExpiration, 
+                                     **kwargs ):
     
     rDict = self.__generateRowDict( locals() )
-    self.__deleteElementsScheduledStatus( 'Service', rDict )
+    self.__deleteElementsScheduledStatus( 'Service', rDict, **kwargs )
     return S_OK()
 
   @CheckExecution
-  def deleteServicesHistory( self, serviceName, statusType, status, reason, 
-                             tokenOwner, tokenExpiration, dateCreated, dateEffective, 
-                             dateEnd, lastCheckTime, **kwargs ):
+  def deleteServicesHistory( self, serviceName, statusType, status, reason, dateCreated, 
+                             dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                             tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'Service', rDict, **kwargs )
@@ -773,9 +791,8 @@ class ResourceStatusDB:
     return S_OK()
   
   @CheckExecution
-  def setResourceStatus( self, resourceName, statusType, status, reason, tokenOwner, 
-                         tokenExpiration, dateCreated, dateEffective, dateEnd, 
-                         lastCheckTime ):
+  def setResourceStatus( self, resourceName, statusType, status, reason, dateCreated, 
+                         dateEffective, dateEnd, lastCheckTime, tokenOwner,tokenExpiration ):
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementStatus( 'Resource', rDict )
@@ -783,17 +800,17 @@ class ResourceStatusDB:
 
   @CheckExecution
   def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
-                                  tokenOwner, tokenExpiration, dateCreated, 
-                                  dateEffective, dateEnd, lastCheckTime ):
+                                  dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                  tokenOwner, tokenExpiration ):
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementScheduledStatus( 'Resource', rDict )
     return S_OK()
 
   @CheckExecution
-  def updateResourceStatus( self, resourceName, statusType, status, reason, 
-                           tokenOwner, tokenExpiration, dateCreated, dateEffective, 
-                           dateEnd, lastCheckTime ):
+  def updateResourceStatus( self, resourceName, statusType, status, reason, dateCreated, 
+                            dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                            tokenExpiration ):
         
     rDict = self.__generateRowDict( locals() )
     self.__updateElementStatus( 'Resource', rDict )
@@ -807,17 +824,17 @@ class ResourceStatusDB:
     return self.__getElements( 'Resource', rDict, **kwargs )
 
   @CheckExecution
-  def getResourcesStatus( self, resourceName, statusType, status, reason, 
-                          tokenOwner, tokenExpiration, dateCreated, dateEffective, 
-                          dateEnd, lastCheckTime, **kwargs ):
+  def getResourcesStatus( self, resourceName, statusType, status, reason, dateCreated, 
+                          dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                          tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Resource', rDict, table = 'Status', **kwargs )
 
   @CheckExecution
-  def getResourcesHistory( self, resourceName, statusType, status, reason, 
-                           tokenOwner, tokenExpiration, dateCreated, dateEffective, 
-                           dateEnd, lastCheckTime, **kwargs ):
+  def getResourcesHistory( self, resourceName, statusType, status, reason, dateCreated, 
+                           dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                           tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -826,8 +843,8 @@ class ResourceStatusDB:
 
   @CheckExecution
   def getResourcesScheduledStatus( self, resourceName, statusType, status, reason, 
-                                   tokenOwner, tokenExpiration, dateCreated, 
-                                   dateEffective, dateEnd, lastCheckTime, **kwargs ):
+                                   dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                   tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'Resource', rDict, table = 'ScheduledStatus', **kwargs )  
@@ -844,24 +861,28 @@ class ResourceStatusDB:
   @CheckExecution  
   def deleteResources( self, resourceName ):
     
+    #VALIDATION#
+    self.rsVal.validateMultipleNames( resourceName )
+    # END VALIDATION #
+    
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElements( 'Resource', rDict)
     return S_OK()
 
   @CheckExecution
   def deleteResourcesScheduledStatus( self, resourceName, statusType, status, 
-                                      reason, tokenOwner, tokenExpiration, 
-                                      dateCreated, dateEffective, dateEnd, 
-                                      lastCheckTime ):
+                                      reason, dateCreated, dateEffective, dateEnd, 
+                                      lastCheckTime, tokenOwner, tokenExpiration, 
+                                      **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
-    self.__deleteElementsScheduledStatus( 'Resource', rDict )
+    self.__deleteElementsScheduledStatus( 'Resource', rDict, **kwargs )
     return S_OK()
 
   @CheckExecution
-  def deleteResourcesHistory( self, resourceName, statusType, status, reason, 
-                              tokenOwner, tokenExpiration, dateCreated, dateEffective, 
-                              dateEnd, lastCheckTime, **kwargs ):
+  def deleteResourcesHistory( self, resourceName, statusType, status, reason, dateCreated, 
+                              dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                              tokenExpiration, **kwargs ):
       
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'Resource', rDict, **kwargs )
@@ -897,8 +918,8 @@ class ResourceStatusDB:
   
   @CheckExecution
   def setStorageElementStatus( self, storageElementName, statusType, status, 
-                               reason, tokenOwner, tokenExpiration, dateCreated, 
-                               dateEffective, dateEnd, lastCheckTime ):
+                               reason, dateCreated, dateEffective, dateEnd, 
+                               lastCheckTime, tokenOwner, tokenExpiration ):
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementStatus( 'StorageElement', rDict )
@@ -906,9 +927,8 @@ class ResourceStatusDB:
 
   @CheckExecution
   def setStorageElementScheduledStatus( self, storageElementName, statusType, status, 
-                                        reason, tokenOwner, tokenExpiration, 
-                                        dateCreated, dateEffective, dateEnd, 
-                                        lastCheckTime ):
+                                        reason, dateCreated, dateEffective, dateEnd, 
+                                        lastCheckTime, tokenOwner, tokenExpiration ):
     
     rDict = self.__generateRowDict( locals() )
     self.__setElementScheduledStatus( 'StorageElement', rDict )
@@ -916,8 +936,8 @@ class ResourceStatusDB:
 
   @CheckExecution
   def updateStorageElementStatus( self, storageElementName, statusType, status, 
-                                  reason, tokenOwner, tokenExpiration, dateCreated, 
-                                  dateEffective, dateEnd, lastCheckTime ):
+                                  reason, dateCreated, dateEffective, dateEnd, 
+                                  lastCheckTime, tokenOwner, tokenExpiration ):
     
     rDict = self.__generateRowDict( locals() )
     self.__updateElementStatus( 'StorageElement', rDict )
@@ -931,16 +951,16 @@ class ResourceStatusDB:
 
   @CheckExecution
   def getStorageElementsStatus( self, storageElementName, statusType, status, 
-                                reason, tokenOwner, tokenExpiration, dateCreated, 
-                                dateEffective, dateEnd, lastCheckTime, **kwargs ):
+                                reason, dateCreated, dateEffective, dateEnd, 
+                                lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     return self.__getElements( 'StorageElement', rDict, table = 'Status', **kwargs )
 
   @CheckExecution
   def getStorageElementsHistory( self, storageElementName, statusType, status, 
-                                 reason, tokenOwner, tokenExpiration, dateCreated, 
-                                 dateEffective, dateEnd, lastCheckTime, **kwargs ):
+                                 reason, dateCreated, dateEffective, dateEnd, 
+                                 lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
     if not kwargs.has_key( 'sort' ):
@@ -949,9 +969,9 @@ class ResourceStatusDB:
 
   @CheckExecution
   def getStorageElementsScheduledStatus( self, storageElementName, statusType, 
-                                         status, reason, tokenOwner, tokenExpiration, 
-                                         dateCreated, dateEffective, dateEnd, 
-                                         lastCheckTime, **kwargs ):
+                                         status, reason, dateCreated, dateEffective, 
+                                         dateEnd, lastCheckTime, tokenOwner, 
+                                         tokenExpiration, **kwargs ):
     '''
       **kwargs can be:
           columns <list> column names
@@ -974,25 +994,29 @@ class ResourceStatusDB:
   @CheckExecution  
   def deleteStorageElements( self, storageElementName ):
     
+    #VALIDATION#
+    self.rsVal.validateMultipleNames( storageElementName )
+    # END VALIDATION #
+    
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElements( 'StorageElement', rDict)
     return S_OK()
 
   @CheckExecution
   def deleteStorageElementsScheduledStatus( self, storageElementName, statusType, 
-                                            status, reason, tokenOwner, 
-                                            tokenExpiration, dateCreated, 
-                                            dateEffective, dateEnd, lastCheckTime ):
+                                            status, reason, dateCreated, 
+                                            dateEffective, dateEnd, lastCheckTime,
+                                            tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = self.__generateRowDict( locals() )
-    self.__deleteElementsScheduledStatus( 'StorageElement', rDict )
+    self.__deleteElementsScheduledStatus( 'StorageElement', rDict, **kwargs )
     return S_OK()
 
   @CheckExecution
   def deleteStorageElementsHistory( self, storageElementName, statusType, 
-                                    status, reason, tokenOwner, tokenExpiration, 
-                                    dateCreated, dateEffective, dateEnd, 
-                                    lastCheckTime, **kwargs ):
+                                    status, reason, dateCreated, dateEffective, 
+                                    dateEnd, lastCheckTime, tokenOwner, tokenExpiration, 
+                                    **kwargs ):
       
     rDict = self.__generateRowDict( locals() )  
     self.__deleteElementHistory( 'StorageElement', rDict, **kwargs )
@@ -1126,9 +1150,13 @@ class ResourceStatusDB:
   @CheckExecution 
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
 
-    self.rsVal.validateSiteType( gridTier )
+    # VALIDATION #
+    self.rsVal.validateName( gridSiteName )
+    self.rsVal.validateGridSiteType( gridTier )
+    # END VALIDATION #
 
     rDict = self.__generateRowDict( locals() )
+    
     self.__addOrModifyGridElement( rDict )
     return S_OK()
   
@@ -1141,7 +1169,12 @@ class ResourceStatusDB:
   @CheckExecution
   def deleteGridSites( self, gridSiteName ):
     
+    #VALIDATION#
+    self.rsVal.validateMultipleNames( gridSiteName )
+    # END VALIDATION #
+    
     rDict = self.__generateRowDict( locals() )
+    
     whereElements = self.__getMultipleWhereElements( rDict )
     self.__deleteRow( 'GridSite', whereElements )
     return S_OK()
