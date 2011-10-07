@@ -653,6 +653,7 @@ class ResourceStatusDB:
     rDict = self.__generateRowDict( locals() )
     
     # START VALIDATION #
+    self.rsVal.validateName( serviceName )
     self.rsVal.validateServiceType( serviceType )
     self.rsVal.validateSite( siteName )
     # END VALIDATION #    
