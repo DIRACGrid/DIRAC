@@ -203,7 +203,17 @@ def list_combine(l1, l2):
   return list(imap(lambda x,y: (x,y), l1, l2))
 
 def list_flatten(l):
-  return [ee for e in l for ee in e]
+  try:
+    return [ee for e in l for ee in e]
+  except TypeError:
+    return l
+
+def list_sanitize(l):
+  """Remove doublons and results that evaluate to false"""
+  try:
+    return list(set([i for i in l if i]))
+  except TypeError:
+    return [i for i in l if i]
 
 # Dict utils
 

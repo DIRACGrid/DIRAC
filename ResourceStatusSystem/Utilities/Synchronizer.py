@@ -121,21 +121,35 @@ class Synchronizer(object):
       self.rsClient.addOrModifyService( service, type_, site )
       servicesInDB.append( service )
 
-  def __syncNode(self, NodeInCS, servicesInCS, servicesInDB, resourcesInDB, resourceType, serviceType):
-    for node in NodeInCS:
-      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ))
-      if siteInGOCDB == []:
-        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(node) ))
-      try:
-        siteInGOCDB = siteInGOCDB[0]['SITENAME']
-      except IndexError:
-        continue
-      sites = Utils.unpack(getDIRACSiteName( siteInGOCDB ))
-      for site in sites:
-        self.__updateService(site, serviceType, servicesInCS, servicesInDB)
+  def __getServiceEndpointInfo(self, node):
+    res = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ))
+    if res == []:
+      res = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo('hostname', Utils.canonicalURL(node)))
+    return res
 
+  def __syncNode(self, NodeInCS, servicesInCS, servicesInDB,
+                 resourcesInDB, resourceType, serviceType, site = "NULL"):
+    # Update Service table
+    print NodeInCS
+    print
+    siteInGOCDB = [self.__getServiceEndpointInfo(node) for node in NodeInCS]
+    siteInGOCDB = Utils.list_sanitize(siteInGOCDB)
+    sites = [Utils.unpack(getDIRACSiteName(s[0]['SITENAME'])) for s in siteInGOCDB]
+    sites = Utils.list_sanitize(Utils.list_flatten(sites))
+    _ = [self.__updateService(s, serviceType, servicesInCS, servicesInDB) for s in sites]
+
+    # Update Resource table
+    for node in NodeInCS:
+      if serviceType == "Computing":
+        resourceType = CS.getCEType(site, node)
       if node not in resourcesInDB and node is not None:
-        self.rsClient.addOrModifyResource( node, resourceType, serviceType, 'NULL', siteInGOCDB )
+        try:
+          siteInGOCDB = self. __getServiceEndpointInfo(node)[0]['SITENAME']
+        except IndexError:
+          pass
+        print "%s, %s, %s, %s, %s\n" % ( node, resourceType, serviceType, site, siteInGOCDB )
+        print self.rsClient.addOrModifyResource( node, resourceType, serviceType, site, siteInGOCDB )
+        print
         resourcesInDB.append( node )
 ############################################################################
 
@@ -143,33 +157,27 @@ class Synchronizer(object):
     gLogger.info("Starting sync of Resources")
 
     # resources in the DB now
-    #resourcesInDB = self.rsClient.getMonitoredsList( 'Resource', paramsList = ['ResourceName'] )
     kwargs = { 'columns' : [ 'ResourceName' ]}
-    resourcesInDB = self.rsClient.getResourcesPresent( **kwargs )#paramsList = ['ServiceName'] )
+    resourcesInDB = self.rsClient.getResourcesPresent( **kwargs )
     resourcesInDB = [r[0] for r in resourcesInDB]
 
     # services in the DB now
     kwargs = { 'columns' : [ 'ServiceName' ]}
-    servicesInDB = self.rsClient.getServicesPresent( **kwargs )#paramsList = ['ServiceName'] )
-    #servicesInDB = self.rsClient.getMonitoredsList( 'Service', paramsList = ['ServiceName'] )
+    servicesInDB = self.rsClient.getServicesPresent( **kwargs )
     servicesInDB = [s[0] for s in servicesInDB]
 
-    # Site-CE mapping in CS now
+    # Site-CE / Site-SE mapping in CS now
     siteCE = Utils.unpack(getSiteCEMapping( 'LCG' ))
-    # Site-SE mapping in CS now
     siteSE = Utils.unpack(getSiteSEMapping( 'LCG' ))
 
-    # CEs in CS now
-    # http://stackoverflow.com/questions/952914/making-a-flat-list-out-of-list-of-lists-in-python
-    CEInCS = [CE for celist in siteCE.values() for CE in celist] # [[a], [b]] -> [a, b], super fast
+    # All CEs in CS now
+    CEInCS = Utils.list_sanitize([CE for celist in siteCE.values() for CE in celist])
 
-    # SEs in CS now
-    SEInCS = [SE for selist in siteSE.values() for SE in selist]
+    # All SEs in CS now
+    SEInCS = Utils.list_sanitize([SE for selist in siteSE.values() for SE in selist])
 
-    # SE Nodes in CS now
-    SENodeInCS = [Utils.unpack(CS.getSENodes( SE )) for SE in SEInCS]
-    SENodeInCS = [n for n in SENodeInCS if n]                # Filter out None results
-    SENodeInCS = list(set(SENodeInCS))                       # Filter out doublons
+    # All SE Nodes in CS now
+    SENodeInCS = Utils.list_sanitize([Utils.unpack(CS.getSENodes( SE )) for SE in SEInCS])
 
     # LFC Nodes in CS now
     # FIXME: Refactor.
@@ -190,8 +198,7 @@ class Synchronizer(object):
 
     # FTS Nodes in CS now
     FTSNodeInCS = Utils.unpack(CS.getFTSSites())
-    FTSNodeInCS = [Utils.unpack(CS.getFTSEndpoint(site)) for site in FTSNodeInCS]
-    FTSNodeInCS = [e for e in FTSNodeInCS if e]
+    FTSNodeInCS = Utils.list_sanitize([Utils.unpack(CS.getFTSEndpoint(site)) for site in FTSNodeInCS])
     FTSNodeInCS = [e[0] for e in FTSNodeInCS]
 
     # VOMS Nodes in CS now
@@ -215,60 +222,16 @@ class Synchronizer(object):
 
     # add to DB what is in CS now and wasn't before
 
+    import time
+    t = time.time()
+
     # CEs
-    # CEs = Utils.list_flatten(siteCE.values())
-    # CEs = [ce for ce in CEs if ce]
-    # siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', ce )) for ce in CEs]
-    # siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(ce) ))
-    #                for ce in CEs if ce == []]
-    # siteInGOCDB = [s for s in siteInGOCDB if len(s) > 0]
-    # siteInGOCDB = [siteInGOCDB[0]['SITENAME'] for s in siteInGOCDB]
+    for site in siteCE:
+      self.__syncNode(siteCE[site], servicesInCS, servicesInDB, resourcesInDB, "", "Computing", site)
+    print "#### %s seconds!" % (time.time() - t)
 
-
-    # Add CSe to Services/Resources on DB ####################
-    gLogger.info("Syncing CEs")
-    for site in siteCE.keys():
-      if site == 'LCG.Dummy.ch':
-        continue
-      for ce in siteCE[site]:
-        if ce is None:
-          continue
-        siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', ce ))
-        if siteInGOCDB == []:
-          siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(ce) ))
-        try:
-          siteInGOCDB = siteInGOCDB[0]['SITENAME']
-        except IndexError:
-          continue
-        self.__updateService(site, "Computing", servicesInCS, servicesInDB)
-
-        if ce not in resourcesInDB:
-          CEType = Utils.unpack(CS.getCEType( site, ce ))
-          ceType = 'CE'
-          if CEType == 'CREAM':
-            ceType = 'CREAMCE'
-          self.rsClient.addOrModifyResource( ce, ceType, "Computing", site, siteInGOCDB )
-          resourcesInDB.append( ce )
-
-
-    # Add SRMs to Services on DB #################
-    gLogger.info("Syncing SRMs")
-    siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
-                   for srm in SENodeInCS]
-    siteInGOCDB = [Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', Utils.canonicalURL(srm) ))
-                   for srm in siteInGOCDB if srm == []]
-    siteInGOCDB = [s for s in siteInGOCDB if len(s) > 0]
-    siteInGOCDB = [s[0]['SITENAME'] for s in siteInGOCDB]
-    sites       = [Utils.unpack(getDIRACSiteName( s )) for s in siteInGOCDB]
-    for site in sites:
-      self.__updateService(site, 'Storage', servicesInCS, servicesInDB)
-
-    # Add SRM to Resources on DB #################
-    def addSRMTODB(srm, resourcesInDB):
-      if srm and srm not in resourcesInDB:
-        self.rsClient.addOrModifyResource( srm, 'SE', "Storage", 'NULL', siteInGOCDB )
-        resourcesInDB.append( srm )
-    _ = [addSRMTODB(srm, resourcesInDB) for srm in SENodeInCS]
+    # SRMs
+    self.__syncNode(SENodeInCS, servicesInCS, servicesInDB, resourcesInDB, "SE", "Storage")
 
     # LFC_C
     self.__syncNode(LFCNodeInCS_C, servicesInCS, servicesInDB, resourcesInDB, "LFC_C", "Storage")
