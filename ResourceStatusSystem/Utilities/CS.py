@@ -18,6 +18,7 @@ def getValue(v):
   """Wrapper around gConfig.getValue. Returns typed values instead of
   a string value"""
   res = gConfig.getValue(v)
+  if res == None: return None
   if res.find(",") > -1: # res is a list of values
     return [Utils.typedobj_of_string(e) for e in List.fromChar(res)]
   else: return Utils.typedobj_of_string(res)
@@ -127,14 +128,14 @@ def getSiteTier( sitesIn ):
   def normalizeTier(val):
     # All sites that have no or invalid tier information are considered tier2
     try:               return int(val)
-    except ValueError: return 2
+    except:            return 2
   sites = sitesIn
   if isinstance(sitesIn, basestring):
     sites = [sitesIn]
-  tiers = [CS.getValue("%s/Sites/LCG/%s/MoUTierLevel"
+  tiers = [getValue("%s/Sites/LCG/%s/MoUTierLevel"
                        % (g_BaseResourcesSection, site)) for site in sites]
 
-  tiers = [normaliseTier(t) for t in tiers]
+  tiers = [normalizeTier(t) for t in tiers]
   if isinstance(sitesIn, basestring): return S_OK(tiers[0])
   else:                               return S_OK(tiers)
 

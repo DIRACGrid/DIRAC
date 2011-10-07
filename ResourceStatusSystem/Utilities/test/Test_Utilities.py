@@ -357,8 +357,8 @@ class SynchronizerSuccess(UtilitiesTestCase):
   def test__syncVOBOX(self):
     self.syncC._syncVOBOX()
 
-  # def test__syncResources(self):
-  #   self.syncC._syncResources()
+  def test__syncResources(self):
+    self.syncC._syncResources()
 
   def test__syncStorageElements(self):
     self.syncC._syncStorageElements()
