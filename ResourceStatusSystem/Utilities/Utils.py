@@ -124,6 +124,8 @@ def canonicalURL(url):
   except socket.gaierror:
     return url
 
+# time utils
+
 # RPC utils
 
 class RPCError(Exception):
