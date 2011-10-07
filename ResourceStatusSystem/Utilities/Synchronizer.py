@@ -64,6 +64,7 @@ class Synchronizer(object):
 
     # sites in CS now
     sitesCS = Utils.unpack(CS.getSites())
+    print "%d sites in CS!!\n" % len(sitesCS)
 
     # remove sites from the DB that are not in the CS
     sitesToDelete = set(sitesDB) - set(sitesCS)
@@ -85,8 +86,11 @@ class Synchronizer(object):
       else:
         gt = getGOCTier( DIRACSitesOfGridSites )
 
-      self.rsClient.addOrModifyGridSite( gridSiteName, gt )
-      self.rsClient.addOrModifySite( site, tier, gridSiteName )
+      print "%s, %s\n" % ( gridSiteName, gt )
+      print self.rsClient.addOrModifyGridSite( gridSiteName, gt )
+
+      print "%s, %s, %s\n" % (site, tier, gridSiteName)
+      print self.rsClient.addOrModifySite( site, tier, gridSiteName )
       sitesDB.append( site )
 
 #############################################################################
@@ -108,7 +112,7 @@ class Synchronizer(object):
 
       service = 'VO-BOX@' + site
       if service not in servicesInDB:
-        self.rsClient.addOrModifyService( service, 'VO-BOX', site )
+        print self.rsClient.addOrModifyService( service, 'VO-BOX', site )
 
 #############################################################################
 # _syncResources HELPER functions
@@ -299,7 +303,8 @@ class Synchronizer(object):
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
 
       if SE not in DBSEs:
-        self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
+        print "%s, %s, %s\n" % ( SE, srm, siteInGOCDB )
+        print self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
         DBSEs.append( SE )
 
 #############################################################################
