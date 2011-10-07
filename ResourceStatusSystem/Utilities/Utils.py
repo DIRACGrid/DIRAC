@@ -107,6 +107,12 @@ import copy, ast, socket
 
 id_fun = lambda x: x
 
+# DIRAC utils
+
+def protect(value):
+  if value['OK'] == False:
+    print "%s\n" % value['Message']
+
 # Import utils
 
 def voimport(base_mod, voext):
@@ -123,8 +129,6 @@ def canonicalURL(url):
     return canonical
   except socket.gaierror:
     return url
-
-# time utils
 
 # RPC utils
 
