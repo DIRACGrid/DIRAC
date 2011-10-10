@@ -1,3 +1,5 @@
+import itertools
+
 from DIRAC                                   import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities                    import List
 
@@ -116,7 +118,7 @@ def getVOMSEndpoints():
 
 # Sites functions ###################
 
-def getSites( grids = ['LCG'] ):
+def getSites( grids = 'LCG' ):
   if isinstance(grids, basestring):
     grids = [grids]
   sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
@@ -138,6 +140,12 @@ def getSiteTier( sitesIn ):
   tiers = [normalizeTier(t) for t in tiers]
   if isinstance(sitesIn, basestring): return S_OK(tiers[0])
   else:                               return S_OK(tiers)
+
+def getT1s(grids = 'LCG'):
+  sites = Utils.unpack(getSites(grids))
+  tiers = Utils.unpack(getSiteTier(sites))
+  pairs = itertools.izip(sites, tiers)
+  return [s for (s, t) in pairs if t == 1]
 
 # LFC functions #####################
 

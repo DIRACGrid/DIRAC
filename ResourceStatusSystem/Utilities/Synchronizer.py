@@ -101,17 +101,13 @@ class Synchronizer(object):
     """
 
     # services in the DB now
-    #servicesInDB = self.rsClient.getMonitoredsList( 'Service', paramsList = ['ServiceName'] )
     kwargs = { 'columns' : [ 'ServiceName' ]}
-    servicesInDB = self.rsClient.getServicesPresent( **kwargs )#paramsList = ['ServiceName'] )
+    servicesInDB = self.rsClient.getServicesPresent( **kwargs )
     servicesInDB = [ s[0] for s in servicesInDB ]
 
-    for site in ['LCG.CNAF.it', 'LCG.IN2P3.fr', 'LCG.PIC.es',
-                 'LCG.RAL.uk', 'LCG.GRIDKA.de', 'LCG.NIKHEF.nl']:
-
+    for site in CS.getT1s():
       service = 'VO-BOX@' + site
       if service not in servicesInDB:
-
         Utils.protect2(self.rsClient.addOrModifyService, service, 'VO-BOX', site )
 
 #############################################################################
@@ -214,25 +210,18 @@ class Synchronizer(object):
     # list of services in CS now (to be done)
     servicesInCS = []
 
-    #remove resources no more in the CS
+    # Remove resources that are not in the CS anymore
     for res in set(resourcesInDB) - set(resourcesInCS):
       self.rsClient.deleteResources( res )
       kwargs = { 'columns' : [ 'StorageElementName' ] }
-      sesToBeDel = self.rsClient.getStorageElementsPresent( resourceName = res, **kwargs )
-     #sesToBeDel = self.rsClient.getMonitoredsList( 'StorageElement', ['StorageElementName'], resourceName = res )
-      if sesToBeDel[ 'OK' ]:
-        for seToBeDel in sesToBeDel[ 'Value' ]:
-          Utils.protect2(self.rsClient.deleteStorageElements, seToBeDel[ 0 ] )
+      sesToBeDel = Utils.unpack(self.rsClient.getStorageElementsPresent( resourceName = res, **kwargs ))
+      _ = [Utils.protect2(self.rsClient.deleteStorageElements, s[0]) for s in sesToBeDel]
 
     # add to DB what is in CS now and wasn't before
-
-    import time
-    t = time.time()
 
     # CEs
     for site in siteCE:
       self.__syncNode(siteCE[site], servicesInCS, servicesInDB, resourcesInDB, "", "Computing", site)
-    print "#### %s seconds!" % (time.time() - t)
 
     # SRMs
     self.__syncNode(SENodeInCS, servicesInCS, servicesInDB, resourcesInDB, "SE", "Storage")
@@ -249,7 +238,7 @@ class Synchronizer(object):
     # VOMSs
     self.__syncNode(VOMSNodeInCS, servicesInCS, servicesInDB, resourcesInDB, "VOMS", "VOMS")
 
-    #remove services no more in the CS
+    # Remove services that are not in the CS anymore
     for ser in set(servicesInDB) - set(servicesInCS):
       serType = ser.split( '@' )[0]
       if serType != 'VO-BOX':
