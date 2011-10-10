@@ -5,7 +5,11 @@ DIRAC.ResourceStatusSystem package
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
 
-gencfg            = CS.getTypedDictRootedAt( "GeneralConfig" )
+try:
+  gencfg            = CS.getTypedDictRootedAt( "GeneralConfig" )
+except CS.CSError:
+  print "Unable to connect to CS. Do you have a proxy ?"
+  exit(1)
 
 ValidRes          = gencfg[ 'Resources' ].keys()
 ValidStatus       = gencfg[ 'Status' ]
