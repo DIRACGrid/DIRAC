@@ -225,6 +225,14 @@ def list_sanitize(l):
   except TypeError:
     return [i for i in l if i]
 
+def set_sanitize(l):
+  """Remove doublons and results that evaluate to false"""
+  try:
+    return set([i for i in l if i])
+  except TypeError:
+    return [i for i in l if i]
+
+
 # Dict utils
 
 def dictMatch(dict1, dict2):
