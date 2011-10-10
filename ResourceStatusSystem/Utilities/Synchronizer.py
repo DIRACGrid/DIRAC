@@ -151,9 +151,9 @@ class Synchronizer(object):
           siteInGOCDB = self. __getServiceEndpointInfo(node)[0]['SITENAME']
         except IndexError:
           pass
-        print "%s, %s, %s, %s, %s\n" % ( node, resourceType, serviceType, site, siteInGOCDB )
+        print "--%s, %s, %s, %s, %s\n" % ( node, resourceType, serviceType, site, siteInGOCDB )
         print self.rsClient.addOrModifyResource( node, resourceType, serviceType, site, siteInGOCDB )
-        print
+        print "=="
         resourcesInDB.append( node )
 ############################################################################
 
@@ -303,7 +303,7 @@ class Synchronizer(object):
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
 
       if SE not in DBSEs:
-        print "%s, %s, %s\n" % ( SE, srm, siteInGOCDB )
+        print "--%s, %s, %s\n" % ( SE, srm, siteInGOCDB )
         print self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
         DBSEs.append( SE )
 
