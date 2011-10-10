@@ -13,13 +13,16 @@ from datetime import datetime
 
 class ResourceStatusValidator:
 
-  def __init__( self, rsGate = None ):
+  def __init__( self, rsGate ):
+    
+    self.isDB = False
     
     if rsGate is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       self.rsGate = ResourceStatusClient()
     else:
-      self.rsGate = rsGate  
+      self.rsGate = rsGate
+      self.isDB = True  
 
   def validateName( self, name ):
     
@@ -92,7 +95,10 @@ class ResourceStatusValidator:
       message = '%s is not string, as expected' % siteName
       raise InvalidFormat, where( self, self.validateSite ) + message
     
-    res = self.rsGate.getSites( siteName, None, None )
+    if self.isDB:
+      res = self.rsGate.getSites( siteName, None, None )
+    else:
+      res = self.rsGate.getSites( siteName = siteName )
 
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known siteName' % siteName
@@ -104,14 +110,22 @@ class ResourceStatusValidator:
       message = '%s is not string, as expected' % resourceName
       raise InvalidFormat, where( self, self.validateSite ) + message
     
-    res = self.rsGate.getResources( resourceName, None, None, None, None )
+    if self.isDB:    
+      res = self.rsGate.getResources( resourceName, None, None, None, None )
+    else:
+      res = self.rsGate.getResources( resourceName = resourceName)
+      
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known resourceName' % resourceName
-      raise InvalidResource, where( self, self.validateSite ) + message
+      raise InvalidResource, where( self, self.validateResource ) + message
       
   def validateGridSite( self, gridSiteName ):
-    
-    res = self.rsGate.getGridSites( gridSiteName, None )
+
+    if self.isDB:    
+      res = self.rsGate.getGridSites( gridSiteName, None )
+    else:
+      res = self.rsGate.getGridSites( gridSiteName = gridSiteName )
+        
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known GridSiteName' % gridSiteName
       raise InvalidGridSite, where( self, self.validateGridSite ) + message        
