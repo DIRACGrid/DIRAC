@@ -86,8 +86,10 @@ class Synchronizer(object):
       else:
         gt = getGOCTier( DIRACSitesOfGridSites )
 
-      Utils.protect(self.rsClient.addOrModifyGridSite( gridSiteName, gt ))
-      Utils.protect(self.rsClient.addOrModifySite( site, tier, gridSiteName ))
+
+      Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
+      Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
+
       sitesDB.append( site )
 
 #############################################################################
@@ -109,7 +111,8 @@ class Synchronizer(object):
 
       service = 'VO-BOX@' + site
       if service not in servicesInDB:
-        Utils.protect(self.rsClient.addOrModifyService( service, 'VO-BOX', site ))
+
+        Utils.protect2(self.rsClient.addOrModifyService, service, 'VO-BOX', site )
 
 #############################################################################
 # _syncResources HELPER functions
@@ -119,7 +122,7 @@ class Synchronizer(object):
     if service not in servicesInCS:
       servicesInCS.append( service )
     if service not in servicesInDB:
-      self.rsClient.addOrModifyService( service, type_, site )
+      Utils.protect2(self.rsClient.addOrModifyService, service, type_, site )
       servicesInDB.append( service )
 
   def __getServiceEndpointInfo(self, node):
@@ -146,11 +149,11 @@ class Synchronizer(object):
       if node not in resourcesInDB and node is not None:
         try:
           siteInGOCDB = self. __getServiceEndpointInfo(node)[0]['SITENAME']
-        except IndexError:
-          pass
+        except IndexError: # No INFO in GOCDB: Node does not exist
+          continue
 
         assert(type(siteInGOCDB) == str)
-        Utils.protect(self.rsClient.addOrModifyResource( node, resourceType, serviceType, site, siteInGOCDB ))
+        Utils.protect2(self.rsClient.addOrModifyResource, node, resourceType, serviceType, site, siteInGOCDB )
         resourcesInDB.append( node )
 ############################################################################
 
@@ -219,7 +222,7 @@ class Synchronizer(object):
      #sesToBeDel = self.rsClient.getMonitoredsList( 'StorageElement', ['StorageElementName'], resourceName = res )
       if sesToBeDel[ 'OK' ]:
         for seToBeDel in sesToBeDel[ 'Value' ]:
-          self.rsClient.deleteStorageElements( seToBeDel[ 0 ] )
+          Utils.protect2(self.rsClient.deleteStorageElements, seToBeDel[ 0 ] )
 
     # add to DB what is in CS now and wasn't before
 
@@ -266,7 +269,7 @@ class Synchronizer(object):
             #sesToBeDel = self.rsClient.getMonitoredsList('StorageElement', ['StorageElementName'], gridSiteName = site )
           if sesToBeDel[ 'OK' ]:
             for seToBeDel in sesToBeDel[ 'Value' ]:
-              self.rsClient.deleteStorageElements( seToBeDel )
+              Utils.protect2(self.rsClient.deleteStorageElements, seToBeDel )
 
 
 #############################################################################
@@ -300,8 +303,8 @@ class Synchronizer(object):
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
 
       if SE not in DBSEs:
-        print "%s, %s, %s\n" % ( SE, srm, siteInGOCDB )
-        print self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
+
+        self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
         DBSEs.append( SE )
 
 #############################################################################
