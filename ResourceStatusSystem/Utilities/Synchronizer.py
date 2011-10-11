@@ -93,7 +93,7 @@ class Synchronizer(object):
     """
 
     # services in the DB now
-    servicesInDB = self.rsClient.getServicesPresent( columns="ServiceName" )
+    servicesInDB = Utils.unpack(self.rsClient.getServicesPresent( columns="ServiceName" ))
     servicesInDB = set([ s[0] for s in servicesInDB ])
 
     for site in CS.getT1s():
