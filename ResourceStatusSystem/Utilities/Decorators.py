@@ -3,7 +3,7 @@ import inspect
 
 from DIRAC import S_ERROR, gLogger
 
-class CheckExecution( object ):
+class CheckExecution2( object ):
   
   def __init__( self, f ):
     self.f = f
@@ -17,9 +17,9 @@ class CheckExecution( object ):
       except Exception, x:
         return S_ERROR( x )
 
-################################################################################
+#################################################################################
 
-class CheckExecution2( object ):
+class CheckExecution( object ):
   
   def __init__( self, f ):
     self.f = f
@@ -29,18 +29,17 @@ class CheckExecution2( object ):
     
   def __call__( self, *args, **kwargs ):
       
-      functionNames = [ 'addOrModify', 'set', 'get', 'update', 'delete' ]         
+      functionNames = [ 'addOrModify', 'get', 'delete' ]         
       tableName = self.f.__name__  
       for fN in functionNames:  
         tableName = tableName.replace( fN, '' ) 
       
-      if self.f.startswith( 'addOrModify' ) or self.f.startswith( 'set' ):
+      if self.f.__name__.startswith( 'addOrModify' ):# or self.f.__name__.startswith( 'update' ):
         kwargs = {} 
       
       kwargs.update( { 'table' : tableName })
       
       try:
-        
         self.f.kwargs = kwargs
         return self.f( *args, **kwargs )
       except Exception, x:
