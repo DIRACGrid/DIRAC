@@ -35,12 +35,12 @@ from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
 from DIRAC.ResourceStatusSystem.Utilities.Decorators import HandlerExecution
 
-rsDB = False
+db = False
 
 def initializeResourceStatusHandler( _serviceInfo ):
 
-  global rsDB
-  rsDB = ResourceStatusDB()
+  global db
+  db = ResourceStatusDB()
 
 #  rmDB = ResourceManagementDB()
 
@@ -54,7 +54,7 @@ def initializeResourceStatusHandler( _serviceInfo ):
 #  WMSAdmin = RPCClient( "WorkloadManagement/WMSAdministrator" )
 
 #  global publisher
-#  publisher = Publisher( VOExtension, rsDBIn = rsDB, commandCallerIn = cc,
+#  publisher = Publisher( VOExtension, dbIn = db, commandCallerIn = cc,
 #                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
 
   sync_O = Synchronizer()
@@ -66,6 +66,14 @@ class ResourceStatusHandler( RequestHandler ):
 
   def initialize( self ):
     pass
+
+  def setDatabase( self, oDatabase ):
+    '''
+    Needed to inherit without messing up global variables, and get the
+    extended DB object
+    '''
+    global db
+    db = oDatabase
 
 ################################################################################
 
@@ -79,7 +87,7 @@ class ResourceStatusHandler( RequestHandler ):
 
   @HandlerExecution
   def export_addOrModifySite( self, siteName, siteType, gridSiteName ):
-    return rsDB  
+    return db  
 
 ################################################################################
 
@@ -92,7 +100,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_setSiteStatus( self, siteName, statusType, status, reason, dateCreated, 
                             dateEffective, dateEnd, lastCheckTime, tokenOwner,
                             tokenExpiration ):
-    return rsDB
+    return db
 
 ################################################################################
     
@@ -105,7 +113,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_setSiteScheduledStatus( self, siteName, statusType, status, reason, 
                                      dateCreated, dateEffective, dateEnd, 
                                      lastCheckTime, tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
 
 ################################################################################
       
@@ -119,7 +127,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_updateSiteStatus( self, siteName, statusType, status, reason, 
                                dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
       
 ################################################################################
 
@@ -128,7 +136,7 @@ class ResourceStatusHandler( RequestHandler ):
   
   @HandlerExecution    
   def export_getSites( self, siteName, siteType, gridSiteName, kwargs ):
-    return rsDB
+    return db
 
 ################################################################################
 
@@ -143,7 +151,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getSitesStatus( self, siteName, statusType, status, reason, 
                              dateCreated, dateEffective, dateEnd, lastCheckTime, 
                              tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
     
 ################################################################################  
   
@@ -158,7 +166,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getSitesHistory( self, siteName, statusType, status, reason, 
                               dateCreated, dateEffective, dateEnd, lastCheckTime, 
                               tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
 
 ################################################################################
 
@@ -173,7 +181,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getSitesScheduledStatus( self, siteName, statusType, status, reason, 
                                       dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                       tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
 
 ################################################################################
 
@@ -190,7 +198,7 @@ class ResourceStatusHandler( RequestHandler ):
                               statusType, status, dateEffective, reason, 
                               lastCheckTime, tokenOwner, tokenExpiration, 
                               formerStatus, kwargs ):
-    return rsDB
+    return db
 
 ################################################################################    
 
@@ -198,7 +206,7 @@ class ResourceStatusHandler( RequestHandler ):
 
   @HandlerExecution
   def export_deleteSites( self, siteName ):
-    return rsDB
+    return db
     
 ################################################################################
 
@@ -213,7 +221,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_deleteSitesScheduledStatus( self, siteName, statusType, status, 
                                          reason, dateCreated, dateEffective, dateEnd, 
                                          lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
 
 ################################################################################
 
@@ -227,7 +235,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_deleteSitesHistory( self, siteName, statusType, status, 
                                  reason, dateCreated, dateEffective, dateEnd, 
                                  lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
 
 ################################################################################
 
@@ -240,7 +248,7 @@ class ResourceStatusHandler( RequestHandler ):
   types_addOrModifyService = [ str, str, str ]
   
   def export_addOrModifyService( self, serviceName, serviceType, siteName ):
-    return rsDB
+    return db
   
 ################################################################################  
   
@@ -252,7 +260,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_setServiceStatus( self, serviceName, statusType, status, reason, 
                                dateCreated, dateEffective, dateEnd, 
                                lastCheckTime,tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
    
 ################################################################################   
     
@@ -265,7 +273,7 @@ class ResourceStatusHandler( RequestHandler ):
                                         reason, 
                                         dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime, tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
 
   
 ################################################################################  
@@ -279,7 +287,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_updateServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
                                   dateEffective, dateEnd, lastCheckTime, 
                                   tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
     
 
   
@@ -289,7 +297,7 @@ class ResourceStatusHandler( RequestHandler ):
                         ( str, list, NoneType ), dict ]
   
   def export_getServices( self, serviceName, serviceType, siteName, kwargs ):
-    return rsDB
+    return db
 
   
 ################################################################################  
@@ -303,7 +311,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getServicesStatus( self, serviceName, statusType, status, reason, dateCreated, 
                                 dateEffective, dateEnd, lastCheckTime, 
                                 tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
   
 ################################################################################  
 
@@ -316,7 +324,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getServicesHistory( self, serviceName, statusType, status, reason, dateCreated, 
                                  dateEffective, dateEnd, lastCheckTime, 
                                  tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
 
 
 
@@ -331,7 +339,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getServicesScheduledStatus( self, serviceName, statusType, status, 
                                          reason, dateCreated, dateEffective, dateEnd, 
                                          lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
 
     
 ################################################################################  
@@ -348,7 +356,7 @@ class ResourceStatusHandler( RequestHandler ):
                                  statusType, status, dateEffective, reason, 
                                  lastCheckTime, tokenOwner, tokenExpiration, 
                                  formerStatus, kwargs ):
-    return rsDB    
+    return db    
 
   
 ################################################################################  
@@ -356,7 +364,7 @@ class ResourceStatusHandler( RequestHandler ):
   types_deleteServices = [ ( str, list ) ]  
     
   def export_deleteServices( self, serviceName ):
-    return rsDB 
+    return db 
   
 ################################################################################  
     
@@ -371,7 +379,7 @@ class ResourceStatusHandler( RequestHandler ):
                                             reason, dateCreated, dateEffective, dateEnd, 
                                             lastCheckTime, tokenOwner, tokenExpiration, 
                                             kwargs ):
-    return rsDB
+    return db
 
 
 ################################################################################
@@ -384,7 +392,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_deleteServicesHistory( self, serviceName, statusType, status, reason, 
                                     dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                     tokenOwner, tokenExpiration, kwargs ):                                              
-    return rsDB
+    return db
 
 
 ################################################################################
@@ -399,7 +407,7 @@ class ResourceStatusHandler( RequestHandler ):
 
   def export_addOrModifyResource( self, resourceName, resourceType, serviceType, 
                                   siteName, gridSiteName ):
-    return rsDB
+    return db
   
 ################################################################################
   
@@ -411,7 +419,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_setResourceStatus( self, resourceName, statusType, status, reason, 
                                 dateCreated, dateEffective, dateEnd, 
                                 lastCheckTime, tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
     
 ################################################################################
    
@@ -423,7 +431,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_setResourceScheduledStatus( self, resourceName, statusType, status, 
                                          reason, dateCreated, dateEffective, dateEnd, 
                                          lastCheckTime, tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
          
 ################################################################################         
          
@@ -436,7 +444,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_updateResourceStatus( self, resourceName, statusType, status, reason, 
                                    dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                    tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
   
 ################################################################################
         
@@ -446,7 +454,7 @@ class ResourceStatusHandler( RequestHandler ):
         
   def export_getResources( self, resourceName, resourceType, serviceType, 
                            siteName, gridSiteName, kwargs ):
-    return rsDB
+    return db
   
 ################################################################################
      
@@ -459,7 +467,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getResourcesStatus( self, resourceName, statusType, status, reason, 
                                  dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                  tokenOwner, tokenExpiration, kwargs ):
-    return rsDB 
+    return db 
   
 ################################################################################
       
@@ -472,7 +480,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getResourcesHistory( self, resourceName, statusType, status, reason, 
                                   dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                   tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
       
 ################################################################################
         
@@ -486,7 +494,7 @@ class ResourceStatusHandler( RequestHandler ):
                                           reason, dateCreated, dateEffective, dateEnd, 
                                           lastCheckTime, tokenOwner, tokenExpiration, 
                                           kwargs ): 
-    return rsDB
+    return db
   
 ################################################################################
       
@@ -502,14 +510,14 @@ class ResourceStatusHandler( RequestHandler ):
                                   siteType, resourceType, statusType, status, 
                                   dateEffective, reason, lastCheckTime, tokenOwner, 
                                   tokenExpiration, formerStatus, kwargs ):
-    return rsDB
+    return db
   
 ################################################################################
      
   types_deleteResources = [ ( str, list ) ]   
      
   def export_deleteResources( self, resourceName ):
-    return rsDB 
+    return db 
   
 ################################################################################
       
@@ -524,7 +532,7 @@ class ResourceStatusHandler( RequestHandler ):
                                              reason, dateCreated, dateEffective, dateEnd, 
                                              lastCheckTime, tokenOwner, tokenExpiration, 
                                              kwargs ):
-    return rsDB
+    return db
      
 ################################################################################
       
@@ -538,7 +546,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_deleteResourcesHistory( self, resourceName, statusType, status, reason, 
                                      dateCreated, dateEffective, dateEnd, lastCheckTime,
                                      tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
   
 ################################################################################
 
@@ -552,7 +560,7 @@ class ResourceStatusHandler( RequestHandler ):
    
   def export_addOrModifyStorageElement( self, storageElementName, resourceName, 
                                         gridSiteName ):
-    return rsDB
+    return db
   
 ################################################################################
 
@@ -564,7 +572,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_setStorageElementStatus( self, storageElementName, statusType, status, 
                                       reason, dateCreated, dateEffective, dateEnd, 
                                       lastCheckTime, tokenOwner, tokenExpiration ):
-    return rsDB
+    return db
     
 ################################################################################
              
@@ -577,7 +585,7 @@ class ResourceStatusHandler( RequestHandler ):
                                                status, reason, dateCreated, dateEffective, 
                                                dateEnd, lastCheckTime, tokenOwner, 
                                                tokenExpiration ):
-    return rsDB
+    return db
   
 ################################################################################
              
@@ -590,7 +598,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_updateStorageElementStatus( self, storageElementName, statusType, status, 
                                          reason, dateCreated, dateEffective, dateEnd, 
                                          lastCheckTime, tokenOwner, tokenExpiration ):
-    return rsDB  
+    return db  
 
 ################################################################################
              
@@ -599,7 +607,7 @@ class ResourceStatusHandler( RequestHandler ):
              
   def export_getStorageElements( self, storageElementName, resourceName, 
                                  gridSiteName, kwargs ):
-    return rsDB
+    return db
     
 ################################################################################
              
@@ -612,7 +620,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getStorageElementsStatus( self, storageElementName, statusType, 
                                        status, reason, dateCreated, dateEffective, dateEnd, 
                                        lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
     
 ################################################################################
           
@@ -625,7 +633,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getStorageElementsHistory( self, storageElementName, statusType, 
                                         status, reason, dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
-    return rsDB
+    return db
     
 ################################################################################
             
@@ -640,7 +648,7 @@ class ResourceStatusHandler( RequestHandler ):
                                                 dateEffective, dateEnd, 
                                                 lastCheckTime, tokenOwner, 
                                                 tokenExpiration, kwargs ):
-    return rsDB
+    return db
   
 ################################################################################
            
@@ -657,14 +665,14 @@ class ResourceStatusHandler( RequestHandler ):
                                         status, dateEffective, reason, 
                                         lastCheckTime, tokenOwner,tokenExpiration, 
                                         formerStatus, kwargs ):
-    return rsDB
+    return db
   
 ################################################################################
   
   types_deleteStorageElements = [ ( str, list ) ]
                                          
   def export_deleteStorageElements( self, storageElementName ):
-    return rsDB
+    return db
     
 ################################################################################
        
@@ -680,7 +688,7 @@ class ResourceStatusHandler( RequestHandler ):
                                                    dateEffective, dateEnd, 
                                                    lastCheckTime, tokenOwner, 
                                                    tokenExpiration, kwargs ):
-    return rsDB
+    return db
     
 ################################################################################
       
@@ -695,7 +703,7 @@ class ResourceStatusHandler( RequestHandler ):
                                            status, reason, dateCreated, dateEffective, 
                                            dateEnd, lastCheckTime, tokenOwner, 
                                            tokenExpiration, kwargs ):          
-    return rsDB
+    return db
 
 ################################################################################
   
@@ -710,7 +718,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getServiceStats( self, siteName, statusType ):
     
     gLogger.info( "getServiceStats_1" )
-    resQuery = rsDB.getServiceStats( siteName, statusType )
+    resQuery = db.getServiceStats( siteName, statusType )
     gLogger.info( "getServiceStats_2" )  
     return resQuery
 
@@ -721,7 +729,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getResourceStats( self, element, name, statusType ):
     
     gLogger.info( "getResourceStats_1" )
-    resQuery = rsDB.getResourceStats( element, name, statusType )
+    resQuery = db.getResourceStats( element, name, statusType )
     gLogger.info( "getResourceStats_2" )  
     return resQuery
   
@@ -732,7 +740,7 @@ class ResourceStatusHandler( RequestHandler ):
   def export_getStorageElementStats( self, element, name, statusType ):
           
     gLogger.info( "getStorageElementStats_1" )
-    resQuery = rsDB.getStorageElementStats( element, name, statusType )
+    resQuery = db.getStorageElementStats( element, name, statusType )
     gLogger.info( "getStorageElementStats_2" )  
     return resQuery  
   
@@ -748,7 +756,7 @@ class ResourceStatusHandler( RequestHandler ):
   
   @HandlerExecution
   def export_addOrModifyGridSite( self, gridSiteName, gridTier ):
-    return rsDB
+    return db
 
 ################################################################################
       
@@ -756,7 +764,7 @@ class ResourceStatusHandler( RequestHandler ):
       
   @HandlerExecution    
   def export_getGridSites( self, gridSiteName, gridTier, kwargs ):
-    return rsDB
+    return db
 
 ################################################################################
   
@@ -764,7 +772,7 @@ class ResourceStatusHandler( RequestHandler ):
     
   @HandlerExecution  
   def export_deleteGridSites( self, gridSiteName ):         
-    return rsDB
+    return db
 
 ################################################################################
 

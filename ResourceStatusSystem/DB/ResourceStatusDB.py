@@ -70,7 +70,7 @@ class ResourceStatusDB:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
       
-    self.mm    = MySQLMonkey()  
+    self.mm    = MySQLMonkey( self.db )  
     self.rsVal = ResourceStatusValidator( self )
 
   '''
@@ -139,17 +139,19 @@ class ResourceStatusDB:
   def __getColumns( self, columns ):
     return self.mm.getColumns( columns )  
   
-  def __addRow( self, element, dict ):      
+  def __addRow( self, element, rDict ):      
 
     req = "INSERT INTO %s (" % element 
     req += ','.join( "%s" % key for key in dict.keys())
     req += ") VALUES ("
     req += ','.join( "'%s'" % value for value in dict.values())
     req += ")"   
+    sqlQuery = self.db._update( req )
 
-    resUpdate = self.db._update( req )
-    if not resUpdate[ 'OK' ]:
-      raise RSSDBException, where( self, self.__addElementRow ) + resUpdate[ 'Message' ]
+    #sqlQuery = self.mm.insert( element, rDict )
+
+    if not sqlQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.__addElementRow ) + sqlQuery[ 'Message' ]
         
   def __addElementRow( self, element, dict ):
     
@@ -159,6 +161,14 @@ class ResourceStatusDB:
   def __addGridRow( self, rDict ):   
          
     self.__addRow( 'GridSite', rDict )
+
+  def __getElement2( self, element, rDict, **kwargs ):
+    
+    sqlQuery = self.mm.select( element, rDict, **kwargs )
+    if not sqlQuery[ 'OK' ]:
+      raise RSSDBException, where( self, self.__getElement ) + sqlQuery[ 'Message' ]
+
+    return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )
 
   def __getElement( self, element, cols, whereElements, sort, order, limit ):
 
@@ -755,7 +765,7 @@ class ResourceStatusDB:
     # START VALIDATION #
     self.rsVal.validateResourceType( resourceType )
     self.rsVal.validateServiceType( serviceType )
-    self.rsVal.validateSite( siteName )
+#    self.rsVal.validateSite( siteName )
     self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION #    
     
@@ -876,6 +886,8 @@ class ResourceStatusDB:
     self.rsVal.validateResource( resourceName )
     self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION #    
+    
+    print 'a'
     
     self.__addOrModifyElement( 'StorageElement', rDict )
     return S_OK()

@@ -86,11 +86,8 @@ class Synchronizer(object):
       else:
         gt = getGOCTier( DIRACSitesOfGridSites )
 
-      print "%s, %s\n" % ( gridSiteName, gt )
-      print self.rsClient.addOrModifyGridSite( gridSiteName, gt )
-
-      print "%s, %s, %s\n" % (site, tier, gridSiteName)
-      print self.rsClient.addOrModifySite( site, tier, gridSiteName )
+      Utils.protect(self.rsClient.addOrModifyGridSite( gridSiteName, gt ))
+      Utils.protect(self.rsClient.addOrModifySite( site, tier, gridSiteName ))
       sitesDB.append( site )
 
 #############################################################################
@@ -112,7 +109,7 @@ class Synchronizer(object):
 
       service = 'VO-BOX@' + site
       if service not in servicesInDB:
-        print self.rsClient.addOrModifyService( service, 'VO-BOX', site )
+        Utils.protect(self.rsClient.addOrModifyService( service, 'VO-BOX', site ))
 
 #############################################################################
 # _syncResources HELPER functions
@@ -133,9 +130,9 @@ class Synchronizer(object):
 
   def __syncNode(self, NodeInCS, servicesInCS, servicesInDB,
                  resourcesInDB, resourceType, serviceType, site = "NULL"):
+
+    if len(NodeInCS) == 0: return
     # Update Service table
-    print NodeInCS
-    print
     siteInGOCDB = [self.__getServiceEndpointInfo(node) for node in NodeInCS]
     siteInGOCDB = Utils.list_sanitize(siteInGOCDB)
     sites = [Utils.unpack(getDIRACSiteName(s[0]['SITENAME'])) for s in siteInGOCDB]
@@ -151,9 +148,8 @@ class Synchronizer(object):
           siteInGOCDB = self. __getServiceEndpointInfo(node)[0]['SITENAME']
         except IndexError:
           pass
-        print "--%s, %s, %s, %s, %s\n" % ( node, resourceType, serviceType, site, siteInGOCDB )
-        print self.rsClient.addOrModifyResource( node, resourceType, serviceType, site, siteInGOCDB )
-        print "=="
+        assert(type(siteInGOCDB) == str)
+        Utils.protect(self.rsClient.addOrModifyResource( node, resourceType, serviceType, site, siteInGOCDB ))
         resourcesInDB.append( node )
 ############################################################################
 
