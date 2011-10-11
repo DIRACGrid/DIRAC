@@ -57,7 +57,8 @@ class ResourceManagementDB(object):
 
   """
   
-  TABLES = {
+  # Small very valuable piece of information for the MySQLMonkey
+  __TABLES__ = {
             'EnvironmentCache'  : {
               'uniqueKeys' : [ 'HashEnv', 'SiteName' ]                      
                                   },
