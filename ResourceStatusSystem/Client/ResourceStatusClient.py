@@ -45,68 +45,62 @@ class ResourceStatusClient:
     pass
 
   @ClientExecution
-  def setSiteStatus( self, siteName, statusType, status, reason = None, 
+  def addOrModifySiteStatus( self, siteName, statusType, status, reason = None, 
                      dateCreated = None, dateEffective = None, dateEnd = None, 
                      lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
     pass
 
   @ClientExecution
-  def setSiteScheduledStatus( self, siteName, statusType, status, reason = None, 
+  def addOrModifySiteScheduledStatus( self, siteName, statusType, status, reason = None, 
                               dateCreated = None, dateEffective = None, dateEnd = None, 
                               lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
     pass
-  
-  @ClientExecution
-  def updateSiteStatus( self, siteName, statusType = None, status = None, reason = None, 
-                        dateCreated = None, dateEffective = None, dateEnd = None, 
-                        lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
-    pass
 
   @ClientExecution
-  def getSites( self, siteName = None, siteType = None, gridSiteName = None, **kwargs ):
+  def getSite( self, siteName = None, siteType = None, gridSiteName = None, **kwargs ):
     pass
   
   @ClientExecution
-  def getSitesStatus( self, siteName = None, statusType = None, status = None, 
+  def getSiteStatus( self, siteName = None, statusType = None, status = None, 
                       reason = None, dateCreated = None, dateEffective = None, 
                       dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                       tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution
-  def getSitesHistory( self, siteName = None, statusType = None, status = None, 
+  def getSiteHistory( self, siteName = None, statusType = None, status = None, 
                       reason = None, dateCreated = None, dateEffective = None, 
                       dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                       tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution
-  def getSitesScheduledStatus( self, siteName = None, statusType = None, status = None, 
+  def getSiteScheduledStatus( self, siteName = None, statusType = None, status = None, 
                                reason = None, dateCreated = None, dateEffective = None, 
                                dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                                tokenExpiration = None, **kwargs):
     pass
   
   @ClientExecution
-  def getSitesPresent( self, siteName = None, siteType = None, gridSiteName = None,
+  def getSitePresent( self, siteName = None, siteType = None, gridSiteName = None,
                        gridTier = None, statusType = None, status = None, dateEffective = None,
                        reason = None, lastCheckTime = None, tokenOwner = None,
                        tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
   
   @ClientExecution
-  def deleteSites( self, siteName ):
+  def deleteSite( self, siteName ):
     pass
   
   @ClientExecution
-  def deleteSitesScheduledStatus( self, siteName = None, statusType = None, status = None, 
+  def deleteSiteScheduledStatus( self, siteName = None, statusType = None, status = None, 
                                   reason = None, dateCreated = None, dateEffective = None, 
                                   dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                                   tokenExpiration = None, **kwargs):
     pass
   
   @ClientExecution
-  def deleteSitesHistory( self, siteName = None, statusType = None, status = None, 
+  def deleteSiteHistory( self, siteName = None, statusType = None, status = None, 
                           reason = None, dateCreated = None, dateEffective = None, 
                           dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                           tokenExpiration = None, **kwargs ):
@@ -125,52 +119,45 @@ class ResourceStatusClient:
     pass
   
   @ClientExecution  
-  def setServiceStatus( self, serviceName, statusType, status, reason, 
+  def addOrModifyServiceStatus( self, serviceName, statusType, status, reason, 
                         dateCreated = None, dateEffective = None, dateEnd = None, 
                         lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
     pass
    
   @ClientExecution  
-  def setServiceScheduledStatus( self, serviceName, statusType, status, reason, 
+  def addOrModifyServiceScheduledStatus( self, serviceName, statusType, status, reason, 
                                  dateCreated = None, dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None, tokenOwner = None, tokenExpiration = None  ):
     pass
-  
-  @ClientExecution  
-  def updateServiceStatus( self, serviceName, statusType = None, status = None, 
-                           reason = None, dateCreated = None, dateEffective = None, 
-                           dateEnd = None, lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None ):
-    pass
-  
+    
   @ClientExecution
-  def getServices( self, serviceName = None, serviceType = None, siteName = None, 
+  def getService( self, serviceName = None, serviceType = None, siteName = None, 
                    **kwargs ):
     pass
   
   @ClientExecution  
-  def getServicesStatus( self, serviceName = None, statusType = None, status = None, 
+  def getServiceStatus( self, serviceName = None, statusType = None, status = None, 
                          reason = None, dateCreated = None, dateEffective = None, 
                          dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution  
-  def getServicesHistory( self, serviceName = None, statusType = None, status = None, 
+  def getServiceHistory( self, serviceName = None, statusType = None, status = None, 
                           reason = None, dateCreated = None, dateEffective = None, 
                           dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                           tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution  
-  def getServicesScheduledStatus( self, serviceName = None, statusType = None, 
+  def getServiceScheduledStatus( self, serviceName = None, statusType = None, 
                                  status = None, reason = None, dateCreated = None, 
                                  dateEffective = None, dateEnd = None, lastCheckTime = None, 
                                  tokenOwner = None, tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution  
-  def getServicesPresent( self, serviceName = None, siteName = None, siteType = None, 
+  def getServicePresent( self, serviceName = None, siteName = None, siteType = None, 
                           serviceType = None, statusType = None, status = None, 
                           dateEffective = None, reason = None, lastCheckTime = None, 
                           tokenOwner = None, tokenExpiration = None, 
@@ -178,11 +165,11 @@ class ResourceStatusClient:
     pass
   
   @ClientExecution  
-  def deleteServices( self, serviceName ):
+  def deleteService( self, serviceName ):
     pass
   
   @ClientExecution  
-  def deleteServicesScheduledStatus( self, serviceName = None, statusType = None, 
+  def deleteServiceScheduledStatus( self, serviceName = None, statusType = None, 
                                      status = None, reason = None, dateCreated = None, 
                                      dateEffective = None, dateEnd = None, 
                                      lastCheckTime = None, tokenOwner = None, 
@@ -190,7 +177,7 @@ class ResourceStatusClient:
     pass
   
   @ClientExecution  
-  def deleteServicesHistory( self, serviceName = None, statusType = None, status = None, 
+  def deleteServiceHistory( self, serviceName = None, statusType = None, status = None, 
                             reason = None, dateCreated = None, dateEffective = None, 
                             dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                             tokenExpiration = None, **kwargs ):                                              
@@ -210,76 +197,69 @@ class ResourceStatusClient:
     pass
   
   @ClientExecution      
-  def setResourceStatus( self, resourceName, statusType, status, reason,  dateCreated = None, 
-                         dateEffective = None, dateEnd = None, lastCheckTime = None,
-                         tokenOwner = None, tokenExpiration = None ):
+  def addOrModifyResourceStatus( self, resourceName, statusType, status, reason,  dateCreated = None, 
+                                 dateEffective = None, dateEnd = None, lastCheckTime = None,
+                                 tokenOwner = None, tokenExpiration = None ):
     pass
   
   @ClientExecution      
-  def setResourceScheduledStatus( self, resourceName, statusType, status, reason, 
-                                  dateCreated = None, dateEffective = None, dateEnd = None, 
-                                  lastCheckTime = None, tokenOwner = None, 
-                                  tokenExpiration = None ):
-    pass
-  
-  @ClientExecution          
-  def updateResourceStatus( self, resourceName, statusType = None, status = None, 
-                            reason = None, dateCreated = None, dateEffective = None, 
-                            dateEnd = None, lastCheckTime = None, tokenOwner = None, 
-                            tokenExpiration = None ):
+  def addOrModifyResourceScheduledStatus( self, resourceName, statusType, status, reason, 
+                                          dateCreated = None, dateEffective = None, dateEnd = None, 
+                                          lastCheckTime = None, tokenOwner = None, 
+                                          tokenExpiration = None ):
     pass
   
   @ClientExecution      
-  def getResources( self, resourceName = None, resourceType = None, serviceType = None, 
-                    siteName = None, gridSiteName = None, **kwargs ):
+  def getResource( self, resourceName = None, resourceType = None, serviceType = None, 
+                   siteName = None, gridSiteName = None, **kwargs ):
     pass
   
   @ClientExecution      
-  def getResourcesStatus( self, resourceName = None, statusType = None, status = None,
+  def getResourceStatus( self, resourceName = None, statusType = None, status = None,
+                         reason = None, dateCreated = None, dateEffective = None, 
+                         dateEnd = None, lastCheckTime = None,tokenOwner = None, 
+                         tokenExpiration = None, **kwargs ):
+    pass
+  
+  @ClientExecution      
+  def getResourceHistory( self, resourceName = None, statusType = None, status = None,
                           reason = None, dateCreated = None, dateEffective = None, 
                           dateEnd = None, lastCheckTime = None,tokenOwner = None, 
                           tokenExpiration = None, **kwargs ):
     pass
   
-  @ClientExecution      
-  def getResourcesHistory( self, resourceName = None, statusType = None, status = None,
-                           reason = None, dateCreated = None, dateEffective = None, 
-                           dateEnd = None, lastCheckTime = None,tokenOwner = None, 
-                           tokenExpiration = None, **kwargs ):
-    pass
-  
   @ClientExecution        
-  def getResourcesScheduledStatus( self, resourceName = None, statusType = None, 
-                                   status = None, reason = None, dateCreated = None, 
-                                   dateEffective = None, dateEnd = None, lastCheckTime = None,
-                                   tokenOwner = None, tokenExpiration = None, **kwargs ):
+  def getResourceScheduledStatus( self, resourceName = None, statusType = None, 
+                                  status = None, reason = None, dateCreated = None, 
+                                  dateEffective = None, dateEnd = None, lastCheckTime = None,
+                                  tokenOwner = None, tokenExpiration = None, **kwargs ):
     pass
   
   @ClientExecution      
-  def getResourcesPresent( self, resourceName = None, siteName = None, serviceType = None,
-                           gridSiteName = None, siteType = None, resourceType = None,
-                           statusType = None, status = None, dateEffective = None, 
-                           reason = None, lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, formerStatus = None, **kwargs ):
+  def getResourcePresent( self, resourceName = None, siteName = None, serviceType = None,
+                          gridSiteName = None, siteType = None, resourceType = None,
+                          statusType = None, status = None, dateEffective = None, 
+                          reason = None, lastCheckTime = None, tokenOwner = None, 
+                          tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
   
   @ClientExecution     
-  def deleteResources( self, resourceName ):
+  def deleteResource( self, resourceName ):
     pass
   
   @ClientExecution      
-  def deleteResourcesScheduledStatus( self, resourceName = None, statusType = None, 
-                                      status = None, reason = None, dateCreated = None, 
-                                      dateEffective = None, dateEnd = None, 
-                                      lastCheckTime = None,tokenOwner = None, 
-                                      tokenExpiration = None, **kwargs):
+  def deleteResourceScheduledStatus( self, resourceName = None, statusType = None, 
+                                     status = None, reason = None, dateCreated = None, 
+                                     dateEffective = None, dateEnd = None, 
+                                     lastCheckTime = None,tokenOwner = None, 
+                                     tokenExpiration = None, **kwargs):
     pass
   
   @ClientExecution      
-  def deleteResourcesHistory( self, resourceName = None, statusType = None, status = None, 
-                              reason = None, dateCreated = None, dateEffective = None, 
-                              dateEnd = None, lastCheckTime = None,tokenOwner = None, 
-                              tokenExpiration = None, **kwargs ):
+  def deleteResourceHistory( self, resourceName = None, statusType = None, status = None, 
+                             reason = None, dateCreated = None, dateEffective = None, 
+                             dateEnd = None, lastCheckTime = None,tokenOwner = None, 
+                             tokenExpiration = None, **kwargs ):
     pass
 
 ################################################################################
@@ -296,82 +276,74 @@ class ResourceStatusClient:
     pass
   
   @ClientExecution       
-  def setStorageElementStatus( self, storageElementName, statusType, status, 
-                               reason, dateCreated = None, dateEffective = None, 
-                               dateEnd = None, lastCheckTime = None, tokenOwner = None, 
-                               tokenExpiration = None ):
+  def addOrModifyStorageElementStatus( self, storageElementName, statusType, status, 
+                                       reason, dateCreated = None, dateEffective = None, 
+                                       dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                                       tokenExpiration = None ):
     pass
       
   @ClientExecution       
-  def setStorageElementScheduledStatus( self, storageElementName, statusType, status, 
-                                        reason, dateCreated = None, dateEffective = None, 
-                                        dateEnd = None, lastCheckTime = None, 
-                                        tokenOwner = None, tokenExpiration = None ):
+  def addOrModifyStorageElementScheduledStatus( self, storageElementName, statusType, status, 
+                                                reason, dateCreated = None, dateEffective = None, 
+                                                dateEnd = None, lastCheckTime = None, 
+                                                tokenOwner = None, tokenExpiration = None ):
     pass
       
   @ClientExecution       
-  def updateStorageElementStatus( self, storageElementName, statusType = None, 
-                                  status = None, reason = None, dateCreated = None, 
-                                  dateEffective = None, dateEnd = None,
-                                  lastCheckTime = None, tokenOwner = None, 
-                                  tokenExpiration = None ):
+  def getStorageElement( self, storageElementName = None, resourceName = None, 
+                         gridSiteName = None, **kwargs ):
     pass
       
   @ClientExecution       
-  def getStorageElements( self, storageElementName = None, resourceName = None, 
-                          gridSiteName = None, **kwargs ):
-    pass
-      
-  @ClientExecution       
-  def getStorageElementsStatus( self, storageElementName = None, statusType = None, 
-                                status = None, reason = None, dateCreated = None, 
-                                dateEffective = None, dateEnd = None, 
-                                lastCheckTime = None, tokenOwner = None, 
-                                tokenExpiration = None, **kwargs ):
+  def getStorageElementStatus( self, storageElementName = None, statusType = None, 
+                               status = None, reason = None, dateCreated = None, 
+                               dateEffective = None, dateEnd = None, 
+                               lastCheckTime = None, tokenOwner = None, 
+                               tokenExpiration = None, **kwargs ):
     pass    
     
   @ClientExecution       
-  def getStorageElementsHistory( self, storageElementName = None, statusType = None, 
-                                 status = None, reason = None, tokenOwner = None, 
-                                 tokenExpiration = None, dateCreated = None, 
-                                 dateEffective = None, dateEnd = None, 
-                                 lastCheckTime = None, **kwargs ):
+  def getStorageElementHistory( self, storageElementName = None, statusType = None, 
+                                status = None, reason = None, tokenOwner = None, 
+                                tokenExpiration = None, dateCreated = None, 
+                                dateEffective = None, dateEnd = None, 
+                                lastCheckTime = None, **kwargs ):
     pass
       
   @ClientExecution       
-  def getStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
-                                         status = None, reason = None, dateCreated = None, 
-                                         dateEffective = None, dateEnd = None, 
-                                         lastCheckTime = None, tokenOwner = None, 
-                                         tokenExpiration = None, **kwargs ):
+  def getStorageElementScheduledStatus( self, storageElementName = None, statusType = None, 
+                                        status = None, reason = None, dateCreated = None, 
+                                        dateEffective = None, dateEnd = None, 
+                                        lastCheckTime = None, tokenOwner = None, 
+                                        tokenExpiration = None, **kwargs ):
     pass
       
   @ClientExecution      
-  def getStorageElementsPresent( self, storageElementName = None, resourceName = None, 
-                                 gridSiteName = None, siteType = None, statusType = None, 
-                                 status = None, dateEffective = None, reason = None, 
-                                 lastCheckTime = None, tokenOwner = None,
-                                 tokenExpiration = None, formerStatus = None, **kwargs ):
+  def getStorageElementPresent( self, storageElementName = None, resourceName = None, 
+                                gridSiteName = None, siteType = None, statusType = None, 
+                                status = None, dateEffective = None, reason = None, 
+                                lastCheckTime = None, tokenOwner = None,
+                                tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
       
   @ClientExecution                                    
-  def deleteStorageElements( self, storageElementName ):
+  def deleteStorageElement( self, storageElementName ):
     pass
       
   @ClientExecution  
-  def deleteStorageElementsScheduledStatus( self, storageElementName = None, statusType = None, 
-                                            status = None, reason = None, dateCreated = None, 
-                                            dateEffective = None, dateEnd = None, 
-                                            lastCheckTime = None, tokenOwner = None, 
-                                            tokenExpiration = None, **kwargs ):
+  def deleteStorageElementScheduledStatus( self, storageElementName = None, statusType = None, 
+                                           status = None, reason = None, dateCreated = None, 
+                                           dateEffective = None, dateEnd = None, 
+                                           lastCheckTime = None, tokenOwner = None, 
+                                           tokenExpiration = None, **kwargs ):
     pass
       
   @ClientExecution
-  def deleteStorageElementsHistory( self, storageElementName = None, statusType = None, 
-                                    status = None, reason = None, dateCreated = None, 
-                                    dateEffective = None, dateEnd = None, 
-                                    lastCheckTime = None, tokenOwner = None, 
-                                    tokenExpiration = None, **kwargs ):          
+  def deleteStorageElementHistory( self, storageElementName = None, statusType = None, 
+                                   status = None, reason = None, dateCreated = None, 
+                                   dateEffective = None, dateEnd = None, 
+                                   lastCheckTime = None, tokenOwner = None, 
+                                   tokenExpiration = None, **kwargs ):          
     pass
 
 ################################################################################
