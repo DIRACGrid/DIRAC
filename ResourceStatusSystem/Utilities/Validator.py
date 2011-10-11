@@ -112,8 +112,9 @@ class ResourceStatusValidator:
     
     if self.isDB:    
       res = self.rsGate.getResources( resourceName, None, None, None, None )
+      print res
     else:
-      res = self.rsGate.getResources( resourceName = resourceName)
+      res = self.rsGate.getResources( resourceName = resourceName )
       
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known resourceName' % resourceName
@@ -122,9 +123,9 @@ class ResourceStatusValidator:
   def validateGridSite( self, gridSiteName ):
 
     if self.isDB:    
-      res = self.rsGate.getGridSites( gridSiteName, None )
+      res = self.rsGate.getGridSite( gridSiteName, None )
     else:
-      res = self.rsGate.getGridSites( gridSiteName = gridSiteName )
+      res = self.rsGate.getGridSite( gridSiteName = gridSiteName )
         
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known GridSiteName' % gridSiteName
