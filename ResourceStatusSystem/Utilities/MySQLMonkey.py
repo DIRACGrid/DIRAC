@@ -10,6 +10,7 @@ class MySQLMonkey( object ):
 
 ################################################################################
 # PUBLIC FUNCTIONS
+################################################################################
 
   def insert( self, rDict, **kwargs ):  
     
@@ -20,6 +21,17 @@ class MySQLMonkey( object ):
     
     return self.__insert( rDict, **kwargs )
 
+  def insertQuery( self, rDict, **kwargs ):
+    
+    # PARSING #
+    rDict  = self.parseDict( rDict )
+    kwargs = self.parseKwargs( kwargs )
+    # END PARSING #
+
+    return self.__insertSQLStatement( rDict, **kwargs )
+
+################################################################################
+
   def select( self, rDict, **kwargs ):  
 
     # PARSING #
@@ -28,6 +40,17 @@ class MySQLMonkey( object ):
     # END PARSING #
     
     return self.__select( rDict, **kwargs )
+
+  def selectQuery( self, rDict, **kwargs ):
+    
+    # PARSING #
+    rDict  = self.parseDict( rDict )
+    kwargs = self.parseKwargs( kwargs )
+    # END PARSING #
+
+    return self.__selectSQLStatement( rDict, **kwargs )
+
+################################################################################
 
   def get( self, rDict, **kwargs ):
 
@@ -39,6 +62,18 @@ class MySQLMonkey( object ):
 
     return self.__select( rDict, **kwargs )
 
+  def getQuery( self, rDict, **kwargs ):
+    
+    # PARSING #
+    rDict  = self.parseDict( rDict )
+    kwargs = self.parseKwargs( kwargs )
+    kwargs[ 'onlyUniqueKeys' ] = None
+    # END PARSING #
+
+    return self.__selectSQLStatement( rDict, **kwargs )
+
+################################################################################
+
   def update( self, rDict, **kwargs ):
 
     # PARSING #
@@ -47,6 +82,18 @@ class MySQLMonkey( object ):
     # END PARSING #
     
     return self.__update( rDict, **kwargs )    
+
+  def updateQuery( self, rDict, **kwargs ):
+    
+    # PARSING #
+    rDict  = self.parseDict( rDict )
+    kwargs = self.parseKwargs( kwargs )
+    # END PARSING #
+
+    return self.__updateSQLStatement( rDict, **kwargs )
+
+
+################################################################################    
     
   def delete( self, rDict, **kwargs ):
 
@@ -57,7 +104,19 @@ class MySQLMonkey( object ):
     # END PARSING #
 
     return self.__delete( rDict, **kwargs )
+
+  def deleteQuery( self, rDict, **kwargs ):
+    
+    # PARSING #
+    rDict  = self.parseDict( rDict )
+    kwargs = self.parseKwargs( kwargs )
+    kwargs[ 'onlyUniqueKeys' ] = None
+    # END PARSING #
+
+    return self.__deleteSQLStatement( rDict, **kwargs )
+
       
+################################################################################
     
   def localsToDict( self, locls ):
 
@@ -71,6 +130,7 @@ class MySQLMonkey( object ):
 
 ################################################################################
 # PARSERS
+################################################################################
 
   def parseDict( self, rDict ):
     # checks that the fields of the table are correct !!
@@ -89,7 +149,7 @@ class MySQLMonkey( object ):
       pKwargs[ 'onlyUniqueKeys' ] = True
       
     if pKwargs[ 'uniqueKeys' ] is None:
-      pKwargs[ 'uniqueKeys' ] = self.dbWrapper.TABLES[ pKwargs[ 'table'] ][ 'uniqueKeys' ]  
+      pKwargs[ 'uniqueKeys' ] = self.dbWrapper.__TABLES__[ pKwargs[ 'table'] ][ 'uniqueKeys' ]  
     
     return pKwargs  
   
@@ -99,6 +159,32 @@ class MySQLMonkey( object ):
 
   def __insert( self, rDict, **kwargs ):
     
+    sqlStatement = self.__insertSQLStatement( rDict, **kwargs )
+    return self.dbWrapper.db._update( sqlStatement )
+    
+  def __select( self, rDict, **kwargs ):
+
+    sqlStatement = self.__selectSQLStatement( rDict, **kwargs)  
+    sqlQuery     = self.dbWrapper.db._query( sqlStatement )
+    
+    return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )     
+ 
+  def __update( self, rDict, **kwargs ):
+    
+    sqlStatement = self.__updateSQLStatement( rDict, **kwargs )
+    return self.dbWrapper.db._update( sqlStatement )
+       
+  def __delete( self, rDict, **kwargs ):
+    
+    sqlStatement = self.__deleteSQLStatement( rDict, **kwargs )
+    return self.dbWrapper.db._update( sqlStatement )     
+       
+################################################################################
+# SQL STATEMENTS FUNCTIONS
+################################################################################       
+       
+  def __insertSQLStatement( self, rDict, **kwargs ):  
+    
     table = kwargs[ 'table' ]
     
     req = "INSERT INTO %s (" % table  
@@ -107,9 +193,9 @@ class MySQLMonkey( object ):
     req += ','.join( "'%s'" % value for value in rDict.values())
     req += ")"   
     
-    return self.dbWrapper.db._update( req )
-    
-  def __select( self, rDict, **kwargs ):
+    return req
+  
+  def __selectSQLStatement( self, rDict, **kwargs ):
 
     table = kwargs[ 'table' ]
     
@@ -134,12 +220,11 @@ class MySQLMonkey( object ):
       if order:
         req += " %s" % order 
     if limit:
-      req += " LIMIT %d" % limit     
-
-    sqlQuery = self.dbWrapper.db._query( req )
-    return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )     
- 
-  def __update( self, rDict, **kwargs ):
+      req += " LIMIT %d" % limit   
+  
+    return req
+  
+  def __updateSQLStatement( self, rDict, **kwargs ):
     
     table = kwargs[ 'table' ]
     
@@ -148,10 +233,10 @@ class MySQLMonkey( object ):
     req = "UPDATE %s SET " % table
     req += ','.join( "%s='%s'" % (key,value) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] ) )
     req += " WHERE %s" % whereElements
-    
-    return self.dbWrapper.db._update( req )
-       
-  def __delete( self, rDict, **kwargs ):
+
+    return req
+
+  def __deleteSQLStatement( self, rDict, **kwargs ):  
     
     table = kwargs[ 'table' ]
     
@@ -164,9 +249,10 @@ class MySQLMonkey( object ):
     if whereElements is not None:
       req += " WHERE %s" % whereElements
     
-    return self.dbWrapper.db._update( req )     
+    return req  
        
 ################################################################################       
+################################################################################   
        
 ################################################################################
 # AUXILIAR FUNCTIONS   
@@ -218,14 +304,17 @@ class MySQLMonkey( object ):
         continue
       
       if v is None:
-        pass
+        continue
+      
       elif isinstance( v, list ):
         if len(v) > 1:
-          items.append( '%s IN %s' % ( k, tuple( [ str(vv) for vv in v ] ) ) )
+          items.append( '%s IN %s' % ( k, tuple( [ str(vv) for vv in v if vv is not None ] ) ) )
         elif len(v):
-          items.append( "%s='%s'" % ( k, v[0] ) )
+          if v[ 0 ] is not None:
+            items.append( "%s='%s'" % ( k, v[0] ) )
         else:
-          raise NameError( rDict )      
+          items.append( "%s=''" % k )
+          #raise NameError( rDict )      
       else:
         items.append( "%s='%s'" % ( k, v ) )
                 
