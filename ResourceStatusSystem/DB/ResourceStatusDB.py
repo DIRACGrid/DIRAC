@@ -46,6 +46,30 @@ class ResourceStatusDB:
    >>> rsDB = ResourceStatusDB(DBin = ['UserName', 'Password'])
 
   """
+ 
+  __TABLES__ = {
+                'GridSite'                      : {'uniqueKeys' : [ 'GridSiteName' ] },
+                'Site'                          : {'uniqueKeys' : [ 'SiteName' ] },
+                'SiteStatus'                    : {'uniqueKeys' : [ 'SiteName', 'StatusType' ] },
+                'SiteScheduledStatus'           : {'uniqueKeys' : [ 'SiteName', 'StatusType', 'DateEffective' ] },
+                'SiteHistory'                   : {'uniqueKeys' : [ 'SiteName', 'StatusType', 'DateEnd' ] },
+                'SitePresent'                   : {'uniqueKeys' : [ 'SiteName', 'StatusType' ] },                                   
+                'Service'                       : {'uniqueKeys' : [ 'ServiceName' ] },
+                'ServiceStatus'                 : {'uniqueKeys' : [ 'ServiceName', 'StatusType' ] },
+                'ServiceScheduledStatus'        : {'uniqueKeys' : [ 'ServiceName', 'StatusType', 'DateEffective' ] },
+                'ServiceHistory'                : {'uniqueKeys' : [ 'ServiceName', 'StatusType', 'DateEnd' ] },
+                'ServicePresent'                : {'uniqueKeys' : [ 'ServiceName', 'StatusType' ]},
+                'Resource'                      : {'uniqueKeys' : [ 'ResourceName' ] },
+                'ResourceStatus'                : {'uniqueKeys' : [ 'ResourceName', 'StatusType' ] },
+                'ResourceScheduledStatus'       : {'uniqueKeys' : [ 'ResourceName', 'StatusType', 'DateEffective' ] },
+                'ResourceHistory'               : {'uniqueKeys' : [ 'ResourceName', 'StatusType', 'DateEnd' ] },
+                'ResourcePresent'               : {'uniqueKeys' : [ 'ResourceName', 'StatusType' ] },   
+                'StorageElement'                : {'uniqueKeys' : [ 'StorageElement' ] },
+                'StorageElementStatus'          : {'uniqueKeys' : [ 'StorageElementName', 'StatusType' ] },
+                'StorageElementScheduledStatus' : {'uniqueKeys' : [ 'StorageElementName', 'StatusType', 'DateEffective' ] },
+                'StorageElementHistory'         : {'uniqueKeys' : [ 'StorageElementName', 'StatusType', 'DateEnd' ] },
+                'StorageElementPresent'         : {'uniqueKeys' : [ 'StorageElementName', 'StatusType' ] }                               
+                }
 
   def __init__( self, *args, **kwargs ):
 
@@ -69,7 +93,7 @@ class ResourceStatusDB:
     else:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
-    self.mm    = MySQLMonkey( self.db )  
+    self.mm    = MySQLMonkey( self )  
     self.rsVal = ResourceStatusValidator( self )
 
   '''
@@ -78,83 +102,70 @@ class ResourceStatusDB:
   ##############################################################################
   '''
 
-  def __validateElementTableName( self, element ):
+#  def __validateElementTableName( self, element ):
+#
+#    element = element.replace('Status','').replace('History','').replace('Scheduled','').replace('Present','')
+#    self.rsVal.validateRes( element )
 
-    element = element.replace('Status','').replace('History','').replace('Scheduled','').replace('Present','')
-    self.rsVal.validateRes( element )
-
-  def __getWhereElements( self, element, dict ):
-
-    if element in ValidRes:
-      elements = [ '%sName' % element ]
-    elif element.replace( 'Status', '' ) in ValidRes:
-      elements = [ '%sName' % element.replace( 'Status', '' )]
-      if dict.has_key( 'StatusType' ):
-        elements.append( 'StatusType' )
-    elif element.replace( 'History', '') in ValidRes:
-      elements = [ '%sName' % element.replace( 'History', '' ), 'DateEnd' ]#'StatusType', 'DateEnd' ]
-      if dict.has_key( 'StatusType' ):
-        elements.append( 'StatusType' )
-    else:
-      message = '%s is a wrong element' % element
-      raise RSSDBException, where( self, self.__getWhereElements ) + message
-
-    newDict = {}
-    for el in elements:
-      newDict[ el ] = dict[ el ]
-
-    whereElements = self.__getMultipleWhereElements( newDict )
-
-    return whereElements
+#  def __getWhereElements( self, element, dict ):
+#
+#    if element in ValidRes:
+#      elements = [ '%sName' % element ]
+#    elif element.replace( 'Status', '' ) in ValidRes:
+#      elements = [ '%sName' % element.replace( 'Status', '' )]
+#      if dict.has_key( 'StatusType' ):
+#        elements.append( 'StatusType' )
+#    elif element.replace( 'History', '') in ValidRes:
+#      elements = [ '%sName' % element.replace( 'History', '' ), 'DateEnd' ]#'StatusType', 'DateEnd' ]
+#      if dict.has_key( 'StatusType' ):
+#        elements.append( 'StatusType' )
+#    else:
+#      message = '%s is a wrong element' % element
+#      raise RSSDBException, where( self, self.__getWhereElements ) + message
+#
+#    newDict = {}
+#    for el in elements:
+#      newDict[ el ] = dict[ el ]
+#
+#    whereElements = self.__getMultipleWhereElements( newDict )
+#
+#    return whereElements
 
   def __getMultipleWhereElements( self, dict, **kwargs ):
 
     return self.mm.getWhereElements( dict, **kwargs )
 
-  def __getElementUniqueKeys( self, element ):
+#  def __getElementUniqueKeys( self, element ):
+#
+#    if element in ValidRes:
+#      elements = [ '%sName' % element ]
+#    elif element.replace( 'Status', '' ) in ValidRes:
+#      elements = [ '%sName' % element.replace( 'Status', '' ), 'StatusType']
+#    elif element.replace( 'History', '') in ValidRes:
+#      elements = [ '%sName' % element.replace( 'History', '' ), 'StatusType', 'DateEnd' ]
+#    else:
+#      message = '%s is a wrong element' % element
+#      raise RSSDBException, where( self, self.__getElementUniqueKeys ) + message
+#
+#    return elements
 
-    if element in ValidRes:
-      elements = [ '%sName' % element ]
-    elif element.replace( 'Status', '' ) in ValidRes:
-      elements = [ '%sName' % element.replace( 'Status', '' ), 'StatusType']
-    elif element.replace( 'History', '') in ValidRes:
-      elements = [ '%sName' % element.replace( 'History', '' ), 'StatusType', 'DateEnd' ]
-    else:
-      message = '%s is a wrong element' % element
-      raise RSSDBException, where( self, self.__getElementUniqueKeys ) + message
+#  def __getColumns( self, columns ):
+#    return self.mm.getColumns( columns )  
 
-    return elements
-
-  def __generateRowDict( self, dict ):
-
-    rDict = {}
-    for k,v in dict.items():
-      if k not in ['self', 'dict', 'k', 'v', 'rDict', 'kwargs' ]:
-        if v is not None:
-          rDict[ k[0].upper() + k[1:] ] = v
-
-    return rDict
-
-  def __getColumns( self, columns ):
-    return self.mm.getColumns( columns )  
-  
-#  def __addRow( self, element, rDict ):      
-#    return self.mm.getColumns( columns )
-
-  def __addRow( self, element, dict ):
-    
-    req = "INSERT INTO %s (" % element
-    req += ','.join( "%s" % key for key in dict.keys())
-    req += ") VALUES ("
-    req += ','.join( "'%s'" % value for value in dict.values())
-
-    req += ")"   
-    sqlQuery = self.db._update( req )
-
-    #sqlQuery = self.mm.insert( element, rDict )
-
-    if not sqlQuery[ 'OK' ]:
-      raise RSSDBException, where( self, self.__addElementRow ) + sqlQuery[ 'Message' ]
+#  def __addRow( self, element, dict ):
+#    
+#    req = "INSERT INTO %s (" % element
+#    req += ','.join( "%s" % key for key in dict.keys())
+#    req += ") VALUES ("
+#    req += ','.join( "'%s'" % value for value in dict.values())
+#
+#    req += ")"   
+#    sqlQuery = self.db._update( req )
+#
+#    #sqlQuery = self.mm.insert( element, rDict )
+#
+#    if not sqlQuery[ 'OK' ]:
+#      raise RSSDBException, where( self, self.__addRow ) + sqlQuery[ 'Message' ]
         
     #req += ")"
 
@@ -163,77 +174,60 @@ class ResourceStatusDB:
     #  raise RSSDBException, where( self, self.__addElementRow ) + resUpdate[ 'Message' ]
 
 
-  def __addElementRow( self, element, dict ):
+#  def __addElementRow( self, element, dict ):
+#
+#    self.__validateElementTableName( element )
+#    self.__addRow( element, dict )
 
-    self.__validateElementTableName( element )
-    self.__addRow( element, dict )
+#  def __addGridRow( self, rDict ):
+#
+#    self.__addRow( 'GridSite', rDict )
 
-  def __addGridRow( self, rDict ):
+#  def __getElement2( self, element, rDict, **kwargs ):
+#    
+#    sqlQuery = self.mm.select( element, rDict, **kwargs )
+#    if not sqlQuery[ 'OK' ]:
+#      raise RSSDBException, where( self, self.__getElement ) + sqlQuery[ 'Message' ]
+#
+#    return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )
 
-    self.__addRow( 'GridSite', rDict )
+#  def __getElement( self, element, cols, whereElements, sort, order, limit ):
+#
+#    req = "SELECT %s from %s" % ( cols, element )
+#    if whereElements:
+#      req += " WHERE %s" % whereElements
+#    if sort:
+#      req += " ORDER BY %s" % sort
+#      if order:
+#        req += " %s" % order
+#    if limit:
+#      req += " LIMIT %d" % limit
+#
+#    resQuery = self.db._query( req )
+#    if not resQuery[ 'OK' ]:
+#      raise RSSDBException, where( self, self.__getElement ) + resQuery[ 'Message' ]
+#
+#    return S_OK( [ list(rQ) for rQ in resQuery[ 'Value' ]] )
 
-  def __getElement2( self, element, rDict, **kwargs ):
-    
-    sqlQuery = self.mm.select( element, rDict, **kwargs )
-    if not sqlQuery[ 'OK' ]:
-      raise RSSDBException, where( self, self.__getElement ) + sqlQuery[ 'Message' ]
-
-    return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )
-
-  def __getElement( self, element, cols, whereElements, sort, order, limit ):
-
-    req = "SELECT %s from %s" % ( cols, element )
-    if whereElements:
-      req += " WHERE %s" % whereElements
-    if sort:
-      req += " ORDER BY %s" % sort
-      if order:
-        req += " %s" % order
-    if limit:
-      req += " LIMIT %d" % limit
-
-    resQuery = self.db._query( req )
-    if not resQuery[ 'OK' ]:
-      raise RSSDBException, where( self, self.__getElement ) + resQuery[ 'Message' ]
-
-    return S_OK( [ list(rQ) for rQ in resQuery[ 'Value' ]] )
-
-  def __getElementRow( self, element, dict, **kwargs ):
-                        #sort = None, order = None, limit = None ):
-
-    self.__validateElementTableName( element )
-
-    # PARAMS PROCESSED FROM KWARGS !!!
-    sort    = kwargs.pop( 'sort',    None )
-    order   = kwargs.pop( 'order',   None )
-    limit   = kwargs.pop( 'limit',   None )
-    columns = kwargs.pop( 'columns', None )
-
-    whereElements = self.__getMultipleWhereElements( dict, **kwargs )
-    cols          = self.__getColumns( columns )
-    if sort is not None:
-      sort        = self.__getColumns( sort )
-    if order is not None:
-      order       = self.__getColumns( order )
-
-    return self.__getElement( element, cols, whereElements, sort, order, limit )
-
-  def __getGridElementRow( self, dict, **kwargs ):
-
-    # PARAMS PROCESSED FROM KWARGS !!!
-    sort    = kwargs.pop( 'sort',    None )
-    order   = kwargs.pop( 'order',   None )
-    limit   = kwargs.pop( 'limit',   None )
-    columns = kwargs.pop( 'columns', None )
-
-    whereElements = self.__getMultipleWhereElements( dict, **kwargs )
-    cols          = self.__getColumns( columns )
-    if sort is not None:
-      sort        = self.__getColumns( sort )
-    if order is not None:
-      order       = self.__getColumns( order )
-
-    return self.__getElement( 'GridSite', cols, whereElements, sort, order, limit )
+#  def __getElementRow( self, element, dict, **kwargs ):
+#                        #sort = None, order = None, limit = None ):
+#
+#    self.__validateElementTableName( element )
+#
+#    # PARAMS PROCESSED FROM KWARGS !!!
+#    sort    = kwargs.pop( 'sort',    None )
+#    order   = kwargs.pop( 'order',   None )
+#    limit   = kwargs.pop( 'limit',   None )
+#    columns = kwargs.pop( 'columns', None )
+#
+#    whereElements = self.__getMultipleWhereElements( dict, **kwargs )
+#    cols          = self.__getColumns( columns )
+#    if sort is not None:
+#      sort        = self.__getColumns( sort )
+#    if order is not None:
+#      order       = self.__getColumns( order )
+#
+#    return self.__getElement( element, cols, whereElements, sort, order, limit )
 
   def __getElementStatusCountRow( self, element, whereElements ):
 
@@ -268,216 +262,273 @@ class ResourceStatusDB:
     count['Total'] = sum( count.values() )
     return S_OK( count )
 
-  def __updateRow( self, element, dict, uniqueKeys, whereElements ):
+#  def __updateRow( self, element, dict, uniqueKeys, whereElements ):
+#
+#    req = "UPDATE %s SET " % element
+#    req += ','.join( "%s='%s'" % (key,value) for (key,value) in dict.items() if (key not in uniqueKeys) )
+#    req += " WHERE %s" % whereElements
+#
+#    resUpdate = self.db._update( req )
+#    if not resUpdate[ 'OK' ]:
+#      raise RSSDBException, where( self, self.__updateRow ) + resUpdate[ 'Message' ]
 
-    req = "UPDATE %s SET " % element
-    req += ','.join( "%s='%s'" % (key,value) for (key,value) in dict.items() if (key not in uniqueKeys) )
-    req += " WHERE %s" % whereElements
+#  def __updateElementRow( self, element, dict ):
+#
+#    self.__validateElementTableName( element )
+#
+#    uniqueKeys    = self.__getElementUniqueKeys( element )
+#    whereElements = self.__getWhereElements( element, dict )
+#
+#    self.__updateRow( element, dict,  uniqueKeys, whereElements )
+#
+#  def __updateGridRow( self, dict ):
+#
+#    uniqueKeys    = [ 'GridSiteName' ]
+#    whereElements = 'GridSiteName = "%s"' % dict[ 'GridSiteName' ]
+#
+#    self.__updateRow( 'GridSite', dict, uniqueKeys, whereElements )
+#
+#  def __deleteRow( self, element, whereElements ):
+#
+#    req = "DELETE from %s" % element
+#    if whereElements is not None:
+#      req += " WHERE %s" % whereElements
+#
+#    resDel = self.db._update( req )
+#    if not resDel[ 'OK' ]:
+#      raise RSSDBException, where( self, self.__deleteRow ) + resDel[ 'Message' ]
+#
+#  def __deleteElementRow( self, element, dict, **kwargs ):
+#
+#    self.__validateElementTableName( element )
+#
+#    whereElements = self.__getMultipleWhereElements( dict, **kwargs )
+#    self.__deleteRow(element, whereElements)
 
-    resUpdate = self.db._update( req )
-    if not resUpdate[ 'OK' ]:
-      raise RSSDBException, where( self, self.__updateRow ) + resUpdate[ 'Message' ]
+#  def __addOrModifyElement( self, element, dict ):
+#
+#    self.rsVal.validateRes( element )
+#
+#    kwargs = { 'columns' : [ '%sName' % element ] }
+#    elemnt = self.__getElementRow( element,
+#                                   {
+#                                    '%sName' % element : dict[ '%sName' % element ]
+#                                    },
+#                                    **kwargs
+#                                    #: '%sName' % element
+#                                  )
+#
+#    if elemnt[ 'Value' ]:
+#      self.__updateElementRow( element, dict )
+#    else:
+#      # If we add a new site, we set the new Site with status 'Banned'
+#      self.__addElementRow( element, dict )
+#
+#      defaultStatus  = 'Banned'
+#      defaultReasons = [ 'Added to DB', 'Init' ]
+#      tokenOwner     = 'RS_SVC'
+#
+#      # This three lines make not much sense, but sometimes statusToSet is '',
+#      # and we need it as a list to work properly
+#      statusToSet = ValidStatusTypes[ element ][ 'StatusType' ]
+#      if not isinstance( statusToSet, list ):
+#        statusToSet = [ statusToSet ]
+#
+#      rDict = { '%sName' % element : dict[ '%sName' % element ],
+#                'Status'           : defaultStatus,
+#                'TokenOwner'       : tokenOwner }
+#
+#      for statusType in statusToSet:
+#
+#        rDict[ 'StatusType' ] = statusType
+#
+#        # Trick to populate ElementHistory table with one entry. This allows
+#        # us to use PresentElement views ( otherwise they do not work ).
+#        for defaultReason in defaultReasons:
+#
+#          rDict[ 'Reason' ] = defaultReason
+#          self.__setElementStatus( element, rDict )
 
-  def __updateElementRow( self, element, dict ):
+################################################################################
+################################################################################
+# SUB PUBLIC FUNCTIONS
+################################################################################
+################################################################################
 
-    self.__validateElementTableName( element )
+  def _addOrModifyElement( self, rDict, **kwargs ):
+    
+    sqlQuery = self.mm.select( rDict, **kwargs )
+    
+    if sqlQuery[ 'Value' ]:      
+      return self.mm.update( rDict, **kwargs )
+    else: 
+      sqlQuery = self.mm.insert( rDict, **kwargs )
+      if sqlQuery[ 'OK' ]:       
+        self.__setInitStatus( rDict, **kwargs )
+      else:
+        return sqlQuery       
 
-    uniqueKeys    = self.__getElementUniqueKeys( element )
-    whereElements = self.__getWhereElements( element, dict )
+################################################################################
 
-    self.__updateRow( element, dict,  uniqueKeys, whereElements )
-
-  def __updateGridRow( self, dict ):
-
-    uniqueKeys    = [ 'GridSiteName' ]
-    whereElements = 'GridSiteName = "%s"' % dict[ 'GridSiteName' ]
-
-    self.__updateRow( 'GridSite', dict, uniqueKeys, whereElements )
-
-  def __deleteRow( self, element, whereElements ):
-
-    req = "DELETE from %s" % element
-    if whereElements is not None:
-      req += " WHERE %s" % whereElements
-
-    resDel = self.db._update( req )
-    if not resDel[ 'OK' ]:
-      raise RSSDBException, where( self, self.__deleteRow ) + resDel[ 'Message' ]
-
-  def __deleteElementRow( self, element, dict, **kwargs ):
-
-    self.__validateElementTableName( element )
-
-    whereElements = self.__getMultipleWhereElements( dict, **kwargs )
-    self.__deleteRow(element, whereElements)
-
-  def __addOrModifyElement( self, element, dict ):
-
-    self.rsVal.validateRes( element )
-
-    kwargs = { 'columns' : [ '%sName' % element ] }
-    elemnt = self.__getElementRow( element,
-                                   {
-                                    '%sName' % element : dict[ '%sName' % element ]
-                                    },
-                                    **kwargs
-                                    #: '%sName' % element
-                                  )
-
-    if elemnt[ 'Value' ]:
-      self.__updateElementRow( element, dict )
-    else:
-      # If we add a new site, we set the new Site with status 'Banned'
-      self.__addElementRow( element, dict )
-
-      defaultStatus  = 'Banned'
-      defaultReasons = [ 'Added to DB', 'Init' ]
-      tokenOwner     = 'RS_SVC'
-
-      # This three lines make not much sense, but sometimes statusToSet is '',
-      # and we need it as a list to work properly
-      statusToSet = ValidStatusTypes[ element ][ 'StatusType' ]
-      if not isinstance( statusToSet, list ):
-        statusToSet = [ statusToSet ]
-
-      rDict = { '%sName' % element : dict[ '%sName' % element ],
-                'Status'           : defaultStatus,
-                'TokenOwner'       : tokenOwner }
-
-      for statusType in statusToSet:
-
-        rDict[ 'StatusType' ] = statusType
-
-        # Trick to populate ElementHistory table with one entry. This allows
-        # us to use PresentElement views ( otherwise they do not work ).
-        for defaultReason in defaultReasons:
-
-          rDict[ 'Reason' ] = defaultReason
-          self.__setElementStatus( element, rDict )
-
-  def __addOrModifyGridElement( self, rDict ):
-
-    gridSite = self.__getGridElementRow( { 'GridSiteName' : rDict[ 'GridSiteName' ] } )
-
-    if gridSite[ 'Value' ]:
-      self.__updateGridRow( rDict )
-    else:
-      self.__addGridRow( rDict )
-
-  def __setElementStatus( self, element, rDict ):
+  def _addOrModifyElementStatus( self, rDict, **kwargs ):
 
     # START VALIDATION #
-    self.rsVal.validateRes( element )
-    self.rsVal.validateSingleElementStatusType( element, rDict['StatusType'] )
+    if rDict.has_key( 'Status' ):
+      self.rsVal.validateStatus( rDict['Status'] )
+    if rDict.has_key( 'Reason' ):
+      self.rsVal.validateName( rDict['Reason'] )
+    self.rsVal.validateSingleDates( rDict )
+    # END VALIDATION #
+
+    rDict, now = self.__setStatusDefaults( rDict )
+
+    sqlQuery = self.mm.select( rDict, **kwargs )
+    
+    if not sqlQuery[ 'Value' ]:
+      return self.mm.insert( rDict, **kwargs )
+    
+#    if sqlQuery[ 'Value' ]:
+    updateSQLQuery = self.mm.update( rDict, **kwargs )
+    if not sqlQuery[ 'OK' ]:
+      return updateSQLQuery 
+
+    sqlQ                       = sqlQuery[ 'Value' ][ 0 ]
+    
+    rDict[ 'Status' ]          = sqlQ[ 3 ]
+    rDict[ 'Reason' ]          = sqlQ[ 4 ]
+    rDict[ 'DateCreated' ]     = sqlQ[ 5 ]
+    rDict[ 'DateEffective' ]   = sqlQ[ 6 ]
+    rDict[ 'DateEnd' ]         = now
+    rDict[ 'LastCheckTime' ]   = sqlQ[ 8 ]
+    rDict[ 'TokenOwner' ]      = sqlQ[ 9 ]
+    rDict[ 'TokenExpiration' ] = sqlQ[ 10 ]
+
+    kwargs.update( { 'table' : kwargs[ 'table' ].replace( 'Status', 'History' ) } )
+    return self.mm.insert( rDict, **kwargs )
+  
+################################################################################
+
+#  def _updateElementStatus( self, rDict, **kwargs ):
+#
+#    # START VALIDATION #
+#    self.rsVal.validateSingleDates( rDict )
+#    if rDict.has_key( 'Status' ):
+#      self.rsVal.validateStatus( dict['Status'] )
+#    self.rsVal.validateSingleDates( rDict )
+#    # END VALIDATION #
+#
+#    now = datetime.utcnow()
+#    #We force LastCheckTime to now
+#    rDict[ 'LastCheckTime'] = now
+#
+#    # We keep a copy before the update, to add a history row
+#    sqlQuery = self.mm.select( rDict, **kwargs )
+#    if not sqlQuery[ 'OK' ]:
+#      return sqlQuery
+#
+#    # THIS MUST FAIL IF WE TRY TO UPDATE SOMETHING THAT IS NOT ON THE DB    
+#    #    if sqlQuery[ 'Value' ]:
+#    updateSQLQuery = self.mm.update( rDict, **kwargs )
+#    if not updateSQLQuery[ 'OK']:
+#      return updateSQLQuery
+#    
+#    sqlQ                        = sqlQuery[ 'Value' ][ 0 ]    
+#    rDict[ 'Status' ]           = sqlQ[ 3 ]
+#    rDict[ 'Reason' ]           = sqlQ[ 4 ]
+#    rDict[ 'DateCreated' ]      = sqlQ[ 5 ]
+#    rDict[ 'DateEffective' ]    = sqlQ[ 6 ]
+#    rDict[ 'DateEnd' ]          = now # cSs[ 7 ]
+#    rDict[ 'LastCheckTime' ]    = sqlQ[ 8 ]
+#    rDict[ 'TokenOwner' ]       = sqlQ[ 9 ]
+#    rDict[ 'TokenExpiration' ]  = sqlQ[ 10 ]
+#
+#    #We store any modification on the Status
+#    kwargs.update( { 'table' : kwargs[ 'table' ].replace( 'Status', 'History' ) } )
+#    return self.mm.insert( rDict, **kwargs )
+
+################################################################################
+    
+  def _addOrModifyElementScheduledStatus( self, rDict, **kwargs ):
+
+    # START VALIDATION #
     self.rsVal.validateStatus( rDict['Status'] )
     self.rsVal.validateName( rDict['Reason'] )
     self.rsVal.validateSingleDates( rDict )
     # END VALIDATION #
-
-    el = self.__getElementRow( element, { '%sName' % element : rDict[ '%sName' % element ] } )#, None )
-    if not el[ 'Value' ]:
-      message = '%s "%s" does not exist' % ( element, rDict[ '%sName' % element ] )
-      raise RSSDBException, where( self, self.__setElementStatus ) + message
-
-    # END VALIDATION #
-
-    currentStatus = self.__getElementRow( '%sStatus' % element,
-                                          {
-                                           '%sName' % element : rDict[ '%sName' % element ],
-                                           'StatusType'       : rDict[ 'StatusType' ]
-                                           } )
-
-    now    = datetime.utcnow()
-    never  = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 )
-
-    rDict[ 'TokenExpiration' ] = ( 1 and ( rDict.has_key('TokenExpiration') and rDict['TokenExpiration'] ) ) or never
-    rDict[ 'DateCreated' ]     = ( 1 and ( rDict.has_key('DateCreated')     and rDict['DateCreated']     ) ) or now
-    rDict[ 'DateEffective' ]   = ( 1 and ( rDict.has_key('DateEffective')   and rDict['DateEffective']   ) ) or now
-    rDict[ 'DateEnd' ]         = ( 1 and ( rDict.has_key('DateEnd')         and rDict['DateEnd']         ) ) or never
-    rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now
-
-    rDict[ 'TokenOwner' ]      = ( 1 and ( rDict.has_key('TokenOwner')      and rDict['TokenOwner']      ) ) or 'RS_SVC'
-
-    if currentStatus[ 'Value' ]:
-
-      self.__updateElementRow( '%sStatus' % element , rDict )
-
-      cS            = currentStatus[ 'Value' ][ 0 ]
-
-      rDict[ 'Status' ]          = cS[ 3 ]
-      rDict[ 'Reason' ]          = cS[ 4 ]
-      rDict[ 'DateCreated' ]     = cS[ 5 ]
-      rDict[ 'DateEffective' ]   = cS[ 6 ]
-      rDict[ 'DateEnd' ]         = now
-      rDict[ 'LastCheckTime' ]   = cS[ 8 ]
-      rDict[ 'TokenOwner' ]      = cS[ 9 ]
-      rDict[ 'TokenExpiration' ] = cS[ 10 ]
-
-      self.__addElementRow( '%sHistory' % element , rDict)
-
-    else:
-
-      self.__addElementRow( '%sStatus' % element , rDict )
-
-  def __updateElementStatus( self, element, dict ):
-
-    now = datetime.utcnow()
-
-    # START VALIDATION #
-    self.rsVal.validateRes( element )
-    self.rsVal.validateSingleDates( dict )
-    if dict.has_key( 'Status' ):
-      self.rsVal.validateStatus( dict['Status'] )
-    self.rsVal.validateSingleElementStatusType( element, dict[ 'StatusType'] )
-    self.rsVal.validateSingleDates( dict )
-
-    el = self.__getElementRow( element, { '%sName' % element : dict[ '%sName' % element ] } )#, None )
-    if not el[ 'Value' ]:
-      message = '%s "%s" does not exist' % ( element, dict[ '%sName' % element ] )
-      raise RSSDBException, where( self, self.__updateElementStatus ) + message
-    # END VALIDATION #
-
-    rDict = { '%sName' % element : dict[ '%sName' % element ] }
-    if dict.has_key( 'StatusType' ):
-      rDict[ 'StatusType' ] = dict[ 'StatusType' ]
-
-    dict[ 'LastCheckTime'] = now
-
-    self.__updateElementRow( '%sStatus' % element, dict )
-
-    currentStatus = self.__getElementRow( '%sStatus' % element, dict )#, None )
-    for cSs in currentStatus[ 'Value' ]:
-
-      rDict[ '%sName' % element ] = cSs[ 1 ]
-      rDict[ 'Status' ]           = cSs[ 3 ]
-      rDict[ 'Reason' ]           = cSs[ 4 ]
-      rDict[ 'DateCreated' ]      = cSs[ 5 ]
-      rDict[ 'DateEffective' ]    = cSs[ 6 ]
-      rDict[ 'DateEnd' ]          = now # cSs[ 7 ]
-      rDict[ 'LastCheckTime' ]    = cSs[ 8 ]
-      rDict[ 'TokenOwner' ]       = cSs[ 9 ]
-      rDict[ 'TokenExpiration' ]  = cSs[ 10 ]
-
-      #We store any modification on the Status
-      self.__addElementRow( '%sHistory' % element , rDict )
-
-  def __setElementScheduledStatus( self, element, rDict ):
-
-    # START VALIDATION #
-    self.rsVal.validateRes( element )
-    self.rsVal.validateSingleElementStatusType( element, rDict['StatusType'])
-    self.rsVal.validateStatus( rDict['Status'] )
-    self.rsVal.validateName( rDict['Reason'] )
-    self.rsVal.validateSingleDates( rDict )
-
-    el = self.__getElementRow( element, { '%sName' % element : rDict[ '%sName' % element ] } )
-    if not el[ 'Value' ]:
-      message = '%s "%s" does not exist' % ( element, rDict[ '%sName' % element ] )
-      raise RSSDBException, where( self, self.__setElementStatus ) + message
-    # END VALIDATION #
-
+ 
     # We prevent from users not giving all values.
-    znever = datetime.min
+    rDict, _now = self.__setStatusDefaults( rDict )
+
+    sqlQuery = self.mm.select( rDict, **kwargs )
+    if sqlQuery[ 'Value' ]:
+      return self.mm.update( rDict, **kwargs )
+    else:  
+      return self.mm.insert( rDict, **kwargs )    
+
+################################################################################
+
+  def _deleteElement( self, rDict, **kwargs ):
+    
+    element = kwargs[ 'table' ]
+    
+    for table in [ 'History', 'ScheduledStatus', 'Status', '' ]:
+      
+      kwargs[ 'table' ] = '%s%s' % ( element, table )
+      sqlQuery = self.mm.delete( rDict, **kwargs )
+      
+      if not sqlQuery[ 'OK' ]:
+        return sqlQuery
+    
+    return S_OK()
+    
+################################################################################
+################################################################################    
+
+################################################################################
+################################################################################
+# AUXILIAR FUNCTIONS
+################################################################################
+################################################################################
+
+  def __setInitStatus( self, rDict, **kwargs ):
+
+    defaultStatus  = 'Banned'
+    defaultReasons = [ 'Added to DB', 'Init' ]
+    tokenOwner     = 'RS_SVC'
+
+    # This three lines make not much sense, but sometimes statusToSet is '',
+    # and we need it as a list to work properly
+    statusToSet = ValidStatusTypes[ kwargs[ 'table' ] ][ 'StatusType' ]
+    
+    if not isinstance( statusToSet, list ):
+      statusToSet = [ statusToSet ]
+
+    rDict = { '%sName' % kwargs[ 'table' ] : rDict[ '%sName' % kwargs[ 'table' ] ],
+              'Status'                     : defaultStatus,
+              'TokenOwner'                 : tokenOwner }
+
+    element           = kwargs[ 'table' ]
+    kwargs[ 'table' ] = '%sStatus' % element
+    
+    for statusType in statusToSet:
+
+      rDict[ 'StatusType' ] = statusType
+      # Trick to populate ElementHistory table with one entry. This allows
+      # us to use PresentElement views ( otherwise they do not work ).
+      for defaultReason in defaultReasons:
+
+        rDict[ 'Reason' ] = defaultReason
+        sqlQuery = self._addOrModifyElementStatus( element, rDict, **kwargs )
+        
+        if not sqlQuery[ 'OK' ]:
+          return sqlQuery
+        
+    return S_OK()      
+
+################################################################################
+    
+  def __setStatusDefaults( self, rDict ):
+     
     now    = datetime.utcnow()
     never  = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 )
 
@@ -486,47 +537,49 @@ class ResourceStatusDB:
     rDict[ 'DateEffective' ]   = ( 1 and ( rDict.has_key('DateEffective')   and rDict['DateEffective']   ) ) or now
     rDict[ 'DateEnd' ]         = ( 1 and ( rDict.has_key('DateEnd')         and rDict['DateEnd']         ) ) or never
     rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now
-
     rDict[ 'TokenOwner' ]      = ( 1 and ( rDict.has_key('TokenOwner')      and rDict['TokenOwner']      ) ) or 'RS_SVC'
+    
+    return rDict, now     
 
-    self.__addElementRow( '%sScheduledStatus' % element , rDict )
+################################################################################
+################################################################################
 
-  def __getElements( self, element, rDict, table = None, **kwargs ):
-
-    # START VALIDATION #
-    self.rsVal.validateRes( element )
-    self.rsVal.validateDates( rDict )
-    # END VALIDATION #
-
-    if table is not None:
-      element = '%s%s' % ( element, table )
-
-    return self.__getElementRow( element, rDict, **kwargs )
-
-  def __deleteElements( self, element, rDict ):
-
-    # START VALIDATION #
-    self.rsVal.validateRes( element )
-    # END VALIDATION #
-    self.__deleteElementRow( '%sHistory' % element,         rDict )
-    self.__deleteElementRow( '%sScheduledStatus' % element, rDict )
-    self.__deleteElementRow( '%sStatus' % element,          rDict )
-    self.__deleteElementRow( element,                       rDict )
-
-  def __deleteElementHistory( self, element, rDict, **kwargs ):
-
-    # START VALIDATION #
-    self.rsVal.validateRes( element )
-    self.rsVal.validateDates(rDict)
-    # END VALIDATION #
-    self.__deleteElementRow( '%sHistory' % element, rDict, **kwargs )
-
-  def __deleteElementsScheduledStatus( self, element, rDict, **kwargs ):
-    # START VALIDATION #
-    self.rsVal.validateRes( element )
-    self.rsVal.validateDates(rDict)
-    # END VALIDATION #
-    self.__deleteElementRow( '%sScheduledStatus' % element, rDict, **kwargs)
+#  def __getElements( self, element, rDict, table = None, **kwargs ):
+#
+#    # START VALIDATION #
+#    self.rsVal.validateRes( element )
+#    self.rsVal.validateDates( rDict )
+#    # END VALIDATION #
+#
+#    if table is not None:
+#      element = '%s%s' % ( element, table )
+#
+#    return self.__getElementRow( element, rDict, **kwargs )
+#
+#  def __deleteElements( self, element, rDict ):
+#
+#    # START VALIDATION #
+#    self.rsVal.validateRes( element )
+#    # END VALIDATION #
+#    self.__deleteElementRow( '%sHistory' % element,         rDict )
+#    self.__deleteElementRow( '%sScheduledStatus' % element, rDict )
+#    self.__deleteElementRow( '%sStatus' % element,          rDict )
+#    self.__deleteElementRow( element,                       rDict )
+#
+#  def __deleteElementHistory( self, element, rDict, **kwargs ):
+#
+#    # START VALIDATION #
+#    self.rsVal.validateRes( element )
+#    self.rsVal.validateDates(rDict)
+#    # END VALIDATION #
+#    self.__deleteElementRow( '%sHistory' % element, rDict, **kwargs )
+#
+#  def __deleteElementsScheduledStatus( self, element, rDict, **kwargs ):
+#    # START VALIDATION #
+#    self.rsVal.validateRes( element )
+#    self.rsVal.validateDates(rDict)
+#    # END VALIDATION #
+#    self.__deleteElementRow( '%sScheduledStatus' % element, rDict, **kwargs)
 
   '''
   ##############################################################################
@@ -535,113 +588,111 @@ class ResourceStatusDB:
   '''
 
   @CheckExecution
-  def addOrModifySite( self, siteName, siteType, gridSiteName ):
+  def addOrModifySite( self, siteName, siteType, gridSiteName, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
+    rDict = self.mm.localsToDict( locals() )
     # VALIDATION #
-    self.rsVal.validateName(siteName)
+    self.rsVal.validateName( siteName )
     self.rsVal.validateSiteType( siteType )
     self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION #
-    self.__addOrModifyElement( 'Site', rDict )
-    return S_OK()
+   
+    return self._addOrModifyElement( rDict, **kwargs )
 
   @CheckExecution
-  def setSiteStatus( self, siteName, statusType, status, reason, dateCreated,
-                     dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                     tokenExpiration ):
+  def addOrModifySiteStatus( self, siteName, statusType, status, reason, dateCreated,
+                             dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                             tokenExpiration, **kwargs ):
+  
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateName( siteName )
+    self.rsVal.validateSingleElementStatusType( 'Site', rDict[ 'StatusType' ] )
+    # END VALIDATION #
+       
+    print rDict   
+       
+    return self._addOrModifyElementStatus( rDict, **kwargs )
+    
+  @CheckExecution
+  def addOrModifySiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
+                                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                                      tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__setElementStatus( 'Site', rDict )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateName( siteName )
+    self.rsVal.validateSingleElementStatusType( 'Site', rDict[ 'StatusType' ] )
+    # END VALIDATION #
+    
+    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
 
   @CheckExecution
-  def setSiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
-                              dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                              tokenExpiration ):
+  def getSite( self, siteName, siteType, gridSiteName, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__setElementScheduledStatus( 'Site', rDict )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def updateSiteStatus( self, siteName, statusType, status, reason, dateCreated,
-                        dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                        tokenExpiration ):
-
-    rDict = self.__generateRowDict( locals() )
-    self.__updateElementStatus( 'Site' , rDict )
-    return S_OK()
-
-  @CheckExecution
-  def getSites( self, siteName, siteType, gridSiteName, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Site', rDict, **kwargs )
-
-  @CheckExecution
-  def getSitesStatus( self, siteName, statusType, status, reason, dateCreated,
+  def getSiteStatus( self, siteName, statusType, status, reason, dateCreated,
                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
                      tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Site', rDict, table = 'Status', **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def getSitesHistory( self, siteName, statusType, status, reason, dateCreated,
-                       dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                       tokenExpiration, **kwargs ):
+  def getSiteHistory( self, siteName, statusType, status, reason, dateCreated,
+                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                      tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
+    rDict = self.mm.localsToDict( locals() )
     if not kwargs.has_key( 'sort' ):
       kwargs[ 'sort' ] = [ 'SiteName', 'SiteHistoryID' ]
-    return self.__getElements( 'Site', rDict, table = 'History', **kwargs )
+    return self.mm.get( rDict, **kwargs )  
 
   @CheckExecution
-  def getSitesScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
-                               dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                               tokenExpiration, **kwargs ):
+  def getSiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
+                              dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                              tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Site', rDict, table = 'ScheduledStatus', **kwargs )
-
-  @CheckExecution
-  def getSitesPresent( self, siteName, siteType, gridSiteName, gridTier,
-                       statusType, status, dateEffective, reason, lastCheckTime,
-                       tokenOwner, tokenExpiration, formerStatus, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Site', rDict, table = 'Present', **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )  
 
   @CheckExecution
-  def deleteSites( self, siteName ):
+  def getSitePresent( self, siteName, siteType, gridSiteName, gridTier,
+                      statusType, status, dateEffective, reason, lastCheckTime,
+                      tokenOwner, tokenExpiration, formerStatus, **kwargs ):
 
-    #VALIDATION#
+    rDict = self.mm.localsToDict( locals() )   
+    return self.mm.get( rDict, **kwargs )
+
+  @CheckExecution
+  def deleteSite( self, siteName, **kwargs ):
+
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
     self.rsVal.validateMultipleNames( siteName )
     # END VALIDATION #
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElements( 'Site', rDict)
-    return S_OK()
+    return self._deleteElement( rDict, **kwargs )
 
   @CheckExecution
-  def deleteSitesScheduledStatus( self, siteName, statusType, status, reason,
-                                  dateCreated, dateEffective, dateEnd,
-                                  lastCheckTime, tokenOwner, tokenExpiration,
-                                  **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElementsScheduledStatus( 'Site', rDict, **kwargs )
-    return S_OK()
+  def deleteSiteScheduledStatus( self, siteName, statusType, status, reason,
+                                 dateCreated, dateEffective, dateEnd,
+                                 lastCheckTime, tokenOwner, tokenExpiration,
+                                 **kwargs ):
+    
+    rDict = self.mm.localsToDict( locals() )  
+    return self.mm.delete( rDict, **kwargs )
 
   @CheckExecution
-  def deleteSitesHistory( self, siteName, statusType, status, reason, dateCreated,
+  def deleteSiteHistory( self, siteName, statusType, status, reason, dateCreated,
                           dateEffective, dateEnd, lastCheckTime, tokenOwner,
                           tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElementHistory( 'Site', rDict, **kwargs )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.delete( rDict, **kwargs )
 
   '''
   ##############################################################################
@@ -650,9 +701,9 @@ class ResourceStatusDB:
   '''
 
   @CheckExecution
-  def addOrModifyService( self, serviceName, serviceType, siteName ):
+  def addOrModifyService( self, serviceName, serviceType, siteName, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
+    rDict = self.mm.localsToDict( locals() )
 
     # START VALIDATION #
     self.rsVal.validateName( serviceName )
@@ -660,105 +711,101 @@ class ResourceStatusDB:
     self.rsVal.validateSite( siteName )
     # END VALIDATION #
 
-    self.__addOrModifyElement( 'Service', rDict)
-    return S_OK()
+    return self._addOrModifyElement( rDict, **kwargs )
 
   @CheckExecution
-  def setServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
-                        dateEffective, dateEnd, lastCheckTime,tokenOwner,
-                        tokenExpiration ):
+  def addOrModifyServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
+                                dateEffective, dateEnd, lastCheckTime,tokenOwner,
+                                tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__setElementStatus( 'Service', rDict )
-    return S_OK()
-
-  @CheckExecution
-  def setServiceScheduledStatus( self, serviceName, statusType, status,
-                                 reason, dateCreated, dateEffective, dateEnd,
-                                 lastCheckTime, tokenOwner, tokenExpiration ):
-
-    rDict = self.__generateRowDict( locals() )
-    self.__setElementScheduledStatus( 'Service', rDict )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateName( serviceName )
+    self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
+    # END VALIDATION #
+       
+    return self._addOrModifyElementStatus( rDict, **kwargs )    
 
   @CheckExecution
-  def updateServiceStatus( self, serviceName, statusType, status, reason,
-                           dateCreated, dateEffective, dateEnd, lastCheckTime,
-                           tokenOwner, tokenExpiration ):
-
-    rDict = self.__generateRowDict( locals() )
-    self.__updateElementStatus( 'Service', rDict )
-    return S_OK()
+  def addOrModifyServiceScheduledStatus( self, serviceName, statusType, status,
+                                         reason, dateCreated, dateEffective, dateEnd,
+                                         lastCheckTime, tokenOwner, tokenExpiration,
+                                         **kwargs ):
+    
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateName( serviceName )
+    self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
+    # END VALIDATION #
+    
+    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
 
   @CheckExecution
-  def getServices( self, serviceName, serviceType, siteName, **kwargs ):
+  def getService( self, serviceName, serviceType, siteName, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Service', rDict, **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def getServicesStatus( self, serviceName, statusType, status, reason, dateCreated,
+  def getServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
+                        dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                        tokenExpiration, **kwargs ):
+
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
+
+  @CheckExecution
+  def getServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
                          tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Service', rDict, table = 'Status', **kwargs )
-
-  @CheckExecution
-  def getServicesHistory( self, serviceName, statusType, status, reason, dateCreated,
-                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                          tokenExpiration, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
+    rDict = self.mm.localsToDict( locals() )
     if not kwargs.has_key( 'sort' ):
       kwargs[ 'sort' ] = [ 'ServiceName', 'ServiceHistoryID' ]
-    return self.__getElements( 'Service', rDict, table = 'History', **kwargs )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def getServicesScheduledStatus( self, serviceName, statusType, status, reason,
-                                  dateCreated, dateEffective, dateEnd, lastCheckTime,
-                                  tokenOwner, tokenExpiration, **kwargs ):
+  def getServiceScheduledStatus( self, serviceName, statusType, status, reason,
+                                 dateCreated, dateEffective, dateEnd, lastCheckTime,
+                                 tokenOwner, tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Service', rDict, table = 'ScheduledStatus', **kwargs )
-
-  @CheckExecution
-  def getServicesPresent( self, serviceName, siteName, siteType, serviceType,
-                          statusType, status, dateEffective, reason, lastCheckTime,
-                          tokenOwner, tokenExpiration, formerStatus, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Service', rDict, table = 'Present', **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def deleteServices( self, serviceName ):
+  def getServicePresent( self, serviceName, siteName, siteType, serviceType,
+                         statusType, status, dateEffective, reason, lastCheckTime,
+                         tokenOwner, tokenExpiration, formerStatus, **kwargs ):
 
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
+
+  @CheckExecution
+  def deleteService( self, serviceName, **kwargs ):
+
+    rDict = self.mm.localsToDict( locals() )
     #VALIDATION#
     self.rsVal.validateMultipleNames( serviceName )
     # END VALIDATION #
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElements( 'Service', rDict)
-    return S_OK()
+    return self._deleteElement( rDict, **kwargs )
 
   @CheckExecution
-  def deleteServicesScheduledStatus( self, serviceName, statusType, status,
+  def deleteServiceScheduledStatus( self, serviceName, statusType, status,
                                      reason, dateCreated, dateEffective, dateEnd,
                                      lastCheckTime, tokenOwner, tokenExpiration,
                                      **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElementsScheduledStatus( 'Service', rDict, **kwargs )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )  
+    return self.mm.delete( rDict, **kwargs )
 
   @CheckExecution
-  def deleteServicesHistory( self, serviceName, statusType, status, reason, dateCreated,
+  def deleteServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
                              dateEffective, dateEnd, lastCheckTime, tokenOwner,
                              tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElementHistory( 'Service', rDict, **kwargs )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )  
+    return self.mm.delete( rDict, **kwargs )
 
   '''
   ##############################################################################
@@ -768,118 +815,117 @@ class ResourceStatusDB:
 
   @CheckExecution
   def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName,
-                           gridSiteName ):
+                           gridSiteName, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-
+    rDict = self.mm.localsToDict( locals() )
+    
     # START VALIDATION #
+    self.rsVal.validateName( resourceName )  
     self.rsVal.validateResourceType( resourceType )
     self.rsVal.validateServiceType( serviceType )
+    # Not used, some resources have NULL site !!
 #    self.rsVal.validateSite( siteName )
     self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION #
 
-    self.__addOrModifyElement( 'Resource', rDict )
-    return S_OK()
+    return self._addOrModifyElement( rDict, **kwargs )
 
   @CheckExecution
-  def setResourceStatus( self, resourceName, statusType, status, reason, dateCreated,
-                         dateEffective, dateEnd, lastCheckTime, tokenOwner,tokenExpiration ):
+  def addOrModifyResourceStatus( self, resourceName, statusType, status, reason, 
+                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                 tokenOwner,tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__setElementStatus( 'Resource', rDict )
-    return S_OK()
-
-  @CheckExecution
-  def setResourceScheduledStatus( self, resourceName, statusType, status, reason,
-                                  dateCreated, dateEffective, dateEnd, lastCheckTime,
-                                  tokenOwner, tokenExpiration ):
-
-    rDict = self.__generateRowDict( locals() )
-    self.__setElementScheduledStatus( 'Resource', rDict )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateName( resourceName )
+    self.rsVal.validateSingleElementStatusType( 'Resource', rDict[ 'StatusType' ] )
+    # END VALIDATION #
+       
+    return self._addOrModifyElementStatus( rDict, **kwargs )    
 
   @CheckExecution
-  def updateResourceStatus( self, resourceName, statusType, status, reason, dateCreated,
-                            dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                            tokenExpiration ):
+  def addOrModifyResourceScheduledStatus( self, resourceName, statusType, status, 
+                                          reason, dateCreated, dateEffective, dateEnd, 
+                                          lastCheckTime, tokenOwner, tokenExpiration,
+                                          **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__updateElementStatus( 'Resource', rDict )
-    return S_OK()
-
-  @CheckExecution
-  def getResources( self, resourceName, resourceType, serviceType, siteName,
-                    gridSiteName, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Resource', rDict, **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateName( resourceName )
+    self.rsVal.validateSingleElementStatusType( 'Resource', rDict[ 'StatusType' ] )
+    # END VALIDATION #
+    
+    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
 
   @CheckExecution
-  def getResourcesStatus( self, resourceName, statusType, status, reason, dateCreated,
+  def getResource( self, resourceName, resourceType, serviceType, siteName,
+                   gridSiteName, **kwargs ):
+
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
+
+  @CheckExecution
+  def getResourceStatus( self, resourceName, statusType, status, reason, dateCreated,
+                         dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                         tokenExpiration, **kwargs ):
+
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
+
+  @CheckExecution
+  def getResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
                           dateEffective, dateEnd, lastCheckTime, tokenOwner,
                           tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Resource', rDict, table = 'Status', **kwargs )
-
-  @CheckExecution
-  def getResourcesHistory( self, resourceName, statusType, status, reason, dateCreated,
-                           dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                           tokenExpiration, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
+    rDict = self.mm.localsToDict( locals() )
     if not kwargs.has_key( 'sort' ):
       kwargs[ 'sort' ] = [ 'ResourceName', 'ResourceHistoryID' ]
-    return self.__getElements( 'Resource', rDict, table = 'History', **kwargs )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def getResourcesScheduledStatus( self, resourceName, statusType, status, reason,
-                                   dateCreated, dateEffective, dateEnd, lastCheckTime,
-                                   tokenOwner, tokenExpiration, **kwargs ):
+  def getResourceScheduledStatus( self, resourceName, statusType, status, reason,
+                                  dateCreated, dateEffective, dateEnd, lastCheckTime,
+                                  tokenOwner, tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Resource', rDict, table = 'ScheduledStatus', **kwargs )
-
-  @CheckExecution
-  def getResourcesPresent( self, resourceName, siteName, serviceType, gridSiteName,
-                           siteType, resourceType, statusType, status, dateEffective,
-                           reason, lastCheckTime, tokenOwner, tokenExpiration,
-                           formerStatus, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'Resource', rDict, table = 'Present', **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def deleteResources( self, resourceName ):
+  def getResourcePresent( self, resourceName, siteName, serviceType, gridSiteName,
+                          siteType, resourceType, statusType, status, dateEffective,
+                          reason, lastCheckTime, tokenOwner, tokenExpiration,
+                          formerStatus, **kwargs ):
 
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
+
+  @CheckExecution
+  def deleteResource( self, resourceName, **kwargs ):
+
+    rDict = self.mm.localsToDict( locals() )
     #VALIDATION#
     self.rsVal.validateMultipleNames( resourceName )
     # END VALIDATION #
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElements( 'Resource', rDict)
-    return S_OK()
+    return self._deleteElement( rDict, **kwargs )
+  
+  @CheckExecution
+  def deleteResourceScheduledStatus( self, resourceName, statusType, status,
+                                     reason, dateCreated, dateEffective, dateEnd,
+                                     lastCheckTime, tokenOwner, tokenExpiration,
+                                     **kwargs ):
+
+    rDict = self.mm.localsToDict( locals() )  
+    return self.mm.delete( rDict, **kwargs )
 
   @CheckExecution
-  def deleteResourcesScheduledStatus( self, resourceName, statusType, status,
-                                      reason, dateCreated, dateEffective, dateEnd,
-                                      lastCheckTime, tokenOwner, tokenExpiration,
-                                      **kwargs ):
+  def deleteResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
+                             dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                             tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElementsScheduledStatus( 'Resource', rDict, **kwargs )
-    return S_OK()
-
-  @CheckExecution
-  def deleteResourcesHistory( self, resourceName, statusType, status, reason, dateCreated,
-                              dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                              tokenExpiration, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElementHistory( 'Resource', rDict, **kwargs )
-    return S_OK()
-
+    rDict = self.mm.localsToDict( locals() )  
+    return self.mm.delete( rDict, **kwargs )
+  
   '''
   ##############################################################################
   # STORAGE ELEMENT FUNCTIONS
@@ -888,117 +934,115 @@ class ResourceStatusDB:
 
   @CheckExecution
   def addOrModifyStorageElement( self, storageElementName, resourceName,
-                                 gridSiteName ):
+                                 gridSiteName, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-
+    rDict = self.mm.localsToDict( locals() )
+    
     # START VALIDATION #
+    self.rsVal.validateName( storageElementName )  
     self.rsVal.validateResource( resourceName )
     self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION #
 
-    self.__addOrModifyElement( 'StorageElement', rDict )
-    return S_OK()
+    return self._addOrModifyElement( rDict, **kwargs )
 
   @CheckExecution
-  def setStorageElementStatus( self, storageElementName, statusType, status,
-                               reason, dateCreated, dateEffective, dateEnd,
-                               lastCheckTime, tokenOwner, tokenExpiration ):
+  def addOrModifyStorageElementStatus( self, storageElementName, statusType, status,
+                                       reason, dateCreated, dateEffective, dateEnd,
+                                       lastCheckTime, tokenOwner, tokenExpiration,
+                                       **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__setElementStatus( 'StorageElement', rDict )
-    return S_OK()
-
-  @CheckExecution
-  def setStorageElementScheduledStatus( self, storageElementName, statusType, status,
-                                        reason, dateCreated, dateEffective, dateEnd,
-                                        lastCheckTime, tokenOwner, tokenExpiration ):
-
-    rDict = self.__generateRowDict( locals() )
-    self.__setElementScheduledStatus( 'StorageElement', rDict )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateName( storageElementName )
+    self.rsVal.validateSingleElementStatusType( 'StorageElement', rDict[ 'StatusType' ] )
+    # END VALIDATION #
+       
+    return self._addOrModifyElementStatus( rDict, **kwargs )   
 
   @CheckExecution
-  def updateStorageElementStatus( self, storageElementName, statusType, status,
-                                  reason, dateCreated, dateEffective, dateEnd,
-                                  lastCheckTime, tokenOwner, tokenExpiration ):
+  def addOrModifyStorageElementScheduledStatus( self, storageElementName, statusType, status,
+                                                reason, dateCreated, dateEffective, dateEnd,
+                                                lastCheckTime, tokenOwner, tokenExpiration,
+                                                **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__updateElementStatus( 'StorageElement', rDict )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateName( storageElementName )
+    self.rsVal.validateSingleElementStatusType( 'StorageElement', rDict[ 'StatusType' ] )
+    # END VALIDATION #
+    
+    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
 
   @CheckExecution
-  def getStorageElements( self, storageElementName, resourceName, gridSiteName, **kwargs ):
+  def getStorageElement( self, storageElementName, resourceName, gridSiteName, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'StorageElement', rDict, **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def getStorageElementsStatus( self, storageElementName, statusType, status,
+  def getStorageElementStatus( self, storageElementName, statusType, status,
                                 reason, dateCreated, dateEffective, dateEnd,
                                 lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'StorageElement', rDict, table = 'Status', **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def getStorageElementsHistory( self, storageElementName, statusType, status,
+  def getStorageElementHistory( self, storageElementName, statusType, status,
                                  reason, dateCreated, dateEffective, dateEnd,
                                  lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
+    rDict = self.mm.localsToDict( locals() )
     if not kwargs.has_key( 'sort' ):
       kwargs[ 'sort' ] = [ 'StorageElementName', 'StorageElementHistoryID' ]
-    return self.__getElements( 'StorageElement', rDict, table = 'History', **kwargs )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def getStorageElementsScheduledStatus( self, storageElementName, statusType,
+  def getStorageElementScheduledStatus( self, storageElementName, statusType,
                                          status, reason, dateCreated, dateEffective,
                                          dateEnd, lastCheckTime, tokenOwner,
                                          tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'StorageElement', rDict, table = 'ScheduledStatus', **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def getStorageElementsPresent( self, storageElementName, resourceName,
+  def getStorageElementPresent( self, storageElementName, resourceName,
                                  gridSiteName, siteType, statusType, status,
                                  dateEffective, reason, lastCheckTime, tokenOwner,
                                  tokenExpiration, formerStatus, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    return self.__getElements( 'StorageElement', rDict, table = 'Present', **kwargs )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
 
   @CheckExecution
-  def deleteStorageElements( self, storageElementName ):
+  def deleteStorageElement( self, storageElementName, **kwargs ):
 
+    rDict = self.mm.localsToDict( locals() )
     #VALIDATION#
     self.rsVal.validateMultipleNames( storageElementName )
     # END VALIDATION #
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElements( 'StorageElement', rDict)
-    return S_OK()
+    return self._deleteElement( rDict, **kwargs )
 
   @CheckExecution
-  def deleteStorageElementsScheduledStatus( self, storageElementName, statusType,
+  def deleteStorageElementScheduledStatus( self, storageElementName, statusType,
                                             status, reason, dateCreated,
                                             dateEffective, dateEnd, lastCheckTime,
                                             tokenOwner, tokenExpiration, **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElementsScheduledStatus( 'StorageElement', rDict, **kwargs )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )  
+    return self.mm.delete( rDict, **kwargs )
 
   @CheckExecution
-  def deleteStorageElementsHistory( self, storageElementName, statusType,
+  def deleteStorageElementHistory( self, storageElementName, statusType,
                                     status, reason, dateCreated, dateEffective,
                                     dateEnd, lastCheckTime, tokenOwner, tokenExpiration,
                                     **kwargs ):
 
-    rDict = self.__generateRowDict( locals() )
-    self.__deleteElementHistory( 'StorageElement', rDict, **kwargs )
-    return S_OK()
+    rDict = self.mm.localsToDict( locals() )  
+    return self.mm.delete( rDict, **kwargs )
 
   '''
   ##############################################################################
@@ -1023,7 +1067,7 @@ class ResourceStatusDB:
 #    if statusType is not None:
 #      self.__validateElementStatusTypes( 'Service', statusType )
 #      rDict[ 'StatusType'] = statusType
-    rDict = self.__generateRowDict( locals() )
+    rDict = self.mm.localsToDict( locals() )
     return self.__getElementStatusCount( 'Service', rDict )
 
   @CheckExecution
@@ -1126,36 +1170,37 @@ class ResourceStatusDB:
   '''
 
   @CheckExecution
-  def addOrModifyGridSite( self, gridSiteName, gridTier ):
+  def addOrModifyGridSite( self, gridSiteName, gridTier, **kwargs ):
 
     # VALIDATION #
     self.rsVal.validateName( gridSiteName )
     self.rsVal.validateGridSiteType( gridTier )
     # END VALIDATION #
 
-    rDict = self.__generateRowDict( locals() )
-
-    self.__addOrModifyGridElement( rDict )
-    return S_OK()
-
-  @CheckExecution
-  def getGridSites( self, gridSiteName, gridTier, **kwargs ):
-
-    rDict = self.__generateRowDict( locals() )
-    return self.__getGridElementRow( rDict, **kwargs )
+    rDict    = self.mm.localsToDict( locals() )
+    sqlQuery = self.mm.select( rDict, **kwargs )
+    
+    if sqlQuery[ 'Value' ]:      
+      return self.mm.update( rDict, **kwargs )
+    else: 
+      return self.mm.insert( rDict, **kwargs )  
 
   @CheckExecution
-  def deleteGridSites( self, gridSiteName ):
+  def getGridSite( self, gridSiteName, gridTier, **kwargs ):
+
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.get( rDict, **kwargs )
+
+  @CheckExecution
+  def deleteGridSite( self, gridSiteName, **kwargs ):
 
     #VALIDATION#
     self.rsVal.validateMultipleNames( gridSiteName )
     # END VALIDATION #
 
-    rDict = self.__generateRowDict( locals() )
+    rDict = self.mm.localsToDict( locals() )
+    return self.mm.delete( rDict, **kwargs )
 
-    whereElements = self.__getMultipleWhereElements( rDict )
-    self.__deleteRow( 'GridSite', whereElements )
-    return S_OK()
 
   '''
   ##############################################################################
