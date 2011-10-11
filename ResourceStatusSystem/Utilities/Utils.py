@@ -1,7 +1,6 @@
 """
 This module collects utility functions
 """
-
 #############################################################################
 # useful functions
 #############################################################################
@@ -107,11 +106,6 @@ import copy, ast, socket
 
 id_fun = lambda x: x
 
-# DIRAC utils
-
-def protect(value):
-  if value['OK'] == False:
-    print "%s\n" % value['Message']
 
 # Import utils
 
@@ -144,6 +138,18 @@ def unpack(dirac_value):
     return dirac_value['Value']
   except KeyError:
     raise RPCError, dirac_value['Message']
+
+def protect2(f, *args, **kw):
+  """Wrapper protect"""
+  try:
+    ret = f(*args, **kw)
+    if type(ret) == dict and ret['OK'] == False:
+      print "function " + str(f) + " called with " + str(args)
+      print "%s\n" % ret['Message']
+    return ret
+  except Exception as e:
+    print "function " + str(f) + " called with " + str(args)
+    raise e
 
 # (Duck) type checking
 
@@ -218,6 +224,14 @@ def list_sanitize(l):
     return list(set([i for i in l if i]))
   except TypeError:
     return [i for i in l if i]
+
+def set_sanitize(l):
+  """Remove doublons and results that evaluate to false"""
+  try:
+    return set([i for i in l if i])
+  except TypeError:
+    return [i for i in l if i]
+
 
 # Dict utils
 
