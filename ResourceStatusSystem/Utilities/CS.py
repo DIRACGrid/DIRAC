@@ -173,18 +173,10 @@ def getLFCNode( sites = None, readable = None ):
 
 # Storage Elements functions ########
 
-def getStorageElements( hostName = None ):
-  SEs = gConfig.getSections('%s/StorageElements' %g_BaseResourcesSection)
-  if not SEs['OK'] or hostName == None: return SEs
-  else:
-    SEs = SEs['Value']
-    if isinstance(hostName, basestring):
-      hostName = [hostName.tolower()]
-    else:
-      hostName = [h.tolower() for h in hostName]
-
-    hosts_to_SE_assoc_list = [(getHostByToken(SE), SE) for SE in SEs]
-    return S_OK([token for (url, token) in hosts_to_SE_assoc_list if url.tolower() in hostName])
+from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
+def getSpaceTokens():
+  SEinCS = Utils.unpack(getSiteSEMapping( 'LCG' ))
+  return Utils.set_sanitize([SE for selist in SEinCS.values() for SE in selist])
 
 def getSENodes( SEIn ):
   if not SEIn:
