@@ -351,14 +351,17 @@ class InfoGetterSuccess(UtilitiesTestCase):
 #############################################################################
 
 class SynchronizerSuccess(UtilitiesTestCase):
-  def test__syncSites(self):
-    self.syncC._syncSites()
+  # def test__syncSites(self):
+  #   self.syncC._syncSites()
 
-  def test__syncVOBOX(self):
-    self.syncC._syncVOBOX()
+  # def test__syncVOBOX(self):
+  #   self.syncC._syncVOBOX()
 
-  def test__syncResources(self):
-    self.syncC._syncResources()
+  # def test__syncCondDBs(self):
+  #   self.syncC._syncCondDBs()
+
+  # def test__syncResources(self):
+  #   self.syncC._syncResources()
 
   def test__syncStorageElements(self):
     self.syncC._syncStorageElements()
