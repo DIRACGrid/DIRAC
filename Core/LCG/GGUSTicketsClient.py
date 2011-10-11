@@ -28,13 +28,9 @@ class GGUSTicketsClient:
 
   def getTicketsList( self, name, startDate = None, endDate = None ):
     """ Return tickets of entity in name
-
-       :params:
-         :attr:`name`: should be the name of the site
-
-         :attr:`startDate`: starting date (optional)
-
-        :attr:`endDate`: end date (optional)
+       @param name: should be the name of the site
+       @param startDate: starting date (optional)
+       @param endDate: end date (optional)
     """
     self.siteName = name
     self.statusCount = {}

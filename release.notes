@@ -1,3 +1,35 @@
+[v6r0-pre8]
+
+*FileCatalog
+The default file catalog is now determined using /LocalSite/FileCatalog. 
+The old behavior is provided as a fallback solution
+
+*ReplicaManager 
+can now deal with multiple catalogs. Makes sure the surl used for removal is 
+the same as the one used for registration.
+
+
+*JobSchedulingAgent
+NEW: set the job Site attribute to the name of a group of sites corresponding to a SE
+     chosen by the data staging procedure 
+     
+*PoolXMLCatalog
+NEW: added getTypeByPfn() function to get the type of the given PFN
+
+*Stager
+NEW: added new command dirac-stager-stage-files     
+
+*ProxyManager
+NEW: dirac-proxy-init will check that the lifetime of the certificate is less than one month and advise to renew it
+NEW: Added some more functions to the Registry helper
+NEW: Will check that the certificate has at least one month of validity
+FIX: Never use the host certificate if there is one for dirac-proxy-init
+NEW: Proxy manager will send notifications when the uploaded proxies are about to expire (configurable via CS)
+
+*LcgFileCatalogClient
+NEW: new version of getPathPermissions relying on the lfc_access method to solve the problem
+     of multiple user DNs in LFC.
+
 [v6r0-pre7]
 
 *FTSCleaningAgent

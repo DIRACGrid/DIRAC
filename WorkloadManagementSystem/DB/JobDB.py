@@ -32,8 +32,7 @@
     setJobStatus()
     setInputData()
 
-    insertJobIntoDB()
-    addJobToDB()
+    insertNewJobIntoDB()
     removeJobFromDB()
 
     rescheduleJob()
@@ -1219,17 +1218,6 @@ class JobDB( DB ):
         return S_OK( result['Value'][0][0] )
     else:
       return result
-
-#############################################################################
-  def insertJobIntoDB( self, jobID, jdl ):
-    """ Insert the initial job JDL into the Job database
-    """
-
-    result = self.setJobJDL( jobID, originalJDL = jdl )
-    if not result['OK']:
-      return result
-
-    return self.setJobStatus( jobID, status = 'Received', minor = 'Initial insertion' )
 
 #############################################################################
   def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup ):

@@ -22,14 +22,14 @@ import string, threading, types
 import inspect
 from sets import Set
 
-# Stage Request are issue with a length of "PinLength"
-# However, once Staged, the entry in the StageRequest will set a PinExpiryTime only for "PinLength" / THROTTLING_STEPS
+# Stage Request are issue with a length of "PinLifetime"
+# However, once Staged, the entry in the StageRequest will set a PinExpiryTime only for "PinLifetime" / THROTTLING_STEPS
 # As PinExpiryTime arrives, StageRequest and their corresponding CacheReplicas entries are cleaned
-# This allows to throttle the submission of Stage Requests up to a maximum of "DiskCacheTB" per "PinLength"
-# After "PinLength" / THROTTLING_STEPS seconds, entries are removed, so new requests for the same replica will trigger
+# This allows to throttle the submission of Stage Requests up to a maximum of "DiskCacheTB" per "PinLifetime"
+# After "PinLifetime" / THROTTLING_STEPS seconds, entries are removed, so new requests for the same replica will trigger
 # a new Stage Request to the SE, and thus an update of the Pinning on the SE.
 #
-#  - "PinLength" is an Option of the StageRequest Agent that defaults to THROTTLING_TIME
+#  - "PinLifetime" is an Option of the StageRequest Agent that defaults to THROTTLING_TIME
 #  - "DiskCacheTB" is an Option of the StorageElement that defaults to 1 (TB)
 
 THROTTLING_TIME = 86400
@@ -828,14 +828,22 @@ class StorageManagementDB( DB ):
     gLogger.debug( "StorageManagementDB.setStageComplete: Successfully updated %s StageRequests table with StageStatus=Staged for ReplicaIDs: %s." % ( res['Value'], replicaIDs ) )
     return res
 
-  def wakeupOldRequests( self, replicaIDs , connection = False ):
+  def wakeupOldRequests( self, replicaIDs , retryInterval, connection = False ):
     """
-    get only StageRequests with StageRequestSubmitTime older than 1 day AND are still not staged
+    get only StageRequests with StageRequestSubmitTime older than retryInterval hours AND are still not staged
     delete these requests
     reset Replicas with corresponding ReplicaIDs to Status='New'
     """
+    try:
+      retryInterval = max( retryInterval, 2 )
+      retryInterval = min( retryInterval, 24 )
+      retryInterval = int( retryInterval )
+    except Exception:
+      errorString = 'Wrong argument type'
+      gLogger.exception( errorString )
+      return S_ERROR( errorString )
     if( replicaIDs ) > 0:
-      req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL 1 DAY ) < UTC_TIMESTAMP();" % intListToString( replicaIDs )
+      req = "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL %s HOUR ) < UTC_TIMESTAMP();" % ( intListToString( replicaIDs ), retryInterval )
       res = self._query( req )
       if not res['OK']:
         gLogger.error( "StorageManagementDB.wakeupOldRequests: Failed to select old StageRequests.", res['Message'] )

@@ -156,7 +156,7 @@ def getSiteTier( sites ):
     sites = [sites]
   tiers = []
   for site in sites:
-    t = gConfig.getValue("%s/Sites/LCG/%s/MoUTierLevel" %( g_BaseResourcesSection, site ) )
+    t = gConfig.getValue("%s/Sites/LCG/%s/MoUTierLevel" %( g_BaseResourcesSection, site ), -1 )
     tiers = tiers + [t]
   return S_OK(tiers)
 
