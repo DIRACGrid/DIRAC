@@ -34,10 +34,9 @@ class Synchronizer(object):
     """
 
     # FIXME: VOBOX not generic
-    # FIXME: Add DIRACSites
-    # FIXME: Add CONDDB
+    # FIXME: Add DIRACSites -> Cannot for now (Not in GOCDB!!)
 
-    thingsToSync = [ 'Sites', 'VOBOX', 'Resources', 'StorageElements', "Services", 'RegistryUsers' ]
+    thingsToSync = [ 'Sites', 'VOBOX', 'Resources', 'StorageElements', "Services", "CondDBs", 'RegistryUsers' ]
     gLogger.info( "!!! Sync DB content with CS content for %s !!!" % ( ", ".join(thingsToSync) ) )
 
     for thing in thingsToSync:
@@ -54,18 +53,17 @@ class Synchronizer(object):
       return "T" + str(min([int(v) for v in Utils.unpack(CS.getSiteTier(sitesList))]))
 
     # sites in the DB now
-    sitesDB = Utils.unpack(self.rsClient.getSites())
-    sitesDB = set([s[0] for s in sitesDB])
+    sitesDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getSites())))
 
     # sites in CS now
     sitesCS = set(Utils.unpack(CS.getSites()))
-    print "%d sites in CS, %d sites in DB\n" % (len(sitesCS), len(sitesDB))
 
     # remove sites from the DB that are not in the CS
     for s in sitesDB - sitesCS:
       self.rsClient.deleteSites(s)
 
     # add to DB what is missing
+    print "Updating %d Sites in DB" % len(sitesCS - sitesDB)
     for site in sitesCS - sitesDB:
       # DIRAC Tier
       tier = "T" + str(Utils.unpack(CS.getSiteTier( site )))
@@ -92,13 +90,24 @@ class Synchronizer(object):
     """
 
     # services in the DB now
-    servicesInDB = Utils.unpack(self.rsClient.getServicesPresent( columns="ServiceName" ))
-    servicesInDB = set([ s[0] for s in servicesInDB ])
+    VOBOXesInCS = set(Utils.unpack(CS.getT1s()))
+    VOBOXesInDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getServicesPresent(
+          serviceType = "VO-BOX", columns = "SiteName" ))))
 
-    for site in CS.getT1s():
+    print "Updating %d VOBOXes on DB" % len(VOBOXesInCS - VOBOXesInDB)
+    for site in VOBOXesInCS - VOBOXesInDB:
       service = 'VO-BOX@' + site
-      if service not in servicesInDB:
-        Utils.protect2(self.rsClient.addOrModifyService, service, 'VO-BOX', site )
+      Utils.protect2(self.rsClient.addOrModifyService, service, 'VO-BOX', site )
+
+  def _syncCondDBs(self):
+    CondDBinCS = set(Utils.unpack(CS.getCondDBs()))
+    CondDBinDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getServicesPresent(
+            serviceType = "CondDB", columns = "SiteName"))))
+
+    print "Updating %d CondDBs on DB" % len (CondDBinCS - CondDBinDB)
+    for site in CondDBinCS - CondDBinDB:
+      service = "CondDB@" + site
+      Utils.protect2(self.rsClient.addOrModifyService, service, 'CondDB', site )
 
 #############################################################################
 # _syncResources HELPER functions
@@ -148,8 +157,7 @@ class Synchronizer(object):
     gLogger.info("Starting sync of Resources")
 
     # resources in the DB now
-    resourcesInDB = Utils.unpack(self.rsClient.getResourcesPresent( columns="ResourceName" ))
-    resourcesInDB = set([r[0] for r in resourcesInDB])
+    resourcesInDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getResourcesPresent( columns="ResourceName" ))))
 
     # Site-CE / Site-SE mapping in CS now
     CEinCS = Utils.unpack(getSiteCEMapping( 'LCG' ))
@@ -218,15 +226,15 @@ class Synchronizer(object):
 
     # Get StorageElements from the CS and the DB
     CSSEs = set(CS.getSpaceTokens())
-    DBSEs = set((s[0] for s in Utils.unpack(self.rsClient.getStorageElementsPresent( columns="StorageElementName" ))))
-
-    print "%d SEs in CS, %d SEs in DB\n" % (len(CSSEs), len(DBSEs))
+    DBSEs = set(Utils.list_flatten(Utils.unpack(self.rsClient.getStorageElementsPresent(
+            columns="StorageElementName" ))))
 
     # Remove storageElements that are in DB but not in CS
     for se in DBSEs - CSSEs:
       Utils.protect2(self.rsClient.deleteStorageElements, se )
 
     # Add new storage Elements
+    print "Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs))
     for SE in CSSEs - DBSEs:
       srm = Utils.unpack(CS.getSENodes( SE ))
       if srm == None:
@@ -245,10 +253,8 @@ class Synchronizer(object):
     """This function is in charge of cleaning the Service table in DB
     in case of obsolescence."""
     # services in the DB now
-    servicesInDB = Utils.unpack(self.rsClient.getServicesPresent( columns="ServiceName" ))
-    servicesInDB = set([s[0] for s in servicesInDB])
+    servicesInDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getServicesPresent( columns="ServiceName" ))))
     # TODO: Write the code.
-
 
   def _syncRegistryUsers(self):
     users = CS.getTypedDictRootedAt("Users", root= "/Registry")

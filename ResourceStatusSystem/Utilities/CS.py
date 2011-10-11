@@ -118,7 +118,7 @@ def getVOMSEndpoints():
 
 # Sites functions ###################
 
-def getSites( grids = 'LCG' ):
+def getSites( grids = ['LCG'] ):
   if isinstance(grids, basestring):
     grids = [grids]
   sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
@@ -145,7 +145,7 @@ def getT1s(grids = 'LCG'):
   sites = Utils.unpack(getSites(grids))
   tiers = Utils.unpack(getSiteTier(sites))
   pairs = itertools.izip(sites, tiers)
-  return [s for (s, t) in pairs if t == 1]
+  return S_OK([s for (s, t) in pairs if t == 1])
 
 # LFC functions #####################
 
@@ -224,3 +224,8 @@ def getCEType( site, ce, grid = 'LCG' ):
     else:              return "CE"
   except Utils.RPCError:
     return "CE"
+
+# CondDB functions ##################
+
+def getCondDBs():
+  return gConfig.getSections("%s/CondDB" % g_BaseResourcesSection)
