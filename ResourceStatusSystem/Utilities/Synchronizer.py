@@ -266,15 +266,7 @@ class Synchronizer(object):
         print "Warning! %s is not in GOCDB!!!" % srm
         continue
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
-<<<<<<< HEAD
-
-      if SE not in DBSEs:
-        print "--%s, %s, %s\n" % ( SE, srm, siteInGOCDB )
-        print self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
-        DBSEs.append( SE )
-=======
       Utils.protect2(self.rsClient.addOrModifyStorageElement, SE, srm, siteInGOCDB )
->>>>>>> vincent/rssPermissions
 
 #############################################################################
 
