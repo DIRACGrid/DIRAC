@@ -6,6 +6,7 @@ Note that all interaction is done though the Client with its generic API !!
 """
 
 from DIRAC import S_OK, S_ERROR
+
 from DIRAC.ResourceStatusSystem.Utilities.Validator import ResourceStatusValidator
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
@@ -13,9 +14,11 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 
-from DIRAC.ResourceStatusSystem import ValidRes
+from DIRAC.ResourceStatusSystem import ValidRes, ValidStatusTypes
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution2
+from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import localsToDict 
+
 
 from datetime import datetime, timedelta
 
@@ -26,8 +29,222 @@ class ResourceStatusBooster( object ):
     self.rsVal      = ResourceStatusValidator( rsGate = rsClient ) 
 
 ################################################################################    
+################################################################################    
 
-  @CheckExecution      
+  def insertElement( self, element, *args ):
+    
+    fname = 'insert%s' % element
+    try:
+      f = getattr( self.rsClient, fname )
+    except Exception, x:
+      return S_ERROR( '%s function not found in rsClient' )  
+    
+    try:
+      return f( *args )
+    except Exception, x:
+      return S_ERROR( x )
+
+  def updateElement( self, element, *args ):
+    
+    fname = 'update%s' % element
+    try:
+      f = getattr( self.rsClient, fname )
+    except Exception, x:
+      return S_ERROR( '%s function not found in rsClient' )  
+    
+    try:
+      return f( *args )
+    except Exception, x:
+      return S_ERROR( x )
+
+  def getElement( self, element, *args, **kwargs ):
+    
+    fname = 'get%s' % element
+    try:
+      f = getattr( self.rsClient, fname )
+    except Exception, x:
+      return S_ERROR( '%s function not found in rsClient' )  
+    
+    try:
+      return f( *args, **kwargs )
+    except Exception, x:
+      return S_ERROR( x )
+
+  def deleteElement( self, element, *args, **kwargs ):
+    
+    fname = 'delete%s' % element
+    try:
+      f = getattr( self.rsClient, fname )
+    except Exception, x:
+      return S_ERROR( '%s function not found in rsClient' )  
+    
+    try:
+      return f( *args, **kwargs )
+    except Exception, x:
+      return S_ERROR( x )
+
+################################################################################
+
+  def _addOrModifyElement( self, element, *args ):
+    
+    #args[ 0 ] must be always be elementName, which is the uniqueKey for the
+    #element tables. 
+    elementName = '%sName' % ( element[0].lower() + element[1:] )
+    kwargs = { elementName : args[ 0 ] }
+    sqlQuery = self.getElement( element, **kwargs )       
+    
+    if sqlQuery[ 'Value' ]:      
+      return self.updateElement( element, *args )
+    else: 
+      sqlQuery = self.insertElement( element, *args )
+      if sqlQuery[ 'OK' ]:       
+        return self._setElementInitStatus( element, *args )
+      else:
+        return sqlQuery  
+
+  def _setElementInitStatus( self, element, *args ):
+    
+    defaultStatus  = 'Banned'
+    defaultReasons = [ 'Added to DB', 'Init' ]
+
+    # This three lines make not much sense, but sometimes statusToSet is '',
+    # and we need it as a list to work properly
+    statusToSet = ValidStatusTypes[ element ][ 'StatusType' ]
+    
+    if not isinstance( statusToSet, list ):
+      statusToSet = [ statusToSet ]
+    
+    for statusType in statusToSet:
+
+      # Trick to populate ElementHistory table with one entry. This allows
+      # us to use PresentElement views ( otherwise they do not work ).
+      for defaultReason in defaultReasons:
+
+        rList = [ args[0], statusType, defaultStatus, defaultReason ] 
+        sqlQuery = self._addOrModifyElementStatus( element, rList  )
+        
+        if not sqlQuery[ 'OK' ]:
+          return sqlQuery
+        
+    return S_OK()     
+     
+  def _addOrModifyElementStatus( self, element, rList ):
+
+    # START VALIDATION #
+#    if rDict.has_key( 'Status' ):
+#      self.rsVal.validateStatus( rDict['Status'] )
+#    if rDict.has_key( 'Reason' ):
+#      self.rsVal.validateName( rDict['Reason'] )
+#    self.rsVal.validateSingleDates( rDict )
+    # END VALIDATION #
+
+    rList += self._setStatusDefaults()
+
+    elementName = '%sName' % ( element[0].lower() + element[1:] )
+    kwargs = { elementName : rList[ 0 ], 'statusType' : rList[ 1 ] }
+    sqlQuery = self.getElement( '%sStatus' % element, **kwargs )
+
+    if not sqlQuery[ 'Value' ]:
+      return self.insertElement( '%sStatus' % element, *tuple( rList ) )
+
+    updateSQLQuery = self.updateElement( '%sStatus' % element, *tuple( rList ))
+    if not updateSQLQuery[ 'OK' ]:
+      return updateSQLQuery 
+
+    sqlQ      = list( sqlQuery[ 'Value' ][ 0 ] )[1:]
+    # EHistory.DateEnd = EStatus.DateEffective
+    # This is vital for the views !!!!
+    sqlQ[ 6 ] = rList[ 5 ]   
+     
+    return self.insertElement( '%sHistory' % element , *tuple( sqlQ ) )       
+
+  def _setStatusDefaults( self ):#, rDict ):
+     
+    now    = datetime.utcnow()
+    never  = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 )
+
+    #dateCreated, dateEffective, dateEnd, lastCheckTime, tokenOwner, tokenExpiration
+    iList = [ now, now, never, now, 'RS_SVC', never ] 
+    return iList
+#    rDict[ 'TokenExpiration' ] = ( 1 and ( rDict.has_key('TokenExpiration') and rDict['TokenExpiration'] ) ) or never
+#    rDict[ 'DateCreated' ]     = ( 1 and ( rDict.has_key('DateCreated')     and rDict['DateCreated']     ) ) or now
+#    rDict[ 'DateEffective' ]   = ( 1 and ( rDict.has_key('DateEffective')   and rDict['DateEffective']   ) ) or now
+#    rDict[ 'DateEnd' ]         = ( 1 and ( rDict.has_key('DateEnd')         and rDict['DateEnd']         ) ) or never
+#    rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now
+#    rDict[ 'TokenOwner' ]      = ( 1 and ( rDict.has_key('TokenOwner')      and rDict['TokenOwner']      ) ) or 'RS_SVC'
+    
+    #return rDict     
+
+  @CheckExecution2
+  def addOrModifySite( self, siteName, siteType, gridSiteName ):
+#    # VALIDATION #
+#    self.rsVal.validateName( siteName )
+#    self.rsVal.validateSiteType( siteType )
+#    self.rsVal.validateGridSite( gridSiteName )
+#    # END VALIDATION #
+
+    # VALIDATION ? 
+    return self._addOrModifyElement( 'Site', siteName, siteType, gridSiteName )
+
+  @CheckExecution2
+  def addOrModifyService( self, serviceName, serviceType, siteName ):
+    # VALIDATION ?
+    return self._addOrModifyElement( 'Service', serviceName, serviceType, siteName )
+  
+  @CheckExecution2
+  def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName, gridSiteName ):
+    # VALIDATION ?
+    return self._addOrModifyElement( 'Resource', resourceName, resourceType, serviceType, siteName, gridSiteName )
+  
+  @CheckExecution2
+  def addOrModifyStorageElement( self, storageElementName, resourceName, gridSiteName ):
+    # VALIDATION ?
+    return self._addOrModifyElement( 'StorageElement', storageElementName, resourceName, gridSiteName )
+
+  @CheckExecution2
+  def addOrModifyGridSite( self, gridSiteName, gridTier ):
+  
+    # VALIDATION ?  
+    sqlQuery = self.rsClient.getGridSite( gridSiteName = gridSiteName )
+    
+    if sqlQuery[ 'Value' ]:      
+      return self.rsClient.updateGridSite( gridSiteName, gridTier )
+    else:
+      return self.rsClient.insertGridSite( gridSiteName, gridTier ) 
+
+################################################################################    
+################################################################################
+  
+  def _removeElement( self, element, elementName ):
+  
+    tables = [ 'ScheduledStatus', 'Status', 'History', '' ]
+    for table in tables:
+      sqlQuery = self.deleteElement( '%s%s' % ( element, table ), elementName )
+      if not sqlQuery[ 'OK' ]:
+        return sqlQuery
+
+    return sqlQuery
+
+  @CheckExecution2
+  def removeSite( self, siteName ):
+    return self._removeElement( 'Site', siteName )
+
+  @CheckExecution2
+  def removeService( self, serviceName ):
+    return self._removeElement( 'Service', serviceName )
+
+  @CheckExecution2
+  def removeResource( self, resourceName ):
+    return self._removeElement( 'Resource', resourceName )
+
+  @CheckExecution2
+  def removeStorageElement( self, storageElementName ):
+    return self._removeElement( 'StorageElement', storageElementName )
+          
+################################################################################    
+################################################################################    
+
+  @CheckExecution2      
   def getGeneralName( self, from_element, name, to_element ):
 
     self.rsVal.validateRes( from_element )
@@ -80,7 +297,7 @@ class ResourceStatusBooster( object ):
     
 ################################################################################    
     
-  @CheckExecution  
+  @CheckExecution2  
   def getGridSiteName( self, granularity, name ):
 
     self.rsVal.validateRes( granularity )
@@ -101,7 +318,7 @@ class ResourceStatusBooster( object ):
 
 ################################################################################    
         
-  @CheckExecution      
+  @CheckExecution2      
   def getTokens( self, granularity, name, tokenExpiration, statusType, **kwargs ):
 
     self.rsVal.validateRes( granularity )  
@@ -127,7 +344,7 @@ class ResourceStatusBooster( object ):
 
 ################################################################################    
     
-  @CheckExecution  
+  @CheckExecution2  
   def setToken( self, granularity, name, statusType, reason, tokenOwner, tokenExpiration ):
 
     self.rsVal.validateRes( granularity )
@@ -147,7 +364,7 @@ class ResourceStatusBooster( object ):
 
 ################################################################################    
     
-  @CheckExecution  
+  @CheckExecution2  
   def setReason( self, granularity, name, statusType, reason ):
         
     self.rsVal.validateRes( granularity )
@@ -163,7 +380,7 @@ class ResourceStatusBooster( object ):
 
 ################################################################################    
     
-  @CheckExecution  
+  @CheckExecution2  
   def setDateEnd( self, granularity, name, statusType, dateEffective ):
     
     self.rsVal.validateRes( granularity )
@@ -179,7 +396,7 @@ class ResourceStatusBooster( object ):
     
 ################################################################################    
      
-  @CheckExecution   
+  @CheckExecution2   
   def whatIs( self, name ):
     """
     Find which is the granularity of name.
@@ -201,7 +418,7 @@ class ResourceStatusBooster( object ):
 
 ################################################################################    
      
-  @CheckExecution   
+  @CheckExecution2   
   def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
     """
     Get Sites, Services, Resources, StorageElements to be checked using Present-x views.
@@ -245,7 +462,7 @@ class ResourceStatusBooster( object ):
 
 ################################################################################    
   
-  @CheckExecution
+  @CheckExecution2
   def getMonitoredStatus( self, granularity, name ):
  
     getter = getattr( self.rsClient, 'get%ssPresent' % granularity )
@@ -271,7 +488,7 @@ class ResourceStatusBooster( object ):
   
 ################################################################################  
   
-  @CheckExecution
+  @CheckExecution2
   def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, maxItems ):
     """
     Get present sites status list, for the web.
