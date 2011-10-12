@@ -33,7 +33,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB#
 
 from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import Handler
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import HandlerDec
 
 db = False
 
@@ -88,22 +88,22 @@ class ResourceStatusHandler( RequestHandler ):
   __site_GD = [ ( t, list, NoneType ) for t in __site_IU ] + [ dict ] 
 
   types_insertSite = __site_IU
-  @Handler
+  @HandlerDec
   def export_insertSite( self, siteName, siteType, gridSiteName ):
     return db  
 
   types_updateSite = __site_IU
-  @Handler
+  @HandlerDec
   def export_updateSite( self, siteName, siteType, gridSiteName ):
     return db  
 
   types_getSite = __site_GD
-  @Handler    
+  @HandlerDec    
   def export_getSite( self, siteName, siteType, gridSiteName, kwargs ):
     return db
   
   types_deleteSite = __site_GD
-  @Handler    
+  @HandlerDec    
   def export_deleteSite( self, siteName, siteType, gridSiteName, kwargs ):
     return db  
 
@@ -117,28 +117,28 @@ class ResourceStatusHandler( RequestHandler ):
   __siteStatus_GD = [ ( t, list ,NoneType ) for t in __siteStatus_IU ] + [ dict ] 
 
   types_insertSiteStatus = __siteStatus_IU
-  @Handler
+  @HandlerDec
   def export_insertSiteStatus( self, siteName, statusType, status, reason, 
                                dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                tokenOwner, tokenExpiration ):
     return db
 
   types_updateSiteStatus = __siteStatus_IU    
-  @Handler
+  @HandlerDec
   def export_updateSiteStatus( self, siteName, statusType, status, reason, 
                                dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                tokenOwner, tokenExpiration ):
     return db
 
   types_getSiteStatus = __siteStatus_GD
-  @Handler
+  @HandlerDec
   def export_getSiteStatus( self, siteName, statusType, status, reason, 
                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
                             tokenOwner, tokenExpiration, kwargs ):
     return db
   
   types_deleteSiteStatus = __siteStatus_GD
-  @Handler
+  @HandlerDec
   def export_deleteSiteStatus( self, siteName, statusType, status, reason, 
                                dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                tokenOwner, tokenExpiration, kwargs ):
@@ -154,28 +154,28 @@ class ResourceStatusHandler( RequestHandler ):
   __siteScheduledstatus_GD = [ ( t, list, NoneType ) for t in __siteScheduledstatus_IU ] + [ dict ] 
 
   types_insertSiteScheduledStatus = __siteScheduledstatus_IU 
-  @Handler
+  @HandlerDec
   def export_insertSiteScheduledStatus( self, siteName, statusType, status, reason, 
                                         dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime, tokenOwner, tokenExpiration ):
     return db
   
   types_updateSiteScheduledStatus = __siteScheduledstatus_IU 
-  @Handler
+  @HandlerDec
   def export_updateSiteScheduledStatus( self, siteName, statusType, status, reason, 
                                         dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime, tokenOwner, tokenExpiration ):
     return db
   
   types_getSiteScheduledStatus = __siteScheduledstatus_GD
-  @Handler
+  @HandlerDec
   def export_getSiteScheduledStatus( self, siteName, statusType, status, reason, 
                                      dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                      tokenOwner, tokenExpiration, kwargs ):
     return db
 
   types_deleteSiteScheduledStatus = __siteScheduledstatus_GD
-  @Handler
+  @HandlerDec
   def export_deleteSiteScheduledStatus( self, siteName, statusType, status, reason, 
                                      dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                      tokenOwner, tokenExpiration, kwargs ):
@@ -193,28 +193,28 @@ class ResourceStatusHandler( RequestHandler ):
   __siteHistory_GD = [ ( t, list, NoneType) for t in __siteHistory_IU ] + [ dict ] 
 
   types_insertSiteHistory = __siteHistory_IU 
-  @Handler
+  @HandlerDec
   def export_insertSiteHistory( self, siteName, statusType, status, reason, 
                                 dateCreated, dateEffective, dateEnd, 
                                 lastCheckTime, tokenOwner, tokenExpiration ):
     return db
   
   types_updateSiteHistory = __siteHistory_IU 
-  @Handler
+  @HandlerDec
   def export_updateSiteHistory( self, siteName, statusType, status, reason, 
                                 dateCreated, dateEffective, dateEnd, 
                                 lastCheckTime, tokenOwner, tokenExpiration ):
     return db
   
   types_getSiteHistory = __siteHistory_GD
-  @Handler
+  @HandlerDec
   def export_getSiteHistory( self, siteName, statusType, status, reason, 
                              dateCreated, dateEffective, dateEnd, lastCheckTime, 
                              tokenOwner, tokenExpiration, kwargs ):
     return db
 
   types_deleteSiteHistory = __siteHistory_GD
-  @Handler
+  @HandlerDec
   def export_deleteSiteHistory( self, siteName, statusType, status, reason, 
                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                 tokenOwner, tokenExpiration, kwargs ):
@@ -234,7 +234,7 @@ class ResourceStatusHandler( RequestHandler ):
                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
                            dict ]
 
-  @Handler
+  @HandlerDec
   def export_getSitePresent( self, siteName, siteType, gridSiteName, gridTier, 
                              statusType, status, dateEffective, reason, 
                              lastCheckTime, tokenOwner, tokenExpiration, 
@@ -254,22 +254,22 @@ class ResourceStatusHandler( RequestHandler ):
   __ser_GD = [ ( t, list, NoneType ) for t in __ser_IU ] + [ dict ]
   
   types_insertService = __ser_IU
-  @Handler
+  @HandlerDec
   def export_insertService( self, serviceName, serviceType, siteName ):
     return db
 
   types_updateService = __ser_IU
-  @Handler
+  @HandlerDec
   def export_updateService( self, serviceName, serviceType, siteName ):
     return db
   
   types_getService = __ser_GD 
-  @Handler
+  @HandlerDec
   def export_getService( self, serviceName, serviceType, siteName, kwargs ):
     return db  
 
   types_deleteService = __ser_GD 
-  @Handler
+  @HandlerDec
   def export_deleteService( self, serviceName, serviceType, siteName, kwargs ):
     return db  
 
@@ -283,28 +283,28 @@ class ResourceStatusHandler( RequestHandler ):
   __serStatus_GD = [ ( t, list, NoneType ) for t in __serStatus_IU ] + [ dict ]
   
   types_insertServiceStatus = __serStatus_IU   
-  @Handler  
+  @HandlerDec  
   def export_insertServiceStatus( self, serviceName, statusType, status, reason, 
                                   dateCreated, dateEffective, dateEnd, 
                                   lastCheckTime,tokenOwner, tokenExpiration ):
     return db
   
   types_updateServiceStatus = __serStatus_IU   
-  @Handler  
+  @HandlerDec  
   def export_updateServiceStatus( self, serviceName, statusType, status, reason, 
                                   dateCreated, dateEffective, dateEnd, 
                                   lastCheckTime,tokenOwner, tokenExpiration ):
     return db
 
   types_getServiceStatus = __serStatus_GD  
-  @Handler  
+  @HandlerDec  
   def export_getServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
                                dateEffective, dateEnd, lastCheckTime, tokenOwner, 
                                tokenExpiration, kwargs ):
     return db
 
   types_deleteServiceStatus = __serStatus_GD  
-  @Handler  
+  @HandlerDec  
   def export_deleteServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
                                   dateEffective, dateEnd, lastCheckTime, tokenOwner, 
                                   tokenExpiration, kwargs ):
@@ -320,7 +320,7 @@ class ResourceStatusHandler( RequestHandler ):
   __serScheduledstatus_GD = [ ( t, list, NoneType ) for t in __serScheduledstatus_IU ] + [ dict ] 
     
   types_insertServiceScheduledStatus = __serScheduledstatus_IU  
-  @Handler        
+  @HandlerDec        
   def export_insertServiceScheduledStatus( self, serviceName, statusType, status, 
                                            reason, dateCreated, dateEffective, 
                                            dateEnd, lastCheckTime, tokenOwner, 
@@ -328,7 +328,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db
 
   types_updateServiceScheduledStatus = __serScheduledstatus_IU  
-  @Handler        
+  @HandlerDec        
   def export_updateServiceScheduledStatus( self, serviceName, statusType, status, 
                                            reason, dateCreated, dateEffective, 
                                            dateEnd, lastCheckTime, tokenOwner, 
@@ -336,7 +336,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db
 
   types_getServiceScheduledStatus = __serScheduledstatus_GD
-  @Handler    
+  @HandlerDec    
   def export_getServiceScheduledStatus( self, serviceName, statusType, status, 
                                         reason, dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime, tokenOwner, tokenExpiration, 
@@ -344,7 +344,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db
 
   types_deleteServiceScheduledStatus = __serScheduledstatus_GD
-  @Handler    
+  @HandlerDec    
   def export_deleteServiceScheduledStatus( self, serviceName, statusType, status, 
                                            reason, dateCreated, dateEffective, dateEnd, 
                                            lastCheckTime, tokenOwner, tokenExpiration, 
@@ -361,28 +361,28 @@ class ResourceStatusHandler( RequestHandler ):
   __serHistory_GD = [ ( t, list, NoneType ) for t in __serHistory_IU ] + [ dict ] 
 
   types_insertServiceHistory = __serHistory_IU
-  @Handler      
+  @HandlerDec      
   def export_insertServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
                                    dateEffective, dateEnd, lastCheckTime, tokenOwner, 
                                    tokenExpiration ):
     return db
 
   types_updateServiceHistory = __serHistory_IU
-  @Handler      
+  @HandlerDec      
   def export_updateServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
                                    dateEffective, dateEnd, lastCheckTime, tokenOwner, 
                                    tokenExpiration ):
     return db
 
   types_getServiceHistory = __serHistory_IU
-  @Handler      
+  @HandlerDec      
   def export_getServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
                                 dateEffective, dateEnd, lastCheckTime, tokenOwner, 
                                 tokenExpiration, kwargs ):
     return db
 
   types_deleteServiceHistory = __serHistory_IU
-  @Handler      
+  @HandlerDec      
   def export_deleteServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
                                    dateEffective, dateEnd, lastCheckTime, tokenOwner, 
                                    tokenExpiration, kwargs ):
@@ -402,7 +402,7 @@ class ResourceStatusHandler( RequestHandler ):
                               ( datetime, list, NoneType ), ( str, list, NoneType ), 
                               ( datetime, list, NoneType ), ( str, list, NoneType ), 
                               dict ]  
-  @Handler  
+  @HandlerDec  
   def export_getServicePresent( self, serviceName, siteName, siteType, serviceType, 
                                 statusType, status, dateEffective, reason, 
                                 lastCheckTime, tokenOwner, tokenExpiration, 
@@ -422,25 +422,25 @@ class ResourceStatusHandler( RequestHandler ):
   __res_GD = [ ( t, list, NoneType ) for t in __res_IU ] + [ dict ]
 
   types_insertResource = __res_IU
-  @Handler
+  @HandlerDec
   def export_insertResource( self, resourceName, resourceType, serviceType, 
                              siteName, gridSiteName ):
     return db
 
   types_updateResource = __res_IU
-  @Handler
+  @HandlerDec
   def export_updateResource( self, resourceName, resourceType, serviceType, 
                              siteName, gridSiteName ):
     return db
 
   types_getResource = __res_GD
-  @Handler      
+  @HandlerDec      
   def export_getResource( self, resourceName, resourceType, serviceType, 
                           siteName, gridSiteName, kwargs ):
     return db  
   
   types_deleteResource = __res_GD
-  @Handler      
+  @HandlerDec      
   def export_deleteResource( self, resourceName, resourceType, serviceType, 
                              siteName, gridSiteName, kwargs ):
     return db  
@@ -455,28 +455,28 @@ class ResourceStatusHandler( RequestHandler ):
   __resStatus_IU = [ ( t, list, NoneType ) for t in __resStatus_IU ] + [ dict ]
   
   types_insertResourceStatus = __resStatus_IU
-  @Handler    
+  @HandlerDec    
   def export_insertResourceStatus( self, resourceName, statusType, status, reason, 
                                    dateCreated, dateEffective, dateEnd, 
                                    lastCheckTime, tokenOwner, tokenExpiration ):
     return db
 
   types_updateResourceStatus = __resStatus_IU
-  @Handler    
+  @HandlerDec    
   def export_updateResourceStatus( self, resourceName, statusType, status, reason, 
                                    dateCreated, dateEffective, dateEnd, 
                                    lastCheckTime, tokenOwner, tokenExpiration ):
     return db
     
   types_getResourceStatus = __resStatus_IU  
-  @Handler    
+  @HandlerDec    
   def export_getResourceStatus( self, resourceName, statusType, status, reason, 
                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                 tokenOwner, tokenExpiration, kwargs ):
     return db 
 
   types_deleteResourceStatus = __resStatus_IU  
-  @Handler    
+  @HandlerDec    
   def export_deleteResourceStatus( self, resourceName, statusType, status, reason, 
                                    dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                    tokenOwner, tokenExpiration, kwargs ):
@@ -492,21 +492,21 @@ class ResourceStatusHandler( RequestHandler ):
   __resScheduledstatus_GD = [ ( t, list, NoneType ) for t in __resScheduledstatus_IU ] + [ dict ] 
    
   types_insertResourceScheduledStatus = __resScheduledstatus_IU
-  @Handler     
+  @HandlerDec     
   def export_insertResourceScheduledStatus( self, resourceName, statusType, status, 
                                             reason, dateCreated, dateEffective, dateEnd, 
                                             lastCheckTime, tokenOwner, tokenExpiration ):
     return db
 
   types_updateResourceScheduledStatus = __resScheduledstatus_IU
-  @Handler     
+  @HandlerDec     
   def export_updateResourceScheduledStatus( self, resourceName, statusType, status, 
                                             reason, dateCreated, dateEffective, dateEnd, 
                                             lastCheckTime, tokenOwner, tokenExpiration ):
     return db
 
   types_getResourceScheduledStatus = __resScheduledstatus_GD       
-  @Handler      
+  @HandlerDec      
   def export_getResourceScheduledStatus( self, resourceName, statusType, status,
                                           reason, dateCreated, dateEffective, dateEnd, 
                                           lastCheckTime, tokenOwner, tokenExpiration, 
@@ -514,7 +514,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db
 
   types_deleteResourceScheduledStatus = __resScheduledstatus_GD       
-  @Handler      
+  @HandlerDec      
   def export_deleteResourceScheduledStatus( self, resourceName, statusType, status,
                                           reason, dateCreated, dateEffective, dateEnd, 
                                           lastCheckTime, tokenOwner, tokenExpiration, 
@@ -531,28 +531,28 @@ class ResourceStatusHandler( RequestHandler ):
   __resHistory_GD = [ ( t, list, NoneType ) for t in __resHistory_IU ] + [ dict ]   
 
   types_insertResourceHistory = __resHistory_IU    
-  @Handler                
+  @HandlerDec                
   def export_insertResourceHistory( self, resourceName, statusType, status, reason, 
                                     dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                     tokenOwner, tokenExpiration, kwargs ):
     return db
   
   types_updateResourceHistory = __resHistory_IU    
-  @Handler                
+  @HandlerDec                
   def export_updateResourceHistory( self, resourceName, statusType, status, reason, 
                                     dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                     tokenOwner, tokenExpiration, kwargs ):
     return db  
       
   types_getResourceHistory = __resHistory_GD    
-  @Handler                
+  @HandlerDec                
   def export_getResourceHistory( self, resourceName, statusType, status, reason, 
                                  dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                  tokenOwner, tokenExpiration, kwargs ):
     return db
 
   types_deleteResourceHistory = __resHistory_GD    
-  @Handler                
+  @HandlerDec                
   def export_deleteResourceHistory( self, resourceName, statusType, status, reason, 
                                  dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                  tokenOwner, tokenExpiration, kwargs ):
@@ -571,7 +571,7 @@ class ResourceStatusHandler( RequestHandler ):
                                ( datetime, list, NoneType ), ( str, list, NoneType ), 
                                ( datetime, list, NoneType ), ( str, list, NoneType ),
                                ( datetime, list, NoneType ), ( str, list, NoneType ), dict ]    
-  @Handler    
+  @HandlerDec    
   def export_getResourcePresent( self, resourceName, siteName, serviceType, gridSiteName, 
                                  siteType, resourceType, statusType, status, 
                                  dateEffective, reason, lastCheckTime, tokenOwner, 
@@ -591,25 +591,25 @@ class ResourceStatusHandler( RequestHandler ):
   __stEl_GD = [ ( t, list, NoneType ) for t in __stEl_IU ] + [ dict ]
 
   types_insertStorageElement = __stEl_IU 
-  @Handler 
+  @HandlerDec 
   def export_insertStorageElement( self, storageElementName, resourceName, 
                                    gridSiteName ):
     return db
 
   types_updateStorageElement = __stEl_IU 
-  @Handler 
+  @HandlerDec 
   def export_updateStorageElement( self, storageElementName, resourceName, 
                                    gridSiteName ):
     return db
 
   types_getStorageElement = __stEl_GD            
-  @Handler           
+  @HandlerDec           
   def export_getStorageElement( self, storageElementName, resourceName, 
                                 gridSiteName, kwargs ):
     return db
 
   types_deleteStorageElement = __stEl_GD            
-  @Handler           
+  @HandlerDec           
   def export_deleteStorageElement( self, storageElementName, resourceName, 
                                 gridSiteName, kwargs ):
     return db
@@ -624,28 +624,28 @@ class ResourceStatusHandler( RequestHandler ):
   __stElStatus_GD = [ ( t, list, NoneType) for t in __stElStatus_IU ] + [ dict ]
 
   types_insertStorageElementStatus = __stElStatus_IU
-  @Handler                  
+  @HandlerDec                  
   def export_insertStorageElementStatus( self, storageElementName, statusType, status, 
                                          reason, dateCreated, dateEffective, dateEnd, 
                                          lastCheckTime, tokenOwner, tokenExpiration ):
     return db
 
   types_updateStorageElementStatus = __stElStatus_IU
-  @Handler                  
+  @HandlerDec                  
   def export_updateStorageElementStatus( self, storageElementName, statusType, status, 
                                          reason, dateCreated, dateEffective, dateEnd, 
                                          lastCheckTime, tokenOwner, tokenExpiration ):
     return db
 
   types_getStorageElementStatus = __stElStatus_GD
-  @Handler                  
+  @HandlerDec                  
   def export_getStorageElementStatus( self, storageElementName, statusType, status, 
                                       reason, dateCreated, dateEffective, dateEnd, 
                                       lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
     return db
 
   types_deleteStorageElementStatus = __stElStatus_GD
-  @Handler                  
+  @HandlerDec                  
   def export_deleteStorageElementStatus( self, storageElementName, statusType, status, 
                                       reason, dateCreated, dateEffective, dateEnd, 
                                       lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
@@ -661,7 +661,7 @@ class ResourceStatusHandler( RequestHandler ):
   __stElScheduledStatus_GD = [ ( t, list, NoneType) for t in __stElScheduledStatus_IU ] + [ dict ]
 
   types_insertStorageElementScheduledStatus = __stElScheduledStatus_IU          
-  @Handler                             
+  @HandlerDec                             
   def export_insertStorageElementScheduledStatus( self, storageElementName, statusType, 
                                                   status, reason, dateCreated, dateEffective, 
                                                   dateEnd, lastCheckTime, tokenOwner, 
@@ -669,7 +669,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db
 
   types_updateStorageElementScheduledStatus = __stElScheduledStatus_IU          
-  @Handler                             
+  @HandlerDec                             
   def export_updateStorageElementScheduledStatus( self, storageElementName, statusType, 
                                                   status, reason, dateCreated, dateEffective, 
                                                   dateEnd, lastCheckTime, tokenOwner, 
@@ -677,7 +677,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db
 
   types_getStorageElementScheduledStatus = __stElScheduledStatus_GD          
-  @Handler                             
+  @HandlerDec                             
   def export_getStorageElementScheduledStatus( self, storageElementName, statusType, 
                                                status, reason, dateCreated, dateEffective, 
                                                dateEnd, lastCheckTime, tokenOwner, 
@@ -685,7 +685,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db
 
   types_deleteStorageElementScheduledStatus = __stElScheduledStatus_GD          
-  @Handler                             
+  @HandlerDec                             
   def export_deleteStorageElementScheduledStatus( self, storageElementName, statusType, 
                                                   status, reason, dateCreated, dateEffective, 
                                                   dateEnd, lastCheckTime, tokenOwner, 
@@ -702,28 +702,28 @@ class ResourceStatusHandler( RequestHandler ):
   __stElHistory_GD = [ ( t, list, NoneType) for t in __stElHistory_IU ] + [ dict ]
 
   types_insertStorageElementHistory = __stElHistory_IU        
-  @Handler             
+  @HandlerDec             
   def export_insertStorageElementHistory( self, storageElementName, statusType, 
                                           status, reason, dateCreated, dateEffective, dateEnd, 
                                           lastCheckTime, tokenOwner, tokenExpiration ):
     return db
 
   types_updateStorageElementHistory = __stElHistory_IU        
-  @Handler             
+  @HandlerDec             
   def export_updateStorageElementHistory( self, storageElementName, statusType, 
                                           status, reason, dateCreated, dateEffective, dateEnd, 
                                           lastCheckTime, tokenOwner, tokenExpiration ):
     return db
 
   types_getStorageElementHistory = __stElHistory_GD        
-  @Handler             
+  @HandlerDec             
   def export_getStorageElementHistory( self, storageElementName, statusType, 
                                        status, reason, dateCreated, dateEffective, dateEnd, 
                                        lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
     return db
     
   types_deleteStorageElementHistory = __stElHistory_GD        
-  @Handler             
+  @HandlerDec             
   def export_deleteStorageElementHistory( self, storageElementName, statusType, 
                                           status, reason, dateCreated, dateEffective, dateEnd, 
                                           lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
@@ -763,22 +763,22 @@ class ResourceStatusHandler( RequestHandler ):
   __gs_GD = [ ( t, list, NoneType ) for t in __gs_IU ] + [ dict ]
   
   types_insertGridSite = __gs_IU
-  @Handler
+  @HandlerDec
   def export_insertGridSite( self, gridSiteName, gridTier ):
     return db
 
   types_updateGridSite = __gs_IU
-  @Handler
+  @HandlerDec
   def export_updateGridSite( self, gridSiteName, gridTier ):
     return db
       
   types_getGridSites = __gs_GD    
-  @Handler    
+  @HandlerDec    
   def export_getGridSites( self, gridSiteName, gridTier, kwargs ):
     return db
 
   types_deleteGridSites = __gs_GD    
-  @Handler  
+  @HandlerDec  
   def export_deleteGridSites( self, gridSiteName, gridTier, kwargs ):         
     return db  
   
@@ -871,7 +871,7 @@ class ResourceStatusHandler( RequestHandler ):
 #  types_getSite = [ str ]
 #  def export_getSite( self, siteName ):
 #
-#    gLogger.info( "ResourceStatusHandler.getSite: Attempting to get Site" )
+#    gLogger.info( "ResourceStatusHandlerDec.getSite: Attempting to get Site" )
 #
 #    try:
 #      resQuery = rsDB.getSites( siteName = siteName )
