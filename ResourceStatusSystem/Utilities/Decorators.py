@@ -19,7 +19,7 @@ class CheckExecution2( object ):
 
 #################################################################################
 
-class CheckExecution( object ):
+class DBDec( object ):
   
   def __init__( self, f ):
     self.f = f
@@ -29,25 +29,25 @@ class CheckExecution( object ):
     
   def __call__( self, *args, **kwargs ):
       
-      functionNames = [ 'insert', 'update', 'get', 'delete' ]         
-      tableName = self.f.__name__  
-      for fN in functionNames:  
-        tableName = tableName.replace( fN, '' ) 
+    functionNames = [ 'insert', 'update', 'get', 'delete' ]         
+    tableName = self.f.__name__  
+    for fN in functionNames:  
+      tableName = tableName.replace( fN, '' ) 
       
-      if self.f.__name__.startswith( 'insert' ):# or self.f.__name__.startswith( 'update' ):
-        kwargs = {} 
+    if self.f.__name__.startswith( 'insert' ) or self.f.__name__.startswith( 'update' ):
+      kwargs = {} 
       
-      kwargs.update( { 'table' : tableName })
+    kwargs.update( { 'table' : tableName })
       
-      try:
-        self.f.kwargs = kwargs
-        return self.f( *args, **kwargs )
-      except Exception, x:
-        return S_ERROR( x )
+    try:
+      self.f.kwargs = kwargs
+      return self.f( *args, **kwargs )
+    except Exception, x:
+      return S_ERROR( x )
 
 ################################################################################
 
-class Handler( object ):
+class HandlerDec( object ):
   
   def __init__( self, f ):
     self.f = f
@@ -91,7 +91,7 @@ class Handler( object ):
 
 ################################################################################
 
-class Client( object ):
+class ClientDec( object ):
   
   def __init__( self, f ):
     self.f = f
