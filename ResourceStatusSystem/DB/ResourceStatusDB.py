@@ -9,12 +9,12 @@ from DIRAC import S_OK#, S_ERROR
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus#, ValidStatusTypes
+from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidStatusTypes
 
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey, localsToDict
 from DIRAC.ResourceStatusSystem.Utilities.Validator import ResourceStatusValidator
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import DBDec
 
 ################################################################################
 
@@ -74,52 +74,6 @@ class ResourceStatusDB:
     self.mm    = MySQLMonkey( self )  
     self.rsVal = ResourceStatusValidator( self )
 
-  '''
-  ##############################################################################
-  # ELEMENT FUNCTIONS
-  ##############################################################################
-  '''
-
-  def __getMultipleWhereElements( self, dict, **kwargs ):
-
-    return self.mm.getWhereElements( dict, **kwargs )
-
-  def __getElementStatusCountRow( self, element, whereElements ):
-
-    #self.__validateRes( element )
-
-    req = "SELECT Status, COUNT(*) from %sPresent" % element
-    if whereElements:
-      req += " WHERE %s" % whereElements
-    req += " GROUP BY Status"
-
-    resQuery = self.db._query( req )
-    if not resQuery[ 'OK' ]:
-      raise RSSDBException, where( self, self.__getElementStatusCountRow ) + resQuery[ 'Message' ]
-
-    return resQuery
-
-  def __getElementStatusCount( self, element, dict ):
-
-    self.rsVal.validateRes( element )
-
-    whereElements = self.__getMultipleWhereElements( dict )
-
-    resQuery = self.__getElementStatusCountRow( element, whereElements )
-
-    count = { 'Total' : 0 }
-    for validStatus in ValidStatus:
-      count[ validStatus ] = 0
-
-    for x in resQuery[ 'Value' ]:
-      count[ x[0] ] = int( x[1] )
-
-    count['Total'] = sum( count.values() )
-    return S_OK( count )
-
-################################################################################
-################################################################################
-
 ################################################################################
 ################################################################################
 
@@ -129,7 +83,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifySite( self, siteName, siteType, gridSiteName, **kwargs ):
 #
 #    rDict = localsToDict( locals() )
@@ -143,7 +97,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'Site' ] = {'uniqueKeys' : [ 'SiteName' ] } 
   
-  @CheckExecution
+  @DBDec
   def insertSite( self, siteName, siteType, gridSiteName, **kwargs ):
     
     rDict = localsToDict( locals() )
@@ -151,7 +105,7 @@ class ResourceStatusDB:
     # END VALIDATION #
     return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def updateSite( self, siteName, siteType, gridSiteName, **kwargs ):
   
     rDict = localsToDict( locals() )
@@ -159,7 +113,7 @@ class ResourceStatusDB:
     # END VALIDATION #
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getSite( self, siteName, siteType, gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )
@@ -167,7 +121,7 @@ class ResourceStatusDB:
     # END VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteSite( self, siteName, siteType, gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )
@@ -183,7 +137,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifySiteStatus( self, siteName, statusType, status, reason, dateCreated,
 #                             dateEffective, dateEnd, lastCheckTime, tokenOwner,
 #                             tokenExpiration, **kwargs ):
@@ -198,7 +152,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'SiteStatus' ] = {'uniqueKeys' : [ 'SiteName', 'StatusType' ] }
 
-  @CheckExecution
+  @DBDec
   def insertSiteStatus( self, siteName, statusType, status, reason, dateCreated,
                         dateEffective, dateEnd, lastCheckTime, tokenOwner, tokenExpiration, 
                         **kwargs ):
@@ -211,7 +165,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElementStatus( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def updateSiteStatus( self, siteName, statusType, status, reason, dateCreated,
                         dateEffective, dateEnd, lastCheckTime, tokenOwner, tokenExpiration, 
                         **kwargs ):
@@ -224,7 +178,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElementStatus( rDict, **kwargs )
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getSiteStatus( self, siteName, statusType, status, reason, dateCreated,
                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
                      tokenExpiration, **kwargs ):
@@ -234,7 +188,7 @@ class ResourceStatusDB:
     # END VALIDATION #
     return self.mm.get( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def deleteSiteStatus( self, siteName, statusType, status, reason, dateCreated,
                         dateEffective, dateEnd, lastCheckTime, tokenOwner,
                         tokenExpiration, **kwargs ):
@@ -250,7 +204,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''  
     
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifySiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
 #                                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
 #                                      tokenExpiration, **kwargs ):
@@ -265,7 +219,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'SiteScheduledStatus' ] = {'uniqueKeys' : [ 'SiteName', 'StatusType', 'DateEffective' ] }
 
-  @CheckExecution
+  @DBDec
   def insertSiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
                                  dateEffective, dateEnd, lastCheckTime, tokenOwner,
                                  tokenExpiration, **kwargs ):
@@ -279,7 +233,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def updateSiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
                                  dateEffective, dateEnd, lastCheckTime, tokenOwner,
                                  tokenExpiration, **kwargs ):
@@ -293,7 +247,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getSiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
                               dateEffective, dateEnd, lastCheckTime, tokenOwner,
                               tokenExpiration, **kwargs ):
@@ -301,7 +255,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.get( rDict, **kwargs )  
 
-  @CheckExecution
+  @DBDec
   def deleteSiteScheduledStatus( self, siteName, statusType, status, reason,
                                  dateCreated, dateEffective, dateEnd,
                                  lastCheckTime, tokenOwner, tokenExpiration,
@@ -318,7 +272,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'SiteHistory' ] = {'uniqueKeys' : [ 'SiteName', 'StatusType', 'DateEnd' ] }
 
-  @CheckExecution
+  @DBDec
   def insertSiteHistory( self, siteName, statusType, status, reason, dateCreated,
                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
                          tokenExpiration, **kwargs ):
@@ -326,7 +280,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.insert( rDict, **kwargs )    
   
-  @CheckExecution
+  @DBDec
   def updateSiteHistory( self, siteName, statusType, status, reason, dateCreated,
                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
                          tokenExpiration, **kwargs ):
@@ -334,7 +288,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.update( rDict, **kwargs )  
   
-  @CheckExecution
+  @DBDec
   def getSiteHistory( self, siteName, statusType, status, reason, dateCreated,
                       dateEffective, dateEnd, lastCheckTime, tokenOwner,
                       tokenExpiration, **kwargs ):
@@ -344,7 +298,7 @@ class ResourceStatusDB:
       kwargs[ 'sort' ] = [ 'SiteName', 'SiteHistoryID' ]
     return self.mm.get( rDict, **kwargs )  
 
-  @CheckExecution
+  @DBDec
   def deleteSiteHistory( self, siteName, statusType, status, reason, dateCreated,
                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
                          tokenExpiration, **kwargs ):
@@ -360,7 +314,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'SitePresent' ] = {'uniqueKeys' : [ 'SiteName', 'StatusType' ] } 
 
-  @CheckExecution
+  @DBDec
   def getSitePresent( self, siteName, siteType, gridSiteName, gridTier,
                       statusType, status, dateEffective, reason, lastCheckTime,
                       tokenOwner, tokenExpiration, formerStatus, **kwargs ):
@@ -378,7 +332,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyService( self, serviceName, serviceType, siteName, **kwargs ):
 #
 #    rDict = localsToDict( locals() )
@@ -393,7 +347,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'Service' ] = {'uniqueKeys' : [ 'ServiceName' ] }
 
-  @CheckExecution
+  @DBDec
   def insertService( self, serviceName, serviceType, siteName, **kwargs ):
 
     rDict = localsToDict( locals() )
@@ -408,7 +362,7 @@ class ResourceStatusDB:
 
     #return self._addOrModifyElement( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def updateService( self, serviceName, serviceType, siteName, **kwargs ):
 
     rDict = localsToDict( locals() )
@@ -423,13 +377,13 @@ class ResourceStatusDB:
 
     #return self._addOrModifyElement( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getService( self, serviceName, serviceType, siteName, **kwargs ):
 
     rDict = localsToDict( locals() )
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteService( self, serviceName, **kwargs ):
 
     rDict = localsToDict( locals() )
@@ -448,7 +402,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'ServiceStatus'  ] = {'uniqueKeys' : [ 'ServiceName', 'StatusType' ] }
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
 #                                dateEffective, dateEnd, lastCheckTime,tokenOwner,
 #                                tokenExpiration, **kwargs ):
@@ -461,7 +415,7 @@ class ResourceStatusDB:
 #       
 #    return self._addOrModifyElementStatus( rDict, **kwargs )    
   
-  @CheckExecution
+  @DBDec
   def insertServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
                            dateEffective, dateEnd, lastCheckTime,tokenOwner,
                            tokenExpiration, **kwargs ):
@@ -475,7 +429,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElementStatus( rDict, **kwargs )    
     return self.mm.insert( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def updateServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
                            dateEffective, dateEnd, lastCheckTime,tokenOwner,
                            tokenExpiration, **kwargs ):
@@ -489,7 +443,7 @@ class ResourceStatusDB:
     return self.mm.update( rDict, **kwargs )   
     #return self._addOrModifyElementStatus( rDict, **kwargs )        
 
-  @CheckExecution
+  @DBDec
   def getServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
                         dateEffective, dateEnd, lastCheckTime, tokenOwner,
                         tokenExpiration, **kwargs ):
@@ -497,7 +451,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.get( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def deleteServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
                            dateEffective, dateEnd, lastCheckTime, tokenOwner,
                            tokenExpiration, **kwargs ):
@@ -512,7 +466,7 @@ class ResourceStatusDB:
   '''  
   __TABLES__[ 'ServiceScheduledStatus' ] = {'uniqueKeys' : [ 'ServiceName', 'StatusType', 'DateEffective' ] }
   
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyServiceScheduledStatus( self, serviceName, statusType, status,
 #                                         reason, dateCreated, dateEffective, dateEnd,
 #                                         lastCheckTime, tokenOwner, tokenExpiration,
@@ -526,7 +480,7 @@ class ResourceStatusDB:
 #    
 #    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def insertServiceScheduledStatus( self, serviceName, statusType, status,
                                     reason, dateCreated, dateEffective, dateEnd,
                                     lastCheckTime, tokenOwner, tokenExpiration,
@@ -540,7 +494,7 @@ class ResourceStatusDB:
     
     return self.mm.insert( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def updateServiceScheduledStatus( self, serviceName, statusType, status,
                                     reason, dateCreated, dateEffective, dateEnd,
                                     lastCheckTime, tokenOwner, tokenExpiration,
@@ -554,7 +508,7 @@ class ResourceStatusDB:
     
     return self.mm.update( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def getServiceScheduledStatus( self, serviceName, statusType, status,
                                  reason, dateCreated, dateEffective, dateEnd,
                                  lastCheckTime, tokenOwner, tokenExpiration,
@@ -568,7 +522,7 @@ class ResourceStatusDB:
     
     return self.mm.get( rDict, **kwargs )      
 
-  @CheckExecution
+  @DBDec
   def deleteServiceScheduledStatus( self, serviceName, statusType, status,
                                     reason, dateCreated, dateEffective, dateEnd,
                                     lastCheckTime, tokenOwner, tokenExpiration,
@@ -590,7 +544,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'ServiceHistory' ] = {'uniqueKeys' : [ 'ServiceName', 'StatusType', 'DateEnd' ] }
   
-  @CheckExecution
+  @DBDec
   def insertServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
                             dateEffective, dateEnd, lastCheckTime, tokenOwner,
                             tokenExpiration, **kwargs ):
@@ -598,7 +552,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.insert( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def updateServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
                          tokenExpiration, **kwargs ):
@@ -606,7 +560,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
                          tokenExpiration, **kwargs ):
@@ -616,7 +570,7 @@ class ResourceStatusDB:
       kwargs[ 'sort' ] = [ 'ServiceName', 'ServiceHistoryID' ]
     return self.mm.get( rDict, **kwargs )    
 
-  @CheckExecution
+  @DBDec
   def deleteServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
                             dateEffective, dateEnd, lastCheckTime, tokenOwner,
                             tokenExpiration, **kwargs ):
@@ -632,7 +586,7 @@ class ResourceStatusDB:
   
   __TABLES__[ 'ServicePresent' ] = {'uniqueKeys' : [ 'ServiceName', 'StatusType' ] }
 
-  @CheckExecution
+  @DBDec
   def getServicePresent( self, serviceName, siteName, siteType, serviceType,
                          statusType, status, dateEffective, reason, lastCheckTime,
                          tokenOwner, tokenExpiration, formerStatus, **kwargs ):
@@ -640,7 +594,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.get( rDict, **kwargs )
 
-#  @CheckExecution
+#  @DBDec
 #  def deleteService( self, serviceName, **kwargs ):
 #
 #    rDict = localsToDict( locals() )
@@ -661,7 +615,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'Resource' ] = {'uniqueKeys' : [ 'ResourceName' ] }
   
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName,
 #                           gridSiteName, **kwargs ):
 #
@@ -678,7 +632,7 @@ class ResourceStatusDB:
 #
 #    return self._addOrModifyElement( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, **kwargs ):
 
@@ -696,7 +650,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElement( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, **kwargs ):
 
@@ -707,7 +661,7 @@ class ResourceStatusDB:
 
     return self.mm.update( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def getResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, **kwargs ):
 
@@ -718,7 +672,7 @@ class ResourceStatusDB:
 
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, **kwargs ):
 
@@ -735,7 +689,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''  
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyResourceStatus( self, resourceName, statusType, status, reason, 
 #                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
 #                                 tokenOwner,tokenExpiration, **kwargs ):
@@ -750,7 +704,7 @@ class ResourceStatusDB:
   
   __TABLES__[ 'ResourceStatus' ] = {'uniqueKeys' : [ 'ResourceName', 'StatusType' ] }
   
-  @CheckExecution
+  @DBDec
   def insertResourceStatus( self, resourceName, statusType, status, reason, 
                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
                             tokenOwner,tokenExpiration, **kwargs ):
@@ -764,7 +718,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElementStatus( rDict, **kwargs )      
     return self.mm.insert( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def updateResourceStatus( self, resourceName, statusType, status, reason, 
                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
                             tokenOwner,tokenExpiration, **kwargs ):
@@ -775,7 +729,7 @@ class ResourceStatusDB:
              
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getResourceStatus( self, resourceName, statusType, status, reason, 
                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
                             tokenOwner,tokenExpiration, **kwargs ):
@@ -786,7 +740,7 @@ class ResourceStatusDB:
              
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteResourceStatus( self, resourceName, statusType, status, reason, 
                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
                             tokenOwner,tokenExpiration, **kwargs ):
@@ -803,7 +757,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''  
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyResourceScheduledStatus( self, resourceName, statusType, status, 
 #                                          reason, dateCreated, dateEffective, dateEnd, 
 #                                          lastCheckTime, tokenOwner, tokenExpiration,
@@ -819,7 +773,7 @@ class ResourceStatusDB:
   
   __TABLES__[ 'ResourceScheduledStatus' ] = {'uniqueKeys' : [ 'ResourceName', 'StatusType', 'DateEffective' ] }
   
-  @CheckExecution
+  @DBDec
   def insertResourceScheduledStatus( self, resourceName, statusType, status, 
                                      reason, dateCreated, dateEffective, dateEnd, 
                                      lastCheckTime, tokenOwner, tokenExpiration,
@@ -835,7 +789,7 @@ class ResourceStatusDB:
   
     return self.mm.insert( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def updateResourceScheduledStatus( self, resourceName, statusType, status, 
                                      reason, dateCreated, dateEffective, dateEnd, 
                                      lastCheckTime, tokenOwner, tokenExpiration,
@@ -847,7 +801,7 @@ class ResourceStatusDB:
        
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getResourceScheduledStatus( self, resourceName, statusType, status, 
                                   reason, dateCreated, dateEffective, dateEnd, 
                                   lastCheckTime, tokenOwner, tokenExpiration,
@@ -859,7 +813,7 @@ class ResourceStatusDB:
        
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteResourceScheduledStatus( self, resourceName, statusType, status, 
                                      reason, dateCreated, dateEffective, dateEnd, 
                                      lastCheckTime, tokenOwner, tokenExpiration,
@@ -877,7 +831,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''  
 
-#  @CheckExecution
+#  @DBDec
 #  def getResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
 #                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
 #                          tokenExpiration, **kwargs ):
@@ -889,7 +843,7 @@ class ResourceStatusDB:
   
   __TABLES__[ 'ResourceHistory' ] = {'uniqueKeys' : [ 'ResourceName', 'StatusType', 'DateEnd' ] }
   
-  @CheckExecution
+  @DBDec
   def insertResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
                              dateEffective, dateEnd, lastCheckTime, tokenOwner,
                              tokenExpiration, **kwargs ):
@@ -897,7 +851,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def updateResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
                              dateEffective, dateEnd, lastCheckTime, tokenOwner,
                              tokenExpiration, **kwargs ):
@@ -905,7 +859,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.update( rDict, **kwargs )
   
-  @CheckExecution
+  @DBDec
   def getResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
                           dateEffective, dateEnd, lastCheckTime, tokenOwner,
                           tokenExpiration, **kwargs ):
@@ -915,7 +869,7 @@ class ResourceStatusDB:
       kwargs[ 'sort' ] = [ 'ResourceName', 'ResourceHistoryID' ]
     return self.mm.get( rDict, **kwargs )  
 
-  @CheckExecution
+  @DBDec
   def deleteResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
                              dateEffective, dateEnd, lastCheckTime, tokenOwner,
                              tokenExpiration, **kwargs ):
@@ -932,7 +886,7 @@ class ResourceStatusDB:
   __TABLES__[ 'ResourcePresent' ] = {'uniqueKeys' : [ 'ResourceName', 'StatusType' ] }
 
 
-  @CheckExecution
+  @DBDec
   def getResourcePresent( self, resourceName, siteName, serviceType, gridSiteName,
                           siteType, resourceType, statusType, status, dateEffective,
                           reason, lastCheckTime, tokenOwner, tokenExpiration,
@@ -952,7 +906,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'StorageElement' ] = {'uniqueKeys' : [ 'StorageElementName' ] }
   
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyStorageElement( self, storageElementName, resourceName,
 #                                 gridSiteName, **kwargs ):
 #
@@ -966,7 +920,7 @@ class ResourceStatusDB:
 #
 #    return self._addOrModifyElement( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def insertStorageElement( self, storageElementName, resourceName,
                             gridSiteName, **kwargs ):
 
@@ -981,7 +935,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElement( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def updateStorageElement( self, storageElementName, resourceName,
                             gridSiteName, **kwargs ):
 
@@ -991,7 +945,7 @@ class ResourceStatusDB:
 
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getStorageElement( self, storageElementName, resourceName,
                             gridSiteName, **kwargs ):
 
@@ -1001,7 +955,7 @@ class ResourceStatusDB:
 
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteStorageElement( self, storageElementName, resourceName,
                             gridSiteName, **kwargs ):
 
@@ -1017,7 +971,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyStorageElementStatus( self, storageElementName, statusType, status,
 #                                       reason, dateCreated, dateEffective, dateEnd,
 #                                       lastCheckTime, tokenOwner, tokenExpiration,
@@ -1033,7 +987,7 @@ class ResourceStatusDB:
   
   __TABLES__[ 'StorageElementStatus' ] = {'uniqueKeys' : [ 'StorageElementName', 'StatusType' ] }
   
-  @CheckExecution
+  @DBDec
   def insertStorageElementStatus( self, storageElementName, statusType, status,
                                   reason, dateCreated, dateEffective, dateEnd,
                                   lastCheckTime, tokenOwner, tokenExpiration,
@@ -1048,7 +1002,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElementStatus( rDict, **kwargs )    
     return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def updateStorageElementStatus( self, storageElementName, statusType, status,
                                   reason, dateCreated, dateEffective, dateEnd,
                                   lastCheckTime, tokenOwner, tokenExpiration,
@@ -1060,7 +1014,7 @@ class ResourceStatusDB:
            
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getStorageElementStatus( self, storageElementName, statusType, status,
                                reason, dateCreated, dateEffective, dateEnd,
                                lastCheckTime, tokenOwner, tokenExpiration,
@@ -1072,7 +1026,7 @@ class ResourceStatusDB:
            
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteStorageElementStatus( self, storageElementName, statusType, status,
                                   reason, dateCreated, dateEffective, dateEnd,
                                   lastCheckTime, tokenOwner, tokenExpiration,
@@ -1090,7 +1044,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''  
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyStorageElementScheduledStatus( self, storageElementName, statusType, status,
 #                                                reason, dateCreated, dateEffective, dateEnd,
 #                                                lastCheckTime, tokenOwner, tokenExpiration,
@@ -1106,7 +1060,7 @@ class ResourceStatusDB:
   
   __TABLES__[ 'StorageElementScheduledStatus' ] = {'uniqueKeys' : [ 'StorageElementName', 'StatusType', 'DateEffective' ] }
   
-  @CheckExecution
+  @DBDec
   def insertStorageElementScheduledStatus( self, storageElementName, statusType, status,
                                            reason, dateCreated, dateEffective, dateEnd,
                                            lastCheckTime, tokenOwner, tokenExpiration,
@@ -1121,7 +1075,7 @@ class ResourceStatusDB:
     #return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )  
 
-  @CheckExecution
+  @DBDec
   def updateStorageElementScheduledStatus( self, storageElementName, statusType, status,
                                            reason, dateCreated, dateEffective, dateEnd,
                                            lastCheckTime, tokenOwner, tokenExpiration,
@@ -1133,7 +1087,7 @@ class ResourceStatusDB:
     
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getStorageElementScheduledStatus( self, storageElementName, statusType, status,
                                            reason, dateCreated, dateEffective, dateEnd,
                                            lastCheckTime, tokenOwner, tokenExpiration,
@@ -1145,7 +1099,7 @@ class ResourceStatusDB:
     
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteStorageElementScheduledStatus( self, storageElementName, statusType, status,
                                            reason, dateCreated, dateEffective, dateEnd,
                                            lastCheckTime, tokenOwner, tokenExpiration,
@@ -1163,7 +1117,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''  
 
-#  @CheckExecution
+#  @DBDec
 #  def getStorageElementHistory( self, storageElementName, statusType, status,
 #                                 reason, dateCreated, dateEffective, dateEnd,
 #                                 lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
@@ -1175,7 +1129,7 @@ class ResourceStatusDB:
 
   __TABLES__[ 'StorageElementHistory'] = {'uniqueKeys' : [ 'StorageElementName', 'StatusType', 'DateEnd' ] }
 
-  @CheckExecution
+  @DBDec
   def insertStorageElementHistory( self, storageElementName, statusType, status,
                                    reason, dateCreated, dateEffective, dateEnd,
                                    lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
@@ -1183,7 +1137,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def updateStorageElementHistory( self, storageElementName, statusType, status,
                                    reason, dateCreated, dateEffective, dateEnd,
                                    lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
@@ -1191,7 +1145,7 @@ class ResourceStatusDB:
     rDict = localsToDict( locals() )
     return self.mm.update( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getStorageElementHistory( self, storageElementName, statusType, status,
                                    reason, dateCreated, dateEffective, dateEnd,
                                    lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
@@ -1201,7 +1155,7 @@ class ResourceStatusDB:
       kwargs[ 'sort' ] = [ 'StorageElementName', 'StorageElementHistoryID' ]    
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteStorageElementHistory( self, storageElementName, statusType, status,
                                    reason, dateCreated, dateEffective, dateEnd,
                                    lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
@@ -1218,7 +1172,7 @@ class ResourceStatusDB:
   __TABLES__[ 'StorageElementPresent']= {'uniqueKeys' : [ 'StorageElementName', 'StatusType' ] }   
 
 
-  @CheckExecution
+  @DBDec
   def getStorageElementPresent( self, storageElementName, resourceName,
                                  gridSiteName, siteType, statusType, status,
                                  dateEffective, reason, lastCheckTime, tokenOwner,
@@ -1236,7 +1190,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''
 
-#  @CheckExecution
+#  @DBDec
 #  def addOrModifyGridSite( self, gridSiteName, gridTier, **kwargs ):
 #
 #    # VALIDATION #
@@ -1255,7 +1209,7 @@ class ResourceStatusDB:
   
   __TABLES__[ 'GridSite' ] = { 'uniqueKeys' : [ 'GridSiteName' ] } 
 
-  @CheckExecution
+  @DBDec
   def insertGridSite( self, gridSiteName, gridTier, **kwargs ):
 
     # VALIDATION #
@@ -1271,7 +1225,7 @@ class ResourceStatusDB:
     #else: 
     return self.mm.insert( rDict, **kwargs )  
 
-  @CheckExecution
+  @DBDec
   def updateGridSite( self, gridSiteName, gridTier, **kwargs ):
 
     # VALIDATION #
@@ -1288,13 +1242,13 @@ class ResourceStatusDB:
     #return self.mm.insert( rDict, **kwargs )  
 
 
-  @CheckExecution
+  @DBDec
   def getGridSite( self, gridSiteName, gridTier, **kwargs ):
 
     rDict = localsToDict( locals() )
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteGridSite( self, gridSiteName, gridTier, **kwargs ):
 
     #VALIDATION#
@@ -1310,7 +1264,7 @@ class ResourceStatusDB:
   ##############################################################################
   '''
 
-#  @CheckExecution
+#  @DBDec
 #  def getServiceStats( self, siteName, statusType ):
 #    """
 #    Returns simple statistics of active, probing, bad and banned services of a site;
@@ -1330,7 +1284,7 @@ class ResourceStatusDB:
 #    rDict = localsToDict( locals() )
 #    return self.__getElementStatusCount( 'Service', rDict )
 #
-#  @CheckExecution
+#  @DBDec
 #  def getResourceStats( self, element, name, statusType ):
 #
 #    rDict = {}
@@ -1385,7 +1339,7 @@ class ResourceStatusDB:
 #
 #    return self.__getElementStatusCount( 'Resource', rDict )
 #
-#  @CheckExecution
+#  @DBDec
 #  def getStorageElementStats( self, element, name, statusType ):
 #
 #    rDict = {}
