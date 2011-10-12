@@ -144,7 +144,7 @@ def protect2(f, *args, **kw):
   try:
     ret = f(*args, **kw)
     if type(ret) == dict and ret['OK'] == False:
-      print "function " + str(f) + " called with " + str(args)
+      print "function " + f.f.__name__ + " called with " + str( args )
       print "%s\n" % ret['Message']
     return ret
   except Exception as e:
