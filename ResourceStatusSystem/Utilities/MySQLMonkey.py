@@ -1,5 +1,20 @@
 from DIRAC import S_OK
 
+################################################################################
+    
+def localsToDict( locls ):
+
+  rDict = {}
+  for k,v in locls.items():
+    if k not in [ 'self', 'k', 'v', 'rDict', 'kwargs' ]:
+      if v is not None:
+        rDict[ k[0].upper() + k[1:] ] = v   
+    
+  return rDict
+
+################################################################################
+
+
 class MySQLMonkey( object ):
   
   ACCEPTED_KWARGS = [ 'table', 'uniqueKeys', 'sort', 'order', 'limit', 'columns', 
@@ -115,19 +130,6 @@ class MySQLMonkey( object ):
 
     return self.__deleteSQLStatement( rDict, **kwargs )
 
-      
-################################################################################
-    
-  def localsToDict( self, locls ):
-
-    rDict = {}
-    for k,v in locls.items():
-      if k not in ['self', 'k', 'v', 'rDict', 'kwargs' ]:
-        if v is not None:
-          rDict[ k[0].upper() + k[1:] ] = v   
-    
-    return rDict
-
 ################################################################################
 # PARSERS
 ################################################################################
@@ -164,7 +166,7 @@ class MySQLMonkey( object ):
     
   def __select( self, rDict, **kwargs ):
 
-    sqlStatement = self.__selectSQLStatement( rDict, **kwargs)  
+    sqlStatement = self.__selectSQLStatement( rDict, **kwargs )
     sqlQuery     = self.dbWrapper.db._query( sqlStatement )
     
     return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )     
@@ -232,7 +234,11 @@ class MySQLMonkey( object ):
         
     req = "UPDATE %s SET " % table
     req += ','.join( "%s='%s'" % (key,value) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] ) )
-    req += " WHERE %s" % whereElements
+    # This was a bug, but is quite handy.
+    # Prevents users from updating the whole table in one go if on the client
+    # they execute updateX() without arguments for the uniqueKeys values 
+    if whereElements is not None:
+      req += " WHERE %s" % whereElements
 
     return req
 
