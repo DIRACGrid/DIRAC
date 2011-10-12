@@ -33,7 +33,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB#
 
 from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import HandlerExecution
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import Handler
 
 db = False
 
@@ -76,713 +76,778 @@ class ResourceStatusHandler( RequestHandler ):
     db = oDatabase
 
 ################################################################################
-
-################################################################################
-# Sites functions
 ################################################################################
 
-################################################################################
+  '''
+  ##############################################################################
+  # SITE FUNCTIONS
+  ##############################################################################
+  '''
 
-  types_addOrModifySite = [ str, str, str ]
+  __site_IU = [ str, str, str ]
+  __site_GD = [ ( t, list, NoneType ) for t in __site_IU ] + [ dict ] 
 
-  @HandlerExecution
-  def export_addOrModifySite( self, siteName, siteType, gridSiteName ):
+  types_insertSite = __site_IU
+  @Handler
+  def export_insertSite( self, siteName, siteType, gridSiteName ):
     return db  
 
-################################################################################
+  types_updateSite = __site_IU
+  @Handler
+  def export_updateSite( self, siteName, siteType, gridSiteName ):
+    return db  
 
-  types_setSiteStatus = [ str, str, str, str, ( datetime, NoneType ),
-                          ( datetime, NoneType ), ( datetime, NoneType ),
-                          ( datetime, NoneType ), ( str, NoneType ), 
-                          ( datetime, NoneType ) ]    
+  types_getSite = __site_GD
+  @Handler    
+  def export_getSite( self, siteName, siteType, gridSiteName, kwargs ):
+    return db
+  
+  types_deleteSite = __site_GD
+  @Handler    
+  def export_deleteSite( self, siteName, siteType, gridSiteName, kwargs ):
+    return db  
 
-  @HandlerExecution
-  def export_setSiteStatus( self, siteName, statusType, status, reason, dateCreated, 
-                            dateEffective, dateEnd, lastCheckTime, tokenOwner,
-                            tokenExpiration ):
+  '''
+  ##############################################################################
+  # SITE STATUS FUNCTIONS
+  ##############################################################################
+  '''
+
+  __siteStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __siteStatus_GD = [ ( t, list ,NoneType ) for t in __siteStatus_IU ] + [ dict ] 
+
+  types_insertSiteStatus = __siteStatus_IU
+  @Handler
+  def export_insertSiteStatus( self, siteName, statusType, status, reason, 
+                               dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                               tokenOwner, tokenExpiration ):
     return db
 
-################################################################################
-    
-  types_setSiteScheduledStatus = [ str, str, str, str, ( datetime, NoneType ),
-                                   ( datetime, NoneType ), ( datetime, NoneType ),
-                                   ( datetime, NoneType ), ( str, NoneType), 
-                                   ( datetime, NoneType ) ]
-    
-  @HandlerExecution
-  def export_setSiteScheduledStatus( self, siteName, statusType, status, reason, 
-                                     dateCreated, dateEffective, dateEnd, 
-                                     lastCheckTime, tokenOwner, tokenExpiration ):
-    return db
-
-################################################################################
-      
-  types_updateSiteStatus = [ str, str, ( str, NoneType ), 
-                            ( str, NoneType ),
-                            ( datetime, NoneType ), ( datetime, NoneType ), 
-                            ( datetime, NoneType ), ( datetime, NoneType ),
-                            ( str, NoneType ), ( datetime, NoneType ) ]  
-
-  @HandlerExecution    
+  types_updateSiteStatus = __siteStatus_IU    
+  @Handler
   def export_updateSiteStatus( self, siteName, statusType, status, reason, 
                                dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                tokenOwner, tokenExpiration ):
     return db
-      
-################################################################################
 
-  types_getSites = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                     ( str, list, NoneType ), dict ]
-  
-  @HandlerExecution    
-  def export_getSites( self, siteName, siteType, gridSiteName, kwargs ):
-    return db
-
-################################################################################
-
-  types_getSitesStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                          ( str, list, NoneType ), ( str, list, NoneType ), 
-                          ( datetime, list, NoneType ), 
-                          ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                          ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                          ( datetime, list, NoneType ), dict ]
-
-  @HandlerExecution
-  def export_getSitesStatus( self, siteName, statusType, status, reason, 
-                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                             tokenOwner, tokenExpiration, kwargs ):
-    return db
-    
-################################################################################  
-  
-  types_getSitesHistory = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                            ( str, list, NoneType ), ( str, list, NoneType ), 
-                            ( datetime, list, NoneType ), 
-                            ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                            ( datetime, list, NoneType ), dict ]
-
-  @HandlerExecution
-  def export_getSitesHistory( self, siteName, statusType, status, reason, 
-                              dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                              tokenOwner, tokenExpiration, kwargs ):
-    return db
-
-################################################################################
-
-  types_getSitesScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                    ( str, list, NoneType ), ( str, list, NoneType ), 
-                                    ( datetime, list, NoneType ), 
-                                    ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                                    ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                                    ( datetime, list, NoneType ), dict ]
-
-  @HandlerExecution
-  def export_getSitesScheduledStatus( self, siteName, statusType, status, reason, 
-                                      dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                      tokenOwner, tokenExpiration, kwargs ):
-    return db
-
-################################################################################
-
-  types_getSitesPresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                            ( str, list, NoneType ), ( str, list, NoneType ), 
-                            ( str, list, NoneType ), ( str, list, NoneType ), 
-                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                            ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                            dict ]
-
-  @HandlerExecution
-  def export_getSitesPresent( self, siteName, siteType, gridSiteName, gridTier, 
-                              statusType, status, dateEffective, reason, 
-                              lastCheckTime, tokenOwner, tokenExpiration, 
-                              formerStatus, kwargs ):
-    return db
-
-################################################################################    
-
-  types_deleteSites = [ ( str, list ) ]
-
-  @HandlerExecution
-  def export_deleteSites( self, siteName ):
-    return db
-    
-################################################################################
-
-  types_deleteSitesScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                       ( str, list, NoneType ), ( str, list, NoneType ),
-                                       ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                       ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                                       ( str, list, NoneType ), ( datetime, list, NoneType ),
-                                       dict ]
-
-  @HandlerExecution
-  def export_deleteSitesScheduledStatus( self, siteName, statusType, status, 
-                                         reason, dateCreated, dateEffective, dateEnd, 
-                                         lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
-    return db
-
-################################################################################
-
-  types_deleteSitesHistory = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                               ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]
-
-  @HandlerExecution
-  def export_deleteSitesHistory( self, siteName, statusType, status, 
-                                 reason, dateCreated, dateEffective, dateEnd, 
-                                 lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
-    return db
-
-################################################################################
-
-################################################################################
-# Services functions
-################################################################################
-
-################################################################################
-
-  types_addOrModifyService = [ str, str, str ]
-  
-  def export_addOrModifyService( self, serviceName, serviceType, siteName ):
+  types_getSiteStatus = __siteStatus_GD
+  @Handler
+  def export_getSiteStatus( self, siteName, statusType, status, reason, 
+                            dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                            tokenOwner, tokenExpiration, kwargs ):
     return db
   
-################################################################################  
-  
-  types_setServiceStatus = [ str, str, str, str, ( datetime, NoneType ),
-                            ( datetime, NoneType ), ( datetime, NoneType ),
-                            ( datetime, NoneType ), ( str, NoneType), 
-                            ( datetime, NoneType ) ]  
-    
-  def export_setServiceStatus( self, serviceName, statusType, status, reason, 
-                               dateCreated, dateEffective, dateEnd, 
-                               lastCheckTime,tokenOwner, tokenExpiration ):
-    return db
-   
-################################################################################   
-    
-  types_setServiceScheduledStatus = [ str, str, str, str, ( datetime, NoneType ),
-                                      ( datetime, NoneType ),( datetime, NoneType ),
-                                      ( datetime, NoneType ),( str, NoneType),
-                                      ( datetime, NoneType ) ]  
-          
-  def export_setServiceScheduledStatus( self, serviceName, statusType, status, 
-                                        reason, 
+  types_deleteSiteStatus = __siteStatus_GD
+  @Handler
+  def export_deleteSiteStatus( self, siteName, statusType, status, reason, 
+                               dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                               tokenOwner, tokenExpiration, kwargs ):
+    return db  
+
+  '''
+  ##############################################################################
+  # SITE SCHEDULED STATUS FUNCTIONS
+  ##############################################################################
+  '''
+
+  __siteScheduledstatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime  ]
+  __siteScheduledstatus_GD = [ ( t, list, NoneType ) for t in __siteScheduledstatus_IU ] + [ dict ] 
+
+  types_insertSiteScheduledStatus = __siteScheduledstatus_IU 
+  @Handler
+  def export_insertSiteScheduledStatus( self, siteName, statusType, status, reason, 
                                         dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime, tokenOwner, tokenExpiration ):
     return db
-
   
-################################################################################  
-    
-  types_updateServiceStatus = [ str, str, ( str, NoneType ),
-                                ( str, NoneType ), ( str, NoneType ), 
-                                ( datetime, NoneType ), ( datetime, NoneType ),
-                                ( datetime, NoneType ),( datetime, NoneType ), 
-                                ( str, NoneType ), ( datetime, NoneType ) ]  
-    
-  def export_updateServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
-                                  dateEffective, dateEnd, lastCheckTime, 
-                                  tokenOwner, tokenExpiration ):
-    return db
-    
-
-  
-################################################################################  
-  
-  types_getServices = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                        ( str, list, NoneType ), dict ]
-  
-  def export_getServices( self, serviceName, serviceType, siteName, kwargs ):
-    return db
-
-  
-################################################################################  
-    
-  types_getServicesStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                              ( str, list, NoneType ), ( str, list, NoneType ), 
-                              ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                              ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                              ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]  
-    
-  def export_getServicesStatus( self, serviceName, statusType, status, reason, dateCreated, 
-                                dateEffective, dateEnd, lastCheckTime, 
-                                tokenOwner, tokenExpiration, kwargs ):
+  types_updateSiteScheduledStatus = __siteScheduledstatus_IU 
+  @Handler
+  def export_updateSiteScheduledStatus( self, siteName, statusType, status, reason, 
+                                        dateCreated, dateEffective, dateEnd, 
+                                        lastCheckTime, tokenOwner, tokenExpiration ):
     return db
   
-################################################################################  
-
-  types_getServicesHistory = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                               ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]
-      
-  def export_getServicesHistory( self, serviceName, statusType, status, reason, dateCreated, 
-                                 dateEffective, dateEnd, lastCheckTime, 
-                                 tokenOwner, tokenExpiration, kwargs ):
+  types_getSiteScheduledStatus = __siteScheduledstatus_GD
+  @Handler
+  def export_getSiteScheduledStatus( self, siteName, statusType, status, reason, 
+                                     dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                     tokenOwner, tokenExpiration, kwargs ):
     return db
 
-
-
-################################################################################  
-
-  types_getServicesScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                       ( str, list, NoneType ), ( str, list, NoneType ), 
-                                       ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                       ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                                       ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]
-    
-  def export_getServicesScheduledStatus( self, serviceName, statusType, status, 
-                                         reason, dateCreated, dateEffective, dateEnd, 
-                                         lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
-    return db
-
-    
-################################################################################  
-    
-  types_getServicesPresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                               ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                               ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                               dict ]  
-    
-  def export_getServicesPresent( self, serviceName, siteName, siteType, serviceType, 
-                                 statusType, status, dateEffective, reason, 
-                                 lastCheckTime, tokenOwner, tokenExpiration, 
-                                 formerStatus, kwargs ):
-    return db    
-
+  types_deleteSiteScheduledStatus = __siteScheduledstatus_GD
+  @Handler
+  def export_deleteSiteScheduledStatus( self, siteName, statusType, status, reason, 
+                                     dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                     tokenOwner, tokenExpiration, kwargs ):
+    return db   
+   
+  '''
+  ##############################################################################
+  # SITE HISTORY FUNCTIONS
+  ##############################################################################
+  '''   
   
-################################################################################  
-    
-  types_deleteServices = [ ( str, list ) ]  
-    
-  def export_deleteServices( self, serviceName ):
-    return db 
-  
-################################################################################  
-    
-  types_deleteServicesScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                          ( str, list, NoneType ), ( str, list, NoneType ), 
-                                          ( str, list, NoneType ), ( datetime, list, NoneType ),
-                                          ( str, list, NoneType ), ( str, list, NoneType ), 
-                                          ( str, list, NoneType ), ( str, list, NoneType ),
-                                          dict ]  
-    
-  def export_deleteServicesScheduledStatus( self, serviceName, statusType, status, 
-                                            reason, dateCreated, dateEffective, dateEnd, 
-                                            lastCheckTime, tokenOwner, tokenExpiration, 
-                                            kwargs ):
-    return db
+  __siteHistory_IU = [ str, str, str, str, datetime, datetime, datetime, 
+                       datetime, str, datetime  ]
 
+  __siteHistory_GD = [ ( t, list, NoneType) for t in __siteHistory_IU ] + [ dict ] 
 
-################################################################################
-    
-  types_deleteServicesHistory = [ ( str, NoneType ), ( str, NoneType ), ( str, NoneType ), 
-                                  ( str, NoneType ), ( str, NoneType ), ( datetime, NoneType ),
-                                  ( str, NoneType ), ( str, NoneType ), ( str, NoneType ), 
-                                  ( str, NoneType ), dict ]  
-    
-  def export_deleteServicesHistory( self, serviceName, statusType, status, reason, 
-                                    dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                    tokenOwner, tokenExpiration, kwargs ):                                              
-    return db
-
-
-################################################################################
-
-################################################################################
-# Resources functions
-################################################################################
-
-################################################################################
-
-  types_addOrModifyResource = [ str, str, str, str, str ]
-
-  def export_addOrModifyResource( self, resourceName, resourceType, serviceType, 
-                                  siteName, gridSiteName ):
-    return db
-  
-################################################################################
-  
-  types_setResourceStatus = [ str, str, str, str, ( datetime, NoneType ),
-                              ( datetime, NoneType ), ( datetime, NoneType ),
-                              ( datetime, NoneType ), ( str, NoneType), 
-                              ( datetime, NoneType ) ]
-      
-  def export_setResourceStatus( self, resourceName, statusType, status, reason, 
+  types_insertSiteHistory = __siteHistory_IU 
+  @Handler
+  def export_insertSiteHistory( self, siteName, statusType, status, reason, 
                                 dateCreated, dateEffective, dateEnd, 
                                 lastCheckTime, tokenOwner, tokenExpiration ):
     return db
-    
+  
+  types_updateSiteHistory = __siteHistory_IU 
+  @Handler
+  def export_updateSiteHistory( self, siteName, statusType, status, reason, 
+                                dateCreated, dateEffective, dateEnd, 
+                                lastCheckTime, tokenOwner, tokenExpiration ):
+    return db
+  
+  types_getSiteHistory = __siteHistory_GD
+  @Handler
+  def export_getSiteHistory( self, siteName, statusType, status, reason, 
+                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                             tokenOwner, tokenExpiration, kwargs ):
+    return db
+
+  types_deleteSiteHistory = __siteHistory_GD
+  @Handler
+  def export_deleteSiteHistory( self, siteName, statusType, status, reason, 
+                                dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                tokenOwner, tokenExpiration, kwargs ):
+    return db  
+  
+  '''
+  ##############################################################################
+  # SITE PRESENT FUNCTIONS
+  ##############################################################################
+  '''   
+  
+  types_getSitePresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                           ( str, list, NoneType ), ( str, list, NoneType ), 
+                           ( str, list, NoneType ), ( str, list, NoneType ), 
+                           ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                           ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                           ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                           dict ]
+
+  @Handler
+  def export_getSitePresent( self, siteName, siteType, gridSiteName, gridTier, 
+                             statusType, status, dateEffective, reason, 
+                             lastCheckTime, tokenOwner, tokenExpiration, 
+                             formerStatus, kwargs ):
+    return db
+
 ################################################################################
+################################################################################
+
+  '''
+  ##############################################################################
+  # SERVICE FUNCTIONS
+  ##############################################################################
+  '''
+  
+  __ser_IU = [ str, str, str ] 
+  __ser_GD = [ ( t, list, NoneType ) for t in __ser_IU ] + [ dict ]
+  
+  types_insertService = __ser_IU
+  @Handler
+  def export_insertService( self, serviceName, serviceType, siteName ):
+    return db
+
+  types_updateService = __ser_IU
+  @Handler
+  def export_updateService( self, serviceName, serviceType, siteName ):
+    return db
+  
+  types_getService = __ser_GD 
+  @Handler
+  def export_getService( self, serviceName, serviceType, siteName, kwargs ):
+    return db  
+
+  types_deleteService = __ser_GD 
+  @Handler
+  def export_deleteService( self, serviceName, serviceType, siteName, kwargs ):
+    return db  
+
+  '''
+  ##############################################################################
+  # SERVICE STATUS FUNCTIONS
+  ##############################################################################
+  '''  
+  
+  __serStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ] 
+  __serStatus_GD = [ ( t, list, NoneType ) for t in __serStatus_IU ] + [ dict ]
+  
+  types_insertServiceStatus = __serStatus_IU   
+  @Handler  
+  def export_insertServiceStatus( self, serviceName, statusType, status, reason, 
+                                  dateCreated, dateEffective, dateEnd, 
+                                  lastCheckTime,tokenOwner, tokenExpiration ):
+    return db
+  
+  types_updateServiceStatus = __serStatus_IU   
+  @Handler  
+  def export_updateServiceStatus( self, serviceName, statusType, status, reason, 
+                                  dateCreated, dateEffective, dateEnd, 
+                                  lastCheckTime,tokenOwner, tokenExpiration ):
+    return db
+
+  types_getServiceStatus = __serStatus_GD  
+  @Handler  
+  def export_getServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
+                               dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                               tokenExpiration, kwargs ):
+    return db
+
+  types_deleteServiceStatus = __serStatus_GD  
+  @Handler  
+  def export_deleteServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
+                                  dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                                  tokenExpiration, kwargs ):
+    return db
    
-  types_setResourceScheduledStatus = [ str, str, str, str, ( datetime, NoneType ),
-                                      ( datetime, NoneType ), ( datetime, NoneType ),
-                                      ( datetime, NoneType ), ( str, NoneType), 
-                                      ( datetime, NoneType ) ]    
-       
-  def export_setResourceScheduledStatus( self, resourceName, statusType, status, 
-                                         reason, dateCreated, dateEffective, dateEnd, 
-                                         lastCheckTime, tokenOwner, tokenExpiration ):
+  '''
+  ##############################################################################
+  # SERVICE SCHEDULED STATUS FUNCTIONS
+  ##############################################################################
+  '''     
+  
+  __serScheduledstatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __serScheduledstatus_GD = [ ( t, list, NoneType ) for t in __serScheduledstatus_IU ] + [ dict ] 
+    
+  types_insertServiceScheduledStatus = __serScheduledstatus_IU  
+  @Handler        
+  def export_insertServiceScheduledStatus( self, serviceName, statusType, status, 
+                                           reason, dateCreated, dateEffective, 
+                                           dateEnd, lastCheckTime, tokenOwner, 
+                                           tokenExpiration ):
     return db
-         
-################################################################################         
-         
-  types_updateResourceStatus = [ str, str, ( str, NoneType ),
-                                ( str, NoneType ), ( str, NoneType ), 
-                                ( datetime, NoneType ), ( datetime, NoneType ),
-                                ( datetime, NoneType ),( datetime, NoneType ), 
-                                ( str, NoneType ), ( datetime, NoneType ) ]   
-         
+
+  types_updateServiceScheduledStatus = __serScheduledstatus_IU  
+  @Handler        
+  def export_updateServiceScheduledStatus( self, serviceName, statusType, status, 
+                                           reason, dateCreated, dateEffective, 
+                                           dateEnd, lastCheckTime, tokenOwner, 
+                                           tokenExpiration ):
+    return db
+
+  types_getServiceScheduledStatus = __serScheduledstatus_GD
+  @Handler    
+  def export_getServiceScheduledStatus( self, serviceName, statusType, status, 
+                                        reason, dateCreated, dateEffective, dateEnd, 
+                                        lastCheckTime, tokenOwner, tokenExpiration, 
+                                        kwargs ):
+    return db
+
+  types_deleteServiceScheduledStatus = __serScheduledstatus_GD
+  @Handler    
+  def export_deleteServiceScheduledStatus( self, serviceName, statusType, status, 
+                                           reason, dateCreated, dateEffective, dateEnd, 
+                                           lastCheckTime, tokenOwner, tokenExpiration, 
+                                           kwargs ):
+    return db
+
+  '''
+  ##############################################################################
+  # SERVICE HISTORY FUNCTIONS
+  ##############################################################################
+  '''  
+
+  __serHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __serHistory_GD = [ ( t, list, NoneType ) for t in __serHistory_IU ] + [ dict ] 
+
+  types_insertServiceHistory = __serHistory_IU
+  @Handler      
+  def export_insertServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
+                                   dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                                   tokenExpiration ):
+    return db
+
+  types_updateServiceHistory = __serHistory_IU
+  @Handler      
+  def export_updateServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
+                                   dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                                   tokenExpiration ):
+    return db
+
+  types_getServiceHistory = __serHistory_IU
+  @Handler      
+  def export_getServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
+                                dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                                tokenExpiration, kwargs ):
+    return db
+
+  types_deleteServiceHistory = __serHistory_IU
+  @Handler      
+  def export_deleteServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
+                                   dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+                                   tokenExpiration, kwargs ):
+    return db
+
+
+  '''
+  ##############################################################################
+  # SERVICE PRESENT FUNCTIONS
+  ##############################################################################
+  '''    
+    
+  types_getServicePresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                              ( str, list, NoneType ), ( str, list, NoneType ), 
+                              ( str, list, NoneType ), ( str, list, NoneType ),
+                              ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                              ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                              ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                              dict ]  
+  @Handler  
+  def export_getServicePresent( self, serviceName, siteName, siteType, serviceType, 
+                                statusType, status, dateEffective, reason, 
+                                lastCheckTime, tokenOwner, tokenExpiration, 
+                                formerStatus, kwargs ):
+    return db    
+
+################################################################################
+################################################################################
+    
+  '''
+  ##############################################################################
+  # RESOURCE FUNCTIONS
+  ##############################################################################
+  '''    
+
+  __res_IU = [ str, str, str, str, str ]
+  __res_GD = [ ( t, list, NoneType ) for t in __res_IU ] + [ dict ]
+
+  types_insertResource = __res_IU
+  @Handler
+  def export_insertResource( self, resourceName, resourceType, serviceType, 
+                             siteName, gridSiteName ):
+    return db
+
+  types_updateResource = __res_IU
+  @Handler
+  def export_updateResource( self, resourceName, resourceType, serviceType, 
+                             siteName, gridSiteName ):
+    return db
+
+  types_getResource = __res_GD
+  @Handler      
+  def export_getResource( self, resourceName, resourceType, serviceType, 
+                          siteName, gridSiteName, kwargs ):
+    return db  
+  
+  types_deleteResource = __res_GD
+  @Handler      
+  def export_deleteResource( self, resourceName, resourceType, serviceType, 
+                             siteName, gridSiteName, kwargs ):
+    return db  
+
+  '''
+  ##############################################################################
+  # RESOURCE STATUS FUNCTIONS
+  ##############################################################################
+  '''  
+  
+  __resStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __resStatus_IU = [ ( t, list, NoneType ) for t in __resStatus_IU ] + [ dict ]
+  
+  types_insertResourceStatus = __resStatus_IU
+  @Handler    
+  def export_insertResourceStatus( self, resourceName, statusType, status, reason, 
+                                   dateCreated, dateEffective, dateEnd, 
+                                   lastCheckTime, tokenOwner, tokenExpiration ):
+    return db
+
+  types_updateResourceStatus = __resStatus_IU
+  @Handler    
   def export_updateResourceStatus( self, resourceName, statusType, status, reason, 
-                                   dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                   tokenOwner, tokenExpiration ):
+                                   dateCreated, dateEffective, dateEnd, 
+                                   lastCheckTime, tokenOwner, tokenExpiration ):
     return db
-  
-################################################################################
-        
-  types_getResources = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                         ( str, list, NoneType ), ( str, list, NoneType ), 
-                         ( str, list, NoneType ), dict ]      
-        
-  def export_getResources( self, resourceName, resourceType, serviceType, 
-                           siteName, gridSiteName, kwargs ):
-    return db
-  
-################################################################################
-     
-  types_getResourcesStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                               ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]    
-      
-  def export_getResourcesStatus( self, resourceName, statusType, status, reason, 
-                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                 tokenOwner, tokenExpiration, kwargs ):
+    
+  types_getResourceStatus = __resStatus_IU  
+  @Handler    
+  def export_getResourceStatus( self, resourceName, statusType, status, reason, 
+                                dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                tokenOwner, tokenExpiration, kwargs ):
     return db 
-  
-################################################################################
-      
-  types_getResourcesHistory = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                               ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]    
-               
-  def export_getResourcesHistory( self, resourceName, statusType, status, reason, 
-                                  dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                  tokenOwner, tokenExpiration, kwargs ):
+
+  types_deleteResourceStatus = __resStatus_IU  
+  @Handler    
+  def export_deleteResourceStatus( self, resourceName, statusType, status, reason, 
+                                   dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                   tokenOwner, tokenExpiration, kwargs ):
+    return db 
+
+  '''
+  ##############################################################################
+  # RESOURCE SCHEDULED STATUS FUNCTIONS
+  ##############################################################################
+  '''  
+
+  __resScheduledstatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __resScheduledstatus_GD = [ ( t, list, NoneType ) for t in __resScheduledstatus_IU ] + [ dict ] 
+   
+  types_insertResourceScheduledStatus = __resScheduledstatus_IU
+  @Handler     
+  def export_insertResourceScheduledStatus( self, resourceName, statusType, status, 
+                                            reason, dateCreated, dateEffective, dateEnd, 
+                                            lastCheckTime, tokenOwner, tokenExpiration ):
     return db
-      
-################################################################################
-        
-  types_getResourcesScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                        ( str, list, NoneType ), ( str, list, NoneType ), 
-                                        ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                        ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                                        ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]      
-        
-  def export_getResourcesScheduledStatus( self, resourceName, statusType, status,
+
+  types_updateResourceScheduledStatus = __resScheduledstatus_IU
+  @Handler     
+  def export_updateResourceScheduledStatus( self, resourceName, statusType, status, 
+                                            reason, dateCreated, dateEffective, dateEnd, 
+                                            lastCheckTime, tokenOwner, tokenExpiration ):
+    return db
+
+  types_getResourceScheduledStatus = __resScheduledstatus_GD       
+  @Handler      
+  def export_getResourceScheduledStatus( self, resourceName, statusType, status,
                                           reason, dateCreated, dateEffective, dateEnd, 
                                           lastCheckTime, tokenOwner, tokenExpiration, 
                                           kwargs ): 
     return db
-  
-################################################################################
-      
-  types_getResourcesPresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                ( str, list, NoneType ), ( str, list, NoneType ), 
-                                ( str, list, NoneType ), ( str, list, NoneType ),
-                                ( str, list, NoneType ), ( str, list, NoneType ), 
-                                ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                                ( datetime, list, NoneType ), ( str, list, NoneType ),
-                                ( datetime, list, NoneType ), ( str, list, NoneType ), dict ]    
-      
-  def export_getResourcesPresent( self, resourceName, siteName, serviceType, gridSiteName, 
-                                  siteType, resourceType, statusType, status, 
-                                  dateEffective, reason, lastCheckTime, tokenOwner, 
-                                  tokenExpiration, formerStatus, kwargs ):
-    return db
-  
-################################################################################
-     
-  types_deleteResources = [ ( str, list ) ]   
-     
-  def export_deleteResources( self, resourceName ):
-    return db 
-  
-################################################################################
-      
-  types_deleteResourcesScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                           ( str, list, NoneType ), ( str, list, NoneType ),
-                                           ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                           ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                                           ( str, list, NoneType ), ( datetime, list, NoneType ),
-                                           dict ]    
-      
-  def export_deleteResourcesScheduledStatus( self, resourceName, statusType, status, 
-                                             reason, dateCreated, dateEffective, dateEnd, 
-                                             lastCheckTime, tokenOwner, tokenExpiration, 
-                                             kwargs ):
-    return db
-     
-################################################################################
-      
-  types_deleteResourcesHistory = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                   ( str, list, NoneType ), ( str, list, NoneType ),
-                                   ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                   ( datetime, list, NoneType ), ( datetime, list, NoneType ), 
-                                   ( str, list, NoneType ), ( datetime, list, NoneType ),
-                                   dict ]    
-      
-  def export_deleteResourcesHistory( self, resourceName, statusType, status, reason, 
-                                     dateCreated, dateEffective, dateEnd, lastCheckTime,
-                                     tokenOwner, tokenExpiration, kwargs ):
-    return db
-  
-################################################################################
 
-################################################################################
-# StorageElements functions
-################################################################################
-
-################################################################################
-
-  types_addOrModifyStorageElement = [ str, str, str ]
-   
-  def export_addOrModifyStorageElement( self, storageElementName, resourceName, 
-                                        gridSiteName ):
+  types_deleteResourceScheduledStatus = __resScheduledstatus_GD       
+  @Handler      
+  def export_deleteResourceScheduledStatus( self, resourceName, statusType, status,
+                                          reason, dateCreated, dateEffective, dateEnd, 
+                                          lastCheckTime, tokenOwner, tokenExpiration, 
+                                          kwargs ): 
     return db
-  
-################################################################################
 
-  types_setStorageElementStatus = [ str, str, str, str, ( datetime, NoneType ),
-                                    ( datetime, NoneType ), ( datetime, NoneType ),
-                                    ( datetime, NoneType ), ( str, NoneType), 
-                                    ( datetime, NoneType ) ]
+  '''
+  ##############################################################################
+  # RESOURCE HISTORY FUNCTIONS
+  ##############################################################################
+  ''' 
          
-  def export_setStorageElementStatus( self, storageElementName, statusType, status, 
-                                      reason, dateCreated, dateEffective, dateEnd, 
-                                      lastCheckTime, tokenOwner, tokenExpiration ):
+  __resHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __resHistory_GD = [ ( t, list, NoneType ) for t in __resHistory_IU ] + [ dict ]   
+
+  types_insertResourceHistory = __resHistory_IU    
+  @Handler                
+  def export_insertResourceHistory( self, resourceName, statusType, status, reason, 
+                                    dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                    tokenOwner, tokenExpiration, kwargs ):
     return db
-    
-################################################################################
-             
-  types_setStorageElementScheduledStatus = [ str, str, str, str, ( datetime, NoneType ),
-                                             ( datetime, NoneType ), ( datetime, NoneType ),
-                                             ( datetime, NoneType ), ( str, NoneType), 
-                                             ( datetime, NoneType ) ]           
-             
-  def export_setStorageElementScheduledStatus( self, storageElementName, statusType, 
-                                               status, reason, dateCreated, dateEffective, 
-                                               dateEnd, lastCheckTime, tokenOwner, 
-                                               tokenExpiration ):
+  
+  types_updateResourceHistory = __resHistory_IU    
+  @Handler                
+  def export_updateResourceHistory( self, resourceName, statusType, status, reason, 
+                                    dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                    tokenOwner, tokenExpiration, kwargs ):
+    return db  
+      
+  types_getResourceHistory = __resHistory_GD    
+  @Handler                
+  def export_getResourceHistory( self, resourceName, statusType, status, reason, 
+                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                 tokenOwner, tokenExpiration, kwargs ):
+    return db
+
+  types_deleteResourceHistory = __resHistory_GD    
+  @Handler                
+  def export_deleteResourceHistory( self, resourceName, statusType, status, reason, 
+                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                 tokenOwner, tokenExpiration, kwargs ):
+    return db
+      
+  '''
+  ##############################################################################
+  # RESOURCE PRESENT FUNCTIONS
+  ##############################################################################
+  ''' 
+      
+  types_getResourcePresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
+                               ( str, list, NoneType ), ( str, list, NoneType ), 
+                               ( str, list, NoneType ), ( str, list, NoneType ),
+                               ( str, list, NoneType ), ( str, list, NoneType ), 
+                               ( datetime, list, NoneType ), ( str, list, NoneType ), 
+                               ( datetime, list, NoneType ), ( str, list, NoneType ),
+                               ( datetime, list, NoneType ), ( str, list, NoneType ), dict ]    
+  @Handler    
+  def export_getResourcePresent( self, resourceName, siteName, serviceType, gridSiteName, 
+                                 siteType, resourceType, statusType, status, 
+                                 dateEffective, reason, lastCheckTime, tokenOwner, 
+                                 tokenExpiration, formerStatus, kwargs ):
     return db
   
 ################################################################################
-             
-  types_updateStorageElementStatus = [ str, str, ( str, NoneType ),
-                                       ( str, NoneType ), ( str, NoneType ), 
-                                       ( datetime, NoneType ), ( datetime, NoneType ),
-                                       ( datetime, NoneType ),( datetime, NoneType ), 
-                                       ( str, NoneType ), ( datetime, NoneType ) ]           
-             
+################################################################################
+
+  '''
+  ##############################################################################
+  # STORAGE ELEMENT FUNCTIONS
+  ##############################################################################
+  '''
+  
+  __stEl_IU = [ str, str, str ]
+  __stEl_GD = [ ( t, list, NoneType ) for t in __stEl_IU ] + [ dict ]
+
+  types_insertStorageElement = __stEl_IU 
+  @Handler 
+  def export_insertStorageElement( self, storageElementName, resourceName, 
+                                   gridSiteName ):
+    return db
+
+  types_updateStorageElement = __stEl_IU 
+  @Handler 
+  def export_updateStorageElement( self, storageElementName, resourceName, 
+                                   gridSiteName ):
+    return db
+
+  types_getStorageElement = __stEl_GD            
+  @Handler           
+  def export_getStorageElement( self, storageElementName, resourceName, 
+                                gridSiteName, kwargs ):
+    return db
+
+  types_deleteStorageElement = __stEl_GD            
+  @Handler           
+  def export_deleteStorageElement( self, storageElementName, resourceName, 
+                                gridSiteName, kwargs ):
+    return db
+
+  '''
+  ##############################################################################
+  # STORAGE ELEMENT STATUS FUNCTIONS
+  ##############################################################################
+  '''
+
+  __stElStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __stElStatus_GD = [ ( t, list, NoneType) for t in __stElStatus_IU ] + [ dict ]
+
+  types_insertStorageElementStatus = __stElStatus_IU
+  @Handler                  
+  def export_insertStorageElementStatus( self, storageElementName, statusType, status, 
+                                         reason, dateCreated, dateEffective, dateEnd, 
+                                         lastCheckTime, tokenOwner, tokenExpiration ):
+    return db
+
+  types_updateStorageElementStatus = __stElStatus_IU
+  @Handler                  
   def export_updateStorageElementStatus( self, storageElementName, statusType, status, 
                                          reason, dateCreated, dateEffective, dateEnd, 
                                          lastCheckTime, tokenOwner, tokenExpiration ):
-    return db  
-
-################################################################################
-             
-  types_getStorageElements = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), dict ]           
-             
-  def export_getStorageElements( self, storageElementName, resourceName, 
-                                 gridSiteName, kwargs ):
     return db
-    
-################################################################################
-             
-  types_getStorageElementsStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                     ( str, list, NoneType ), ( str, list, NoneType ), 
-                                     ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                     ( datetime, list, NoneType ), ( datetime, list, NoneType ),  
-                                     ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]           
-             
-  def export_getStorageElementsStatus( self, storageElementName, statusType, 
+
+  types_getStorageElementStatus = __stElStatus_GD
+  @Handler                  
+  def export_getStorageElementStatus( self, storageElementName, statusType, status, 
+                                      reason, dateCreated, dateEffective, dateEnd, 
+                                      lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
+    return db
+
+  types_deleteStorageElementStatus = __stElStatus_GD
+  @Handler                  
+  def export_deleteStorageElementStatus( self, storageElementName, statusType, status, 
+                                      reason, dateCreated, dateEffective, dateEnd, 
+                                      lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
+    return db
+
+  '''
+  ##############################################################################
+  # STORAGE ELEMENT SCHEDULED STATUS FUNCTIONS
+  ##############################################################################
+  '''
+
+  __stElScheduledStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __stElScheduledStatus_GD = [ ( t, list, NoneType) for t in __stElScheduledStatus_IU ] + [ dict ]
+
+  types_insertStorageElementScheduledStatus = __stElScheduledStatus_IU          
+  @Handler                             
+  def export_insertStorageElementScheduledStatus( self, storageElementName, statusType, 
+                                                  status, reason, dateCreated, dateEffective, 
+                                                  dateEnd, lastCheckTime, tokenOwner, 
+                                                  tokenExpiration ):
+    return db
+
+  types_updateStorageElementScheduledStatus = __stElScheduledStatus_IU          
+  @Handler                             
+  def export_updateStorageElementScheduledStatus( self, storageElementName, statusType, 
+                                                  status, reason, dateCreated, dateEffective, 
+                                                  dateEnd, lastCheckTime, tokenOwner, 
+                                                  tokenExpiration ):
+    return db
+
+  types_getStorageElementScheduledStatus = __stElScheduledStatus_GD          
+  @Handler                             
+  def export_getStorageElementScheduledStatus( self, storageElementName, statusType, 
+                                               status, reason, dateCreated, dateEffective, 
+                                               dateEnd, lastCheckTime, tokenOwner, 
+                                               tokenExpiration, kwargs ):
+    return db
+
+  types_deleteStorageElementScheduledStatus = __stElScheduledStatus_GD          
+  @Handler                             
+  def export_deleteStorageElementScheduledStatus( self, storageElementName, statusType, 
+                                                  status, reason, dateCreated, dateEffective, 
+                                                  dateEnd, lastCheckTime, tokenOwner, 
+                                                  tokenExpiration, kwargs ):
+    return db
+
+  '''
+  ##############################################################################
+  # STORAGE ELEMENT HISTORY FUNCTIONS
+  ##############################################################################
+  '''
+
+  __stElHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __stElHistory_GD = [ ( t, list, NoneType) for t in __stElHistory_IU ] + [ dict ]
+
+  types_insertStorageElementHistory = __stElHistory_IU        
+  @Handler             
+  def export_insertStorageElementHistory( self, storageElementName, statusType, 
+                                          status, reason, dateCreated, dateEffective, dateEnd, 
+                                          lastCheckTime, tokenOwner, tokenExpiration ):
+    return db
+
+  types_updateStorageElementHistory = __stElHistory_IU        
+  @Handler             
+  def export_updateStorageElementHistory( self, storageElementName, statusType, 
+                                          status, reason, dateCreated, dateEffective, dateEnd, 
+                                          lastCheckTime, tokenOwner, tokenExpiration ):
+    return db
+
+  types_getStorageElementHistory = __stElHistory_GD        
+  @Handler             
+  def export_getStorageElementHistory( self, storageElementName, statusType, 
                                        status, reason, dateCreated, dateEffective, dateEnd, 
                                        lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
     return db
     
-################################################################################
-          
-  types_getStorageElementsHistory = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                      ( str, list, NoneType ), ( str, list, NoneType ), 
-                                      ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                      ( datetime, list, NoneType ), ( datetime, list, NoneType ),  
-                                      ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]        
-          
-  def export_getStorageElementsHistory( self, storageElementName, statusType, 
-                                        status, reason, dateCreated, dateEffective, dateEnd, 
-                                        lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
+  types_deleteStorageElementHistory = __stElHistory_GD        
+  @Handler             
+  def export_deleteStorageElementHistory( self, storageElementName, statusType, 
+                                          status, reason, dateCreated, dateEffective, dateEnd, 
+                                          lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
     return db
-    
-################################################################################
-            
-  types_getStorageElementsScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                                              ( str, list, NoneType ), ( str, list, NoneType ), 
-                                              ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                              ( datetime, list, NoneType ), ( datetime, list, NoneType ),  
-                                              ( str, list, NoneType ), ( datetime, list, NoneType ), dict ]          
-            
-  def export_getStorageElementsScheduledStatus( self, storageElementName, statusType, 
-                                                status, reason, dateCreated, 
-                                                dateEffective, dateEnd, 
-                                                lastCheckTime, tokenOwner, 
-                                                tokenExpiration, kwargs ):
-    return db
-  
-################################################################################
+
+  '''
+  ##############################################################################
+  # STORAGE ELEMENT PRESENT FUNCTIONS
+  ##############################################################################
+  '''
+
+  types_getStorageElementPresent = [ ( str, list, NoneType ), ( str, list, NoneType ),
+                                     ( str, list, NoneType ), ( str, list, NoneType ),
+                                     ( str, list, NoneType ), ( str, list, NoneType ),
+                                     ( datetime, list, NoneType ), ( str, list, NoneType ),
+                                     ( datetime, list, NoneType ), ( str, list, NoneType ),
+                                     ( datetime, list, NoneType ), ( str, list, NoneType ),
+                                     dict ]         
            
-  types_getStorageElementsPresent = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                      ( str, list, NoneType ), ( str, list, NoneType ),
-                                      ( str, list, NoneType ), ( str, list, NoneType ),
-                                      ( datetime, list, NoneType ), ( str, list, NoneType ),
-                                      ( datetime, list, NoneType ), ( str, list, NoneType ),
-                                      ( datetime, list, NoneType ), ( str, list, NoneType ),
-                                      dict ]         
-           
-  def export_getStorageElementsPresent( self, storageElementName, resourceName, 
-                                        gridSiteName, siteType, statusType, 
-                                        status, dateEffective, reason, 
-                                        lastCheckTime, tokenOwner,tokenExpiration, 
-                                        formerStatus, kwargs ):
-    return db
-  
-################################################################################
-  
-  types_deleteStorageElements = [ ( str, list ) ]
-                                         
-  def export_deleteStorageElements( self, storageElementName ):
-    return db
-    
-################################################################################
-       
-  types_deleteStorageElementsScheduledStatus = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                                 ( str, list, NoneType ), ( str, list, NoneType ),
-                                                 ( str, list, NoneType ), ( datetime, list, NoneType ), 
-                                                 ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                                 ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                                 dict ]     
-       
-  def export_deleteStorageElementsScheduledStatus( self, storageElementName, statusType, 
-                                                   status, reason, dateCreated, 
-                                                   dateEffective, dateEnd, 
-                                                   lastCheckTime, tokenOwner, 
-                                                   tokenExpiration, kwargs ):
-    return db
-    
-################################################################################
-      
-  types_deleteStorageElementsHistory = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                         ( str, list, NoneType ), ( str, list, NoneType ),
-                                         ( str, list, NoneType ), ( datetime, list, NoneType ), 
-                                         ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                         ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                         dict ]   
-      
-  def export_deleteStorageElementsHistory( self, storageElementName, statusType, 
-                                           status, reason, dateCreated, dateEffective, 
-                                           dateEnd, lastCheckTime, tokenOwner, 
-                                           tokenExpiration, kwargs ):          
+  def export_getStorageElementPresent( self, storageElementName, resourceName, 
+                                       gridSiteName, siteType, statusType, 
+                                       status, dateEffective, reason, 
+                                       lastCheckTime, tokenOwner,tokenExpiration, 
+                                       formerStatus, kwargs ):
     return db
 
 ################################################################################
-  
-################################################################################
-# Stats functions
 ################################################################################
   
-################################################################################  
-
-  types_getServiceStats = [ str, ( str, NoneType ) ]  
-
-  def export_getServiceStats( self, siteName, statusType ):
-    
-    gLogger.info( "getServiceStats_1" )
-    resQuery = db.getServiceStats( siteName, statusType )
-    gLogger.info( "getServiceStats_2" )  
-    return resQuery
-
-################################################################################      
-      
-  types_getResourceStats = [ str, str, ( str, NoneType ) ]    
-      
-  def export_getResourceStats( self, element, name, statusType ):
-    
-    gLogger.info( "getResourceStats_1" )
-    resQuery = db.getResourceStats( element, name, statusType )
-    gLogger.info( "getResourceStats_2" )  
-    return resQuery
+  '''
+  ##############################################################################
+  # GRID SITE FUNCTIONS
+  ##############################################################################
+  '''  
   
-################################################################################  
-       
-  types_getStorageelementStats = [ str, str, ( str, NoneType ) ]   
-     
-  def export_getStorageElementStats( self, element, name, statusType ):
-          
-    gLogger.info( "getStorageElementStats_1" )
-    resQuery = db.getStorageElementStats( element, name, statusType )
-    gLogger.info( "getStorageElementStats_2" )  
-    return resQuery  
+  __gs_IU = [ str, str ]
+  __gs_GD = [ ( t, list, NoneType ) for t in __gs_IU ] + [ dict ]
   
-################################################################################
-
-################################################################################
-# GridSites functions
-################################################################################
-
-################################################################################  
-  
-  types_addOrModifyGridSite = [ str, str ]
-  
-  @HandlerExecution
-  def export_addOrModifyGridSite( self, gridSiteName, gridTier ):
+  types_insertGridSite = __gs_IU
+  @Handler
+  def export_insertGridSite( self, gridSiteName, gridTier ):
     return db
 
-################################################################################
+  types_updateGridSite = __gs_IU
+  @Handler
+  def export_updateGridSite( self, gridSiteName, gridTier ):
+    return db
       
-  types_getGridSites = [ ( str, list, NoneType ), ( str, list, NoneType ), dict ]    
-      
-  @HandlerExecution    
+  types_getGridSites = __gs_GD    
+  @Handler    
   def export_getGridSites( self, gridSiteName, gridTier, kwargs ):
     return db
 
-################################################################################
+  types_deleteGridSites = __gs_GD    
+  @Handler  
+  def export_deleteGridSites( self, gridSiteName, gridTier, kwargs ):         
+    return db  
   
-  types_deleteGridSites = [ ( str, list ) ]
-    
-  @HandlerExecution  
-  def export_deleteGridSites( self, gridSiteName ):         
-    return db
-
 ################################################################################
+################################################################################ 
+################################################################################  
 
+#  types_getServiceStats = [ str, ( str, NoneType ) ]  
+#
+#  def export_getServiceStats( self, siteName, statusType ):
+#    
+#    gLogger.info( "getServiceStats_1" )
+#    resQuery = db.getServiceStats( siteName, statusType )
+#    gLogger.info( "getServiceStats_2" )  
+#    return resQuery
+#
+#################################################################################      
+#      
+#  types_getResourceStats = [ str, str, ( str, NoneType ) ]    
+#      
+#  def export_getResourceStats( self, element, name, statusType ):
+#    
+#    gLogger.info( "getResourceStats_1" )
+#    resQuery = db.getResourceStats( element, name, statusType )
+#    gLogger.info( "getResourceStats_2" )  
+#    return resQuery
+#  
+#################################################################################  
+#       
+#  types_getStorageelementStats = [ str, str, ( str, NoneType ) ]   
+#     
+#  def export_getStorageElementStats( self, element, name, statusType ):
+#          
+#    gLogger.info( "getStorageElementStats_1" )
+#    resQuery = db.getStorageElementStats( element, name, statusType )
+#    gLogger.info( "getStorageElementStats_2" )  
+#    return resQuery  
+  
 ################################################################################
-# Misc functions
-################################################################################
+################################################################################  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
+  # Check ResourceStatusBooster.py
 
-################################################################################
 
-# Check ResourceStatusBooster.py
+
+
+
+
+
+
     
 ################################################################################
 ################################################################################
