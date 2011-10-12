@@ -96,9 +96,9 @@ class ResourceStatusValidator:
       raise InvalidFormat, where( self, self.validateSite ) + message
     
     if self.isDB:
-      res = self.rsGate.getSites( siteName, None, None )
+      res = self.rsGate.getSite( siteName, None, None )
     else:
-      res = self.rsGate.getSites( siteName = siteName )
+      res = self.rsGate.getSite( siteName = siteName )
 
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known siteName' % siteName
@@ -111,10 +111,10 @@ class ResourceStatusValidator:
       raise InvalidFormat, where( self, self.validateSite ) + message
     
     if self.isDB:    
-      res = self.rsGate.getResources( resourceName, None, None, None, None )
+      res = self.rsGate.getResource( resourceName, None, None, None, None )
       print res
     else:
-      res = self.rsGate.getResources( resourceName = resourceName )
+      res = self.rsGate.getResource( resourceName = resourceName )
       
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '%s is not a known resourceName' % resourceName
