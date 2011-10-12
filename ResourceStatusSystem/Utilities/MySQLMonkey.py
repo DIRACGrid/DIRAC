@@ -17,8 +17,9 @@ def localsToDict( locls ):
 
 class MySQLMonkey( object ):
   
-  ACCEPTED_KWARGS = [ 'table', 'uniqueKeys', 'sort', 'order', 'limit', 'columns', 
-                      'onlyUniqueKeys' ]
+  ACCEPTED_KWARGS = [ 'table',  
+                      'sort', 'order', 'limit', 'columns', 'group', 'count', # or, minor, dict 
+                      'uniqueKeys', 'onlyUniqueKeys' ]
   
   def __init__( self, dbWrapper ):
     self.dbWrapper = dbWrapper
@@ -205,14 +206,17 @@ class MySQLMonkey( object ):
     sort     = kwargs[ 'sort' ]
     limit    = kwargs[ 'limit' ]      
     order    = kwargs[ 'order' ]
+    group    = kwargs[ 'group' ]
   
     whereElements = self.__getWhereElements( rDict, **kwargs )       
-    columns       = self.__getColumns( columns )
+    columns       = self.__getColumns( columns, **kwargs )
 
     if sort is not None: 
       sort        = self.__listToString( sort )  
     if order is not None:
       order       = self.__listToString( order ) 
+    if group is not None:
+      order       = self.__listToString( group )
                 
     req = "SELECT %s from %s" % ( columns, table )
     if whereElements:
@@ -221,6 +225,8 @@ class MySQLMonkey( object ):
       req += " ORDER BY %s" % sort
       if order:
         req += " %s" % order 
+    if group:
+      req += " GROUP BY %s" % group    
     if limit:
       req += " LIMIT %d" % limit   
   
@@ -263,16 +269,25 @@ class MySQLMonkey( object ):
 ################################################################################
 # AUXILIAR FUNCTIONS   
     
-  def __getColumns( self, columnsList ):
+  def __getColumns( self, columnsList, **kwargs ):
     
     columns = ""
     
-    if columnsList is None:
-      columns = "*"  
-    else:
-      columns = self.__listToString( columnsList )
+    #KWARGS
+    count   = kwargs[ 'count' ]
     
-    return columns
+    if columnsList is None:
+      columnsList = [ "*" ]  
+        
+    # Either True, or a string value  
+    if count == True:  
+      columnsList.append( 'COUNT(*)' )
+    elif isinstance( count,str ):
+      columnsList.append( 'COUNT(%s)' % count )    
+       
+    return self.__listToString( columnsList )
+    
+    #return columns
     
   def __listToString( self, itemsList ):  
     
