@@ -10,7 +10,7 @@ from DIRAC.ResourceStatusSystem                                 import ValidRes,
   ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB             import ResourceStatusDB 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators            import Client
+from DIRAC.ResourceStatusSystem.Utilities.Decorators            import ClientDec
 from DIRAC.ResourceStatusSystem.Utilities.ResourceStatusBooster import ResourceStatusBooster
        
 class ResourceStatusClient:
@@ -40,16 +40,16 @@ class ResourceStatusClient:
   # SITE FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertSite( self, siteName, siteType, gridSiteName ):
     pass
-  @Client
+  @ClientDec
   def updateSite( self, siteName, siteType, gridSiteName ):
     pass
-  @Client
+  @ClientDec
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, **kwargs ):
     pass
-  @Client
+  @ClientDec
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, **kwargs ):
     pass      
 
@@ -58,20 +58,20 @@ class ResourceStatusClient:
   # SITE STATUS FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertSiteStatus( self, siteName, statusType, status, reason, dateCreated,
                         dateEffective, dateEnd, lastCheckTime, tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateSiteStatus( self, siteName, statusType, status, reason, dateCreated,
                         dateEffective, dateEnd, lastCheckTime, tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def getSiteStatus( self, siteName = None, statusType = None, status = None, reason = None, 
                      dateCreated = None, dateEffective = None, dateEnd = None, 
                      lastCheckTime = None, tokenOwner = None, tokenExpiration = None, **kwargs ):
     pass
-  @Client
+  @ClientDec
   def deleteSiteStatus( self, siteName = None, statusType = None, status = None, reason = None, 
                         dateCreated = None, dateEffective = None, dateEnd = None, 
                         lastCheckTime = None, tokenOwner = None, tokenExpiration = None, **kwargs ):
@@ -82,23 +82,23 @@ class ResourceStatusClient:
   # SITE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertSiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
                                  dateEffective, dateEnd, lastCheckTime, tokenOwner,
                                  tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateSiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
                                  dateEffective, dateEnd, lastCheckTime, tokenOwner,
                                  tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def getSiteScheduledStatus( self, siteName = None, statusType = None, status = None, 
                               reason = None, dateCreated = None, dateEffective = None, 
                               dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                               tokenExpiration = None, **kwargs ):
     pass        
-  @Client
+  @ClientDec
   def deleteSiteScheduledStatus( self, siteName = None, statusType = None, status = None, 
                                  reason = None, dateCreated = None, dateEffective = None, 
                                  dateEnd = None, lastCheckTime = None, tokenOwner = None, 
@@ -110,23 +110,23 @@ class ResourceStatusClient:
   # SITE HISTORY FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertSiteHistory( self, siteName, statusType, status, reason, dateCreated,
                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
                          tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateSiteHistory( self, siteName, statusType, status, reason, dateCreated,
                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
                          tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def getSiteHistory( self, siteName = None, statusType = None, status = None, 
                       reason = None, dateCreated = None, dateEffective = None, 
                       dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                       tokenExpiration = None, **kwargs ):
     pass        
-  @Client
+  @ClientDec
   def deleteSiteHistory( self, siteName = None, statusType = None, status = None, 
                          reason = None, dateCreated = None, dateEffective = None, 
                          dateEnd = None, lastCheckTime = None, tokenOwner = None, 
@@ -138,7 +138,7 @@ class ResourceStatusClient:
   # SITE PRESENT FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def getSitePresent( self, siteName = None, siteType = None, gridSiteName = None,
                        gridTier = None, statusType = None, status = None, dateEffective = None,
                        reason = None, lastCheckTime = None, tokenOwner = None,
@@ -153,16 +153,16 @@ class ResourceStatusClient:
   # SERVICE FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertService( self, serviceName, serviceType, siteName ):
     pass
-  @Client
+  @ClientDec
   def updateService( self, serviceName, serviceType, siteName ):
     pass
-  @Client
+  @ClientDec
   def getService( self, serviceName = None, serviceType = None, siteName = None, **kwargs ):
     pass
-  @Client
+  @ClientDec
   def deleteService( self, serviceName = None, serviceType = None, siteName = None, **kwargs ):
     pass
 
@@ -171,21 +171,21 @@ class ResourceStatusClient:
   # SERVICE STATUS FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
                            dateEffective, dateEnd, lastCheckTime,tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
                            dateEffective, dateEnd, lastCheckTime,tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def getServiceStatus( self, serviceName = None, statusType = None, status = None, 
                         reason = None, dateCreated = None, dateEffective = None, 
                         dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                         tokenExpiration = None, **kwargs ):
     pass
-  @Client
+  @ClientDec
   def deleteServiceStatus( self, serviceName = None, statusType = None, status = None, 
                            reason = None, dateCreated = None, dateEffective = None, 
                            dateEnd = None, lastCheckTime = None, tokenOwner = None, 
@@ -197,21 +197,21 @@ class ResourceStatusClient:
   # SERVICE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertServiceScheduledStatus( self, serviceName, statusType, status, reason, dateCreated,
                                     dateEffective, dateEnd, lastCheckTime,tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateServiceScheduledStatus( self, serviceName, statusType, status, reason, dateCreated,
                                     dateEffective, dateEnd, lastCheckTime,tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def getServiceScheduledStatus( self, serviceName = None, statusType = None, status = None, 
                                  reason = None, dateCreated = None, dateEffective = None, 
                                  dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                                  tokenExpiration = None, **kwargs ):
     pass
-  @Client
+  @ClientDec
   def deleteServiceScheduledStatus( self, serviceName = None, statusType = None, status = None, 
                                     reason = None, dateCreated = None, dateEffective = None, 
                                     dateEnd = None, lastCheckTime = None, tokenOwner = None, 
@@ -223,21 +223,21 @@ class ResourceStatusClient:
   # SERVICE HISTORY FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
                             dateEffective, dateEnd, lastCheckTime,tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
                             dateEffective, dateEnd, lastCheckTime,tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def getServiceHistory( self, serviceName = None, statusType = None, status = None, 
                          reason = None, dateCreated = None, dateEffective = None, 
                          dateEnd = None, lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, **kwargs ):
     pass
-  @Client
+  @ClientDec
   def deleteServiceHistory( self, serviceName = None, statusType = None, status = None, 
                             reason = None, dateCreated = None, dateEffective = None, 
                             dateEnd = None, lastCheckTime = None, tokenOwner = None, 
@@ -249,7 +249,7 @@ class ResourceStatusClient:
   # SERVICE PRESENT FUNCTIONS
   ##############################################################################
   '''
-  @Client  
+  @ClientDec  
   def getServicePresent( self, serviceName = None, siteName = None, siteType = None, 
                           serviceType = None, statusType = None, status = None, 
                           dateEffective = None, reason = None, lastCheckTime = None, 
@@ -265,19 +265,19 @@ class ResourceStatusClient:
   # RESOURCE FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName ):
     pass
-  @Client
+  @ClientDec
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName ):
     pass
-  @Client
+  @ClientDec
   def getResource( self, resourceName = None, resourceType = None, serviceType = None, 
                    siteName = None, gridSiteName = None, **kwargs ):
     pass
-  @Client
+  @ClientDec
   def deleteResource( self, resourceName = None, resourceType = None, serviceType = None, 
                       siteName = None, gridSiteName = None, **kwargs ):
     pass
@@ -287,23 +287,23 @@ class ResourceStatusClient:
   # RESOURCE STATUS FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertResourceStatus( self, resourceName, statusType, status, reason, 
                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
                             tokenOwner,tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateResourceStatus( self, resourceName, statusType, status, reason, 
                             dateCreated, dateEffective, dateEnd, lastCheckTime, 
                             tokenOwner,tokenExpiration ):
     pass
-  @Client      
+  @ClientDec      
   def getResourceStatus( self, resourceName = None, statusType = None, status = None,
                          reason = None, dateCreated = None, dateEffective = None, 
                          dateEnd = None, lastCheckTime = None,tokenOwner = None, 
                          tokenExpiration = None, **kwargs ):
     pass
-  @Client      
+  @ClientDec      
   def deleteResourceStatus( self, resourceName = None, statusType = None, status = None,
                             reason = None, dateCreated = None, dateEffective = None, 
                             dateEnd = None, lastCheckTime = None,tokenOwner = None, 
@@ -315,23 +315,23 @@ class ResourceStatusClient:
   # RESOURCE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertResourceScheduledStatus( self, resourceName, statusType, status, reason, 
                                      dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                      tokenOwner,tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateResourceScheduledStatus( self, resourceName, statusType, status, reason, 
                                      dateCreated, dateEffective, dateEnd, lastCheckTime, 
                                      tokenOwner,tokenExpiration ):
     pass
-  @Client      
+  @ClientDec      
   def getResourceScheduledStatus( self, resourceName = None, statusType = None, status = None,
                                   reason = None, dateCreated = None, dateEffective = None, 
                                   dateEnd = None, lastCheckTime = None,tokenOwner = None, 
                                   tokenExpiration = None, **kwargs ):
     pass
-  @Client      
+  @ClientDec      
   def deleteResourceScheduledStatus( self, resourceName = None, statusType = None, status = None,
                                      reason = None, dateCreated = None, dateEffective = None, 
                                      dateEnd = None, lastCheckTime = None,tokenOwner = None, 
@@ -343,23 +343,23 @@ class ResourceStatusClient:
   # RESOURCE HISTORY FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertResourceHistory( self, resourceName, statusType, status, reason, 
                              dateCreated, dateEffective, dateEnd, lastCheckTime, 
                              tokenOwner,tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateResourceHistory( self, resourceName, statusType, status, reason, 
                              dateCreated, dateEffective, dateEnd, lastCheckTime, 
                              tokenOwner,tokenExpiration ):
     pass
-  @Client      
+  @ClientDec      
   def getResourceHistory( self, resourceName = None, statusType = None, status = None,
                           reason = None, dateCreated = None, dateEffective = None, 
                           dateEnd = None, lastCheckTime = None,tokenOwner = None, 
                           tokenExpiration = None, **kwargs ):
     pass
-  @Client      
+  @ClientDec      
   def deleteResourceHistory( self, resourceName = None, statusType = None, status = None,
                              reason = None, dateCreated = None, dateEffective = None, 
                              dateEnd = None, lastCheckTime = None,tokenOwner = None, 
@@ -371,7 +371,7 @@ class ResourceStatusClient:
   # RESOURCE PRESENT FUNCTIONS
   ##############################################################################
   '''  
-  @Client      
+  @ClientDec      
   def getResourcePresent( self, resourceName = None, siteName = None, serviceType = None,
                           gridSiteName = None, siteType = None, resourceType = None,
                           statusType = None, status = None, dateEffective = None, 
@@ -387,17 +387,17 @@ class ResourceStatusClient:
   # STORAGE ELEMENT FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertStorageElement( self, storageElementName, resourceName, gridSiteName ):
     pass
-  @Client
+  @ClientDec
   def updateStorageElement( self, storageElementName, resourceName, gridSiteName ):
     pass
-  @Client       
+  @ClientDec       
   def getStorageElement( self, storageElementName = None, resourceName = None, 
                          gridSiteName = None, **kwargs ):
     pass
-  @Client       
+  @ClientDec       
   def deleteStorageElement( self, storageElementName = None, resourceName = None, 
                             gridSiteName = None, **kwargs ):
     pass    
@@ -407,24 +407,24 @@ class ResourceStatusClient:
   # STORAGE ELEMENT STATUS FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertStorageElementStatus( self, storageElementName, statusType, status,
                                   reason, dateCreated, dateEffective, dateEnd,
                                   lastCheckTime, tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateStorageElementStatus( self, storageElementName, statusType, status,
                                   reason, dateCreated, dateEffective, dateEnd,
                                   lastCheckTime, tokenOwner, tokenExpiration ):
     pass
-  @Client       
+  @ClientDec       
   def getStorageElementStatus( self, storageElementName = None, statusType = None, 
                                status = None, reason = None, dateCreated = None, 
                                dateEffective = None, dateEnd = None, 
                                lastCheckTime = None, tokenOwner = None, 
                                tokenExpiration = None, **kwargs ):
     pass    
-  @Client       
+  @ClientDec       
   def deleteStorageElementStatus( self, storageElementName = None, statusType = None, 
                                   status = None, reason = None, dateCreated = None, 
                                   dateEffective = None, dateEnd = None, 
@@ -437,24 +437,24 @@ class ResourceStatusClient:
   # STORAGE ELEMENT SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertStorageElementScheduledStatus( self, storageElementName, statusType, status,
                                            reason, dateCreated, dateEffective, dateEnd,
                                            lastCheckTime, tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateStorageElementScheduledStatus( self, storageElementName, statusType, status,
                                            reason, dateCreated, dateEffective, dateEnd,
                                            lastCheckTime, tokenOwner, tokenExpiration ):
     pass
-  @Client       
+  @ClientDec       
   def getStorageElementScheduledStatus( self, storageElementName = None, statusType = None, 
                                         status = None, reason = None, dateCreated = None, 
                                         dateEffective = None, dateEnd = None, 
                                         lastCheckTime = None, tokenOwner = None, 
                                         tokenExpiration = None, **kwargs ):
     pass    
-  @Client       
+  @ClientDec       
   def deleteStorageElementScheduledStatus( self, storageElementName = None, statusType = None, 
                                            status = None, reason = None, dateCreated = None, 
                                            dateEffective = None, dateEnd = None, 
@@ -467,24 +467,24 @@ class ResourceStatusClient:
   # STORAGE ELEMENT HISTORY FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertStorageElementHistory( self, storageElementName, statusType, status,
                                    reason, dateCreated, dateEffective, dateEnd,
                                    lastCheckTime, tokenOwner, tokenExpiration ):
     pass
-  @Client
+  @ClientDec
   def updateStorageElementHistory( self, storageElementName, statusType, status,
                                    reason, dateCreated, dateEffective, dateEnd,
                                    lastCheckTime, tokenOwner, tokenExpiration ):
     pass
-  @Client       
+  @ClientDec       
   def getStorageElementHistory( self, storageElementName = None, statusType = None, 
                                 status = None, reason = None, dateCreated = None, 
                                 dateEffective = None, dateEnd = None, 
                                 lastCheckTime = None, tokenOwner = None, 
                                 tokenExpiration = None, **kwargs ):
     pass    
-  @Client       
+  @ClientDec       
   def deleteStorageElementHistory( self, storageElementName = None, statusType = None, 
                                    status = None, reason = None, dateCreated = None, 
                                    dateEffective = None, dateEnd = None, 
@@ -497,7 +497,7 @@ class ResourceStatusClient:
   # STORAGE ELEMENT PRESENT FUNCTIONS
   ##############################################################################
   '''
-  @Client      
+  @ClientDec      
   def getStorageElementPresent( self, storageElementName = None, resourceName = None, 
                                 gridSiteName = None, siteType = None, statusType = None, 
                                 status = None, dateEffective = None, reason = None, 
@@ -513,38 +513,19 @@ class ResourceStatusClient:
   # GRID SITE FUNCTIONS
   ##############################################################################
   '''
-  @Client
+  @ClientDec
   def insertGridSite( self, gridSiteName, gridTier ):
     pass
-  @Client
+  @ClientDec
   def updateGridSite( self, gridSiteName, gridTier ):
     pass
-  @Client    
+  @ClientDec    
   def getGridSite( self, gridSiteName = None, gridTier = None, **kwargs ):
     pass
-  @Client    
+  @ClientDec    
   def deleteGridSite( self, gridSiteName = None, gridTier = None, **kwargs ):        
     pass
     
-################################################################################
-################################################################################
-# Stats functions
-################################################################################
-#  
-#  @Client
-#  def getServiceStats( self, siteName, statusType = None ):
-#    pass
-#    
-#  @Client  
-#  def getResourceStats( self, element, name, statusType = None ):
-#    pass
-#    
-#  @Client  
-#  def getStorageElementStats( self, element, name, statusType = None ):      
-#    pass
-#
-################################################################################
-
 # DB ###########################################################################
 # BOOSTER ######################################################################
 
@@ -554,33 +535,48 @@ class ResourceStatusClient:
   ##############################################################################
   '''
 
-  @Client
+  @ClientDec
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
     pass
-  @Client
+  @ClientDec
   def addOrModifyService( self, serviceName, serviceType, siteName ):
     pass
-  @Client
+  @ClientDec
   def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName, gridSiteName ):
     pass
-  @Client
+  @ClientDec
   def addOrModifyStorageElement( self, storageElementName, resourceName, gridSiteName ):
     pass
-  @Client
+  @ClientDec
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
     pass      
   
-  @Client
+  @ClientDec
   def removeSite( self, siteName ):
     pass
-  @Client
+  @ClientDec
   def removeService( self, serviceName ):
     pass
-  @Client
+  @ClientDec
   def removeResource( self, resourceName ):
     pass
-  @Client
+  @ClientDec
   def removeStorageElement( self, storageElementName ):
+    pass
+  
+  '''
+  ##############################################################################
+  # Stats functions
+  ##############################################################################
+  '''
+  @ClientDec
+  def getServiceStats( self, siteName, statusType = None ):
+    pass
+  @ClientDec
+  def getResourceStats( self, element, name, statusType = None ):
+    pass
+  @ClientDec
+  def getStorageElementStats( self, element, name, statusType = None ):
     pass
   
   '''
@@ -589,45 +585,45 @@ class ResourceStatusClient:
   ##############################################################################
   '''
 
-  @Client 
+  @ClientDec 
   def getGeneralName( self, from_element, name, to_element ):
     pass
     
-  @Client     
+  @ClientDec     
   def getGridSiteName( self, granularity, name ):
     pass
     
-  @Client     
+  @ClientDec     
   def getTokens( self, granularity, name = None, tokenExpiration = None, 
                  statusType = None, **kwargs ): 
     pass
    
-  @Client    
+  @ClientDec    
   def setToken( self, granularity, name, statusType, reason, tokenOwner, 
                 tokenExpiration ):
     pass
     
-  @Client     
+  @ClientDec     
   def setReason( self, granularity, name, statusType, reason ):     
     pass
   
-  @Client     
+  @ClientDec     
   def setDateEnd( self, granularity, name, statusType, dateEnd ):     
     pass 
     
-  @Client     
+  @ClientDec     
   def whatIs( self, name ):  
     pass
   
-  @Client   
+  @ClientDec   
   def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
     pass    
   
-  @Client      
+  @ClientDec      
   def getMonitoredStatus( self, granularity, name ):
     pass
     
-  @Client  
+  @ClientDec  
   def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, maxItems ):
     pass
               
