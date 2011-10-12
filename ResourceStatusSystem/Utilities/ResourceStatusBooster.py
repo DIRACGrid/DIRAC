@@ -14,10 +14,10 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 
-from DIRAC.ResourceStatusSystem import ValidRes, ValidStatusTypes
+from DIRAC.ResourceStatusSystem import ValidRes, ValidStatusTypes, ValidStatus
 
 from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution2
-from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import localsToDict 
+#from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import localsToDict 
 
 
 from datetime import datetime, timedelta
@@ -31,59 +31,241 @@ class ResourceStatusBooster( object ):
 ################################################################################    
 ################################################################################    
 
+  '''
+  ##############################################################################
+  # Getter functions
+  ##############################################################################
+  '''
+
+  @CheckExecution2
   def insertElement( self, element, *args ):
     
     fname = 'insert%s' % element
-    try:
-      f = getattr( self.rsClient, fname )
-    except Exception, x:
-      return S_ERROR( '%s function not found in rsClient' )  
-    
-    try:
-      return f( *args )
-    except Exception, x:
-      return S_ERROR( x )
+    #try:
+    f = getattr( self.rsClient, fname )
+    #except Exception, x:
+    #  return S_ERROR( '%s function not found in rsClient' )  
+    #try:
+    return f( *args )
+    #except Exception, x:
+    #  return S_ERROR( x )
 
+  @CheckExecution2
   def updateElement( self, element, *args ):
     
     fname = 'update%s' % element
-    try:
-      f = getattr( self.rsClient, fname )
-    except Exception, x:
-      return S_ERROR( '%s function not found in rsClient' )  
+    #try:
+    f = getattr( self.rsClient, fname )
+    #except Exception, x:
+    #  return S_ERROR( '%s function not found in rsClient' )  
     
-    try:
-      return f( *args )
-    except Exception, x:
-      return S_ERROR( x )
+    #try:
+    return f( *args )
+    #except Exception, x:
+    #  return S_ERROR( x )
 
+  @CheckExecution2
   def getElement( self, element, *args, **kwargs ):
     
     fname = 'get%s' % element
-    try:
-      f = getattr( self.rsClient, fname )
-    except Exception, x:
-      return S_ERROR( '%s function not found in rsClient' )  
+    #try:
+    f = getattr( self.rsClient, fname )
+    #except Exception, x:
+    #  return S_ERROR( '%s function not found in rsClient' )  
     
-    try:
-      return f( *args, **kwargs )
-    except Exception, x:
-      return S_ERROR( x )
+    #try:
+    return f( *args, **kwargs )
+    #except Exception, x:
+    #  return S_ERROR( x )
 
+  @CheckExecution2
   def deleteElement( self, element, *args, **kwargs ):
     
     fname = 'delete%s' % element
-    try:
-      f = getattr( self.rsClient, fname )
-    except Exception, x:
-      return S_ERROR( '%s function not found in rsClient' )  
+    #try:
+    f = getattr( self.rsClient, fname )
+    #except Exception, x:
+    #  return S_ERROR( '%s function not found in rsClient' )  
     
-    try:
-      return f( *args, **kwargs )
-    except Exception, x:
-      return S_ERROR( x )
+    #try:
+    return f( *args, **kwargs )
+    #except Exception, x:
+    #  return S_ERROR( x )
 
+  '''
+  ##############################################################################
+  # addOrModify FUNCTIONS
+  ##############################################################################
+  '''
+  @CheckExecution2
+  def addOrModifySite( self, siteName, siteType, gridSiteName ):
+#    # VALIDATION #
+#    self.rsVal.validateName( siteName )
+#    self.rsVal.validateSiteType( siteType )
+#    self.rsVal.validateGridSite( gridSiteName )
+#    # END VALIDATION #
+
+    # VALIDATION ? 
+    return self._addOrModifyElement( 'Site', siteName, siteType, gridSiteName )
+
+  @CheckExecution2
+  def addOrModifyService( self, serviceName, serviceType, siteName ):
+    # VALIDATION ?
+    return self._addOrModifyElement( 'Service', serviceName, serviceType, siteName )
+  
+  @CheckExecution2
+  def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName, gridSiteName ):
+    # VALIDATION ?
+    return self._addOrModifyElement( 'Resource', resourceName, resourceType, serviceType, siteName, gridSiteName )
+  
+  @CheckExecution2
+  def addOrModifyStorageElement( self, storageElementName, resourceName, gridSiteName ):
+    # VALIDATION ?
+    return self._addOrModifyElement( 'StorageElement', storageElementName, resourceName, gridSiteName )
+
+  @CheckExecution2
+  def addOrModifyGridSite( self, gridSiteName, gridTier ):
+  
+    # VALIDATION ?  
+    sqlQuery = self.rsClient.getGridSite( gridSiteName = gridSiteName )
+    
+    if sqlQuery[ 'Value' ]:      
+      return self.rsClient.updateGridSite( gridSiteName, gridTier )
+    else:
+      return self.rsClient.insertGridSite( gridSiteName, gridTier ) 
+
+  '''
+  ##############################################################################
+  # remove FUNCTIONS
+  ##############################################################################
+  '''
+  @CheckExecution2
+  def removeSite( self, siteName ):
+    return self._removeElement( 'Site', siteName )
+
+  @CheckExecution2
+  def removeService( self, serviceName ):
+    return self._removeElement( 'Service', serviceName )
+
+  @CheckExecution2
+  def removeResource( self, resourceName ):
+    return self._removeElement( 'Resource', resourceName )
+
+  @CheckExecution2
+  def removeStorageElement( self, storageElementName ):
+    return self._removeElement( 'StorageElement', storageElementName )
+
+  '''
+  ##############################################################################
+  # stats FUNCTIONS
+  ##############################################################################
+  '''
+  @CheckExecution2
+  def getServiceStats( self, siteName, statusType ):
+
+    presentDict = { 'SiteName' : siteName }
+    if statusType is not None:
+      self.__validateElementStatusTypes( 'Service', statusType )
+      presentDict[ 'StatusType'] = statusType
+    
+    kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
+    presentDict = presentDict.update( kwargs )
+    sqlQuery = self.rsClient.getPresentService( **presentDict )
+  
+    return self._getStats( sqlQuery )
+
+  @CheckExecution2
+  def getResourceStats( self, element, name, statusType ):
+
+    # VALIDATION ??
+
+    presentDict = { }
+
+    if statusType is not None:
+      self.rsVal.validateElementStatusTypes( 'Service', statusType )
+      presentDict[ 'StatusType'] = statusType    
+
+    rDict = { 'serviceType'  : None, 
+              'siteName'     : None, 
+              'gridSiteName' : None
+            }
+
+    if element == 'Site':
+      rDict[ 'siteName' ] = name
+
+    elif element == 'Service':
+
+      serviceType, siteName = name.split( '@' )
+      rDict[ 'serviceType' ] = serviceType
+      
+      if serviceType == 'Computing':
+        rDict[ 'siteName' ] = siteName
+        
+      else:
+        kwargs = { 'columns' : [ 'GridSiteName' ] }
+        gridSiteName = [ gs[0] for gs in self.rsClient.getSite( siteName = siteName, **kwargs )[ 'Value' ] ]
+        
+        rDict[ 'gridSiteName' ] = gridSiteName
+        
+    else:
+      message = '%s is non accepted element. Only Site or Service' % element
+      return S_ERROR( message )
+
+    resourceNames = [ re[0] for re in self.getResource( **rDict )[ 'Value' ] ]
+    
+    kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
+    presentDict[ 'resourceName' ] = resourceNames
+    presentDict = presentDict.update( kwargs )
+    
+    sqlQuery = self.rsClient.getPresentResource( **presentDict )
+    return self._getStats( sqlQuery )
+
+  @CheckExecution2  
+  def getStorageElementStats( self, element, name, statusType ):
+
+    # VALIDATION ??
+    presentDict = {}
+
+    if statusType is not None:
+      self.rsVal.validateElementStatusTypes( 'StorageElement', statusType )
+      presentDict[ 'StatusType'] = statusType
+
+    rDict = { 'resourceName' : None,
+              'gridSiteName' : None }
+    
+
+    if element == 'Site':
+
+      kwargs = { 'columns' : [ 'GridSiteName' ] }
+      gridSiteNames = [ gs[0] for gs in self.getSite( siteName = name, **kwargs )[ 'Value' ] ]
+      rDict[ 'gridSiteName' ] = gridSiteNames
+
+    elif element == 'Resource':
+
+      rDict[ 'resourceName' ] = name
+
+    else:
+      message = '%s is non accepted element. Only Site or Resource' % element
+      return S_ERROR( message )
+
+    storageElementNames = [ se[0] for se in self.getStorageElement( **rDict )[ 'Value' ] ]
+
+    kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
+    presentDict[ 'storageElementName' ] = storageElementNames
+    presentDict = presentDict.update( kwargs )
+    
+    sqlQuery = self.rsClient.getPresentResource( **presentDict )
+    return self._getStats( sqlQuery )  
+  
 ################################################################################
+# SUB PUBLIC FUNCTIONS 
+################################################################################
+
+  '''
+  ##############################################################################
+  # addOrModify SUB PUBLIC FUNCTIONS
+  ##############################################################################
+  '''
 
   def _addOrModifyElement( self, element, *args ):
     
@@ -175,45 +357,11 @@ class ResourceStatusBooster( object ):
     
     #return rDict     
 
-  @CheckExecution2
-  def addOrModifySite( self, siteName, siteType, gridSiteName ):
-#    # VALIDATION #
-#    self.rsVal.validateName( siteName )
-#    self.rsVal.validateSiteType( siteType )
-#    self.rsVal.validateGridSite( gridSiteName )
-#    # END VALIDATION #
-
-    # VALIDATION ? 
-    return self._addOrModifyElement( 'Site', siteName, siteType, gridSiteName )
-
-  @CheckExecution2
-  def addOrModifyService( self, serviceName, serviceType, siteName ):
-    # VALIDATION ?
-    return self._addOrModifyElement( 'Service', serviceName, serviceType, siteName )
-  
-  @CheckExecution2
-  def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName, gridSiteName ):
-    # VALIDATION ?
-    return self._addOrModifyElement( 'Resource', resourceName, resourceType, serviceType, siteName, gridSiteName )
-  
-  @CheckExecution2
-  def addOrModifyStorageElement( self, storageElementName, resourceName, gridSiteName ):
-    # VALIDATION ?
-    return self._addOrModifyElement( 'StorageElement', storageElementName, resourceName, gridSiteName )
-
-  @CheckExecution2
-  def addOrModifyGridSite( self, gridSiteName, gridTier ):
-  
-    # VALIDATION ?  
-    sqlQuery = self.rsClient.getGridSite( gridSiteName = gridSiteName )
-    
-    if sqlQuery[ 'Value' ]:      
-      return self.rsClient.updateGridSite( gridSiteName, gridTier )
-    else:
-      return self.rsClient.insertGridSite( gridSiteName, gridTier ) 
-
-################################################################################    
-################################################################################
+  '''
+  ##############################################################################
+  # remove SUB PUBLIC FUNCTIONS
+  ##############################################################################
+  '''
   
   def _removeElement( self, element, elementName ):
   
@@ -224,22 +372,27 @@ class ResourceStatusBooster( object ):
         return sqlQuery
 
     return sqlQuery
+          
+  '''
+  ##############################################################################
+  # stats FUNCTIONS
+  ##############################################################################
+  '''          
+     
+  def _getStats( self, sqlQuery ):
+    
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery 
 
-  @CheckExecution2
-  def removeSite( self, siteName ):
-    return self._removeElement( 'Site', siteName )
+    count = { 'Total' : 0 }
+    for validStatus in ValidStatus:
+      count[ validStatus ] = 0
 
-  @CheckExecution2
-  def removeService( self, serviceName ):
-    return self._removeElement( 'Service', serviceName )
+    for x in sqlQuery[ 'Value' ]:
+      count[ x[0] ] = int( x[1] )
 
-  @CheckExecution2
-  def removeResource( self, resourceName ):
-    return self._removeElement( 'Resource', resourceName )
-
-  @CheckExecution2
-  def removeStorageElement( self, storageElementName ):
-    return self._removeElement( 'StorageElement', storageElementName )
+    count['Total'] = sum( count.values() )
+    return S_OK( count )  
           
 ################################################################################    
 ################################################################################    
