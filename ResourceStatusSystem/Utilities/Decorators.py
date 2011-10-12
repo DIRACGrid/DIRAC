@@ -29,12 +29,12 @@ class CheckExecution( object ):
     
   def __call__( self, *args, **kwargs ):
       
-      functionNames = [ 'addOrModify', 'get', 'delete' ]         
+      functionNames = [ 'insert', 'update', 'get', 'delete' ]         
       tableName = self.f.__name__  
       for fN in functionNames:  
         tableName = tableName.replace( fN, '' ) 
       
-      if self.f.__name__.startswith( 'addOrModify' ):# or self.f.__name__.startswith( 'update' ):
+      if self.f.__name__.startswith( 'insert' ):# or self.f.__name__.startswith( 'update' ):
         kwargs = {} 
       
       kwargs.update( { 'table' : tableName })
@@ -47,7 +47,7 @@ class CheckExecution( object ):
 
 ################################################################################
 
-class HandlerExecution( object ):
+class Handler( object ):
   
   def __init__( self, f ):
     self.f = f
@@ -91,7 +91,7 @@ class HandlerExecution( object ):
 
 ################################################################################
 
-class ClientExecution( object ):
+class Client( object ):
   
   def __init__( self, f ):
     self.f = f
