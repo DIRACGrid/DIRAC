@@ -10,7 +10,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import DBDec
 
 ################################################################################
 
@@ -57,24 +57,9 @@ class ResourceManagementDB(object):
 
   """
   
-  # Small very valuable piece of information for the MySQLMonkey
-  __TABLES__ = {
-            'EnvironmentCache'  : {
-              'uniqueKeys' : [ 'HashEnv', 'SiteName' ]                      
-                                  },
-            'PolicyResult'      : {
-              'uniqueKeys' : [ 'Name', 'StatusType', 'PolicyName' ]                    
-                                  },
-            'ClientCache'       : {
-              'uniqueKeys' : [ 'Name', 'CommandName', 'Value' ]                    
-                                  },
-            'AccountingCache'   : {
-              'uniqueKeys' : [ 'Name', 'PlotType', 'PlotName' ]                    
-                                  },            
-            'UserRegistryCache' : {
-              'uniqueKeys' : [ 'Login' ]                     
-                                   }           
-            }
+  # Small, very valuable piece of information for the MySQLMonkey
+  # Now is hard-coded for simplicity, eventually will be calculated automatically
+  __TABLES__ = {}
 
   def __init__( self, *args, **kwargs ):
 
@@ -104,14 +89,16 @@ class ResourceManagementDB(object):
 
 
 ################################################################################
-
-################################################################################
-# EnvironmentCache functions
 ################################################################################
 
-################################################################################
+  '''
+  ##############################################################################
+  # ENVIRONMENT CACHE FUNCTIONS
+  ##############################################################################
+  '''
+  __TABLES__[ 'EnvironmentCache' ] = { 'uniqueKeys' : [ 'HashEnv', 'SiteName' ] }
 
-  @CheckExecution
+  @DBDec
   def addOrModifyEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
     
     ## 
@@ -125,7 +112,7 @@ class ResourceManagementDB(object):
     else: 
       return self.mm.insert( rDict, **kwargs )  
 
-  @CheckExecution
+  @DBDec
   def getEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
     
     ##
@@ -134,7 +121,7 @@ class ResourceManagementDB(object):
     
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution    
+  @DBDec    
   def deleteEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
 
     ##
@@ -143,15 +130,14 @@ class ResourceManagementDB(object):
     
     return self.mm.delete( rDict, **kwargs )
 
-################################################################################
+  '''
+  ##############################################################################
+  # POLICY RESULT FUNCTIONS
+  ##############################################################################
+  '''
+  __TABLES__[ 'PolicyResult' ] = {'uniqueKeys' : [ 'Name', 'StatusType', 'PolicyName' ] }
 
-################################################################################
-# PolicyRes functions
-################################################################################
-
-################################################################################
-
-  @CheckExecution
+  @DBDec
   def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime, **kwargs ):
 
@@ -166,7 +152,7 @@ class ResourceManagementDB(object):
     else: 
       return self.mm.insert( rDict, **kwargs )
   
-  @CheckExecution      
+  @DBDec      
   def getPolicyResult( self, granularity, name, policyName, statusType, status, 
                         reason, dateEffective, lastCheckTime, **kwargs ):
 
@@ -176,7 +162,7 @@ class ResourceManagementDB(object):
     
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deletePolicyResult( self, granularity, name, policyName, statusType, status, 
                            reason, dateEffective, lastCheckTime, **kwargs ):
 
@@ -186,15 +172,14 @@ class ResourceManagementDB(object):
     
     return self.mm.delete( rDict, **kwargs )
 
-################################################################################
-
-################################################################################
-# ClientsCache functions
-################################################################################
-
-################################################################################
-
-  @CheckExecution
+  '''
+  ##############################################################################
+  # CLIENT CACHE FUNCTIONS
+  ##############################################################################
+  '''
+  __TABLES__[ 'ClientCache' ] = {'uniqueKeys' : [ 'Name', 'CommandName', 'Value' ] }
+  
+  @DBDec
   def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
                               dateEffective, lastCheckTime, **kwargs ):
     
@@ -209,7 +194,7 @@ class ResourceManagementDB(object):
     else: 
       return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution    
+  @DBDec    
   def getClientCache( self, name, commandName, opt_ID, value, result,
                        dateEffective, lastCheckTime, **kwargs ):  
     
@@ -219,7 +204,7 @@ class ResourceManagementDB(object):
     
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution  
+  @DBDec  
   def deleteClientCache( self, name, commandName, opt_ID, value, result,
                           dateEffective, lastCheckTime, **kwargs ):
     
@@ -229,15 +214,14 @@ class ResourceManagementDB(object):
     
     return self.mm.delete( rDict, **kwargs )
 
-################################################################################
+  '''
+  ##############################################################################
+  # ACCOUNTING CACHE FUNCTIONS
+  ##############################################################################
+  '''
+  __TABLES__[ 'AccountingCache' ] = {'uniqueKeys' : [ 'Name', 'PlotType', 'PlotName' ] }
 
-################################################################################
-# AccountingCache functions
-################################################################################
-
-################################################################################
-
-  @CheckExecution
+  @DBDec
   def addOrModifyAccountingCache( self, name, plotType, plotName, result, dateEffective,
                                   lastCheckTime, **kwargs ):
     
@@ -252,7 +236,7 @@ class ResourceManagementDB(object):
     else: 
       return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getAccountingCache( self, name, plotType, plotName, result, dateEffective,
                            lastCheckTime, **kwargs ):
     
@@ -262,7 +246,7 @@ class ResourceManagementDB(object):
     
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteAccountingCache( self, name, plotType, plotName, result, dateEffective,
                               lastCheckTime, **kwargs ):
 
@@ -272,15 +256,14 @@ class ResourceManagementDB(object):
     
     return self.mm.delete( rDict, **kwargs )
 
-################################################################################
+  '''
+  ##############################################################################
+  # USER REGISTRY CACHE FUNCTIONS
+  ##############################################################################
+  '''
+  __TABLES__[ 'UserRegistryCache' ] =  { 'uniqueKeys' : [ 'Login' ] }  
 
-################################################################################
-# UserRegistryCache functions
-################################################################################
-
-################################################################################
-
-  @CheckExecution
+  @DBDec
   def addOrModifyUserRegistryCache( self, login, name, email, **kwargs ):
     
     ##
@@ -294,7 +277,7 @@ class ResourceManagementDB(object):
     else: 
       return self.mm.insert( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def getUserRegistryCache( self, login, name, email, **kwargs ):
     
     ##
@@ -303,7 +286,7 @@ class ResourceManagementDB(object):
     
     return self.mm.get( rDict, **kwargs )
 
-  @CheckExecution
+  @DBDec
   def deleteUserRegistryCache( self, login, name, email, **kwargs ):
 
     ##
