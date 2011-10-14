@@ -33,6 +33,8 @@ def initializeProxyManagerHandler( serviceInfo ):
     return S_ERROR( "Can't initialize ProxyDB" )
   gThreadScheduler.addPeriodicTask( 900, gProxyDB.purgeExpiredTokens, elapsedTime = 900 )
   gThreadScheduler.addPeriodicTask( 900, gProxyDB.purgeExpiredRequests, elapsedTime = 900 )
+  gThreadScheduler.addPeriodicTask( 3600, gProxyDB.purgeLogs )
+  gThreadScheduler.addPeriodicTask( 3600, gProxyDB.purgeExpiredProxies )
   gLogger.info( "VOMS: %s\nMyProxy: %s\n MyProxy Server: %s" % ( requireVoms, useMyProxy, gProxyDB.getMyProxyServer() ) )
   return S_OK()
 
@@ -131,7 +133,7 @@ class ProxyManagerHandler( RequestHandler ):
     """
     credDict = self.getRemoteCredentials()
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
-      gProxyDB.getUsers( validSecondsRequired, dnMask = [ credDict[ 'DN' ] ] )
+      return gProxyDB.getUsers( validSecondsRequired, userMask = [ credDict[ 'username' ] ] )
     return gProxyDB.getUsers( validSecondsRequired )
 
   def __checkProperties( self, requestedUserDN, requestedUserGroup ):
@@ -289,10 +291,7 @@ class ProxyManagerHandler( RequestHandler ):
     """
     credDict = self.getRemoteCredentials()
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
-      result = Registry.getDNForUsername( credDict[ 'username' ] )
-      if not result[ 'OK' ]:
-        return S_ERROR( "You are not a valid user!" )
-      selDict[ 'UserDN' ] = result[ 'Value' ]
+      selDict[ 'UserName' ] = credDict[ 'username' ]
     return gProxyDB.getProxiesContent( selDict, sortDict, start, limit )
 
   types_getLogContents = [ types.DictType, ( types.ListType, types.TupleType ),
