@@ -8,6 +8,7 @@ __RCSID__ = "$Id$"
 
 import time
 import random
+import types
 try:
   import hashlib as md5
 except:
@@ -42,6 +43,8 @@ class ProxyDB( DB ):
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ] )
+    self.purgeExpiredProxies( sendNotifications = False )
+    self.__checkDBVersion()
 
   def getMyProxyServer( self ):
     return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
@@ -68,8 +71,10 @@ class ProxyDB( DB ):
                                                    },
                                         'PrimaryKey' : 'Id'
                                       }
+
     if 'ProxyDB_Proxies' not in tablesInDB:
-      tablesD[ 'ProxyDB_Proxies' ] = { 'Fields' : { 'UserDN' : 'VARCHAR(255) NOT NULL',
+      tablesD[ 'ProxyDB_Proxies' ] = { 'Fields' : { 'UserName' : 'VARCHAR(64) NOT NULL',
+                                                    'UserDN' : 'VARCHAR(255) NOT NULL',
                                                     'UserGroup' : 'VARCHAR(255) NOT NULL',
                                                     'Pem' : 'BLOB',
                                                     'ExpirationTime' : 'DATETIME',
@@ -77,8 +82,10 @@ class ProxyDB( DB ):
                                                   },
                                       'PrimaryKey' : [ 'UserDN', 'UserGroup' ]
                                      }
+
     if 'ProxyDB_VOMSProxies' not in tablesInDB:
-      tablesD[ 'ProxyDB_VOMSProxies' ] = { 'Fields' : { 'UserDN' : 'VARCHAR(255) NOT NULL',
+      tablesD[ 'ProxyDB_VOMSProxies' ] = { 'Fields' : { 'UserName' : 'VARCHAR(64) NOT NULL',
+                                                        'UserDN' : 'VARCHAR(255) NOT NULL',
                                                         'UserGroup' : 'VARCHAR(255) NOT NULL',
                                                         'VOMSAttr' : 'VARCHAR(255) NOT NULL',
                                                         'Pem' : 'BLOB',
@@ -86,6 +93,7 @@ class ProxyDB( DB ):
                                                   },
                                            'PrimaryKey' : [ 'UserDN', 'UserGroup', 'vomsAttr'  ]
                                      }
+
     if 'ProxyDB_Log' not in tablesInDB:
       tablesD[ 'ProxyDB_Log' ] = { 'Fields' : { 'IssuerDN' : 'VARCHAR(255) NOT NULL',
                                                 'IssuerGroup' : 'VARCHAR(255) NOT NULL',
@@ -95,6 +103,7 @@ class ProxyDB( DB ):
                                                 'Timestamp' : 'DATETIME',
                                               }
                                   }
+
     if 'ProxyDB_Tokens' not in tablesInDB:
       tablesD[ 'ProxyDB_Tokens' ] = { 'Fields' : { 'Token' : 'VARCHAR(64) NOT NULL',
                                                    'RequesterDN' : 'VARCHAR(255) NOT NULL',
@@ -104,6 +113,7 @@ class ProxyDB( DB ):
                                                  },
                                       'PrimaryKey' : 'Token'
                                   }
+
     if 'ProxyDB_ExpNotifs' not in tablesInDB:
       tablesD[ 'ProxyDB_ExpNotifs' ] = { 'Fields' : { 'UserDN' : 'VARCHAR(255) NOT NULL',
                                                       'UserGroup' : 'VARCHAR(255) NOT NULL',
@@ -114,6 +124,47 @@ class ProxyDB( DB ):
                                        }
 
     return self._createTables( tablesD )
+
+  def __addUserNameToTable( self, tableName ):
+    result = self._update( "ALTER TABLE `%s` ADD COLUMN UserName VARCHAR(64) NOT NULL" % tableName )
+    if not result[ 'OK' ]:
+      return result
+    result = self._query( "SELECT DISTINCT UserName, UserDN FROM `%s`" % tableName )
+    if not result[ 'OK' ]:
+      return result
+    data = result[ 'Value' ]
+    for userName, userDN in data:
+      if not userName:
+        result = Registry.getUsernameForDN( userDN )
+        if not result[ 'OK' ]:
+          self.log.error( "Could not retrieve username for DN %s" % userDN )
+          continue
+        userName = result[ 'Value' ]
+        result = self._escapeString( userName )
+        if not result[ 'OK' ]:
+          self.log.error( "Could not escape username %s" % userName )
+          continue
+        userName = result[ 'Value' ]
+        result = self._update( "UPDATE `%s` SET UserName=%s WHERE UserDN='%s'" % ( tableName, userName, userDN ) )
+        if not result[ 'OK' ]:
+          self.log.error( "Could update username for DN %s: %s" % ( userDN, result[ 'Message' ] ) )
+          continue
+        self.log.info( "UserDN %s has user %s" % ( userDN, userName ) )
+    return S_OK()
+
+
+  def __checkDBVersion( self ):
+    for tableName in ( "ProxyDB_Proxies", "ProxyDB_VOMSProxies" ):
+      result = self._query( "describe `%s`" % tableName )
+      if not result[ 'OK' ]:
+        return result
+      if 'UserName' not in [ row[0] for row in result[ 'Value' ] ]:
+        self.log.notice( "Username missing in table %s schema. Adding it" % tableName )
+        result = self.__addUserNameToTable( tableName )
+        if not result[ 'OK' ]:
+          return result
+
+
 
   def generateDelegationRequest( self, proxyChain, userDN ):
     """
@@ -269,6 +320,10 @@ class ProxyDB( DB ):
     """ Store user proxy into the Proxy repository for a user specified by his
         DN and group.
     """
+    retVal = Registry.getUsernameForDN( userDN )
+    if not retVal[ 'OK' ]:
+      return retVal
+    userName = retVal[ 'Value' ]
     #Get remaining secs
     retVal = chain.getRemainingSecs()
     if not retVal[ 'OK' ]:
@@ -302,7 +357,11 @@ class ProxyDB( DB ):
     #Check if its limited
     if chain.isLimitedProxy()['Value']:
       return S_ERROR( "Limited proxies are not allowed to be stored" )
-    self.log.info( "Storing proxy for credentials %s (%s secs)" % ( proxyIdentityDN, remainingSecs ) )
+    dLeft = remainingSecs / 86400
+    hLeft = remainingSecs / 3600 - dLeft * 24
+    mLeft = remainingSecs / 60 - hLeft * 60 - dLeft * 1440
+    sLeft = remainingSecs - hLeft * 3600 - mLeft * 60 - dLeft * 86400
+    self.log.info( "Storing proxy for credentials %s (%d:%02d:%02d:%02d left)" % ( proxyIdentityDN, dLeft, hLeft, mLeft, sLeft ) )
 
     # Check what we have already got in the repository
     cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
@@ -323,17 +382,29 @@ class ProxyDB( DB ):
           return S_OK()
 
     pemChain = chain.dumpAllToString()['Value']
+    dValues = { 'UserName' : self._escapeString( userName )[ 'Value' ],
+                'UserDN' : self._escapeString( userDN )[ 'Value' ],
+                'UserGroup' : self._escapeString( userGroup )[ 'Value' ],
+                'Pem' : self._escapeString( pemChain )[ 'Value' ],
+                'ExpirationTime' : 'TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )' % int( remainingSecs ),
+                'PersistentFlag' : "'False'" }
     if sqlInsert:
-      cmd = "INSERT INTO `ProxyDB_Proxies` ( UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
-      cmd += "( '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ), 'False' )" % ( userDN,
-                                                                                  userGroup,
-                                                                                  pemChain,
-                                                                                  remainingSecs )
+      sqlFields = []
+      sqlValues = []
+      for key in dValues:
+        sqlFields.append( key )
+        sqlValues.append( dValues[ key ] )
+      cmd = "INSERT INTO `ProxyDB_Proxies` ( %s ) VALUES ( %s )" % ( ", ".join( sqlFields ), ", ".join( sqlValues ) )
     else:
-      cmd = "UPDATE `ProxyDB_Proxies` set Pem='%s', ExpirationTime = TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) WHERE UserDN='%s' AND UserGroup='%s'" % ( pemChain,
-                                                                                                                                                remainingSecs,
-                                                                                                                                                userDN,
-                                                                                                                                                userGroup )
+      sqlSet = []
+      sqlWhere = []
+      for k in dValues:
+        if k in ( 'UserDN', 'UserGroup' ):
+          sqlWhere.append( "%s = %s" % ( k, dValues[k] ) )
+        else:
+          sqlSet.append( "%s = %s" % ( k, dValues[k] ) )
+      cmd = "UPDATE `ProxyDB_Proxies` SET %s WHERE %s" % ( ", ".join( sqlSet ), " AND ".join( sqlWhere ) )
+
     self.logAction( "store proxy", userDN, userGroup, userDN, userGroup )
     return self._update( cmd )
 
@@ -341,11 +412,15 @@ class ProxyDB( DB ):
     """
     Purge expired requests from the db
     """
-    cmd = "DELETE FROM `ProxyDB_Proxies` WHERE ExpirationTime < UTC_TIMESTAMP()"
-    result = self._update( cmd )
-    if not result[ 'OK' ]:
-      return result
-    purged = result[ 'Value' ]
+
+    purged = 0
+    for tableName in ( "ProxyDB_Proxies", "ProxyDB_VOMSProxies" ):
+      cmd = "DELETE FROM `%s` WHERE ExpirationTime < UTC_TIMESTAMP()" % tableName
+      result = self._update( cmd )
+      if not result[ 'OK' ]:
+        return result
+      purged += result[ 'Value' ]
+      self.log.info( "Purged %s expired proxies from %s" % ( result[ 'Value' ], tableName ) )
     if sendNotifications:
       result = self.sendExpirationNotifications()
       if not result[ 'OK' ]:
@@ -566,9 +641,14 @@ class ProxyDB( DB ):
       return S_ERROR( "Can't parse VOMS time left: %s" % str( e ) )
     secsLeft = min( vomsSecsLeft, chain.getRemainingSecs()[ 'Value' ] )
     pemData = chain.dumpAllToString()[ 'Value' ]
-    cmd = "INSERT INTO `ProxyDB_VOMSProxies` ( UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
-    cmd += "( '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN, userGroup,
-                                                                                         vomsAttr, pemData, secsLeft )
+    result = Registry.getUsernameForDN( userDN )
+    if not result[ 'OK' ]:
+      userName = ""
+    else:
+      userName = result[ 'Value' ]
+    cmd = "INSERT INTO `ProxyDB_VOMSProxies` ( UserName, UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
+    cmd += "( '%s', '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userName, userDN, userGroup,
+                                                                                              vomsAttr, pemData, secsLeft )
     result = self._update( cmd, conn = connObj )
     if not result[ 'OK' ]:
       return result
@@ -587,25 +667,29 @@ class ProxyDB( DB ):
       return S_OK( 0 )
     return S_OK( int( data[0][0] ) )
 
-  def getUsers( self, validSecondsLeft = 0, dnMask = False, groupMask = False ):
+  def getUsers( self, validSecondsLeft = 0, dnMask = False, groupMask = False, userMask = False ):
     """ Get all the distinct users from the Proxy Repository. Optionally, only users
         with valid proxies within the given validity period expressed in seconds
     """
 
-    cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
+    cmd = "SELECT UserName, UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
     sqlCond = []
+
     if validSecondsLeft:
-      sqlCond.append( "( UTC_TIMESTAMP() + INTERVAL %d SECOND ) < ExpirationTime" % validSecondsLeft )
-    if dnMask:
-      maskCond = []
-      for dn in dnMask:
-        maskCond.append( "UserDN = '%s'" % dn )
-      sqlCond.append( "( %s )" % " OR ".join( maskCond ) )
-    if groupMask:
-      maskCond = []
-      for group in groupMask:
-        maskCond.append( "UserGroup = '%s'" % group )
-      sqlCond.append( "( %s )" % " OR ".join( maskCond ) )
+      try:
+        validSecondsLeft = int( validSecondsLeft )
+      except ValueError:
+        return S_ERROR( "Seconds left has to be an integer" )
+      sqlCond.append( "TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > %d" % validSecondsLeft )
+
+    for field, mask in ( ( 'UserDN', dnMask ), ( 'UserGroup', groupMask ), ( 'UserName', userMask ) ):
+      if not mask:
+        continue
+      if type( mask ) not in ( types.ListType, types.TupleType ):
+        mask = [ mask ]
+      mask = [ self._escapeString( entry )[ 'Value' ] for entry in mask ]
+      sqlCond.append( "%s in ( %s )" % ( field, ", ".join( mask ) ) )
+
     if sqlCond:
       cmd += " WHERE %s" % " AND ".join( sqlCond )
 
@@ -614,10 +698,11 @@ class ProxyDB( DB ):
       return retVal
     data = []
     for record in retVal[ 'Value' ]:
-      data.append( { 'DN' : record[0],
-                     'group' : record[1],
-                     'expirationtime' : record[2],
-                     'persistent' : record[3] == 'True' } )
+      data.append( { 'Name': record[0],
+                     'DN' : record[1],
+                     'group' : record[2],
+                     'expirationtime' : record[3],
+                     'persistent' : record[4] == 'True' } )
     return S_OK( data )
 
   def getCredentialsAboutToExpire( self, requiredSecondsLeft, onlyPersistent = True ):
@@ -663,13 +748,39 @@ class ProxyDB( DB ):
     Function to get the contents of the db
       parameters are a filter to the db
     """
-    fields = ( "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag" )
-    cmd = "SELECT %s FROM `ProxyDB_Proxies` WHERE Pem is not NULL" % ", ".join( fields )
+    fields = ( "UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag" )
+    cmd = "SELECT %s FROM `ProxyDB_Proxies`" % ", ".join( fields )
+    sqlWhere = [ "Pem is not NULL" ]
     for field in selDict:
-      cmd += " AND (%s)" % " OR ".join( [ "%s=%s" % ( field, self._escapeString( str( value ) )[ 'Value' ] ) for value in selDict[field] ] )
+      if field not in fields:
+        continue
+      fVal = selDict[field]
+      if type( fVal ) in ( types.DictType, types.TupleType ):
+        sqlWhere.append( "%s in (%s)" % ", ".join( [ self._escapeString( str( value ) )[ 'Value' ] for value in fVal ] ) )
+      else:
+        sqlWhere.append( "%s = %s" % ( field, self._escapeString( str( fVal ) )[ 'Value' ] ) )
+    sqlOrder = []
     if sortList:
-      cmd += " ORDER BY %s" % ", ".join( [ "%s %s" % ( sort[0], sort[1] ) for sort in sortList ] )
+      for sort in sortList:
+        if len( sort ) == 1:
+          sort = ( sort, "DESC" )
+        elif len( sort ) > 2:
+          return S_ERROR( "Invalid sort %s" % sort )
+        if sort[0] not in fields:
+          return S_ERROR( "Invalid sorting field %s" % sort[0] )
+        if sort[1].upper() not in ( "ASC", "DESC" ):
+          return S_ERROR( "Invalid sorting order %s" % sort[1] )
+        sqlOrder.append( "%s %s" % ( sort[0], sort[1] ) )
+    if sqlWhere:
+      cmd = "%s WHERE %s" % ( cmd, " AND ".join( sqlWhere ) )
+    if sqlOrder:
+      cmd = "%s ORDER BY %s" % ( cmd, ", ".join( sqlOrder ) )
     if limit:
+      try:
+        start = int( start )
+        limit = int( limit )
+      except ValueError:
+        return S_ERROR( "start and limit have to be integers" )
       cmd += " LIMIT %d,%d" % ( start, limit )
     retVal = self._query( cmd )
     if not retVal[ 'OK' ]:
@@ -677,18 +788,15 @@ class ProxyDB( DB ):
     data = []
     for record in retVal[ 'Value' ]:
       record = list( record )
-      if record[3] == 'True':
-        record[3] = True
+      if record[4] == 'True':
+        record[4] = True
       else:
-        record[3] = False
+        record[4] = False
       data.append( record )
     totalRecords = len( data )
     cmd = "SELECT COUNT( UserGroup ) FROM `ProxyDB_Proxies`"
-    if selDict:
-      qr = []
-      for field in selDict:
-        qr.append( "(%s)" % " OR ".join( [ "%s=%s" % ( field, self._escapeString( str( value ) )[ 'Value' ] ) for value in selDict[field] ] ) )
-      cmd += " WHERE %s" % " AND ".join( qr )
+    if sqlWhere:
+      cmd = "%s WHERE %s" % ( cmd, " AND ".join( sqlWhere ) )
     retVal = self._query( cmd )
     if retVal[ 'OK' ]:
       totalRecords = retVal[ 'Value' ][0][0]
