@@ -11,7 +11,7 @@ import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import CS, Properties
-from DIRAC.Core.Security.Misc import *
+from DIRAC.Core.Security.ProxyInfo import *
 
 userName = False
 

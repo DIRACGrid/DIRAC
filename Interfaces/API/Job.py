@@ -43,7 +43,7 @@ from DIRAC.Core.Workflow.Workflow                             import *
 from DIRAC.Core.Workflow.WorkflowReader                       import *
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
-from DIRAC.Core.Security.Misc                                 import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements

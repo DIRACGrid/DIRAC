@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC                                                   import gConfig
 from DIRAC.Core.Base                                         import Script
-from DIRAC.Core.Security.Misc                                import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
