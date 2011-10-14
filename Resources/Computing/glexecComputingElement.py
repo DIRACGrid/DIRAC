@@ -14,7 +14,7 @@ from DIRAC.Resources.Computing.ComputingElement             import ComputingElem
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
-from DIRAC.Core.Security.Misc                               import getProxyInfoAsString
+from DIRAC.Core.Security.ProxyInfo                          import getProxyInfoAsString
 from DIRAC                                                  import gConfig, S_OK, S_ERROR
 
 import DIRAC

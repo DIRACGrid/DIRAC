@@ -15,7 +15,7 @@ from DIRAC                                                             import gC
 from DIRAC.Core.Base.DB                                                import DB
 from DIRAC.DataManagementSystem.Client.ReplicaManager                  import CatalogDirectory
 from DIRAC.Core.DISET.RPCClient                                        import RPCClient
-from DIRAC.Core.Security.Misc                                          import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                                     import getProxyInfo
 from DIRAC.Core.Utilities.List                                         import stringListToString, intListToString, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                                import getSEsForSite, getSitesForSE
 from DIRAC.Core.Utilities.Shifter                                      import setupShifterProxyInEnv

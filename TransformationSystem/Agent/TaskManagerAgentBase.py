@@ -9,7 +9,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Client.FileReport                   import FileReport
-from DIRAC.Core.Security.Misc                                       import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                                  import getProxyInfo
 from DIRAC.Core.Utilities.List                                      import sortList
 import os, time, string, datetime, re
 

@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
 from DIRAC                                               import gConfig
-from DIRAC.Core.Security.Misc                            import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 import os, sys, time, re, socket
 import string, shutil, bz2, base64, tempfile
