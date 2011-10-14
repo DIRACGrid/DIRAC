@@ -33,12 +33,13 @@ class StatesAccountingAgent( AgentModule ):
                                 'User',
                                 'UserGroup',
                                 'JobGroup',
-                                'JobSplitType',
+                                'JobType',
                               ]
   __summaryDefinedFields = [ ( 'ApplicationStatus', 'unset' ), ( 'MinorStatus', 'unset' ) ]
   __summaryValueFieldsMapping = [ 'Jobs',
                                   'Reschedules',
                                 ]
+  __renameFieldsMapping = { 'JobType' : 'JobSplitType' }
 
 
   def initialize( self ):
@@ -87,7 +88,7 @@ class StatesAccountingAgent( AgentModule ):
           rD[ fV[0] ] = fV[1]
         for iP in range( len( self.__summaryKeyFieldsMapping ) ):
           fieldName = self.__summaryKeyFieldsMapping[iP]
-          rD[ fieldName ] = record[iP]
+          rD[ self.__renameFieldsMapping.get( fieldName, fieldName ) ] = record[iP]
         record = record[ len( self.__summaryKeyFieldsMapping ): ]
         for iP in range( len( self.__summaryValueFieldsMapping ) ):
           rD[ self.__summaryValueFieldsMapping[iP] ] = int( record[iP] )
