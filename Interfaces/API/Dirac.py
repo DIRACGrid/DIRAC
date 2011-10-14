@@ -38,8 +38,8 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient     import Sandbox
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection, getServiceURL
-from DIRAC.Core.Security.Misc                                import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOForGroup
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite

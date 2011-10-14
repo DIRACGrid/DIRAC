@@ -7,7 +7,7 @@ a data management operation
 import os, xml.dom.minidom, types, time, copy, datetime
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR, Time
-from DIRAC.Core.Security.Misc import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 

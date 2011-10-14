@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
-from DIRAC.Core.Security.Misc                           import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess                    import pythonCall
 from DIRAC.Core.Utilities.Pfn                           import pfnparse, pfnunparse
