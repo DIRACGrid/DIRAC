@@ -33,7 +33,7 @@ for switch in Script.getUnprocessedSwitches():
 
 from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
-from DIRAC.Core.Security.Misc                         import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
 from DIRAC                                            import gConfig, gLogger
 from DIRAC.Core.Utilities.List                        import intListToString
 csAPI = CSAPI()

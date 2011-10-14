@@ -7,7 +7,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers                 import getVO
 from DIRAC.Resources.Catalog.FileCatalogueBase                import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                                import fromEpoch
 from DIRAC.Core.Utilities.List                                import sortList, breakListIntoChunks
-from DIRAC.Core.Security.Misc                                 import getProxyInfo, formatProxyInfoAsString
+from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.CS                                   import getDNForUsername, getVOMSAttributeForGroup
 from stat import *
 import os, re, types, time
@@ -190,6 +190,23 @@ class LcgFileCatalogClient( FileCatalogueBase ):
               }
     return S_OK( resDict )
 
+  def __getPathAccess( self, path ):
+    """ Determine the permissions using the lfc function lfc_access """
+    fullLfn = '%s%s' % ( self.prefix, path )
+    permDict = { 'Read': 1,
+                 'Write': 2,
+                 'Execute': 4}
+    resDict = {}
+    for p in permDict.keys():
+
+      code = permDict[ p ]
+      value = lfc.lfc_access( fullLfn, code )
+      if value == 0:
+        resDict[ p ] = True
+      else:
+        resDict[ p ] = False
+    return S_OK( resDict )
+
   def getPathPermissions( self, path ):
     """ Determine the VOMs based ACL information for a supplied path
     """
@@ -206,37 +223,28 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         failed[path] = res['Message']
       else:
         basePath = res['Value']
-        res = self.__getACLInformation( basePath )
+        res = self.__getPathAccess( basePath )
         if not res['OK']:
           failed[path] = res['Message']
         else:
-          # Evaluate access rights
-          lfcPerm = res['Value']
-          resClient = self.__getClientCertInfo()
-          if not resClient['OK']:
-            failed[path] = resClient['Message']
+          LFCPerm = res['Value']
+          res = self.__getACLInformation( basePath )
+          if not res['OK']:
+            failed[path] = res['Message']
           else:
-            clientInfo = resClient['Value']
-            groupMatch = False
-            for vomsRole in clientInfo['Role']:
-              if vomsRole.endswith( lfcPerm['Role'] ):
-                groupMatch = True
-            if ( lfcPerm['DN'] in clientInfo['AllDNs'] ):
-              if groupMatch:
-                perms = lfcPerm['user']
-              else:
-                perms = lfcPerm['world']
-            else:
-              if groupMatch:
-                perms = lfcPerm['group']
-              else:
-                perms = lfcPerm['world']
-
-            lfcPerm['Write'] = ( perms & 2 ) != 0
-            lfcPerm['Read'] = ( perms & 4 ) != 0
-            lfcPerm['Execute'] = ( perms & 1 ) != 0
-
-            successful[path] = lfcPerm
+          # Evaluate access rights
+            val = res['Value']
+            try:
+              LFCPerm['user'] = val['user']
+              LFCPerm['group'] = val['group']
+              LFCPerm['world'] = val['world']
+              LFCPerm['DN'] = val['DN']
+              LFCPerm['Role'] = val['Role']
+            except KeyError:
+              print 'key not found: __getACLInformation returned incomplete dictionary', KeyError
+              failed[path] = LFCPerm
+              continue
+          successful[path] = LFCPerm
 
     if created:
       self.__closeSession()

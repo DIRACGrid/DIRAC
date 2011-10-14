@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 import os, types
 from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
-from DIRAC.Core.Security.Misc                         import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR
 
 def executeGridCommand( proxy, cmd, gridEnvScript = None ):

@@ -3,8 +3,8 @@ __RCSID__ = "$Id: TaskManager.py 19505 2009-12-15 15:43:27Z paterson $"
 COMPONENT_NAME='TaskManager'
 
 from DIRAC                                                      import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
-from DIRAC.Core.Security.Misc                                   import getProxyInfo
+from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import sortList
 
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer

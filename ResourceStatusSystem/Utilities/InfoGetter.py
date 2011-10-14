@@ -143,21 +143,18 @@ class InfoGetter:
         ConfirmationPolicy = self.C_Policies[p]['ConfirmationPolicy']
       except KeyError:
         ConfirmationPolicy = None
-#      args = self.C_Policies[p]['args']
-      if useNewRes:
-        try:
-          commandIn = self.C_Policies[p]['commandInNewRes']
-        except:
-          commandIn = self.C_Policies[p]['commandIn']
-      else:
-        commandIn = self.C_Policies[p]['commandIn']
 
       if useNewRes:
         try:
+          commandIn = self.C_Policies[p]['commandInNewRes']
+        except KeyError:
+          commandIn = self.C_Policies[p]['commandIn']
+        try:
           args = self.C_Policies[p]['argsNewRes']
-        except:
+        except KeyError:
           args = self.C_Policies[p]['args']
       else:
+        commandIn = self.C_Policies[p]['commandIn']
         args = self.C_Policies[p]['args']
 
       polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args,
@@ -207,109 +204,54 @@ class InfoGetter:
 
     info = []
 
-    for p in self.C_Policies.keys():
-      if panel_name in self.C_Policies[p].keys():
+    # First, select only policies we want.
+    argsdict = {'Granularity': granularity,
+                'Status': status,
+                'FormerStatus': formerStatus,
+                'SiteType': siteType,
+                'ServiceType': serviceType,
+                'ResourceType': resourceType}
 
-        toAppend = copy.deepcopy(self.C_Policies[p][panel_name])
+    all_policies = getTypedDictRootedAt("Policies")
+    selected_policies = []
+    for p in all_policies:
+      if Utils.dictMatch(argsdict, all_policies[p]):
+        selected_policies.append(p)
 
-        if not useNewRes:
-          for i in range(len(toAppend)):
-            for info_type in toAppend[i].keys():
+    for p in selected_policies:                   # For selected policies
+      if panel_name in self.C_Policies[p].keys(): # For selected panel_name (arguments)
 
-              try:
-                command = toAppend[i][info_type]['CommandIn']
-                toAppend[i][info_type]['CommandIn'] = command
-                del toAppend[i][info_type]['CommandInNewRes']
-              except:
-                pass
-              try:
-                args = toAppend[i][info_type]['args']
-                toAppend[i][info_type]['args'] = args
-                del toAppend[i][info_type]['argsNewRes']
-              except:
-                pass
+        toAppend = copy.deepcopy(self.C_Policies[p][panel_name]) # type(toAppend) = list
 
+        # Put CommandIn and args to correct values according to useNewRes
+        if useNewRes:
+          for panel in toAppend:
+            for info_type in panel.keys():
+
+              if type(panel[info_type]) == dict:
+                try:
+                  panel[info_type]['CommandIn'] = panel[info_type]['CommandInNewRes']
+                  del panel[info_type]['CommandInNewRes']
+                except KeyError:
+                  pass
+                try:
+                  panel[info_type]['args'] = panel[info_type]['argsNewRes']
+                  del panel[info_type]['argsNewRes']
+                except KeyError:
+                  pass
         else:
-          for i in range(len(toAppend)):
-            for info_type in toAppend[i].keys():
-
-              if isinstance(toAppend[i][info_type], dict):
-                try:
-                  command = toAppend[i][info_type]['CommandInNewRes']
-                  del toAppend[i][info_type]['CommandInNewRes']
-                except:
-                  command = toAppend[i][info_type]['CommandIn']
-                toAppend[i][info_type]['CommandIn'] = command
-
-
-                try:
-                  args = toAppend[i][info_type]['argsNewRes']
-                  del toAppend[i][info_type]['argsNewRes']
-                except:
-                  args = toAppend[i][info_type]['args']
-                toAppend[i][info_type]['args'] = args
+          for panel in toAppend:
+            for info_type in panel.keys():
+              try:
+                del panel[info_type]['CommandInNewRes']
+              except KeyError:
+                pass
+              try:
+                del panel[info_type]['argsNewRes']
+              except KeyError:
+                pass
 
         info.append({p:toAppend})
-
-        if granularity is not None:
-          if granularity not in self.C_Policies[p]['Granularity']:
-            try:
-              for x in info:
-                if p in x.keys():
-                  toRemove = x
-              info.remove(toRemove)
-            except Exception:
-              continue
-
-        if status is not None:
-          if status not in self.C_Policies[p]['Status']:
-            try:
-              for x in info:
-                if p in x.keys():
-                  toRemove = x
-              info.remove(toRemove)
-            except Exception:
-              continue
-
-        if formerStatus is not None:
-          if formerStatus not in self.C_Policies[p]['FormerStatus']:
-            try:
-              for x in info:
-                if p in x.keys():
-                  toRemove = x
-              info.remove(toRemove)
-            except Exception:
-              continue
-
-        if siteType is not None:
-          if siteType not in self.C_Policies[p]['SiteType']:
-            try:
-              for x in info:
-                if p in x.keys():
-                  toRemove = x
-              info.remove(toRemove)
-            except Exception:
-              continue
-
-        if serviceType is not None:
-          if serviceType not in self.C_Policies[p]['ServiceType']:
-            try:
-              for x in info:
-                if p in x.keys():
-                  toRemove = x
-              info.remove(toRemove)
-            except Exception:
-              continue
-
-        if resourceType is not None:
-          if resourceType not in self.C_Policies[p]['ResourceType']:
-            try:
-              for x in info:
-                if p in x.keys():
-                  toRemove = x
-              info.remove(toRemove)
-            except Exception:
-              continue
 
     return info
 

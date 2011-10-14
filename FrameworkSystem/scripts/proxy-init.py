@@ -20,31 +20,13 @@ import getpass
 import imp
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC import gConfig, gLogger
 Script.disableCS()
 
 from DIRAC.FrameworkSystem.Client.ProxyGeneration import CLIParams, generateProxy
 from DIRAC.FrameworkSystem.Client.ProxyUpload import uploadProxy
-
-cliParams = CLIParams()
-cliParams.registerCLISwitches()
-
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgfile] ...' % Script.scriptName, ] ) )
-
-Script.parseCommandLine()
-
-diracGroup = cliParams.getDIRACGroup()
-time = cliParams.getProxyLifeTime()
-
-retVal = generateProxy( cliParams )
-if not retVal[ 'OK' ]:
-  print "Can't create a proxy: %s" % retVal[ 'Message' ]
-  sys.exit( 1 )
-
-from DIRAC import gConfig, gLogger
 from DIRAC.Core.Security import CS, Properties
-from DIRAC.Core.Security.Misc import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.VOMS import VOMS
 
@@ -66,16 +48,16 @@ def uploadProxyToMyProxy( params, DNAsUsername ):
       return True
   retVal = generateProxy( params )
   if not retVal[ 'OK' ]:
-    print " There was a problem generating proxy to be uploaded to myproxy: %s" % retVal[ 'Message' ]
+    gLogger.error( " There was a problem generating proxy to be uploaded to myproxy: %s" % retVal[ 'Message' ] )
     return False
   retVal = getProxyInfo( retVal[ 'Value' ] )
   if not retVal[ 'OK' ]:
-    print " There was a problem generating proxy to be uploaded to myproxy: %s" % retVal[ 'Message' ]
+    gLogger.error( " There was a problem generating proxy to be uploaded to myproxy: %s" % retVal[ 'Message' ] )
     return False
   generatedProxyInfo = retVal[ 'Value' ]
   retVal = myProxy.uploadProxy( generatedProxyInfo[ 'path' ], useDNAsUserName = DNAsUsername )
   if not retVal[ 'OK' ]:
-    print " Can't upload to myproxy: %s" % retVal[ 'Message' ]
+    gLogger.error( " Can't upload to myproxy: %s" % retVal[ 'Message' ] )
     return False
   gLogger.verbose( " Uploaded" )
   return True
@@ -88,84 +70,110 @@ def uploadProxyToDIRACProxyManager( params ):
   params.onTheFly = True
   retVal = uploadProxy( params )
   if not retVal[ 'OK' ]:
-    print " There was a problem generating proxy to be uploaded proxy manager: %s" % retVal[ 'Message' ]
+    gLogger.error( " There was a problem generating proxy to be uploaded proxy manager: %s" % retVal[ 'Message' ] )
     return False
   return True
 
-Script.enableCS()
 
-retVal = getProxyInfo( retVal[ 'Value' ] )
-if not retVal[ 'OK' ]:
-  print "Can't create a proxy: %s" % retVal[ 'Message' ]
-  sys.exit( 1 )
+if __name__ == "__main__":
 
-proxyInfo = retVal[ 'Value' ]
-if 'username' not in proxyInfo:
-  print "Not authorized in DIRAC"
-  sys.exit( 1 )
+  cliParams = CLIParams()
+  cliParams.registerCLISwitches()
 
-retVal = CS.getGroupsForUser( proxyInfo[ 'username' ] )
-if not retVal[ 'OK' ]:
-  print "No groups defined for user %s" % proxyInfo[ 'username' ]
-  sys.exit( 1 )
-availableGroups = retVal[ 'Value' ]
+  Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                       'Usage:',
+                                       '  %s [option|cfgfile] ...' % Script.scriptName, ] ) )
+  Script.disableCS()
+  Script.parseCommandLine()
+  gConfig.setOptionValue( "/DIRAC/Security/UseServerCertificate", "no" )
 
-pilotGroup = False
-for group in availableGroups:
-  groupProps = CS.getPropertiesForGroup( group )
-  if Properties.PILOT in groupProps or Properties.GENERIC_PILOT in groupProps:
-    pilotGroup = group
-    break
+  diracGroup = cliParams.getDIRACGroup()
+  time = cliParams.getProxyLifeTime()
 
-
-myProxyFlag = gConfig.getValue( '/DIRAC/VOPolicy/UseMyProxy', False )
-
-issuerCert = proxyInfo[ 'chain' ].getIssuerCert()[ 'Value' ]
-remainingSecs = issuerCert.getRemainingSecs()[ 'Value' ]
-cliParams.setProxyRemainingSecs( remainingSecs - 300 )
-
-if not pilotGroup:
-  print "WARN: No pilot group defined for user %s" % proxyInfo[ 'username' ]
-  if cliParams.strict:
+  retVal = generateProxy( cliParams )
+  if not retVal[ 'OK' ]:
+    gLogger.error( "Can't create a proxy: %s" % retVal[ 'Message' ] )
     sys.exit( 1 )
-else:
-  cliParams.setDIRACGroup( pilotGroup )
+  gLogger.info( "Proxy created" )
+
+  Script.enableCS()
+
+  retVal = getProxyInfo( retVal[ 'Value' ] )
+  if not retVal[ 'OK' ]:
+    gLogger.error( "Can't create a proxy: %s" % retVal[ 'Message' ] )
+    sys.exit( 1 )
+
+  proxyInfo = retVal[ 'Value' ]
+  if 'username' not in proxyInfo:
+    print "Not authorized in DIRAC"
+    sys.exit( 1 )
+
+  retVal = CS.getGroupsForUser( proxyInfo[ 'username' ] )
+  if not retVal[ 'OK' ]:
+    gLogger.error( "No groups defined for user %s" % proxyInfo[ 'username' ] )
+    sys.exit( 1 )
+  availableGroups = retVal[ 'Value' ]
+
+  pilotGroup = False
+  for group in availableGroups:
+    groupProps = CS.getPropertiesForGroup( group )
+    if Properties.PILOT in groupProps or Properties.GENERIC_PILOT in groupProps:
+      pilotGroup = group
+      break
+
+
+  myProxyFlag = gConfig.getValue( '/DIRAC/VOPolicy/UseMyProxy', False )
+
+  issuerCert = proxyInfo[ 'chain' ].getIssuerCert()[ 'Value' ]
+  remainingSecs = issuerCert.getRemainingSecs()[ 'Value' ]
+  cliParams.setProxyRemainingSecs( remainingSecs - 300 )
+
+  if not pilotGroup:
+    if cliParams.strict:
+      gLogger.error( "No pilot group defined for user %s" % proxyInfo[ 'username' ] )
+      sys.exit( 1 )
+    else:
+      gLogger.warn( "No pilot group defined for user %s" % proxyInfo[ 'username' ] )
+  else:
+    cliParams.setDIRACGroup( pilotGroup )
+    if myProxyFlag:
+      uploadProxyToMyProxy( cliParams, True )
+    success = uploadProxyToDIRACProxyManager( cliParams )
+    if not success and cliParams.strict:
+      sys.exit( 1 )
+
+  cliParams.setDIRACGroup( proxyInfo[ 'group' ] )
   if myProxyFlag:
-    uploadProxyToMyProxy( cliParams, True )
+    uploadProxyToMyProxy( cliParams, False )
   success = uploadProxyToDIRACProxyManager( cliParams )
   if not success and cliParams.strict:
     sys.exit( 1 )
 
-cliParams.setDIRACGroup( proxyInfo[ 'group' ] )
-if myProxyFlag:
-  uploadProxyToMyProxy( cliParams, False )
-success = uploadProxyToDIRACProxyManager( cliParams )
-if not success and cliParams.strict:
-  sys.exit( 1 )
+  finalChain = proxyInfo[ 'chain' ]
 
-finalChain = proxyInfo[ 'chain' ]
+  vomsMapping = CS.getVOMSAttributeForGroup( proxyInfo[ 'group' ] )
+  vo = CS.getVOMSVOForGroup( proxyInfo[ 'group' ] )
+  if vomsMapping:
+    voms = VOMS()
+    retVal = voms.setVOMSAttributes( finalChain, vomsMapping, vo )
+    if not retVal[ 'OK' ]:
+      #print "Cannot add voms attribute %s to proxy %s: %s" % ( attr, proxyInfo[ 'path' ], retVal[ 'Message' ] )
+      msg = "Warning : Cannot add voms attribute %s to proxy\n" % ( vomsMapping )
+      msg += "          Accessing data in the grid storage from the user interface will not be possible.\n"
+      msg += "          The grid jobs will not be affected."
+      if cliParams.strict:
+        gLogger.error( msg )
+        sys.exit( 1 )
+      gLogger.warn( msg )
+    else:
+      finalChain = retVal[ 'Value' ]
 
-vomsMapping = CS.getVOMSAttributeForGroup( proxyInfo[ 'group' ] )
-vo = CS.getVOMSVOForGroup( proxyInfo[ 'group' ] )
-if vomsMapping:
-  voms = VOMS()
-  retVal = voms.setVOMSAttributes( finalChain, vomsMapping, vo )
+  retVal = finalChain.dumpAllToFile( proxyInfo[ 'path' ] )
   if not retVal[ 'OK' ]:
-    #print "Cannot add voms attribute %s to proxy %s: %s" % ( attr, proxyInfo[ 'path' ], retVal[ 'Message' ] )
-    print "Warning : Cannot add voms attribute %s to proxy" % ( vomsMapping )
-    print "          Accessing data in the grid storage from the user interface will not be possible."
-    print "          The grid jobs will not be affected."
-    if cliParams.strict:
-      sys.exit( 1 )
-  else:
-    finalChain = retVal[ 'Value' ]
-
-retVal = finalChain.dumpAllToFile( proxyInfo[ 'path' ] )
-if not retVal[ 'OK' ]:
-  print "Cannot write proxy to file %s" % proxyInfo[ 'path' ]
-  sys.exit( 1 )
-cliParams.debugMsg( "done" )
-sys.exit( 0 )
+    gLogger.error( "Cannot write proxy to file %s" % proxyInfo[ 'path' ] )
+    sys.exit( 1 )
+  gLogger.notice( "done" )
+  sys.exit( 0 )
 
 
 

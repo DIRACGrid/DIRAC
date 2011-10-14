@@ -13,7 +13,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Security                            import File
-from DIRAC.Core.Security.Misc                       import getProxyInfoAsString
+from DIRAC.Core.Security.ProxyInfo                  import getProxyInfoAsString
 from DIRAC.Core.Utilities.Time                      import dateTime, second
 from DIRAC                                          import S_OK, S_ERROR, gLogger, version
 
