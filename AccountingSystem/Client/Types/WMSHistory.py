@@ -7,9 +7,9 @@ class WMSHistory( BaseAccountingType ):
 
   def __init__( self ):
     BaseAccountingType.__init__( self )
-    self.definitionKeyFields = [ ( 'Status', "VARCHAR(256)" ),
-                                 ( 'MinorStatus', 'VARCHAR(256)' ),
-                                 ( 'ApplicationStatus', 'VARCHAR(256)' ),
+    self.definitionKeyFields = [ ( 'Status', "VARCHAR(128)" ),
+                                 ( 'MinorStatus', 'VARCHAR(128)' ),
+                                 ( 'ApplicationStatus', 'VARCHAR(128)' ),
                                  ( 'Site', 'VARCHAR(128)' ),
                                  ( 'User', 'VARCHAR(128)' ),
                                  ( 'UserGroup', 'VARCHAR(128)' ),
