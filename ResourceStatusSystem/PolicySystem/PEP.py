@@ -60,7 +60,7 @@ class PEP:
   """
 
   def __init__( self, VOExtension, pdp = None, rsClient = None, rmDB = None, nc = None,
-                setup = None, da = None, csAPI = None, knownInfo = None):
+                setup = None, da = None, csAPI = None):
 
     """
     enforce policies, using a PDP  (Policy Decision Point), based on
@@ -136,7 +136,7 @@ class PEP:
     if da is None:
       from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
       da = DiracAdmin()
-    self.ds = da
+    self.da = da
 
     #CSAPI
     if csAPI is None:
@@ -208,11 +208,11 @@ class PEP:
 
       if 'Alarm_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Alarm_PolType", self.VOExtension)
-        m.AlarmPolTypeActions(name, res, statusType, self.nc, self.setup, self.rsClient, self.rmDB,
-                              Granularity = granularity,
-                              SiteType = siteType,
-                              ServiceType = serviceType,
-                              ResourceType = resourceType)
+        m.AlarmPolType(name, res, statusType, self.nc, self.setup, self.rsClient, self.rmDB,
+                       Granularity = granularity,
+                       SiteType = siteType,
+                       ServiceType = serviceType,
+                       ResourceType = resourceType)
 
       if 'RealBan_PolType' in policyType and realBan == True:
         m = Utils.voimport(actionBaseMod + ".RealBan_PolType", self.VOExtension)
