@@ -51,17 +51,17 @@ def AlarmPolTypeActions(name, res, statusType, nc, setup, rsClient, rmDB, **kwar
         if 'Web' in notification['Notifications']:
           nc.addNotificationForUser(user, notif)
         if 'Mail' in notification['Notifications']:
-          
+
           histGetter = getattr( rsClient, 'get%ssHistory' % granularity )
-          
+
           kwargs = { '%sName'     : name,
                      'statusType' : statusType,
-                     'columns'    : ['Status', 'Reason', 'DateEffective'], 
+                     'columns'    : ['Status', 'Reason', 'DateEffective'],
                      'order'      : 'DESC',
                      'limit'      : 1 }
-          
+
           was = histGetter( **kwargs )[ 'Value' ][ 0 ]
-          
+
           #was = rsClient.getMonitoredsHistory( granularity,
           #                                 paramsList = ['Status', 'Reason', 'DateEffective'],
           #                                 name = name, presentAlso = False, order = 'DESC', limit = 1 )['Value'][0]
@@ -75,4 +75,4 @@ Setup = %s
 """ % (granularity, name, res['Status'], res['Reason'], was[0], was[1], was[2], setup)
 
           nc.sendMail(rmDB.registryGetMailFromLogin(user),
-                      '%s: %s' % (name, res['Status']), mailMessage)
+                      '[RSS] Status change for site %s: %s -> %s' % (name,  res['Status'], was[0]), mailMessage)
