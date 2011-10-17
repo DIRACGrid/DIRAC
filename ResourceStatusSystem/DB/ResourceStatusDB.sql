@@ -39,7 +39,7 @@ DROP TABLE IF EXISTS Site;
 CREATE TABLE Site(
   SiteName VARCHAR(64) NOT NULL,
   SiteType VARCHAR(8) NOT NULL,
-  GridSiteName VARCHAR(64) NOT NULL,
+  GridSiteName VARCHAR(64),
   INDEX (GridSiteName),
   PRIMARY KEY(SiteName)
 ) Engine=InnoDB;
@@ -105,32 +105,32 @@ CREATE TABLE SiteHistory(
 ) Engine = InnoDB;
 
 DROP VIEW IF EXISTS SitePresent;
-CREATE VIEW SitePresent AS SELECT 
-  Site.SiteName, 
+CREATE VIEW SitePresent AS SELECT
+  Site.SiteName,
   Site.SiteType,
   Site.GridSiteName,
   GridSite.GridTier,
   SiteStatus.StatusType,
   SiteStatus.Status,
-  SiteStatus.DateEffective, 
+  SiteStatus.DateEffective,
   SiteStatus.Reason,
   SiteStatus.LastCheckTime,
   SiteStatus.TokenOwner,
   SiteStatus.TokenExpiration,
   SiteHistory.Status AS FormerStatus
-FROM ( 
+FROM (
   (
-    ( Site 
-        INNER JOIN GridSite ON 
+    ( Site
+        INNER JOIN GridSite ON
           Site.GridSiteName = GridSite.GridSiteName
     )
-    INNER JOIN SiteHistory ON 
+    INNER JOIN SiteHistory ON
       Site.SiteName = SiteHistory.SiteName
   )
   INNER JOIN SiteStatus ON
     Site.SiteName = SiteStatus.SiteName AND
     SiteHistory.DateEnd = SiteStatus.DateEffective AND
-    SiteHistory.StatusType = SiteStatus.StatusType 
+    SiteHistory.StatusType = SiteStatus.StatusType
 ) WHERE SiteStatus.DateEffective < UTC_TIMESTAMP()
 ORDER BY SiteName, DateEffective;
 
@@ -209,32 +209,32 @@ CREATE TABLE ServiceHistory(
 ) Engine=InnoDB;
 
 DROP VIEW IF EXISTS ServicePresent;
-CREATE VIEW ServicePresent AS SELECT 
+CREATE VIEW ServicePresent AS SELECT
   Service.ServiceName,
-  Service.SiteName, 
+  Service.SiteName,
   Site.SiteType,
-  Service.ServiceType, 
+  Service.ServiceType,
   ServiceStatus.StatusType,
   ServiceStatus.Status,
-  ServiceStatus.DateEffective, 
+  ServiceStatus.DateEffective,
   ServiceStatus.Reason,
   ServiceStatus.LastCheckTime,
-  ServiceStatus.TokenOwner, 
+  ServiceStatus.TokenOwner,
   ServiceStatus.TokenExpiration,
   ServiceHistory.Status AS FormerStatus
-  FROM ( 
+  FROM (
   (
-    ( Service 
-        INNER JOIN Site ON 
+    ( Service
+        INNER JOIN Site ON
           Service.SiteName = Site.SiteName
     )
-    INNER JOIN ServiceHistory ON 
+    INNER JOIN ServiceHistory ON
       Service.ServiceName = ServiceHistory.ServiceName
   )
   INNER JOIN ServiceStatus ON
     Service.ServiceName = ServiceStatus.ServiceName AND
     ServiceHistory.DateEnd = ServiceStatus.DateEffective AND
-    ServiceHistory.StatusType = ServiceStatus.StatusType 
+    ServiceHistory.StatusType = ServiceStatus.StatusType
 ) WHERE ServiceStatus.DateEffective < UTC_TIMESTAMP()
 ORDER BY ServiceName, DateEffective;
 
@@ -316,34 +316,34 @@ CREATE TABLE ResourceHistory(
 ) Engine=InnoDB;
 
 DROP VIEW IF EXISTS ResourcePresent;
-CREATE VIEW ResourcePresent AS SELECT 
-  Resource.ResourceName, 
-  Resource.SiteName, 
+CREATE VIEW ResourcePresent AS SELECT
+  Resource.ResourceName,
+  Resource.SiteName,
   Resource.ServiceType,
-  Resource.GridSiteName, 
-  GridSite.GridTier AS SiteType, 
+  Resource.GridSiteName,
+  GridSite.GridTier AS SiteType,
   Resource.ResourceType,
   ResourceStatus.StatusType,
   ResourceStatus.Status,
-  ResourceStatus.DateEffective, 
+  ResourceStatus.DateEffective,
   ResourceStatus.Reason,
   ResourceStatus.LastCheckTime,
-  ResourceStatus.TokenOwner, 
+  ResourceStatus.TokenOwner,
   ResourceStatus.TokenExpiration,
   ResourceHistory.Status AS FormerStatus
 FROM (
   (
-    ( Resource 
-        INNER JOIN GridSite ON 
+    ( Resource
+        INNER JOIN GridSite ON
           Resource.GridSiteName = GridSite.GridSiteName
     )
-    INNER JOIN ResourceHistory ON 
+    INNER JOIN ResourceHistory ON
       Resource.ResourceName = ResourceHistory.ResourceName
   )
   INNER JOIN ResourceStatus ON
     Resource.ResourceName = ResourceStatus.ResourceName AND
     ResourceHistory.DateEnd = ResourceStatus.DateEffective AND
-    ResourceHistory.StatusType = ResourceStatus.StatusType 
+    ResourceHistory.StatusType = ResourceStatus.StatusType
 ) WHERE ResourceStatus.DateEffective < UTC_TIMESTAMP()
 ORDER BY ResourceName, DateEffective;
 
@@ -422,31 +422,31 @@ CREATE TABLE StorageElementHistory(
 ) Engine=InnoDB;
 
 DROP VIEW IF EXISTS StorageElementPresent;
-CREATE VIEW StorageElementPresent AS SELECT 
-  StorageElement.StorageElementName, 
+CREATE VIEW StorageElementPresent AS SELECT
+  StorageElement.StorageElementName,
   StorageElement.ResourceName,
-  StorageElement.GridSiteName, 
+  StorageElement.GridSiteName,
   GridSite.GridTier AS SiteType,
   StorageElementStatus.StatusType,
   StorageElementStatus.Status,
-  StorageElementStatus.DateEffective, 
+  StorageElementStatus.DateEffective,
   StorageElementStatus.Reason,
   StorageElementStatus.LastCheckTime,
   StorageElementStatus.TokenOwner,
   StorageElementStatus.TokenExpiration,
   StorageElementHistory.Status AS FormerStatus
-FROM ( 
+FROM (
   (
-    ( StorageElement 
-        INNER JOIN GridSite ON 
+    ( StorageElement
+        INNER JOIN GridSite ON
           StorageElement.GridSiteName = GridSite.GridSiteName
     )
-    INNER JOIN StorageElementHistory ON 
+    INNER JOIN StorageElementHistory ON
       StorageElement.StorageElementName = StorageElementHistory.StorageElementName
   )
   INNER JOIN StorageElementStatus ON
     StorageElement.StorageElementName = StorageElementStatus.StorageElementName AND
     StorageElementHistory.DateEnd = StorageElementStatus.DateEffective AND
-    StorageElementHistory.StatusType = StorageElementStatus.StatusType 
+    StorageElementHistory.StatusType = StorageElementStatus.StatusType
 ) WHERE StorageElementStatus.DateEffective < UTC_TIMESTAMP()
 ORDER BY StorageElementName, DateEffective;

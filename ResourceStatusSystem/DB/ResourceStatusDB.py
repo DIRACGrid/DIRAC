@@ -521,7 +521,7 @@ class ResourceStatusDB:
     # VALIDATION #
     self.rsVal.validateName(siteName)
     self.rsVal.validateSiteType( siteType )
-    self.rsVal.validateGridSite( gridSiteName )
+#    self.rsVal.validateGridSite( gridSiteName )
     # END VALIDATION #
     self.__addOrModifyElement( 'Site', rDict )
     return S_OK()

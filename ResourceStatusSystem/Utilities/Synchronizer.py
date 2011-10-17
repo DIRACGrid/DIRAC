@@ -34,7 +34,6 @@ class Synchronizer(object):
     """
 
     # FIXME: VOBOX not generic
-    # FIXME: Add DIRACSites -> Cannot for now (Not in GOCDB!!)
 
     thingsToSync = [ 'Sites', 'VOBOX', 'Resources', 'StorageElements', "Services", "CondDBs", 'RegistryUsers' ]
     gLogger.info( "!!! Sync DB content with CS content for %s !!!" % ( ", ".join(thingsToSync) ) )
@@ -65,21 +64,25 @@ class Synchronizer(object):
     # add to DB what is missing
     print "Updating %d Sites in DB" % len(sitesCS - sitesDB)
     for site in sitesCS - sitesDB:
+      siteType = site.split(".")[0]
       # DIRAC Tier
       tier = "T" + str(Utils.unpack(CS.getSiteTier( site )))
+      if siteType == "LCG":
+        # Grid Name of the site
+        gridSiteName = Utils.unpack(getGOCSiteName(site))
 
-      # Grid Name of the site
-      gridSiteName = Utils.unpack(getGOCSiteName(site))
+        # Grid Tier (with a workaround!)
+        DIRACSitesOfGridSites = Utils.unpack(getDIRACSiteName(gridSiteName))
+        if len( DIRACSitesOfGridSites ) == 1:
+          gt = tier
+        else:
+          gt = getGOCTier( DIRACSitesOfGridSites )
 
-      # Grid Tier (with a workaround!)
-      DIRACSitesOfGridSites = Utils.unpack(getDIRACSiteName(gridSiteName))
-      if len( DIRACSitesOfGridSites ) == 1:
-        gt = tier
-      else:
-        gt = getGOCTier( DIRACSitesOfGridSites )
+        Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
+        Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
 
-      Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
-      Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
+      elif siteType == "DIRAC":
+        Utils.protect2(self.rsClient.addOrModifySite, site, tier, "NULL" )
 
 #############################################################################
 
