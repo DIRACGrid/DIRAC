@@ -87,6 +87,13 @@ class PBSTimeLeft:
 
     if not failed:
       return S_OK( consumed )
+
+    if cpuLimit and wallClockLimit:
+      # We have got a partial result from PBS, assume that we ran for too short time
+      # This is a temporary dirty solution, real consumption should be rather used, A.T.
+      consumed['CPU'] = 300
+      consumed['WallClock'] = 600
+      return S_OK( consumed )
     else:
       self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
       retVal = S_ERROR( 'Could not determine some parameters' )
