@@ -1,3 +1,13 @@
+[v6r0-pre10]
+
+*JobManager
+CHANGE: Parameters can be incremented with ParameterStep and multiplied 
+        by ParameterFactor JDL attributes, float parameters are also allowed
+        
+*TimeLeft
+CHANGE: Call batch system commands with the ( default ) timeout 120 sec
+CHANGE: PBSTimeLeft uses default CPU/WallClock if not present in the output        
+
 [v6r0-pre9]
 
 *Accounting
