@@ -7,8 +7,6 @@ from DIRAC.ResourceStatusSystem.Utilities.Decorators  import DBDec
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey, localsToDict
 from DIRAC.ResourceStatusSystem.Utilities.Validator   import ResourceStatusValidator
 
-################################################################################
-
 class ResourceStatusDB:
   """
   The ResourceStatusDB class is a front-end to the ResourceStatusDB MySQL db.

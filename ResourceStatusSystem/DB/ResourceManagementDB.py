@@ -6,8 +6,6 @@ __RCSID__ = "$Id:  $"
 from DIRAC.ResourceStatusSystem.Utilities.Decorators  import DBDec
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey, localsToDict
 
-################################################################################
-
 class ResourceManagementDB(object):
   """
   The ResourceManagementDB class is a front-end to the ResourceManagementDB MySQL db.
