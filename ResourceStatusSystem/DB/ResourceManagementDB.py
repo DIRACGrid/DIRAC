@@ -1,6 +1,6 @@
 __RCSID__ = "$Id:  $"
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import DBDec
+from DIRAC.ResourceStatusSystem.Utilities.Decorators  import DBDec
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey, localsToDict
 
 ################################################################################
