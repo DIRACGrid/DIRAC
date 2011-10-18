@@ -1,258 +1,225 @@
-""" 
-ResourceManagementClient class is a client for requesting info from the ResourceManagementService.
-"""
-# it crashes epydoc
-# __docformat__ = "restructuredtext en"
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-#from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB             import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators                import ClientExecution
+from DIRAC.ResourceStatusSystem.Utilities.Decorators                import ClientDec
 from DIRAC.ResourceStatusSystem.Utilities.ResourceManagementBooster import ResourceManagementBooster
 
 class ResourceManagementClient:
+  """
+  The ResourceManagementClient class exposes the ResourceStatus API. All functions
+  you need are on this client.
   
-################################################################################
+  It has the 'direct-db-access' functions, the ones of the type:
+    o insert
+    o update
+    o get
+    o delete 
+  
+  plus a set of functions of the type:
+    o getValid 
+    
+  that return parts of the RSSConfiguration stored on the CS, and used everywhere
+  on the RSS module. Finally, and probably more interesting, it exposes a set
+  of functions, badly called 'boosters'. They are 'home made' functions using the
+  basic database functions that are interesting enough to be exposed.  
+  
+  The client will ALWAYS try to connect to the DB, and in case of failure, to the
+  XML-RPC server ( namely ResourceManagementDB and ResourceManagementHandler ).
 
+  You can use this client on this way
+
+   >>> from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import \
+         ResourceManagementClient
+   >>> rsClient = ResourceManagementClient()
+   
+  If you want to know more about ResourceManagementClient, scroll down to the end of
+  the file.  
+  """
+  
   def __init__( self , serviceIn = None ):
-    """ Constructor of the ResourceStatusClient class
-    """
  
     if serviceIn == None:
       try:
         self.gate = ResourceManagementDB()
-      except Exception, x:
-        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )
-        
+      except Exception:
+        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
     else:
       self.gate = serviceIn
       
     self.booster = ResourceManagementBooster( self )  
 
 ################################################################################
+# DB ###########################################################################
 
-################################################################################
-# EnvironmentCache functions
-################################################################################
-
-################################################################################
-
-  @ClientExecution
-  def addOrModifyEnvironmentCache( self, hashEnv, siteName, environment ):
+  '''
+  ##############################################################################
+  # ENVIRONMENT CACHE FUNCTIONS
+  ##############################################################################
+  '''
+  @ClientDec
+  def insertEnvironmentCache( self, hashEnv, siteName, environment ):
     pass
-  
-  @ClientExecution
-  def getEnvironmentCache( self, hashEnv = None, siteName = None, environment = None, 
-                           **kwargs ):
+  @ClientDec
+  def updateEnvironmentCache( self, hashEnv, siteName, environment ):
     pass
-  
-  @ClientExecution
-  def deleteEnvironmentCache( self, hashEnv = None, siteName = None, environment = None, 
-                              **kwargs ):
+  @ClientDec
+  def getEnvironmentCache( self, hashEnv = None, siteName = None, 
+                           environment = None, **kwargs ):
+    pass
+  @ClientDec
+  def deleteEnvironmentCache( self, hashEnv = None, siteName = None, 
+                              environment = None, **kwargs ):
     pass
 
-################################################################################
-
-################################################################################
-# PolicyResult functions
-################################################################################
-
-################################################################################
+# DB ###########################################################################
+# DB ###########################################################################
   
-  @ClientExecution
-  def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
+  '''
+  ##############################################################################
+  # POLICY RESULT FUNCTIONS
+  ##############################################################################
+  '''
+  @ClientDec
+  def insertPolicyResult( self, granularity, name, policyName, statusType,
+                               status, reason, dateEffective, lastCheckTime ):
+    pass 
+  @ClientDec
+  def updatePolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime ):
     pass
-  
-  @ClientExecution
+  @ClientDec
   def getPolicyResult( self, granularity = None, name = None, policyName = None, 
                        statusType = None, status = None, reason = None, 
                        dateEffective = None, lastCheckTime = None, **kwargs ):
     pass
-  
-  @ClientExecution
+  @ClientDec
   def deletePolicyResult( self, granularity = None, name = None, policyName = None, 
                           statusType = None, status = None, reason = None, 
                           dateEffective = None, lastCheckTime = None, **kwargs ):
     pass
-  
-################################################################################
 
-################################################################################
-# PolicyResult functions
-################################################################################
+# DB ###########################################################################
+# DB ###########################################################################
 
-################################################################################  
-  
-  @ClientExecution
-  def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
-                              dateEffective, lastCheckTime ):
+  '''
+  ##############################################################################
+  # CLIENT CACHE FUNCTIONS
+  ##############################################################################
+  '''    
+  @ClientDec
+  def insertClientCache( self, name, commandName, opt_ID, value, result,
+                         dateEffective, lastCheckTime ):
     pass
-  
-  @ClientExecution
-  def getClientCache( self, name = None, commandName = None, opt_ID = None, value = None, 
-                      result = None, dateEffective = None, lastCheckTime = None, **kwargs ):
+  @ClientDec
+  def updateClientCache( self, name, commandName, opt_ID, value, result,
+                         dateEffective, lastCheckTime ):
     pass
-   
-  @ClientExecution 
+  @ClientDec
+  def getClientCache( self, name = None, commandName = None, opt_ID = None, 
+                      value = None, result = None, dateEffective = None, 
+                      lastCheckTime = None, **kwargs ):
+    pass
+  @ClientDec 
   def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
                          lastCheckTime = None, **kwargs ):
     pass
 
-################################################################################
+# DB ###########################################################################
+# DB ###########################################################################
 
-################################################################################
-# PolicyResult functions
-################################################################################
-
-################################################################################
-  
-  @ClientExecution
-  def addOrModifyAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                                  lastCheckTime ):
+  '''
+  ##############################################################################
+  # ACCOUNTING CACHE FUNCTIONS
+  ##############################################################################
+  '''
+  @ClientDec
+  def insertAccountingCache( self, name, plotType, plotName, result, 
+                             dateEffective, lastCheckTime ):
     pass
-  
-  @ClientExecution
+  @ClientDec
+  def updateAccountingCache( self, name, plotType, plotName, result, 
+                             dateEffective, lastCheckTime ):
+    pass
+  @ClientDec
   def getAccountingCache( self, name = None, plotType = None, plotName = None, 
-                          result = None, dateEffective = None, lastCheckTime = None, 
-                          **kwargs ):
+                          result = None, dateEffective = None, 
+                          lastCheckTime = None, **kwargs ):
     pass
-  
-  @ClientExecution
+  @ClientDec
   def deleteAccountingCache( self, name = None, plotType = None, plotName = None, 
-                             result = None, dateEffective = None, lastCheckTime = None, 
-                             **kwargs ):
+                             result = None, dateEffective = None, 
+                             lastCheckTime = None, **kwargs ):
     pass
 
-################################################################################
-
-################################################################################
-# PolicyResult functions
-################################################################################
-
-################################################################################
+# DB ###########################################################################
+# DB ###########################################################################
   
-  @ClientExecution
-  def addOrModifyUserRegistryCache( self, login, name, email ):
+  '''
+  ##############################################################################
+  # USER REGISTRY FUNCTIONS
+  ##############################################################################
+  '''  
+  
+  @ClientDec
+  def insertUserRegistryCache( self, login, name, email ):
+    pass
+
+  @ClientDec
+  def updateUserRegistryCache( self, login, name, email ):
     pass
   
-  @ClientExecution
+  @ClientDec
   def getUserRegistryCache( self, login = None, name = None, email = None, 
                             **kwargs ):
     pass
   
-  @ClientExecution 
+  @ClientDec 
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                **kwargs ):                                            
     pass
 
+# DB ###########################################################################
+# BOOSTER ######################################################################
+
+  '''
+  ##############################################################################
+  # DB specific Boosters
+  ##############################################################################
+  '''
+  @ClientDec
+  def addOrModifyEnvironmentCache( self, hashEnv, siteName, environment ):
+    pass
+  @ClientDec
+  def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
+                               status, reason, dateEffective, lastCheckTime ):
+    pass
+  @ClientDec
+  def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
+                              dateEffective, lastCheckTime ):
+    pass
+  @ClientDec
+  def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
+                                  dateEffective, lastCheckTime ):
+    pass
+  @ClientDec
+  def addOrModifyUserRegistryCache( self, login, name, email ):
+    pass  
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
-
-##############################################################################
-#  
-#  def getEnvironmentCache( self, hash, siteName ):
-#    
-#    res = self.rsM.getEnvironmentCache( hash, siteName )
-#    if not res['OK']:
-#      raise RSSException, where( self, self.getEnvironmentCache) + " " + res['Message']
-##    
-##    return res['Value'] 
-#    return res
-#
-##############################################################################
-#  
-#  def addOrModifyEnvironmentCache( self, hash, siteName, environment ):
-#    
-#    res = self.rsM.addOrModifyEnvironmentCache( hash, siteName, environment )
-#    if not res['OK']:
-#      raise RSSException, where( self, self.addOrModifyEnvironmentCache) + " " + res['Message']
-#
-#    return res 
-#   
-##############################################################################
-#
-#  def getCachedAccountingResult(self, name, plotType, plotName):
-#    """ 
-#    Returns a cached accounting plot
-#        
-#    :Parameters:
-#      `name`
-#        string, should be the name of the res
-#      
-#      `plotType`
-#        string, plot type
-#    
-#      `plotName`
-#        string, should be the plot name
-#      
-#    :returns:
-#      a plot
-#    """
-#
-#    res = self.rsM.getCachedAccountingResult(name, plotType, plotName)
-#    if not res['OK']:
-#      raise RSSException, where(self, self.getCachedAccountingResult) + " " + res['Message'] 
-#
-#    return res     
-#  
-##############################################################################
-#
-#  def getCachedResult(self, name, commandName, value, opt_ID = 'NULL'):
-#    """ 
-#    Returns a cached result;
-#        
-#    :Parameters:
-#      `name`
-#        string, name of site or resource
-#    
-#      `commandName`
-#        string
-#      
-#      `value`
-#        string
-#      
-#      `opt_ID`
-#        optional string
-#      
-#    :returns:
-#      (result, )
-#    """
-#
-#    res = self.rsM.getCachedResult(name, commandName, value, opt_ID)
-#    if not res['OK']:
-#      raise RSSException, where(self, self.getCachedResult) + " " + res['Message'] 
-#
-#    return res
-#
-##############################################################################
-#
-#  def getCachedIDs(self, name, commandName):
-#    """ 
-#    Returns a cached result;
-#        
-#    :Parameters:
-#      `name`
-#        string, name of site or resource
-#    
-#      `commandName`
-#        string
-#      
-#    :returns: (e.g.)
-#      [78805473L, 78805473L, 78805473L, 78805473L]
-#    """
-#
-#    res = self.rsM.getCachedIDs(name, commandName)
-#    if not res['OK']:
-#      raise RSSException, where(self, self.getCachedIDs) + " " + res['Message'] 
-#  
-##    ID_list = [x for x in res['Value']]
-#  
-##    return ID_list
-#    return res   
-#  
-##############################################################################
-#

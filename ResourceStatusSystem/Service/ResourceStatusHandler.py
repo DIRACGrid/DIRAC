@@ -1,39 +1,17 @@
-""" ``ResourceStatusHandler`` exposes the service of the Resource Status System.
-    It uses :mod:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB` for database persistence.
-
-    To use this service
-
-    >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
-    >>> server = RPCCLient("ResourceStatus/ResourceStatus")
-
-"""
-
+################################################################################
+# $HeadURL $
+################################################################################
 __RCSID__ = "$Id:  $"
 
-from datetime import datetime
-from types import NoneType
+from datetime                                          import datetime
+from types                                             import NoneType
 
-from DIRAC import gLogger, gConfig, S_OK#, S_ERROR
+from DIRAC                                             import gConfig, S_OK
+from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 
-#from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
-from DIRAC.Core.DISET.RequestHandler             import RequestHandler
-
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB#RSSDBException, ResourceStatusDB
-#from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-#from DIRAC.ResourceStatusSystem.Utilities.CS            import getExt
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions    import RSSException
-#from DIRAC.ResourceStatusSystem.Utilities.Utils         import whoRaised, where
-
-#from DIRAC.ResourceStatusSystem                        import ValidSiteType, \
-#      ValidServiceType, ValidResourceType, ValidStatus
-#from DIRAC.ResourceStatusSystem.Utilities.Publisher    import Publisher
-#from DIRAC.ResourceStatusSystem.Command.CommandCaller  import CommandCaller
-#from DIRAC.Core.DISET.RPCClient                        import RPCClient
-#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter   import InfoGetter
-
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.Utilities.Decorators   import HandlerDec
 from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
-
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import HandlerDec
 
 db = False
 
@@ -42,28 +20,48 @@ def initializeResourceStatusHandler( _serviceInfo ):
   global db
   db = ResourceStatusDB()
 
+# Publisher is on boxes right now
+# 
 #  rmDB = ResourceManagementDB()
-
 #  cc = CommandCaller()
-
 #  global VOExtension
 #  VOExtension = getExt()
-
 #  ig = InfoGetter( VOExtension )
-
 #  WMSAdmin = RPCClient( "WorkloadManagement/WMSAdministrator" )
-
 #  global publisher
 #  publisher = Publisher( VOExtension, dbIn = db, commandCallerIn = cc,
 #                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
 
   sync_O = Synchronizer()
   gConfig.addListenerToNewVersionEvent( sync_O.sync )
-
   return S_OK()
 
 class ResourceStatusHandler( RequestHandler ):
+  '''
+  The ResourceStatusHandler exposes the DB front-end functions through a XML-RPC
+  server.
+  
+  According to the ResourceStatusDB philosophy, only functions of the type:
+    o insert
+    o update
+    o get
+    o delete 
+  
+  are exposed. If you need anything more complicated, either look for it on the 
+  ResourceStatusClient, or code it yourself. This way the DB and the service keep
+  clean and tidied.
 
+  To can use this service on this way, but you MUST NOT DO IT. Use it through the
+  ResourceStatusClient. If offers in the worst case as good performance as the 
+  ResourceStatusHandler, if not better.
+
+   >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
+   >>> server = RPCCLient("ResourceStatus/ResourceStatus")
+   
+  If you want to know more about ResourceStatusHandler, scroll down to the end of
+  the file.  
+  '''
+  
   def initialize( self ):
     pass
 
@@ -83,7 +81,6 @@ class ResourceStatusHandler( RequestHandler ):
   # SITE FUNCTIONS
   ##############################################################################
   '''
-
   __site_IU = [ str, str, str ]
   __site_GD = [ ( t, list, NoneType ) for t in __site_IU ] + [ dict ] 
 
@@ -112,8 +109,8 @@ class ResourceStatusHandler( RequestHandler ):
   # SITE STATUS FUNCTIONS
   ##############################################################################
   '''
-
-  __siteStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __siteStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                      str, datetime ]
   __siteStatus_GD = [ ( t, list ,NoneType ) for t in __siteStatus_IU ] + [ dict ] 
 
   types_insertSiteStatus = __siteStatus_IU
@@ -149,36 +146,38 @@ class ResourceStatusHandler( RequestHandler ):
   # SITE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''
+  __siteScheduled_IU = [ str, str, str, str, datetime, datetime, datetime, 
+                         datetime, str, datetime  ]
+  __siteScheduled_GD = [ ( t, list, NoneType ) for t in __siteScheduled_IU ] + [ dict ] 
 
-  __siteScheduledstatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime  ]
-  __siteScheduledstatus_GD = [ ( t, list, NoneType ) for t in __siteScheduledstatus_IU ] + [ dict ] 
-
-  types_insertSiteScheduledStatus = __siteScheduledstatus_IU 
+  types_insertSiteScheduledStatus = __siteScheduled_IU 
   @HandlerDec
   def export_insertSiteScheduledStatus( self, siteName, statusType, status, reason, 
                                         dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime, tokenOwner, tokenExpiration ):
     return db
   
-  types_updateSiteScheduledStatus = __siteScheduledstatus_IU 
+  types_updateSiteScheduledStatus = __siteScheduled_IU 
   @HandlerDec
   def export_updateSiteScheduledStatus( self, siteName, statusType, status, reason, 
                                         dateCreated, dateEffective, dateEnd, 
                                         lastCheckTime, tokenOwner, tokenExpiration ):
     return db
   
-  types_getSiteScheduledStatus = __siteScheduledstatus_GD
+  types_getSiteScheduledStatus = __siteScheduled_GD
   @HandlerDec
   def export_getSiteScheduledStatus( self, siteName, statusType, status, reason, 
-                                     dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                     tokenOwner, tokenExpiration, kwargs ):
+                                     dateCreated, dateEffective, dateEnd, 
+                                     lastCheckTime, tokenOwner, tokenExpiration, 
+                                     kwargs ):
     return db
 
-  types_deleteSiteScheduledStatus = __siteScheduledstatus_GD
+  types_deleteSiteScheduledStatus = __siteScheduled_GD
   @HandlerDec
   def export_deleteSiteScheduledStatus( self, siteName, statusType, status, reason, 
-                                     dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                     tokenOwner, tokenExpiration, kwargs ):
+                                        dateCreated, dateEffective, dateEnd, 
+                                        lastCheckTime, tokenOwner, tokenExpiration, 
+                                        kwargs ):
     return db   
    
   '''
@@ -186,10 +185,8 @@ class ResourceStatusHandler( RequestHandler ):
   # SITE HISTORY FUNCTIONS
   ##############################################################################
   '''   
-  
   __siteHistory_IU = [ str, str, str, str, datetime, datetime, datetime, 
                        datetime, str, datetime  ]
-
   __siteHistory_GD = [ ( t, list, NoneType) for t in __siteHistory_IU ] + [ dict ] 
 
   types_insertSiteHistory = __siteHistory_IU 
@@ -225,15 +222,11 @@ class ResourceStatusHandler( RequestHandler ):
   # SITE PRESENT FUNCTIONS
   ##############################################################################
   '''   
+  __sitePresent   = [ str, str, str, str, str, str, datetime, str, datetime, str,
+                      datetime, str,]
+  __sitePresent_G = [ ( t, list, NoneType) for t in __sitePresent ] + [ dict ]
   
-  types_getSitePresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                           ( str, list, NoneType ), ( str, list, NoneType ), 
-                           ( str, list, NoneType ), ( str, list, NoneType ), 
-                           ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                           ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                           ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                           dict ]
-
+  types_getSitePresent = __sitePresent_G
   @HandlerDec
   def export_getSitePresent( self, siteName, siteType, gridSiteName, gridTier, 
                              statusType, status, dateEffective, reason, 
@@ -249,7 +242,6 @@ class ResourceStatusHandler( RequestHandler ):
   # SERVICE FUNCTIONS
   ##############################################################################
   '''
-  
   __ser_IU = [ str, str, str ] 
   __ser_GD = [ ( t, list, NoneType ) for t in __ser_IU ] + [ dict ]
   
@@ -278,8 +270,8 @@ class ResourceStatusHandler( RequestHandler ):
   # SERVICE STATUS FUNCTIONS
   ##############################################################################
   '''  
-  
-  __serStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ] 
+  __serStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                     str, datetime ] 
   __serStatus_GD = [ ( t, list, NoneType ) for t in __serStatus_IU ] + [ dict ]
   
   types_insertServiceStatus = __serStatus_IU   
@@ -298,16 +290,16 @@ class ResourceStatusHandler( RequestHandler ):
 
   types_getServiceStatus = __serStatus_GD  
   @HandlerDec  
-  def export_getServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
-                               dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                               tokenExpiration, kwargs ):
+  def export_getServiceStatus( self, serviceName, statusType, status, reason, 
+                               dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                               tokenOwner, tokenExpiration, kwargs ):
     return db
 
   types_deleteServiceStatus = __serStatus_GD  
   @HandlerDec  
-  def export_deleteServiceStatus( self, serviceName, statusType, status, reason, dateCreated, 
-                                  dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                                  tokenExpiration, kwargs ):
+  def export_deleteServiceStatus( self, serviceName, statusType, status, reason, 
+                                  dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                  tokenOwner, tokenExpiration, kwargs ):
     return db
    
   '''
@@ -315,11 +307,11 @@ class ResourceStatusHandler( RequestHandler ):
   # SERVICE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''     
-  
-  __serScheduledstatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
-  __serScheduledstatus_GD = [ ( t, list, NoneType ) for t in __serScheduledstatus_IU ] + [ dict ] 
+  __serScheduled_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                        str, datetime ]
+  __serScheduled_GD = [ ( t, list, NoneType ) for t in __serScheduled_IU ] + [ dict ] 
     
-  types_insertServiceScheduledStatus = __serScheduledstatus_IU  
+  types_insertServiceScheduledStatus = __serScheduled_IU  
   @HandlerDec        
   def export_insertServiceScheduledStatus( self, serviceName, statusType, status, 
                                            reason, dateCreated, dateEffective, 
@@ -327,7 +319,7 @@ class ResourceStatusHandler( RequestHandler ):
                                            tokenExpiration ):
     return db
 
-  types_updateServiceScheduledStatus = __serScheduledstatus_IU  
+  types_updateServiceScheduledStatus = __serScheduled_IU  
   @HandlerDec        
   def export_updateServiceScheduledStatus( self, serviceName, statusType, status, 
                                            reason, dateCreated, dateEffective, 
@@ -335,7 +327,7 @@ class ResourceStatusHandler( RequestHandler ):
                                            tokenExpiration ):
     return db
 
-  types_getServiceScheduledStatus = __serScheduledstatus_GD
+  types_getServiceScheduledStatus = __serScheduled_GD
   @HandlerDec    
   def export_getServiceScheduledStatus( self, serviceName, statusType, status, 
                                         reason, dateCreated, dateEffective, dateEnd, 
@@ -343,12 +335,12 @@ class ResourceStatusHandler( RequestHandler ):
                                         kwargs ):
     return db
 
-  types_deleteServiceScheduledStatus = __serScheduledstatus_GD
+  types_deleteServiceScheduledStatus = __serScheduled_GD
   @HandlerDec    
   def export_deleteServiceScheduledStatus( self, serviceName, statusType, status, 
-                                           reason, dateCreated, dateEffective, dateEnd, 
-                                           lastCheckTime, tokenOwner, tokenExpiration, 
-                                           kwargs ):
+                                           reason, dateCreated, dateEffective, 
+                                           dateEnd, lastCheckTime, tokenOwner, 
+                                           tokenExpiration,kwargs ):
     return db
 
   '''
@@ -356,52 +348,48 @@ class ResourceStatusHandler( RequestHandler ):
   # SERVICE HISTORY FUNCTIONS
   ##############################################################################
   '''  
-
-  __serHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __serHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                      str, datetime ]
   __serHistory_GD = [ ( t, list, NoneType ) for t in __serHistory_IU ] + [ dict ] 
 
   types_insertServiceHistory = __serHistory_IU
   @HandlerDec      
-  def export_insertServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
-                                   dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                                   tokenExpiration ):
+  def export_insertServiceHistory( self, serviceName, statusType, status, reason, 
+                                   dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                   tokenOwner, tokenExpiration ):
     return db
 
   types_updateServiceHistory = __serHistory_IU
   @HandlerDec      
-  def export_updateServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
-                                   dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                                   tokenExpiration ):
+  def export_updateServiceHistory( self, serviceName, statusType, status, reason, 
+                                   dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                   tokenOwner, tokenExpiration ):
     return db
 
   types_getServiceHistory = __serHistory_IU
   @HandlerDec      
-  def export_getServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
-                                dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                                tokenExpiration, kwargs ):
+  def export_getServiceHistory( self, serviceName, statusType, status, reason, 
+                                dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                tokenOwner, tokenExpiration, kwargs ):
     return db
 
   types_deleteServiceHistory = __serHistory_IU
   @HandlerDec      
-  def export_deleteServiceHistory( self, serviceName, statusType, status, reason, dateCreated, 
-                                   dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-                                   tokenExpiration, kwargs ):
+  def export_deleteServiceHistory( self, serviceName, statusType, status, reason, 
+                                   dateCreated, dateEffective, dateEnd, lastCheckTime, 
+                                   tokenOwner, tokenExpiration, kwargs ):
     return db
-
 
   '''
   ##############################################################################
   # SERVICE PRESENT FUNCTIONS
   ##############################################################################
   '''    
+  __servicePresent   = [ str, str, str, str, str, str, datetime, str, datetime, 
+                         str, datetime, str,]
+  __servicePresent_G = [ ( t, list, NoneType) for t in __servicePresent ] + [ dict ]  
     
-  types_getServicePresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                              ( str, list, NoneType ), ( str, list, NoneType ), 
-                              ( str, list, NoneType ), ( str, list, NoneType ),
-                              ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                              ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                              ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                              dict ]  
+  types_getServicePresent = __servicePresent_G
   @HandlerDec  
   def export_getServicePresent( self, serviceName, siteName, siteType, serviceType, 
                                 statusType, status, dateEffective, reason, 
@@ -417,7 +405,6 @@ class ResourceStatusHandler( RequestHandler ):
   # RESOURCE FUNCTIONS
   ##############################################################################
   '''    
-
   __res_IU = [ str, str, str, str, str ]
   __res_GD = [ ( t, list, NoneType ) for t in __res_IU ] + [ dict ]
 
@@ -450,8 +437,8 @@ class ResourceStatusHandler( RequestHandler ):
   # RESOURCE STATUS FUNCTIONS
   ##############################################################################
   '''  
-  
-  __resStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __resStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                     str, datetime ]
   __resStatus_IU = [ ( t, list, NoneType ) for t in __resStatus_IU ] + [ dict ]
   
   types_insertResourceStatus = __resStatus_IU
@@ -478,8 +465,9 @@ class ResourceStatusHandler( RequestHandler ):
   types_deleteResourceStatus = __resStatus_IU  
   @HandlerDec    
   def export_deleteResourceStatus( self, resourceName, statusType, status, reason, 
-                                   dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                   tokenOwner, tokenExpiration, kwargs ):
+                                   dateCreated, dateEffective, dateEnd, 
+                                   lastCheckTime, tokenOwner, tokenExpiration, 
+                                   kwargs ):
     return db 
 
   '''
@@ -487,38 +475,40 @@ class ResourceStatusHandler( RequestHandler ):
   # RESOURCE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''  
-
-  __resScheduledstatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
-  __resScheduledstatus_GD = [ ( t, list, NoneType ) for t in __resScheduledstatus_IU ] + [ dict ] 
+  __resScheduled_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                        str, datetime ]
+  __resScheduled_GD = [ ( t, list, NoneType ) for t in __resScheduled_IU ] + [ dict ] 
    
-  types_insertResourceScheduledStatus = __resScheduledstatus_IU
+  types_insertResourceScheduledStatus = __resScheduled_IU
   @HandlerDec     
   def export_insertResourceScheduledStatus( self, resourceName, statusType, status, 
-                                            reason, dateCreated, dateEffective, dateEnd, 
-                                            lastCheckTime, tokenOwner, tokenExpiration ):
+                                            reason, dateCreated, dateEffective, 
+                                            dateEnd, lastCheckTime, tokenOwner, 
+                                            tokenExpiration ):
     return db
 
-  types_updateResourceScheduledStatus = __resScheduledstatus_IU
+  types_updateResourceScheduledStatus = __resScheduled_IU
   @HandlerDec     
   def export_updateResourceScheduledStatus( self, resourceName, statusType, status, 
-                                            reason, dateCreated, dateEffective, dateEnd, 
-                                            lastCheckTime, tokenOwner, tokenExpiration ):
+                                            reason, dateCreated, dateEffective, 
+                                            dateEnd, lastCheckTime, tokenOwner, 
+                                            tokenExpiration ):
     return db
 
-  types_getResourceScheduledStatus = __resScheduledstatus_GD       
+  types_getResourceScheduledStatus = __resScheduled_GD       
   @HandlerDec      
   def export_getResourceScheduledStatus( self, resourceName, statusType, status,
-                                          reason, dateCreated, dateEffective, dateEnd, 
-                                          lastCheckTime, tokenOwner, tokenExpiration, 
-                                          kwargs ): 
+                                         reason, dateCreated, dateEffective, 
+                                         dateEnd, lastCheckTime, tokenOwner, 
+                                         tokenExpiration, kwargs ): 
     return db
 
-  types_deleteResourceScheduledStatus = __resScheduledstatus_GD       
+  types_deleteResourceScheduledStatus = __resScheduled_GD       
   @HandlerDec      
   def export_deleteResourceScheduledStatus( self, resourceName, statusType, status,
-                                          reason, dateCreated, dateEffective, dateEnd, 
-                                          lastCheckTime, tokenOwner, tokenExpiration, 
-                                          kwargs ): 
+                                           reason, dateCreated, dateEffective, 
+                                           dateEnd, lastCheckTime, tokenOwner, 
+                                           tokenExpiration, kwargs ): 
     return db
 
   '''
@@ -526,8 +516,8 @@ class ResourceStatusHandler( RequestHandler ):
   # RESOURCE HISTORY FUNCTIONS
   ##############################################################################
   ''' 
-         
-  __resHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __resHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                      str, datetime ]
   __resHistory_GD = [ ( t, list, NoneType ) for t in __resHistory_IU ] + [ dict ]   
 
   types_insertResourceHistory = __resHistory_IU    
@@ -554,8 +544,9 @@ class ResourceStatusHandler( RequestHandler ):
   types_deleteResourceHistory = __resHistory_GD    
   @HandlerDec                
   def export_deleteResourceHistory( self, resourceName, statusType, status, reason, 
-                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                                 tokenOwner, tokenExpiration, kwargs ):
+                                    dateCreated, dateEffective, dateEnd, 
+                                    lastCheckTime, tokenOwner, tokenExpiration, 
+                                    kwargs ):
     return db
       
   '''
@@ -563,19 +554,16 @@ class ResourceStatusHandler( RequestHandler ):
   # RESOURCE PRESENT FUNCTIONS
   ##############################################################################
   ''' 
+  __resourcePresent   = [ str, str, str, str, str, str, datetime, str, datetime, 
+                         str, datetime, str,]
+  __resourcePresent_G = [ ( t, list, NoneType) for t in __resourcePresent ] + [ dict ]       
       
-  types_getResourcePresent = [ ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( str, list, NoneType ), ( str, list, NoneType ), 
-                               ( datetime, list, NoneType ), ( str, list, NoneType ), 
-                               ( datetime, list, NoneType ), ( str, list, NoneType ),
-                               ( datetime, list, NoneType ), ( str, list, NoneType ), dict ]    
+  types_getResourcePresent = __resourcePresent_G    
   @HandlerDec    
-  def export_getResourcePresent( self, resourceName, siteName, serviceType, gridSiteName, 
-                                 siteType, resourceType, statusType, status, 
-                                 dateEffective, reason, lastCheckTime, tokenOwner, 
-                                 tokenExpiration, formerStatus, kwargs ):
+  def export_getResourcePresent( self, resourceName, siteName, serviceType, 
+                                 gridSiteName, siteType, resourceType, statusType, 
+                                 status, dateEffective, reason, lastCheckTime, 
+                                 tokenOwner, tokenExpiration, formerStatus, kwargs ):
     return db
   
 ################################################################################
@@ -586,7 +574,6 @@ class ResourceStatusHandler( RequestHandler ):
   # STORAGE ELEMENT FUNCTIONS
   ##############################################################################
   '''
-  
   __stEl_IU = [ str, str, str ]
   __stEl_GD = [ ( t, list, NoneType ) for t in __stEl_IU ] + [ dict ]
 
@@ -619,36 +606,40 @@ class ResourceStatusHandler( RequestHandler ):
   # STORAGE ELEMENT STATUS FUNCTIONS
   ##############################################################################
   '''
-
-  __stElStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __stElStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                      str, datetime ]
   __stElStatus_GD = [ ( t, list, NoneType) for t in __stElStatus_IU ] + [ dict ]
 
   types_insertStorageElementStatus = __stElStatus_IU
   @HandlerDec                  
-  def export_insertStorageElementStatus( self, storageElementName, statusType, status, 
-                                         reason, dateCreated, dateEffective, dateEnd, 
-                                         lastCheckTime, tokenOwner, tokenExpiration ):
+  def export_insertStorageElementStatus( self, storageElementName, statusType, 
+                                         status, reason, dateCreated, dateEffective, 
+                                         dateEnd, lastCheckTime, tokenOwner, 
+                                         tokenExpiration ):
     return db
 
   types_updateStorageElementStatus = __stElStatus_IU
   @HandlerDec                  
-  def export_updateStorageElementStatus( self, storageElementName, statusType, status, 
-                                         reason, dateCreated, dateEffective, dateEnd, 
-                                         lastCheckTime, tokenOwner, tokenExpiration ):
+  def export_updateStorageElementStatus( self, storageElementName, statusType, 
+                                         status, reason, dateCreated, dateEffective, 
+                                         dateEnd, lastCheckTime, tokenOwner, 
+                                         tokenExpiration ):
     return db
 
   types_getStorageElementStatus = __stElStatus_GD
   @HandlerDec                  
-  def export_getStorageElementStatus( self, storageElementName, statusType, status, 
-                                      reason, dateCreated, dateEffective, dateEnd, 
-                                      lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
+  def export_getStorageElementStatus( self, storageElementName, statusType, 
+                                      status, reason, dateCreated, dateEffective, 
+                                      dateEnd, lastCheckTime, tokenOwner, 
+                                      tokenExpiration, kwargs ):
     return db
 
   types_deleteStorageElementStatus = __stElStatus_GD
   @HandlerDec                  
-  def export_deleteStorageElementStatus( self, storageElementName, statusType, status, 
-                                      reason, dateCreated, dateEffective, dateEnd, 
-                                      lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
+  def export_deleteStorageElementStatus( self, storageElementName, statusType, 
+                                         status, reason, dateCreated, dateEffective, 
+                                         dateEnd, lastCheckTime, tokenOwner, 
+                                         tokenExpiration, kwargs ):
     return db
 
   '''
@@ -657,39 +648,40 @@ class ResourceStatusHandler( RequestHandler ):
   ##############################################################################
   '''
 
-  __stElScheduledStatus_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
-  __stElScheduledStatus_GD = [ ( t, list, NoneType) for t in __stElScheduledStatus_IU ] + [ dict ]
+  __stElScheduled_IU = [ str, str, str, str, datetime, datetime, datetime, 
+                         datetime, str, datetime ]
+  __stElScheduled_GD = [ ( t, list, NoneType) for t in __stElScheduled_IU ] + [ dict ]
 
-  types_insertStorageElementScheduledStatus = __stElScheduledStatus_IU          
+  types_insertStorageElementScheduledStatus = __stElScheduled_IU          
   @HandlerDec                             
   def export_insertStorageElementScheduledStatus( self, storageElementName, statusType, 
-                                                  status, reason, dateCreated, dateEffective, 
-                                                  dateEnd, lastCheckTime, tokenOwner, 
-                                                  tokenExpiration ):
+                                                  status, reason, dateCreated, 
+                                                  dateEffective, dateEnd, lastCheckTime, 
+                                                  tokenOwner, tokenExpiration ):
     return db
 
-  types_updateStorageElementScheduledStatus = __stElScheduledStatus_IU          
+  types_updateStorageElementScheduledStatus = __stElScheduled_IU          
   @HandlerDec                             
   def export_updateStorageElementScheduledStatus( self, storageElementName, statusType, 
-                                                  status, reason, dateCreated, dateEffective, 
-                                                  dateEnd, lastCheckTime, tokenOwner, 
-                                                  tokenExpiration ):
+                                                  status, reason, dateCreated, 
+                                                  dateEffective, dateEnd, lastCheckTime, 
+                                                  tokenOwner, tokenExpiration ):
     return db
 
-  types_getStorageElementScheduledStatus = __stElScheduledStatus_GD          
+  types_getStorageElementScheduledStatus = __stElScheduled_GD          
   @HandlerDec                             
   def export_getStorageElementScheduledStatus( self, storageElementName, statusType, 
-                                               status, reason, dateCreated, dateEffective, 
-                                               dateEnd, lastCheckTime, tokenOwner, 
-                                               tokenExpiration, kwargs ):
+                                               status, reason, dateCreated, 
+                                               dateEffective, dateEnd, lastCheckTime, 
+                                               tokenOwner, tokenExpiration, kwargs ):
     return db
 
-  types_deleteStorageElementScheduledStatus = __stElScheduledStatus_GD          
+  types_deleteStorageElementScheduledStatus = __stElScheduled_GD          
   @HandlerDec                             
   def export_deleteStorageElementScheduledStatus( self, storageElementName, statusType, 
-                                                  status, reason, dateCreated, dateEffective, 
-                                                  dateEnd, lastCheckTime, tokenOwner, 
-                                                  tokenExpiration, kwargs ):
+                                                  status, reason, dateCreated, 
+                                                  dateEffective, dateEnd, lastCheckTime, 
+                                                  tokenOwner, tokenExpiration, kwargs ):
     return db
 
   '''
@@ -697,36 +689,40 @@ class ResourceStatusHandler( RequestHandler ):
   # STORAGE ELEMENT HISTORY FUNCTIONS
   ##############################################################################
   '''
-
-  __stElHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, str, datetime ]
+  __stElHistory_IU = [ str, str, str, str, datetime, datetime, datetime, datetime, 
+                       str, datetime ]
   __stElHistory_GD = [ ( t, list, NoneType) for t in __stElHistory_IU ] + [ dict ]
 
   types_insertStorageElementHistory = __stElHistory_IU        
   @HandlerDec             
   def export_insertStorageElementHistory( self, storageElementName, statusType, 
-                                          status, reason, dateCreated, dateEffective, dateEnd, 
-                                          lastCheckTime, tokenOwner, tokenExpiration ):
+                                          status, reason, dateCreated, dateEffective, 
+                                          dateEnd, lastCheckTime, tokenOwner, 
+                                          tokenExpiration ):
     return db
 
   types_updateStorageElementHistory = __stElHistory_IU        
   @HandlerDec             
   def export_updateStorageElementHistory( self, storageElementName, statusType, 
-                                          status, reason, dateCreated, dateEffective, dateEnd, 
-                                          lastCheckTime, tokenOwner, tokenExpiration ):
+                                          status, reason, dateCreated, dateEffective, 
+                                          dateEnd, lastCheckTime, tokenOwner, 
+                                          tokenExpiration ):
     return db
 
   types_getStorageElementHistory = __stElHistory_GD        
   @HandlerDec             
   def export_getStorageElementHistory( self, storageElementName, statusType, 
-                                       status, reason, dateCreated, dateEffective, dateEnd, 
-                                       lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
+                                       status, reason, dateCreated, dateEffective, 
+                                       dateEnd, lastCheckTime, tokenOwner, 
+                                       tokenExpiration, kwargs ):
     return db
     
   types_deleteStorageElementHistory = __stElHistory_GD        
   @HandlerDec             
   def export_deleteStorageElementHistory( self, storageElementName, statusType, 
-                                          status, reason, dateCreated, dateEffective, dateEnd, 
-                                          lastCheckTime, tokenOwner, tokenExpiration, kwargs ):
+                                          status, reason, dateCreated, dateEffective, 
+                                          dateEnd, lastCheckTime, tokenOwner, 
+                                          tokenExpiration, kwargs ):
     return db
 
   '''
@@ -734,15 +730,11 @@ class ResourceStatusHandler( RequestHandler ):
   # STORAGE ELEMENT PRESENT FUNCTIONS
   ##############################################################################
   '''
+  __stElPresent   = [ str, str, str, str, str, str, datetime, str, datetime, 
+                         str, datetime, str,]
+  __stElPresent_G = [ ( t, list, NoneType) for t in __stElPresent ] + [ dict ]  
 
-  types_getStorageElementPresent = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                     ( str, list, NoneType ), ( str, list, NoneType ),
-                                     ( str, list, NoneType ), ( str, list, NoneType ),
-                                     ( datetime, list, NoneType ), ( str, list, NoneType ),
-                                     ( datetime, list, NoneType ), ( str, list, NoneType ),
-                                     ( datetime, list, NoneType ), ( str, list, NoneType ),
-                                     dict ]         
-           
+  types_getStorageElementPresent = __stElPresent_G
   def export_getStorageElementPresent( self, storageElementName, resourceName, 
                                        gridSiteName, siteType, statusType, 
                                        status, dateEffective, reason, 
@@ -758,7 +750,6 @@ class ResourceStatusHandler( RequestHandler ):
   # GRID SITE FUNCTIONS
   ##############################################################################
   '''  
-  
   __gs_IU = [ str, str ]
   __gs_GD = [ ( t, list, NoneType ) for t in __gs_IU ] + [ dict ]
   
@@ -781,824 +772,26 @@ class ResourceStatusHandler( RequestHandler ):
   @HandlerDec  
   def export_deleteGridSites( self, gridSiteName, gridTier, kwargs ):         
     return db  
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
   
 ################################################################################
-################################################################################ 
-################################################################################  
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
 
-#  types_getServiceStats = [ str, ( str, NoneType ) ]  
-#
-#  def export_getServiceStats( self, siteName, statusType ):
-#    
-#    gLogger.info( "getServiceStats_1" )
-#    resQuery = db.getServiceStats( siteName, statusType )
-#    gLogger.info( "getServiceStats_2" )  
-#    return resQuery
-#
-#################################################################################      
-#      
-#  types_getResourceStats = [ str, str, ( str, NoneType ) ]    
-#      
-#  def export_getResourceStats( self, element, name, statusType ):
-#    
-#    gLogger.info( "getResourceStats_1" )
-#    resQuery = db.getResourceStats( element, name, statusType )
-#    gLogger.info( "getResourceStats_2" )  
-#    return resQuery
+################################################################################
 #  
-#################################################################################  
-#       
-#  types_getStorageelementStats = [ str, str, ( str, NoneType ) ]   
-#     
-#  def export_getStorageElementStats( self, element, name, statusType ):
-#          
-#    gLogger.info( "getStorageElementStats_1" )
-#    resQuery = db.getStorageElementStats( element, name, statusType )
-#    gLogger.info( "getStorageElementStats_2" )  
-#    return resQuery  
-  
+#  Cleaning ongoing  
+#  
 ################################################################################
-################################################################################  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-  # Check ResourceStatusBooster.py
-
-
-
-
-
-
-
-
-    
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
-
-
-#############################################################################
 #
-#  types_getSite = [ str ]
-#  def export_getSite( self, siteName ):
-#
-#    gLogger.info( "ResourceStatusHandlerDec.getSite: Attempting to get Site" )
-#
-#    try:
-#      resQuery = rsDB.getSites( siteName = siteName )
-#      gLogger.info( "ResourceStatusHandler.getSite: got Site" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#      
-#    errorStr += '\n ' + where( self, self.export_getSite )
-#    return S_ERROR( errorStr )
-#
-##############################################################################
-#
-#  types_getSitesList = []
-#  def export_getSitesList( self ):
-#    """
-#    Get sites list from the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getSitesList: Attempting to get sites list" )
-#
-#    try:
-#      resQuery = rsDB.getSites()
-#      gLogger.info( "ResourceStatusHandler.getSitesList: got sites list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#              
-#    errorStr += '\n ' + where( self, self.export_getSitesList )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getSitesStatusWeb = [ dict, int, int ]
-#  def export_getSitesStatusWeb( self, selectDict, startItem, maxItems ):
-#    """ get present sites status list, for the web
-#        Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
-#
-#        :Parameters:
-#          `selectDict`
-#            {
-#              'SiteName':'name of a site' --- present status
-#              'ExpandSiteHistory':'name of a site' --- site status history
-#            }
-#
-#          `sortList`
-#            (no sorting provided)
-#
-#          `startItem`
-#
-#          `maxItems`
-#
-#        :return:
-#        {
-#          'OK': XX,
-#
-#          'rpcStub': XX, 'getSitesStatusWeb', ({}, [], X, X)),
-#
-#          Value':
-#          {
-#
-#            'ParameterNames': ['SiteName', 'Tier', 'GridType', 'Country', 'Status',
-#             'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'],
-#
-#            'Records': [[], [], ...]
-#
-#            'TotalRecords': X,
-#
-#            'Extras': {},
-#          }
-#        }
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getSitesStatusWeb: Attempting to get sites list" )
-#
-#    try:
-#      res = rsDB.getMonitoredsStatusWeb( 'Site', selectDict, startItem, maxItems )
-#      gLogger.info( "ResourceStatusHandler.getSitesStatusWeb: got sites list" )
-#      return res
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#        
-#    errorStr += '\n ' + where( self, self.export_getSitesStatusWeb )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getSitesStatusList = []
-#  def export_getSitesStatusList( self ):
-#    """
-#    Get sites list from the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getSitesList: Attempting to get sites list" )
-#
-#    res = []
-#
-#    try:
-#      kwargs = { 'columns' : [ 'SiteName', 'Status' ] } 
-#      r = rsDB.getSitesPresent( **kwargs )  
-#      #r = rsDB.getMonitoredsList( 'Site', paramsList = [ 'SiteName', 'Status' ] )
-#      for x in r:
-#        res.append( x )
-#      gLogger.info( "ResourceStatusHandler.getSitesList: got sites and status list" )
-#      return S_OK( res )
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#              
-#    errorStr += '\n ' + where( self, self.export_getSitesStatusList )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#############################################################################
-# Services functions
-#############################################################################
-
-#############################################################################
-
-#  types_getService = [ str ]
-#  def export_getService( self, serviceName ):
-#
-#    gLogger.info( "ResourceStatusHandler.getService: Attempting to get Service" )
-#
-#    try:
-#      resQuery = rsDB.getServices( serviceName = serviceName )
-#      gLogger.info( "ResourceStatusHandler.getService: got Service" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#        
-#    errorStr += '\n ' + where( self, self.export_getService )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getServicesList = []
-#  def export_getServicesList( self ):
-#    """
-#    Get services list from the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getServicesList: Attempting to get services list" )
-#
-#    try:
-#      resQuery = rsDB.getServices()
-#      gLogger.info( "ResourceStatusHandler.getServicesList: got services list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getServicesList )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getServicesStatusWeb = [ dict, int, int ]
-#  def export_getServicesStatusWeb( self, selectDict, startItem, maxItems ):
-#    """
-#    Get present services status list, for the web.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
-#
-#    :Parameters
-#      `selectDict`
-#        { 'ServiceName':['XX', ...] , 'ExpandServiceHistory': ['XX', ...], 'Status': ['XX', ...]}
-#
-#      `sortList`
-#
-#      `startItem`
-#
-#      `maxItems`
-#
-#    :return: {
-#      `ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'GridType', 'Country',
-#      'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'],
-#
-#      'Records': [[], [], ...],
-#
-#      'TotalRecords': X,
-#
-#      'Extras': {}
-#
-#      }
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getServicesStatusWeb: Attempting to get services list" )
-#
-#    try:
-#      resQuery = rsDB.getMonitoredsStatusWeb( 'Service', selectDict, startItem, maxItems )
-#      gLogger.info( "ResourceStatusHandler.getServicesStatusWeb: got services list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getServicesStatusWeb )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getServiceStats = [ str, ( str, NoneType ) ]
-#  def export_getServiceStats( self, siteName, statusType ):
-#    """
-#    Returns simple statistics of active, probing and banned services of a site;
-#
-#    :Parameters
-#      `siteName`
-#        string - a site name
-#
-#    :returns:
-#      S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-#      or S_Error
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getServiceStats: Attempting to get service stats for site %s" % siteName )
-#
-#    try:
-#      resQuery = rsDB.getServiceStats( siteName, statusType )
-#      gLogger.info( "ResourceStatusHandler.getServiceStats: got service stats" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getServiceStats )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#############################################################################
-# Resources functions
-#############################################################################
-
-#############################################################################
-
-#  types_getResource = [ str ]
-#  def export_getResource( self, resourceName ):
-#
-#    gLogger.info( "ResourceStatusHandler.getResource: Attempting to get Resource" )
-#
-#    try:
-#      resQuery = rsDB.getResources( resourceName = resourceName )
-#      gLogger.info( "ResourceStatusHandler.getResource: got Resource" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getResource )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getResourcesList = []
-#  def export_getResourcesList( self ):
-#    """
-#    Get resources list from the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getResourcesList: Attempting to get resources list" )
-#
-#    try:
-#      resQuery = rsDB.getResources()
-#      gLogger.info( "ResourceStatusHandler.getResourcesList: got resources list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getResourcesList )
-#    return S_ERROR( errorStr )
-    
-#############################################################################
-
-#  types_getResourcesStatusWeb = [ dict, int, int ]
-#  def export_getResourcesStatusWeb( self, selectDict, startItem, maxItems ):
-#    """ get present resources status list
-#        Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
-#
-#
-#        :Parameters:
-#          `selectDict`
-#            {'ResourceName':'name of a resource' --- present status
-#
-#          `ExpandResourceHistory`
-#            'name of a resource' --- resource status history }
-#
-#          `sortList`
-#            [] (no sorting provided)
-#
-#          `startItem`
-#
-#          `maxItems`
-#
-#        `return`: { 'OK': XX, 'rpcStub': XX, 'getSitesStatusWeb', ({}, [], X, X)),
-#
-#          'Value': { 'ParameterNames': ['ResourceName', 'SiteName', 'ServiceExposed', 'Country',
-#          'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'],
-#
-#          'Records': [[], [], ...]
-#
-#          'TotalRecords': X,
-#
-#          'Extras': {} } }
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getResourcesStatusWeb: Attempting to get resources list" )
-#
-#    try:
-#      resQuery = rsDB.getMonitoredsStatusWeb( 'Resource', selectDict, startItem, maxItems )
-#      gLogger.info( "ResourceStatusHandler.getResourcesStatusWeb: got resources list" )  
-#      return resQuery
-#    except RSSDBException, x: 
-#      errorStr = whoRaised( x ) 
-#    except RSSException, x: 
-#      errorStr = whoRaised( x ) 
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getResourcesStatusWeb )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getResourceStats = [ str, str, ( str, NoneType ) ]
-#  def export_getResourceStats( self, granularity, name, statusType ):
-#    """
-#    Returns simple statistics of active, probing and banned resources of a site or service;
-#
-#    :Parameters:
-#      `granularity`
-#        string, should be in ['Site', 'Service']
-#
-#      `name`
-#        string, name of site or service
-#
-#    :return:
-#      S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-#      or S_ERROR
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getResourceStats: Attempting to get resource stats for site %s" % name )
-#
-#    try:
-#      resQuery = rsDB.getResourceStats( granularity, name, statusType )
-#      gLogger.info( "ResourceStatusHandler.getResourceStats: got resource stats" )
-#      return resQuery  
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getResourceStats )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getCEsList = []
-#  def export_getCEsList( self ):
-#    """
-#    Get CEs list from the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getCEsList: Attempting to get CEs list" )
-#
-#    try:
-#      resQuery = rsDB.getResources( resourceType = [ 'CE', 'CREAMCE' ] )
-#      gLogger.info( "ResourceStatusHandler.getCEsList: got CEs list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )  
-#        
-#    errorStr += '\n ' + where( self, self.export_getCEsList )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#############################################################################
-# StorageElements functions
-#############################################################################
-
-#############################################################################
-
-#  types_getStorageElement = [ str ]
-#  def export_getStorageElement( self, storageElementName ):
-#
-#    gLogger.info( "ResourceStatusHandler.getStorageElement: Attempting to get SE" )
-#
-#    try:
-#      resQuery = rsDB.getStorageElements( storageElementName )
-#      gLogger.info( "ResourceStatusHandler.getStorageElement: got SE" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getStorageElement )
-#    return S_ERROR( errorStr )
-   
-#############################################################################
-
-#  types_getStorageElementsList = [ ]
-#  def export_getStorageElementsList( self ):
-#    """
-#    Get sites list from the ResourceStatusDB.
-#
-#        :Parameters:
-#
-#          `access` : string - Read or Write
-#
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-#    """
-#
-#    gLogger.info("ResourceStatusHandler.getStorageElementsList: Attempting to get sites list")
-#
-#    try:
-#      resQuery = rsDB.getStorageElements( )
-#      gLogger.info( "ResourceStatusHandler.getStorageElementsList: got sites list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#      
-#    errorStr += '\n ' + where( self, self.export_getStorageElementsList )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getStorageElementsStatusWeb = [ dict, int, int ]
-#  def export_getStorageElementsStatusWeb( self, selectDict, startItem, maxItems ):
-#    """ Get present sites status list, for the web
-#        Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
-#
-#
-#        :Parameters:
-#          `selectDict`
-#            {
-#              'StorageElementName':'name of a site' --- present status
-#              'ExpandStorageElementHistory':'name of a site' --- site status history
-#            }
-#
-#          `sortList`
-#            [] (no sorting provided)
-#
-#          `startItem`
-#
-#          `maxItems`
-#
-#          `access`
-#            Read or Write
-#
-#        :return:
-#        {
-#          'OK': XX,
-#
-#          'rpcStub': XX, 'getStorageElementsStatusWeb', ({}, [], X, X)),
-#
-#          Value':
-#          {
-#
-#            'ParameterNames': ['StorageElementName', 'Tier', 'GridType', 'Country', 'Status',
-#             'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'],
-#
-#            'Records': [[], [], ...]
-#
-#            'TotalRecords': X,
-#
-#            'Extras': {},
-#          }
-#        }
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getStorageElementsStatusWeb: Attempting to get SEs list" )
-#
-#    try:
-#      resQuery = rsDB.getMonitoredsStatusWeb( 'StorageElement', selectDict, startItem, maxItems )
-#      gLogger.info( "ResourceStatusHandler.getStorageElementsStatusWeb: got SEs list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#      
-#    errorStr += '\n ' + where( self, self.export_getStorageElementsStatusWeb )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getStorageElementStats = [ str, str, ( str, NoneType ) ]
-#  def export_getStorageElementStats( self, granularity, name, statusType ):
-#    """
-#    Returns simple statistics of active, probing and banned storageElementss of a site or resource;
-#
-#    :Parameters:
-#      `granularity`
-#        string, should be in ['Site', 'Resource']
-#
-#      `name`
-#        string, name of site or service
-#
-#      `access`
-#        string, Read or Write
-#
-#    :return:
-#      S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-#      or S_Error
-#    """
-#
-#    gLogger.info( "StorageElementsStatusHandler.getStorageElementStats: Attempting to get storageElements stats for %s" % name )
-#
-#    try:
-#      resQuery = rsDB.getStorageElementStats( granularity, name, statusType )
-#      gLogger.info( "StorageElementsStatusHandler.getStorageElementStats: got storageElements stats" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )        
-#
-#    errorStr += '\n ' + where( self, self.export_getStorageElementStats )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
-#  types_getSESitesList = [ ]
-#  def export_getSESitesList( self ):
-#    """
-#    Get sites list of the storage elements from the ResourceStatusDB.
-#
-#        :Parameters:
-#
-#          `access` : string - Read or Write
-#
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getSESitesList: Attempting to get SE sites list" )
-#
-#    try:
-#
-#      res = []
-#
-#      try:
-#        resQuery = rsDB.getStorageElements()
-#        for se in resQuery[ 'Value' ]:
-#          gridSite = se[ 4 ]  
-#          
-#          DIRACsites = getDIRACSiteName( gridSite[ 0 ] )
-#          if not DIRACsites[ 'OK' ]:
-#            raise RSSException, "No DIRAC site name" + where( self, self.export_getSESitesList )
-#          DIRACsites = DIRACsites[ 'Value' ]
-#          for DIRACsite in DIRACsites:
-#            if DIRACsite not in res:
-#              res.append( DIRACsite )
-#          
-#
-#      except RSSDBException, x:
-#        gLogger.error( whoRaised( x ) )
-#      except RSSException, x:
-#        gLogger.error( whoRaised( x ) )
-#
-#      gLogger.info( "ResourceStatusHandler.getSESitesList: got SE sites list" )
-#      return S_OK( res )
-#
-#    except Exception:
-#      errorStr = where( self, self.export_getSitesList )
-#      gLogger.exception( errorStr )
-#      return S_ERROR( errorStr )
-  
-#############################################################################
-
-#############################################################################
-# GridSites functions
-#############################################################################
-
-#############################################################################  
-      
-#  types_getGridSitesList = []
-#  def export_getGridSitesList( self ):
-#    """
-#    Get sites list from the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getGridSitesList`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getGridSitesList: Attempting to get sites list" )
-#
-#    try:
-#      resQuery = rsDB.getGridSitesList()
-#      gLogger.info( "ResourceStatusHandler.getGridSitesList: got sites list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getGridSitesList )
-#    return S_ERROR( errorStr )      
-      
-#############################################################################
-
-#  types_getGridSiteName = [ str, str ]
-#  def export_getGridSiteName( self, granularity, name ):
-#    """
-#    Get Grid Site Name, given granularity and a name.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getGridSiteName`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getGridSiteName: Attempting to get the Grid Site Name" )
-#
-#    try:
-#      resQuery = rsDB.getGridSiteName( granularity, name )
-#      gLogger.info( "ResourceStatusHandler.getGridSiteName: got GridSiteName list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getGridSiteName )
-#    return S_ERROR( errorStr )
-           
-#############################################################################
-
-#############################################################################
-# Mixed functions
-#############################################################################
-
-#############################################################################
-
-#  types_getStatusList = []
-#  def export_getStatusList( self ):
-#    """
-#    Get status list from the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getStatusList`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getStatusList: got status list" )
-#    return S_OK( ValidStatus )
-
-#############################################################################
-
-#  types_getCountries = [ str ]
-#  def export_getCountries( self, granularity ):
-#    """
-#    Get countries list from the ResourceStatusDB.
-#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getCountries`
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.getCountries: Attempting to get countries list" )
-#
-#    try:
-#      resQuery = rsDB.getCountries( granularity )
-#      gLogger.info( "ResourceStatusHandler.getCountries: got countries list" )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getCountries )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
 #  types_getPeriods = [ str, str, str, int ]
 #  def export_getPeriods( self, granularity, name, status, hours ):
 #    """ get periods of time when name was in status (for a total of hours hours)
@@ -1619,32 +812,9 @@ class ResourceStatusHandler( RequestHandler ):
 #
 #    errorStr += '\n ' + where( self, self.export_getPeriods )
 #    return S_ERROR( errorStr )
-        
+#
 #############################################################################
-
-#  types_getGeneralName = [ str, str, str ]
-#  def export_getGeneralName( self, granularity, name, toGranularity ):
-#    """ get General Name
-#    """
 #
-#    gLogger.info( "ResourceStatusHandler.getGeneralName: Attempting to get %s general name" % name )
-#
-#    try:
-#      resQuery = rsDB.getGeneralName( granularity, name, toGranularity )
-#      gLogger.info( "ResourceStatusHandler.getGeneralName: got %s general name" % name )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#
-#    errorStr += '\n ' + where( self, self.export_getGeneralName )
-#    return S_ERROR( errorStr )
-
-#############################################################################
-
 #  types_getDownTimesWeb = [dict, list, int, int]
 #  def export_getDownTimesWeb(self, selectDict, sortList, startItem, maxItems):
 #    """ get down times as registered with the policies.
@@ -1795,9 +965,9 @@ class ResourceStatusHandler( RequestHandler ):
 #      errorStr = where(self, self.export_getDownTimesWeb)
 #      gLogger.exception(errorStr)
 #      return S_ERROR(errorStr)
-
+#
 #############################################################################
-
+#
 #  types_enforcePolicies = [str, str, BooleanType]
 #  def export_enforcePolicies(self, granularity, name, useNewRes = True):
 #    """ Enforce all the policies. If `useNewRes` is False, use cached results only (where available).
@@ -1832,9 +1002,9 @@ class ResourceStatusHandler( RequestHandler ):
 #      errorStr = where(self, self.export_getCachedResult)
 #      gLogger.exception(errorStr)
 #      return S_ERROR(errorStr)
-
+#
 #############################################################################
-
+#
 #  types_publisher = [str, str, BooleanType]
 #  def export_publisher(self, granularity, name, useNewRes = False):
 #    """ get a view
@@ -1911,9 +1081,9 @@ class ResourceStatusHandler( RequestHandler ):
 #      errorStr = where(self, self.export_publisher)
 #      gLogger.exception(errorStr)
 #      return S_ERROR(errorStr)
-
+#
 #############################################################################
-
+#
 #  types_reAssignToken = [ str, str, str ]
 #  def export_reAssignToken( self, granularity, name, requester ):
 #    """
@@ -1944,9 +1114,9 @@ class ResourceStatusHandler( RequestHandler ):
 #              
 #    errorStr += '\n ' + where( self, self.export_reAssignToken )
 #    return S_ERROR( errorStr )
-
+#
 #############################################################################
-
+#
 #  types_extendToken = [ str, str, int ]
 #  def export_extendToken( self, granularity, name, hrs ):
 #    """
@@ -1978,29 +1148,4 @@ class ResourceStatusHandler( RequestHandler ):
 #              
 #    errorStr += '\n ' + where( self, self.export_extendToken )
 #    return S_ERROR( errorStr )
-      
-#############################################################################
-
-#  types_whatIs = [ str ]
-#  def export_whatIs( self, name ):
-#    """
-#    Find which is the granularity of name.
-#    """
-#
-#    gLogger.info( "ResourceStatusHandler.whatIs: attempting to find granularity of %s" % name )
-#
-#    try:
-#      resQuery = rsDB.whatIs( name )
-#      gLogger.info( "ResourceStatusHandler.whatIs: got %s granularity" % name )
-#      return resQuery
-#    except RSSDBException, x:
-#      errorStr = whoRaised( x )
-#    except RSSException, x:
-#      errorStr = whoRaised( x )
-#    except Exception, x:
-#      errorStr = whoRaised( x )
-#        
-#    errorStr += '\n ' + where( self, self.export_whatIs )
-#    return S_ERROR( errorStr )
-
-#############################################################################
+#      

@@ -1,36 +1,52 @@
-""" ``ResourceManagementHandler`` exposes the service of the Resource Management System.
-    It uses :mod:`DIRAC.ResourceStatusSystem.DB.ResourceManagementDB` for database persistence.
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
 
-    To use this service
+from datetime                                           import datetime
+from types                                              import NoneType
 
-    >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
-    >>> server = RPCCLient("ResourceStatus/ResourceManagement")
+from DIRAC                                              import S_OK
+from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 
-"""
-__RCSID__ = "$Id$"
-
-# it crashes epydoc
-# __docformat__ = "restructuredtext en"
-
-from datetime import datetime
-from types import NoneType
-
-from DIRAC import S_OK
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import HandlerExecution
+from DIRAC.ResourceStatusSystem.Utilities.Decorators    import HandlerDec
 
-rmDB = False
+db = False
 
 def initializeResourceManagementHandler( _serviceInfo ):
 
-  global rmDB
-  rmDB = ResourceManagementDB()
+  global db
+  db = ResourceManagementDB()
 
   return S_OK()
 
 class ResourceManagementHandler( RequestHandler ):
+  '''
+  The ResourceManagementHandler exposes the DB front-end functions through a 
+  XML-RPC server.
+  
+  According to the ResourceManagementDB philosophy, only functions of the type:
+    o insert
+    o update
+    o get
+    o delete 
+  
+  are exposed. If you need anything more complicated, either look for it on the 
+  ResourceManagementClient, or code it yourself. This way the DB and the service 
+  keep clean and tidied.
 
+  To can use this service on this way, but you MUST NOT DO IT. Use it through the
+  ResourceManagementClient. If offers in the worst case as good performance as the 
+  ResourceManagementHandler, if not better.
+
+   >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
+   >>> server = RPCCLient("ResourceStatus/ResourceManagement")
+   
+  If you want to know more about ResourceManagementHandler, scroll down to the 
+  end of the file.  
+  '''
+  
   def initialize( self ):
     pass
 
@@ -43,195 +59,192 @@ class ResourceManagementHandler( RequestHandler ):
     db = oDatabase
 
 ################################################################################
-
-################################################################################
-# EnvironmentCache functions
 ################################################################################
 
-################################################################################
-
-  types_addOrModifyEnvironmentCache = [ str, str, str ]
-
-  @HandlerExecution
-  def export_addOrModifyEnvironmentCache( self, hashEnv, siteName, environment ):
+  '''
+  ##############################################################################
+  # ENVIRONMENT CACHE FUNCTIONS
+  ##############################################################################
+  '''
+  __envCache_IU = [ str, str, str ]
+  __envCache_GD = [ ( t, list, NoneType ) for t in __envCache_IU ] + [ dict ]
+  
+  types_insertEnvironmentCache = __envCache_IU
+  @HandlerDec
+  def export_insertEnvironmentCache( self, hashEnv, siteName, environment ):
     return db
   
-################################################################################
-
-  types_getEnvironmentCache = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                ( str, list, NoneType ), dict ]
-
-  @HandlerExecution 
+  types_updateEnvironmentCache = __envCache_IU
+  @HandlerDec
+  def export_updateEnvironmentCache( self, hashEnv, siteName, environment ):
+    return db
+  
+  types_getEnvironmentCache = __envCache_GD
+  @HandlerDec 
   def export_getEnvironmentCache( self, hashEnv, siteName, environment, kwargs ):
     return db
 
-################################################################################
-  
-  types_deleteEnvironmentCache = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                   ( str, list, NoneType ), dict ] 
-  
-  @HandlerExecution
+  types_deleteEnvironmentCache = __envCache_GD   
+  @HandlerDec
   def export_deleteEnvironmentCache( self, hashEnv, siteName, environment, kwargs ):
     return db
   
 ################################################################################
-
-################################################################################
-# PolicyResult functions
-################################################################################
-
 ################################################################################
   
-  types_addOrModifyPolicyResult = [ str, str, str, str, str, str, datetime, datetime ]
+  '''
+  ##############################################################################
+  # POLICY RESULT FUNCTIONS
+  ##############################################################################
+  '''
+  __polRes_IU = [ str, str, str, str, str, str, datetime, datetime ]
+  __polRes_GD = [ ( t, list, NoneType ) for t in __polRes_IU ] + [ dict ]
   
-  @HandlerExecution
-  def export_addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
-                                      status, reason, dateEffective, lastCheckTime ):
+  types_insertPolicyResult = __polRes_IU
+  @HandlerDec
+  def export_insertPolicyResult( self, granularity, name, policyName, statusType,
+                                 status, reason, dateEffective, lastCheckTime ):
     return db
 
-################################################################################
+  types_updatePolicyResult = __polRes_IU 
+  @HandlerDec
+  def export_updatePolicyResult( self, granularity, name, policyName, statusType,
+                                 status, reason, dateEffective, lastCheckTime ):
+    return db
   
-  types_getPolicyResult = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                            ( str, list, NoneType ), ( str, list, NoneType ),
-                            ( str, list, NoneType ), ( str, list, NoneType ),
-                            ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                            dict ]
-  
-  @HandlerExecution
-  def export_getPolicyResult( self, granularity, name, policyName, statusType, status, 
-                              reason, dateEffective, lastCheckTime, kwargs ):
+  types_getPolicyResult = __polRes_GD
+  @HandlerDec
+  def export_getPolicyResult( self, granularity, name, policyName, statusType, 
+                              status, reason, dateEffective, lastCheckTime, 
+                              kwargs ):
     return db
 
-################################################################################
-  
-  types_deletePolicyResult = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                               dict ]
-  
-  @HandlerExecution
+  types_deletePolicyResult = __polRes_GD  
+  @HandlerDec
   def export_deletePolicyResult( self, granularity, name, policyName, statusType, 
-                                 status, reason, dateEffective, lastCheckTime, kwargs ):
+                                 status, reason, dateEffective, lastCheckTime, 
+                                 kwargs ):
     return db
 
 ################################################################################
-
-################################################################################
-# ClientCache functions
-################################################################################
-
 ################################################################################
   
-  types_addOrModifyClientCache = [ str, str, str, str, str, datetime, datetime ]
+  '''
+  ##############################################################################
+  # CLIENT CACHE FUNCTIONS
+  ##############################################################################
+  '''  
+  __clienCache_IU = [ str, str, str, str, str, datetime, datetime ]
+  __clienCache_GD = [ ( t, list, NoneType ) for t in __clienCache_IU ] + [ dict ]
   
-  @HandlerExecution
-  def export_addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
-                                     dateEffective, lastCheckTime ):
+  types_insertClientCache = __clienCache_IU
+  @HandlerDec
+  def export_insertClientCache( self, name, commandName, opt_ID, value, result,
+                                dateEffective, lastCheckTime ):
     return db
 
-################################################################################
+  types_updateClientCache = __clienCache_IU
+  @HandlerDec
+  def export_updateClientCache( self, name, commandName, opt_ID, value, result,
+                                dateEffective, lastCheckTime ):
+    return db
   
-  types_getClientCache = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                           ( str, list, NoneType ), ( str, list, NoneType ),
-                           ( str, list, NoneType ), ( datetime, list, NoneType ), 
-                           ( datetime, list, NoneType ), dict ]
-  
-  @HandlerExecution
+  types_getClientCache = __clienCache_GD
+  @HandlerDec
   def export_getClientCache( self, name, commandName, opt_ID, value, result,
                              dateEffective, lastCheckTime, kwargs ):
     return db              
 
-################################################################################
-
-  types_deleteClientCache = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                              ( str, list, NoneType ), ( str, list, NoneType ),
-                              ( str, list, NoneType ), ( datetime, list, NoneType ), 
-                              ( datetime, list, NoneType ), dict ]
-  
-  @HandlerExecution
+  types_deleteClientCache = __clienCache_GD
+  @HandlerDec
   def export_deleteClientCache( self, name, commandName, opt_ID, value, result,
                                 dateEffective, lastCheckTime, kwargs ):
     return db  
 
 ################################################################################
-
-################################################################################
-# AccountingCache functions
 ################################################################################
 
-################################################################################
+  '''
+  ##############################################################################
+  # ACCOUNTING CACHE FUNCTIONS
+  ##############################################################################
+  '''  
+  __acCache_IU = [ str, str, str, str, datetime, datetime ]
+  __acCache_GD = [ ( t, list, NoneType ) for t in __acCache_IU ] + [ dict ]
   
-  types_addOrModifyAccountingCache = [ str, str, str, str, datetime, datetime ]
-  
-  @HandlerExecution
-  def export_addOrModifyAccountingCache( self, name, plotType, plotName, result, 
-                                         dateEffective, lastCheckTime ):
+  types_insertAccountingCache = __acCache_IU 
+  @HandlerDec
+  def export_insertAccountingCache( self, name, plotType, plotName, result, 
+                                    dateEffective, lastCheckTime ):
+    return db
+
+  types_updateAccountingCache = __acCache_IU
+  @HandlerDec
+  def export_updateAccountingCache( self, name, plotType, plotName, result, 
+                                    dateEffective, lastCheckTime ):
     return db
   
-################################################################################  
-  
-  types_getAccountingCache = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( str, list, NoneType ), ( str, list, NoneType ),
-                               ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                               dict ]
-  
-  @HandlerExecution
-  def export_getAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                                 lastCheckTime, kwargs ):
+  types_getAccountingCache = __acCache_GD
+  @HandlerDec
+  def export_getAccountingCache( self, name, plotType, plotName, result, 
+                                 dateEffective, lastCheckTime, kwargs ):
     return db  
-  
-################################################################################
 
-  types_deleteAccountingCache = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                  ( str, list, NoneType ), ( str, list, NoneType ),
-                                  ( datetime, list, NoneType ), ( datetime, list, NoneType ),
-                                  dict ]
-  
-  @HandlerExecution
+  types_deleteAccountingCache = __acCache_GD
+  @HandlerDec
   def export_deleteAccountingCache( self, name, plotType, plotName, result, 
                                     dateEffective, lastCheckTime, kwargs ):
     return db
 
 ################################################################################
-
-################################################################################
-# UserRegistryCache functions
 ################################################################################
 
-################################################################################
+  '''
+  ##############################################################################
+  # USER REGISTRY FUNCTIONS
+  ##############################################################################
+  '''  
+  __usrReg_IU = [ str, str, str ]
+  __usrReg_GD = [ ( t, list, NoneType ) for t in __usrReg_IU ] + [ dict ]
   
-  types_addOrModifyUserRegistryCache = [ str, str, str ]
-  
-  @HandlerExecution
-  def export_addOrModifyUserRegistryCache( self, login, name, email ):
+  types_insertUserRegistryCache = __usrReg_IU
+  @HandlerDec
+  def export_insertUserRegistryCache( self, login, name, email ):
     return db
   
-################################################################################  
+  types_updateUserRegistryCache = __usrReg_IU
+  @HandlerDec
+  def export_updateUserRegistryCache( self, login, name, email ):
+    return db
   
-  types_getUserRegistryCache = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                 ( str, list, NoneType ), dict ]
-  
-  @HandlerExecution
+  types_getUserRegistryCache = __usrReg_GD
+  @HandlerDec
   def export_getUserRegistryCache( self, login, name, email, kwargs ):
     return db
 
-################################################################################
-
-  types_deleteUserRegistryCache = [ ( str, list, NoneType ), ( str, list, NoneType ),
-                                    ( str, list, NoneType ), dict ]
-  
-  @HandlerExecution
+  types_deleteUserRegistryCache = __usrReg_GD
+  @HandlerDec
   def export_deleteUserRegistryCache( self, login, name, email, kwargs ):      
     return db
 
-##############################################################################
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+  
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+
+################################################################################
 #
-##############################################################################
-## Mixed functions
-##############################################################################
+# Cleaning ongoing
 #
-##############################################################################
+################################################################################
 
 ##############################################################################
 #
@@ -305,7 +318,7 @@ class ResourceManagementHandler( RequestHandler ):
 #        if severity == []:
 #          severity = [ 'AT_RISK', 'OUTAGE' ]
 #
-#        res = rmDB.getClientsCacheStuff( [ 'Name', 'Opt_ID', 'Value', 'Result', 'CommandName' ],
+#        res = db.getClientsCacheStuff( [ 'Name', 'Opt_ID', 'Value', 'Result', 'CommandName' ],
 #                                         commandName = commands )
 #        records = []
 #
@@ -361,7 +374,7 @@ class ResourceManagementHandler( RequestHandler ):
 #        # adding downtime links to the GOC DB page in Extras
 #        DT_links = []
 #        for record in records:
-#          DT_link = rmDB.getClientsCacheStuff( [ 'Result' ], opt_ID = record[ 0 ], value = 'Link' )
+#          DT_link = db.getClientsCacheStuff( [ 'Result' ], opt_ID = record[ 0 ], value = 'Link' )
 #          DT_link = DT_link[ 0 ][ 0 ]
 #          DT_links.append( { record[ 0 ] : DT_link } )
 #
@@ -419,7 +432,7 @@ class ResourceManagementHandler( RequestHandler ):
 #        from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 #        pep = PEP( VOExtension, granularity, name, status, formerStatus, reason, siteType,
 #                   serviceType, resourceType, tokenOwner, useNewRes )
-#        pep.enforce( rsDBIn = rsDB, rmDBIn = rmDB )
+#        pep.enforce( rsDBIn = rsDB, dbIn = db )
 #
 #      except RSSDBException, x:
 #        gLogger.error( whoRaised( x ) )
@@ -472,7 +485,7 @@ class ResourceManagementHandler( RequestHandler ):
 #
 ##             pep = PEP( VOExtension, granularity, name, status, formerStatus, None, siteType,
 ##                        None, None, tokenOwner, useNewRes )
-##             pep.enforce( rsDBIn = rsDB, rmDBIn = rmDB )
+##             pep.enforce( rsDBIn = rsDB, dbIn = db )
 #
 ##             res = rsDB.getMonitoredsList( 'Service', paramsList = [ 'ServiceName' ], siteName = name )
 ##             services = [ x[ 0 ] for x in res ]
@@ -485,7 +498,7 @@ class ResourceManagementHandler( RequestHandler ):
 #
 ##               pep = PEP( VOExtension, 'Service', s, status, formerStatus, None, siteType,
 ##                          serviceType, None, tokenOwner, useNewRes )
-##               pep.enforce( rsDBIn = rsDB, rmDB = rmDB )
+##               pep.enforce( rsDBIn = rsDB, db = db )
 ##           else:
 ##             reason = serviceType = resourceType = None
 #
@@ -503,7 +516,7 @@ class ResourceManagementHandler( RequestHandler ):
 ## #            from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 ##             pep = PEP( VOExtension, granularity, name, status, formerStatus, reason, siteType,
 ##                        serviceType, resourceType, tokenOwner, useNewRes )
-##             pep.enforce( rsDBIn = rsDB, rmDBIn = rmDB )
+##             pep.enforce( rsDBIn = rsDB, dbIn = db )
 #
 ##         res = publisher.getInfo( granularity, name, useNewRes )
 ##       except InvalidRes, x:
@@ -531,7 +544,7 @@ class ResourceManagementHandler( RequestHandler ):
 #    gLogger.info( "ResourceManagementHandler.registryAddUser: Attempting to add user on registry cache" )
 #
 #    try:
-#      return S_OK(rmDB.registryAddUser(login, name, email))
+#      return S_OK(db.registryAddUser(login, name, email))
 #
 #    except RSSManagementDBException:
 #      errorStr = where( self, self.export_registryAddUser )
@@ -547,7 +560,7 @@ class ResourceManagementHandler( RequestHandler ):
 #  def export_registryGetMailFromLogin(self, logins):
 #    gLogger.info( "ResourceManagementHandler.registryGetMailFromLogin" )
 #    try:
-#      S_OK([rmDB.registryGetMailFromLogin(l) for l in logins])
+#      S_OK([db.registryGetMailFromLogin(l) for l in logins])
 #
 #    except RSSManagementDBException:
 #      errorStr = where( self, self.export_registryAddUser )
@@ -558,10 +571,9 @@ class ResourceManagementHandler( RequestHandler ):
 #  def export_registryGetMailFromName(self, names):
 #    gLogger.info( "ResourceManagementHandler.registryGetMailFromName" )
 #    try:
-#      S_OK([rmDB.registryGetMailFromName(n) for n in names])
+#      S_OK([db.registryGetMailFromName(n) for n in names])
 #
 #    except RSSManagementDBException:
 #      errorStr = where( self, self.export_registryAddUser )
 #      gLogger.exception( errorStr )
 #      return S_ERROR( errorStr )
-#
