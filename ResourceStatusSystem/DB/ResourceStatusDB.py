@@ -1,3 +1,5 @@
+__RCSID__ = "$Id:  $"
+
 from DIRAC.ResourceStatusSystem.Utilities.Decorators  import DBDec
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey, localsToDict
 from DIRAC.ResourceStatusSystem.Utilities.Validator   import ResourceStatusValidator
