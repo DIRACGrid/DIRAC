@@ -45,6 +45,9 @@ class ResourceManagementDB(object):
   Or, if you want to work with a local DB, providing it's mySQL:
 
    >>> rmDB = ResourceManagementDB( DBin = [ 'UserName', 'Password' ] )
+   
+  If you want to know more about ResourceManagementDB, scroll down to the end of
+  the file. 
   """
   
   # This is an small & temporary 'hack' used for the MySQLMonkey.
@@ -267,6 +270,14 @@ class ResourceManagementDB(object):
     rDict = localsToDict( locals() )
     # NO VALIDATION #    
     return self.mm.delete( rDict, **kwargs )
+  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''     
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
