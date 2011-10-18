@@ -1,36 +1,25 @@
-"""
-The ResourcesManagementDB module contains a couple of exception classes, and a
-class to interact with the ResourceManagement DB.
-"""
-
-#import datetime
-
-#from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-
-from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
-
 from DIRAC.ResourceStatusSystem.Utilities.Decorators import DBDec
-
-################################################################################
-
-class RSSManagementDBException(RSSException):
-  """
-  DB exception
-  """
-
-  def __init__(self, message = ""):
-    self.message = message
-    RSSException.__init__(self, message)
-
-  def __str__(self):
-    return "Exception in the RSS Management DB: " + repr(self.message)
+from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey, localsToDict
 
 ################################################################################
 
 class ResourceManagementDB(object):
   """
-  The ResourceManagementDB class is a front-end to the Resource Management Database.
+  The ResourceManagementDB class is a front-end to the ResourceManagementDB MySQL db.
+  If exposes four basic actions per table:
+  
+    o insert
+    o update
+    o get
+    o delete
+  
+  all them defined on the MySQL monkey class.
+  Moreover, there are a set of key-worded parameters that can be used, specially
+  on the getX and deleteX functions ( to know more, again, check the MySQL monkey
+  documentation ).
+  
+  The DB schema has NO foreign keys, so there may be some small consistency checks,
+  called validators on the insert and update functions.  
 
   The simplest way to instantiate an object of type :class:`ResourceManagementDB`
   is simply by calling
@@ -43,21 +32,21 @@ class ResourceManagementDB(object):
   provided the interface is the same exposed by :mod:`DIRAC.Core.Base.DB`.
 
    >>> AnotherDB = AnotherDBClass()
-   >>> rmDB = ResourceManagementDB(DBin = AnotherDB)
+   >>> rmDB = ResourceManagementDB( DBin = AnotherDB )
 
   Alternatively, for testing purposes, you could do:
 
-   >>> from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
+   >>> from mock import Mock
    >>> mockDB = Mock()
-   >>> rmDB = ResourceManagementDB(DBin = mockDB)
+   >>> rmDB = ResourceManagementDB( DBin = mockDB )
 
   Or, if you want to work with a local DB, providing it's mySQL:
 
-   >>> rmDB = ResourceManagementDB(DBin = ['UserName', 'Password'])
-
+   >>> rmDB = ResourceManagementDB( DBin = [ 'UserName', 'Password' ] )
   """
   
-  # Small, very valuable piece of information for the MySQLMonkey
+  # This is an small & temporary 'hack' used for the MySQLMonkey.
+  # Check MySQL monkey for more info
   # Now is hard-coded for simplicity, eventually will be calculated automatically
   __TABLES__ = {}
 
@@ -85,8 +74,6 @@ class ResourceManagementDB(object):
       self.db = DB( 'ResourceManagementDB', 'ResourceStatus/ResourceManagementDB', maxQueueSize )
 
     self.mm    = MySQLMonkey( self )  
-#    self.rsVal = ResourceStatusValidator( self )
-
 
 ################################################################################
 ################################################################################
@@ -99,35 +86,31 @@ class ResourceManagementDB(object):
   __TABLES__[ 'EnvironmentCache' ] = { 'uniqueKeys' : [ 'HashEnv', 'SiteName' ] }
 
   @DBDec
-  def addOrModifyEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
+  def insertEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
     
-    ## 
-    rDict  = self.mm.localsToDict( locals() )
-    ##        
-            
-    sqlQuery = self.mm.select( rDict, **kwargs )
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #
+    return self.mm.insert( rDict, **kwargs )    
+
+  @DBDec
+  def updateEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
     
-    if sqlQuery[ 'Value' ]:      
-      return self.mm.update( rDict, **kwargs )
-    else: 
-      return self.mm.insert( rDict, **kwargs )  
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #
+    return self.mm.update( rDict, **kwargs )    
 
   @DBDec
   def getEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
     
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #  
     return self.mm.get( rDict, **kwargs )
 
   @DBDec    
   def deleteEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
 
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -135,41 +118,39 @@ class ResourceManagementDB(object):
   # POLICY RESULT FUNCTIONS
   ##############################################################################
   '''
-  __TABLES__[ 'PolicyResult' ] = {'uniqueKeys' : [ 'Name', 'StatusType', 'PolicyName' ] }
+  __TABLES__[ 'PolicyResult' ] = { 'uniqueKeys' : [ 'Name', 'StatusType', 
+                                                    'PolicyName' ] }
 
   @DBDec
-  def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
-                               status, reason, dateEffective, lastCheckTime, **kwargs ):
+  def insertPolicyResult( self, granularity, name, policyName, statusType, status, 
+                          reason, dateEffective, lastCheckTime, **kwargs ):
 
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
-    sqlQuery = self.mm.select( rDict, **kwargs )
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #
+    return self.mm.insert( rDict, **kwargs )   
 
-    if sqlQuery[ 'Value' ]:      
-      return self.mm.update( rDict, **kwargs )
-    else: 
-      return self.mm.insert( rDict, **kwargs )
+  @DBDec
+  def updatePolicyResult( self, granularity, name, policyName, statusType, status, 
+                          reason, dateEffective, lastCheckTime, **kwargs ):
+
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #
+    return self.mm.update( rDict, **kwargs ) 
   
   @DBDec      
   def getPolicyResult( self, granularity, name, policyName, statusType, status, 
-                        reason, dateEffective, lastCheckTime, **kwargs ):
+                       reason, dateEffective, lastCheckTime, **kwargs ):
 
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #    
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
   def deletePolicyResult( self, granularity, name, policyName, statusType, status, 
                            reason, dateEffective, lastCheckTime, **kwargs ):
 
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -177,41 +158,38 @@ class ResourceManagementDB(object):
   # CLIENT CACHE FUNCTIONS
   ##############################################################################
   '''
-  __TABLES__[ 'ClientCache' ] = {'uniqueKeys' : [ 'Name', 'CommandName', 'Value' ] }
+  __TABLES__[ 'ClientCache' ] = { 'uniqueKeys' : [ 'Name', 'CommandName', 'Value' ] }
   
   @DBDec
-  def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
-                              dateEffective, lastCheckTime, **kwargs ):
+  def insertClientCache( self, name, commandName, opt_ID, value, result, dateEffective, 
+                         lastCheckTime, **kwargs ):
     
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
-    sqlQuery = self.mm.select( rDict, **kwargs )
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #
+    return self.mm.insert( rDict, **kwargs )  
 
-    if sqlQuery[ 'Value' ]:      
-      return self.mm.update( rDict, **kwargs )
-    else: 
-      return self.mm.insert( rDict, **kwargs )
+  @DBDec
+  def updateClientCache( self, name, commandName, opt_ID, value, result, 
+                         dateEffective, lastCheckTime, **kwargs ):
+    
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #
+    return self.mm.update( rDict, **kwargs )  
 
   @DBDec    
   def getClientCache( self, name, commandName, opt_ID, value, result,
-                       dateEffective, lastCheckTime, **kwargs ):  
+                      dateEffective, lastCheckTime, **kwargs ):  
     
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec  
   def deleteClientCache( self, name, commandName, opt_ID, value, result,
-                          dateEffective, lastCheckTime, **kwargs ):
+                         dateEffective, lastCheckTime, **kwargs ):
     
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict  = localsToDict( locals() )    
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -222,38 +200,35 @@ class ResourceManagementDB(object):
   __TABLES__[ 'AccountingCache' ] = {'uniqueKeys' : [ 'Name', 'PlotType', 'PlotName' ] }
 
   @DBDec
-  def addOrModifyAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                                  lastCheckTime, **kwargs ):
-    
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
-    sqlQuery = self.mm.select( rDict, **kwargs )
+  def insertAccountingCache( self, name, plotType, plotName, result, dateEffective,
+                             lastCheckTime, **kwargs ):
 
-    if sqlQuery[ 'Value' ]:      
-      return self.mm.update( rDict, **kwargs )
-    else: 
-      return self.mm.insert( rDict, **kwargs )
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #
+    return self.mm.insert( rDict, **kwargs )
+
+  @DBDec
+  def updateAccountingCache( self, name, plotType, plotName, result, dateEffective,
+                             lastCheckTime, **kwargs ):
+
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #    
+    return self.mm.update( rDict, **kwargs )
 
   @DBDec
   def getAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                           lastCheckTime, **kwargs ):
+                          lastCheckTime, **kwargs ):
     
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #    
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
   def deleteAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                              lastCheckTime, **kwargs ):
+                             lastCheckTime, **kwargs ):
 
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict  = localsToDict( locals() )
+    # NO VALIDATION #    
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -264,37 +239,32 @@ class ResourceManagementDB(object):
   __TABLES__[ 'UserRegistryCache' ] =  { 'uniqueKeys' : [ 'Login' ] }  
 
   @DBDec
-  def addOrModifyUserRegistryCache( self, login, name, email, **kwargs ):
-    
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
-    sqlQuery = self.mm.select( rDict, **kwargs )
+  def insertUserRegistryCache( self, login, name, email, **kwargs ):
 
-    if sqlQuery[ 'Value' ]:      
-      return self.mm.update( rDict, **kwargs )
-    else: 
-      return self.mm.insert( rDict, **kwargs )
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #    
+    return self.mm.insert( rDict, **kwargs )
 
+  @DBDec
+  def updateUserRegistryCache( self, login, name, email, **kwargs ):
+
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #    
+    return self.mm.update( rDict, **kwargs )
+  
   @DBDec
   def getUserRegistryCache( self, login, name, email, **kwargs ):
     
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #       
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
   def deleteUserRegistryCache( self, login, name, email, **kwargs ):
 
-    ##
-    rDict  = self.mm.localsToDict( locals() )
-    ##
-    
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #    
     return self.mm.delete( rDict, **kwargs )
-
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
