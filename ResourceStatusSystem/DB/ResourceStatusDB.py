@@ -1,27 +1,27 @@
-"""
-The ResourcesStatusDB module contains a couple of exception classes, and a
-class to interact with the ResourceStatus DB.
-"""
-
-#from datetime import datetime
-
-from DIRAC import S_OK#, S_ERROR
-
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidStatusTypes
-
+from DIRAC.ResourceStatusSystem.Utilities.Decorators  import DBDec
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey, localsToDict
-from DIRAC.ResourceStatusSystem.Utilities.Validator import ResourceStatusValidator
-
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import DBDec
+from DIRAC.ResourceStatusSystem.Utilities.Validator   import ResourceStatusValidator
 
 ################################################################################
 
 class ResourceStatusDB:
   """
-  The ResourcesStatusDB class is a front-end to the Resource Status Database.
-
+  The ResourceStatusDB class is a front-end to the ResourceStatusDB MySQL db.
+  If exposes four basic actions per table:
+  
+    o insert
+    o update
+    o get
+    o delete
+  
+  all them defined on the MySQL monkey class.
+  Moreover, there are a set of key-worded parameters that can be used, specially
+  on the getX and deleteX functions ( to know more, again, check the MySQL monkey
+  documentation ).
+  
+  The DB schema has NO foreign keys, so there are some small consistency checks,
+  called validators on the insert and update functions.  
+  
   The simplest way to instantiate an object of type :class:`ResourceStatusDB`
   is simply by calling
 
@@ -33,20 +33,21 @@ class ResourceStatusDB:
   provided the interface is the same exposed by :mod:`DIRAC.Core.Base.DB`.
 
    >>> AnotherDB = AnotherDBClass()
-   >>> rsDB = ResourceStatusDB(DBin = AnotherDB)
+   >>> rsDB = ResourceStatusDB( DBin = AnotherDB )
 
   Alternatively, for testing purposes, you could do:
 
-   >>> from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
+   >>> from mock import Mock
    >>> mockDB = Mock()
-   >>> rsDB = ResourceStatusDB(DBin = mockDB)
+   >>> rsDB = ResourceStatusDB( DBin = mockDB )
 
   Or, if you want to work with a local DB, providing it's mySQL:
 
-   >>> rsDB = ResourceStatusDB(DBin = ['UserName', 'Password'])
-
+   >>> rsDB = ResourceStatusDB( DBin = [ 'UserName', 'Password' ] )
   """
  
+  #This is an small & temporary 'hack' used for the MySQLMonkey.
+  #Check MySQL monkey for more
   __TABLES__ = {}
 
   def __init__( self, *args, **kwargs ):
@@ -82,34 +83,23 @@ class ResourceStatusDB:
   # SITE FUNCTIONS
   ##############################################################################
   '''
-
-#  @DBDec
-#  def addOrModifySite( self, siteName, siteType, gridSiteName, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( siteName )
-#    self.rsVal.validateSiteType( siteType )
-#    self.rsVal.validateGridSite( gridSiteName )
-#    # END VALIDATION #
-#     
-#    return self._addOrModifyElement( rDict, **kwargs )
-
-  __TABLES__[ 'Site' ] = {'uniqueKeys' : [ 'SiteName' ] } 
-  
+  __TABLES__[ 'Site' ] = { 'uniqueKeys' : [ 'SiteName' ] } 
+ 
   @DBDec
   def insertSite( self, siteName, siteType, gridSiteName, **kwargs ):
     
     rDict = localsToDict( locals() )
     # VALIDATION #
+    self.rsVal.validateSiteType( siteType )
     # END VALIDATION #
     return self.mm.insert( rDict, **kwargs )
 
   @DBDec
   def updateSite( self, siteName, siteType, gridSiteName, **kwargs ):
   
-    rDict = localsToDict( locals() )
+    rDict = localsToDict( locals() )   
     # VALIDATION #
+    self.rsVal.validateSiteType( siteType, False )   
     # END VALIDATION #
     return self.mm.update( rDict, **kwargs )
 
@@ -117,18 +107,14 @@ class ResourceStatusDB:
   def getSite( self, siteName, siteType, gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
-
+  
   @DBDec
   def deleteSite( self, siteName, siteType, gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    #self.rsVal.validateMultipleNames( siteName )
-    # END VALIDATION #
-
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -136,21 +122,7 @@ class ResourceStatusDB:
   # SITE STATUS FUNCTIONS
   ##############################################################################
   '''
-
-#  @DBDec
-#  def addOrModifySiteStatus( self, siteName, statusType, status, reason, dateCreated,
-#                             dateEffective, dateEnd, lastCheckTime, tokenOwner,
-#                             tokenExpiration, **kwargs ):
-#  
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( siteName )
-#    self.rsVal.validateSingleElementStatusType( 'Site', rDict[ 'StatusType' ] )
-#    # END VALIDATION # 
-#       
-#    return self._addOrModifyElementStatus( rDict, **kwargs )
-
-  __TABLES__[ 'SiteStatus' ] = {'uniqueKeys' : [ 'SiteName', 'StatusType' ] }
+  __TABLES__[ 'SiteStatus' ] = { 'uniqueKeys' : [ 'SiteName', 'StatusType' ] }
 
   @DBDec
   def insertSiteStatus( self, siteName, statusType, status, reason, dateCreated,
@@ -159,10 +131,10 @@ class ResourceStatusDB:
   
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( siteName )
-    #self.rsVal.validateSingleElementStatusType( 'Site', rDict[ 'StatusType' ] )
+    self.rsVal.validateSite( siteName )
+    self.rsVal.validateStatusType( 'Site', statusType )
+    self.rsVal.validateStatus( status )
     # END VALIDATION # 
-    #return self._addOrModifyElementStatus( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )
 
   @DBDec
@@ -172,10 +144,10 @@ class ResourceStatusDB:
   
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( siteName )
-    #self.rsVal.validateSingleElementStatusType( 'Site', rDict[ 'StatusType' ] )
+    self.rsVal.validateSite( siteName, False )
+    self.rsVal.validateStatusType( 'Site', statusType, False )
+    self.rsVal.validateStatus( status, False )
     # END VALIDATION # 
-    #return self._addOrModifyElementStatus( rDict, **kwargs )
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -184,8 +156,7 @@ class ResourceStatusDB:
                      tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
   
   @DBDec
@@ -194,8 +165,7 @@ class ResourceStatusDB:
                         tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
   
   '''
@@ -203,21 +173,8 @@ class ResourceStatusDB:
   # SITE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''  
-    
-#  @DBDec
-#  def addOrModifySiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
-#                                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
-#                                      tokenExpiration, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( siteName )
-#    self.rsVal.validateSingleElementStatusType( 'Site', rDict[ 'StatusType' ] )
-#    # END VALIDATION #
-#    
-#    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
-
-  __TABLES__[ 'SiteScheduledStatus' ] = {'uniqueKeys' : [ 'SiteName', 'StatusType', 'DateEffective' ] }
+  __TABLES__[ 'SiteScheduledStatus' ] = { 'uniqueKeys' : [ 'SiteName', 'StatusType', 
+                                                           'DateEffective' ] }
 
   @DBDec
   def insertSiteScheduledStatus( self, siteName, statusType, status, reason, dateCreated,
@@ -226,11 +183,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( siteName )
-    #self.rsVal.validateSingleElementStatusType( 'Site', rDict[ 'StatusType' ] )
+    self.rsVal.validateSite( siteName )
+    self.rsVal.validateStatusType( 'Site', statusType )
+    self.rsVal.validateStatus( status )
     # END VALIDATION #
-    
-    #return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )
 
   @DBDec
@@ -240,11 +196,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( siteName )
-    #self.rsVal.validateSingleElementStatusType( 'Site', rDict[ 'StatusType' ] )
+    self.rsVal.validateSite( siteName, False )
+    self.rsVal.validateStatusType( 'Site', statusType, False )
+    self.rsVal.validateStatus( status, False )
     # END VALIDATION #
-    
-    #return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -253,6 +208,7 @@ class ResourceStatusDB:
                               tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #    
     return self.mm.get( rDict, **kwargs )  
 
   @DBDec
@@ -262,6 +218,7 @@ class ResourceStatusDB:
                                  **kwargs ):
     
     rDict = localsToDict( locals() )  
+    # NO VALIDATION #    
     return self.mm.delete( rDict, **kwargs )
   
   '''
@@ -269,8 +226,7 @@ class ResourceStatusDB:
   # SITE HISTORY FUNCTIONS
   ##############################################################################
   '''  
-
-  __TABLES__[ 'SiteHistory' ] = {'uniqueKeys' : [ 'SiteName', 'StatusType', 'DateEnd' ] }
+  __TABLES__[ 'SiteHistory' ] = { 'uniqueKeys' : [ 'SiteName', 'StatusType', 'DateEnd' ] }
 
   @DBDec
   def insertSiteHistory( self, siteName, statusType, status, reason, dateCreated,
@@ -278,6 +234,9 @@ class ResourceStatusDB:
                          tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    self.rsVal.validateSite( siteName )
+    self.rsVal.validateStatusType( 'Site', statusType )
+    self.rsVal.validateStatus( status )    
     return self.mm.insert( rDict, **kwargs )    
   
   @DBDec
@@ -286,6 +245,11 @@ class ResourceStatusDB:
                          tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateSite( siteName, False )
+    self.rsVal.validateStatusType( 'Site', statusType, False )
+    self.rsVal.validateStatus( status, False )    
+    # END VALIDATION #    
     return self.mm.update( rDict, **kwargs )  
   
   @DBDec
@@ -294,6 +258,7 @@ class ResourceStatusDB:
                       tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     if not kwargs.has_key( 'sort' ):
       kwargs[ 'sort' ] = [ 'SiteName', 'SiteHistoryID' ]
     return self.mm.get( rDict, **kwargs )  
@@ -304,6 +269,7 @@ class ResourceStatusDB:
                          tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -311,17 +277,16 @@ class ResourceStatusDB:
   # SITE PRESENT FUNCTIONS
   ##############################################################################
   '''  
-
-  __TABLES__[ 'SitePresent' ] = {'uniqueKeys' : [ 'SiteName', 'StatusType' ] } 
+  __TABLES__[ 'SitePresent' ] = { 'uniqueKeys' : [ 'SiteName', 'StatusType' ] } 
 
   @DBDec
   def getSitePresent( self, siteName, siteType, gridSiteName, gridTier,
                       statusType, status, dateEffective, reason, lastCheckTime,
                       tokenOwner, tokenExpiration, formerStatus, **kwargs ):
 
-    rDict = localsToDict( locals() )   
+    rDict = localsToDict( locals() )
+    # NO VALIDATION #   
     return self.mm.get( rDict, **kwargs )
-
 
 ################################################################################
 ################################################################################
@@ -331,67 +296,41 @@ class ResourceStatusDB:
   # SERVICE FUNCTIONS
   ##############################################################################
   '''
-
-#  @DBDec
-#  def addOrModifyService( self, serviceName, serviceType, siteName, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#
-#    # START VALIDATION #
-#    self.rsVal.validateName( serviceName )
-#    self.rsVal.validateServiceType( serviceType )
-#    self.rsVal.validateSite( siteName )
-#    # END VALIDATION #
-#
-#    return self._addOrModifyElement( rDict, **kwargs )
-
-  __TABLES__[ 'Service' ] = {'uniqueKeys' : [ 'ServiceName' ] }
+  __TABLES__[ 'Service' ] = { 'uniqueKeys' : [ 'ServiceName' ] }
 
   @DBDec
   def insertService( self, serviceName, serviceType, siteName, **kwargs ):
 
     rDict = localsToDict( locals() )
-
     # START VALIDATION #
-    #self.rsVal.validateName( serviceName )
-    #self.rsVal.validateServiceType( serviceType )
-    #self.rsVal.validateSite( siteName )
+    self.rsVal.validateServiceType( serviceType )
+    self.rsVal.validateSite( siteName )
     # END VALIDATION #
-
     return self.mm.insert( rDict, **kwargs )
-
-    #return self._addOrModifyElement( rDict, **kwargs )
   
   @DBDec
   def updateService( self, serviceName, serviceType, siteName, **kwargs ):
 
     rDict = localsToDict( locals() )
-
     # START VALIDATION #
-    #self.rsVal.validateName( serviceName )
-    #self.rsVal.validateServiceType( serviceType )
-    #self.rsVal.validateSite( siteName )
+    self.rsVal.validateServiceType( serviceType, False )
+    self.rsVal.validateSite( siteName, False )
     # END VALIDATION #
 
     return self.mm.update( rDict, **kwargs )
-
-    #return self._addOrModifyElement( rDict, **kwargs )
 
   @DBDec
   def getService( self, serviceName, serviceType, siteName, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
-  def deleteService( self, serviceName, **kwargs ):
+  def deleteService( self, serviceName, serviceType, siteName, **kwargs ):
 
     rDict = localsToDict( locals() )
-    #VALIDATION#
-    #self.rsVal.validateMultipleNames( serviceName )
-    # END VALIDATION #
-
-    #return self._deleteElement( rDict, **kwargs )
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -399,22 +338,8 @@ class ResourceStatusDB:
   # SERVICE STATUS FUNCTIONS
   ##############################################################################
   '''
-
-  __TABLES__[ 'ServiceStatus'  ] = {'uniqueKeys' : [ 'ServiceName', 'StatusType' ] }
-
-#  @DBDec
-#  def addOrModifyServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
-#                                dateEffective, dateEnd, lastCheckTime,tokenOwner,
-#                                tokenExpiration, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( serviceName )
-#    self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
-#    # END VALIDATION #
-#       
-#    return self._addOrModifyElementStatus( rDict, **kwargs )    
-  
+  __TABLES__[ 'ServiceStatus'  ] = { 'uniqueKeys' : [ 'ServiceName', 'StatusType' ] }
+ 
   @DBDec
   def insertServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
                            dateEffective, dateEnd, lastCheckTime,tokenOwner,
@@ -422,11 +347,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( serviceName )
-    #self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
+    self.rsVal.validateService( serviceName )
+    self.rsVal.validateStatusType( 'Service', statusType )
+    self.rsVal.validateStatus( status )    
     # END VALIDATION #
-       
-    #return self._addOrModifyElementStatus( rDict, **kwargs )    
     return self.mm.insert( rDict, **kwargs )
   
   @DBDec
@@ -436,12 +360,11 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( serviceName )
-    #self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
-    # END VALIDATION #
-     
-    return self.mm.update( rDict, **kwargs )   
-    #return self._addOrModifyElementStatus( rDict, **kwargs )        
+    self.rsVal.validateService( serviceName, False )
+    self.rsVal.validateStatusType( 'Service', statusType, False )
+    self.rsVal.validateStatus( status, False )  
+    # END VALIDATION #    
+    return self.mm.update( rDict, **kwargs )           
 
   @DBDec
   def getServiceStatus( self, serviceName, statusType, status, reason, dateCreated,
@@ -449,6 +372,7 @@ class ResourceStatusDB:
                         tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
   
   @DBDec
@@ -457,6 +381,7 @@ class ResourceStatusDB:
                            tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
   
   '''
@@ -464,22 +389,10 @@ class ResourceStatusDB:
   # SERVICE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''  
-  __TABLES__[ 'ServiceScheduledStatus' ] = {'uniqueKeys' : [ 'ServiceName', 'StatusType', 'DateEffective' ] }
-  
-#  @DBDec
-#  def addOrModifyServiceScheduledStatus( self, serviceName, statusType, status,
-#                                         reason, dateCreated, dateEffective, dateEnd,
-#                                         lastCheckTime, tokenOwner, tokenExpiration,
-#                                         **kwargs ):
-#    
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( serviceName )
-#    self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
-#    # END VALIDATION #
-#    
-#    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
-  
+  __TABLES__[ 'ServiceScheduledStatus' ] = { 'uniqueKeys' : [ 'ServiceName', 
+                                                             'StatusType', 
+                                                             'DateEffective' ] }
+   
   @DBDec
   def insertServiceScheduledStatus( self, serviceName, statusType, status,
                                     reason, dateCreated, dateEffective, dateEnd,
@@ -488,10 +401,10 @@ class ResourceStatusDB:
     
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( serviceName )
-    #self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
+    self.rsVal.validateService( serviceName )
+    self.rsVal.validateStatusType( 'Service', statusType )
+    self.rsVal.validateStatus( status )    
     # END VALIDATION #
-    
     return self.mm.insert( rDict, **kwargs )
   
   @DBDec
@@ -502,10 +415,10 @@ class ResourceStatusDB:
     
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( serviceName )
-    #self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
+    self.rsVal.validateService( serviceName, False )
+    self.rsVal.validateStatusType( 'Service', statusType, False )
+    self.rsVal.validateStatus( status, False )    
     # END VALIDATION #
-    
     return self.mm.update( rDict, **kwargs )
   
   @DBDec
@@ -515,11 +428,7 @@ class ResourceStatusDB:
                                  **kwargs ):
     
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    #self.rsVal.validateName( serviceName )
-    #self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
-    # END VALIDATION #
-    
+    # NO VALIDATION #   
     return self.mm.get( rDict, **kwargs )      
 
   @DBDec
@@ -529,11 +438,7 @@ class ResourceStatusDB:
                                     **kwargs ):
     
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    #self.rsVal.validateName( serviceName )
-    #self.rsVal.validateSingleElementStatusType( 'Service', rDict[ 'StatusType' ] )
-    # END VALIDATION #
-    
+    # NO VALIDATION #   
     return self.mm.delete( rDict, **kwargs )  
   
   '''
@@ -541,8 +446,8 @@ class ResourceStatusDB:
   # SERVICE HISTORY STATUS FUNCTIONS
   ##############################################################################
   '''    
-
-  __TABLES__[ 'ServiceHistory' ] = {'uniqueKeys' : [ 'ServiceName', 'StatusType', 'DateEnd' ] }
+  __TABLES__[ 'ServiceHistory' ] = { 'uniqueKeys' : [ 'ServiceName', 'StatusType', 
+                                                      'DateEnd' ] }
   
   @DBDec
   def insertServiceHistory( self, serviceName, statusType, status, reason, dateCreated,
@@ -550,6 +455,11 @@ class ResourceStatusDB:
                             tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateService( serviceName )
+    self.rsVal.validateStatusType( 'Service', statusType )
+    self.rsVal.validateStatus( status )    
+    # END VALIDATION #
     return self.mm.insert( rDict, **kwargs )
   
   @DBDec
@@ -558,6 +468,11 @@ class ResourceStatusDB:
                          tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateService( serviceName, False )
+    self.rsVal.validateStatusType( 'Service', statusType, False )
+    self.rsVal.validateStatus( status, False )    
+    # END VALIDATION #
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -566,6 +481,7 @@ class ResourceStatusDB:
                          tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     if not kwargs.has_key( 'sort' ):
       kwargs[ 'sort' ] = [ 'ServiceName', 'ServiceHistoryID' ]
     return self.mm.get( rDict, **kwargs )    
@@ -576,6 +492,7 @@ class ResourceStatusDB:
                             tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )  
   
   '''
@@ -583,8 +500,7 @@ class ResourceStatusDB:
   # SERVICE PRESENT FUNCTIONS
   ##############################################################################
   '''     
-  
-  __TABLES__[ 'ServicePresent' ] = {'uniqueKeys' : [ 'ServiceName', 'StatusType' ] }
+  __TABLES__[ 'ServicePresent' ] = { 'uniqueKeys' : [ 'ServiceName', 'StatusType' ] }
 
   @DBDec
   def getServicePresent( self, serviceName, siteName, siteType, serviceType,
@@ -592,17 +508,8 @@ class ResourceStatusDB:
                          tokenOwner, tokenExpiration, formerStatus, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
-
-#  @DBDec
-#  def deleteService( self, serviceName, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    #VALIDATION#
-#    self.rsVal.validateMultipleNames( serviceName )
-#    # END VALIDATION #
-#
-#    return self._deleteElement( rDict, **kwargs )
 
 ################################################################################
 ################################################################################
@@ -612,53 +519,28 @@ class ResourceStatusDB:
   # RESOURCE FUNCTIONS
   ##############################################################################
   '''
-
-  __TABLES__[ 'Resource' ] = {'uniqueKeys' : [ 'ResourceName' ] }
-  
-#  @DBDec
-#  def addOrModifyResource( self, resourceName, resourceType, serviceType, siteName,
-#                           gridSiteName, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    
-#    # START VALIDATION #
-#    self.rsVal.validateName( resourceName )  
-#    self.rsVal.validateResourceType( resourceType )
-#    self.rsVal.validateServiceType( serviceType )
-#    # Not used, some resources have NULL site !!
-##    self.rsVal.validateSite( siteName )
-#    self.rsVal.validateGridSite( gridSiteName )
-#    # END VALIDATION #
-#
-#    return self._addOrModifyElement( rDict, **kwargs )
+  __TABLES__[ 'Resource' ] = { 'uniqueKeys' : [ 'ResourceName' ] }
   
   @DBDec
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, **kwargs ):
 
-    rDict = localsToDict( locals() )
-    
+    rDict = localsToDict( locals() )   
     # START VALIDATION #
-    #self.rsVal.validateName( resourceName )  
-    #self.rsVal.validateResourceType( resourceType )
-    #self.rsVal.validateServiceType( serviceType )
-    # Not used, some resources have NULL site !!
-#    self.rsVal.validateSite( siteName )
-    #self.rsVal.validateGridSite( gridSiteName )
+    self.rsVal.validateResourceType( resourceType )
+    self.rsVal.validateServiceType( serviceType )
     # END VALIDATION #
-
-    #return self._addOrModifyElement( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )
 
   @DBDec
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, **kwargs ):
 
-    rDict = localsToDict( locals() )
-    
+    rDict = localsToDict( locals() )   
     # START VALIDATION #
+    self.rsVal.validateResourceType( resourceType, False )
+    self.rsVal.validateServiceType( serviceType, False )    
     # END VALIDATION #
-
     return self.mm.update( rDict, **kwargs )
   
   @DBDec
@@ -666,10 +548,7 @@ class ResourceStatusDB:
                       gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )
-    
-    # START VALIDATION #
-    # END VALIDATION #
-
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
@@ -677,32 +556,15 @@ class ResourceStatusDB:
                       gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )
-    
-    # START VALIDATION #
-    # END VALIDATION #
-
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
   ##############################################################################
   # RESOURCE STATUS FUNCTIONS
   ##############################################################################
-  '''  
-
-#  @DBDec
-#  def addOrModifyResourceStatus( self, resourceName, statusType, status, reason, 
-#                                 dateCreated, dateEffective, dateEnd, lastCheckTime, 
-#                                 tokenOwner,tokenExpiration, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( resourceName )
-#    self.rsVal.validateSingleElementStatusType( 'Resource', rDict[ 'StatusType' ] )
-#    # END VALIDATION #
-#       
-#    return self._addOrModifyElementStatus( rDict, **kwargs )    
-  
-  __TABLES__[ 'ResourceStatus' ] = {'uniqueKeys' : [ 'ResourceName', 'StatusType' ] }
+  '''   
+  __TABLES__[ 'ResourceStatus' ] = { 'uniqueKeys' : [ 'ResourceName', 'StatusType' ] }
   
   @DBDec
   def insertResourceStatus( self, resourceName, statusType, status, reason, 
@@ -711,11 +573,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( resourceName )
-    #self.rsVal.validateSingleElementStatusType( 'Resource', rDict[ 'StatusType' ] )
+    self.rsVal.validateResource( resourceName )
+    self.rsVal.validateStatusType( 'Resource', statusType )
+    self.rsVal.validateStatus( status )        
     # END VALIDATION #
-       
-    #return self._addOrModifyElementStatus( rDict, **kwargs )      
     return self.mm.insert( rDict, **kwargs )
   
   @DBDec
@@ -725,8 +586,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
+    self.rsVal.validateResource( resourceName, False )
+    self.rsVal.validateStatusType( 'Resource', statusType, False )
+    self.rsVal.validateStatus( status, False )            
     # END VALIDATION #
-             
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -735,9 +598,7 @@ class ResourceStatusDB:
                             tokenOwner,tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
-             
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
@@ -746,9 +607,7 @@ class ResourceStatusDB:
                             tokenOwner,tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
-             
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -756,22 +615,9 @@ class ResourceStatusDB:
   # RESOURCE SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''  
-
-#  @DBDec
-#  def addOrModifyResourceScheduledStatus( self, resourceName, statusType, status, 
-#                                          reason, dateCreated, dateEffective, dateEnd, 
-#                                          lastCheckTime, tokenOwner, tokenExpiration,
-#                                          **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( resourceName )
-#    self.rsVal.validateSingleElementStatusType( 'Resource', rDict[ 'StatusType' ] )
-#    # END VALIDATION #
-#    
-#    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
-  
-  __TABLES__[ 'ResourceScheduledStatus' ] = {'uniqueKeys' : [ 'ResourceName', 'StatusType', 'DateEffective' ] }
+  __TABLES__[ 'ResourceScheduledStatus' ] = { 'uniqueKeys' : [ 'ResourceName', 
+                                                               'StatusType', 
+                                                               'DateEffective' ] }
   
   @DBDec
   def insertResourceScheduledStatus( self, resourceName, statusType, status, 
@@ -781,12 +627,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( resourceName )
-    #self.rsVal.validateSingleElementStatusType( 'Resource', rDict[ 'StatusType' ] )
+    self.rsVal.validateResource( resourceName )
+    self.rsVal.validateStatusType( 'Resource', statusType )
+    self.rsVal.validateStatus( status )        
     # END VALIDATION #
-       
-    #return self._addOrModifyElementScheduledStatus( rDict, **kwargs )  
-  
     return self.mm.insert( rDict, **kwargs )
   
   @DBDec
@@ -797,8 +641,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
+    self.rsVal.validateResource( resourceName, False )
+    self.rsVal.validateStatusType( 'Resource', statusType, False )
+    self.rsVal.validateStatus( status, False )      
     # END VALIDATION #
-       
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -808,9 +654,7 @@ class ResourceStatusDB:
                                   **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
-       
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
@@ -820,9 +664,7 @@ class ResourceStatusDB:
                                      **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
-       
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -830,18 +672,8 @@ class ResourceStatusDB:
   # RESOURCE HISTORY FUNCTIONS
   ##############################################################################
   '''  
-
-#  @DBDec
-#  def getResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
-#                          dateEffective, dateEnd, lastCheckTime, tokenOwner,
-#                          tokenExpiration, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    if not kwargs.has_key( 'sort' ):
-#      kwargs[ 'sort' ] = [ 'ResourceName', 'ResourceHistoryID' ]
-#    return self.mm.get( rDict, **kwargs )
-  
-  __TABLES__[ 'ResourceHistory' ] = {'uniqueKeys' : [ 'ResourceName', 'StatusType', 'DateEnd' ] }
+  __TABLES__[ 'ResourceHistory' ] = { 'uniqueKeys' : [ 'ResourceName', 'StatusType', 
+                                                       'DateEnd' ] }
   
   @DBDec
   def insertResourceHistory( self, resourceName, statusType, status, reason, dateCreated,
@@ -849,6 +681,11 @@ class ResourceStatusDB:
                              tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateResource( resourceName )
+    self.rsVal.validateStatusType( 'Resource', statusType )
+    self.rsVal.validateStatus( status )        
+    # END VALIDATION #    
     return self.mm.insert( rDict, **kwargs )
 
   @DBDec
@@ -857,6 +694,11 @@ class ResourceStatusDB:
                              tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateResource( resourceName, False )
+    self.rsVal.validateStatusType( 'Resource', statusType, False )
+    self.rsVal.validateStatus( status, False )        
+    # END VALIDATION #    
     return self.mm.update( rDict, **kwargs )
   
   @DBDec
@@ -865,6 +707,7 @@ class ResourceStatusDB:
                           tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #        
     if not kwargs.has_key( 'sort' ):
       kwargs[ 'sort' ] = [ 'ResourceName', 'ResourceHistoryID' ]
     return self.mm.get( rDict, **kwargs )  
@@ -875,6 +718,7 @@ class ResourceStatusDB:
                              tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #        
     return self.mm.delete( rDict, **kwargs )
   
   '''
@@ -882,9 +726,7 @@ class ResourceStatusDB:
   # RESOURCE PRESENT FUNCTIONS
   ##############################################################################
   '''   
-  
-  __TABLES__[ 'ResourcePresent' ] = {'uniqueKeys' : [ 'ResourceName', 'StatusType' ] }
-
+  __TABLES__[ 'ResourcePresent' ] = { 'uniqueKeys' : [ 'ResourceName', 'StatusType' ] }
 
   @DBDec
   def getResourcePresent( self, resourceName, siteName, serviceType, gridSiteName,
@@ -893,6 +735,7 @@ class ResourceStatusDB:
                           formerStatus, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #        
     return self.mm.get( rDict, **kwargs )
 
 ################################################################################
@@ -903,36 +746,16 @@ class ResourceStatusDB:
   # STORAGE ELEMENT FUNCTIONS
   ##############################################################################
   '''
-
-  __TABLES__[ 'StorageElement' ] = {'uniqueKeys' : [ 'StorageElementName' ] }
+  __TABLES__[ 'StorageElement' ] = { 'uniqueKeys' : [ 'StorageElementName' ] }
   
-#  @DBDec
-#  def addOrModifyStorageElement( self, storageElementName, resourceName,
-#                                 gridSiteName, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    
-#    # START VALIDATION #
-#    self.rsVal.validateName( storageElementName )  
-#    self.rsVal.validateResource( resourceName )
-#    self.rsVal.validateGridSite( gridSiteName )
-#    # END VALIDATION #
-#
-#    return self._addOrModifyElement( rDict, **kwargs )
-
   @DBDec
   def insertStorageElement( self, storageElementName, resourceName,
                             gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )
-    
     # START VALIDATION #
-    #self.rsVal.validateName( storageElementName )  
-    #self.rsVal.validateResource( resourceName )
-    #self.rsVal.validateGridSite( gridSiteName )
+    self.rsVal.validateResource( resourceName )
     # END VALIDATION #
-
-    #return self._addOrModifyElement( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )
 
   @DBDec
@@ -941,8 +764,8 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )   
     # START VALIDATION #
+    self.rsVal.validateResource( resourceName, False )
     # END VALIDATION #
-
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -950,9 +773,7 @@ class ResourceStatusDB:
                             gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )   
-    # START VALIDATION #
-    # END VALIDATION #
-
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
@@ -960,33 +781,16 @@ class ResourceStatusDB:
                             gridSiteName, **kwargs ):
 
     rDict = localsToDict( locals() )   
-    # START VALIDATION #
-    # END VALIDATION #
-
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
   ##############################################################################
   # STORAGE ELEMENT STATUS FUNCTIONS
   ##############################################################################
-  '''
-
-#  @DBDec
-#  def addOrModifyStorageElementStatus( self, storageElementName, statusType, status,
-#                                       reason, dateCreated, dateEffective, dateEnd,
-#                                       lastCheckTime, tokenOwner, tokenExpiration,
-#                                       **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( storageElementName )
-#    self.rsVal.validateSingleElementStatusType( 'StorageElement', rDict[ 'StatusType' ] )
-#    # END VALIDATION #
-#       
-#    return self._addOrModifyElementStatus( rDict, **kwargs )  
-  
-  __TABLES__[ 'StorageElementStatus' ] = {'uniqueKeys' : [ 'StorageElementName', 'StatusType' ] }
-  
+  ''' 
+  __TABLES__[ 'StorageElementStatus' ] = { 'uniqueKeys' : [ 'StorageElementName', 
+                                                            'StatusType' ] }
   @DBDec
   def insertStorageElementStatus( self, storageElementName, statusType, status,
                                   reason, dateCreated, dateEffective, dateEnd,
@@ -995,11 +799,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( storageElementName )
-    #self.rsVal.validateSingleElementStatusType( 'StorageElement', rDict[ 'StatusType' ] )
+    self.rsVal.validateStorageElement( storageElementName )
+    self.rsVal.validateStatusType( 'StorageElement', statusType )
+    self.rsVal.validateStatus( status )     
     # END VALIDATION #
-       
-    #return self._addOrModifyElementStatus( rDict, **kwargs )    
     return self.mm.insert( rDict, **kwargs )
 
   @DBDec
@@ -1010,8 +813,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
+    self.rsVal.validateStorageElement( storageElementName, False )
+    self.rsVal.validateStatusType( 'StorageElement', statusType, False )
+    self.rsVal.validateStatus( status, False )      
     # END VALIDATION #
-           
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -1021,9 +826,7 @@ class ResourceStatusDB:
                                **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
-           
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
@@ -1033,9 +836,7 @@ class ResourceStatusDB:
                                   **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
-           
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
  
   '''
@@ -1043,22 +844,9 @@ class ResourceStatusDB:
   # STORAGE ELEMENT SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''  
-
-#  @DBDec
-#  def addOrModifyStorageElementScheduledStatus( self, storageElementName, statusType, status,
-#                                                reason, dateCreated, dateEffective, dateEnd,
-#                                                lastCheckTime, tokenOwner, tokenExpiration,
-#                                                **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    # VALIDATION #
-#    self.rsVal.validateName( storageElementName )
-#    self.rsVal.validateSingleElementStatusType( 'StorageElement', rDict[ 'StatusType' ] )
-#    # END VALIDATION #
-#    
-#    return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
-  
-  __TABLES__[ 'StorageElementScheduledStatus' ] = {'uniqueKeys' : [ 'StorageElementName', 'StatusType', 'DateEffective' ] }
+  __TABLES__[ 'StorageElementScheduledStatus' ] = { 'uniqueKeys' : [ 'StorageElementName', 
+                                                                     'StatusType', 
+                                                                     'DateEffective' ] }
   
   @DBDec
   def insertStorageElementScheduledStatus( self, storageElementName, statusType, status,
@@ -1068,11 +856,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    #self.rsVal.validateName( storageElementName )
-    #self.rsVal.validateSingleElementStatusType( 'StorageElement', rDict[ 'StatusType' ] )
+    self.rsVal.validateStorageElement( storageElementName )
+    self.rsVal.validateStatusType( 'StorageElement', statusType )
+    self.rsVal.validateStatus( status )        
     # END VALIDATION #
-    
-    #return self._addOrModifyElementScheduledStatus( rDict, **kwargs )
     return self.mm.insert( rDict, **kwargs )  
 
   @DBDec
@@ -1083,8 +870,10 @@ class ResourceStatusDB:
 
     rDict = localsToDict( locals() )
     # VALIDATION #
-    # END VALIDATION #
-    
+    self.rsVal.validateStorageElement( storageElementName, False )
+    self.rsVal.validateStatusType( 'StorageElement', statusType, False )
+    self.rsVal.validateStatus( status, False )           
+    # END VALIDATION #   
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -1094,9 +883,7 @@ class ResourceStatusDB:
                                            **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
-    
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
@@ -1106,9 +893,7 @@ class ResourceStatusDB:
                                            **kwargs ):
 
     rDict = localsToDict( locals() )
-    # VALIDATION #
-    # END VALIDATION #
-    
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -1116,18 +901,9 @@ class ResourceStatusDB:
   # STORAGE ELEMENT SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''  
-
-#  @DBDec
-#  def getStorageElementHistory( self, storageElementName, statusType, status,
-#                                 reason, dateCreated, dateEffective, dateEnd,
-#                                 lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
-#
-#    rDict = localsToDict( locals() )
-#    if not kwargs.has_key( 'sort' ):
-#      kwargs[ 'sort' ] = [ 'StorageElementName', 'StorageElementHistoryID' ]
-#    return self.mm.get( rDict, **kwargs )
-
-  __TABLES__[ 'StorageElementHistory'] = {'uniqueKeys' : [ 'StorageElementName', 'StatusType', 'DateEnd' ] }
+  __TABLES__[ 'StorageElementHistory'] = { 'uniqueKeys' : [ 'StorageElementName', 
+                                                            'StatusType', 
+                                                            'DateEnd' ] }
 
   @DBDec
   def insertStorageElementHistory( self, storageElementName, statusType, status,
@@ -1135,6 +911,11 @@ class ResourceStatusDB:
                                    lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateStorageElement( storageElementName )
+    self.rsVal.validateStatusType( 'StorageElement', statusType )
+    self.rsVal.validateStatus( status )        
+    # END VALIDATION #    
     return self.mm.insert( rDict, **kwargs )
 
   @DBDec
@@ -1143,6 +924,11 @@ class ResourceStatusDB:
                                    lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # VALIDATION #
+    self.rsVal.validateStorageElement( storageElementName, False )
+    self.rsVal.validateStatusType( 'StorageElement', statusType, False )
+    self.rsVal.validateStatus( status, False )        
+    # END VALIDATION #        
     return self.mm.update( rDict, **kwargs )
 
   @DBDec
@@ -1151,6 +937,7 @@ class ResourceStatusDB:
                                    lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #           
     if not kwargs.has_key( 'sort' ):
       kwargs[ 'sort' ] = [ 'StorageElementName', 'StorageElementHistoryID' ]    
     return self.mm.get( rDict, **kwargs )
@@ -1161,6 +948,7 @@ class ResourceStatusDB:
                                    lastCheckTime, tokenOwner, tokenExpiration, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
 
   '''
@@ -1168,7 +956,6 @@ class ResourceStatusDB:
   # STORAGE ELEMENT PRESENT FUNCTIONS
   ##############################################################################
   '''    
-  
   __TABLES__[ 'StorageElementPresent']= {'uniqueKeys' : [ 'StorageElementName', 'StatusType' ] }   
 
 
@@ -1179,6 +966,7 @@ class ResourceStatusDB:
                                  tokenExpiration, formerStatus, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION # 
     return self.mm.get( rDict, **kwargs )
 
 ################################################################################
@@ -1188,205 +976,43 @@ class ResourceStatusDB:
   ##############################################################################
   # GRID SITE FUNCTIONS
   ##############################################################################
-  '''
-
-#  @DBDec
-#  def addOrModifyGridSite( self, gridSiteName, gridTier, **kwargs ):
-#
-#    # VALIDATION #
-#    self.rsVal.validateName( gridSiteName )
-#    self.rsVal.validateGridSiteType( gridTier )
-#    # END VALIDATION #
-#
-#    rDict    = localsToDict( locals() )
-#    sqlQuery = self.mm.select( rDict, **kwargs )
-#    
-#    if sqlQuery[ 'Value' ]:      
-#      return self.mm.update( rDict, **kwargs )
-#    else: 
-#      return self.mm.insert( rDict, **kwargs )  
-
-  
+  ''' 
   __TABLES__[ 'GridSite' ] = { 'uniqueKeys' : [ 'GridSiteName' ] } 
 
   @DBDec
   def insertGridSite( self, gridSiteName, gridTier, **kwargs ):
 
-    # VALIDATION #
-    #self.rsVal.validateName( gridSiteName )
-    #self.rsVal.validateGridSiteType( gridTier )
-    # END VALIDATION #
-
     rDict    = localsToDict( locals() )
-    #sqlQuery = self.mm.select( rDict, **kwargs )
-    
-    #if sqlQuery[ 'Value' ]:      
-    #  return self.mm.update( rDict, **kwargs )
-    #else: 
+    # NO VALIDATION #
     return self.mm.insert( rDict, **kwargs )  
 
   @DBDec
   def updateGridSite( self, gridSiteName, gridTier, **kwargs ):
 
-    # VALIDATION #
-    #self.rsVal.validateName( gridSiteName )
-    #self.rsVal.validateGridSiteType( gridTier )
-    # END VALIDATION #
-
     rDict    = localsToDict( locals() )
-    #sqlQuery = self.mm.select( rDict, **kwargs )
-    
-    #if sqlQuery[ 'Value' ]:      
+    # NO VALIDATION #
     return self.mm.update( rDict, **kwargs )
-    #else: 
-    #return self.mm.insert( rDict, **kwargs )  
-
-
+    
   @DBDec
   def getGridSite( self, gridSiteName, gridTier, **kwargs ):
 
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.get( rDict, **kwargs )
 
   @DBDec
   def deleteGridSite( self, gridSiteName, gridTier, **kwargs ):
 
-    #VALIDATION#
-    self.rsVal.validateMultipleNames( gridSiteName )
-    # END VALIDATION #
-
     rDict = localsToDict( locals() )
+    # NO VALIDATION #
     return self.mm.delete( rDict, **kwargs )
-
-  '''
-  ##############################################################################
-  # STATS FUNCTIONS
-  ##############################################################################
-  '''
-
-#  @DBDec
-#  def getServiceStats( self, siteName, statusType ):
-#    """
-#    Returns simple statistics of active, probing, bad and banned services of a site;
-#
-#    :params:
-#      :attr:`siteName`: string - a site name
-#
-#    :returns:
-#      { 'Active':xx, 'Probing':yy, 'Bad':vv, 'Banned':zz, 'Total':xyz }
-#    """
-#
-##    rDict = { 'SiteName' : siteName }
-##
-##    if statusType is not None:
-##      self.__validateElementStatusTypes( 'Service', statusType )
-##      rDict[ 'StatusType'] = statusType
-#    rDict = localsToDict( locals() )
-#    return self.__getElementStatusCount( 'Service', rDict )
-#
-#  @DBDec
-#  def getResourceStats( self, element, name, statusType ):
-#
-#    rDict = {}
-#
-#    if statusType is not None:
-#      self.rsVal.validateElementStatusTypes( 'Service', statusType )
-#      rDict[ 'StatusType'] = statusType
-#
-##    resourceDict = {}
-#    resourceName, resourceType, serviceType, siteName, gridSiteName = None, None, None, None, None
-#
-#    if element == 'Site':
-#      #name   = self.getGridSiteName( element, name )[ 'Value' ]
-#      #rDict[ 'GridSiteName' ] = name
-##      resourceDict = { 'siteName' : name }
-#      siteName = name
-#      #resourceNames = [ sn[0] for sn in self.getResources( siteName = name )[ 'Value' ] ]
-###      rDict[ 'ResourceName' ] = resourceNames
-#
-#    elif element == 'Service':
-#
-#      serviceType = name.split( '@' )[ 0 ]
-#      siteName    = name.split( '@' )[ 1 ]
-#
-#      if serviceType == 'Computing':
-##        resourceDict = { 'siteName' : siteName }
-#        siteName = siteName
-#        #resourceName = [ sn[0] for sn in self.getResources( siteName = siteName )[ 'Value' ] ]
-###        rDict[ 'ResourceName' ] = resourceNames
-#        #rDict[ 'SiteName' ] = name
-#      else:
-#        #gridSiteName =
-#        #rDict[ 'GridSiteName' ] = gridSiteName
-##        resourceDict = { 'gridSiteName' : gridSiteName, 'serviceType' : serviceType }
-#        kwargs = { 'columns' : [ 'GridSiteName' ] }
-#        gridSiteName = [ gs[0] for gs in self.getSites( siteName, None, None, **kwargs )[ 'Value' ] ]
-#        #gridSiteName = [ gs[0] for gs in self.getGridSiteName( 'Site', siteName )[ 'Value' ] ]
-#        #serviceType  = serviceType
-#        siteName = None
-#        #resourceName = [ sn[0] for sn in self.getResources( None, None, serviceType, None,gridSiteName )[ 'Value' ] ]
-#        #rDict[ 'SiteName' ] = siteNames
-###        rDict[ 'ResourceName' ] = resourceNames
-#        #rDict[ 'ServiceType' ]  = serviceType
-#
-#    else:
-#      message = '%s is non accepted element. Only Site or Service' % element
-#      return S_ERROR( message )
-##      raise RSSDBException, where( self, self.getResourceStats ) + message
-#
-#    resourceArgs = ( resourceName, resourceType, serviceType, siteName, gridSiteName )
-#    rDict[ 'ResourceName' ] = [ re[0] for re in self.getResources( *resourceArgs )[ 'Value' ] ]
-#
-#    return self.__getElementStatusCount( 'Resource', rDict )
-#
-#  @DBDec
-#  def getStorageElementStats( self, element, name, statusType ):
-#
-#    rDict = {}
-#
-#    if statusType is not None:
-#      self.rsVal.validateElementStatusTypes( 'StorageElement', statusType )
-#      rDict[ 'StatusType'] = statusType
-#
-#    storageElementName, resourceName, gridSiteName = None, None, None
-#
-#    if element == 'Site':
-#      #rDict[ 'GridSiteName' ] = self.getGridSiteName( element, name )[ 'Value' ]
-#      kwargs = { 'columns' : [ 'GridSiteName' ] }
-#      gridSiteName = [ gs[0] for gs in self.getSites( name, None, None, **kwargs )[ 'Value' ] ]
-#      #gridSiteName = [ gs[0] for gs in self.getGridSiteName( element, name )[ 'Value' ] ]
-##      seDict = { 'gridSiteName' : gridSiteName }
-#      ##siteNames = [ sn[0] for sn in self.getSites( gridSiteName = gridSiteName )[ 'Value' ] ]
-#      ##rDict[ 'SiteName' ] = siteNames
-#      #seNames = [ sn[0] for sn in self.getStorageElements( gridSiteName = gridSiteName )[ 'Value' ] ]
-##      rDict[ 'StorageElementName' ] = seNames
-#
-#    elif element == 'Resource':
-#      #rDict[ 'ResourceName' ] = name
-##      seDict = { 'resourceName' : name }
-#      resourceName = name
-#      #seNames = [ sn[0] for sn in self.getStorageElements( resourceName = name )[ 'Value' ] ]
-##      rDict[ 'StorageElementName' ] = seNames
-#
-#    else:
-#      message = '%s is non accepted element. Only Site or Resource' % element
-#      return S_ERROR( message )
-#
-#    seArgs = ( storageElementName, resourceName, gridSiteName )
-#    rDict[ 'StorageElementName' ] = [ se[0] for se in self.getStorageElements( *seArgs )[ 'Value' ] ]
-#
-#    return self.__getElementStatusCount( 'StorageElement', rDict )
-
-
-
 
   '''
   ##############################################################################
   # MISC FUNCTIONS
   ##############################################################################
   '''
-
-  # Check the booster ResourceStatusSystem.Utilities.ResourceStatusBooster
+#  Check the booster ResourceStatusSystem.Utilities.ResourceStatusBooster
 #  def setMonitoredToBeChecked( self, monitoreds, granularity, name ):
 #    """
 #    Set LastCheckTime to 0 to monitored(s)
