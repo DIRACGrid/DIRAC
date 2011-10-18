@@ -137,6 +137,9 @@ def getGroupOption( groupName, optName, defaultValue = "" ):
 def getHostOption( hostName, optName, defaultValue = "" ):
   return gConfig.getValue( "%s/Hosts/%s/%s" % ( gBaseSecuritySection, hostName, optName ), defaultValue )
 
+def getVOOption( voName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/VO/%s/%s" % ( gBaseSecuritySection, voName, optName ), defaultValue )
+
 
 def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % gBaseSecuritySection, [] )
