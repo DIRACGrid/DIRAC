@@ -19,7 +19,7 @@ class ResourceStatusDB:
   on the getX and deleteX functions ( to know more, again, check the MySQL monkey
   documentation ).
   
-  The DB schema has NO foreign keys, so there are some small consistency checks,
+  The DB schema has NO foreign keys, so there may be some small consistency checks,
   called validators on the insert and update functions.  
   
   The simplest way to instantiate an object of type :class:`ResourceStatusDB`
@@ -46,8 +46,9 @@ class ResourceStatusDB:
    >>> rsDB = ResourceStatusDB( DBin = [ 'UserName', 'Password' ] )
   """
  
-  #This is an small & temporary 'hack' used for the MySQLMonkey.
-  #Check MySQL monkey for more
+  # This is an small & temporary 'hack' used for the MySQLMonkey.
+  # Check MySQL monkey for more
+  # Now is hard-coded for simplicity, eventually will be calculated automatically  
   __TABLES__ = {}
 
   def __init__( self, *args, **kwargs ):
