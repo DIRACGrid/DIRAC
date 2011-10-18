@@ -10,7 +10,7 @@ from DIRAC                                                      import S_OK, S_E
 from DIRAC                                                      import gLogger
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 
-from DIRAC.ResourceStatusSytem                                  import ValidRes  
+from DIRAC.ResourceStatusSystem                                 import ValidRes  
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
