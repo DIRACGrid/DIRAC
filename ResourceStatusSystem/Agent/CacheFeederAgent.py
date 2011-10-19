@@ -120,7 +120,7 @@ class CacheFeederAgent( AgentModule ):
               for value in res[key].keys():
                 clientCache = ( key, commandName, None, value, 
                                 res[key][value], None, None )
-                
+                    
             resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
             if not resQuery[ 'OK' ]:
               gLogger.error( resQuery[ 'Message' ] )
@@ -159,9 +159,7 @@ class CacheFeederAgent( AgentModule ):
           for name in res[ plotType ].keys():
             
             #name, plotType, plotName, result, dateEffective, lastCheckTime
-            accountingClient = ( name, plotType, plotName, res[plotType][name], None, None )
-            print accountingClient
-            
+            accountingClient = ( name, plotType, plotName, str(res[plotType][name]), None, None )
             resQuery = self.rmClient.addOrModifyAccountingCache( *accountingClient )
             if not resQuery[ 'OK' ]:
               gLogger.error( resQuery[ 'Message' ] )
