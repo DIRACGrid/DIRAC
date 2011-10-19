@@ -1,16 +1,24 @@
-""" The SLS_Command class is a command class to properly interrogate the SLS
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The SLS_Command class is a command class to properly interrogate the SLS
 """
 
 import urllib2
+import xml.parsers.expat
 
-from DIRAC import gLogger
+from DIRAC                                           import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.Command      import *
+from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-#from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
+from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
-#############################################################################
+################################################################################
+################################################################################
 
 def _getSESLSName(name):
 
@@ -34,7 +42,7 @@ def _getSESLSName(name):
 
   return SLSName
       
-#############################################################################
+################################################################################
 
 def _getCastorSESLSName(name):
 
@@ -50,7 +58,7 @@ def _getCastorSESLSName(name):
   
   return SLSName
       
-#############################################################################
+################################################################################
 
 def _getServiceSLSName(input, type):
 
@@ -69,9 +77,12 @@ def _getServiceSLSName(input, type):
   
   return name
 
-#############################################################################
+################################################################################
+################################################################################
 
 class SLSStatus_Command(Command):
+  
+  __APIs__ = [ 'SLSClient' ]
   
   def doCommand(self):
     """ 
@@ -84,11 +95,13 @@ class SLSStatus_Command(Command):
 
      - args[2]: string: should be the ValidRes type (e.g. 'VO-BOX')
     """
+    
     super(SLSStatus_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    if self.client is None:
-      from DIRAC.Core.LCG.SLSClient import SLSClient   
-      self.client = SLSClient()
+#    if self.client is None:
+#      from DIRAC.Core.LCG.SLSClient import SLSClient   
+#      self.client = SLSClient()
       
     if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
@@ -100,7 +113,7 @@ class SLSStatus_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.client.getAvailabilityStatus(SLSName, timeout = self.timeout)
+      res = self.APIs[ 'SLSClient' ].getAvailabilityStatus(SLSName, timeout = self.timeout)
       if not res['OK']:
         gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
         return  {'Result':None}
@@ -114,9 +127,12 @@ class SLSStatus_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class SLSServiceInfo_Command(Command):
+  
+  __APIs__ = [ 'SLSClient' ]
   
   def doCommand(self):
     """ 
@@ -129,11 +145,13 @@ class SLSServiceInfo_Command(Command):
 
      - args[2]: list: list of info requested
     """
+    
     super(SLSServiceInfo_Command, self).doCommand()
-
-    if self.client is None:
-      from DIRAC.Core.LCG.SLSClient import SLSClient   
-      self.client = SLSClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    
+#    if self.client is None:
+#      from DIRAC.Core.LCG.SLSClient import SLSClient   
+#      self.client = SLSClient()
       
     if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
@@ -145,27 +163,38 @@ class SLSServiceInfo_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
+    
       #gLogger.info(SLSName,self.args[2])   
-      res = self.client.getServiceInfo(SLSName, self.args[2], timeout = self.timeout)
-      if not res['OK']:
+      res = self.APIs[ 'SLSClient' ].getServiceInfo(SLSName, self.args[2], timeout = self.timeout)
+      if not res[ 'OK' ]:
         gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
-        return  {'Result':None}
-      return {'Result':res['Value']}
+        res = None      
+      else:
+        res = res[ 'Value' ]
+      return { 'Result' : res }
+    
     except urllib2.HTTPError:
-      gLogger.error("No (not all) SLS sensors for " + self.args[0] + " " + self.args[1])
+      gLogger.error( "No (not all) SLS sensors for " + self.args[0] + " " + self.args[1])
       return  {'Result':None}
     except urllib2.URLError:
-      gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
+      gLogger.error( "SLS timed out for " + self.args[0] + " " + self.args[1] )
       return  {'Result':'Unknown'}
+    except xml.parsers.expat.ExpatError:
+      gLogger.error( "Error parsing xml for " + self.args[0] + " " + self.args[1])
+      return { 'Result' : 'Unknown' }
     except:
       gLogger.exception("Exception when calling SLSClient for " + self.args[0] + " " + self.args[1])
-      return {'Result':'Unknown'}
+      return { 'Result' : 'Unknown' }
+
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class SLSLink_Command(Command):
+  
+  __APIs__ = [ 'SLSClient' ]
   
   def doCommand(self):
     """ 
@@ -176,11 +205,13 @@ class SLSLink_Command(Command):
 
       - args[1]: string: should be the (DIRAC) name of the ValidRes
     """
+    
     super(SLSLink_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    if self.client is None:
-      from DIRAC.Core.LCG.SLSClient import SLSClient   
-      self.client = SLSClient()
+#    if self.client is None:
+#      from DIRAC.Core.LCG.SLSClient import SLSClient   
+#      self.client = SLSClient()
       
     if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
@@ -192,7 +223,7 @@ class SLSLink_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.client.getLink(SLSName)
+      res = self.APIs[ 'SLSClient' ].getLink(SLSName)
       if not res['OK']:
         gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
         return  {'Result':None}
@@ -206,5 +237,15 @@ class SLSLink_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
   
-#############################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
