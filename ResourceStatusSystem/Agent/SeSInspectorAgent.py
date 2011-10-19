@@ -1,8 +1,11 @@
 ################################################################################
 # $HeadURL:  $
 ################################################################################
+__RCSID__  = "$Id: $"
+AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
 
 import Queue
+
 from DIRAC                                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
@@ -13,20 +16,19 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
-__RCSID__ = "$Id: $"
-
-AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
-
 class SeSInspectorAgent( AgentModule ):
-  """ Class SeSInspectorAgent is in charge of going through Services
-      table, and pass Service and Status to the PEP
+  """ 
+    The SeSInspector agent ( ServiceInspectorAgent ) is one of the four
+    InspectorAgents of the RSS. 
+    
+    This Agent takes care of the Service. In order to do so, it gathers
+    the eligible ones and then evaluates their statuses with the PEP. 
+  
+    If you want to know more about the SeSInspectorAgent, scroll down to the 
+    end of the file.
   """
 
-################################################################################
-
   def initialize( self ):
-    """ Standard constructor
-    """
 
     try:
       
@@ -55,15 +57,10 @@ class SeSInspectorAgent( AgentModule ):
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
-
+################################################################################
 ################################################################################
 
   def execute( self ):
-    """
-    The main SSInspectorAgent execution method.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and
-    put result in self.ServicesToBeChecked (a Queue) and in self.ServiceNamesInCheck (a list)
-    """
 
     try:
 
@@ -94,11 +91,9 @@ class SeSInspectorAgent( AgentModule ):
       return S_ERROR( errorStr )
 
 ################################################################################
+################################################################################
 
   def _executeCheck( self, _arg ):
-    """
-    Create instance of a PEP, instantiated popping a service from lists.
-    """
 
     pep = PEP( self.VOExtension, setup = self.setup )
 
@@ -106,7 +101,7 @@ class SeSInspectorAgent( AgentModule ):
 
       try:
 
-        toBeChecked  = self.ServicesToBeChecked.get()
+        toBeChecked = self.ServicesToBeChecked.get()
 
         pepDict = { 'granularity'  : toBeChecked[ 0 ],
                     'name'         : toBeChecked[ 1 ],
@@ -131,6 +126,16 @@ class SeSInspectorAgent( AgentModule ):
           self.ServiceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
