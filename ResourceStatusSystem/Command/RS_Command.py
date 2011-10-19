@@ -283,7 +283,6 @@ class MonitoredStatus_Command( Command ):
 
     return {'Result':res}
 
-
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
