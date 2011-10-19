@@ -1,20 +1,30 @@
-""" The DIRACAccounting_Command class is a command class to 
-    interrogate the DIRAC Accounting.
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The DIRACAccounting_Command class is a command class to 
+  interrogate the DIRAC Accounting.
 """
 
-import datetime
+from datetime import datetime, timedelta
 
 from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
-#############################################################################
+################################################################################
+################################################################################
 
 class DIRACAccounting_Command(Command):
   
-  def doCommand(self):
+  __APIs__ = [ 'ReportGenerator', 'ReportsClient' ]
+  
+  def doCommand( self ):
     """ 
     Returns jobs accounting info for sites in the last 24h
     `args`: 
@@ -33,15 +43,18 @@ class DIRACAccounting_Command(Command):
        
        - args[6]: dictionary - optional conditions
     """
-    super(DIRACAccounting_Command, self).doCommand()
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+    super( DIRACAccounting_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    
+#    if self.RPC is None:
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
       
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+#    if self.client is None:
+#      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+#      self.client = ReportsClient(rpcClient = self.RPC)
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
     granularity = self.args[0]
     name = self.args[1]
@@ -49,8 +62,8 @@ class DIRACAccounting_Command(Command):
     plot = self.args[3]
     period = self.args[4]
     if period['Format'] == 'LastHours':
-      fromT = datetime.datetime.utcnow()-datetime.timedelta(hours = period['hours'])
-      toT = datetime.datetime.utcnow()
+      fromT = datetime.utcnow()-timedelta(hours = period['hours'])
+      toT = datetime.utcnow()
     elif period['Format'] == 'Periods':
       #TODO
       pass
@@ -76,7 +89,7 @@ class DIRACAccounting_Command(Command):
           
     try:
 
-      res = self.client.getReport(accounting, plot, fromT, toT, conditions, grouping)
+      res = self.APIs[ 'ReportsClient' ].getReport( accounting, plot, fromT, toT, conditions, grouping )
           
       if res['OK']:
         return {'Result':res['Value']}
@@ -89,9 +102,12 @@ class DIRACAccounting_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class TransferQuality_Command(Command):
+
+  __APIs__ = [ 'ReportGenerator', 'ReportsClient' ]
 
   def doCommand(self):
     """ 
@@ -110,32 +126,35 @@ class TransferQuality_Command(Command):
       {'Result': None | a float between 0.0 and 100.0}
     """
     super(TransferQuality_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )    
    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+#    if self.RPC is None:
+#      from DIRAC.Core.DISET.RPCClient import RPCClient
+#      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+#      
+#    if self.client is None:
+#      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+#      self.client = ReportsClient(rpcClient = self.RPC)
+
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
     try:
       if self.args[2] is None:
-        fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
+        fromD = datetime.utcnow()-timedelta(hours = 2)
       else:
         fromD = self.args[2]
     except:
-      fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
+      fromD = datetime.utcnow()-timedelta(hours = 2)
     try:
       if self.args[3] is None:
-        toD = datetime.datetime.utcnow()
+        toD = datetime.utcnow()
       else:
         toD = self.args[3]
     except:
-      toD = datetime.datetime.utcnow()
+      toD = datetime.utcnow()
 
     try:
-      pr_quality = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
+      pr_quality = self.APIs[ 'ReportsClient' ].getReport('DataOperation', 'Quality', fromD, toD, 
                                          {'OperationType':'putAndRegister', 
                                           'Destination':[self.args[1]]}, 'Channel')
       
@@ -165,9 +184,12 @@ class TransferQuality_Command(Command):
   
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class TransferQualityCached_Command(Command):
+  
+  __APIs__ = [ 'ResourceManagementClient' ]
   
   def doCommand(self):
     """ 
@@ -181,16 +203,18 @@ class TransferQualityCached_Command(Command):
     :returns:
       {'Result': None | a float between 0.0 and 100.0}
     """
+    
     super(TransferQualityCached_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )  
 
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.client = ResourceManagementClient(timeout = self.timeout)
+#    if self.rmClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+#      self.rmClient = ResourceManagementClient()
       
     name = self.args[1]
     
     try:
-      res = self.client.getCachedResult(name, 'TransferQualityEverySEs', 'TQ', 'NULL')
+      res = self.APIs[ 'ResourceManagementClient' ].getCachedResult(name, 'TransferQualityEverySEs', 'TQ', 'NULL')
       if res == []:
         return {'Result':None}
     except:
@@ -201,9 +225,12 @@ class TransferQualityCached_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class CachedPlot_Command(Command):
+
+  __APIs__ = [ 'ResourceManagementClient' ]
   
   def doCommand(self):
     """ 
@@ -221,22 +248,40 @@ class CachedPlot_Command(Command):
     :returns:
       a plot
     """
-    super(CachedPlot_Command, self).doCommand()
 
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.client = ResourceManagementClient(timeout = self.timeout)
+    super(CachedPlot_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs ) 
+
+#    if self.rmClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+#      self.rmClient = ResourceManagementClient()
       
     granularity = self.args[0]
-    name = self.args[1]
-    plotType = self.args[2]
-    plotName = self.args[3]
+    name        = self.args[1]
+    plotType    = self.args[2]
+    plotName    = self.args[3]
     
     if granularity == 'Service':
       name = name.split('@')[1]
     
     try:
-      res = self.client.getCachedAccountingResult(name, plotType, plotName)
+      
+      accountingDict = { 
+                        'name'     : name,
+                        'plotType' : plotType,
+                        'plotName' : plotName
+                   }
+      kwargs     = { 'columns'     : 'Result' }
+      accountingDict.update( kwargs )  
+      
+      res = self.APIs[ 'ResourceManagementClient' ].getAccountingCache( **accountingDict )
+      
+      if not res[ 'OK' ]:
+        gLogger.error("Error getting AccountingCache for %s,%s,%s" %( name, plotType, plotName ))
+        return {'Result':'Unknown'}
+      
+      res = res[ 'Value' ]
+      
       if res == []:
         return {'Result':{'data':{}, 'granularity':900}}
     except:
@@ -247,9 +292,12 @@ class CachedPlot_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class TransferQualityFromCachedPlot_Command(Command):
+  
+  __APIs__ = [ 'ResourceManagementClient' ]
   
   def doCommand(self):
     """ 
@@ -263,21 +311,36 @@ class TransferQualityFromCachedPlot_Command(Command):
     :returns:
       {'Result': None | a float between 0.0 and 100.0}
     """
+    
     super(TransferQualityFromCachedPlot_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )     
 
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.client = ResourceManagementClient(timeout = self.timeout)
+#    if self.rmClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+#      self.rmClient = ResourceManagementClient()
       
-    granularity = self.args[0]
-    name = self.args[1]
-    plotType = self.args[2]
-    plotName = self.args[3]
+#    granularity = self.args[0]
+    name        = self.args[1]
+    plotType    = self.args[2]
+    plotName    = self.args[3]
     
     try:
-      res = self.client.getCachedAccountingResult(name, plotType, plotName)
+      
+      accountingDict = { 
+                        'name'     : name,
+                        'plotType' : plotType,
+                        'plotName' : plotName
+                   }
+      kwargs     = { 'columns'     : 'Result' }
+      accountingDict.update( kwargs )  
+      
+      res = self.APIs[ 'ResourceManagementClient' ].getAccountingCache( **accountingDict )
+      
+      if not res[ 'OK' ]:
+        gLogger.error("Error getting AccountingCache for %s,%s,%s" %( name, plotType, plotName ))
+        return {'Result':'Unknown'}
 
-      res = res[ 'Value' ]
+      res = res[ 'Value']
 
       if res == []:
         return {'Result':None}
@@ -303,5 +366,15 @@ class TransferQualityFromCachedPlot_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''    
+    
+################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
