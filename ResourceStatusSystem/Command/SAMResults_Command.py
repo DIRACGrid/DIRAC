@@ -1,19 +1,29 @@
-""" The SAMResults_Command class is a command class to know about 
-    present SAM status
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The SAMResults_Command class is a command class to know about 
+  present SAM status
 """
 
 import urllib2, httplib
 
-from DIRAC import gLogger
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC                                           import gLogger
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.Command      import *
+from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where 
+from DIRAC.ResourceStatusSystem.Utilities.Utils      import where 
 
-#from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
+################################################################################
+################################################################################
 
 class SAMResults_Command(Command):
+  
+  __APIs__ = [ 'SAMResultsClient', 'ResourceStatusClient' ]
   
   def doCommand(self, rsClientIn=None):
     """ 
@@ -29,14 +39,15 @@ class SAMResults_Command(Command):
      - args[3]: list: list of tests
     """
     super(SAMResults_Command, self).doCommand()
-    
-    if self.client is None:
-      from DIRAC.Core.LCG.SAMResultsClient import SAMResultsClient
-      self.client = SAMResultsClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+        
+#    if self.client is None:
+#      from DIRAC.Core.LCG.SAMResultsClient import SAMResultsClient
+#      self.client = SAMResultsClient()
 
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+#    if self.rsClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#      self.rsClient = ResourceStatusClient()
 
     granularity = self.args[0]
     name = self.args[1]
@@ -52,7 +63,7 @@ class SAMResults_Command(Command):
       siteName = siteName['Value']
     elif granularity in ('Resource', 'Resources'):
       if siteName is None:
-        siteName = self.rsClient.getGridSiteName(granularity, name)
+        siteName = self.APIs[ 'ResourceStatusClient' ].getGridSiteName(granularity, name)
         if not siteName['OK']:
           raise RSSException, siteName['Message']    
         else:
@@ -72,7 +83,7 @@ class SAMResults_Command(Command):
     finally:
       try:
         
-        res = self.client.getStatus(granularity, name, siteName, tests, 
+        res = self.APIs[ 'SAMResultsClient' ].getStatus(granularity, name, siteName, tests, 
                                     timeout = self.timeout)
         if not res['OK']:
           gLogger.error("There are no SAM tests for " + granularity + " " + name )
@@ -90,5 +101,16 @@ class SAMResults_Command(Command):
     return {'Result':res['Value']}
   
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+  
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
