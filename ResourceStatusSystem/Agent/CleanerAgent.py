@@ -66,7 +66,6 @@ class CleanerAgent( AgentModule ):
       # Cleans ClientsCache table from DownTimes older than a day.
       aDayAgo = now - timedelta( days = 1 )
       
-     
       kwargs = {
                  'value'  : 'EndDate',
                  'columns': 'Opt_ID',
