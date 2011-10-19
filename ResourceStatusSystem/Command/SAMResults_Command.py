@@ -29,7 +29,7 @@ class SAMResults_Command(Command):
     """ 
     Return getStatus from SAM Results Client  
     
-   :attr:`args`: 
+    :attr:`args`: 
      - args[0]: string: should be a ValidRes
 
      - args[1]: string: should be the (DIRAC) name of the ValidRes
