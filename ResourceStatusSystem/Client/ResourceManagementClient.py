@@ -6,7 +6,7 @@ __RCSID__ = "$Id:  $"
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB             import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators                import ClientDec
+from DIRAC.ResourceStatusSystem.Utilities.Decorators                import ClientDec2
 from DIRAC.ResourceStatusSystem.Utilities.ResourceManagementBooster import ResourceManagementBooster
 
 class ResourceManagementClient:
@@ -61,17 +61,17 @@ class ResourceManagementClient:
   # ENVIRONMENT CACHE FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec
+  @ClientDec2
   def insertEnvironmentCache( self, hashEnv, siteName, environment ):
     pass
-  @ClientDec
+  @ClientDec2
   def updateEnvironmentCache( self, hashEnv, siteName, environment ):
     pass
-  @ClientDec
+  @ClientDec2
   def getEnvironmentCache( self, hashEnv = None, siteName = None, 
                            environment = None, **kwargs ):
     pass
-  @ClientDec
+  @ClientDec2
   def deleteEnvironmentCache( self, hashEnv = None, siteName = None, 
                               environment = None, **kwargs ):
     pass
@@ -84,20 +84,20 @@ class ResourceManagementClient:
   # POLICY RESULT FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec
+  @ClientDec2
   def insertPolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime ):
     pass 
-  @ClientDec
+  @ClientDec2
   def updatePolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime ):
     pass
-  @ClientDec
+  @ClientDec2
   def getPolicyResult( self, granularity = None, name = None, policyName = None, 
                        statusType = None, status = None, reason = None, 
                        dateEffective = None, lastCheckTime = None, **kwargs ):
     pass
-  @ClientDec
+  @ClientDec2
   def deletePolicyResult( self, granularity = None, name = None, policyName = None, 
                           statusType = None, status = None, reason = None, 
                           dateEffective = None, lastCheckTime = None, **kwargs ):
@@ -111,20 +111,20 @@ class ResourceManagementClient:
   # CLIENT CACHE FUNCTIONS
   ##############################################################################
   '''    
-  @ClientDec
+  @ClientDec2
   def insertClientCache( self, name, commandName, opt_ID, value, result,
                          dateEffective, lastCheckTime ):
     pass
-  @ClientDec
+  @ClientDec2
   def updateClientCache( self, name, commandName, opt_ID, value, result,
                          dateEffective, lastCheckTime ):
     pass
-  @ClientDec
+  @ClientDec2
   def getClientCache( self, name = None, commandName = None, opt_ID = None, 
                       value = None, result = None, dateEffective = None, 
                       lastCheckTime = None, **kwargs ):
     pass
-  @ClientDec 
+  @ClientDec2 
   def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
                          lastCheckTime = None, **kwargs ):
@@ -138,20 +138,20 @@ class ResourceManagementClient:
   # ACCOUNTING CACHE FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec
+  @ClientDec2
   def insertAccountingCache( self, name, plotType, plotName, result, 
                              dateEffective, lastCheckTime ):
     pass
-  @ClientDec
+  @ClientDec2
   def updateAccountingCache( self, name, plotType, plotName, result, 
                              dateEffective, lastCheckTime ):
     pass
-  @ClientDec
+  @ClientDec2
   def getAccountingCache( self, name = None, plotType = None, plotName = None, 
                           result = None, dateEffective = None, 
                           lastCheckTime = None, **kwargs ):
     pass
-  @ClientDec
+  @ClientDec2
   def deleteAccountingCache( self, name = None, plotType = None, plotName = None, 
                              result = None, dateEffective = None, 
                              lastCheckTime = None, **kwargs ):
@@ -166,20 +166,20 @@ class ResourceManagementClient:
   ##############################################################################
   '''  
   
-  @ClientDec
+  @ClientDec2
   def insertUserRegistryCache( self, login, name, email ):
     pass
 
-  @ClientDec
+  @ClientDec2
   def updateUserRegistryCache( self, login, name, email ):
     pass
   
-  @ClientDec
+  @ClientDec2
   def getUserRegistryCache( self, login = None, name = None, email = None, 
                             **kwargs ):
     pass
   
-  @ClientDec 
+  @ClientDec2 
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                **kwargs ):                                            
     pass
@@ -192,22 +192,22 @@ class ResourceManagementClient:
   # DB specific Boosters
   ##############################################################################
   '''
-  @ClientDec
+  @ClientDec2
   def addOrModifyEnvironmentCache( self, hashEnv, siteName, environment ):
     pass
-  @ClientDec
+  @ClientDec2
   def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime ):
     pass
-  @ClientDec
+  @ClientDec2
   def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
                               dateEffective, lastCheckTime ):
     pass
-  @ClientDec
+  @ClientDec2
   def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
                                   dateEffective, lastCheckTime ):
     pass
-  @ClientDec
+  @ClientDec2
   def addOrModifyUserRegistryCache( self, login, name, email ):
     pass  
 
