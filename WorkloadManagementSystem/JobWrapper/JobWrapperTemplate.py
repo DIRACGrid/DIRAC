@@ -104,7 +104,7 @@ def execute ( arguments ):
     if not result['OK']:
       gLogger.error( result['Message'] )
       raise JobWrapperError( result['Message'] )
-  except Exception:
+  except Exception, x:
     if str( x ) == '0':
       gLogger.verbose( 'JobWrapper exited with status=0 after execution' )
     else:
