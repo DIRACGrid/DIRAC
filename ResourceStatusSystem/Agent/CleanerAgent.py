@@ -61,7 +61,9 @@ class CleanerAgent( AgentModule ):
       for g in ValidRes:
         deleter = getattr( self.rsClient, 'delete%sHistory' % g )
         kwargs = { 'minor' : { 'DateEnd' : sixMonthsAgo } }
-        deleter( **kwargs )    
+        res = deleter( **kwargs )
+        if not res[ 'OK' ]:
+          gLogger.error( res[ 'Message' ] )            
 
       # Cleans ClientsCache table from DownTimes older than a day.
       aDayAgo = now - timedelta( days = 1 )
@@ -74,11 +76,15 @@ class CleanerAgent( AgentModule ):
       opt_IDs = self.rmClient.getClientCache( **kwargs )              
       opt_IDs = [ ID[ 0 ] for ID in opt_IDs[ 'Value' ] ]
       
-      self.rmClient.deleteClientCache( opt_ID = opt_IDs )
+      res = self.rmClient.deleteClientCache( opt_ID = opt_IDs )
+      if not res[ 'OK' ]:
+        gLogger.error( res[ 'Message' ] )
       
       # Cleans AccountingCache table from plots not updated nor checked in the last 30 mins      
       anHourAgo = now - timedelta( minutes = 30 )
-      self.rmClient.deleteAccountingCache( minor = { 'LastCheckTime' : anHourAgo } )
+      res = self.rmClient.deleteAccountingCache( minor = { 'LastCheckTime' : anHourAgo } )
+      if not res[ 'OK' ]:
+        gLogger.error( res[ 'Message' ] )
 
       return S_OK()
     
