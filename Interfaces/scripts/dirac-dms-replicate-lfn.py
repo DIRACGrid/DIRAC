@@ -56,6 +56,6 @@ for lfn in lfns:
     finalResult["Successful"].append( lfn )
 
 if len( lfns ) > 1:
-  print finalResults
+  print finalResult
 
 DIRAC.exit( exitCode )
