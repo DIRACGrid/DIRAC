@@ -19,7 +19,9 @@ __Clients__ = {
   'JobsClient'               : 'DIRAC.ResourceStatusSystem.Client.JobsClient',
   'PilotsClient'             : 'DIRAC.ResourceStatusSystem.Client.PilotsClient',
   'ReportsClient'            : 'DIRAC.AccountingSystem.Client.ReportsClient',
-  'GOCDBClient'              : 'DIRAC.Core.LCG.GOCDBClient'             
+  'GOCDBClient'              : 'DIRAC.Core.LCG.GOCDBClient',
+  'GGUSTicketsClient'        : 'DIRAC.Core.LCG.GGUSTicketsClient',   
+  'SAMResultsClient'         : 'DIRAC.Core.LCG.SAMResultsClient' 
              }
 
 __RPCs__ = {
