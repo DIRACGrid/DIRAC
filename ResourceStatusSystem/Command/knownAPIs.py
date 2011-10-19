@@ -21,7 +21,8 @@ __Clients__ = {
   'ReportsClient'            : 'DIRAC.AccountingSystem.Client.ReportsClient',
   'GOCDBClient'              : 'DIRAC.Core.LCG.GOCDBClient',
   'GGUSTicketsClient'        : 'DIRAC.Core.LCG.GGUSTicketsClient',   
-  'SAMResultsClient'         : 'DIRAC.Core.LCG.SAMResultsClient' 
+  'SAMResultsClient'         : 'DIRAC.Core.LCG.SAMResultsClient',
+  'SLSClient'                : 'DIRAC.Core.LCG.SLSClient' 
              }
 
 __RPCs__ = {
