@@ -1,8 +1,11 @@
 ################################################################################
 # $HeadURL:  $
 ################################################################################
+__RCSID__  = "$Id:  $"
+AGENT_NAME = 'ResourceStatus/SSInspectorAgent'
 
 import Queue
+
 from DIRAC                                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
@@ -13,21 +16,20 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
-__RCSID__ = "$Id:  $"
-
-AGENT_NAME = 'ResourceStatus/SSInspectorAgent'
-
 class SSInspectorAgent( AgentModule ):
-  """ Class SSInspectorAgent is in charge of going through Sites
-      table, and pass Site and Status to the PEP
+  """ 
+    The SSInspector agent ( SiteInspectorAgent ) is one of the four
+    InspectorAgents of the RSS. 
+    
+    This Agent takes care of the Sites. In order to do so, it gathers
+    the eligible ones and then evaluates their statuses with the PEP. 
+  
+    If you want to know more about the SSInspectorAgent, scroll down to the 
+    end of the file.
   """
 
-################################################################################
-
   def initialize( self ):
-    """ Standard constructor
-    """
-
+ 
     try:
       
       self.VOExtension = getExt()
@@ -56,13 +58,9 @@ class SSInspectorAgent( AgentModule ):
       return S_ERROR( errorStr )
 
 ################################################################################
+################################################################################
 
   def execute( self ):
-    """
-    The main RSInspectorAgent execution method.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and
-    put result in self.SitesToBeChecked (a Queue) and in self.SiteNamesInCheck (a list)
-    """
 
     try:
       
@@ -76,7 +74,7 @@ class SSInspectorAgent( AgentModule ):
         #Ignore all elements with token != RS_SVC
         if siteTuple[ 5 ] != 'RS_SVC':
           continue
-        
+               
         if ( siteTuple[ 0 ],siteTuple[ 1 ] ) in self.SiteNamesInCheck:
           continue
         
@@ -93,11 +91,9 @@ class SSInspectorAgent( AgentModule ):
       return S_ERROR( errorStr )
 
 ################################################################################
+################################################################################
 
   def _executeCheck( self, _arg ):
-    """
-    Create instance of a PEP, instantiated popping a resource from lists.
-    """
     
     pep = PEP( self.VOExtension, setup = self.setup )
 
@@ -129,6 +125,16 @@ class SSInspectorAgent( AgentModule ):
           self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
