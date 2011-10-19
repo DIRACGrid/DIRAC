@@ -755,8 +755,8 @@ class ProxyDB( DB ):
       if field not in fields:
         continue
       fVal = selDict[field]
-      if type( fVal ) in ( types.DictType, types.TupleType ):
-        sqlWhere.append( "%s in (%s)" % ", ".join( [ self._escapeString( str( value ) )[ 'Value' ] for value in fVal ] ) )
+      if type( fVal ) in ( types.DictType, types.TupleType, types.ListType ):
+        sqlWhere.append( "%s in (%s)" % ( field,", ".join( [ self._escapeString( str( value ) )[ 'Value' ] for value in fVal ] ) ) )
       else:
         sqlWhere.append( "%s = %s" % ( field, self._escapeString( str( fVal ) )[ 'Value' ] ) )
     sqlOrder = []

@@ -53,7 +53,8 @@ class JobManagerHandler( RequestHandler ):
     self.owner = credDict[ 'username' ]
     self.peerUsesLimitedProxy = credDict[ 'isLimitedProxy' ]
     self.diracSetup = self.serviceInfoDict['clientSetup']
-    self.maxParametricJobs = self.serviceInfoDict.get('MaxParametricJobs',MAX_PARAMETRIC_JOBS)
+    serviceSectionPath = self.serviceInfoDict['serviceSectionPath']
+    self.maxParametricJobs = gConfig.getValue('%s/MaxParametricJobs'%serviceSectionPath,MAX_PARAMETRIC_JOBS)
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
 
   ###########################################################################
