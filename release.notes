@@ -1,3 +1,16 @@
+[v6r0-pre11]
+
+*Install tools
+NEW: Plainly separate projects from installations
+CHANGE: Installation and distribution configuration files are more meaningful
+
+*VOManagement
+NEW: introduce Registry/VO section, associate groups to VOs, define SubmitPools per VO
+NEW: automatically add SubmitPools JDL option of the job owner's VO defines it
+
+*JobManager
+NEW: Add MaxParametericJobs option to the service configuration
+
 [v6r0-pre10]
 
 *JobManager
