@@ -1,5 +1,11 @@
-""" The ClientsCache_Command class is a command module to know about collective clients results 
-    (to be cached)
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The ClientsCache_Command class is a command module to know about collective clients results 
+  (to be cached)
 """
 
 import datetime
@@ -8,14 +14,15 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRACSiteName
 
 from DIRAC.ResourceStatusSystem.Command.Command import *
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
-
-#############################################################################
+################################################################################
+################################################################################
 
 class JobsEffSimpleEveryOne_Command( Command ):
+
+  __APIs__ = [ 'ResourceStatusClient', 'JobsClient', 'WMSAdministrator' ]
 
   def doCommand( self, sites = None ):
     """ 
@@ -28,29 +35,17 @@ class JobsEffSimpleEveryOne_Command( Command ):
       {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
     """
 
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
-      self.client = JobsClient()
-
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-      #RPC = RPCClient( "ResourceStatus/ResourceStatus" )
-      sites = self.rsClient.getSitesList()
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName')
       if not sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
         sites = [ si[0] for si in sites['Value'] ]
 
-    if self.RPC is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient( "WorkloadManagement/WMSAdministrator" )
-
     try:
-      res = self.client.getJobsSimpleEff( sites, self.RPC )
+      res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( sites, self.APIs[ 'WMSAdministrator' ] )
       if res is None:
         res = []
     except:
@@ -66,10 +61,12 @@ class JobsEffSimpleEveryOne_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-
-#############################################################################
+################################################################################
+################################################################################
 
 class PilotsEffSimpleEverySites_Command( Command ):
+
+  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient', 'WMSAdministrator' ]
 
   def doCommand( self, sites = None ):
     """ 
@@ -82,29 +79,17 @@ class PilotsEffSimpleEverySites_Command( Command ):
       {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
 
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
-      self.client = PilotsClient()
-
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-      #RPC = RPCClient( "ResourceStatus/ResourceStatus" )
-      sites = self.rsClient.getSitesList()
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName')
       if not sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
         sites = [ si[0] for si in sites['Value'] ]
 
-    if self.RPC is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient( "WorkloadManagement/WMSAdministrator" )
-
     try:
-      res = self.client.getPilotsSimpleEff( 'Site', sites, None, self.RPC )
+      res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff( 'Site', sites, None, self.APIs[ 'WMSAdministrator' ] )
       if res is None:
         res = []
     except:
@@ -118,14 +103,14 @@ class PilotsEffSimpleEverySites_Command( Command ):
 
     return resToReturn
 
-
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-
-#############################################################################
-
+################################################################################
+################################################################################
 
 class TransferQualityEverySEs_Command( Command ):
+
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient' ]
 
   def doCommand( self, SEs = None ):
     """ 
@@ -138,32 +123,22 @@ class TransferQualityEverySEs_Command( Command ):
       {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
 
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-      #RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = self.rsClient.getStorageElementsList()
+      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName')
       if not SEs['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + SEs['Message']
       else:
         SEs = SEs['Value']
 
-    if self.RPC is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
-
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient( rpcClient = self.RPC )
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
     fromD = datetime.datetime.utcnow() - datetime.timedelta( hours = 2 )
     toD = datetime.datetime.utcnow()
 
     try:
-      qualityAll = self.client.getReport( 'DataOperation', 'Quality', fromD, toD,
+      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD,
                                          {'OperationType':'putAndRegister',
                                           'Destination':SEs}, 'Channel' )
       if not qualityAll['OK']:
@@ -209,10 +184,12 @@ class TransferQualityEverySEs_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
-
+################################################################################
+################################################################################
 
 class DTEverySites_Command( Command ):
+
+  __APIs__ = [ 'ResourceStatusClient', 'GOCDBClient' ]
 
   def doCommand( self, sites = None ):
     """ 
@@ -226,18 +203,10 @@ class DTEverySites_Command( Command ):
                     'StartDate': 'aDate', ...} ... }
     """
 
-    if self.client is None:
-      from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-      self.client = GOCDBClient()
-
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-      #RPC = RPCClient( "ResourceStatus/ResourceStatus" )
-      GOC_sites = self.rsClient.getGridSitesList()
+      GOC_sites = self.APIs[ 'ResourceStatusClient' ].getGridSite( columns = 'GridSiteName' )
       if not GOC_sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
@@ -246,7 +215,7 @@ class DTEverySites_Command( Command ):
       GOC_sites = [ getGOCSiteName( x )['Value'] for x in sites ]
 
     try:
-      res = self.client.getStatus( 'Site', GOC_sites, None, 120 )
+      res = self.APIs[ 'GOCDBClient' ].getStatus( 'Site', GOC_sites, None, 120 )
     except:
       gLogger.exception( "Exception when calling GOCDBClient." )
       return {}
@@ -284,10 +253,12 @@ class DTEverySites_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
-
+################################################################################
+################################################################################
 
 class DTEveryResources_Command( Command ):
+
+  __APIs__ = [ 'ResourceStatusClient', 'GOCDBClient' ]
 
   def doCommand( self, resources = None ):
     """ 
@@ -301,25 +272,17 @@ class DTEveryResources_Command( Command ):
                     'StartDate': 'aDate', ...} ... }
     """
 
-    if self.client is None:
-      from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-      self.client = GOCDBClient()
-
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if resources is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-      #RPC = RPCClient( "ResourceStatus/ResourceStatus" )
-      resources = self.rsClient.getResourcesList()
+      resources = self.APIs[ 'ResourceStatusClient' ].getResource( columns = 'ResourceName' )
       if not resources['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + resources['Message']
       else:
         resources = [ re[0] for re in resources['Value'] ]
 
     try:
-      res = self.client.getStatus( 'Resource', resources, None, 120 )
+      res = self.APIs[ 'GOCDBClient' ].getStatus( 'Resource', resources, None, 120 )
     except:
       gLogger.exception( "Exception when calling GOCDBClient." )
       return {}
@@ -347,6 +310,16 @@ class DTEveryResources_Command( Command ):
     return resToReturn
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
