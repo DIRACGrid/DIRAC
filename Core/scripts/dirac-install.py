@@ -353,6 +353,22 @@ class ReleaseConfig:
     if basePath in self.__loadedCfgs:
       return S_OK()
 
+    #Check if it's a direct alias
+    try:
+      aliasTo = self.__globalDefaults.get( basePath )
+    except KeyError:
+      aliasTo = False
+
+    if aliasTo:
+      self.__dbgMsg( "%s is an alias to %s" % ( objectName, aliasTo ) )
+      result = self.__loadObjectDefaults( rootPath, aliasTo )
+      if not result[ 'OK' ]:
+        return result
+      cfg = result[ 'Value' ]
+      self.__globalDefaults.update( basePath, cfg )
+      return S_OK()
+
+    #Load the defaults
     if self.__globalDefaults.get( "%s/SkipDefaults" % basePath, False ):
       defaultsLocation = ""
     else:
@@ -368,6 +384,7 @@ class ReleaseConfig:
       cfg = result[ 'Value' ]
       self.__globalDefaults.update( basePath, cfg )
 
+    #Check if the defaults have a sub alias
     try:
       aliasTo = self.__globalDefaults.get( "%s/Alias" % basePath )
     except KeyError:
