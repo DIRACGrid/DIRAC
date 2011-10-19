@@ -1241,5 +1241,5 @@ if __name__ == "__main__":
     sys.exit( 1 )
   writeDefaultConfiguration()
   installExternalRequirements( cliParams.externalsType )
-  logNOTICE( "%s properly installed" % releaseConfig.getDefaultObject() )
+  logNOTICE( "%s properly installed" % cliParams.installation )
   sys.exit( 0 )
