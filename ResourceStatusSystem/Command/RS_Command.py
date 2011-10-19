@@ -1,18 +1,27 @@
-""" The Pilots_Command class is a command class to know about
-    present pilots efficiency
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  TOWRITE
 """
 
 from DIRAC                                            import gLogger
 
 from DIRAC.ResourceStatusSystem.Command.Command       import Command
+from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
 from DIRAC.ResourceStatusSystem                       import ValidRes, ValidStatus
 from DIRAC.ResourceStatusSystem.PolicySystem.Status   import value_of_status
 
-#############################################################################
+################################################################################
+################################################################################
 
 class RSPeriods_Command( Command ):
+
+  __APIs__ = [ 'ResourceStatusClient' ]
 
   def doCommand( self ):
     """
@@ -26,14 +35,16 @@ class RSPeriods_Command( Command ):
 
     - args[3] are the number of hours requested
     """
+    
     super( RSPeriods_Command, self ).doCommand()
-
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    
+#    if self.rsClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#      self.rsClient = ResourceStatusClient()
 
     try:
-      res = self.rslient.getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
+      res = self.APIs[ 'ResourceStatusClient' ].getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
     except:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
@@ -42,13 +53,16 @@ class RSPeriods_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class ServiceStats_Command( Command ):
   """
   The ServiceStats_Command class is a command class to know about
   present services stats
   """
+
+  __APIs__ = [ 'ResourceStatusClient' ]
 
   def doCommand( self ):
     """
@@ -63,14 +77,16 @@ class ServiceStats_Command( Command ):
     :returns:
       {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz}
     """
+    
     super( ServiceStats_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+#    if self.rsClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#      self.rsClient = ResourceStatusClient()
 
     try:
-      res = self.rsClient.getServiceStats( self.args[1], statusType = None )# self.args[0], self.args[1] )['Value']
+      res = self.APIs[ 'ResourceStatusClient' ].getServiceStats( self.args[1] )#, statusType = None )# self.args[0], self.args[1] )['Value']
     except:
       gLogger.exception( "ServiceStats: Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
@@ -83,13 +99,16 @@ class ServiceStats_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class ResourceStats_Command( Command ):
   """
   The ResourceStats_Command class is a command class to know about
   present resources stats
   """
+
+  __APIs__ = [ 'ResourceStatusClient' ]
 
   def doCommand( self ):
     """
@@ -104,14 +123,16 @@ class ResourceStats_Command( Command ):
     :returns:
 
     """
+    
     super( ResourceStats_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+#    if self.rsClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#      self.rsClient = ResourceStatusClient()
 
     try:
-      res = self.rsClient.getResourceStats( self.args[0], self.args[1], statusType = None )
+      res = self.APIs[ 'ResourceStatusClient' ].getResourceStats( self.args[0], self.args[1], statusType = None )
     except:
       gLogger.exception( "ResourceStats: Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
@@ -124,13 +145,16 @@ class ResourceStats_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class StorageElementsStats_Command( Command ):
   """
   The StorageElementsStats_Command class is a command class to know about
   present storageElementss stats
   """
+
+  __APIs__ = [ 'ResourceStatusClient' ]
 
   def doCommand( self ):
     """
@@ -145,7 +169,9 @@ class StorageElementsStats_Command( Command ):
     :returns:
 
     """
+    
     super( StorageElementsStats_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )   
 
     if self.args[0] == 'Service':
       granularity = 'Site'
@@ -156,12 +182,12 @@ class StorageElementsStats_Command( Command ):
     else:
       raise InvalidRes, where( self, self.doCommand )
 
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+#    if self.rsClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#      self.rsClient = ResourceStatusClient()
 
     try:
-      res = self.rsClient.getStorageElementStats( granularity, name, statusType = None )
+      res = self.APIs[ 'ResourceStatusClient' ].getStorageElementStats( granularity, name, statusType = None )
     except:
       gLogger.exception( "StorageElementsStats: Exception when calling ResourceStatusClient for %s %s" % ( granularity, name ) )
       return {'Result':'Unknown'}
@@ -174,13 +200,16 @@ class StorageElementsStats_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class MonitoredStatus_Command( Command ):
   """
   The MonitoredStatus_Command class is a command class to know about
   monitored status.
   """
+
+  __APIs__ = [ 'ResourceStatusClient' ]
 
   def doCommand( self ):
     """
@@ -198,37 +227,39 @@ class MonitoredStatus_Command( Command ):
     :returns:
       {'MonitoredStatus': 'Active'|'Probing'|'Banned'}
     """
+    
     super( MonitoredStatus_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    if self.rsClient is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+#    if self.rsClient is None:
+#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+#      self.rsClient = ResourceStatusClient()
+
 
     try:
       if len( self.args ) == 3:
+        
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
           raise InvalidRes, where( self, self.doCommand )
 
-        toBeFound = self.rsClient.getGeneralName( self.args[0], self.args[1], self.args[2] )
+        toBeFound = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], self.args[2] )
         if not toBeFound[ 'OK' ]:
           return {'Result' : 'Unknown'}
         toBeFound = toBeFound['Value'][ 0 ]
 
-        statuses = self.rsClient.getMonitoredStatus( self.args[2], toBeFound )
+        statuses = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[2], toBeFound )
         if not statuses['OK']:
           return {'Result' : 'Unknown'}
-        statuses = statuses['Value']
+        statuses = statuses['Value'][ 0 ]
 
       else:
           
-        print self.args  
-          
         toBeFound = self.args[1]
-        statuses = self.rsClient.getMonitoredStatus( self.args[0], toBeFound )
+        statuses  = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[0], toBeFound )
 
         if not statuses['OK']:
           return {'Result' : 'Unknown'}
-        statuses = statuses['Value']
+        statuses = statuses['Value'][ 0 ]
 
       if not statuses:
         gLogger.warn( "No status found for %s" % toBeFound )
@@ -255,5 +286,15 @@ class MonitoredStatus_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
