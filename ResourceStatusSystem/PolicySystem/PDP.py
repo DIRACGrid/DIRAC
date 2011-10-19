@@ -10,14 +10,17 @@ The PDP (Policy Decision Point) module is used to:
 #import time
 import datetime
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils             import where, assignOrRaise
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where#, assignOrRaise
 from DIRAC.ResourceStatusSystem.PolicySystem                import Status
 from DIRAC.ResourceStatusSystem                             import *
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, \
-    InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, \
+#    InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, 
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller   import PolicyCaller
 from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
+
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
 ################################################################################
 
@@ -190,8 +193,8 @@ class PDP:
     policyResults = []
 
     for p in policies:
-      pName = p['Name']
-      pModule = p['Module']
+      pName     = p['Name']
+      pModule   = p['Module']
       extraArgs = p['args']
       commandIn = p['commandIn']
       res = self.pc.policyInvocation( VOExtension, granularity = granularity, name = name,
@@ -308,12 +311,14 @@ class PDP:
         If such result is older than 2 hours, it returns {'Status':'Unknown'}
     """
 
-    from DIRAC.Core.DISET.RPCClient import RPCClient
-    rsS = RPCClient("ResourceStatus/ResourceManagement")
+    #from DIRAC.Core.DISET.RPCClient import RPCClient
+    #rsM = RPCClient("ResourceStatus/ResourceManagement")
 
-    res = rsS.getPolicyRes(name, policyName, True)
+    rmClient = ResourceManagementClient()
+    res = rmClient.getPolicyResult( name = name, policyName = policyName )#, True )
+    
     if not res['OK']:
-      raise RSSException, where(self, self.__useOldPolicyRes) + ' Could not get a policy result'
+      raise RSSException, where( self, self.__useOldPolicyRes ) + ' Could not get a policy result'
 
     res = res['Value']
 
