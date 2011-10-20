@@ -1,17 +1,18 @@
-""" JobResultsClient class is a client for to get jobs' stats.
-"""
-# it crashes epydoc
-# __docformat__ = "restructuredtext en"
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
 
+""" 
+  JobResultsClient class is a client for to get jobs' stats.
+"""
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
-#import datetime
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils import where
 
 class JobsClient:
   
-#############################################################################
   def getJobsStats(self, name, periods = None):
 #forse qua non ho bisogno di un client... ce l'ho gia' in self.rc! Basta fare un buon command
     
@@ -51,8 +52,7 @@ class JobsClient:
 #      
 #    print r
 
-
-#############################################################################
+################################################################################
 
   def getJobsEff(self, granularity, name, periods):
     """
@@ -90,8 +90,7 @@ class JobsClient:
 #                                     datetime.datetime.utcnow(), {self._granularity:[self_entity]}, 
 #                                     'GridStatus')
     
-
-#############################################################################
+################################################################################
 
   def getSystemCharge(self):
     """ Returns last hour system charge, and the system charge of an hour before
@@ -110,10 +109,8 @@ class JobsClient:
 #    numberOfJobsLastHour = self.rc.getReport('Job', 'TotalNumberOfJobs', 
 #                                             datetime.datetime.utcnow()-datetime.timedelta(hours = 1), 
 #                                             datetime.datetime.utcnow(), {}, 'Grid')
-    
-    
-#############################################################################
-
+     
+################################################################################
 
   def getJobsSimpleEff(self, name, RPCWMSAdmin = None, timeout = None):
     """  
@@ -155,4 +152,15 @@ class JobsClient:
     
     return effRes
   
-#############################################################################
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

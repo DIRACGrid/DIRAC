@@ -1,4 +1,10 @@
-""" PilotsClient class is a client for to get pilots stats.
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
+""" 
+  PilotsClient class is a client for to get pilots stats.
 """
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName
 
@@ -7,8 +13,6 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 from DIRAC.ResourceStatusSystem                      import ValidRes
 
 class PilotsClient:
-
-#############################################################################
 
   def getPilotsStats(self, granularity, name, periods):
     """
@@ -98,9 +102,7 @@ class PilotsClient:
 #                                       datetime.datetime.utcnow(), {self._granularity:[self_entity]},
 #                                       'GridStatus')
 
-
-#############################################################################
-
+################################################################################
 
   def getPilotsSimpleEff(self, granularity, name, siteName = None,
                          RPCWMSAdmin = None, timeout = None):
@@ -185,4 +187,15 @@ class PilotsClient:
     except IndexError:
       return None
 
-#############################################################################
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
