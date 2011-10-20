@@ -1,5 +1,10 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 """
-This module contains a class to synchronize the content of the DataBase with what is the CS
+  This module contains a class to synchronize the content of the DataBase with what is the CS
 """
 
 from DIRAC                                           import gLogger, S_OK
@@ -11,22 +16,22 @@ from DIRAC.Core.LCG.GOCDBClient                      import GOCDBClient
 
 class Synchronizer(object):
 
-#############################################################################
-  def __init__( self, rsClient = None, rmDBin = None ):
+  def __init__( self, rsClient = None, rmClient = None ):
 
     self.rsClient    = rsClient
-    self.rmDB        = rmDBin
+    self.rmClient    = rmClient
     self.GOCDBClient = GOCDBClient()
 
     if self.rsClient == None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       self.rsClient = ResourceStatusClient()
 
-    if self.rmDB == None:
-      from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-      self.rmDB = ResourceManagementDB()
+    if self.rmClient == None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.rmClient = ResourceManagementClient()
 
-#############################################################################
+################################################################################
+
   def sync( self, _a, _b ):
     """
     :params:
@@ -44,7 +49,8 @@ class Synchronizer(object):
 
     return S_OK()
 
-#############################################################################
+################################################################################
+
   def _syncSites( self ):
     """
     Sync DB content with sites that are in the CS
@@ -81,7 +87,7 @@ class Synchronizer(object):
       Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
       Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
 
-#############################################################################
+################################################################################
 
   def _syncVOBOX( self ):
     """
@@ -109,7 +115,7 @@ class Synchronizer(object):
       service = "CondDB@" + site
       Utils.protect2(self.rsClient.addOrModifyService, service, 'CondDB', site )
 
-#############################################################################
+################################################################################
 # _syncResources HELPER functions
 
   def __updateService(self, site, type_):
@@ -151,7 +157,8 @@ class Synchronizer(object):
         assert(type(siteInGOCDB) == str)
         Utils.protect2(self.rsClient.addOrModifyResource, node, resourceType, serviceType, site, siteInGOCDB )
         resourcesInDB.add( node )
-############################################################################
+
+################################################################################
 
   def _syncResources( self ):
     gLogger.info("Starting sync of Resources")
@@ -220,7 +227,7 @@ class Synchronizer(object):
     # VOMSs
     self.__syncNode(VOMSNodeInCS, resourcesInDB, "VOMS", "VOMS")
 
-#############################################################################
+################################################################################
 
   def _syncStorageElements( self ):
 
@@ -247,7 +254,7 @@ class Synchronizer(object):
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
       Utils.protect2(self.rsClient.addOrModifyStorageElement, SE, srm, siteInGOCDB )
 
-#############################################################################
+################################################################################
 
   def _syncServices(self):
     """This function is in charge of cleaning the Service table in DB
@@ -265,4 +272,17 @@ class Synchronizer(object):
         users[u]['Email'] = users[u]['Email'][0]
 
       users[u]['DN'] = users[u]['DN'].split('=')[-1]
-      self.rmDB.registryAddUser(u, users[u]['DN'].lower(), users[u]['Email'].lower())
+      #self.rmClient.registryAddUser(u, users[u]['DN'].lower(), users[u]['Email'].lower())
+      self.rmClient.addOrModifyUserRegistryCache( u, users[u]['DN'].lower(), users[u]['Email'].lower() )
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

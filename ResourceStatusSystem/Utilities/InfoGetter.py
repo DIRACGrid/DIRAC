@@ -1,7 +1,6 @@
-########################################################################
+################################################################################
 # $HeadURL:  $
-########################################################################
-
+################################################################################
 __RCSID__ = "$Id:  $"
 
 import copy
@@ -13,9 +12,7 @@ from DIRAC.ResourceStatusSystem              import views_panels
 class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations
   """
-
-#############################################################################
-
+  
   def __init__(self, VOExtension):
     """
     Standard constructor
@@ -27,7 +24,7 @@ class InfoGetter:
     configModule    = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations", VOExtension)
     self.C_Policies = copy.deepcopy(configModule.Policies)
 
-#############################################################################
+################################################################################
 
   def getInfoToApply( self, args, granularity, statusType = None, status = None, 
                       formerStatus = None, siteType = None, serviceType = None, 
@@ -108,13 +105,12 @@ class InfoGetter:
 
     return [EVAL]
 
-
-#############################################################################
+################################################################################
 
   def getNewPolicyType(self, granularity, newStatus):
     return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
 
-#############################################################################
+################################################################################
 
   def __getPolToEval( self, granularity, statusType = None, status=None, 
                       formerStatus=None, siteType=None, serviceType=None, 
@@ -171,8 +167,7 @@ class InfoGetter:
 
     return polToEval_Args
 
-
-#############################################################################
+################################################################################
 
   def __getPolTypes( self, granularity, statusType = None, status=None, 
                      formerStatus=None, newStatus=None, siteType=None, 
@@ -206,7 +201,7 @@ class InfoGetter:
 
     return pTypes
 
-#############################################################################
+################################################################################
 
   def __getPanelsInfo( self, granularity, statusType = None, status = None, 
                        formerStatus = None, siteType = None, serviceType = None, 
@@ -320,11 +315,22 @@ class InfoGetter:
 
     return info
 
-#############################################################################
+################################################################################
 
   def __getViewPanels( self, granularity ):
     if granularity is None:
       granularity = 'Site'
     return views_panels[granularity]
 
-#############################################################################
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

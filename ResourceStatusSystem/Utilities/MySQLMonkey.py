@@ -1,3 +1,8 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 from DIRAC import S_OK
 
 ################################################################################
@@ -18,7 +23,8 @@ def localsToDict( locls ):
 class MySQLMonkey( object ):
   
   ACCEPTED_KWARGS = [ 'table',  
-                      'sort', 'order', 'limit', 'columns', 'group', 'count', # or, minor, dict 
+                      'sort', 'order', 'limit', 'columns', 'group', 'count',  
+                      'minor', 'or', 'dict',
                       'uniqueKeys', 'onlyUniqueKeys' ]
   
   def __init__( self, dbWrapper ):
@@ -33,6 +39,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
+    kwargs[ 'onlyUniqueKeys' ] = True
     # END PARSING #
     
     return self.__insert( rDict, **kwargs )
@@ -42,6 +49,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
+    kwargs[ 'onlyUniqueKeys' ] = True
     # END PARSING #
 
     return self.__insertSQLStatement( rDict, **kwargs )
@@ -53,6 +61,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
+    kwargs[ 'onlyUniqueKeys' ] = True
     # END PARSING #
     
     return self.__select( rDict, **kwargs )
@@ -62,6 +71,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
+    kwargs[ 'onlyUniqueKeys' ] = True
     # END PARSING #
 
     return self.__selectSQLStatement( rDict, **kwargs )
@@ -73,7 +83,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
-    kwargs[ 'onlyUniqueKeys' ] = None 
+    #kwargs[ 'onlyUniqueKeys' ] = None 
     # END PARSING #
 
     return self.__select( rDict, **kwargs )
@@ -83,7 +93,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
-    kwargs[ 'onlyUniqueKeys' ] = None
+    #kwargs[ 'onlyUniqueKeys' ] = None
     # END PARSING #
 
     return self.__selectSQLStatement( rDict, **kwargs )
@@ -95,6 +105,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
+    kwargs[ 'onlyUniqueKeys' ] = True
     # END PARSING #
     
     return self.__update( rDict, **kwargs )    
@@ -104,6 +115,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
+    kwargs[ 'onlyUniqueKeys' ] = True
     # END PARSING #
 
     return self.__updateSQLStatement( rDict, **kwargs )
@@ -116,7 +128,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
-    kwargs[ 'onlyUniqueKeys' ] = None
+    #kwargs[ 'onlyUniqueKeys' ] = None
     # END PARSING #
 
     return self.__delete( rDict, **kwargs )
@@ -126,7 +138,7 @@ class MySQLMonkey( object ):
     # PARSING #
     rDict  = self.parseDict( rDict )
     kwargs = self.parseKwargs( kwargs )
-    kwargs[ 'onlyUniqueKeys' ] = None
+    #kwargs[ 'onlyUniqueKeys' ] = None
     # END PARSING #
 
     return self.__deleteSQLStatement( rDict, **kwargs )
@@ -148,8 +160,8 @@ class MySQLMonkey( object ):
     if not pKwargs.has_key( 'table' ):
       raise NameError( 'Table name not given' )
     
-    if pKwargs[ 'onlyUniqueKeys' ] is None:
-      pKwargs[ 'onlyUniqueKeys' ] = True
+#    if pKwargs[ 'onlyUniqueKeys' ] is None:
+#      pKwargs[ 'onlyUniqueKeys' ] = True
       
     if pKwargs[ 'uniqueKeys' ] is None:
       pKwargs[ 'uniqueKeys' ] = self.dbWrapper.__TABLES__[ pKwargs[ 'table'] ][ 'uniqueKeys' ]  
@@ -190,11 +202,11 @@ class MySQLMonkey( object ):
     
     table = kwargs[ 'table' ]
     
-    req = "INSERT INTO %s (" % table  
-    req += ','.join( "%s" % key for key in rDict.keys())
-    req += ") VALUES ("
-    req += ','.join( "'%s'" % value for value in rDict.values())
-    req += ")"   
+    req = 'INSERT INTO %s (' % table  
+    req += ','.join( '%s' % key for key in rDict.keys())
+    req += ') VALUES ('
+    req += ','.join( '"%s"' % value for value in rDict.values())
+    req += ')'   
     
     return req
   
@@ -218,17 +230,17 @@ class MySQLMonkey( object ):
     if group is not None:
       order       = self.__listToString( group )
                 
-    req = "SELECT %s from %s" % ( columns, table )
+    req = 'SELECT %s from %s' % ( columns, table )
     if whereElements:
-      req += " WHERE %s" % whereElements
+      req += ' WHERE %s' % whereElements
     if sort:
-      req += " ORDER BY %s" % sort
+      req += ' ORDER BY %s' % sort
       if order:
-        req += " %s" % order 
+        req += ' %s' % order 
     if group:
-      req += " GROUP BY %s" % group    
+      req += ' GROUP BY %s' % group    
     if limit:
-      req += " LIMIT %d" % limit   
+      req += ' LIMIT %d' % limit   
   
     return req
   
@@ -238,13 +250,13 @@ class MySQLMonkey( object ):
     
     whereElements = self.__getWhereElements( rDict, **kwargs )
         
-    req = "UPDATE %s SET " % table
-    req += ','.join( "%s='%s'" % (key,value) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] ) )
+    req = 'UPDATE %s SET ' % table
+    req += ','.join( '%s="%s"' % (key,value) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] ) )
     # This was a bug, but is quite handy.
     # Prevents users from updating the whole table in one go if on the client
     # they execute updateX() without arguments for the uniqueKeys values 
     if whereElements is not None:
-      req += " WHERE %s" % whereElements
+      req += ' WHERE %s' % whereElements
 
     return req
 
@@ -254,12 +266,12 @@ class MySQLMonkey( object ):
     
     whereElements = self.__getWhereElements( rDict, **kwargs )
     
-    req = "DELETE from %s" % table
+    req = 'DELETE from %s' % table
     # This was a bug, but is quite handy.
     # Prevents users from deleting the whole table in one go if on the client
     # they execute deleteX() without arguments. 
     if whereElements is not None:
-      req += " WHERE %s" % whereElements
+      req += ' WHERE %s' % whereElements
     
     return req  
        
@@ -271,7 +283,7 @@ class MySQLMonkey( object ):
     
   def __getColumns( self, columnsList, **kwargs ):
     
-    columns = ""
+    #columns = ""
     
     #KWARGS
     count   = kwargs[ 'count' ]
@@ -300,18 +312,18 @@ class MySQLMonkey( object ):
 # OTHER FUNCTIONS   
    
    
-  def getColumns( self, columnsList ):
-    
-    cols = ""
-    
-    if columnsList is None:
-      cols = "*"
-    else:
-      if not isinstance( columnsList, list):
-        columnsList = [ columnsList ]
-      cols = ','.join( col for col in columnsList )  
-      
-    return cols
+#  def getColumns( self, columnsList ):
+#    
+#    cols = ""
+#    
+#    if columnsList is None:
+#      cols = "*"
+#    else:
+#      if not isinstance( columnsList, list):
+#        columnsList = [ columnsList ]
+#      cols = ','.join( col for col in columnsList )  
+#      
+#    return cols
 
   def __getWhereElements( self, rDict, **kwargs ):
    
@@ -320,8 +332,7 @@ class MySQLMonkey( object ):
     for k,v in rDict.items():    
 #      if kwargs[ 'excludeUniqueKeys' ] and k in kwargs[ 'uniqueKeys' ]:
 #        continue
-      
-      if kwargs[ 'onlyUniqueKeys' ] and k not in kwargs[ 'uniqueKeys' ]:
+      if kwargs.has_key('onlyUniqueKeys') and  kwargs[ 'onlyUniqueKeys' ] and k not in kwargs[ 'uniqueKeys' ]:
         continue
       
       if v is None:
@@ -332,66 +343,40 @@ class MySQLMonkey( object ):
           items.append( '%s IN %s' % ( k, tuple( [ str(vv) for vv in v if vv is not None ] ) ) )
         elif len(v):
           if v[ 0 ] is not None:
-            items.append( "%s='%s'" % ( k, v[0] ) )
+            items.append( '%s="%s"' % ( k, v[0] ) )
         else:
-          items.append( "%s=''" % k )
+          items.append( '%s=""' % k )
           #raise NameError( rDict )      
       else:
-        items.append( "%s='%s'" % ( k, v ) )
+        items.append( '%s="%s"' % ( k, v ) )      
                 
-    if kwargs.has_key( 'minor' ):
+    if kwargs.has_key( 'minor' ) and kwargs[ 'minor' ] is not None:
+      
       for k,v in kwargs[ 'minor' ].items():
         if v is not None:  
-          items.append( "%s < '%s'" % ( k, v ) ) 
+          items.append( '%s < "%s"' % ( k, v ) ) 
     
-    if kwargs.has_key( 'or' ):
-      
+    if kwargs.has_key( 'or' ) and kwargs[ 'or' ] is not None:
+          
       orItems = []
       for orDict in kwargs[ 'or' ]:      
-        
-        ordict = orDict.pop( 'dict', {} )
-        self.getWhereElements( ordict, **orDict )                     
+        ordict   = orDict.pop( 'dict', {} )
+        orkwargs = orDict.pop( 'kwargs', {} )
+        orItems.append( '(%s)' % self.__getWhereElements( ordict, **orkwargs ) )                     
                 
-      items.append( ' OR '. join( orItem for orItem in orItems ) )          
+      items.append( ' OR '. join( orItem for orItem in orItems ) )                      
                 
-    whereElements = ' AND '.join( item for item in items )
-    return whereElements   
-  
-  def getWhereElements( self, dict, **kwargs ):
-   
-    items = []
+    return ' AND '.join( item for item in items )
 
-    for k,v in dict.items():
-      
-      if v is None:
-        pass
-      elif isinstance( v, list ):
-        if len(v) > 1:
-          items.append( '%s IN %s' % ( k, tuple( [ str(vv) for vv in v ] ) ) )
-        elif len(v):
-          items.append( "%s='%s'" % ( k, v[0] ) )
-        else:
-          raise NameError( dict )      
-      else:
-        items.append( "%s='%s'" % ( k, v ) )
-                
-    if kwargs.has_key( 'minor' ):
-      for k,v in kwargs[ 'minor' ].items():
-        if v is not None:  
-          items.append( "%s < '%s'" % ( k, v ) ) 
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
     
-    if kwargs.has_key( 'or' ):
-      
-      orItems = []
-      for orDict in kwargs[ 'or' ]:      
-        
-        ordict = orDict.pop( 'dict', {} )
-        self.getWhereElements( ordict, **orDict )                     
-                
-      items.append( ' OR '. join( orItem for orItem in orItems ) )          
-                
-    whereElements = ' AND '.join( item for item in items )
-    return whereElements         
-  
+    will come soon...
+'''
+            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

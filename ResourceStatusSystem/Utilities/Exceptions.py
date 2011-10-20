@@ -1,10 +1,15 @@
-""" collects:
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
 
-      - exceptions
+""" 
+  collects:
+    - exceptions
 """
 
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
-    ValidServiceType, ValidResourceType, PolicyTypes
+    ValidServiceType, ValidResourceType
 
 class RSSException(Exception):
   def __init__(self, message = ""):
@@ -183,5 +188,15 @@ class InvalidResourceType(RSSException):
 #  def __str__(self):
 #    return "Invalid Format. " + repr(self.message)
 
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

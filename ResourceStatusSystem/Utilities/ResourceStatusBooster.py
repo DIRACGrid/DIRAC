@@ -1,26 +1,24 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 """
-ResourceStatusBooster class comprises methods that are horrible or not popular
-enough to be added to a generic API, but still quite convenient. 
+  ResourceStatusBooster class comprises methods that are horrible or not popular
+  enough to be added to a generic API, but still quite convenient. 
 
-Note that all interaction is done though the Client with its generic API !!
+  Note that all interaction is done though the Client with its generic API !!
 """
-
-from DIRAC import S_OK, S_ERROR
-
-from DIRAC.ResourceStatusSystem.Utilities.Validator import ResourceStatusValidator
-
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-
-
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
-
-from DIRAC.ResourceStatusSystem import ValidRes, ValidStatusTypes, ValidStatus
-
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution2
-#from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import localsToDict 
-
 
 from datetime import datetime, timedelta
+
+from DIRAC                                           import S_OK, S_ERROR
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName
+
+from DIRAC.ResourceStatusSystem                      import ValidRes, ValidStatusTypes, ValidStatus
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckExecution2
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Validator  import ResourceStatusValidator
 
 class ResourceStatusBooster( object ):
   
@@ -41,56 +39,29 @@ class ResourceStatusBooster( object ):
   def insertElement( self, element, *args ):
     
     fname = 'insert%s' % element
-    #try:
     f = getattr( self.rsClient, fname )
-    #except Exception, x:
-    #  return S_ERROR( '%s function not found in rsClient' )  
-    #try:
     return f( *args )
-    #except Exception, x:
-    #  return S_ERROR( x )
 
   @CheckExecution2
   def updateElement( self, element, *args ):
     
     fname = 'update%s' % element
-    #try:
     f = getattr( self.rsClient, fname )
-    #except Exception, x:
-    #  return S_ERROR( '%s function not found in rsClient' )  
-    
-    #try:
     return f( *args )
-    #except Exception, x:
-    #  return S_ERROR( x )
 
   @CheckExecution2
   def getElement( self, element, *args, **kwargs ):
     
     fname = 'get%s' % element
-    #try:
     f = getattr( self.rsClient, fname )
-    #except Exception, x:
-    #  return S_ERROR( '%s function not found in rsClient' )  
-    
-    #try:
     return f( *args, **kwargs )
-    #except Exception, x:
-    #  return S_ERROR( x )
 
   @CheckExecution2
   def deleteElement( self, element, *args, **kwargs ):
     
     fname = 'delete%s' % element
-    #try:
     f = getattr( self.rsClient, fname )
-    #except Exception, x:
-    #  return S_ERROR( '%s function not found in rsClient' )  
-    
-    #try:
     return f( *args, **kwargs )
-    #except Exception, x:
-    #  return S_ERROR( x )
 
   '''
   ##############################################################################
@@ -99,12 +70,6 @@ class ResourceStatusBooster( object ):
   '''
   @CheckExecution2
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
-#    # VALIDATION #
-#    self.rsVal.validateName( siteName )
-#    self.rsVal.validateSiteType( siteType )
-#    self.rsVal.validateGridSite( gridSiteName )
-#    # END VALIDATION #
-
     # VALIDATION ? 
     return self._addOrModifyElement( 'Site', siteName, siteType, gridSiteName )
 
@@ -136,6 +101,47 @@ class ResourceStatusBooster( object ):
 
   '''
   ##############################################################################
+  # modify Status FUNCTIONS
+  ##############################################################################
+  '''
+
+  @CheckExecution2
+  def modifySiteStatus( self, siteName, statusType, status = None, reason = None, 
+                        dateCreated = None, dateEffective = None, dateEnd = None, 
+                        lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
+    
+    return self._modifyElementStatus( 'Site', siteName, statusType, status, reason, dateCreated,
+                                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                                      tokenExpiration )
+  @CheckExecution2
+  def modifyServiceStatus( self, serviceName, statusType, status = None, reason = None, 
+                           dateCreated = None, dateEffective = None, dateEnd = None, 
+                           lastCheckTime = None, tokenOwner = None, tokenExpiration = None ):
+
+    return self._modifyElementStatus( 'Service', serviceName, statusType, status, reason, dateCreated,
+                                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                                      tokenExpiration )
+  @CheckExecution2
+  def modifyResourceStatus( self, resourceName, statusType, status = None, 
+                            reason = None, dateCreated = None, dateEffective = None, 
+                            dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                            tokenExpiration = None ):
+
+    return self._modifyElementStatus( 'Resource', resourceName, statusType, status, reason, dateCreated,
+                                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                                      tokenExpiration )
+  @CheckExecution2
+  def modifyStorageElementStatus( self, storageElementName, statusType, status = None, 
+                                  reason = None, dateCreated = None, dateEffective = None, 
+                                  dateEnd = None, lastCheckTime = None, tokenOwner = None, 
+                                  tokenExpiration = None ):
+
+    return self._modifyElementStatus( 'StorageElement', storageElementName, statusType, status, reason, dateCreated,
+                                      dateEffective, dateEnd, lastCheckTime, tokenOwner,
+                                      tokenExpiration )
+
+  '''
+  ##############################################################################
   # remove FUNCTIONS
   ##############################################################################
   '''
@@ -163,22 +169,21 @@ class ResourceStatusBooster( object ):
   @CheckExecution2
   def getServiceStats( self, siteName, statusType ):
 
-    presentDict = { 'SiteName' : siteName }
+    presentDict = { 'siteName' : siteName }
     if statusType is not None:
       self.__validateElementStatusTypes( 'Service', statusType )
       presentDict[ 'StatusType'] = statusType
     
     kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
-    presentDict = presentDict.update( kwargs )
-    sqlQuery = self.rsClient.getPresentService( **presentDict )
-  
+    presentDict.update( kwargs )
+
+    sqlQuery = self.rsClient.getServicePresent( **presentDict )
     return self._getStats( sqlQuery )
 
   @CheckExecution2
   def getResourceStats( self, element, name, statusType ):
 
     # VALIDATION ??
-
     presentDict = { }
 
     if statusType is not None:
@@ -211,13 +216,13 @@ class ResourceStatusBooster( object ):
       message = '%s is non accepted element. Only Site or Service' % element
       return S_ERROR( message )
 
-    resourceNames = [ re[0] for re in self.getResource( **rDict )[ 'Value' ] ]
+    resourceNames = [ re[0] for re in self.rsClient.getResource( **rDict )[ 'Value' ] ]
     
     kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
     presentDict[ 'resourceName' ] = resourceNames
-    presentDict = presentDict.update( kwargs )
+    presentDict.update( kwargs )
     
-    sqlQuery = self.rsClient.getPresentResource( **presentDict )
+    sqlQuery = self.rsClient.getResourcePresent( **presentDict )
     return self._getStats( sqlQuery )
 
   @CheckExecution2  
@@ -233,11 +238,10 @@ class ResourceStatusBooster( object ):
     rDict = { 'resourceName' : None,
               'gridSiteName' : None }
     
-
     if element == 'Site':
 
       kwargs = { 'columns' : [ 'GridSiteName' ] }
-      gridSiteNames = [ gs[0] for gs in self.getSite( siteName = name, **kwargs )[ 'Value' ] ]
+      gridSiteNames = [ gs[0] for gs in self.rsClient.getSite( siteName = name, **kwargs )[ 'Value' ] ]
       rDict[ 'gridSiteName' ] = gridSiteNames
 
     elif element == 'Resource':
@@ -248,13 +252,13 @@ class ResourceStatusBooster( object ):
       message = '%s is non accepted element. Only Site or Resource' % element
       return S_ERROR( message )
 
-    storageElementNames = [ se[0] for se in self.getStorageElement( **rDict )[ 'Value' ] ]
+    storageElementNames = [ se[0] for se in self.rsClient.getStorageElement( **rDict )[ 'Value' ] ]
 
     kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
     presentDict[ 'storageElementName' ] = storageElementNames
-    presentDict = presentDict.update( kwargs )
+    presentDict.update( kwargs )
     
-    sqlQuery = self.rsClient.getPresentResource( **presentDict )
+    sqlQuery = self.rsClient.getStorageElementPresent( **presentDict )
     return self._getStats( sqlQuery )  
   
 ################################################################################
@@ -269,12 +273,9 @@ class ResourceStatusBooster( object ):
 
   def _addOrModifyElement( self, element, *args ):
     
-    #args[ 0 ] must be always be elementName, which is the uniqueKey for the
-    #element tables. 
-    elementName = '%sName' % ( element[0].lower() + element[1:] )
-    kwargs = { elementName : args[ 0 ] }
-    sqlQuery = self.getElement( element, **kwargs )       
-    
+    kwargs = { 'onlyUniqueKeys' : True }
+    sqlQuery = self.getElement( element, *args, **kwargs )       
+       
     if sqlQuery[ 'Value' ]:      
       return self.updateElement( element, *args )
     else: 
@@ -310,15 +311,42 @@ class ResourceStatusBooster( object ):
         
     return S_OK()     
      
+  def _modifyElementStatus( self, element, *args ):
+      
+    args = list(args)
+
+    elementName = '%sName' % ( element[0].lower() + element[1:] )
+    kwargs = { elementName : args[ 0 ], 'statusType' : args[ 1 ] }
+    sqlQuery = self.getElement( '%sStatus' % element, **kwargs )
+
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery
+    if not sqlQuery[ 'Value' ]:
+      raise RSSException( 'Impossible to modify, %s (%s) is not on the DB' % ( args[ 0 ],args[ 1 ] ) )
+    
+    #DateEffective
+    if args[ 5 ] is None:
+      args[ 5 ] = datetime.utcnow().replace( microsecond = 0 )
+
+    #LastCheckTime
+    if args[ 7 ] is None:
+      args[ 7 ] = datetime.utcnow().replace( microsecond = 0 )
+    
+    updateSQLQuery = self.updateElement( '%sStatus' % element, *tuple( args ))
+    if not updateSQLQuery[ 'OK' ]:
+      return updateSQLQuery 
+    
+    sqlQ      = list( sqlQuery[ 'Value' ][ 0 ] )[1:]
+    # EHistory.DateEnd = EStatus.DateEffective
+    # This is vital for the views !!!!
+    sqlQ[ 6 ] = args[ 5 ]   
+
+    return self.insertElement( '%sHistory' % element , *tuple( sqlQ ) )  
+    
+     
   def _addOrModifyElementStatus( self, element, rList ):
 
-    # START VALIDATION #
-#    if rDict.has_key( 'Status' ):
-#      self.rsVal.validateStatus( rDict['Status'] )
-#    if rDict.has_key( 'Reason' ):
-#      self.rsVal.validateName( rDict['Reason'] )
-#    self.rsVal.validateSingleDates( rDict )
-    # END VALIDATION #
+    # VALIDATION ?
 
     rList += self._setStatusDefaults()
 
@@ -342,20 +370,12 @@ class ResourceStatusBooster( object ):
 
   def _setStatusDefaults( self ):#, rDict ):
      
-    now    = datetime.utcnow()
+    now    = datetime.utcnow().replace( microsecond = 0 )
     never  = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 )
 
     #dateCreated, dateEffective, dateEnd, lastCheckTime, tokenOwner, tokenExpiration
     iList = [ now, now, never, now, 'RS_SVC', never ] 
     return iList
-#    rDict[ 'TokenExpiration' ] = ( 1 and ( rDict.has_key('TokenExpiration') and rDict['TokenExpiration'] ) ) or never
-#    rDict[ 'DateCreated' ]     = ( 1 and ( rDict.has_key('DateCreated')     and rDict['DateCreated']     ) ) or now
-#    rDict[ 'DateEffective' ]   = ( 1 and ( rDict.has_key('DateEffective')   and rDict['DateEffective']   ) ) or now
-#    rDict[ 'DateEnd' ]         = ( 1 and ( rDict.has_key('DateEnd')         and rDict['DateEnd']         ) ) or never
-#    rDict[ 'LastCheckTime' ]   = ( 1 and ( rDict.has_key('LastCheckTime')   and rDict['LastCheckTime']   ) ) or now
-#    rDict[ 'TokenOwner' ]      = ( 1 and ( rDict.has_key('TokenOwner')      and rDict['TokenOwner']      ) ) or 'RS_SVC'
-    
-    #return rDict     
 
   '''
   ##############################################################################
@@ -400,37 +420,37 @@ class ResourceStatusBooster( object ):
   @CheckExecution2      
   def getGeneralName( self, from_element, name, to_element ):
 
-    self.rsVal.validateRes( from_element )
-    self.rsVal.validateRes( to_element )
+    self.rsVal.validateElement( from_element )
+    self.rsVal.validateElement( to_element )
 
     if from_element == 'Service':
       kwargs = { 'columns' : [ 'SiteName' ] }
-      resQuery = self.rsClient.getServices( serviceName = name, **kwargs )  
+      resQuery = self.rsClient.getService( serviceName = name, **kwargs )  
 
     elif from_element == 'Resource':
       kwargs = { 'columns' : [ 'ServiceType' ] }
-      resQuery = self.rsClient.getResources( resourceName = name, **kwargs )    
+      resQuery = self.rsClient.getResource( resourceName = name, **kwargs )    
       serviceType = resQuery[ 'Value' ][ 0 ][ 0 ]
 
       if serviceType == 'Computing':
         kwargs = { 'columns' : [ 'SiteName' ] }  
-        resQuery = self.rsClient.getResources( resourceName = name, **kwargs )
+        resQuery = self.rsClient.getResource( resourceName = name, **kwargs )
       else:
         kwargs = { 'columns' : [ 'GridSiteName' ] }    
-        gridSiteNames = self.rsClient.getResources( resourceName = name, **kwargs )
+        gridSiteNames = self.rsClient.getResource( resourceName = name, **kwargs )
         kwargs = { 'columns' : [ 'SiteName' ] }  
-        resQuery = self.rsClient.getSites( gridSiteName = list( gridSiteNames[ 'Value' ] ), **kwargs )
+        resQuery = self.rsClient.getSite( gridSiteName = list( gridSiteNames[ 'Value' ] ), **kwargs )
         
     elif from_element == 'StorageElement':
 
       if to_element == 'Resource':
         kwargs = { 'columns' : [ 'ResourceName' ] }   
-        resQuery = self.rsClient.getStorageElements( storageElementName = name, **kwargs )
+        resQuery = self.rsClient.getStorageElement( storageElementName = name, **kwargs )
       else:
         kwargs = { 'columns' : [ 'GridSiteName' ] }  
-        gridSiteNames = self.rsClient.getStorageElements( storageElementName = name, **kwargs )
+        gridSiteNames = self.rsClient.getStorageElement( storageElementName = name, **kwargs )
         kwargs = { 'columns' : [ 'SiteName' ] }
-        resQuery = self.rsClient.getSites( gridSiteName = list( gridSiteNames[ 'Value' ] ), **kwargs )
+        resQuery = self.rsClient.getSite( gridSiteName = list( gridSiteNames[ 'Value' ] ), **kwargs )
 
         if to_element == 'Service':
           serviceType = 'Storage'
@@ -453,7 +473,7 @@ class ResourceStatusBooster( object ):
   @CheckExecution2  
   def getGridSiteName( self, granularity, name ):
 
-    self.rsVal.validateRes( granularity )
+    self.rsVal.validateElement( granularity )
 
     rDict = {
              '%sName' % granularity : name
@@ -466,7 +486,7 @@ class ResourceStatusBooster( object ):
     kwargs.update( rDict )
     
 
-    getter = getattr( self.rsClient, 'get%ss' % granularity )
+    getter = getattr( self.rsClient, 'get%s' % granularity )
     return getter( **kwargs )
 
 ################################################################################    
@@ -474,7 +494,7 @@ class ResourceStatusBooster( object ):
   @CheckExecution2      
   def getTokens( self, granularity, name, tokenExpiration, statusType, **kwargs ):
 
-    self.rsVal.validateRes( granularity )  
+    self.rsVal.validateElement( granularity )  
 
     rDict = {}
     if name is not None:
@@ -500,7 +520,7 @@ class ResourceStatusBooster( object ):
   @CheckExecution2  
   def setToken( self, granularity, name, statusType, reason, tokenOwner, tokenExpiration ):
 
-    self.rsVal.validateRes( granularity )
+    self.rsVal.validateElement( granularity )
     self.rsVal.validateElementStatusTypes( granularity, statusType )
     
     updatter = getattr( self.rsClient, 'update%sStatus' % granularity )
@@ -520,32 +540,37 @@ class ResourceStatusBooster( object ):
   @CheckExecution2  
   def setReason( self, granularity, name, statusType, reason ):
         
-    self.rsVal.validateRes( granularity )
-    
-    updatter = getattr( self.rsClient, 'update%sStatus' % granularity )
+    self.rsVal.validateElement( granularity )
+        
+    modificator = getattr( self, 'modify%sStatus' % granularity )
+    elementName = granularity[0].lower() + granularity[1:]
     
     rDict = { 
-             'statusType'          : statusType,
-             'reason'              : reason,
+             '%sName' % elementName : name,        
+             'statusType'           : statusType,
+             'reason'               : reason,
              }
     
-    return updatter( name, **rDict )
+    return modificator( **rDict )
 
 ################################################################################    
     
   @CheckExecution2  
   def setDateEnd( self, granularity, name, statusType, dateEffective ):
     
-    self.rsVal.validateRes( granularity )
+    self.rsVal.validateElement( granularity )
 
-    updatter = getattr( self.rsClient, 'update%sStatus' % granularity )
+    modificator = getattr( self, 'modify%sStatus' % granularity )   
+    elementName = granularity[0].lower() + granularity[1:]
     
     rDict = { 
-             'statusType'          : statusType,
-             'dateEffective'       : dateEffective,
+             '%sName' % elementName : name,
+             'statusType'           : statusType,
+             'dateEffective'        : dateEffective,
              }
     
-    return updatter( name, **rDict )
+    return modificator( **rDict )
+    #return updatter( name, **rDict )
     
 ################################################################################    
      
@@ -571,7 +596,7 @@ class ResourceStatusBooster( object ):
 
 ################################################################################    
      
-  @CheckExecution2   
+  #@CheckExecution2   
   def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
     """
     Get Sites, Services, Resources, StorageElements to be checked using Present-x views.
@@ -584,7 +609,7 @@ class ResourceStatusBooster( object ):
       :attr:`maxN`: integer - maximum number of lines in output
     """
 
-    self.rsVal.validateRes( granularity )
+    self.rsVal.validateElement( granularity )
 
     toCheck = {}
 
@@ -610,7 +635,8 @@ class ResourceStatusBooster( object ):
                 
       kwargs[ 'or' ].append( orDict )          
                    
-    getter = getattr( self.rsClient, 'get%ssPresent' % granularity )
+    getter = getattr( self.rsClient, 'get%sPresent' % granularity )
+    
     return getter( **kwargs )      
 
 ################################################################################    
@@ -618,27 +644,13 @@ class ResourceStatusBooster( object ):
   @CheckExecution2
   def getMonitoredStatus( self, granularity, name ):
  
-    getter = getattr( self.rsClient, 'get%ssPresent' % granularity )
-    kwargs = { '%sName' % granularity : name, 'columns' : [ 'Status' ] }
+    getter = getattr( self.rsClient, 'get%sPresent' % granularity )
+    
+    elementName = '%sName' % ( granularity[0].lower() + granularity[1:] ) 
+    kwargs = { elementName : name, 'columns' : [ 'Status' ] }
     
     return getter( **kwargs )
-    
-#    statusList = []
-    
-#    res = self.getMonitoredsStatusWeb( granularity, { '%sName' % granularity : name }, 0, 1 )
-#    if not res[ 'OK' ]:
-#      return res
-    
-#    try:
-#      if granularity == 'Resource':
-#        statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 6 ] )
-#      else:
-#        statusList.append( res[ 'Value' ][ 'Records' ][ 0 ][ 5 ] )
-#    except IndexError:
-#      return S_ERROR( None )
-
-#    return S_OK( statusList )
-  
+     
 ################################################################################  
   
   @CheckExecution2
@@ -674,7 +686,7 @@ class ResourceStatusBooster( object ):
       }
     """
 
-    self.rsVal.validateRes( granularity )
+    self.rsVal.validateElement( granularity )
 
     if granularity == 'Site':
       paramNames = [ 'SiteName', 'Tier', 'GridType', 'Country',
@@ -747,7 +759,7 @@ class ResourceStatusBooster( object ):
       kwargs = { 'columns' : paramsList }  
       if granularity == 'Site':
           
-        sitesList = self.rsClient.getSitesPresent( siteName = rDict['SiteName'], 
+        sitesList = self.rsClient.getSitePresent( siteName = rDict['SiteName'], 
                                           status   = rDict['Status'],
                                           siteType   = rDict['SiteType'],
                                           **kwargs )  
@@ -808,20 +820,20 @@ class ResourceStatusBooster( object ):
       elif granularity == 'Resource':
         if rDict[ 'SiteName' ] == None:
           kw = { 'columns' : [ 'SiteName' ] }
-          sites_select = self.rsClient.getSitesPresent( **kw )
+          sites_select = self.rsClient.getSitePresent( **kw )
           #sites_select = self.getMonitoredsList( 'Site',
           #                                       paramsList = [ 'SiteName' ] )
           rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ] 
           
         kw = { 'columns' : [ 'GridSiteName' ] }
-        gridSites_select = self.rsClient.getSitesPresent( siteName = rDict[ 'SiteName'], **kw )
+        gridSites_select = self.rsClient.getSitePresent( siteName = rDict[ 'SiteName'], **kw )
         #gridSites_select = self.getMonitoredsList( 'Site',
         #                                           paramsList = [ 'GridSiteName' ],
         #                                           siteName = rDict[ 'SiteName' ] )
         
         gridSites_select = [ x[ 0 ] for x in gridSites_select[ 'Value' ] ]
 
-        resourcesList = self.rsClient.getResourcesPresent( resourceName = rDict['ResourceName'],
+        resourcesList = self.rsClient.getResourcePresent( resourceName = rDict['ResourceName'],
                                                   status       = rDict['Status'],
                                                   siteType     = rDict['SiteType'],
                                                   resourceType = rDict['ResourceType'],
@@ -889,19 +901,19 @@ class ResourceStatusBooster( object ):
       elif granularity == 'StorageElement':
         if rDict[ 'SiteName' ] == []:#sites_select == []:
           kw = { 'columns' : [ 'SiteName' ] }
-          sites_select = self.rsClient.getSitesPresent( **kw )
+          sites_select = self.rsClient.getSitePresent( **kw )
           #sites_select = self.getMonitoredsList( 'Site',
           #                                      paramsList = [ 'SiteName' ] )
           rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ]
 
         kw = { 'columns' : [ 'GridSiteName' ] }
-        gridSites_select = self.rsClient.getSitesPresent( siteName = rDict[ 'SiteName' ], **kw )
+        gridSites_select = self.rsClient.getSitePresent( siteName = rDict[ 'SiteName' ], **kw )
         #gridSites_select = self.getMonitoredsList( 'Site',
         #                                           paramsList = [ 'GridSiteName' ],
         #                                           siteName = rDict[ 'SiteName' ] )
         gridSites_select = [ x[ 0 ] for x in gridSites_select[ 'Value' ] ]
 
-        storageElementsList = self.rsClient.getStorageElementsPresent( storageElementName = rDict[ 'StorageElementName' ],
+        storageElementsList = self.rsClient.getStorageElementPresent( storageElementName = rDict[ 'StorageElementName' ],
                                                               status             = rDict[ 'Status' ],
                                                               gridSiteName       = gridSites_select,
                                                               **kwargs
@@ -951,5 +963,15 @@ class ResourceStatusBooster( object ):
 
     return S_OK( finalDict )    
 
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF        

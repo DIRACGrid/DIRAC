@@ -1,6 +1,10 @@
-"""
-DIRAC.ResourceStatusSystem package
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
 
+"""
+  DIRAC.ResourceStatusSystem package
 """
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
@@ -32,3 +36,16 @@ views_panels = {
   'Resource' : ['Resource_Panel'],
   'StorageElement' : ['SE_Panel']
 }
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -1,3 +1,8 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 import itertools
 
 from DIRAC                                   import S_OK, S_ERROR, gConfig
@@ -9,7 +14,6 @@ g_BaseRegistrySection   = "/Registry"
 g_BaseResourcesSection  = "/Resources"
 g_BaseOperationsSection = "/Operations"
 g_BaseConfigSection     = "/Operations/RSSConfiguration"
-
 
 ### CS HELPER FUNCTIONS
 
@@ -79,7 +83,7 @@ def getTypedDictRootedAt(relpath = "", root = g_BaseConfigSection):
 def getUserNames():
   return gConfig.getSections("%s/Users" % g_BaseRegistrySection)['Value']
 
-#############################################################################
+################################################################################
 
 # Mail functions #######################
 
@@ -229,3 +233,16 @@ def getCEType( site, ce, grid = 'LCG' ):
 
 def getCondDBs():
   return gConfig.getSections("%s/CondDB" % g_BaseResourcesSection)
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -1,3 +1,8 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 import types
 import inspect
 
@@ -17,7 +22,7 @@ class CheckExecution2( object ):
       except Exception, x:
         return S_ERROR( x )
 
-#################################################################################
+################################################################################
 
 class DBDec( object ):
   
@@ -117,18 +122,93 @@ class ClientDec( object ):
       
     gate    = args[ 0 ].gate  
     booster = args[ 0 ].booster
-     
+          
     fname   = self.f.__name__  
-    args    = tuple( list(args)[1:] + list( newArgs ))    
-       
+    args    = tuple( list(args)[1:] + list( newArgs ))       
+
     try:
       gateFunction = getattr( gate, fname )
     except AttributeError, x:
       gateFunction = getattr( booster, fname )  
     except Exception, x:
-      return S_ERROR( x )    
+      return S_ERROR( x )      
 
     return gateFunction( *args, **kwargs )
+    
+################################################################################
 
+class ClientDec2( object ):
+  
+  def __init__( self, f ):
+    self.f = f
+    
+  def __get__( self, obj, objtype = None ):
+    return types.MethodType( self, obj, objtype )
+    
+  def __call__( self, *args, **kwargs ):  
+ 
+    fname   = self.f.__name__  
+    gate    = args[ 0 ].gate  
+    booster = args[ 0 ].booster
+    
+    try:
+      gateFunction = getattr( gate, fname )
+    except AttributeError, x:
+      gateFunction = getattr( booster, fname )  
+    except Exception, x:
+      return S_ERROR( x )   
+ 
+ 
+    ins = inspect.getargspec( self.f )
+    
+    defKwargs = ( 1 and ins.defaults ) or () 
+    
+    kwargsLen = len( defKwargs )
+    argsLen   = len( ins.args ) - kwargsLen 
+    if ins.varargs is not None:
+      argsLen = len( ins.args )
+    
+    #processArgs
+    newArgs = tuple( list( args )[ 1:argsLen ] )  
+    if len( args ) > len( ins.args ):
+      raise TypeError( '%s arguments received' % len(args) )
+    
+    #processKwargs
+    newKwargs = []
+    if kwargsLen: #newArgs:
+      #Keyword arguments on function self.f
+      funkwargs = ins.args[ -kwargsLen: ]
+      kw      = dict(zip( funkwargs, defKwargs ) )
+      
+      kw.update( kwargs ) 
+      
+      if list( args )[ argsLen: ]:
+        for _i in xrange( argsLen, len(args) ):
+          
+          funkey = funkwargs[ _i - argsLen ]
+          
+          if kw[ funkey ] is not None:
+            raise TypeError( '%s Got %s twice %s,%s' % ( fname, funkey, kw[ funkey ], args[_i]))
+          kw[ funkey ] = args[ _i ]
+      
+      newKwargs = [ kw[k] for k in funkwargs ]
+      
+      for fk in funkwargs:
+        kwargs.pop( fk, None )    
+
+    args    = tuple( list(newArgs) + newKwargs )         
+
+    return gateFunction( *args, **kwargs )
+      
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

@@ -1,6 +1,12 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 """
-This module collects utility functions
+  This module collects utility functions
 """
+
 #############################################################################
 # useful functions
 #############################################################################
@@ -166,8 +172,10 @@ def bool_of_string(s):
   else                      : raise ValueError, "Cannot convert %s to a boolean value" % s
 
 def typedobj_of_string(s):
-  if s == "":
-    return s
+  if s == '_none_':
+    return []
+  if s == '': #isinstance( s, str ):
+    return [ s ]
   try:
     return ast.literal_eval(s)
   except (ValueError, SyntaxError): # Probably it's just a string
@@ -384,3 +392,16 @@ def sql_insert_update_(table, keys, kw):
 
 def sql_insert_update(table, keys, **kw):
   return sql_insert_update_(table, keys, kw)
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
