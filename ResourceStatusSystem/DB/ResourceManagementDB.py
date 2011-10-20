@@ -203,7 +203,7 @@ class ResourceManagementDB(object):
   # ACCOUNTING CACHE FUNCTIONS
   ##############################################################################
   '''
-  __TABLES__[ 'AccountingCache' ] = {'uniqueKeys' : [ 'Name', 'PlotType', 'PlotName' ] }
+  __TABLES__[ 'AccountingCache' ] = { 'uniqueKeys' : [ 'Name', 'PlotType', 'PlotName' ] }
 
   @DBDec
   def insertAccountingCache( self, name, plotType, plotName, result, dateEffective,
@@ -286,7 +286,7 @@ class ResourceManagementDB(object):
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
 
 '''
-This goes to the booster
+This will go to the booster
 
 ################################################################################
 ## Web functions
