@@ -1,7 +1,15 @@
-""" ResourcePolType Actions
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
+""" 
+  ResourcePolType Actions
 """
 
 from DIRAC import gLogger
+
+################################################################################
 
 def EmptyPolTypeActions( granularity, name, resDecisions, res ):
   
@@ -10,4 +18,16 @@ def EmptyPolTypeActions( granularity, name, resDecisions, res ):
   
   gLogger.info( 'EmptyAction at %s with %s' % ( name, str( resDecisions ) ) )
 
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
   

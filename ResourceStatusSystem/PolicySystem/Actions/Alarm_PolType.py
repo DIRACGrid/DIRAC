@@ -1,8 +1,15 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 """
-AlarmPolType Actions
+  AlarmPolType Actions
 """
 from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
+
+################################################################################
 
 def getUsersToNotify(setup, kwargs):
   """Get a list of users to notify (helper function for AlarmPolTypeActions)
@@ -23,7 +30,9 @@ def getUsersToNotify(setup, kwargs):
 
   return notifications
 
-def AlarmPolTypeActions(name, res, statusType, nc, setup, rsClient, rmDB, **kwargs):
+################################################################################
+
+def AlarmPolTypeActions(name, res, statusType, nc, setup, rsClient, rmClient, **kwargs):
   """ Do actions required to notify users.
   Mandatory keyword arguments:
   - Granularity
@@ -52,7 +61,7 @@ def AlarmPolTypeActions(name, res, statusType, nc, setup, rsClient, rmDB, **kwar
           nc.addNotificationForUser(user, notif)
         if 'Mail' in notification['Notifications']:
           
-          histGetter = getattr( rsClient, 'get%ssHistory' % granularity )
+          histGetter = getattr( rsClient, 'get%sHistory' % granularity )
           
           kwargs = { '%sName'     : name,
                      'statusType' : statusType,
@@ -74,5 +83,18 @@ Was in status "%s", with reason "%s", since %s
 Setup = %s
 """ % (granularity, name, res['Status'], res['Reason'], was[0], was[1], was[2], setup)
 
-          nc.sendMail(rmDB.registryGetMailFromLogin(user),
+          nc.sendMail(rmClient.registryGetMailFromLogin(user),
                       '%s: %s' % (name, res['Status']), mailMessage)
+          
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
