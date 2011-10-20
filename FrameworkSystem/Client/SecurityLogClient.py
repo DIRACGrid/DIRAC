@@ -9,7 +9,7 @@ class SecurityLogClient:
 
   __securityLogStore = []
 
-  def __init__(self):
+  def __init__( self ):
     self.__messagesList = []
     self.__maxMessagesInBundle = 1000
     self.__maxMessagesWaiting = 10000
@@ -26,7 +26,7 @@ class SecurityLogClient:
       strMsg = "Time=%s Accept=%s Source=%s:%s SourceID=%s Destination=%s:%s Service=%s Action=%s"
       syslog.syslog( strMsg % msg )
     while len( self.__messagesList ) > self.__maxMessagesWaiting:
-      self.__messagesList.pop(0)
+      self.__messagesList.pop( 0 )
     if not self.__securityLogStore:
       self.__messagesList.append( msg )
     else:
@@ -38,8 +38,8 @@ class SecurityLogClient:
     self.__securityLogStore.append( logStore )
     gThreadScheduler.addPeriodicTask( 10, self.__sendData, executions = 1 )
 
-  def __sendData(self):
-    gLogger.info( "Sending records to security log service...")
+  def __sendData( self ):
+    gLogger.verbose( "Sending records to security log service..." )
     msgList = self.__messagesList
     self.__messagesList = []
     rpcClient = RPCClient( "Framework/SecurityLogging" )
@@ -50,6 +50,6 @@ class SecurityLogClient:
         self.__messagesList.extend( msgList )
         break
       msgList = msgList[ self.__maxMessagesInBundle: ]
-    gLogger.info( "Data sent to security log service" )
+    gLogger.verbose( "Data sent to security log service" )
 
 

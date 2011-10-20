@@ -249,6 +249,16 @@ class PoolXMLCatalog:
 
     return ''
 
+  def getTypeByPfn( self, pfn ):
+    """ Get Type for a given PFN
+    """
+    for guid, pfile in self.files.items():
+      for p in pfile.pfns:
+        if pfn == p[0]:
+          return p[1]
+
+    return ''
+
   def exists( self, lfn ):
     """ Check for the given LFN existence
     """

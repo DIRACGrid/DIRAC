@@ -28,6 +28,7 @@ class CLIParams:
   userPasswd = ""
   checkClock = True
 
+
   def setProxyLifeTime( self, arg ):
     try:
       fields = [ f.strip() for f in arg.split( ":" ) ]
@@ -189,7 +190,6 @@ def generateProxy( params ):
                                         limited = params.limitedProxy )
 
     gLogger.info( "Contacting CS..." )
-
     retVal = Script.enableCS()
     if not retVal[ 'OK' ]:
       gLogger.warn( retVal[ 'Message' ] )

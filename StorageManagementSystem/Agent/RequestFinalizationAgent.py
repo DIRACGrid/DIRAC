@@ -23,7 +23,7 @@ class RequestFinalizationAgent( AgentModule ):
     self.am_setOption( 'shifterProxy', 'DataManager' )
     self.storageDB = StorageManagementDB()
     #self.stagerClient = StorageManagerClient()
-    self.oldTaskDays = self.am_getOption( 'oldTaskDays', 3 )
+    res = self.setOldTasksAsFailed( self.am_getOption( 'FailIntervalDay', 3 ) )
     return S_OK()
 
   def execute( self ):

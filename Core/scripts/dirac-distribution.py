@@ -133,8 +133,8 @@ class DistributionMaker:
 
   def __init__( self, cliParams ):
     self.cliParams = cliParams
-    self.relConf = DiracInstall.ReleaseConfig( cliParams.projectName )
-    self.relConf.loadDefaults()
+    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName )
+    self.relConf.loadProjectDefaults()
     if cliParams.debug:
       self.relConf.setDebugCB( gLogger.info )
 
@@ -156,7 +156,7 @@ class DistributionMaker:
 
   def loadReleases( self ):
     gLogger.notice( "Loading releases.cfg" )
-    return self.relConf.loadProjectForRelease( self.cliParams.relcfg )
+    return self.relConf.loadProjectRelease( self.cliParams.releasesToBuild, releaseMode = True, relLocation = self.cliParams.relcfg )
 
   def createModuleTarballs( self ):
     for version in self.cliParams.releasesToBuild:
@@ -178,7 +178,7 @@ class DistributionMaker:
       dctArgs.append( "-v '%s'" % modVersion )
       gLogger.notice( "Creating tar for %s version %s" % ( modName, modVersion ) )
       #Source
-      result = self.relConf.getModSource( modName )
+      result = self.relConf.getModSource( releaseVersion, modName )
       if not result[ 'OK' ]:
         return result
       modSrcTuple = result[ 'Value' ]
@@ -301,9 +301,9 @@ class DistributionMaker:
         gLogger.fatal( "There was a problem when creating the Externals tarballs" )
         return False
     #Write the releases files
-    projectCFG = self.relConf.getCFG( self.cliParams.projectName )
-    projectCFGData = projectCFG.toString() + "\n"
     for relVersion in self.cliParams.releasesToBuild:
+      projectCFG = self.relConf.getReleaseCFG( self.cliParams.projectName, relVersion )
+      projectCFGData = projectCFG.toString() + "\n"
       try:
         relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
         relFile.write( projectCFGData )
@@ -320,7 +320,7 @@ class DistributionMaker:
         return False
       #Check deps
       if 'DIRAC' != self.cliParams.projectName:
-        deps = self.relConf.getReleaseDependencies( relVersion )
+        deps = self.relConf.getReleaseDependencies( self.cliParams.projectName, relVersion )
         if 'DIRAC' not in deps:
           gLogger.notice( "Release %s doesn't depend on DIRAC. Check it's what you really want" % relVersion )
         else:
@@ -328,7 +328,9 @@ class DistributionMaker:
     return True
 
   def getUploadCmd( self ):
-    upCmd = self.relConf.getDefaultValue( "UploadCommand" )
+    upCmd = self.relConf.getReleaseOption( self.cliParams.projectName,
+                                           self.cliParams.releasesToBuild[0],
+                                           "UploadCommand" )
     if not upCmd:
       if self.cliParams.projectName in g_uploadCmd:
         upCmd = g_uploadCmd[ self.cliParams.projectName ]
@@ -344,7 +346,7 @@ class DistributionMaker:
     outFileNames = " ".join( [ os.path.basename( filePath ) for filePath in filesToCopy ] )
 
     if not upCmd:
-      return "Upload to your installation source:\n\t %s\n" % filesToCopy
+      return "Upload to your installation source:\n'%s'\n" % "' '".join( filesToCopy )
     for inRep, outRep in ( ( "%OUTLOCATION%", self.cliParams.destination ),
                            ( "%OUTFILES%", outFiles ),
                            ( "%OUTFILENAMES%", outFileNames ) ):

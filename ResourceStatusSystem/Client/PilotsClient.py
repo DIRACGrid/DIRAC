@@ -144,7 +144,7 @@ class PilotsClient:
         if not siteName[ 'OK' ]:
           raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
         if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
-          return None
+          return {}
         siteName = siteName['Value']
 
       res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
@@ -157,7 +157,7 @@ class PilotsClient:
       res = res['Value']['Records']
 
     if len(res) == 0:
-      return None
+      return {}
 
     effRes = {}
 
@@ -185,7 +185,7 @@ class PilotsClient:
       return effRes
 
     except IndexError:
-      return None
+      return {}
 
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  

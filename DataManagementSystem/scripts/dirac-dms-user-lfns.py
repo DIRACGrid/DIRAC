@@ -44,7 +44,7 @@ for switch in Script.getUnprocessedSwitches():
 import DIRAC
 from DIRAC                                                   import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
-from DIRAC.Core.Security.Misc                                import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
 from DIRAC.DataManagementSystem.Client.ReplicaManager        import ReplicaManager
 from DIRAC.Core.Utilities.List                               import sortList
 from datetime import datetime, timedelta

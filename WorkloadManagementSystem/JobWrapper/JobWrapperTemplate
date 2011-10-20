@@ -4,7 +4,7 @@ import os
 gPilotProxyLocation='@PILOTPROXYLOCATION@'
 jobProxyData="""@JOBPROXYDATA@"""
 from DIRAC.Core.Security import File
-from DIRAC.Core.Security.Misc import getProxyInfoAsString
+from DIRAC.Core.Security.ProxyInfo import getProxyInfoAsString
 result = File.writeToProxyFile( jobProxyData )
 if not result[ 'OK' ]:
   print "ERROR WHILE WRITING PROXY TO FILE:" + result[ 'Message' ]

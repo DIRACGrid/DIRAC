@@ -28,10 +28,10 @@ class GGUSTicketsClient:
 
   def getTicketsList( self, name, startDate = None, endDate = None ):
     """ Return tickets of entity in name
-@param name: should be the name of the site
-@param startDate: starting date (optional)
-@param endDate: end date (optional)
-"""
+       @param name: should be the name of the site
+       @param startDate: starting date (optional)
+       @param endDate: end date (optional)
+    """
     self.siteName = name
     self.statusCount = {}
     self.shortDescription = {}
@@ -106,19 +106,18 @@ class GGUSTicketsClient:
 #############################################################################
   def globalStatistics( self ):
     '''
-Get some statistics about the tickets for the site: total number
-of tickets and number of ticket in different status
-'''
+        Get some statistics about the tickets for the site: total number
+        of tickets and number of ticket in different status
+    '''
     self.selectedTickets = {} # initialize the dictionary of tickets to return
     for ticket in self.ticketList:
       id_ = ticket[3][0]
       if id_ not in self.selectedTickets.keys():
-        self.selectedTickets[id_] = {}
-        self.selectedTickets[id_]['status'] = ticket[0][0]
+        self.selectedTickets[id_]                     = {}
+        self.selectedTickets[id_]['status']           = ticket[0][0]
         self.selectedTickets[id_]['shortDescription'] = ticket[1][0]
-        self.selectedTickets[id_]['responsibleUnit'] = ticket[2][0]
-        self.selectedTickets[id_]['site'] = ticket[4][0]
-# print 'total number of tickets: ', len(self.selectedTickets.keys())
+        self.selectedTickets[id_]['responsibleUnit']  = ticket[2][0]
+        self.selectedTickets[id_]['site']             = ticket[4][0]
     self.count = {}
     # group tickets in only 2 categories: open and terminal states
     # create a dictionary to store the short description only for tickets in open states:
@@ -144,4 +143,3 @@ of tickets and number of ticket in different status
 # gLogger.error(st)
 
 #############################################################################
-
