@@ -122,7 +122,7 @@ def getVOMSEndpoints():
 
 # Sites functions ###################
 
-def getSites( grids = ['LCG'] ):
+def getSites( grids = ['LCG', 'DIRAC'] ):
   if isinstance(grids, basestring):
     grids = [grids]
   sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
@@ -138,8 +138,8 @@ def getSiteTier( sitesIn ):
   sites = sitesIn
   if isinstance(sitesIn, basestring):
     sites = [sitesIn]
-  tiers = [getValue("%s/Sites/LCG/%s/MoUTierLevel"
-                       % (g_BaseResourcesSection, site)) for site in sites]
+  tiers = [getValue("%s/Sites/%s/%s/MoUTierLevel"
+                    % (g_BaseResourcesSection, site.split(".")[0], site)) for site in sites]
 
   tiers = [normalizeTier(t) for t in tiers]
   if isinstance(sitesIn, basestring): return S_OK(tiers[0])

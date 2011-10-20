@@ -97,7 +97,7 @@ class SSInspectorAgent( AgentModule ):
   def _executeCheck( self, _arg ):
     
     # Init the APIs beforehand, and reuse them. 
-    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'GGUSTicketsClient' ]
     clients = initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )

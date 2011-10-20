@@ -28,14 +28,10 @@ class GGUSTicketsClient:
 
   def getTicketsList( self, name, startDate = None, endDate = None ):
     """ Return tickets of entity in name
-
-       :params:
-         :attr:`name`: should be the name of the site
-
-         :attr:`startDate`: starting date (optional)
-          
-        :attr:`endDate`: end date (optional)  
-    """
+@param name: should be the name of the site
+@param startDate: starting date (optional)
+@param endDate: end date (optional)
+"""
     self.siteName = name
     self.statusCount = {}
     self.shortDescription = {}
@@ -51,13 +47,13 @@ class GGUSTicketsClient:
     #self.query = '\'GHD_Affected Site\'=\"'+ self.siteName + '\"'
     self.startDate = startDate
     if self.startDate is not None:
-#      st = 'set the starting date as ', self.startDate
-#      gLogger.info(st)
+# st = 'set the starting date as ', self.startDate
+# gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'>' + str( self.startDate )
     self.endDate = endDate
     if self.endDate is not None:
-#      st = 'set the end date as ', self.endDate
-#      gLogger.info(st)
+# st = 'set the end date as ', self.endDate
+# gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str( self.endDate )
 
     # create the URL to get tickets relative to the site:
@@ -110,29 +106,29 @@ class GGUSTicketsClient:
 #############################################################################
   def globalStatistics( self ):
     '''
-        Get some statistics about the tickets for the site: total number 
-        of tickets and number of ticket in different status
-    '''
+Get some statistics about the tickets for the site: total number
+of tickets and number of ticket in different status
+'''
     self.selectedTickets = {} # initialize the dictionary of tickets to return
     for ticket in self.ticketList:
-      id = ticket[3]
-      if id not in self.selectedTickets.keys():
-        self.selectedTickets[id] = {}
-        self.selectedTickets[id]['status'] = str( ticket[0] )
-        self.selectedTickets[id]['shortDescription'] = str( ticket[1] )
-        self.selectedTickets[id]['responsibleUnit'] = str( ticket[2] )
-        self.selectedTickets[id]['site'] = str( ticket[4] )
-#    print 'total number of tickets: ', len(self.selectedTickets.keys()) 
+      id_ = ticket[3][0]
+      if id_ not in self.selectedTickets.keys():
+        self.selectedTickets[id_] = {}
+        self.selectedTickets[id_]['status'] = ticket[0][0]
+        self.selectedTickets[id_]['shortDescription'] = ticket[1][0]
+        self.selectedTickets[id_]['responsibleUnit'] = ticket[2][0]
+        self.selectedTickets[id_]['site'] = ticket[4][0]
+# print 'total number of tickets: ', len(self.selectedTickets.keys())
     self.count = {}
-    # group tickets in only 2 categories: open and terminal states   
+    # group tickets in only 2 categories: open and terminal states
     # create a dictionary to store the short description only for tickets in open states:
     openStates = ['assigned', 'in progress', 'new', 'on hold',
                   'reopened', 'waiting for reply']
     terminalStates = ['solved', 'unsolved', 'verified']
     self.statusCount['open'] = 0
     self.statusCount['terminal'] = 0
-    for id in self.selectedTickets.keys():
-      status = self.selectedTickets[id]['status']
+    for id_ in self.selectedTickets.keys():
+      status = self.selectedTickets[id_]['status']
       if status not in self.count.keys():
         self.count[status] = 0
       self.count[status] += 1
@@ -140,12 +136,12 @@ class GGUSTicketsClient:
         self.statusCount['terminal'] += 1
       elif status in openStates:
         self.statusCount['open'] += 1
-        if id not in self.shortDescription.keys():
-          self.shortDescription[str( id )] = self.selectedTickets[id]['shortDescription']
+        if id_ not in self.shortDescription.keys():
+          self.shortDescription[str( id_ )] = self.selectedTickets[id_]['shortDescription']
       else:
         pass
-#        st = 'ERROR! GGUS status unknown: ', status
-#        gLogger.error(st)
+# st = 'ERROR! GGUS status unknown: ', status
+# gLogger.error(st)
 
 #############################################################################
 

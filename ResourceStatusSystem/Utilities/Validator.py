@@ -147,7 +147,7 @@ class ResourceStatusValidator:
       return 
         
     self.validateString( resourceName )
-    res = self.rsGate.getResource( resourceName, None, None )
+    res = self.rsGate.getResource( resourceName, None, None, None, None )
     
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '"%s" is not a known resourceName' % resourceName
@@ -159,7 +159,7 @@ class ResourceStatusValidator:
       return 
         
     self.validateString( storageElementName )
-    res = self.rsGate.getStorageElementName( storageElementName, None, None )
+    res = self.rsGate.getStorageElement( storageElementName, None, None )
     
     if not res[ 'OK' ] or not res[ 'Value' ]:
       message = '"%s" is not a known storageElementName' % storageElementName

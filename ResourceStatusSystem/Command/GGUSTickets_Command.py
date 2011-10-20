@@ -41,7 +41,7 @@ def callClient( args, clientIn ):
 
 class GGUSTickets_Open( Command ):
   
-  __APISs__ = [ 'GGUSTicketsClient' ]
+  __APIs__ = [ 'GGUSTicketsClient' ]
   
   def doCommand( self ):
     """ 
@@ -66,7 +66,7 @@ class GGUSTickets_Open( Command ):
 
 class GGUSTickets_Link(Command):
   
-  __APISs__ = [ 'GGUSTicketsClient' ]
+  __APIs__ = [ 'GGUSTicketsClient' ]
   
   def doCommand( self ):
     """ 
@@ -92,7 +92,7 @@ class GGUSTickets_Link(Command):
 
 class GGUSTickets_Info(Command):
   
-  __APISs__ = [ 'GGUSTicketsClient' ]
+  __APIs__ = [ 'GGUSTicketsClient' ]
   
   def doCommand(self):
     """ 
