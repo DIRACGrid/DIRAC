@@ -12,6 +12,7 @@ from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
 from DIRAC.ResourceStatusSystem                             import CheckingFreqs
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Command.knownAPIs           import initAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
@@ -95,7 +96,11 @@ class SSInspectorAgent( AgentModule ):
 
   def _executeCheck( self, _arg ):
     
-    pep = PEP( self.VOExtension, setup = self.setup )
+    # Init the APIs beforehand, and reuse them. 
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+    clients = initAPIs( __APIs__, {} )
+    
+    pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
     while True:
 

@@ -1,10 +1,8 @@
 ################################################################################
 # $HeadURL:  $
 ################################################################################
-""" 
-TokenAgent is in charge of checking tokens assigned on resources.
-Notifications are sent to those users owning expiring tokens. 
-"""
+__RCSID__  = "$Id:  $"
+AGENT_NAME = 'ResourceStatus/TokenAgent'
 
 import datetime
 
@@ -18,15 +16,12 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.Utilities.CS         import getMailForUser
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP     import PDP 
 from DIRAC.ResourceStatusSystem.Utilities.CS         import getExt
-      
-__RCSID__ = "$Id:  $"
-
-AGENT_NAME = 'ResourceStatus/TokenAgent'
-
 
 class TokenAgent( AgentModule ):
-
-################################################################################
+  """ 
+    TokenAgent is in charge of checking tokens assigned on resources.
+    Notifications are sent to those users owning expiring tokens. 
+  """
 
   def initialize( self ):
     """ 
@@ -147,5 +142,14 @@ class TokenAgent( AgentModule ):
       return S_ERROR( errorStr )
 
 ################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
 
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+
+################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

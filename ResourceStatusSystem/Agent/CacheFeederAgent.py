@@ -115,15 +115,19 @@ class CacheFeederAgent( AgentModule ):
                 if value != 'ID':
                   clientCache = ( key.split()[1], commandName, res[key]['ID'],
                                   value, res[key][value], None, None )
+                  
+                  resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
+                  if not resQuery[ 'OK' ]:
+                    gLogger.error( resQuery[ 'Message' ] )
             
             else:
               for value in res[key].keys():
                 clientCache = ( key, commandName, None, value, 
                                 res[key][value], None, None )
                     
-            resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
-            if not resQuery[ 'OK' ]:
-              gLogger.error( resQuery[ 'Message' ] )
+                resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
+                if not resQuery[ 'OK' ]:
+                  gLogger.error( resQuery[ 'Message' ] )        
                 
         except:
           gLogger.exception( "Exception when executing " + co[0][1] )

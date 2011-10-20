@@ -1,34 +1,35 @@
 ################################################################################
 # $HeadURL:  $
 ################################################################################
+__RCSID__  = "$Id:  $"
+AGENT_NAME = 'ResourceStatus/StElInspectorAgent'
 
 import Queue
+
 from DIRAC                                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
 from DIRAC.ResourceStatusSystem                             import CheckingFreqs
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Command.knownAPIs           import initAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
-__RCSID__ = "$Id:  $"
-
-AGENT_NAME = 'ResourceStatus/StElInspectorAgent'
-
 class StElInspectorAgent( AgentModule ):
-  """ Class StElInspectorAgent is in charge of going through StorageElements
-      table, and pass StorageElement and Status to the PEP
+  """ 
+    The StElInspector agent ( StorageElementInspectorAgent ) is one of the four
+    InspectorAgents of the RSS. 
+    
+    This Agent takes care of the StorageElements. In order to do so, it gathers
+    the eligible ones and then evaluates their statuses with the PEP. 
+  
+    If you want to know more about the StElInspectorAgent, scroll down to the 
+    end of the file.
   """
 
-################################################################################
-
   def initialize( self ):
-    """ Standard constructor
-    """
-
-    self.ePepDict = {}
 
     try:
       
@@ -58,13 +59,9 @@ class StElInspectorAgent( AgentModule ):
       return S_ERROR( errorStr )
 
 ################################################################################
+################################################################################
 
   def execute( self ):
-    """
-    The main RSInspectorAgent execution method.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and
-    put result in self.StorageElementToBeChecked (a Queue) and in self.StorageElementInCheck (a list)
-    """
 
     try:
 
@@ -96,19 +93,21 @@ class StElInspectorAgent( AgentModule ):
       return S_ERROR( errorStr )
 
 ################################################################################
+################################################################################
 
-  def _executeCheck( self, arg ):
-    """
-    Create instance of a PEP, instantiated popping a resource from lists.
-    """
+  def _executeCheck( self, _arg ):
 
-    pep = PEP( self.VOExtension, setup = self.setup )
+    # Init the APIs beforehand, and reuse them. 
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'SLSClient' ]
+    clients = initAPIs( __APIs__, {} )
+    
+    pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
     while True:
 
       try:
 
-        toBeChecked        = self.StorageElementsToBeChecked.get()
+        toBeChecked = self.StorageElementsToBeChecked.get()
 
         pepDict = { 'granularity'  : toBeChecked[ 0 ],
                     'name'         : toBeChecked[ 1 ],
@@ -132,6 +131,16 @@ class StElInspectorAgent( AgentModule ):
           self.StorageElementsNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

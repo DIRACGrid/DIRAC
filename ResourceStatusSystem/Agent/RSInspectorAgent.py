@@ -1,32 +1,35 @@
 ################################################################################
 # $HeadURL:  $
 ################################################################################
+__RCSID__  = "$Id:  $"
+AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
 
 import Queue
+
 from DIRAC                                                  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
 from DIRAC.ResourceStatusSystem                             import CheckingFreqs
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Command.knownAPIs           import initAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
-__RCSID__ = "$Id:  $"
-
-AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
-
 class RSInspectorAgent( AgentModule ):
-  """ Class RSInspectorAgent is in charge of going through Resources
-      table, and pass Resource and Status to the PEP
+  """ 
+    The RSInspector agent ( ResourceInspectorAgent ) is one of the four
+    InspectorAgents of the RSS. 
+    
+    This Agent takes care of the Resources. In order to do so, it gathers
+    the eligible ones and then evaluates their statuses with the PEP. 
+  
+    If you want to know more about the RSInspectorAgent, scroll down to the 
+    end of the file.
   """
 
-################################################################################
-
   def initialize( self ):
-    """ Standard constructor
-    """
 
     try:
       
@@ -56,13 +59,9 @@ class RSInspectorAgent( AgentModule ):
       return S_ERROR( errorStr )
 
 ################################################################################
+################################################################################
 
   def execute( self ):
-    """
-    The main RSInspectorAgent execution method.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getStuffToCheck` and
-    put result in self.ResourcesToBeChecked (a Queue) and in self.ResourceNamesInCheck (a list)
-    """
 
     try:
 
@@ -95,13 +94,15 @@ class RSInspectorAgent( AgentModule ):
 
 
 ################################################################################
+################################################################################
 
   def _executeCheck( self, _arg ):
-    """
-    Create instance of a PEP, instantiated popping a resource from lists.
-    """
     
-    pep = PEP( self.VOExtension, setup = self.setup )
+    # Init the APIs beforehand, and reuse them. 
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+    clients = initAPIs( __APIs__, {} )
+    
+    pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
     while True:
 
@@ -132,6 +133,16 @@ class RSInspectorAgent( AgentModule ):
           self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
