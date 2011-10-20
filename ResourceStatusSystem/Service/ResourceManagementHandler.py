@@ -21,6 +21,8 @@ def initializeResourceManagementHandler( _serviceInfo ):
 
   return S_OK()
 
+################################################################################
+
 class ResourceManagementHandler( RequestHandler ):
   '''
   The ResourceManagementHandler exposes the DB front-end functions through a 

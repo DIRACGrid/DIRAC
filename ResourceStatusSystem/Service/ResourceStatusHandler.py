@@ -36,6 +36,8 @@ def initializeResourceStatusHandler( _serviceInfo ):
   gConfig.addListenerToNewVersionEvent( sync_O.sync )
   return S_OK()
 
+################################################################################
+
 class ResourceStatusHandler( RequestHandler ):
   '''
   The ResourceStatusHandler exposes the DB front-end functions through a XML-RPC
