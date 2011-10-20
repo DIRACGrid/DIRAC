@@ -1,13 +1,15 @@
 #!/usr/bin/env python
-########################################################################
+################################################################################
 # $HeadURL$
 # File:     dirac-rss-reassign-token
 # Author:   Federico Stagni
-########################################################################
+################################################################################
+__RCSID__ = "$Id$"
+
 """
   Re-assign a token: if it was assigned to a human, assign it to 'RS_SVC' and viceversa.
 """
-__RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -57,3 +59,16 @@ for arg in args:
   nc.sendMail( getMailForUser( userName )['Value'][0], 'Token for %s reassigned' % arg, mailMessage )
 
 DIRAC.exit( 0 )
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -1,13 +1,15 @@
 #!/usr/bin/env python
-########################################################################
+################################################################################
 # $HeadURL$
 # File:     dirac-rss-renew-token
 # Author:   Federico Stagni
-########################################################################
+################################################################################
+__RCSID__ = "$Id$"
+
 """
   Extend the duration of given token
 """
-__RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -67,3 +69,16 @@ for arg in args:
   nc.sendMail( getMailForUser( userName )['Value'][0], 'Token for %s renewed' % arg, mailMessage )
 
 DIRAC.exit( 0 )
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
