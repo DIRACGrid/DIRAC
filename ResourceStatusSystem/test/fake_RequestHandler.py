@@ -1,7 +1,11 @@
-""" fake RequestHandler class. Every function can simply return S_OK()
-"""
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
 
-from DIRAC import S_OK
+""" 
+  fake RequestHandler class. Every function can simply return S_OK()
+"""
 
 class RequestHandler:
   
@@ -12,3 +16,16 @@ class RequestHandler:
 
   def initialize( self ):
     pass
+  
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
