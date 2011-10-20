@@ -1,8 +1,15 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 """
-    Module used for calling policies. Its class is used for invoking
-    real policies, based on the policy name
+  Module used for calling policies. Its class is used for invoking
+  real policies, based on the policy name
 """
+
 class PolicyCaller:
+
   def __init__(self, commandCallerIn = None, **clients ):
     if commandCallerIn is not None:
       self.cc = commandCallerIn
@@ -11,6 +18,8 @@ class PolicyCaller:
       self.cc = CommandCaller()
 
     self.clients       = clients
+
+################################################################################
 
   def policyInvocation(self, VOExtension, granularity = None, name = None, status = None, policy = None,
                        args = None, pName = None, pModule = None, extraArgs = None, commandIn = None):
@@ -62,7 +71,7 @@ class PolicyCaller:
       commandIn = self.cc.setCommandObject( commandIn )
 
       for clientName, clientInstance in self.clients.items():
-        self.cc.setClient( commandIn, clientName, clientInstance )
+        self.cc.setAPI( commandIn, clientName, clientInstance )
 
     res = self._innerEval(p, a, commandIn = commandIn)
     # Just adding the PolicyName to the result of the evaluation of the policy
@@ -74,3 +83,16 @@ class PolicyCaller:
     policy.setArgs(arguments)
     policy.setCommand(commandIn)
     return policy.evaluate()
+  
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

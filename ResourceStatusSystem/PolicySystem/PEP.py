@@ -1,14 +1,14 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 """
-    Module used for enforcing policies. Its class is used for:
-
+  Module used for enforcing policies. Its class is used for:
     1. invoke a PDP and collects results
-
     2. enforcing results by:
-
        a. saving result on a DB
-
        b. rasing alarms
-
        c. other....
 """
 
@@ -18,15 +18,14 @@ from DIRAC.ResourceStatusSystem.Utilities import Utils
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidStatusTypes, \
     ValidSiteType, ValidServiceType, ValidResourceType
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import \
-    InvalidRes, InvalidStatus, InvalidResourceType, InvalidServiceType, InvalidSiteType
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, InvalidStatus, \
+    InvalidResourceType, InvalidServiceType, InvalidSiteType
 
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Empty_PolType    import EmptyPolTypeActions
 
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 
 class PEP:
-#############################################################################
   """
   PEP (Policy Enforcement Point) initialization
 
@@ -59,8 +58,8 @@ class PEP:
 
   """
 
-  def __init__( self, VOExtension, pdp = None, rsClient = None, rmDB = None, nc = None,
-                setup = None, da = None, csAPI = None, knownInfo = None):
+  def __init__( self, VOExtension, pdp = None, nc = None, setup = None, 
+                da = None, csAPI = None, knownInfo = None, clients = {} ):
 
     """
     enforce policies, using a PDP  (Policy Decision Point), based on
@@ -108,17 +107,19 @@ class PEP:
     self.VOExtension = VOExtension
 
     #DB
-    if rsClient is None:
+    if not clients.has_key( 'ResourceStatusClient' ):
       # Use standard DIRAC DB
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      rsClient = ResourceStatusClient()
-    self.rsClient = rsClient
+      self.rsClient = ResourceStatusClient( )
+    else:
+      self.rsClient = clients[ 'ResourceStatusClient' ]       
 
-    if rmDB is None:
+    if not clients.has_key( 'ResourceManagementClient'):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-      rmDB = ResourceManagementDB()
-    self.rmDB = rmDB
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.rmClient = ResourceManagementClient()
+    else:
+      self.rmClient = clients[ 'ResourceManagementClient' ]  
 
     #setup
     if setup is None:
@@ -145,11 +146,9 @@ class PEP:
     self.csAPI = csAPI
 
     if pdp is None:
-      clients = { 'rsClient' : self.rsClient, 'rmClient' : self.rmDB }
       self.pdp = PDP( **clients )
 
-
-#############################################################################
+################################################################################
 
   def enforce( self, granularity = None, name = None, statusType = None,
                 status = None, formerStatus = None, reason = None, siteType = None,
@@ -204,11 +203,11 @@ class PEP:
       if 'Resource_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Resource_PolType", self.VOExtension)
         m.ResourcePolTypeActions( granularity, name, statusType,
-                                  resDecisions, self.rsClient, self.rmDB )
+                                  resDecisions, self.rsClient, self.rmClient )
 
       if 'Alarm_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Alarm_PolType", self.VOExtension)
-        m.AlarmPolTypeActions(name, res, statusType, self.nc, self.setup, self.rsClient, self.rmDB,
+        m.AlarmPolTypeActions(name, res, statusType, self.nc, self.setup, self.rsClient, self.rmClient,
                               Granularity = granularity,
                               SiteType = siteType,
                               ServiceType = serviceType,
@@ -217,3 +216,16 @@ class PEP:
       if 'RealBan_PolType' in policyType and realBan == True:
         m = Utils.voimport(actionBaseMod + ".RealBan_PolType", self.VOExtension)
         m.RealBanPolTypeActions( granularity, name, res, self.da, self.csAPI, self.setup )
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF        

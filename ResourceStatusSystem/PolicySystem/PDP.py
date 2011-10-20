@@ -1,52 +1,34 @@
-"""
-The PDP (Policy Decision Point) module is used to:
-
-1. Decides which policies have to be applied.
-
-2. Invokes an evaluation of the policies, and returns the result (to a PEP)
-"""
 ################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
 
-#import time
 import datetime
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils             import where#, assignOrRaise
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 from DIRAC.ResourceStatusSystem.PolicySystem                import Status
 from DIRAC.ResourceStatusSystem                             import *
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, \
-#    InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller   import PolicyCaller
 from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
 
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-
-################################################################################
-
-
 class PDP:
   """
-  PDP = Policy Decision Point.
-
-  Used to invoke policies and to take decision based on the polict results combination.
+    The PDP (Policy Decision Point) module is used to:
+    1. Decides which policies have to be applied.
+    2. Invokes an evaluation of the policies, and returns the result (to a PEP)
   """
 
-################################################################################
-
-  def __init__( self, **clients ): #VOExtension, granularity = None, name = None, 
-                #statusType = None, status = None, formerStatus = None, 
-                #reason = None, siteType = None, serviceType = None, 
-                #resourceType = None, useNewRes = False ):
-
+  def __init__( self, **clients ):
 
     cc             = CommandCaller()
+    self.clients   = clients
     self.pc        = PolicyCaller( cc, **clients )
 
   def setup( self, VOExtension, granularity = None, name = None, statusType = None, 
              status = None, formerStatus = None, reason = None, siteType = None, 
              serviceType = None, resourceType = None, useNewRes = False ):
-
     """
     PDP (Policy Decision Point) initialization
 
@@ -152,7 +134,6 @@ class PDP:
       if not policyCombinedResults:
         return { 'SinglePolicyResults' : singlePolicyResults,
                  'PolicyCombinedResult': {} }
-
 
       #
       # policy results communication
@@ -310,12 +291,8 @@ class PDP:
     """ Use the RSS Service to get an old policy result.
         If such result is older than 2 hours, it returns {'Status':'Unknown'}
     """
-
-    #from DIRAC.Core.DISET.RPCClient import RPCClient
-    #rsM = RPCClient("ResourceStatus/ResourceManagement")
-
-    rmClient = ResourceManagementClient()
-    res = rmClient.getPolicyResult( name = name, policyName = policyName )#, True )
+    
+    res = self.clients['ResourceManagementClient'].getPolicyResult( name = name, policyName = policyName )#, True )
     
     if not res['OK']:
       raise RSSException, where( self, self.__useOldPolicyRes ) + ' Could not get a policy result'
@@ -342,3 +319,14 @@ class PDP:
     return result
 
 ################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
