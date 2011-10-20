@@ -39,10 +39,6 @@ class JobsStats_Command(Command):
 
     super(JobsStats_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-    
-#    if self.client is None:
-#      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
-#      self.client = JobsClient()
       
     try:
       res = self.APIs[ 'JobsClient' ].getJobsStats(self.args[0], self.args[1], self.args[2])
@@ -79,10 +75,6 @@ class JobsEff_Command(Command):
     super(JobsEff_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-#    if self.client is None:
-#      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
-#      self.client = JobsClient()
-      
     try:
       res = self.APIs[ 'JobsClient' ].getJobsEff(self.args[0], self.args[1], self.args[2])
     except:
@@ -110,11 +102,7 @@ class SystemCharge_Command(Command):
     
     super(SystemCharge_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs ) 
-
-#    if self.client is None:
-#      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
-#      self.client = JobsClient()
-      
+     
     try:
       res = self.APIs[ 'JobsClient' ].getSystemCharge()
     except:
@@ -151,9 +139,6 @@ class JobsEffSimple_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
     
     if self.args[0] == 'Service':
-#      if self.rsClient is None:
-#        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-#        self.rsClient = ResourceStatusClient()
       try:
         name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
@@ -165,11 +150,7 @@ class JobsEffSimple_Command(Command):
       granularity = self.args[0]
     else:
       raise InvalidRes, where(self, self.doCommand)
-    
-#    if self.client is None:
-#      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
-#      self.client = JobsClient()
-      
+         
     try:
       res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( name )#, timeout = self.timeout)
       if res == None:
@@ -206,13 +187,6 @@ class JobsEffSimpleCached_Command(Command):
     
     super(JobsEffSimpleCached_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-    
-    #client = self.client
-    
-
-#    if self.rsClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#      self.rsClient = ResourceStatusClient()  
       
     if self.args[0] == 'Service':
       try:
@@ -228,9 +202,6 @@ class JobsEffSimpleCached_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-#      if self.rmClient is None:  
-#        from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-#        self.rmClient = ResourceManagementClient( )
       
       clientDict = { 
                      'name'        : name,
@@ -242,7 +213,6 @@ class JobsEffSimpleCached_Command(Command):
       clientDict.update( kwargs )  
       
       res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
-      #res = self.rmClient.getCachedResult(name, 'JobsEffSimpleEveryOne', 'JE_S', 'NULL')['Value']
       if res == None:
         return {'Result':'Idle'}
       if res == []:

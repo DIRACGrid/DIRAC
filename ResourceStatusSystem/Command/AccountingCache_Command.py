@@ -158,7 +158,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
     listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getStorageElementsStatusWeb( { 'StorageElementName': listOfDest }, 0, 300 )
+      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300 )
     except:
       gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
       return {}
@@ -264,8 +264,7 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
     listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
-                                                             [], 0, 300, 'Read' )
+      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300)
     except:
       gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
       return {}
@@ -430,8 +429,8 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
                                         {'FinalStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_jobs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + succ_jobs['Message'] 
-      else:
-        succ_jobs = succ_jobs['Value']
+
+      succ_jobs = succ_jobs['Value']
 
     except:
       gLogger.exception("Exception when calling SuccessfullJobsBySiteSplitted_Command")
@@ -453,7 +452,6 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
     resToReturn = {'Job': singlePlots}
 
     return resToReturn
-
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 

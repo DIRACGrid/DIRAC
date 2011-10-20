@@ -30,10 +30,6 @@ class PilotsStats_Command(Command):
     super(PilotsStats_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-#    if self.client is None:
-#      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
-#      self.client = PilotsClient()
-
     try:
       res = self.APIs[ 'PilotsClient' ].getPilotsStats(self.args[0], self.args[1], self.args[2])
     except:
@@ -58,10 +54,6 @@ class PilotsEff_Command(Command):
     
     super(PilotsEff_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-#    if self.client is None:
-#      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
-#      self.client = PilotsClient()
 
     try:
       res = self.APIs[ 'PilotsClient' ].getPilotsEff(self.args[0], self.args[1], self.args[2])
@@ -100,10 +92,6 @@ class PilotsEffSimple_Command(Command):
 
     if self.args[0] == 'Service':
       
-#      if self.rsClient is None:
-#        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#        self.rsClient = ResourceStatusClient()
-
       try:
         name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
@@ -116,10 +104,6 @@ class PilotsEffSimple_Command(Command):
       granularity = self.args[0]
     else:
       raise InvalidRes, where(self, self.doCommand)
-
-#    if self.client is None:
-#      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
-#      self.client = PilotsClient()
 
     try:
       res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff(granularity, name, timeout = self.timeout)
@@ -160,10 +144,6 @@ class PilotsEffSimpleCached_Command(Command):
     super(PilotsEffSimpleCached_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-#    if self.rsClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#      self.rsClient = ResourceStatusClient()
-
     if self.args[0] == 'Service':
       try:
         name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
@@ -178,10 +158,6 @@ class PilotsEffSimpleCached_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
 
     try:
-
-#      if self.rmClient is None:
-#        from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-#        self.rmClient = ResourceManagementClient()
 
       clientDict = { 
                      'name'        : name,

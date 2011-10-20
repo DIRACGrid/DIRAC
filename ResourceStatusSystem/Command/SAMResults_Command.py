@@ -40,14 +40,6 @@ class SAMResults_Command(Command):
     """
     super(SAMResults_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-        
-#    if self.client is None:
-#      from DIRAC.Core.LCG.SAMResultsClient import SAMResultsClient
-#      self.client = SAMResultsClient()
-
-#    if self.rsClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#      self.rsClient = ResourceStatusClient()
 
     granularity = self.args[0]
     name = self.args[1]

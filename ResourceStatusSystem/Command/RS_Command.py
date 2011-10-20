@@ -38,10 +38,6 @@ class RSPeriods_Command( Command ):
     
     super( RSPeriods_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-    
-#    if self.rsClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#      self.rsClient = ResourceStatusClient()
 
     try:
       res = self.APIs[ 'ResourceStatusClient' ].getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
@@ -81,10 +77,6 @@ class ServiceStats_Command( Command ):
     super( ServiceStats_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-#    if self.rsClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#      self.rsClient = ResourceStatusClient()
-
     try:
       res = self.APIs[ 'ResourceStatusClient' ].getServiceStats( self.args[1] )#, statusType = None )# self.args[0], self.args[1] )['Value']
     except:
@@ -93,7 +85,7 @@ class ServiceStats_Command( Command ):
 
     if not res[ 'OK' ]:
       gLogger.error( "ServiceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
-#      return { 'Result' : None }    
+      return { 'Result' : None }    
 
     return { 'Result' : res[ 'Value' ] }
 
@@ -127,10 +119,6 @@ class ResourceStats_Command( Command ):
     super( ResourceStats_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-#    if self.rsClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#      self.rsClient = ResourceStatusClient()
-
     try:
       res = self.APIs[ 'ResourceStatusClient' ].getResourceStats( self.args[0], self.args[1], statusType = None )
     except:
@@ -139,7 +127,7 @@ class ResourceStats_Command( Command ):
 
     if not res[ 'OK' ]:
       gLogger.error( "ResourceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
-#      return { 'Result' : None }
+      return { 'Result' : None }
 
     return { 'Result' : res[ 'Value' ] }
 
@@ -182,10 +170,6 @@ class StorageElementsStats_Command( Command ):
     else:
       raise InvalidRes, where( self, self.doCommand )
 
-#    if self.rsClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#      self.rsClient = ResourceStatusClient()
-
     try:
       res = self.APIs[ 'ResourceStatusClient' ].getStorageElementStats( granularity, name, statusType = None )
     except:
@@ -194,7 +178,7 @@ class StorageElementsStats_Command( Command ):
 
     if not res[ 'OK' ]:
       gLogger.error( "StorageElementsStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], granularity, name ) )
-#      return { 'Result' : None }
+      return { 'Result' : None }
 
     return { 'Result' : res[ 'Value' ] }
 
@@ -230,11 +214,6 @@ class MonitoredStatus_Command( Command ):
     
     super( MonitoredStatus_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-#    if self.rsClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#      self.rsClient = ResourceStatusClient()
-
 
     try:
       if len( self.args ) == 3:

@@ -46,14 +46,6 @@ class DIRACAccounting_Command(Command):
     
     super( DIRACAccounting_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-    
-#    if self.RPC is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-#      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-#    if self.client is None:
-#      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-#      self.client = ReportsClient(rpcClient = self.RPC)
     self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
     granularity = self.args[0]
@@ -127,15 +119,6 @@ class TransferQuality_Command(Command):
     """
     super(TransferQuality_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
-   
-#    if self.RPC is None:
-#      from DIRAC.Core.DISET.RPCClient import RPCClient
-#      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-#      
-#    if self.client is None:
-#      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-#      self.client = ReportsClient(rpcClient = self.RPC)
-
     self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
     try:
@@ -206,10 +189,6 @@ class TransferQualityCached_Command(Command):
     
     super(TransferQualityCached_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )  
-
-#    if self.rmClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-#      self.rmClient = ResourceManagementClient()
       
     name = self.args[1]
     
@@ -251,10 +230,6 @@ class CachedPlot_Command(Command):
 
     super(CachedPlot_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs ) 
-
-#    if self.rmClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-#      self.rmClient = ResourceManagementClient()
       
     granularity = self.args[0]
     name        = self.args[1]
@@ -315,11 +290,6 @@ class TransferQualityFromCachedPlot_Command(Command):
     super(TransferQualityFromCachedPlot_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )     
 
-#    if self.rmClient is None:
-#      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-#      self.rmClient = ResourceManagementClient()
-      
-#    granularity = self.args[0]
     name        = self.args[1]
     plotType    = self.args[2]
     plotName    = self.args[3]

@@ -98,10 +98,6 @@ class SLSStatus_Command(Command):
     
     super(SLSStatus_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-#    if self.client is None:
-#      from DIRAC.Core.LCG.SLSClient import SLSClient   
-#      self.client = SLSClient()
       
     if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
@@ -113,7 +109,7 @@ class SLSStatus_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.APIs[ 'SLSClient' ].getAvailabilityStatus(SLSName, timeout = self.timeout)
+      res = self.APIs[ 'SLSClient' ].getAvailabilityStatus(SLSName)#, timeout = self.timeout)
       if not res['OK']:
         gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
         return  {'Result':None}
@@ -149,10 +145,6 @@ class SLSServiceInfo_Command(Command):
     super(SLSServiceInfo_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
     
-#    if self.client is None:
-#      from DIRAC.Core.LCG.SLSClient import SLSClient   
-#      self.client = SLSClient()
-      
     if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
       SLSName = _getCastorSESLSName(self.args[1])
@@ -163,9 +155,8 @@ class SLSServiceInfo_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-    
-      #gLogger.info(SLSName,self.args[2])   
-      res = self.APIs[ 'SLSClient' ].getServiceInfo(SLSName, self.args[2], timeout = self.timeout)
+     
+      res = self.APIs[ 'SLSClient' ].getServiceInfo(SLSName, self.args[2] )#, timeout = self.timeout)
       if not res[ 'OK' ]:
         gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
         res = None      
@@ -208,10 +199,6 @@ class SLSLink_Command(Command):
     
     super(SLSLink_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-#    if self.client is None:
-#      from DIRAC.Core.LCG.SLSClient import SLSClient   
-#      self.client = SLSClient()
       
     if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
