@@ -134,9 +134,8 @@ class DistributionMaker:
   def __init__( self, cliParams ):
     self.cliParams = cliParams
     self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName )
+    self.relConf.setDebugCB( gLogger.info )
     self.relConf.loadProjectDefaults()
-    if cliParams.debug:
-      self.relConf.setDebugCB( gLogger.info )
 
   def isOK( self ):
     if not self.cliParams.releasesToBuild:
