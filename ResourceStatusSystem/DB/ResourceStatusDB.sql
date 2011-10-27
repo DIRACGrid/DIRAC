@@ -82,6 +82,7 @@ CREATE TABLE SiteScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY(SiteName,StatusType,DateEffective),
   PRIMARY KEY (SiteScheduledStatusID)
 ) Engine = InnoDB;
 
@@ -101,6 +102,7 @@ CREATE TABLE SiteHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY (SiteName,StatusType,Reason,DateEnd),
   PRIMARY KEY(SiteHistoryID)
 ) Engine = InnoDB;
 
@@ -186,6 +188,7 @@ CREATE TABLE ServiceScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY (ServiceName,StatusType,DateEffective),
   PRIMARY KEY (ServiceScheduledStatusID)
 ) Engine = InnoDB;
 
@@ -205,6 +208,7 @@ CREATE TABLE ServiceHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY (ServiceName,StatusType,Reason,DateEnd),
   PRIMARY KEY(ServiceHistoryID)
 ) Engine=InnoDB;
 
@@ -293,6 +297,7 @@ CREATE TABLE ResourceScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY (ResourceName,StatusType,DateEffective),
   PRIMARY KEY (ResourceScheduledStatusID)
 ) Engine = InnoDB;
 
@@ -312,6 +317,7 @@ CREATE TABLE ResourceHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY (ResourceName,StatusType,Reason,DateEnd),
   PRIMARY KEY (ResourceHistoryID)
 ) Engine=InnoDB;
 
@@ -378,6 +384,7 @@ CREATE TABLE StorageElementStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY (StorageElementName,StatusType),
   PRIMARY KEY (StorageElementStatusID)
 ) Engine = InnoDB;
 
@@ -398,7 +405,7 @@ CREATE TABLE StorageElementScheduledStatus(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
-  UNIQUE KEY (StorageElementName,StatusType),
+  UNIQUE KEY (StorageElementName,StatusType,DateEffective),
   PRIMARY KEY (StorageElementScheduledStatusID)
 ) Engine = InnoDB;
 
@@ -418,6 +425,7 @@ CREATE TABLE StorageElementHistory(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(64) NOT NULL DEFAULT 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  UNIQUE KEY (StorageElementName,StatusType,Reason,DateEnd),
   PRIMARY KEY (StorageElementHistoryID)
 ) Engine=InnoDB;
 
