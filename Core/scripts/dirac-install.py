@@ -434,6 +434,13 @@ class ReleaseConfig:
       return S_OK( self.__projectTarLocation[ project ] )
     return S_ERROR( "Don't know how to find the installation tarballs for project %s" % project )
 
+  def getUploadCommand( self, project = False ):
+    if not project:
+      project = self.__projectName
+    defLoc = self.__globalDefaults.get( "Projects/%s/UploadCommand" % project, "" )
+    if defLoc:
+      return S_OK( defLoc )
+    return S_ERROR( "No UploadCommand for %s" % project )
 
   def __loadReleaseConfig( self, project, release, releaseMode, sourceURL = False, relLocation = False ):
     if project not in self.__prjRelCFG:

@@ -134,9 +134,8 @@ class DistributionMaker:
   def __init__( self, cliParams ):
     self.cliParams = cliParams
     self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName )
+    self.relConf.setDebugCB( gLogger.info )
     self.relConf.loadProjectDefaults()
-    if cliParams.debug:
-      self.relConf.setDebugCB( gLogger.info )
 
   def isOK( self ):
     if not self.cliParams.releasesToBuild:
@@ -199,7 +198,7 @@ class DistributionMaker:
         scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball.py" )
       cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
       gLogger.verbose( "Executing %s" % cmd )
-      if os.system( cmd ):
+      if os.system( cmd ) != 0:
         return S_ERROR( "Failed creating tarball for module %s. Aborting" % modName )
       gLogger.notice( "Tarball for %s version %s created" % ( modName, modVersion ) )
     return S_OK()
@@ -328,14 +327,13 @@ class DistributionMaker:
     return True
 
   def getUploadCmd( self ):
-    upCmd = self.relConf.getReleaseOption( self.cliParams.projectName,
-                                           self.cliParams.releasesToBuild[0],
-                                           "UploadCommand" )
-    if not upCmd:
+    result = self.relConf.getUploadCommand()
+    upCmd = False
+    if not result['OK']:
       if self.cliParams.projectName in g_uploadCmd:
         upCmd = g_uploadCmd[ self.cliParams.projectName ]
-      else:
-        upCmd = False
+    else:
+      upCmd = result[ 'Value' ]
 
     filesToCopy = []
     for fileName in os.listdir( cliParams.destination ):
@@ -365,5 +363,6 @@ if __name__ == "__main__":
   if not distMaker.doTheMagic():
     sys.exit( 1 )
   gLogger.notice( "Everything seems ok. Tarballs generated in %s" % cliParams.destination )
-  gLogger.always( "Please run:" )
-  gLogger.always( distMaker.getUploadCmd() )
+  upCmd = distMaker.getUploadCmd()
+  gLogger.always( upCmd )
+
