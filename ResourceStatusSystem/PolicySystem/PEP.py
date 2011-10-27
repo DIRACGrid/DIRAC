@@ -106,19 +106,19 @@ class PEP:
     self.VOExtension = VOExtension
 
     #DB
-    if not clients.has_key( 'ResourceStatusClient' ):
+    if not clients.has_key( 'ResourceStatusAPI' ):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient( )
+      from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+      self.rsAPI = ResourceStatusAPI( )
     else:
-      self.rsClient = clients[ 'ResourceStatusClient' ]       
+      self.rsAPI = clients[ 'ResourceStatusAPI' ]       
 
-    if not clients.has_key( 'ResourceManagementClient'):
+    if not clients.has_key( 'ResourceManagementAPI'):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.rmClient = ResourceManagementClient()
+      from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
+      self.rmAPI = ResourceManagementAPI()
     else:
-      self.rmClient = clients[ 'ResourceManagementClient' ]  
+      self.rmAPI = clients[ 'ResourceManagementAPI' ]  
 
     #setup
     if setup is None:
@@ -202,12 +202,12 @@ class PEP:
       if 'Resource_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Resource_PolType", self.VOExtension)
         m.ResourcePolTypeActions( granularity, name, statusType,
-                                  resDecisions, self.rsClient, self.rmClient )
+                                  resDecisions, self.rsAPI, self.rmAPI )
 
       if 'Alarm_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Alarm_PolType", self.VOExtension)
 
-        m.AlarmPolType(name, res, statusType, self.nc, self.setup, self.rsClient, self.rmClient,
+        m.AlarmPolType(name, res, statusType, self.nc, self.setup, self.rsAPI, self.rmAPI,
                        Granularity = granularity,
                        SiteType = siteType,
                        ServiceType = serviceType,
