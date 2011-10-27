@@ -8,20 +8,20 @@ __RCSID__ = "$Id:  $"
   classes to store accounting results in the accounting cache.
 """
 
-from datetime import datetime, timedelta
+from datetime                                     import datetime, timedelta
 
-from DIRAC import gLogger
+from DIRAC                                        import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
 
 ################################################################################
 ################################################################################
 
 class TransferQualityByDestSplitted_Command( Command ):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ]  
   
   def doCommand( self, sources = None, SEs = None ):
     """ 
@@ -41,14 +41,14 @@ class TransferQualityByDestSplitted_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
+      SEs = self.APIs[ 'ResourceStatusAPI' ].getStorageElement( columns = 'StorageElementName' )
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      sources = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )      
+      sources = self.APIs[ 'ResourceStatusAPI' ].getSite( columns = 'SiteName' )      
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
@@ -100,7 +100,7 @@ class TransferQualityByDestSplitted_Command( Command ):
 
 class TransferQualityByDestSplittedSite_Command( Command ):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]   
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ]   
   
   def doCommand( self, sources = None, SEs = None ):
     """ 
@@ -120,14 +120,14 @@ class TransferQualityByDestSplittedSite_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
+      SEs = self.APIs[ 'ResourceStatusAPI' ].getStorageElement( columns = 'StorageElementName' )
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      sources = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )
+      sources = self.APIs[ 'ResourceStatusAPI' ].getSite( columns = 'SiteName' )
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
@@ -158,7 +158,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
     listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300 )
+      storSitesWeb = self.APIs[ 'ResourceStatusAPI' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300 )
     except:
       gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
       return {}
@@ -209,7 +209,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 
 class TransferQualityBySourceSplittedSite_Command( Command ):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ] 
   
   def doCommand( self, sources = None, SEs = None ):
     """ 
@@ -229,14 +229,14 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
+      SEs = self.APIs[ 'ResourceStatusAPI' ].getStorageElement( columns = 'StorageElementName' )
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
         SEs = SEs[ 'Value' ]
     
     if sources is None:
-      sources = self.APIs[ 'ResourceStatusClient' ].getSitesList()
+      sources = self.APIs[ 'ResourceStatusAPI' ].getSitesList()
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
@@ -264,7 +264,7 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
     listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300)
+      storSitesWeb = self.APIs[ 'ResourceStatusAPI' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300)
     except:
       gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
       return {}
@@ -315,7 +315,7 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
 
 class FailedTransfersBySourceSplitted_Command( Command ):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ] 
   
   def doCommand( self, sources = None, SEs = None ):
     """ 
@@ -335,14 +335,14 @@ class FailedTransfersBySourceSplitted_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
+      SEs = self.APIs[ 'ResourceStatusAPI' ].getStorageElement( columns = 'StorageElementName' )
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      sources = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )      
+      sources = self.APIs[ 'ResourceStatusAPI' ].getSite( columns = 'SiteName' )      
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
@@ -395,7 +395,7 @@ class FailedTransfersBySourceSplitted_Command( Command ):
 
 class SuccessfullJobsBySiteSplitted_Command( Command ):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -413,7 +413,7 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )
+      sites = self.APIs[ 'ResourceStatusAPI' ].getSite( columns = 'SiteName' )
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
@@ -460,7 +460,7 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
 
 class FailedJobsBySiteSplitted_Command(Command):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -478,7 +478,7 @@ class FailedJobsBySiteSplitted_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )      
+      sites = self.APIs[ 'ResourceStatusAPI' ].getSite( columns = 'SiteName' )      
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
@@ -525,7 +525,7 @@ class FailedJobsBySiteSplitted_Command(Command):
 
 class SuccessfullPilotsBySiteSplitted_Command(Command):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ]  
   
   def doCommand(self, sites = None):
     """ 
@@ -543,7 +543,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )      
+      sites = self.APIs[ 'ResourceStatusAPI' ].getSite( columns = 'SiteName' )      
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
@@ -591,7 +591,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
 
 class FailedPilotsBySiteSplitted_Command(Command):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -609,7 +609,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )      
+      sites = self.APIs[ 'ResourceStatusAPI' ].getSite( columns = 'SiteName' )      
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
@@ -656,7 +656,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
 
 class SuccessfullPilotsByCESplitted_Command(Command):
 
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ]  
   
   def doCommand(self, CEs = None):
     """ 
@@ -674,7 +674,7 @@ class SuccessfullPilotsByCESplitted_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if CEs is None:
-      CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], columns = 'ResourceName')
+      CEs = self.APIs[ 'ResourceStatusAPI' ].getResource( resourceType = [ 'CE','CREAMCE' ], columns = 'ResourceName')
       if not CEs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + CEs['Message'] 
       else:
@@ -722,7 +722,7 @@ class SuccessfullPilotsByCESplitted_Command(Command):
 
 class FailedPilotsByCESplitted_Command(Command):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ] 
   
   def doCommand(self, CEs = None):
     """ 
@@ -740,7 +740,7 @@ class FailedPilotsByCESplitted_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if CEs is None:
-      CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], columns = 'ResourceName')     
+      CEs = self.APIs[ 'ResourceStatusAPI' ].getResource( resourceType = [ 'CE','CREAMCE' ], columns = 'ResourceName')     
       if not CEs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + CEs['Message'] 
       else:
@@ -787,7 +787,7 @@ class FailedPilotsByCESplitted_Command(Command):
 
 class RunningJobsBySiteSplitted_Command(Command):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
+  __APIs__ = [ 'ResourceStatusAPI', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -805,7 +805,7 @@ class RunningJobsBySiteSplitted_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )
+      sites = self.APIs[ 'ResourceStatusAPI' ].getSite( columns = 'SiteName' )
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:

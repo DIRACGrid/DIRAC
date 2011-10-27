@@ -23,7 +23,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
 class SAMResults_Command(Command):
   
-  __APIs__ = [ 'SAMResultsClient', 'ResourceStatusClient' ]
+  __APIs__ = [ 'SAMResultsClient', 'ResourceStatusAPI' ]
   
   def doCommand(self, rsClientIn=None):
     """ 
@@ -55,7 +55,7 @@ class SAMResults_Command(Command):
       siteName = siteName['Value']
     elif granularity in ('Resource', 'Resources'):
       if siteName is None:
-        siteName = self.APIs[ 'ResourceStatusClient' ].getGridSiteName(granularity, name)
+        siteName = self.APIs[ 'ResourceStatusAPI' ].getGridSiteName(granularity, name)
         if not siteName['OK']:
           raise RSSException, siteName['Message']    
         else:

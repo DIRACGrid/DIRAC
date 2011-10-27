@@ -21,7 +21,7 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Status   import value_of_status
 
 class RSPeriods_Command( Command ):
 
-  __APIs__ = [ 'ResourceStatusClient' ]
+  __APIs__ = [ 'ResourceStatusAPI' ]
 
   def doCommand( self ):
     """
@@ -40,9 +40,9 @@ class RSPeriods_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      res = self.APIs[ 'ResourceStatusClient' ].getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
+      res = self.APIs[ 'ResourceStatusAPI' ].getPeriods( self.args[0], self.args[1], self.args[2], self.args[3] )['Value']
     except:
-      gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
+      gLogger.exception( "Exception when calling ResourceStatusAPI for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
     return {'Result':res}
@@ -58,11 +58,11 @@ class ServiceStats_Command( Command ):
   present services stats
   """
 
-  __APIs__ = [ 'ResourceStatusClient' ]
+  __APIs__ = [ 'ResourceStatusAPI' ]
 
   def doCommand( self ):
     """
-    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getServiceStats`
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusAPI.getServiceStats`
 
     :params:
       :attr:`args`: a tuple
@@ -78,13 +78,13 @@ class ServiceStats_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
     try:
-      res = self.APIs[ 'ResourceStatusClient' ].getServiceStats( self.args[1] )#, statusType = None )# self.args[0], self.args[1] )['Value']
+      res = self.APIs[ 'ResourceStatusAPI' ].getServiceStats( self.args[1] )#, statusType = None )# self.args[0], self.args[1] )['Value']
     except:
-      gLogger.exception( "ServiceStats: Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
+      gLogger.exception( "ServiceStats: Exception when calling ResourceStatusAPI for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
     if not res[ 'OK' ]:
-      gLogger.error( "ServiceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
+      gLogger.error( "ServiceStats: Error %s returned calling ResourceStatusAPI for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
       return { 'Result' : None }    
 
     return { 'Result' : res[ 'Value' ] }
@@ -100,11 +100,11 @@ class ResourceStats_Command( Command ):
   present resources stats
   """
 
-  __APIs__ = [ 'ResourceStatusClient' ]
+  __APIs__ = [ 'ResourceStatusAPI' ]
 
   def doCommand( self ):
     """
-    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getResourceStats`
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusAPI.getResourceStats`
 
     :params:
       :attr:`args`: a tuple
@@ -120,13 +120,13 @@ class ResourceStats_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
     try:
-      res = self.APIs[ 'ResourceStatusClient' ].getResourceStats( self.args[0], self.args[1], statusType = None )
+      res = self.APIs[ 'ResourceStatusAPI' ].getResourceStats( self.args[0], self.args[1], statusType = None )
     except:
-      gLogger.exception( "ResourceStats: Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
+      gLogger.exception( "ResourceStats: Exception when calling ResourceStatusAPI for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
     if not res[ 'OK' ]:
-      gLogger.error( "ResourceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
+      gLogger.error( "ResourceStats: Error %s returned calling ResourceStatusAPI for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
       return { 'Result' : None }
 
     return { 'Result' : res[ 'Value' ] }
@@ -142,11 +142,11 @@ class StorageElementsStats_Command( Command ):
   present storageElementss stats
   """
 
-  __APIs__ = [ 'ResourceStatusClient' ]
+  __APIs__ = [ 'ResourceStatusAPI' ]
 
   def doCommand( self ):
     """
-    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getStorageElementStats`
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusAPI.getStorageElementStats`
 
     :params:
       :attr:`args`: a tuple
@@ -171,13 +171,13 @@ class StorageElementsStats_Command( Command ):
       raise InvalidRes, where( self, self.doCommand )
 
     try:
-      res = self.APIs[ 'ResourceStatusClient' ].getStorageElementStats( granularity, name, statusType = None )
+      res = self.APIs[ 'ResourceStatusAPI' ].getStorageElementStats( granularity, name, statusType = None )
     except:
-      gLogger.exception( "StorageElementsStats: Exception when calling ResourceStatusClient for %s %s" % ( granularity, name ) )
+      gLogger.exception( "StorageElementsStats: Exception when calling ResourceStatusAPI for %s %s" % ( granularity, name ) )
       return {'Result':'Unknown'}
 
     if not res[ 'OK' ]:
-      gLogger.error( "StorageElementsStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], granularity, name ) )
+      gLogger.error( "StorageElementsStats: Error %s returned calling ResourceStatusAPI for %s %s" % ( res[ 'Message' ], granularity, name ) )
       return { 'Result' : None }
 
     return { 'Result' : res[ 'Value' ] }
@@ -193,11 +193,11 @@ class MonitoredStatus_Command( Command ):
   monitored status.
   """
 
-  __APIs__ = [ 'ResourceStatusClient' ]
+  __APIs__ = [ 'ResourceStatusAPI' ]
 
   def doCommand( self ):
     """
-    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getMonitoredStatus`
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusAPI.getMonitoredStatus`
 
     :params:
       :attr:`args`: a tuple
@@ -221,12 +221,12 @@ class MonitoredStatus_Command( Command ):
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
           raise InvalidRes, where( self, self.doCommand )
 
-        toBeFound = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], self.args[2] )
+        toBeFound = self.APIs[ 'ResourceStatusAPI' ].getGeneralName( self.args[0], self.args[1], self.args[2] )
         if not toBeFound[ 'OK' ]:
           return {'Result' : 'Unknown'}
         toBeFound = toBeFound['Value'][ 0 ]
 
-        statuses = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[2], toBeFound )
+        statuses = self.APIs[ 'ResourceStatusAPI' ].getMonitoredStatus( self.args[2], toBeFound )
         if not statuses['OK']:
           return {'Result' : 'Unknown'}
         statuses = statuses['Value'][ 0 ]
@@ -234,7 +234,7 @@ class MonitoredStatus_Command( Command ):
       else:
           
         toBeFound = self.args[1]
-        statuses  = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[0], toBeFound )
+        statuses  = self.APIs[ 'ResourceStatusAPI' ].getMonitoredStatus( self.args[0], toBeFound )
 
         if not statuses['OK']:
           return {'Result' : 'Unknown'}
@@ -245,7 +245,7 @@ class MonitoredStatus_Command( Command ):
         return {'Result':'Unknown'}
 
     except:
-      gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
+      gLogger.exception( "Exception when calling ResourceStatusAPI for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
     # statuses is a list of statuses. We take the worst returned

@@ -12,6 +12,10 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
   Here are all known and relevant APIs for the ResourceStatusSystem Commands
   They can be either clients or RPC servers. 
 '''
+__APIs__ = {
+  'ResourceStatusAPI'     : 'DIRAC.ResourceStatusSystem.API.ResourceStatusAPI',
+  'ResourceManagementAPI' : 'DIRAC.ResourceStatusSystem.API.ResourceManagementAPI'          
+            }
 
 __Clients__ = {
   'ResourceStatusClient'     : 'DIRAC.ResourceStatusSystem.Client.ResourceStatusClient', 
@@ -37,6 +41,7 @@ def initAPIs( desiredAPIs, knownAPIs ):
   
   APIs = __Clients__.copy()
   APIs.update( __RPCs__ )
+  APIs.update( __APIs__ )
   
   if not isinstance( desiredAPIs, list ):
     raise RSSException, 'Got "%s" instead of list while initializing APIs' % desiredAPIs
