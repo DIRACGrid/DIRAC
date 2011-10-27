@@ -3,18 +3,17 @@
 ################################################################################
 __RCSID__ = "$Id:  $"
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators  import DBDec
-from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey, localsToDict
+from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
 
 class ResourceManagementDB(object):
   """
   The ResourceManagementDB class is a front-end to the ResourceManagementDB MySQL db.
-  If exposes four basic actions per table:
+  If exposes four basic methods:
   
-    o insert
-    o update
-    o get
-    o delete
+  - insert
+  - update
+  - get
+  - delete
   
   all them defined on the MySQL monkey class.
   Moreover, there are a set of key-worded parameters that can be used, specially
@@ -47,17 +46,25 @@ class ResourceManagementDB(object):
 
    >>> rmDB = ResourceManagementDB( DBin = [ 'UserName', 'Password' ] )
    
-  If you want to know more about ResourceManagementDB, scroll down to the end of
-  the file. 
-  """
+  The ResourceStatusDB also exposes database Schema information, either on a 
+  dictionary or on a MySQLSchema tree object.
   
-  # This is an small & temporary 'hack' used for the MySQLMonkey.
-  # Check MySQL monkey for more info
-  # Now is hard-coded for simplicity, eventually will be calculated automatically
-  __TABLES__ = {}
+  - getSchema
+  - inspectSchema
+    
+  Alternatively, we can access the MySQLSchema XML and tree as follows:
+  
+   >>> rmDB = ResourceManagementDB()
+   >>> xml  = rmDB.mm.SCHEMA
+   >>> tree = rmDB.mm.mSchema
+   >>> tree
+   >>> tree.
+   >>> tree.PolicyResult.Name
+  
+  """
 
   def __init__( self, *args, **kwargs ):
-
+    """Constructor."""
     if len(args) == 1:
       if isinstance(args[0], str):
         maxQueueSize=10
@@ -81,206 +88,125 @@ class ResourceManagementDB(object):
 
     self.mm    = MySQLMonkey( self )  
 
-################################################################################
-################################################################################
+  def insert( self, args, kwargs ):
+    """      
+    Inserts args in the DB making use of kwargs where parameters such as
+    the table are specified ( filled automatically by the Client). In order to 
+    do the insertion, it uses MySQLMonkey to do the parsing, execution and
+    error handling. Typically you will not pass kwargs to this function, unless
+    you know what are you doing and you have a very special use case.    
+      
+    :param args: Tuple with the arguments for the delete function. Note the 
+      non usage of \*args.
+    :type  args: tuple
+    :param kwargs: Dictionary with the keyworded arguments for the insert 
+      function. Note the non usage of \*kwargs. At least, kwargs contains the 
+      key table, with the table in which args are going to be inserted.
+    :type kwargs: dict
+    :returns: Dictionary with key Value if execution successful, otherwise key 
+      Message with logs.
+    :rtype: S_OK || S_ERROR
+    """
+    return self.mm.insert2( *args, **kwargs )
 
-  '''
-  ##############################################################################
-  # ENVIRONMENT CACHE FUNCTIONS
-  ##############################################################################
-  '''
-  __TABLES__[ 'EnvironmentCache' ] = { 'uniqueKeys' : [ 'HashEnv', 'SiteName' ] }
+  def update( self, args, kwargs ):
+    """   
+    Updates row with values given on args. The row selection is done using the
+    default of MySQLMonkey ( column.primary or column.keyColumn ). It can be
+    modified using kwargs, but it is not explained here. The table keyword 
+    argument is mandatory, and filled automatically by the Client. Typically 
+    you will not pass kwargs to this function, unless you know what are you 
+    doing and you have a very special use case.
+       
+    :param args: Tuple with the arguments for the delete function. Note the 
+      non usage of \*args.
+    :type  args: tuple
+    :param kwargs: Dictionary with the keyworded arguments for the update 
+      function. Note the non usage of \*kwargs. At least, kwargs contains the 
+      key table, with the table in which args are going to be used to select 
+      rows.
+    :type kwargs: dict
+    :returns: Dictionary with key Value if execution successful, otherwise key 
+      Message with logs.
+    :rtype: S_OK || S_ERROR
+    """
+    return self.mm.update2( *args, **kwargs )
 
-  @DBDec
-  def insertEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
-    
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.insert( rDict, **kwargs )    
+  def get( self, args, kwargs ):
+    """  
+    Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
+    sql statement desired is more complex, you can use kwargs to interact with
+    the MySQLStatement parser and generate a more sophisticated query.
+       
+    :param args: Tuple with the arguments for the delete function. Note the 
+      non usage of \*args.
+    :type  args: tuple
+    :param kwargs: Dictionary with the keyworded arguments for the get 
+      function. Note the non usage of \*kwargs. At least, kwargs contains the 
+      key table, with the table in which args are going to be used to select 
+      rows.
+    :type kwargs: dict
+    :returns: Dictionary with key Value if execution successful, otherwise key 
+      Message with logs.
+    :rtype: S_OK || S_ERROR
+    """
+    return self.mm.get2( *args, **kwargs )
 
-  @DBDec
-  def updateEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
-    
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.update( rDict, **kwargs )    
-
-  @DBDec
-  def getEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
-    
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #  
-    return self.mm.get( rDict, **kwargs )
-
-  @DBDec    
-  def deleteEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
-
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.delete( rDict, **kwargs )
-
-  '''
-  ##############################################################################
-  # POLICY RESULT FUNCTIONS
-  ##############################################################################
-  '''
-  __TABLES__[ 'PolicyResult' ] = { 'uniqueKeys' : [ 'Name', 'StatusType', 
-                                                    'PolicyName' ] }
-
-  @DBDec
-  def insertPolicyResult( self, granularity, name, policyName, statusType, status, 
-                          reason, dateEffective, lastCheckTime, **kwargs ):
-
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.insert( rDict, **kwargs )   
-
-  @DBDec
-  def updatePolicyResult( self, granularity, name, policyName, statusType, status, 
-                          reason, dateEffective, lastCheckTime, **kwargs ):
-
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.update( rDict, **kwargs ) 
+  def delete( self, args, kwargs ):
+    """     
+    Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
+    sql statement desired is more complex, you can use kwargs to interact with
+    the MySQLStatement parser and generate a more sophisticated query. There is
+    only one forbidden query, with all parameters None ( this would mean a query
+    of the type `DELETE * from TableName` ). The usage of kwargs is the same 
+    as in the get function.
+       
+    :param args: Tuple with the arguments for the delete function. Note the 
+      non usage of \*args.
+    :type  args: tuple
+    :param kwargs: Dictionary with the keyworded arguments for the delete 
+      function. Note the non usage of \*kwargs. At least, kwargs contains the 
+      key table, with the table in which args are going to be used to select 
+      rows to be deleted.
+    :type kwargs: dict
+    :returns: Dictionary with key Value if execution successful, otherwise key 
+      Message with logs.
+    :rtype: S_OK || S_ERROR
+    """
+    return self.mm.delete2( *args, **kwargs )
   
-  @DBDec      
-  def getPolicyResult( self, granularity, name, policyName, statusType, status, 
-                       reason, dateEffective, lastCheckTime, **kwargs ):
-
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #    
-    return self.mm.get( rDict, **kwargs )
-
-  @DBDec
-  def deletePolicyResult( self, granularity, name, policyName, statusType, status, 
-                           reason, dateEffective, lastCheckTime, **kwargs ):
-
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.delete( rDict, **kwargs )
-
-  '''
-  ##############################################################################
-  # CLIENT CACHE FUNCTIONS
-  ##############################################################################
-  '''
-  __TABLES__[ 'ClientCache' ] = { 'uniqueKeys' : [ 'Name', 'CommandName', 'Value' ] }
+  def getSchema( self ):
+    """  
+    Returns a dictionary with database schema, this includes table and column
+    names. It has two variants, columns and keyUsage. The first one has at least,
+    as many keys as keyUsage, it is the complete schema. The second one is the 
+    one used for the default updates and selects -- not taking into account 
+    auto_increment fields, but taking into account primary and keyUsage fields.
+      
+    :returns: Dictionary with database schema.
+    :rtype: S_OK 
+    """    
+    return { 'OK': True, 'Value' : self.mm.SCHEMA }
+    
+  def inspectSchema( self ):
+    """   
+    Returns an object which represents the database schema and can be browsed.
+     >>> db = ResourceManagementDB()
+     >>> schema = db.inspectSchema()[ 'Value' ]
+     >>> schema
+         Schema 123:
+         <TableName1>,<TableName2>...
+     >>> schema.TableName1
+         Table TableName1:
+         <ColumnName1>,<ColumnName2>..
   
-  @DBDec
-  def insertClientCache( self, name, commandName, opt_ID, value, result, dateEffective, 
-                         lastCheckTime, **kwargs ):
-    
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.insert( rDict, **kwargs )  
-
-  @DBDec
-  def updateClientCache( self, name, commandName, opt_ID, value, result, 
-                         dateEffective, lastCheckTime, **kwargs ):
-    
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.update( rDict, **kwargs )  
-
-  @DBDec    
-  def getClientCache( self, name, commandName, opt_ID, value, result,
-                      dateEffective, lastCheckTime, **kwargs ):  
-    
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.get( rDict, **kwargs )
-
-  @DBDec  
-  def deleteClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, **kwargs ):
-    
-    rDict  = localsToDict( locals() )    
-    # NO VALIDATION #
-    return self.mm.delete( rDict, **kwargs )
-
-  '''
-  ##############################################################################
-  # ACCOUNTING CACHE FUNCTIONS
-  ##############################################################################
-  '''
-  __TABLES__[ 'AccountingCache' ] = { 'uniqueKeys' : [ 'Name', 'PlotType', 'PlotName' ] }
-
-  @DBDec
-  def insertAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                             lastCheckTime, **kwargs ):
-
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #
-    return self.mm.insert( rDict, **kwargs )
-
-  @DBDec
-  def updateAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                             lastCheckTime, **kwargs ):
-
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #    
-    return self.mm.update( rDict, **kwargs )
-
-  @DBDec
-  def getAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                          lastCheckTime, **kwargs ):
-    
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #    
-    return self.mm.get( rDict, **kwargs )
-
-  @DBDec
-  def deleteAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                             lastCheckTime, **kwargs ):
-
-    rDict  = localsToDict( locals() )
-    # NO VALIDATION #    
-    return self.mm.delete( rDict, **kwargs )
-
-  '''
-  ##############################################################################
-  # USER REGISTRY CACHE FUNCTIONS
-  ##############################################################################
-  '''
-  __TABLES__[ 'UserRegistryCache' ] =  { 'uniqueKeys' : [ 'Login' ] }  
-
-  @DBDec
-  def insertUserRegistryCache( self, login, name, email, **kwargs ):
-
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #    
-    return self.mm.insert( rDict, **kwargs )
-
-  @DBDec
-  def updateUserRegistryCache( self, login, name, email, **kwargs ):
-
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #    
-    return self.mm.update( rDict, **kwargs )
-  
-  @DBDec
-  def getUserRegistryCache( self, login, name, email, **kwargs ):
-    
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #       
-    return self.mm.get( rDict, **kwargs )
-
-  @DBDec
-  def deleteUserRegistryCache( self, login, name, email, **kwargs ):
-
-    rDict = localsToDict( locals() )
-    # NO VALIDATION #    
-    return self.mm.delete( rDict, **kwargs )
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''     
+    Every column has a few attributes ( primary, keyUsage, extra, position,
+    dataType and charMaxLen ). 
+     
+    :returns: Browsable object with schema definition.
+    :rtype: S_OK 
+    """    
+    return { 'OK': True, 'Value' : self.mm.mSchema }
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
