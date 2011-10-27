@@ -4,9 +4,8 @@
 __RCSID__ = "$Id:  $"
 
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
-#from DIRAC.ResourceStatusSystem.Utilities.Validator   import ResourceStatusValidator
 
-class ResourceStatusDB:
+class ResourceStatusDB( object ):
   """
   The ResourceStatusDB class is a front-end to the ResourceStatusDB MySQL db.
   It exposes four basic methods:
@@ -89,7 +88,6 @@ class ResourceStatusDB:
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
    
     self.mm    = MySQLMonkey( self )  
-    #self.rsVal = ResourceStatusValidator( self )
 
   def insert( self, args, kwargs ):
     """    
