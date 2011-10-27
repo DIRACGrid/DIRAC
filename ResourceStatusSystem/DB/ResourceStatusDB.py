@@ -97,16 +97,15 @@ class ResourceStatusDB( object ):
     error handling. Typically you will not pass kwargs to this function, unless
     you know what are you doing and you have a very special use case.    
       
-    :param args: Tuple with the arguments for the delete function. Note the 
-      non usage of \*args.
-    :type  args: tuple
-    :param kwargs: Dictionary with the keyworded arguments for the insert 
-      function. Note the non usage of \*kwargs. At least, kwargs contains the 
-      key table, with the table in which args are going to be inserted.
-    :type kwargs: dict
-    :returns: Dictionary with key Value if execution successful, otherwise key 
-      Message with logs.
-    :rtype: S_OK || S_ERROR
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
     """
     return self.mm.insert2( *args, **kwargs )
 
@@ -119,17 +118,15 @@ class ResourceStatusDB( object ):
     you will not pass kwargs to this function, unless you know what are you 
     doing and you have a very special use case.
        
-    :param args: Tuple with the arguments for the delete function. Note the 
-      non usage of \*args.
-    :type  args: tuple
-    :param kwargs: Dictionary with the keyworded arguments for the update 
-      function. Note the non usage of \*kwargs. At least, kwargs contains the 
-      key table, with the table in which args are going to be used to select 
-      rows.
-    :type kwargs: dict
-    :returns: Dictionary with key Value if execution successful, otherwise key 
-      Message with logs.
-    :rtype: S_OK || S_ERROR
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
     """
     return self.mm.update2( *args, **kwargs )
 
@@ -139,17 +136,15 @@ class ResourceStatusDB( object ):
     sql statement desired is more complex, you can use kwargs to interact with
     the MySQLStatement parser and generate a more sophisticated query.
        
-    :param args: Tuple with the arguments for the delete function. Note the 
-      non usage of \*args.
-    :type  args: tuple
-    :param kwargs: Dictionary with the keyworded arguments for the get 
-      function. Note the non usage of \*kwargs. At least, kwargs contains the 
-      key table, with the table in which args are going to be used to select 
-      rows.
-    :type kwargs: dict
-    :returns: Dictionary with key Value if execution successful, otherwise key 
-      Message with logs.
-    :rtype: S_OK || S_ERROR
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
     """
     return self.mm.get2( *args, **kwargs )
 
@@ -162,17 +157,15 @@ class ResourceStatusDB( object ):
     of the type `DELETE * from TableName` ). The usage of kwargs is the same as in
     the get function.
       
-    :param args: Tuple with the arguments for the delete function. Note the 
-      non usage of \*args.
-    :type  args: tuple
-    :param kwargs: Dictionary with the keyworded arguments for the delete 
-      function. Note the non usage of \*kwargs. At least, kwargs contains the 
-      key table, with the table in which args are going to be used to select 
-      rows to be deleted.
-    :type kwargs: dict
-    :returns: Dictionary with key Value if execution successful, otherwise key 
-      Message with logs.
-    :rtype: S_OK || S_ERROR
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
     """
     return self.mm.delete2( *args, **kwargs )
   
@@ -184,8 +177,10 @@ class ResourceStatusDB( object ):
     one used for the default updates and selects -- not taking into account 
     auto_increment fields, but taking into account primary and keyUsage fields.
       
-    :returns: Dictionary with database schema.
-    :rtype: S_OK
+    :Parameters:
+      `None`
+    
+    :return: S_OK()
     """    
     return { 'OK': True, 'Value' : self.mm.SCHEMA }
     
@@ -204,8 +199,10 @@ class ResourceStatusDB( object ):
     Every column has a few attributes ( primary, keyUsage, extra, position,
     dataType and charMaxLen ). 
       
-    :returns: Browsable object with schema definition.
-    :rtype: S_OK
+    :Parameters:
+      `None`
+    
+    :return: S_OK()
     """    
     return { 'OK': True, 'Value' : self.mm.mSchema }
 
