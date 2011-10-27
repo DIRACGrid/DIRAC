@@ -6,16 +6,16 @@ AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
 
 import Queue
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                            import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
+from DIRAC                                            import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                      import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
 
-from DIRAC.ResourceStatusSystem                             import CheckingFreqs
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Command.knownAPIs           import initAPIs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
-from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+from DIRAC.ResourceStatusSystem                       import CheckingFreqs
+from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
+from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
 
 class SeSInspectorAgent( AgentModule ):
   """ 
@@ -36,7 +36,7 @@ class SeSInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsClient            = ResourceStatusClient()
+      self.rsAPI               = ResourceStatusAPI()
       self.ServicesFreqs       = CheckingFreqs[ 'ServicesFreqs' ]
       self.ServicesToBeChecked = Queue.Queue()
       self.ServiceNamesInCheck = []
@@ -67,7 +67,7 @@ class SeSInspectorAgent( AgentModule ):
 
       kwargs = { 'columns' : [ 'ServiceName', 'StatusType', 'Status', 'FormerStatus', \
                               'SiteType', 'ServiceType', 'TokenOwner' ] }
-      resQuery = self.rsClient.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
+      resQuery = self.rsAPI.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
 
       for serviceTuple in resQuery[ 'Value' ]:
           
@@ -97,7 +97,7 @@ class SeSInspectorAgent( AgentModule ):
   def _executeCheck( self, _arg ):
 
     # Init the APIs beforehand, and reuse them. 
-    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'SLSClient' ]
+    __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI', 'SLSClient' ]
     clients = initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
