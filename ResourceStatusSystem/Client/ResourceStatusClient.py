@@ -16,9 +16,6 @@ class ResourceStatusClient:
    - update
    - get
    - delete 
-  
-  plus a set of functions of the type:
-   - getValid 
     
   that return parts of the RSSConfiguration stored on the CS, and used everywhere
   on the RSS module. Finally, and probably more interesting, it exposes a set
@@ -53,15 +50,79 @@ class ResourceStatusClient:
       self.gate = serviceIn
       
   def insert( self, *args, **kwargs ):
+    '''
+    This method calls the insert function in :class:`ResourceStatusDB`, either
+    directly or remotely through the RPC Server :class:`ResourceStatusHandler`. 
+    It does not add neither processing nor validation. If you need to know more 
+    about this method, you must keep reading on the database documentation.     
+
+    :Parameters:
+      **\*args** - `[,tuple]`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **\*\*kwargs** - `[,dict]`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
     return self.gate.insert( args, kwargs )
 
   def update( self, *args, **kwargs ):
+    '''
+    This method calls the update function in :class:`ResourceStatusDB`, either
+    directly or remotely through the RPC Server :class:`ResourceStatusHandler`. 
+    It does not add neither processing nor validation. If you need to know more 
+    about this method, you must keep reading on the database documentation.
+      
+    :Parameters:
+      **\*args** - `[,tuple]`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **\*\*kwargs** - `[,dict]`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
     return self.gate.update( args, kwargs )
 
   def get( self, *args, **kwargs ):
+    '''
+    This method calls the get function in :class:`ResourceStatusDB`, either
+    directly or remotely through the RPC Server :class:`ResourceStatusHandler`. 
+    It does not add neither processing nor validation. If you need to know more 
+    about this method, you must keep reading on the database documentation.
+      
+    :Parameters:
+      **\*args** - `[,tuple]`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **\*\*kwargs** - `[,dict]`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
     return self.gate.get( args, kwargs )
 
   def delete( self, *args, **kwargs ):
+    '''
+    This method calls the delete function in :class:`ResourceStatusDB`, either
+    directly or remotely through the RPC Server :class:`ResourceStatusHandler`. 
+    It does not add neither processing nor validation. If you need to know more 
+    about this method, you must keep reading on the database documentation.
+      
+    :Parameters:
+      **\*args** - `[,tuple]`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **\*\*kwargs** - `[,dict]`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
     return self.gate.delete( args, kwargs )
     
 ################################################################################

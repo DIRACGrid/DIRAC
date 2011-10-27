@@ -3,51 +3,47 @@
 ################################################################################
 __RCSID__  = "$Id$"
 
-""" 
-  PilotsClient class is a client for to get pilots stats.
-"""
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName
-
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
-from DIRAC.ResourceStatusSystem                      import ValidRes
 
 class PilotsClient:
+  """ 
+  PilotsClient class is a client to get pilots stats.
+  """
 
-  def getPilotsStats(self, granularity, name, periods):
-    """
-    Return pilot stats
 
-    :Parameters:
-      `granularity`
-        string - should be a ValidRes
-
-      `name`
-        string - should be the name of the ValidRes
-
-      `periods`
-        list - contains the periods to consider in the query
-
-    :return:
-      {
-        'MeanProcessedPilots': X'
-
-        'LastProcessedPilots': X'
-      }
-    """
-
-    if granularity.capitalize() not in ValidRes:
-      raise InvalidRes, where(self, self.getPilotsStats)
-
-    if granularity == 'Site':
-      entity = getGOCSiteName(name)
-      if not entity['OK']:
-        raise RSSException, entity['Message']
-      entity = entity['Value']
-      _granularity = 'Site'
-    else:
-      entity = name
-      _granularity = 'GridCE'
+#  def getPilotsStats( self, granularity, name, periods ):
+#    """
+#    Return pilot stats
+#
+#    :param granularity: should be a ValidRes
+#    :type granularity: string
+#    :param name: should be the name of the ValidRes
+#    :type name: string
+#    :param periods: contains the periods to consider in the query
+#    :type periods: list
+#    :returns: 
+#    
+#    :return:
+#      {
+#        'MeanProcessedPilots': X'
+#
+#        'LastProcessedPilots': X'
+#      }
+#    """
+#
+#    if granularity.capitalize() not in ValidRes:
+#      raise InvalidRes, where(self, self.getPilotsStats)
+#
+#    if granularity == 'Site':
+#      entity = getGOCSiteName(name)
+#      if not entity['OK']:
+#        raise RSSException, entity['Message']
+#      entity = entity['Value']
+#      _granularity = 'Site'
+#    else:
+#      entity = name
+#      _granularity = 'GridCE'
 
     #######TODO
 #    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots',
@@ -104,55 +100,51 @@ class PilotsClient:
 
 ################################################################################
 
-  def getPilotsSimpleEff(self, granularity, name, siteName = None,
-                         RPCWMSAdmin = None, timeout = None):
+  def getPilotsSimpleEff( self, granularity, name, siteName = None, 
+                          RPCWMSAdmin = None ):
     """
+    
     Return pilots simple efficiency of entity in args for periods
-
+    
     :Parameters:
-      `granularity`
-        string - should be a ValidRes (Site or Resource)
-
-      `name`
-        string or list - names of the ValidRes
-
-      `siteName`
-        string - optional site name, in case granularity is `Resource`
-
-      `RPCWMSAdmin`
-        RPCClient to RPCWMSAdmin
-
-    :return:
-      {
-      'PilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-      }
+      **granularity** - `string`
+        should be a ValidRes (Site or Resource)
+      **name** - `string || list` 
+        name(s) of the ValidRes 
+      **siteName** - `[,string]`
+        optional site name, in case granularity is `Resource` 
+      **RPCWMSAdmin** - `[,RPCClient]`
+        RPCClient to WMSAdmin
+        
+    :return: { PilotsEff : Good | Fair | Poor | Idle | Bad }
+      
     """
 
     if RPCWMSAdmin is not None:
       RPC = RPCWMSAdmin
     else:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient("WorkloadManagement/WMSAdministrator", timeout = timeout)
+      RPC = RPCClient( "WorkloadManagement/WMSAdministrator" )
 
-    if granularity in ('Site', 'Sites'):
-      res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,300)
-    elif granularity in ('Resource', 'Resources'):
+    if granularity == 'Site':
+      res = RPC.getPilotSummaryWeb( { 'GridSite' : name }, [], 0, 300 )
+    elif granularity == 'Resource':
       if siteName is None:
-        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-        rsc = ResourceStatusClient()
-        siteName = rsc.getGeneralName(granularity, name, 'Site')
+        from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+        rsAPI = ResourceStatusAPI()
+        siteName = rsAPI.getGeneralName( granularity, name, 'Site' )
         if not siteName[ 'OK' ]:
           raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
         if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
           return {}
         siteName = siteName['Value']
 
-      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
+      res = RPC.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 50 )
     else:
-      raise InvalidRes, where(self, self.getPilotsSimpleEff)
+      raise InvalidRes, where( self, self.getPilotsSimpleEff )
 
     if not res['OK']:
-      raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message']
+      raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res['Message']
     else:
       res = res['Value']['Records']
 
@@ -162,7 +154,7 @@ class PilotsClient:
     effRes = {}
 
     try:
-      if granularity in ('Site', 'Sites'):
+      if granularity == 'Site':
         for r in res:
           name = r[0]
           try:
@@ -171,7 +163,7 @@ class PilotsClient:
             eff = 'Idle'
           effRes[name] = eff
 
-      elif granularity in ('Resource', 'Resources'):
+      elif granularity == 'Resource':
         eff = None
         for r in res:
           if r[1] == name:
@@ -186,16 +178,6 @@ class PilotsClient:
 
     except IndexError:
       return {}
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
-            
+         
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
