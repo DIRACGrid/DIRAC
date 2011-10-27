@@ -3,14 +3,11 @@
 ################################################################################
 __RCSID__ = "$Id:  $"
 
-from datetime                                           import datetime
-from types                                              import NoneType
-
 from DIRAC                                              import S_OK
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators    import HandlerDec
+from DIRAC.ResourceStatusSystem.Utilities.Decorators    import HandlerDec2
 
 db = False
 
@@ -25,219 +22,129 @@ def initializeResourceManagementHandler( _serviceInfo ):
 
 class ResourceManagementHandler( RequestHandler ):
   '''
-  The ResourceManagementHandler exposes the DB front-end functions through a 
-  XML-RPC server.
+  The ResourceManagementHandler exposes the DB front-end functions through a
+  XML-RPC server, functionalities inherited from :class:`DIRAC.Core.DISET.Reques\
+  tHandler.RequestHandler`
   
   According to the ResourceManagementDB philosophy, only functions of the type:
-    o insert
-    o update
-    o get
-    o delete 
+  - insert
+  - update
+  - get
+  - delete 
   
   are exposed. If you need anything more complicated, either look for it on the 
-  ResourceManagementClient, or code it yourself. This way the DB and the service 
-  keep clean and tidied.
+  :class:`ResourceManagementAPI`, or code it yourself. This way the DB and the 
+  Service are kept clean and tidied.
 
   To can use this service on this way, but you MUST NOT DO IT. Use it through the
-  ResourceManagementClient. If offers in the worst case as good performance as the 
-  ResourceManagementHandler, if not better.
+  :class:`ResourceManagementClient`. If offers in the worst case as good perfor\
+  mance as the :class:`ResourceManagementHandler`, if not better.
 
    >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
    >>> server = RPCCLient("ResourceStatus/ResourceManagement")
-   
-  If you want to know more about ResourceManagementHandler, scroll down to the 
-  end of the file.  
   '''
-  
-  def initialize( self ):
-    pass
 
-  def setDatabase( self, oDatabase ):
-    '''
-    Needed to inherit without messing up global variables, and get the
-    extended DB object
+  def setDatabase( self, database ):
+    '''   
+    This method let us inherit from this class and overwrite the database object
+    without having problems with the global variables.
+    
+    :Parameters:
+      **database** - `MySQL`
+        database used by this handler
+
+    :return: None
     '''
     global db
-    db = oDatabase
+    db = database
 
-################################################################################
-################################################################################
-
-  '''
-  ##############################################################################
-  # ENVIRONMENT CACHE FUNCTIONS
-  ##############################################################################
-  '''
-  __envCache_IU = [ str, str, str ]
-  __envCache_GD = [ ( t, list, NoneType ) for t in __envCache_IU ] + [ dict ]
-  
-  types_insertEnvironmentCache = __envCache_IU
-  @HandlerDec
-  def export_insertEnvironmentCache( self, hashEnv, siteName, environment ):
-    return db
-  
-  types_updateEnvironmentCache = __envCache_IU
-  @HandlerDec
-  def export_updateEnvironmentCache( self, hashEnv, siteName, environment ):
-    return db
-  
-  types_getEnvironmentCache = __envCache_GD
-  @HandlerDec 
-  def export_getEnvironmentCache( self, hashEnv, siteName, environment, kwargs ):
-    return db
-
-  types_deleteEnvironmentCache = __envCache_GD   
-  @HandlerDec
-  def export_deleteEnvironmentCache( self, hashEnv, siteName, environment, kwargs ):
-    return db
-  
-################################################################################
-################################################################################
-  
-  '''
-  ##############################################################################
-  # POLICY RESULT FUNCTIONS
-  ##############################################################################
-  '''
-  __polRes_IU = [ str, str, str, str, str, str, datetime, datetime ]
-  __polRes_GD = [ ( t, list, NoneType ) for t in __polRes_IU ] + [ dict ]
-  
-  types_insertPolicyResult = __polRes_IU
-  @HandlerDec
-  def export_insertPolicyResult( self, granularity, name, policyName, statusType,
-                                 status, reason, dateEffective, lastCheckTime ):
-    return db
-
-  types_updatePolicyResult = __polRes_IU 
-  @HandlerDec
-  def export_updatePolicyResult( self, granularity, name, policyName, statusType,
-                                 status, reason, dateEffective, lastCheckTime ):
-    return db
-  
-  types_getPolicyResult = __polRes_GD
-  @HandlerDec
-  def export_getPolicyResult( self, granularity, name, policyName, statusType, 
-                              status, reason, dateEffective, lastCheckTime, 
-                              kwargs ):
-    return db
-
-  types_deletePolicyResult = __polRes_GD  
-  @HandlerDec
-  def export_deletePolicyResult( self, granularity, name, policyName, statusType, 
-                                 status, reason, dateEffective, lastCheckTime, 
-                                 kwargs ):
-    return db
-
-################################################################################
-################################################################################
-  
-  '''
-  ##############################################################################
-  # CLIENT CACHE FUNCTIONS
-  ##############################################################################
-  '''  
-  __clienCache_IU = [ str, str, str, str, str, datetime, datetime ]
-  __clienCache_GD = [ ( t, list, NoneType ) for t in __clienCache_IU ] + [ dict ]
-  
-  types_insertClientCache = __clienCache_IU
-  @HandlerDec
-  def export_insertClientCache( self, name, commandName, opt_ID, value, result,
-                                dateEffective, lastCheckTime ):
-    return db
-
-  types_updateClientCache = __clienCache_IU
-  @HandlerDec
-  def export_updateClientCache( self, name, commandName, opt_ID, value, result,
-                                dateEffective, lastCheckTime ):
-    return db
-  
-  types_getClientCache = __clienCache_GD
-  @HandlerDec
-  def export_getClientCache( self, name, commandName, opt_ID, value, result,
-                             dateEffective, lastCheckTime, kwargs ):
-    return db              
-
-  types_deleteClientCache = __clienCache_GD
-  @HandlerDec
-  def export_deleteClientCache( self, name, commandName, opt_ID, value, result,
-                                dateEffective, lastCheckTime, kwargs ):
-    return db  
-
-################################################################################
-################################################################################
-
-  '''
-  ##############################################################################
-  # ACCOUNTING CACHE FUNCTIONS
-  ##############################################################################
-  '''  
-  __acCache_IU = [ str, str, str, str, datetime, datetime ]
-  __acCache_GD = [ ( t, list, NoneType ) for t in __acCache_IU ] + [ dict ]
-  
-  types_insertAccountingCache = __acCache_IU 
-  @HandlerDec
-  def export_insertAccountingCache( self, name, plotType, plotName, result, 
-                                    dateEffective, lastCheckTime ):
-    return db
-
-  types_updateAccountingCache = __acCache_IU
-  @HandlerDec
-  def export_updateAccountingCache( self, name, plotType, plotName, result, 
-                                    dateEffective, lastCheckTime ):
-    return db
-  
-  types_getAccountingCache = __acCache_GD
-  @HandlerDec
-  def export_getAccountingCache( self, name, plotType, plotName, result, 
-                                 dateEffective, lastCheckTime, kwargs ):
-    return db  
-
-  types_deleteAccountingCache = __acCache_GD
-  @HandlerDec
-  def export_deleteAccountingCache( self, name, plotType, plotName, result, 
-                                    dateEffective, lastCheckTime, kwargs ):
-    return db
-
-################################################################################
-################################################################################
-
-  '''
-  ##############################################################################
-  # USER REGISTRY FUNCTIONS
-  ##############################################################################
-  '''  
-  __usrReg_IU = [ str, str, str ]
-  __usrReg_GD = [ ( t, list, NoneType ) for t in __usrReg_IU ] + [ dict ]
-  
-  types_insertUserRegistryCache = __usrReg_IU
-  @HandlerDec
-  def export_insertUserRegistryCache( self, login, name, email ):
-    return db
-  
-  types_updateUserRegistryCache = __usrReg_IU
-  @HandlerDec
-  def export_updateUserRegistryCache( self, login, name, email ):
-    return db
-  
-  types_getUserRegistryCache = __usrReg_GD
-  @HandlerDec
-  def export_getUserRegistryCache( self, login, name, email, kwargs ):
-    return db
-
-  types_deleteUserRegistryCache = __usrReg_GD
-  @HandlerDec
-  def export_deleteUserRegistryCache( self, login, name, email, kwargs ):      
-    return db
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
+  types_insert = [ tuple, dict ]
+  @HandlerDec2
+  def export_insert( self, args, kwargs ):
+    '''   
+    This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
+    does not add neither processing nor validation. If you need to know more 
+    about this method, you must keep reading on the database documentation.     
+      
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
     
-    will come soon...
-'''
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+    # It returns a db object, which is picked by the decorator and return whatever
+    # the insert method returns ( db.insert )    
+    return db
+
+  types_update = [ tuple, dict ]
+  @HandlerDec2
+  def export_update( self, args, kwargs ):
+    '''   
+    This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
+    does not add neither processing nor validation. If you need to know more 
+    about this method, you must keep reading on the database documentation.     
+      
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''      
+    # It returns a db object, which is picked by the decorator and return whatever
+    # the update method returns ( db.update )    
+    return db
+
+  types_get = [ tuple, dict ]
+  @HandlerDec2
+  def export_get( self, args, kwargs ):
+    '''
+    This method is a bridge to access :class:`ResourceManagementDB` remotely. 
+    It does not add neither processing nor validation. If you need to know more\ 
+    about this method, you must keep reading on the database documentation.     
+      
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''      
+    # It returns a db object, which is picked by the decorator and return whatever
+    # the get method returns ( db.get )    
+    return db
+
+  types_delete = [ tuple, dict ]
+  @HandlerDec2
+  def export_delete( self, args, kwargs ):
+    '''   
+    This method is a bridge to access :class:`ResourceManagementDB` remotely.\
+    It does not add neither processing nor validation. If you need to know more \
+    about this method, you must keep reading on the database documentation.     
+      
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''         
+    # It returns a db object, which is picked by the decorator and return whatever
+    # the delete method returns ( db.delete )    
+    return db
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

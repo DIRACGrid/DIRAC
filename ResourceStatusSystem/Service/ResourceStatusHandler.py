@@ -48,7 +48,7 @@ class ResourceStatusHandler( RequestHandler ):
   - delete 
   
   are exposed. If you need anything more complicated, either look for it on the 
-  :class:`ResourceStatusClient`, or code it yourself. This way the DB and the 
+  :class:`ResourceStatusAPI`, or code it yourself. This way the DB and the 
   Service are kept clean and tidied.
 
   To can use this service on this way, but you MUST NOT DO IT. Use it through the
@@ -64,8 +64,11 @@ class ResourceStatusHandler( RequestHandler ):
     This method let us inherit from this class and overwrite the database object
     without having problems with the global variables.
     
-    :param database: Database object.
-    :type database: MySQL instance
+    :Parameters:
+      **database** - `MySQL`
+        database used by this handler
+
+    :return: None
     '''
     global db
     db = database
@@ -78,16 +81,15 @@ class ResourceStatusHandler( RequestHandler ):
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.     
       
-    :param args: Tuple with the arguments for the insert function. Note the non \
-      usage of \*args. 
-    :type  args: tuple
-    :param kwargs: Dictionary with the keyworded arguments for the insert \
-      function. Note the non usage of \*kwargs. At least, kwargs contains the \
-      key table, with the table in which args are going to be inserted.
-    :type kwargs: dict
-    :returns: Dictionary with key Value if execution successful, otherwise key \
-      Message with logs.
-    :rtype: S_OK || S_ERROR
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the insert method returns ( db.insert )
@@ -101,16 +103,15 @@ class ResourceStatusHandler( RequestHandler ):
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.     
       
-    :param args: Tuple with the arguments for the update function. Note the non\ 
-      usage of \*args. 
-    :type  args: tuple
-    :param kwargs: Dictionary with the keyworded arguments for the update \
-      function. Note the non usage of \*kwargs. At least, kwargs contains the \ 
-      key table, with the table in which args are going to be updated.
-    :type kwargs: dict
-    :returns: Dictionary with key Value if execution successful, otherwise key \ 
-      Message with logs.
-    :rtype: S_OK || S_ERROR
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''      
     # It returns a db object, which is picked by the decorator and return whatever
     # the update method returns ( db.update )
@@ -124,16 +125,15 @@ class ResourceStatusHandler( RequestHandler ):
     does not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.     
       
-    :param args: Tuple with the arguments for the get function. Note the non\
-      usage of \*args. 
-    :type  args: tuple
-    :param kwargs: Dictionary with the keyworded arguments for the get\
-      function. Note the non usage of \*kwargs. At least, kwargs contains the\
-      key table, with the table in which args are going to be used to select.
-    :type kwargs: dict
-    :returns: Dictionary with key Value if execution successful, otherwise key\
-      Message with logs.
-    :rtype: S_OK || S_ERROR
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''      
     # It returns a db object, which is picked by the decorator and return whatever
     # the get method returns ( db.get )
@@ -147,17 +147,15 @@ class ResourceStatusHandler( RequestHandler ):
     not add neither processing nor validation. If you need to know more about
     this method, you must keep reading on the database documentation.     
       
-    :param args: Tuple with the arguments for the get function. Note the non\
-      usage of \*args. 
-    :type  args: tuple
-    :param kwargs: Dictionary with the keyworded arguments for the delete\
-      function. Note the non usage of \*kwargs. At least, kwargs contains the\
-      key table, with the table in which args are going to be used to select\
-      rows to be deleted.
-    :type kwargs: dict
-    :returns: Dictionary with key Value if execution successful, otherwise key\
-      Message with logs.
-    :rtype: S_OK || S_ERROR
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+    
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
     '''         
     # It returns a db object, which is picked by the decorator and return whatever
     # the delete method returns ( db.delete )
