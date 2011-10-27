@@ -16,19 +16,19 @@ from DIRAC.Core.LCG.GOCDBClient                      import GOCDBClient
 
 class Synchronizer(object):
 
-  def __init__( self, rsAPI = None, rmClient = None ):
+  def __init__( self, rsAPI = None, rmAPI = None ):
 
-    self.rsAPI    = rsAPI
-    self.rmClient    = rmClient
+    self.rsAPI       = rsAPI
+    self.rmAPI       = rmAPI
     self.GOCDBClient = GOCDBClient()
 
     if self.rsAPI == None:
       from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
       self.rsAPI = ResourceStatusAPI()
 
-    if self.rmClient == None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.rmClient = ResourceManagementClient()
+    if self.rmAPI == None:
+      from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
+      self.rmAPI = ResourceManagementAPI()
 
 ################################################################################
 
@@ -276,7 +276,7 @@ class Synchronizer(object):
 
       users[u]['DN'] = users[u]['DN'].split('=')[-1]
       #self.rmClient.registryAddUser(u, users[u]['DN'].lower(), users[u]['Email'].lower())
-      self.rmClient.addOrModifyUserRegistryCache( u, users[u]['DN'].lower(), users[u]['Email'].lower() )
+      self.rmAPI.addOrModifyUserRegistryCache( u, users[u]['DN'].lower(), users[u]['Email'].lower() )
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
 ################################################################################

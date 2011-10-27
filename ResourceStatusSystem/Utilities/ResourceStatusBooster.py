@@ -68,7 +68,7 @@ class ResourceStatusBooster( object ):
   # addOrModify FUNCTIONS
   ##############################################################################
   '''
-  @CheckExecution2
+  #@CheckExecution2
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
     # VALIDATION ? 
     return self._addOrModifyElement( 'Site', siteName, siteType, gridSiteName )
@@ -304,8 +304,9 @@ class ResourceStatusBooster( object ):
       for defaultReason in defaultReasons:
 
         rList = [ args[0], statusType, defaultStatus, defaultReason ] 
-        sqlQuery = self._addOrModifyElementStatus( element, rList  )
         
+        sqlQuery = self._addOrModifyElementStatus( element, rList  )
+                
         if not sqlQuery[ 'OK' ]:
           return sqlQuery
         
@@ -366,7 +367,7 @@ class ResourceStatusBooster( object ):
     # This is vital for the views !!!!
     sqlQ[ 6 ] = rList[ 5 ]   
      
-    return self.insertElement( '%sHistory' % element , *tuple( sqlQ ) )       
+    return self.insertElement( '%sHistory' % element , *tuple( sqlQ ) )   
 
   def _setStatusDefaults( self ):#, rDict ):
      
