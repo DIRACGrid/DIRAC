@@ -1,12 +1,18 @@
-from DIRAC.ResourceStatusSystem.API.private.ResourceStatusBaseAPI import ResourceStatusBaseAPI
-from DIRAC.ResourceStatusSystem                      import ValidStatus, ValidStatusTypes, ValidRes
+################################################################################
+# $HeadURL:  $
+################################################################################
+__RCSID__  = "$Id:  $"
 
 from datetime import datetime, timedelta
 
+from DIRAC                                           import S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC.ResourceStatusSystem                      import ValidStatus, \
+  ValidStatusTypes, ValidRes
+from DIRAC.ResourceStatusSystem.API.private.ResourceStatusBaseAPI import \
+  ResourceStatusBaseAPI
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     
@@ -40,13 +46,14 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     else:
       return self.insertGridSite( *args )   
 
-  def modifyElementStatus( self, element, elementName, statusType, status = None, 
-                           reason = None, dateCreated = None, 
+  def modifyElementStatus( self, element, elementName, statusType, 
+                           status = None, reason = None, dateCreated = None, 
                            dateEffective = None, dateEnd = None,
                            lastCheckTime = None, tokenOwner = None, 
                            tokenExpiration = None ):
-    args = ( elementName, statusType, status, reason, dateCreated, dateEffective, 
-             dateEnd, lastCheckTime, tokenOwner, tokenExpiration )
+    args = ( elementName, statusType, status, reason, dateCreated, 
+             dateEffective, dateEnd, lastCheckTime, tokenOwner, 
+             tokenExpiration )
     return self.__modifyElementStatus( element, *args )
 
   def removeElement( self, element, elementName ):
@@ -94,7 +101,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
       else:
         kwargs = { 'columns' : [ 'GridSiteName' ], 'siteName' : siteName }
         #gridSiteName = [ gs[0] for gs in self.rsClient.getSite( siteName = siteName, **kwargs )[ 'Value' ] ]
-        gridSiteName = [ gs[0] for gs in self.__getElement( 'Site', **kwargs )[ 'Value' ] ]
+        gridSiteName = [ gs[0] for gs in \
+                         self.__getElement( 'Site', **kwargs )[ 'Value' ] ]
         
         rDict[ 'gridSiteName' ] = gridSiteName
         
@@ -103,7 +111,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
       return S_ERROR( message )
 
     #resourceNames = [ re[0] for re in self.rsClient.getResource( **rDict )[ 'Value' ] ]
-    resourceNames = [ re[0] for re in self.__getElement( 'Resource', **rDict )[ 'Value' ] ]
+    resourceNames = [ re[0] for re in \
+                          self.__getElement( 'Resource', **rDict )[ 'Value' ] ]
     
     kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
     presentDict[ 'resourceName' ] = resourceNames
@@ -129,7 +138,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
 
       kwargs = { 'columns' : [ 'GridSiteName' ], 'siteName' : name  }
       #gridSiteNames = [ gs[0] for gs in self.rsClient.getSite( siteName = name, **kwargs )[ 'Value' ] ]
-      gridSiteNames = [ gs[0] for gs in self.__getElement( 'Site', **kwargs )[ 'Value' ] ]
+      gridSiteNames = [ gs[0] for gs in \
+                             self.__getElement( 'Site', **kwargs )[ 'Value' ] ]
       rDict[ 'gridSiteName' ] = gridSiteNames
 
     elif element == 'Resource':
@@ -141,7 +151,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
       return S_ERROR( message )
 
     #storageElementNames = [ se[0] for se in self.rsClient.getStorageElement( **rDict )[ 'Value' ] ]
-    storageElementNames = [ se[0] for se in self.__getElement( 'StorageElement', **rDict )[ 'Value' ] ]
+    storageElementNames = [ se[0] for se in \
+                    self.__getElement( 'StorageElement', **rDict )[ 'Value' ] ]
 
     kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
     presentDict[ 'storageElementName' ] = storageElementNames
@@ -175,7 +186,10 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
         kwargs = { 'columns' : [ 'GridSiteName' ], 'resourceName' : name }    
         #gridSiteNames = self.rsClient.getResource( resourceName = name, **kwargs )
         gridSiteNames = self.__getElement( 'Resource', **kwargs )
-        kwargs = { 'columns' : [ 'SiteName' ], 'gridSiteName' : list( gridSiteNames[ 'Value' ] ) }  
+        kwargs = { 
+                   'columns'      : [ 'SiteName' ], 
+                   'gridSiteName' : list( gridSiteNames[ 'Value' ] ) 
+                 }  
         resQuery = self.__getElement( 'Site', **kwargs )
         #resQuery = self.rsClient.getSite( gridSiteName = list( gridSiteNames[ 'Value' ] ), **kwargs )
         
@@ -189,7 +203,10 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
         kwargs = { 'columns' : [ 'GridSiteName' ], 'storageElementName' : name }  
         #gridSiteNames = self.rsClient.getStorageElement( storageElementName = name, **kwargs )
         gridSiteNames = self.__getElement( 'StorageElement', **kwargs )
-        kwargs = { 'columns' : [ 'SiteName' ], 'gridSiteName' : list( gridSiteNames[ 'Value' ] ) }
+        kwargs = { 
+                   'columns'      : [ 'SiteName' ], 
+                   'gridSiteName' : list( gridSiteNames[ 'Value' ] ) 
+                 }
         resQuery = self.__getElement( 'Site', **kwargs )
         #resQuery = self.rsClient.getSite( gridSiteName = list( gridSiteNames[ 'Value' ] ), **kwargs )
 
@@ -227,7 +244,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
  #   getter = getattr( self.rsClient, 'get%s' % granularity )
     #return getter( **kwargs )
 
-  def getTokens( self, granularity, name, tokenExpiration, statusType, **kwargs ):
+  def getTokens( self, granularity, name = None, tokenExpiration = None, 
+                 statusType = None, **kwargs ):
 
 #    self.rsVal.validateElement( granularity )  
 
@@ -250,7 +268,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     #getter = getattr( self.rsClient, 'get%sStatus' % granularity )  
     #return getter( **kw ) 
 
-  def setToken( self, granularity, name, statusType, reason, tokenOwner, tokenExpiration ):
+  def setToken( self, granularity, name, statusType, reason, tokenOwner, 
+                tokenExpiration ):
 
 #    self.rsVal.validateElement( granularity )
 #    self.rsVal.validateElementStatusTypes( granularity, statusType )
@@ -303,9 +322,6 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     #return updatter( name, **rDict )
 
   def whatIs( self, name ):
-    """
-    Find which is the granularity of name.
-    """
 
     for g in ValidRes:
       
@@ -323,16 +339,6 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     return S_OK( 'Unknown' )  
 
   def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
-    """
-    Get Sites, Services, Resources, StorageElements to be checked using Present-x views.
-
-    :params:
-      :attr:`granularity`: a ValidRes
-
-      :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
-
-      :attr:`maxN`: integer - maximum number of lines in output
-    """
 
 #    self.rsVal.validateElement( granularity )
 
@@ -374,60 +380,36 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     return self.__getElement( '%sPresent' % granularity, **kwargs )
     #return getter( **kwargs )
 
-  def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, maxItems ):
-    """
-    Get present sites status list, for the web.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
-    and :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsHistory`
-
-    Example of parameters:
-
-    :params:
-      :attr:`selectDict`: { 'SiteName':['XX', ...] , 'ExpandSiteHistory': ['XX', ...],
-      'Status': ['XX', ...]}
-      and equivalents for the other monitoreds
-
-      :attr:`sortList`
-
-      :attr:`startItem`
-
-      :attr:`maxItems`
-
-    :return: {
-      :attr:`ParameterNames`: ['SiteName', 'Tier', 'GridType', 'Country',
-      'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'],
-
-      :attr:'Records': [[], [], ...],
-
-      :attr:'TotalRecords': X,
-
-      :attr:'Extras': {}
-
-      }
-    """
+  def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, 
+                              maxItems ):
 
 #    self.rsVal.validateElement( granularity )
 
     if granularity == 'Site':
-      paramNames = [ 'SiteName', 'Tier', 'GridType', 'Country',
-                     'StatusType','Status', 'DateEffective', 'FormerStatus', 'Reason' ]
-      paramsList = [ 'SiteName', 'SiteType', 'StatusType','Status', 'DateEffective',
-                     'FormerStatus', 'Reason' ]
+      paramNames = [ 'SiteName', 'Tier', 'GridType', 'Country', 'StatusType',
+                     'Status', 'DateEffective', 'FormerStatus', 'Reason' ]
+      paramsList = [ 'SiteName', 'SiteType', 'StatusType','Status', 
+                     'DateEffective', 'FormerStatus', 'Reason' ]
     elif granularity == 'Service':
-      paramNames = [ 'ServiceName', 'ServiceType', 'Site', 'Country', 'StatusType','Status',
-                     'DateEffective', 'FormerStatus', 'Reason' ]
-      paramsList = [ 'ServiceName', 'ServiceType', 'SiteName', 'StatusType','Status',
-                     'DateEffective', 'FormerStatus', 'Reason' ]
+      paramNames = [ 'ServiceName', 'ServiceType', 'Site', 'Country', 
+                     'StatusType','Status', 'DateEffective', 'FormerStatus', 
+                     'Reason' ]
+      paramsList = [ 'ServiceName', 'ServiceType', 'SiteName', 'StatusType',
+                     'Status', 'DateEffective', 'FormerStatus', 'Reason' ]
     elif granularity == 'Resource':
       paramNames = [ 'ResourceName', 'ServiceType', 'SiteName', 'ResourceType',
-                     'Country', 'StatusType','Status', 'DateEffective', 'FormerStatus', 'Reason' ]
-      paramsList = [ 'ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 'ResourceType',
-                     'StatusType','Status', 'DateEffective', 'FormerStatus', 'Reason' ]
+                     'Country', 'StatusType','Status', 'DateEffective', 
+                     'FormerStatus', 'Reason' ]
+      paramsList = [ 'ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 
+                     'ResourceType', 'StatusType','Status', 'DateEffective', 
+                     'FormerStatus', 'Reason' ]
     elif granularity == 'StorageElement':
-      paramNames = [ 'StorageElementName', 'ResourceName', 'SiteName',
-                     'Country', 'StatusType','Status', 'DateEffective', 'FormerStatus', 'Reason' ]
-      paramsList = [ 'StorageElementName', 'ResourceName', 'GridSiteName', 'StatusType','Status',
-                     'DateEffective', 'FormerStatus', 'Reason' ]
+      paramNames = [ 'StorageElementName', 'ResourceName', 'SiteName', 
+                     'Country', 'StatusType','Status', 'DateEffective', 
+                     'FormerStatus', 'Reason' ]
+      paramsList = [ 'StorageElementName', 'ResourceName', 'GridSiteName', 
+                     'StatusType','Status', 'DateEffective', 'FormerStatus', 
+                     'Reason' ]
 
     records                = []
 
@@ -454,7 +436,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
           rDict[ k ] = [ rDict[ k ] ]
 
     if selectDict.has_key( 'Expanded%sHistory' % granularity ):
-      paramsList = [ '%sName', 'StatusType', 'Status', 'Reason', 'DateEffective' ]
+      paramsList = [ '%sName', 'StatusType', 'Status', 'Reason', 
+                     'DateEffective' ]
       elements   = rDict[ 'Expanded%sHistory' % granularity ]
       #hgetter    = getattr( self.rsClient, 'get%ssHhistory' )
       kwargs     = { '%sName' % granularity : elements, 'columns' : paramsList }  
@@ -650,7 +633,10 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
           #                                      paramsList = [ 'SiteName' ] )
           rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ]
 
-        kw = { 'columns' : [ 'GridSiteName' ], 'siteName' : rDict[ 'SiteName' ] }
+        kw = { 
+               'columns'  : [ 'GridSiteName' ], 
+               'siteName' : rDict[ 'SiteName' ] 
+              }
         #gridSites_select = self.rsClient.getSitePresent( siteName = rDict[ 'SiteName' ], **kw )
         gridSites_select = self.__getElement( 'SitePresent', **kw )
         #gridSites_select = self.getMonitoredsList( 'Site',
@@ -662,7 +648,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
         kwargs[ 'status' ]             = rDict[ 'Status' ]
         kwargs[ 'gridSiteName']        = gridSites_select 
 
-        storageElementsList = self.__getElement( 'StorageElementPresent', *kwargs )
+        storageElementsList = self.__getElement( 'StorageElementPresent', 
+                                                 **kwargs )
         #storageElementsList = self.rsClient.getStorageElementPresent( storageElementName = rDict[ 'StorageElementName' ],
         #                                                      status             = rDict[ 'Status' ],
         #                                                      gridSiteName       = gridSites_select,
@@ -799,7 +786,11 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     rList += self.__setStatusDefaults()
 
     #elementName = '%sName' % ( element[0].lower() + element[1:] )
-    kwargs = { 'elementName' : rList[ 0 ], 'statusType' : rList[ 1 ], 'onlyUniqueKeys' : True }
+    kwargs = { 
+               'elementName'    : rList[ 0 ], 
+               'statusType'     : rList[ 1 ], 
+               'onlyUniqueKeys' : True 
+             }
     #sqlQuery = self.__getElement( '%sStatus' % element, **kwargs )
 
     sqlQuery = self.__getElement( 'ElementStatus', element, **kwargs )
@@ -809,7 +800,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
       return self.__insertElement( 'ElementStatus', element, *tuple( rList ) )
 
     #updateSQLQuery = self.__updateElement( '%sStatus' % element, *tuple( rList ))
-    updateSQLQuery = self.__updateElement( 'ElementStatus', element, *tuple( rList ))
+    updateSQLQuery = self.__updateElement( 'ElementStatus', element, 
+                                           *tuple( rList ) )
     if not updateSQLQuery[ 'OK' ]:
       return updateSQLQuery 
 
@@ -847,7 +839,9 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     if not sqlQuery[ 'OK' ]:
       return sqlQuery
     if not sqlQuery[ 'Value' ]:
-      return S_ERROR( 'Impossible to modify, %s (%s) is not on the DB' % ( args[ 0 ],args[ 1 ] ) )
+      _msg = 'Impossible to modify, %s (%s) is not on the DB' 
+      _msg = _msg % ( args[ 0 ],args[ 1 ] )
+      return S_ERROR( _msg )
 
     #DateEffective
     if args[ 5 ] is None:
@@ -857,7 +851,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
     if args[ 7 ] is None:
       args[ 7 ] = datetime.utcnow().replace( microsecond = 0 )
     
-    updateSQLQuery = self.__updateElement( 'ElementStatus', element, *tuple( args ))
+    updateSQLQuery = self.__updateElement( 'ElementStatus', element, 
+                                           *tuple( args ) )
     if not updateSQLQuery[ 'OK' ]:
       return updateSQLQuery 
     
@@ -878,7 +873,8 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
   
     tables = [ 'ScheduledStatus', 'Status', 'History' ]
     for table in tables:
-      sqlQuery = self.__deleteElement( 'Element%s' % ( table ), element, elementName )
+      sqlQuery = self.__deleteElement( 'Element%s' % ( table ), element, 
+                                       elementName )
       if not sqlQuery[ 'OK' ]:
         return sqlQuery
     
@@ -906,3 +902,6 @@ class ResourceStatusExtendedBaseAPI( ResourceStatusBaseAPI ):
 
     count['Total'] = sum( count.values() )
     return S_OK( count ) 
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

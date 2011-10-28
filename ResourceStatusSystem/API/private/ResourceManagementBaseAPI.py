@@ -1,7 +1,11 @@
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities.Decorators            import ClientDec5
+################################################################################
+# $HeadURL:  $
+################################################################################
+__RCSID__  = "$Id:  $"
 
-from DIRAC import S_OK
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import \
+  ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Utilities.Decorators           import ClientDec5
 
 class ResourceManagementBaseAPI( object ):
   
@@ -38,9 +42,10 @@ class ResourceManagementBaseAPI( object ):
                        dateEffective = None, lastCheckTime = None, **kwargs ):
     pass
   @ClientDec5
-  def deletePolicyResult( self, granularity = None, name = None, policyName = None, 
-                          statusType = None, status = None, reason = None, 
-                          dateEffective = None, lastCheckTime = None, **kwargs ):
+  def deletePolicyResult( self, granularity = None, name = None, 
+                          policyName = None, statusType = None, status = None, 
+                          reason = None, dateEffective = None, 
+                          lastCheckTime = None, **kwargs ):
     pass
   @ClientDec5
   def insertClientCache( self, name, commandName, opt_ID, value, result,
@@ -74,9 +79,10 @@ class ResourceManagementBaseAPI( object ):
                           lastCheckTime = None, **kwargs ):
     pass
   @ClientDec5
-  def deleteAccountingCache( self, name = None, plotType = None, plotName = None, 
-                             result = None, dateEffective = None, 
-                             lastCheckTime = None, **kwargs ):
+  def deleteAccountingCache( self, name = None, plotType = None, 
+                             plotName = None, result = None, 
+                             dateEffective = None, lastCheckTime = None, 
+                             **kwargs ):
     pass  
   @ClientDec5
   def insertUserRegistryCache( self, login, name, email, **kwargs ):
@@ -95,3 +101,6 @@ class ResourceManagementBaseAPI( object ):
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                **kwargs ):                                            
     pass      
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

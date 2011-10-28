@@ -1,10 +1,16 @@
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-
-from DIRAC.ResourceStatusSystem.Utilities.Decorators            import ClientDec5
+################################################################################
+# $HeadURL:  $
+################################################################################
+__RCSID__  = "$Id:  $"
 
 from DIRAC import S_OK
-from DIRAC.ResourceStatusSystem                                 import ValidRes,\
-  ValidStatus, ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType
+
+from DIRAC.ResourceStatusSystem                             import ValidRes,\
+  ValidStatus, ValidStatusTypes, ValidSiteType, ValidServiceType, \
+  ValidResourceType
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import \
+  ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Utilities.Decorators        import ClientDec5
 
 class ResourceStatusBaseAPI( object ):
   
@@ -32,11 +38,11 @@ class ResourceStatusBaseAPI( object ):
                   **kwargs ):
     pass      
   @ClientDec5
-  def getSitePresent( self, siteName = None, siteType = None, gridSiteName = None,
-                       gridTier = None, statusType = None, status = None, 
-                       dateEffective = None, reason = None, lastCheckTime = None, 
-                       tokenOwner = None, tokenExpiration = None, 
-                       formerStatus = None, **kwargs ):
+  def getSitePresent( self, siteName = None, siteType = None, 
+                      gridSiteName = None, gridTier = None, statusType = None, 
+                      status = None, dateEffective = None, reason = None, 
+                      lastCheckTime = None, tokenOwner = None, 
+                      tokenExpiration = None, formerStatus = None, **kwargs ):
     pass
 
   '''
@@ -63,7 +69,8 @@ class ResourceStatusBaseAPI( object ):
                          siteType = None, serviceType = None, statusType = None, 
                          status = None, dateEffective = None, reason = None, 
                          lastCheckTime = None, tokenOwner = None, 
-                         tokenExpiration = None, formerStatus = None, **kwargs ):
+                         tokenExpiration = None, formerStatus = None, 
+                         **kwargs ):
     pass
 
   '''
@@ -92,10 +99,12 @@ class ResourceStatusBaseAPI( object ):
   @ClientDec5      
   def getResourcePresent( self, resourceName = None, siteName = None, 
                           serviceType = None, gridSiteName = None, 
-                          siteType = None, resourceType = None, statusType = None, 
-                          status = None, dateEffective = None, reason = None, 
+                          siteType = None, resourceType = None, 
+                          statusType = None, status = None, 
+                          dateEffective = None, reason = None, 
                           lastCheckTime = None, tokenOwner = None, 
-                          tokenExpiration = None, formerStatus = None, **kwargs ):
+                          tokenExpiration = None, formerStatus = None, 
+                          **kwargs ):
     pass
 
   '''
@@ -104,20 +113,21 @@ class ResourceStatusBaseAPI( object ):
   ##############################################################################
   '''
   @ClientDec5
-  def insertStorageElement( self, storageElementName, resourceName, gridSiteName,
-                            **kwargs ):
+  def insertStorageElement( self, storageElementName, resourceName, 
+                            gridSiteName, **kwargs ):
     pass
   @ClientDec5
-  def updateStorageElement( self, storageElementName, resourceName, gridSiteName,
-                            **kwargs ):
+  def updateStorageElement( self, storageElementName, resourceName, 
+                            gridSiteName, **kwargs ):
     pass
   @ClientDec5       
   def getStorageElement( self, storageElementName = None, resourceName = None, 
                          gridSiteName = None, **kwargs ):
     pass
   @ClientDec5       
-  def deleteStorageElement( self, storageElementName = None, resourceName = None, 
-                            gridSiteName = None, **kwargs ):
+  def deleteStorageElement( self, storageElementName = None, 
+                            resourceName = None, gridSiteName = None, 
+                            **kwargs ):
     pass    
   @ClientDec5      
   def getStorageElementPresent( self, storageElementName = None, 
@@ -153,14 +163,16 @@ class ResourceStatusBaseAPI( object ):
   ##############################################################################
   '''
   @ClientDec5
-  def insertElementStatus( self, element, elementName, statusType, status, reason, 
-                           dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                           tokenOwner, tokenExpiration, **kwargs ): 
+  def insertElementStatus( self, element, elementName, statusType, status, 
+                           reason, dateCreated, dateEffective, dateEnd, 
+                           lastCheckTime, tokenOwner, tokenExpiration, 
+                           **kwargs ): 
     pass
   @ClientDec5
-  def updateElementStatus( self, element, elementName, statusType, status, reason, 
-                           dateCreated, dateEffective, dateEnd, lastCheckTime, 
-                           tokenOwner, tokenExpiration, **kwargs ):
+  def updateElementStatus( self, element, elementName, statusType, status, 
+                           reason, dateCreated, dateEffective, dateEnd, 
+                           lastCheckTime, tokenOwner, tokenExpiration, 
+                           **kwargs ):
     pass
   @ClientDec5
   def getElementStatus( self, element, elementName = None, statusType = None, 
@@ -196,11 +208,11 @@ class ResourceStatusBaseAPI( object ):
     pass
   @ClientDec5
   def getElementScheduledStatus( self, element, elementName = None, 
-                                 statusType = None, status = None, reason = None, 
-                                 dateCreated = None, dateEffective = None, 
-                                 dateEnd = None, lastCheckTime = None, 
-                                 tokenOwner = None, tokenExpiration = None, 
-                                 **kwargs ):
+                                 statusType = None, status = None, 
+                                 reason = None, dateCreated = None, 
+                                 dateEffective = None, dateEnd = None, 
+                                 lastCheckTime = None, tokenOwner = None, 
+                                 tokenExpiration = None, **kwargs ):
     pass
   @ClientDec5
   def deleteElementScheduledStatus( self, element, elementName = None, 
@@ -236,11 +248,12 @@ class ResourceStatusBaseAPI( object ):
                          tokenExpiration = None, **kwargs ):
     pass
   @ClientDec5
-  def deleteElementHistory( self, element, elementName = None, statusType = None, 
-                            status = None, reason = None, dateCreated = None,
-                            dateEffective = None, dateEnd = None, 
-                            lastCheckTime = None, tokenOwner = None,
-                            tokenExpiration = None, **kwargs ):
+  def deleteElementHistory( self, element, elementName = None, 
+                            statusType = None, status = None, reason = None, 
+                            dateCreated = None, dateEffective = None, 
+                            dateEnd = None, lastCheckTime = None, 
+                            tokenOwner = None, tokenExpiration = None, 
+                            **kwargs ):
     pass  
 
   '''

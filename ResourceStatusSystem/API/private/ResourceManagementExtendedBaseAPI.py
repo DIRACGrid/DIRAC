@@ -1,4 +1,12 @@
-from DIRAC.ResourceStatusSystem.API.private.ResourceManagementBaseAPI import ResourceManagementBaseAPI
+################################################################################
+# $HeadURL:  $
+################################################################################
+__RCSID__  = "$Id:  $"
+
+from datetime import datetime
+
+from DIRAC.ResourceStatusSystem.API.private.ResourceManagementBaseAPI import \
+  ResourceManagementBaseAPI
 
 class ResourceManagementExtendedBaseAPI( ResourceManagementBaseAPI ):
   
@@ -18,8 +26,8 @@ class ResourceManagementExtendedBaseAPI( ResourceManagementBaseAPI ):
              lastCheckTime )
     return self.__addOrModifyElement( 'ClientCache', *args )
     
-  def addOrModifyAccountingCache( self, name, plotType, plotName, result, dateEffective,
-                                  lastCheckTime ):
+  def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
+                                  dateEffective, lastCheckTime ):
     args = ( name, plotType, plotName, result, dateEffective, lastCheckTime )
     return self.__addOrModifyElement( 'AccountingCache', *args )
     
