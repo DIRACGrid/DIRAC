@@ -4,7 +4,7 @@
 __RCSID__  = "$Id:  $"
 AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
 
-import Queue
+import Queue, time
 
 from DIRAC                                            import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                      import AgentModule
@@ -92,6 +92,18 @@ class RSInspectorAgent( AgentModule ):
       gLogger.exception( errorStr,lException=x )
       return S_ERROR( errorStr )
 
+################################################################################
+################################################################################
+
+  def finalize( self ):
+    if self.ResourceNamesInCheck:
+      _msg = "Wait for queue to get empty before terminating the agent (%d tasks)" 
+      _msg = _msg % len( self.ResourceNamesInCheck )
+      self.log.info( _msg )
+      while self.ResourceNamesInCheck:
+        time.sleep( 2 )
+      self.log.info( "Queue is empty, terminating the agent..." )
+    return S_OK()
 
 ################################################################################
 ################################################################################
