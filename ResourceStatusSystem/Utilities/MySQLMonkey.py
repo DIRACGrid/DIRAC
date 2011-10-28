@@ -6,9 +6,6 @@ __RCSID__  = "$Id$"
 from DIRAC import S_OK#, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
 
-#def localsToDict( a ):
-#  return {}
-
 ################################################################################
 # MySQL Monkey 
 ################################################################################
@@ -211,7 +208,7 @@ class MySQLStatements( object ):
     
     #try:
       # PARSING #
-      pArgs,pKwargs  = self.parseInput( *args, **kwargs )
+      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
       pKwargs[ 'onlyUniqueKeys' ] = True
       # END PARSING #
     
@@ -223,7 +220,7 @@ class MySQLStatements( object ):
     
     #try:
       # PARSING #
-      pArgs,pKwargs  = self.parseInput( *args, **kwargs )
+      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
       pKwargs[ 'onlyUniqueKeys' ] = True
       # END PARSING #
     
@@ -235,7 +232,7 @@ class MySQLStatements( object ):
     
     #try:
       # PARSING #
-      pArgs,pKwargs  = self.parseInput( *args, **kwargs )
+      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
       # END PARSING #
     
       return self.__select( pArgs, **pKwargs )
@@ -246,7 +243,7 @@ class MySQLStatements( object ):
     
     #try:
       # PARSING #
-      pArgs,pKwargs  = self.parseInput( *args, **kwargs )
+      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
       # END PARSING #
     
       return self.__delete( pArgs, **pKwargs )
@@ -369,7 +366,7 @@ class MySQLStatements( object ):
 # PARSERS
 ################################################################################
 
-  def parseInput( self, *args, **kwargs ):
+  def __parseInput( self, *args, **kwargs ):
     
     parsedKwargs = self.__parseKwargs( **kwargs )
     parsedArgs   = self.__parseArgs( *args, **kwargs )
