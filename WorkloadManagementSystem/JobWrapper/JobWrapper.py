@@ -257,6 +257,7 @@ class JobWrapper:
     """The main execution method of the Job Wrapper
     """
     self.log.info( 'Job Wrapper is starting execution phase for job %s' % ( self.jobID ) )
+    os.environ['DIRACJOBID'] = str(self.jobID)
     os.environ['DIRACROOT'] = self.localSiteRoot
     self.log.verbose( 'DIRACROOT = %s' % ( self.localSiteRoot ) )
     os.environ['DIRACPYTHON'] = sys.executable
@@ -475,7 +476,7 @@ class JobWrapper:
   def resolveInputData( self ):
     """Input data is resolved here using a VO specific plugin module.
     """
-    self.__report( 'Running', 'Input Data Resolution' )
+    self.__report( 'Running', 'Input Data Resolution', sendFlag = True )
 
     if self.ceArgs.has_key( 'LocalSE' ):
       localSEList = self.ceArgs['LocalSE']

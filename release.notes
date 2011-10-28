@@ -1,3 +1,115 @@
+[v6r0-pre11]
+
+*Install tools
+NEW: Plainly separate projects from installations
+CHANGE: Installation and distribution configuration files are more meaningful
+
+*VOManagement
+NEW: introduce Registry/VO section, associate groups to VOs, define SubmitPools per VO
+NEW: automatically add SubmitPools JDL option of the job owner's VO defines it
+
+*JobManager
+NEW: Add MaxParametericJobs option to the service configuration
+
+[v6r0-pre10]
+
+*JobManager
+CHANGE: Parameters can be incremented with ParameterStep and multiplied 
+        by ParameterFactor JDL attributes, float parameters are also allowed
+        
+*TimeLeft
+CHANGE: Call batch system commands with the ( default ) timeout 120 sec
+CHANGE: PBSTimeLeft uses default CPU/WallClock if not present in the output        
+
+[v6r0-pre9]
+
+*Accounting
+CHANGE: For the WMSHistory type, send as JobSplitType the JobType
+CHANGE: Reduced the size of the max key length to workaround mysql max bytes for index problem
+
+*dirac-deploy-scripts
+NEW: When setting the lib path in the deploy scripts. Also search for subpaths of the libdir and include them
+
+*SecurityLogging
+CHANGE: Security log level to verbose
+
+*Utilities/Security
+CHANGE: Replace import from DIRAC.Core.Security.Misc by ProxyInfo
+
+*ProxyManager
+NEW: Now the proxyDB also has a knowledge of user names. Queries can use the user name as a query key
+FIX: Calculate properly the dates for credentials about to expire
+CHANGE: The proxy manager will autoexpire old proxies
+CHANGE: Also auto purge logs
+FIX: Made sure that some db queries were properly escaped
+
+[v6r0-pre8]
+
+*FileCatalog
+The default file catalog is now determined using /LocalSite/FileCatalog. 
+The old behavior is provided as a fallback solution
+
+*ReplicaManager 
+can now deal with multiple catalogs. Makes sure the surl used for removal is 
+the same as the one used for registration.
+
+
+*JobSchedulingAgent
+NEW: set the job Site attribute to the name of a group of sites corresponding to a SE
+     chosen by the data staging procedure 
+     
+*PoolXMLCatalog
+NEW: added getTypeByPfn() function to get the type of the given PFN
+
+*Stager
+NEW: added new command dirac-stager-stage-files     
+
+*ProxyManager
+NEW: dirac-proxy-init will check that the lifetime of the certificate is less than one month and advise to renew it
+NEW: Added some more functions to the Registry helper
+NEW: Will check that the certificate has at least one month of validity
+FIX: Never use the host certificate if there is one for dirac-proxy-init
+NEW: Proxy manager will send notifications when the uploaded proxies are about to expire (configurable via CS)
+
+*LcgFileCatalogClient
+NEW: new version of getPathPermissions relying on the lfc_access method to solve the problem
+     of multiple user DNs in LFC.
+
+[v6r0-pre7]
+
+*FTSCleaningAgent
+NEW: FTSCleaningAgent will allow to fix transient errors in RequestDB. At the moment it's 
+     only fixing Requests for which SourceTURL is equal to TargetSURL.
+
+*OracleDB:
+NEW: Added Array type 
+
+*TransferDBMonitoring
+FIX: putting FTSMonitor web page back
+
+*RSS/TokenAgent
+CHANGE: TokenAgent sends e-mails with current status
+
+*MySQL
+NEW: Allow definition of the port number in the configuration
+
+*RSS
+NEW: Major code refactoring 
+
+[v6r0-pre6]
+
+*RemovalAgent
+BUGFIX: put a limit to be sure the execute method will end after a certain number of iterations
+
+*StorageManagement
+FIX: Requests older than 1 day, which haven't been staged are retried. Tasks older than "daysOld" 
+     number of days are set to Failed. These tasks have already been retried "daysOld" times for staging.
+FIX: CacheReplicas and StageRequests records are kept until the pin has expired. This way the 
+     StageRequest agent will have proper accounting of the amount of staged data in cache.
+     
+*ReleaseManagement
+NEW: LCG bundle version can be defined on a per release basis in the releases.cfg     
+
 [v6r0-pre5]
 
 *Workflow
@@ -41,6 +153,25 @@ FIX: -V switch was being used inconsistently in the pilotDirector
 
 *RemovalAgent
 BUGFIX: TypeError when getting JobID in RemovalAgent
+
+*DownloadInputData
+FIX: when files have been uploaded with lcg_util, the PFN filename
+might not match the LFN file name
+
+*StorageElement
+NEW: new option in the StorageElement configuration "CheckAccess"
+
+*ResourceStatusSystem
+BUGFIX: Cleaned RSS scripts, they are still prototypes
+CHANGE: PEP actions now reside in separate modules outside PEP module.
+NEW: RSS CS module add facilities to extract info from CS.
+CHANGE: Updating various RSS tests to make them compatible with
+changes in the system.
+NEW: CS is used instead of ad-hoc configuration module in most places.
+NEW: Adding various helper functions in RSS Utils module. These are
+functions used by RSS developers, including mainly myself, and are
+totally independant from the rest of DIRAC.
+CHANGE: Mostly trivial changes, typos, etc in various files in RSS
 
 [v6r0-pre4]
 

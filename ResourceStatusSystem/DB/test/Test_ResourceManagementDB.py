@@ -8,7 +8,7 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes,ValidStatus
+from DIRAC.ResourceStatusSystem import ValidRes,ValidStatus
 
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 
@@ -28,7 +28,6 @@ class ResourceManagementDBTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
 
-    from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
     from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
     # setting mock interface

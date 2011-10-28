@@ -1,10 +1,10 @@
 """ PilotsClient class is a client for to get pilots stats.
 """
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+from DIRAC.ResourceStatusSystem                      import ValidRes
 
 class PilotsClient:
 
@@ -142,7 +142,7 @@ class PilotsClient:
         if not siteName[ 'OK' ]:
           raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
         if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
-          return None
+          return {}
         siteName = siteName['Value']
 
       res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
@@ -155,7 +155,7 @@ class PilotsClient:
       res = res['Value']['Records']
 
     if len(res) == 0:
-      return None
+      return {}
 
     effRes = {}
 
@@ -183,6 +183,6 @@ class PilotsClient:
       return effRes
 
     except IndexError:
-      return None
+      return {}
 
 #############################################################################

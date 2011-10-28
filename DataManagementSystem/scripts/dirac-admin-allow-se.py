@@ -31,14 +31,12 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
-#from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
+from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
-from DIRAC.Core.Security.Misc                         import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
 from DIRAC                                            import gConfig, gLogger
 from DIRAC.Core.Utilities.List                        import intListToString
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#csAPI     = CSAPI()
-rssClient = ResourceStausClient()
+csAPI = CSAPI()
 
 res = getProxyInfo()
 if not res['OK']:
@@ -63,62 +61,31 @@ if not ses:
 
 readAllowed = []
 writeAllowed = []
-#storageCFGBase = "/Resources/StorageElements"
+storageCFGBase = "/Resources/StorageElements"
 for se in ses:
-  #res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) ) 
-  #if not res['OK']:
-  #  gLogger.error( "Storage Element %s does not exist" % se )
-  #  continue
-  
-  resR = rssClient.getStorageElement( se, 'Read' )
-  if resR[ 'OK' ]:
-    resR = resR[ 'Value' ]    
-    if not resR:
-      gLogger.error( "Storage Element (R) %s does not exist" % se )      
-      continue    
-  
-  resW = rssClient.getStorageElement( se, 'Write' )
-  if resW[ 'OK' ]:
-    resW = resW[ 'Value' ]    
-    if not resW:
-      gLogger.error( "Storage Element (W) %s does not exist" % se )      
-      continue    
-
-  if read and ( resR[1] == 'Banned' or resR[1] == 'Probing' ):
-    res = rssClient.setStorageElementStatus( se, 'Active', 'dirac-admin-allow-se', userName, 'Read')     
+  res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
+  if not res['OK']:
+    gLogger.error( "Storage Element %s does not exist" % se )
+    continue
+  existingOptions = res['Value']
+  if read and existingOptions['ReadAccess'] == "InActive":
+    res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "Active" )
     if not res['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
       gLogger.debug( "Successfully updated %s read access to Active" % se )
       readAllowed.append( se )
-
-  if write and ( resW[1] == 'Banned' or resW[1] == 'Probing' ):
-    res = rssClient.setStorageElementStatus( se, 'Active', 'dirac-admin-allow-se', userName, 'Write')     
+  if write and existingOptions['WriteAccess'] == "InActive":
+    res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "Active" )
     if not res['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
       gLogger.debug( "Successfully updated %s write access to Active" % se )
       writeAllowed.append( se )
-
-#  existingOptions = res['Value']
-#  if read and existingOptions['ReadAccess'] == "InActive":
-#    res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "Active" )
-#    if not res['OK']:
-#      gLogger.error( "Failed to update %s read access to Active" % se )
-#    else:
-#      gLogger.debug( "Successfully updated %s read access to Active" % se )
-#      readAllowed.append( se )
-#  if write and existingOptions['WriteAccess'] == "InActive":
-#    res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "Active" )
-#    if not res['OK']:
-#      gLogger.error( "Failed to update %s write access to Active" % se )
-#    else:
-#      gLogger.debug( "Successfully updated %s write access to Active" % se )
-#      writeAllowed.append( se )
-#res = csAPI.commitChanges()
-#if not res['OK']:
-#  gLogger.error( "Failed to commit changes to CS", res['Message'] )
-#  DIRAC.exit( -1 )
+res = csAPI.commitChanges()
+if not res['OK']:
+  gLogger.error( "Failed to commit changes to CS", res['Message'] )
+  DIRAC.exit( -1 )
 
 if not ( writeAllowed or readAllowed ):
   gLogger.info( "No storage elements were allowed" )

@@ -8,7 +8,7 @@ from DIRAC                                            import S_OK, S_ERROR, gCon
 from DIRAC.Core.DISET.RPCClient                       import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
-from DIRAC.ResourceStatusSystem.Policy.Configurations import ValidRes
+from DIRAC.ResourceStatusSystem                       import ValidRes
 
 class ResourceStatusClient:
 

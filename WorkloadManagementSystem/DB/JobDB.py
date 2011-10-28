@@ -32,8 +32,7 @@
     setJobStatus()
     setInputData()
 
-    insertJobIntoDB()
-    addJobToDB()
+    insertNewJobIntoDB()
     removeJobFromDB()
 
     rescheduleJob()
@@ -55,7 +54,7 @@ import time, operator
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
 from DIRAC                                                   import S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.Core.Security.CS                                  import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client.JobDescription    import JobDescription
@@ -1221,17 +1220,6 @@ class JobDB( DB ):
       return result
 
 #############################################################################
-  def insertJobIntoDB( self, jobID, jdl ):
-    """ Insert the initial job JDL into the Job database
-    """
-
-    result = self.setJobJDL( jobID, originalJDL = jdl )
-    if not result['OK']:
-      return result
-
-    return self.setJobStatus( jobID, status = 'Received', minor = 'Initial insertion' )
-
-#############################################################################
   def insertNewJobIntoDB( self, jdl, owner, ownerDN, ownerGroup, diracSetup ):
     """ Insert the initial JDL into the Job database,
         Do initial JDL crosscheck,
@@ -1392,7 +1380,7 @@ class JobDB( DB ):
   def __checkAndPrepareJob( self, jobID, classAdJob, classAdReq, owner, ownerDN,
                             ownerGroup, diracSetup, jobAttrNames, jobAttrValues ):
     """
-      Check Consistence of Submitted JDL and set some defaults
+      Check Consistency of Submitted JDL and set some defaults
       Prepare subJDL with Job Requirements
     """
     error = ''
@@ -1423,6 +1411,9 @@ class JobDB( DB ):
     classAdJob.insertAttributeString( 'OwnerGroup', ownerGroup )
     if vo:
       classAdJob.insertAttributeString( 'VirtualOrganization', vo )
+      submitPool = getVOOption(vo,'SubmitPools')
+      if submitPool and not classAdJob.lookupAttribute( 'SubmitPools' ):
+        classAdJob.insertAttributeString( 'SubmitPools', submitPool )
 
     classAdReq.insertAttributeString( 'Setup', diracSetup )
     classAdReq.insertAttributeString( 'OwnerDN', ownerDN )

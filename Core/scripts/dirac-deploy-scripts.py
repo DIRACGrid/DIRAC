@@ -55,8 +55,14 @@ else:
     print >> sys.stderr, "Can not determine local platform"
     sys.exit(-1)
 DiracPath        = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'bin'), )
-DiracLibraryPath = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'lib'), )
 DiracPythonPath  = '%s' % ( DiracRoot, )
+DiracLibraryPath      = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'lib'), )
+
+baseLibPath = DiracLibraryPath
+for entry in os.listdir( baseLibPath ):
+  if os.path.isdir( entry ):
+    DiracLibraryPath = '%s:%s' % ( DiracLibraryPath, os.path.join( baseLibPath, entry ) ) 
+
 
 os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
 

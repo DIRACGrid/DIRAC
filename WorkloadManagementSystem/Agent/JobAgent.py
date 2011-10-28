@@ -19,7 +19,7 @@ from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory      import ComputingElementFactory
 from DIRAC                                                  import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
-from DIRAC.Core.Security.Misc                               import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 from DIRAC.Core.Security                                    import Properties
 from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob

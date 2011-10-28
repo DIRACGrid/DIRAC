@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
 from DIRAC                                               import gConfig
-from DIRAC.Core.Security.Misc                            import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 import os, sys, time, re, socket, stat, shutil
 import string, shutil, tempfile
@@ -100,7 +100,12 @@ class CREAMComputingElement( ComputingElement ):
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
 
       if result['OK']:
+        if result['Value'][0]:
+          # We have got a non-zero status code
+          return S_ERROR('Pilot submission failed with error: %s ' % result['Value'][2].strip())
         pilotJobReference = result['Value'][1].strip()
+        if not pilotJobReference:
+          return S_ERROR('No pilot reference returned from the glite job submission command')
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
       os.unlink( jdlName )

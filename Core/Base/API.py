@@ -10,7 +10,7 @@ Script.initialize()
 
 from DIRAC                          import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List      import sortList
-from DIRAC.Core.Security.Misc       import getProxyInfo, formatProxyInfoAsString
+from DIRAC.Core.Security.ProxyInfo  import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.CS         import getDNForUsername
 
 import pprint, sys

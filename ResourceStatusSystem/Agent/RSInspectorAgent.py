@@ -3,19 +3,19 @@
 ########################################################################
 
 import Queue
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC                                              import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                        import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                    import ThreadPool
+from DIRAC.Interfaces.API.DiracAdmin                    import DiracAdmin
+from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
+from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Utilities.CS            import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils         import where
 
-from DIRAC.ResourceStatusSystem.Policy.Configurations import CheckingFreqs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+from DIRAC.ResourceStatusSystem                         import CheckingFreqs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP        import PEP
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
 
@@ -117,6 +117,10 @@ class RSInspectorAgent( AgentModule ):
         siteType     = toBeChecked[ 4 ]
         resourceType = toBeChecked[ 5 ]
         tokenOwner   = toBeChecked[ 6 ]
+
+        # Ignore all elements with token != RS_SVC
+        if tokenOwner != 'RS_SVC':
+          continue
 
         gLogger.info( "Checking Resource %s, with status %s" % ( resourceName, status ) )
 

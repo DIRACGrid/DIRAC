@@ -18,7 +18,7 @@ users = Script.getPositionalArgs()
 
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.List import sortList
-from DIRAC.Core.Security.Misc import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 if not users:
   res = gConfig.getSections( '/Registry/Users' )

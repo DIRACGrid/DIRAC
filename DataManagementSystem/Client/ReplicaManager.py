@@ -1529,30 +1529,28 @@ class ReplicaManager( CatalogToStorage ):
     gLogger.info( "ReplicaManager.__initializeReplication: File size determined to be %s." % catalogueSize )
     ###########################################################
     # Check whether the destination storage element is banned
-#    gLogger.verbose( "ReplicaManager.__initializeReplication: Determining whether %s is banned." % destSE )
-#    configStr = '/Resources/StorageElements/BannedTarget'
-#    bannedTargets = gConfig.getValue( configStr, [] )
-#    bannedTargets = []
-#    if destSE in bannedTargets:
-#      infoStr = "ReplicaManager.__initializeReplication: Destination Storage Element is currently banned."
-#      gLogger.info( infoStr, destSE )
-#      return S_ERROR( infoStr )
-#    gLogger.info( "ReplicaManager.__initializeReplication: Destination site not banned." )
+    gLogger.verbose( "ReplicaManager.__initializeReplication: Determining whether %s is banned." % destSE )
+    configStr = '/Resources/StorageElements/BannedTarget'
+    bannedTargets = gConfig.getValue( configStr, [] )
+    if destSE in bannedTargets:
+      infoStr = "ReplicaManager.__initializeReplication: Destination Storage Element is currently banned."
+      gLogger.info( infoStr, destSE )
+      return S_ERROR( infoStr )
+    gLogger.info( "ReplicaManager.__initializeReplication: Destination site not banned." )
     ###########################################################
     # Check whether the supplied source SE is sane
     gLogger.verbose( "ReplicaManager.__initializeReplication: Determining whether source Storage Element is sane." )
-#    configStr = '/Resources/StorageElements/BannedSource'
-#    bannedSources = gConfig.getValue( configStr, [] )
-#    bannedSources = []
+    configStr = '/Resources/StorageElements/BannedSource'
+    bannedSources = gConfig.getValue( configStr, [] )
     if sourceSE:
       if not lfnReplicas.has_key( sourceSE ):
         errStr = "ReplicaManager.__initializeReplication: LFN does not exist at supplied source SE."
         gLogger.error( errStr, "%s %s" % ( lfn, sourceSE ) )
         return S_ERROR( errStr )
-#      elif sourceSE in bannedSources:
-#        infoStr = "ReplicaManager.__initializeReplication: Supplied source Storage Element is currently banned."
-#        gLogger.info( infoStr, sourceSE )
-#        return S_ERROR( errStr )
+      elif sourceSE in bannedSources:
+        infoStr = "ReplicaManager.__initializeReplication: Supplied source Storage Element is currently banned."
+        gLogger.info( infoStr, sourceSE )
+        return S_ERROR( errStr )
     gLogger.info( "ReplicaManager.__initializeReplication: Replication initialization successful." )
     resDict = {'DestStorage':destStorageElement, 'DestSE':destSE, 'Replicas':lfnReplicas, 'CatalogueSize':catalogueSize}
     return S_OK( resDict )
@@ -1560,9 +1558,8 @@ class ReplicaManager( CatalogToStorage ):
   def __resolveBestReplicas( self, sourceSE, lfnReplicas, catalogueSize ):
     ###########################################################
     # Determine the best replicas (remove banned sources, invalid storage elements and file with the wrong size)
-#    configStr = '/Resources/StorageElements/BannedSource'
-#    bannedSources = gConfig.getValue( configStr, [] )
-    bannedSources = []
+    configStr = '/Resources/StorageElements/BannedSource'
+    bannedSources = gConfig.getValue( configStr, [] )
     gLogger.info( "ReplicaManager.__resolveBestReplicas: Obtained current banned sources." )
     replicaPreference = []
     for diracSE, pfn in lfnReplicas.items():
@@ -1913,8 +1910,8 @@ class ReplicaManager( CatalogToStorage ):
     for pfn, error in res['Value']['Failed'].items():
       failed[pfnDict[pfn]] = error
     replicaTuples = []
-    for pfn in res['Value']['Successful'].keys():
-      replicaTuple = ( pfnDict[pfn], pfn, storageElementName )
+    for pfn,surl in res['Value']['Successful'].items():
+      replicaTuple = ( pfnDict[pfn], surl, storageElementName )
       replicaTuples.append( replicaTuple )
     successful = {}
     res = self.__removeCatalogReplica( replicaTuples )
@@ -2084,6 +2081,12 @@ class ReplicaManager( CatalogToStorage ):
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued accounting removal request."
       gLogger.info( infoStr )
+      for surl,value in res['Value']['Successful'].items():
+        ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
+        if not ret['OK']:
+          res['Value']['Successful'][surl] = surl
+        else:
+          res['Value']['Successful'][surl] = ret['Value']
       return res
 
   #########################################################################
@@ -2199,30 +2202,15 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( replicaDict )
 
   def __SEActive( self, se ):
-#    storageCFGBase = "/Resources/StorageElements"
-#    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
-    rssClient = ResourceStatusClient()
-    resR = rssClient.getStorageElement( se, 'Read' )
-    resW = rssClient.getStorageElement( se, 'Write' )
-    
-    if not resR['Ok'] or not resW['Ok']:
-      return S_ERROR( "SE not known" ) 
-    
+    storageCFGBase = "/Resources/StorageElements"
+    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
+    if not res['OK']:
+      return S_ERROR( "SE not known" )
     seStatus = {'Read':True, 'Write':True}
-     
-    if not ( resR['Value'][1] == 'Active' or resR['Value'][1] == 'Bad' ) :
-      seStatus[ 'Read' ] = False
-    if not ( resW['Value'][1] == 'Active' or resW['Value'][1] == 'Bad' ) :
-      seStatus[ 'Write' ] = False
-    
-        
-    #if not res['OK']:
-    #  return S_ERROR( "SE not known" )
-    #seStatus = {'Read':True, 'Write':True}
-    #if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
-    #  seStatus['Read'] = False
-    #if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
-    #  seStatus['Write'] = False
+    if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
+      seStatus['Read'] = False
+    if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
+      seStatus['Write'] = False
     return S_OK( seStatus )
 
   def __initialiseAccountingObject( self, operation, se, files ):

@@ -45,10 +45,7 @@ class Mail:
       smtp.connect()
       smtp.sendmail( self._fromAddress, self._mailAddress, text )
     except Exception, x:
-      gLogger.error( "Sending mail failed", str( x ) )
       return S_ERROR( "Sending mail failed %s" % str( x ) )
 
     smtp.quit()
-    gLogger.info( "The mail was succesfully sent", "to %s" \
-                  % ', '.join( addresses ) )
     return S_OK( "The mail was succesfully sent" )

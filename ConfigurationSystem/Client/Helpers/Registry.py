@@ -1,6 +1,7 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
+import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
@@ -111,6 +112,22 @@ def getPropertiesForEntity( group, name = "", dn = "", defaultValue = None ):
   else:
     return getPropertiesForGroup( group, defaultValue )
 
+def __matchProps( sProps, rProps ):
+  foundProps = []
+  for prop in sProps:
+    if prop in rProps:
+      foundProps.append( prop )
+
+def groupHasProperties( groupName, propList ):
+  if type( propList ) in types.StringTypes:
+    propList = [ propList ]
+  return __matchProps( propList, getPropertiesForGroup( groupName ) )
+
+def hostHasProperties( hostName, propList ):
+  if type( propList ) in types.StringTypes:
+    propList = [ propList ]
+  return __matchProps( propList, getPropertiesForHost( hostName ) )
+
 def getUserOption( userName, optName, defaultValue = "" ):
   return gConfig.getValue( "%s/Users/%s/%s" % ( gBaseSecuritySection, userName, optName ), defaultValue )
 
@@ -119,6 +136,9 @@ def getGroupOption( groupName, optName, defaultValue = "" ):
 
 def getHostOption( hostName, optName, defaultValue = "" ):
   return gConfig.getValue( "%s/Hosts/%s/%s" % ( gBaseSecuritySection, hostName, optName ), defaultValue )
+
+def getVOOption( voName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/VO/%s/%s" % ( gBaseSecuritySection, voName, optName ), defaultValue )
 
 
 def getBannedIPs():

@@ -12,7 +12,7 @@ import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where, assignOrRaise
 from DIRAC.ResourceStatusSystem.PolicySystem                import Status
-from DIRAC.ResourceStatusSystem.Policy                      import Configurations
+from DIRAC.ResourceStatusSystem                             import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, \
     InvalidStatus, InvalidSiteType, InvalidServiceType, InvalidResourceType, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
@@ -59,14 +59,14 @@ class PDP:
 
     self.VOExtension = VOExtension
 
-    self.__granularity  = assignOrRaise(granularity, Configurations.ValidRes, InvalidRes, self, self.__init__)
+    self.__granularity  = assignOrRaise(granularity, ValidRes, InvalidRes, self, self.__init__)
     self.__name         = name
-    self.__status       = assignOrRaise(status, Configurations.ValidStatus, InvalidStatus, self, self.__init__)
-    self.__formerStatus = assignOrRaise(formerStatus, Configurations.ValidStatus, InvalidStatus, self, self.__init__)
+    self.__status       = assignOrRaise(status, ValidStatus, InvalidStatus, self, self.__init__)
+    self.__formerStatus = assignOrRaise(formerStatus, ValidStatus, InvalidStatus, self, self.__init__)
     self.__reason       = reason
-    self.__siteType     = assignOrRaise(siteType, Configurations.ValidSiteType, InvalidSiteType, self, self.__init__)
-    self.__serviceType  = assignOrRaise(serviceType, Configurations.ValidServiceType, InvalidServiceType, self, self.__init__)
-    self.__resourceType = assignOrRaise(resourceType, Configurations.ValidResourceType, InvalidResourceType, self, self.__init__)
+    self.__siteType     = assignOrRaise(siteType, ValidSiteType, InvalidSiteType, self, self.__init__)
+    self.__serviceType  = assignOrRaise(serviceType, ValidServiceType, InvalidServiceType, self, self.__init__)
+    self.__resourceType = assignOrRaise(resourceType, ValidResourceType, InvalidResourceType, self, self.__init__)
 
     cc      = CommandCaller()
     self.pc = PolicyCaller(cc)

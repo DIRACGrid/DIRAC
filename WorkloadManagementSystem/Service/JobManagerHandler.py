@@ -53,6 +53,8 @@ class JobManagerHandler( RequestHandler ):
     self.owner = credDict[ 'username' ]
     self.peerUsesLimitedProxy = credDict[ 'isLimitedProxy' ]
     self.diracSetup = self.serviceInfoDict['clientSetup']
+    serviceSectionPath = self.serviceInfoDict['serviceSectionPath']
+    self.maxParametricJobs = gConfig.getValue('%s/MaxParametricJobs'%serviceSectionPath,MAX_PARAMETRIC_JOBS)
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
 
   ###########################################################################
@@ -87,29 +89,50 @@ class JobManagerHandler( RequestHandler ):
       if jobClassAd.isAttributeList('Parameters'):
         parameterList = jobClassAd.getListFromExpression('Parameters')
       else:
+        pStep = 0
+        pFactor = 1
         nParameters = jobClassAd.getAttributeInt('Parameters')
         if not nParameters:
           value = jobClassAd.get_expression('Parameters')
           return S_ERROR('Illegal value for Parameters JDL field: %s' % value)
+        
         if jobClassAd.lookupAttribute('ParameterStart'):
-          pStart = jobClassAd.getAttributeInt('ParameterStart')
-        else:
-          return S_ERROR('Missing JDL field ParameterStart')
+          value = jobClassAd.get_expression('ParameterStart').replace('"','')
+          try:
+            pStart = int(value)
+          except:
+            try:
+              pStart = float(value)
+            except:   
+              return S_ERROR('Illegal value for ParameterStart JDL field: %s' % value)
+            
         if jobClassAd.lookupAttribute('ParameterStep'):  
           pStep = jobClassAd.getAttributeInt('ParameterStep')
           if not pStep:
-            value = jobClassAd.get_expression('ParameterStep')
-            return S_ERROR('Illegal value for ParameterStep JDL field: %s' % value)
-        else:
-          return S_ERROR('Missing JDL field ParameterStep')  
-        parameterList = list( range(pStart,pStart+pStep*nParameters,pStep) )
+            pStep = jobClassAd.getAttributeFloat('ParameterStep')
+            if not pStep:
+              value = jobClassAd.get_expression('ParameterStep')
+              return S_ERROR('Illegal value for ParameterStep JDL field: %s' % value)
+        if jobClassAd.lookupAttribute('ParameterFactor'):  
+          pFactor = jobClassAd.getAttributeInt('ParameterFactor')
+          if not pFactor:
+            pFactor = jobClassAd.getAttributeFloat('ParameterFactor')
+            if not pFactor:
+              value = jobClassAd.get_expression('ParameterFactor')
+              return S_ERROR('Illegal value for ParameterFactor JDL field: %s' % value) 
+        
+        parameterList = list()
+        parameterList.append(pStart)
+        for i in range(nParameters-1):
+          parameterList.append(parameterList[i]*pFactor+pStep)
+        
 
-      if len(parameterList) > MAX_PARAMETRIC_JOBS:
-        return S_ERROR('The number of parametric jobs exceeded the limit of %d' % MAX_PARAMETRIC_JOBS  )  
+      if len(parameterList) > self.maxParametricJobs:
+        return S_ERROR('The number of parametric jobs exceeded the limit of %d' % self.maxParametricJobs  )  
         
       jobDescList = []
-      for p in parameterList:
-        jobDescList.append( jobDesc.replace('%s',str(p)) )
+      for n,p in enumerate(parameterList):
+        jobDescList.append( jobDesc.replace('%s',str(p)).replace('%n',str(n)) )
     else:
       jobDescList = [ jobDesc ]     
 
