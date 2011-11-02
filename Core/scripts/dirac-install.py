@@ -1198,7 +1198,7 @@ def writeDefaultConfiguration():
 
   # filePath = os.path.join( cliParams.targetPath, "defaults-%s.cfg" % cliParams.installation )
   # Keep the default configuration file in the working directory
-  filePath = os.path.join( "defaults-%s.cfg" % cliParams.installation )
+  filePath = "defaults-%s.cfg" % cliParams.installation
   try:
     fd = open( filePath, "wb" )
     fd.write( instCFG.toString() )
