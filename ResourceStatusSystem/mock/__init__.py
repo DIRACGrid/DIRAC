@@ -7,4 +7,5 @@ ValidServiceType  = [ '' ]
 ValidResourceType = [ '' ]
 PolicyTypes       = [ '' ]
 
-CheckingFreqs     = {}
+CheckingFreqs     = { 'StorageElementsFreqs': {}, 'SitesFreqs' : {}, 
+                      'ResourcesFreqs' : {}, 'ServicesFreqs' : {} }
