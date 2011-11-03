@@ -4,6 +4,7 @@
 __RCSID__ = "$Id:  $"
 
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckDBExecution, ValidateDBTypes
 
 class ResourceStatusDB( object ):
   """
@@ -89,6 +90,8 @@ class ResourceStatusDB( object ):
    
     self.mm    = MySQLMonkey( self )  
 
+  @CheckDBExecution
+  @ValidateDBTypes
   def insert( self, args, kwargs ):
     """    
     Inserts args in the DB making use of kwargs where parameters such as
@@ -109,6 +112,8 @@ class ResourceStatusDB( object ):
     """
     return self.mm.insert2( *args, **kwargs )
 
+  @CheckDBExecution
+  @ValidateDBTypes
   def update( self, args, kwargs ):
     """    
     Updates row with values given on args. The row selection is done using the
@@ -130,6 +135,8 @@ class ResourceStatusDB( object ):
     """
     return self.mm.update2( *args, **kwargs )
 
+  @CheckDBExecution
+  @ValidateDBTypes
   def get( self, args, kwargs ):
     """   
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
@@ -148,6 +155,8 @@ class ResourceStatusDB( object ):
     """
     return self.mm.get2( *args, **kwargs )
 
+  @CheckDBExecution
+  @ValidateDBTypes
   def delete( self, args, kwargs ):
     """     
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
@@ -169,6 +178,7 @@ class ResourceStatusDB( object ):
     """
     return self.mm.delete2( *args, **kwargs )
   
+  @CheckDBExecution
   def getSchema( self ):
     """      
     Returns a dictionary with database schema, this includes table and column
@@ -184,6 +194,7 @@ class ResourceStatusDB( object ):
     """    
     return { 'OK': True, 'Value' : self.mm.SCHEMA }
     
+  @CheckDBExecution  
   def inspectSchema( self ):
     """     
     Returns an object which represents the database schema and can be browsed.
