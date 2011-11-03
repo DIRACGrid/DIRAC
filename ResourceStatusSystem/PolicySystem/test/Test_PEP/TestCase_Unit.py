@@ -32,7 +32,7 @@ class TestCase_Unit( unittest.TestCase ):
     self.assertEquals( res, { 'PolicyCombinedResult' : {} } )
     res = self.pep.enforce( tokenOwner = '' )
     self.assertEquals( res, { 'PolicyCombinedResult' : {} } )
-    res = self.pep.enforce( userNewRes = False )
+    res = self.pep.enforce( useNewRes = False )
     self.assertEquals( res, { 'PolicyCombinedResult' : {} } )
     res = self.pep.enforce( knownInfo = '' )
     self.assertEquals( res, { 'PolicyCombinedResult' : {} } )
