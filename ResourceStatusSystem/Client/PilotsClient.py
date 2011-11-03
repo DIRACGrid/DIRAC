@@ -6,102 +6,16 @@ __RCSID__  = "$Id$"
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
-class PilotsClient:
+class PilotsClient( object ):
   """ 
   PilotsClient class is a client to get pilots stats.
   """
 
-
-#  def getPilotsStats( self, granularity, name, periods ):
-#    """
-#    Return pilot stats
-#
-#    :param granularity: should be a ValidRes
-#    :type granularity: string
-#    :param name: should be the name of the ValidRes
-#    :type name: string
-#    :param periods: contains the periods to consider in the query
-#    :type periods: list
-#    :returns: 
-#    
-#    :return:
-#      {
-#        'MeanProcessedPilots': X'
-#
-#        'LastProcessedPilots': X'
-#      }
-#    """
-#
-#    if granularity.capitalize() not in ValidRes:
-#      raise InvalidRes, where(self, self.getPilotsStats)
-#
-#    if granularity == 'Site':
-#      entity = getGOCSiteName(name)
-#      if not entity['OK']:
-#        raise RSSException, entity['Message']
-#      entity = entity['Value']
-#      _granularity = 'Site'
-#    else:
-#      entity = name
-#      _granularity = 'GridCE'
-
-    #######TODO
-#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots',
-#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2),
-#                                                 datetime.datetime.utcnow(), {granularity:[entity]},
-#                                                 'GridStatus')
-#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots',
-#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2),
-#                                                 datetime.datetime.utcnow(), {granularity:[entity]},
-#                                                 'GridStatus')
-#
-#    for x in numberOfPilots['Value']['data'].itervalues():
-#      total = 0
-#      for y in x.values():
-#        total = total+y
-#
-#    print r
-
-
-#############################################################################
-#
-#  def getPilotsEff(self, granularity, name, periods):
-#    """
-#    Return pilot stats of entity in args for periods
-#
-#    :Parameters:
-#      `granularity`
-#        string - should be a ValidRes
-#
-#      `name`
-#        string - should be the name of the ValidRes
-#
-#      `name`
-#        list - periods contains the periods to consider in the query
-#
-#    :return:
-#      {
-#        'PilotsEff': X (0-1)'
-#      }
-#    """
-#
-#    if granularity == 'Site':
-#      entity = getSiteRealName(name)
-#      _granularity = 'Site'
-#    else:
-##      entity = name
-#      granularity = 'GridCE'
-#
-    #######TODO
-#    numberOfPilots = self.rc.getReport('Pilot', 'NumberOfPilots',
-#                                       datetime.datetime.utcnow()-datetime.timedelta(hours = 24),
-#                                       datetime.datetime.utcnow(), {self._granularity:[self_entity]},
-#                                       'GridStatus')
-
-################################################################################
-
+  def __init__( self ):
+    self.gate = PrivatePilotsClient()
+    
   def getPilotsSimpleEff( self, granularity, name, siteName = None, 
-                          RPCWMSAdmin = None ):
+                          RPCWMSAdmin = None  ):  
     """
     
     Return pilots simple efficiency of entity in args for periods
@@ -119,6 +33,15 @@ class PilotsClient:
     :return: { PilotsEff : Good | Fair | Poor | Idle | Bad }
       
     """
+    return self.gate.getPilotsSimpleEff( granularity, name, siteName = siteName, 
+                                         RPCWMSAdmin = RPCWMSAdmin )
+
+################################################################################
+
+class PrivatePilotsClient( object ):
+
+  def getPilotsSimpleEff( self, granularity, name, siteName = None, 
+                          RPCWMSAdmin = None ):
 
     if RPCWMSAdmin is not None:
       RPC = RPCWMSAdmin
