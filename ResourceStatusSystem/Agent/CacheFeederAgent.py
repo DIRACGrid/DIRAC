@@ -100,7 +100,7 @@ class CacheFeederAgent( AgentModule ):
         try:
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()
-          
+                  
           if not res or res is None:
             gLogger.info('  returned empty...')
             continue

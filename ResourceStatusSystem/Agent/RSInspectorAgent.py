@@ -99,10 +99,10 @@ class RSInspectorAgent( AgentModule ):
     if self.ResourceNamesInCheck:
       _msg = "Wait for queue to get empty before terminating the agent (%d tasks)" 
       _msg = _msg % len( self.ResourceNamesInCheck )
-      self.log.info( _msg )
+      gLogger.info( _msg )
       while self.ResourceNamesInCheck:
         time.sleep( 2 )
-      self.log.info( "Queue is empty, terminating the agent..." )
+      gLogger.info( "Queue is empty, terminating the agent..." )
     return S_OK()
 
 ################################################################################
