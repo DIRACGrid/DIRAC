@@ -7,7 +7,6 @@ import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 from DIRAC.ResourceStatusSystem.PolicySystem                import Status
-from DIRAC.ResourceStatusSystem                             import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller   import PolicyCaller
@@ -26,8 +25,8 @@ class PDP:
     self.clients   = clients
     self.pc        = PolicyCaller( cc, **clients )
 
-  def setup( self, VOExtension, granularity = None, name = None, statusType = None, 
-             status = None, formerStatus = None, reason = None, siteType = None, 
+  def setup( self, VOExtension, granularity = None, name = None, statusType = None,
+             status = None, formerStatus = None, reason = None, siteType = None,
              serviceType = None, resourceType = None, useNewRes = False ):
     """
     PDP (Policy Decision Point) initialization
@@ -109,58 +108,52 @@ class PDP:
                                   resourceType = self.__resourceType,
                                   useNewRes    = self.__useNewRes)
 
-    for policyGroup in EVAL:
+    singlePolicyResults = []
+    decision = {}
 
-      policyType = policyGroup['PolicyType']
+    policyType = EVAL['PolicyType'] # type: generator
 
-      if self.policy is not None:
-        # Only the policy provided will be evaluated
-        # FIXME: Check that the policies are valid.
-        singlePolicyResults = self.policy.evaluate()
-      else:
-        if policyGroup['Policies'] is None:
-          return { 'SinglePolicyResults' : [],
-                   'PolicyCombinedResult' : {'PolicyType': policyType,
-                                             'Action': False,
-                                             'Reason':'No policy results'}}
-        else:
-          singlePolicyResults = self._invocation( self.VOExtension, self.__granularity,
-                                                  self.__name, self.__status, self.policy,
-                                                  self.args, policyGroup['Policies'])
+    if self.policy:
+      # Only the policy provided will be evaluated
+      # FIXME: Check that the policies are valid.
+      singlePolicyResults = self.policy.evaluate()
 
-      policyCombinedResults = self._policyCombination(singlePolicyResults)
-      assert(type(policyCombinedResults) == dict)
+    else:
+      singlePolicyResults = self._invocation( self.VOExtension, self.__granularity,
+                                              self.__name, self.__status, self.policy,
+                                              self.args, EVAL['Policies'])
 
-      if not policyCombinedResults:
-        return { 'SinglePolicyResults' : singlePolicyResults,
-                 'PolicyCombinedResult': {} }
+    policyCombinedResults = self._policyCombination(singlePolicyResults)
+    if policyCombinedResults == {}:
+      policyCombinedResults["Action"] = False
+      policyCombinedResults["Reason"] = 'No policy results'
+      policyCombinedResults["PolicyType"] = policyType
 
-      #
-      # policy results communication
-      #
+    if not policyCombinedResults.has_key("Status"):
+      return { 'SinglePolicyResults' : singlePolicyResults,
+               'PolicyCombinedResult': policyCombinedResults }
 
-      newstatus = policyCombinedResults['Status']
+    #
+    # policy results communication
+    #
 
-      if newstatus != self.__status: # Policies satisfy
-        reason = policyCombinedResults['Reason']
-        newPolicyType = self.ig.getNewPolicyType(self.__granularity, newstatus)
-        for npt in newPolicyType:
-          if npt not in policyType:
-            policyType.append(npt)
-        decision = { 'PolicyType': policyType, 'Action': True, 'Status': newstatus, 'Reason': reason }
-        if policyCombinedResults.has_key('EndDate'):
-          decision['EndDate'] = policyCombinedResults['EndDate']
+    newstatus = policyCombinedResults['Status']
+    reason    = policyCombinedResults['Reason']
 
-      else: # Policies does not satisfy
-        reason = policyCombinedResults['Reason']
-        decision = { 'PolicyType': policyType, 'Action': False, 'Reason': reason }
-        if policyCombinedResults.has_key('EndDate'):
-          decision['EndDate'] = policyCombinedResults['EndDate']
+    if newstatus != self.__status: # Policies satisfy
+      newPolicyType = self.ig.getNewPolicyType(self.__granularity, newstatus)
+      policyType = set(policyType) & set(newPolicyType)
+      decision = { 'PolicyType': policyType, 'Action': True, 'Status': newstatus, 'Reason': reason }
 
-    res = { 'SinglePolicyResults' : singlePolicyResults,
-            'PolicyCombinedResult' : decision }
+    else:                          # Policies does not satisfy
+      decision = { 'PolicyType': policyType, 'Action': False, 'Reason': reason }
 
-    assert(type(res) == dict)
+    if policyCombinedResults.has_key('EndDate'):
+      decision['EndDate'] = policyCombinedResults['EndDate']
+
+    return { 'SinglePolicyResults'  : singlePolicyResults,
+             'PolicyCombinedResult' : decision }
+
     return res
 
 ################################################################################
@@ -168,7 +161,7 @@ class PDP:
   def _invocation(self, VOExtension, granularity, name, status, policy, args, policies):
     """ One by one, use the PolicyCaller to invoke the policies, and putting
         their results in `policyResults`. When the status is `Unknown`, invokes
-        `self.__useOldPolicyRes`.
+        `self.__useOldPolicyRes`. Always returns a list, possibly empty.
     """
 
     policyResults = []
@@ -291,9 +284,9 @@ class PDP:
     """ Use the RSS Service to get an old policy result.
         If such result is older than 2 hours, it returns {'Status':'Unknown'}
     """
-    
+
     res = self.clients['ResourceManagementAPI'].getPolicyResult( name = name, policyName = policyName )#, True )
-    
+
     if not res['OK']:
       raise RSSException, where( self, self.__useOldPolicyRes ) + ' Could not get a policy result'
 
@@ -319,14 +312,14 @@ class PDP:
     return result
 
 ################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ################################################################################
 
 '''
   HOW DOES THIS WORK.
-    
+
     will come soon...
 '''
-            
+
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -103,18 +103,15 @@ class InfoGetter:
 
       EVAL['Panels'] = panels_info_dict
 
-    return [EVAL]
-
-################################################################################
-
-  def getNewPolicyType(self, granularity, newStatus):
-    return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
+    return EVAL
 
 ################################################################################
 
   def __getPolToEval( self, granularity, statusType = None, status=None,
                       formerStatus=None, siteType=None, serviceType=None,
                       resourceType=None, useNewRes=False ):
+    """Returns a possibly empty list of dicts, each dict containing
+    enough information to evaluate a given policy"""
 
     # This dict is constructed to be used with function dictMatch that
     # helps selecting policies. **kwargs are not used due to the fact
@@ -128,12 +125,7 @@ class InfoGetter:
                  'ResourceType' : resourceType }
 
     pConfig = getTypedDictRootedAt("Policies")
-    pol_to_eval = []
-
-    for p in pConfig:
-      if Utils.dictMatch(argsdict, pConfig[p]):
-        pol_to_eval.append(p)
-
+    pol_to_eval = (p for p in pConfig if Utils.dictMatch(argsdict, pConfig[p]))
     polToEval_Args = []
 
     for p in pol_to_eval:
@@ -171,7 +163,7 @@ class InfoGetter:
                      formerStatus=None, newStatus=None, siteType=None,
                      serviceType=None, resourceType=None ):
     """Get Policy Types from config that match the given keyword
-    arguments"""
+    arguments. Always returns a generator object, possibly empty."""
 
     # This dict is constructed to be used with function dictMatch that
     # helps selecting policies. **kwargs are not used due to the fact
@@ -186,19 +178,10 @@ class InfoGetter:
                 'ResourceType' : resourceType }
 
     pTconfig = getTypedDictRootedAt("PolicyTypes")
+    return (pt for pt in pTconfig if Utils.dictMatch(argsdict, pTconfig[pt]))
 
-    pTypes = []
-
-    for pt in pTconfig:
-      if Utils.dictMatch(argsdict, pTconfig[pt]):
-        pTypes.append(pt)
-
-    for pt_name in pTypes:
-      if 'Alarm_PolType' in pt_name:
-        pTypes.remove(pt_name)
-        pTypes.append('Alarm_PolType')
-
-    return pTypes
+  def getNewPolicyType(self, granularity, newStatus):
+    return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
 
 ################################################################################
 

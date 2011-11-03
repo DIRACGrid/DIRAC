@@ -58,7 +58,7 @@ class PEP:
 
   """
 
-  def __init__( self, VOExtension, pdp = None, nc = None, setup = None, 
+  def __init__( self, VOExtension, pdp = None, nc = None, setup = None,
                 da = None, csAPI = None, knownInfo = None, clients = {} ):
     """
     enforce policies, using a PDP  (Policy Decision Point), based on
@@ -111,14 +111,14 @@ class PEP:
       from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
       self.rsAPI = ResourceStatusAPI( )
     else:
-      self.rsAPI = clients[ 'ResourceStatusAPI' ]       
+      self.rsAPI = clients[ 'ResourceStatusAPI' ]
 
     if not clients.has_key( 'ResourceManagementAPI'):
       # Use standard DIRAC DB
       from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
       self.rmAPI = ResourceManagementAPI()
     else:
-      self.rmAPI = clients[ 'ResourceManagementAPI' ]  
+      self.rmAPI = clients[ 'ResourceManagementAPI' ]
 
     #setup
     if setup is None:
@@ -168,8 +168,12 @@ class PEP:
     ###################
 
     granularity = Utils.assignOrRaise( granularity, ValidRes, InvalidRes, self, self.__init__ )
-    statusType   = Utils.assignOrRaise( statusType, ValidStatusTypes[ granularity ]['StatusType'], \
-                                                InvalidStatus, self, self.enforce )
+    try:
+      statusType   = Utils.assignOrRaise( statusType, ValidStatusTypes[ granularity ]['StatusType'], \
+                                            InvalidStatus, self, self.enforce )
+    except KeyError:
+      statusType = "''" # "strange" default value returned by CS
+
     status       = Utils.assignOrRaise( status, ValidStatus, InvalidStatus, self, self.enforce )
     formerStatus = Utils.assignOrRaise( formerStatus, ValidStatus, InvalidStatus, self, self.enforce )
     siteType     = Utils.assignOrRaise( siteType, ValidSiteType, InvalidSiteType, self, self.enforce )
@@ -219,14 +223,14 @@ class PEP:
         m.RealBanPolTypeActions( granularity, name, res, self.da, self.csAPI, self.setup )
 
 ################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ################################################################################
 
 '''
   HOW DOES THIS WORK.
-    
+
     will come soon...
 '''
-            
+
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF        
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
