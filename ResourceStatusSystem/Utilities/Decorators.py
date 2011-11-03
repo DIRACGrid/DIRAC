@@ -3,24 +3,40 @@
 ################################################################################
 __RCSID__  = "$Id$"
 
-import types
-import inspect
+import inspect, types
 
 from DIRAC import S_ERROR, gLogger
 
-class CheckExecution2( object ):
-  
+class BaseDec( object ):
+
   def __init__( self, f ):
     self.f = f
     
   def __get__( self, obj, objtype = None ):
     return types.MethodType( self, obj, objtype ) 
-    
+
   def __call__( self, *args, **kwargs ):
-      try:
-        return self.f( *args, **kwargs )
-      except Exception, x:
-        return S_ERROR( x )
+    # Do it yourself !
+    pass
+
+class CheckDBExecution( BaseDec ):
+  
+  def __call__( self, *args, **kwargs ):
+    
+    try:
+      return self.f( *args, **kwargs )
+    except Exception, x:
+      return S_ERROR( x )
+
+class ValidateDBTypes( BaseDec ):
+  
+  def __call__( self, *args, **kwargs ):  
+  
+    if not isinstance( args[1], tuple ):
+      return S_ERROR( 'args MUST be a tuple, not %s' % type( args[1] ))
+    if not isinstance( args[2], dict ):
+      return S_ERROR( 'kwargs MUST be a dict, not %s' % type( args[2] ))
+    return self.f( *args, **kwargs )
 
 ################################################################################
 
@@ -66,12 +82,12 @@ class HandlerDec2( object ):
 
     fname = self.f.__name__.replace( 'export_', '' )
     db    = self.f( *args )
-
+    
     if ins.args[-1] == 'kwargs':       
       kwargs = list( args )[ -1 ]
       args   = tuple( list( args )[ :-1 ] )
 
-    args  = tuple( list( args )[ 1:] ) 
+    args  = tuple( list( args )[ 1:] )[ 0 ] 
 
     try:
       dbFunction = getattr( db, fname )
@@ -86,7 +102,7 @@ class HandlerDec2( object ):
     gLogger.info( '%s.kwargs: %s' % ( fname, kwargs ) )
         
     try:
-      resQuery = dbFunction( *args, **kwargs )
+      resQuery = dbFunction( args, kwargs )
       gLogger.info( 'Done %s' % fname )
     except Exception, x:
       gLogger.exception( 'Something went wrong executing %s \n %s' % ( fname, x ) )    
@@ -322,10 +338,7 @@ class ClientDec3( object ):
      
     if kwargs.has_key( 'table' ):
       return gateFunction( args, kwargs )
-    
-    print args
-    print kwargs
-    
+
     return gateFunction( *args, **kwargs )
     
 ################################################################################
@@ -403,7 +416,7 @@ class ClientDec5( object ):
     return types.MethodType( self, obj, objtype )
     
   def __call__( self, *args, **kwargs ):  
-
+     
     INTERNAL_FUNCTIONS = [ 'insert', 'update', 'get', 'delete' ]
 
     fname   = self.f.__name__   
@@ -446,6 +459,10 @@ class ClientDec5( object ):
       for fk in funkwargs:
         kwargs.pop( fk, None )    
 
+    else:     
+      if not len( args ) == len ( ins.args ):
+        raise TypeError( '%s arguments received' % len( args ))
+
     args    = tuple( list(newArgs) + newKwargs )         
     
     try:
@@ -460,6 +477,7 @@ class ClientDec5( object ):
             _element = args[ 0 ]
             _table   = _table.replace( 'Element', _element )
             args = args[ 1: ]
+            kwargs.pop( 'element', None ) 
 
       kwargs[ 'table' ] = _table
                    
@@ -485,12 +503,10 @@ class APIDecorator( object ):
     eBaseAPI = args[ 0 ].eBaseAPI
     try:
       eBaseAPIFunction      = getattr( eBaseAPI, self.f.__name__ )
+      args = args[1:]
+      return eBaseAPIFunction( *args, **kwargs )
     except Exception, x:
-      return S_ERROR( x )
-    
-    args = args[1:]
-     
-    return eBaseAPIFunction( *args, **kwargs )          
+      return S_ERROR( x )        
           
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  

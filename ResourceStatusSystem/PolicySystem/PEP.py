@@ -1,14 +1,12 @@
 ################################################################################
 # $HeadURL $
 ################################################################################
-__RCSID__  = "$Id$"
-
 """
   Module used for enforcing policies. Its class is used for:
     1. invoke a PDP and collects results
     2. enforcing results by:
        a. saving result on a DB
-       b. rasing alarms
+       b. raising alarms
        c. other....
 """
 
@@ -222,15 +220,7 @@ class PEP:
         m = Utils.voimport(actionBaseMod + ".RealBan_PolType", self.VOExtension)
         m.RealBanPolTypeActions( granularity, name, res, self.da, self.csAPI, self.setup )
 
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
+    return resDecisions
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

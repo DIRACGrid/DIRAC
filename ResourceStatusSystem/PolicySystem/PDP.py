@@ -95,7 +95,6 @@ class PDP:
     self.policy    = policyIn
     self.knownInfo = knownInfo
 
-
     self.ig = InfoGetter(self.VOExtension)
 
     EVAL = self.ig.getInfoToApply(('policy', 'policyType'),
@@ -296,16 +295,6 @@ class PDP:
     result['PolicyName'] = policyName
 
     return result
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

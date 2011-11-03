@@ -98,10 +98,10 @@ class SeSInspectorAgent( AgentModule ):
     if self.ServiceNamesInCheck:
       _msg = "Wait for queue to get empty before terminating the agent (%d tasks)" 
       _msg = _msg % len( self.ServiceNamesInCheck )
-      self.log.info( _msg )
+      gLogger.info( _msg )
       while self.ServiceNamesInCheck:
         time.sleep( 2 )
-      self.log.info( "Queue is empty, terminating the agent..." )
+      gLogger.info( "Queue is empty, terminating the agent..." )
     return S_OK()
 
 ################################################################################

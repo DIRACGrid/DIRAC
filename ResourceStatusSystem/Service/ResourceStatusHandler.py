@@ -73,6 +73,7 @@ class ResourceStatusHandler( RequestHandler ):
     global db
     db = database
 
+  
   types_insert = [ tuple, dict ]
   @HandlerDec2
   def export_insert( self, args, kwargs ):

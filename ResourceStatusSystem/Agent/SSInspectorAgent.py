@@ -98,10 +98,10 @@ class SSInspectorAgent( AgentModule ):
     if self.SiteNamesInCheck:
       _msg = "Wait for queue to get empty before terminating the agent (%d tasks)" 
       _msg = _msg % len( self.SiteNamesInCheck )
-      self.log.info( _msg )
+      gLogger.info( _msg )
       while self.SiteNamesInCheck:
         time.sleep( 2 )
-      self.log.info( "Queue is empty, terminating the agent..." )
+      gLogger.info( "Queue is empty, terminating the agent..." )
     return S_OK()
   
 ################################################################################
