@@ -14,8 +14,9 @@ class DescriptionFixture( unittest.TestCase ):
     mockedModule.ResourceStatusDB = ResourceStatusDB
     mockedModule.Synchronizer     = Synchronizer
     
+    mockedModule.ResourceStatusHandler.__bases__ = ( mockedModule.RequestHandler, )
+    
     mockedModule.initializeResourceStatusHandler( 1 )
-    mockedModule.ResourceStatusHandler.__bases__ = ( mockedModule.RequestHandler, ) 
     self.handler = mockedModule.ResourceStatusHandler( '', '', '', '' )
     
   def tearDown( self ):  
