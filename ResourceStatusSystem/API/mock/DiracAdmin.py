@@ -1,0 +1,2 @@
+class DiracAdmin( object ):
+  pass
