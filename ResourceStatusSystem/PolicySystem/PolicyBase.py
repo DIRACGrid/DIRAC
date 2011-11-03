@@ -12,6 +12,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 from DIRAC.ResourceStatusSystem                             import ValidRes
 
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker      import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
 
 class PolicyBase(object):
   """
@@ -109,14 +110,13 @@ class PolicyBase(object):
     else:
       if not self.command:
         # use standard Command
-        from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
         cc = CommandCaller()
-        self.command = cc.setCommandObject(self.commandName)
+        self.command = cc.setCommandObject( self.commandName )
 
       clientsInvoker = ClientsInvoker()
-      clientsInvoker.setCommand(self.command)
+      clientsInvoker.setCommand( self.command )
 
-      self.command.setArgs(self.args)
+      self.command.setArgs( self.args )
 
       result = clientsInvoker.doCommand()
 

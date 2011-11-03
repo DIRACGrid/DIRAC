@@ -217,16 +217,8 @@ class PEP:
       if 'RealBan_PolType' in policyType and realBan == True:
         m = Utils.voimport(actionBaseMod + ".RealBan_PolType", self.VOExtension)
         m.RealBanPolTypeActions( granularity, name, res, self.da, self.csAPI, self.setup )
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
     
-    will come soon...
-'''
+    return resDecisions
             
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF        

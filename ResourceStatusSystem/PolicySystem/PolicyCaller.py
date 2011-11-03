@@ -10,7 +10,8 @@ __RCSID__  = "$Id$"
 
 class PolicyCaller:
 
-  def __init__(self, commandCallerIn = None, **clients ):
+  def __init__( self, commandCallerIn = None, **clients ):
+    
     if commandCallerIn is not None:
       self.cc = commandCallerIn
     else:
@@ -21,8 +22,9 @@ class PolicyCaller:
 
 ################################################################################
 
-  def policyInvocation(self, VOExtension, granularity = None, name = None, status = None, policy = None,
-                       args = None, pName = None, pModule = None, extraArgs = None, commandIn = None):
+  def policyInvocation( self, VOExtension = None, granularity = None, name = None, 
+                        status = None, policy = None, args = None, pName = None, 
+                        pModule = None, extraArgs = None, commandIn = None ):
     """
     Invokes a policy:
 
@@ -43,9 +45,10 @@ class PolicyCaller:
     p = policy
     a = args
 
-    moduleBase = VOExtension + "DIRAC.ResourceStatusSystem.Policy."
-
     if p is None:
+      
+      moduleBase = VOExtension + "DIRAC.ResourceStatusSystem.Policy."
+      
       try:
         module = moduleBase + pModule
         policyModule = __import__(module, globals(), locals(), ['*'])
@@ -83,16 +86,6 @@ class PolicyCaller:
     policy.setArgs(arguments)
     policy.setCommand(commandIn)
     return policy.evaluate()
-  
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
             
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
