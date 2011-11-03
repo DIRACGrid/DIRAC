@@ -108,9 +108,6 @@ class PDP:
                                   resourceType = self.__resourceType,
                                   useNewRes    = self.__useNewRes)
 
-    singlePolicyResults = []
-    decision = {}
-
     policyType = EVAL['PolicyType'] # type: generator
 
     if self.policy:
@@ -124,37 +121,26 @@ class PDP:
                                               self.args, EVAL['Policies'])
 
     policyCombinedResults = self._policyCombination(singlePolicyResults)
+
     if policyCombinedResults == {}:
-      policyCombinedResults["Action"] = False
-      policyCombinedResults["Reason"] = 'No policy results'
+      policyCombinedResults["Action"]     = False
+      policyCombinedResults["Reason"]     = 'No policy results'
       policyCombinedResults["PolicyType"] = policyType
 
-    if not policyCombinedResults.has_key("Status"):
-      return { 'SinglePolicyResults' : singlePolicyResults,
-               'PolicyCombinedResult': policyCombinedResults }
+    if policyCombinedResults.has_key("Status"):
+      newstatus = policyCombinedResults['Status']
 
-    #
-    # policy results communication
-    #
+      if newstatus != self.__status: # Policies satisfy
+        newPolicyType = self.ig.getNewPolicyType(self.__granularity, newstatus)
+        policyType = set(policyType) & set(newPolicyType)
+        policyCombinedResults["PolicyType"] = policyType
+        policyCombinedResults["Action"]     = True
 
-    newstatus = policyCombinedResults['Status']
-    reason    = policyCombinedResults['Reason']
-
-    if newstatus != self.__status: # Policies satisfy
-      newPolicyType = self.ig.getNewPolicyType(self.__granularity, newstatus)
-      policyType = set(policyType) & set(newPolicyType)
-      decision = { 'PolicyType': policyType, 'Action': True, 'Status': newstatus, 'Reason': reason }
-
-    else:                          # Policies does not satisfy
-      decision = { 'PolicyType': policyType, 'Action': False, 'Reason': reason }
-
-    if policyCombinedResults.has_key('EndDate'):
-      decision['EndDate'] = policyCombinedResults['EndDate']
+      else:                          # Policies does not satisfy
+        policyCombinedResults["Action"] = False
 
     return { 'SinglePolicyResults'  : singlePolicyResults,
-             'PolicyCombinedResult' : decision }
-
-    return res
+             'PolicyCombinedResult' : policyCombinedResults }
 
 ################################################################################
 
