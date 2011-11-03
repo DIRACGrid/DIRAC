@@ -112,6 +112,74 @@ class HandlerDec2( object ):
 
 ################################################################################
 
+class HandlerDec3( object ):
+  
+  def __init__( self, f, *args, **kwargs ):
+    self.f           = f
+    self.db          = None
+    self.credentials = None
+    
+  def processArgs( self, *args ):
+    
+    _db, _credentials = self.f( *args )
+    
+    self.db          = _db
+    self.credentials = _credentials  
+    
+  def __get__( self, obj, objtype = None ):
+    return types.MethodType( self, obj, objtype )
+    
+  def __call__( self, *args, **kwargs ):  
+      
+    fname = self.f.__name__.replace( 'export_', '' )    
+    if self.db is None:
+      self.processArgs( *args )
+    
+    ins = inspect.getargspec( self.f )    
+    if ins.args[-1] == 'kwargs':       
+      kwargs = list( args )[ -1 ]
+      args   = tuple( list( args )[ :-1 ] )
+
+    args = tuple( list( args )[ 1:] )[ 0 ] 
+
+    try:
+      dbFunction = getattr( self.db, fname )
+    except Exception, x:
+      gLogger.exception( 'Unable to find function %s \n %s' % ( fname, x ) )
+      return S_ERROR( x )    
+
+    gLogger.info( 'Attempting to %s' % fname )
+
+    gLogger.info( '%s.args: %s'   % ( fname, args )   )  
+    gLogger.info( '%s.kwargs: %s' % ( fname, kwargs ) )
+        
+    try:
+      resQuery = dbFunction( args, kwargs )
+      gLogger.info( 'Done %s' % fname )
+    except Exception, x:
+      gLogger.exception( 'Something went wrong executing %s \n %s' % ( fname, x ) )    
+      return S_ERROR( x )
+    
+    return resQuery   
+
+################################################################################
+
+class AdminRequired( BaseDec ):
+  
+  def __call__( self, *args, **kwargs ):
+    
+    self.f.processArgs( *args, **kwargs )
+    
+    credentials = self.f.credentials   
+    credGroup   = credentials.get( 'group', '' )
+    
+    if not credGroup == 'diracAdmin':
+      return S_ERROR( 'Not enough permissions to execute this action.' ) 
+    
+    return self.f( *args, **kwargs )
+
+################################################################################
+
 class HandlerDec( object ):
   
   def __init__( self, f ):
@@ -120,7 +188,7 @@ class HandlerDec( object ):
   def __get__( self, obj, objtype = None ):
     return types.MethodType( self, obj, objtype )
     
-  def __call__( self, *args, **kwargs ):#f ):  
+  def __call__( self, *args, **kwargs ):  
       
       ins = inspect.getargspec( self.f )
 
