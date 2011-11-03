@@ -70,7 +70,7 @@ class PilotsEff_Command(Command):
 
 class PilotsEffSimple_Command(Command):
 
-  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient' ]
+  __APIs__ = [ 'ResourceStatusAPI', 'PilotsClient' ]
 
   def doCommand(self, RSClientIn = None):
     """
@@ -93,7 +93,7 @@ class PilotsEffSimple_Command(Command):
     if self.args[0] == 'Service':
       
       try:
-        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.APIs[ 'ResourceStatusAPI' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("PilotsEffSimple_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}
@@ -106,7 +106,7 @@ class PilotsEffSimple_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
 
     try:
-      res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff(granularity, name, timeout = self.timeout)
+      res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff( granularity, name )
       if res is None:
         return {'Result':'Idle'}
       if res[name] is None:
@@ -124,7 +124,7 @@ class PilotsEffSimple_Command(Command):
 
 class PilotsEffSimpleCached_Command(Command):
 
-  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+  __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI' ]
 
   def doCommand(self):
     """
@@ -146,7 +146,7 @@ class PilotsEffSimpleCached_Command(Command):
 
     if self.args[0] == 'Service':
       try:
-        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.APIs[ 'ResourceStatusAPI' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("PilotsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}
@@ -168,7 +168,7 @@ class PilotsEffSimpleCached_Command(Command):
       kwargs     = { 'columns'     : 'Result' }
       clientDict.update( kwargs )  
       
-      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]        
+      res = self.APIs[ 'ResourceManagementAPI' ].getClientCache( **clientDict )[ 'Value' ]        
       print res
         
       if res == None:
@@ -176,7 +176,7 @@ class PilotsEffSimpleCached_Command(Command):
       if res == []:
         return {'Result':'Idle'}
     except:
-      gLogger.exception("Exception when calling ResourceManagementClient for %s %s" %(granularity, name))
+      gLogger.exception("Exception when calling ResourceManagementAPI for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
 
     return {'Result':res[0]}

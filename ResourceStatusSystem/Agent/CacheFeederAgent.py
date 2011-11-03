@@ -6,14 +6,14 @@ AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
 from datetime import datetime
 
-from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC                                                      import gLogger
-from DIRAC.Core.Base.AgentModule                                import AgentModule
+from DIRAC                                                import S_OK, S_ERROR
+from DIRAC                                                import gLogger
+from DIRAC.Core.Base.AgentModule                          import AgentModule
 
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Command.CommandCaller           import CommandCaller
-from DIRAC.ResourceStatusSystem.Command.ClientsInvoker          import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Command.knownAPIs               import initAPIs
+from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
+from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
+from DIRAC.ResourceStatusSystem.Command.ClientsInvoker    import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.knownAPIs         import initAPIs
 
 class CacheFeederAgent( AgentModule ):
   '''
@@ -26,7 +26,7 @@ class CacheFeederAgent( AgentModule ):
 
     try:
 
-      self.rmClient       = ResourceManagementClient()
+      self.rmAPI          = ResourceManagementAPI()
       self.clientsInvoker = ClientsInvoker()   
          
       commandsList_ClientsCache = [
@@ -59,7 +59,7 @@ class CacheFeederAgent( AgentModule ):
       
       # We know beforehand which APIs are we going to need, so we initialize them
       # first, making everything faster.
-      APIs = [ 'ResourceStatusClient', 'WMSAdministrator', 'ReportGenerator',
+      APIs = [ 'ResourceStatusAPI', 'WMSAdministrator', 'ReportGenerator',
                'JobsClient', 'PilotsClient', 'GOCDBClient', 'ReportsClient' ]
       APIs = initAPIs( APIs, {} )
       
@@ -103,7 +103,7 @@ class CacheFeederAgent( AgentModule ):
           
           if not res:
             gLogger.info('  returned empty...')
-          gLogger.debug( res )
+          gLogger.info( res )
           
           for key in res.keys():
           
@@ -116,7 +116,7 @@ class CacheFeederAgent( AgentModule ):
                   clientCache = ( key.split()[1], commandName, res[key]['ID'],
                                   value, res[key][value], None, None )
                   
-                  resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
+                  resQuery = self.rmAPI.addOrModifyClientCache( *clientCache )
                   if not resQuery[ 'OK' ]:
                     gLogger.error( resQuery[ 'Message' ] )
             
@@ -125,7 +125,10 @@ class CacheFeederAgent( AgentModule ):
                 clientCache = ( key, commandName, None, value, 
                                 res[key][value], None, None )
                     
-                resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
+                    
+                resQuery = self.rmAPI.addOrModifyClientCache( *clientCache )
+                print clientCache
+                print resQuery
                 if not resQuery[ 'OK' ]:
                   gLogger.error( resQuery[ 'Message' ] )        
                 
@@ -164,7 +167,7 @@ class CacheFeederAgent( AgentModule ):
             
             #name, plotType, plotName, result, dateEffective, lastCheckTime
             accountingClient = ( name, plotType, plotName, str(res[plotType][name]), None, None )
-            resQuery = self.rmClient.addOrModifyAccountingCache( *accountingClient )
+            resQuery = self.rmAPI.addOrModifyAccountingCache( *accountingClient )
             if not resQuery[ 'OK' ]:
               gLogger.error( resQuery[ 'Message' ] )
             

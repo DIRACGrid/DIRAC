@@ -16,19 +16,19 @@ from DIRAC.Core.LCG.GOCDBClient                      import GOCDBClient
 
 class Synchronizer(object):
 
-  def __init__( self, rsClient = None, rmClient = None ):
+  def __init__( self, rsAPI = None, rmAPI = None ):
 
-    self.rsClient    = rsClient
-    self.rmClient    = rmClient
+    self.rsAPI       = rsAPI
+    self.rmAPI       = rmAPI
     self.GOCDBClient = GOCDBClient()
 
-    if self.rsClient == None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
+    if self.rsAPI == None:
+      from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+      self.rsAPI = ResourceStatusAPI()
 
-    if self.rmClient == None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.rmClient = ResourceManagementClient()
+    if self.rmAPI == None:
+      from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
+      self.rmAPI = ResourceManagementAPI()
 
 ################################################################################
 
@@ -58,14 +58,14 @@ class Synchronizer(object):
       return "T" + str(min([int(v) for v in Utils.unpack(CS.getSiteTier(sitesList))]))
 
     # sites in the DB now
-    sitesDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getSite())))
+    sitesDB = set(Utils.list_flatten(Utils.unpack(self.rsAPI.getSite())))
 
     # sites in CS now
     sitesCS = set(Utils.unpack(CS.getSites()))
 
     # remove sites from the DB that are not in the CS
     for s in sitesDB - sitesCS:
-      self.rsClient.removeSite(s)
+      self.rsAPI.removeElement( 'Site', s )
 
     # add to DB what is missing
     print "Updating %d Sites in DB" % len(sitesCS - sitesDB)
@@ -84,11 +84,11 @@ class Synchronizer(object):
         else:
           gt = getGOCTier( DIRACSitesOfGridSites )
 
-        Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
-        Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
+        Utils.protect2(self.rsAPI.addOrModifyGridSite, gridSiteName, gt)
+        Utils.protect2(self.rsAPI.addOrModifySite, site, tier, gridSiteName )
 
       elif siteType == "DIRAC":
-        Utils.protect2(self.rsClient.addOrModifySite, site, tier, "NULL" )
+        Utils.protect2(self.rsAPI.addOrModifySite, site, tier, "NULL" )
 
 ################################################################################
 
@@ -100,30 +100,30 @@ class Synchronizer(object):
 
     # services in the DB now
     VOBOXesInCS = set(Utils.unpack(CS.getT1s()))
-    VOBOXesInDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getServicePresent(
+    VOBOXesInDB = set(Utils.list_flatten(Utils.unpack(self.rsAPI.getServicePresent(
           serviceType = "VO-BOX", columns = "SiteName" ))))
 
     print "Updating %d VOBOXes on DB" % len(VOBOXesInCS - VOBOXesInDB)
     for site in VOBOXesInCS - VOBOXesInDB:
       service = 'VO-BOX@' + site
-      Utils.protect2(self.rsClient.addOrModifyService, service, 'VO-BOX', site )
+      Utils.protect2(self.rsAPI.addOrModifyService, service, 'VO-BOX', site )
 
   def _syncCondDBs(self):
     CondDBinCS = set(Utils.unpack(CS.getCondDBs()))
-    CondDBinDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getServicePresent(
+    CondDBinDB = set(Utils.list_flatten(Utils.unpack(self.rsAPI.getServicePresent(
             serviceType = "CondDB", columns = "SiteName"))))
 
     print "Updating %d CondDBs on DB" % len (CondDBinCS - CondDBinDB)
     for site in CondDBinCS - CondDBinDB:
       service = "CondDB@" + site
-      Utils.protect2(self.rsClient.addOrModifyService, service, 'CondDB', site )
+      Utils.protect2(self.rsAPI.addOrModifyService, service, 'CondDB', site )
 
 ################################################################################
 # _syncResources HELPER functions
 
   def __updateService(self, site, type_):
     service = type_ + '@' + site
-    Utils.protect2(self.rsClient.addOrModifyService, service, type_, site )
+    Utils.protect2(self.rsAPI.addOrModifyService, service, type_, site )
 
   def __getServiceEndpointInfo(self, node):
     res = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ))
@@ -158,7 +158,7 @@ class Synchronizer(object):
           continue
 
         assert(type(siteInGOCDB) == str)
-        Utils.protect2(self.rsClient.addOrModifyResource, node, resourceType, serviceType, site, siteInGOCDB )
+        Utils.protect2(self.rsAPI.addOrModifyResource, node, resourceType, serviceType, site, siteInGOCDB )
         resourcesInDB.add( node )
 
 ################################################################################
@@ -167,7 +167,7 @@ class Synchronizer(object):
     gLogger.info("Starting sync of Resources")
 
     # resources in the DB now
-    resourcesInDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getResourcePresent( columns="ResourceName" ))))
+    resourcesInDB = set(Utils.list_flatten(Utils.unpack(self.rsAPI.getResourcePresent( columns="ResourceName" ))))
 
     # Site-CE / Site-SE mapping in CS now
     CEinCS = Utils.unpack(getSiteCEMapping( 'LCG' ))
@@ -203,11 +203,11 @@ class Synchronizer(object):
 
     # Remove resources that are not in the CS anymore
     for res in set(resourcesInDB) - set(resourcesInCS):
-      self.rsClient.removeResource( res )
-      sesToBeDel = Utils.unpack(self.rsClient.getStorageElementPresent(
+      self.rsAPI.removeElement( 'Resource', res )
+      sesToBeDel = Utils.unpack(self.rsAPI.getStorageElementPresent(
           resourceName = res,
           columns="StorageElementName" ))
-      _ = [Utils.protect2(self.rsClient.removeStorageElement, s[0]) for s in sesToBeDel]
+      _ = [Utils.protect2(self.rsAPI.removeElement, 'StorageElement', s[0]) for s in sesToBeDel]
 
     # Add to DB what is in CS now and wasn't before
 
@@ -236,12 +236,12 @@ class Synchronizer(object):
 
     # Get StorageElements from the CS and the DB
     CSSEs = set(CS.getSpaceTokens())
-    DBSEs = set(Utils.list_flatten(Utils.unpack(self.rsClient.getStorageElementPresent(
+    DBSEs = set(Utils.list_flatten(Utils.unpack(self.rsAPI.getStorageElementPresent(
             columns="StorageElementName" ))))
 
     # Remove storageElements that are in DB but not in CS
     for se in DBSEs - CSSEs:
-      Utils.protect2(self.rsClient.removeStorageElement, se )
+      Utils.protect2(self.rsAPI.removeElement, 'StorageElement', se )
 
     # Add new storage Elements
     print "Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs))
@@ -255,7 +255,7 @@ class Synchronizer(object):
         print "Warning! %s is not in GOCDB!!!" % srm
         continue
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
-      Utils.protect2(self.rsClient.addOrModifyStorageElement, SE, srm, siteInGOCDB )
+      Utils.protect2(self.rsAPI.addOrModifyStorageElement, SE, srm, siteInGOCDB )
 
 ################################################################################
 
@@ -263,7 +263,7 @@ class Synchronizer(object):
     """This function is in charge of cleaning the Service table in DB
     in case of obsolescence."""
     # services in the DB now
-    servicesInDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getServicePresent( columns="ServiceName" ))))
+    servicesInDB = set(Utils.list_flatten(Utils.unpack(self.rsAPI.getServicePresent( columns="ServiceName" ))))
     # TODO: Write the code.
 
   def _syncRegistryUsers(self):
@@ -276,7 +276,7 @@ class Synchronizer(object):
 
       users[u]['DN'] = users[u]['DN'].split('=')[-1]
       #self.rmClient.registryAddUser(u, users[u]['DN'].lower(), users[u]['Email'].lower())
-      self.rmClient.addOrModifyUserRegistryCache( u, users[u]['DN'].lower(), users[u]['Email'].lower() )
+      self.rmAPI.addOrModifyUserRegistryCache( u, users[u]['DN'].lower(), users[u]['Email'].lower() )
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
 ################################################################################

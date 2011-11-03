@@ -6,16 +6,16 @@ AGENT_NAME = 'ResourceStatus/TokenAgent'
 
 import datetime
 
-from DIRAC                                           import S_OK, S_ERROR
-from DIRAC                                           import gLogger
-from DIRAC.Core.Base.AgentModule                     import AgentModule
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC                                             import S_OK, S_ERROR
+from DIRAC                                             import gLogger
+from DIRAC.Core.Base.AgentModule                       import AgentModule
+from DIRAC.FrameworkSystem.Client.NotificationClient   import NotificationClient
 
-from DIRAC.ResourceStatusSystem                      import ValidRes   
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.Utilities.CS         import getMailForUser
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP     import PDP 
-from DIRAC.ResourceStatusSystem.Utilities.CS         import getExt
+from DIRAC.ResourceStatusSystem                        import ValidRes   
+from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI  import ResourceStatusAPI
+from DIRAC.ResourceStatusSystem.Utilities.CS           import getMailForUser
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP       import PDP 
+from DIRAC.ResourceStatusSystem.Utilities.CS           import getExt
 
 class TokenAgent( AgentModule ):
   """ 
@@ -33,7 +33,7 @@ class TokenAgent( AgentModule ):
     self.notifyHours = self.am_getOption( 'notifyHours', 10 )
     
     try:
-      self.rsDB  = ResourceStatusDB()
+      self.rsAPI = ResourceStatusAPI()
       self.nc    = NotificationClient()
       self.VOExt = getExt()
       
@@ -50,7 +50,7 @@ class TokenAgent( AgentModule ):
     """ 
     The main TokenAgent execution method.
     Checks for tokens owned by users that are expiring, and notifies those users.
-    Calls rsDB.setToken() to set 'RS_SVC' as owner for those tokens that expired.
+    Calls rsAPI.setToken() to set 'RS_SVC' as owner for those tokens that expired.
     """
     
     adminMail = ''
@@ -62,7 +62,7 @@ class TokenAgent( AgentModule ):
       #reAssign the token to RS_SVC
       #for g in self.ELEMENTS:
       for g in ValidRes:
-        tokensExpired = self.rsDB.getTokens( g, dateExpiration = datetime.datetime.utcnow() )
+        tokensExpired = self.rsAPI.getTokens( g, dateExpiration = datetime.datetime.utcnow() )
         
         if tokensExpired[ 'Value' ]:
           adminMail += '\nLIST OF EXPIRED %s TOKENS\n' % g
@@ -75,7 +75,7 @@ class TokenAgent( AgentModule ):
           user  = token[ 2 ]
           
           gLogger.info( ( g, name, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ), stype ))
-          self.rsDB.setToken( g, name, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ), stype )
+          self.rsAPI.setToken( g, name, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ), stype )
           adminMail += ' %s %s %s\n' %( user.ljust(20), name.ljust(15), stype )
 
       #notify token owners
@@ -83,7 +83,7 @@ class TokenAgent( AgentModule ):
       #for g in self.ELEMENTS:
       for g in ValidRes:
           
-        tokensExpiring = self.rsDB.getTokens( g, dateExpiration = inNHours )
+        tokensExpiring = self.rsAPI.getTokens( g, dateExpiration = inNHours )
         
         if tokensExpiring[ 'Value' ]:
           adminMail += '\nLIST OF EXPIRING %s TOKENS\n' % g

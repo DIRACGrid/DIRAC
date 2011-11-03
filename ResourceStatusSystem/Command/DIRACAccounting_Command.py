@@ -172,7 +172,7 @@ class TransferQuality_Command(Command):
 
 class TransferQualityCached_Command(Command):
   
-  __APIs__ = [ 'ResourceManagementClient' ]
+  __APIs__ = [ 'ResourceManagementAPI' ]
   
   def doCommand(self):
     """ 
@@ -193,11 +193,11 @@ class TransferQualityCached_Command(Command):
     name = self.args[1]
     
     try:
-      res = self.APIs[ 'ResourceManagementClient' ].getCachedResult(name, 'TransferQualityEverySEs', 'TQ', 'NULL')
+      res = self.APIs[ 'ResourceManagementAPI' ].getCachedResult(name, 'TransferQualityEverySEs', 'TQ', 'NULL')
       if res == []:
         return {'Result':None}
     except:
-      gLogger.exception("Exception when calling ResourceManagementClient for %s" %(name))
+      gLogger.exception("Exception when calling ResourceManagementAPI for %s" %(name))
       return {'Result':'Unknown'}
     
     return {'Result':float(res[0])}
@@ -209,7 +209,7 @@ class TransferQualityCached_Command(Command):
 
 class CachedPlot_Command(Command):
 
-  __APIs__ = [ 'ResourceManagementClient' ]
+  __APIs__ = [ 'ResourceManagementAPI' ]
   
   def doCommand(self):
     """ 
@@ -249,7 +249,7 @@ class CachedPlot_Command(Command):
       kwargs     = { 'columns'     : 'Result' }
       accountingDict.update( kwargs )  
       
-      res = self.APIs[ 'ResourceManagementClient' ].getAccountingCache( **accountingDict )
+      res = self.APIs[ 'ResourceManagementAPI' ].getAccountingCache( **accountingDict )
       
       if not res[ 'OK' ]:
         gLogger.error("Error getting AccountingCache for %s,%s,%s" %( name, plotType, plotName ))
@@ -272,7 +272,7 @@ class CachedPlot_Command(Command):
 
 class TransferQualityFromCachedPlot_Command(Command):
   
-  __APIs__ = [ 'ResourceManagementClient' ]
+  __APIs__ = [ 'ResourceManagementAPI' ]
   
   def doCommand(self):
     """ 
@@ -304,7 +304,7 @@ class TransferQualityFromCachedPlot_Command(Command):
       kwargs     = { 'columns'     : 'Result' }
       accountingDict.update( kwargs )  
       
-      res = self.APIs[ 'ResourceManagementClient' ].getAccountingCache( **accountingDict )
+      res = self.APIs[ 'ResourceManagementAPI' ].getAccountingCache( **accountingDict )
       
       if not res[ 'OK' ]:
         gLogger.error("Error getting AccountingCache for %s,%s,%s" %( name, plotType, plotName ))

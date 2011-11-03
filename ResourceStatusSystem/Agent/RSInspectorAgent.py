@@ -4,18 +4,18 @@
 __RCSID__  = "$Id:  $"
 AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
 
-import Queue
+import Queue, time
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                            import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
+from DIRAC                                            import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                      import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
 
-from DIRAC.ResourceStatusSystem                             import CheckingFreqs
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Command.knownAPIs           import initAPIs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
-from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+from DIRAC.ResourceStatusSystem                       import CheckingFreqs
+from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
+from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
 
 class RSInspectorAgent( AgentModule ):
   """ 
@@ -36,7 +36,7 @@ class RSInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsClient             = ResourceStatusClient()
+      self.rsAPI             = ResourceStatusAPI()
       self.ResourcesFreqs       = CheckingFreqs[ 'ResourcesFreqs' ]
       self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
@@ -68,7 +68,7 @@ class RSInspectorAgent( AgentModule ):
       kwargs = { 'columns' : [ 'ResourceName', 'StatusType', 'Status', 'FormerStatus', \
                               'SiteType', 'ResourceType', 'TokenOwner' ] }
 
-      resQuery = self.rsClient.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
+      resQuery = self.rsAPI.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
 
       for resourceTuple in resQuery[ 'Value' ]:
         
@@ -92,6 +92,18 @@ class RSInspectorAgent( AgentModule ):
       gLogger.exception( errorStr,lException=x )
       return S_ERROR( errorStr )
 
+################################################################################
+################################################################################
+
+  def finalize( self ):
+    if self.ResourceNamesInCheck:
+      _msg = "Wait for queue to get empty before terminating the agent (%d tasks)" 
+      _msg = _msg % len( self.ResourceNamesInCheck )
+      self.log.info( _msg )
+      while self.ResourceNamesInCheck:
+        time.sleep( 2 )
+      self.log.info( "Queue is empty, terminating the agent..." )
+    return S_OK()
 
 ################################################################################
 ################################################################################
@@ -99,7 +111,7 @@ class RSInspectorAgent( AgentModule ):
   def _executeCheck( self, _arg ):
     
     # Init the APIs beforehand, and reuse them. 
-    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+    __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI' ]
     clients = initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )

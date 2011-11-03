@@ -4,15 +4,15 @@
 __RCSID__  = "$Id$"
 AGENT_NAME = 'ResourceStatus/CleanerAgent'
 
-from datetime                                                   import datetime,timedelta
+from datetime                                             import datetime,timedelta
 
-from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC                                                      import gLogger
-from DIRAC.Core.Base.AgentModule                                import AgentModule
+from DIRAC                                                import S_OK, S_ERROR
+from DIRAC                                                import gLogger
+from DIRAC.Core.Base.AgentModule                          import AgentModule
 
-from DIRAC.ResourceStatusSystem                                 import ValidRes  
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem                           import ValidRes  
+from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI     import ResourceStatusAPI
+from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
 
 class CleanerAgent( AgentModule ):
   '''
@@ -36,8 +36,8 @@ class CleanerAgent( AgentModule ):
     
     try:
       
-      self.rsClient      = ResourceStatusClient()
-      self.rmClient      = ResourceManagementClient()  
+      self.rsAPI         = ResourceStatusAPI()
+      self.rmAPI         = ResourceManagementAPI()  
       self.historyTables = [ '%sHistory' % x for x in ValidRes ]
 
       return S_OK()
@@ -59,9 +59,11 @@ class CleanerAgent( AgentModule ):
       sixMonthsAgo = now - timedelta( days = 180 )
       
       for g in ValidRes:
-        deleter = getattr( self.rsClient, 'delete%sHistory' % g )
+        #deleter = getattr( self.rsClient, 'delete%sHistory' % g )
+        
         kwargs = { 'minor' : { 'DateEnd' : sixMonthsAgo } }
-        res = deleter( **kwargs )
+        #res = deleter( **kwargs )
+        res = self.rsAPI.deleteElementHistory( g, **kwargs )
         if not res[ 'OK' ]:
           gLogger.error( res[ 'Message' ] )            
 
@@ -73,16 +75,16 @@ class CleanerAgent( AgentModule ):
                  'columns': 'Opt_ID',
                  'minor'  : { 'Result' : aDayAgo }
                 }
-      opt_IDs = self.rmClient.getClientCache( **kwargs )              
+      opt_IDs = self.rmAPI.getClientCache( **kwargs )              
       opt_IDs = [ ID[ 0 ] for ID in opt_IDs[ 'Value' ] ]
       
-      res = self.rmClient.deleteClientCache( opt_ID = opt_IDs )
+      res = self.rmAPI.deleteClientCache( opt_ID = opt_IDs )
       if not res[ 'OK' ]:
         gLogger.error( res[ 'Message' ] )
       
       # Cleans AccountingCache table from plots not updated nor checked in the last 30 mins      
       anHourAgo = now - timedelta( minutes = 30 )
-      res = self.rmClient.deleteAccountingCache( minor = { 'LastCheckTime' : anHourAgo } )
+      res = self.rmAPI.deleteAccountingCache( minor = { 'LastCheckTime' : anHourAgo } )
       if not res[ 'OK' ]:
         gLogger.error( res[ 'Message' ] )
 

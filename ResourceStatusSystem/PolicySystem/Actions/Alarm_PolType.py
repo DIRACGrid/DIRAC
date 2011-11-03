@@ -10,14 +10,14 @@ from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 class AlarmPolType(object):
-  def __init__(self, name, res, statusType, nc, setup, rsClient, rmClient, **kwargs):
+  def __init__(self, name, res, statusType, nc, setup, rsAPI, rmAPI, **kwargs):
     self.name       = name
     self.res        = res
     self.statusType = statusType
     self.nc         = nc
     self.setup      = setup
-    self.rsClient   = rsClient
-    self.rmClient   = rmClient
+    self.rsAPI      = rsAPI
+    self.rmAPI      = rmAPI
     self.kwargs     = kwargs
 
     self.run()
@@ -69,7 +69,7 @@ class AlarmPolType(object):
           if 'Web' in notification['Notifications']:
             self.nc.addNotificationForUser(user, notif)
           if 'Mail' in notification['Notifications']:
-            histGetter = getattr( self.rsClient, 'get%sHistory' % granularity )
+            #histGetter = getattr( self.rsAPI, 'get%sHistory' % granularity )
 
             kwargs = { '%sName'     : self.name,
                        'statusType' : self.statusType,
@@ -77,7 +77,8 @@ class AlarmPolType(object):
                        'order'      : 'DESC',
                        'limit'      : 1 }
 
-            was = histGetter( **kwargs )[ 'Value' ][ 0 ]
+            #was = histGetter( **kwargs )[ 'Value' ][ 0 ]
+            was = self.rsAPI.getElementHistory( granularity, **kwargs )[ 'Value' ][ 0 ]
 
             mailMessage = """Granularity = %s
 Name = %s
@@ -87,8 +88,8 @@ Was in status "%s", with reason "%s", since %s
 Setup = %s
 """ % (granularity, self.name, self.res['Status'], self.res['Reason'], was[0], was[1], was[2], self.setup)
 
-            self.nc.sendMail('aebeda3@gmail.com',#self.rmDB.getUserRegistryCache(user)[ 'Value' ][0][0],
-                        '[RSS] Status change for site %s: %s -> %s' % (self.name,  self.res['Status'], was[0]), mailMessage)
+#            self.nc.sendMail(self.rmDB.getUserRegistryCache(user)[ 'Value' ][0][0],
+#                        '[RSS] Status change for site %s: %s -> %s' % (self.name,  self.res['Status'], was[0]), mailMessage)
 
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  

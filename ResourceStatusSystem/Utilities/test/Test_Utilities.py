@@ -355,28 +355,27 @@ class InfoGetterSuccess(UtilitiesTestCase):
 #############################################################################
 
 class SynchronizerSuccess(UtilitiesTestCase):
-  # def test__syncSites(self):
-  #   self.syncC._syncSites()
+  #def test__syncSites(self):
+  #  self.syncC._syncSites()
 
-  # def test__syncVOBOX(self):
-  #   self.syncC._syncVOBOX()
+  #def test__syncVOBOX(self):
+  #  self.syncC._syncVOBOX()
 
-  # def test__syncCondDBs(self):
-  #   self.syncC._syncCondDBs()
+  #def test__syncCondDBs(self):
+  #  self.syncC._syncCondDBs()
 
-  # def test__syncResources(self):
-  #   self.syncC._syncResources()
+  #def test__syncResources(self):
+  #  self.syncC._syncResources()
 
-  def test__syncStorageElements(self):
-    self.syncC._syncStorageElements()
+  #def test__syncStorageElements(self):
+  #  self.syncC._syncStorageElements()
 
 #############################################################################
 
 
 if __name__ == '__main__':
-  # suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
   # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
-  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
   # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SynchronizerSuccess))
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

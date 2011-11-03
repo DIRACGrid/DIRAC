@@ -91,13 +91,13 @@ def getOperationMails( op ):
   return gConfig.getOption("%s/EMail/%s" %(g_BaseOperationsSection, op) ,'')
 
 def getMailForUser(users):
-  from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-  rmDB = ResourceManagementDB()
+  from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
+  rmAPI = ResourceManagementAPI()
 
   if isinstance(users, basestring):
     users = [users]
 
-  return S_OK([rmDB.registryGetMailFromLogin(u) for u in users])
+  return rmAPI.getUserRegistryCache( user = users, columns= 'email' ) #      .registryGetMailFromLogin(u) for u in users])
 
 # Setup functions ####################
 

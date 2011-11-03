@@ -76,7 +76,7 @@ CREATE TABLE EnvironmentCache(
   SiteName VARCHAR(64) NOT NULL,
   INDEX ( SiteName ),
   Environment BLOB,
-  PRIMARY KEY( HashEnv )
+  PRIMARY KEY( HashEnv, SiteName )
 ) Engine=InnoDB;
 
 DROP TABLE IF EXISTS UserRegistryCache;
