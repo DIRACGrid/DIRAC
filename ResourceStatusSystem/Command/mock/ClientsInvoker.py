@@ -1,7 +1,7 @@
 class ClientsInvoker( object ):
       
   def setCommand( self, c ):
-    self.command = c
+    pass
     
   def doCommand( self ):
-    return self.command.doCommand()
+    return { 'Result' : {} }
