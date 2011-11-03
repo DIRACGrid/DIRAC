@@ -731,6 +731,7 @@ class ResourceStatusAPI( object ):
 
     :return: S_OK() || S_ERROR()
     '''
+    pass
   @APIDecorator
   def getElementStatus( self, element, elementName = None, statusType = None, 
                         status = None, reason = None, dateCreated = None, 
