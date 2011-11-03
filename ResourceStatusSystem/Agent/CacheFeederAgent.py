@@ -101,8 +101,9 @@ class CacheFeederAgent( AgentModule ):
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()
           
-          if not res:
+          if not res or res is None:
             gLogger.info('  returned empty...')
+            continue
           gLogger.info( res )
           
           for key in res.keys():
@@ -127,8 +128,6 @@ class CacheFeederAgent( AgentModule ):
                     
                     
                 resQuery = self.rmAPI.addOrModifyClientCache( *clientCache )
-                print clientCache
-                print resQuery
                 if not resQuery[ 'OK' ]:
                   gLogger.error( resQuery[ 'Message' ] )        
                 
@@ -157,6 +156,11 @@ class CacheFeederAgent( AgentModule ):
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()
           
+          if not res or res is None:
+            gLogger.info('  returned empty...')
+            continue
+          gLogger.info( res )
+          
           plotType = res.keys()[ 0 ]
           
           if not res[ plotType ]:
@@ -181,16 +185,6 @@ class CacheFeederAgent( AgentModule ):
       errorStr = "CacheFeederAgent execution"
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

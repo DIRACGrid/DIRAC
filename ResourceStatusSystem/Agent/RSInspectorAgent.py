@@ -36,7 +36,7 @@ class RSInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsAPI             = ResourceStatusAPI()
+      self.rsAPI                = ResourceStatusAPI()
       self.ResourcesFreqs       = CheckingFreqs[ 'ResourcesFreqs' ]
       self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
