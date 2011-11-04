@@ -7,7 +7,7 @@ from DIRAC                                             import gConfig, S_OK
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators   import HandlerDec2
+from DIRAC.ResourceStatusSystem.Utilities.Decorators   import HandlerDec3, AdminRequired
 from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
 db = False
@@ -75,7 +75,8 @@ class ResourceStatusHandler( RequestHandler ):
 
   
   types_insert = [ tuple, dict ]
-  @HandlerDec2
+  @AdminRequired
+  @HandlerDec3
   def export_insert( self, args, kwargs ):
     '''   
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
@@ -94,10 +95,12 @@ class ResourceStatusHandler( RequestHandler ):
     '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the insert method returns ( db.insert )
-    return db
+    credentials = self.getRemoteCredentials()
+    return db, credentials
 
   types_update = [ tuple, dict ]
-  @HandlerDec2
+  @AdminRequired
+  @HandlerDec3
   def export_update( self, args, kwargs ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
@@ -116,10 +119,11 @@ class ResourceStatusHandler( RequestHandler ):
     '''      
     # It returns a db object, which is picked by the decorator and return whatever
     # the update method returns ( db.update )
-    return db
+    credentials = self.getRemoteCredentials()
+    return db, credentials
 
   types_get = [ tuple, dict ]
-  @HandlerDec2
+  @HandlerDec3
   def export_get( self, args, kwargs ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It \
@@ -138,10 +142,12 @@ class ResourceStatusHandler( RequestHandler ):
     '''      
     # It returns a db object, which is picked by the decorator and return whatever
     # the get method returns ( db.get )
-    return db
+    credentials = self.getRemoteCredentials()
+    return db, credentials
 
   types_delete = [ tuple, dict ]
-  @HandlerDec2
+  @AdminRequired
+  @HandlerDec3
   def export_delete( self, args, kwargs ):
     '''  
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
@@ -160,7 +166,8 @@ class ResourceStatusHandler( RequestHandler ):
     '''         
     # It returns a db object, which is picked by the decorator and return whatever
     # the delete method returns ( db.delete )
-    return db
+    credentials = self.getRemoteCredentials()
+    return db, credentials
 
 #################################################################################
 ##EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
