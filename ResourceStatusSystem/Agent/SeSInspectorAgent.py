@@ -11,7 +11,7 @@ from DIRAC.Core.Base.AgentModule                      import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
 
 from DIRAC.ResourceStatusSystem                       import CheckingFreqs
-from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
@@ -36,7 +36,7 @@ class SeSInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsAPI               = ResourceStatusAPI()
+      self.rsClient               = ResourceStatusClient()
       self.ServicesFreqs       = CheckingFreqs[ 'ServicesFreqs' ]
       self.ServicesToBeChecked = Queue.Queue()
       self.ServiceNamesInCheck = []
@@ -67,7 +67,7 @@ class SeSInspectorAgent( AgentModule ):
 
       kwargs = { 'columns' : [ 'ServiceName', 'StatusType', 'Status', 'FormerStatus', \
                               'SiteType', 'ServiceType', 'TokenOwner' ] }
-      resQuery = self.rsAPI.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
+      resQuery = self.rsClient.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
 
       for serviceTuple in resQuery[ 'Value' ]:
           
@@ -110,50 +110,42 @@ class SeSInspectorAgent( AgentModule ):
   def _executeCheck( self, _arg ):
 
     # Init the APIs beforehand, and reuse them. 
-    __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI', 'SLSClient' ]
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'SLSClient' ]
     clients = initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
     while True:
 
+      toBeChecked = self.ServicesToBeChecked.get()
+
+      pepDict = { 'granularity'  : toBeChecked[ 0 ],
+                  'name'         : toBeChecked[ 1 ],
+                  'statusType'   : toBeChecked[ 2 ],
+                  'status'       : toBeChecked[ 3 ],
+                  'formerStatus' : toBeChecked[ 4 ],
+                  'siteType'     : toBeChecked[ 5 ],
+                  'serviceType'  : toBeChecked[ 6 ],
+                  'tokenOwner'   : toBeChecked[ 7 ] }
+
       try:
-
-        toBeChecked = self.ServicesToBeChecked.get()
-
-        pepDict = { 'granularity'  : toBeChecked[ 0 ],
-                    'name'         : toBeChecked[ 1 ],
-                    'statusType'   : toBeChecked[ 2 ],
-                    'status'       : toBeChecked[ 3 ],
-                    'formerStatus' : toBeChecked[ 4 ],
-                    'siteType'     : toBeChecked[ 5 ],
-                    'serviceType'  : toBeChecked[ 6 ],
-                    'tokenOwner'   : toBeChecked[ 7 ] }
 
         gLogger.info( "Checking Service %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
 
-        pep.enforce( **pepDict )     
+        pepRes = pep.enforce( **pepDict )     
+        #print pepRes
 
         # remove from InCheck list
         self.ServiceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
       except Exception:
-        gLogger.exception( 'SeSInspector._executeCheck' )
+        gLogger.exception( "SeSInspector._executeCheck Checking Service %s, with type/status: %s/%s" % \
+                      ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
         try:
           self.ServiceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

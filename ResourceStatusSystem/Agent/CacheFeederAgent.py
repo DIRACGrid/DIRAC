@@ -6,14 +6,14 @@ AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
 from datetime import datetime
 
-from DIRAC                                                import S_OK, S_ERROR
-from DIRAC                                                import gLogger
-from DIRAC.Core.Base.AgentModule                          import AgentModule
+from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC                                                      import gLogger
+from DIRAC.Core.Base.AgentModule                                import AgentModule
 
-from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
-from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
-from DIRAC.ResourceStatusSystem.Command.ClientsInvoker    import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Command.knownAPIs         import initAPIs
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Command.CommandCaller           import CommandCaller
+from DIRAC.ResourceStatusSystem.Command.ClientsInvoker          import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.knownAPIs               import initAPIs
 
 class CacheFeederAgent( AgentModule ):
   '''
@@ -26,30 +26,30 @@ class CacheFeederAgent( AgentModule ):
 
     try:
 
-      self.rmAPI          = ResourceManagementAPI()
+      self.rmClient       = ResourceManagementClient()
       self.clientsInvoker = ClientsInvoker()   
          
       commandsList_ClientsCache = [
         ( 'ClientsCache_Command', 'JobsEffSimpleEveryOne_Command'     ),
-        ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
-        ( 'ClientsCache_Command', 'DTEverySites_Command'              ),
-        ( 'ClientsCache_Command', 'DTEveryResources_Command'          )
+#        ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
+#        ( 'ClientsCache_Command', 'DTEverySites_Command'              ),
+#        ( 'ClientsCache_Command', 'DTEveryResources_Command'          )
         ]
 
       commandsList_AccountingCache =  [
-        ( 'AccountingCache_Command', 'TransferQualityByDestSplitted_Command',     ( 2, ),    'Always' ),
-        ( 'AccountingCache_Command', 'FailedTransfersBySourceSplitted_Command',   ( 2, ),    'Always' ),
-        ( 'AccountingCache_Command', 'TransferQualityByDestSplittedSite_Command', ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'SuccessfullJobsBySiteSplitted_Command',     ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'FailedJobsBySiteSplitted_Command',          ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'SuccessfullPilotsBySiteSplitted_Command',   ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'FailedPilotsBySiteSplitted_Command',        ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'SuccessfullPilotsByCESplitted_Command',     ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'FailedPilotsByCESplitted_Command',          ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 168, ),  'Hourly' ),
-        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 720, ),  'Daily'  ),
-        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 8760, ), 'Daily'  ),
+#        ( 'AccountingCache_Command', 'TransferQualityByDestSplitted_Command',     ( 2, ),    'Always' ),
+#        ( 'AccountingCache_Command', 'FailedTransfersBySourceSplitted_Command',   ( 2, ),    'Always' ),
+#        ( 'AccountingCache_Command', 'TransferQualityByDestSplittedSite_Command', ( 24, ),   'Hourly' ),
+#        ( 'AccountingCache_Command', 'SuccessfullJobsBySiteSplitted_Command',     ( 24, ),   'Hourly' ),
+#        ( 'AccountingCache_Command', 'FailedJobsBySiteSplitted_Command',          ( 24, ),   'Hourly' ),
+#        ( 'AccountingCache_Command', 'SuccessfullPilotsBySiteSplitted_Command',   ( 24, ),   'Hourly' ),
+#        ( 'AccountingCache_Command', 'FailedPilotsBySiteSplitted_Command',        ( 24, ),   'Hourly' ),
+#        ( 'AccountingCache_Command', 'SuccessfullPilotsByCESplitted_Command',     ( 24, ),   'Hourly' ),
+#        ( 'AccountingCache_Command', 'FailedPilotsByCESplitted_Command',          ( 24, ),   'Hourly' ),
+#        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 24, ),   'Hourly' ),
+#        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 168, ),  'Hourly' ),
+#        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 720, ),  'Daily'  ),
+#        ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 8760, ), 'Daily'  ),
         ]
 
       self.commandObjectsList_ClientsCache    = []
@@ -59,7 +59,7 @@ class CacheFeederAgent( AgentModule ):
       
       # We know beforehand which APIs are we going to need, so we initialize them
       # first, making everything faster.
-      APIs = [ 'ResourceStatusAPI', 'WMSAdministrator', 'ReportGenerator',
+      APIs = [ 'ResourceStatusClient', 'WMSAdministrator', 'ReportGenerator',
                'JobsClient', 'PilotsClient', 'GOCDBClient', 'ReportsClient' ]
       APIs = initAPIs( APIs, {} )
       
@@ -117,19 +117,25 @@ class CacheFeederAgent( AgentModule ):
                   clientCache = ( key.split()[1], commandName, res[key]['ID'],
                                   value, res[key][value], None, None )
                   
-                  resQuery = self.rmAPI.addOrModifyClientCache( *clientCache )
+                  resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
                   if not resQuery[ 'OK' ]:
                     gLogger.error( resQuery[ 'Message' ] )
+                    gLogger.error( resQuery[ 'sql' ] )
+                    
             
             else:
               for value in res[key].keys():
                 clientCache = ( key, commandName, None, value, 
                                 res[key][value], None, None )
                     
-                    
-                resQuery = self.rmAPI.addOrModifyClientCache( *clientCache )
+                  
+                print clientCache    
+                resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
                 if not resQuery[ 'OK' ]:
-                  gLogger.error( resQuery[ 'Message' ] )        
+                  gLogger.error( resQuery[ 'Message' ] )     
+                  gLogger.error( resQuery[ 'sql' ] )   
+                  gLogger.error( resQuery[ 'rDict' ] )
+                  gLogger.error( resQuery[ 'kwargs' ] )
                 
         except:
           gLogger.exception( "Exception when executing " + co[0][1] )
@@ -171,7 +177,7 @@ class CacheFeederAgent( AgentModule ):
             
             #name, plotType, plotName, result, dateEffective, lastCheckTime
             accountingClient = ( name, plotType, plotName, str(res[plotType][name]), None, None )
-            resQuery = self.rmAPI.addOrModifyAccountingCache( *accountingClient )
+            resQuery = self.rmClient.addOrModifyAccountingCache( *accountingClient )
             if not resQuery[ 'OK' ]:
               gLogger.error( resQuery[ 'Message' ] )
             

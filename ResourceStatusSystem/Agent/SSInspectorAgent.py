@@ -11,7 +11,7 @@ from DIRAC.Core.Base.AgentModule                      import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
 
 from DIRAC.ResourceStatusSystem                       import CheckingFreqs
-from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
@@ -36,7 +36,7 @@ class SSInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsAPI            = ResourceStatusAPI()
+      self.rsClient            = ResourceStatusClient()
       self.SitesFreqs       = CheckingFreqs[ 'SitesFreqs' ]
       self.SitesToBeChecked = Queue.Queue()
       self.SiteNamesInCheck = []
@@ -67,7 +67,7 @@ class SSInspectorAgent( AgentModule ):
       
       kwargs = { 'columns' : ['SiteName', 'StatusType', 'Status', 'FormerStatus',\
                                'SiteType', 'TokenOwner'] }
-      resQuery = self.rsAPI.getStuffToCheck( 'Site', self.SitesFreqs, **kwargs )
+      resQuery = self.rsClient.getStuffToCheck( 'Site', self.SitesFreqs, **kwargs )
 
       for siteTuple in resQuery[ 'Value' ]:
         
@@ -110,35 +110,37 @@ class SSInspectorAgent( AgentModule ):
   def _executeCheck( self, _arg ):
     
     # Init the APIs beforehand, and reuse them. 
-    __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI', 'GGUSTicketsClient' ]
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'GGUSTicketsClient' ]
     clients = initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
     while True:
 
+      toBeChecked  = self.SitesToBeChecked.get()
+
+      pepDict = { 'granularity'  : toBeChecked[ 0 ],
+                  'name'         : toBeChecked[ 1 ],
+                  'statusType'   : toBeChecked[ 2 ],
+                  'status'       : toBeChecked[ 3 ],
+                  'formerStatus' : toBeChecked[ 4 ],
+                  'siteType'     : toBeChecked[ 5 ],
+                  'tokenOwner'   : toBeChecked[ 6 ] }
+
       try:
-
-        toBeChecked  = self.SitesToBeChecked.get()
-
-        pepDict = { 'granularity'  : toBeChecked[ 0 ],
-                    'name'         : toBeChecked[ 1 ],
-                    'statusType'   : toBeChecked[ 2 ],
-                    'status'       : toBeChecked[ 3 ],
-                    'formerStatus' : toBeChecked[ 4 ],
-                    'siteType'     : toBeChecked[ 5 ],
-                    'tokenOwner'   : toBeChecked[ 6 ] }
 
         gLogger.info( "Checking Site %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
      
-        pep.enforce( **pepDict )
+        pepRes = pep.enforce( **pepDict )
+        #print pepRes
 
         # remove from InCheck list
         self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )       
 
       except Exception:
-        gLogger.exception( 'SSInspector._executeCheck' )
+        gLogger.exception( "SSInspector._executeCheck Checking Site %s, with type/status: %s/%s" % \
+                      ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
         try:
           self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:

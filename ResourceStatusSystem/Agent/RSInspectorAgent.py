@@ -11,7 +11,7 @@ from DIRAC.Core.Base.AgentModule                      import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
 
 from DIRAC.ResourceStatusSystem                       import CheckingFreqs
-from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
@@ -36,7 +36,7 @@ class RSInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsAPI                = ResourceStatusAPI()
+      self.rsClient                = ResourceStatusClient()
       self.ResourcesFreqs       = CheckingFreqs[ 'ResourcesFreqs' ]
       self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
@@ -68,7 +68,7 @@ class RSInspectorAgent( AgentModule ):
       kwargs = { 'columns' : [ 'ResourceName', 'StatusType', 'Status', 'FormerStatus', \
                               'SiteType', 'ResourceType', 'TokenOwner' ] }
 
-      resQuery = self.rsAPI.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
+      resQuery = self.rsClient.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
 
       for resourceTuple in resQuery[ 'Value' ]:
         
@@ -111,36 +111,38 @@ class RSInspectorAgent( AgentModule ):
   def _executeCheck( self, _arg ):
     
     # Init the APIs beforehand, and reuse them. 
-    __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI' ]
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
     clients = initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
     while True:
 
+      toBeChecked  = self.ResourcesToBeChecked.get()
+
+      pepDict = { 'granularity'  : toBeChecked[ 0 ],
+                  'name'         : toBeChecked[ 1 ],
+                  'statusType'   : toBeChecked[ 2 ],
+                  'status'       : toBeChecked[ 3 ],
+                  'formerStatus' : toBeChecked[ 4 ],
+                  'siteType'     : toBeChecked[ 5 ],
+                  'resourceType' : toBeChecked[ 6 ],
+                  'tokenOwner'   : toBeChecked[ 7 ] }
+
       try:
-
-        toBeChecked  = self.ResourcesToBeChecked.get()
-
-        pepDict = { 'granularity'  : toBeChecked[ 0 ],
-                    'name'         : toBeChecked[ 1 ],
-                    'statusType'   : toBeChecked[ 2 ],
-                    'status'       : toBeChecked[ 3 ],
-                    'formerStatus' : toBeChecked[ 4 ],
-                    'siteType'     : toBeChecked[ 5 ],
-                    'resourceType' : toBeChecked[ 6 ],
-                    'tokenOwner'   : toBeChecked[ 7 ] }
 
         gLogger.info( "Checking Resource %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
        
-        pep.enforce( **pepDict )
+        pepRes =  pep.enforce( **pepDict )
+        #print pepRes
 
         # remove from InCheck list
         self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
       except Exception:
-        gLogger.exception( 'RSInspector._executeCheck' )
+        gLogger.exception( "RSInspector._executeCheck Checking Resource %s, with type/status: %s/%s" % \
+                      ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
         try:
           self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:

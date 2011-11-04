@@ -11,7 +11,7 @@ from DIRAC.Core.Base.AgentModule                      import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
 
 from DIRAC.ResourceStatusSystem                       import CheckingFreqs
-from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
 from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
@@ -36,7 +36,7 @@ class StElInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsAPI                       = ResourceStatusAPI()      
+      self.rsClient                       = ResourceStatusClient()      
       self.StorageElementsFreqs        = CheckingFreqs[ 'StorageElementsFreqs' ]
       self.StorageElementsToBeChecked  = Queue.Queue()
       self.StorageElementsNamesInCheck = [] 
@@ -67,7 +67,7 @@ class StElInspectorAgent( AgentModule ):
 
       kwargs = { 'columns' : [ 'StorageElementName', 'StatusType', 'Status', \
                               'FormerStatus', 'SiteType', 'TokenOwner' ] }
-      resQuery = self.rsAPI.getStuffToCheck( 'StorageElement', self.StorageElementsFreqs, **kwargs )
+      resQuery = self.rsClient.getStuffToCheck( 'StorageElement', self.StorageElementsFreqs, **kwargs )
 
       for seTuple in resQuery[ 'Value' ]:
         
@@ -111,29 +111,30 @@ class StElInspectorAgent( AgentModule ):
   def _executeCheck( self, _arg ):
 
     # Init the APIs beforehand, and reuse them. 
-    __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI', 'SLSClient' ]
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'SLSClient' ]
     clients = initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
     while True:
 
+      toBeChecked = self.StorageElementsToBeChecked.get()
+
+      pepDict = { 'granularity'  : toBeChecked[ 0 ],
+                  'name'         : toBeChecked[ 1 ],
+                  'statusType'   : toBeChecked[ 2 ],
+                  'status'       : toBeChecked[ 3 ],
+                  'formerStatus' : toBeChecked[ 4 ],
+                  'siteType'     : toBeChecked[ 5 ],
+                  'tokenOwner'   : toBeChecked[ 6 ] }
+
       try:
-
-        toBeChecked = self.StorageElementsToBeChecked.get()
-
-        pepDict = { 'granularity'  : toBeChecked[ 0 ],
-                    'name'         : toBeChecked[ 1 ],
-                    'statusType'   : toBeChecked[ 2 ],
-                    'status'       : toBeChecked[ 3 ],
-                    'formerStatus' : toBeChecked[ 4 ],
-                    'siteType'     : toBeChecked[ 5 ],
-                    'tokenOwner'   : toBeChecked[ 6 ] }
 
         gLogger.info( "Checking StorageElement %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
      
-        pep.enforce( **pepDict )
+        pepRes = pep.enforce( **pepDict )
+        #print pepRes
 
         # remove from InCheck list
         self.StorageElementsNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
