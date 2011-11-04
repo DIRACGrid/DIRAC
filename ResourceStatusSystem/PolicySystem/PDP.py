@@ -270,7 +270,7 @@ class PDP:
         If such result is older than 2 hours, it returns {'Status':'Unknown'}
     """
 
-    res = self.clients['ResourceManagementAPI'].getPolicyResult( name = name, policyName = policyName )#, True )
+    res = self.clients['ResourceManagementClient'].getPolicyResult( name = name, policyName = policyName )#, True )
 
     if not res['OK']:
       raise RSSException, where( self, self.__useOldPolicyRes ) + ' Could not get a policy result'
