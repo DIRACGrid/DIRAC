@@ -127,11 +127,11 @@ class TokenAgent( AgentModule ):
           mailMessage += policyMessage
           adminMail   += policyMessage
           
-#          self.nc.sendMail( getMailForUser( user )[ 'Value' ][ 0 ], 
-#                            'Token for %s is expiring' % name, mailMessage )
-#      if adminMail != '':
-#        self.nc.sendMail( getMailForUser( 'ubeda' )[ 'Value' ][ 0 ], 
-#                            "Token's summary", adminMail )
+          self.nc.sendMail( getMailForUser( user )[ 'Value' ][ 0 ], 
+                            'Token for %s is expiring' % name, mailMessage )
+      if adminMail != '':
+        self.nc.sendMail( getMailForUser( 'ubeda' )[ 'Value' ][ 0 ], 
+                            "Token's summary", adminMail )
 
       return S_OK()
     
