@@ -53,9 +53,9 @@ class PrivatePilotsClient( object ):
       res = RPC.getPilotSummaryWeb( { 'GridSite' : name }, [], 0, 300 )
     elif granularity == 'Resource':
       if siteName is None:
-        from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
-        rsAPI = ResourceStatusAPI()
-        siteName = rsAPI.getGeneralName( granularity, name, 'Site' )
+        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+        rsClient = ResourceStatusClient()
+        siteName = rsClient.getGeneralName( granularity, name, 'Site' )
         if not siteName[ 'OK' ]:
           raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
         if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
