@@ -558,6 +558,99 @@ class ClientDec5( object ):
 
 ################################################################################
 
+class ClientDec6( BaseDec ):
+  
+  def __call__( self, *args, **kwargs ):
+
+    INTERNAL_FUNCTIONS = [ 'insert', 'update', 'get', 'delete' ]
+
+    fname   = self.f.__name__   
+    client = args[ 0 ].gate     
+ 
+    ins = inspect.getargspec( self.f )
+    
+    defKwargs = ( 1 and ins.defaults ) or () 
+    
+    kwargsLen = len( defKwargs )
+    argsLen   = len( ins.args ) - kwargsLen 
+    if ins.varargs is not None:
+      argsLen = len( ins.args )
+    
+    #processArgs
+    newArgs = tuple( list( args )[ 1:argsLen ] )   
+    if len( args ) > len( ins.args ):
+      raise TypeError( '%s arguments received' % len(args) )
+    
+    #processKwargs
+    newKwargs = []
+    if kwargsLen: #newArgs:
+      #Keyword arguments on function self.f
+      funkwargs = ins.args[ -kwargsLen: ]
+      kw      = dict(zip( funkwargs, defKwargs ) )
+      
+      kw.update( kwargs ) 
+      
+      if list( args )[ argsLen: ]:
+        for _i in xrange( argsLen, len(args) ):
+          
+          funkey = funkwargs[ _i - argsLen ]
+          
+          if kw[ funkey ] is not None:
+            raise TypeError( '%s Got %s twice %s,%s' % ( fname, funkey, kw[ funkey ], args[_i]))
+          kw[ funkey ] = args[ _i ]
+      
+      newKwargs = [ kw[k] for k in funkwargs ]
+      
+      for fk in funkwargs:
+        kwargs.pop( fk, None )    
+
+    else:     
+      if not len( args ) == len ( ins.args ):
+        raise TypeError( '%s arguments received' % len( args ))
+
+    args    = tuple( list(newArgs) + newKwargs )         
+    
+    try:
+      
+      _fname, _table = fname,''
+      
+      for _if in INTERNAL_FUNCTIONS:
+        if fname.startswith( _if ):
+          _fname = _if
+          _table = fname.replace( _if, '' )
+          if _table.startswith( 'Element' ):
+            _element = args[ 0 ]
+            _table   = _table.replace( 'Element', _element )
+            args = args[ 1: ]
+            kwargs.pop( 'element', None ) 
+
+      kwargs[ 'table' ] = _table
+                   
+      gateFunction      = getattr( client, _fname )
+
+    except Exception, x:
+      return S_ERROR( x )  
+     
+    return gateFunction( args, kwargs )
+
+################################################################################
+
+class ClientDec7( BaseDec ):
+  
+  def __call__( self, *args, **kwargs ):
+
+    private = args[ 0 ].private
+    gate    = args[ 0 ].gate
+     
+    try:
+      eBaseAPIFunction      = getattr( eBaseAPI, self.f.__name__ )
+      args = args[1:]
+      return eBaseAPIFunction( *args, **kwargs )
+    except Exception, x:
+      return S_ERROR( x ) 
+
+################################################################################
+
 class APIDecorator( object ):
   
   def __init__( self, f ):

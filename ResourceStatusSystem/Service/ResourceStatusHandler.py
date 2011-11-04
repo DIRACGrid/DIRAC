@@ -48,7 +48,7 @@ class ResourceStatusHandler( RequestHandler ):
   - delete 
   
   are exposed. If you need anything more complicated, either look for it on the 
-  :class:`ResourceStatusAPI`, or code it yourself. This way the DB and the 
+  :class:`ResourceStatusClient`, or code it yourself. This way the DB and the 
   Service are kept clean and tidied.
 
   To can use this service on this way, but you MUST NOT DO IT. Use it through the

@@ -91,8 +91,8 @@ def getOperationMails( op ):
   return gConfig.getOption("%s/EMail/%s" %(g_BaseOperationsSection, op) ,'')
 
 def getMailForUser(users):
-  from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
-  rmAPI = ResourceManagementAPI()
+  from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+  rmAPI = ResourceManagementClient()
 
   if isinstance(users, basestring):
     users = [users]

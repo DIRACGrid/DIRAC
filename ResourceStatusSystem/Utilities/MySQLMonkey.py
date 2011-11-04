@@ -441,24 +441,40 @@ class MySQLStatements( object ):
   def __insert( self, rDict, **kwargs ):
     
     sqlStatement = self.__insertSQLStatement( rDict, **kwargs )
-    return self.dbWrapper.db._update( sqlStatement )
-    
+    res = self.dbWrapper.db._update( sqlStatement )
+    res[ 'sql' ] = sqlStatement
+    res[ 'rDict' ] = rDict
+    res[ 'kwargs' ] = kwargs
+    return res
+     
   def __select( self, rDict, **kwargs ):
 
     sqlStatement = self.__selectSQLStatement( rDict, **kwargs )
     sqlQuery     = self.dbWrapper.db._query( sqlStatement )
     
-    return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )     
+    res = S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )
+    res[ 'sql' ] = sqlStatement
+    res[ 'rDict' ] = rDict
+    res[ 'kwargs' ] = kwargs
+    return res     
  
   def __update( self, rDict, **kwargs ):
      
     sqlStatement = self.__updateSQLStatement( rDict, **kwargs )
-    return self.dbWrapper.db._update( sqlStatement )
+    res = self.dbWrapper.db._update( sqlStatement )
+    res[ 'sql' ] = sqlStatement
+    res[ 'rDict' ] = rDict
+    res[ 'kwargs' ] = kwargs
+    return res
        
   def __delete( self, rDict, **kwargs ):
     
     sqlStatement = self.__deleteSQLStatement( rDict, **kwargs )
-    return self.dbWrapper.db._update( sqlStatement )     
+    res = self.dbWrapper.db._update( sqlStatement )
+    res[ 'sql' ] = sqlStatement
+    res[ 'rDict' ] = rDict
+    res[ 'kwargs' ] = kwargs
+    return res     
        
 ################################################################################
 # SQL STATEMENTS FUNCTIONS

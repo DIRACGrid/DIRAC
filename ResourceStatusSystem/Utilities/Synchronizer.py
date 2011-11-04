@@ -23,12 +23,12 @@ class Synchronizer(object):
     self.GOCDBClient = GOCDBClient()
 
     if self.rsAPI == None:
-      from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
-      self.rsAPI = ResourceStatusAPI()
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsAPI = ResourceStatusClient()
 
     if self.rmAPI == None:
-      from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
-      self.rmAPI = ResourceManagementAPI()
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.rmAPI = ResourceManagementClient()
 
 ################################################################################
 
