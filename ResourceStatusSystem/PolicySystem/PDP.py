@@ -132,11 +132,12 @@ class PDP:
       if newstatus != self.__status: # Policies satisfy
         newPolicyType = self.ig.getNewPolicyType(self.__granularity, newstatus)
         policyType = set(policyType) & set(newPolicyType)
-        policyCombinedResults["PolicyType"] = policyType
-        policyCombinedResults["Action"]     = True
+        policyCombinedResults["Action"] = True
 
       else:                          # Policies does not satisfy
         policyCombinedResults["Action"] = False
+
+      policyCombinedResults["PolicyType"] = policyType
 
     return { 'SinglePolicyResults'  : singlePolicyResults,
              'PolicyCombinedResult' : policyCombinedResults }
