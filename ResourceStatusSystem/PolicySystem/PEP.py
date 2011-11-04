@@ -104,19 +104,19 @@ class PEP:
     self.VOExtension = VOExtension
 
     #DB
-    if not clients.has_key( 'ResourceStatusAPI' ):
+    if not clients.has_key( 'ResourceStatusClient' ):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.API.ResourceStatusAPI import ResourceStatusAPI
-      self.rsAPI = ResourceStatusAPI( )
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsAPI = ResourceStatusClient( )
     else:
-      self.rsAPI = clients[ 'ResourceStatusAPI' ]
+      self.rsAPI = clients[ 'ResourceStatusClient' ]
 
-    if not clients.has_key( 'ResourceManagementAPI'):
+    if not clients.has_key( 'ResourceManagementClient'):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.API.ResourceManagementAPI import ResourceManagementAPI
-      self.rmAPI = ResourceManagementAPI()
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.rmAPI = ResourceManagementClient()
     else:
-      self.rmAPI = clients[ 'ResourceManagementAPI' ]
+      self.rmAPI = clients[ 'ResourceManagementClient' ]
 
     #setup
     if setup is None:
