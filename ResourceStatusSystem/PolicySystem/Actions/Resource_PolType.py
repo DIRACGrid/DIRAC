@@ -60,7 +60,7 @@ def ResourcePolTypeActions( granularity, name, statusType, resDecisions, rsAPI, 
 
   for resP in resDecisions['SinglePolicyResults']:
     if not resP.has_key( 'OLD' ):
-      rmAPI.addOrModifyPolicyResult( granularity, name, resP['PolicyName'], resP['Status'], resP['Reason'], now, now )
+      rmAPI.addOrModifyPolicyResult( granularity, name, resP['PolicyName'], statusType, resP['Status'], resP['Reason'], now, now )
 
   if res.has_key( 'EndDate' ):
     rsAPI.setDateEnd( granularity, name, statusType, res['EndDate'] )
