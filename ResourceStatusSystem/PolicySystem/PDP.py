@@ -5,12 +5,11 @@ __RCSID__  = "$Id$"
 
 import datetime
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 from DIRAC.ResourceStatusSystem.PolicySystem                import Status
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller   import PolicyCaller
 from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
+from DIRAC.ResourceStatusSystem.Utilities                   import Utils
 
 class PDP:
   """
@@ -270,13 +269,7 @@ class PDP:
     """ Use the RSS Service to get an old policy result.
         If such result is older than 2 hours, it returns {'Status':'Unknown'}
     """
-
-    res = self.clients['ResourceManagementClient'].getPolicyResult( name = name, policyName = policyName )#, True )
-
-    if not res['OK']:
-      raise RSSException, where( self, self.__useOldPolicyRes ) + ' Could not get a policy result'
-
-    res = res['Value']
+    res = Utils.unpack(self.clients['ResourceManagementClient'].getPolicyResult( name = name, policyName = policyName ))
 
     if res == []:
       return {'Status':'Unknown'}
