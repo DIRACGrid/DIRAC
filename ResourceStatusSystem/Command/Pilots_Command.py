@@ -70,7 +70,7 @@ class PilotsEff_Command(Command):
 
 class PilotsEffSimple_Command(Command):
 
-  __APIs__ = [ 'ResourceStatusAPI', 'PilotsClient' ]
+  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient' ]
 
   def doCommand(self, RSClientIn = None):
     """
@@ -93,7 +93,7 @@ class PilotsEffSimple_Command(Command):
     if self.args[0] == 'Service':
       
       try:
-        name = self.APIs[ 'ResourceStatusAPI' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("PilotsEffSimple_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}
@@ -124,7 +124,7 @@ class PilotsEffSimple_Command(Command):
 
 class PilotsEffSimpleCached_Command(Command):
 
-  __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI' ]
+  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
 
   def doCommand(self):
     """
@@ -146,7 +146,7 @@ class PilotsEffSimpleCached_Command(Command):
 
     if self.args[0] == 'Service':
       try:
-        name = self.APIs[ 'ResourceStatusAPI' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("PilotsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}
@@ -168,7 +168,7 @@ class PilotsEffSimpleCached_Command(Command):
       kwargs     = { 'columns'     : 'Result' }
       clientDict.update( kwargs )  
       
-      res = self.APIs[ 'ResourceManagementAPI' ].getClientCache( **clientDict )[ 'Value' ]        
+      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]        
       print res
         
       if res == None:
@@ -176,7 +176,7 @@ class PilotsEffSimpleCached_Command(Command):
       if res == []:
         return {'Result':'Idle'}
     except:
-      gLogger.exception("Exception when calling ResourceManagementAPI for %s %s" %(granularity, name))
+      gLogger.exception("Exception when calling ResourceManagementClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
 
     return {'Result':res[0]}

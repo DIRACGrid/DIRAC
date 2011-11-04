@@ -12,9 +12,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
   Here are all known and relevant APIs for the ResourceStatusSystem Commands
   They can be either clients or RPC servers. 
 '''
-__APIs__ = {
-  'ResourceStatusAPI'     : 'DIRAC.ResourceStatusSystem.API.ResourceStatusAPI',
-  'ResourceManagementAPI' : 'DIRAC.ResourceStatusSystem.API.ResourceManagementAPI'          
+__APIs__ = {         
             }
 
 __Clients__ = {

@@ -118,7 +118,7 @@ class SystemCharge_Command(Command):
 
 class JobsEffSimple_Command(Command):
   
-  __APIs__ = [ 'ResourceStatusAPI', 'JobsClient' ]
+  __APIs__ = [ 'ResourceStatusClient', 'JobsClient' ]
   
   def doCommand(self ):
     """ 
@@ -140,7 +140,7 @@ class JobsEffSimple_Command(Command):
     
     if self.args[0] == 'Service':
       try:
-        name = self.APIs[ 'ResourceStatusAPI' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("JobsEffSimple_Command: Can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
@@ -168,7 +168,7 @@ class JobsEffSimple_Command(Command):
 
 class JobsEffSimpleCached_Command(Command):
   
-  __APIs__ = [ 'ResourceStatusAPI', 'ResourceManagementAPI' ]
+  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
   
   def doCommand(self):
     """ 
@@ -190,7 +190,7 @@ class JobsEffSimpleCached_Command(Command):
       
     if self.args[0] == 'Service':
       try:
-        name = self.APIs[ 'ResourceStatusAPI' ].getGeneralName( self.args[0], self.args[1], 'Site' )['Value'][0]
+        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )['Value'][0]
       except:
         gLogger.error("JobsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
@@ -212,13 +212,13 @@ class JobsEffSimpleCached_Command(Command):
       kwargs     = { 'columns'     : 'Result' }
       clientDict.update( kwargs )  
       
-      res = self.APIs[ 'ResourceManagementAPI' ].getClientCache( **clientDict )[ 'Value' ]
+      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if res == None:
         return {'Result':'Idle'}
       if res == []:
         return {'Result':'Idle'}
     except:
-      gLogger.exception("Exception when calling ResourceStatusAPI for %s %s" %(granularity, name))
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
     
     return {'Result':res[0]}
