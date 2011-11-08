@@ -19,8 +19,8 @@ class BaseAccountingType:
     self.startTime = 0
     self.endTime = 0
     self.dataTimespan = 0
-    self.bucketsLength = [ ( 604800, 3600 ), #<1w = 1h
-                           ( 15552000, 86400 ), #>1w <6m = 1d
+    self.bucketsLength = [ ( 86400 * 8, 3600 ), #<1w+1 = 1h
+                           ( 15552000, 86400 ), #>1w+1d <6m = 1d
                            ( 31104000, 604800 ), #>6m = 1w
                          ]
     self.definitionKeyFields = []
