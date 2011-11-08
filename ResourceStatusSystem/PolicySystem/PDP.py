@@ -276,14 +276,13 @@ class PDP:
     if not res['OK']:
       raise RSSException, where( self, self.__useOldPolicyRes ) + ' Could not get a policy result'
 
-    res = res['Value']
-
-    if res == []:
+    if not res[ 'Value' ]:
       return {'Status':'Unknown'}
-
-    oldStatus = res[0]
-    oldReason = res[1]
-    lastCheckTime = res[2]
+    res = res[ 'Value' ][ 0 ]
+    
+    oldStatus     = res[5]
+    oldReason     = res[6]
+    lastCheckTime = res[8]
 
     if ( lastCheckTime + datetime.timedelta(hours = 2) ) < datetime.datetime.utcnow():
       return {'Status':'Unknown'}
