@@ -1182,6 +1182,7 @@ def createBashrc():
       lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
                      'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
+                     'export DYLD_LIBRARY_PATH=$DIRACLIB',
                      'export PYTHONPATH=$DIRAC'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )
@@ -1202,7 +1203,9 @@ def writeDefaultConfiguration():
   for opName in instCFG.getOptions():
     instCFG.delPath( opName )
 
-  filePath = os.path.join( cliParams.targetPath, "defaults-%s.cfg" % cliParams.installation )
+  # filePath = os.path.join( cliParams.targetPath, "defaults-%s.cfg" % cliParams.installation )
+  # Keep the default configuration file in the working directory
+  filePath = "defaults-%s.cfg" % cliParams.installation
   try:
     fd = open( filePath, "wb" )
     fd.write( instCFG.toString() )
