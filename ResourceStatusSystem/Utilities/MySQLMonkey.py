@@ -119,7 +119,7 @@ class MySQLTable( MySQLNode ):
                'table'      : 'information_schema.COLUMNS' 
              } 
         
-    columnsQuery = self.parent.mm.get2( rDict, **kwargs )
+    columnsQuery = self.parent.mm.get( rDict, kwargs )
     if not columnsQuery[ 'OK' ]:
       columnsQuery = { 'Value' : [] }
 
@@ -133,7 +133,7 @@ class MySQLTable( MySQLNode ):
     kwargs = { 'columns' : [ 'CONSTRAINT_NAME', 'COLUMN_NAME' ],
                'table'   : 'information_schema.KEY_COLUMN_USAGE' }
     
-    keyColumnsUsageQuery = self.parent.mm.get2( rDict, **kwargs )
+    keyColumnsUsageQuery = self.parent.mm.get( rDict, kwargs )
     if not keyColumnsUsageQuery[ 'OK' ]:
       keyColumnsUsageQuery = { 'Value' : [] }
       
@@ -156,7 +156,7 @@ class MySQLSchema( MySQLNode ):
     kwargs = { 'columns'    : [ 'TABLE_NAME', 'TABLE_TYPE' ], 
                'table'      : 'information_schema.TABLES' } 
         
-    tablesQuery = self.mm.get2( rDict, **kwargs )
+    tablesQuery = self.mm.get( rDict, kwargs )
     if not tablesQuery[ 'OK' ]:
       tablesQuery[ 'Value' ] = []
 
@@ -204,65 +204,81 @@ class MySQLStatements( object ):
 # PUBLIC FUNCTIONS II
 ################################################################################
 
-  def insert2( self, *args, **kwargs ):
-    
-    #try:
-      # PARSING #
-      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
-      pKwargs[ 'onlyUniqueKeys' ] = True
-      # END PARSING #
-    
-      return self.__insert( pArgs, **pKwargs )
-    #except:
-    #  return S_ERROR( 'Message' )
+#  def insert2( self, *args, **kwargs ):
+#    
+#    #try:
+#      # PARSING #
+#      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
+#      pKwargs[ 'onlyUniqueKeys' ] = True
+#      # END PARSING #
+#    
+#      return self.__insert( pArgs, **pKwargs )
+#    #except:
+#    #  return S_ERROR( 'Message' )
+#
+#  def update2( self, *args, **kwargs ):
+#    
+#    #try:
+#      # PARSING #
+#      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
+#      pKwargs[ 'onlyUniqueKeys' ] = True
+#      # END PARSING #
+#    
+#      return self.__update( pArgs, **pKwargs )
+#    #except:
+#    #  return S_ERROR( 'Message' )
+#
+#  def get( self, *args, **kwargs ):
+#    
+#    #try:
+#      # PARSING #
+#      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
+#      # END PARSING #
+#    
+#      return self.__select( pArgs, **pKwargs )
+#    #except:
+#    #  return S_ERROR( 'Message' )
+#
+#  def delete2( self, *args, **kwargs ):
+#    
+#    #try:
+#      # PARSING #
+#      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
+#      # END PARSING #
+#    
+#      return self.__delete( pArgs, **pKwargs )
+#    #except:
+#    #  return S_ERROR( 'Message')
 
-  def update2( self, *args, **kwargs ):
+  def insert( self, params, meta ):
     
-    #try:
-      # PARSING #
-      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
-      pKwargs[ 'onlyUniqueKeys' ] = True
-      # END PARSING #
+      params, meta  = self.__parseInput( params, meta )
+      meta[ 'onlyUniqueKeys' ] = True
     
-      return self.__update( pArgs, **pKwargs )
-    #except:
-    #  return S_ERROR( 'Message' )
+      return self.__insert( params, **meta )
+    
+  def update( self, params, meta ):
+    
+      params, meta  = self.__parseInput( params, meta )
+      meta[ 'onlyUniqueKeys' ] = True
+    
+      return self.__update( params, **meta )
 
-  def get2( self, *args, **kwargs ):
+  def get( self, params, meta ):
     
-    #try:
-      # PARSING #
-      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
-      # END PARSING #
+      params, meta  = self.__parseInput( params, meta )
     
-      return self.__select( pArgs, **pKwargs )
-    #except:
-    #  return S_ERROR( 'Message' )
-
-  def delete2( self, *args, **kwargs ):
+      return self.__select( params, **meta )
     
-    #try:
-      # PARSING #
-      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
-      # END PARSING #
+  def delete( self, params, meta ):
     
-      return self.__delete( pArgs, **pKwargs )
-    #except:
-    #  return S_ERROR( 'Message')
+      params, meta  = self.__parseInput( params, meta )   
+      return self.__delete( params, **meta )
 
 ################################################################################
 # PUBLIC FUNCTIONS
 ################################################################################
 
-#  def insert( self, rDict, **kwargs ):  
-#    
-#    # PARSING #
-#    rDict  = self.parseDict( rDict )
-#    kwargs = self.parseKwargs( kwargs )
-#    kwargs[ 'onlyUniqueKeys' ] = True
-#    # END PARSING #
-#    
-#    return self.__insert( rDict, **kwargs )
 #
 #  def insertQuery( self, rDict, **kwargs ):
 #    
@@ -276,15 +292,6 @@ class MySQLStatements( object ):
 
 ################################################################################
 
-#  def select( self, rDict, **kwargs ):  
-#
-#    # PARSING #
-#    rDict  = self.parseDict( rDict )
-#    kwargs = self.parseKwargs( kwargs )
-#    kwargs[ 'onlyUniqueKeys' ] = True
-#    # END PARSING #
-#    
-#    return self.__select( rDict, **kwargs )
 #
 #  def selectQuery( self, rDict, **kwargs ):
 #    
@@ -298,15 +305,6 @@ class MySQLStatements( object ):
 
 ################################################################################
 
-#  def get( self, rDict, **kwargs ):
-#
-#    # PARSING #
-#    rDict  = self.parseDict( rDict )
-#    kwargs = self.parseKwargs( kwargs )
-#    #kwargs[ 'onlyUniqueKeys' ] = None 
-#    # END PARSING #
-#
-#    return self.__select( rDict, **kwargs )
 #
 #  def getQuery( self, rDict, **kwargs ):
 #    
@@ -320,15 +318,6 @@ class MySQLStatements( object ):
 
 ################################################################################
 
-#  def update( self, rDict, **kwargs ):
-#
-#    # PARSING #
-#    rDict  = self.parseDict( rDict )
-#    kwargs = self.parseKwargs( kwargs )
-#    kwargs[ 'onlyUniqueKeys' ] = True
-#    # END PARSING #
-#    
-#    return self.__update( rDict, **kwargs )    
 #
 #  def updateQuery( self, rDict, **kwargs ):
 #    
@@ -341,16 +330,7 @@ class MySQLStatements( object ):
 #    return self.__updateSQLStatement( rDict, **kwargs )
 
 ################################################################################    
-    
-#  def delete( self, rDict, **kwargs ):
-#
-#    # PARSING #
-#    rDict  = self.parseDict( rDict )
-#    kwargs = self.parseKwargs( kwargs )
-#    #kwargs[ 'onlyUniqueKeys' ] = None
-#    # END PARSING #
-#
-#    return self.__delete( rDict, **kwargs )
+
 #
 #  def deleteQuery( self, rDict, **kwargs ):
 #    
@@ -366,73 +346,59 @@ class MySQLStatements( object ):
 # PARSERS
 ################################################################################
 
-  def __parseInput( self, *args, **kwargs ):
+  def __parseInput( self, params, meta ):
     
-    parsedKwargs = self.__parseKwargs( **kwargs )
-    parsedArgs   = self.__parseArgs( *args, **kwargs )
+    parsedMeta   = self.__parseKwargs( meta )   
+    parsedParams = self.__parseArgs( params, parsedMeta )
+    
+    return parsedParams,parsedMeta
 
-    return parsedArgs,parsedKwargs
-
-  def __parseArgs( self, *args, **kwargs ):
+  def __parseArgs( self, params, meta ):
+    
+    upperParams = {}
+    
+    for p in params.keys():
+      pCap = p[0].upper() + p[1:]
+      upperParams[ pCap ] = params[ p ]
     
     # CHECK FOR EVIL !!
     
-    if 'information_schema' in kwargs[ 'table' ]:
-      return args[0]
+    if 'information_schema' in meta[ 'table' ]:
+      return upperParams
     
-    if self.SCHEMA.has_key( kwargs[ 'table' ] ):
-      _columns = self.SCHEMA[ kwargs[ 'table' ] ][ 'columns' ]
+    if self.SCHEMA.has_key( meta[ 'table' ] ):
+      _columns = self.SCHEMA[ meta[ 'table' ] ][ 'columns' ]
     
-      if len( args ) != len( _columns ):
+      if len( upperParams ) != len( _columns ):
         msg = 'Arguments length is %d, got %d - %s' 
-        msg = msg % ( len( _columns ), len(args), str(args) )
+        msg = msg % ( len( _columns ), len(upperParams), str(upperParams) )
         raise RSSDBException( msg )
     
-    argsDict = {}
-    _junk    = map(lambda k, v: argsDict.update({k: v}), _columns, args )
+      for _col in _columns:
+        if not upperParams.has_key( _col ):
+          raise RSSDBException( 'Wrong parameter name: %s' % _col )
      
-    return argsDict
-
-#  def parseKwargs( self, kwargs ):
-#    pKwargs = {}
-#    for ak in self.ACCEPTED_KWARGS:
-#      pKwargs[ ak ] = kwargs.pop( ak, None )
-#  
-#    if not pKwargs.has_key( 'table' ):
-#      raise RSSDBException( 'Table name not given' )
-#    
-##    if pKwargs[ 'onlyUniqueKeys' ] is None:
-##      pKwargs[ 'onlyUniqueKeys' ] = True
-#      
-#    if pKwargs[ 'uniqueKeys' ] is None:
-#      if self.dbWrapper.__SCHEMA__.has_key( pKwargs[ 'table'] ):
-#        if self.dbWrapper.__SCHEMA__[ pKwargs[ 'table'] ].has_key( 'uniqueKeys' ):
-#          pKwargs[ 'uniqueKeys' ] = self.dbWrapper.__SCHEMA__[ pKwargs[ 'table'] ][ 'uniqueKeys' ]  
-#    
-#    return pKwargs  
-
-  def __parseKwargs( self, **kwargs ):
+    return upperParams
+  
+  def __parseKwargs( self, meta ):
     
     pKwargs = {}
     for ak in self.ACCEPTED_KWARGS:
-      pKwargs[ ak ] = kwargs.pop( ak, None )
+      pKwargs[ ak ] = meta.pop( ak, None )
   
-    if not pKwargs.has_key( 'table' ):
+    if not pKwargs.has_key( 'table' ) or pKwargs[ 'table' ] is None:
       raise RSSDBException( 'Table name not given' )
     
     if 'information_schema' in pKwargs[ 'table' ]:
       return pKwargs
     
-#    if pKwargs[ 'onlyUniqueKeys' ] is None:
-#      pKwargs[ 'onlyUniqueKeys' ] = True
-      
+    if not self.SCHEMA.has_key( pKwargs[ 'table' ]):
+      raise RSSDBException( 'Table "%s" not found' % pKwargs[ 'table' ] )
+          
     if pKwargs[ 'uniqueKeys' ] is None:
       pKwargs[ 'uniqueKeys' ] = self.SCHEMA[ pKwargs[ 'table' ]][ 'keyColumns' ]
-#      if self.dbWrapper.__SCHEMA__.has_key( pKwargs[ 'table'] ):
-#        if self.dbWrapper.__SCHEMA__[ pKwargs[ 'table'] ].has_key( 'uniqueKeys' ):
-#          pKwargs[ 'uniqueKeys' ] = self.dbWrapper.__SCHEMA__[ pKwargs[ 'table'] ][ 'uniqueKeys' ]  
     
-    return pKwargs  
+    return pKwargs    
   
 ################################################################################
 # RAW SQL FUNCTIONS
@@ -441,40 +407,23 @@ class MySQLStatements( object ):
   def __insert( self, rDict, **kwargs ):
     
     sqlStatement = self.__insertSQLStatement( rDict, **kwargs )
-    res = self.dbWrapper.db._update( sqlStatement )
-    res[ 'sql' ] = sqlStatement
-    res[ 'rDict' ] = rDict
-    res[ 'kwargs' ] = kwargs
-    return res
-     
+    return self.dbWrapper.db._update( sqlStatement )
+         
   def __select( self, rDict, **kwargs ):
 
     sqlStatement = self.__selectSQLStatement( rDict, **kwargs )
     sqlQuery     = self.dbWrapper.db._query( sqlStatement )
-    
-    res = S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )
-    res[ 'sql' ] = sqlStatement
-    res[ 'rDict' ] = rDict
-    res[ 'kwargs' ] = kwargs
-    return res     
+    return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )    
  
   def __update( self, rDict, **kwargs ):
      
     sqlStatement = self.__updateSQLStatement( rDict, **kwargs )
-    res = self.dbWrapper.db._update( sqlStatement )
-    res[ 'sql' ] = sqlStatement
-    res[ 'rDict' ] = rDict
-    res[ 'kwargs' ] = kwargs
-    return res
+    return self.dbWrapper.db._update( sqlStatement )
        
   def __delete( self, rDict, **kwargs ):
     
     sqlStatement = self.__deleteSQLStatement( rDict, **kwargs )
-    res = self.dbWrapper.db._update( sqlStatement )
-    res[ 'sql' ] = sqlStatement
-    res[ 'rDict' ] = rDict
-    res[ 'kwargs' ] = kwargs
-    return res     
+    return self.dbWrapper.db._update( sqlStatement )
        
 ################################################################################
 # SQL STATEMENTS FUNCTIONS

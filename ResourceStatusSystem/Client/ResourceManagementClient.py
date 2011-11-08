@@ -6,7 +6,7 @@ __RCSID__ = "$Id:  $"
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB             import ResourceManagementDB
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientDec6
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientFastDec
 
 from datetime import datetime
 
@@ -54,8 +54,8 @@ class ResourceManagementClient:
     else:
       self.gate = serviceIn    
 
-  @ClientDec6
-  def insertEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
+  @ClientFastDec
+  def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
     '''
     Inserts on EnvironmentCache a new row with the arguments given.
     
@@ -72,9 +72,9 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    pass
-  @ClientDec6
-  def updateEnvironmentCache( self, hashEnv, siteName, environment, **kwargs ):
+    return locals()
+  @ClientFastDec
+  def updateEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
     '''
     Updates EnvironmentCache with the parameters given. By default, `hashEnv`
     will be the parameter used to select the row. 
@@ -92,10 +92,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def getEnvironmentCache( self, hashEnv = None, siteName = None, 
-                           environment = None, **kwargs ):
+                           environment = None, meta = {} ):
     '''
     Gets from EnvironmentCache all rows that match the parameters given.
     
@@ -112,10 +112,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def deleteEnvironmentCache( self, hashEnv = None, siteName = None, 
-                              environment = None, **kwargs ):
+                              environment = None, meta = {} ):
     '''
     Deletes from EnvironmentCache all rows that match the parameters given.
     
@@ -132,11 +132,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def insertPolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime,
-                          **kwargs ):
+                          meta = {} ):
     '''
     Inserts on PolicyResult a new row with the arguments given.
     
@@ -165,11 +165,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    pass 
-  @ClientDec6
+    return locals() 
+  @ClientFastDec
   def updatePolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime, 
-                          **kwargs ):
+                          meta = {} ):
     '''
     Updates PolicyResult with the parameters given. By default, `name`, 
     `policyName` and `statusType` will be the parameters used to select the row.
@@ -199,11 +199,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def getPolicyResult( self, granularity = None, name = None, policyName = None, 
                        statusType = None, status = None, reason = None, 
-                       dateEffective = None, lastCheckTime = None, **kwargs ):
+                       dateEffective = None, lastCheckTime = None, meta = {} ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
     
@@ -232,12 +232,12 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def deletePolicyResult( self, granularity = None, name = None, 
                           policyName = None, statusType = None, status = None, 
                           reason = None, dateEffective = None, 
-                          lastCheckTime = None, **kwargs ):
+                          lastCheckTime = None, meta = {} ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -266,10 +266,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def insertClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, **kwargs ):
+                         dateEffective, lastCheckTime, meta = {} ):
     '''
     Inserts on ClientCache a new row with the arguments given.
     
@@ -294,10 +294,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def updateClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, **kwargs ):
+                         dateEffective, lastCheckTime, meta = {} ):
     '''
     Updates ClientCache with the parameters given. By default, `name`, 
     `commandName` and `value` will be the parameters used to select the row.
@@ -323,11 +323,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def getClientCache( self, name = None, commandName = None, opt_ID = None, 
                       value = None, result = None, dateEffective = None, 
-                      lastCheckTime = None, **kwargs ):
+                      lastCheckTime = None, meta = {} ):
     '''
     Gets from ClientCache all rows that match the parameters given.
     
@@ -352,11 +352,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6 
+    return locals()
+  @ClientFastDec 
   def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
-                         lastCheckTime = None, **kwargs ):
+                         lastCheckTime = None, meta = {} ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -381,10 +381,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass  
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def insertAccountingCache( self, name, plotType, plotName, result, 
-                             dateEffective, lastCheckTime, **kwargs ):
+                             dateEffective, lastCheckTime, meta = {} ):
     '''
     Inserts on AccountingCache a new row with the arguments given.
     
@@ -407,10 +407,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def updateAccountingCache( self, name, plotType, plotName, result, 
-                             dateEffective, lastCheckTime, **kwargs ):
+                             dateEffective, lastCheckTime, meta = {} ):
     '''
     Updates AccountingCache with the parameters given. By default, `name`, 
     `plotType` and `plotName` will be the parameters used to select the row.
@@ -434,11 +434,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def getAccountingCache( self, name = None, plotType = None, plotName = None, 
                           result = None, dateEffective = None, 
-                          lastCheckTime = None, **kwargs ):
+                          lastCheckTime = None, meta = {} ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
     
@@ -461,12 +461,12 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def deleteAccountingCache( self, name = None, plotType = None, 
                              plotName = None, result = None, 
                              dateEffective = None, lastCheckTime = None, 
-                             **kwargs ):
+                             meta = {} ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -489,9 +489,9 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass  
-  @ClientDec6
-  def insertUserRegistryCache( self, login, name, email, **kwargs ):
+    return locals()
+  @ClientFastDec
+  def insertUserRegistryCache( self, login, name, email, meta = {} ):
     '''
     Inserts on UserRegistryCache a new row with the arguments given.
     
@@ -508,9 +508,9 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6
-  def updateUserRegistryCache( self, login, name, email, **kwargs ):
+    return locals()
+  @ClientFastDec
+  def updateUserRegistryCache( self, login, name, email, meta = {} ):
     '''
     Updates UserRegistryCache with the parameters given. By default, `login` 
     will be the parameter used to select the row.
@@ -528,10 +528,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6
+    return locals()
+  @ClientFastDec
   def getUserRegistryCache( self, login = None, name = None, email = None, 
-                            **kwargs ):
+                            meta = {} ):
     '''
     Gets from UserRegistryCache all rows that match the parameters given.
     
@@ -548,10 +548,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
-  @ClientDec6 
+    return locals()
+  @ClientFastDec 
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
-                               **kwargs ):                                            
+                               meta = {} ):                                            
     '''
     Deletes from UserRegistryCache all rows that match the parameters given.
     
@@ -568,7 +568,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    pass
+    return locals()
 
   '''
   ##############################################################################
@@ -594,8 +594,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    args = ( hashEnv, siteName, environment )
-    return self.__addOrModifyElement( 'EnvironmentCache', *args )
+    return self.__addOrModifyElement( 'EnvironmentCache', locals() )
 
   def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime ):
@@ -628,9 +627,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    args = ( granularity, name, policyName, statusType, status, reason, 
-             dateEffective, lastCheckTime) 
-    return self.__addOrModifyElement( 'PolicyResult', *args )
+    return self.__addOrModifyElement( 'PolicyResult', locals() )
 
   def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
                               dateEffective, lastCheckTime ):
@@ -659,9 +656,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    args = ( name, commandName, opt_ID, value, result, dateEffective, 
-             lastCheckTime )
-    return self.__addOrModifyElement( 'ClientCache', *args )
+    return self.__addOrModifyElement( 'ClientCache', locals() )
 
   def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
                                   dateEffective, lastCheckTime ):
@@ -688,8 +683,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    args = ( name, plotType, plotName, result, dateEffective, lastCheckTime )
-    return self.__addOrModifyElement( 'AccountingCache', *args )
+    return self.__addOrModifyElement( 'AccountingCache', locals() )
 
   def addOrModifyUserRegistryCache( self, login, name, email ):
     '''
@@ -709,8 +703,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    args = ( login, name, email )
-    return self.__addOrModifyElement( 'UserRegistryCache', *args ) 
+    return self.__addOrModifyElement( 'UserRegistryCache', locals() ) 
 
 ################################################################################
 
@@ -720,138 +713,57 @@ class ResourceManagementClient:
   ##############################################################################
   '''
 
-  def _insertElement( self, element, *args, **kwargs ):
+  def _insertElement( self, element, **kwargs ):
     
     fname = 'insert%s' % element
     f = getattr( self, fname )
-    return f( *args, **kwargs )
+    return f( **kwargs )
 
-  def _updateElement( self, element, *args, **kwargs ):
+  def _updateElement( self, element, **kwargs ): 
     
     fname = 'update%s' % element
     f = getattr( self, fname )
-    return f( *args, **kwargs )
+    return f( **kwargs )
 
-  def _getElement( self, element, *args, **kwargs ):
+  def _getElement( self, element, **kwargs ):
     
     fname = 'get%s' % element
     f = getattr( self, fname )
-    return f( *args, **kwargs )
+    return f( **kwargs )
 
-  def _deleteElement( self, element, *args, **kwargs ):
-    
+  def _deleteElement( self, element, **kwargs ):    
     fname = 'delete%s' % element
     f = getattr( self, fname )
-    return f( *args, **kwargs )
+    return f( **kwargs )
 
   '''
   ##############################################################################
   # addOrModify PRIVATE FUNCTIONS
   ##############################################################################
   ''' 
-  def __addOrModifyElement( self, element, *args ):
+  def __addOrModifyElement( self, element, kwargs ):
        
-    kwargs = { 'onlyUniqueKeys' : True }
-    sqlQuery = self._getElement( element, *args, **kwargs )     
+    del kwargs[ 'self' ]
+       
+    kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
+    sqlQuery = self._getElement( element, **kwargs )   
+    
+    del kwargs[ 'meta' ]
     
     if sqlQuery[ 'Value' ]:      
-      if element in [ 'PolicyResult', 'ClientCache', 'AccountingCache' ]:
-        args = list( args )
-        #Force lastCheckTime to now if not set
-        if args[ -1 ] is None:
-          args[ -1 ] = datetime.utcnow().replace( microsecond = 0 )
-        args = tuple( args )
+      #if element in [ 'PolicyResult', 'ClientCache', 'AccountingCache' ]:
+      if kwargs.has_key( 'lastCheckTime' ):
+        kwargs[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )      
       
-      return self._updateElement( element, *args )
+      return self._updateElement( element, **kwargs )
     else: 
-      if element in [ 'PolicyResult', 'ClientCache', 'AccountingCache' ]:
-        args = list( args )
-        #Force dateEffective to now if not set
-        if args[ -2 ] is None:
-          args[ -2 ] = datetime.utcnow().replace( microsecond = 0 )
-        #Force lastCheckTime to now if not set
-        if args[ -1 ] is None:
-          args[ -1 ] = datetime.utcnow().replace( microsecond = 0 )
-        args = tuple( args )
       
-      return self._insertElement( element, *args ) 
-
-
-#  def insert( self, *args, **kwargs ):
-#    '''
-#    This method calls the insert function in :class:`ResourceManagementDB`, either
-#    directly or remotely through the RPC Server :class:`ResourceManagementHandler`. 
-#    It does not add neither processing nor validation. If you need to know more 
-#    about this method, you must keep reading on the database documentation.     
-#      
-#    :param args: Tuple with the arguments for the insert function. 
-#    :type  args: tuple
-#    :param kwargs: Dictionary with the keyworded arguments for the insert\
-#      function. At least, kwargs contains the key table, with the table in which 
-#      args are going to be inserted.
-#    :type kwargs: dict
-#    :returns: Dictionary with key Value if execution successful, otherwise key\
-#      Message with logs.
-#    :rtype: S_OK || S_ERROR
-#    '''
-#    return self.gate.insert( args, kwargs )
-#
-#  def update( self, *args, **kwargs ):
-#    '''
-#    This method calls the update function in :class:`ResourceManagementDB`, either
-#    directly or remotely through the RPC Server :class:`ResourceManagementHandler`. 
-#    It does not add neither processing nor validation. If you need to know more 
-#    about this method, you must keep reading on the database documentation.
-#      
-#    :Parameters:
-#      **\*args** - `[,tuple]`
-#        arguments for the mysql query ( must match table columns ! ).
-#    
-#      **\*\*kwargs** - `[,dict]`
-#        metadata for the mysql query. It must contain, at least, `table` key
-#        with the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    return self.gate.update( args, kwargs )
-#
-#  def get( self, *args, **kwargs ):
-#    '''
-#    This method calls the get function in :class:`ResourceManagementDB`, either
-#    directly or remotely through the RPC Server :class:`ResourceManagementHandler`. 
-#    It does not add neither processing nor validation. If you need to know more 
-#    about this method, you must keep reading on the database documentation.
-#      
-#    :Parameters:
-#      **\*args** - `[,tuple]`
-#        arguments for the mysql query ( must match table columns ! ).
-#    
-#      **\*\*kwargs** - `[,dict]`
-#        metadata for the mysql query. It must contain, at least, `table` key
-#        with the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''  
-#    return self.gate.get( args, kwargs )
-#
-#  def delete( self, *args, **kwargs ):
-#    '''
-#    This method calls the delete function in :class:`ResourceManagementDB`, either
-#    directly or remotely through the RPC Server :class:`ResourceManagementHandler`. 
-#    It does not add neither processing nor validation. If you need to know more 
-#    about this method, you must keep reading on the database documentation.
-#      
-#    :Parameters:
-#      **\*args** - `[,tuple]`
-#        arguments for the mysql query ( must match table columns ! ).
-#    
-#      **\*\*kwargs** - `[,dict]`
-#        metadata for the mysql query. It must contain, at least, `table` key
-#        with the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    return self.gate.delete( args, kwargs )
+      if kwargs.has_key( 'lastCheckTime' ):
+        kwargs[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )
+      if kwargs.has_key( 'dateEffective' ):
+        kwargs[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+      
+      return self._insertElement( element, **kwargs ) 
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -163,13 +163,11 @@ class PilotsEffSimpleCached_Command(Command):
                      'name'        : name,
                      'commandName' : 'PilotsEffSimpleEverySites',
                      'value'       : 'PE_S',
-                     'opt_ID'      : 'NULL'
+                     'opt_ID'      : 'NULL',
+                     'meta'        : { 'columns'     : 'Result' }
                    }
-      kwargs     = { 'columns'     : 'Result' }
-      clientDict.update( kwargs )  
       
       res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]        
-      print res
         
       if res == None:
         return {'Result':'Idle'}

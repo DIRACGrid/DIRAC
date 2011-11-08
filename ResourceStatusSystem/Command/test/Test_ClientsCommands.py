@@ -12,7 +12,7 @@ from DIRAC import S_OK, S_ERROR
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
 
-from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
+from DIRAC.ResourceStatusSystem.Utilities.mock72 import Mock
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Command.MacroCommand import MacroCommand
 from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller

@@ -14,7 +14,7 @@ class TestCase_Description( unittest.TestCase ):
   def test_insert_definition( self ):
     
     ins = inspect.getargspec( self.db.insert.f.f )   
-    self.assertEqual( ins.args, [ 'self', 'args', 'kwargs' ] )
+    self.assertEqual( ins.args, [ 'self', 'params', 'meta' ] )
     self.assertEqual( ins.varargs,  None)
     self.assertEqual( ins.keywords, None )
     self.assertEqual( ins.defaults, None )
@@ -22,7 +22,7 @@ class TestCase_Description( unittest.TestCase ):
   def test_update_definition( self ):
     
     ins = inspect.getargspec( self.db.update.f.f )   
-    self.assertEqual( ins.args, [ 'self', 'args', 'kwargs' ] )
+    self.assertEqual( ins.args, [ 'self', 'params', 'meta' ] )
     self.assertEqual( ins.varargs,  None)
     self.assertEqual( ins.keywords, None )
     self.assertEqual( ins.defaults, None )
@@ -30,7 +30,7 @@ class TestCase_Description( unittest.TestCase ):
   def test_get_definition( self ):
     
     ins = inspect.getargspec( self.db.get.f.f )   
-    self.assertEqual( ins.args, [ 'self', 'args', 'kwargs' ] )
+    self.assertEqual( ins.args, [ 'self', 'params', 'meta' ] )
     self.assertEqual( ins.varargs,  None)
     self.assertEqual( ins.keywords, None )
     self.assertEqual( ins.defaults, None )
@@ -38,7 +38,7 @@ class TestCase_Description( unittest.TestCase ):
   def test_delete_definition( self ):
     
     ins = inspect.getargspec( self.db.delete.f.f )   
-    self.assertEqual( ins.args, [ 'self', 'args', 'kwargs' ] )
+    self.assertEqual( ins.args, [ 'self', 'params', 'meta' ] )
     self.assertEqual( ins.varargs,  None)
     self.assertEqual( ins.keywords, None )
     self.assertEqual( ins.defaults, None )

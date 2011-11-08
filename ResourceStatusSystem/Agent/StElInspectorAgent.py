@@ -65,8 +65,8 @@ class StElInspectorAgent( AgentModule ):
 
     try:
 
-      kwargs = { 'columns' : [ 'StorageElementName', 'StatusType', 'Status', \
-                              'FormerStatus', 'SiteType', 'TokenOwner' ] }
+      kwargs = { 'meta' : { 'columns' : [ 'StorageElementName', 'StatusType', 'Status', \
+                              'FormerStatus', 'SiteType', 'TokenOwner' ] } }
       resQuery = self.rsClient.getStuffToCheck( 'StorageElement', self.StorageElementsFreqs, **kwargs )
 
       for seTuple in resQuery[ 'Value' ]:

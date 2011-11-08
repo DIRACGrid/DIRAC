@@ -83,6 +83,6 @@ DROP TABLE IF EXISTS UserRegistryCache;
 CREATE TABLE UserRegistryCache(
   Login VARCHAR(16),
   Name VARCHAR(64) NOT NULL,
-  Email VARCHAR(64) UNIQUE NOT NULL,
+  Email VARCHAR(64) NOT NULL,
   PRIMARY KEY( Login )
 ) Engine=InnoDB;

@@ -61,8 +61,9 @@ class TokenAgent( AgentModule ):
       
       #reAssign the token to RS_SVC
       #for g in self.ELEMENTS:
+      
       for g in ValidRes:
-        tokensExpired = self.rsClient.getTokens( g, dateExpiration = datetime.datetime.utcnow() )
+        tokensExpired = self.rsClient.getTokens( g, tokenExpiration = datetime.datetime.utcnow() )
         
         if tokensExpired[ 'Value' ]:
           adminMail += '\nLIST OF EXPIRED %s TOKENS\n' % g
@@ -70,12 +71,11 @@ class TokenAgent( AgentModule ):
                 
         for token in tokensExpired[ 'Value' ]:
           
-          name  = token[ 0 ]
-          stype = token[ 1 ]
-          user  = token[ 2 ]
+          name  = token[ 1 ]
+          stype = token[ 2 ]
+          user  = token[ 9 ]
           
-          gLogger.info( ( g, name, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ), stype ))
-          self.rsClient.setToken( g, name, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ), stype )
+          print self.rsClient.setToken( g, name, stype, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ) )
           adminMail += ' %s %s %s\n' %( user.ljust(20), name.ljust(15), stype )
 
       #notify token owners
@@ -83,7 +83,7 @@ class TokenAgent( AgentModule ):
       #for g in self.ELEMENTS:
       for g in ValidRes:
           
-        tokensExpiring = self.rsClient.getTokens( g, dateExpiration = inNHours )
+        tokensExpiring = self.rsClient.getTokens( g, tokenExpiration = inNHours )
         
         if tokensExpiring[ 'Value' ]:
           adminMail += '\nLIST OF EXPIRING %s TOKENS\n' % g
@@ -91,11 +91,11 @@ class TokenAgent( AgentModule ):
                   
         for token in tokensExpiring[ 'Value' ]:
           
-          name  = token[ 0 ]
-          stype = token[ 1 ]
-          user  = token[ 2 ]
+          name  = token[ 1 ]
+          stype = token[ 2 ]
+          user  = token[ 9 ]
           
-          adminMail += '\n %s %s\n' %( user.ljust(20), name.ljust(15), stype )
+          adminMail += '\n %s %s %s\n' %( user.ljust(20), name.ljust(15), stype )
           
           #If user is RS_SVC, we ignore this, whenever the token is out, this
           #agent will set again the token to RS_SVC
@@ -129,7 +129,6 @@ class TokenAgent( AgentModule ):
           
           self.nc.sendMail( getMailForUser( user )[ 'Value' ][ 0 ], 
                             'Token for %s is expiring' % name, mailMessage )
-
       if adminMail != '':
         self.nc.sendMail( getMailForUser( 'ubeda' )[ 'Value' ][ 0 ], 
                             "Token's summary", adminMail )

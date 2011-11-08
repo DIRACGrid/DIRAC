@@ -58,10 +58,10 @@ class ResourceManagementHandler( RequestHandler ):
     global db
     db = database
 
-  types_insert = [ tuple, dict ]
+  types_insert = [ dict, dict ]
   @AdminRequired
   @HandlerDec3
-  def export_insert( self, args, kwargs ):
+  def export_insert( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
     does not add neither processing nor validation. If you need to know more 
@@ -79,12 +79,13 @@ class ResourceManagementHandler( RequestHandler ):
     '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the insert method returns ( db.insert )    
-    return db
+    credentials = self.getRemoteCredentials()
+    return db, credentials
 
-  types_update = [ tuple, dict ]
+  types_update = [ dict, dict ]
   @AdminRequired
   @HandlerDec3
-  def export_update( self, args, kwargs ):
+  def export_update( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
     does not add neither processing nor validation. If you need to know more 
@@ -102,11 +103,12 @@ class ResourceManagementHandler( RequestHandler ):
     '''      
     # It returns a db object, which is picked by the decorator and return whatever
     # the update method returns ( db.update )    
-    return db
+    credentials = self.getRemoteCredentials()
+    return db, credentials
 
-  types_get = [ tuple, dict ]
+  types_get = [ dict, dict ]
   @HandlerDec3
-  def export_get( self, args, kwargs ):
+  def export_get( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceManagementDB` remotely. 
     It does not add neither processing nor validation. If you need to know more\ 
@@ -124,12 +126,13 @@ class ResourceManagementHandler( RequestHandler ):
     '''      
     # It returns a db object, which is picked by the decorator and return whatever
     # the get method returns ( db.get )    
-    return db
+    credentials = self.getRemoteCredentials()
+    return db, credentials
 
-  types_delete = [ tuple, dict ]
+  types_delete = [ dict, dict ]
   @AdminRequired
   @HandlerDec3
-  def export_delete( self, args, kwargs ):
+  def export_delete( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely.\
     It does not add neither processing nor validation. If you need to know more \
@@ -147,7 +150,8 @@ class ResourceManagementHandler( RequestHandler ):
     '''         
     # It returns a db object, which is picked by the decorator and return whatever
     # the delete method returns ( db.delete )    
-    return db
+    credentials = self.getRemoteCredentials()
+    return db, credentials
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

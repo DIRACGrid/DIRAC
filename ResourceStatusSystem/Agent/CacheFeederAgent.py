@@ -31,9 +31,9 @@ class CacheFeederAgent( AgentModule ):
          
       commandsList_ClientsCache = [
         ( 'ClientsCache_Command', 'JobsEffSimpleEveryOne_Command'     ),
-#        ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
-#        ( 'ClientsCache_Command', 'DTEverySites_Command'              ),
-#        ( 'ClientsCache_Command', 'DTEveryResources_Command'          )
+        ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
+        ( 'ClientsCache_Command', 'DTEverySites_Command'              ),
+        ( 'ClientsCache_Command', 'DTEveryResources_Command'          )
         ]
 
       commandsList_AccountingCache =  [
@@ -119,23 +119,16 @@ class CacheFeederAgent( AgentModule ):
                   
                   resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
                   if not resQuery[ 'OK' ]:
-                    gLogger.error( resQuery[ 'Message' ] )
-                    gLogger.error( resQuery[ 'sql' ] )
-                    
+                    gLogger.error( resQuery[ 'Message' ] )                   
             
             else:
               for value in res[key].keys():
                 clientCache = ( key, commandName, None, value, 
                                 res[key][value], None, None )
                     
-                  
-                print clientCache    
                 resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
                 if not resQuery[ 'OK' ]:
                   gLogger.error( resQuery[ 'Message' ] )     
-                  gLogger.error( resQuery[ 'sql' ] )   
-                  gLogger.error( resQuery[ 'rDict' ] )
-                  gLogger.error( resQuery[ 'kwargs' ] )
                 
         except:
           gLogger.exception( "Exception when executing " + co[0][1] )

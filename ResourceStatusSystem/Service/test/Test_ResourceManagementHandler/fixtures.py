@@ -9,8 +9,9 @@ class DescriptionFixture( unittest.TestCase ):
     
     import DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler as mockedModule
     
-    mockedModule.RequestHandler       = RequestHandler
-    mockedModule.ResourceManagementDB = ResourceManagementDB
+    mockedModule.RequestHandler             = RequestHandler
+    mockedModule.RequestHandler.credentials = { 'group' : 'diracAdmin' }
+    mockedModule.ResourceManagementDB       = ResourceManagementDB
     
     mockedModule.ResourceManagementHandler.__bases__ = ( mockedModule.RequestHandler, )
     
@@ -20,3 +21,22 @@ class DescriptionFixture( unittest.TestCase ):
   def tearDown( self ):  
     
     del sys.modules[ 'DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler' ]
+    
+class DescriptionFixture_WithoutPerms( unittest.TestCase ):
+  
+  def setUp( self ):   
+    
+    import DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler as mockedModule
+    
+    mockedModule.RequestHandler             = RequestHandler
+    mockedModule.RequestHandler.credentials = {}
+    mockedModule.ResourceManagementDB       = ResourceManagementDB
+    
+    mockedModule.ResourceManagementHandler.__bases__ = ( mockedModule.RequestHandler, )
+    
+    mockedModule.initializeResourceManagementHandler( 1 )
+    self.handler = mockedModule.ResourceManagementHandler( '', '', '', '' )
+    
+  def tearDown( self ):  
+    
+    del sys.modules[ 'DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler' ]    

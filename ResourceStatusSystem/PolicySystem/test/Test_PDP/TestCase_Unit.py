@@ -5,7 +5,9 @@ class TestCase_Unit( unittest.TestCase ):
   def test_takeDecision_ok( self ):
     
     self.pdp.setup( 'LHCb', granularity = '' )
-    print self.pdp.takeDecision()
+    res = self.pdp.takeDecision()
+    self.assertEquals( res[ 'SinglePolicyResults' ], [])
+    self.assertEquals( res[ 'PolicyCombinedResult'], {'Action': False, 'Reason': 'No policy results', 'PolicyType': []})
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF                   

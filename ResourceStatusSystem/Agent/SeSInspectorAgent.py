@@ -65,8 +65,8 @@ class SeSInspectorAgent( AgentModule ):
 
     try:
 
-      kwargs = { 'columns' : [ 'ServiceName', 'StatusType', 'Status', 'FormerStatus', \
-                              'SiteType', 'ServiceType', 'TokenOwner' ] }
+      kwargs = { 'meta' : { 'columns' : [ 'ServiceName', 'StatusType', 'Status', 'FormerStatus', \
+                              'SiteType', 'ServiceType', 'TokenOwner' ] } }
       resQuery = self.rsClient.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
 
       for serviceTuple in resQuery[ 'Value' ]:

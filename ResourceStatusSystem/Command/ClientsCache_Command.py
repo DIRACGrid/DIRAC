@@ -38,7 +38,7 @@ class JobsEffSimpleEveryOne_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName' )
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' } )
       if not sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
@@ -82,7 +82,7 @@ class PilotsEffSimpleEverySites_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( columns = 'SiteName')
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' })
       if not sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
@@ -126,7 +126,7 @@ class TransferQualityEverySEs_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName')
+      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns' : 'StorageElementName' })
       if not SEs['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + SEs['Message']
       else:
@@ -206,7 +206,7 @@ class DTEverySites_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      GOC_sites = self.APIs[ 'ResourceStatusClient' ].getGridSite( columns = 'GridSiteName' )
+      GOC_sites = self.APIs[ 'ResourceStatusClient' ].getGridSite( meta = { 'columns' : 'GridSiteName' })
       if not GOC_sites['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
       else:
@@ -275,7 +275,7 @@ class DTEveryResources_Command( Command ):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if resources is None:
-      resources = self.APIs[ 'ResourceStatusClient' ].getResource( columns = 'ResourceName' )
+      resources = self.APIs[ 'ResourceStatusClient' ].getResource( meta = { 'columns' : 'ResourceName' })
       if not resources['OK']:
         raise RSSException, where( self, self.doCommand ) + " " + resources['Message']
       else:
