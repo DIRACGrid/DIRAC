@@ -10,7 +10,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
        
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName       
        
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientDec6     
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientFastDec     
 from DIRAC.ResourceStatusSystem                             import ValidRes,\
   ValidStatus, ValidStatusTypes, ValidSiteType, ValidServiceType, \
   ValidResourceType       
@@ -66,80 +66,80 @@ class ResourceStatusClient:
   ##############################################################################
   '''
   
-  @ClientDec6
-  def insertSite( self, siteName, siteType, gridSiteName, **kwargs ):
-    pass
-  @ClientDec6
-  def updateSite( self, siteName, siteType, gridSiteName, **kwargs ):
-    pass
-  @ClientDec6
+  @ClientFastDec
+  def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
+    return locals()
+  @ClientFastDec
+  def updateSite( self, siteName, siteType, gridSiteName, meta = {} ):
+    return locals()
+  @ClientFastDec
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
-               **kwargs ):
-    pass
-  @ClientDec6
+               meta = {} ):
+    return locals()
+  @ClientFastDec
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
-                  **kwargs ):
-    pass      
-  @ClientDec6
+                  meta = {} ):
+    return locals()      
+  @ClientFastDec
   def getSitePresent( self, siteName = None, siteType = None, 
                       gridSiteName = None, gridTier = None, statusType = None, 
                       status = None, dateEffective = None, reason = None, 
                       lastCheckTime = None, tokenOwner = None, 
-                      tokenExpiration = None, formerStatus = None, **kwargs ):
-    pass
+                      tokenExpiration = None, formerStatus = None, meta = {} ):
+    return locals()
 
   '''
   ##############################################################################
   # SERVICE FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec6
-  def insertService( self, serviceName, serviceType, siteName, **kwargs ):
-    pass
-  @ClientDec6
-  def updateService( self, serviceName, serviceType, siteName, **kwargs ):
-    pass
-  @ClientDec6
+  @ClientFastDec
+  def insertService( self, serviceName, serviceType, siteName, meta = {} ):
+    return locals()
+  @ClientFastDec
+  def updateService( self, serviceName, serviceType, siteName, meta = {} ):
+    return locals()
+  @ClientFastDec
   def getService( self, serviceName = None, serviceType = None, siteName = None, 
-                  **kwargs ):
-    pass
-  @ClientDec6
+                  meta = {} ):
+    return locals()
+  @ClientFastDec
   def deleteService( self, serviceName = None, serviceType = None, 
-                     siteName = None, **kwargs ):
-    pass
-  @ClientDec6  
+                     siteName = None, meta = {} ):
+    return locals()
+  @ClientFastDec  
   def getServicePresent( self, serviceName = None, siteName = None, 
                          siteType = None, serviceType = None, statusType = None, 
                          status = None, dateEffective = None, reason = None, 
                          lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, formerStatus = None, 
-                         **kwargs ):
-    pass
+                         meta = {} ):
+    return locals()
 
   '''
   ##############################################################################
   # RESOURCE FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec6
+  @ClientFastDec
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
-                      gridSiteName, **kwargs ):
-    pass
-  @ClientDec6
+                      gridSiteName, meta = {} ):
+    return locals()
+  @ClientFastDec
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
-                      gridSiteName, **kwargs ):
-    pass
-  @ClientDec6
+                      gridSiteName, meta = {} ):
+    return locals()
+  @ClientFastDec
   def getResource( self, resourceName = None, resourceType = None, 
                    serviceType = None, siteName = None, gridSiteName = None, 
-                   **kwargs ):
-    pass
-  @ClientDec6
+                   meta = {} ):
+    return locals()
+  @ClientFastDec
   def deleteResource( self, resourceName = None, resourceType = None, 
                       serviceType = None, siteName = None, gridSiteName = None, 
-                      **kwargs ):
-    pass
-  @ClientDec6      
+                      meta = {} ):
+    return locals()
+  @ClientFastDec      
   def getResourcePresent( self, resourceName = None, siteName = None, 
                           serviceType = None, gridSiteName = None, 
                           siteType = None, resourceType = None, 
@@ -147,157 +147,157 @@ class ResourceStatusClient:
                           dateEffective = None, reason = None, 
                           lastCheckTime = None, tokenOwner = None, 
                           tokenExpiration = None, formerStatus = None, 
-                          **kwargs ):
-    pass
+                          meta = {} ):
+    return locals()
 
   '''
   ##############################################################################
   # STORAGE ELEMENT FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec6
+  @ClientFastDec
   def insertStorageElement( self, storageElementName, resourceName, 
-                            gridSiteName, **kwargs ):
-    pass
-  @ClientDec6
+                            gridSiteName, meta = {} ):
+    return locals()
+  @ClientFastDec
   def updateStorageElement( self, storageElementName, resourceName, 
-                            gridSiteName, **kwargs ):
-    pass
-  @ClientDec6       
+                            gridSiteName, meta = {} ):
+    return locals()
+  @ClientFastDec       
   def getStorageElement( self, storageElementName = None, resourceName = None, 
-                         gridSiteName = None, **kwargs ):
-    pass
-  @ClientDec6       
+                         gridSiteName = None, meta = {} ):
+    return locals()
+  @ClientFastDec       
   def deleteStorageElement( self, storageElementName = None, 
                             resourceName = None, gridSiteName = None, 
-                            **kwargs ):
-    pass    
-  @ClientDec6      
+                            meta = {} ):
+    return locals()    
+  @ClientFastDec      
   def getStorageElementPresent( self, storageElementName = None, 
                                 resourceName = None, gridSiteName = None, 
                                 siteType = None, statusType = None, 
                                 status = None, dateEffective = None, 
                                 reason = None, lastCheckTime = None, 
                                 tokenOwner = None, tokenExpiration = None, 
-                                formerStatus = None, **kwargs ):
-    pass
+                                formerStatus = None, meta = {} ):
+    return locals()
 
   '''
   ##############################################################################
   # GRID SITE FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec6
-  def insertGridSite( self, gridSiteName, gridTier, **kwargs ):
-    pass
-  @ClientDec6
-  def updateGridSite( self, gridSiteName, gridTier, **kwargs ):
-    pass
-  @ClientDec6    
-  def getGridSite( self, gridSiteName = None, gridTier = None, **kwargs ):
-    pass
-  @ClientDec6    
-  def deleteGridSite( self, gridSiteName = None, gridTier = None, **kwargs ):        
-    pass
+  @ClientFastDec
+  def insertGridSite( self, gridSiteName, gridTier, meta = {} ):
+    return locals()
+  @ClientFastDec
+  def updateGridSite( self, gridSiteName, gridTier, meta = {} ):
+    return locals()
+  @ClientFastDec    
+  def getGridSite( self, gridSiteName = None, gridTier = None, meta = {} ):
+    return locals()
+  @ClientFastDec    
+  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = {} ):        
+    return locals()
 
   '''
   ##############################################################################
   # ELEMENT STATUS FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec6
+  @ClientFastDec
   def insertElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
-                           **kwargs ): 
-    pass
-  @ClientDec6
+                           meta = {} ): 
+    return locals()
+  @ClientFastDec
   def updateElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
-                           **kwargs ):
-    pass
-  @ClientDec6
+                           meta = {} ):
+    return locals()
+  @ClientFastDec
   def getElementStatus( self, element, elementName = None, statusType = None, 
                         status = None, reason = None, dateCreated = None, 
                         dateEffective = None, dateEnd = None, 
                         lastCheckTime = None, tokenOwner = None, 
-                        tokenExpiration = None, **kwargs ):
-    pass
-  @ClientDec6
+                        tokenExpiration = None, meta = {} ):
+    return locals()
+  @ClientFastDec
   def deleteElementStatus( self, element, elementName = None, statusType = None, 
                            status = None, reason = None, dateCreated = None, 
                            dateEffective = None, dateEnd = None, 
                            lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, **kwargs ):
-    pass
+                           tokenExpiration = None, meta = {} ):
+    return locals()
 
   '''
   ##############################################################################
   # ELEMENT SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec6
+  @ClientFastDec
   def insertElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
-                                    tokenExpiration, **kwargs ): 
-    pass
-  @ClientDec6
+                                    tokenExpiration, meta = {} ): 
+    return locals()
+  @ClientFastDec
   def updateElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
-                                    tokenExpiration, **kwargs ):
-    pass
-  @ClientDec6
+                                    tokenExpiration, meta = {} ):
+    return locals()
+  @ClientFastDec
   def getElementScheduledStatus( self, element, elementName = None, 
                                  statusType = None, status = None, 
                                  reason = None, dateCreated = None, 
                                  dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None, tokenOwner = None, 
-                                 tokenExpiration = None, **kwargs ):
-    pass
-  @ClientDec6
+                                 tokenExpiration = None, meta = {} ):
+    return locals()
+  @ClientFastDec
   def deleteElementScheduledStatus( self, element, elementName = None, 
                                     statusType = None, status = None, 
                                     reason = None, dateCreated = None,
                                     dateEffective = None, dateEnd = None, 
                                     lastCheckTime = None, tokenOwner = None, 
-                                    tokenExpiration = None, **kwargs ):
-    pass
+                                    tokenExpiration = None, meta = {} ):
+    return locals()
       
   '''
   ##############################################################################
   # ELEMENT HISTORY FUNCTIONS
   ##############################################################################
   '''
-  @ClientDec6
+  @ClientFastDec
   def insertElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
-                            **kwargs ): 
-    pass
-  @ClientDec6
+                            meta = {} ): 
+    return locals()
+  @ClientFastDec
   def updateElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
-                            **kwargs ):
-    pass
-  @ClientDec6
+                            meta = {} ):
+    return locals()
+  @ClientFastDec
   def getElementHistory( self, element, elementName = None, statusType = None, 
                          status = None, reason = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, 
                          lastCheckTime = None, tokenOwner = None, 
-                         tokenExpiration = None, **kwargs ):
-    pass
-  @ClientDec6
+                         tokenExpiration = None, meta = {} ):
+    return locals()
+  @ClientFastDec
   def deleteElementHistory( self, element, elementName = None, 
                             statusType = None, status = None, reason = None, 
                             dateCreated = None, dateEffective = None, 
                             dateEnd = None, lastCheckTime = None, 
                             tokenOwner = None, tokenExpiration = None, 
-                            **kwargs ):
-    pass  
+                            meta = {} ):
+    return locals() 
 
   '''
   ##############################################################################
@@ -325,29 +325,26 @@ class ResourceStatusClient:
   '''
 
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
-    args = ( siteName, siteType, gridSiteName )
-    return self.__addOrModifyElement( 'Site', *args )
+    return self.__addOrModifyElement( 'Site', locals() )
 
   def addOrModifyService( self, serviceName, serviceType, siteName ):
-    args = ( serviceName, serviceType, siteName )
-    return self.__addOrModifyElement( 'Service', *args )
+    return self.__addOrModifyElement( 'Service', locals() )
 
   def addOrModifyResource( self, resourceName, resourceType, serviceType, 
                            siteName, gridSiteName ):
-    args = ( resourceName, resourceType, serviceType, siteName, gridSiteName )
-    return self.__addOrModifyElement( 'Resource', *args )
+    return self.__addOrModifyElement( 'Resource', locals() )
 
   def addOrModifyStorageElement( self, storageElementName, resourceName, 
                                  gridSiteName ):
-    args = (storageElementName, resourceName, gridSiteName)
-    return self.__addOrModifyElement( 'StorageElement', *args )
+    return self.__addOrModifyElement( 'StorageElement', locals() )
 
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
 
     args = ( gridSiteName, gridTier )
-    kwargs = { 'onlyUniqueKeys' : True }
+    kwargs = { 'gridSiteName' : gridSiteName, 'gridTier' : gridTier, 
+               'meta' : { 'onlyUniqueKeys' : True } }
       
-    sqlQuery = self.getGridSite( *args, **kwargs )
+    sqlQuery = self.getGridSite( **kwargs )
    
     if sqlQuery[ 'Value' ]:
       return self.updateGridSite( *args )      
@@ -359,10 +356,7 @@ class ResourceStatusClient:
                            dateEffective = None, dateEnd = None,
                            lastCheckTime = None, tokenOwner = None, 
                            tokenExpiration = None ):
-    args = ( elementName, statusType, status, reason, dateCreated, 
-             dateEffective, dateEnd, lastCheckTime, tokenOwner, 
-             tokenExpiration )
-    return self.__modifyElementStatus( element, *args )
+    return self.__modifyElementStatus( locals() )
 
   def removeElement( self, element, elementName ):
     return self.__removeElement( element, elementName )
@@ -374,7 +368,9 @@ class ResourceStatusClient:
 #      self.__validateElementStatusTypes( 'Service', statusType )
       presentDict[ 'StatusType' ] = statusType
     
-    kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
+    kwargs   = { 'meta' : { 'columns' : [ 'Status'], 
+                            'count' : True, 
+                            'group' : 'Status' } }
     presentDict.update( kwargs )
 
     #sqlQuery = self.rsClient.getServicePresent( **presentDict )
@@ -407,7 +403,7 @@ class ResourceStatusClient:
         rDict[ 'siteName' ] = siteName
         
       else:
-        kwargs = { 'columns' : [ 'GridSiteName' ], 'siteName' : siteName }
+        kwargs = { 'meta' : {'columns' : [ 'GridSiteName' ] }, 'siteName' : siteName }
         #gridSiteName = [ gs[0] for gs in self.rsClient.getSite( siteName = siteName, **kwargs )[ 'Value' ] ]
         gridSiteName = [ gs[0] for gs in \
                          self._getElement( 'Site', **kwargs )[ 'Value' ] ]
@@ -422,7 +418,7 @@ class ResourceStatusClient:
     resourceNames = [ re[0] for re in \
                           self._getElement( 'Resource', **rDict )[ 'Value' ] ]
     
-    kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
+    kwargs   = { 'meta' : { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' } }
     presentDict[ 'resourceName' ] = resourceNames
     presentDict.update( kwargs )
     
@@ -444,7 +440,7 @@ class ResourceStatusClient:
     
     if element == 'Site':
 
-      kwargs = { 'columns' : [ 'GridSiteName' ], 'siteName' : name  }
+      kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'siteName' : name  }
       #gridSiteNames = [ gs[0] for gs in self.rsClient.getSite( siteName = name, **kwargs )[ 'Value' ] ]
       gridSiteNames = [ gs[0] for gs in \
                              self._getElement( 'Site', **kwargs )[ 'Value' ] ]
@@ -462,7 +458,7 @@ class ResourceStatusClient:
     storageElementNames = [ se[0] for se in \
                     self._getElement( 'StorageElement', **rDict )[ 'Value' ] ]
 
-    kwargs   = { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' }
+    kwargs   = { 'meta' : { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' } }
     presentDict[ 'storageElementName' ] = storageElementNames
     presentDict.update( kwargs )
     
@@ -476,26 +472,26 @@ class ResourceStatusClient:
 #    self.rsVal.validateElement( to_element )
 
     if from_element == 'Service':
-      kwargs = { 'columns' : [ 'SiteName' ], 'serviceName' : name }
+      kwargs = { 'meta' : { 'columns' : [ 'SiteName' ] }, 'serviceName' : name }
       resQuery = self._getElement( 'Service', **kwargs )
       #resQuery = self.rsClient.getService( serviceName = name, **kwargs )  
 
     elif from_element == 'Resource':
-      kwargs = { 'columns' : [ 'ServiceType' ], 'resourceName' : name }
+      kwargs = { 'meta' : { 'columns' : [ 'ServiceType' ] }, 'resourceName' : name }
       resQuery = self._getElement( 'Resource', **kwargs )
       #resQuery = self.rsClient.getResource( resourceName = name, **kwargs )    
       serviceType = resQuery[ 'Value' ][ 0 ][ 0 ]
 
       if serviceType == 'Computing':
-        kwargs = { 'columns' : [ 'SiteName' ], 'resourceName' : name }
+        kwargs = { 'meta' : { 'columns' : [ 'SiteName' ] }, 'resourceName' : name }
         resQuery = self._getElement( 'Resource', **kwargs )  
         #resQuery = self.rsClient.getResource( resourceName = name, **kwargs )
       else:
-        kwargs = { 'columns' : [ 'GridSiteName' ], 'resourceName' : name }    
+        kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'resourceName' : name }    
         #gridSiteNames = self.rsClient.getResource( resourceName = name, **kwargs )
         gridSiteNames = self._getElement( 'Resource', **kwargs )
         kwargs = { 
-                   'columns'      : [ 'SiteName' ], 
+                   'meta' : { 'columns'      : [ 'SiteName' ] }, 
                    'gridSiteName' : list( gridSiteNames[ 'Value' ] ) 
                  }  
         resQuery = self._getElement( 'Site', **kwargs )
@@ -504,15 +500,15 @@ class ResourceStatusClient:
     elif from_element == 'StorageElement':
 
       if to_element == 'Resource':
-        kwargs = { 'columns' : [ 'ResourceName' ], 'storageElementName' : name }   
+        kwargs = { 'meta' : { 'columns' : [ 'ResourceName' ] }, 'storageElementName' : name }   
         resQuery = self._getElement( 'StorageElement', **kwargs )
         #resQuery = self.rsClient.getStorageElement( storageElementName = name, **kwargs )
       else:
-        kwargs = { 'columns' : [ 'GridSiteName' ], 'storageElementName' : name }  
+        kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'storageElementName' : name }  
         #gridSiteNames = self.rsClient.getStorageElement( storageElementName = name, **kwargs )
         gridSiteNames = self._getElement( 'StorageElement', **kwargs )
         kwargs = { 
-                   'columns'      : [ 'SiteName' ], 
+                   'meta' : { 'columns'      : [ 'SiteName' ] }, 
                    'gridSiteName' : list( gridSiteNames[ 'Value' ] ) 
                  }
         resQuery = self._getElement( 'Site', **kwargs )
@@ -543,7 +539,7 @@ class ResourceStatusClient:
              }
 
     kwargs = { 
-              'columns' : [ 'GridSiteName' ] 
+              'meta' : { 'columns' : [ 'GridSiteName' ] } 
              }
     
     kwargs.update( rDict )
@@ -557,7 +553,7 @@ class ResourceStatusClient:
 
 #    self.rsVal.validateElement( granularity )  
 
-    rDict = {}
+    rDict = { 'element' : granularity }
     if name is not None:
       rDict[ '%sName' % granularity ] = name
       
@@ -565,14 +561,15 @@ class ResourceStatusClient:
 #      self.rsVal.validateElementStatusTypes( granularity, statusType )
       rDict[ 'StatusType' ] = statusType
 
-    kw = {}
-    kw[ 'columns' ] = kwargs.pop( 'columns', None )
+    kw = { 'meta' : {}}
+    kw[ 'meta' ][ 'columns' ] = kwargs.pop( 'columns', None )
     if tokenExpiration is not None:
-      kw[ 'minor' ]   = { 'TokenExpiration' : tokenExpiration }
+      kw[ 'meta' ][ 'minor' ]   = { 'tokenExpiration' : tokenExpiration }
 
     kw.update( rDict )
+    
      
-    return self._getElement( '%sStatus' % granularity, **kw ) 
+    return self._getElement( 'ElementStatus', **kw ) 
     #getter = getattr( self.rsClient, 'get%sStatus' % granularity )  
     #return getter( **kw ) 
 
@@ -585,13 +582,16 @@ class ResourceStatusClient:
     #updatter = getattr( self.rsClient, 'update%sStatus' % granularity )
     
     rDict = { 
+             'elementName'         : name,
              'statusType'          : statusType,
              'reason'              : reason,
              'tokenOwner'          : tokenOwner,
              'tokenExpiration'     : tokenExpiration
              }
     
-    return self._updateElement( 'ElementStatus', granularity, name, **rDict )
+    #print ( granularity, name, rDict )
+    return self.modifyElementStatus( granularity, **rDict )
+    #return self._updateElement( 'ElementStatus', granularity, name, **rDict )
     #return updatter( name, **rDict )
 
   def setReason( self, granularity, name, statusType, reason ):
@@ -635,9 +635,9 @@ class ResourceStatusClient:
       
       #getter = getattr( self.rsClient, 'get%ss' % g )
 
-      rDict  = { '%sName' % g : name }
+      rDict  = { '%sName' % g : name, 'element' : g }
       #resQuery = getter( **rDict )
-      resQuery = self._getElement( g, **rDict )
+      resQuery = self._getElement( **rDict )
       
       if not resQuery[ 'Value' ]:
         continue
@@ -657,10 +657,10 @@ class ResourceStatusClient:
     for freqName, freq in checkFrequency.items():
       toCheck[ freqName ] = ( now - timedelta( minutes = freq ) ).isoformat(' ')
 
-    if not kwargs.has_key( 'sort' ):
-      kwargs[ 'sort' ] = 'LastCheckTime'
+    if not kwargs.has_key( 'meta' ) and kwargs['meta'].has_key( 'meta' ):
+      kwargs[ 'meta' ][ 'sort' ] = 'LastCheckTime'
 
-    kwargs[ 'or' ] = []
+    kwargs[ 'meta' ][ 'or' ] = []
         
     for k,v in toCheck.items():
           
@@ -672,7 +672,7 @@ class ResourceStatusClient:
                 
       orDict = { 'dict': dict, 'kwargs' : kw }          
                 
-      kwargs[ 'or' ].append( orDict )          
+      kwargs[ 'meta' ][ 'or' ].append( orDict )          
                    
     #getter = getattr( self.rsClient, 'get%sPresent' % granularity )
     #return getter( **kwargs )  
@@ -683,7 +683,7 @@ class ResourceStatusClient:
     #getter = getattr( self.rsClient, 'get%sPresent' % granularity )
     
     elementName = '%sName' % ( granularity[0].lower() + granularity[1:] ) 
-    kwargs = { elementName : name, 'columns' : [ 'Status' ] }
+    kwargs = { elementName : name, 'meta' : { 'columns' : [ 'Status' ] }}
     
     return self._getElement( '%sPresent' % granularity, **kwargs )
     #return getter( **kwargs )
@@ -748,9 +748,9 @@ class ResourceStatusClient:
                      'DateEffective' ]
       elements   = rDict[ 'Expanded%sHistory' % granularity ]
       #hgetter    = getattr( self.rsClient, 'get%ssHhistory' )
-      kwargs     = { '%sName' % granularity : elements, 'columns' : paramsList }  
+      kwargs     = { '%sName' % granularity : elements, 'columns' : paramsList, 'element' : granularity }  
       #elementsH  = hgetter( **kwargs )
-      elementsH = self._getElement( 'ElementHistory', granularity, **kwargs )
+      elementsH = self._getElement( 'ElementHistory', **kwargs )
       #elementsH  = self.getMonitoredsHistory( granularity, paramsList = paramsList,
       #                                        name = elements )
 
@@ -768,7 +768,7 @@ class ResourceStatusClient:
         records.append( record )        
 
     else:
-      kwargs = { 'columns' : paramsList }  
+      kwargs = { 'meta' : { 'columns' : paramsList }}  
       if granularity == 'Site':
         
         kwargs[ 'siteName' ] = rDict['SiteName']
@@ -843,14 +843,14 @@ class ResourceStatusClient:
 
       elif granularity == 'Resource':
         if rDict[ 'SiteName' ] == None:
-          kw = { 'columns' : [ 'SiteName' ] }
+          kw = { 'meta' : { 'columns' : [ 'SiteName' ] } }
           #sites_select = self.rsClient.getSitePresent( **kw )
           sites_select = self._getElement( 'SitePresent', **kw )
           #sites_select = self.getMonitoredsList( 'Site',
           #                                       paramsList = [ 'SiteName' ] )
           rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ] 
           
-        kw = { 'columns' : [ 'GridSiteName' ], 'siteName' : rDict[ 'SiteName'] }
+        kw = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'siteName' : rDict[ 'SiteName'] }
         
         #gridSites_select = self.rsClient.getSitePresent( siteName = rDict[ 'SiteName'], **kw )
         gridSites_select = self._getElement( 'SitePresent', **kw )
@@ -935,7 +935,7 @@ class ResourceStatusClient:
 
       elif granularity == 'StorageElement':
         if rDict[ 'SiteName' ] == []:#sites_select == []:
-          kw = { 'columns' : [ 'SiteName' ] }
+          kw = { 'meta' : { 'columns' : [ 'SiteName' ] } }
           #sites_select = self.rsClient.getSitePresent( **kw )
           sites_select = self._getElement( 'SitePresent', **kw )
           #sites_select = self.getMonitoredsList( 'Site',
@@ -943,7 +943,7 @@ class ResourceStatusClient:
           rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ]
 
         kw = { 
-               'columns'  : [ 'GridSiteName' ], 
+               'meta' : { 'columns'  : [ 'GridSiteName' ] }, 
                'siteName' : rDict[ 'SiteName' ] 
               }
         #gridSites_select = self.rsClient.getSitePresent( siteName = rDict[ 'SiteName' ], **kw )
@@ -1018,21 +1018,29 @@ class ResourceStatusClient:
   ##############################################################################
   '''
 
-  def __addOrModifyElement( self, element, *args ):
+  #def __addOrModifyElement( self, element, *args ):
+  def __addOrModifyElement( self, element, kwargs ):
+
+    del kwargs[ 'self' ]
+       
+    kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
+    sqlQuery = self._getElement( element, **kwargs )
     
-    kwargs = { 'onlyUniqueKeys' : True }    
-    sqlQuery = self._getElement( element, *args, **kwargs )  
+    #kwargs = { 'onlyUniqueKeys' : True }    
+    #sqlQuery = self._getElement( element, *args, **kwargs )  
+     
+    del kwargs[ 'meta' ] 
        
     if sqlQuery[ 'Value' ]:      
-      return self._updateElement( element, *args )
+      return self._updateElement( element, **kwargs )
     else: 
-      sqlQuery = self._insertElement( element, *args )
+      sqlQuery = self._insertElement( element, **kwargs )
       if sqlQuery[ 'OK' ]:       
-        return self.__setElementInitStatus( element, *args )
+        return self.__setElementInitStatus( element, **kwargs )
       else:
         return sqlQuery  
 
-  def __setElementInitStatus( self, element, *args ):
+  def __setElementInitStatus( self, element, **kwargs ):
     
     defaultStatus  = 'Banned'
     defaultReasons = [ 'Added to DB', 'Init' ]
@@ -1040,6 +1048,8 @@ class ResourceStatusClient:
     # This three lines make not much sense, but sometimes statusToSet is '',
     # and we need it as a list to work properly
     statusToSet = ValidStatusTypes[ element ][ 'StatusType' ]
+    
+    elementName = '%sName' % ( element[0].lower() + element[1:] )
     
     if not isinstance( statusToSet, list ):
       statusToSet = [ statusToSet ]
@@ -1050,57 +1060,93 @@ class ResourceStatusClient:
       # us to use PresentElement views ( otherwise they do not work ).
       for defaultReason in defaultReasons:
 
-        rList = [ args[0], statusType, defaultStatus, defaultReason ] 
+        rDict = {}
+        rDict[ 'elementName' ] = kwargs[ elementName ]
+        rDict[ 'statusType' ]  = statusType
+        rDict[ 'status']       = defaultStatus
+        rDict[ 'reason' ]      = defaultReason
+
+        #rList = [ kwargs[ elementName ], statusType, defaultStatus, defaultReason ] 
         
-        sqlQuery = self.__addOrModifyElementStatus( element, rList  )        
+        sqlQuery = self.__addOrModifyElementStatus( element, rDict  )        
                 
         if not sqlQuery[ 'OK' ]:
           return sqlQuery
         
     return S_OK()     
 
-  def __addOrModifyElementStatus( self, element, rList ):
+  def __addOrModifyElementStatus( self, element, rDict ):
 
     # VALIDATION ?
    
-    rList += self.__setStatusDefaults()
+    #rList += self.__setStatusDefaults()
+    rDict.update( self.__setStatusDefaults())
 
     #elementName = '%sName' % ( element[0].lower() + element[1:] )
     kwargs = { 
-               'elementName'    : rList[ 0 ], 
-               'statusType'     : rList[ 1 ], 
-               'onlyUniqueKeys' : True 
+               'element'        : element,
+               'elementName'    : rDict[ 'elementName' ], 
+               'statusType'     : rDict[ 'statusType' ], 
+               'meta'           : { 'onlyUniqueKeys' : True } 
              }
     #sqlQuery = self._getElement( '%sStatus' % element, **kwargs )
 
-    sqlQuery = self._getElement( 'ElementStatus', element, **kwargs )
+    sqlQuery = self._getElement( 'ElementStatus', **kwargs )
+
+
+    rDict[ 'element' ] = element
 
     if not sqlQuery[ 'Value' ]:
-      #return self._insertElement( '%sStatus' % element, *tuple( rList ) )
-      return self._insertElement( 'ElementStatus', element, *tuple( rList ) )
+      return self._insertElement( 'ElementStatus', **rDict )
+      #return self._insertElement( 'ElementStatus', element, *tuple( rList ) )
 
-    #updateSQLQuery = self._updateElement( '%sStatus' % element, *tuple( rList ))
-    updateSQLQuery = self._updateElement( 'ElementStatus', element, 
-                                           *tuple( rList ) )
+    
+    updateSQLQuery = self._updateElement( 'ElementStatus', **rDict )
+    #updateSQLQuery = self._updateElement( 'ElementStatus', element, *tuple( rList ) )
     if not updateSQLQuery[ 'OK' ]:
       return updateSQLQuery 
 
     sqlQ      = list( sqlQuery[ 'Value' ][ 0 ] )[1:]
     # EHistory.DateEnd = EStatus.DateEffective
     # This is vital for the views !!!!
-    sqlQ[ 6 ] = rList[ 5 ]   
-     
-    #return self._insertElement( '%sHistory' % element , *tuple( sqlQ ) )   
-    return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )
+    #sqlQ[ 6 ] = rList[ 5 ]   
+    sqlQ[ 6 ] = rDict[ 'dateEffective' ]
+        
+    sqlDict = {}
+    sqlDict[ 'elementName' ]     = sqlQ[ 0 ]
+    sqlDict[ 'statusType' ]      = sqlQ[ 1 ]
+    sqlDict[ 'status']           = sqlQ[ 2 ]
+    sqlDict[ 'reason' ]          = sqlQ[ 3 ]
+    sqlDict[ 'dateCreated' ]     = sqlQ[ 4 ]
+    sqlDict[ 'dateEffective' ]   = sqlQ[ 5 ]   
+    sqlDict[ 'dateEnd' ]         = rDict[ 'dateEffective' ]
+    sqlDict[ 'lastCheckTime' ]   = sqlQ[ 7 ]
+    sqlDict[ 'tokenOwner' ]      = sqlQ[ 8 ]
+    sqlDict[ 'tokenExpiration' ] = sqlQ[ 9 ]   
+           
+    sqlDict[ 'element' ] = element       
+           
+    return self._insertElement( 'ElementHistory', **sqlDict )    
+    #return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )
 
   def __setStatusDefaults( self ):#, rDict ):
      
     now    = datetime.utcnow().replace( microsecond = 0 )
     never  = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 )
 
+    iDict = {}
+    iDict[ 'dateCreated'] = now
+    iDict[ 'dateEffective'] = now
+    iDict[ 'dateEnd'] = never
+    iDict[ 'lastCheckTime'] = now
+    iDict[ 'tokenOwner'] = 'RS_SVC'
+    iDict[ 'tokenExpiration'] = never
+
+    return iDict
+    
     #dateCreated, dateEffective, dateEnd, lastCheckTime, tokenOwner, tokenExpiration
-    iList = [ now, now, never, now, 'RS_SVC', never ] 
-    return iList
+    #iList = [ now, now, never, now, 'RS_SVC', never ] 
+    #return iList
 
   '''
   ##############################################################################
@@ -1108,40 +1154,66 @@ class ResourceStatusClient:
   ##############################################################################
   '''
   
-  def __modifyElementStatus( self, element, *args ):
+  def __modifyElementStatus( self,kwargs ):
       
-    args = list(args)
+    del kwargs[ 'self' ]  
+    #del kwargs[ 'element' ]
+    
+    kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
+    #sqlQuery = self._getElement( element, **kwargs )
+      
+    #args = list(args)
 
     #elementName = '%sName' % ( element[0].lower() + element[1:] )
-    kwargs = { 'elementName' : args[ 0 ], 'statusType' : args[ 1 ] }
-    sqlQuery = self._getElement( 'ElementStatus', element, **kwargs )
+    #kwargs = { 'elementName' : args[ 0 ], 'statusType' : args[ 1 ] }
+    sqlQuery = self._getElement( 'ElementStatus', **kwargs )
+
+    del kwargs[ 'meta' ]
 
     if not sqlQuery[ 'OK' ]:
       return sqlQuery
     if not sqlQuery[ 'Value' ]:
       _msg = 'Impossible to modify, %s (%s) is not on the DB' 
-      _msg = _msg % ( args[ 0 ],args[ 1 ] )
+      _msg = _msg % ( kwargs[ 'elementName' ],kwargs[ 'statusType' ] )
       return S_ERROR( _msg )
 
     #DateEffective
-    if args[ 5 ] is None:
-      args[ 5 ] = datetime.utcnow().replace( microsecond = 0 )
+    if kwargs[ 'dateEffective' ] is None:
+      kwargs[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
 
     #LastCheckTime
-    if args[ 7 ] is None:
-      args[ 7 ] = datetime.utcnow().replace( microsecond = 0 )
+    if kwargs[ 'lastCheckTime' ] is None:
+      kwargs[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )
     
-    updateSQLQuery = self._updateElement( 'ElementStatus', element, 
-                                           *tuple( args ) )
+    #updateSQLQuery = self._updateElement( 'ElementStatus', element, 
+    #                                       *tuple( args ) )
+    updateSQLQuery = self._updateElement( 'ElementStatus', **kwargs ) 
+    
     if not updateSQLQuery[ 'OK' ]:
       return updateSQLQuery 
-    
+
     sqlQ      = list( sqlQuery[ 'Value' ][ 0 ] )[1:]
+
+    sqlDict = {}
+    sqlDict[ 'elementName' ]     = sqlQ[ 0 ]
+    sqlDict[ 'statusType' ]      = sqlQ[ 1 ]
+    sqlDict[ 'status']           = sqlQ[ 2 ]
+    sqlDict[ 'reason' ]          = sqlQ[ 3 ]
+    sqlDict[ 'dateCreated' ]     = sqlQ[ 4 ]
+    sqlDict[ 'dateEffective' ]   = sqlQ[ 5 ]   
+    sqlDict[ 'dateEnd' ]         = kwargs[ 'dateEffective' ]
+    sqlDict[ 'lastCheckTime' ]   = sqlQ[ 7 ]
+    sqlDict[ 'tokenOwner' ]      = sqlQ[ 8 ]
+    sqlDict[ 'tokenExpiration' ] = sqlQ[ 9 ]  
+    
+    sqlDict[ 'element' ] = kwargs[ 'element' ]
+    
     # EHistory.DateEnd = EStatus.DateEffective
     # This is vital for the views !!!!
-    sqlQ[ 6 ] = args[ 5 ]   
+    #sqlQ[ 6 ] = args[ 5 ]   
 
-    return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )  
+    #return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )  
+    return self._insertElement( 'ElementHistory', **sqlDict )
   
   '''
   ##############################################################################
@@ -1153,12 +1225,16 @@ class ResourceStatusClient:
   
     tables = [ 'ScheduledStatus', 'Status', 'History' ]
     for table in tables:
-      sqlQuery = self._deleteElement( 'Element%s' % ( table ), element, 
-                                       elementName )
+      
+      rDict = { 'elementName' : elementName, 'element' : element }
+      
+      sqlQuery = self._deleteElement( 'Element%s' % table, **rDict )
       if not sqlQuery[ 'OK' ]:
         return sqlQuery
     
-    sqlQuery = self._deleteElement( element, elementName )
+    _elementName = '%sName' % ( element[0].lower() + element[1:])
+    rDict = { _elementName : elementName }
+    sqlQuery = self._deleteElement( element, **rDict )
 
     return sqlQuery   
   
@@ -1192,29 +1268,37 @@ class ResourceStatusClient:
   ##############################################################################
   '''
 
-  def _insertElement( self, element, *args, **kwargs ):
+  #def _insertElement( self, element, *args, **kwargs ):
+  def _insertElement( self, elementTable, **kwargs ):
     
-    fname = 'insert%s' % element
+    fname = 'insert%s' % elementTable
     f = getattr( self, fname )
-    return f( *args, **kwargs )
+  # return f( *args, **kwargs )
+    return f( **kwargs )
 
-  def _updateElement( self, element, *args, **kwargs ):
+  #def _updateElement( self, element, *args, **kwargs ):
+  def _updateElement( self, elementTable, **kwargs ):
     
-    fname = 'update%s' % element
+    fname = 'update%s' % elementTable
     f = getattr( self, fname )
-    return f( *args, **kwargs )
+    return f( **kwargs )
+  # return f( *args, **kwargs )
 
-  def _getElement( self, element, *args, **kwargs ):
+  #def _getElement( self, element, *args, **kwargs ):
+  def _getElement( self, elementTable, **kwargs ):
     
-    fname = 'get%s' % element
+    fname = 'get%s' % elementTable
     f = getattr( self, fname )
-    return f( *args, **kwargs )
+    return f( **kwargs )
+  # return f( *args, **kwargs )
 
-  def _deleteElement( self, element, *args, **kwargs ):
+  #def _deleteElement( self, element, *args, **kwargs ):
+  def _deleteElement( self, elementTable, **kwargs ): 
     
-    fname = 'delete%s' % element
+    fname = 'delete%s' % elementTable
     f = getattr( self, fname )
-    return f( *args, **kwargs )      
+    return f( **kwargs )
+  # return f( *args, **kwargs )      
       
 #  def insert( self, *args, **kwargs ):
 #    '''
