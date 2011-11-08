@@ -19,25 +19,25 @@ class ResourceManagementDB( object ):
   @ValidateDBTypes  
   def insert( self, args, kwargs ):
     #return { 'OK' : True, 'Value' : '' }
-    return self.mm.insert2( *args, **kwargs )
+    return self.mm.insert( *args, **kwargs )
   
   @CheckDBExecution
   @ValidateDBTypes  
   def update( self, args, kwargs ):
     #return { 'OK' : True, 'Value' : '' }
-    return self.mm.update2( *args, **kwargs )
+    return self.mm.update( *args, **kwargs )
   
   @CheckDBExecution
   @ValidateDBTypes
   def get( self, args, kwargs ):
     #return { 'OK' : True, 'Value' : '' }
-    return self.mm.get2( *args, **kwargs )
+    return self.mm.get( *args, **kwargs )
   
   @CheckDBExecution
   @ValidateDBTypes
   def delete( self, args, kwargs ):
     #return { 'OK' : True, 'Value' : '' }
-    return self.mm.delete2( *args, **kwargs )
+    return self.mm.delete( *args, **kwargs )
   
   @CheckDBExecution
   def getSchema( self ):

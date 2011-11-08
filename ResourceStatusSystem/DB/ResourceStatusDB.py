@@ -92,7 +92,7 @@ class ResourceStatusDB( object ):
 
   @CheckDBExecution
   @ValidateDBTypes
-  def insert( self, args, kwargs ):
+  def insert( self, params, meta ):
     """    
     Inserts args in the DB making use of kwargs where parameters such as
     the table are specified ( filled automatically by the Client). In order to 
@@ -110,11 +110,11 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     """
-    return self.mm.insert2( *args, **kwargs )
+    return self.mm.insert( params, meta )
 
   @CheckDBExecution
   @ValidateDBTypes
-  def update( self, args, kwargs ):
+  def update( self, params, meta ):
     """    
     Updates row with values given on args. The row selection is done using the
     default of MySQLMonkey ( column.primary or column.keyColumn ). It can be
@@ -133,11 +133,11 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     """
-    return self.mm.update2( *args, **kwargs )
+    return self.mm.update( params, meta )
 
   @CheckDBExecution
   @ValidateDBTypes
-  def get( self, args, kwargs ):
+  def get( self, params, meta ):
     """   
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
     sql statement desired is more complex, you can use kwargs to interact with
@@ -153,11 +153,11 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     """
-    return self.mm.get2( *args, **kwargs )
+    return self.mm.get( params, meta )
 
   @CheckDBExecution
   @ValidateDBTypes
-  def delete( self, args, kwargs ):
+  def delete( self, params, meta ):
     """     
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
     sql statement desired is more complex, you can use kwargs to interact with
@@ -176,7 +176,7 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     """
-    return self.mm.delete2( *args, **kwargs )
+    return self.mm.delete( params, meta )
   
   @CheckDBExecution
   def getSchema( self ):
