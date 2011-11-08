@@ -74,10 +74,10 @@ class ResourceStatusHandler( RequestHandler ):
     db = database
 
   
-  types_insert = [ tuple, dict ]
+  types_insert = [ dict, dict ]
   @AdminRequired
   @HandlerDec3
-  def export_insert( self, args, kwargs ):
+  def export_insert( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
@@ -98,10 +98,10 @@ class ResourceStatusHandler( RequestHandler ):
     credentials = self.getRemoteCredentials()
     return db, credentials
 
-  types_update = [ tuple, dict ]
+  types_update = [ dict, dict ]
   @AdminRequired
   @HandlerDec3
-  def export_update( self, args, kwargs ):
+  def export_update( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
@@ -122,9 +122,9 @@ class ResourceStatusHandler( RequestHandler ):
     credentials = self.getRemoteCredentials()
     return db, credentials
 
-  types_get = [ tuple, dict ]
+  types_get = [ dict, dict ]
   @HandlerDec3
-  def export_get( self, args, kwargs ):
+  def export_get( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It \
     does not add neither processing nor validation. If you need to know more about
@@ -145,10 +145,10 @@ class ResourceStatusHandler( RequestHandler ):
     credentials = self.getRemoteCredentials()
     return db, credentials
 
-  types_delete = [ tuple, dict ]
+  types_delete = [ dict, dict ]
   @AdminRequired
   @HandlerDec3
-  def export_delete( self, args, kwargs ):
+  def export_delete( self, params, meta ):
     '''  
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
