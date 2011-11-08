@@ -82,7 +82,7 @@ class PilotDirector:
     If additional datamembers are defined, they must:
       - be declared in the __init__
       - be reconfigured in the configureFromSection method by executing
-        self.reloadConfiguration( csSection, submitPool ) in theri configure method
+        self.reloadConfiguration( csSection, submitPool ) in their configure method
   """
   gridMiddleware = ''
 
@@ -104,6 +104,7 @@ class PilotDirector:
     self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
+    self.targetGrids = [ self.gridMiddleware ]
 
 
     self.genericPilotDN = PILOT_DN
@@ -141,13 +142,14 @@ class PilotDirector:
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
     self.log.info( '' )
+    self.log.info( ' Target Grids:   ', ', '.join( self.targetGrids ) )
     self.log.info( ' Install script: ', self.install )
     self.log.info( ' Pilot script:   ', self.pilot )
     self.log.info( ' Install Ver:    ', self.installVersion )
     if self.installInstallation:
       self.log.info( ' Installation:        ', self.installInstallation )
     if self.extraPilotOptions:
-      self.log.info( ' Exta Options:   ', ' '.join( self.extraPilotOptions ) )
+      self.log.info( ' Extra Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
     self.log.info( ' Private %:      ', self.privatePilotFraction * 100 )
     if self.enableListMatch:
@@ -175,6 +177,7 @@ class PilotDirector:
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
     self.installInstallation = gConfig.getValue( mySection + '/Installation'        , self.installInstallation )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
+    self.targetGrids = gConfig.getValue( mySection + '/TargetGrids'    , self.targetGrids )
 
     self.enableListMatch = gConfig.getValue( mySection + '/EnableListMatch'      , self.enableListMatch )
     self.listMatchDelay = gConfig.getValue( mySection + '/ListMatchDelay'       , self.listMatchDelay )
@@ -237,27 +240,27 @@ class PilotDirector:
     # Get CE's associates to the given site Names
     ceMask = []
 
-    section = '/Resources/Sites/%s' % self.gridMiddleware
-    ret = gConfig.getSections( section )
-    if not ret['OK']:
-      # To avoid duplicating sites listed in LCG for gLite for example.
-      # This could be passed as a parameter from
-      # the sub class to avoid below...
-      section = '/Resources/Sites/LCG'
+    for grid in self.targetGrids:
+
+      section = '/Resources/Sites/%s' % grid
       ret = gConfig.getSections( section )
+      if not ret['OK']:
+        # this is hack, maintained until LCG is added as TargetGrid for the gLite SubmitPool
+        section = '/Resources/Sites/LCG'
+        ret = gConfig.getSections( section )
 
-    if not ret['OK'] or not ret['Value']:
-      self.log.error( 'Could not obtain CEs from CS', ret['Message'] )
-      return []
+      if not ret['OK']:
+        self.log.error( 'Could not obtain CEs from CS', ret['Message'] )
+        continue
 
-    gridSites = ret['Value']
-    for siteName in gridSites:
-      if siteName in siteMask:
-        ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName ), [] )
-        for ce in ret:
-          submissionMode = gConfig.getValue( '%s/%s/CEs/%s/SubmissionMode' % ( section, siteName, ce ), 'gLite' )
-          if submissionMode == self.gridMiddleware:
-            ceMask.append( ce )
+      gridSites = ret['Value']
+      for siteName in gridSites:
+        if siteName in siteMask:
+          ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName ), [] )
+          for ce in ret:
+            submissionMode = gConfig.getValue( '%s/%s/CEs/%s/SubmissionMode' % ( section, siteName, ce ), 'gLite' )
+            if submissionMode == self.gridMiddleware and ce not in ceMask:
+              ceMask.append( ce )
 
     if not ceMask:
       self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( siteMask ) )
