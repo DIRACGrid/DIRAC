@@ -30,7 +30,7 @@ class Job( BaseAccountingType ):
                                         ( 'OutputSandBoxSize', 'BIGINT UNSIGNED' ),
                                         ( 'ProcessedEvents', 'INT UNSIGNED' )
                                       ]
-    self.bucketsLength = [ ( 86400 * 7, 3600 ), #<1w = 1h
+    self.bucketsLength = [ ( 86400 * 8, 3600 ), #<1w+1d = 1h
                            ( 86400 * 35, 3600 * 4 ), #<35d = 4h
                            ( 86400 * 30 * 6, 86400 ), #<6m = 1d
                            ( 86400 * 365, 86400 * 2 ), #<1y = 2d
