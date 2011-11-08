@@ -1,3 +1,26 @@
+[v6r0-pre12]
+
+*SystemAdministrator
+NEW: Added Project support for the sysadmin
+CHANGE: The sysadmin cli will try to connect to the service when setting the host
+NEW: Colorization of errors in the cli
+
+*Stager
+FIX: Update Stager code in v6 to the same point as v5r13p37
+
+*dirac-proxy-init
+BUGFIX: bug in the VOMS extension generation
+
+*dirac-install
+BUGFIX: take defaults-XXX.cfg file from a proper location
+FIX: define DYLD_LIBRARY_PATH ( for Mac installations )
+
+*PilotDirector
+NEW: each SubmitPool or Middleware can define TargetGrids
+
+*Accounting
+FIX: Modified buckets width of 1week to 1 week + 1 day to fix summer time end week (1 hour more )
+
 [v6r0-pre11]
 
 *Install tools
