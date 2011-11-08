@@ -21,6 +21,9 @@ NEW: each SubmitPool or Middleware can define TargetGrids
 *Accounting
 FIX: Modified buckets width of 1week to 1 week + 1 day to fix summer time end week (1 hour more )
 
+*JobAgent
+NEW: new StopOnApplicationFailure option to make the agent exiting the loop on application failure
+
 [v6r0-pre11]
 
 *Install tools
