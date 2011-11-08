@@ -782,7 +782,7 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
       logERROR( "%s does not exist" % url )
       return False
   except Exception, x:
-    if x == 'TimeOut':
+    if x == 'Timeout':
       logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     if timeout:
       signal.alarm( 0 )

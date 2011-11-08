@@ -43,7 +43,7 @@ except Exception, x:
 
 class CliParams:
 
-  MAX_CYCLES = 5
+  MAX_CYCLES = 100
 
   def __init__( self ):
     self.debug = False
