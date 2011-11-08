@@ -3,7 +3,7 @@
 ################################################################################
 __RCSID__ = "$Id:  $"
 
-""" 
+"""
   TOWRITE
 """
 
@@ -12,9 +12,8 @@ from DIRAC                                            import gLogger
 from DIRAC.ResourceStatusSystem.Command.Command       import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes
-from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
-from DIRAC.ResourceStatusSystem                       import ValidRes, ValidStatus
-from DIRAC.ResourceStatusSystem.PolicySystem.Status   import value_of_status
+from DIRAC.ResourceStatusSystem.Utilities             import Utils
+from DIRAC.ResourceStatusSystem                       import ValidRes
 
 ################################################################################
 ################################################################################
@@ -35,7 +34,7 @@ class RSPeriods_Command( Command ):
 
     - args[3] are the number of hours requested
     """
-    
+
     super( RSPeriods_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
@@ -73,9 +72,9 @@ class ServiceStats_Command( Command ):
     :returns:
       {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz}
     """
-    
+
     super( ServiceStats_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
       res = self.APIs[ 'ResourceStatusClient' ].getServiceStats( self.args[1] )#, statusType = None )# self.args[0], self.args[1] )['Value']
@@ -85,7 +84,7 @@ class ServiceStats_Command( Command ):
 
     if not res[ 'OK' ]:
       gLogger.error( "ServiceStats: Error %s returned calling ResourceStatusClient for %s %s" % ( res[ 'Message' ], self.args[0], self.args[1] ) )
-      return { 'Result' : None }    
+      return { 'Result' : None }
 
     return { 'Result' : res[ 'Value' ] }
 
@@ -115,9 +114,9 @@ class ResourceStats_Command( Command ):
     :returns:
 
     """
-    
+
     super( ResourceStats_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
       res = self.APIs[ 'ResourceStatusClient' ].getResourceStats( self.args[0], self.args[1], statusType = None )
@@ -157,9 +156,9 @@ class StorageElementsStats_Command( Command ):
     :returns:
 
     """
-    
+
     super( StorageElementsStats_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )   
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if self.args[0] == 'Service':
       granularity = 'Site'
@@ -168,7 +167,7 @@ class StorageElementsStats_Command( Command ):
       granularity = self.args[0]
       name        = self.args[1]
     else:
-      raise InvalidRes, where( self, self.doCommand )
+      raise InvalidRes, Utils.where( self, self.doCommand )
 
     try:
       res = self.APIs[ 'ResourceStatusClient' ].getStorageElementStats( granularity, name, statusType = None )
@@ -211,68 +210,38 @@ class MonitoredStatus_Command( Command ):
     :returns:
       {'MonitoredStatus': 'Active'|'Probing'|'Banned'}
     """
-    
+
     super( MonitoredStatus_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
       if len( self.args ) == 3:
-        
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
-          raise InvalidRes, where( self, self.doCommand )
-
-        toBeFound = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], self.args[2] )
-        if not toBeFound[ 'OK' ]:
-          return {'Result' : 'Unknown'}
-        toBeFound = toBeFound['Value'][ 0 ]
-
-        statuses = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[2], toBeFound )
-        if not statuses['OK']:
-          return {'Result' : 'Unknown'}
-        statuses = statuses['Value'][ 0 ]
+          raise InvalidRes, Utils.where( self, self.doCommand )
+        toBeFound = Utils.unpack(self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], self.args[2] ))[0]
 
       else:
-          
         toBeFound = self.args[1]
-        statuses  = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[0], toBeFound )
 
-        if not statuses['OK']:
-          return {'Result' : 'Unknown'}
-        statuses = statuses['Value'][ 0 ]
+      statuses  = Utils.unpack(self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[0], toBeFound ))[0]
 
-      if not statuses:
-        gLogger.warn( "No status found for %s" % toBeFound )
-        return {'Result':'Unknown'}
-
-    except:
+    except InvalidRes:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
 
-    # statuses is a list of statuses. We take the worst returned
-    # status.
-
-    assert(type(statuses) == list)
-    statuses.sort(key=value_of_status)
-
-    res = statuses[0]
-
-    if len(statuses) > 1:
-      gLogger.info( ValidStatus )
-      gLogger.info( statuses )
-
-    return {'Result':res}
+    return {'Result':statuses[0]}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ################################################################################
 
 '''
   HOW DOES THIS WORK.
-    
+
     will come soon...
 '''
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
