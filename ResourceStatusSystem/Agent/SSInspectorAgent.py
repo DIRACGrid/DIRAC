@@ -65,8 +65,8 @@ class SSInspectorAgent( AgentModule ):
 
     try:
       
-      kwargs = { 'columns' : ['SiteName', 'StatusType', 'Status', 'FormerStatus',\
-                               'SiteType', 'TokenOwner'] }
+      kwargs = { 'meta' : { 'columns' : ['SiteName', 'StatusType', 'Status', 'FormerStatus',\
+                               'SiteType', 'TokenOwner'] } }
       resQuery = self.rsClient.getStuffToCheck( 'Site', self.SitesFreqs, **kwargs )
 
       for siteTuple in resQuery[ 'Value' ]:
@@ -133,7 +133,11 @@ class SSInspectorAgent( AgentModule ):
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
      
         pepRes = pep.enforce( **pepDict )
-        #print pepRes
+        if pepRes.has_key( 'PolicyCombinedResult' ):
+          pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
+          if pepStatus != pepDict[ 'status' ]:
+            gLogger.info( 'Updated Site %s (%s) from %s to %s' % 
+                          ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
 
         # remove from InCheck list
         self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )       

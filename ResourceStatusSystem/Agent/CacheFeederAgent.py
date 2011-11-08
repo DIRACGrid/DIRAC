@@ -31,9 +31,9 @@ class CacheFeederAgent( AgentModule ):
          
       commandsList_ClientsCache = [
         ( 'ClientsCache_Command', 'JobsEffSimpleEveryOne_Command'     ),
-#        ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
-#        ( 'ClientsCache_Command', 'DTEverySites_Command'              ),
-#        ( 'ClientsCache_Command', 'DTEveryResources_Command'          )
+        ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
+        ( 'ClientsCache_Command', 'DTEverySites_Command'              ),
+        ( 'ClientsCache_Command', 'DTEveryResources_Command'          )
         ]
 
       commandsList_AccountingCache =  [

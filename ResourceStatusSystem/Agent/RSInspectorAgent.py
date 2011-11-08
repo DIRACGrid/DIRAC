@@ -65,8 +65,8 @@ class RSInspectorAgent( AgentModule ):
 
     try:
 
-      kwargs = { 'columns' : [ 'ResourceName', 'StatusType', 'Status', 'FormerStatus', \
-                              'SiteType', 'ResourceType', 'TokenOwner' ] }
+      kwargs = { 'meta' : { 'columns' : [ 'ResourceName', 'StatusType', 'Status', 'FormerStatus', \
+                              'SiteType', 'ResourceType', 'TokenOwner' ] }}
 
       resQuery = self.rsClient.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
 
