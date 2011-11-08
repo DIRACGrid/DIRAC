@@ -246,7 +246,7 @@ class CachedPlot_Command(Command):
                         'plotType' : plotType,
                         'plotName' : plotName
                    }
-      kwargs     = { 'columns'     : 'Result' }
+      kwargs     = { 'meta' : { 'columns'     : 'Result' } }
       accountingDict.update( kwargs )  
       
       res = self.APIs[ 'ResourceManagementClient' ].getAccountingCache( **accountingDict )
@@ -301,7 +301,7 @@ class TransferQualityFromCachedPlot_Command(Command):
                         'plotType' : plotType,
                         'plotName' : plotName
                    }
-      kwargs     = { 'columns'     : 'Result' }
+      kwargs     = { 'meta' : { 'columns'     : 'Result' } }
       accountingDict.update( kwargs )  
       
       res = self.APIs[ 'ResourceManagementClient' ].getAccountingCache( **accountingDict )

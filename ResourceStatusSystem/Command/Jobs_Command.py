@@ -207,10 +207,9 @@ class JobsEffSimpleCached_Command(Command):
                      'name'        : name,
                      'commandName' : 'JobsEffSimpleEveryOne',
                      'value'       : 'JE_S',
-                     'opt_ID'      : 'NULL'
+                     'opt_ID'      : 'NULL',
+                     'meta'        : { 'columns'     : 'Result' }
                    }
-      kwargs     = { 'columns'     : 'Result' }
-      clientDict.update( kwargs )  
       
       res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if res == None:
