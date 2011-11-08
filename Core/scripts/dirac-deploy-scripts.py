@@ -66,7 +66,7 @@ for entry in os.listdir( baseLibPath ):
 
 os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
 
-for varName in ( 'LD_LIBRARY_PATH', ):
+for varName in ( 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH'):
   if varName not in os.environ:
     os.environ[varName] = DiracLibraryPath
   else:
