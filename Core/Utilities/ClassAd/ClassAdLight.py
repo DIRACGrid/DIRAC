@@ -224,7 +224,7 @@ class ClassAd:
       else:
         result = result + 4 * ' ' + name + ' = ' + str( value ) + ';\n'
 
-    return "[ \n" + result[:-2] + "\n]"
+    return "[ \n" + result[:-1] + "\n]"
 
   def getAttributeString( self, name ):
     """ Get String type attribute value
