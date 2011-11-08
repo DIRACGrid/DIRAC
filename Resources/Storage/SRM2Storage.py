@@ -36,6 +36,7 @@ class SRM2Storage( StorageBase ):
 
     self.timeout = 100
     self.long_timeout = 1200
+    self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
@@ -1489,7 +1490,7 @@ class SRM2Storage( StorageBase ):
     for urls in listOfLists:
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] = len( urls )
-      gfalDict['timeout'] = self.fileTimeout * len( urls ) * 10
+      gfalDict['timeout'] = self.stageTimeout
       res = self.__gfal_operation_wrapper( 'gfal_prestage', gfalDict, timeout_sendreceive = self.fileTimeout * len( urls ) )
       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
