@@ -9,17 +9,17 @@ class MySQLStatements( object ):
     self.dbWrapper = dbWrapper
     self.SCHEMA    = {}
   
-  def insert2( self, *args, **kwargs  ):
-    return { 'OK' : True, 'Value' : '' }
+  def insert( self, *args, **kwargs  ):
+    return { 'OK' : True, 'Value' : [] }
   
-  def update2( self, *args, **kwargs  ):
-    return { 'OK' : True, 'Value' : '' }  
+  def update( self, *args, **kwargs  ):
+    return { 'OK' : True, 'Value' : [] }  
   
-  def get2( self, *args, **kwargs  ):
-    return { 'OK' : True, 'Value' : '' }
+  def get( self, *args, **kwargs  ):
+    return { 'OK' : True, 'Value' : [] }
  
-  def delete2( self, *args, **kwargs  ):
-    return { 'OK' : True, 'Value' : '' }
+  def delete( self, *args, **kwargs  ):
+    return { 'OK' : True, 'Value' : [] }
 
 ################################################################################
 
