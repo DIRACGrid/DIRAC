@@ -366,7 +366,7 @@ class ResourceStatusClient:
     presentDict = { 'siteName' : siteName }
     if statusType is not None:
 #      self.__validateElementStatusTypes( 'Service', statusType )
-      presentDict[ 'StatusType' ] = statusType
+      presentDict[ 'statusType' ] = statusType
     
     kwargs   = { 'meta' : { 'columns' : [ 'Status'], 
                             'count' : True, 
@@ -384,7 +384,7 @@ class ResourceStatusClient:
 
     if statusType is not None:
 #      self.rsVal.validateElementStatusTypes( 'Service', statusType )
-      presentDict[ 'StatusType'] = statusType    
+      presentDict[ 'statusType'] = statusType    
 
     rDict = { 'serviceType'  : None, 
               'siteName'     : None, 
@@ -433,7 +433,7 @@ class ResourceStatusClient:
 
     if statusType is not None:
 #      self.rsVal.validateElementStatusTypes( 'StorageElement', statusType )
-      presentDict[ 'StatusType'] = statusType
+      presentDict[ 'statusType'] = statusType
 
     rDict = { 'resourceName' : None,
               'gridSiteName' : None }
@@ -518,7 +518,7 @@ class ResourceStatusClient:
           serviceType = 'Storage'
 
     else:
-      raise ValueError
+      return S_ERROR( 'Expected from_element either Service, Resource or StorageElement' )
 
     if not resQuery[ 'Value' ]:
       return resQuery
@@ -534,8 +534,10 @@ class ResourceStatusClient:
 
 #    self.rsVal.validateElement( granularity )
 
+    elementName = '%sName' % ( granularity[0].lower() + granularity[1:] ) 
+
     rDict = {
-             '%sName' % granularity : name
+              elementName : name
              }
 
     kwargs = { 
@@ -555,11 +557,11 @@ class ResourceStatusClient:
 
     rDict = { 'element' : granularity }
     if name is not None:
-      rDict[ '%sName' % granularity ] = name
+      rDict[ 'elementName' ] = name
       
     if statusType is not None:
 #      self.rsVal.validateElementStatusTypes( granularity, statusType )
-      rDict[ 'StatusType' ] = statusType
+      rDict[ 'statusType' ] = statusType
 
     kw = { 'meta' : {}}
     kw[ 'meta' ][ 'columns' ] = kwargs.pop( 'columns', None )
@@ -613,7 +615,7 @@ class ResourceStatusClient:
 
   def setDateEnd( self, granularity, name, statusType, dateEffective ):
     
-    self.rsVal.validateElement( granularity )
+    #self.rsVal.validateElement( granularity )
 
     #modificator = getattr( self, 'modify%sStatus' % granularity )   
     #elementName = granularity[0].lower() + granularity[1:]
@@ -635,10 +637,11 @@ class ResourceStatusClient:
       
       #getter = getattr( self.rsClient, 'get%ss' % g )
 
-      rDict  = { '%sName' % g : name, 'element' : g }
-      #resQuery = getter( **rDict )
+      elementName = '%sName' % (g[0].lower() + g[1:])
+
+      rDict  = { elementName : name, 'elementTable' : g }
       resQuery = self._getElement( **rDict )
-      
+           
       if not resQuery[ 'Value' ]:
         continue
       else:
@@ -657,7 +660,9 @@ class ResourceStatusClient:
     for freqName, freq in checkFrequency.items():
       toCheck[ freqName ] = ( now - timedelta( minutes = freq ) ).isoformat(' ')
 
-    if not kwargs.has_key( 'meta' ) and kwargs['meta'].has_key( 'meta' ):
+    if not kwargs.has_key( 'meta' ):
+      kwargs[ 'meta' ] = {}
+    if not kwargs['meta'].has_key( 'sort' ): 
       kwargs[ 'meta' ][ 'sort' ] = 'LastCheckTime'
 
     kwargs[ 'meta' ][ 'or' ] = []
@@ -718,6 +723,9 @@ class ResourceStatusClient:
       paramsList = [ 'StorageElementName', 'ResourceName', 'GridSiteName', 
                      'StatusType','Status', 'DateEffective', 'FormerStatus', 
                      'Reason' ]
+    else:
+      return S_ERROR( '%s is not a valid granularity' % granularity )
+    
 
     records                = []
 
