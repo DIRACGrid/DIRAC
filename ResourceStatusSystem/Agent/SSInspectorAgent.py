@@ -6,16 +6,16 @@ AGENT_NAME = 'ResourceStatus/SSInspectorAgent'
 
 import Queue, time
 
-from DIRAC                                            import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                      import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
+from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem                       import CheckingFreqs
+from DIRAC.ResourceStatusSystem                             import CheckingFreqs
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
-from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
+from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
 class SSInspectorAgent( AgentModule ):
   """ 
@@ -111,7 +111,7 @@ class SSInspectorAgent( AgentModule ):
     
     # Init the APIs beforehand, and reuse them. 
     __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'GGUSTicketsClient' ]
-    clients = initAPIs( __APIs__, {} )
+    clients = knownAPIs.initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
@@ -149,16 +149,6 @@ class SSInspectorAgent( AgentModule ):
           self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
