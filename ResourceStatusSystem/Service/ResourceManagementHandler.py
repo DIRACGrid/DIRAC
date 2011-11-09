@@ -68,10 +68,10 @@ class ResourceManagementHandler( RequestHandler ):
     about this method, you must keep reading on the database documentation.     
       
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -92,10 +92,10 @@ class ResourceManagementHandler( RequestHandler ):
     about this method, you must keep reading on the database documentation.     
       
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -115,10 +115,10 @@ class ResourceManagementHandler( RequestHandler ):
     about this method, you must keep reading on the database documentation.     
       
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -139,10 +139,10 @@ class ResourceManagementHandler( RequestHandler ):
     about this method, you must keep reading on the database documentation.     
       
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
