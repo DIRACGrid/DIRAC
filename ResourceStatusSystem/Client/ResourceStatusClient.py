@@ -68,17 +68,86 @@ class ResourceStatusClient:
   
   @ClientFastDec
   def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
+    '''
+    Inserts on Site a new row with the arguments given.
+    
+    :Parameters:
+      **siteName** - `string`
+        name of the site 
+      **siteType** - `string`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`
+      **gridSiteName** - `string`
+        name of the  grid site the site belongs ( if any )
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()
   @ClientFastDec
   def updateSite( self, siteName, siteType, gridSiteName, meta = {} ):
+    '''
+    Updates Site with the parameters given. By default, `siteName` will be the \
+    parameter used to select the row. 
+    
+    :Parameters:
+      **siteName** - `string`
+        name of the site 
+      **siteType** - `string`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`
+      **gridSiteName** - `string`
+        name of the  grid site the site belongs ( if any )
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()
   @ClientFastDec
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
                meta = {} ):
+    '''
+    Gets from Site all rows that match the parameters given.
+    
+    :Parameters:
+      **siteName** - `[, string, list]`
+        name of the site 
+      **siteType** - `[, string, list]`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`
+      **gridSiteName** - `[, string, list]`
+        name of the  grid site the site belongs ( if any )
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()
   @ClientFastDec
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
                   meta = {} ):
+    '''
+    Deletes from Site all rows that match the parameters given.
+    
+    :Parameters:
+      **siteName** - `[, string, list]`
+        name of the site 
+      **siteType** - `[, string, list]`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`
+      **gridSiteName** - `[, string, list]`
+        name of the  grid site the site belongs ( if any )
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()      
   @ClientFastDec
   def getSitePresent( self, siteName = None, siteType = None, 
@@ -86,6 +155,42 @@ class ResourceStatusClient:
                       status = None, dateEffective = None, reason = None, 
                       lastCheckTime = None, tokenOwner = None, 
                       tokenExpiration = None, formerStatus = None, meta = {} ):
+    '''
+    Gets from the view composed by Site, SiteStatus and SiteHistory all rows 
+    that match the parameters given ( not necessarily returns the same number 
+    of rows as are there on Site or SiteStatus ).
+    
+    :Parameters:
+      **siteName** - `[, string, list]`
+        name of the site 
+      **siteType** - `[, string, list]`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`
+      **gridSiteName** - `[, string, list]`
+        name of the  grid site the site belongs ( if any )
+      **gridTier** - `[, string, list]`
+        grid tier of the associated grid site ( if any )   
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the `Site` granularity
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`  
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status  
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership    
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()
 
   '''
@@ -95,17 +200,86 @@ class ResourceStatusClient:
   '''
   @ClientFastDec
   def insertService( self, serviceName, serviceType, siteName, meta = {} ):
+    '''
+    Inserts on Service a new row with the arguments given.
+    
+    :Parameters:
+      **serviceName** - `string`
+        name of the service 
+      **serviceType** - `string`
+        it has to be a valid service type, any of the defaults: `Computing` |\
+         `Storage` ...
+      **siteName** - `string`
+        name of the site the service belongs
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()
   @ClientFastDec
   def updateService( self, serviceName, serviceType, siteName, meta = {} ):
+    '''
+    Updates Service with the parameters given. By default, `serviceName` will \
+    be the parameter used to select the row.
+    
+    :Parameters:
+      **serviceName** - `string`
+        name of the service 
+      **serviceType** - `string`
+        it has to be a valid service type, any of the defaults: `Computing` | \
+        `Storage` ...
+      **siteName** - `string`
+        name of the site the service belongs
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()
   @ClientFastDec
   def getService( self, serviceName = None, serviceType = None, siteName = None, 
                   meta = {} ):
+    '''
+    Gets from Service all rows that match the parameters given.
+    
+    :Parameters:
+      **serviceName** - `[, string, list]`
+        name of the service 
+      **serviceType** - `[, string, list]`
+        it has to be a valid service type, any of the defaults: `Computing` | \
+        `Storage` ...
+      **siteName** - `[, string, list]`
+        name of the site the service belongs
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()
   @ClientFastDec
   def deleteService( self, serviceName = None, serviceType = None, 
                      siteName = None, meta = {} ):
+    '''
+    Deletes from Service all rows that match the parameters given.
+    
+    :Parameters:
+      **serviceName** - `[, string, list]`
+        name of the service 
+      **serviceType** - `[, string, list]`
+        it has to be a valid service type, any of the defaults: `Computing` | \
+        `Storage` ...
+      **siteName** - `[, string, list]`
+        name of the site the service belongs
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec  
   def getServicePresent( self, serviceName = None, siteName = None, 
@@ -114,6 +288,43 @@ class ResourceStatusClient:
                          lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, formerStatus = None, 
                          meta = {} ):
+    '''
+    Gets from the view composed by Service, ServiceStatus and ServiceHistory all 
+    rows that match the parameters given ( not necessarily returns the same 
+    number of rows as are there on Service or ServiceStatus ).
+    
+    :Parameters:
+      **serviceName** - `[, string, list]`
+        name of the service 
+      **siteName** - `[, string, list]`
+        name of the site the service belongs
+      **siteType** - `[, string, list]`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`
+      **serviceType** - `[, string, list]`
+        it has to be a valid service type, any of the defaults: `Computing` | \
+        `Storage` ... 
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the `Service` granularity
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`  
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status  
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership    
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
 
   '''
@@ -124,20 +335,105 @@ class ResourceStatusClient:
   @ClientFastDec
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, meta = {} ):
+    '''
+    Inserts on Resource a new row with the arguments given.
+    
+    :Parameters:
+      **resourceName** - `string`
+        name of the resource 
+      **resourceType** - `string`
+        it has to be a valid resource type, any of the defaults: `CE` | \
+        `CREAMCE` ...
+      **serviceType** - `string`
+        type of the service it belongs, defaults are: `Computing` | `Storage` ..
+      **siteName** - `string`
+        name of the site the resource belongs ( if any )
+      **gridSiteName** - `string`
+        name of the grid site the resource belongs ( if any )  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, meta = {} ):
+    '''
+    Updates Resource with the parameters given. By default, `resourceName` will 
+    be the parameter used to select the row.
+    
+    :Parameters:
+      **resourceName** - `string`
+        name of the resource 
+      **resourceType** - `string`
+        it has to be a valid resource type, any of the defaults: `CE` | \
+        `CREAMCE` ...
+      **serviceType** - `string`
+        type of the service it belongs, defaults are: `Computing` | `Storage` ..
+      **siteName** - `string`
+        name of the site the resource belongs ( if any )
+      **gridSiteName** - `string`
+        name of the grid site the resource belongs ( if any )
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals()
   @ClientFastDec
   def getResource( self, resourceName = None, resourceType = None, 
                    serviceType = None, siteName = None, gridSiteName = None, 
                    meta = {} ):
+    '''
+    Gets from Resource all rows that match the parameters given.
+    
+    :Parameters:
+      **resourceName** - `[, string, list]`
+        name of the resource 
+      **resourceType** - `[, string, list]`
+        it has to be a valid resource type, any of the defaults: `CE` | \
+        `CREAMCE` ...
+      **serviceType** - `[, string, list]`
+        type of the service it belongs, defaults are: `Computing` | `Storage` ..
+      **siteName** - `[, string, list]`
+        name of the site the resource belongs ( if any )
+      **gridSiteName** - `[, string, list]`
+        name of the grid site the resource belongs ( if any )
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def deleteResource( self, resourceName = None, resourceType = None, 
                       serviceType = None, siteName = None, gridSiteName = None, 
                       meta = {} ):
+    '''
+    Deletes from Resource all rows that match the parameters given.
+    
+    :Parameters:
+      **resourceName** - `[, string, list]`
+        name of the resource 
+      **resourceType** - `[, string, list]`
+        it has to be a valid resource type, any of the defaults: `CE` | \
+        `CREAMCE` ...
+      **serviceType** - `[, string, list]`
+        type of the service it belongs, defaults are: `Computing` | `Storage` ...
+      **siteName** - `[, string, list]`
+        name of the site the resource belongs ( if any )   
+      **gridSiteName** - `[, string, list]`
+        name of the grid site the resource belongs ( if any )
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec      
   def getResourcePresent( self, resourceName = None, siteName = None, 
@@ -148,6 +444,48 @@ class ResourceStatusClient:
                           lastCheckTime = None, tokenOwner = None, 
                           tokenExpiration = None, formerStatus = None, 
                           meta = {} ):
+    '''
+    Gets from the view composed by Resource, ResourceStatus and ResourceHistory 
+    all rows that match the parameters given ( not necessarily returns the same 
+    number of rows as are there on Resource or ResourceStatus ).
+    
+    :Parameters:
+      **resourceName** - `[, string, list]`
+        name of the resource
+      **siteName** - `[, string, list]`
+        name of the site the resource belongs ( if any )
+      **serviceType** - `[, string, list]`
+        it has to be a valid service type, any of the defaults: `Computing` | \
+        `Storage` ...
+      **gridSiteName** - `[, string, list]`
+        name of the grid site the resource belongs ( if any )      
+      **siteType** - `[, string, list]`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`
+      **resourceType** - `[, string, list]`
+        it has to be a valid resource type, any of the defaults: `CE` | \
+        `CREAMCE` ...     
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the `Resource` granularity
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`  
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status  
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership    
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
 
   '''
@@ -158,19 +496,84 @@ class ResourceStatusClient:
   @ClientFastDec
   def insertStorageElement( self, storageElementName, resourceName, 
                             gridSiteName, meta = {} ):
+    '''
+    Inserts on StorageElement a new row with the arguments given.
+    
+    :Parameters:
+      **storageElementName** - `string`
+        name of the storage element 
+      **resourceName** - `string`
+        name of the resource the storage element belongs
+      **gridSiteName** - `string`
+        name of the grid site the storage element belongs
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def updateStorageElement( self, storageElementName, resourceName, 
                             gridSiteName, meta = {} ):
+    '''
+    Updates StorageElement with the parameters given. By default, 
+    `storageElementName` will be the parameter used to select the row.
+    
+    :Parameters:
+      **storageElementName** - `string`
+        name of the storage element 
+      **resourceName** - `string`
+        name of the resource the storage element belongs
+      **gridSiteName** - `string`
+        name of the grid site the storage element belongs
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec       
   def getStorageElement( self, storageElementName = None, resourceName = None, 
                          gridSiteName = None, meta = {} ):
+    '''
+    Gets from StorageElement all rows that match the parameters given.
+    
+    :Parameters:
+      **storageElementName** - `[, string, list]`
+        name of the storage element 
+      **resourceName** - `[, string, list]`
+        name of the resource the storage element belongs
+      **gridSiteName** - `[, string, list]`
+        name of the grid site the storage element belongs
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec       
   def deleteStorageElement( self, storageElementName = None, 
                             resourceName = None, gridSiteName = None, 
                             meta = {} ):
+    '''
+    Deletes from StorageElement all rows that match the parameters given.
+    
+    :Parameters:
+      **storageElementName** - `[, string, list]`
+        name of the storage element 
+      **resourceName** - `[, string, list]`
+        name of the resource the storage element belongs
+      **gridSiteName** - `[, string, list]`
+        name of the grid site the storage element belongs
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()    
   @ClientFastDec      
   def getStorageElementPresent( self, storageElementName = None, 
@@ -180,6 +583,43 @@ class ResourceStatusClient:
                                 reason = None, lastCheckTime = None, 
                                 tokenOwner = None, tokenExpiration = None, 
                                 formerStatus = None, meta = {} ):
+    '''
+    Gets from the view composed by StorageElement, StorageElementStatus and 
+    StorageElementHistory all rows that match the parameters given ( not 
+    necessarily returns the same number of rows as are there on StorageElement 
+    or StorageElementStatus ).
+    
+    :Parameters:
+      **storageElementName** - `[, string, list]`
+        name of the storage element
+      **resourceName** - `[, string, list]`
+        name of the resource
+      **gridSiteName** - `[, string, list]`
+        name of the grid site the storage element belongs ( if any )
+      **siteType** - `[, string, list]`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`     
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the `StorageElement` granularity
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`  
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status  
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership    
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
 
   '''
@@ -189,15 +629,72 @@ class ResourceStatusClient:
   '''
   @ClientFastDec
   def insertGridSite( self, gridSiteName, gridTier, meta = {} ):
+    '''
+    Inserts on GridSite a new row with the arguments given.
+    
+    :Parameters:
+      **gridSiteName** - `string`
+        name of the grid site
+      **gridTier** - `string`
+        grid tier of the grid site
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def updateGridSite( self, gridSiteName, gridTier, meta = {} ):
+    '''
+    Updates GridSite with the parameters given. By default, 
+    `gridSiteName` will be the parameter used to select the row.
+    
+    :Parameters:
+      **gridSiteName** - `string`
+        name of the grid site
+      **gridTier** - `string`
+        grid tier of the grid site
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec    
   def getGridSite( self, gridSiteName = None, gridTier = None, meta = {} ):
+    '''
+    Gets from GridSite all rows that match the parameters given.
+
+    :Parameters:
+      **gridSiteName** - `[, string, list]`
+        name of the grid site
+      **gridTier** - `[, string, list]`
+        grid tier of the grid site
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec    
-  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = {} ):        
+  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = {} ): 
+    '''
+    Deletes from GridSite all rows that match the parameters given.
+    
+    :Parameters:
+      **gridSiteName** - `[, string, list]`
+        name of the grid site
+      **gridTier** - `[, string, list]`
+        grid tier of the grid site
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''           
     return locals()
 
   '''
@@ -210,12 +707,81 @@ class ResourceStatusClient:
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
                            meta = {} ): 
+    '''
+    Inserts on <element>Status a new row with the arguments given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateCreated** - `datetime`
+        time-stamp setting status assignment    
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `datetime`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def updateElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
                            meta = {} ):
+    '''
+    Updates <element>Status with the parameters given. By default, 
+    `elementName` and 'statusType' will be the parameters used to select the row.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateCreated** - `datetime`
+        time-stamp setting status assignment    
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `datetime`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def getElementStatus( self, element, elementName = None, statusType = None, 
@@ -223,6 +789,40 @@ class ResourceStatusClient:
                         dateEffective = None, dateEnd = None, 
                         lastCheckTime = None, tokenOwner = None, 
                         tokenExpiration = None, meta = {} ):
+    '''
+    Gets from <element>Status all rows that match the parameters given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `[, string, list]`
+        name of the individual of class element  
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status
+      **dateCreated** - `[, datetime, list]`
+        time-stamp setting status assignment    
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `[, datetime, list]`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def deleteElementStatus( self, element, elementName = None, statusType = None, 
@@ -230,6 +830,40 @@ class ResourceStatusClient:
                            dateEffective = None, dateEnd = None, 
                            lastCheckTime = None, tokenOwner = None, 
                            tokenExpiration = None, meta = {} ):
+    '''
+    Deletes from <element>Status all rows that match the parameters given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `[, string, list]`
+        name of the individual of class element  
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status
+      **dateCreated** - `[, datetime, list]`
+        time-stamp setting status assignment    
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `[, datetime, list]`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
 
   '''
@@ -242,12 +876,82 @@ class ResourceStatusClient:
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
                                     tokenExpiration, meta = {} ): 
+    '''
+    Inserts on <element>ScheduledStatus a new row with the arguments given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateCreated** - `datetime`
+        time-stamp setting status assignment    
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `datetime`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def updateElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
                                     tokenExpiration, meta = {} ):
+    '''
+    Updates <element>ScheduledStatus with the parameters given. By default, 
+    `elementName`, 'statusType' and `dateEffective` will be the parameters used 
+    to select the row.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateCreated** - `datetime`
+        time-stamp setting status assignment    
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `datetime`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def getElementScheduledStatus( self, element, elementName = None, 
@@ -256,6 +960,40 @@ class ResourceStatusClient:
                                  dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None, tokenOwner = None, 
                                  tokenExpiration = None, meta = {} ):
+    '''
+    Gets from <element>ScheduledStatus all rows that match the parameters given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `[, string, list]`
+        name of the individual of class element  
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status
+      **dateCreated** - `[, datetime, list]`
+        time-stamp setting status assignment    
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `[, datetime, list]`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def deleteElementScheduledStatus( self, element, elementName = None, 
@@ -264,6 +1002,41 @@ class ResourceStatusClient:
                                     dateEffective = None, dateEnd = None, 
                                     lastCheckTime = None, tokenOwner = None, 
                                     tokenExpiration = None, meta = {} ):
+    '''
+    Deletes from <element>ScheduledStatus all rows that match the parameters 
+    given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `[, string, list]`
+        name of the individual of class element  
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status
+      **dateCreated** - `[, datetime, list]`
+        time-stamp setting status assignment    
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `[, datetime, list]`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
       
   '''
@@ -276,12 +1049,82 @@ class ResourceStatusClient:
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
                             meta = {} ): 
+    '''
+    Inserts on <element>History a new row with the arguments given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateCreated** - `datetime`
+        time-stamp setting status assignment    
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `datetime`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def updateElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
                             meta = {} ):
+    '''
+    Updates <element>History with the parameters given. By default, 
+    `elementName`, 'statusType', `reason` and `dateEnd` will be the parameters 
+    used to select the row.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateCreated** - `datetime`
+        time-stamp setting status assignment    
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `datetime`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def getElementHistory( self, element, elementName = None, statusType = None, 
@@ -289,6 +1132,40 @@ class ResourceStatusClient:
                          dateEffective = None, dateEnd = None, 
                          lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, meta = {} ):
+    '''
+    Gets from <element>History all rows that match the parameters given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `[, string, list]`
+        name of the individual of class element  
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status
+      **dateCreated** - `[, datetime, list]`
+        time-stamp setting status assignment    
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `[, datetime, list]`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return locals()
   @ClientFastDec
   def deleteElementHistory( self, element, elementName = None, 
@@ -297,6 +1174,40 @@ class ResourceStatusClient:
                             dateEnd = None, lastCheckTime = None, 
                             tokenOwner = None, tokenExpiration = None, 
                             meta = {} ):
+    '''
+    Deletes from <element>History all rows that match the parameters given.
+
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `[, string, list]`
+        name of the individual of class element  
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status
+      **dateCreated** - `[, datetime, list]`
+        time-stamp setting status assignment    
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `[, datetime, list]`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''   
     return locals() 
 
   '''
@@ -306,16 +1217,59 @@ class ResourceStatusClient:
   '''
   
   def getValidElements( self ):
+    '''
+    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/Resources`
+    
+    :Parameters: `None`
+    
+    :return: S_OK()
+    '''   
     return S_OK( ValidRes )
   def getValidStatuses( self ):
+    '''
+    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/Status`
+    
+    :Parameters: `None`
+    
+    :return: S_OK()
+    '''    
     return S_OK( ValidStatus )
   def getValidStatusTypes( self ):  
+    '''
+    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/Resources`
+    
+    :Parameters: `None`
+    
+    :return: S_OK()
+    '''    
     return S_OK( ValidStatusTypes )
   def getValidSiteTypes( self ):
+    '''
+    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/SiteType`
+    
+    :Parameters: `None`
+    
+    :return: S_OK()
+    '''    
     return S_OK( ValidSiteType )
   def getValidServiceTypes( self ):
+    '''
+    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/ServiceType`
+    
+    :Parameters: `None`
+    
+    :return: S_OK()
+    '''    
     return S_OK( ValidServiceType ) 
   def getValidResourceTypes( self ):
+    '''
+    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/Resource\
+    Type`
+    
+    :Parameters: `None`
+    
+    :return: S_OK()
+    '''    
     return S_OK( ValidResourceType )
 
   '''
@@ -325,20 +1279,95 @@ class ResourceStatusClient:
   '''
 
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
+    '''
+    Using `siteName` to query the database, decides whether to insert or update
+    the table.
+    
+    :Parameters:
+      **siteName** - `string`
+        name of the site 
+      **siteType** - `string`
+        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
+         | `T3`
+      **gridSiteName** - `string`
+        name of the  grid site the site belongs ( if any )
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return self.__addOrModifyElement( 'Site', locals() )
 
   def addOrModifyService( self, serviceName, serviceType, siteName ):
+    '''
+    Using `serviceName` to query the database, decides whether to insert or 
+    update the table.
+    
+    :Parameters:
+      **serviceName** - `string`
+        name of the service 
+      **serviceType** - `string`
+        it has to be a valid service type, any of the defaults: `Computing` | \
+        `Storage` ...
+      **siteName** - `string`
+        name of the site the service belongs
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return self.__addOrModifyElement( 'Service', locals() )
 
   def addOrModifyResource( self, resourceName, resourceType, serviceType, 
                            siteName, gridSiteName ):
+    '''
+    Using `resourceName` to query the database, decides whether to insert or 
+    update the table.
+    
+    :Parameters:
+      **resourceName** - `string`
+        name of the resource 
+      **resourceType** - `string`
+        it has to be a valid resource type, any of the defaults: `CE` | \
+        `CREAMCE` ...
+      **serviceType** - `string`
+        type of the service it belongs, defaults are: `Computing` | `Storage` ..
+      **siteName** - `string`
+        name of the site the resource belongs ( if any )
+      **gridSiteName** - `string`
+        name of the grid site the resource belongs ( if any )  
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return self.__addOrModifyElement( 'Resource', locals() )
 
   def addOrModifyStorageElement( self, storageElementName, resourceName, 
                                  gridSiteName ):
+    '''
+    Using `storageElementName` to query the database, decides whether to insert 
+    or update the table.
+    
+    :Parameters:
+      **storageElementName** - `string`
+        name of the storage element 
+      **resourceName** - `string`
+        name of the resource the storage element belongs
+      **gridSiteName** - `string`
+        name of the grid site the storage element belongs
+
+    :return: S_OK() || S_ERROR()
+    '''    
     return self.__addOrModifyElement( 'StorageElement', locals() )
 
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
+    '''
+    Using `gridSiteName` to query the database, decides whether to insert or 
+    update the table.
+    
+    :Parameters:
+      **gridSiteName** - `string`
+        name of the grid site
+      **gridTier** - `string`
+        grid tier of the grid site
+
+    :return: S_OK() || S_ERROR()
+    '''
 
     args = ( gridSiteName, gridTier )
     kwargs = { 'gridSiteName' : gridSiteName, 'gridTier' : gridTier, 
@@ -356,13 +1385,70 @@ class ResourceStatusClient:
                            dateEffective = None, dateEnd = None,
                            lastCheckTime = None, tokenOwner = None, 
                            tokenExpiration = None ):
+    '''
+    Updates <element>Status with the parameters given. By default, 
+    `elementName` and 'statusType' will be the parameters used to select the 
+    row.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `[, string]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string]`
+        decision that triggered the assigned status
+      **dateCreated** - `[, datetime]`
+        time-stamp setting status assignment    
+      **dateEffective** - `[, datetime]`
+        time-stamp from which the status & status type are effective
+      **dateEnd** - `[, datetime]`
+        time-stamp setting end of status validity    
+      **lastCheckTime** - `[, datetime]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime]`
+        time-stamp setting validity of token ownership  
+
+    :return: S_OK() || S_ERROR()
+    '''
     return self.__modifyElementStatus( locals() )
 
   def removeElement( self, element, elementName ):
+    '''
+    Deletes from <element>, <element>Status, <element>ScheduledStatus and 
+    <element>History all rows with `elementName`.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **elementName** - `[, string, list]`
+        name of the individual of class element  
+    
+    :return: S_OK() || S_ERROR()
+    '''       
     return self.__removeElement( element, elementName )
 
   def getServiceStats( self, siteName, statusType = None ):
-
+    '''
+    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+    Services of a Site;
+    
+    :Parameters:
+      **siteName** - `string`
+        name of the site
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the 'Site' granularity
+        
+    :return: S_OK() || S_ERROR()
+    '''
     presentDict = { 'siteName' : siteName }
     if statusType is not None:
 #      self.__validateElementStatusTypes( 'Service', statusType )
@@ -372,15 +1458,26 @@ class ResourceStatusClient:
                             'count' : True, 
                             'group' : 'Status' } }
     presentDict.update( kwargs )
-
-    #sqlQuery = self.rsClient.getServicePresent( **presentDict )
     sqlQuery = self._getElement( 'ServicePresent', **presentDict )
     return self.__getStats( sqlQuery )
 
   def getResourceStats( self, element, name, statusType = None ):
-
+    '''
+    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+    Resources of a Site or a Service;
+    
+    :Parameters:
+      **element** - `string`
+        it has to be either `Site` or `Service`
+      **name** - `string`
+        name of the individual of element class
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+        
+    :return: S_OK() || S_ERROR()
+    '''
     # VALIDATION ??
-    presentDict = { }
+    presentDict = {}
 
     if statusType is not None:
 #      self.rsVal.validateElementStatusTypes( 'Service', statusType )
@@ -404,7 +1501,6 @@ class ResourceStatusClient:
         
       else:
         kwargs = { 'meta' : {'columns' : [ 'GridSiteName' ] }, 'siteName' : siteName }
-        #gridSiteName = [ gs[0] for gs in self.rsClient.getSite( siteName = siteName, **kwargs )[ 'Value' ] ]
         gridSiteName = [ gs[0] for gs in \
                          self._getElement( 'Site', **kwargs )[ 'Value' ] ]
         
@@ -414,7 +1510,6 @@ class ResourceStatusClient:
       message = '%s is non accepted element. Only Site or Service' % element
       return S_ERROR( message )
 
-    #resourceNames = [ re[0] for re in self.rsClient.getResource( **rDict )[ 'Value' ] ]
     resourceNames = [ re[0] for re in \
                           self._getElement( 'Resource', **rDict )[ 'Value' ] ]
     
@@ -422,12 +1517,24 @@ class ResourceStatusClient:
     presentDict[ 'resourceName' ] = resourceNames
     presentDict.update( kwargs )
     
-    #sqlQuery = self.rsClient.getResourcePresent( **presentDict )
     sqlQuery = self._getElement( 'ResourcePresent', **presentDict )
     return self.__getStats( sqlQuery )
  
   def getStorageElementStats( self, element, name, statusType = None ):
-
+    '''
+    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
+    StorageElements of a Site or a Resource;
+    
+    :Parameters:
+      **element** - `string`
+        it has to be either `Site` or `Resource`
+      **name** - `string`
+        name of the individual of element class
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+        
+    :return: S_OK() || S_ERROR()
+    '''
     # VALIDATION ??
     presentDict = {}
 
@@ -441,7 +1548,6 @@ class ResourceStatusClient:
     if element == 'Site':
 
       kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'siteName' : name  }
-      #gridSiteNames = [ gs[0] for gs in self.rsClient.getSite( siteName = name, **kwargs )[ 'Value' ] ]
       gridSiteNames = [ gs[0] for gs in \
                              self._getElement( 'Site', **kwargs )[ 'Value' ] ]
       rDict[ 'gridSiteName' ] = gridSiteNames
@@ -454,7 +1560,6 @@ class ResourceStatusClient:
       message = '%s is non accepted element. Only Site or Resource' % element
       return S_ERROR( message )
 
-    #storageElementNames = [ se[0] for se in self.rsClient.getStorageElement( **rDict )[ 'Value' ] ]
     storageElementNames = [ se[0] for se in \
                     self._getElement( 'StorageElement', **rDict )[ 'Value' ] ]
 
@@ -462,57 +1567,65 @@ class ResourceStatusClient:
     presentDict[ 'storageElementName' ] = storageElementNames
     presentDict.update( kwargs )
     
-#    sqlQuery = self.rsClient.getStorageElementPresent( **presentDict )
     sqlQuery = self._getElement( 'StorageElementPresent', **presentDict )
     return self.__getStats( sqlQuery )  
   
   def getGeneralName( self, from_element, name, to_element ):
+    '''
+    Get name of a individual of granularity `from_g`, to the name of the
+    individual with granularity `to_g`
 
+    For a StorageElement, get either the Site, Service or the Resource name.
+    For a Resource, get either the Site name or Service name.
+    For a Service name, get the Site name
+
+    :Parameters:
+      **from_element** - `string`
+        granularity of the element named name
+      **name** - `string`
+        name of the element
+      **to_element** - `string`
+        granularity of the desired name
+        
+    :return: S_OK() || S_ERROR()        
+    '''
 #    self.rsVal.validateElement( from_element )
 #    self.rsVal.validateElement( to_element )
 
     if from_element == 'Service':
       kwargs = { 'meta' : { 'columns' : [ 'SiteName' ] }, 'serviceName' : name }
-      resQuery = self._getElement( 'Service', **kwargs )
-      #resQuery = self.rsClient.getService( serviceName = name, **kwargs )  
+      resQuery = self._getElement( 'Service', **kwargs ) 
 
     elif from_element == 'Resource':
       kwargs = { 'meta' : { 'columns' : [ 'ServiceType' ] }, 'resourceName' : name }
-      resQuery = self._getElement( 'Resource', **kwargs )
-      #resQuery = self.rsClient.getResource( resourceName = name, **kwargs )    
+      resQuery = self._getElement( 'Resource', **kwargs )    
       serviceType = resQuery[ 'Value' ][ 0 ][ 0 ]
 
       if serviceType == 'Computing':
         kwargs = { 'meta' : { 'columns' : [ 'SiteName' ] }, 'resourceName' : name }
         resQuery = self._getElement( 'Resource', **kwargs )  
-        #resQuery = self.rsClient.getResource( resourceName = name, **kwargs )
       else:
         kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'resourceName' : name }    
-        #gridSiteNames = self.rsClient.getResource( resourceName = name, **kwargs )
         gridSiteNames = self._getElement( 'Resource', **kwargs )
         kwargs = { 
                    'meta' : { 'columns'      : [ 'SiteName' ] }, 
                    'gridSiteName' : list( gridSiteNames[ 'Value' ] ) 
                  }  
         resQuery = self._getElement( 'Site', **kwargs )
-        #resQuery = self.rsClient.getSite( gridSiteName = list( gridSiteNames[ 'Value' ] ), **kwargs )
         
     elif from_element == 'StorageElement':
 
       if to_element == 'Resource':
         kwargs = { 'meta' : { 'columns' : [ 'ResourceName' ] }, 'storageElementName' : name }   
         resQuery = self._getElement( 'StorageElement', **kwargs )
-        #resQuery = self.rsClient.getStorageElement( storageElementName = name, **kwargs )
       else:
         kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'storageElementName' : name }  
-        #gridSiteNames = self.rsClient.getStorageElement( storageElementName = name, **kwargs )
         gridSiteNames = self._getElement( 'StorageElement', **kwargs )
         kwargs = { 
                    'meta' : { 'columns'      : [ 'SiteName' ] }, 
                    'gridSiteName' : list( gridSiteNames[ 'Value' ] ) 
                  }
         resQuery = self._getElement( 'Site', **kwargs )
-        #resQuery = self.rsClient.getSite( gridSiteName = list( gridSiteNames[ 'Value' ] ), **kwargs )
 
         if to_element == 'Service':
           serviceType = 'Storage'
@@ -531,28 +1644,47 @@ class ResourceStatusClient:
       return S_OK( newNames )
 
   def getGridSiteName( self, granularity, name ):
-
+    '''
+    Get grid site name for the given individual.
+    
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **name** - `string`
+        name of the element
+    
+    :return: S_OK() | S_ERROR()      
+    '''
 #    self.rsVal.validateElement( granularity )
 
     elementName = '%sName' % ( granularity[0].lower() + granularity[1:] ) 
 
-    rDict = {
-              elementName : name
-             }
-
-    kwargs = { 
-              'meta' : { 'columns' : [ 'GridSiteName' ] } 
-             }
+    rDict  = { elementName : name }
+    kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] } }
     
     kwargs.update( rDict )
-    
     return self._getElement( granularity, **kwargs )
- #   getter = getattr( self.rsClient, 'get%s' % granularity )
-    #return getter( **kwargs )
 
   def getTokens( self, granularity, name = None, tokenExpiration = None, 
                  statusType = None, **kwargs ):
+    '''
+    Get tokens for the given parameters. If `tokenExpiration` given, will select
+    the ones with tokenExpiration older than the given one.
 
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **name** - `[, string, list]`
+        name of the element  
+      **tokenExpiration** - `[, datetime]`
+        time-stamp with the token expiration time
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the granularity class
+    
+    :return: S_OK || S_ERROR
+    '''
 #    self.rsVal.validateElement( granularity )  
 
     rDict = { 'element' : granularity }
@@ -567,21 +1699,35 @@ class ResourceStatusClient:
     kw[ 'meta' ][ 'columns' ] = kwargs.pop( 'columns', None )
     if tokenExpiration is not None:
       kw[ 'meta' ][ 'minor' ]   = { 'tokenExpiration' : tokenExpiration }
-
     kw.update( rDict )
-    
      
     return self._getElement( 'ElementStatus', **kw ) 
-    #getter = getattr( self.rsClient, 'get%sStatus' % granularity )  
-    #return getter( **kw ) 
 
   def setToken( self, granularity, name, statusType, reason, tokenOwner, 
                 tokenExpiration ):
-
+    '''
+    Updates <granularity>Status with the parameters given, using `name` and 
+    `statusType` to select the row.
+        
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **name** - `string`
+        name of the element  
+      **statusType** - `string`
+        it has to be a valid status type for the granularity class
+      **reason** - `string`
+        decision that triggered the assigned status
+      **tokenOwner** - `string`
+        token assigned to the element & status type    
+      **tokenExpiration** - `datetime`
+        time-stamp with the token expiration time
+    
+    :return: S_OK || S_ERROR
+    '''
 #    self.rsVal.validateElement( granularity )
 #    self.rsVal.validateElementStatusTypes( granularity, statusType )
-    
-    #updatter = getattr( self.rsClient, 'update%sStatus' % granularity )
     
     rDict = { 
              'elementName'         : name,
@@ -590,52 +1736,75 @@ class ResourceStatusClient:
              'tokenOwner'          : tokenOwner,
              'tokenExpiration'     : tokenExpiration
              }
-    
-    #print ( granularity, name, rDict )
+  
     return self.modifyElementStatus( granularity, **rDict )
-    #return self._updateElement( 'ElementStatus', granularity, name, **rDict )
-    #return updatter( name, **rDict )
-
+  
   def setReason( self, granularity, name, statusType, reason ):
-        
-#    self.rsVal.validateElement( granularity )
-        
-    #modificator = getattr( self, 'modify%sStatus' % granularity )
-    #elementName = granularity[0].lower() + granularity[1:]
+    '''
+    Updates <granularity>Status with the parameters given, using `name` and 
+    `statusType` to select the row.
     
-    rDict = { 
-             #'%sName' % elementName : name,        
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **name** - `string`
+        name of the element  
+      **statusType** - `string`
+        it has to be a valid status type for the granularity class
+      **reason** - `string`
+        decision that triggered the assigned status
+    
+    :return: S_OK || S_ERROR
+    '''           
+#    self.rsVal.validateElement( granularity )
+    
+    rDict = {        
              'elementName': name,
              'statusType' : statusType,
              'reason'     : reason,
              }
      
     return self.modifyElementStatus( granularity, **rDict ) 
-    #return modificator( **rDict )
 
   def setDateEnd( self, granularity, name, statusType, dateEffective ):
+    '''
+    Updates <granularity>Status with the parameters given, using `name` and 
+    `statusType` to select the row.
     
-    #self.rsVal.validateElement( granularity )
-
-    #modificator = getattr( self, 'modify%sStatus' % granularity )   
-    #elementName = granularity[0].lower() + granularity[1:]
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **name** - `string`
+        name of the element  
+      **statusType** - `string`
+        it has to be a valid status type for the granularity class
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
     
+    :return: S_OK || S_ERROR
+    '''    
+    #self.rsVal.validateElement( granularity )   
     rDict = { 
-             #'%sName' % elementName : name,
              'elementName'   : name,
              'statusType'    : statusType,
              'dateEffective' : dateEffective,
              }
     
     return self.modifyElementStatus( granularity, **rDict )
-    #return modificator( **rDict )
-    #return updatter( name, **rDict )
-
+    
   def whatIs( self, name ):
-
+    '''
+    Finds which is the granularity of the given name.
+    
+    :Parameters:
+      **name** - `string`
+        name of the element  
+    
+    :return: S_OK || S_ERROR
+    '''
     for g in ValidRes:
-      
-      #getter = getattr( self.rsClient, 'get%ss' % g )
 
       elementName = '%sName' % (g[0].lower() + g[1:])
 
@@ -650,7 +1819,21 @@ class ResourceStatusClient:
     return S_OK( 'Unknown' )  
 
   def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
-
+    '''
+    Gets from the <granularity>Present view all elements that match the 
+    chechFrequency values ( lastCheckTime(j) < now - checkFrequencyTime(j) ). 
+    
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **checkFrequency** - `dict`
+        used to set chech frequency depending on state and type
+      **\*\*kwargs** - `[, dict]`
+        meta-data for the MySQL query. 
+    
+    :return: S_OK() || S_ERROR()    
+    '''
 #    self.rsVal.validateElement( granularity )
 
     toCheck = {}
@@ -678,24 +1861,45 @@ class ResourceStatusClient:
       orDict = { 'dict': dict, 'kwargs' : kw }          
                 
       kwargs[ 'meta' ][ 'or' ].append( orDict )          
-                   
-    #getter = getattr( self.rsClient, 'get%sPresent' % granularity )
-    #return getter( **kwargs )  
+
     return self._getElement( '%sPresent' % granularity, **kwargs )
 
   def getMonitoredStatus( self, granularity, name ):
- 
-    #getter = getattr( self.rsClient, 'get%sPresent' % granularity )
+    '''
+    Gets from <granularity>Present the present status of name.
     
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **name** - `string`
+        name of the element
+     
+    :return: S_OK() || S_ERROR()      
+    '''   
     elementName = '%sName' % ( granularity[0].lower() + granularity[1:] ) 
     kwargs = { elementName : name, 'meta' : { 'columns' : [ 'Status' ] }}
     
     return self._getElement( '%sPresent' % granularity, **kwargs )
-    #return getter( **kwargs )
 
   def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, 
                               maxItems ):
-
+    '''
+    Get present sites status list, for the web.
+    
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`
+      **selectDict** - `dict`
+        meta-data for the MySQL query
+      **startItem** - `integer`
+        first item index of the slice returned
+      **maxItems** - `integer`
+        length of the slice returned
+        
+    :return: S_OK() || S_ERROR()          
+    '''
 #    self.rsVal.validateElement( granularity )
 
     if granularity == 'Site':
