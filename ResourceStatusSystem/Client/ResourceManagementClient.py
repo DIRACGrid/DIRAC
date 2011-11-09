@@ -66,7 +66,7 @@ class ResourceManagementClient:
         name of the site
       **environment** - `string`
         environment to be cached
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -86,7 +86,7 @@ class ResourceManagementClient:
         name of the site
       **environment** - `string`
         environment to be cached
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -106,7 +106,7 @@ class ResourceManagementClient:
         name of the site
       **environment** - `[, string, list]`
         environment to be cached
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -126,7 +126,7 @@ class ResourceManagementClient:
         name of the site
       **environment** - `[, string, list]`
         environment to be cached
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -159,7 +159,7 @@ class ResourceManagementClient:
         time-stamp from which the policy result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the policy result was checked
-      **\*\*kwargs** - `[,dict]`
+      **meta** - `[,dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -193,7 +193,7 @@ class ResourceManagementClient:
         time-stamp from which the policy result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the policy result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -226,7 +226,7 @@ class ResourceManagementClient:
         time-stamp from which the policy result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -260,7 +260,7 @@ class ResourceManagementClient:
         time-stamp from which the policy result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -288,7 +288,7 @@ class ResourceManagementClient:
         time-stamp from which the result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -317,7 +317,7 @@ class ResourceManagementClient:
         time-stamp from which the result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -346,7 +346,7 @@ class ResourceManagementClient:
         time-stamp from which this result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time this result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -375,7 +375,7 @@ class ResourceManagementClient:
         time-stamp from which this result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time this result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -401,7 +401,7 @@ class ResourceManagementClient:
         time-stamp from which the result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -428,7 +428,7 @@ class ResourceManagementClient:
         time-stamp from which the result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -455,7 +455,7 @@ class ResourceManagementClient:
         time-stamp from which the result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -483,7 +483,7 @@ class ResourceManagementClient:
         time-stamp from which the result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -502,7 +502,7 @@ class ResourceManagementClient:
         user's name
       **email** - `string`
         user's email
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -522,7 +522,7 @@ class ResourceManagementClient:
         user's name
       **email** - `string`
         user's email
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -542,7 +542,7 @@ class ResourceManagementClient:
         user's name
       **email** - `[, string, list]`
         user's email
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -562,7 +562,7 @@ class ResourceManagementClient:
         user's name
       **email** - `[, string, list]`
         user's email
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -588,7 +588,7 @@ class ResourceManagementClient:
         name of the site
       **environment** - `string`
         environment to be cached
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -621,7 +621,7 @@ class ResourceManagementClient:
         time-stamp from which the policy result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the policy result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -650,7 +650,7 @@ class ResourceManagementClient:
         time-stamp from which the result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -677,7 +677,7 @@ class ResourceManagementClient:
         time-stamp from which the result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the result was checked
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
@@ -697,7 +697,7 @@ class ResourceManagementClient:
         user's name
       **email** - `string`
         user's email
-      **\*\*kwargs** - `[, dict]`
+      **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 

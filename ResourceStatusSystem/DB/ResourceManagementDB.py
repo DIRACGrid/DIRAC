@@ -100,10 +100,10 @@ class ResourceManagementDB(object):
     you know what are you doing and you have a very special use case.    
       
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -123,10 +123,10 @@ class ResourceManagementDB(object):
     doing and you have a very special use case.
        
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -143,10 +143,10 @@ class ResourceManagementDB(object):
     the MySQLStatement parser and generate a more sophisticated query.
        
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -166,10 +166,10 @@ class ResourceManagementDB(object):
     as in the get function.
        
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 

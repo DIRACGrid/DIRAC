@@ -101,10 +101,10 @@ class ResourceStatusDB( object ):
     you know what are you doing and you have a very special use case.    
       
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -124,10 +124,10 @@ class ResourceStatusDB( object ):
     doing and you have a very special use case.
        
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -144,10 +144,10 @@ class ResourceStatusDB( object ):
     the MySQLStatement parser and generate a more sophisticated query.
        
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
@@ -167,10 +167,10 @@ class ResourceStatusDB( object ):
     the get function.
       
     :Parameters:
-      **args** - `tuple`
+      **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
     
-      **kwargs** - `dict`
+      **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
