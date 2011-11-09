@@ -831,9 +831,9 @@ class TransformationDB( DB ):
       resultDict[taskID] = taskDict
       if site and ( se in selSEs ):
         resultDict[taskID]['Site'] = site
-      else:
-        resultDict.pop( taskID )
-        gLogger.warn( "Can not find corresponding site for se", se )
+#      else:
+#        resultDict.pop( taskID )
+#        gLogger.warn( "Can not find corresponding site for se", se )
     return S_OK( resultDict )
 
   def deleteTasks( self, transName, taskIDbottom, taskIDtop, author = '', connection = False ):
