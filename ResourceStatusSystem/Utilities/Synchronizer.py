@@ -1,8 +1,6 @@
 ################################################################################
 # $HeadURL $
 ################################################################################
-__RCSID__  = "$Id$"
-
 """
   This module contains a class to synchronize the content of the DataBase with what is the CS
 """
@@ -21,6 +19,7 @@ class Synchronizer(object):
     self.rsClient       = rsClient
     self.rmClient       = rmClient
     self.GOCDBClient = GOCDBClient()
+    self.synclist = [ 'Sites', 'Resources', 'StorageElements', 'Services', 'RegistryUsers' ]
 
     if self.rsClient == None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -37,13 +36,9 @@ class Synchronizer(object):
     :params:
       :attr:`thingsToSync`: list of things to sync
     """
+    gLogger.info( "!!! Sync DB content with CS content for %s !!!" % ( ", ".join(self.synclist) ) )
 
-    # FIXME: VOBOX not generic
-
-    thingsToSync = [ 'Sites', 'VOBOX', 'Resources', 'StorageElements', "Services", "CondDBs", 'RegistryUsers' ]
-    gLogger.info( "!!! Sync DB content with CS content for %s !!!" % ( ", ".join(thingsToSync) ) )
-
-    for thing in thingsToSync:
+    for thing in self.synclist:
       getattr( self, '_sync' + thing )()
 
     return S_OK()
@@ -83,40 +78,12 @@ class Synchronizer(object):
           gt = tier
         else:
           gt = getGOCTier( DIRACSitesOfGridSites )
-        
+
         Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
         Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
 
       elif siteType == "DIRAC":
         Utils.protect2(self.rsClient.addOrModifySite, site, tier, "NULL" )
-
-################################################################################
-
-  def _syncVOBOX( self ):
-    """
-    Sync DB content with VOBoxes
-    LHCb specific
-    """
-
-    # services in the DB now
-    VOBOXesInCS = set(Utils.unpack(CS.getT1s()))
-    VOBOXesInDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getServicePresent(
-          serviceType = "VO-BOX", meta = { 'columns' : "SiteName" } ))))
-
-    print "Updating %d VOBOXes on DB" % len(VOBOXesInCS - VOBOXesInDB)
-    for site in VOBOXesInCS - VOBOXesInDB:
-      service = 'VO-BOX@' + site
-      Utils.protect2(self.rsClient.addOrModifyService, service, 'VO-BOX', site )
-
-  def _syncCondDBs(self):
-    CondDBinCS = set(Utils.unpack(CS.getCondDBs()))
-    CondDBinDB = set(Utils.list_flatten(Utils.unpack(self.rsClient.getServicePresent(
-            serviceType = "CondDB", meta = { 'columns' : "SiteName" } ))))
-
-    print "Updating %d CondDBs on DB" % len (CondDBinCS - CondDBinDB)
-    for site in CondDBinCS - CondDBinDB:
-      service = "CondDB@" + site
-      Utils.protect2(self.rsClient.addOrModifyService, service, 'CondDB', site )
 
 ################################################################################
 # _syncResources HELPER functions
@@ -278,14 +245,14 @@ class Synchronizer(object):
       #self.rmClient.registryAddUser(u, users[u]['DN'].lower(), users[u]['Email'].lower())
       self.rmClient.addOrModifyUserRegistryCache( u, users[u]['DN'].lower(), users[u]['Email'].lower() )
 ################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ################################################################################
 
 '''
   HOW DOES THIS WORK.
-    
+
     will come soon...
 '''
-            
+
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
