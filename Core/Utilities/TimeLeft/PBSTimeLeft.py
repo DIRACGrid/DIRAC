@@ -52,7 +52,7 @@ class PBSTimeLeft:
     lines = result['Value'].split( '\n' )
     for line in lines:
       info = line.split()
-      if re.search( '.*resources_used.cput.*', line ):
+      if re.search( '.*resources_used.pcput.*', line ):
         if len( info ) >= 3:
           cpuList = info[2].split( ':' )
           cpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2] )
@@ -64,7 +64,7 @@ class PBSTimeLeft:
           wallClock = ( float( wcList[0] ) * 60 + float( wcList[1] ) ) * 60 + float( wcList[2] )
         else:
           self.log.warn( 'Problem parsing "%s" for elapsed wall clock time' % line )
-      if re.search( '.*Resource_List.cput.*', line ):
+      if re.search( '.*Resource_List.pcput.*', line ):
         if len( info ) >= 3:
           cpuList = info[2].split( ':' )
           cpuLimit = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2] )
@@ -86,6 +86,13 @@ class PBSTimeLeft:
         self.log.warn( 'Could not determine %s' % key )
 
     if not failed:
+      return S_OK( consumed )
+
+    if cpuLimit and wallClockLimit:
+      # We have got a partial result from PBS, assume that we ran for too short time
+      # This is a temporary dirty solution, real consumption should be rather used, A.T.
+      consumed['CPU'] = 300
+      consumed['WallClock'] = 600
       return S_OK( consumed )
     else:
       self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
