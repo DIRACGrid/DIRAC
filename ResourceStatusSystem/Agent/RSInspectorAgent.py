@@ -6,16 +6,16 @@ AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
 
 import Queue, time
 
-from DIRAC                                            import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                      import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
+from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem                       import CheckingFreqs
+from DIRAC.ResourceStatusSystem                             import CheckingFreqs
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
-from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
+from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
 class RSInspectorAgent( AgentModule ):
   """ 
@@ -36,7 +36,7 @@ class RSInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsClient                = ResourceStatusClient()
+      self.rsClient             = ResourceStatusClient()
       self.ResourcesFreqs       = CheckingFreqs[ 'ResourcesFreqs' ]
       self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
@@ -112,7 +112,7 @@ class RSInspectorAgent( AgentModule ):
     
     # Init the APIs beforehand, and reuse them. 
     __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
-    clients = initAPIs( __APIs__, {} )
+    clients = knownAPIs.initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
@@ -135,8 +135,12 @@ class RSInspectorAgent( AgentModule ):
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
        
         pepRes =  pep.enforce( **pepDict )
-        #print pepRes
-
+        if pepRes.has_key( 'PolicyCombinedResult' ):
+          pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
+          if pepStatus != pepDict[ 'status' ]:
+            gLogger.info( 'Updated Site %s (%s) from %s to %s' % 
+                          ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
+            
         # remove from InCheck list
         self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
@@ -147,16 +151,6 @@ class RSInspectorAgent( AgentModule ):
           self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

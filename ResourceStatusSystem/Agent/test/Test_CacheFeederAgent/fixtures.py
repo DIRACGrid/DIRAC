@@ -1,16 +1,16 @@
 import unittest, sys
 
-from DIRAC.ResourceStatusSystem.API.mock.ResourceManagementAPI import ResourceManagementAPI
-from DIRAC.ResourceStatusSystem.Command.mock.ClientsInvoker import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Agent.mock.AgentModule import AgentModule
+from DIRAC.ResourceStatusSystem.Client.mock.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Command.mock.ClientsInvoker          import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Agent.mock.AgentModule               import AgentModule
 
 class UnitFixture( unittest.TestCase ):
 
   def setUp( self ):
     
     import DIRAC.ResourceStatusSystem.Agent.CacheFeederAgent as mockedModule
-    mockedModule.ResourceManagementAPI = ResourceManagementAPI
-    mockedModule.ClientsInvoker = ClientsInvoker
+    mockedModule.ResourceManagementClient = ResourceManagementClient
+    mockedModule.ClientsInvoker           = ClientsInvoker
     
     mockedModule.CacheFeederAgent.__bases__ = ( AgentModule, )
     

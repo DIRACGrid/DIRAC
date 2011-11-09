@@ -1,18 +1,18 @@
 import unittest, sys
 
-from DIRAC.ResourceStatusSystem.API.mock.ResourceStatusAPI import ResourceStatusAPI
-from DIRAC.ResourceStatusSystem.API.mock.ResourceManagementAPI import ResourceManagementAPI 
-from DIRAC.ResourceStatusSystem.mock import ValidRes
-from DIRAC.ResourceStatusSystem.Agent.mock.AgentModule import AgentModule
+from DIRAC.ResourceStatusSystem.Client.mock.ResourceStatusClient     import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.mock.ResourceManagementClient import ResourceManagementClient 
+from DIRAC.ResourceStatusSystem.mock                                 import ValidRes
+from DIRAC.ResourceStatusSystem.Agent.mock.AgentModule               import AgentModule
 
 class UnitFixture( unittest.TestCase ):
 
   def setUp( self ):
        
     import DIRAC.ResourceStatusSystem.Agent.CleanerAgent as mockedModule
-    mockedModule.ResourceStatusAPI = ResourceStatusAPI
-    mockedModule.ResourceManagementAPI = ResourceManagementAPI
-    mockedModule.ValidRes = ValidRes
+    mockedModule.ResourceStatusClient     = ResourceStatusClient
+    mockedModule.ResourceManagementClient = ResourceManagementClient
+    mockedModule.ValidRes                 = ValidRes
     
     mockedModule.CleanerAgent.__bases__ = ( AgentModule, )
     

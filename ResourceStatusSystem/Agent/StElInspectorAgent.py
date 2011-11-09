@@ -6,16 +6,16 @@ AGENT_NAME = 'ResourceStatus/StElInspectorAgent'
 
 import Queue, time
 
-from DIRAC                                            import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                      import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
+from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem                       import CheckingFreqs
+from DIRAC.ResourceStatusSystem                             import CheckingFreqs
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
-from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
+from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
 class StElInspectorAgent( AgentModule ):
   """ 
@@ -36,7 +36,7 @@ class StElInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsClient                       = ResourceStatusClient()      
+      self.rsClient                    = ResourceStatusClient()      
       self.StorageElementsFreqs        = CheckingFreqs[ 'StorageElementsFreqs' ]
       self.StorageElementsToBeChecked  = Queue.Queue()
       self.StorageElementsNamesInCheck = [] 
@@ -112,7 +112,7 @@ class StElInspectorAgent( AgentModule ):
 
     # Init the APIs beforehand, and reuse them. 
     __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'SLSClient' ]
-    clients = initAPIs( __APIs__, {} )
+    clients = knownAPIs.initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
@@ -134,7 +134,11 @@ class StElInspectorAgent( AgentModule ):
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
      
         pepRes = pep.enforce( **pepDict )
-        #print pepRes
+        if pepRes.has_key( 'PolicyCombinedResult' ):
+          pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
+          if pepStatus != pepDict[ 'status' ]:
+            gLogger.info( 'Updated Site %s (%s) from %s to %s' % 
+                          ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
 
         # remove from InCheck list
         self.StorageElementsNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
@@ -145,16 +149,6 @@ class StElInspectorAgent( AgentModule ):
           self.StorageElementsNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

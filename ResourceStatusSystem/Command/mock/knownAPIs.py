@@ -4,7 +4,7 @@
 __RCSID__ = "$Id:  $"
 
 from DIRAC                                           import gLogger  
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
+#from DIRAC.Core.DISET.RPCClient                      import RPCClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
@@ -13,24 +13,24 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
   They can be either clients or RPC servers. 
 '''
 __APIs__ = {         
-  'ResourceStatusClient'     : 'DIRAC.ResourceStatusSystem.Client.ResourceStatusClient', 
-  'ResourceManagementClient' : 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
-  'JobsClient'               : 'DIRAC.ResourceStatusSystem.Client.JobsClient',
-  'PilotsClient'             : 'DIRAC.ResourceStatusSystem.Client.PilotsClient',
-  'ReportsClient'            : 'DIRAC.AccountingSystem.Client.ReportsClient',
-  'GOCDBClient'              : 'DIRAC.Core.LCG.GOCDBClient',
-  'GGUSTicketsClient'        : 'DIRAC.Core.LCG.GGUSTicketsClient',   
-  'SAMResultsClient'         : 'DIRAC.Core.LCG.SAMResultsClient',
-  'SLSClient'                : 'DIRAC.Core.LCG.SLSClient', 
-  'WMSAdministrator'         : 'WorkloadManagement/WMSAdministrator',
-  'ReportGenerator'          : 'Accounting/ReportGenerator'
+  'ResourceStatusClient'     : 'DIRAC.ResourceStatusSystem.Client.mock.ResourceStatusClient', 
+  'ResourceManagementClient' : 'DIRAC.ResourceStatusSystem.Client.mock.ResourceManagementClient',
+  'JobsClient'               : 'DIRAC.ResourceStatusSystem.Client.mock.JobsClient',
+  'PilotsClient'             : 'DIRAC.ResourceStatusSystem.Client.mock.PilotsClient',
+  'ReportsClient'            : 'DIRAC.AccountingSystem.Client.mock.ReportsClient',
+  'GOCDBClient'              : 'DIRAC.Core.LCG.mock.GOCDBClient',
+  'GGUSTicketsClient'        : 'DIRAC.Core.LCG.mock.GGUSTicketsClient',   
+  'SAMResultsClient'         : 'DIRAC.Core.LCG.mock.SAMResultsClient',
+  'SLSClient'                : 'DIRAC.Core.LCG.mock.SLSClient', 
+  'WMSAdministrator'         : 'DIRAC.WorkloadManagementSystem.Service.mock.WMSAdministrator',#'WorkloadManagement/WMSAdministrator',
+  'ReportGenerator'          : 'DIRAC.AccountingSystem.Service.mock.ReportGenerator'#'Accounting/ReportGenerator'
              }
 
 ################################################################################
 ################################################################################
 
 def initAPIs( desiredAPIs, knownAPIs ):
-  
+   
   if not isinstance( desiredAPIs, list ):
     raise RSSException, 'Got "%s" instead of list while initializing APIs' % desiredAPIs
   
@@ -50,25 +50,13 @@ def initAPIs( desiredAPIs, knownAPIs ):
       if not '/' in __APIs__[ dAPI ]:
         dClientMod = __import__( __APIs__[ dAPI ], globals(), locals(), ['*'] )
         knownAPIs[ dAPI ] = getattr( dClientMod, dAPI )()
-      else:  
-        knownAPIs[ dAPI ] = RPCClient( __APIs__[ dAPI ] )
         
       gLogger.info( 'API %s initialized' % dAPI )
         
-    except Exception, x:
-      raise RSSException, 'Exception %s while importing "%s - %s"' % ( x, dAPI, __APIs__[ dAPI ] )  
+    except Exception:
+      knownAPIs[ dAPI ] = None
     
   return knownAPIs
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

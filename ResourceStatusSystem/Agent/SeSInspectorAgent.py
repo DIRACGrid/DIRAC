@@ -6,16 +6,16 @@ AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
 
 import Queue, time
 
-from DIRAC                                            import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                      import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                  import ThreadPool
+from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem                       import CheckingFreqs
+from DIRAC.ResourceStatusSystem                             import CheckingFreqs
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP      import PEP
-from DIRAC.ResourceStatusSystem.Utilities.CS          import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils       import where
+from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.Utilities.CS                import getSetup, getExt
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
 class SeSInspectorAgent( AgentModule ):
   """ 
@@ -36,7 +36,7 @@ class SeSInspectorAgent( AgentModule ):
       self.VOExtension = getExt()
       self.setup       = getSetup()[ 'Value' ]
       
-      self.rsClient               = ResourceStatusClient()
+      self.rsClient            = ResourceStatusClient()
       self.ServicesFreqs       = CheckingFreqs[ 'ServicesFreqs' ]
       self.ServicesToBeChecked = Queue.Queue()
       self.ServiceNamesInCheck = []
@@ -111,7 +111,7 @@ class SeSInspectorAgent( AgentModule ):
 
     # Init the APIs beforehand, and reuse them. 
     __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'SLSClient' ]
-    clients = initAPIs( __APIs__, {} )
+    clients = knownAPIs.initAPIs( __APIs__, {} )
     
     pep = PEP( self.VOExtension, setup = self.setup, clients = clients )
 
@@ -134,7 +134,11 @@ class SeSInspectorAgent( AgentModule ):
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
 
         pepRes = pep.enforce( **pepDict )     
-        #print pepRes
+        if pepRes.has_key( 'PolicyCombinedResult' ):
+          pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
+          if pepStatus != pepDict[ 'status' ]:
+            gLogger.info( 'Updated Site %s (%s) from %s to %s' % 
+                          ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
 
         # remove from InCheck list
         self.ServiceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
