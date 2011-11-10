@@ -2571,6 +2571,16 @@ class TestCase_Unit( unittest.TestCase ):
     self.assertEquals( res['OK'], True )
           
 ################################################################################   
+
+  def test_getTopology_nok( self ):
+    pass
+  
+  def test_getTopology_ok( self ):
+    
+    res = self.client.getTopology()
+    self.assertEquals( res['OK'], True )  
+
+################################################################################   
       
   def test_getMonitoredStatus_nok( self ):
     

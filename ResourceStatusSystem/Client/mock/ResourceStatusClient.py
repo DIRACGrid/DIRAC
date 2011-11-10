@@ -332,6 +332,9 @@ class ResourceStatusClient( object ):
   def getStuffToCheck( self, granularity, checkFrequency, **kwargs ):
     return { 'OK': True, 'Value' : [] }
 
+  def getTopology( self ):
+    return { 'OK': True, 'Value' : [] }
+
   def getMonitoredStatus( self, granularity, name ):
     return { 'OK': True, 'Value' : [] }
 

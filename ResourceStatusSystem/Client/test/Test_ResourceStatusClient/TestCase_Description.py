@@ -543,6 +543,14 @@ class TestCase_Description( unittest.TestCase ):
     self.assertEqual( ins.keywords, 'kwargs' )
     self.assertEqual( ins.defaults, None )    
       
+  def test_getTopology( self ):    
+    
+    ins = inspect.getargspec( self.client.getTopology )   
+    self.assertEqual( ins.args, [ 'self' ] )
+    self.assertEqual( ins.varargs,  None )
+    self.assertEqual( ins.keywords, None )
+    self.assertEqual( ins.defaults, None )    
+      
   def test_getMonitoredStatus_definition( self ):    
     
     ins = inspect.getargspec( self.client.getMonitoredStatus )   
