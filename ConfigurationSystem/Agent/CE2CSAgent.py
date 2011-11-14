@@ -403,7 +403,7 @@ class CE2CSAgent( AgentModule ):
           result = ldapService( ce )
           if not result['OK'] :
             result = self.__checkAlternativeBDIISite( ldapService, ce )
-          if result['OK']:
+          if result['OK'] and result['Value']:
             services = result['Value']
             newcetype = 'LCG'
             for service in services:

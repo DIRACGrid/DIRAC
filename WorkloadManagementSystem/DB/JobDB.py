@@ -1332,6 +1332,10 @@ class JobDB( DB ):
     classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
 
     jobJDL = classAdJob.asJDL()
+    
+    # Replace the JobID placeholder if any
+    if jobJDL.find('%j') != -1:
+      jobJDL = jobJDL.replace('%j',str(jobID))
 
     result = self.setJobJDL( jobID, jobJDL )
     if not result['OK']:
