@@ -28,6 +28,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Security.CS import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
 
 import threading
 
@@ -253,6 +254,7 @@ class WMSAdministratorHandler(RequestHandler):
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
 
+    group = getGroupOption(group,'VOMSRole',group)
     ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
     if not ret['OK']:
       gLogger.error( ret['Message'] )
@@ -326,18 +328,17 @@ class WMSAdministratorHandler(RequestHandler):
         return S_ERROR('Empty pilot output found')
 
     gridType = pilotDict['GridType']
-    if gridType in ["DIRAC","CREAM"]:
-      # For the moment return with error. Later can try to get the output from the CE
-      return S_ERROR('Pilot output is not yet retrieved') 
-    elif gridType in ["LCG","gLite"]:
+    if gridType in ["LCG","gLite","CREAM"]:
+      group = getGroupOption(group,'VOMSRole',group)
       ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
       if not ret['OK']:
         gLogger.error( ret['Message'] )
         gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
         return S_ERROR("Failed to get the pilot's owner proxy")
       proxy = ret['Value']
-  
-      result = getPilotOutput( proxy, gridType, pilotReference )
+ 
+      pilotStamp = pilotDict['PilotStamp'] 
+      result = getPilotOutput( proxy, gridType, pilotReference, pilotStamp )
       if not result['OK']:
         return S_ERROR('Failed to get pilot output: '+result['Message'])
       # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?

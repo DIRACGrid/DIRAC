@@ -11,6 +11,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
@@ -55,7 +56,7 @@ class SiteDirector( AgentModule ):
         siteNames = [siteName]
 
     self.siteNames = siteNames
-    self.gridEnv = self.am_getOption( "GridEnv", '' )
+    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
 
     self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
     self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
@@ -164,7 +165,7 @@ class SiteDirector( AgentModule ):
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
-            os.mkdir( qwDir )
+            os.makedirs( qwDir )
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
           queueDict = dict( ceDict )
           queueDict.update( self.queueDict[queueName]['ParametersDict'] )
@@ -681,5 +682,4 @@ EOF
       return result
 
     return S_OK()
-
 
