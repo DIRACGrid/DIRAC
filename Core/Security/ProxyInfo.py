@@ -102,6 +102,8 @@ def formatProxyInfoAsString( infoDict ):
       mins = int( secs / 60 )
       secs -= mins * 60
       value = "%02d:%02d:%02d" % ( hours, mins, secs )
+    elif field == "groupProperties":
+      value = ", ".join( infoDict[ field ] )
     else:
       value = infoDict[ field ]
     contentList.append( "%s: %s" % ( dispField.ljust( leftAlign ), value ) )
