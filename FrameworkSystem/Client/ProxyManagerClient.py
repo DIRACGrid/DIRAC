@@ -391,7 +391,7 @@ class ProxyManagerClient:
       return S_OK()
 
     if not proxyToConnect:
-      proxyToConnectDict = proxyToRenewDict
+      proxyToConnectDict = { 'chain': False, 'tempFile': False }
     else:
       retVal = File.multiProxyArgument( proxyToConnect )
       if not retVal[ 'Value' ]:
@@ -435,10 +435,12 @@ class ProxyManagerClient:
     if not retVal[ 'OK' ]:
       return retVal
 
-    if not proxyToRenewDict[ 'tempFile' ]:
-      return proxyToRenewDict[ 'chain' ].dumpAllToFile( proxyToRenewDict[ 'file' ] )
+    chain = retVal['Value']
 
-    return S_OK( proxyToRenewDict[ 'chain' ] )
+    if not proxyToRenewDict[ 'tempFile' ]:
+      return chain.dumpAllToFile( proxyToRenewDict[ 'file' ] )
+
+    return S_OK( chain )
 
   def getDBContents( self, condDict = {} ):
     """
