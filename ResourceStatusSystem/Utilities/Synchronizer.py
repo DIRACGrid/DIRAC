@@ -5,29 +5,25 @@
   This module contains a class to synchronize the content of the DataBase with what is the CS
 """
 
-from DIRAC                                           import gLogger, S_OK
-from DIRAC.Core.Utilities.SiteCEMapping              import getSiteCEMapping
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName, getDIRACSiteName
+from DIRAC                                                      import gLogger, S_OK
+from DIRAC.Core.Utilities.SiteCEMapping                         import getSiteCEMapping
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName, getDIRACSiteName
 
-from DIRAC.ResourceStatusSystem.Utilities            import CS, Utils
-from DIRAC.Core.LCG.GOCDBClient                      import GOCDBClient
+from DIRAC.ResourceStatusSystem.Utilities                       import CS, Utils
+from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
+
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
 class Synchronizer(object):
 
   def __init__( self, rsClient = None, rmClient = None ):
 
-    self.rsClient       = rsClient
-    self.rmClient       = rmClient
     self.GOCDBClient = GOCDBClient()
+    self.rsClient = ResourceStatusClient()     if rsClient == None else rsClient
+    self.rmClient = ResourceManagementClient() if rmClient == None else rmClient
+
     self.synclist = [ 'Sites', 'Resources', 'StorageElements', 'Services', 'RegistryUsers' ]
-
-    if self.rsClient == None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsClient = ResourceStatusClient()
-
-    if self.rmClient == None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.rmClient = ResourceManagementClient()
 
 ################################################################################
 

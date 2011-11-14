@@ -13,19 +13,13 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 
+from DIRAC.ResourceStatusSystem.Client.mock.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.mock.ResourceManagementClient import ResourceManagementClient
+
 class UtilitiesTestCase(unittest.TestCase):
   """ Base class for the Utilities test cases
   """
   def setUp(self):
-
-    # sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    # sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    # sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    # sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    # sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    # sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
-    # sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceManagementDB"] = DIRAC.ResourceStatusSystem.test.fake_rmDB
-    # sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 
     from DIRAC import gConfig
 
@@ -52,6 +46,8 @@ class UtilitiesTestCase(unittest.TestCase):
     self.configModule = voimport("DIRAC.ResourceStatusSystem.Policy.Configurations", self.VO)
 
     self.syncC = Synchronizer()
+    self.rsClient = ResourceStatusClient()
+    self.rmClient = ResourceManagementClient()
 
 #############################################################################
 
@@ -355,20 +351,20 @@ class InfoGetterSuccess(UtilitiesTestCase):
 #############################################################################
 
 class SynchronizerSuccess(UtilitiesTestCase):
-  #def test__syncSites(self):
-  #  self.syncC._syncSites()
+  def test__syncSites(self):
+   self.syncC._syncSites()
 
-  #def test__syncVOBOX(self):
-  #  self.syncC._syncVOBOX()
+  def test__syncVOBOX(self):
+   self.syncC._syncVOBOX()
 
-  #def test__syncCondDBs(self):
-  #  self.syncC._syncCondDBs()
+  def test__syncCondDBs(self):
+   self.syncC._syncCondDBs()
 
-  #def test__syncResources(self):
-  #  self.syncC._syncResources()
+  def test__syncResources(self):
+   self.syncC._syncResources()
 
-  #def test__syncStorageElements(self):
-  #  self.syncC._syncStorageElements()
+  def test__syncStorageElements(self):
+   self.syncC._syncStorageElements()
 
 #############################################################################
 
