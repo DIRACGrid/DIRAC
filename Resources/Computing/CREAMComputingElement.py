@@ -78,7 +78,7 @@ class CREAMComputingElement( ComputingElement ):
 
   def reset( self ):
     self.queue = self.ceParameters['Queue']
-    self.outputURL = self.ceParameters['OutputURL']
+    self.outputURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
     self.gridEnv = self.ceParameters['GridEnv']
 
   #############################################################################
@@ -260,7 +260,7 @@ class CREAMComputingElement( ComputingElement ):
     if not stamp:
       return S_ERROR( 'Pilot stamp not defined for %s' % pilotRef )
 
-    outURL = self.ceParameters['OutputURL']
+    outURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
     if outURL == 'gsiftp://localhost':
       result = self.__resolveOutputURL( pilotRef )
       if not result['OK']:
