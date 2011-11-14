@@ -312,7 +312,8 @@ class JobAgent( AgentModule ):
         self.log.error( 'Invalid Proxy', 'Group has no properties defined' )
         return S_ERROR( 'Proxy has no group properties defined' )
 
-      if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
+      groupProps = ret['Value']['groupProperties']
+      if Properties.GENERIC_PILOT in groupProps or Properties.PILOT in groupProps:
         proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
         if not proxyResult['OK']:
           self.log.error( 'Invalid Proxy', proxyResult['Message'] )
