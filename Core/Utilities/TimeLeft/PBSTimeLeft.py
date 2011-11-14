@@ -56,9 +56,19 @@ class PBSTimeLeft:
       if re.search( '.*resources_used.cput.*', line ):
         if len( info ) >= 3:
           cpuList = info[2].split( ':' )
-          cpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2] )
+          newcpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2] )
+          if not cpu or newcpu > cpu:
+            cpu = newcpu
         else:
           self.log.warn( 'Problem parsing "%s" for CPU consumed' % line )
+      if re.search( '.*resources_used.pcput.*', line ):
+        if len( info ) >= 3:
+          cpuList = info[2].split( ':' )
+          newcpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2] )
+          if not cpu or newcpu > cpu:
+            cpu = newcpu
+        else:
+          self.log.warn( 'Problem parsing "%s" for CPU consumed' % line )    
       if re.search( '.*resources_used.walltime.*', line ):
         if len( info ) >= 3:
           wcList = info[2].split( ':' )
