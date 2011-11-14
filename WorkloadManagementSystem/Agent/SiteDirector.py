@@ -46,6 +46,10 @@ class SiteDirector( AgentModule ):
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
     self.queueDict = {}
+    
+    return S_OK()
+  
+  def beginExecution( self ):
 
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() ) 
     self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
@@ -106,6 +110,7 @@ class SiteDirector( AgentModule ):
     """ Get the list of relevant CEs and their descriptions
     """
 
+    self.queueDict = {}
     ceFactory = ComputingElementFactory()
     ceTypes = self.am_getOption( 'CETypes', [] )
     ceConfList = self.am_getOption( 'CEs', [] )
