@@ -5,15 +5,16 @@ __RCSID__ = "$Id:  $"
 
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.Core.DISET.RPCClient                     import RPCClient
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB 
+from DIRAC.Core.DISET.RPCClient                      import RPCClient
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
        
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName       
        
 from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientFastDec     
-from DIRAC.ResourceStatusSystem                             import ValidRes,\
-  ValidStatus, ValidStatusTypes, ValidSiteType, ValidServiceType, \
-  ValidResourceType       
+from DIRAC.ResourceStatusSystem                      import ValidRes, ValidStatus, \
+  ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType       
+
+from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node       
        
 from datetime import datetime, timedelta       
        
@@ -64,7 +65,7 @@ class ResourceStatusClient:
   ##############################################################################
   # SITE FUNCTIONS
   ##############################################################################
-  '''
+  '''      
   
   @ClientFastDec
   def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
@@ -1863,6 +1864,82 @@ class ResourceStatusClient:
       kwargs[ 'meta' ][ 'or' ].append( orDict )          
 
     return self._getElement( '%sPresent' % granularity, **kwargs )
+
+  def getTopology( self ):
+    '''
+    Gets all elements in the database and returns a node tree with all the
+    relations between them.
+    
+    :Parameters: `None`
+    
+    :return: S_OK() || S_ERROR()
+    '''     
+    
+    tree = Node( 'DIRAC', 'Topology', 'Site', '' )
+    
+    sites = self.getSite()
+    if not sites[ 'OK' ]:
+      return sites
+    
+    for site in sites['Value']:
+      s = Node( site[0], 'Site', 'Service', 'Topology' )
+      s.setAttr( 'SiteType',     site[1] )
+      s.setAttr( 'GridSiteType', site[2] )
+      tree.setChildren( s )
+      
+    services = self.getService()  
+    if not services[ 'OK' ]:
+      return services
+    
+    for service in services['Value']:
+      
+      siteName = service[2].replace( '.', '_' ).replace( '-', '_' )
+      
+      site = tree._levels[ 'Site' ][ siteName ]
+      se = Node( service[0], 'Service', 'Resource', 'Site' )  
+      se.setAttr( 'ServiceType', service[ 1 ])
+      site.setChildren( se )
+
+    resources = self.getResource()
+    if not resources[ 'OK' ]:
+      return resources
+    
+    for resource in resources['Value']:
+      
+      resourceType = resource[ 1 ]
+      serviceType  = resource[ 2 ]
+      
+      if resource[ 3 ] != 'NULL':
+        siteName = resource[ 3 ].replace( '.', '_' ).replace( '-', '_' )
+        serviceName = [ '%s_%s' % ( serviceType, siteName ) ]
+      else:
+        serviceName = [ '%s_%s' % ( serviceType, site.name ) for site in tree._levels[ 'Site' ].values() if site.attr[ 'GridSiteType' ] == resource[ 4 ] ]  
+      
+      re = Node( resource[0], 'Resource', 'StorageElement', 'Service' )
+      re.setAttr( 'ResourceType', resourceType )
+      re.setAttr( 'ServiceType', serviceType )
+      
+      for sName in serviceName:
+        service = tree._levels[ 'Service' ][ sName ]
+        service.setChildren( re )
+      
+    storageElements = self.getStorageElement()
+    if not storageElements[ 'OK' ]:
+      return storageElements
+    
+    for storageElement in storageElements[ 'Value' ]:
+      
+      resourceName = storageElement[ 1 ].replace( '.', '_' ).replace( '-', '_' )
+      gridSiteName = storageElement[ 2 ]
+      
+      se = Node( storageElement[ 0 ], 'StorageElement', '', 'Resource' )
+      se.setAttr( 'ResourceName', resourceName )
+      se.setAttr( 'GridSiteName', gridSiteName )
+      
+      resource = tree._levels[ 'Resource' ][ resourceName ]
+      resource.setChildren( se )
+      
+    return S_OK( tree )  
 
   def getMonitoredStatus( self, granularity, name ):
     '''
