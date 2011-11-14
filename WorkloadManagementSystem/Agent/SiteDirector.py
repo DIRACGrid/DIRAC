@@ -45,33 +45,31 @@ class SiteDirector( AgentModule ):
     """
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
+    self.queueDict = {}
 
-    # Get the site description dictionary
-    siteNames = self.am_getOption( 'Site', [] )
-    if not siteNames:
-      siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
-      if siteName == 'Unknown':
-        return S_ERROR( 'Unknown site' )
-      else:
-        siteNames = [siteName]
-
-    self.siteNames = siteNames
-    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
-
+    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() ) 
     self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
     self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400*3 )
-    self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', 5 )
-    self.extraPilotOptions = self.am_getOption( 'ExtraPilotOptions', [] )
-    self.pilotDebugMode = self.am_getOption( 'PilotDebugMode', True )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
     self.getOutput = self.am_getOption( 'GetPilotOutput', True )
     self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
+
+    # Get the site description dictionary
+    siteNames = self.am_getOption( 'Site', [] )
+    if not siteNames:
+      siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
+      if siteName == 'Unknown':
+        return S_OK( 'No site specified for the SiteDirector' )
+      else:
+        siteNames = [siteName]
+    self.siteNames = siteNames
+ 
     if self.updateStatus:
       self.log.always( 'Pilot status update requested' )
     if self.getOutput:
@@ -91,7 +89,6 @@ class SiteDirector( AgentModule ):
 
     self.localhost = socket.getfqdn()
     self.proxy = ''
-    self.queueDict = {}
     result = self.getQueues()
     if not result['OK']:
       return result
@@ -194,6 +191,11 @@ class SiteDirector( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
+
+    if not self.queueDict:
+      self.log.warn('No site defined, exiting the cycle')
+      return S_OK()
+
     result = self.submitJobs()
     if not result['OK']:
       self.log.error( 'Errors in the job submission: %s' % result['Message'] )
@@ -382,11 +384,10 @@ class SiteDirector( AgentModule ):
     ( token, numberOfUses ) = result[ 'Value' ]
     pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
     # Use Filling mode
-    pilotOptions.append( '-M %s' % self.maxJobsInFillMode )
+    pilotOptions.append( '-M %s' % 5 )
 
     # Debug
-    if self.pilotDebugMode:
-      pilotOptions.append( '-d' )
+    pilotOptions.append( '-d' )
     # CS Servers
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
@@ -413,9 +414,6 @@ class SiteDirector( AgentModule ):
         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
       if 'CPUNormalizationFactor' in queueDict:
         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
-
-    if self.extraPilotOptions:
-      pilotOptions.extend( self.extraPilotOptions )
 
     self.log.verbose( "pilotOptions: ", ' '.join( pilotOptions ) )
 
@@ -689,4 +687,3 @@ EOF
       return result
 
     return S_OK()
-
