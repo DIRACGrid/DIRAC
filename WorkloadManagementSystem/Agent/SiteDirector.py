@@ -45,19 +45,9 @@ class SiteDirector( AgentModule ):
     """
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
+    self.queueDict = {}
 
-    # Get the site description dictionary
-    siteNames = self.am_getOption( 'Site', [] )
-    if not siteNames:
-      siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
-      if siteName == 'Unknown':
-        return S_ERROR( 'Unknown site' )
-      else:
-        siteNames = [siteName]
-
-    self.siteNames = siteNames
-    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
-
+    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() ) 
     self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
     self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
     self.pilot = DIRAC_PILOT
@@ -69,6 +59,17 @@ class SiteDirector( AgentModule ):
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
     self.getOutput = self.am_getOption( 'GetPilotOutput', True )
     self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
+
+    # Get the site description dictionary
+    siteNames = self.am_getOption( 'Site', [] )
+    if not siteNames:
+      siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
+      if siteName == 'Unknown':
+        return S_OK( 'No site specified for the SiteDirector' )
+      else:
+        siteNames = [siteName]
+    self.siteNames = siteNames
+ 
     if self.updateStatus:
       self.log.always( 'Pilot status update requested' )
     if self.getOutput:
@@ -88,7 +89,6 @@ class SiteDirector( AgentModule ):
 
     self.localhost = socket.getfqdn()
     self.proxy = ''
-    self.queueDict = {}
     result = self.getQueues()
     if not result['OK']:
       return result
@@ -191,6 +191,11 @@ class SiteDirector( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
+
+    if not self.queueDict:
+      self.log.warn('No site defined, exiting the cycle')
+      return S_OK()
+
     result = self.submitJobs()
     if not result['OK']:
       self.log.error( 'Errors in the job submission: %s' % result['Message'] )
@@ -682,4 +687,3 @@ EOF
       return result
 
     return S_OK()
-
