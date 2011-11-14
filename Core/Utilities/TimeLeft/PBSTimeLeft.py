@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
 
-import os, re
+import os, re, time
 
 class PBSTimeLeft:
 
@@ -33,6 +33,7 @@ class PBSTimeLeft:
     self.cpuLimit = None
     self.wallClockLimit = None
     self.log.verbose( 'PBS_JOBID=%s, PBS_O_QUEUE=%s' % ( self.jobID, self.queue ) )
+    self.startTime = time.time()
 
   #############################################################################
   def getResourceUsage( self ):
@@ -98,11 +99,17 @@ class PBSTimeLeft:
     if not failed:
       return S_OK( consumed )
 
-    if cpuLimit and wallClockLimit:
+    if cpuLimit or wallClockLimit:
       # We have got a partial result from PBS, assume that we ran for too short time
-      # This is a temporary dirty solution, real consumption should be rather used, A.T.
-      consumed['CPU'] = 300
-      consumed['WallClock'] = 600
+      if not cpuLimit:
+        consumed['CPULimit'] = wallClockLimit
+      if not wallClockLimit:
+        consumed['WallClockLimit'] = cpuLimit  
+      if not cpu:          
+        consumed['CPU'] = int( time.time() - self.startTime )
+      if not wallClock:  
+        consumed['WallClock'] = int( time.time() - self.startTime )
+      self.log.debug( "TimeLeft counters restored: " + str( consumed ) )  
       return S_OK( consumed )
     else:
       self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
