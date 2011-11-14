@@ -117,7 +117,8 @@ class ProxyInit:
 
     result = VOMS.VOMS().setVOMSAttributes( self.__proxyGenerated, attribute = vomsAttr, vo = Registry.getVOForGroup( self.__piParams.diracGroup ) )
     if not result[ 'OK' ]:
-      gLogger.error( "Failed adding VOMS attribute:", result[ 'Message' ] )
+      gLogger.notice( "Could not add VOMS extensions to the proxy" )
+      gLogger.warn( "Failed adding VOMS attribute:", result[ 'Message' ] )
       return False
     else:
       gLogger.notice( "Added VOMS attribute %s" % vomsAttr )
