@@ -66,6 +66,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     self.host = None
     self.port = None
     self.prompt = '(%s)> ' % colorize( "no host", "yellow" )
+    if host:
+      self.__setHost( host )
 
   def __setHost( self, host ):
     hostList = host.split( ':' )
