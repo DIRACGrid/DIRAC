@@ -86,7 +86,7 @@ def formatProxyInfoAsString( infoDict ):
   leftAlign = 13
   contentList = []
   for field in ( 'subject', 'issuer', 'identity', ( 'secondsLeft', 'timeleft' ),
-                 ( 'group', 'DIRAC group' ), 'path', 'username',
+                 ( 'group', 'DIRAC group' ), 'path', 'username', ( 'groupProperties', "properties" ),
                  ( 'hasVOMS', 'VOMS' ), ( 'VOMS', 'VOMS fqan' ), ( 'VOMSError', 'VOMS Error' ) ):
     if type( field ) == types.StringType:
       dispField = field
