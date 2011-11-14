@@ -1,3 +1,24 @@
+[v6r0-pre13]
+
+*WMS
+NEW: on demand retrieval of the CREAM pilot output
+
+*PBSTimeLeft
+FIX: proper handling of (p)cput parameter in the batch system output, recovery of the
+     incomplete batch system output
+     
+*pilot-output
+FIX: proper job ID evaluation for the OSG sites
+
+*ComputingElement
+FIX: fixed proxy renewal logic for generic and private pilots
+
+*CE2CSAgent
+FIX: update the CEType only if there is a relevant info in the BDII     
+
+*JDL
+NEW: Added %j placeholder in the JDL to be replaced by the JobID
+
 [v6r0-pre12]
 
 *SystemAdministrator
