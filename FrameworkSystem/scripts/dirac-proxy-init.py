@@ -49,13 +49,6 @@ class ProxyInit:
     self.__uploadedInfo = {}
     self.__proxiesUploaded = []
 
-  def __checkParams( self ):
-    #Check if the proxy needs to be uploaded
-    if not self.__piParams.uploadProxy:
-      self.__piParams.uploadProxy = Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadProxy", False )
-    if self.__piParams.uploadProxy:
-      gLogger.verbose( "Proxy will be uploaded to ProxyManager" )
-
   def getIssuerCert( self ):
     if self.__issuerCert:
       return self.__issuerCert
@@ -86,10 +79,15 @@ class ProxyInit:
       msg = "%s\n  %s  \n%s" % ( sep, msg, sep )
       gLogger.notice( msg )
 
-  def getPilotGroupsToUpload( self ):
-    pilotUpload = Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadPilotProxy", self.__piParams.uploadPilot )
-    if not pilotUpload:
-      return []
+  def getGroupsToUpload( self ):
+    uploadGroups = []
+
+    if self.__piParams.uploadProxy or Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadProxy", False ):
+      uploadGroups.append( self.__piParams.diracGroup )
+
+    if not self.__piParams.uploadPilot:
+      if not Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadPilotProxy", False ):
+        return uploadGroups
 
     issuerCert = self.getIssuerCert()
     userDN = issuerCert.getSubjectDN()[ 'Value' ]
@@ -104,8 +102,8 @@ class ProxyInit:
     for group in availableGroups:
       groupProps = Registry.getPropertiesForGroup( group )
       if Properties.PILOT in groupProps or Properties.GENERIC_PILOT in groupProps:
-        pilotGroups.append( group )
-    return pilotGroups
+        uploadGroups.append( group )
+    return uploadGroups
 
   def addVOMSExtIfNeeded( self ):
     addVOMS = Registry.getGroupOption( self.__piParams.diracGroup, "AutoAddVOMS", self.__piParams.addVOMSExt )
@@ -203,13 +201,7 @@ if __name__ == "__main__":
   pI.certLifeTimeCheck()
   pI.addVOMSExtIfNeeded()
 
-  if piParams.uploadProxy:
-    result = pI.uploadProxy()
-    if not result[ 'OK' ]:
-      gLogger.error( result[ 'Message' ] )
-      sys.exit( 1 )
-
-  for pilotGroup in pI.getPilotGroupsToUpload():
+  for pilotGroup in pI.getGroupsToUpload():
     result = pI.uploadProxy( userGroup = pilotGroup )
     if not result[ 'OK' ]:
       gLogger.error( result[ 'Message' ] )
