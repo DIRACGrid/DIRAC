@@ -64,6 +64,9 @@ class SiteDirector( AgentModule ):
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400*3 )
+    self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', 5 )
+    self.extraPilotOptions = self.am_getOption( 'ExtraPilotOptions', [] )
+    self.pilotDebugMode = self.am_getOption( 'PilotDebugMode', True )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -379,10 +382,11 @@ class SiteDirector( AgentModule ):
     ( token, numberOfUses ) = result[ 'Value' ]
     pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
     # Use Filling mode
-    pilotOptions.append( '-M %s' % 5 )
+    pilotOptions.append( '-M %s' % self.maxJobsInFillMode )
 
     # Debug
-    pilotOptions.append( '-d' )
+    if self.pilotDebugMode:
+      pilotOptions.append( '-d' )
     # CS Servers
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
@@ -409,6 +413,9 @@ class SiteDirector( AgentModule ):
         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
       if 'CPUNormalizationFactor' in queueDict:
         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
+
+    if self.extraPilotOptions:
+      pilotOptions.extend( self.extraPilotOptions )
 
     self.log.verbose( "pilotOptions: ", ' '.join( pilotOptions ) )
 
