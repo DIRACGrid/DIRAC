@@ -1166,6 +1166,8 @@ def createBashrc():
         lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
       if 'X509_CERT_DIR' in os.environ:
         lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
+      elif not os.path.isdir( "/etc/grid-security/certificates" ):
+        lines.append( "[[ -d '%s/etc/grid-security/certificates' ]] && export X509_CERT_DIR='%s/etc/grid-security/certificates'" % ( proPath, proPath ) )
       lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      'export DIRAC=%s' % proPath,
