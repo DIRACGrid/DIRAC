@@ -526,7 +526,7 @@ class ReleaseConfig:
       relDeps = self.__prjDepends[ project ][ release ]
 
       if not relCFG.getChild( "Releases/%s" % ( release ) ):
-        return S_ERROR( "Release %s is not defined for project %s in the release file" % ( project, release ) )
+        return S_ERROR( "Release %s is not defined for project %s in the release file" % ( release, project ) )
 
       initialDeps = self.getReleaseDependencies( project, release )
       if initialDeps:
