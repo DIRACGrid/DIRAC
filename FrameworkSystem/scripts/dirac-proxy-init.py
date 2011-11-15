@@ -106,7 +106,7 @@ class ProxyInit:
     return uploadGroups
 
   def addVOMSExtIfNeeded( self ):
-    addVOMS = Registry.getGroupOption( self.__piParams.diracGroup, "AutoAddVOMS", self.__piParams.addVOMSExt )
+    addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption( self.__piParams.diracGroup, "AutoAddVOMS", False )
     if not addVOMS:
       return
 
