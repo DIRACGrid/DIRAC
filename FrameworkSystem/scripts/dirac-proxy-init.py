@@ -30,7 +30,7 @@ class Params( ProxyGeneration.CLIParams ):
     self.uploadPilot = True
     return S_OK()
 
-  def addVOMSExt( self, arg ):
+  def setVOMSExt( self, arg ):
     self.addVOMSExt = True
     return S_OK()
 
@@ -38,7 +38,7 @@ class Params( ProxyGeneration.CLIParams ):
     ProxyGeneration.CLIParams.registerCLISwitches( self )
     Script.registerSwitch( "U", "upload", "Upload a long lived proxy to the ProxyManager", self.setUploadProxy )
     Script.registerSwitch( "P", "uploadPilot", "Upload a long lived pilot proxy to the ProxyManager", self.setUploadPilotProxy )
-    Script.registerSwitch( "M", "VOMS", "Add voms extension", self.addVOMSExt )
+    Script.registerSwitch( "M", "VOMS", "Add voms extension", self.setVOMSExt )
 
 class ProxyInit:
 
