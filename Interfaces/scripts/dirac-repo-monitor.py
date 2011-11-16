@@ -24,7 +24,7 @@ if len( args ) != 1:
 
 repoLocation = args[0]
 from DIRAC.Interfaces.API.Dirac import Dirac
-dirac = Dirac( WithRepo = True, RepoLocation = repoLocation )
+dirac = Dirac( withRepo = True, repoLocation = repoLocation )
 
 exitCode = 0
 result = dirac.monitorRepository( printOutput = True )
