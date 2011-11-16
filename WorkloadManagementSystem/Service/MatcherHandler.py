@@ -279,29 +279,21 @@ class MatcherHandler( RequestHandler ):
     # Check if the site exceeding the given limits
     fields = limitDict.keys()
     for field in fields:
-      for key, value in limitDict[field]:
-        if int( value ) > 0:
-          result = gJobDB.getCounters( 'Jobs', ['Status'], {'Site':site, field:key} )
-          if not result['OK']:
-            return result
-          count = 0
-          if result['Value']:
-            for countDict, number in result['Value']:
-              if countDict['Status'] in ["Running", "Matched"]:
-                count += number
-          if count > value:
-            if not resultDict.has_key( field ):
-              resultDict[field] = []
-            resultDict[field].append( key )
-            gLogger.verbose( 'Job Limit imposed at %s on %s/%s/%d,'
-                             ' %d jobs already deployed' % ( site, field, key, value, count ) )
-        else:
-          if not resultDict.has_key( field ):
-            resultDict[field] = []
-          resultDict[field].append( key )
-          gLogger.verbose( 'Jobs prohibited at %s for %s/%s' % ( site, field, key ) )
-
+      result = gJobDB.getCounters( 'Jobs', [ field ], { 'Site' : site, 'Status' : [ 'Running', 'Matched' ] } )
+      if not result[ 'OK' ]:
+        return result
+      data = result[ 'Value' ]
+      data = dict( [ ( k[0][ field ], k[1] )  for k in data ] )
+      for value, limit in limitDict[ field ]:
+        running = data.get( value, 0 )
+        if running >= limit:
+          gLogger.verbose( 'Job Limit imposed at %s on %s/%s/%d,'
+                           ' %d jobs already deployed' % ( site, field, value, limit, running ) )
+          if field not in resultDict:
+            resultDict[ field ] = []
+          resultDict[ field ].append( value )
     return S_OK( resultDict )
+
 
 ##############################################################################
   types_requestJob = [ [StringType, DictType] ]
