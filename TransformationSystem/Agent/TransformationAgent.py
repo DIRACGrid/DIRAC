@@ -97,7 +97,7 @@ class TransformationAgent( AgentModule ):
       lfns = lfns[0:self.maxFiles - 1]
     unusedFiles = len( lfns )
     # Check the data is available with replicas
-    res = self.__getDataReplicas( transID, lfns, active = not replicateOfRemove )
+    res = self.__getDataReplicas( transID, lfns, active = not replicateOrRemove )
     if not res['OK']:
       gLogger.error( "%s.processTransformation: Failed to get data replicas" % AGENT_NAME, res['Message'] )
       return res
