@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
-from DIRAC.Core.Security.Misc                           import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess                    import pythonCall
 from DIRAC.Core.Utilities.Pfn                           import pfnparse, pfnunparse
@@ -36,6 +36,7 @@ class SRM2Storage( StorageBase ):
 
     self.timeout = 100
     self.long_timeout = 1200
+    self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
@@ -358,6 +359,9 @@ class SRM2Storage( StorageBase ):
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
           gLogger.debug( "SRM2Storage.prestageFile: Issued stage request for file %s." % pathSURL )
+          successful[pathSURL] = urlDict['SRMReqID']
+        elif urlDict['status'] == 1:
+          gLogger.debug( "SRM2Storage.prestageFile: File found to be already staged.", pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
           errMessage = "SRM2Storage.prestageFile: File does not exist."
@@ -1486,8 +1490,8 @@ class SRM2Storage( StorageBase ):
     for urls in listOfLists:
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] = len( urls )
-      gfalDict['timeout'] = self.fileTimeout * len( urls )
-      res = self.__gfal_operation_wrapper( 'gfal_prestage', gfalDict )
+      gfalDict['timeout'] = self.stageTimeout
+      res = self.__gfal_operation_wrapper( 'gfal_prestage', gfalDict, timeout_sendreceive = self.fileTimeout * len( urls ) )
       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
         for url in urls:
@@ -1693,7 +1697,7 @@ class SRM2Storage( StorageBase ):
     resDict['Failed'] = failed
     return S_OK( resDict )
 
-  def __gfal_operation_wrapper( self, operation, gfalDict, srmRequestID = None ):
+  def __gfal_operation_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
 
     # Create an accounting DataOperation record for each operation
     oDataOperation = self.__initialiseAccountingObject( operation, self.name, gfalDict['nbfiles'] )
@@ -1712,7 +1716,9 @@ class SRM2Storage( StorageBase ):
 
 
     timeout = gfalDict['timeout']
-    res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID )
+    if timeout_sendreceive:
+      timeout = timeout_sendreceive
+    res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID, timeout_sendreceive )
     end = time.time()
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', end - start )
@@ -1730,7 +1736,7 @@ class SRM2Storage( StorageBase ):
     res['AccountingOperation'] = oDataOperation
     return res
 
-  def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None ):
+  def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
 
     res = self.__create_gfal_object( gfalDict )
     if not res['OK']:
@@ -1744,7 +1750,7 @@ class SRM2Storage( StorageBase ):
         result = S_ERROR( res['Message'] )
         return result
 
-    res = self.__gfal_exec( gfalObject, operation )
+    res = self.__gfal_exec( gfalObject, operation, timeout_sendreceive )
     if not res['OK']:
       result = S_ERROR( res['Message'] )
       return result
@@ -1827,10 +1833,31 @@ class SRM2Storage( StorageBase ):
 
   # These methods are for the execution of the functionality
 
-  def __gfal_exec( self, gfalObject, method ):
+  def __gfal_exec( self, gfalObject, method, timeout_sendreceive = None ):
+    """
+      In gfal, for every method (synchronous or asynchronous), you can define a sendreceive timeout and a connect timeout.
+      The connect timeout sets the maximum amount of time a client accepts to wait before establishing a successful TCP connection to SRM (default 60 seconds).
+      The sendreceive timeout, allows a client to set the maximum time the send
+      of a request to SRM can take (normally all send operations return immediately unless there is no free TCP buffer) 
+      and the maximum time to receive a reply (a token for example). Default 0, i.e. no timeout.
+      The srm timeout for asynchronous requests default to 3600 seconds
+    
+      gfal_set_timeout_connect (int value)
+
+      gfal_set_timeout_sendreceive (int value)
+
+      gfal_set_timeout_bdii (int value)
+
+      gfal_set_timeout_srm (int value)
+      
+    """
     gLogger.debug( "SRM2Storage.__gfal_exec: Performing %s." % method )
     execString = "errCode,gfalObject,errMessage = self.gfal.%s(gfalObject)" % method
     try:
+      if timeout_sendreceive:
+        # For asynchronous methods this timeout defines how long the connection to set the 
+        # request can take
+        self.gfal.gfal_set_timeout_sendreceive( timeout_sendreceive )
       exec( execString )
       if not errCode == 0:
         errStr = "SRM2Storage.__gfal_exec: Failed to perform %s." % method

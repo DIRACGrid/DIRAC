@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities                               import List
 from DIRAC.Core.Utilities.Grid                          import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapService
 from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI             import CSAPI
-from DIRAC.Core.Security.Misc                           import getProxyInfo, formatProxyInfoAsString
+from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
@@ -403,7 +403,7 @@ class CE2CSAgent( AgentModule ):
           result = ldapService( ce )
           if not result['OK'] :
             result = self.__checkAlternativeBDIISite( ldapService, ce )
-          if result['OK']:
+          if result['OK'] and result['Value']:
             services = result['Value']
             newcetype = 'LCG'
             for service in services:

@@ -5,18 +5,22 @@
 __RCSID__ = "$Id$"
 import base64
 import types
+import inspect
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
 
-__FIRST_IMPORT = True
-if __FIRST_IMPORT:
+__NOTIFIED_CALLERS = set()
+stack = inspect.stack()
+caller = ( stack[1][1], stack[1][2] )
+if caller not in __NOTIFIED_CALLERS:
   print
-  print 'Deprecation warning: DIRAC.Core.Security.Misc will not be available in next release,'
-  print '                     use DIRAC.Core.Security.ProxyInfo instead.'
+  print 'From %s at line %s:' % caller
+  print '[Deprecation warning] DIRAC.Core.Security.Misc will not be available in next release,'
+  print '                      use DIRAC.Core.Security.ProxyInfo instead.'
   print
-  __FIRST_IMPORT = False
+  __NOTIFIED_CALLERS.add( caller )
 
 
 def getProxyInfo( proxy = False, disableVOMS = False ):

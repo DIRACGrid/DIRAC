@@ -1,3 +1,127 @@
+[v6r0-pre13]
+
+*WMS
+NEW: on demand retrieval of the CREAM pilot output
+
+*PBSTimeLeft
+FIX: proper handling of (p)cput parameter in the batch system output, recovery of the
+     incomplete batch system output
+     
+*pilot-output
+FIX: proper job ID evaluation for the OSG sites
+
+*ComputingElement
+FIX: fixed proxy renewal logic for generic and private pilots
+
+*CE2CSAgent
+FIX: update the CEType only if there is a relevant info in the BDII     
+
+*JDL
+NEW: Added %j placeholder in the JDL to be replaced by the JobID
+
+[v6r0-pre12]
+
+*SystemAdministrator
+NEW: Added Project support for the sysadmin
+CHANGE: The sysadmin cli will try to connect to the service when setting the host
+NEW: Colorization of errors in the cli
+
+*Stager
+FIX: Update Stager code in v6 to the same point as v5r13p37
+
+*dirac-proxy-init
+BUGFIX: bug in the VOMS extension generation
+
+*dirac-install
+BUGFIX: take defaults-XXX.cfg file from a proper location
+FIX: define DYLD_LIBRARY_PATH ( for Mac installations )
+
+*PilotDirector
+NEW: each SubmitPool or Middleware can define TargetGrids
+
+*Accounting
+FIX: Modified buckets width of 1week to 1 week + 1 day to fix summer time end week (1 hour more )
+
+*JobAgent
+NEW: new StopOnApplicationFailure option to make the agent exiting the loop on application failure
+
+[v6r0-pre11]
+
+*Install tools
+NEW: Plainly separate projects from installations
+CHANGE: Installation and distribution configuration files are more meaningful
+
+*VOManagement
+NEW: introduce Registry/VO section, associate groups to VOs, define SubmitPools per VO
+NEW: automatically add SubmitPools JDL option of the job owner's VO defines it
+
+*JobManager
+NEW: Add MaxParametericJobs option to the service configuration
+
+[v6r0-pre10]
+
+*JobManager
+CHANGE: Parameters can be incremented with ParameterStep and multiplied 
+        by ParameterFactor JDL attributes, float parameters are also allowed
+        
+*TimeLeft
+CHANGE: Call batch system commands with the ( default ) timeout 120 sec
+CHANGE: PBSTimeLeft uses default CPU/WallClock if not present in the output        
+
+[v6r0-pre9]
+
+*Accounting
+CHANGE: For the WMSHistory type, send as JobSplitType the JobType
+CHANGE: Reduced the size of the max key length to workaround mysql max bytes for index problem
+
+*dirac-deploy-scripts
+NEW: When setting the lib path in the deploy scripts. Also search for subpaths of the libdir and include them
+
+*SecurityLogging
+CHANGE: Security log level to verbose
+
+*Utilities/Security
+CHANGE: Replace import from DIRAC.Core.Security.Misc by ProxyInfo
+
+*ProxyManager
+NEW: Now the proxyDB also has a knowledge of user names. Queries can use the user name as a query key
+FIX: Calculate properly the dates for credentials about to expire
+CHANGE: The proxy manager will autoexpire old proxies
+CHANGE: Also auto purge logs
+FIX: Made sure that some db queries were properly escaped
+
+[v6r0-pre8]
+
+*FileCatalog
+The default file catalog is now determined using /LocalSite/FileCatalog. 
+The old behavior is provided as a fallback solution
+
+*ReplicaManager 
+can now deal with multiple catalogs. Makes sure the surl used for removal is 
+the same as the one used for registration.
+
+
+*JobSchedulingAgent
+NEW: set the job Site attribute to the name of a group of sites corresponding to a SE
+     chosen by the data staging procedure 
+     
+*PoolXMLCatalog
+NEW: added getTypeByPfn() function to get the type of the given PFN
+
+*Stager
+NEW: added new command dirac-stager-stage-files     
+
+*ProxyManager
+NEW: dirac-proxy-init will check that the lifetime of the certificate is less than one month and advise to renew it
+NEW: Added some more functions to the Registry helper
+NEW: Will check that the certificate has at least one month of validity
+FIX: Never use the host certificate if there is one for dirac-proxy-init
+NEW: Proxy manager will send notifications when the uploaded proxies are about to expire (configurable via CS)
+
+*LcgFileCatalogClient
+NEW: new version of getPathPermissions relying on the lfc_access method to solve the problem
+     of multiple user DNs in LFC.
+
 [v6r0-pre7]
 
 *FTSCleaningAgent

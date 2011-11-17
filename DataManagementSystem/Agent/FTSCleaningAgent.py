@@ -45,7 +45,6 @@ from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL 
 
 AGENT_NAME = "DataManagement/FTSCleaningAgent"

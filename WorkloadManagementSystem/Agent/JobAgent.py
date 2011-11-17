@@ -19,7 +19,7 @@ from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.Resources.Computing.ComputingElementFactory      import ComputingElementFactory
 from DIRAC                                                  import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
-from DIRAC.Core.Security.Misc                               import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
 from DIRAC.Core.Security                                    import Properties
 from DIRAC.WorkloadManagementSystem.Client.JobReport        import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper   import rescheduleFailedJob
@@ -77,6 +77,7 @@ class JobAgent( AgentModule ):
     self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', 10 )
     self.defaultLogLevel = self.am_getOption( 'DefaultLogLevel', 'info' )
     self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
+    self.stopOnApplicationFailure = self.am_getOption( 'StopOnApplicationFailure', True )
     self.jobCount = 0
     #Timeleft
     self.timeLeftUtil = TimeLeft()
@@ -215,7 +216,7 @@ class JobAgent( AgentModule ):
       self.__reportPilotInfo( jobID )
       result = self.__setupProxy( ownerDN, jobGroup )
       if not result[ 'OK' ]:
-        return self.__rescheduleFailedJob( jobID, result[ 'Message' ] )
+        return self.__rescheduleFailedJob( jobID, result[ 'Message' ], self.stopOnApplicationFailure )
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
 
@@ -234,7 +235,7 @@ class JobAgent( AgentModule ):
         errorMsg = software['Message']
         if not errorMsg:
           errorMsg = 'Failed software installation'
-        return self.__rescheduleFailedJob( jobID, errorMsg )
+        return self.__rescheduleFailedJob( jobID, errorMsg, self.stopOnApplicationFailure )
 
       self.log.verbose( 'Before %sCE submitJob()' % ( self.ceName ) )
       submission = self.__submitJob( jobID, params, resourceParams, optimizerParams, jobJDL, proxyChain )
@@ -243,12 +244,13 @@ class JobAgent( AgentModule ):
         return self.__finish( submission['Message'] )
       elif 'PayloadFailed' in submission:
         # Do not keep running and do not overwrite the Payload error
-        return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'] )
+        return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'],
+                              self.stopOnApplicationFailure )
 
       self.log.verbose( 'After %sCE submitJob()' % ( self.ceName ) )
     except Exception:
       self.log.exception()
-      return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception' )
+      return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception', self.stopOnApplicationFailure )
 
     result = self.timeLeftUtil.getTimeLeft( 0.0 )
     if result['OK']:
@@ -310,7 +312,8 @@ class JobAgent( AgentModule ):
         self.log.error( 'Invalid Proxy', 'Group has no properties defined' )
         return S_ERROR( 'Proxy has no group properties defined' )
 
-      if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
+      groupProps = ret['Value']['groupProperties']
+      if Properties.GENERIC_PILOT in groupProps or Properties.PILOT in groupProps:
         proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
         if not proxyResult['OK']:
           self.log.error( 'Invalid Proxy', proxyResult['Message'] )
@@ -619,15 +622,18 @@ class JobAgent( AgentModule ):
     return jobParam
 
   #############################################################################
-  def __finish( self, message ):
+  def __finish( self, message, stop = True ):
     """Force the JobAgent to complete gracefully.
     """
     self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
-    self.am_stopExecution()
-    return S_ERROR( message )
+    if stop:
+      self.am_stopExecution()
+      return S_ERROR( message )
+    else:
+      return S_OK( message )
 
   #############################################################################
-  def __rescheduleFailedJob( self, jobID, message ):
+  def __rescheduleFailedJob( self, jobID, message, stop = True ):
     """
     Set Job Status to "Rescheduled" and issue a reschedule command to the Job Manager
     """
@@ -649,10 +655,10 @@ class JobAgent( AgentModule ):
     result = jobManager.rescheduleJob( jobID )
     if not result['OK']:
       self.log.error( result['Message'] )
-      return self.__finish( 'Problem Rescheduling Job' )
+      return self.__finish( 'Problem Rescheduling Job', stop )
 
     self.log.info( 'Job Rescheduled %s' % ( jobID ) )
-    return self.__finish( 'Job Rescheduled' )
+    return self.__finish( 'Job Rescheduled', stop )
 
   #############################################################################
   def finalize( self ):

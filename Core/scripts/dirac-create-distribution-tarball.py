@@ -539,3 +539,4 @@ if __name__ == "__main__":
     gLogger.error( "Could not create the tarball: %s" % result[ 'Message' ] )
     sys.exit( 1 )
   gLogger.always( "Tarball successfully created at %s" % result[ 'Value' ] )
+  sys.exit( 0 )

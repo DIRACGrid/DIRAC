@@ -133,10 +133,9 @@ class DistributionMaker:
 
   def __init__( self, cliParams ):
     self.cliParams = cliParams
-    self.relConf = DiracInstall.ReleaseConfig( cliParams.projectName )
-    self.relConf.loadDefaults()
-    if cliParams.debug:
-      self.relConf.setDebugCB( gLogger.info )
+    self.relConf = DiracInstall.ReleaseConfig( projectName = cliParams.projectName )
+    self.relConf.setDebugCB( gLogger.info )
+    self.relConf.loadProjectDefaults()
 
   def isOK( self ):
     if not self.cliParams.releasesToBuild:
@@ -156,7 +155,7 @@ class DistributionMaker:
 
   def loadReleases( self ):
     gLogger.notice( "Loading releases.cfg" )
-    return self.relConf.loadProjectForRelease( self.cliParams.relcfg )
+    return self.relConf.loadProjectRelease( self.cliParams.releasesToBuild, releaseMode = True, relLocation = self.cliParams.relcfg )
 
   def createModuleTarballs( self ):
     for version in self.cliParams.releasesToBuild:
@@ -178,7 +177,7 @@ class DistributionMaker:
       dctArgs.append( "-v '%s'" % modVersion )
       gLogger.notice( "Creating tar for %s version %s" % ( modName, modVersion ) )
       #Source
-      result = self.relConf.getModSource( modName )
+      result = self.relConf.getModSource( releaseVersion, modName )
       if not result[ 'OK' ]:
         return result
       modSrcTuple = result[ 'Value' ]
@@ -199,7 +198,7 @@ class DistributionMaker:
         scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball.py" )
       cmd = "'%s' %s" % ( scriptName, " ".join( dctArgs ) )
       gLogger.verbose( "Executing %s" % cmd )
-      if os.system( cmd ):
+      if os.system( cmd ) != 0:
         return S_ERROR( "Failed creating tarball for module %s. Aborting" % modName )
       gLogger.notice( "Tarball for %s version %s created" % ( modName, modVersion ) )
     return S_OK()
@@ -301,9 +300,9 @@ class DistributionMaker:
         gLogger.fatal( "There was a problem when creating the Externals tarballs" )
         return False
     #Write the releases files
-    projectCFG = self.relConf.getCFG( self.cliParams.projectName )
-    projectCFGData = projectCFG.toString() + "\n"
     for relVersion in self.cliParams.releasesToBuild:
+      projectCFG = self.relConf.getReleaseCFG( self.cliParams.projectName, relVersion )
+      projectCFGData = projectCFG.toString() + "\n"
       try:
         relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
         relFile.write( projectCFGData )
@@ -320,7 +319,7 @@ class DistributionMaker:
         return False
       #Check deps
       if 'DIRAC' != self.cliParams.projectName:
-        deps = self.relConf.getReleaseDependencies( relVersion )
+        deps = self.relConf.getReleaseDependencies( self.cliParams.projectName, relVersion )
         if 'DIRAC' not in deps:
           gLogger.notice( "Release %s doesn't depend on DIRAC. Check it's what you really want" % relVersion )
         else:
@@ -328,12 +327,13 @@ class DistributionMaker:
     return True
 
   def getUploadCmd( self ):
-    upCmd = self.relConf.getDefaultValue( "UploadCommand" )
-    if not upCmd:
+    result = self.relConf.getUploadCommand()
+    upCmd = False
+    if not result['OK']:
       if self.cliParams.projectName in g_uploadCmd:
         upCmd = g_uploadCmd[ self.cliParams.projectName ]
-      else:
-        upCmd = False
+    else:
+      upCmd = result[ 'Value' ]
 
     filesToCopy = []
     for fileName in os.listdir( cliParams.destination ):
@@ -344,7 +344,7 @@ class DistributionMaker:
     outFileNames = " ".join( [ os.path.basename( filePath ) for filePath in filesToCopy ] )
 
     if not upCmd:
-      return "Upload to your installation source:\n\t %s\n" % filesToCopy
+      return "Upload to your installation source:\n'%s'\n" % "' '".join( filesToCopy )
     for inRep, outRep in ( ( "%OUTLOCATION%", self.cliParams.destination ),
                            ( "%OUTFILES%", outFiles ),
                            ( "%OUTFILENAMES%", outFileNames ) ):
@@ -363,5 +363,6 @@ if __name__ == "__main__":
   if not distMaker.doTheMagic():
     sys.exit( 1 )
   gLogger.notice( "Everything seems ok. Tarballs generated in %s" % cliParams.destination )
-  gLogger.always( "Please run:" )
-  gLogger.always( distMaker.getUploadCmd() )
+  upCmd = distMaker.getUploadCmd()
+  gLogger.always( upCmd )
+

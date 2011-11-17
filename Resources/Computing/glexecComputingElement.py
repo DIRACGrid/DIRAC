@@ -11,11 +11,9 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement             import ComputingElement
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler                   import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                        import shellCall
-from DIRAC.Core.Security.Misc                               import getProxyInfoAsString
-from DIRAC                                                  import gConfig, S_OK, S_ERROR
+from DIRAC                                                  import S_OK, S_ERROR
 
 import DIRAC
 
@@ -32,9 +30,6 @@ class glexecComputingElement( ComputingElement ):
     """ Standard constructor.
     """
     ComputingElement.__init__( self, ceUniqueID )
-    self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
-    self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 ) #secs
-    self.proxyCheckPeriod = gConfig.getValue( '/Registry/ProxyCheckingPeriod', 3600 ) #secs
     self.submittedJobs = 0
 
   #############################################################################
@@ -322,20 +317,14 @@ class glexecComputingElement( ComputingElement ):
   def monitorProxy( self, glexecLocation, pilotProxy, payloadProxy ):
     """ Monitor the payload proxy and renew as necessary.
     """
-    if not os.path.exists( pilotProxy ):
-      return S_ERROR( 'Pilot proxy not found at %s' % pilotProxy )
-    if not os.path.exists( payloadProxy ):
-      return S_ERROR( 'Payload proxy not found at %s' % payloadProxy )
+    retVal = self._monitorProxy( pilotProxy, payloadProxy )
+    if not retVal['OK']:
+      # Failed to renew the proxy, nothing else to be done
+      return retVal
 
-    result = getProxyInfoAsString( payloadProxy )
-    if not result['OK']:
-      self.log.error( 'Could not get payload proxy info', result )
-      return result
-
-    self.log.info( 'Payload proxy information seen from pilot:\n%s' % result['Value'] )
-    gProxyManager.renewProxy( minLifeTime = self.minProxyTime,
-                             newProxyLifeTime = self.defaultProxyTime,
-                             proxyToConnect = pilotProxy )
+    if not retVal['Value']:
+      # No need to renew the proxy, nothing else to be done
+      return retVal
 
     if glexecLocation:
       self.log.info( 'Rerunning glexec without arguments to renew payload proxy' )

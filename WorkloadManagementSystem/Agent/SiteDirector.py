@@ -11,6 +11,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
@@ -44,19 +45,13 @@ class SiteDirector( AgentModule ):
     """
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
+    self.queueDict = {}
+    
+    return S_OK()
+  
+  def beginExecution( self ):
 
-    # Get the site description dictionary
-    siteNames = self.am_getOption( 'Site', [] )
-    if not siteNames:
-      siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
-      if siteName == 'Unknown':
-        return S_ERROR( 'Unknown site' )
-      else:
-        siteNames = [siteName]
-
-    self.siteNames = siteNames
-    self.gridEnv = self.am_getOption( "GridEnv", '' )
-
+    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() ) 
     self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
     self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
     self.pilot = DIRAC_PILOT
@@ -68,6 +63,17 @@ class SiteDirector( AgentModule ):
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
     self.getOutput = self.am_getOption( 'GetPilotOutput', True )
     self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
+
+    # Get the site description dictionary
+    siteNames = self.am_getOption( 'Site', [] )
+    if not siteNames:
+      siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
+      if siteName == 'Unknown':
+        return S_OK( 'No site specified for the SiteDirector' )
+      else:
+        siteNames = [siteName]
+    self.siteNames = siteNames
+ 
     if self.updateStatus:
       self.log.always( 'Pilot status update requested' )
     if self.getOutput:
@@ -87,7 +93,6 @@ class SiteDirector( AgentModule ):
 
     self.localhost = socket.getfqdn()
     self.proxy = ''
-    self.queueDict = {}
     result = self.getQueues()
     if not result['OK']:
       return result
@@ -105,6 +110,7 @@ class SiteDirector( AgentModule ):
     """ Get the list of relevant CEs and their descriptions
     """
 
+    self.queueDict = {}
     ceFactory = ComputingElementFactory()
     ceTypes = self.am_getOption( 'CETypes', [] )
     ceConfList = self.am_getOption( 'CEs', [] )
@@ -164,7 +170,7 @@ class SiteDirector( AgentModule ):
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
-            os.mkdir( qwDir )
+            os.makedirs( qwDir )
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
           queueDict = dict( ceDict )
           queueDict.update( self.queueDict[queueName]['ParametersDict'] )
@@ -190,6 +196,11 @@ class SiteDirector( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
+
+    if not self.queueDict:
+      self.log.warn('No site defined, exiting the cycle')
+      return S_OK()
+
     result = self.submitJobs()
     if not result['OK']:
       self.log.error( 'Errors in the job submission: %s' % result['Message'] )
@@ -681,5 +692,3 @@ EOF
       return result
 
     return S_OK()
-
-
