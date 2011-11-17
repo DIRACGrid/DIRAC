@@ -122,7 +122,7 @@ class TransformationCleaningAgent( AgentModule ):
   def __addDirs( self, transID, newDirs, existingDirs ):
     for dir in newDirs:
       transStr = str( transID ).zfill( 8 )
-      if re.search( transStr, dir ):
+      if re.search( transStr, str(dir) ):
         if not dir in existingDirs:
           existingDirs.append( dir )
     return existingDirs
