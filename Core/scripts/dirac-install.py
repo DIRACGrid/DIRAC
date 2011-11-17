@@ -997,11 +997,14 @@ def loadConfiguration():
   for opName in ( 'release', 'externalsType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules' ):
+                  'project', 'release', 'extraModules', 'extensions' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
+    #Also react to Extensions as if they were extra modules
+    if opName == 'extensions':
+      opName = 'extraModules'
     if type( getattr( cliParams, opName ) ) == types.StringType:
       setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
