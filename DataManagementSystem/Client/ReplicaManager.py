@@ -1833,9 +1833,14 @@ class ReplicaManager( CatalogToStorage ):
     for lfn in lfnDict.keys():
       if not failed.has_key( lfn ):
         completelyRemovedFiles.append( lfn )
-    res = self.fileCatalogue.removeFile( completelyRemovedFiles )
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
+    if completelyRemovedFiles:     
+      res = self.fileCatalogue.removeFile( completelyRemovedFiles )
+      if not res['OK']:
+        for lfn in completelyRemovedFiles:
+          failed[lfn] = "Failed to remove file from the catalog: %s" % res['Message']
+      else:  
+        failed.update( res['Value']['Failed'] )
+        successful = res['Value']['Successful']
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 

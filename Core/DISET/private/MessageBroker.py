@@ -133,7 +133,7 @@ class MessageBroker:
           continue
       except:
         from DIRAC import gLogger
-        gLogger.exception( "Exception while select'ing persistent connections" )
+        gLogger.exception( "Exception while selecting persistent connections" )
         continue
       for sock in inList:
         for iPos in range( len( sIdList ) ):
