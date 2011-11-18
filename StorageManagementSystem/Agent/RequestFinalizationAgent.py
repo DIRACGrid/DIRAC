@@ -23,14 +23,13 @@ class RequestFinalizationAgent( AgentModule ):
     self.am_setOption( 'shifterProxy', 'DataManager' )
     self.storageDB = StorageManagementDB()
     #self.stagerClient = StorageManagerClient()
-    res = self.setOldTasksAsFailed( self.am_getOption( 'FailIntervalDay', 3 ) )
     return S_OK()
 
   def execute( self ):
     res = self.clearFailedTasks()
     res = self.callbackStagedTasks()
     res = self.removeUnlinkedReplicas()
-    res = self.setOldTasksAsFailed( self.oldTaskDays )
+    res = self.setOldTasksAsFailed( self.am_getOption( 'FailIntervalDay', 3 ) )
     return res
 
   def clearFailedTasks( self ):
