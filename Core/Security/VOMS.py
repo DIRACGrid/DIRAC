@@ -224,6 +224,8 @@ class VOMS( BaseSecurity ):
     newProxyLocation = retVal[ 'Value' ]
 
     cmdArgs = []
+    if chain.isLimitedProxy()[ 'Value' ]:
+      cmdArgs.append( '-limited' )
     cmdArgs.append( '-cert "%s"' % proxyLocation )
     cmdArgs.append( '-key "%s"' % proxyLocation )
     cmdArgs.append( '-out "%s"' % newProxyLocation )

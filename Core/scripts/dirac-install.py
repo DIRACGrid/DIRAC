@@ -526,7 +526,7 @@ class ReleaseConfig:
       relDeps = self.__prjDepends[ project ][ release ]
 
       if not relCFG.getChild( "Releases/%s" % ( release ) ):
-        return S_ERROR( "Release %s is not defined for project %s in the release file" % ( project, release ) )
+        return S_ERROR( "Release %s is not defined for project %s in the release file" % ( release, project ) )
 
       initialDeps = self.getReleaseDependencies( project, release )
       if initialDeps:
@@ -997,11 +997,14 @@ def loadConfiguration():
   for opName in ( 'release', 'externalsType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules' ):
+                  'project', 'release', 'extraModules', 'extensions' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
+    #Also react to Extensions as if they were extra modules
+    if opName == 'extensions':
+      opName = 'extraModules'
     if type( getattr( cliParams, opName ) ) == types.StringType:
       setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
@@ -1166,6 +1169,8 @@ def createBashrc():
         lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
       if 'X509_CERT_DIR' in os.environ:
         lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
+      elif not os.path.isdir( "/etc/grid-security/certificates" ):
+        lines.append( "[[ -d '%s/etc/grid-security/certificates' ]] && export X509_CERT_DIR='%s/etc/grid-security/certificates'" % ( proPath, proPath ) )
       lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      'export DIRAC=%s' % proPath,
