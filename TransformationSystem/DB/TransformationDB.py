@@ -817,6 +817,7 @@ class TransformationDB( DB ):
       selSEs = res['Value']
     # Now prepare the tasks
     resultDict = {}
+
     for taskDict in tasks:
       if len( resultDict ) >= numTasks:
         break
@@ -828,22 +829,11 @@ class TransformationDB( DB ):
       taskID = taskDict['TaskID']
       se = taskDict['TargetSE']
       resultDict[taskID] = taskDict
-      if not site:
-        if taskDict['InputData']:
-          res = getSitesForSE( se )
-          if not res['OK']:
-            continue
-          usedSite = res['Value']
-          if len( usedSite ) == 1:
-            usedSite = usedSite[0]
-        else:
-          usedSite = 'ANY'
-        resultDict[taskID]['Site'] = usedSite
-      elif site and ( se in selSEs ):
-        resultDict[taskID]['Site'] = usedSite
-      else:
-        resultDict.pop( taskID )
-        gLogger.warn( "Can not find corresponding site for se", se )
+      if site and ( se in selSEs ):
+        resultDict[taskID]['Site'] = site
+#      else:
+#        resultDict.pop( taskID )
+#        gLogger.warn( "Can not find corresponding site for se", se )
     return S_OK( resultDict )
 
   def deleteTasks( self, transName, taskIDbottom, taskIDtop, author = '', connection = False ):
