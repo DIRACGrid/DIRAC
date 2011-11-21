@@ -122,10 +122,10 @@ class RequestDBFile:
       reqDir = os.path.join( self.root, requestType, "ToDo" )
       self.getIdLock.acquire()
       if os.path.exists( reqDir ):
-        candidateRequests = [ os.path.basename(requestFile) for requestFile in 
-                         sorted( filter( os.path.isfile, 
-                                         [ os.path.join( reqDir, requestName ) for requestName in os.listdir( reqDir ) ] ), 
-                                 key=os.path.getctime ) ]
+        candidateRequests = [ os.path.basename( requestFile ) for requestFile in
+                         sorted( filter( os.path.isfile,
+                                         [ os.path.join( reqDir, requestName ) for requestName in os.listdir( reqDir ) ] ),
+                                 key = os.path.getctime ) ]
       if not len( candidateRequests ) > 0:
         self.getIdLock.release()
         gLogger.info( "RequestDBFile._getRequest: No request of type %s found." % requestType )
@@ -164,7 +164,13 @@ class RequestDBFile:
       self.lastRequest[requestType] = ( selectedRequestName, selectedRequestIndex )
       self.getIdLock.release()
       gLogger.info( "RequestDBFile._getRequest: Successfully obtained %s request." % selectedRequestName )
-      resDict = {'RequestString':selectedRequestString, 'RequestName':selectedRequestName}
+      jobID = 'Unknown'
+      try:
+        oRequest = RequestContainer( request = selectedRequestString )
+        jobID = oRequest.getJobID()['Value']
+      except:
+        gLogger.exception( 'Could not get JobID from Request' )
+      resDict = {'RequestString':selectedRequestString, 'RequestName':selectedRequestName, 'JobID': jobID}
       return S_OK( resDict )
     except Exception, x:
       errStr = "RequestDBFile._getRequest: Exception while getting request."
@@ -336,18 +342,18 @@ class RequestDBFile:
       errStr = "RequestDBFile.__getRequestString: Exception while obtaining request string."
       gLogger.exception( errStr, requestName, lException = x )
       return S_ERROR( errStr )
-    
-  def _getRequestAttribute(self,attribute,requestName):
+
+  def _getRequestAttribute( self, attribute, requestName ):
     """ Get attribute of request specified by requestname
-    """  
-    result = self.__getRequestString(requestName)
+    """
+    result = self.__getRequestString( requestName )
     if not result['OK']:
-      return result    
+      return result
     request = result['Request']
     try:
-      return request.getAttribute(attribute)
-    except KeyError,x:
-      return S_OK(None)
+      return request.getAttribute( attribute )
+    except KeyError, x:
+      return S_OK( None )
 
   def __readSubRequestString( self, subRequestPath ):
     """ Read the contents of the supplied sub-request path
@@ -385,9 +391,9 @@ class RequestDBFile:
       gLogger.exception( errStr, lException = x )
       return S_ERROR( errStr )
 
-  def getCurrentExecutionOrder(self,requestID):
+  def getCurrentExecutionOrder( self, requestID ):
     """ Get the current subrequest execution order for the given request,
         fake method to satisfy the standard interface
     """
 
-    return S_OK(0)
+    return S_OK( 0 )
