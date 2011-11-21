@@ -662,10 +662,10 @@ class ReleaseConfig:
     except KeyError:
       return False
 
-  def getLCGVersion( self, lcgVersion = False ):
+  def getLCGVersion( self, lcgVersion = "" ):
     for objName in self.__projectsLoadedBy:
       try:
-        return self.__prjRelCFG[ objName ].get( "Releases/%s/LcgVer" % self.__depsLoaded[ objName ] )
+        return self.__prjRelCFG[ self.__projectName ][ cliParams.release ].get( "Releases/%s/LcgVer" % cliParams.release, lcgVersion )
       except KeyError:
         pass
     return lcgVersion
