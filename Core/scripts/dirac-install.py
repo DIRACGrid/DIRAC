@@ -478,6 +478,14 @@ class ReleaseConfig:
   def getReleaseCFG( self, project, release ):
     return self.__prjRelCFG[ project ][ release ]
 
+  def dumpReleasesToPath( self, path ):
+    for project in self.__prjRelCFG:
+      prjRels = self.__prjRelCFG[ project ]
+      for release in prjRels:
+        self.__dbgMsg( "Dumping releases file for %s:%s" % ( project, release ) )
+        fd = open( os.path.join( cliParams.targetPath, "releases-%s-%s.cfg" % ( project, release ) ), "w" )
+        fd.write( prjRels[ release ].toString() )
+        fd.close()
 
   def __checkCircularDependencies( self, key, routePath = False ):
     if not routePath:
@@ -1233,6 +1241,9 @@ if __name__ == "__main__":
       logERROR( result[ 'Message' ] )
       sys.exit( 1 )
     modsOrder, modsToInstall = result[ 'Value' ]
+    if cliParams.debug:
+      logNOTICE( "Writing down the releases files" )
+      releaseConfig.dumpReleasesToPath( cliParams.targetPath )
     logNOTICE( "Installing modules..." )
     for modName in modsOrder:
       tarsURL, modVersion = modsToInstall[ modName ]
