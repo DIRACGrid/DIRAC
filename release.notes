@@ -1,3 +1,11 @@
+[v6r0-pre15]
+
+*RequestDBFile
+BUGFIX: make getRequest return value for getRequest the same as for
+
+*Utilities/Grid
+BUGFIX: remove temporarily stored proxy files
+
 [v6r0-pre14]
 
 *dirac-install
