@@ -28,6 +28,7 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   else:
     gridEnv = currentEnv
 
+  dumpedProxy = False
   if not proxy:
     res = getProxyInfo()
     if not res['OK']:
@@ -43,8 +44,14 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
     if not ret['OK']:
       return ret
     gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
+    dumpedProxy = True
 
-  return systemCall( 120, cmd, env = gridEnv )
+  result = systemCall( 120, cmd, env = gridEnv )
+  if dumpedProxy:
+    # If proxy is stored in a file, delete it, gProxyManager fails to reuse it.
+    # Once the gProxyManager is fixed, this file removal can be dropped
+    os.unlink( gridEnv[ 'X509_USER_PROXY' ] )
+  return result
 
 def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
   """ Python wrapper for ldapserch at bdii.
