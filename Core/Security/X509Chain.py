@@ -9,9 +9,10 @@ import types
 import os
 import stat
 import tempfile
+import hashlib
 from GSI import crypto
 from DIRAC.Core.Security.X509Certificate import X509Certificate
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC import S_OK, S_ERROR
 
 class X509Chain:
@@ -22,6 +23,7 @@ class X509Chain:
     self.__isProxy = False
     self.__firstProxyStep = 0
     self.__isLimitedProxy = True
+    self.__hash = False
     if certList:
       self.__loadedChain = True
       self.__certList = certList
@@ -298,6 +300,7 @@ class X509Chain:
     return S_OK( False )
 
   def __checkProxyness( self ):
+    self.__hash = False
     self.__firstProxyStep = len( self.__certList ) - 2 # -1 is user cert by default, -2 is first proxy step
     self.__isProxy = True
     self.__isLimitedProxy = False
@@ -564,25 +567,44 @@ class X509Chain:
         return retVal
       diracGroup = retVal[ 'Value' ]
       if not diracGroup:
-        diracGroup = CS.getDefaultUserGroup()
+        diracGroup = Registry.getDefaultUserGroup()
       credDict[ 'group' ] = diracGroup
       credDict[ 'identity'] = self.__certList[ self.__firstProxyStep + 1 ].get_subject().one_line()
-      retVal = CS.getUsernameForDN( credDict[ 'identity' ] )
+      retVal = Registry.getUsernameForDN( credDict[ 'identity' ] )
       if retVal[ 'OK' ]:
         credDict[ 'username' ] = retVal[ 'Value' ]
         credDict[ 'validDN' ] = True
-        retVal = CS.getGroupsForUser( credDict[ 'username' ] )
+        retVal = Registry.getGroupsForUser( credDict[ 'username' ] )
         if retVal[ 'OK' ] and diracGroup in retVal[ 'Value']:
           credDict[ 'validGroup' ] = True
-          credDict[ 'groupProperties' ] = CS.getPropertiesForGroup( diracGroup )
+          credDict[ 'groupProperties' ] = Registry.getPropertiesForGroup( diracGroup )
     else:
-      retVal = CS.getHostnameForDN( credDict['subject'] )
+      retVal = Registry.getHostnameForDN( credDict['subject'] )
       retVal[ 'group' ] = 'hosts'
       if retVal[ 'OK' ]:
         credDict[ 'hostname' ] = retVal[ 'Value' ]
         credDict[ 'validDN' ] = True
         credDict[ 'validGroup' ] = True
     return S_OK( credDict )
+
+  def hash( self ):
+    if not self.__loadedChain:
+      return S_ERROR( "No chain loaded" )
+    if self.__hash:
+      return S_OK( self.__hash )
+    sha1 = hashlib.sha1()
+    for cert in self.__certList:
+      sha1.update( cert.get_subject().one_line() )
+    sha1.update( str( self.getRemainingSecs()[ 'Value' ] / 3600 ) )
+    sha1.update( self.getDIRACGroup()[ 'Value' ] )
+    if self.isVOMS():
+      sha1.update( "VOMS" )
+      from DIRAC.Core.Security.VOMS import VOMS
+      result = VOMS().getVOMSAttributes( self )
+      if result[ 'OK' ]:
+        sha1.update( result[ 'Value' ] )
+    self.__hash = sha1.hexdigest()
+    return S_OK( self.__hash )
 
 
 g_X509ChainType = type( X509Chain() )

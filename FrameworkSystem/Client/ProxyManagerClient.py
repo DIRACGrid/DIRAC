@@ -344,16 +344,20 @@ class ProxyManagerClient:
     """
     Dump a proxy to a file. It's cached so multiple calls won't generate extra files
     """
-    if self.__filesCache.exists( chain, requiredTimeLeft ):
-      filepath = self.__filesCache.get( chain )
+    result = chain.hash()
+    if not result[ 'OK' ]:
+      return result
+    hash = result[ 'Value' ]
+    if self.__filesCache.exists( hash, requiredTimeLeft ):
+      filepath = self.__filesCache.get( hash )
       if os.path.isfile( filepath ):
         return S_OK( filepath )
-      self.__filesCache.delete( filepath )
+      self.__filesCache.delete( hash )
     retVal = chain.dumpAllToFile( destinationFile )
     if not retVal[ 'OK' ]:
       return retVal
     filename = retVal[ 'Value' ]
-    self.__filesCache.add( chain, chain.getRemainingSecs()['Value'], filename )
+    self.__filesCache.add( hash, chain.getRemainingSecs()['Value'], filename )
     return S_OK( filename )
 
   def deleteGeneratedProxyFile( self, chain ):
