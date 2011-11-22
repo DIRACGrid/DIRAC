@@ -213,7 +213,7 @@ if __name__ == "__main__":
   pI = ProxyInit( piParams )
   result = pI.doTheMagic()
   if not result[ 'OK' ]:
-    gLogger.error( result[ 'Message' ] )
+    gLogger.fatal( result[ 'Message' ] )
     sys.exit( 1 )
 
   pI.printInfo()
