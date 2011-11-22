@@ -1,3 +1,9 @@
+[integration]
+
+*Utilities/Security
+FIX: Hash VOMS Attributes as string
+
+
 [v6r0-pre16]
 
 *dirac-proxy-init
