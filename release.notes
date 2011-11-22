@@ -1,3 +1,30 @@
+[v6r0-pre16]
+
+*dirac-proxy-init
+NEW: Set failing error as fatal
+
+*dirac-install
+NEW: Put all the goodness under a function so scripts like lhcb-proxy-init can use it easily
+FIX: Properly search for the LcgVer
+NEW: dirac-install will write down the releases files in -d mode
+
+*SystemAdministrator
+FIX: Do not set  a default lcg version
+FIX: Removed debug print
+
+*Utilities/Security
+FIX: Generate a chain hash to discover if two chains are equal
+NEW: Use chain has to discover if it has already been dumped
+
+*Logger
+NEW: Added showing the thread id in the logger if enabled
+
+*Releases
+NEW: Added VMDIRAC to the integration rolling release
+
+*TransformationDB
+BUGFIX: not removing task when site is not set
+
 [v6r0-pre15]
 
 *RequestDBFile
