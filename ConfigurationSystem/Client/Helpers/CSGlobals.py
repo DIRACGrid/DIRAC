@@ -10,6 +10,10 @@ __RCSID__ = "$Id$"
 
 #from DIRAC import gConfig
 
+def getSetup():
+  from DIRAC import gConfig
+  return gConfig.getValue( "/DIRAC/Setup", "" )
+
 def getVO( defaultVO = '' ):
   """
     Return VO from configuration
