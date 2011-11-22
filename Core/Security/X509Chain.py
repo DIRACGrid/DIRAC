@@ -602,7 +602,7 @@ class X509Chain:
       from DIRAC.Core.Security.VOMS import VOMS
       result = VOMS().getVOMSAttributes( self )
       if result[ 'OK' ]:
-        sha1.update( result[ 'Value' ] )
+        sha1.update( str( result[ 'Value' ] ) )
     self.__hash = sha1.hexdigest()
     return S_OK( self.__hash )
 
