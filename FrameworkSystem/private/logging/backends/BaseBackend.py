@@ -1,10 +1,12 @@
 # $HeadURL$
+import threading
 __RCSID__ = "$Id$"
 """  This constitues the base class for the backends of the logger
 """
 
 class BaseBackend:
 
+  _charData = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   _showCallingFrame = True
 
   def __init__( self, optionsDictionary ):
@@ -15,6 +17,19 @@ class BaseBackend:
 
   def doMessage( self ):
     raise Exception( "This function MUST be overloaded!!" )
+
+  def getThreadId( self ):
+    rid = ""
+    thid = str( threading.current_thread().ident )
+    segments = []
+    for iP in range( len( thid ) ):
+      if iP % 4 == 0:
+        segments.append( "" )
+      segments[-1] += thid[ iP ]
+    for seg in segments:
+      rid += BaseBackend._charData[ int( seg ) % len( BaseBackend._charData ) ]
+    return rid
+
 
   def composeString( self, messageObject ):
     from DIRAC.Core.Utilities import Time
@@ -30,9 +45,10 @@ class BaseBackend:
       messageName += "[%s]" % messageObject.getFrameInfo()
     timeToShow = Time.toString( messageObject.getTime() ).split( '.' )[0]
     lines = []
+    prefix = [ timeToShow, "UTC", messageName, "%s:" % messageObject.getLevel().rjust( 5 ) ]
+    if self._optionsDictionary[ 'showThreads' ]:
+      prefix[2] += "[%s]" % self.getThreadId()
+    prefix = " ".join( prefix )
     for lineString in messageObject.getMessage().split( "\n" ):
-      lines.append( "%s UTC %s %s: %s" % ( timeToShow,
-                                           messageName,
-                                           messageObject.getLevel().rjust( 5 ),
-                                           lineString ) )
+      lines.append( "%s %s" % ( prefix, lineString ) )
     return "\n".join( lines )

@@ -31,15 +31,18 @@ class Logger:
     self._outputList = []
     self._subLoggersDict = {}
     self._logLevels = LogLevels()
-    self.__backendOptions = { 'showHeaders' : True }
+    self.__backendOptions = { 'showHeaders' : True, 'showThreads' : False }
     self.__preinitialize()
     self.__initialized = False
 
   def initialized( self ):
     return self.__initialized
 
-  def showHeaders( self, yesno ):
+  def showHeaders( self, yesno = True ):
     self.__backendOptions[ 'showHeaders' ] = yesno
+
+  def showThreadIDs( self, yesno = True ):
+    self.__backendOptions[ 'showThreads' ] = yesno
 
   def registerBackends( self, desiredBackends ):
     self._backendsDict = {}
@@ -68,6 +71,7 @@ class Logger:
     elif debLevs >= 3:
       self.setLevel( "DEBUG" )
       self.showHeaders( True )
+      self.showThreadIDs()
 
   def initialize( self, systemName, cfgPath ):
     if self.__initialized:
