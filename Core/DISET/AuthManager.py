@@ -52,13 +52,13 @@ class AuthManager:
     requiredProperties = self.getValidPropertiesForMethod( methodQuery, defaultProperties )
     lowerCaseProperties = [ prop.lower() for prop in requiredProperties ]
     #Check non secure backends
+    if 'all' in lowerCaseProperties or 'any' in lowerCaseProperties:
+      self.__authLogger.verbose( "Accepted request from unsecure transport" )
+      credDict[ self.KW_PROPERTIES ] = []
+      return True
     if self.KW_DN not in credDict:
-      if 'all' in lowerCaseProperties or 'any' in lowerCaseProperties:
-        self.__authLogger.verbose( "Accepted request from unsecure transport" )
-        return True
-      else:
-        self.__authLogger.verbose( "Explicit property required and query seems to be coming through an unsecure transport" )
-        return False
+      self.__authLogger.verbose( "Explicit property required and query seems to be coming through an unsecure transport" )
+      return False
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
       self.__authLogger.verbose( "Query comes from a gateway" )

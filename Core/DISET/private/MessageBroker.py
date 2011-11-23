@@ -3,6 +3,7 @@ import threading
 import select
 import time
 import types
+import socket
 
 from DIRAC import gConfig, gMonitor, gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
@@ -128,8 +129,12 @@ class MessageBroker:
       finally:
         self.__trInOutLock.release()
       try:
-        inList, outList, exList = select.select( [ pos[1] for pos in sIdList ] , [], [], 1 )
-        if len( inList ) == 0:
+        try:
+          inList, outList, exList = select.select( [ pos[1] for pos in sIdList ] , [], [], 1 )
+          if len( inList ) == 0:
+            continue
+        except socket.error:
+          time.sleep( 0.1 )
           continue
       except:
         from DIRAC import gLogger
