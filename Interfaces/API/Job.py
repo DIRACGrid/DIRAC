@@ -362,6 +362,23 @@ class Job:
 
     return S_OK()
 
+  #############################################################################  
+  def setGenericParametricInput(self, inputlist):
+    """ Helper function
+    
+       Define a generic parametric job with this function. Should not be used when 
+       the ParametricInputData of ParametricInputSandbox are used.
+       
+       @param inputlist: Input list of parameters to build the parametric job
+       @type inputlist: list
+    
+    """
+    kwargs = {'inputlist':inputlist}
+    if not type( inputlist ) == type( [] ):
+      return self._reportError( 'Expected list for parameters', **kwargs )
+    self.parametric['GenericParameters'] = inputlist
+    return S_OK()
+  
   #############################################################################
   def setInputDataPolicy( self, policy, dataScheduling = True ):
     """Helper function.
@@ -1122,7 +1139,10 @@ class Job:
         paramsDict['Parameters'] = {}
         paramsDict['Parameters']['value'] = self.parametric['files']
         paramsDict['Parameters']['type'] = 'JDL'
-
+      if self.parametric.has_key('GenericParameters'):
+        paramsDict['Parameters']={}
+        paramsDict['Parameters']['value']=self.parametric['GenericParameters']
+        paramsDict['Parameters']['type'] = 'JDL'
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
