@@ -1251,7 +1251,7 @@ class ResourceStatusHandler( RequestHandler ):
 #############################################################################
 
   types_getStorageElementsStatusWeb = [ dict, list, int, int, str ]
-  def export_getStorageElementsStatusWeb( self, selectDict, sortList, startItem, maxItems, access ):
+  def export_getStorageElementsStatusWeb( self, selectDict, sortList, startItem, maxItems, access = 'Read' ):
     """ Get present sites status list, for the web
         Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
 
