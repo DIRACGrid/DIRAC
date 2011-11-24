@@ -29,7 +29,7 @@ __APIs__ = {
 ################################################################################
 ################################################################################
 
-def initAPIs( desiredAPIs, knownAPIs ):
+def initAPIs( desiredAPIs, knownAPIs, force = False ):
   
   if not isinstance( desiredAPIs, list ):
     raise RSSException, 'Got "%s" instead of list while initializing APIs' % desiredAPIs
@@ -39,7 +39,7 @@ def initAPIs( desiredAPIs, knownAPIs ):
   
   for dAPI in desiredAPIs:
     
-    if knownAPIs.has_key( dAPI ):
+    if knownAPIs.has_key( dAPI ) and not force == True:
       continue
     
     if not dAPI in __APIs__.keys():

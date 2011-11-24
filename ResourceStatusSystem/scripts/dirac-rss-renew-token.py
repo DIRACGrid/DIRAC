@@ -49,11 +49,11 @@ if not res['OK']:
   gLogger.error( "Failed to get proxy information", res['Message'] )
   DIRAC.exit( 2 )
 userName = res['Value']['username']
-group = res['Value']['group']
-if group not in ( 'diracAdmin', 'lhcb_prod' ):
-  gLogger.error( "You must be lhcb_prod or diracAdmin to execute this script" )
-  gLogger.info( "Please issue 'lhcb-proxy-init -g lhcb_prod' or 'lhcb-proxy-init -g diracAdmin'" )
-  DIRAC.exit( 2 )
+#group = res['Value']['group']
+#if group not in ( 'diracAdmin', 'lhcb_prod' ):
+#  gLogger.error( "You must be lhcb_prod or diracAdmin to execute this script" )
+#  gLogger.info( "Please issue 'lhcb-proxy-init -g lhcb_prod' or 'lhcb-proxy-init -g diracAdmin'" )
+#  DIRAC.exit( 2 )
 
 for arg in args:
   g = s.whatIs( arg )
@@ -69,16 +69,6 @@ for arg in args:
   nc.sendMail( getMailForUser( userName )['Value'][0], 'Token for %s renewed' % arg, mailMessage )
 
 DIRAC.exit( 0 )
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
             
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

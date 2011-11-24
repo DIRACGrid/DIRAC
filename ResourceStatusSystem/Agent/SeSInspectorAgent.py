@@ -64,19 +64,28 @@ class SeSInspectorAgent( AgentModule ):
   def execute( self ):
 
     try:
-
-      kwargs = { 'meta' : { 'columns' : [ 'ServiceName', 'StatusType', 'Status', 'FormerStatus', \
-                              'SiteType', 'ServiceType', 'TokenOwner' ] } }
+#
+#      kwargs = { 'meta' : { 'columns' : [ 'ServiceName', 'StatusType', 'Status', 'FormerStatus', \
+#                              'SiteType', 'ServiceType', 'TokenOwner' ] } }
+      kwargs = { 'meta' : {} }
+      kwargs['meta']['columns'] = [ 'ServiceName', 'StatusType', 'Status', 
+                                    'FormerStatus', 'SiteType', 'ServiceType', \
+                                    'TokenOwner' ]
+      kwargs[ 'tokenOwner' ]    = 'RS_SVC'
+      
       resQuery = self.rsClient.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
+     
+      gLogger.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
 
       for serviceTuple in resQuery[ 'Value' ]:
           
         #THIS IS IMPORTANT !!
         #Ignore all elements with token != RS_SVC  
-        if serviceTuple[ 6 ] != 'RS_SVC':
-          continue
+#        if serviceTuple[ 6 ] != 'RS_SVC':
+#          continue
           
         if ( serviceTuple[ 0 ], serviceTuple[ 1 ] ) in self.ServiceNamesInCheck:
+          gLogger.info( '%s(%s) discarded, already on the queue' % ( serviceTuple[ 0 ], serviceTuple[ 1 ] ) )
           continue
         
         resourceL = [ 'Service' ] + serviceTuple
@@ -134,7 +143,7 @@ class SeSInspectorAgent( AgentModule ):
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
 
         pepRes = pep.enforce( **pepDict )     
-        if pepRes.has_key( 'PolicyCombinedResult' ):
+        if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
           pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
           if pepStatus != pepDict[ 'status' ]:
             gLogger.info( 'Updated Site %s (%s) from %s to %s' % 

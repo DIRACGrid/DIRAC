@@ -88,18 +88,9 @@ Was in status "%s", with reason "%s", since %s
 Setup = %s
 """ % (granularity, self.name, self.res['Status'], self.res['Reason'], was[0], was[1], was[2], self.setup)
 
-#            self.nc.sendMail(self.rmDB.getUserRegistryCache(user)[ 'Value' ][0][0],
-#                        '[RSS] Status change for site %s: %s -> %s' % (self.name,  self.res['Status'], was[0]), mailMessage)
+            self.nc.sendMail(self.rmDB.getUserRegistryCache(user)[ 'Value' ][0][0],
+                        '[RSS] Status change for site %s: %s -> %s' % (self.name,  self.res['Status'], was[0]), mailMessage)
 
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
 
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
-            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

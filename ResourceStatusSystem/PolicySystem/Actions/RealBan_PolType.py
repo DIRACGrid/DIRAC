@@ -129,16 +129,6 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
           sendMail = da.sendMail(address,subject,body)
           if not sendMail['OK']:
             raise RSSException, where(self, self.enforce) + sendMail['Message']
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
-            
+   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF          

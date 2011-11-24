@@ -65,19 +65,25 @@ class RSInspectorAgent( AgentModule ):
 
     try:
 
-      kwargs = { 'meta' : { 'columns' : [ 'ResourceName', 'StatusType', 'Status', 'FormerStatus', \
-                              'SiteType', 'ResourceType', 'TokenOwner' ] }}
-
+      kwargs = { 'meta' : {} }
+      kwargs['meta']['columns'] = [ 'ResourceName', 'StatusType', 'Status', 
+                                    'FormerStatus', 'SiteType', 'ResourceType', \
+                                    'TokenOwner' ]
+      kwargs[ 'tokenOwner' ]    = 'RS_SVC'
+      
       resQuery = self.rsClient.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
+
+      gLogger.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
 
       for resourceTuple in resQuery[ 'Value' ]:
         
         #THIS IS IMPORTANT !!
         #Ignore all elements with token != RS_SVC
-        if resourceTuple[ 6 ] != 'RS_SVC':
-          continue
+        #if resourceTuple[ 6 ] != 'RS_SVC':
+        #  continue
         
         if ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) in self.ResourceNamesInCheck:
+          gLogger.info( '%s(%s) discarded, already on the queue' % ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
           continue
         
         resourceL = [ 'Resource' ] + resourceTuple
@@ -135,7 +141,7 @@ class RSInspectorAgent( AgentModule ):
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
        
         pepRes =  pep.enforce( **pepDict )
-        if pepRes.has_key( 'PolicyCombinedResult' ):
+        if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
           pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
           if pepStatus != pepDict[ 'status' ]:
             gLogger.info( 'Updated Site %s (%s) from %s to %s' % 
