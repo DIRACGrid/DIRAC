@@ -55,7 +55,7 @@ class AuthManager:
     #Set no properties by default
     credDict[ self.KW_PROPERTIES ] = []
     #Check non secure backends
-    if self.KW_DN not in credDict:
+    if self.KW_DN not in credDict or not credDict[ self.KW_DN ]:
       if allowAll:
         self.__authLogger.verbose( "Accepted request from unsecure transport" )
         return True
@@ -93,23 +93,23 @@ class AuthManager:
           self.__authLogger.warn( "Host is invalid" )
           if not allowAll:
             return False
+          #If all, then set anon credentials
           credDict[ self.KW_USERNAME ] = "anonymous"
+          credDict[ self.KW_GROUP ] = "visitor"
       else:
       #For users
         if not self.getUsername( credDict ):
           self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
           if not allowAll:
             return False
+          #If all, then set anon credentials
           credDict[ self.KW_USERNAME ] = "anonymous"
+          credDict[ self.KW_GROUP ] = "visitor"
     #If any or all in the props, allow
     if allowAll:
       return True
-    #Check user is authenticated
-    if not self.KW_DN in credDict or not credDict[ self.KW_DN ]:
-      self.__authLogger.warn( "User has no DN" )
-      return False
     #Check authorized groups
-    if "authenticated" in requiredProperties:
+    if "authenticated" in lowerCaseProperties:
       return True
     if not self.matchProperties( credDict, requiredProperties ):
       self.__authLogger.warn( "Client is not authorized\nValid properties: %s\Client: %s" % ( requiredProperties, credDict ) )
