@@ -1125,7 +1125,7 @@ class Job:
         paramsDict['Parameters']['type'] = 'JDL'
       if self.parametric.has_key('GenericParameters'):
         paramsDict['Parameters']={}
-        paramsDict['Parameters']['value']=self.parametric['GenericParameters']
+        paramsDict['Parameters']['value']=";".join(self.parametric['GenericParameters'])
         paramsDict['Parameters']['type'] = 'JDL'
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', string.join( arguments, ' ' ) )
