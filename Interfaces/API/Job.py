@@ -1133,11 +1133,11 @@ class Job:
           paramsDict['InputSandbox'] = {}
           paramsDict['InputSandbox']['value'] = '%s'
           paramsDict['InputSandbox']['type'] = 'JDL'
-        self.parametric['files'] = self.parametric['InputSandbox']
-        arguments.append( ' -p ParametricInputSandbox=%s' )
-      if self.parametric.has_key( 'files' ):
-        paramsDict['Parameters'] = {}
-        paramsDict['Parameters']['value'] = self.parametric['files']
+        self.parametric['files']=  self.parametric['InputSandbox']
+        arguments.append(' -p ParametricInputSandbox=%s')
+      if self.parametric.has_key('files'):   
+        paramsDict['Parameters']={}
+        paramsDict['Parameters']['value']=";".join(self.parametric['files'])
         paramsDict['Parameters']['type'] = 'JDL'
       if self.parametric.has_key('GenericParameters'):
         paramsDict['Parameters']={}
