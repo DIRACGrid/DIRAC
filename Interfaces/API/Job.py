@@ -1121,7 +1121,7 @@ class Job:
         arguments.append(' -p ParametricInputSandbox=%s')
       if self.parametric.has_key('files'):   
         paramsDict['Parameters']={}
-        paramsDict['Parameters']['value']=self.parametric['files']
+        paramsDict['Parameters']['value']=";".join(self.parametric['files'])
         paramsDict['Parameters']['type'] = 'JDL'
       if self.parametric.has_key('GenericParameters'):
         paramsDict['Parameters']={}
