@@ -51,14 +51,17 @@ class AuthManager:
     #Get properties
     requiredProperties = self.getValidPropertiesForMethod( methodQuery, defaultProperties )
     lowerCaseProperties = [ prop.lower() for prop in requiredProperties ]
+    allowAll = "any" in lowerCaseProperties or "all" in lowerCaseProperties
+    #Set no properties by default
+    credDict[ self.KW_PROPERTIES ] = []
     #Check non secure backends
-    if 'all' in lowerCaseProperties or 'any' in lowerCaseProperties:
-      self.__authLogger.verbose( "Accepted request from unsecure transport" )
-      credDict[ self.KW_PROPERTIES ] = []
-      return True
     if self.KW_DN not in credDict:
-      self.__authLogger.verbose( "Explicit property required and query seems to be coming through an unsecure transport" )
-      return False
+      if allowAll:
+        self.__authLogger.verbose( "Accepted request from unsecure transport" )
+        return True
+      else:
+        self.__authLogger.verbose( "Explicit property required and query seems to be coming through an unsecure transport" )
+        return False
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
       self.__authLogger.verbose( "Query comes from a gateway" )
@@ -88,15 +91,18 @@ class AuthManager:
       #For host
         if not self.getHostNickName( credDict ):
           self.__authLogger.warn( "Host is invalid" )
-          return False
-        credDict[ self.KW_PROPERTIES ] = CS.getPropertiesForHost( credDict[ self.KW_USERNAME ], [] )
+          if not allowAll:
+            return False
+          credDict[ self.KW_USERNAME ] = "anonymous"
       else:
       #For users
         if not self.getUsername( credDict ):
           self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
-          return False
+          if not allowAll:
+            return False
+          credDict[ self.KW_USERNAME ] = "anonymous"
     #If any or all in the props, allow
-    if "any" in lowerCaseProperties or "all" in lowerCaseProperties:
+    if allowAll:
       return True
     #Check user is authenticated
     if not self.KW_DN in credDict or not credDict[ self.KW_DN ]:
@@ -128,6 +134,7 @@ class AuthManager:
       gLogger.warn( "Cannot find hostname for DN %s: %s" % ( credDict[ self.KW_DN ], retVal[ 'Message' ] ) )
       return False
     credDict[ self.KW_USERNAME ] = retVal[ 'Value' ]
+    credDict[ self.KW_PROPERTIES ] = CS.getPropertiesForHost( credDict[ self.KW_USERNAME ], [] )
     return True
 
   def getValidPropertiesForMethod( self, method, defaultProperties = False ):
