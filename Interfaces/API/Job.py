@@ -908,6 +908,8 @@ class Job:
                         'Default null parametric input data value' )
     self._addParameter( self.workflow, 'ParametricInputSandbox', 'JDL', '',
                         'Default null parametric input sandbox value' )
+    self._addParameter( self.workflow, 'ParametricParameters', 'JDL', '', 
+                        'Default null parametric input parameters value' )
 
   #############################################################################
   def _addParameter( self, wObject, name, ptype, value, description, io = 'input' ):
@@ -1143,6 +1145,7 @@ class Job:
         paramsDict['Parameters']={}
         paramsDict['Parameters']['value']=";".join(self.parametric['GenericParameters'])
         paramsDict['Parameters']['type'] = 'JDL'
+        arguments.append(' -p ParametricParameters=%s')
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
