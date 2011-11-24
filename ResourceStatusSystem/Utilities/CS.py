@@ -109,11 +109,10 @@ def getExtensions():
 
 def getExt():
   """FIXME: Only works for LHCb. """
-  VOExtension = ''
-  ext = getExtensions()['Value']
-  if 'LHCb' in ext:
-    VOExtension = 'LHCb'
-  return VOExtension
+  try:
+    return "LHCb" if "LHCb" in getExtensions()['Value'] else return ""
+  except KeyError:
+    return ""
 
 # VOMS functions ####################
 
@@ -235,14 +234,14 @@ def getCondDBs():
   return gConfig.getSections("%s/CondDB" % g_BaseResourcesSection)
 
 ################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ################################################################################
 
 '''
   HOW DOES THIS WORK.
-    
+
     will come soon...
 '''
-            
+
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
