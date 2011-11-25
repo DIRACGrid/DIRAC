@@ -1197,7 +1197,7 @@ def createBashrc():
       lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
                      'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
-                     'export DYLD_LIBRARY_PATH=$DIRACLIB',
+                     'export DYLD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
                      'export PYTHONPATH=$DIRAC'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )
