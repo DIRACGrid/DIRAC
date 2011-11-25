@@ -1002,7 +1002,7 @@ def loadConfiguration():
       else:
         logNOTICE( "Loaded %s" % arg )
 
-  for opName in ( 'release', 'externalsType', 'pythonVersion',
+  for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
                   'project', 'release', 'extraModules', 'extensions' ):
@@ -1013,6 +1013,8 @@ def loadConfiguration():
     #Also react to Extensions as if they were extra modules
     if opName == 'extensions':
       opName = 'extraModules'
+    if opName == 'installType':
+      opName = 'externalsType'
     if type( getattr( cliParams, opName ) ) == types.StringType:
       setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
