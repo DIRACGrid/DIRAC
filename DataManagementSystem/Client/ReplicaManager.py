@@ -916,17 +916,17 @@ class ReplicaManager( CatalogToStorage ):
       return res
 
     paths = path
-    if type(path) in types.StringTypes:
+    if type( path ) in types.StringTypes:
       paths = [path]
 
     for p in paths:
       if not res['Value']['Successful'].has_key( p ):
-        return S_OK(False)
+        return S_OK( False )
       catalogPerm = res['Value']['Successful'][p]
       if not ( catalogPerm.has_key( 'Write' ) and catalogPerm['Write'] ):
-        return S_OK(False)
+        return S_OK( False )
 
-    return S_OK(True)
+    return S_OK( True )
 
   ##########################################################################
   #
@@ -1816,6 +1816,7 @@ class ReplicaManager( CatalogToStorage ):
           storageElementDict[se] = []
         storageElementDict[se].append( ( lfn, pfn ) )
     failed = {}
+    successful = {}
     for storageElementName, fileTuple in storageElementDict.items():
       res = self.__removeReplica( storageElementName, fileTuple )
       if not res['OK']:
@@ -1833,12 +1834,12 @@ class ReplicaManager( CatalogToStorage ):
     for lfn in lfnDict.keys():
       if not failed.has_key( lfn ):
         completelyRemovedFiles.append( lfn )
-    if completelyRemovedFiles:     
+    if completelyRemovedFiles:
       res = self.fileCatalogue.removeFile( completelyRemovedFiles )
       if not res['OK']:
         for lfn in completelyRemovedFiles:
           failed[lfn] = "Failed to remove file from the catalog: %s" % res['Message']
-      else:  
+      else:
         failed.update( res['Value']['Failed'] )
         successful = res['Value']['Successful']
     resDict = {'Successful':successful, 'Failed':failed}
@@ -1915,7 +1916,7 @@ class ReplicaManager( CatalogToStorage ):
     for pfn, error in res['Value']['Failed'].items():
       failed[pfnDict[pfn]] = error
     replicaTuples = []
-    for pfn,surl in res['Value']['Successful'].items():
+    for pfn, surl in res['Value']['Successful'].items():
       replicaTuple = ( pfnDict[pfn], surl, storageElementName )
       replicaTuples.append( replicaTuple )
     successful = {}
@@ -2086,7 +2087,7 @@ class ReplicaManager( CatalogToStorage ):
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued accounting removal request."
       gLogger.info( infoStr )
-      for surl,value in res['Value']['Successful'].items():
+      for surl, value in res['Value']['Successful'].items():
         ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
         if not ret['OK']:
           res['Value']['Successful'][surl] = surl
