@@ -168,7 +168,7 @@ class DownloadInputData:
         # Rename file if downloaded FileName does not match the LFN
         lfnName = os.path.basename( lfn )
         oldPath = result['Value']['path']
-        fileName = os.path.basename()
+        fileName = os.path.basename( oldPath )
         if lfnName != fileName:
           newPath = os.path.join( os.path.dirname( oldPath, lfnName ) )
           os.rename( oldPath, newPath )
