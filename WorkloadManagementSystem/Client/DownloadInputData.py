@@ -162,9 +162,9 @@ class DownloadInputData:
         if not result['OK']:
           self.log.warn( 'Download of file from any SE failed with message:\n%s' % ( result ) )
           failedReplicas.append( lfn )
-        else:
-          resolvedData[lfn] = result['Value']
       else:
+        localSECount += 1
+      if result['OK']:
         # Rename file if downloaded FileName does not match the LFN
         lfnName = os.path.basename( lfn )
         oldPath = result['Value']['path']
@@ -174,7 +174,6 @@ class DownloadInputData:
           os.rename( oldPath, newPath )
           result['Value']['path'] = newPath
         resolvedData[lfn] = result['Value']
-        localSECount += 1
 
     #Report datasets that could not be downloaded
     report = ''
