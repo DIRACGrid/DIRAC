@@ -113,14 +113,11 @@ def getExtensions():
 #############################################################################
 
 def getExt():
-  VOExtension = ''
-
-  ext = getExtensions()['Value']
-
-  if 'LHCb' in ext:
-    VOExtension = 'LHCb'
-
-  return VOExtension
+  try:
+    if 'LHCb' in getExtensions()['Value']:
+      return 'LHCb'
+  except TypeError:
+    return ""
 
 #############################################################################
 
