@@ -3,7 +3,7 @@
 ################################################################################
 __RCSID__  = "$Id$"
 
-""" 
+"""
   The Policy class is a simple base class for all the policies
 """
 
@@ -120,6 +120,7 @@ class PolicyBase(object):
 
       result = clientsInvoker.doCommand()
 
+
     if not self.infoName:
       result = result['Result']
     else:
@@ -131,14 +132,14 @@ class PolicyBase(object):
     return result
 
 ################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ################################################################################
 
 '''
   HOW DOES THIS WORK.
-    
+
     will come soon...
 '''
-            
+
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

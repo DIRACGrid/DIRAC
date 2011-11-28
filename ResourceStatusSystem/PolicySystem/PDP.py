@@ -24,14 +24,13 @@ class PDP:
     self.clients   = clients
     self.pc        = PolicyCaller( cc, **clients )
 
-  def setup( self, VOExtension, granularity = None, name = None, statusType = None,
+  def setup( self, granularity = None, name = None, statusType = None,
              status = None, formerStatus = None, reason = None, siteType = None,
              serviceType = None, resourceType = None, useNewRes = False ):
     """
     PDP (Policy Decision Point) initialization
 
     :params:
-      :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
       :attr:`granularity`: string - a ValidRes
       :attr:`name`: string - name (e.g. of a site)
       :attr:`status`: string - status
@@ -42,7 +41,6 @@ class PDP:
       :attr:`resourceType`: string - optional resource type
     """
 
-    self.VOExtension    = VOExtension
     self.__granularity  = granularity
     self.__name         = name
     self.__statusType   = statusType
@@ -94,7 +92,7 @@ class PDP:
     self.policy    = policyIn
     self.knownInfo = knownInfo
 
-    self.ig = InfoGetter(self.VOExtension)
+    self.ig = InfoGetter()
 
     EVAL = self.ig.getInfoToApply(('policy', 'policyType'),
                                   granularity  = self.__granularity,
@@ -114,7 +112,7 @@ class PDP:
       singlePolicyResults = self.policy.evaluate()
 
     else:
-      singlePolicyResults = self._invocation( self.VOExtension, self.__granularity,
+      singlePolicyResults = self._invocation(self.__granularity,
                                               self.__name, self.__status, self.policy,
                                               self.args, EVAL['Policies'])
 
@@ -143,7 +141,7 @@ class PDP:
 
 ################################################################################
 
-  def _invocation(self, VOExtension, granularity, name, status, policy, args, policies):
+  def _invocation(self, granularity, name, status, policy, args, policies):
     """ One by one, use the PolicyCaller to invoke the policies, and putting
         their results in `policyResults`. When the status is `Unknown`, invokes
         `self.__useOldPolicyRes`. Always returns a list, possibly empty.
@@ -156,7 +154,7 @@ class PDP:
       pModule   = p['Module']
       extraArgs = p['args']
       commandIn = p['commandIn']
-      res = self.pc.policyInvocation( VOExtension, granularity = granularity, name = name,
+      res = self.pc.policyInvocation(granularity = granularity, name = name,
                                       status = status, policy = policy, args = args, pName = pName,
                                       pModule = pModule, extraArgs = extraArgs, commandIn = commandIn )
 
@@ -177,7 +175,7 @@ class PDP:
         pModule = triggeredPolicy['module']
         extraArgs = triggeredPolicy['args']
         commandIn = triggeredPolicy['commandIn']
-        res = self.pc.policyInvocation(VOExtension, granularity = granularity, name = name,
+        res = self.pc.policyInvocation(granularity = granularity, name = name,
                                        status = status, policy = policy, args = args, pName = pName,
                                        pModule = pModule, extraArgs = extraArgs, commandIn = commandIn)
 

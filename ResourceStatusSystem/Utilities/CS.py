@@ -88,7 +88,7 @@ def getUserNames():
 # Mail functions #######################
 
 def getOperationMails( op ):
-  return gConfig.getOption("%s/EMail/%s" %(g_BaseOperationsSection, op) ,'')
+  return gConfig.getValue("%s/EMail/%s" %(g_BaseOperationsSection, op) ,"")
 
 def getMailForUser(users):
   from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -97,22 +97,12 @@ def getMailForUser(users):
   if isinstance(users, basestring):
     users = [users]
 
-  return rmAPI.getUserRegistryCache( user = users, columns= 'email' ) #      .registryGetMailFromLogin(u) for u in users])
+  return rmAPI.getUserRegistryCache( user = users, columns= 'email' )
 
 # Setup functions ####################
 
 def getSetup():
-  return gConfig.getValue("DIRAC/Setup")
-
-def getExtensions():
-  return gConfig.getValue("DIRAC/Extensions", [])
-
-def getExt():
-  """FIXME: Write generic code for other VOs """
-  try:
-    return "LHCb" if "LHCb" in getExtensions() else return ""
-  except KeyError:
-    return ""
+  return gConfig.getValue("DIRAC/Setup", "")
 
 # VOMS functions ####################
 
@@ -192,7 +182,7 @@ def getSENodes( SEIn ):
   else:                            return S_OK(node)
 
 def getStorageElementStatus(SE, accessType):
-  return gConfig.getOption("%s/StorageElements/%s/%s" %
+  return gConfig.getValue("%s/StorageElements/%s/%s" %
                            (g_BaseResourcesSection, SE, accessType))
 
 def getHostByToken(space_token):

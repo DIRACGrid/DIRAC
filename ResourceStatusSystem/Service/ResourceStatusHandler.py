@@ -28,7 +28,7 @@ def initializeResourceStatusHandler( _serviceInfo ):
 #  publisher = Publisher( VOExtension, dbIn = db, commandCallerIn = cc,
 #                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
 
-  SyncModule = Utils.voimport("DIRAC.ResourceStatusSystem.Utilities.Synchronizer", "LHCb")
+  SyncModule = Utils.voimport("DIRAC.ResourceStatusSystem.Utilities.Synchronizer")
   sync_O = SyncModule.Synchronizer()
   gConfig.addListenerToNewVersionEvent( sync_O.sync )
   return S_OK()
