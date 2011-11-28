@@ -102,15 +102,15 @@ def getMailForUser(users):
 # Setup functions ####################
 
 def getSetup():
-  return gConfig.getOption("DIRAC/Setup")
+  return gConfig.getValue("DIRAC/Setup")
 
 def getExtensions():
-  return gConfig.getOption("DIRAC/Extensions")
+  return gConfig.getValue("DIRAC/Extensions", [])
 
 def getExt():
-  """FIXME: Only works for LHCb. """
+  """FIXME: Write generic code for other VOs """
   try:
-    return "LHCb" if "LHCb" in getExtensions()['Value'] else return ""
+    return "LHCb" if "LHCb" in getExtensions() else return ""
   except KeyError:
     return ""
 

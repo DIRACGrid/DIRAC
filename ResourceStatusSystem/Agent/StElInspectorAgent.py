@@ -65,18 +65,28 @@ class StElInspectorAgent( AgentModule ):
 
     try:
 
-      kwargs = { 'meta' : { 'columns' : [ 'StorageElementName', 'StatusType', 'Status', \
-                              'FormerStatus', 'SiteType', 'TokenOwner' ] } }
+#      kwargs = { 'meta' : { 'columns' : [ 'StorageElementName', 'StatusType', 'Status', \
+#                              'FormerStatus', 'SiteType', 'TokenOwner' ] } }
+
+      kwargs = { 'meta' : {} }
+      kwargs['meta']['columns'] = [ 'StorageElementName', 'StatusType', 
+                                    'Status', 'FormerStatus', 'SiteType', \
+                                    'TokenOwner' ]
+      kwargs[ 'tokenOwner' ]    = 'RS_SVC'
+      
       resQuery = self.rsClient.getStuffToCheck( 'StorageElement', self.StorageElementsFreqs, **kwargs )
+
+      gLogger.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
 
       for seTuple in resQuery[ 'Value' ]:
         
         #THIS IS IMPORTANT !!
         #Ignore all elements with token != RS_SVC
-        if seTuple[ 5 ] != 'RS_SVC':
-          continue
+#        if seTuple[ 5 ] != 'RS_SVC':
+#          continue
         
         if ( seTuple[ 0 ], seTuple[ 1 ] ) in self.StorageElementsNamesInCheck:
+          gLogger.info( '%s(%s) discarded, already on the queue' % ( seTuple[ 0 ], seTuple[ 1 ] ) )
           continue
         
         resourceL = [ 'StorageElement' ] + seTuple
@@ -134,7 +144,7 @@ class StElInspectorAgent( AgentModule ):
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
      
         pepRes = pep.enforce( **pepDict )
-        if pepRes.has_key( 'PolicyCombinedResult' ):
+        if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
           pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
           if pepStatus != pepDict[ 'status' ]:
             gLogger.info( 'Updated Site %s (%s) from %s to %s' % 

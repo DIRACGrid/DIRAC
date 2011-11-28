@@ -90,7 +90,7 @@ class ResourceStatusDB( object ):
    
     self.mm    = MySQLMonkey( self )  
 
-  @CheckDBExecution
+#  @CheckDBExecution
   @ValidateDBTypes
   def insert( self, params, meta ):
     """    
@@ -112,7 +112,7 @@ class ResourceStatusDB( object ):
     """
     return self.mm.insert( params, meta )
 
-  @CheckDBExecution
+#  @CheckDBExecution
   @ValidateDBTypes
   def update( self, params, meta ):
     """    
@@ -135,7 +135,7 @@ class ResourceStatusDB( object ):
     """
     return self.mm.update( params, meta )
 
-  @CheckDBExecution
+#  @CheckDBExecution
   @ValidateDBTypes
   def get( self, params, meta ):
     """   
@@ -155,7 +155,7 @@ class ResourceStatusDB( object ):
     """
     return self.mm.get( params, meta )
 
-  @CheckDBExecution
+#  @CheckDBExecution
   @ValidateDBTypes
   def delete( self, params, meta ):
     """     

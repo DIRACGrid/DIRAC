@@ -114,14 +114,4 @@ class GGUSTickets_Info(Command):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
-
-################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

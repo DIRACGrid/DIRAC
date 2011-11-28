@@ -65,18 +65,27 @@ class SSInspectorAgent( AgentModule ):
 
     try:
       
-      kwargs = { 'meta' : { 'columns' : ['SiteName', 'StatusType', 'Status', 'FormerStatus',\
-                               'SiteType', 'TokenOwner'] } }
+#      kwargs = { 'meta' : { 'columns' : ['SiteName', 'StatusType', 'Status', 'FormerStatus',\
+#                               'SiteType', 'TokenOwner'] } }
+      
+      kwargs = { 'meta' : {} }
+      kwargs['meta']['columns'] = [ 'SiteName', 'StatusType', 'Status', 
+                                    'FormerStatus', 'SiteType', 'TokenOwner']
+      kwargs[ 'tokenOwner' ]    = 'RS_SVC'
+      
       resQuery = self.rsClient.getStuffToCheck( 'Site', self.SitesFreqs, **kwargs )
+
+      gLogger.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
 
       for siteTuple in resQuery[ 'Value' ]:
         
         #THIS IS IMPORTANT !!
         #Ignore all elements with token != RS_SVC
-        if siteTuple[ 5 ] != 'RS_SVC':
-          continue
+#        if siteTuple[ 5 ] != 'RS_SVC':
+#          continue
                
         if ( siteTuple[ 0 ],siteTuple[ 1 ] ) in self.SiteNamesInCheck:
+          gLogger.info( '%s(%s) discarded, already on the queue' % ( siteTuple[ 0 ],siteTuple[ 1 ] ) )
           continue
         
         resourceL = [ 'Site' ] + siteTuple
@@ -133,7 +142,7 @@ class SSInspectorAgent( AgentModule ):
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
      
         pepRes = pep.enforce( **pepDict )
-        if pepRes.has_key( 'PolicyCombinedResult' ):
+        if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
           pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
           if pepStatus != pepDict[ 'status' ]:
             gLogger.info( 'Updated Site %s (%s) from %s to %s' % 

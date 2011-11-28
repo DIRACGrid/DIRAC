@@ -6,6 +6,10 @@ __RCSID__  = "$Id$"
 from DIRAC import S_OK#, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
 
+from datetime import datetime
+
+import re
+
 ################################################################################
 # MySQL Monkey 
 ################################################################################
@@ -179,14 +183,20 @@ class MySQLStatements( object ):
   
   ACCEPTED_KWARGS = [ 'table',  
                       'sort', 'order', 'limit', 'columns', 'group', 'count',  
-                      'minor', 'or', 'dict', 'not',
+                      'minor', 'or', 'not',#'dict', 'not',
                       'uniqueKeys', 'onlyUniqueKeys' ]
   
   def __init__( self, dbWrapper ):
     self.dbWrapper = dbWrapper
     self.SCHEMA    = {}
+    self.mSchema   = None
 
   def setSchema( self, schema ):
+    '''
+    Makes a dirty quick solution, eventually it will use NodeTree..
+    '''
+    
+    self.mSchema = schema
     
     for table in schema.nodes:
       self.SCHEMA[ table.name ] = { 'columns' : [], 'keyColumns' : [] }
@@ -203,52 +213,6 @@ class MySQLStatements( object ):
 ################################################################################
 # PUBLIC FUNCTIONS II
 ################################################################################
-
-#  def insert2( self, *args, **kwargs ):
-#    
-#    #try:
-#      # PARSING #
-#      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
-#      pKwargs[ 'onlyUniqueKeys' ] = True
-#      # END PARSING #
-#    
-#      return self.__insert( pArgs, **pKwargs )
-#    #except:
-#    #  return S_ERROR( 'Message' )
-#
-#  def update2( self, *args, **kwargs ):
-#    
-#    #try:
-#      # PARSING #
-#      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
-#      pKwargs[ 'onlyUniqueKeys' ] = True
-#      # END PARSING #
-#    
-#      return self.__update( pArgs, **pKwargs )
-#    #except:
-#    #  return S_ERROR( 'Message' )
-#
-#  def get( self, *args, **kwargs ):
-#    
-#    #try:
-#      # PARSING #
-#      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
-#      # END PARSING #
-#    
-#      return self.__select( pArgs, **pKwargs )
-#    #except:
-#    #  return S_ERROR( 'Message' )
-#
-#  def delete2( self, *args, **kwargs ):
-#    
-#    #try:
-#      # PARSING #
-#      pArgs,pKwargs  = self.__parseInput( *args, **kwargs )
-#      # END PARSING #
-#    
-#      return self.__delete( pArgs, **pKwargs )
-#    #except:
-#    #  return S_ERROR( 'Message')
 
   def insert( self, params, meta ):
     
@@ -351,7 +315,9 @@ class MySQLStatements( object ):
     parsedMeta   = self.__parseKwargs( meta )   
     parsedParams = self.__parseArgs( params, parsedMeta )
     
-    return parsedParams,parsedMeta
+    return self.__parseEvil( parsedParams, parsedMeta )
+    
+    #return parsedParams,parsedMeta
 
   def __parseArgs( self, params, meta ):
     
@@ -399,6 +365,143 @@ class MySQLStatements( object ):
       pKwargs[ 'uniqueKeys' ] = self.SCHEMA[ pKwargs[ 'table' ]][ 'keyColumns' ]
     
     return pKwargs    
+  
+  def __parseEvil( self, parsedArgs, parsedKwargs ):
+    
+    #First parameters, then meta
+    
+    if self.mSchema is None:
+      return parsedArgs, parsedKwargs
+    
+    #parsedMeta
+    def parseMultiple( l ):
+      
+      if parsedKwargs[ l ] is None:
+        return None
+      if not isinstance( parsedKwargs[ l ], list ):
+        parsedKwargs[ l ] = [ parsedKwargs[ l ] ]
+      res = self.dbWrapper.db._escapeValues( parsedKwargs[ l ] )
+      #res = self._checkMultipleALPHA( parsedKwargs[ l ] )
+      if not res[ 'OK' ]:
+        raise RSSDBException( res[ 'Message' ] )
+      return res[ 'Value' ]
+    
+    def parseDict( d, dataType ):
+      
+      if d is None:
+        return d
+      
+      #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
+      k = self._checkMultipleALPHA( d.keys() )
+      if dataType == 'DATETIME':
+        v = self._checkDATETIME( d.values() )
+      if dataType == 'STRING':
+        #v = self.dbWrapper.db._escapeValues( d.values() )[ 'Value' ]
+        v = self._checkMultipleALPHA( d.values() )
+        
+      return dict(zip(k,v))
+        
+    # table alreadyChecked
+    # sort   
+    if parsedKwargs.has_key( 'sort') and parsedKwargs['sort'] is not None:
+      parsedKwargs[ 'sort'  ] = self._checkMultipleALPHA( parsedKwargs[ 'sort'  ] )#parseMultiple( 'sort' )
+    # order   
+    if parsedKwargs.has_key( 'order') and parsedKwargs[ 'order' ] is not None:
+      parsedKwargs[ 'order' ] = self._checkMultipleALPHA( parsedKwargs[ 'order'  ] )#parseMultiple( 'order' )
+    # limit
+    if parsedKwargs.has_key( 'limit') and parsedKwargs[ 'limit' ] is not None:
+      if not isinstance( parsedKwargs[ 'limit' ], int ):
+        raise RSSDBException( 'Non integer limit value' )
+    # columns
+    if parsedKwargs.has_key( 'columns') and parsedKwargs[ 'columns' ] is not None:
+      parsedKwargs[ 'columns' ] = self._checkMultipleALPHA( parsedKwargs[ 'columns'  ] )#parseMultiple( 'columns' )
+    # group
+    if parsedKwargs.has_key( 'group') and parsedKwargs[ 'group' ] is not None:
+      parsedKwargs[ 'group' ] = self._checkMultipleALPHA( parsedKwargs[ 'group'  ] )[0]#parseMultiple( 'group' )
+    # uniqueKeys
+    if parsedKwargs.has_key( 'uniqueKeys') and parsedKwargs[ 'uniqueKeys' ] is not None:
+      parsedKwargs[ 'uniqueKeys' ] = self._checkMultipleALPHA( parsedKwargs[ 'uniqueKeys'  ] )#parseMultiple( 'uniqueKeys' )
+    # count
+    if parsedKwargs.has_key( 'count') and parsedKwargs[ 'count'] is not None and parsedKwargs[ 'count' ] != True:
+      #count = self.dbWrapper.db._escapeString( parsedKwargs[ 'count' ])
+      count = self._checkALPHA( parsedKwargs[ 'count' ])
+      if not count[ 'OK' ]:
+        raise RSSDBException( 'Cannot escape count value')
+      parsedKwargs[ 'count'] = count[ 'Value' ]  
+    # or
+    if parsedKwargs.has_key( 'or' ) and parsedKwargs['or'] is not None:
+      orD = parsedKwargs[ 'or' ]
+      if orD is not None:
+        parsedOr = []
+        for d in orD:
+          #small hack to prevent a crash parsing the arguments of the dict
+          d['kwargs']['table'] = parsedKwargs[ 'table' ]
+          pDict,pKw = self.__parseEvil( d['dict'], d['kwargs'] )
+          parsedOr.append( { 'dict' : pDict, 'kwargs' :pKw } )  
+        #orD[ 'dict' ],orD[ 'kwargs' ] = self.__parseEvil( orD[ 'dict' ],orD[ 'kwargs' ] )
+        parsedKwargs[ 'or' ] = parsedOr
+
+    # minor ( datetime )
+    if parsedKwargs.has_key( 'minor' ) and parsedKwargs[ 'minor' ] is not None:
+      parsedKwargs[ 'minor' ] = parseDict( parsedKwargs[ 'minor' ], 'DATETIME' )
+
+    # not ( string )   
+    if parsedKwargs.has_key( 'not' ) and parsedKwargs[ 'not' ] is not None:
+      parsedKwargs[ 'not' ] = parseDict( parsedKwargs[ 'not' ], 'STRING' )
+        
+#    if not isinstance( parsedKwargs[ 'sort' ], list ):
+#      parsedKwargs[ 'sort' ] = [ parsedKwargs[ 'sort' ] ]
+#    res = self.dbWrapper.db._escapeValues( parsedKwargs[ 'sort' ] )
+#    if not res[ 'OK' ]:
+#      raise RSSDBException( res[ 'Message' ] )
+#    parsedKwargs[ 'sort' ] = res[ 'Value' ]    
+      
+    table = getattr( self.mSchema, parsedKwargs[ 'table' ] )  
+      
+    # parsedArgs  
+    for k,v in parsedArgs.items():
+      
+      self._checkALPHA( k )
+      if v is None:
+        continue
+      
+      dataType = getattr( table, k ).dataType.upper()
+      if not isinstance( v, list ):
+        v = [ v ]
+      v = getattr( self, '_check%s' % dataType )( v )   
+                
+    #print parsedArgs, parsedKwargs             
+                
+    return parsedArgs, parsedKwargs  
+  
+  def _checkMultipleALPHA( self,suspicious ):
+    
+    if not isinstance( suspicious, list ):
+      suspicious = [ suspicious ]
+      
+    for s in suspicious:
+      self._checkALPHA( s )
+    return suspicious
+
+  def _checkALPHA( self,suspicious ):
+    if not re.match( "[A-Za-z_-]+$", suspicious ):
+      raise RSSDBException( 'Non alpha value "%s"' % suspicious )
+    return suspicious
+  
+  def _checkVARCHAR( self, suspicious ):  
+    
+    res = self.dbWrapper.db._escapeValues( suspicious )
+    if not res[ 'OK' ]:
+      raise RSSDBException( res[ 'Message' ] )
+    return res[ 'Value' ]
+    
+  def _checkDATETIME( self, suspicious ):
+    for s in suspicious:
+      if not isinstance( s, datetime ):
+        raise RSSDBException( 'Non datetime value "%s"' % s )
+    return suspicious
+  
+  _checkBLOB = _checkVARCHAR   
   
 ################################################################################
 # RAW SQL FUNCTIONS
@@ -473,6 +576,7 @@ class MySQLStatements( object ):
     if limit:
       req += ' LIMIT %d' % limit   
   
+    #print req
     return req
   
   def __updateSQLStatement( self, rDict, **kwargs ):
@@ -586,16 +690,6 @@ class MySQLStatements( object ):
       items.append( ' OR '. join( orItem for orItem in orItems ) )                      
                 
     return ' AND '.join( item for item in items )
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
             
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

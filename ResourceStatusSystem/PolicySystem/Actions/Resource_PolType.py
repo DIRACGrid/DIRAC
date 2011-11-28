@@ -64,16 +64,6 @@ def ResourcePolTypeActions( granularity, name, statusType, resDecisions, rsAPI, 
 
   if res.has_key( 'EndDate' ):
     rsAPI.setDateEnd( granularity, name, statusType, res['EndDate'] )
-    
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
             
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

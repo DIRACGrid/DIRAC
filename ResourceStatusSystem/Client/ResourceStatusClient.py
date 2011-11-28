@@ -1842,7 +1842,7 @@ class ResourceStatusClient:
     now = datetime.utcnow().replace( microsecond = 0 )
 
     for freqName, freq in checkFrequency.items():
-      toCheck[ freqName ] = ( now - timedelta( minutes = freq ) ).isoformat(' ')
+      toCheck[ freqName ] = ( now - timedelta( minutes = freq ) )#.isoformat(' ')
 
     if not kwargs.has_key( 'meta' ):
       kwargs[ 'meta' ] = {}
