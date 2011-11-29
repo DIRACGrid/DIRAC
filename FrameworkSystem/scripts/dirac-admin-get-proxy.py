@@ -12,7 +12,8 @@ import os
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
 
 class Params:
 
@@ -77,7 +78,7 @@ userDN = str( args[0] )
 userName = False
 if userDN.find( "/" ) != 0:
   userName = userDN
-  retVal = CS.getDNForUsername( userName )
+  retVal = Registry.getDNForUsername( userName )
   if not retVal[ 'OK' ]:
     print "Cannot discover DN for username %s\n\t%s" % ( userName, retVal[ 'Message' ] )
     DIRAC.exit( 2 )
@@ -92,7 +93,7 @@ if userDN.find( "/" ) != 0:
 
 if not params.proxyPath:
   if not userName:
-    result = CS.getUsernameForDN( userDN )
+    result = Registry.getUsernameForDN( userDN )
     if not result[ 'OK' ]:
       print "DN '%s' is not registered in DIRAC" % userDN
       DIRAC.exit( 2 )
