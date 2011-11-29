@@ -1,4 +1,4 @@
-[v6r0]
+[v6r0-pre17]
 
 *Framework
 NEW: DISET Framework modified client/server protocol, messaging mechanism to be used for optimizers
@@ -102,6 +102,7 @@ NEW: PilotAgentsDB - on demand retrieval of the CREAM pilot output
 NEW: Pilot - proper job ID evaluation for the OSG sites
 FIX: ComputingElement - fixed proxy renewal logic for generic and private pilots
 NEW: JDL - added %j placeholder in the JDL to be replaced by the JobID
+BUGFIX: DownloadInputData - bug fixed in the naming of downloaded files
 
 *DataManagement
 FIX: FileCatalog/DiractoryLevelTree - consistent application of the max directory level using global 
