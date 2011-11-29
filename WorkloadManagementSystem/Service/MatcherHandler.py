@@ -135,10 +135,17 @@ class MatcherHandler( RequestHandler ):
     resourceDict = self.__processResourceDescription( resourceDescription )
 
     credDict = self.getRemoteCredentials()
-    #Check DNs
+    #Check Credentials
     if Properties.GENERIC_PILOT not in credDict[ 'properties' ]:
+      #No generic pilot? DN has to be the same!
       if 'OwnerDN' in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
-        return S_ERROR( "You can only match jobs for your DN (%s)" % credDict[ 'DN' ] )
+        gLogger.notice( "You can only match jobs for your DN (%s)" % credDict[ 'DN' ] )
+      resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
+      if Properties.PILOT not in credDict[ 'properties' ]:
+        #No pilot? Group has to be the same!
+        if 'OwnerGroup' in resourceDict and resourceDict[ 'OwnerGroup' ] != credDict[ 'group' ]:
+          gLogger.notice( "You can only match jobs for your group (%s)" % credDict[ 'group' ] )
+        resourceDict[ 'OwnerGroup' ] = credDict[ 'group' ]
 
     # Check the pilot DIRAC version
     if self.checkPilotVersion:
