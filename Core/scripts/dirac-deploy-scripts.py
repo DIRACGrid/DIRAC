@@ -66,7 +66,7 @@ for entry in os.listdir( baseLibPath ):
 
 os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
 
-for varName in ( 'LD_LIBRARY_PATH', ):
+for varName in ( 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH'):
   if varName not in os.environ:
     os.environ[varName] = DiracLibraryPath
   else:
@@ -78,6 +78,12 @@ else:
   os.environ['PYTHONPATH'] = '%s:%s' % ( DiracPythonPath, os.environ['PYTHONPATH'] )
 
 DiracScript = os.path.join( DiracRoot, '$SCRIPTLOCATION$' )
+
+certDir = os.path.join( "etc", "grid-security", "certificates" )
+if 'X509_CERT_DIR' not in os.environ and \
+  not os.path.isdir( os.path.join( "/", certDir ) ) and \
+  os.path.isdir( os.path.join( DiracRoot, certDir ) ):
+  os.environ[ 'X509_CERT_DIR' ] = os.path.join( DiracRoot, certDir ) 
 
 if sys.argv[1:]:
   args = ' "%s"' % '" "'.join( sys.argv[1:] )

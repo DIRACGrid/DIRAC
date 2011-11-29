@@ -445,7 +445,6 @@ class TarModuleCreator( object ):
       return S_ERROR( "Cannot generate the html %s: %s" % ( baseNotesPath, str( excp ) ) )
     baseList = [ baseNotesPath ]
     if self.params.outRelNotes:
-      print "ASDAS"
       gLogger.notice( "Leaving a copy of the release notes outside the tarballs" )
       baseList.append( "%s/releasenotes.%s.%s" % ( self.params.destination, self.params.name, self.params.version ) )
     for baseFileName in baseList:
@@ -539,3 +538,4 @@ if __name__ == "__main__":
     gLogger.error( "Could not create the tarball: %s" % result[ 'Message' ] )
     sys.exit( 1 )
   gLogger.always( "Tarball successfully created at %s" % result[ 'Value' ] )
+  sys.exit( 0 )

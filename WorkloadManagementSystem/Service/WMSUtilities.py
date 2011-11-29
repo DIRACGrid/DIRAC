@@ -10,6 +10,7 @@ __RCSID__ = "$Id$"
 from tempfile import mkdtemp
 import shutil, os
 from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 
 from DIRAC import S_OK, S_ERROR, gConfig
 
@@ -19,7 +20,58 @@ outputSandboxFiles = [ 'StdOut', 'StdErr', 'std.out', 'std.err' ]
 
 COMMAND_TIMEOUT = 60
 ###########################################################################
-def getPilotOutput( proxy, grid, pilotRef ):
+
+def getGridEnv():
+  
+  gridEnv = ''
+  setup = gConfig.getValue( '/DIRAC/Setup', '' )
+  if setup:
+    instance = gConfig.getValue( '/DIRAC/Setups/%s/WorkloadManagement' % setup, '' )
+    if instance:
+      gridEnv = gConfig.getValue( '/Systems/WorkloadManagement/%s/GridEnv' % instance, '' )
+      
+  return gridEnv    
+
+def getPilotOutput( proxy, grid, pilotRef, pilotStamp='' ):
+  
+  if grid in ['LCG','gLite']:
+    return getWMSPilotOutput( proxy, grid, pilotRef )
+  elif grid == "CREAM":
+    return getCREAMPilotOutput( proxy, pilotRef, pilotStamp ) 
+  else:
+    return S_ERROR( 'Non-valid grid type %s' % grid )
+
+def getCREAMPilotOutput(proxy,pilotRef,pilotStamp):
+  """
+  """
+  gridEnv = getGridEnv()
+  tmpdir = mkdtemp()
+  result = ComputingElementFactory().getCE(ceName = 'CREAMSite',ceType = 'CREAM',
+                                       ceParametersDict = {'GridEnv':gridEnv,
+                                                           'Queue':'Qeuue',
+                                                           'OutputURL':"gsiftp://localhost",
+                                                           'WorkingDirectory':tmpdir})
+                                   
+  if not result['OK']:
+    shutil.rmtree(tmpdir)  
+    return result
+  ce = result['Value']
+  ce.reset()
+  ce.setProxy(proxy)
+  fullPilotRef = ":::".join([pilotRef,pilotStamp])
+  result = ce.getJobOutput( fullPilotRef )
+  shutil.rmtree(tmpdir)
+  if not result['OK']:
+    return S_ERROR( 'Failed to get pilot output: %s' % result['Message'] )
+  output, error = result['Value']  
+  fileList = outputSandboxFiles
+  result = S_OK()
+  result['FileList'] = fileList
+  result['StdOut'] = output
+  result['StdErr'] = error
+  return result
+
+def getWMSPilotOutput( proxy, grid, pilotRef ):
   """
    Get Output of a GRID job
   """
@@ -33,12 +85,7 @@ def getPilotOutput( proxy, grid, pilotRef ):
 
   cmd.extend( ['--noint', '--dir', tmp_dir, pilotRef] )
 
-  gridEnv = ''
-  setup = gConfig.getValue( '/DIRAC/Setup', '' )
-  if setup:
-    instance = gConfig.getValue( '/DIRAC/Setups/%s/WorkloadManagement' % setup, '' )
-    if instance:
-      gridEnv = gConfig.getValue( '/Systems/WorkloadManagement/%s/GridEnv' % instance, '' )
+  gridEnv = getGridEnv()
 
   ret = executeGridCommand( proxy, cmd, gridEnv )
   if not ret['OK']:
@@ -98,21 +145,15 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
    Get LoggingInfo of a GRID job
   """
   if grid == 'LCG':
-    cmd = [ 'edg-job-get-logging-info', '-v', '2' ]
+    cmd = [ 'edg-job-get-logging-info', '-v', '2','--noint', pilotRef ]
   elif grid == 'gLite':
-    cmd = [ 'glite-wms-job-logging-info', '-v', '3' ]
+    cmd = [ 'glite-wms-job-logging-info', '-v', '3','--noint', pilotRef ]
+  elif grid == 'CREAM':
+    cmd = [ 'glite-ce-job-status', '-L', '2', '%s' % pilotRef ]  
   else:
     return S_ERROR( 'Unknnown GRID %s' % grid )
 
-  cmd.extend( ['--noint', pilotRef] )
-
-  gridEnv = ''
-  setup = gConfig.getValue( '/DIRAC/Setup', '' )
-  if setup:
-    instance = gConfig.getValue( '/DIRAC/Setups/%s/WorkloadManagement' % setup, '' )
-    if instance:
-      gridEnv = gConfig.getValue( '/Systems/WorkloadManagement/%s/GridEnv' % instance, '' )
-
+  gridEnv =  getGridEnv()
   ret = executeGridCommand( proxy, cmd, gridEnv )
   if not ret['OK']:
     return ret
@@ -122,5 +163,4 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
     return S_ERROR( error )
 
   return S_OK( output )
-
 

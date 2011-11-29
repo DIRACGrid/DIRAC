@@ -90,7 +90,7 @@ class JobWrapper:
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
     self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
-    self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', 'LcgFileCatalogCombined' )
+    self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', [] )
     self.defaultFailoverSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-Failover', [] )
     self.defaultOutputPath = ''
     self.rm = ReplicaManager()
@@ -911,26 +911,24 @@ class JobWrapper:
        files if no path is specified.
     """
 
-    # A.T. Version using jobid with the last 3 digits stripped off for the
-    # extra subdirectory name in the LFN to avoid confuion with a poorly
-    # defined date
-
     if not re.search( '^LFN:', outputFile ):
       localfile = outputFile
       initial = self.owner[:1]
-      subdir = str( self.jobID / 1000 )
-      if outputPath:
-        # Add output Path if given
-        subdir = outputPath + '/' + subdir
       vo = getVOForGroup( self.userGroup )
       if not vo:
         vo = 'dirac'
       basePath = '/' + vo + '/user/' + initial + '/' + self.owner
-      finalPath = subdir + '/' + str( self.jobID ) + '/' + os.path.basename( localfile )
-      lfn = os.path.join( basePath, finalPath )
-      # lfn = '/' + vo + '/user/' + initial + '/' + self.owner + '/' + subdir + '/' + \
-      #       str( self.jobID ) + '/' + os.path.basename( localfile )
+      if outputPath:
+        # If output path is given, append it to the user path and put output files in this directory
+        if outputPath.startswith('/'):
+          outputPath = outputPath[1:]
+      else:  
+        # By default the output path is constructed from the job id 
+        subdir = str( self.jobID / 1000 )      
+        outputPath = subdir + '/' + str( self.jobID )
+      lfn = os.path.join( basePath, outputPath, os.path.basename( localfile ) )  
     else:
+      # if LFN is given, take it as it is
       localfile = os.path.basename( outputFile.replace( "LFN:", "" ) )
       lfn = outputFile.replace( "LFN:", "" )
 

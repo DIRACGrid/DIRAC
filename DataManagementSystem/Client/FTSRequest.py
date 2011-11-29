@@ -849,7 +849,9 @@ class FTSRequest:
     corruptTargetErrors = ['file exists',
                            'FILE_EXISTS',
                            'Device or resource busy',
-                           'Marking Space as Being Used failed']
+                           'Marking Space as Being Used failed',
+                           'Another prepareToPut/Update is ongoing for this file',
+                           'Requested file is still in SRM_SPACE_AVAILABLE state!' ]
     corruptedTarget = []
     for lfn in sortList( self.fileDict.keys() ):
       if self.fileDict[lfn].get( 'Status', '' ) == 'Failed':

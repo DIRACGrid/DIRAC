@@ -18,6 +18,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  cfgfile: DIRAC Cfg with description of the configuration (optional)' ] ) )
 
 Script.addDefaultOptionValue( '/DIRAC/Security/UseServerCertificate', 'yes' )
+Scrpit.addDefaultOptionValue( 'LogLevel', 'INFO' )
 Script.parseCommandLine()
 args = Script.getExtraCLICFGFiles()
 #
@@ -35,7 +36,7 @@ InstallTools.exitOnError = True
 result = InstallTools.setupSite( Script.localCfg, cfg )
 if not result['OK']:
   print "ERROR:", result['Message']
-  exit(-1)
+  exit( -1 )
 #
 result = InstallTools.getStartupComponentStatus( [] )
 if not result['OK']:

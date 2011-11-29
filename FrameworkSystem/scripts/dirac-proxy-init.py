@@ -30,7 +30,7 @@ class Params( ProxyGeneration.CLIParams ):
     self.uploadPilot = True
     return S_OK()
 
-  def addVOMSExt( self, arg ):
+  def setVOMSExt( self, arg ):
     self.addVOMSExt = True
     return S_OK()
 
@@ -38,7 +38,7 @@ class Params( ProxyGeneration.CLIParams ):
     ProxyGeneration.CLIParams.registerCLISwitches( self )
     Script.registerSwitch( "U", "upload", "Upload a long lived proxy to the ProxyManager", self.setUploadProxy )
     Script.registerSwitch( "P", "uploadPilot", "Upload a long lived pilot proxy to the ProxyManager", self.setUploadPilotProxy )
-    Script.registerSwitch( "M", "VOMS", "Add voms extension", self.addVOMSExt )
+    Script.registerSwitch( "M", "VOMS", "Add voms extension", self.setVOMSExt )
 
 class ProxyInit:
 
@@ -48,13 +48,6 @@ class ProxyInit:
     self.__proxyGenerated = False
     self.__uploadedInfo = {}
     self.__proxiesUploaded = []
-
-  def __checkParams( self ):
-    #Check if the proxy needs to be uploaded
-    if not self.__piParams.uploadProxy:
-      self.__piParams.uploadProxy = Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadProxy", False )
-    if self.__piParams.uploadProxy:
-      gLogger.verbose( "Proxy will be uploaded to ProxyManager" )
 
   def getIssuerCert( self ):
     if self.__issuerCert:
@@ -86,10 +79,15 @@ class ProxyInit:
       msg = "%s\n  %s  \n%s" % ( sep, msg, sep )
       gLogger.notice( msg )
 
-  def getPilotGroupsToUpload( self ):
-    pilotUpload = Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadPilotProxy", self.__piParams.uploadPilot )
-    if not pilotUpload:
-      return []
+  def getGroupsToUpload( self ):
+    uploadGroups = []
+
+    if self.__piParams.uploadProxy or Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadProxy", False ):
+      uploadGroups.append( self.__piParams.diracGroup )
+
+    if not self.__piParams.uploadPilot:
+      if not Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadPilotProxy", False ):
+        return uploadGroups
 
     issuerCert = self.getIssuerCert()
     userDN = issuerCert.getSubjectDN()[ 'Value' ]
@@ -104,25 +102,26 @@ class ProxyInit:
     for group in availableGroups:
       groupProps = Registry.getPropertiesForGroup( group )
       if Properties.PILOT in groupProps or Properties.GENERIC_PILOT in groupProps:
-        pilotGroups.append( group )
-    return pilotGroups
+        uploadGroups.append( group )
+    return uploadGroups
 
   def addVOMSExtIfNeeded( self ):
-    addVOMS = Registry.getGroupOption( self.__piParams.diracGroup, "AutoAddVOMS", self.__piParams.addVOMSExt )
+    addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption( self.__piParams.diracGroup, "AutoAddVOMS", False )
     if not addVOMS:
-      return
+      return S_OK()
 
     vomsAttr = Registry.getVOMSAttributeForGroup( self.__piParams.diracGroup )
     if not vomsAttr:
-      gLogger.error( "Requested adding a VOMS extension but no VOMS attribute defined for group %s" % self.__piParams.diracGroup )
-      return
+      return S_ERROR( "Requested adding a VOMS extension but no VOMS attribute defined for group %s" % self.__piParams.diracGroup )
 
-    result = VOMS.VOMS().setVOMSAttributes( vomsAttr, vo = Registry.getVOForGroup( self.__piParams.diracGroup ) )
+    result = VOMS.VOMS().setVOMSAttributes( self.__proxyGenerated, attribute = vomsAttr, vo = Registry.getVOForGroup( self.__piParams.diracGroup ) )
     if not result[ 'OK' ]:
-      gLogger.error( "Failed adding VOMS attribute:", result[ 'Message' ] )
-      return False
-    else:
-      gLogger.notice( "Added VOMS attribute %s" % vomsAttr )
+      return S_ERROR( "Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" % result[ 'Message' ] )
+
+    gLogger.notice( "Added VOMS attribute %s" % vomsAttr )
+    chain = result['Value']
+    chain.dumpAllToFile( self.__proxyGenerated )
+    return S_OK()
 
   def createProxy( self ):
     gLogger.notice( "Generating proxy..." )
@@ -182,6 +181,25 @@ class ProxyInit:
                                                   group.ljust( maxGroupLen ),
                                                   self.__uploadedInfo[ userDN ][ group ].strftime( "%Y/%m/%d %H:%M" ) ) )
 
+  def doTheMagic( self ):
+    result = self.createProxy()
+    if not result[ 'OK' ]:
+      return result
+
+    pI.certLifeTimeCheck()
+    result = pI.addVOMSExtIfNeeded()
+    if not result[ 'OK' ]:
+      gLogger.info( result[ 'Message' ] )
+      if self.__piParams.strict:
+        return result
+
+    for pilotGroup in pI.getGroupsToUpload():
+      result = pI.uploadProxy( userGroup = pilotGroup )
+      if not result[ 'OK' ]:
+        if self.__piParams.strict:
+          return result
+
+    return S_OK()
 
 
 if __name__ == "__main__":
@@ -193,28 +211,11 @@ if __name__ == "__main__":
   DIRAC.gConfig.setOptionValue( "/DIRAC/Security/UseServerCertificate", "False" )
 
   pI = ProxyInit( piParams )
-  result = pI.createProxy()
+  result = pI.doTheMagic()
   if not result[ 'OK' ]:
-    gLogger.error( result[ 'Message' ] )
+    gLogger.fatal( result[ 'Message' ] )
     sys.exit( 1 )
 
-  pI.certLifeTimeCheck()
-  pI.addVOMSExtIfNeeded()
-
-  if piParams.uploadProxy:
-    result = pI.uploadProxy()
-    if not result[ 'OK' ]:
-      gLogger.error( result[ 'Message' ] )
-      sys.exit( 1 )
-
-  for pilotGroup in pI.getPilotGroupsToUpload():
-    result = pI.uploadProxy( userGroup = pilotGroup )
-    if not result[ 'OK' ]:
-      gLogger.error( result[ 'Message' ] )
-      sys.exit( 1 )
-
   pI.printInfo()
-
-
 
   sys.exit( 0 )

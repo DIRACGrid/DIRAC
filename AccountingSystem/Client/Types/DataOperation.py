@@ -24,9 +24,9 @@ class DataOperation( BaseAccountingType ):
                                         ( 'RegistrationOK', 'INT UNSIGNED' ),
                                         ( 'RegistrationTotal', 'INT UNSIGNED' )
                                       ]
-    self.bucketsLength = [ ( 172800, 900 ), #<2d = 15m
-                           ( 604800, 3600 ), #<1w = 1h
-                           ( 15552000, 86400 ), #>1w <6m = 1d
+    self.bucketsLength = [ ( 86400 * 3, 900 ), #<3d = 15m
+                           ( 86400 * 8, 3600 ), #<1w+1d = 1h
+                           ( 15552000, 86400 ), #>1w+1d <6m = 1d
                            ( 31104000, 604800 ), #>6m = 1w
                          ]
     self.checkType()

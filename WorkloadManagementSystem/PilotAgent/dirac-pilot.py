@@ -43,7 +43,7 @@ except Exception, x:
 
 class CliParams:
 
-  MAX_CYCLES = 5
+  MAX_CYCLES = 100
 
   def __init__( self ):
     self.debug = False
@@ -318,13 +318,18 @@ if pilotRef != 'Unknown':
 ###
 #cliParams.ceName = 'Local'
 if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
-  if os.environ.has_key( 'OSG_APP' ):
-    retCode, CE = executeAndGetOutput( 'echo $OSG_HOSTNAME' )
-  else:
-    retCode, CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
+  retCode, CE = executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE' )
   if not retCode:
     cliParams.ceName = CE.split( ':' )[0]
-    if CE.count('/'):
+    if len( CE.split( '/' ) ) > 1:
+      cliParams.queueName = CE.split( '/' )[1]
+    configureOpts.append( '-N "%s"' % cliParams.ceName )
+  elif os.environ.has_key( 'OSG_JOB_CONTACT' ):
+    # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission 
+    #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
+    CE = os.environ['OSG_JOB_CONTACT']
+    cliParams.ceName = CE.split( '/' )[0]
+    if len( CE.split( '/' ) ) > 1:
       cliParams.queueName = CE.split( '/' )[1]
     configureOpts.append( '-N "%s"' % cliParams.ceName )
   else:
@@ -332,7 +337,7 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
 elif cliParams.flavour == "CREAM":
   if os.environ.has_key( 'CE_ID' ):
     cliParams.ceName = os.environ['CE_ID'].split( ':' )[0]
-    if os.environ['CE_ID'].count("/"):
+    if os.environ['CE_ID'].count( "/" ):
       cliParams.queueName = os.environ['CE_ID'].split( '/' )[1]
     configureOpts.append( '-N "%s"' % cliParams.ceName )
     #if cliParams.queueName:

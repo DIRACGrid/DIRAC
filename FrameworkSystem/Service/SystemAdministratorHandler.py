@@ -7,10 +7,10 @@ __RCSID__ = "$Id$"
 
 from types import *
 import os
-from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall
+from DIRAC import S_OK, S_ERROR, gConfig, shellCall, systemCall, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
-from DIRAC.Core.Utilities import InstallTools
+from DIRAC.Core.Utilities import InstallTools, CFG
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 
 cmDB = None
@@ -191,7 +191,7 @@ class SystemAdministratorHandler( RequestHandler ):
 # General purpose methods
 #
   types_updateSoftware = [ StringTypes ]
-  def export_updateSoftware( self, version, rootPath = "", gridVersion = "2010-11-20" ):
+  def export_updateSoftware( self, version, rootPath = "", gridVersion = "" ):
     """ Update the local DIRAC software installation to version
     """
 
@@ -278,6 +278,53 @@ class SystemAdministratorHandler( RequestHandler ):
         error.append( 'Failed to install Oracle client module' )
         return S_ERROR( '\n'.join( error ) )
     return S_OK()
+
+  def __loadDIRACCFG( self ):
+    installPath = gConfig.getValue( '/LocalInstallation/TargetPath',
+                                    gConfig.getValue( '/LocalInstallation/RootPath', '' ) )
+    if not installPath:
+      installPath = rootPath
+    cfgPath = os.path.join( installPath, 'etc', 'dirac.cfg' )
+    try:
+      diracCFG = CFG.CFG().loadFromFile( cfgPath )
+    except Exception, excp:
+      return S_ERROR( "Could not load dirac.cfg: %s" % str( excp ) )
+    #HACK: Remove me once the v6 migration hell is over
+    if diracCFG.isOption( "/LocalInstallation/ExtraPackages" ):
+      diracCFG[ "LocalInstallation" ].renameKey( "ExtraPackages", "ExtraModules" )
+      try:
+        fd = open( cfgPath, "w" )
+        fd.write( str( diracCFG ) )
+        fd.close()
+      except IOError, excp :
+        gLogger.warn( "Could not write dirac.cfg: %s" % str( excp ) )
+        pass
+    #EOH (End Of Hack)
+    return S_OK( ( cfgPath, diracCFG ) )
+
+  types_setProject = [ StringTypes ]
+  def export_setProject( self, projectName ):
+    result = self.__loadDIRACCFG()
+    if not result[ 'OK' ]:
+      return result
+    cfgPath, diracCFG = result[ 'Value' ]
+    gLogger.notice( "Setting project to %s" % projectName )
+    diracCFG.setOption( "/LocalInstallation/Project", projectName, "Project to install" )
+    try:
+      fd = open( cfgPath, "w" )
+      fd.write( str( diracCFG ) )
+      fd.close()
+    except IOError, excp :
+      return S_ERROR( "Could not write dirac.cfg: %s" % str( excp ) )
+    return S_OK()
+
+  types_getProject = []
+  def export_getProject( self ):
+    result = self.__loadDIRACCFG()
+    if not result[ 'OK' ]:
+      return result
+    cfgPath, diracCFG = result[ 'Value' ]
+    return S_OK( diracCFG.getOption( "/LocalInstallation/Project", "DIRAC" ) )
 
   types_addOptionToDiracCfg = [ StringTypes, StringTypes ]
   def export_addOptionToDiracCfg( self, option, value ):

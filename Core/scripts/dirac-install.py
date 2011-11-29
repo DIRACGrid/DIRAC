@@ -434,6 +434,13 @@ class ReleaseConfig:
       return S_OK( self.__projectTarLocation[ project ] )
     return S_ERROR( "Don't know how to find the installation tarballs for project %s" % project )
 
+  def getUploadCommand( self, project = False ):
+    if not project:
+      project = self.__projectName
+    defLoc = self.__globalDefaults.get( "Projects/%s/UploadCommand" % project, "" )
+    if defLoc:
+      return S_OK( defLoc )
+    return S_ERROR( "No UploadCommand for %s" % project )
 
   def __loadReleaseConfig( self, project, release, releaseMode, sourceURL = False, relLocation = False ):
     if project not in self.__prjRelCFG:
@@ -471,6 +478,14 @@ class ReleaseConfig:
   def getReleaseCFG( self, project, release ):
     return self.__prjRelCFG[ project ][ release ]
 
+  def dumpReleasesToPath( self, path ):
+    for project in self.__prjRelCFG:
+      prjRels = self.__prjRelCFG[ project ]
+      for release in prjRels:
+        self.__dbgMsg( "Dumping releases file for %s:%s" % ( project, release ) )
+        fd = open( os.path.join( cliParams.targetPath, "releases-%s-%s.cfg" % ( project, release ) ), "w" )
+        fd.write( prjRels[ release ].toString() )
+        fd.close()
 
   def __checkCircularDependencies( self, key, routePath = False ):
     if not routePath:
@@ -519,7 +534,7 @@ class ReleaseConfig:
       relDeps = self.__prjDepends[ project ][ release ]
 
       if not relCFG.getChild( "Releases/%s" % ( release ) ):
-        return S_ERROR( "Release %s is not defined for project %s in the release file" % ( project, release ) )
+        return S_ERROR( "Release %s is not defined for project %s in the release file" % ( release, project ) )
 
       initialDeps = self.getReleaseDependencies( project, release )
       if initialDeps:
@@ -647,10 +662,10 @@ class ReleaseConfig:
     except KeyError:
       return False
 
-  def getLCGVersion( self, lcgVersion = False ):
+  def getLCGVersion( self, lcgVersion = "" ):
     for objName in self.__projectsLoadedBy:
       try:
-        return self.__prjRelCFG[ objName ].get( "Releases/%s/LcgVer" % self.__depsLoaded[ objName ] )
+        return self.__prjRelCFG[ self.__projectName ][ cliParams.release ].get( "Releases/%s/LcgVer" % cliParams.release, lcgVersion )
       except KeyError:
         pass
     return lcgVersion
@@ -775,7 +790,7 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
       logERROR( "%s does not exist" % url )
       return False
   except Exception, x:
-    if x == 'TimeOut':
+    if x == 'Timeout':
       logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
     if timeout:
       signal.alarm( 0 )
@@ -930,7 +945,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'u:', 'baseURL=', "Use URL as the source for installation tarballs" ),
             ( 'd', 'debug', 'Show debug messages' ),
-            ( 'V:', 'installation=', 'Virtual Organization (deprecated, use -l or --project)' ),
+            ( 'V:', 'installation=', 'Installation from which to extract parameter values' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
             ( 'h', 'help', 'Show this help' ),
           )
@@ -987,14 +1002,19 @@ def loadConfiguration():
       else:
         logNOTICE( "Loaded %s" % arg )
 
-  for opName in ( 'release', 'externalsType', 'pythonVersion',
+  for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules' ):
+                  'project', 'release', 'extraModules', 'extensions' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
       continue
+    #Also react to Extensions as if they were extra modules
+    if opName == 'extensions':
+      opName = 'extraModules'
+    if opName == 'installType':
+      opName = 'externalsType'
     if type( getattr( cliParams, opName ) ) == types.StringType:
       setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
@@ -1159,6 +1179,8 @@ def createBashrc():
         lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
       if 'X509_CERT_DIR' in os.environ:
         lines.append( 'export X509_CERT_DIR=%s' % os.environ['X509_CERT_DIR'] )
+      elif not os.path.isdir( "/etc/grid-security/certificates" ):
+        lines.append( "[[ -d '%s/etc/grid-security/certificates' ]] && export X509_CERT_DIR='%s/etc/grid-security/certificates'" % ( proPath, proPath ) )
       lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
       lines.extend( ['# Some DIRAC locations',
                      'export DIRAC=%s' % proPath,
@@ -1175,6 +1197,7 @@ def createBashrc():
       lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
                      'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
+                     'export DYLD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
                      'export PYTHONPATH=$DIRAC'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )
@@ -1195,7 +1218,9 @@ def writeDefaultConfiguration():
   for opName in instCFG.getOptions():
     instCFG.delPath( opName )
 
-  filePath = os.path.join( cliParams.targetPath, "defaults-%s.cfg" % cliParams.installation )
+  # filePath = os.path.join( cliParams.targetPath, "defaults-%s.cfg" % cliParams.installation )
+  # Keep the default configuration file in the working directory
+  filePath = "defaults-%s.cfg" % cliParams.installation
   try:
     fd = open( filePath, "wb" )
     fd.write( instCFG.toString() )
@@ -1218,6 +1243,9 @@ if __name__ == "__main__":
       logERROR( result[ 'Message' ] )
       sys.exit( 1 )
     modsOrder, modsToInstall = result[ 'Value' ]
+    if cliParams.debug:
+      logNOTICE( "Writing down the releases files" )
+      releaseConfig.dumpReleasesToPath( cliParams.targetPath )
     logNOTICE( "Installing modules..." )
     for modName in modsOrder:
       tarsURL, modVersion = modsToInstall[ modName ]

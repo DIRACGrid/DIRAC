@@ -22,6 +22,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC                                             import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
+from DIRAC.Core.Security                               import Properties
 
 DEBUG = 0
 
@@ -75,13 +76,7 @@ class MatcherHandler( RequestHandler ):
     self.checkPilotVersion = self.getCSOption( "CheckPilotVersion", True )
     self.setup = gConfig.getValue( '/DIRAC/Setup', '' )
 
-  def selectJob( self, resourceDescription ):
-    """ Main job selection function to find the highest priority job
-        matching the resource capacity
-    """
-
-    startTime = time.time()
-
+  def __processResourceDescription( self, resourceDescription ):
     # Check and form the resource description dictionary
     resourceDict = {}
     if type( resourceDescription ) in StringTypes:
@@ -128,6 +123,22 @@ class MatcherHandler( RequestHandler ):
 
       if resourceDescription.has_key( 'VirtualOrganization' ):
         resourceDict['VirtualOrganization'] = resourceDescription['VirtualOrganization']
+
+    return resourceDict
+
+  def selectJob( self, resourceDescription ):
+    """ Main job selection function to find the highest priority job
+        matching the resource capacity
+    """
+
+    startTime = time.time()
+    resourceDict = self.__processResourceDescription( resourceDescription )
+
+    credDict = self.getRemoteCredentials()
+    #Check DNs
+    if Properties.GENERIC_PILOT not in credDict[ 'properties' ]:
+      if 'OwnerDN' in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
+        return S_ERROR( "You can only match jobs for your DN (%s)" % credDict[ 'DN' ] )
 
     # Check the pilot DIRAC version
     if self.checkPilotVersion:
@@ -268,29 +279,21 @@ class MatcherHandler( RequestHandler ):
     # Check if the site exceeding the given limits
     fields = limitDict.keys()
     for field in fields:
-      for key, value in limitDict[field]:
-        if int( value ) > 0:
-          result = gJobDB.getCounters( 'Jobs', ['Status'], {'Site':site, field:key} )
-          if not result['OK']:
-            return result
-          count = 0
-          if result['Value']:
-            for countDict, number in result['Value']:
-              if countDict['Status'] in ["Running", "Matched"]:
-                count += number
-          if count > value:
-            if not resultDict.has_key( field ):
-              resultDict[field] = []
-            resultDict[field].append( key )
-            gLogger.verbose( 'Job Limit imposed at %s on %s/%s/%d,'
-                             ' %d jobs already deployed' % ( site, field, key, value, count ) )
-        else:
-          if not resultDict.has_key( field ):
-            resultDict[field] = []
-          resultDict[field].append( key )
-          gLogger.verbose( 'Jobs prohibited at %s for %s/%s' % ( site, field, key ) )
-
+      result = gJobDB.getCounters( 'Jobs', [ field ], { 'Site' : site, 'Status' : [ 'Running', 'Matched' ] } )
+      if not result[ 'OK' ]:
+        return result
+      data = result[ 'Value' ]
+      data = dict( [ ( k[0][ field ], k[1] )  for k in data ] )
+      for value, limit in limitDict[ field ]:
+        running = data.get( value, 0 )
+        if running >= limit:
+          gLogger.verbose( 'Job Limit imposed at %s on %s/%s/%d,'
+                           ' %d jobs already deployed' % ( site, field, value, limit, running ) )
+          if field not in resultDict:
+            resultDict[ field ] = []
+          resultDict[ field ].append( value )
     return S_OK( resultDict )
+
 
 ##############################################################################
   types_requestJob = [ [StringType, DictType] ]
