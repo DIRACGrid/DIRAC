@@ -162,13 +162,13 @@ class DiracAdmin:
       self.log.warn( result['Message'] )
       return result
     sites = result['Value']
-    
-    result = gConfig.getSections('/Resources/Sites')
+
+    result = gConfig.getSections( '/Resources/Sites' )
     if not result['OK']:
       return result
     grids = result['Value']
     for grid in grids:
-      result = gConfig.getSections('/Resources/Sites/%s' % grid)
+      result = gConfig.getSections( '/Resources/Sites/%s' % grid )
       if not result['OK']:
         return result
       totalList += result['Value']
@@ -586,7 +586,7 @@ class DiracAdmin:
       fopen = open( stdout, 'w' )
       fopen.write( outputs['StdOut'] )
       fopen.close()
-      self.log.verbose( 'Standard output written to %s' % ( stdout ) )
+      self.log.info( 'Standard output written to %s' % ( stdout ) )
     else:
       self.log.warn( 'No standard output returned' )
 
@@ -595,11 +595,11 @@ class DiracAdmin:
       fopen = open( stderr, 'w' )
       fopen.write( outputs['StdErr'] )
       fopen.close()
-      self.log.verbose( 'Standard error written to %s' % ( stderr ) )
+      self.log.info( 'Standard error written to %s' % ( stderr ) )
     else:
       self.log.warn( 'No standard error returned' )
 
-    self.log.info( 'Outputs retrieved in %s' % outputPath )
+    self.log.notice( 'Outputs retrieved in %s' % outputPath )
     return result
 
   #############################################################################
