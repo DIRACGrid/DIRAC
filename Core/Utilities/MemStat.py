@@ -1,7 +1,10 @@
+import os
 def VmB( vmKey ):
   __memScale = {'kB': 1024.0, 'mB': 1024.0 * 1024.0, 'KB': 1024.0, 'MB': 1024.0 * 1024.0}
-  if vmKey not in __memScale:
-	return 0 
+  __vmKeys = [ 'VmPeak:', 'VmSize:', 'VmLck:', 'VmHWM:', 'VmRSS:', 'VmData:', 'VmStk:', 'VmExe:', 'VmLib:', 'VmPTE:',
+               'VmPeak', 'VmSize', 'VmLck', 'VmHWM', 'VmRSS', 'VmData', 'VmStk', 'VmExe', 'VmLib', 'VmPTE'  ]
+  if vmKey not in __vmKeys:
+    return 0
   procFile = '/proc/%d/status' % os.getpid()
    # get pseudo file  /proc/<pid>/status
   try:
