@@ -158,7 +158,13 @@ def generateProxy( params ):
 
   #Load password
   testChain = X509Chain()
-  retVal = testChain.loadKeyFromFile( keyLoc, password = params.userPasswd )
+  retVal = testChain.loadChainFromFile( params.certLoc )
+  if not retVal[ 'OK' ]:
+    return S_ERROR( "Cannot load certificate %s: %s" % ( params.certLoc, retVal[ 'Message' ] ) )
+  timeLeft = testChain.getRemainingSecs()[ 'Value' ] / 86400
+  if timeLeft < 30:
+    gLogger.notice( "\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft )
+  retVal = testChain.loadKeyFromFile( params.keyLoc, password = params.userPasswd )
   if not retVal[ 'OK' ]:
     passwdPrompt = "Enter Certificate password:"
     if params.stdinPasswd:
