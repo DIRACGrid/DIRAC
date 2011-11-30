@@ -28,7 +28,6 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   else:
     gridEnv = currentEnv
 
-  dumpedProxy = False
   if not proxy:
     res = getProxyInfo()
     if not res['OK']:

@@ -256,10 +256,9 @@ for o, v in optList:
   elif o in ( '-U', '--Upload' ):
     #TODO
     pass
-  elif o in ( '-V', '--VO' ):
-    configureOpts.append( '-V "%s"' % v )
-    #HACK while VO == project in dirac-install
+  elif o in ( '-V', '--installation' ):
     installOpts.append( '-V "%s"' % v )
+    configureOpts.append( 'defaults-%s.cfg' % v )
   elif o in ( '-W', '--gateway' ):
     configureOpts.append( '-W "%s"' % v )
   elif o == '-E' or o == '--server':
