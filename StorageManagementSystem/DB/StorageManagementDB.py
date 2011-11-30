@@ -983,8 +983,8 @@ class StorageManagementDB( DB ):
 
   def removeUnlinkedReplicas( self, connection = False ):
     """ This will remove Replicas from the CacheReplicas that are not associated to any Task.
-        If the Replica has been Staged, 
-          wait until StageRequest.PinExpiryTime and remove the StageRequest and CacheReplicas entries 
+        If the Replica has been Staged,
+          wait until StageRequest.PinExpiryTime and remove the StageRequest and CacheReplicas entries
         else
           remove the CacheReplicas entry
     """
@@ -1027,7 +1027,7 @@ class StorageManagementDB( DB ):
     if not replicaIDs:
       return S_OK()
 
-    # Now delete all CacheReplicas 
+    # Now delete all CacheReplicas
     reqSelect = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
     resSelect = self._query( reqSelect )
     if not resSelect['OK']:
@@ -1036,7 +1036,7 @@ class StorageManagementDB( DB ):
       for record in resSelect['Value']:
         gLogger.info( "%s.%s_DB: to_delete CacheReplicas =  %s" % ( self._caller(), 'removeUnlinkedReplicas', record ) )
 
-    req = "DELETE FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString( replicaIDs )
+    req = "DELETE FROM CacheReplicas WHERE ReplicaID IN (%s) AND Links= 0;" % intListToString( replicaIDs )
     res = self._update( req, connection )
     if res['OK']:
       gLogger.info( "%s.%s_DB: deleted CacheReplicas" % ( self._caller(), 'removeUnlinkedReplicas' ) )
