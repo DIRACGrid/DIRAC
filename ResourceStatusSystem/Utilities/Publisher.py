@@ -1,7 +1,6 @@
-########################################################################
+################################################################################
 # $HeadURL:  $
-########################################################################
-
+################################################################################
 __RCSID__ = "$Id:  $"
 
 import copy
@@ -20,8 +19,6 @@ class Publisher:
   """
   Class Publisher is in charge of getting dispersed information, to be published on the web.
   """
-
-#############################################################################
 
   def __init__(self, VOExtension, rsDBIn = None, commandCallerIn = None, infoGetterIn = None,
                WMSAdminIn = None):
@@ -79,7 +76,7 @@ class Publisher:
 
     self.infoForPanel_res = {}
 
-#############################################################################
+################################################################################
 
   def getInfo(self, granularity, name, useNewRes = False):
     """
@@ -192,13 +189,13 @@ class Publisher:
 
     return infoToGet_res
 
-#############################################################################
+################################################################################
 
   def getInfoForPanel(self, info, granularityForPanel, nameForPanel):
 
     #get single RSS policy results
     policyResToGet = info.keys()[0]
-    pol_res = self.rmDB.getPolicyRes(nameForPanel, policyResToGet)
+    pol_res = self.rmDB.getPolicyResult(nameForPanel, policyResToGet)
     if pol_res != []:
       pol_res_dict = {'Status' : pol_res[0], 'Reason' : pol_res[1]}
     else:
@@ -234,7 +231,7 @@ class Publisher:
     finally:
       self.lockObj.release()
 
-#############################################################################
+################################################################################
 
   def _getStatus(self, name, panel):
 
@@ -264,7 +261,7 @@ class Publisher:
 
     return status
 
-#############################################################################
+################################################################################
 
   def _getInfo(self, granularity, name, format_, what):
 
@@ -288,7 +285,7 @@ class Publisher:
 
     return info_bit_got
 
-#############################################################################
+################################################################################
 
   def _getInfoFromRSSDB(self, name, what):
 
@@ -378,13 +375,13 @@ class Publisher:
 
     return info_bit_got
 
-#############################################################################
+################################################################################
 
   def _getPolicyDesc(self, policyName):
 
     return self.configModule.Policies[policyName]['Description']
 
-#############################################################################
+################################################################################
 
   def __getNameForPanel(self, granularity, name, panel):
 
@@ -413,7 +410,7 @@ class Publisher:
 
     return (granularity, name)
 
-#############################################################################
+################################################################################
 
   def _resExist(self, granularity, name):
 
@@ -440,4 +437,15 @@ class Publisher:
     else:
       return True
 
-#############################################################################
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -9,7 +9,6 @@ import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
 import DIRAC.ResourceStatusSystem.test.fake_rmDB
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
@@ -19,14 +18,14 @@ class UtilitiesTestCase(unittest.TestCase):
   """
   def setUp(self):
 
-    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
-    sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceManagementDB"] = DIRAC.ResourceStatusSystem.test.fake_rmDB
-    sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
+    # sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    # sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
+    # sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceManagementDB"] = DIRAC.ResourceStatusSystem.test.fake_rmDB
+    # sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 
     from DIRAC import gConfig
 
@@ -265,23 +264,28 @@ class InfoGetterSuccess(UtilitiesTestCase):
 
             for resource_t in ValidResourceType:
 
-              res = ig.getInfoToApply(('policyType', ), g, s, None, site_t, service_t, resource_t)
+
+              ## Testing the policyType (__getPolTypes) part
+              res = ig.getInfoToApply(('policyType', ), g, None, s, None, site_t, service_t, resource_t)
               for p_res in res[0]['PolicyType']:
-                self.assert_(p_res in ['Resource_PolType', 'Alarm_PolType', 'Alarm_PolType_SE'])
+                self.assert_(p_res in CS.getTypedDictRootedAt("PolicyTypes").keys())
 
               for useNewRes in (False, True):
 
-                res = ig.getInfoToApply(('policy', ), g, s, None, site_t, service_t, resource_t, useNewRes)
-                pModuleList = [None]
+                ## Testing the policy (__getPolToEval) part
+                res = ig.getInfoToApply(('policy', ), g, None, s, None, site_t, service_t, resource_t, useNewRes)
+                pModuleList = []
+
                 for k in self.configModule.Policies.keys():
                   try:
                     if self.configModule.Policies[k]['module'] not in pModuleList:
                       pModuleList.append(self.configModule.Policies[k]['module'])
                   except KeyError:
                     pass
-                for p_res in res[0]['Policies']:
-                  self.assert_(p_res['Name'] in self.configModule.Policies.keys())
-                  self.assert_(p_res['Module'] in pModuleList)
+
+                for p_res in res[0]['Policies']: # All __getPolToEval results...
+                  self.assertTrue(p_res['Name'] in CS.getTypedDictRootedAt("Policies"))
+#                  self.assertTrue(p_res['Module'] in pModuleList)
                   if useNewRes is False:
                     self.assertEqual(p_res['commandIn'], self.configModule.Policies[p_res['Name']]['commandIn'])
                     self.assertEqual(p_res['args'], self.configModule.Policies[p_res['Name']]['args'])
@@ -295,7 +299,7 @@ class InfoGetterSuccess(UtilitiesTestCase):
                     except KeyError:
                       self.assertEqual(p_res['args'], self.configModule.Policies[p_res['Name']]['args'])
 
-                res = ig.getInfoToApply(('panel_info', ), g, s, None, site_t, service_t, resource_t, useNewRes)
+                res = ig.getInfoToApply(('panel_info', ), g, None, s, None, site_t, service_t, resource_t, useNewRes)
                 for p_res in res[0]['Info']:
 
 #                  if 'JobsEfficiencySimple' in p_res.keys():
@@ -351,30 +355,27 @@ class InfoGetterSuccess(UtilitiesTestCase):
 #############################################################################
 
 class SynchronizerSuccess(UtilitiesTestCase):
+  #def test__syncSites(self):
+  #  self.syncC._syncSites()
 
+  #def test__syncVOBOX(self):
+  #  self.syncC._syncVOBOX()
 
+  #def test__syncCondDBs(self):
+  #  self.syncC._syncCondDBs()
 
-  def test__syncUtils(self):
-    self.syncC._syncUtils()
+  #def test__syncResources(self):
+  #  self.syncC._syncResources()
 
-  def test__syncSites(self):
-    self.syncC._syncSites()
-
-  def test__syncVOBOX(self):
-    self.syncC._syncVOBOX()
-
-  def test__syncResources(self):
-    self.syncC._syncResources()
-
-  def test__syncStorageElements(self):
-    self.syncC._syncStorageElements()
+  #def test__syncStorageElements(self):
+  #  self.syncC._syncStorageElements()
 
 #############################################################################
 
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
+  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SynchronizerSuccess))
+  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SynchronizerSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

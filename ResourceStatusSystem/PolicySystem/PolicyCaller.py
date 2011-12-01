@@ -1,28 +1,30 @@
-"""
-    Module used for calling policies. Its class is used for invoking
-    real policies, based on the policy name
-"""
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
 
-from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
+"""
+  Module used for calling policies. Its class is used for invoking
+  real policies, based on the policy name
+"""
 
 class PolicyCaller:
 
-#############################################################################
-
-  def __init__(self, commandCallerIn = None):
-
+  def __init__( self, commandCallerIn = None, **clients ):
+    
     if commandCallerIn is not None:
       self.cc = commandCallerIn
     else:
       from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
       self.cc = CommandCaller()
 
-    self.policyInvoker = PolicyInvoker()
+    self.clients       = clients
 
-#############################################################################
+################################################################################
 
-  def policyInvocation(self, VOExtension, granularity = None, name = None, status = None, policy = None,
-                       args = None, pName = None, pModule = None, extraArgs = None, commandIn = None):
+  def policyInvocation( self, VOExtension = None, granularity = None, name = None, 
+                        status = None, policy = None, args = None, pName = None, 
+                        pModule = None, extraArgs = None, commandIn = None ):
     """
     Invokes a policy:
 
@@ -43,9 +45,10 @@ class PolicyCaller:
     p = policy
     a = args
 
-    moduleBase = VOExtension + "DIRAC.ResourceStatusSystem.Policy."
-
     if p is None:
+      
+      moduleBase = VOExtension + "DIRAC.ResourceStatusSystem.Policy."
+      
       try:
         module = moduleBase + pModule
         policyModule = __import__(module, globals(), locals(), ['*'])
@@ -68,28 +71,21 @@ class PolicyCaller:
         a = argsList
 
     if commandIn is not None:
-      commandIn = self.cc.setCommandObject(commandIn)
+      commandIn = self.cc.setCommandObject( commandIn )
+
+      for clientName, clientInstance in self.clients.items():
+        self.cc.setAPI( commandIn, clientName, clientInstance )
 
     res = self._innerEval(p, a, commandIn = commandIn)
-
+    # Just adding the PolicyName to the result of the evaluation of the policy
     res['PolicyName'] = pName
-
     return res
 
-
-#############################################################################
-
-  def _innerEval(self, p, a, commandIn = None, knownInfo = None):
-    """ policy evaluation
-    """
-
-    self.policyInvoker.setPolicy(p)
-
-    p.setArgs(a)
-    p.setCommand(commandIn)
-#    p.setInfoName('Result')
-
-    res = self.policyInvoker.evaluatePolicy()
-    return res
-
-#############################################################################
+  def _innerEval(self, policy, arguments, commandIn = None):
+    """Policy evaluation"""
+    policy.setArgs(arguments)
+    policy.setCommand(commandIn)
+    return policy.evaluate()
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
