@@ -48,6 +48,8 @@ def defaultCallback( task, ret ):
   log = gLogger.getSubLogger( "defaultCallback" )
   log.showHeaders( True )
   log.setLevel( "INFO" )
+
+  log.info("callback from task %s" % str(task) )
   if not ret["OK"]: 
     log.error( ret["Message"] )
     return
@@ -59,7 +61,6 @@ def defaultCallback( task, ret ):
         gMonitor.addMark( mark, value )
       except Exception, error:
         log.exception( str(error) )
-    
     
 def defaultExceptionCallback( task, exc_info ):
   """ default exception callbak, just printing to gLogger.exception
@@ -93,10 +94,8 @@ class RequestAgentBase( AgentModule ):
   __queueSize = 10
   ## placeholder for RequestClient instance
   __requestClient = None
-
   ## request type
   __requestType = ""
-
   ## placeholder for request task class definition 
   __requestTask = None
   ## placeholder for request callback function
@@ -116,13 +115,13 @@ class RequestAgentBase( AgentModule ):
     """
     AgentModule.__init__( self, agentName, baseAgentName, properties )
 
-    self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", 5 )
+    self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", 10 )
     self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
     self.__minProcess = self.am_getOption( "MinProcess", 2 )
     self.log.info("ProcessPool min process = %d" % self.__minProcess )
     self.__maxProcess = self.am_getOption( "MaxProcess", 4 )
     self.log.info("ProcessPool max process = %d" % self.__maxProcess )
-    self.__queueSize = self.am_getOption( "ProcessPoolQueueSize", 4 )
+    self.__queueSize = self.am_getOption( "ProcessPoolQueueSize", 10 )
     self.log.info("ProcessPool queue size = %d" % self.__queueSize )
     self.__requestType = self.am_getOption( "RequestType", None )
     self.log.info( "Will process '%s' request type." % str( self.__requestType ) )

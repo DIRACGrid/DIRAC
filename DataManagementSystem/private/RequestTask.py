@@ -185,6 +185,10 @@ class RequestTask( object ):
 
   @classmethod
   def monitor( cls ):
+    """ get monitoring dict
+
+    :param cls: class reference
+    """
     return cls.__monitor
 
   def makeGlobal( self, objName, objDef ):
@@ -200,7 +204,10 @@ class RequestTask( object ):
         __builtins__[objName] = objDef 
       else:
         setattr( __builtins__, objName, objDef )
-        
+      self.debug("Symbol %s of a type %s has been added to __builtins__" % ( objName, str(type(objDef)) ) )
+    else:
+      self.debug("Symbol %s is already defined in __builtins__" % objName )
+    
   def requestType( self ):
     """ get request type
 
@@ -347,7 +354,7 @@ class RequestTask( object ):
 
     ################################################################
     ## get ownerDN and ownerGroup
-    requestObj = self.requestObj 
+    #requestObj = self.requestObj 
     ownerDN = self.requestObj.getAttibute( "OwnerDN" )
     if not ownerDN["OK"]:
       return ownerDN
@@ -469,6 +476,6 @@ class RequestTask( object ):
     self.addMark( "Done", 1 )
 
     ## should  return S_OK with monitor dict
-    return S_OK( { "monitor" : self.__monitor } )
+    return S_OK( { "monitor" : self.monitor() } )
 
  

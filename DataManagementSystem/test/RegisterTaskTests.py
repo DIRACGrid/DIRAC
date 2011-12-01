@@ -42,8 +42,6 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 ReplicaManager = Mock(spec=ReplicaManager)
 from DIRAC.DataManagementSystem.Agent.RegisterTask import RegisterTask
 
-
-
 def getRegisterRequest( ):
   """ helper fcn to build request
   """
@@ -84,10 +82,10 @@ def getRegisterRequest( ):
   requestContainer.setSubRequestFiles( 0, "register", files )
 
   return { "OK" : True,
-           "Value" : { "RequestName" : "11889410.xml",
-                       "RequestString" : requestContainer.toXML()["Value"],
-                       "JobID" : 11889410,
-                       "RequestContainer" : requestContainer } }
+           "Value" : { "requestName" : "11889410.xml",
+                       "requestString" : requestContainer.toXML()["Value"],
+                       "jobID" : 11889410,
+                       "configPath" : "" }
 
 ########################################################################
 class RegisterTaskTests(unittest.TestCase):
@@ -101,8 +99,6 @@ class RegisterTaskTests(unittest.TestCase):
 
     :param self: self reference
     """
-    
-
     self.registerTask = RegisterTask( )
     self.registerTask.__replicaManager = Mock(spec=ReplicaManager)
 
