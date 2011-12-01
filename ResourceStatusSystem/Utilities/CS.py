@@ -143,20 +143,23 @@ def getLFCNode( sites = Utils.unpack(getLFCSites()),
 
 # Storage Elements functions ########
 
-def getHostByToken(space_token):
-  return gConfig.getValue('%s/StorageElements/%s/AccessProtocol.1/Host'
-                          % (g_BaseResourcesSection, space_token), "")
-
-def getSpaceTokens():
+def getSEs():
   return gConfig.getSections("/Resources/StorageElements")
 
-def getStorageElementStatus(SE, accessType):
+def getSEHost(SE):
+  return gConfig.getValue('%s/StorageElements/%s/AccessProtocol.1/Host'
+                          % (g_BaseResourcesSection, SE), "")
+
+def getSENodes():
+  nodes = [getSEHost(SE) for SE in getSEs()]
+  return S_OK([n for n in nodes if n != ""])
+
+def getSEStatus(SE, accessType):
   return gConfig.getValue("%s/StorageElements/%s/%s" %
                            (g_BaseResourcesSection, SE, accessType), "")
 
-def getSENodes():
-  nodes = [getHostByToken(tok) for tok in getSpaceTokens()]
-  return S_OK([n for n in nodes if n != ""])
+def getSEToken(SE):
+  return gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken", "")
 
 # CE functions ######################
 

@@ -73,7 +73,7 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI):
 
     elif granularity == 'StorageElement':
 
-      presentReadStatus = CS.getStorageElementStatus( name, 'ReadAccess')
+      presentReadStatus = CS.getSEStatus( name, 'ReadAccess')
 
       if res['Status'] == 'Banned':
 

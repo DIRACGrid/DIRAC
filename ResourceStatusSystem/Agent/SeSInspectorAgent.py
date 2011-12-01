@@ -114,7 +114,7 @@ class SeSInspectorAgent( AgentModule ):
   def _executeCheck( self, _arg ):
 
     # Init the APIs beforehand, and reuse them.
-    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'SLSClient' ]
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
     clients = knownAPIs.initAPIs( __APIs__, {} )
 
     pep = PEP( clients = clients )

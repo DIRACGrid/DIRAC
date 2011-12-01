@@ -204,7 +204,7 @@ class Synchronizer(object):
   def _syncStorageElements( self ):
 
     # Get StorageElements from the CS and the DB
-    CSSEs = CS.getSpaceTokens()
+    CSSEs = CS.getSEs()
     DBSEs = set((s[0] for s in Utils.unpack(self.rsClient.getStorageElement())))
 
     # Remove storageElements that are in DB but not in CS
@@ -214,7 +214,7 @@ class Synchronizer(object):
     # Add new storage elements
     print "Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs))
     for SE in CSSEs - DBSEs:
-      srm = Utils.unpack(CS.getHostByToken( SE ))
+      srm = Utils.unpack(CS.getSEHost( SE ))
       if not srm:
         print "Warning! %s has no srm URL in CS!!!" % SE
         continue
