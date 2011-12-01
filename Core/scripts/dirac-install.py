@@ -259,7 +259,7 @@ class ReleaseConfig:
 
   def __init__( self, instName = 'DIRAC', projectName = 'DIRAC' ):
     self.__globalDefaults = ReleaseConfig.CFG()
-    self.__loadedCfgs = set()
+    self.__loadedCfgs = []
     self.__prjDepends = {}
     self.__prjRelCFG = {}
     self.__projectsLoadedBy = {}
@@ -398,7 +398,7 @@ class ReleaseConfig:
       cfg = result[ 'Value' ]
       self.__globalDefaults.update( basePath, cfg )
 
-    self.__loadedCfgs.add( basePath )
+    self.__loadedCfgs.append( basePath )
     return S_OK( self.__globalDefaults.getChild( basePath ) )
 
 
