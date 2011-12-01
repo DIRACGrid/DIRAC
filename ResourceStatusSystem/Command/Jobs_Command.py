@@ -1,16 +1,26 @@
-""" The Jobs_Command class is a command class to know about 
-    present jobs efficiency
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The Jobs_Command class is a command class to know about 
+  present jobs efficiency
 """
 
-from DIRAC import gLogger
+from DIRAC                                           import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.Command      import *
+from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
-#############################################################################
+################################################################################
+################################################################################
 
 class JobsStats_Command(Command):
+  
+  __APIs__ = [ 'JobsClient' ]
   
   def doCommand(self):
     """ 
@@ -26,14 +36,12 @@ class JobsStats_Command(Command):
       'MeanProcessedJobs': X
     }
     """
+
     super(JobsStats_Command, self).doCommand()
-    
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
-      self.client = JobsClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
       
     try:
-      res = self.client.getJobsStats(self.args[0], self.args[1], self.args[2])
+      res = self.APIs[ 'JobsClient' ].getJobsStats(self.args[0], self.args[1], self.args[2])
     except:
       gLogger.exception("Exception when calling JobsClient for %s %s" %(self.args[0], self.args[1]))
       return {'Result':'Unknown'}
@@ -42,9 +50,12 @@ class JobsStats_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class JobsEff_Command(Command):
+
+  __APIs__ = [ 'JobsClient' ]  
   
   def doCommand(self):
     """ 
@@ -60,24 +71,24 @@ class JobsEff_Command(Command):
         'JobsEff': X
       }
     """
+    
     super(JobsEff_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
-      self.client = JobsClient()
-      
     try:
-      res = self.client.getJobsEff(self.args[0], self.args[1], self.args[2])
+      res = self.APIs[ 'JobsClient' ].getJobsEff(self.args[0], self.args[1], self.args[2])
     except:
       gLogger.exception("Exception when calling JobsClient")
       return {'Result':'Unknown'}
     
     return {'Result':res}
 
-
-#############################################################################
+################################################################################
+################################################################################
 
 class SystemCharge_Command(Command):
+  
+  __APIs__ = [ 'JobsClient' ]
   
   def doCommand(self):
     """ Returns last hour system charge, and the system charge of an hour before
@@ -88,14 +99,12 @@ class SystemCharge_Command(Command):
             'anHourBefore': n_anHourBefore
           }
     """
+    
     super(SystemCharge_Command, self).doCommand()
-
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
-      self.client = JobsClient()
-      
+    self.APIs = initAPIs( self.__APIs__, self.APIs ) 
+     
     try:
-      res = self.client.getSystemCharge()
+      res = self.APIs[ 'JobsClient' ].getSystemCharge()
     except:
       gLogger.exception("Exception when calling JobsClient")
       return {'Result':'Unknown'}
@@ -104,11 +113,14 @@ class SystemCharge_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class JobsEffSimple_Command(Command):
   
-  def doCommand(self, RSClientIn = None):
+  __APIs__ = [ 'ResourceStatusClient', 'JobsClient' ]
+  
+  def doCommand(self ):
     """ 
     Returns simple jobs efficiency
 
@@ -122,32 +134,25 @@ class JobsEffSimple_Command(Command):
         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
+    
     super (JobsEffSimple_Command, self).doCommand()
-
-    if self.args[0] in ('Service', 'Services'):
-      if RSClientIn is not None:
-        rsc = RSClientIn
-      else:
-        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-        rsc = ResourceStatusClient()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    
+    if self.args[0] == 'Service':
       try:
-        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
       except:
         gLogger.error("JobsEffSimple_Command: Can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
       granularity = 'Site'
-    elif self.args[0] in ('Site', 'Sites'):
+    elif self.args[0] == 'Site':
       name = self.args[1]
       granularity = self.args[0]
     else:
       raise InvalidRes, where(self, self.doCommand)
-    
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
-      self.client = JobsClient()
-      
+         
     try:
-      res = self.client.getJobsSimpleEff(name, timeout = self.timeout)
+      res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( name )#, timeout = self.timeout)
       if res == None:
         return {'Result':'Idle'}
     except:
@@ -158,9 +163,12 @@ class JobsEffSimple_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class JobsEffSimpleCached_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
   
   def doCommand(self):
     """ 
@@ -176,33 +184,34 @@ class JobsEffSimpleCached_Command(Command):
         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
+    
     super(JobsEffSimpleCached_Command, self).doCommand()
-
-    client = self.client
-
-    if client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
       
-    if self.args[0] in ('Service', 'Services'):
+    if self.args[0] == 'Service':
       try:
-        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
+        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )['Value'][0]
       except:
         gLogger.error("JobsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
       granularity = 'Site'
-    elif self.args[0] in ('Site', 'Sites'):
+    elif self.args[0] == 'Site':
       name = self.args[1]
       granularity = self.args[0]
     else:
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      if client is None:  
-        from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-        self.client = ResourceManagementClient(timeout = self.timeout)
       
-      res = self.client.getCachedResult(name, 'JobsEffSimpleEveryOne', 'JE_S', 'NULL')['Value']
+      clientDict = { 
+                     'name'        : name,
+                     'commandName' : 'JobsEffSimpleEveryOne',
+                     'value'       : 'JE_S',
+                     'opt_ID'      : 'NULL',
+                     'meta'        : { 'columns'     : 'Result' }
+                   }
+      
+      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if res == None:
         return {'Result':'Idle'}
       if res == []:
@@ -215,4 +224,5 @@ class JobsEffSimpleCached_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

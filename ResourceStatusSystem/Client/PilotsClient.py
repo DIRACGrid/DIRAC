@@ -1,156 +1,73 @@
-""" PilotsClient class is a client for to get pilots stats.
-"""
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getGOCSiteName
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
-from DIRAC.ResourceStatusSystem                      import ValidRes
 
-class PilotsClient:
+class PilotsClient( object ):
+  """ 
+  PilotsClient class is a client to get pilots stats.
+  """
 
-#############################################################################
-
-  def getPilotsStats(self, granularity, name, periods):
+  def __init__( self ):
+    self.gate = PrivatePilotsClient()
+    
+  def getPilotsSimpleEff( self, granularity, name, siteName = None, 
+                          RPCWMSAdmin = None  ):  
     """
-    Return pilot stats
-
-    :Parameters:
-      `granularity`
-        string - should be a ValidRes
-
-      `name`
-        string - should be the name of the ValidRes
-
-      `periods`
-        list - contains the periods to consider in the query
-
-    :return:
-      {
-        'MeanProcessedPilots': X'
-
-        'LastProcessedPilots': X'
-      }
-    """
-
-    if granularity.capitalize() not in ValidRes:
-      raise InvalidRes, where(self, self.getPilotsStats)
-
-    if granularity == 'Site':
-      entity = getGOCSiteName(name)
-      if not entity['OK']:
-        raise RSSException, entity['Message']
-      entity = entity['Value']
-      _granularity = 'Site'
-    else:
-      entity = name
-      _granularity = 'GridCE'
-
-    #######TODO
-#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots',
-#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2),
-#                                                 datetime.datetime.utcnow(), {granularity:[entity]},
-#                                                 'GridStatus')
-#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots',
-#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2),
-#                                                 datetime.datetime.utcnow(), {granularity:[entity]},
-#                                                 'GridStatus')
-#
-#    for x in numberOfPilots['Value']['data'].itervalues():
-#      total = 0
-#      for y in x.values():
-#        total = total+y
-#
-#    print r
-
-
-#############################################################################
-#
-#  def getPilotsEff(self, granularity, name, periods):
-#    """
-#    Return pilot stats of entity in args for periods
-#
-#    :Parameters:
-#      `granularity`
-#        string - should be a ValidRes
-#
-#      `name`
-#        string - should be the name of the ValidRes
-#
-#      `name`
-#        list - periods contains the periods to consider in the query
-#
-#    :return:
-#      {
-#        'PilotsEff': X (0-1)'
-#      }
-#    """
-#
-#    if granularity == 'Site':
-#      entity = getSiteRealName(name)
-#      _granularity = 'Site'
-#    else:
-##      entity = name
-#      granularity = 'GridCE'
-#
-    #######TODO
-#    numberOfPilots = self.rc.getReport('Pilot', 'NumberOfPilots',
-#                                       datetime.datetime.utcnow()-datetime.timedelta(hours = 24),
-#                                       datetime.datetime.utcnow(), {self._granularity:[self_entity]},
-#                                       'GridStatus')
-
-
-#############################################################################
-
-
-  def getPilotsSimpleEff(self, granularity, name, siteName = None,
-                         RPCWMSAdmin = None, timeout = None):
-    """
+    
     Return pilots simple efficiency of entity in args for periods
-
+    
     :Parameters:
-      `granularity`
-        string - should be a ValidRes (Site or Resource)
-
-      `name`
-        string or list - names of the ValidRes
-
-      `siteName`
-        string - optional site name, in case granularity is `Resource`
-
-      `RPCWMSAdmin`
-        RPCClient to RPCWMSAdmin
-
-    :return:
-      {
-      'PilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-      }
+      **granularity** - `string`
+        should be a ValidRes (Site or Resource)
+      **name** - `string || list` 
+        name(s) of the ValidRes 
+      **siteName** - `[,string]`
+        optional site name, in case granularity is `Resource` 
+      **RPCWMSAdmin** - `[,RPCClient]`
+        RPCClient to WMSAdmin
+        
+    :return: { PilotsEff : Good | Fair | Poor | Idle | Bad }
+      
     """
+    return self.gate.getPilotsSimpleEff( granularity, name, siteName = siteName, 
+                                         RPCWMSAdmin = RPCWMSAdmin )
+
+################################################################################
+
+class PrivatePilotsClient( object ):
+
+  def getPilotsSimpleEff( self, granularity, name, siteName = None, 
+                          RPCWMSAdmin = None ):
 
     if RPCWMSAdmin is not None:
       RPC = RPCWMSAdmin
     else:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient("WorkloadManagement/WMSAdministrator", timeout = timeout)
+      RPC = RPCClient( "WorkloadManagement/WMSAdministrator" )
 
-    if granularity in ('Site', 'Sites'):
-      res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,300)
-    elif granularity in ('Resource', 'Resources'):
+    if granularity == 'Site':
+      res = RPC.getPilotSummaryWeb( { 'GridSite' : name }, [], 0, 300 )
+    elif granularity == 'Resource':
       if siteName is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-        rsc = ResourceStatusClient()
-        siteName = rsc.getGeneralName(granularity, name, 'Site')
+        rsClient = ResourceStatusClient()
+        siteName = rsClient.getGeneralName( granularity, name, 'Site' )
         if not siteName[ 'OK' ]:
           raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
         if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
           return {}
         siteName = siteName['Value']
 
-      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
+      res = RPC.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 50 )
     else:
-      raise InvalidRes, where(self, self.getPilotsSimpleEff)
+      raise InvalidRes, where( self, self.getPilotsSimpleEff )
 
     if not res['OK']:
-      raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message']
+      raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res['Message']
     else:
       res = res['Value']['Records']
 
@@ -160,7 +77,7 @@ class PilotsClient:
     effRes = {}
 
     try:
-      if granularity in ('Site', 'Sites'):
+      if granularity == 'Site':
         for r in res:
           name = r[0]
           try:
@@ -169,7 +86,7 @@ class PilotsClient:
             eff = 'Idle'
           effRes[name] = eff
 
-      elif granularity in ('Resource', 'Resources'):
+      elif granularity == 'Resource':
         eff = None
         for r in res:
           if r[1] == name:
@@ -184,5 +101,6 @@ class PilotsClient:
 
     except IndexError:
       return {}
-
-#############################################################################
+         
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

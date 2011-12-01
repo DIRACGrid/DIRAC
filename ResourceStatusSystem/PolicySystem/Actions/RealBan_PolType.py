@@ -1,7 +1,11 @@
-"""
-RealBan_PolType Actions
-"""
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
 
+"""
+  RealBan_PolType Actions
+"""
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, \
     getStorageElementStatus, getOperationMails
@@ -12,12 +16,13 @@ import time
 # FIXME: Get rid of this very temporary hack. ##
 class DummyObj(object):
   enforce = None
+################################################################################
 
 def where(_a, _b):
   return "Module RealBan_PolType"
 self = DummyObj()
-################################################
 
+################################################################################
 
 def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
   # implement real ban
@@ -124,3 +129,6 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
           sendMail = da.sendMail(address,subject,body)
           if not sendMail['OK']:
             raise RSSException, where(self, self.enforce) + sendMail['Message']
+   
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF          

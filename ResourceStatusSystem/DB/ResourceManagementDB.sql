@@ -19,33 +19,28 @@ FLUSH PRIVILEGES;
 
 USE ResourceManagementDB;
 
-DROP TABLE IF EXISTS Status;
-CREATE TABLE Status(
-  Status VARCHAR(8) NOT NULL,
-  Description BLOB,
-  PRIMARY KEY(Status)
-) Engine=InnoDB;
-
-DROP TABLE IF EXISTS PolicyRes;
-CREATE TABLE PolicyRes(
-  prID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS PolicyResult;
+CREATE TABLE PolicyResult(
+  PolicyResultID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   Granularity VARCHAR(32) NOT NULL,
   Name VARCHAR(64) NOT NULL,
   INDEX (Name),
   PolicyName VARCHAR(64) NOT NULL,
   INDEX (PolicyName),
+  StatusType VARCHAR(16) NOT NULL DEFAULT '',
+  INDEX (StatusType),
   Status VARCHAR(8) NOT NULL,
   Index(Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
   DateEffective DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
-  FOREIGN KEY (Status) REFERENCES Status(Status),
-  PRIMARY KEY(prID)
+  UNIQUE KEY( Name, StatusType, PolicyName ),
+  PRIMARY KEY(PolicyResultID)
 ) Engine=InnoDB;
 
-DROP TABLE IF EXISTS ClientsCache;
-CREATE TABLE ClientsCache(
-  ccID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS ClientCache;
+CREATE TABLE ClientCache(
+  ClientCacheID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   Name VARCHAR(64) NOT NULL,
   INDEX (Name),
   CommandName VARCHAR(64) NOT NULL,
@@ -55,12 +50,13 @@ CREATE TABLE ClientsCache(
   Result VARCHAR(255) NOT NULL,
   DateEffective DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
-  PRIMARY KEY(ccID)
+  UNIQUE KEY( Name, CommandName, Value ),
+  PRIMARY KEY( ClientCacheID )
 ) Engine=InnoDB;
 
 DROP TABLE IF EXISTS AccountingCache;
 CREATE TABLE AccountingCache(
-  acID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  AccountingCacheID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   Name VARCHAR(64) NOT NULL,
   INDEX (Name),
   PlotType VARCHAR(16) NOT NULL,
@@ -69,25 +65,24 @@ CREATE TABLE AccountingCache(
   Result TEXT NOT NULL,
   DateEffective DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
-  PRIMARY KEY(acID)
+  UNIQUE KEY( Name, PlotType, PlotName ),
+  PRIMARY KEY(AccountingCacheID)
 ) Engine=InnoDB;
-
 
 DROP TABLE IF EXISTS EnvironmentCache;
 CREATE TABLE EnvironmentCache(
-  Hash VARCHAR(128) NOT NULL,
-  INDEX (Hash),
+  HashEnv VARCHAR(128) NOT NULL,
+  INDEX ( HashEnv ),
   SiteName VARCHAR(64) NOT NULL,
-  INDEX (SiteName),
-  DateEffective DATETIME NOT NULL,
+  INDEX ( SiteName ),
   Environment BLOB,
-  PRIMARY KEY(Hash)
+  PRIMARY KEY( HashEnv, SiteName )
 ) Engine=InnoDB;
 
 DROP TABLE IF EXISTS UserRegistryCache;
 CREATE TABLE UserRegistryCache(
-  login VARCHAR(16),
-  name VARCHAR(64) NOT NULL,
-  email VARCHAR(64) UNIQUE NOT NULL,
-  PRIMARY KEY(login)
+  Login VARCHAR(16),
+  Name VARCHAR(64) NOT NULL,
+  Email VARCHAR(64) NOT NULL,
+  PRIMARY KEY( Login )
 ) Engine=InnoDB;

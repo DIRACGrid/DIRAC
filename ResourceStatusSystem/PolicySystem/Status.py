@@ -1,3 +1,8 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import id_fun
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus
 from DIRAC.ResourceStatusSystem                      import ValidStatus
@@ -9,6 +14,8 @@ statesInfo = {
   'Active'  : (3, set(), id_fun)
   }
 
+################################################################################
+
 def value_of_status(s):
   try:
     return int(s)
@@ -18,8 +25,12 @@ def value_of_status(s):
     except KeyError:
       raise InvalidStatus
 
+################################################################################
+
 def value_of_policy(p):
   return value_of_status(p['Status'])
+
+################################################################################
 
 def status_of_value(v):
   # Hack: rely on the order of values in ValidStatus
@@ -27,3 +38,16 @@ def status_of_value(v):
     return ValidStatus[v]
   except IndexError:
     raise InvalidStatus
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
