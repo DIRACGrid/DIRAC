@@ -155,25 +155,15 @@ class Synchronizer(object):
     # All CEs in CS now
     CEInCS = Utils.set_sanitize([CE for celist in CEinCS.values() for CE in celist])
 
-    # All SEs in CS now
-    SEInCS = CS.getSpaceTokens()
-
     # All SE Nodes in CS now
-    SENodeInCS = Utils.set_sanitize([Utils.unpack(CS.getSENodes( SE )) for SE in SEInCS])
+    SENodeInCS = set(Utils.unpack(CS.getSENodes()))
 
     # LFC Nodes in CS now
-    LFCSites = Utils.unpack(CS.getLFCSites())
-    sitesRO = [(s, "ReadOnly") for s in LFCSites]
-    sitesRW = [(s, "ReadWrite") for s in LFCSites]
-    LFCNodesRO = Utils.set_sanitize([Utils.unpack(CS.getLFCNode(*s)) for s in sitesRO])
-    LFCNodesRW = Utils.set_sanitize([Utils.unpack(CS.getLFCNode(*s)) for s in sitesRW])
-    LFCNodeInCS_L = set((e[0] for e in LFCNodesRO))
-    LFCNodeInCS_C = set((e[0] for e in LFCNodesRW))
+    LFCNodeInCS_L = set(Utils.unpack(CS.getLFCNode(readable = "ReadOnly")))
+    LFCNodeInCS_C = set(Utils.unpack(CS.getLFCNode(readable = "ReadWrite")))
 
     # FTS Nodes in CS now
-    FTSNodeInCS = Utils.unpack(CS.getFTSSites())
-    FTSNodeInCS = Utils.set_sanitize([Utils.unpack(CS.getFTSEndpoint(site)) for site in FTSNodeInCS])
-    FTSNodeInCS = set((e[0] for e in FTSNodeInCS))
+    FTSNodeInCS = set([v.split("/")[2][0:-5] for v in CS.getTypedDictRootedAt(root="/Resources/FTSEndpoints").values()])
 
     # VOMS Nodes in CS now
     VOMSNodeInCS = set(Utils.unpack(CS.getVOMSEndpoints()))
@@ -224,8 +214,8 @@ class Synchronizer(object):
     # Add new storage elements
     print "Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs))
     for SE in CSSEs - DBSEs:
-      srm = Utils.unpack(CS.getSENodes( SE ))
-      if srm == None:
+      srm = Utils.unpack(CS.getHostByToken( SE ))
+      if not srm:
         print "Warning! %s has no srm URL in CS!!!" % SE
         continue
       siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))

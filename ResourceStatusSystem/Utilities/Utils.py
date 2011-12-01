@@ -3,6 +3,7 @@
 """
 
 from DIRAC import gConfig
+import collections
 
 #############################################################################
 # useful functions
@@ -159,7 +160,6 @@ def protect2(f, *args, **kw):
 # (Duck) type checking
 
 def isiterable(obj):
-  import collections
   return isinstance(obj,collections.Iterable)
 
 # Type conversion

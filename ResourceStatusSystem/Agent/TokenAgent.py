@@ -6,15 +6,15 @@ AGENT_NAME = 'ResourceStatus/TokenAgent'
 
 import datetime
 
-from DIRAC                                             import S_OK, S_ERROR
-from DIRAC                                             import gLogger
-from DIRAC.Core.Base.AgentModule                       import AgentModule
-from DIRAC.FrameworkSystem.Client.NotificationClient   import NotificationClient
+from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC                                                      import gLogger
+from DIRAC.Core.Base.AgentModule                                import AgentModule
+from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
 
-from DIRAC.ResourceStatusSystem                        import ValidRes
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient  import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Utilities.CS           import getMailForUser
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP       import PDP
+from DIRAC.ResourceStatusSystem                                 import ValidRes
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
 
 class TokenAgent( AgentModule ):
   """
@@ -33,6 +33,7 @@ class TokenAgent( AgentModule ):
 
     try:
       self.rsClient = ResourceStatusClient()
+      self.rmClient = ResourceManagementClient()
       self.nc       = NotificationClient()
 
       return S_OK()
@@ -125,10 +126,11 @@ class TokenAgent( AgentModule ):
           mailMessage += policyMessage
           adminMail   += policyMessage
 
-          self.nc.sendMail( getMailForUser( user )[ 'Value' ][ 0 ],
+          self.nc.sendMail( self.rmClient.getUserRegistryCache( user )[ 2 ],
                             'Token for %s is expiring' % name, mailMessage )
       if adminMail != '':
-        self.nc.sendMail( getMailForUser( 'ubeda' )[ 'Value' ][ 0 ],
+        #FIXME: 'ubeda' is not generic ;p
+        self.nc.sendMail( self.rmClient.getUserRegistryCache( 'ubeda' )[ 2 ],
                             "Token's summary", adminMail )
 
       return S_OK()
