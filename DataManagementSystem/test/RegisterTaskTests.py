@@ -37,23 +37,29 @@ from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 RequestDBMySQL = Mock(spec=RequestDBMySQL)
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 RequestClient = Mock(spec=RequestClient)
+from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
+DataLoggingClient = Mock(spec=DataLoggingClient)
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 ReplicaManager = Mock(spec=ReplicaManager)
-from DIRAC.DataManagementSystem.Agent.RegisterTask import RegisterTask
+from DIRAC.DataManagementSystem.Agent.RegistrationTask import RegistrationTask
+
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
+gProxyManager = Mock( spec=gProxyManager.__class__ )
 
 def getRegisterRequest( ):
   """ helper fcn to build request
   """
   requestContainer = RequestContainer( init = False )
   requestContainer.setJobID( 11889410 )
-  requestContainer.setOwnerDN( "/C=UK/O=eScience/OU=Imperial/L=Physics/CN=christopher blanks" )
+  #requestContainer.setOwnerDN( "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba" )
   requestContainer.setOwnerGroup( "lhcb_user" )
   requestContainer.setDIRACSetup( "LHCb-Production" )
   requestContainer.setSourceComponent( None )
   requestContainer.setCreationTime( "0000-00-00 00:00:00" )
   requestContainer.setLastUpdate( "2011-02-19 04:57:02" )
   requestContainer.setStatus( "Waiting" )
+  
 
   requestContainer.initiateSubRequest( "register" )
   subRequestDict = { "Status" : "Waiting", 
@@ -81,11 +87,12 @@ def getRegisterRequest( ):
 
   requestContainer.setSubRequestFiles( 0, "register", files )
 
-  return { "OK" : True,
-           "Value" : { "requestName" : "11889410.xml",
-                       "requestString" : requestContainer.toXML()["Value"],
-                       "jobID" : 11889410,
-                       "configPath" : "" }
+  return { "requestName" : "11889410.xml",
+           "requestString" : requestContainer.toXML()["Value"],
+           "jobID" : 11889410,
+           "executionOrder" : 0,
+           "sourceServer" : "foobarserver",
+           "configPath" : "/Systems/DataManagement/Development/Agents/RegistrationAgent" }
 
 ########################################################################
 class RegisterTaskTests(unittest.TestCase):
@@ -99,27 +106,30 @@ class RegisterTaskTests(unittest.TestCase):
 
     :param self: self reference
     """
-    self.registerTask = RegisterTask( )
-    self.registerTask.__replicaManager = Mock(spec=ReplicaManager)
+    kwargs = getRegisterRequest()
 
-    self.registerTask.__requestClient = Mock(spec=RequestClient)
-    self.registerTask.__requestClient().getRequest = Mock()
-    self.registerTask.__requestClient().getRequest.return_value = getRegisterRequest()
-    
-    self.registerTask.__requestClient().finalizeRequest = Mock()
-    self.registerTask.__requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
+    self.registerTask = RegistrationTask( **kwargs )
+   
+    self.registerTask.dataLoggingClient = Mock( return_value = Mock(spec = DataLoggingClient ) )
+    self.registerTask.dataLoggingClient().addFileRecord = Mock()
+    self.registerTask.dataLoggingClient().addFileRecord.return_value = { "OK" : True, "Value" : "" }
 
+    self.registerTask.requestClient = Mock( return_value = Mock(spec=RequestClient) ) 
 
-    self.registerTask.__replicaManager().registerFiles = Mock()
-    self.registerTask.__replicaManager().registerFiles.return_value = { "OK" : True,
-                                                                        "Value" : 
-                                                                        { "Failed" : {},
-                                                                          "Succesfull" : { "/lhcb/user/c/cblanks/11889/11889410/LDSB.rsQrRL" : True } } }
+    self.registerTask.requestClient().updateRequest = Mock()
+    self.registerTask.requestClient().updateRequest.return_value = { "OK" : True, "Value" : None }
 
+    self.registerTask.requestClient().finalizeRequest = Mock()
+    self.registerTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
+    self.registerTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
+    self.registerTask.replicaManager().registerFile = Mock()
+    self.registerTask.replicaManager().registerFile.return_value =  { "OK" : True,
+                                                                    "Value" : 
+                                                                    { "Failed" : {},
+                                                                      "Succesfull" : { "/lhcb/user/c/cblanks/11889/11889410/LDSB.rsQrRL" : True } } } 
 
-  def test_01_ctor( self ):
-
+  def test_01_call( self ):
     ret = self.registerTask.__call__()
     print ret
 

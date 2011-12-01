@@ -38,7 +38,7 @@ class RegistrationTask( RequestTask ):
 
     :param self: self reference
     """
-    RequestTask.__init__( self, args, *kwargs )
+    RequestTask.__init__( self, *args, **kwargs )
     self.setRequestType( "register" )
     self.addOperationAction( "registerFile", self.registerFile )
 
@@ -51,6 +51,8 @@ class RegistrationTask( RequestTask ):
     :param subRequestAttrs: SubRequest attributes
     :param subRequestFiles: subRequest files
     """
+    self.always( "Processing subrequest %d registerFile" % index )
+
     ## list of targetSE
     targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") ] ) )
     if not targetSEs:
@@ -77,9 +79,11 @@ class RegistrationTask( RequestTask ):
       size = subRequestFile.get( "Size", 0 ) 
       guid = subRequestFile.get( "GUID", "" ) 
       addler = subRequestFile.get( "Addler", "" ) 
-      fileTuple = ( lfn, pfn, size, guid, addler )
+
       for targetSE in targetSEs:
+        fileTuple = ( lfn, pfn, size, targetSE, guid, addler )
         res = self.replicaManager().registerFile( fileTuple, catalogue )
+        
         if not res["OK"] or lfn in res["Value"]["Failed"]:
           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationTask" )
           reason = res["Message"] if not res["OK"] else "registration in ReplicaManager failed"

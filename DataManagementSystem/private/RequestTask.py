@@ -135,6 +135,7 @@ class RequestTask( object ):
     ## DIRAC fixtures
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
     self.__log = gLogger.getSubLogger( self.__class__.__name__ )
+
     self.always = self.__log.always
     self.notice = self.__log.notice
     self.info = self.__log.info
@@ -152,13 +153,17 @@ class RequestTask( object ):
     self.makeGlobal( "S_ERROR", S_ERROR )
     self.makeGlobal( "gLogger", gLogger )
     self.makeGlobal( "gConfig", gConfig )
-    self.makeGlobal( "gProxyMannager", gProxyManager ) 
+    self.makeGlobal( "gProxyManager", gProxyManager ) 
+    
+  
     
     ## save request string
     self.requestString = requestString
     ## build request object
     from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-    self.requestObj = RequestContainer( request = self.requestString )
+    self.requestObj = RequestContainer( init = False )
+    self.requestObj.parseRequest( request = self.requestString )
+    
     self.requestName = requestName
     self.jobID = jobID
     self.executionOrder = executionOrder
@@ -204,9 +209,9 @@ class RequestTask( object ):
         __builtins__[objName] = objDef 
       else:
         setattr( __builtins__, objName, objDef )
-      self.debug("Symbol %s of a type %s has been added to __builtins__" % ( objName, str(type(objDef)) ) )
-    else:
-      self.debug("Symbol %s is already defined in __builtins__" % objName )
+      return True
+    
+
     
   def requestType( self ):
     """ get request type
@@ -350,16 +355,15 @@ class RequestTask( object ):
     :param str requestType: request type 
     :return: S_OK/S_ERROR
     """
-    gLogger.always("executing request %s" % self.requestName )
+    self.always("executing request %s" % self.requestName )
 
     ################################################################
     ## get ownerDN and ownerGroup
-    #requestObj = self.requestObj 
-    ownerDN = self.requestObj.getAttibute( "OwnerDN" )
+    ownerDN = self.requestObj.getAttribute( "OwnerDN" )
     if not ownerDN["OK"]:
       return ownerDN
     ownerDN = ownerDN["Value"]
-    ownerGroup = self.requestObj.getAttibute( "OwnerGroup" )
+    ownerGroup = self.requestObj.getAttribute( "OwnerGroup" )
     if not ownerGroup["OK"]:
       return ownerGroup
     ownerGroup = ownerGroup["Value"]
@@ -371,6 +375,9 @@ class RequestTask( object ):
       ownerProxyFile = self.changeProxy( ownerDN, ownerGroup )
       if not ownerProxyFile["OK"]:
         return ownerProxyFile
+      ownerProxyFile = ownerProxyFile["Value"]
+      self.info( "Will execute request for '%s'@'%s' using proxy file %s" % ( ownerDN, ownerGroup, ownerProxyFile ) )
+
     #################################################################
     ## execute handlers
     try:
@@ -403,7 +410,6 @@ class RequestTask( object ):
     self.addMark( "Execute", 1 )
     ## process sub requests
     for index in range( res["Value"] ):
-      gMonitor.addMark( "Execute", 1 )
       self.info( "handleRequest: Processing SubRequest %s." % str(index) )
       subRequestAttrs = self.requestObj.getSubRequestAttributes( index, self.__requestType )["Value"]
       if subRequestAttrs["ExecutionOrder"]:
@@ -429,7 +435,6 @@ class RequestTask( object ):
           if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
             self.info("Subrequest is empty, will set its status to 'Done'")
             self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
-            gMonitor.addMark( "Done", 1 )
             continue
           ## get files
           subRequestFiles = self.requestObj.getSubRequestFiles( index, self.__requestType )["Value"]          
@@ -457,6 +462,7 @@ class RequestTask( object ):
                 self.warn("SubRequest %s is not done yet, request finalisation is disabled" % str(index) )
                 canFinalize = False
       
+
     ################################################
     #  Generate the new request string after operation
     newRequestString = self.requestObj.toXML()['Value']
