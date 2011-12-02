@@ -1,6 +1,6 @@
 class InfoGetter( object ):
 
-  def __init__( self, VOExtension ):
+  def __init__( self ):
     pass
 
   def getInfoToApply( self, args, granularity, statusType = None, status = None,
