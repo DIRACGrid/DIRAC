@@ -239,7 +239,6 @@ def set_sanitize(l):
   except TypeError:
     return [i for i in l if i]
 
-
 # Dict utils
 
 def dictMatch(dict1, dict2):
@@ -310,85 +309,3 @@ def xml_append(doc, tag, value_=None, elt_=None, **kw):
     return elt_.appendChild(new_elt)
   else:
     return doc.documentElement.appendChild(new_elt)
-
-# SQL Utils
-# These module generate ad-hoc SQL queries given a table and kwargs
-# WARNING: Not SQL injection free!!! Use at your own risk.
-
-class SQLParam(str):
-  pass
-
-class SQLValues(object):
-  null = SQLParam("NULL")
-  now  = SQLParam("NOW()")
-
-def sql_protect(f):
-  """Protect from SQL injections"""
-  def sql_protect_string(s):
-    if not s.isalnum(): raise ValueError
-    return s
-  def sql_protect_list(l):
-    return [sql_protect_string(s) for s in l]
-  def sql_protect_dict(d):
-    for k in d:
-      if not (k.isalnum() and d[k].isalnum()): raise ValueError
-    return d
-  try:
-    return sql_protect_string(f)
-  except AttributeError:
-    if type(f) == list: return sql_protect_list(f)
-    if type(f) == dict: return sql_protect_dict(f)
-    else:               return ValueError, "Argument has to be a string, a dict or a list."
-
-def sql_normalize(f):
-  """Tranform a python value into a MySQL value to be used in a SQL
-  statement."""
-  def normalize_str(f):
-    return str(f) if type(f) != str else "'"+f+"'"
-  def normalize_assoclist(l):
-    return [(a, normalize_str(b)) for (a, b) in l]
-  def normalize_dict(d):
-    return dict(normalize_assoclist(d.items()))
-
-  try:
-    return normalize_dict(f)
-  except AttributeError:
-    if type(f) == str:  return normalize_str(f)
-    if type(f) == list: return normalize_assoclist(f)
-    else:               raise ValueError, "Argument has to be a string, a dict or a list."
-
-def sql_update_(table, kw):
-  if kw == {}: return ""
-  kw = sql_normalize(kw)
-  res = "UPDATE %s SET " % table
-  res += ", ".join([("%s=%s" % (a, b)) for (a, b) in kw.items()])
-  return res
-
-def sql_update(table, **kw):
-  """Generate a SQL UPDATE query. Uses the table name and a dict for
-  specifying the values to update.
-  """
-  return sql_update_(table, kw)
-
-def sql_insert_(table, kw):
-  if kw == {}: return ""
-  kw = sql_normalize(kw)
-  res = "INSERT INTO %s " % table
-  res += "(" + ", ".join(kw.keys()) + ") "
-  res += "VALUES (" + ", ".join(kw.values()) + ")"
-  return res
-
-def sql_insert(table, **kw):
-  return sql_insert_(table, kw)
-
-def sql_insert_update_(table, keys, kw):
-  if type(keys) != list:
-    raise TypeError, "keys argument has to be a list"
-  res1 = sql_insert_(table, kw)
-  kw = sql_normalize(kw)
-  kw_without_keys = [("%s=%s" % (a, b)) for (a, b) in kw.items() if a not in keys]
-  res2 = " ON DUPLICATE KEY UPDATE " + ", ".join(kw_without_keys)
-  return res1 + res2
-
-def sql_insert_update(table, keys, **kw):
-  return sql_insert_update_(table, keys, kw)
