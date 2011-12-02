@@ -1,34 +1,29 @@
+################################################################################
+# $HeadURL $
+################################################################################
 """
-    Module used for calling policies. Its class is used for invoking
-    real policies, based on the policy name
+  Module used for calling policies. Its class is used for invoking
+  real policies, based on the policy name
 """
-
-from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
+from DIRAC import gLogger
+from DIRAC.ResourceStatusSystem.Utilities             import Utils
+from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
 
 class PolicyCaller:
+  def __init__( self, commandCallerIn = None, **clients ):
+    self.cc      = commandCallerIn if commandCallerIn != None else CommandCaller()
+    self.clients = clients
 
-#############################################################################
+################################################################################
 
-  def __init__(self, commandCallerIn = None):
-
-    if commandCallerIn is not None:
-      self.cc = commandCallerIn
-    else:
-      from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
-      self.cc = CommandCaller()
-
-    self.policyInvoker = PolicyInvoker()
-
-#############################################################################
-
-  def policyInvocation(self, VOExtension, granularity = None, name = None, status = None, policy = None,
-                       args = None, pName = None, pModule = None, extraArgs = None, commandIn = None):
+  def policyInvocation( self, granularity = None, name = None,
+                        status = None, policy = None, args = None, pName = None,
+                        pModule = None, extraArgs = None, commandIn = None ):
     """
     Invokes a policy:
 
-    1. If :attr:`policy` is not None, import the right policy module,
-    specified with :attr:`VOExtension` (e.g.: 'LHCb') and
-    :attr:`pModule` (e.g. 'DT_Policy').
+    1. If :attr:`policy` is None, import the policy module specified
+    with :attr:`pModule` (e.g. 'DT_Policy').
 
       1.1. Create a policy object.
 
@@ -43,53 +38,41 @@ class PolicyCaller:
     p = policy
     a = args
 
-    moduleBase = VOExtension + "DIRAC.ResourceStatusSystem.Policy."
-
-    if p is None:
+    if not p:
       try:
-        module = moduleBase + pModule
-        policyModule = __import__(module, globals(), locals(), ['*'])
+        policyModule = Utils.voimport("DIRAC.ResourceStatusSystem.Policy." + pModule)
       except ImportError:
+        gLogger.warn("Unable to import a policy module named %s, falling back on AlwaysFalse_Policy." % pModule)
+        policyModule = __import__("DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy",
+                                  globals(), locals(), ['*'])
         pModule = "AlwaysFalse_Policy"
-        module = moduleBase + pModule
-        policyModule = __import__(module, globals(), locals(), ['*'])
-      p = getattr(policyModule, pModule)()
+      try:
+        p = getattr(policyModule, pModule)()
+      except AttributeError as exc:
+        print policyModule, pModule
+        raise exc
 
-    if a is None:
+    if not a:
       a = (granularity, name)
 
-    if extraArgs is not None:
-      if isinstance(extraArgs, tuple):
-        a = a + extraArgs
-      elif isinstance(extraArgs, list):
-        argsList = []
-        for argsTuple in extraArgs:
-          argsList.append(a + argsTuple)
-        a = argsList
+    if extraArgs:
+      a = a + tuple(extraArgs)
 
-    if commandIn is not None:
-      commandIn = self.cc.setCommandObject(commandIn)
+    if commandIn:
+      commandIn = self.cc.setCommandObject( commandIn )
+      for clientName, clientInstance in self.clients.items():
+        self.cc.setAPI( commandIn, clientName, clientInstance )
 
     res = self._innerEval(p, a, commandIn = commandIn)
-
+    # Just adding the PolicyName to the result of the evaluation of the policy
     res['PolicyName'] = pName
-
     return res
 
+  def _innerEval(self, policy, arguments, commandIn = None):
+    """Policy evaluation"""
+    policy.setArgs(arguments)
+    policy.setCommand(commandIn)
+    return policy.evaluate()
 
-#############################################################################
-
-  def _innerEval(self, p, a, commandIn = None, knownInfo = None):
-    """ policy evaluation
-    """
-
-    self.policyInvoker.setPolicy(p)
-
-    p.setArgs(a)
-    p.setCommand(commandIn)
-#    p.setInfoName('Result')
-
-    res = self.policyInvoker.evaluatePolicy()
-    return res
-
-#############################################################################
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

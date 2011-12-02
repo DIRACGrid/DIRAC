@@ -1,7 +1,6 @@
-########################################################################
+################################################################################
 # $HeadURL:  $
-########################################################################
-
+################################################################################
 __RCSID__ = "$Id:  $"
 
 import copy
@@ -14,23 +13,15 @@ class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations
   """
 
-#############################################################################
-
-  def __init__(self, VOExtension):
-    """
-    Standard constructor
-
-    :params:
-      :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
-    """
-
-    configModule    = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations", VOExtension)
+  def __init__(self):
+    configModule    = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations")
     self.C_Policies = copy.deepcopy(configModule.Policies)
 
-#############################################################################
+################################################################################
 
-  def getInfoToApply(self, args, granularity, status = None, formerStatus = None,
-                     siteType = None, serviceType = None, resourceType = None, useNewRes = False):
+  def getInfoToApply( self, args, granularity, statusType = None, status = None,
+                      formerStatus = None, siteType = None, serviceType = None,
+                      resourceType = None, useNewRes = False ):
     """ Main method. Use internal methods to parse information regarding:
         policies to be applied, policy types, panel and view info.
 
@@ -53,15 +44,16 @@ class InfoGetter:
     EVAL = {}
 
     if 'policy' in args:
-      EVAL['Policies'] = self.__getPolToEval( granularity = granularity, status = status,
-                                              formerStatus = formerStatus, siteType = siteType,
-                                              serviceType = serviceType, resourceType = resourceType,
-                                              useNewRes = useNewRes)
+      EVAL['Policies'] = self.__getPolToEval( granularity = granularity, statusType = statusType,
+                                              status = status, formerStatus = formerStatus,
+                                              siteType = siteType, serviceType = serviceType,
+                                              resourceType = resourceType, useNewRes = useNewRes)
 
     if 'policyType' in args:
-      EVAL['PolicyType'] = self.__getPolTypes(granularity = granularity, status = status,
-                                              formerStatus = formerStatus, siteType = siteType,
-                                              serviceType = serviceType, resourceType = resourceType)
+      EVAL['PolicyType'] = self.__getPolTypes( granularity = granularity, statusType = statusType,
+                                               status = status, formerStatus = formerStatus,
+                                               siteType = siteType, serviceType = serviceType,
+                                               resourceType = resourceType)
 
     if 'panel_info' in args:
       if granularity in ('Site', 'Sites'):
@@ -81,10 +73,11 @@ class InfoGetter:
         info = 'SE_Panel'
       elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
         info = 'SE_Panel'
-      EVAL['Info'] = self.__getPanelsInfo(granularity = granularity, status = status,
-                                          formerStatus = formerStatus, siteType = siteType,
-                                          serviceType = serviceType, resourceType = resourceType,
-                                          panel_name = info, useNewRes = useNewRes)
+      EVAL['Info'] = self.__getPanelsInfo( granularity = granularity, statusType = statusType,
+                                           status = status, formerStatus = formerStatus,
+                                           siteType = siteType, serviceType = serviceType,
+                                           resourceType = resourceType, panel_name = info,
+                                           useNewRes = useNewRes )
 
     if 'view_info' in args:
       panels_info_dict = {}
@@ -94,44 +87,38 @@ class InfoGetter:
 
       view_panels = self.__getViewPanels(granularity)
       for panel in view_panels:
-        panel_info = self.__getPanelsInfo(granularity = granularity, status = status,
-                                          formerStatus = formerStatus, siteType = siteType,
-                                          serviceType = serviceType, resourceType = resourceType,
-                                          panel_name = panel, useNewRes = useNewRes)
+        panel_info = self.__getPanelsInfo( granularity = granularity, statusType = statusType,
+                                           status = status, formerStatus = formerStatus,
+                                           siteType = siteType, serviceType = serviceType,
+                                           resourceType = resourceType, panel_name = panel,
+                                           useNewRes = useNewRes )
         panels_info_dict[panel] = panel_info
 
       EVAL['Panels'] = panels_info_dict
 
-    return [EVAL]
+    return EVAL
 
+################################################################################
 
-#############################################################################
-
-  def getNewPolicyType(self, granularity, newStatus):
-    return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
-
-#############################################################################
-
-  def __getPolToEval(self, granularity, status=None, formerStatus=None, siteType=None,
-                     serviceType=None, resourceType=None, useNewRes=False):
+  def __getPolToEval( self, granularity, statusType = None, status=None,
+                      formerStatus=None, siteType=None, serviceType=None,
+                      resourceType=None, useNewRes=False ):
+    """Returns a possibly empty list of dicts, each dict containing
+    enough information to evaluate a given policy"""
 
     # This dict is constructed to be used with function dictMatch that
     # helps selecting policies. **kwargs are not used due to the fact
     # that it's too dangerous here.
-    argsdict = {'Granularity': granularity,
-                'Status': status,
-                'FormerStatus': formerStatus,
-                'SiteType': siteType,
-                'ServiceType': serviceType,
-                'ResourceType': resourceType}
+    argsdict = { 'Granularity'  : granularity,
+                 'StatusType'   : statusType,
+                 'Status'       : status,
+                 'FormerStatus' : formerStatus,
+                 'SiteType'     : siteType,
+                 'ServiceType'  : serviceType,
+                 'ResourceType' : resourceType }
 
     pConfig = getTypedDictRootedAt("Policies")
-    pol_to_eval = []
-
-    for p in pConfig:
-      if Utils.dictMatch(argsdict, pConfig[p]):
-        pol_to_eval.append(p)
-
+    pol_to_eval = (p for p in pConfig if Utils.dictMatch(argsdict, pConfig[p]))
     polToEval_Args = []
 
     for p in pol_to_eval:
@@ -163,54 +150,49 @@ class InfoGetter:
 
     return polToEval_Args
 
+################################################################################
 
-#############################################################################
-
-  def __getPolTypes(self, granularity, status=None, formerStatus=None, newStatus=None,
-                    siteType=None, serviceType=None, resourceType=None):
+  def __getPolTypes( self, granularity, statusType=None, status=None,
+                     formerStatus=None, newStatus=None, siteType=None,
+                     serviceType=None, resourceType=None ):
     """Get Policy Types from config that match the given keyword
-    arguments"""
+    arguments. Always returns a generator object, possibly empty."""
 
     # This dict is constructed to be used with function dictMatch that
     # helps selecting policies. **kwargs are not used due to the fact
     # that it's too dangerous here.
-    argsdict = {'Granularity': granularity,
-                'Status': status,
-                'FormerStatus': formerStatus,
-                'NewStatus': newStatus,
-                'SiteType': siteType,
-                'ServiceType': serviceType,
-                'ResourceType': resourceType}
+    argsdict = {'Granularity'  : granularity,
+                'StatusType'   : statusType,
+                'Status'       : status,
+                'FormerStatus' : formerStatus,
+                'NewStatus'    : newStatus,
+                'SiteType'     : siteType,
+                'ServiceType'  : serviceType,
+                'ResourceType' : resourceType }
 
     pTconfig = getTypedDictRootedAt("PolicyTypes")
+    return (pt for pt in pTconfig if Utils.dictMatch(argsdict, pTconfig[pt]))
 
-    pTypes = []
+  def getNewPolicyType(self, granularity, newStatus):
+    return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
 
-    for pt in pTconfig:
-      if Utils.dictMatch(argsdict, pTconfig[pt]):
-        pTypes.append(pt)
+################################################################################
 
-    for pt_name in pTypes:
-      if 'Alarm_PolType' in pt_name:
-        pTypes.remove(pt_name)
-        pTypes.append('Alarm_PolType')
-
-    return pTypes
-
-#############################################################################
-
-  def __getPanelsInfo(self, granularity, status = None, formerStatus = None, siteType = None,
-                      serviceType = None, resourceType = None, panel_name = None, useNewRes = False):
+  def __getPanelsInfo( self, granularity, statusType = None, status = None,
+                       formerStatus = None, siteType = None, serviceType = None,
+                       resourceType = None, panel_name = None, useNewRes = False ):
 
     info = []
 
     # First, select only policies we want.
-    argsdict = {'Granularity': granularity,
-                'Status': status,
-                'FormerStatus': formerStatus,
-                'SiteType': siteType,
-                'ServiceType': serviceType,
-                'ResourceType': resourceType}
+    argsdict = {'Granularity'  : granularity,
+                'StatusType'   : statusType,
+                'Status'       : status,
+                'FormerStatus' : formerStatus,
+                'SiteType'     : siteType,
+                'ServiceType'  : serviceType,
+                'ResourceType' : resourceType}
+
 
     all_policies = getTypedDictRootedAt("Policies")
     selected_policies = []
@@ -255,11 +237,22 @@ class InfoGetter:
 
     return info
 
-#############################################################################
+################################################################################
 
-  def __getViewPanels(self, granularity):
+  def __getViewPanels( self, granularity ):
     if granularity is None:
       granularity = 'Site'
     return views_panels[granularity]
 
-#############################################################################
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

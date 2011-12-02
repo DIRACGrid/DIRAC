@@ -1,26 +1,28 @@
+################################################################################
+# $HeadURL $
+################################################################################
 """
-RealBan_PolType Actions
+  RealBan_PolType Actions
 """
-
-
-from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, \
-    getStorageElementStatus, getOperationMails
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-
 import time
+
+from DIRAC.ResourceStatusSystem.Utilities            import CS
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 # FIXME: Get rid of this very temporary hack. ##
 class DummyObj(object):
   enforce = None
+################################################################################
 
 def where(_a, _b):
   return "Module RealBan_PolType"
 self = DummyObj()
-################################################
 
+################################################################################
 
-def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
+def RealBanPolTypeActions(granularity, name, res, da, csAPI):
   # implement real ban
+  setup = CS.getSetup()
 
   if res['Action']:
 
@@ -32,7 +34,6 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
       else:
         banList = banList['Value']
 
-
       if res['Status'] == 'Banned':
 
         if name not in banList:
@@ -40,7 +41,7 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
           if not banSite['OK']:
             raise RSSException, where(self, self.enforce) + banSite['Message']
           if 'Production' in setup:
-            address = getOperationMails('Production')['Value']
+            address = getOperationMails('Production')
           else:
             address = 'fstagni@cern.ch'
 
@@ -58,7 +59,7 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
           if not addSite['OK']:
             raise RSSException, where(self, self.enforce) + addSite['Message']
           if setup == 'LHCb-Production':
-            address = getOperationMails('Production')['Value']
+            address = CS.getOperationMails('Production')
           else:
             address = 'fstagni@cern.ch'
 
@@ -72,7 +73,7 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
 
     elif granularity == 'StorageElement':
 
-      presentReadStatus = getStorageElementStatus( name, 'ReadAccess')['Value']
+      presentReadStatus = CS.getSEStatus( name, 'ReadAccess')
 
       if res['Status'] == 'Banned':
 
@@ -87,7 +88,7 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
           if not commit['OK']:
             raise RSSException, where(self, self.enforce) + commit['Message']
           if 'Production' in setup:
-            address = getSetup()['Value']
+            address = CS.getOperationMails('Production')
           else:
             address = 'fstagni@cern.ch'
 
@@ -113,7 +114,7 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
           if not commit['OK']:
             raise RSSException, where(self, self.enforce) + commit['Message']
           if setup == 'LHCb-Production':
-            address = getSetup()['Value']
+            address = CS.getOperationMails('Production')
           else:
             address = 'fstagni@cern.ch'
 
@@ -124,3 +125,6 @@ def RealBanPolTypeActions(granularity, name, res, da, csAPI, setup):
           sendMail = da.sendMail(address,subject,body)
           if not sendMail['OK']:
             raise RSSException, where(self, self.enforce) + sendMail['Message']
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

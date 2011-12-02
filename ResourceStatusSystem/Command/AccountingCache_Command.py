@@ -1,19 +1,27 @@
-""" The AccountingCache_Command class is a command module that collects command classes to store
-    accounting results in the accounting cache.
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The AccountingCache_Command class is a command module that collects command 
+  classes to store accounting results in the accounting cache.
 """
 
-import datetime
+from datetime                                     import datetime, timedelta
 
-from DIRAC import gLogger
+from DIRAC                                        import gLogger
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Command.Command   import *
+from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
+from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
-
-#############################################################################
+################################################################################
+################################################################################
 
 class TransferQualityByDestSplitted_Command( Command ):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
   
   def doCommand( self, sources = None, SEs = None ):
     """ 
@@ -29,40 +37,36 @@ class TransferQualityByDestSplitted_Command( Command ):
       
     """
 
+    super( TransferQualityByDestSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList( 'Write' )
+      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = { 'columns' : 'StorageElementName' } )
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs[ 'Value' ]
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      sources = RPC_RSS.getSitesList()
+      sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' })      
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources[ 'Value' ]
+        sources = [ s[0] for s in sources[ 'Value' ] ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient( rpcClient = self.RPC )
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
-    toD = datetime.datetime.utcnow()
+    toD   = datetime.utcnow()
+    fromD = toD - timedelta( hours = self.args[ 0 ] )
 
     try:
-      qualityAll = self.client.getReport( 'DataOperation', 'Quality', fromD, toD, 
-                                          { 'OperationType':'putAndRegister', 
-                                          'Source': sources + SEs, 'Destination': sources + SEs }, 
-                                          'Destination' )
+      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', 
+                                                    fromD, toD, 
+                                                    { 'OperationType':'putAndRegister', 
+                                                      'Source': sources + SEs, 
+                                                      'Destination': sources + SEs 
+                                                    }, 
+                                                    'Destination' )
       
       if not qualityAll[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + qualityAll[ 'Message' ] 
@@ -74,7 +78,6 @@ class TransferQualityByDestSplitted_Command( Command ):
       return {}
     
     listOfDestSEs = qualityAll[ 'data' ].keys()
-    
     plotGran = qualityAll[ 'granularity' ]
     
     singlePlots = {}
@@ -92,9 +95,12 @@ class TransferQualityByDestSplitted_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class TransferQualityByDestSplittedSite_Command( Command ):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]   
   
   def doCommand( self, sources = None, SEs = None ):
     """ 
@@ -109,41 +115,37 @@ class TransferQualityByDestSplittedSite_Command( Command ):
     :returns:
       
     """
+   
+    super( TransferQualityByDestSplittedSite_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList( 'Write' )
+      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns': 'StorageElementName' })
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs[ 'Value' ]
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      sources = RPC_RSS.getSitesList()
+      sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources[ 'Value' ]
+        sources = [ si[0] for si in sources[ 'Value' ] ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient( rpcClient = self.RPC )
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
-    toD = datetime.datetime.utcnow()
+    fromD = datetime.utcnow() - timedelta( hours = self.args[ 0 ] )
+    toD   = datetime.utcnow()
 
     try:
-      qualityAll = self.client.getReport( 'DataOperation', 'Quality', fromD, toD, 
-                                          {'OperationType':'putAndRegister', 
-                                        'Source':sources + SEs, 'Destination':sources + SEs }, 
-                                        'Destination' )
+      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', 
+                                                    fromD, toD, 
+                                                    {'OperationType':'putAndRegister', 
+                                                     'Source':sources + SEs, 
+                                                     'Destination':sources + SEs 
+                                                     }, 
+                                                     'Destination' )
       if not qualityAll[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + qualityAll[ 'Message' ] 
       else:
@@ -156,13 +158,10 @@ class TransferQualityByDestSplittedSite_Command( Command ):
     listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
-                                                             [], 0, 300, 'Write' )
-    except NameError:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
-                                                             [], 0, 300, 'Write' )
+      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300 )
+    except:
+      gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
+      return {}
     
     if not storSitesWeb[ 'OK' ]:
       raise RSSException, where( self, self.doCommand ) + " " + storSitesWeb[ 'Message' ] 
@@ -205,9 +204,12 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class TransferQualityBySourceSplittedSite_Command( Command ):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
   
   def doCommand( self, sources = None, SEs = None ):
     """ 
@@ -222,38 +224,31 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
     :returns:
       
     """
+  
+    super( TransferQualityBySourceSplittedSite_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList( 'Read' )
+      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
         SEs = SEs[ 'Value' ]
     
     if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      sources = RPC_RSS.getSitesList()
+      sources = self.APIs[ 'ResourceStatusClient' ].getSitesList()
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
         sources = sources[ 'Value' ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient( rpcClient = self.RPC )
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
-    toD = datetime.datetime.utcnow()
+    fromD = datetime.utcnow()-timedelta( hours = self.args[ 0 ] )
+    toD = datetime.utcnow()
 
     try:
-      qualityAll = self.client.getReport( 'DataOperation', 'Quality', fromD, toD, 
+      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD, 
                                           { 'OperationType':'putAndRegister', 
                                             'Source': sources + SEs, 'Destination': sources + SEs }, 
                                           'Destination')
@@ -269,13 +264,10 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
     listOfDest = qualityAll[ 'data' ].keys()
     
     try:
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
-                                                             [], 0, 300, 'Read' )
-    except NameError:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb( { 'StorageElementName': listOfDest },
-                                                             [], 0, 300, 'Read' )
+      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300)
+    except:
+      gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
+      return {}
     
     if not storSitesWeb[ 'OK' ]:
       raise RSSException, where( self, self.doCommand ) + " " + storSitesWeb[ 'Message' ] 
@@ -318,9 +310,12 @@ class TransferQualityBySourceSplittedSite_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class FailedTransfersBySourceSplitted_Command( Command ):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
   
   def doCommand( self, sources = None, SEs = None ):
     """ 
@@ -335,43 +330,38 @@ class FailedTransfersBySourceSplitted_Command( Command ):
     :returns:
       
     """
+  
+    super( FailedTransfersBySourceSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      SEs = RPC_RSS.getStorageElementsList( 'Read' )
+      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns': 'StorageElementName' })
       if not SEs[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
       else:
-        SEs = SEs[ 'Value' ]
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
     if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient( "ResourceStatus/ResourceStatus" )
-      sources = RPC_RSS.getSitesList()
+      sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )      
       if not sources[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
       else:
-        sources = sources[ 'Value' ]
+        sources = [ si[0] for si in sources[ 'Value' ] ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient( "Accounting/ReportGenerator", timeout = self.timeout )
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient( rpcClient = self.RPC )
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta( hours = self.args[ 0 ] )
-    toD = datetime.datetime.utcnow()
+    fromD = datetime.utcnow()-timedelta( hours = self.args[ 0 ] )
+    toD = datetime.utcnow()
 
     try:
-      ft_source = self.client.getReport( 'DataOperation', 'FailedTransfers', 
-                                         fromD, toD, 
-                                         { 'OperationType':'putAndRegister', 
-                                           'Source': sources + SEs, 'Destination': sources + SEs,
-                                         'FinalStatus':[ 'Failed' ] }, 
-                                         'Source' )
+      ft_source = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'FailedTransfers', 
+                                                   fromD, toD, 
+                                                   { 'OperationType':'putAndRegister', 
+                                                     'Source': sources + SEs, 
+                                                     'Destination': sources + SEs,
+                                                     'FinalStatus':[ 'Failed' ] 
+                                                    }, 
+                                                    'Source' )
       if not ft_source[ 'OK' ]:
         raise RSSException, where( self, self.doCommand ) + " " + ft_source[ 'Message' ] 
       else:
@@ -400,9 +390,12 @@ class FailedTransfersBySourceSplitted_Command( Command ):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class SuccessfullJobsBySiteSplitted_Command( Command ):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -416,33 +409,28 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
       
     """
 
+    super( SuccessfullJobsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName' })
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+    toD   = datetime.utcnow()
 
     try:
-      succ_jobs = self.client.getReport('Job', 'NumberOfJobs', fromD, toD, 
+      succ_jobs = self.APIs[ 'ReportsClient' ].getReport('Job', 'NumberOfJobs', fromD, toD, 
                                         {'FinalStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_jobs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + succ_jobs['Message'] 
-      else:
-        succ_jobs = succ_jobs['Value']
+
+      succ_jobs = succ_jobs['Value']
 
     except:
       gLogger.exception("Exception when calling SuccessfullJobsBySiteSplitted_Command")
@@ -465,12 +453,14 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
 
     return resToReturn
 
-
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class FailedJobsBySiteSplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -483,29 +473,24 @@ class FailedJobsBySiteSplitted_Command(Command):
     :returns:
       
     """
+    
+    super( FailedJobsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns' : 'SiteName'} )      
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+        sites = [ si[0] for si in sites['Value'] ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+    fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+    toD   = datetime.utcnow()
 
     try:
-      failed_jobs = self.client.getReport('Job', 'NumberOfJobs', fromD, toD, 
+      failed_jobs = self.APIs[ 'ReportsClient' ].getReport('Job', 'NumberOfJobs', fromD, toD, 
                                           {'FinalStatus':['Failed'], 'Site':sites}, 'Site')
       if not failed_jobs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + failed_jobs['Message'] 
@@ -535,9 +520,12 @@ class FailedJobsBySiteSplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class SuccessfullPilotsBySiteSplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
   
   def doCommand(self, sites = None):
     """ 
@@ -550,29 +538,24 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
     :returns:
       
     """
+    
+    super( SuccessfullPilotsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns':'SiteName'} )      
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+        sites = [ si[0] for si in sites['Value'] ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+    fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+    toD   = datetime.utcnow()
 
     try:
-      succ_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
+      succ_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                         {'GridStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_pilots['OK']:
         raise RSSException, where(self, self.doCommand) + " " + succ_pilots['Message'] 
@@ -603,9 +586,12 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class FailedPilotsBySiteSplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -619,28 +605,23 @@ class FailedPilotsBySiteSplitted_Command(Command):
       
     """
 
+    super( FailedPilotsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )      
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+    toD   = datetime.utcnow()
 
     try:
-      failed_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
+      failed_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                           {'GridStatus':['Aborted'], 'Site':sites}, 'Site')
       if not failed_pilots['OK']:
         raise RSSException, where(self, self.doCommand) + " " + failed_pilots['Message'] 
@@ -670,9 +651,12 @@ class FailedPilotsBySiteSplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class SuccessfullPilotsByCESplitted_Command(Command):
+
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
   
   def doCommand(self, CEs = None):
     """ 
@@ -685,29 +669,24 @@ class SuccessfullPilotsByCESplitted_Command(Command):
     :returns:
       
     """
+    
+    super( SuccessfullPilotsByCESplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     if CEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      CEs = RPC_RSS.getCEsList()
+      CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], meta = {'columns':'ResourceName'})
       if not CEs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + CEs['Message'] 
       else:
-        CEs = CEs['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+        CEs = [ ce[0] for ce in CEs['Value'] ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+    fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+    toD   = datetime.utcnow()
 
     try:
-      succ_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
+      succ_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                           {'GridStatus':['Done'], 'GridCE':CEs}, 'GridCE')
       if not succ_pilots['OK']:
         raise RSSException, where(self, self.doCommand) + " " + succ_pilots['Message'] 
@@ -738,9 +717,12 @@ class SuccessfullPilotsByCESplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class FailedPilotsByCESplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
   
   def doCommand(self, CEs = None):
     """ 
@@ -754,28 +736,23 @@ class FailedPilotsByCESplitted_Command(Command):
       
     """
 
+    super( FailedPilotsByCESplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
     if CEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      CEs = RPC_RSS.getCEsList()
+      CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], meta = {'columns': 'ResourceName'})     
       if not CEs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + CEs['Message'] 
       else:
-        CEs = CEs['Value']
+        CEs = [ ce[0] for ce in CEs['Value'] ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+    toD   = datetime.utcnow()
 
     try:
-      failed_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
+      failed_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                             {'GridStatus':['Aborted'], 'GridCE':CEs}, 'GridCE')
       if not failed_pilots['OK']:
         raise RSSException, where(self, self.doCommand) + " " + failed_pilots['Message'] 
@@ -805,9 +782,12 @@ class FailedPilotsByCESplitted_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class RunningJobsBySiteSplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -821,28 +801,23 @@ class RunningJobsBySiteSplitted_Command(Command):
       
     """
 
+    super( RunningJobsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
     if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
+      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )
       if not sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
+        sites = [ si[0] for si in sites['Value'] ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+    toD   = datetime.utcnow()
 
     try:
-      run_jobs = self.client.getReport('WMSHistory', 'NumberOfJobs', fromD, toD, 
+      run_jobs = self.APIs[ 'ReportsClient' ].getReport('WMSHistory', 'NumberOfJobs', fromD, toD, 
                                        {}, 'Site')
       if not run_jobs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + run_jobs['Message'] 
@@ -870,8 +845,7 @@ class RunningJobsBySiteSplitted_Command(Command):
 
     return resToReturn
 
-
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
-
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

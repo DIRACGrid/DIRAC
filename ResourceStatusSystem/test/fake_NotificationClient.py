@@ -1,7 +1,10 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 class NotificationClient:
-  def __init__( self, rpcFunctor = False ):
-#    print "AAAAAAAAAAAAAAAAAAAAAAAAA"
-    
+  def __init__( self, rpcFunctor = False ):   
     pass
   
   def __getRPCClient( self ):
@@ -60,3 +63,16 @@ class NotificationClient:
 
   def getNotifications( self, selectDict, sortList, startItem, maxItems ):
     pass
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

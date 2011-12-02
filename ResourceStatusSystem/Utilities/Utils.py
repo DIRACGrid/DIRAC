@@ -1,6 +1,9 @@
 """
-This module collects utility functions
+  This module collects utility functions
 """
+
+from DIRAC import gConfig
+import collections
 
 #############################################################################
 # useful functions
@@ -103,22 +106,60 @@ def convertTime(t, inTo = None):
 ############################
 
 from itertools import imap
-import copy, ast
+import copy, ast, socket
 
 id_fun = lambda x: x
 
 # Import utils
 
-def voimport(base_mod, voext):
+def voimport(base_mod):
+  for ext in gConfig.getValue("DIRAC/Extensions", []):
+    try:
+      return  __import__(ext + base_mod, globals(), locals(), ['*'])
+    except ImportError:
+      continue
+  # If not found in extensions, import it in DIRAC base.
+  return  __import__(base_mod, globals(), locals(), ['*'])
+
+# socket utils
+
+def canonicalURL(url):
   try:
-    return  __import__(voext + base_mod, globals(), locals(), ['*'])
-  except ImportError:
-    return  __import__(base_mod, globals(), locals(), ['*'])
+    canonical = socket.gethostbyname_ex(url)[0]
+    return canonical
+  except socket.gaierror:
+    return url
+
+# RPC utils
+
+class RPCError(Exception):
+  pass
+
+def unpack(dirac_value):
+  if type(dirac_value) != dict:
+    raise ValueError, "Not a DIRAC value."
+  if 'OK' not in dirac_value.keys():
+    raise ValueError, "Not a DIRAC value."
+  try:
+    return dirac_value['Value']
+  except KeyError:
+    raise RPCError, dirac_value['Message']
+
+def protect2(f, *args, **kw):
+  """Wrapper protect"""
+  try:
+    ret = f(*args, **kw)
+    if type(ret) == dict and ret['OK'] == False:
+      print "function " + f.f.__name__ + " called with " + str( args )
+      print "%s\n" % ret['Message']
+    return ret
+  except Exception as e:
+    print "function " + str(f) + " called with " + str(args)
+    raise e
 
 # (Duck) type checking
 
 def isiterable(obj):
-  import collections
   return isinstance(obj,collections.Iterable)
 
 # Type conversion
@@ -130,8 +171,10 @@ def bool_of_string(s):
   else                      : raise ValueError, "Cannot convert %s to a boolean value" % s
 
 def typedobj_of_string(s):
-  if s == "":
-    return s
+  if s == '_none_':
+    return []
+  if s == '': #isinstance( s, str ):
+    return [ s ]
   try:
     return ast.literal_eval(s)
   except (ValueError, SyntaxError): # Probably it's just a string
@@ -177,11 +220,25 @@ def list_combine(l1, l2):
   return list(imap(lambda x,y: (x,y), l1, l2))
 
 def list_flatten(l):
-  res = []
-  for e in l:
-    for ee in e:
-      res.append(ee)
-  return res
+  try:
+    return [ee for e in l for ee in e]
+  except TypeError:
+    return l
+
+def list_sanitize(l):
+  """Remove doublons and results that evaluate to false"""
+  try:
+    return list(set([i for i in l if i]))
+  except TypeError:
+    return [i for i in l if i]
+
+def set_sanitize(l):
+  """Remove doublons and results that evaluate to false"""
+  try:
+    return set([i for i in l if i])
+  except TypeError:
+    return [i for i in l if i]
+
 
 # Dict utils
 
@@ -256,8 +313,7 @@ def xml_append(doc, tag, value=None, elt=None, **kw):
 
 # SQL Utils
 # These module generate ad-hoc SQL queries given a table and kwargs
-
-import re
+# WARNING: Not SQL injection free!!! Use at your own risk.
 
 class SQLParam(str):
   pass
@@ -266,35 +322,85 @@ class SQLValues(object):
   null = SQLParam("NULL")
   now  = SQLParam("NOW()")
 
+def sql_protect(f):
+  """Protect from SQL injections"""
+  def sql_protect_string(s):
+    if not s.isalnum(): raise ValueError
+    return s
+  def sql_protect_list(l):
+    return [sql_protect_string(s) for s in l]
+  def sql_protect_dict(d):
+    for k in d:
+      if not (k.isalnum() and d[k].isalnum()): raise ValueError
+    return d
+  try:
+    return sql_protect_string(f)
+  except AttributeError:
+    if type(f) == list: return sql_protect_list(f)
+    if type(f) == dict: return sql_protect_dict(f)
+    else:               return ValueError, "Argument has to be a string, a dict or a list."
+
+def sql_normalize(f):
+  """Tranform a python value into a MySQL value to be used in a SQL
+  statement."""
+  def normalize_str(f):
+    return str(f) if type(f) != str else "'"+f+"'"
+  def normalize_assoclist(l):
+    return [(a, normalize_str(b)) for (a, b) in l]
+  def normalize_dict(d):
+    return dict(normalize_assoclist(d.items()))
+
+  try:
+    return normalize_dict(f)
+  except AttributeError:
+    if type(f) == str:  return normalize_str(f)
+    if type(f) == list: return normalize_assoclist(f)
+    else:               raise ValueError, "Argument has to be a string, a dict or a list."
+
 def sql_update_(table, kw):
   if kw == {}: return ""
+  kw = sql_normalize(kw)
   res = "UPDATE %s SET " % table
-  for k in kw:
-    res += ("%s=%s, " % (k, str(kw[k]))) if type(kw[k]) != str else ("%s='%s', " % (k, kw[k]))
-  return res[:-2]
+  res += ", ".join([("%s=%s" % (a, b)) for (a, b) in kw.items()])
+  return res
 
 def sql_update(table, **kw):
+  """Generate a SQL UPDATE query. Uses the table name and a dict for
+  specifying the values to update.
+  """
   return sql_update_(table, kw)
 
 def sql_insert_(table, kw):
   if kw == {}: return ""
+  kw = sql_normalize(kw)
   res = "INSERT INTO %s " % table
-  res += "(" + reduce(lambda acc, k: acc + k + ", ", kw.keys(), "") + ") "
-  res += "VALUES (" + reduce(lambda acc, k: acc + (str(k) if type(k) != str else "'" + k +"'") + ", ", kw.values(), "") + ")"
-  return re.sub(r", \)", ")", res)
+  res += "(" + ", ".join(kw.keys()) + ") "
+  res += "VALUES (" + ", ".join(kw.values()) + ")"
+  return res
 
 def sql_insert(table, **kw):
-  return sql_instert_(table, kw)
+  return sql_insert_(table, kw)
 
 def sql_insert_update_(table, keys, kw):
   if type(keys) != list:
     raise TypeError, "keys argument has to be a list"
   res1 = sql_insert_(table, kw)
-  res2 = " ON DUPLICATE KEY UPDATE "
-  for k in kw:
-    if k not in keys:
-      res2 += ("%s=%s, " % (k, str(kw[k]))) if type(kw[k]) != str else ("%s='%s', " % (k, kw[k]))
-  return (res1 + res2)[:-2]
+  kw_without_keys = [(a, b) for (a, b) in kw.items() if a not in keys]
+  res2 = " ON DUPLICATE KEY UPDATE " + ", ".join(kw_without_keys)
+  return res1 + res2
 
 def sql_insert_update(table, keys, **kw):
   return sql_insert_update_(table, keys, kw)
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
