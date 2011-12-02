@@ -499,7 +499,7 @@ class UserProfileDB( DB ):
     sqlCond = [ "`up_Users`.Id = `up_ProfilesData`.UserId",
                 "`up_Groups`.Id = `up_ProfilesData`.GroupId",
                 "`up_VOs`.Id = `up_ProfilesData`.VOId",
-                self.__webProfileReadAccessDataCond( userIds, sqlProfileName ) ]
+                self.__webProfileReadAccessDataCond( userIds, userIds, sqlProfileName ) ]
     if filterDict:
       for k in filterDict:
         filterDict[ k.lower() ] = filterDict[ k ]
