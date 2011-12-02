@@ -130,12 +130,12 @@ class RegisterTaskTests(unittest.TestCase):
                                                                       "Succesfull" : { "/lhcb/user/c/cblanks/11889/11889410/LDSB.rsQrRL" : True } } } 
 
   def test_01_call( self ):
-    ret = self.registerTask.__call__()
-    print ret
+    """ call test """
+    self.assertEqual( self.registerTask.__call__(), {'OK': True, 'Value': {'monitor': {'Execute': 1, 'Done': 1}}} )
 
 
+## suite execution
 if __name__ == "__main__":
-
   testLoader = unittest.TestLoader()
   suite = testLoader.loadTestsFromTestCase(RegisterTaskTests)     
   unittest.TextTestRunner(verbosity=3).run(suite)

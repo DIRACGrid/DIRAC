@@ -44,7 +44,7 @@ class RemovalTask( RequestTask ):
     :param dict kwagrs: named args dict
     """
     
-    RequestTask.__init__( self, args, *kwargs )
+    RequestTask.__init__( self, *args, **kwargs )
     self.setRequestType( "removal" )
     self.addOperationAction( "physicalRemoval" , self.physicalRemoval )
     self.addOperationAction( "removeFile", self.removeFile )
@@ -90,7 +90,7 @@ class RemovalTask( RequestTask ):
     self.addMark( 'PhysicalRemovalDone', len( pfnsOK ) )
     for pfn in pfnsOK:
       self.info("Succesfully removed %s from %s" % pfn, str(targetSEs) )
-      res = requestObj.setSubRequestFileAttribute( index, "removal", pfnToLfn[pfn], "Status", "Done" )
+      res = requestObj.setSubRequestFileAttributeValue( index, "removal", pfnToLfn[pfn], "Status", "Done" )
       if not res["OK"]:
         self.error("Error setting status to 'Done' for %s" % pfnToLfn[pfn])
 
@@ -101,7 +101,7 @@ class RemovalTask( RequestTask ):
           if type( failed[pfn][targetSE] ) in StringTypes:
             if re.search("no such file or directory", failed[pfn][targetSE].lower()):
               self.info("File %s did not exist" % pfn)
-              res = requestObj.setSubRequestFileAttribute( index, "removal", pfnToLfn[pfn], "Status", "Done" )
+              res = requestObj.setSubRequestFileAttributeValue( index, "removal", pfnToLfn[pfn], "Status", "Done" )
               if not res["OK"]:
                 self.error("Error setting status to 'Done' for %s" % pfnToLfn[pfn] )
 
@@ -125,19 +125,19 @@ class RemovalTask( RequestTask ):
     self.addMark( 'RemoveFileAtt', len( lfns ) )
     if lfns:
       removal = self.replicaManager().removeFile( lfns )
-      self.addMark( 'RemoveFileDone', len( removal['Value']['Successful'] ) )
-      self.addMark( 'RemoveFileFail', len( removal['Value']['Failed'] ) )
+      self.addMark( 'RemoveFileDone', len( removal["Value"]["Successful"] ) )
+      self.addMark( 'RemoveFileFail', len( removal["Value"]["Failed"] ) )
       if removal["OK"]:
-        for lfn in removal["Value"]["Succesful"]:
-          self.info("Sucefssfully removed %s" % lfn )
-          updateStatus = requestObj.setSubRequestFileAttribute( index, "removal", lfn, "Status", "Done" )
+        for lfn in removal["Value"]["Successful"]:
+          self.info("Successfully removed %s" % lfn )
+          updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
           if not updateStatus["OK"]:
             self.error("Unable to change status to 'Done' for %s" % lfn )
         for lfn, error in removal["Value"]["Failed"].items():
           if type(error) in StringTypes:
             if re.search( "no such file or directory", error.lower() ):
               self.info("File %s didn't exist, setting its status to 'Done'." % lfn )
-              updateStatus = requestObj.setSubRequestFileAttribute( index, "removal", lfn, "Status", "Done")
+              updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done")
               if not updateStatus["OK"]:
                 self.error("Unable to change status to 'Done' for %s" % lfn )
             else:
