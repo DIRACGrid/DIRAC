@@ -330,8 +330,6 @@ class PilotDirector:
     # Requested Project to install
     if self.installInstallation:
       pilotOptions.append( '-V %s' % self.installInstallation )
-    elif self.virtualOrganization:
-      pilotOptions.append( '-V %s' % self.virtualOrganization )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
 

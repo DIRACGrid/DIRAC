@@ -259,7 +259,7 @@ class ReleaseConfig:
 
   def __init__( self, instName = 'DIRAC', projectName = 'DIRAC' ):
     self.__globalDefaults = ReleaseConfig.CFG()
-    self.__loadedCfgs = set()
+    self.__loadedCfgs = []
     self.__prjDepends = {}
     self.__prjRelCFG = {}
     self.__projectsLoadedBy = {}
@@ -398,7 +398,7 @@ class ReleaseConfig:
       cfg = result[ 'Value' ]
       self.__globalDefaults.update( basePath, cfg )
 
-    self.__loadedCfgs.add( basePath )
+    self.__loadedCfgs.append( basePath )
     return S_OK( self.__globalDefaults.getChild( basePath ) )
 
 
@@ -1002,7 +1002,7 @@ def loadConfiguration():
       else:
         logNOTICE( "Loaded %s" % arg )
 
-  for opName in ( 'release', 'externalsType', 'pythonVersion',
+  for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
                   'project', 'release', 'extraModules', 'extensions' ):
@@ -1013,6 +1013,8 @@ def loadConfiguration():
     #Also react to Extensions as if they were extra modules
     if opName == 'extensions':
       opName = 'extraModules'
+    if opName == 'installType':
+      opName = 'externalsType'
     if type( getattr( cliParams, opName ) ) == types.StringType:
       setattr( cliParams, opName, opVal )
     elif type( getattr( cliParams, opName ) ) == types.BooleanType:
@@ -1195,7 +1197,7 @@ def createBashrc():
       lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                      '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
                      'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
-                     'export DYLD_LIBRARY_PATH=$DIRACLIB',
+                     'export DYLD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
                      'export PYTHONPATH=$DIRAC'] )
       lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                      'export OPENSSL_CONF=/tmp'] )

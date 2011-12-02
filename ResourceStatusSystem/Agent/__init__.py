@@ -1,3 +1,11 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 """
-   DIRAC.ResourceStatusSystem.Agent package
+  DIRAC.ResourceStatusSystem.Agent package
 """
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF 

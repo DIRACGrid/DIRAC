@@ -12,17 +12,16 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 class AlwaysFalse_Policy( PolicyBase ):
 
   def evaluate( self, args, commandIn = None, knownInfo = None ):
-    """ 
+    """
     Does nothing.
-    
+
     Always returns:
-        { 
-          'SAT':False,
+        {
           'Status':args[2]
-          'Reason':None 
+          'Reason':None
         }
     """
 
-    return {'SAT':False, 'Status':args[2], 'Reason':'None'}
+    return {'Status':args[2], 'Reason':'None'}
 
   evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__

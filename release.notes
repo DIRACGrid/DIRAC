@@ -22,6 +22,8 @@ NEW: Proxy manager will send notifications when the uploaded proxies are about t
 NEW: Now the proxyDB also has a knowledge of user names. Queries can use the user name as a query key
 FIX: ProxyManager - calculate properly the dates for credentials about to expire
 CHANGE: ProxyManager will autoexpire old proxies, also auto purge logs
+CHANGE: Rename dirac-proxy-upload to dirac-admin-proxy-upload
+NEW: dirac-proxy-init will complain if the user certificate has less than 30 days
 CHANGE: SecurityLogging - security log level to verbose
 NEW: OracleDB - added Array type 
 NEW: MySQL - allow definition of the port number in the configuration
@@ -102,6 +104,11 @@ NEW: PilotAgentsDB - on demand retrieval of the CREAM pilot output
 NEW: Pilot - proper job ID evaluation for the OSG sites
 FIX: ComputingElement - fixed proxy renewal logic for generic and private pilots
 NEW: JDL - added %j placeholder in the JDL to be replaced by the JobID
+BUGFIX: DownloadInputData - bug fixed in the naming of downloaded files
+FIX: Matcher - set the group and DN when a request gets to the matcher if the request is not 
+     coming from a pilot
+FIX: Matcher = take into account JobSharing when checking the owner for the request
+CHANGE: PilotDirector, dirac-pilot - interpret -V flag of the pilot as Installation name
 
 *DataManagement
 FIX: FileCatalog/DiractoryLevelTree - consistent application of the max directory level using global 
@@ -126,6 +133,7 @@ NEW: The default file catalog is now determined using /LocalSite/FileCatalog. Th
 NEW: ReplicaManager - can now deal with multiple catalogs. Makes sure the surl used for removal is 
 the same as the one used for registration.   
 NEW: PoolXMLCatalog - added getTypeByPfn() function to get the type of the given PFN  
+NEW: dirac-dms-ban(allow)-se - added possibility to use CheckAccess property of the SE
 
 *StorageManagement
 FIX: Stager - updateJobFromStager(): only return S_ERROR if the Status sent is not
@@ -141,6 +149,7 @@ NEW: FTSCleaningAgent will allow to fix transient errors in RequestDB. At the mo
      only fixing Requests for which SourceTURL is equal to TargetSURL.
 NEW: Stager - added new command dirac-stager-stage-files          
 FIX: Update Stager code in v6 to the same point as v5r13p37
+FIX: StorageManager - avoid race condition by ensuring that Links=0 in the query while removing replicas
 
 *RequestManagement
 FIX: RequestDBFile - get request in chronological order (closes issue #84)

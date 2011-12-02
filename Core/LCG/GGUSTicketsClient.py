@@ -47,13 +47,13 @@ class GGUSTicketsClient:
     #self.query = '\'GHD_Affected Site\'=\"'+ self.siteName + '\"'
     self.startDate = startDate
     if self.startDate is not None:
-#      st = 'set the starting date as ', self.startDate
-#      gLogger.info(st)
+# st = 'set the starting date as ', self.startDate
+# gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'>' + str( self.startDate )
     self.endDate = endDate
     if self.endDate is not None:
-#      st = 'set the end date as ', self.endDate
-#      gLogger.info(st)
+# st = 'set the end date as ', self.endDate
+# gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str( self.endDate )
 
     # create the URL to get tickets relative to the site:
@@ -118,7 +118,6 @@ class GGUSTicketsClient:
         self.selectedTickets[id_]['shortDescription'] = ticket[1][0]
         self.selectedTickets[id_]['responsibleUnit']  = ticket[2][0]
         self.selectedTickets[id_]['site']             = ticket[4][0]
-#    print 'total number of tickets: ', len(self.selectedTickets.keys())
     self.count = {}
     # group tickets in only 2 categories: open and terminal states
     # create a dictionary to store the short description only for tickets in open states:
@@ -140,7 +139,7 @@ class GGUSTicketsClient:
           self.shortDescription[str( id_ )] = self.selectedTickets[id_]['shortDescription']
       else:
         pass
-#        st = 'ERROR! GGUS status unknown: ', status
-#        gLogger.error(st)
+# st = 'ERROR! GGUS status unknown: ', status
+# gLogger.error(st)
 
 #############################################################################
