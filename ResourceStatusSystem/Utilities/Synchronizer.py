@@ -204,7 +204,7 @@ class Synchronizer(object):
   def _syncStorageElements( self ):
 
     # Get StorageElements from the CS and the DB
-    CSSEs = CS.getSEs()
+    CSSEs = set(Utils.unpack(CS.getSEs()))
     DBSEs = set((s[0] for s in Utils.unpack(self.rsClient.getStorageElement())))
 
     # Remove storageElements that are in DB but not in CS
