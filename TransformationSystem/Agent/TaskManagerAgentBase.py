@@ -8,7 +8,6 @@ __RCSID__ = "$Id$"
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
-from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 from DIRAC.TransformationSystem.Client.FileReport                   import FileReport
 from DIRAC.Core.Security.ProxyInfo                                  import getProxyInfo
 from DIRAC.Core.Utilities.List                                      import sortList
@@ -23,7 +22,6 @@ class TaskManagerAgentBase( AgentModule ):
     self.section = self.am_getOption( "section" )
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks", gMonitor.OP_ACUM )
     self.transClient = TransformationClient()
-    self.wfTasks = WorkflowTasks()
     return S_OK()
 
   #############################################################################
@@ -235,15 +233,15 @@ class TaskManagerAgentBase( AgentModule ):
         gLogger.verbose( "submitTasks: No tasks found for submission for transformation %s" % transID )
         continue
       gLogger.info( "submitTasks: Obtained %d tasks for submission for transformation %s" % ( len( tasks ), transID ) )
-      res = self.wfTasks.prepareTransformationTasks( transBody, tasks, owner, ownerGroup )
+      res = self.prepareTransformationTasks( transBody, tasks, owner, ownerGroup )
       if not res['OK']:
         gLogger.error( "submitTasks: Failed to prepare tasks for transformation", "%s %s" % ( transID, res['Message'] ) )
         continue
-      res = self.wfTasks.submitTransformationTasks( res['Value'] )
+      res = self.submitTransformationTasks( res['Value'] )
       if not res['OK']:
         gLogger.error( "submitTasks: Failed to submit prepared tasks for transformation", "%s %s" % ( transID, res['Message'] ) )
         continue
-      res = self.wfTasks.updateDBAfterTaskSubmission( res['Value'] )
+      res = self.updateDBAfterTaskSubmission( res['Value'] )
       if not res['OK']:
         gLogger.error( "submitTasks: Failed to update DB after task submission for transformation", "%s %s" % ( transID, res['Message'] ) )
         continue

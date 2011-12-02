@@ -13,7 +13,7 @@ from DIRAC import S_OK
 
 def _parseSingleElement( element, attributes = None ):
   """
-  Given a minidom element, return a dictionary of its
+  Given a DOM Element, return a dictionary of its
   child elements and values (as strings).
   """
 
@@ -34,7 +34,7 @@ def _parseSingleElement( element, attributes = None ):
 #############################################################################
 
 
-class GOCDBClient:
+class GOCDBClient(object):
   # FIXME: Why is this a class and not just few methods?
 
 #############################################################################
@@ -105,14 +105,14 @@ class GOCDBClient:
 
       # first call: pass the startDate argument as None,
       # so the curlDownload method will search for only ongoing DTs
-      resXML_ongoing = self._downTimeCurlDonwload( name )
+      resXML_ongoing = self._downTimeCurlDownload( name )
       if resXML_ongoing is None:
         res_ongoing = {}
       else:
         res_ongoing = self._downTimeXMLParsing( resXML_ongoing, granularity, name )
 
       # second call: pass the startDate argument
-      resXML_startDate = self._downTimeCurlDonwload( name, startDate_STR )
+      resXML_startDate = self._downTimeCurlDownload( name, startDate_STR )
       if resXML_startDate is None:
         res_startDate = {}
       else:
@@ -127,7 +127,7 @@ class GOCDBClient:
 
     else:
       #just query for onGoing downtimes
-      resXML = self._downTimeCurlDonwload( name, startDate_STR )
+      resXML = self._downTimeCurlDownload( name, startDate_STR )
       if resXML is None:
         return S_OK( None )
 
@@ -158,8 +158,8 @@ class GOCDBClient:
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-
-    serviceXML = self._getServiceEndpointCurlDonwload( granularity, entity )
+    assert(type(granularity) == str and type(entity) == str)
+    serviceXML = self._getServiceEndpointCurlDownload( granularity, entity )
     return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
 
 #############################################################################
@@ -172,7 +172,7 @@ class GOCDBClient:
 #      :attr:`entity` : a string. Actual name of the site.
 #    """
 #
-#    siteXML = self._getSiteCurlDonwload(site)
+#    siteXML = self._getSiteCurlDownload(site)
 #    return S_OK(self._siteXMLParsing(siteXML))
 
 #############################################################################
@@ -187,7 +187,7 @@ class GOCDBClient:
 
 #############################################################################
 
-  def _downTimeCurlDonwload( self, entity = None, startDate = None ):
+  def _downTimeCurlDownload( self, entity = None, startDate = None ):
     """ Download ongoing downtimes for entity using the GOC DB programmatic interface
     """
 
@@ -219,7 +219,7 @@ class GOCDBClient:
 
 #############################################################################
 
-  def _getServiceEndpointCurlDonwload( self, granularity, entity ):
+  def _getServiceEndpointCurlDownload( self, granularity, entity ):
     """
     Calls method `get_service_endpoint` from the GOC DB programmatic interface.
 
@@ -229,18 +229,20 @@ class GOCDBClient:
 
       :attr:`entity` : a string. Actual name of the entity.
     """
+    if type(granularity) != str or type(entity) != str:
+      raise ValueError, "Arguments must be strings."
 
     # GOCDB-PI query
-    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" + granularity + '=' + entity
+    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" \
+        + granularity + '=' + entity
 
-    req = urllib2.Request( gocdb_ep )
-    service_endpoint_page = urllib2.urlopen( req )
+    service_endpoint_page = urllib2.urlopen( gocdb_ep )
 
     return service_endpoint_page.read()
 
 #############################################################################
 
-#  def _getSiteCurlDonwload(self, site):
+#  def _getSiteCurlDownload(self, site):
 #    """
 #    Calls method `get_site` from the GOC DB programmatic interface.
 #
@@ -309,18 +311,10 @@ class GOCDBClient:
 #############################################################################
 
   def _serviceEndpointXMLParsing( self, serviceXML ):
-    """ Performs xml parsing from the service endpoint string (returns a dictionary)
+    """ Performs xml parsing from the service endpoint string
+    Returns a list.
     """
     doc = minidom.parseString( serviceXML )
-
     services = doc.getElementsByTagName( "SERVICE_ENDPOINT" )
-
-    servicesList = []
-
-    for service in services:
-      handler = _parseSingleElement( service )
-      servicesList.append( handler )
-
-    return servicesList
-
-#############################################################################
+    services = [_parseSingleElement(s) for s in services]
+    return services

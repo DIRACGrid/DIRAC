@@ -272,14 +272,6 @@ class StorageManagerHandler( RequestHandler ):
       gLogger.error( 'getStageSubmittedReplicas: Failed to obtain StageSubmitted replicas', res['Message'] )
     return res
 
-  types_getStagedReplicas = []
-  def export_getStagedReplicas( self ):
-    """ This method obtains the replicas and SRM request information which are in the Staged status """
-    res = storageDB.getCacheReplicas( {'Status':'Staged'} )
-    if not res['OK']:
-      gLogger.error( 'getStagedReplicas: Failed to obtain Staged replicas', res['Message'] )
-    return res
-
   types_wakeupOldRequests = [ListType, IntType ]
   def export_wakeupOldRequests( self, oldRequests, retryInterval ):
     """  get only StageRequests with StageRequestSubmitTime older than 1 day AND are still not staged
@@ -305,7 +297,7 @@ class StorageManagerHandler( RequestHandler ):
   types_getAssociatedReplicas = [ListType]
   def export_getAssociatedReplicas( self, replicaIDs ):
     """
-    Retrieve the list of Replicas that belong to the same Tasks as the provided list    
+    Retrieve the list of Replicas that belong to the same Tasks as the provided list
     """
     res = storageDB.getAssociatedReplicas( replicaIDs )
     if not res['OK']:

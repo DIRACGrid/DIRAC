@@ -1,17 +1,24 @@
-""" The MacroCommand class is a macro class for all the macro commands
-    for interacting with multiple commands
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The MacroCommand class is a macro class for all the macro commands
+  for interacting with multiple commands
 """
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class MacroCommand(Command):
   
   def __init__(self):
     self.commands = None
-    self.args = None
-    self.clients = None
+    self.args     = None
+    self.clients  = None
+
+################################################################################
     
   def setCommands(self, commandsListIn = None):
     """
@@ -26,6 +33,7 @@ class MacroCommand(Command):
       
     self.commands = commandsListIn
   
+################################################################################
     
   def setArgs(self, argsListIn = None):
     """
@@ -51,6 +59,7 @@ class MacroCommand(Command):
     for command, arg in commArgs:
       command.setArgs(arg)
   
+################################################################################
   
   def setClient(self, clientListIn = None):
     """
@@ -75,25 +84,8 @@ class MacroCommand(Command):
     
     for command, client in commArgs:
       command.setClient(client)
-  
 
-#  def setRPC(self, RPCIn = None):
-#    """
-#    set `self.client`. If not set, a standard RPC will be instantiated.
-#    
-#    :params:
-#      :attr:`clientIn`: a client object 
-#    """
-#    self.RPC = RPCIn
-#  
-#  def setTimeOut(self, timoeut = None):
-#    """
-#    set `self.client`. If not set, a standard RPC will be instantiated.
-#    
-#    :params:
-#      :attr:`clientIn`: a client object 
-#    """
-#    self.timeout = timeout
+################################################################################
   
   def doCommand(self):
     """ 
@@ -105,3 +97,16 @@ class MacroCommand(Command):
     for command in self.commands:
       res.append(command.doCommand())
     return res
+  
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

@@ -1,29 +1,29 @@
+################################################################################
+# $HeadURL $
+################################################################################
 """
-    Module used for enforcing policies. Its class is used for:
-
+  Module used for enforcing policies. Its class is used for:
     1. invoke a PDP and collects results
-
     2. enforcing results by:
-
        a. saving result on a DB
-
-       b. rasing alarms
-
+       b. raising alarms
        c. other....
 """
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidStatusTypes, \
+    ValidSiteType, ValidServiceType, ValidResourceType
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import \
-    InvalidRes, InvalidStatus, InvalidResourceType, InvalidServiceType, InvalidSiteType
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, InvalidStatus, \
+    InvalidResourceType, InvalidServiceType, InvalidSiteType
 
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Empty_PolType    import EmptyPolTypeActions
 
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
+
 class PEP:
-#############################################################################
   """
   PEP (Policy Enforcement Point) initialization
 
@@ -56,36 +56,8 @@ class PEP:
 
   """
 
-  def __init__( self, VOExtension, granularity = None, name = None, status = None, formerStatus = None,
-                reason = None, siteType = None, serviceType = None, resourceType = None,
-                tokenOwner = None, useNewRes = False ):
-
-    self.VOExtension = VOExtension
-
-    try:
-      self.__granularity = Utils.assignOrRaise( granularity, ValidRes, InvalidRes, self, self.__init__ )
-    except NameError:
-      pass
-
-    self.__name         = name
-    self.__status       = Utils.assignOrRaise( status, ValidStatus, InvalidStatus, self, self.__init__ )
-    self.__formerStatus = Utils.assignOrRaise( formerStatus, ValidStatus, InvalidStatus, self, self.__init__ )
-    self.__reason       = reason
-    self.__siteType     = Utils.assignOrRaise( siteType, ValidSiteType, InvalidSiteType, self, self.__init__ )
-    self.__serviceType  = Utils.assignOrRaise( serviceType, ValidServiceType, InvalidServiceType, self, self.__init__ )
-    self.__resourceType = Utils.assignOrRaise( resourceType, ValidResourceType, InvalidResourceType, self, self.__init__ )
-
-    self.__realBan = False
-    if tokenOwner is not None:
-      if tokenOwner == 'RS_SVC':
-        self.__realBan = True
-
-    self.useNewRes = useNewRes
-
-#############################################################################
-
-  def enforce( self, pdpIn = None, rsDBIn = None, rmDBIn = None, ncIn = None, setupIn = None,
-               daIn = None, csAPIIn = None, knownInfo = None ):
+  def __init__( self, VOExtension, pdp = None, nc = None, setup = None,
+                da = None, csAPI = None, knownInfo = None, clients = {} ):
     """
     enforce policies, using a PDP  (Policy Decision Point), based on
 
@@ -129,65 +101,94 @@ class PEP:
        :attr:`knownInfo`: a string of known provided information (optional)
     """
 
-    #PDP
-    if pdpIn is not None:
-      pdp = pdpIn
-    else:
-      # Use standard DIRAC PDP
-      from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
-      pdp = PDP( self.VOExtension, granularity = self.__granularity, name = self.__name,
-                 status = self.__status, formerStatus = self.__formerStatus, reason = self.__reason,
-                 siteType = self.__siteType, serviceType = self.__serviceType,
-                 resourceType = self.__resourceType, useNewRes = self.useNewRes )
+    self.VOExtension = VOExtension
 
     #DB
-    if rsDBIn is not None:
-      rsDB = rsDBIn
-    else:
+    if not clients.has_key( 'ResourceStatusClient' ):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-      rsDB = ResourceStatusDB()
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.rsAPI = ResourceStatusClient( )
+    else:
+      self.rsAPI = clients[ 'ResourceStatusClient' ]
 
-    if rmDBIn is not None:
-      rmDB = rmDBIn
-    else:
+    if not clients.has_key( 'ResourceManagementClient'):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-      rmDB = ResourceManagementDB()
+      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+      self.rmAPI = ResourceManagementClient()
+    else:
+      self.rmAPI = clients[ 'ResourceManagementClient' ]
 
     #setup
-    if setupIn is not None:
-      setup = setupIn
-    else:
+    if setup is None:
       # get present setup
       setup = CS.getSetup()[ 'Value' ]
+    self.setup = setup
 
     #notification client
-    if ncIn is not None:
-      nc = ncIn
-    else:
+    if nc is None:
       from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
       nc = NotificationClient()
+    self.nc = nc
 
     #DiracAdmin
-    if daIn is not None:
-      da = daIn
-    else:
+    if da is None:
       from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
       da = DiracAdmin()
+    self.da = da
 
     #CSAPI
-    if csAPIIn is not None:
-      csAPI = csAPIIn
-    else:
+    if csAPI is None:
       from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
       csAPI = CSAPI()
+    self.csAPI = csAPI
+
+    if pdp is None:
+      self.pdp = PDP( **clients )
+
+################################################################################
+
+  def enforce( self, granularity = None, name = None, statusType = None,
+                status = None, formerStatus = None, reason = None, siteType = None,
+                serviceType = None, resourceType = None, tokenOwner = None,
+                useNewRes = False, knownInfo = None  ):
+
+    ###################
+    #  real ban flag  #
+    ###################
+
+    realBan = False
+    if tokenOwner is not None:
+      if tokenOwner == 'RS_SVC':
+        realBan = True
+
+    ###################
+    # policy setup #
+    ###################
+
+    granularity = Utils.assignOrRaise( granularity, ValidRes, InvalidRes, self, self.__init__ )
+    try:
+      statusType   = Utils.assignOrRaise( statusType, ValidStatusTypes[ granularity ]['StatusType'], \
+                                            InvalidStatus, self, self.enforce )
+    except KeyError:
+      statusType = "''" # "strange" default value returned by CS
+
+    status       = Utils.assignOrRaise( status, ValidStatus, InvalidStatus, self, self.enforce )
+    formerStatus = Utils.assignOrRaise( formerStatus, ValidStatus, InvalidStatus, self, self.enforce )
+    siteType     = Utils.assignOrRaise( siteType, ValidSiteType, InvalidSiteType, self, self.enforce )
+    serviceType  = Utils.assignOrRaise( serviceType, ValidServiceType, InvalidServiceType, self, self.enforce )
+    resourceType = Utils.assignOrRaise( resourceType, ValidResourceType, InvalidResourceType, self, self.enforce )
+
+    self.pdp.setup( self.VOExtension, granularity = granularity, name = name,
+                    statusType = statusType, status = status,
+                    formerStatus = formerStatus, reason = reason, siteType = siteType,
+                    serviceType = serviceType, resourceType = resourceType,
+                    useNewRes = useNewRes )
 
     ###################
     # policy decision #
     ###################
 
-    resDecisions = pdp.takeDecision( knownInfo = knownInfo )
+    resDecisions = self.pdp.takeDecision( knownInfo = knownInfo )
     assert(type(resDecisions) == dict and resDecisions != {})
 
     res          = resDecisions[ 'PolicyCombinedResult' ]
@@ -195,23 +196,31 @@ class PEP:
 
     # Security mechanism in case there is no PolicyType returned
     if res == {}:
-      EmptyPolTypeActions( self.__granularity, self.__name, resDecisions, res )
+      EmptyPolTypeActions( granularity, name, resDecisions, res )
 
     else:
       policyType   = res[ 'PolicyType' ]
 
       if 'Resource_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Resource_PolType", self.VOExtension)
-        m.ResourcePolTypeActions( self.__granularity, self.__name, resDecisions, res, rsDB, rmDB )
+        m.ResourcePolTypeActions( granularity, name, statusType,
+                                  resDecisions, self.rsAPI, self.rmAPI )
 
       if 'Alarm_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Alarm_PolType", self.VOExtension)
-        m.AlarmPolTypeActions(self.__name, res, nc, setup, rsDB, rmDB,
-                            Granularity=self.__granularity,
-                            SiteType=self.__siteType,
-                            ServiceType=self.__serviceType,
-                            ResourceType=self.__resourceType)
 
-      if 'RealBan_PolType' in policyType and self.__realBan == True:
+        m.AlarmPolType(name, res, statusType, self.nc, self.setup, self.rsAPI, self.rmAPI,
+                       Granularity = granularity,
+                       SiteType = siteType,
+                       ServiceType = serviceType,
+                       ResourceType = resourceType)
+
+
+      if 'RealBan_PolType' in policyType and realBan == True:
         m = Utils.voimport(actionBaseMod + ".RealBan_PolType", self.VOExtension)
-        m.RealBanPolTypeActions( self.__granularity, self.__name, res, da, csAPI, setup )
+        m.RealBanPolTypeActions( granularity, name, res, self.da, self.csAPI, self.setup )
+
+    return resDecisions
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
