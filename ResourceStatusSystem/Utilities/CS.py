@@ -116,8 +116,8 @@ def getSiteTier( sites ):
   else:                               return tiers
 
 def getT1s(grids = 'LCG'):
-  sites = Utils.unpack(getSites(grids))
-  tiers = Utils.unpack(getSiteTier(sites))
+  sites = getSites(grids)
+  tiers = getSiteTier(sites)
   pairs = itertools.izip(sites, tiers)
   return [s for (s, t) in pairs if t == 1]
 
@@ -127,7 +127,7 @@ def getLFCSites():
   return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
                              % g_BaseResourcesSection, True))
 
-def getLFCNode( sites = Utils.unpack(getLFCSites()),
+def getLFCNode( sites = getLFCSites(),
                 readable = ('ReadOnly', 'ReadWrite')):
   def getLFCURL(site, mode):
     return gConfig.getValue("%s/FileCatalogs/LcgFileCatalogCombined/%s/%s"
