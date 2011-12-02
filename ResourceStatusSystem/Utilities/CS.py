@@ -159,7 +159,15 @@ def getSEStatus(SE, accessType):
                            (g_BaseResourcesSection, SE, accessType), "")
 
 def getSEToken(SE):
-  return gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken", "")
+  return gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/SpaceToken" % SE, "")
+
+# Space Tokens functions ############
+
+def getSpaceTokens():
+  return ["LHCb_USER", "LHCb-Disk", "LHCb-Tape"]
+
+def getSpaceTokenEndpoints():
+  return getTypedDictRootedAt(root="", relpath="/Resources/Shares/Disk")
 
 # CE functions ######################
 

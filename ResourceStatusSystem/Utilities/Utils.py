@@ -299,15 +299,15 @@ def dict_invert(dict_):
 
 # XML utils
 
-def xml_append(doc, tag, value=None, elt=None, **kw):
+def xml_append(doc, tag, value_=None, elt_=None, **kw):
   new_elt = doc.createElement(tag)
   for k in kw:
-    new_elt.setAttribute(k, kw[k])
-  if value != None:
-    textnode = doc.createTextNode(str(value))
+    new_elt.setAttribute(k, str(kw[k]))
+  if value_ != None:
+    textnode = doc.createTextNode(str(value_))
     new_elt.appendChild(textnode)
-  if elt != None:
-    return elt.appendChild(new_elt)
+  if elt_ != None:
+    return elt_.appendChild(new_elt)
   else:
     return doc.documentElement.appendChild(new_elt)
 
@@ -385,22 +385,10 @@ def sql_insert_update_(table, keys, kw):
   if type(keys) != list:
     raise TypeError, "keys argument has to be a list"
   res1 = sql_insert_(table, kw)
-  kw_without_keys = [(a, b) for (a, b) in kw.items() if a not in keys]
+  kw = sql_normalize(kw)
+  kw_without_keys = [("%s=%s" % (a, b)) for (a, b) in kw.items() if a not in keys]
   res2 = " ON DUPLICATE KEY UPDATE " + ", ".join(kw_without_keys)
   return res1 + res2
 
 def sql_insert_update(table, keys, **kw):
   return sql_insert_update_(table, keys, kw)
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
-
-################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
