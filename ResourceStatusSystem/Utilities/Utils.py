@@ -1,11 +1,9 @@
-################################################################################
-# $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
-
 """
   This module collects utility functions
 """
+
+from DIRAC import gConfig
+import collections
 
 #############################################################################
 # useful functions
@@ -112,14 +110,16 @@ import copy, ast, socket
 
 id_fun = lambda x: x
 
-
 # Import utils
 
-def voimport(base_mod, voext):
-  try:
-    return  __import__(voext + base_mod, globals(), locals(), ['*'])
-  except ImportError:
-    return  __import__(base_mod, globals(), locals(), ['*'])
+def voimport(base_mod):
+  for ext in gConfig.getValue("DIRAC/Extensions", []):
+    try:
+      return  __import__(ext + base_mod, globals(), locals(), ['*'])
+    except ImportError:
+      continue
+  # If not found in extensions, import it in DIRAC base.
+  return  __import__(base_mod, globals(), locals(), ['*'])
 
 # socket utils
 
@@ -160,7 +160,6 @@ def protect2(f, *args, **kw):
 # (Duck) type checking
 
 def isiterable(obj):
-  import collections
   return isinstance(obj,collections.Iterable)
 
 # Type conversion

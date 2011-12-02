@@ -4,8 +4,6 @@
 # File:     dirac-rss-renew-token
 # Author:   Federico Stagni
 ################################################################################
-__RCSID__ = "$Id$"
-
 """
   Extend the duration of given token
 """
@@ -37,9 +35,10 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
 from DIRAC                                           import gLogger
 from DIRAC.Core.DISET.RPCClient                      import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities.CS         import getMailForUser
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
 nc = NotificationClient()
+rmClient = ResourceManagementClient()
 
 s = RPCClient( "ResourceStatus/ResourceStatus" )
 
@@ -66,9 +65,9 @@ for arg in args:
     gLogger.error( "Problem with extending: %s" % res['Message'] )
     DIRAC.exit( 2 )
   mailMessage = "The token for %s %s has been successfully renewed for others %i hours" % ( g, arg, hours )
-  nc.sendMail( getMailForUser( userName )['Value'][0], 'Token for %s renewed' % arg, mailMessage )
+  nc.sendMail( rmClient.getUserRegistryCache( userName )[2], 'Token for %s renewed' % arg, mailMessage )
 
 DIRAC.exit( 0 )
-            
+
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

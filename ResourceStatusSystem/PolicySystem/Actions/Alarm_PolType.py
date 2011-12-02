@@ -10,16 +10,15 @@ from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 class AlarmPolType(object):
-  def __init__(self, name, res, statusType, nc, setup, rsAPI, rmAPI, **kwargs):
+  def __init__(self, name, res, statusType, nc, rsAPI, rmAPI, **kwargs):
     self.name       = name
     self.res        = res
     self.statusType = statusType
     self.nc         = nc
-    self.setup      = setup
     self.rsAPI      = rsAPI
     self.rmAPI      = rmAPI
     self.kwargs     = kwargs
-
+    self.setup      = CS.getSetup()
     self.run()
 
   def getUsersToNotify(self):
