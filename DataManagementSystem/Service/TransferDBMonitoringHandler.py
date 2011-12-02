@@ -20,46 +20,46 @@ import os
 transferDB = False
 
 # this should also select the SourceSite,DestinationSite
-SUMMARY = [ 'Status', 
-            'NumberOfFiles', 
-            'PercentageComplete', 
-            'TotalSize', 
-            'SubmitTime', 
+SUMMARY = [ 'Status',
+            'NumberOfFiles',
+            'PercentageComplete',
+            'TotalSize',
+            'SubmitTime',
             'LastMonitor' ]
 
-RequestsColumns = [ 'RequestID', 
-                    'RequestName', 
-                    'JobID', 
-                    'OwnerDN', 
-                    'DIRACInstance', 
-                    'Status', 
-                    'CreationTime', 
+RequestsColumns = [ 'RequestID',
+                    'RequestName',
+                    'JobID',
+                    'OwnerDN',
+                    'DIRACInstance',
+                    'Status',
+                    'CreationTime',
                     'SubmissionTime' ]
 
-SubRequestsColumns = [ 'RequestID', 
-                       'SubRequestID', 
-                       'RequestType', 
-                       'Status', 
-                       'Operation', 
-                       'SourceSE', 
-                       'TargetSE', 
-                       'Catalogue', 
-                       'SubmissionTime', 
+SubRequestsColumns = [ 'RequestID',
+                       'SubRequestID',
+                       'RequestType',
+                       'Status',
+                       'Operation',
+                       'SourceSE',
+                       'TargetSE',
+                       'Catalogue',
+                       'SubmissionTime',
                        'LastUpdate' ]
 
-FilesColumns = [ 'SubRequestID', 
-                 'FileID', 
-                 'LFN', 
-                 'Size', 
-                 'PFN', 
-                 'GUID', 
-                 'Md5', 
-                 'Addler', 
-                 'Attempt', 
+FilesColumns = [ 'SubRequestID',
+                 'FileID',
+                 'LFN',
+                 'Size',
+                 'PFN',
+                 'GUID',
+                 'Md5',
+                 'Addler',
+                 'Attempt',
                  'Status' ]
 
-DatasetColumns = [ 'SubRequestID', 
-                   'Dataset', 
+DatasetColumns = [ 'SubRequestID',
+                   'Dataset',
                    'Status' ]
 
 def initializeTransferDBMonitoringHandler( serviceInfo ):
@@ -71,36 +71,6 @@ def initializeTransferDBMonitoringHandler( serviceInfo ):
   global transferDB
   transferDB = TransferDB()
 
-  monitoringSection = PathFinder.getServiceSection( "DataManagement/TransferDBMonitoring" )
-  #Get data location
-  retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection )
-  if not retDict["OK"]:
-    return retDict
-  dataPath = retDict["Value"].strip()
-  if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
-  gLogger.info( "Data will be written into %s path" % dataPath )
-
-  ## check data path 
-  try:
-    ## exists??   
-    if os.path.exists( dataPath ):
-      ## and it's a dir??
-      if os.path.isdir( dataPath):
-        ## and writable??
-        if os.access( dataPath, os.W_OK ):
-          return S_OK()
-        else:
-          return S_ERROR( "Data path %s exists, but it is not writable!" % dataPath )
-      else:
-        return S_ERROR( "Data path %s exists, but points to a file!" % dataPath  )
-    else:
-      ## create 
-      os.makedirs( dataPath )
-
-  except ( OSError, IOError ) , anError:
-    return S_ERROR( str(anError) )
-    
   return S_OK()
 
 class TransferDBMonitoringHandler( RequestHandler ):
