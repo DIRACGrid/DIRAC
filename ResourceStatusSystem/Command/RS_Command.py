@@ -227,9 +227,13 @@ class MonitoredStatus_Command( Command ):
 
     except InvalidRes:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
-      return {'Result':'Unknown'}
+      return { 'Result':'Unknown' }
+    except IndexError:
+      gLogger.warn("Empty database")
+      return { 'Result':'Unknown' }
 
-    return {'Result':statuses[0]}
+
+    return { 'Result':statuses[0] }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
