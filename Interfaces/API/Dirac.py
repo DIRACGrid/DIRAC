@@ -90,7 +90,7 @@ class Dirac:
           self.defaultFileCatalog = result['Value'][0]
     else:
       self.defaultFileCatalog = defaultFC
-    if not defaultFC:
+    if not self.defaultFileCatalog:
       self.defaultFileCatalog = 'FileCatalog'
 
   def version( self ):
