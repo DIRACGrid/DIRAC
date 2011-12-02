@@ -94,7 +94,7 @@ def getSetup():
 # VOMS functions ####################
 
 def getVOMSEndpoints():
-  return gConfig.getSections("%s/VOMS/Servers/lhcb/" % g_BaseRegistrySection)
+  return Utils.unpack(gConfig.getSections("%s/VOMS/Servers/lhcb/" % g_BaseRegistrySection))
 
 # Sites functions ###################
 
@@ -104,7 +104,7 @@ def getSites( grids = ('LCG', 'DIRAC') ):
   sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
                                       % ( g_BaseResourcesSection, grid ), True))
            for grid in grids]
-  return S_OK(Utils.list_flatten(sites))
+  return Utils.list_flatten(sites)
 
 def getSiteTier( sites ):
   if isinstance(sites, basestring):
@@ -112,20 +112,20 @@ def getSiteTier( sites ):
   tiers = [getValue("%s/Sites/%s/%s/MoUTierLevel"
                     % (g_BaseResourcesSection, site.split(".")[0], site), 2) for site in sites]
 
-  if isinstance(sites, basestring): return S_OK(tiers[0])
-  else:                               return S_OK(tiers)
+  if isinstance(sites, basestring): return tiers[0]
+  else:                               return tiers
 
 def getT1s(grids = 'LCG'):
   sites = Utils.unpack(getSites(grids))
   tiers = Utils.unpack(getSiteTier(sites))
   pairs = itertools.izip(sites, tiers)
-  return S_OK([s for (s, t) in pairs if t == 1])
+  return [s for (s, t) in pairs if t == 1]
 
 # LFC functions #####################
 
 def getLFCSites():
-  return gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
-                             % g_BaseResourcesSection, True)
+  return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
+                             % g_BaseResourcesSection, True))
 
 def getLFCNode( sites = Utils.unpack(getLFCSites()),
                 readable = ('ReadOnly', 'ReadWrite')):
@@ -138,13 +138,13 @@ def getLFCNode( sites = Utils.unpack(getLFCSites()),
 
   node = [[getLFCURL(site, r) for r in readable] for site in sites]
   node = [url for urlgroup in node for url in urlgroup] # Flatten the list
-  node = [n for n in node if n != ""]                   # Filter empty string
-  return S_OK(node)
+  return [n for n in node if n != ""]                   # Filter empty string
+
 
 # Storage Elements functions ########
 
 def getSEs():
-  return gConfig.getSections("/Resources/StorageElements")
+  return Utils.unpack(gConfig.getSections("/Resources/StorageElements"))
 
 def getSEHost(SE):
   return gConfig.getValue('%s/StorageElements/%s/AccessProtocol.1/Host'
@@ -152,7 +152,7 @@ def getSEHost(SE):
 
 def getSENodes():
   nodes = [getSEHost(SE) for SE in getSEs()]
-  return S_OK([n for n in nodes if n != ""])
+  return [n for n in nodes if n != ""]
 
 def getSEStatus(SE, accessType):
   return gConfig.getValue("%s/StorageElements/%s/%s" %
@@ -179,7 +179,7 @@ def getCEType( site, ce, grid = 'LCG' ):
 # CondDB functions ##################
 
 def getCondDBs():
-  return gConfig.getSections("%s/CondDB" % g_BaseResourcesSection)
+  return Utils.unpack(gConfig.getSections("%s/CondDB" % g_BaseResourcesSection))
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

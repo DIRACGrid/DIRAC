@@ -61,13 +61,13 @@ class Synchronizer(object):
     Sync DB content with sites that are in the CS
     """
     def getGOCTier(sitesList):
-      return "T" + str(min([int(v) for v in Utils.unpack(CS.getSiteTier(sitesList))]))
+      return "T" + str(min([int(v) for v in CS.getSiteTier(sitesList)]))
 
     # sites in the DB now
     sitesDB = set((s[0] for s in Utils.unpack(self.rsClient.getSite())))
 
     # sites in CS now
-    sitesCS = set(Utils.unpack(CS.getSites()))
+    sitesCS = set(CS.getSites())
 
     print "Syncing Sites from CS: %d sites in CS, %d sites in DB" % (len(sitesCS), len(sitesDB))
 
@@ -82,7 +82,7 @@ class Synchronizer(object):
     for site in sitesCS - sitesDB:
       siteType = site.split(".")[0]
       # DIRAC Tier
-      tier = "T" + str(Utils.unpack(CS.getSiteTier( site )))
+      tier = "T" + str(CS.getSiteTier( site ))
       if siteType == "LCG":
         # Grid Name of the site
         gridSiteName = Utils.unpack(getGOCSiteName(site))
@@ -156,17 +156,17 @@ class Synchronizer(object):
     CEInCS = Utils.set_sanitize([CE for celist in CEinCS.values() for CE in celist])
 
     # All SE Nodes in CS now
-    SENodeInCS = set(Utils.unpack(CS.getSENodes()))
+    SENodeInCS = set(CS.getSENodes())
 
     # LFC Nodes in CS now
-    LFCNodeInCS_L = set(Utils.unpack(CS.getLFCNode(readable = "ReadOnly")))
-    LFCNodeInCS_C = set(Utils.unpack(CS.getLFCNode(readable = "ReadWrite")))
+    LFCNodeInCS_L = set(CS.getLFCNode(readable = "ReadOnly"))
+    LFCNodeInCS_C = set(CS.getLFCNode(readable = "ReadWrite"))
 
     # FTS Nodes in CS now
     FTSNodeInCS = set([v.split("/")[2][0:-5] for v in CS.getTypedDictRootedAt(root="/Resources/FTSEndpoints").values()])
 
     # VOMS Nodes in CS now
-    VOMSNodeInCS = set(Utils.unpack(CS.getVOMSEndpoints()))
+    VOMSNodeInCS = set(CS.getVOMSEndpoints())
 
     # complete list of resources in CS now
     resourcesInCS = CEInCS | SENodeInCS | LFCNodeInCS_L | LFCNodeInCS_C | FTSNodeInCS | VOMSNodeInCS
@@ -204,7 +204,7 @@ class Synchronizer(object):
   def _syncStorageElements( self ):
 
     # Get StorageElements from the CS and the DB
-    CSSEs = set(Utils.unpack(CS.getSEs()))
+    CSSEs = set(CS.getSEs())
     DBSEs = set((s[0] for s in Utils.unpack(self.rsClient.getStorageElement())))
 
     # Remove storageElements that are in DB but not in CS
@@ -214,7 +214,7 @@ class Synchronizer(object):
     # Add new storage elements
     print "Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs))
     for SE in CSSEs - DBSEs:
-      srm = Utils.unpack(CS.getSEHost( SE ))
+      srm = CS.getSEHost( SE )
       if not srm:
         print "Warning! %s has no srm URL in CS!!!" % SE
         continue
