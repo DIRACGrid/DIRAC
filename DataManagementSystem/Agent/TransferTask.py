@@ -42,7 +42,7 @@ class TransferTask(RequestTask):
     :param dict kwargs: args dict
     """
     ## parent class init
-    RequestTask.__init__( self, args, *kwargs )
+    RequestTask.__init__( self, *args, **kwargs )
     ## set request type
     self.setRequestType( "transfer" )
     ## operation handlers
