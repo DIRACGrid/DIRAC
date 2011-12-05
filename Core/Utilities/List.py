@@ -17,7 +17,14 @@ def uniqueElements( aList ):
   :param list aList: list of elements
   :return: list of unique elements
   """
-  return list( set( aList ) )
+  newList = []
+  try:
+    for i in aList:
+      if i not in newList:
+        newList.append( i )
+    return newList
+  except:
+    return None
 
 def appendUnique( aList, anObject ):
   """Append to list if object does not exist.
