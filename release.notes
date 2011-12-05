@@ -32,6 +32,10 @@ BUGFIX: fixed typos in the Script class name
 *Core
 BUGFIX: List.uniqueElements() preserves the other of the remaining elements
 
+*Framework
+CHANGE: By default set authorization rules to authenticated instead of all
+FIX: Use all required arguments in read access data for UserProfileDB
+
 [v6r0]
 
 *Framework
