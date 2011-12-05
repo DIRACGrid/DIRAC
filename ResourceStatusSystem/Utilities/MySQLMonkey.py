@@ -496,13 +496,15 @@ class MySQLStatements( object ):
     return suspicious
 
   def _checkFLOAT(self, suspicious):
-    if type(suspicious) not in (int, float):
-      raise RSSDBException( 'Non numeric value "%s"' % suspicious )
+    for i in list(suspicious):
+      if type(i) not in (int, float):
+        raise RSSDBException( 'Non numeric value "%s"' % suspicious )
     return suspicious
 
   _checkNUMERIC  = _checkFLOAT
   _checkDECIMAL  = _checkFLOAT
   _checkINTEGER  = _checkFLOAT
+  _checkINT      = _checkFLOAT
   _checkSMALLINT = _checkFLOAT
   _checkREAL     = _checkFLOAT
 
