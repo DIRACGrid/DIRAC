@@ -630,12 +630,13 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     channelDict = {}
     for channelID,data,files in res['Value']:
-      throughPut = float(data)/channelTimeDict[channelID]
-      filePut = float(files)/channelTimeDict[channelID]
-      channelDict[channelID] = {'Throughput': throughPut,'Fileput': filePut}
+      if channelID in channelTimeDict:
+        throughPut = float(data)/channelTimeDict[channelID]
+        filePut = float(files)/channelTimeDict[channelID]
+        channelDict[channelID] = {'Throughput': throughPut,'Fileput': filePut}
 
     for channelID in channelIDs:
-      if not channelDict.has_key(channelID):
+      if channelID not in channelDict:
         channelDict[channelID] = {'Throughput': 0,'Fileput': 0}
 
     #############################################
