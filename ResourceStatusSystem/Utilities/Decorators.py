@@ -691,10 +691,10 @@ class ClientFastDec( BaseDec ):
     except Exception, x:
       return S_ERROR( x )  
 
-    try:
-      return gateFunction( fKwargs, meta )
-    except Exception, x:
-      return S_ERROR( x )
+#    try:
+    return gateFunction( fKwargs, meta )
+#    except Exception, x:
+#      return S_ERROR( x )
      
 ################################################################################
 

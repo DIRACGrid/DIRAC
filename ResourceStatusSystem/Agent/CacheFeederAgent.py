@@ -44,7 +44,7 @@ class CacheFeederAgent( AgentModule ):
         ( 'AccountingCache_Command', 'FailedJobsBySiteSplitted_Command',          ( 24, ),   'Hourly' ),
         ( 'AccountingCache_Command', 'SuccessfullPilotsBySiteSplitted_Command',   ( 24, ),   'Hourly' ),
         ( 'AccountingCache_Command', 'FailedPilotsBySiteSplitted_Command',        ( 24, ),   'Hourly' ),
-        ( 'AccountingCache_Command', 'SuccessfullPilotsByCESplitted_Command',     ( 24, ),   'Hourly' ),
+        ( 'AccountingCache_Command', 'SuccessfullPilotsByCESplitted_Command' ,    ( 24, ),   'Hourly' ),
         ( 'AccountingCache_Command', 'FailedPilotsByCESplitted_Command',          ( 24, ),   'Hourly' ),
         ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 24, ),   'Hourly' ),
         ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 168, ),  'Hourly' ),

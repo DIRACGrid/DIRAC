@@ -468,6 +468,7 @@ class MySQLStatements( object ):
       dataType = getattr( table, k ).dataType.upper()
       if not isinstance( v, list ):
         v = [ v ]
+
       v = getattr( self, '_check%s' % dataType )( v )   
                 
     #print parsedArgs, parsedKwargs             
@@ -501,7 +502,8 @@ class MySQLStatements( object ):
         raise RSSDBException( 'Non datetime value "%s"' % s )
     return suspicious
   
-  _checkBLOB = _checkVARCHAR   
+  _checkBLOB = _checkVARCHAR  
+  _checkTEXT = _checkVARCHAR 
   
 ################################################################################
 # RAW SQL FUNCTIONS

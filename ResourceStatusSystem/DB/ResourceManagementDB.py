@@ -111,7 +111,7 @@ class ResourceManagementDB(object):
     """   
     return self.mm.insert( params, meta )
 
-#  @CheckDBExecution
+  @CheckDBExecution
   @ValidateDBTypes
   def update( self, params, meta ):
     """   
@@ -134,7 +134,7 @@ class ResourceManagementDB(object):
     """
     return self.mm.update( params, meta )
 
-#  @CheckDBExecution
+  @CheckDBExecution
   @ValidateDBTypes
   def get( self, params, meta ):
     """  
@@ -154,7 +154,7 @@ class ResourceManagementDB(object):
     """
     return self.mm.get( params, meta )
 
-#  @CheckDBExecution
+  @CheckDBExecution
   @ValidateDBTypes
   def delete( self, params, meta ):
     """     
@@ -177,7 +177,7 @@ class ResourceManagementDB(object):
     """
     return self.mm.delete( params, meta )
   
-#  @CheckDBExecution
+  @CheckDBExecution
   def getSchema( self ):
     """  
     Returns a dictionary with database schema, this includes table and column
