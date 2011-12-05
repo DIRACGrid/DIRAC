@@ -19,6 +19,9 @@ from DIRAC.ResourceStatusSystem                                    import ValidR
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions               import InvalidRes, InvalidStatus, \
     InvalidResourceType, InvalidServiceType, InvalidSiteType
 
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
+
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Empty_PolType import EmptyPolTypeActions
 
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                   import PDP
@@ -100,14 +103,12 @@ class PEP:
     #DB
     if not clients.has_key( 'ResourceStatusClient' ):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       self.rsAPI = ResourceStatusClient( )
     else:
       self.rsAPI = clients[ 'ResourceStatusClient' ]
 
     if not clients.has_key( 'ResourceManagementClient'):
       # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
       self.rmAPI = ResourceManagementClient()
     else:
       self.rmAPI = clients[ 'ResourceManagementClient' ]
