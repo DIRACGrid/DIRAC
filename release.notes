@@ -22,9 +22,15 @@ NEW: Utilities.Validator are common checks done through RSS modules
 CHANGE: Utilities.Synchronizer syncs users and DIRAC sites
 CHANGE: cosmetic changes everywhere, added HeadURL and RCSID
 CHANGE: Removed all the VOExtension logic on RSS
+BUGFIX: ResourceStatusHandler - getStorageElementStatusWeb(), access mode by default is Read
 
 *dirac-setup-site
 BUGFIX: fixed typos in the Script class name
+
+[v6r0p1]
+
+*Core
+BUGFIX: List.uniqueElements() preserves the other of the remaining elements
 
 [v6r0]
 
