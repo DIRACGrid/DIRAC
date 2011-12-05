@@ -335,7 +335,7 @@ class RemovalTaskTests( unittest.TestCase ):
 
 ## suite execution
 if __name__ == "__main__":
-  parseCommandLine()
+  #parseCommandLine()
   testLoader = unittest.TestLoader()
   suiteRemovalTask = testLoader.loadTestsFromTestCase( RemovalTaskTests )
   suite = unittest.TestSuite( [ suiteRemovalTask ] )

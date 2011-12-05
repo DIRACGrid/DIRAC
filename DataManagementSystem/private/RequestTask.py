@@ -134,7 +134,11 @@ class RequestTask( object ):
 
     ## DIRAC fixtures
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
     self.__log = gLogger.getSubLogger( self.__class__.__name__ )
+    #self.__log.initialize( self.__class__.__name__, os.path.join( configPath, self.__class__.__name__ ) )
+    #self.__log = gLogger.getSubLogger( self.__class__.__name__ )
+    #self.__log.showHeaders( True ) #  = gLogger.getSubLogger( self.__class__.__name__ )
 
     self.always = self.__log.always
     self.notice = self.__log.notice
@@ -171,15 +175,21 @@ class RequestTask( object ):
     ## save config path 
     self.__configPath = configPath
     ## set requestType
-    self.setRequestType( gConfig.getValue( os.path.join( self.__configPath, "RequestType" ), "" ) )
+    self.setRequestType( gConfig.getValue( os.path.join( configPath, "RequestType" ), "" ) )
     ## get log level
-    self.__log.setLevel( gConfig.getValue( os.path.join( self.__configPath, self.__class__.__name__,  "LogLevel" ), "DEBUG" ) )
+    self.__log.setLevel( gConfig.getValue( os.path.join( configPath, self.__class__.__name__,  "LogLevel" ), "DEBUG" ) )
     ## clear monitoring
     self.__monitor = {}
     ## save DataManager proxy
     self.__dataManagerProxy = None
     if "X509_USER_PROXY" in os.environ:
+      self.info("saving path to current proxy file")
       self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
+
+    #self.always( os.path.join( configPath, self.__class__.__name__ ) )
+    #self.__log.initialize( self.__class__.__name__, configPath  )
+    #self.always( self.__log.initialized()  )
+
       
 
   def addMark( self, name, value = 1 ):
