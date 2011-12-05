@@ -43,7 +43,6 @@ class RemovalTask( RequestTask ):
     :param tuple args: anonymouse args tuple 
     :param dict kwagrs: named args dict
     """
-    
     RequestTask.__init__( self, *args, **kwargs )
     self.setRequestType( "removal" )
     self.addOperationAction( "physicalRemoval" , self.physicalRemoval )
@@ -89,7 +88,7 @@ class RemovalTask( RequestTask ):
     pfnsOK = [ pfn for pfn in pfns if pfn not in failedPFNs ]
     self.addMark( 'PhysicalRemovalDone', len( pfnsOK ) )
     for pfn in pfnsOK:
-      self.info("Succesfully removed %s from %s" % pfn, str(targetSEs) )
+      self.info("Succesfully removed %s from %s" % ( pfn, str(targetSEs) ) )
       res = requestObj.setSubRequestFileAttributeValue( index, "removal", pfnToLfn[pfn], "Status", "Done" )
       if not res["OK"]:
         self.error("Error setting status to 'Done' for %s" % pfnToLfn[pfn])
@@ -233,7 +232,7 @@ class RemovalTask( RequestTask ):
       for targetSE in targetSEs:
         reTransfer = self.replicaManager().onlineRetransfer( targetSE, pfn )
         if reTransfer["OK"]:
-          if pfn in reTransfer["Value"]["Succesfull"]:
+          if pfn in reTransfer["Value"]["Successful"]:
             self.info("Succesfully requested retransfer of %s" % pfn )
           else:
             self.error( "Failed to retransfer request for %s at %s: %s" % ( pfn, 

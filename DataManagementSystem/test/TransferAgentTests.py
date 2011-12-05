@@ -59,7 +59,6 @@ class TransferAgentTests( unittest.TestCase ):
     self.assertEqual( isinstance( agent, TransferAgent ), True )
 
     
-
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
   suiteTA = testLoader.loadTestsFromTestCase( TransferAgentTests )     

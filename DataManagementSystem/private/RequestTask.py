@@ -106,8 +106,8 @@ class RequestTask( object ):
   __dataManagerDN = None
   ## holder of dataManager group
   __dataManagerGroup = None
-  ## 
-  __monitor = { }
+  ## monitoring dict
+  __monitor = {} 
 
   def __init__( self, requestString, requestName, executionOrder, jobID, sourceServer, configPath ):
     """ c'tor
@@ -149,13 +149,12 @@ class RequestTask( object ):
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
 
+    ## export DIRAC global tools and functions
     self.makeGlobal( "S_OK", S_OK )
     self.makeGlobal( "S_ERROR", S_ERROR )
     self.makeGlobal( "gLogger", gLogger )
     self.makeGlobal( "gConfig", gConfig )
     self.makeGlobal( "gProxyManager", gProxyManager ) 
-    
-  
     
     ## save request string
     self.requestString = requestString
@@ -175,6 +174,13 @@ class RequestTask( object ):
     self.setRequestType( gConfig.getValue( os.path.join( self.__configPath, "RequestType" ), "" ) )
     ## get log level
     self.__log.setLevel( gConfig.getValue( os.path.join( self.__configPath, self.__class__.__name__,  "LogLevel" ), "DEBUG" ) )
+    ## clear monitoring
+    self.__monitor = {}
+    ## save DataManager proxy
+    self.__dataManagerProxy = None
+    if "X509_USER_PROXY" in os.environ:
+      self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
+      
 
   def addMark( self, name, value = 1 ):
     """ add mark to __monitor dict
@@ -188,13 +194,12 @@ class RequestTask( object ):
       self.__monitor.setdefault( name, 0 )
     self.__monitor[name] += value
 
-  @classmethod
-  def monitor( cls ):
+  def monitor( self ):
     """ get monitoring dict
 
     :param cls: class reference
     """
-    return cls.__monitor
+    return self.__monitor
 
   def makeGlobal( self, objName, objDef ):
     """ export :objDef: to global name space using :objName: name 
@@ -210,9 +215,7 @@ class RequestTask( object ):
       else:
         setattr( __builtins__, objName, objDef )
       return True
-    
-
-    
+        
   def requestType( self ):
     """ get request type
 
@@ -386,6 +389,9 @@ class RequestTask( object ):
       ## delete owner proxy
       if ownerProxyFile:
         os.unlink( ownerProxyFile )
+      ## put back DataManager proxy to env
+      if self.__dataManagerProxy:
+        os.environ["X509_USER_PROXY"] = self.__dataManagerProxy
     return ret
 
   def handleRequest( self ):

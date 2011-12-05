@@ -531,7 +531,6 @@ class TransferAgent( RequestAgentBase ):
           self.log.info("No free slots available in processPool, will wait a second to proceed...")
           time.sleep( 1 )
 
-
     return S_OK()
           
 
@@ -630,9 +629,7 @@ class TransferAgent( RequestAgentBase ):
         tree = tree["Value"]
         
         for channelID, repDict in tree.items():
-          
           self.log.info( "schedule: processing for channel %d %s" % ( channelID, str( repDict ) ) )
-          
           transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
           if not transferURLs["OK"]:
             return transferURLs
