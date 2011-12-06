@@ -7,17 +7,26 @@
 
 __RCSID__  = "$Id$"
 
-from DIRAC.ResourceStatusSystem.Utilities import CS
-from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC.ResourceStatusSystem.Utilities            import CS
+from DIRAC.ResourceStatusSystem.Utilities            import Utils
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 class AlarmPolType(object):
-  def __init__(self, name, res, statusType, nc, rsAPI, rmAPI, **kwargs):
+  def __init__(self, name, res, statusType, clients, **kwargs):
     self.name       = name
     self.res        = res
     self.statusType = statusType
-    self.nc         = nc
-    self.rsAPI      = rsAPI
-    self.rmAPI      = rmAPI
+    self.nc         = NotificationClient()
+
+    try:
+      self.rsAPI = clients[ 'ResourceStatusClient' ]
+    except ValueError:
+      self.rsAPI = ResourceStatusClient()
+    try:
+      self.rmAPI = clients[ 'ResourceManagementClient' ]
+    except ValueError:
+      self.rmAPI = ResourceManagementClient()
+
     self.kwargs     = kwargs
     self.setup      = CS.getSetup()
     self.run()
