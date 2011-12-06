@@ -1,11 +1,12 @@
 ################################################################################
 # $HeadURL $
 ################################################################################
-__RCSID__  = "$Id$"
-
-""" 
+"""
   ResourcePolType Actions
 """
+
+__RCSID__  = "$Id$"
+
 
 from datetime import datetime
 
@@ -28,33 +29,22 @@ def ResourcePolTypeActions( granularity, name, statusType, resDecisions, rsAPI, 
 
   if res['Action']:
 
-    if res['Status'] == 'Probing':
-      token = 'RS_Hold'
+    # if res['Status'] == 'Probing':
+    #   token = 'RS_Hold'
 
     modifiedStatus = { 'status' : res[ 'Status' ], 'reason' : res[ 'Reason' ],
                        'tokenOwner' : token }
 
     if granularity == 'Site':
       rsAPI.modifyElementStatus( granularity, name, statusType, **modifiedStatus )
-      #rsDB.setMonitoredToBeChecked( ['Service', 'Resource', 'StorageElement'], granularity, name )
-
     elif granularity == 'Service':
       rsAPI.modifyElementStatus( granularity, name, statusType, **modifiedStatus )
-      #rsDB.setMonitoredToBeChecked( ['Site', 'Resource', 'StorageElement'], granularity, name )
-
     elif granularity == 'Resource':
       rsAPI.modifyElementStatus( granularity, name, statusType, **modifiedStatus )
-      #rsAPI.modifyResourceStatus( name, statusType, **modifiedStatus )
-      #rsDB.setMonitoredToBeChecked( ['Site', 'Service', 'StorageElement'], granularity, name )
-
     elif granularity == 'StorageElement':
       rsAPI.modifyElementStatus( granularity, name, statusType, **modifiedStatus )
-      #rsAPI.modifyStorageElementStatus( name, statusType, **modifiedStatus )
-      #rsDB.setMonitoredToBeChecked( ['Site', 'Service', 'Resource'], granularity, name )
-
   else:
     rsAPI.setReason( granularity, name, statusType, res['Reason'] )#, 'RS_SVC' )
-    #rsDB.setLastMonitoredCheckTime( granularity, name, statusType )
 
   now = datetime.utcnow()
 
@@ -64,6 +54,6 @@ def ResourcePolTypeActions( granularity, name, statusType, resDecisions, rsAPI, 
 
   if res.has_key( 'EndDate' ):
     rsAPI.setDateEnd( granularity, name, statusType, res['EndDate'] )
-            
+
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
