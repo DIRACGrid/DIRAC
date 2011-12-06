@@ -427,15 +427,22 @@ class TransferTask(RequestTask):
       if pfn:
         for targetSE in targetSEs:
           get = self.replicaManager().getStorageFile( pfn, targetSE )
-          if get["OK"] and pfn in get["Value"]["Successful"]:
-            self.info("Sucessfully get %s at %s" % ( pfn, targetSE) )
+          if get["OK"]:
+            if pfn in get["Value"]["Successful"]:
+              self.info("Sucessfully got %s at %s" % ( pfn, targetSE ) )
+            else:
+              failed[lfn][targetSE] = get["Value"]["Failure"][pfn]
+              self.error("Cannot get %s at %s: %s" % ( pfn, targetSE, get["Value"]["Failed"][lfn] ) )
           else:
             self.error( "Failed to get %s file at %s: %s" % ( lfn, targetSE, get["Message"] ) )
             failed[lfn][targetSE] = get["Message"]
       else:
         get = self.replicaManager().getFile( lfn )
-        if get["OK"] and lfn in get["Value"]["Successful"]: 
-          self.info( "Successfully got %s" % ( lfn ) )
+        if get["OK"]:
+          if lfn in get["Value"]["Successful"]: 
+            self.info( "Successfully got %s" % ( lfn ) )
+          else:
+            failed[lfn][lfn] =  get["Value"]["Failed"][lfn]
         else:
           self.error( "Failed to get %s file: %s" % ( lfn, get["Message"] ) )
           failed[lfn][lfn] = get["Message"]

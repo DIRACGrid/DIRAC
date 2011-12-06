@@ -30,7 +30,6 @@ from mock import *
 global MySQL, DB, RequestDBMySQL
 
 from DIRAC.Core.Base.Script import parseCommandLine
-
 from DIRAC.Core.Utilities.MySQL import MySQL
 MySQL = Mock(spec=MySQL)
 from DIRAC.Core.Base.DB import DB
@@ -249,7 +248,6 @@ class RemovalTaskTests( unittest.TestCase ):
                                                                  { "Failed" : {},
                                                                    "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
     
-
     self.assertEqual( removalTask.__call__(),
                       {'OK': True, 'Value': {'monitor': {'Done': 1, 'Execute': 1, 'ReplicaRemovalAtt': 1, 'ReplicaRemovalDone': 1}}} )
     del removalTask
