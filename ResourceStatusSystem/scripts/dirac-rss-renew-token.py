@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-########################################################################
+################################################################################
 # $HeadURL$
 # File:     dirac-rss-renew-token
 # Author:   Federico Stagni
-########################################################################
+################################################################################
 """
   Extend the duration of given token
 """
-__RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -35,9 +35,10 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
 from DIRAC                                           import gLogger
 from DIRAC.Core.DISET.RPCClient                      import RPCClient
-from DIRAC.ResourceStatusSystem.Utilities.CS         import getMailForUser
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
 nc = NotificationClient()
+rmClient = ResourceManagementClient()
 
 s = RPCClient( "ResourceStatus/ResourceStatus" )
 
@@ -47,11 +48,11 @@ if not res['OK']:
   gLogger.error( "Failed to get proxy information", res['Message'] )
   DIRAC.exit( 2 )
 userName = res['Value']['username']
-group = res['Value']['group']
-if group not in ( 'diracAdmin', 'lhcb_prod' ):
-  gLogger.error( "You must be lhcb_prod or diracAdmin to execute this script" )
-  gLogger.info( "Please issue 'lhcb-proxy-init -g lhcb_prod' or 'lhcb-proxy-init -g diracAdmin'" )
-  DIRAC.exit( 2 )
+#group = res['Value']['group']
+#if group not in ( 'diracAdmin', 'lhcb_prod' ):
+#  gLogger.error( "You must be lhcb_prod or diracAdmin to execute this script" )
+#  gLogger.info( "Please issue 'lhcb-proxy-init -g lhcb_prod' or 'lhcb-proxy-init -g diracAdmin'" )
+#  DIRAC.exit( 2 )
 
 for arg in args:
   g = s.whatIs( arg )
@@ -64,6 +65,9 @@ for arg in args:
     gLogger.error( "Problem with extending: %s" % res['Message'] )
     DIRAC.exit( 2 )
   mailMessage = "The token for %s %s has been successfully renewed for others %i hours" % ( g, arg, hours )
-  nc.sendMail( getMailForUser( userName )['Value'][0], 'Token for %s renewed' % arg, mailMessage )
+  nc.sendMail( rmClient.getUserRegistryCache( userName )[2], 'Token for %s renewed' % arg, mailMessage )
 
 DIRAC.exit( 0 )
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

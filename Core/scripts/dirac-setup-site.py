@@ -18,7 +18,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  cfgfile: DIRAC Cfg with description of the configuration (optional)' ] ) )
 
 Script.addDefaultOptionValue( '/DIRAC/Security/UseServerCertificate', 'yes' )
-Scrpit.addDefaultOptionValue( 'LogLevel', 'INFO' )
+Script.addDefaultOptionValue( 'LogLevel', 'INFO' )
 Script.parseCommandLine()
 args = Script.getExtraCLICFGFiles()
 #
