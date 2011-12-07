@@ -10,7 +10,8 @@ from DIRAC import S_OK, S_ERROR
 
 def getAvailabilityStatus( sls_id, timeout = None ):
   """
-  Return actual SLS availability status of entity in sls_id
+  Return actual SLS availability status of entity in sls_id.
+  Use SLS API: fast!!
 
   :params:
   :attr:`sls_id`: string - sls_id of the service
@@ -32,7 +33,8 @@ def getAvailabilityStatus( sls_id, timeout = None ):
 
 def getServiceInfo( sls_id, timeout = None ):
   """
-  Return actual SLS "additional service information" as a dict
+  Return actual SLS "additional service information" as a dict.
+  (Parse SLS update XML)
 
   :params:
   :attr:`sls_id` : string - sls_id of the service

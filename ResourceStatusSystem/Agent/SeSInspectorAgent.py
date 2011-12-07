@@ -128,8 +128,11 @@ class SeSInspectorAgent( AgentModule ):
         if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
           pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
           if pepStatus != pepDict[ 'status' ]:
-            self.log.info( 'Updated Site %s (%s) from %s to %s' %
-                          ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
+            self.log.info( 'Updated %s %s from %s/%s to %s/%s' %
+                          ( pepDict["granularity"],
+                            pepDict['name'],
+                            pepDict['statusType'], pepDict['status'],
+                            pepDict['statusType'], pepStatus ))
 
       except Exception:
         self.log.exception( "SeSInspector._executeCheck Checking Service %s, with type/status: %s/%s" %
