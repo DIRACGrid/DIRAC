@@ -746,8 +746,9 @@ class ResourceManagementClient:
     del kwargs[ 'self' ]
        
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
-    sqlQuery = self._getElement( element, **kwargs )   
     
+    sqlQuery = self._getElement( element, **kwargs )   
+        
     del kwargs[ 'meta' ]
     
     if sqlQuery[ 'Value' ]:      

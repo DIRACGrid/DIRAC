@@ -10,19 +10,19 @@ class ResourceManagementDB(object):
   """
   The ResourceManagementDB class is a front-end to the ResourceManagementDB MySQL db.
   If exposes four basic methods:
-  
+
   - insert
   - update
   - get
   - delete
-  
+
   all them defined on the MySQL monkey class.
   Moreover, there are a set of key-worded parameters that can be used, specially
   on the getX and deleteX functions ( to know more, again, check the MySQL monkey
   documentation ).
-  
+
   The DB schema has NO foreign keys, so there may be some small consistency checks,
-  called validators on the insert and update functions.  
+  called validators on the insert and update functions.
 
   The simplest way to instantiate an object of type :class:`ResourceManagementDB`
   is simply by calling
@@ -46,22 +46,22 @@ class ResourceManagementDB(object):
   Or, if you want to work with a local DB, providing it's mySQL:
 
    >>> rmDB = ResourceManagementDB( DBin = [ 'UserName', 'Password' ] )
-   
-  The ResourceStatusDB also exposes database Schema information, either on a 
+
+  The ResourceStatusDB also exposes database Schema information, either on a
   dictionary or on a MySQLSchema tree object.
-  
+
   - getSchema
   - inspectSchema
-    
+
   Alternatively, we can access the MySQLSchema XML and tree as follows:
-  
+
    >>> rmDB = ResourceManagementDB()
    >>> xml  = rmDB.mm.SCHEMA
    >>> tree = rmDB.mm.mSchema
    >>> tree
    >>> tree.
    >>> tree.PolicyResult.Name
-  
+
   """
 
   def __init__( self, *args, **kwargs ):
@@ -87,45 +87,45 @@ class ResourceManagementDB(object):
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceManagementDB', 'ResourceStatus/ResourceManagementDB', maxQueueSize )
 
-    self.mm    = MySQLMonkey( self )  
+    self.mm    = MySQLMonkey( self )
 
   @CheckDBExecution
   @ValidateDBTypes
   def insert( self, params, meta ):
-    """      
+    """
     Inserts args in the DB making use of kwargs where parameters such as
-    the table are specified ( filled automatically by the Client). In order to 
+    the table are specified ( filled automatically by the Client). In order to
     do the insertion, it uses MySQLMonkey to do the parsing, execution and
     error handling. Typically you will not pass kwargs to this function, unless
-    you know what are you doing and you have a very special use case.    
-      
+    you know what are you doing and you have a very special use case.
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """   
+    """
     return self.mm.insert( params, meta )
 
-#  @CheckDBExecution
+  @CheckDBExecution
   @ValidateDBTypes
   def update( self, params, meta ):
-    """   
+    """
     Updates row with values given on args. The row selection is done using the
     default of MySQLMonkey ( column.primary or column.keyColumn ). It can be
-    modified using kwargs, but it is not explained here. The table keyword 
-    argument is mandatory, and filled automatically by the Client. Typically 
-    you will not pass kwargs to this function, unless you know what are you 
+    modified using kwargs, but it is not explained here. The table keyword
+    argument is mandatory, and filled automatically by the Client. Typically
+    you will not pass kwargs to this function, unless you know what are you
     doing and you have a very special use case.
-       
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
@@ -134,18 +134,18 @@ class ResourceManagementDB(object):
     """
     return self.mm.update( params, meta )
 
-#  @CheckDBExecution
+  @CheckDBExecution
   @ValidateDBTypes
   def get( self, params, meta ):
-    """  
-    Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
+    """
+    Uses arguments to build conditional SQL statement ( WHERE ... ). If the
     sql statement desired is more complex, you can use kwargs to interact with
     the MySQLStatement parser and generate a more sophisticated query.
-       
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
@@ -154,21 +154,21 @@ class ResourceManagementDB(object):
     """
     return self.mm.get( params, meta )
 
-#  @CheckDBExecution
+  @CheckDBExecution
   @ValidateDBTypes
   def delete( self, params, meta ):
-    """     
-    Uses arguments to build conditional SQL statement ( WHERE ... ). If the 
+    """
+    Uses arguments to build conditional SQL statement ( WHERE ... ). If the
     sql statement desired is more complex, you can use kwargs to interact with
     the MySQLStatement parser and generate a more sophisticated query. There is
     only one forbidden query, with all parameters None ( this would mean a query
-    of the type `DELETE * from TableName` ). The usage of kwargs is the same 
+    of the type `DELETE * from TableName` ). The usage of kwargs is the same
     as in the get function.
-       
+
     :Parameters:
       **params** - `dict`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **meta** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
@@ -176,26 +176,26 @@ class ResourceManagementDB(object):
     :return: S_OK() || S_ERROR()
     """
     return self.mm.delete( params, meta )
-  
-#  @CheckDBExecution
+
+  @CheckDBExecution
   def getSchema( self ):
-    """  
+    """
     Returns a dictionary with database schema, this includes table and column
     names. It has two variants, columns and keyUsage. The first one has at least,
-    as many keys as keyUsage, it is the complete schema. The second one is the 
-    one used for the default updates and selects -- not taking into account 
+    as many keys as keyUsage, it is the complete schema. The second one is the
+    one used for the default updates and selects -- not taking into account
     auto_increment fields, but taking into account primary and keyUsage fields.
-      
+
     :Parameters:
       `None`
-    
+
     :return: S_OK()
-    """    
+    """
     return { 'OK': True, 'Value' : self.mm.SCHEMA }
-    
-  @CheckDBExecution  
+
+  @CheckDBExecution
   def inspectSchema( self ):
-    """   
+    """
     Returns an object which represents the database schema and can be browsed.
      >>> db = ResourceManagementDB()
      >>> schema = db.inspectSchema()[ 'Value' ]
@@ -205,15 +205,15 @@ class ResourceManagementDB(object):
      >>> schema.TableName1
          Table TableName1:
          <ColumnName1>,<ColumnName2>..
-  
+
     Every column has a few attributes ( primary, keyUsage, extra, position,
-    dataType and charMaxLen ). 
-     
+    dataType and charMaxLen ).
+
     :Parameters:
       `None`
-    
+
     :return: S_OK()
-    """    
+    """
     return { 'OK': True, 'Value' : self.mm.mSchema }
 
 ################################################################################

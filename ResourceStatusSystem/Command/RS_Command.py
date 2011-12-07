@@ -1,11 +1,11 @@
 ################################################################################
 # $HeadURL $
 ################################################################################
-__RCSID__ = "$Id:  $"
+"""
+RS_Command
+"""
 
-"""
-  TOWRITE
-"""
+__RCSID__ = "$Id:  $"
 
 from DIRAC                                            import gLogger
 
@@ -200,10 +200,8 @@ class MonitoredStatus_Command( Command ):
 
     :params:
       :attr:`args`: a tuple
-        - `args[0]`: string - should be a ValidRes
-
-        - `args[1]`: string - should be the name of the ValidRes
-
+        - `args[0]`: string          - should be a ValidRes
+        - `args[1]`: string          - should be the name of the ValidRes
         - `args[2]`: optional string - a ValidRes (get status of THIS ValidRes
           for name in args[1], will call getGeneralName)
 
@@ -218,18 +216,22 @@ class MonitoredStatus_Command( Command ):
       if len( self.args ) == 3:
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
           raise InvalidRes, Utils.where( self, self.doCommand )
-        toBeFound = Utils.unpack(self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], self.args[2] ))[0]
-
+        toBeFound = Utils.unpack(self.APIs[ 'ResourceStatusClient' ].getGeneralName(
+            self.args[0], self.args[1], self.args[2] ))[0]
       else:
         toBeFound = self.args[1]
 
-      statuses  = Utils.unpack(self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[0], toBeFound ))[0]
+      statuses  = Utils.unpack(self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus(
+          self.args[0], toBeFound ))[0]
 
     except InvalidRes:
       gLogger.exception( "Exception when calling ResourceStatusClient for %s %s" % ( self.args[0], self.args[1] ) )
       return {'Result':'Unknown'}
+    except IndexError:
+      gLogger.warn( "No value for getMonitoredStatus of %s/%s" % ( self.args[0], self.args[1] ) )
+      return {'Result':'Unknown'}
 
-    return {'Result':statuses[0]}
+    return { 'Result':statuses[0] }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
