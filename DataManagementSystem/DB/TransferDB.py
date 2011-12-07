@@ -603,40 +603,57 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def getChannelObservedThroughput(self,interval):
-    res = self.getChannels()
-    if not res['OK']:
-      return res
-    channels = res['Value']
+  def getChannelObservedThroughput( self, interval ):
+    """ create and return a dict holding summary info about FTS channels 
+    and related transfers in last :interval: seconds 
+ 
+    :return: S_OK( { channelID : { "Throughput" : float,
+                                   "Fileput" : float,
+                                   "SuccessfulFiles" : int,
+                                   "FailedFiles" : int
+                                  }, ... } )
+
+    :param self: self reference
+    :param int interval: monitoring interval in seconds
+    """
+
+    channels = self.getChannels()
+    if not channels["OK"]:
+      return channels
+    channels = channels['Value']
     channelIDs = channels.keys()
+
+    ## create empty channelDict
+    channelDict = dict.fromkeys( channels.keys(), { "Throughput" : 0,
+                                                    "Fileput" : 0,
+                                                    "SuccessfulFiles" : 0,
+                                                    "FailedFiles" : 0 } )
+
 
     #############################################
     # First get the total time spend transferring files on the channels
     req = "SELECT ChannelID,SUM(TIME_TO_SEC(TIMEDIFF(TerminalTime,SubmissionTime))) FROM FileToFTS WHERE Status IN ('Completed','Failed') AND SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % interval
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain total time transferring.'
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    channelTimeDict = {}
-    for channelID,totalTime in res['Value']:
+
+    channelTimeDict = dict.fromkeys( channels.keys(), None )
+    for channelID, totalTime in res['Value']:
       channelTimeDict[channelID] = float(totalTime)
 
     #############################################
     # Now get the total size of the data transferred and the number of files that were successful
     req = "SELECT ChannelID,SUM(FileSize),COUNT(*) FROM FileToFTS WHERE Status = 'Completed' and SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % interval
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain total transferred data and files.'
       return S_ERROR('%s\n%s' % (err,res['Message']))
-    channelDict = {}
-    for channelID,data,files in res['Value']:
-      throughPut = float(data)/channelTimeDict[channelID]
-      filePut = float(files)/channelTimeDict[channelID]
-      channelDict[channelID] = {'Throughput': throughPut,'Fileput': filePut}
-
-    for channelID in channelIDs:
-      if not channelDict.has_key(channelID):
-        channelDict[channelID] = {'Throughput': 0,'Fileput': 0}
+    
+    for channelID, data, files in res['Value']:
+      if channelID in channelTimeDict and channelTimeDict[channelID]:
+        channelDict[channelID] = { 'Throughput': float(data)/channelTimeDict[channelID]
+                                   'Fileput': float(files)/channelTimeDict[channelID] }
 
     #############################################
     # Now get the success rate on the channels
@@ -644,16 +661,13 @@ class TransferDB(DB):
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain success rate.'
-      return S_ERROR('%s\n%s' % (err,res['Message']))
-    for channelID,successful,failed in res['Value']:
+      return S_ERROR('%s\n%s' % ( err, res['Message'] ) )
+  
+    for channelID, successful, failed in res['Value']:
       channelDict[channelID]['SuccessfulFiles'] = int(successful)
       channelDict[channelID]['FailedFiles'] = int(failed)
-    for channelID in channelIDs:
-      if not channelDict[channelID].has_key('SuccessfulFiles'):
-        channelDict[channelID]['SuccessfulFiles'] = 0
-        channelDict[channelID]['FailedFiles'] = 0
-
-    return S_OK(channelDict)
+    
+    return S_OK( channelDict )
 
   def getTransferDurations(self,channelID,startTime=None,endTime=None):
     """ This obtains the duration of the successful transfers on the supplied channel
