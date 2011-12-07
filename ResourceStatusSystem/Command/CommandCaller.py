@@ -36,7 +36,7 @@ class CommandCaller:
       cClass = comm[1]
       commandModule = Utils.voimport("DIRAC.ResourceStatusSystem.Command." + cModule)
     except ImportError:
-      gLogger.warn("Command %s/%s not found, using dummy command DoNothing_Command.")
+      gLogger.warn("Command %s/%s not found, using dummy command DoNothing_Command." % (cModule, cClass))
       cClass = "DoNothing_Command"
       commandModule = __import__("DIRAC.ResourceStatusSystem.Command.DoNothing_Command", globals(), locals(), ['*'])
 

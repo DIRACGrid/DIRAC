@@ -9,8 +9,6 @@
        b. raising alarms
        c. other....
 """
-
-from DIRAC.ResourceStatusSystem.Utilities                          import CS
 from DIRAC.ResourceStatusSystem.Utilities                          import Utils
 
 from DIRAC.ResourceStatusSystem                                    import ValidRes, ValidStatus, ValidStatusTypes, \
@@ -18,6 +16,9 @@ from DIRAC.ResourceStatusSystem                                    import ValidR
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions               import InvalidRes, InvalidStatus, \
     InvalidResourceType, InvalidServiceType, InvalidSiteType
+
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
 
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Empty_PolType import EmptyPolTypeActions
 
@@ -28,107 +29,53 @@ class PEP:
   PEP (Policy Enforcement Point) initialization
 
   :params:
-    :attr:`granularity`: string - a ValidRes (optional)
-
-    :attr:`name`: string - optional name (e.g. of a site)
-
-    :attr:`status`: string - optional status
-
-    :attr:`formerStatus`: string - optional former status
-
-    :attr:`reason`: string - optional reason for last status change
-
-    :attr:`siteType`: string - optional site type
-
-    :attr:`serviceType`: string - optional service type
-
-    :attr:`resourceType`: string - optional resource type
-
-    :attr:`futureEnforcement`: optional
+    :attr:`granularity`       : string - a ValidRes (optional)
+    :attr:`name`              : string - optional name (e.g. of a site)
+    :attr:`status`            : string - optional status
+    :attr:`formerStatus`      : string - optional former status
+    :attr:`reason`            : string - optional reason for last status change
+    :attr:`siteType`          : string - optional site type
+    :attr:`serviceType`       : string - optional service type
+    :attr:`resourceType`      : string - optional resource type
+    :attr:`futureEnforcement` :          optional
       [
         {
           'PolicyType': a PolicyType
           'Granularity': a ValidRes (optional)
         }
       ]
-
   """
 
-  def __init__( self, pdp = None, nc = None, da = None, csAPI = None,
-                knownInfo = None, clients = {} ):
+  def __init__( self, pdp = None, clients = {} ):
     """
-    enforce policies, using a PDP  (Policy Decision Point), based on
+    Enforce policies, using a PDP  (Policy Decision Point), based on
 
      self.__granularity (optional)
-
      self.__name (optional)
-
      self.__status (optional)
-
      self.__formerStatus (optional)
-
      self.__reason (optional)
-
      self.__siteType (optional)
-
      self.__serviceType (optional)
-
      self.__realBan (optional)
-
      self.__user (optional)
-
      self.__futurePolicyType (optional)
-
      self.__futureGranularity (optional)
 
      :params:
-       :attr:`pdpIn`: a custom PDP object (optional)
-
-       :attr:`rsDBIn`: a custom (statuses) database object (optional)
-
-       :attr:`rmDBIn`: a custom (management) database object (optional)
-
-       :attr:`ncIn`: a custom notification client object (optional)
-
-       :attr:`daIn`: a custom DiracAdmin object (optional)
-
-       :attr:`csAPIIn`: a custom CSAPI object (optional)
-
-       :attr:`knownInfo`: a string of known provided information (optional)
+       :attr:`pdp`       : a custom PDP object (optional)
+       :attr:`clients`   : a dictionary containing modules corresponding to clients.
     """
-
-    #DB
-    if not clients.has_key( 'ResourceStatusClient' ):
-      # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.rsAPI = ResourceStatusClient( )
-    else:
+    try:
       self.rsAPI = clients[ 'ResourceStatusClient' ]
-
-    if not clients.has_key( 'ResourceManagementClient'):
-      # Use standard DIRAC DB
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.rmAPI = ResourceManagementClient()
-    else:
+    except ValueError:
+      self.rsAPI = ResourceStatusClient()
+    try:
       self.rmAPI = clients[ 'ResourceManagementClient' ]
+    except ValueError:
+      self.rmAPI = ResourceManagementClient()
 
-    #notification client
-    if nc is None:
-      from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-      nc = NotificationClient()
-    self.nc = nc
-
-    #DiracAdmin
-    if da is None:
-      from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-      da = DiracAdmin()
-    self.da = da
-
-    #CSAPI
-    if csAPI is None:
-      from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-      csAPI = CSAPI()
-    self.csAPI = csAPI
+    self.clients = clients
 
     if pdp is None:
       self.pdp = PDP( **clients )
@@ -149,9 +96,9 @@ class PEP:
       if tokenOwner == 'RS_SVC':
         realBan = True
 
-    ###################
-    # policy setup    #
-    ###################
+    ################
+    # policy setup #
+    ################
 
     granularity = Utils.assignOrRaise( granularity, ValidRes, InvalidRes, self, self.__init__ )
     try:
@@ -177,7 +124,6 @@ class PEP:
     ###################
 
     resDecisions = self.pdp.takeDecision( knownInfo = knownInfo )
-    assert(type(resDecisions) == dict and resDecisions != {})
 
     res          = resDecisions[ 'PolicyCombinedResult' ]
     actionBaseMod = "DIRAC.ResourceStatusSystem.PolicySystem.Actions"
@@ -197,16 +143,16 @@ class PEP:
       if 'Alarm_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Alarm_PolType")
 
-        m.AlarmPolType(name, res, statusType, self.nc, self.rsAPI, self.rmAPI,
+        m.AlarmPolType(name, res, statusType, self.clients,
                        Granularity = granularity,
                        SiteType = siteType,
                        ServiceType = serviceType,
                        ResourceType = resourceType)
 
 
-      if 'RealBan_PolType' in policyType and realBan == True:
+      if 'RealBan_PolType' in policyType and realBan:
         m = Utils.voimport(actionBaseMod + ".RealBan_PolType")
-        m.RealBanPolTypeActions( granularity, name, res, self.da, self.csAPI)
+        m.RealBanPolTypeActions(granularity, name, res)
 
     return resDecisions
 
