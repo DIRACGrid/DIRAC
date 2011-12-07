@@ -15,7 +15,7 @@ except CS.CSError:
   print "Unable to connect to CS. Do you have a proxy ?"
   exit(1)
 
-ValidRes          = gencfg[ 'Resources' ].keys()
+ValidRes          = gencfg[ 'Granularity' ]
 ValidStatus       = gencfg[ 'Status' ]
 ValidStatusTypes  = gencfg[ 'Resources' ]
 ValidPolicyResult = gencfg[ 'PolicyResult' ] + gencfg[ 'Status' ]
@@ -36,6 +36,6 @@ views_panels = {
   'Resource' : ['Resource_Panel'],
   'StorageElement' : ['SE_Panel']
 }
-            
+
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
