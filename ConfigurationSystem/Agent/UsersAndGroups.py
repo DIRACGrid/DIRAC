@@ -201,10 +201,10 @@ class UsersAndGroups( AgentModule ):
     usersInVOMS.sort()
     for iUPos in range( len( usersInVOMS ) ):
       userName = ''
+      user = usersInVOMS[ iUPos ]
       for oldUser in currentUsers:
         if user[ 'DN' ].strip() in List.fromChar( currentUsers[oldUser][ 'DN' ] ):
           userName = oldUser
-      user = usersInVOMS[ iUPos ]
       if not userName:
         result = self.vomsSrv.attGetUserNickname( user[ 'DN' ], user[ 'CA' ] )
         if result[ 'OK' ]:
