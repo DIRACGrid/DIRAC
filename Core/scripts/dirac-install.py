@@ -1155,7 +1155,7 @@ def createBashrc():
           os.unlink( oldPath )
         os.rename( proPath, oldPath )
       os.symlink( cliParams.targetPath, proPath )
-      for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc']:
+      for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc', 'webRoot']:
         fake = os.path.join( cliParams.targetPath, dir )
         real = os.path.join( cliParams.basePath, dir )
         if not os.path.exists( real ):
