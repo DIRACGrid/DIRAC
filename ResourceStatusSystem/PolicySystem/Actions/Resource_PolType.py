@@ -29,22 +29,19 @@ def ResourcePolTypeActions( granularity, name, statusType, resDecisions, rsAPI, 
 
   if res['Action']:
 
+    ## If HammerCloud in place, or other instrument to get out of the
+    ## Probing state, you can uncomment this:
+
     # if res['Status'] == 'Probing':
     #   token = 'RS_Hold'
+    ####################################################################
 
-    modifiedStatus = { 'status' : res[ 'Status' ], 'reason' : res[ 'Reason' ],
-                       'tokenOwner' : token }
+    rsAPI.modifyElementStatus( granularity, name, statusType,
+                               status=res[ 'Status' ], reason=res[ 'Reason' ],
+                               tokenOwner=token)
 
-    if granularity == 'Site':
-      rsAPI.modifyElementStatus( granularity, name, statusType, **modifiedStatus )
-    elif granularity == 'Service':
-      rsAPI.modifyElementStatus( granularity, name, statusType, **modifiedStatus )
-    elif granularity == 'Resource':
-      rsAPI.modifyElementStatus( granularity, name, statusType, **modifiedStatus )
-    elif granularity == 'StorageElement':
-      rsAPI.modifyElementStatus( granularity, name, statusType, **modifiedStatus )
   else:
-    rsAPI.setReason( granularity, name, statusType, res['Reason'] )#, 'RS_SVC' )
+    rsAPI.setReason( granularity, name, statusType, res['Reason'] )
 
   now = datetime.utcnow()
 
