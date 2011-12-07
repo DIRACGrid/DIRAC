@@ -14,6 +14,8 @@ def getAvailabilityStatus( sls_id, timeout = None ):
 
   :params:
   :attr:`sls_id`: string - sls_id of the service
+
+  Returns: { "Availability": <int>, "Weblink": <str> }
   """
   socket.setdefaulttimeout( timeout )
   try:
@@ -26,27 +28,7 @@ def getAvailabilityStatus( sls_id, timeout = None ):
   elif "ERROR:" in res:
     return S_ERROR("Unknown SLS error")
   else:
-    return S_OK(int(res))
-
-def getInfo( sls_id, timeout = None ):
-  """
-  Use getStatus to return actual SLS status of entity in sls_id
-  and return link to SLS page
-
-  :params:
-  :attr:`sls_id`: string - sls_id of the service
-
-  returns:
-  {
-  'SLS':availability
-  'WebLink':link
-  }
-
-  """
-  status = getAvailabilityStatus( sls_id, timeout )
-  status['Weblink'] = 'https://sls.cern.ch/sls/service.php?id=' + sls_id
-
-  return status # Already a S_OK/S_ERROR value.
+    return S_OK( { "Availability": int(res), "Weblink": "https://sls.cern.ch/sls/service.php?id=" + sls_id})
 
 def getServiceInfo( sls_id, timeout = None ):
   """
@@ -62,6 +44,5 @@ def getServiceInfo( sls_id, timeout = None ):
     numericValues = doc.getElementsByTagName( "numericvalue" )
   except Exception as exc:
     return S_ERROR(str(exc))
-
 
   return S_OK(dict([(nv.getAttribute("name"), float(nv.firstChild.nodeValue)) for nv in numericValues]))

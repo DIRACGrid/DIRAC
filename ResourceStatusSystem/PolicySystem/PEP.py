@@ -75,6 +75,8 @@ class PEP:
     except ValueError:
       self.rmAPI = ResourceManagementClient()
 
+    self.clients = clients
+
     if pdp is None:
       self.pdp = PDP( **clients )
 
@@ -141,7 +143,7 @@ class PEP:
       if 'Alarm_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".Alarm_PolType")
 
-        m.AlarmPolType(name, res, statusType, clients,
+        m.AlarmPolType(name, res, statusType, self.clients,
                        Granularity = granularity,
                        SiteType = siteType,
                        ServiceType = serviceType,
