@@ -200,22 +200,19 @@ class UsersAndGroups( AgentModule ):
     self.log.info( "Retrieving usernames..." )
     usersInVOMS.sort()
     for iUPos in range( len( usersInVOMS ) ):
-      user = usersInVOMS[ iUPos ]
-      # result = self.vomsSrv.attGetUserNickname( user[ 'DN' ], user[ 'CA' ] )
-      # if not result[ 'OK' ]:
-      #   self.__adminMsgs[ 'Errors' ].append( "Could not retrieve nickname for DN %s" % user[ 'DN' ] )
-      #   self.log.error( "Could not get nickname for DN %s" % user[ 'DN' ] )
-      #   return result
-      # userName = result[ 'Value' ]
       userName = ''
       for oldUser in currentUsers:
         if user[ 'DN' ].strip() in List.fromChar( currentUsers[oldUser][ 'DN' ] ):
           userName = oldUser
+      user = usersInVOMS[ iUPos ]
       if not userName:
-        userName = user[ 'mail' ][:user[ 'mail' ].find( '@' )]
-      if userName in [ 'emiliano.carmona', 'lamanna', 'giovanni.lamanna' ] :
-        print "*%s*" % user[ 'DN' ]
-        print "*%s*" % currentUsers[userName][ 'DN' ]
+        result = self.vomsSrv.attGetUserNickname( user[ 'DN' ], user[ 'CA' ] )
+        if result[ 'OK' ]:
+          userName = result[ 'Value' ]
+        else:
+          self.__adminMsgs[ 'Errors' ].append( "Could not retrieve nickname for DN %s" % user[ 'DN' ] )
+          self.log.error( "Could not get nickname for DN %s" % user[ 'DN' ] )
+          userName = user[ 'mail' ][:user[ 'mail' ].find( '@' )]
       if not userName:
         self.log.error( "Empty nickname for DN %s" % user[ 'DN' ] )
         self.__adminMsgs[ 'Errors' ].append( "Empty nickname for DN %s" % user[ 'DN' ] )
