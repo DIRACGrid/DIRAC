@@ -27,6 +27,22 @@ BUGFIX: ResourceStatusHandler - getStorageElementStatusWeb(), access mode by def
 *dirac-setup-site
 BUGFIX: fixed typos in the Script class name
 
+*Transformation
+FIX: Missing logger in the TaskManager Client (was using agent's one)
+NEW: Added UnitTest class for TaskManager Client
+
+*DIRAC API
+BUGFIX: Dirac.py. If /LocalSite/FileCatalog is not define the default Catalog was not properly set.
+
+*Framework
+NEW: UsersAndGroups agent to synchronize users from VOMRS server.
+
+*dirac-install
+FIX: make Platform.py able to run with python2.3 to be used inside dirac-install
+
+*WorkloadManagement
+FIX: SiteDirector - change getVO() function call to getVOForGroup()
+
 [v6r0p1]
 
 *Core
