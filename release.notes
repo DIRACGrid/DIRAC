@@ -1,4 +1,4 @@
-[v6r1-pre2]
+[v6r1-pre3]
 
 *RSS
 CHANGE: Major refactoring of the RSS system
@@ -39,6 +39,7 @@ NEW: UsersAndGroups agent to synchronize users from VOMRS server.
 
 *dirac-install
 FIX: make Platform.py able to run with python2.3 to be used inside dirac-install
+FIX: protection against the old or pro links pointing to non-existent directories
 
 *WorkloadManagement
 FIX: SiteDirector - change getVO() function call to getVOForGroup()
