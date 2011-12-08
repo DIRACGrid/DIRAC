@@ -1,4 +1,4 @@
-[v6r1-pre1]
+[v6r1-pre2]
 
 *RSS
 CHANGE: Major refactoring of the RSS system
@@ -51,6 +51,7 @@ BUGFIX: List.uniqueElements() preserves the other of the remaining elements
 *Framework
 CHANGE: By default set authorization rules to authenticated instead of all
 FIX: Use all required arguments in read access data for UserProfileDB
+FIX: NotificationClient - dropped LHCb-Production setup by default in the __getRPSClient()
 
 [v6r0]
 
