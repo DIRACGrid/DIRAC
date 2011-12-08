@@ -1150,8 +1150,8 @@ def createBashrc():
     oldPath = os.path.join( cliParams.basePath, 'old' )
     proPath = os.path.join( cliParams.basePath, 'pro' )
     try:
-      if os.path.exists( proPath ):
-        if os.path.exists( oldPath ):
+      if os.path.exists( proPath ) or os.path.islink( proPath ):
+        if os.path.exists( oldPath ) or os.path.islink( oldPath ):
           os.unlink( oldPath )
         os.rename( proPath, oldPath )
       os.symlink( cliParams.targetPath, proPath )
@@ -1160,6 +1160,8 @@ def createBashrc():
         real = os.path.join( cliParams.basePath, dir )
         if not os.path.exists( real ):
           os.makedirs( real )
+        if os.path.exists( fake ):
+          os.rename( fake, fake+'.bak' )
         os.symlink( real, fake )
     except Exception, x:
       logERROR( str( x ) )
