@@ -274,7 +274,7 @@ class TransferAgent( RequestAgentBase ):
     :param self: self reference
     """
     if not self.__strategyHandler:
-      self.__strategyHandler = StrategyHandler( self.__configPath )
+      self.__strategyHandler = StrategyHandler( self.configPath() )
     return self.__strategyHandler
 
   def setupStrategyHandler( self ):
@@ -296,6 +296,7 @@ class TransferAgent( RequestAgentBase ):
       self.log.error( errStr, res['Message'] )
       return S_ERROR( errStr )
     bandwidths = res["Value"] or False
+
 
     ## neither channels nor bandwidths 
     if not ( channels and bandwidths ):
@@ -444,7 +445,21 @@ class TransferAgent( RequestAgentBase ):
 
     :param self: self reference
     """
-    requestCounter = self.__requestsPerCycle
+    requestCounter = self.requestsPerCycle()
+
+    failback = False
+
+    if self.__executionMode["FTS"]:
+      self.log.info( "Will setup StrategyHandler for FTS scheduling...")
+      self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', 3600 )
+      self.log.debug( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
+
+      ## setup strategy handler
+      setupStrategyHandler = self.setupStrategyHandler()
+      if not setupStrategyHandler["OK"]:
+        self.log.error( setupStrategyHandler["Message"] )
+        self.log.error( "Disabling FTS scheduling in this cycle...")
+        failback = True 
 
     ## loop over requests
     while requestCounter:
@@ -457,46 +472,33 @@ class TransferAgent( RequestAgentBase ):
         self.log.info("No more 'Waiting' requests found in RequestDB")
         return S_OK()
       requestDict = requestDict["Value"]
-      self.log.info("Processing request (%d) %s" %  ( self.__requestsPerCycle - requestCounter + 1, 
+      self.log.info("Processing request (%d) %s" %  ( self.requestsPerCycle() - requestCounter + 1, 
                                                       requestDict["requestName"] ) )
 
       requestObj = RequestContainer( requestDict["requestString"] )
       ownerDN = requestObj.getAttribute( "OwnerDN" )
       
-      ## flag for executing TransferTask mode
-      failback = False
-      ## skip scheduling in ownerDN is set
-      if ownerDN: 
+     
+      if ownerDN["OK"] and ownerDN["Value"]:
+        self.log.info("Request %s has its owner %s, FTS scheduling is disabled" % ( requestDict["requestName"], ownerDN["Value"] ) )
         failback = True
       
       ## if ownerDN is NOT present and FTS scheduling is enabled we can proceed with it 
       if not failback and self.__executionMode["FTS"]:
         self.log.info("About to schedule files for FTS")
-        
-        ## get throughput time scale in sec (default 1h)
-        self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', 3600 )
-        self.log.debug( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
-
-        ## setup strategy handler
-        setupStrategyHandler = self.setupStrategyHandler()
-        if not setupStrategyHandler["OK"]:
-          self.log.error( setupStrategyHandler["Message"] )
-          failback = True
-
-        ## fire FTS schduling at least
-        if not failback:
-          try:
-            schedule = self.schedule( requestDict )
-            if schedule["OK"]:
-              self.log.info("Request %s has been scheduled for FTS" % requestDict["requestName"] )
-              requestCounter = requestCounter - 1
-              continue
-            else:
-              self.log.error( schedule["Message"] )
-              failback = True
-          except StrategyHandlerChannelNotDefined, error:
-            self.log.info( str(error) )
+        try:
+          schedule = self.schedule( requestDict )
+          if schedule["OK"]:
+            self.log.info("Request %s has been scheduled for FTS" % requestDict["requestName"] )
+            requestCounter = requestCounter - 1
+            failback = False
+            continue
+          else:
+            self.log.error( schedule["Message"] )
             failback = True
+        except StrategyHandlerChannelNotDefined, error:
+          self.log.info( str(error) )
+          failback = True
 
       ## failback 
       if failback:
@@ -507,17 +509,17 @@ class TransferAgent( RequestAgentBase ):
           continue
 
       ## if we land here anyway this request has to be processed by tasks
-      requestDict["configPath"] = self.__configPath
+      requestDict["configPath"] = self.configPath()
       self.log.info("About to process request using TransferTask")
       
       ## TransferTask main loop 
       while True:
         if self.processPool().getFreeSlots():
-          self.log.info("spawning task %d" % ( self.__requestsPerCycle - requestCounter + 1 ) ) 
+          self.log.info("spawning task %d" % ( self.requestsPerCycle() - requestCounter + 1 ) ) 
           enqueue = self.processPool().createAndQueueTask( TransferTask, 
                                                            kwargs = requestDict, 
-                                                           callback =  self.__requestCallback,
-                                                           exceptionCallback = self.__exceptionCallback,
+                                                           callback =  self.requestCallback,
+                                                           exceptionCallback = self.exceptionCallback,
                                                            blocking = True )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
@@ -594,6 +596,7 @@ class TransferAgent( RequestAgentBase ):
       if not files["OK"]:
         self.log.debug("schedule: Failed to get Waiting files from SubRequest.", files["Message"] )
       waitingFiles, replicas, metadata = files["Value"]
+
       if not waitingFiles or not replicas or not metadata:
         return S_ERROR( "waiting files, replica or metadata info is missing" )
 
@@ -707,7 +710,7 @@ class StrategyHandler( object ):
 
     ## sublogger
     self.log = gLogger.getSubLogger( "StrategyHandler", child=False )
-    self.log.setLevel( gConfig.getValue( self.configSection + "/LogLevel" ), "DEBUG" )
+    self.log.setLevel( gConfig.getValue( self.configSection + "/LogLevel", "DEBUG"  ) )
 
     self.bandwidths = bandwidths
     self.channels = channels
@@ -776,7 +779,7 @@ class StrategyHandler( object ):
             self.log.warn("determineRepliactionTree: can't set new sigma value from '%s'" % strategy )
         if reStrategy.pattern in [ "MinimiseTotalWait", "DynamicThroughput" ]:
           replicasToUse = replicas.keys() if sourceSE == "None" else [ sourceSE ]
-          tree = self.strategyDispatcher[ reStrategy.pattern ].__call__( replicasToUse, targetSEs  )
+          tree = self.strategyDispatcher[ reStrategy ].__call__( replicasToUse, targetSEs  )
         elif reStrategy.pattern == "Simple":
           if not sourceSE in replicas.keys():
             return S_ERROR( "File does not exist at specified source site." )

@@ -146,6 +146,9 @@ class RequestAgentBase( AgentModule ):
     """
     return self.__configPath
 
+  def requestsPerCycle( self ):
+    return self.__requestsPerCycle
+
   @classmethod
   def requestClient( cls ):
     """ RequestClient getter
@@ -185,6 +188,9 @@ class RequestAgentBase( AgentModule ):
     self.__requestCallback = callback
     return S_OK()
 
+  def requestCallback( self ):
+    return self.__requestCallback
+
   def registerExceptionCallback( self, exceptionCallback ):
     """ register exception callback, executed when requestTask raise an exception
  
@@ -194,6 +200,10 @@ class RequestAgentBase( AgentModule ):
     if not callable( exceptionCallback ):
       return S_ERROR("Exception callback cannot be registered, object '%s' isn't callable." % str(exceptionCallback) )
     self.__exceptionCallback = exceptionCallback
+
+  def exceptionCallback( self ):
+    return self.__exceptionCallback
+
 
   @classmethod
   def getRequest( cls, requestType ):
