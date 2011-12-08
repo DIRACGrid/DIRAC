@@ -27,7 +27,7 @@ class NotificationClient:
       self.__rpcFunctor = RPCClient
 
   def __getRPCClient( self, **kwargs ):
-    return self.__rpcFunctor( "Framework/Notification", setup = 'LHCb-Production', **kwargs )
+    return self.__rpcFunctor( "Framework/Notification", **kwargs )
 
   #############################################################################
   def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True ):
