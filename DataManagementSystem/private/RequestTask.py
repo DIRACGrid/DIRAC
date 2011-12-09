@@ -477,7 +477,10 @@ class RequestTask( object ):
               if not subRequestDone["Value"]:
                 self.warn("SubRequest %s is not done yet, request finalisation is disabled" % str(index) )
                 canFinalize = False
-      
+
+          if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
+            self.info("No more waiting files in subrequest, will set its status to 'Done'")
+            self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
 
     ################################################
     #  Generate the new request string after operation
