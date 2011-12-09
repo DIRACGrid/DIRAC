@@ -386,7 +386,7 @@ class TransferTask(RequestTask):
           subRequestError = res["Message"]
 
       if not failed[lfn]:
-        self.info("File %s successfully processed at all targetSEs.")
+        self.info("File %s successfully processed at all targetSEs." % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
 
     if not subRequestError:
@@ -449,7 +449,7 @@ class TransferTask(RequestTask):
           subRequestError = get["Message"]
 
       if not failed[lfn]:
-        self.info("File %s sucessfully processed at all targetSEs")
+        self.info("File %s sucessfully processed at all targetSEs." % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
 
     if not subRequestError:

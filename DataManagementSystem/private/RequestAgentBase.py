@@ -115,6 +115,11 @@ class RequestAgentBase( AgentModule ):
     """
     AgentModule.__init__( self, agentName, baseAgentName, properties )
 
+    ## save config path
+    self.__configPath = PathFinder.getAgentSection( agentName )
+    self.log.info( "Will use %s config path" % self.__configPath )
+  
+
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", 10 )
     self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
     self.__minProcess = self.am_getOption( "MinProcess", 2 )
@@ -127,17 +132,16 @@ class RequestAgentBase( AgentModule ):
     self.log.info( "Will process '%s' request type." % str( self.__requestType ) )
 
     self.am_setOption( "shifterProxy", "DataManager" )
-    self.log.info( "Will use DataManager proxy." )
-    ## save config path
-    self.__configPath = PathFinder.getAgentSection( agentName )
-    
+    self.log.info( "Will use DataManager proxy by default." )
+
     ## common monitor activity 
-    gMonitor.registerActivity( "Iteration", "Agent Loops", 
-                               self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Execute", "Request Processed", 
-                               self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Done", "Request Completed", 
-                               self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Iteration", "Agent Loops", 
+                                   self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Execute", "Request Processed", 
+                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Done", "Request Completed", 
+                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+
 
   def configPath( self ):
     """ config path getter

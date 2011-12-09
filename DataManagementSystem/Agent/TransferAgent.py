@@ -154,56 +154,53 @@ class TransferAgent( RequestAgentBase ):
   ## exectuon modes
   __executionMode = { "Tasks" : True, "FTS" : False }
 
-  def initilize( self ):
-    """ agent initilisation
 
+  def __init__( self, agentName, baseAgentName=False, properties=dict() ):
+    """ c'tor
+     
     :param self: self reference
+    :param str agentName: agent name
+    :param str baseAgentName: base agent name
+    :param dict properties: whatever else properties
     """
-    self.setRequestTask( TransferTask )
-    self.log.info("Will use %s task for request processing." % TransferTask.__class__.__name__ )
+    RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
 
-    ## make sure configPath is saved
-    self.__configPath = PathFinder.getAgentSection( AGENT_NAME )
-  
+
     ## gMonitor stuff
-    gMonitor.registerActivity( "Replicate and register", "Replicate and register operations", 
-                               "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Replicate", "Replicate operations", "TransferAgent", 
-                               "Attempts/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Put and register", "Put and register operations", 
-                               "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Put", "Put operations", 
-                               "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Replicate and register", "Replicate and register operations", 
+                                   "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Replicate", "Replicate operations", "TransferAgent", 
+                                   "Attempts/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Put and register", "Put and register operations", 
+                                   "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Put", "Put operations", 
+                                   "TransferAgent", "Attempts/min", gMonitor.OP_SUM )
 
-    gMonitor.registerActivity( "Replication successful", "Successful replications", 
-                               "TransferAgent", "Successful/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Put successful", "Successful puts", 
-                               "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Replication successful", "Successful replications", 
+                                   "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Put successful", "Successful puts", 
+                                   "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    
+    self.monitor.registerActivity( "Replication failed", "Failed replications", 
+                                   "TransferAgent", "Failed/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Put failed", "Failed puts", 
+                                   "TransferAgent", "Failed/min", gMonitor.OP_SUM )
+    
+    self.monitor.registerActivity( "Replica registration successful", "Successful replica registrations", 
+                                   "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "File registration successful", "Successful file registrations", 
+                                   "TransferAgent", "Successful/min", gMonitor.OP_SUM )
+    
+    self.monitor.registerActivity( "Replica registration failed", "Failed replica registrations", 
+                                   "TransferAgent", "Failed/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "File registration failed", "Failed file registrations", 
+                                   "TransferAgent", "Failed/min", gMonitor.OP_SUM )
 
-    gMonitor.registerActivity( "Replication failed", "Failed replications", 
-                               "TransferAgent", "Failed/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Put failed", "Failed puts", 
-                               "TransferAgent", "Failed/min", gMonitor.OP_SUM )
 
-    gMonitor.registerActivity( "Replica registration successful", "Successful replica registrations", 
-                               "TransferAgent", "Successful/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "File registration successful", "Successful file registrations", 
-                               "TransferAgent", "Successful/min", gMonitor.OP_SUM )
-
-    gMonitor.registerActivity( "Replica registration failed", "Failed replica registrations", 
-                               "TransferAgent", "Failed/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "File registration failed", "Failed file registrations", 
-                               "TransferAgent", "Failed/min", gMonitor.OP_SUM )
-
-    ## default proxy
-    self.am_setOption( "shifterProxy", "DataManager" )
-    self.log.info("Will use default DataManager proxy for handling requests.")
-
-    ## execution modes
     self.__executionMode["Tasks"] = self.am_getOption( "TasksExecuting", True )
     self.log.info( "Tasks execution mode is %s." % { True : "enabled", 
                                                      False : "disabled" }[ self.__executionMode["Tasks"] ] )
-
+    
     self.__executionMode["FTS"] = self.am_getOption( "FTSScheduling", False )
     self.log.info( "FTS execution mode is %s." % { True : "enabled", 
                                                    False : "disabled" }[ self.__executionMode["FTS"] ] )
@@ -212,19 +209,20 @@ class TransferAgent( RequestAgentBase ):
     if self.__executionMode["FTS"]:
       try:
         self.__transferDB = TransferDB()
-        self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', 3600 )
-        self.log.debug( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
       except Exception, error:
         self.log.exception( error )
       if not isinstance( self.__transferDB, TransferDB ):
         self.log.warn("Can't create TransferDB instance, disabling FTS execution mode.")
         self.__executionMode["FTS"] = False
-      
+      else:
+        self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', 3600 )
+        self.log.debug( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
+
     ## is there any mode enabled?
     if True not in self.__executionMode.values():
       return S_ERROR("Agent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
-    return S_OK()
 
+    self.log.info("%s has been constructed" % agentName )
 
   ###################################################################################
   # facades for various DIRAC tools
@@ -297,14 +295,14 @@ class TransferAgent( RequestAgentBase ):
       return S_ERROR( errStr )
     bandwidths = res["Value"] or False
 
-
     ## neither channels nor bandwidths 
     if not ( channels and bandwidths ):
-      return S_ERROR( "setupStrategyHandler: No active channels found for replication." )
+      return S_ERROR( "setupStrategyHandler: No active channels found for replication" )
     
     self.strategyHandler().setBandwiths( bandwidths )
     self.strategyHandler().setChannels( channels )
     self.strategyHandler().reset()
+
     return S_OK()
 
   def getTransferURLs( self, lfn, repDict, replicas ):
@@ -439,14 +437,12 @@ class TransferAgent( RequestAgentBase ):
       return S_ERROR( res["Value"]["Failed"][pfn] )
     return S_OK( res["Value"]["Successful"][pfn] )
 
-
   def execute( self ):
     """ request execution goes here
 
     :param self: self reference
     """
-    requestCounter = self.requestsPerCycle()
-
+    requestCounter = self.__requestsPerCycle
     failback = False
 
     if self.__executionMode["FTS"]:
@@ -603,7 +599,7 @@ class TransferAgent( RequestAgentBase ):
       ## loop over waiting files, get replication tree 
       for waitingFileLFN, waitingFileID in sorted( waitingFiles.items() ):
         
-        waitingFileReplicas = None if waitingFileLFN not in replicas else replicas[waitingFileLFN]
+        waitingFileReplicas = [] if waitingFileLFN not in replicas else replicas[waitingFileLFN]
         if not waitingFileReplicas:
           self.log.warn("schedule: no replica information available for LFN %s" % waitingFileLFN )
           continue 
@@ -620,16 +616,29 @@ class TransferAgent( RequestAgentBase ):
           requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFileLFN, "Status", "Done" )
           continue
         
+        self.log.info( "Processing %s size=%s replicas=%d targetSEs=%s" % ( waitingFileLFN, 
+                                                                            waitingFileSize, 
+                                                                            len(waitingFileReplicas), 
+                                                                            str(waitingFileTargets) ) ) 
+
+
         ## get the tree at least
         tree = self.strategyHandler().determineReplicationTree( sourceSE, 
                                                                 waitingFileTargets, 
                                                                 waitingFileReplicas,  
                                                                 waitingFileSize, 
                                                                 strategy )
+
         if not tree["OK"]:
-          self.log.error( "schedule: Failed to determine replication tree.", tree["Message"] )
+          self.log.error( "schedule: failed to determine replication tree.", tree["Message"] )
           continue
         tree = tree["Value"]
+        if not tree:
+          self.log.error("schedule: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
+          continue
+        else:
+          self.log.debug( "replicationTree: %s" % tree )
+
         
         for channelID, repDict in tree.items():
           self.log.info( "schedule: processing for channel %d %s" % ( channelID, str( repDict ) ) )
@@ -699,19 +708,27 @@ class StrategyHandler( object ):
     :param bandwithds: observed throughput on active channels
     :param channels: active channels
     """
+    ## save config section
     self.configSection = configSection + "/" + self.__class__.__name__
-
-    self.supportedStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
-    self.sigma = gConfig.getValue( self.configSection + '/HopSigma', 0.0 )
-    self.schedulingType = gConfig.getValue( self.configSection + '/SchedulingType', 'File' )
-    self.activeStrategies = gConfig.getValue( self.configSection + '/ActiveStrategies', ['MinimiseTotalWait'] )
-    self.numberOfStrategies = len( self.activeStrategies )
-    self.acceptableFailureRate = gConfig.getValue( self.configSection + '/AcceptableFailureRate', 75 )
-
     ## sublogger
-    self.log = gLogger.getSubLogger( "StrategyHandler", child=False )
+    self.log = gLogger.getSubLogger( "StrategyHandler", child=True )
     self.log.setLevel( gConfig.getValue( self.configSection + "/LogLevel", "DEBUG"  ) )
 
+  
+    self.supportedStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
+    self.log.debug( "Supported strategies = %s" % ", ".join( self.supportedStrategies ) )
+  
+    self.sigma = gConfig.getValue( self.configSection + '/HopSigma', 0.0 )
+    self.log.debug( "HopSigma = %s" % self.sigma )
+    self.schedulingType = gConfig.getValue( self.configSection + '/SchedulingType', 'File' )
+    self.log.debug( "SchedulingType = %s" % self.schedulingType )
+    self.activeStrategies = gConfig.getValue( self.configSection + '/ActiveStrategies', ['MinimiseTotalWait'] )
+    self.log.debug( "ActiveStrategies = %s" % ", ".join( self.activeStrategies ) )
+    self.numberOfStrategies = len( self.activeStrategies )
+    self.log.debug( "Number of active strategies = %s" % self.numberOfStrategies )
+    self.acceptableFailureRate = gConfig.getValue( self.configSection + '/AcceptableFailureRate', 75 )
+    self.log.debug( "AcceptableFailureRate = %s" % self.acceptableFailureRate )
+            
     self.bandwidths = bandwidths
     self.channels = channels
     self.chosenStrategy = 0
@@ -721,6 +738,13 @@ class StrategyHandler( object ):
                                 re.compile("DynamicThroughput") : self.__dynamicThroughput,
                                 re.compile("Simple") : self.__simple, 
                                 re.compile("Swarm") : self.__swarm }
+
+    self.log.debug( "strategyDispatcher entries:" )
+    for key, value in self.strategyDispatcher.items():
+      self.log.debug( "%s : %s" % ( key.pattern, value.__name__ ) )
+
+    self.log.debug("%s has been constructed" % self.__class__.__name__ )
+
 
   def reset( self ):
     """Reset chosenStrategy."""
@@ -733,6 +757,7 @@ class StrategyHandler( object ):
     :param bandwithds: observed througput of active FTS channels
     """
     self.bandwidths = bandwidths
+    #self.log.debug( "bandwiths set to %s" % bandwidths )
 
   def setChannels( self, channels ):
     """Set the channels.
@@ -741,6 +766,7 @@ class StrategyHandler( object ):
     :param channels: active channels queues
     """
     self.channels = channels 
+    #self.log.debug( "channels set to %s" % channels )
 
   def getSupportedStrategies( self ):
     """ Get supported strategies.
@@ -763,22 +789,25 @@ class StrategyHandler( object ):
     """
     if not strategy:
       strategy = self.__selectStrategy()
+    self.log.debug( "Will use %s strategy"  % strategy )
 
     if sigma:
+      self.log.debug( "Sigme set to %s"  % sigma )
       self.sigma = sigma
 
     # For each strategy implemented an 'if' must be placed here 
     tree = {}
     for reStrategy in self.strategyDispatcher:
+      self.log.debug( reStrategy.pattern )
       if reStrategy.search( strategy ):
         if "_" in strategy:
           try:
             self.sigma = float(strategy.split("_")[1])
-            self.log.debug("determineReplicationTree: new sigma %f" % self.sigma )
+            self.log.debug("determineReplicationTree: new sigma %s" % self.sigma )
           except ValueError:
             self.log.warn("determineRepliactionTree: can't set new sigma value from '%s'" % strategy )
         if reStrategy.pattern in [ "MinimiseTotalWait", "DynamicThroughput" ]:
-          replicasToUse = replicas.keys() if sourceSE == "None" else [ sourceSE ]
+          replicasToUse = replicas.keys() if sourceSE == None else [ sourceSE ]
           tree = self.strategyDispatcher[ reStrategy ].__call__( replicasToUse, targetSEs  )
         elif reStrategy.pattern == "Simple":
           if not sourceSE in replicas.keys():
@@ -953,6 +982,10 @@ class StrategyHandler( object ):
     :param list sourceSEs: source storage elements names
     :param list destSEs: destination storage elements names
     """
+
+    self.log.debug( "sourceSEs = %s" % sourceSEs )
+    self.log.debug( "destSEs = %s" % destSEs )
+    
     tree = {}
     res = self.__getTimeToStart()
     if not res["OK"]:
@@ -1022,7 +1055,7 @@ class StrategyHandler( object ):
                                   "Strategy" : "MinimiseTotalWait" }
       sourceSEs.append( selectedDestSE )
       destSEs.remove( selectedDestSE )
-
+      
     return tree
 
   def __getTimeToStart( self ):

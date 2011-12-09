@@ -21,7 +21,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 # agent's name
-AGENT_NAME = 'DataManagement/RemovalAgent'
+AGENT_NAME = "DataManagement/RemovalAgent"
 
 class RemovalAgent( RequestAgentBase ):
   """
@@ -48,38 +48,35 @@ class RemovalAgent( RequestAgentBase ):
     shifterProxy = DataManager
 
   """
-  def initialize( self ):
+  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
     """ agent initialisation
  
     :param self: self reference
     """
-
-    self.am_setOption( "shifterProxy", "DataManager" )
-    self.setRequestTask( RemovalTask )
-    self.__configPath = PathFinder.getAgentSection( AGENT_NAME )
-
+    RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
+    
     # gMonitor stuff goes here
-    gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical removals attempted",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalDone", "Successful physical removals",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalFail", "Failed physical removals",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalSize", "Physically removed size",
-                               "RemovalAgent", "Bytes", gMonitor.OP_ACUM )
+    self.monitor.registerActivity( "PhysicalRemovalAtt", "Physical removals attempted",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "PhysicalRemovalDone", "Successful physical removals",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "PhysicalRemovalFail", "Failed physical removals",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "PhysicalRemovalSize", "Physically removed size",
+                                   "RemovalAgent", "Bytes", gMonitor.OP_ACUM )
+    
+    self.monitor.registerActivity( "ReplicaRemovalAtt", "Replica removal attempted",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "ReplicaRemovalDone", "Successful replica removals",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "ReplicaRemovalFail", "Failed replica removals",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    
+    self.monitor.registerActivity( "RemoveFileAtt", "File removal attempted",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "RemoveFileDone", "File removal done",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "RemoveFileFail", "File removal failed",
+                                   "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
 
-    gMonitor.registerActivity( "ReplicaRemovalAtt", "Replica removal attempted",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "ReplicaRemovalDone", "Successful replica removals",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "ReplicaRemovalFail", "Failed replica removals",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-
-    gMonitor.registerActivity( "RemoveFileAtt", "File removal attempted",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveFileDone", "File removal done",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveFileFail", "File removal failed",
-                               "RemovalAgent", "Removal/min", gMonitor.OP_SUM )
-
-    return S_OK()
+    self.log.info( "%s agent has been constructed" % agentName )

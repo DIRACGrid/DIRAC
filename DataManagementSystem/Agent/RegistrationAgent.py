@@ -42,17 +42,20 @@ class RegistrationAgent( RequestAgentBase ):
     shifterProxy = DataManager
 
   """
-  def initialize( self ):
-    """ agent initialisation 
+  def __init__( self, agentName, baseAgentName = False, properties = dict() ):
+    """ agen c'tor
 
     :param self: self reference
     """
-    self.setRequestTask( RegistrationTask )
-    self.log.info("Will use '%s' for task processing." % RegistrationTask.__class__.__name__ )
-    self.__configPath = PathFinder.getAgentSection( AGENT_NAME )    
-    self.am_setOption( "shifterProxy", "DataManager" )
-    self.log.info("Will use DataManager proxy for processing requests." )
-    return S_OK()
+    RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
+    self.log.info("%s has been constructed" % agentName  )
+    
+    #self.setRequestTask( RegistrationTask )
+    #self.log.info("Will use '%s' for task processing." % RegistrationTask.__class__.__name__ )
+    #self.__configPath = PathFinder.getAgentSection( AGENT_NAME )    
+    #self.am_setOption( "shifterProxy", "DataManager" )
+    #self.log.info("Will use DataManager proxy for processing requests." )
+    #return S_OK()
   
 
 
