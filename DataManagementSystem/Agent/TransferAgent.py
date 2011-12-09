@@ -587,10 +587,10 @@ class TransferAgent( RequestAgentBase ):
                    True: operation }[ operation in self.strategyHandler().getSupportedStrategies() ]
 
       ## get subrequest files  
-      self.log.info( "schedule: Obtaining 'Waiting' files for %d SubRequest." % iSubRequest )
+      self.log.info( "schedule: obtaining 'Waiting' files for %d SubRequest." % iSubRequest )
       files = self.collectFiles( requestObj, iSubRequest )
       if not files["OK"]:
-        self.log.debug("schedule: Failed to get Waiting files from SubRequest.", files["Message"] )
+        self.log.debug("schedule: failed to get 'Waiting' files from SubRequest.", files["Message"] )
       waitingFiles, replicas, metadata = files["Value"]
 
       if not waitingFiles or not replicas or not metadata:
@@ -599,6 +599,8 @@ class TransferAgent( RequestAgentBase ):
       ## loop over waiting files, get replication tree 
       for waitingFileLFN, waitingFileID in sorted( waitingFiles.items() ):
         
+        self.log.info("schedule: processing file FileID=%s LFN=%s" % ( waitingFileID, waitingFileLFN ) )
+
         waitingFileReplicas = [] if waitingFileLFN not in replicas else replicas[waitingFileLFN]
         if not waitingFileReplicas:
           self.log.warn("schedule: no replica information available for LFN %s" % waitingFileLFN )
@@ -616,11 +618,11 @@ class TransferAgent( RequestAgentBase ):
           requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFileLFN, "Status", "Done" )
           continue
         
-        self.log.info( "Processing %s size=%s replicas=%d targetSEs=%s" % ( waitingFileLFN, 
-                                                                            waitingFileSize, 
-                                                                            len(waitingFileReplicas), 
-                                                                            str(waitingFileTargets) ) ) 
-
+        self.log.info( "Processing file %s size=%s replicas=%d targetSEs=%s" % ( waitingFileLFN, 
+                                                                                 waitingFileSize, 
+                                                                                 len(waitingFileReplicas), 
+                                                                                 str(waitingFileTargets) ) ) 
+        
 
         ## get the tree at least
         tree = self.strategyHandler().determineReplicationTree( sourceSE, 
@@ -641,7 +643,7 @@ class TransferAgent( RequestAgentBase ):
 
         
         for channelID, repDict in tree.items():
-          self.log.info( "schedule: processing for channel %d %s" % ( channelID, str( repDict ) ) )
+          self.log.info( "schedule: processing channel %d %s" % ( channelID, str( repDict ) ) )
           transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
           if not transferURLs["OK"]:
             return transferURLs
@@ -677,18 +679,24 @@ class TransferAgent( RequestAgentBase ):
                                                                                             channelID ) )
               return S_ERROR( errStr )
         
-            requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", 
-                                                        waitingFileLFN, "Status", "Scheduled" )
-            res = self.transferDB().addReplicationTree( waitingFileID, tree )
 
+          res = self.transferDB().addReplicationTree( waitingFileID, tree )
+          if not res["OK"]:
+            self.log.error("schedule: error adding replication tree for file %s: %s" % ( waitingFileLFN, res["Message"]) )
+            continue
+          requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", 
+                                                      waitingFileLFN, "Status", "Scheduled" )
+          self.log.info( "schedule: status of %s file set to 'Scheduled'" % waitingFileLFN )
+          
       if requestObj.isSubRequestEmpty( iSubRequest, "transfer" )["Value"]:
+        self.log.info("schedule: setting sub-request %d status to 'Scheduled'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Scheduled" )
-
+        
     ## update Request in DB after operation
     requestString = requestObj.toXML()["Value"]
     res = self.requestDBMySQL().updateRequest( requestName, requestString )
     if not res["OK"]:
-      self.log.error( "schedule: Failed to update request", "%s %s" % ( requestName, res["Message"] ) )
+      self.log.error( "schedule: failed to update request", "%s %s" % ( requestName, res["Message"] ) )
       
     return S_OK()
 
