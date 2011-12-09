@@ -77,7 +77,7 @@ def getRequest( operation ):
                      "Arguments" : None,
                      "ExecutionOrder" : 0, 
                      "SourceSE" : None, 
-                     "TargetSE" : "CERN-USER,PIC-USER",
+                     "TargetSE" : "CERN-USER,PIC-USER,RAL-USER",
                      "Catalogue" : "LcgFileCatalogCombined", 
                      "CreationTime" : "2011-12-01 04:57:02", 
                      "SubmissionTime" : "2011-12-01 04:57:02",
