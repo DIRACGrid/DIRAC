@@ -503,10 +503,15 @@ class MySQLStatements( object ):
 
   _checkNUMERIC  = _checkFLOAT
   _checkDECIMAL  = _checkFLOAT
+
   _checkINTEGER  = _checkFLOAT
-  _checkINT      = _checkFLOAT
+  _checkTINYINT  = _checkFLOAT
   _checkSMALLINT = _checkFLOAT
+  _checkINT      = _checkFLOAT
+  _checkBIGINT   = _checkFLOAT
+
   _checkREAL     = _checkFLOAT
+  _checkDOUBLE   = _checkFLOAT
 
   _checkBLOB     = _checkVARCHAR
   _checkTEXT     = _checkVARCHAR
