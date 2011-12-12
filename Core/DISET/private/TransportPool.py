@@ -28,7 +28,6 @@ class TransportPool:
     if retries == 0:
       return
     now = time.time()
-    print self.__transports
     try:
       tridList = [ trid for trid in self.__transports ]
     except RuntimeError:
