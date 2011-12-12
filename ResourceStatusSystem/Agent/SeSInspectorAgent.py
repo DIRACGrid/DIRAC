@@ -10,7 +10,7 @@ from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem                             import CheckingFreqs
+from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
@@ -33,7 +33,7 @@ class SeSInspectorAgent( AgentModule ):
 
     try:
       self.rsClient            = ResourceStatusClient()
-      self.ServicesFreqs       = CheckingFreqs[ 'ServicesFreqs' ]
+      self.ServicesFreqs       = CS.getTypedDictRootedAt("CheckingFreqs/ServicesFreqs")
       self.queue = Queue.Queue()
 
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )

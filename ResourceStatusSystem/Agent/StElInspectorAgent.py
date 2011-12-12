@@ -10,7 +10,7 @@ from DIRAC                                                  import gLogger, S_OK
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem                             import CheckingFreqs
+from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
@@ -32,7 +32,7 @@ class StElInspectorAgent( AgentModule ):
 
     try:
       self.rsClient                    = ResourceStatusClient()
-      self.StorageElementsFreqs        = CheckingFreqs[ 'StorageElementsFreqs' ]
+      self.StorageElementsFreqs        = CS.getTypedDictRootedAt("CheckingFreqs/StorageElementsFreqs")
       self.StorageElementsToBeChecked  = Queue.Queue()
       self.StorageElementsNamesInCheck = []
 
