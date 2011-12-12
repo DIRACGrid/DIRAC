@@ -1,4 +1,4 @@
-[v6r1-pre3]
+[v6r1-pre4]
 
 *RSS
 CHANGE: Major refactoring of the RSS system
@@ -23,6 +23,7 @@ CHANGE: Utilities.Synchronizer syncs users and DIRAC sites
 CHANGE: cosmetic changes everywhere, added HeadURL and RCSID
 CHANGE: Removed all the VOExtension logic on RSS
 BUGFIX: ResourceStatusHandler - getStorageElementStatusWeb(), access mode by default is Read
+FIX: RSS __init__.py will not crash anymore if no CS info provided
 
 *dirac-setup-site
 BUGFIX: fixed typos in the Script class name
