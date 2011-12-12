@@ -266,7 +266,10 @@ class Service:
     try:
       #Handshake
       try:
-        clientTransport.handshake()
+        result = clientTransport.handshake()
+        if not result[ 'OK' ]:
+          clientTransport.close()
+          return
       except:
         return
       #Add to the transport pool

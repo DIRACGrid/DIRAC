@@ -117,6 +117,7 @@ def __matchProps( sProps, rProps ):
   for prop in sProps:
     if prop in rProps:
       foundProps.append( prop )
+  return foundProps
 
 def groupHasProperties( groupName, propList ):
   if type( propList ) in types.StringTypes:
