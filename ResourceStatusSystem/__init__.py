@@ -14,13 +14,12 @@ try:
 except CS.CSError:
   gencfg = {}
 
-ValidRes          = gencfg.get("Granularity", ["Site", "Service", "Resource", "StorageElement"])
 ValidStatus       = gencfg.get("Status", ["Banned", "Probing", "Bad", "Active"])
-
 ValidStatusTypes  = gencfg.get("Resources", {"Site": {"StatusType": "''"},
                                              "Service": {"StatusType": "''"},
                                              "Resource": {"StatusType": "''"},
                                              "StorageElement": {"StatusType": ["Read", "Write", "Remove", "Check"]}})
+ValidRes = ValidStatusTypes.keys()
 
 ValidPolicyResult = gencfg.get('PolicyResult', ["Error", "Unknown", "NeedConfirmation", "Banned", "Probing", "Bad", "Active"])
 ValidSiteType     = gencfg.get('SiteType', ["T0", "T1", "T2", "T3"])
