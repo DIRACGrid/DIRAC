@@ -10,7 +10,7 @@ from DIRAC                                                  import gLogger, S_OK
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem                             import CheckingFreqs
+from DIRAC.ResourceStatusSystem.Utilities import CS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
@@ -32,7 +32,7 @@ class SSInspectorAgent( AgentModule ):
 
     try:
       self.rsClient            = ResourceStatusClient()
-      self.SitesFreqs       = CheckingFreqs[ 'SitesFreqs' ]
+      self.SitesFreqs       = CS.getTypedDictRootedAt("CheckingFreqs/SitesFreqs")
       self.SitesToBeChecked = Queue.Queue()
       self.SiteNamesInCheck = []
 
