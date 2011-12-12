@@ -8,8 +8,7 @@ from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.Utilities.Decorators   import HandlerDec3, AdminRequired
-from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
-
+from DIRAC.ResourceStatusSystem.Utilities              import Utils
 db = False
 
 def initializeResourceStatusHandler( _serviceInfo ):
@@ -18,7 +17,7 @@ def initializeResourceStatusHandler( _serviceInfo ):
   db = ResourceStatusDB()
 
 # Publisher is on boxes right now
-# 
+#
 #  rmDB = ResourceStatusDB()
 #  cc = CommandCaller()
 #  global VOExtension
@@ -29,7 +28,8 @@ def initializeResourceStatusHandler( _serviceInfo ):
 #  publisher = Publisher( VOExtension, dbIn = db, commandCallerIn = cc,
 #                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
 
-  sync_O = Synchronizer()
+  SyncModule = Utils.voimport("DIRAC.ResourceStatusSystem.Utilities.Synchronizer")
+  sync_O = SyncModule.Synchronizer()
   gConfig.addListenerToNewVersionEvent( sync_O.sync )
   return S_OK()
 
@@ -38,21 +38,21 @@ def initializeResourceStatusHandler( _serviceInfo ):
 class ResourceStatusHandler( RequestHandler ):
   '''
   The ResourceStatusHandler exposes the DB front-end functions through a XML-RPC
-  server, functionalities inherited from 
+  server, functionalities inherited from
   :class:`DIRAC.Core.DISET.RequestHandler.RequestHandler`
-  
+
   According to the ResourceStatusDB philosophy, only functions of the type:
   - insert
   - update
   - get
-  - delete 
-  
-  are exposed. If you need anything more complicated, either look for it on the 
-  :class:`ResourceStatusClient`, or code it yourself. This way the DB and the 
+  - delete
+
+  are exposed. If you need anything more complicated, either look for it on the
+  :class:`ResourceStatusClient`, or code it yourself. This way the DB and the
   Service are kept clean and tidied.
 
   To can use this service on this way, but you MUST NOT DO IT. Use it through the
-  :class:`ResourceStatusClient`. If offers in the worst case as good performance 
+  :class:`ResourceStatusClient`. If offers in the worst case as good performance
   as the :class:`ResourceStatusHandler`, if not better.
 
    >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
@@ -60,10 +60,10 @@ class ResourceStatusHandler( RequestHandler ):
   '''
 
   def setDatabase( self, database ):
-    '''   
+    '''
     This method let us inherit from this class and overwrite the database object
     without having problems with the global variables.
-    
+
     :Parameters:
       **database** - `MySQL`
         database used by this handler
@@ -73,20 +73,20 @@ class ResourceStatusHandler( RequestHandler ):
     global db
     db = database
 
-  
+
   types_insert = [ dict, dict ]
   @AdminRequired
   @HandlerDec3
   def export_insert( self, params, meta ):
-    '''   
+    '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.     
-      
+    this method, you must keep reading on the database documentation.
+
     :Parameters:
       **args** - `tuple`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **kwargs** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
@@ -105,18 +105,18 @@ class ResourceStatusHandler( RequestHandler ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.     
-      
+    this method, you must keep reading on the database documentation.
+
     :Parameters:
       **args** - `tuple`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **kwargs** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''      
+    '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the update method returns ( db.update )
     credentials = self.getRemoteCredentials()
@@ -128,18 +128,18 @@ class ResourceStatusHandler( RequestHandler ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It \
     does not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.     
-      
+    this method, you must keep reading on the database documentation.
+
     :Parameters:
       **args** - `tuple`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **kwargs** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''      
+    '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the get method returns ( db.get )
     credentials = self.getRemoteCredentials()
@@ -149,21 +149,21 @@ class ResourceStatusHandler( RequestHandler ):
   @AdminRequired
   @HandlerDec3
   def export_delete( self, params, meta ):
-    '''  
+    '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
     not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.     
-      
+    this method, you must keep reading on the database documentation.
+
     :Parameters:
       **args** - `tuple`
         arguments for the mysql query ( must match table columns ! ).
-    
+
       **kwargs** - `dict`
         metadata for the mysql query. It must contain, at least, `table` key
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''         
+    '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the delete method returns ( db.delete )
     credentials = self.getRemoteCredentials()
@@ -173,9 +173,9 @@ class ResourceStatusHandler( RequestHandler ):
 ##EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
 #
 #################################################################################
-##  
-##  Cleaning ongoing  
-##  
+##
+##  Cleaning ongoing
+##
 #################################################################################
 ##
 ##  types_getPeriods = [ str, str, str, int ]
@@ -497,7 +497,7 @@ class ResourceStatusHandler( RequestHandler ):
 ##      errorStr = whoRaised( x )
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )
-##              
+##
 ##    errorStr += '\n ' + where( self, self.export_reAssignToken )
 ##    return S_ERROR( errorStr )
 ##
@@ -531,7 +531,7 @@ class ResourceStatusHandler( RequestHandler ):
 ##      errorStr = whoRaised( x )
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )
-##              
+##
 ##    errorStr += '\n ' + where( self, self.export_extendToken )
 ##    return S_ERROR( errorStr )
-#      
+#

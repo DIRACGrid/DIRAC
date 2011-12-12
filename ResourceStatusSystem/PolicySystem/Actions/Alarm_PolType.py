@@ -1,45 +1,41 @@
 ################################################################################
 # $HeadURL $
 ################################################################################
-__RCSID__  = "$Id$"
-
 """
   AlarmPolType Actions
 """
-from DIRAC.ResourceStatusSystem.Utilities import CS
-from DIRAC.ResourceStatusSystem.Utilities import Utils
+
+__RCSID__  = "$Id$"
+
+from DIRAC.ResourceStatusSystem.Utilities            import CS
+from DIRAC.ResourceStatusSystem.Utilities            import Utils
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 class AlarmPolType(object):
-  def __init__(self, name, res, statusType, nc, setup, rsAPI, rmAPI, **kwargs):
+  def __init__(self, name, res, statusType, clients, **kwargs):
     self.name       = name
     self.res        = res
     self.statusType = statusType
-    self.nc         = nc
-    self.setup      = setup
-    self.rsAPI      = rsAPI
-    self.rmAPI      = rmAPI
-    self.kwargs     = kwargs
+    self.nc         = NotificationClient()
 
+    try:
+      self.rsAPI = clients[ 'ResourceStatusClient' ]
+    except ValueError:
+      self.rsAPI = ResourceStatusClient()
+    try:
+      self.rmAPI = clients[ 'ResourceManagementClient' ]
+    except ValueError:
+      self.rmAPI = ResourceManagementClient()
+
+    self.kwargs     = kwargs
+    self.setup      = CS.getSetup()
     self.run()
 
-  def getUsersToNotify(self):
-    """Get a list of users to notify (helper function for AlarmPolTypeActions)
-    Optional keyword arguments:
-    - Granularity
-    - SiteType
-    - ServiceType
-    - ResourceType
-    """
-
-    notifications = []
-    groups = CS.getTypedDictRootedAt("AssigneeGroups/" + self.setup)
-
-    for k in groups:
-      if Utils.dictMatch(self.kwargs, groups[k]):
-        notifications.append({'Users':groups[k]['Users'],
-                              'Notifications':groups[k]['Notifications']})
-
-    return notifications
+  def _getUsersToNotify(self):
+    groups = CS.getTypedDictRootedAt("AssigneeGroups/" + self.setup).values()
+    concerned_groups = [g for g in groups if Utils.dictMatch(self.kwargs, g)]
+    return [{'Users':g['Users'],
+             'Notifications':g['Notifications']} for g in concerned_groups]
 
   def run(self):
     """ Do actions required to notify users.
@@ -53,7 +49,7 @@ class AlarmPolType(object):
     # raise alarms, right now makes a simple notification
 
     if 'Granularity' not in self.kwargs.keys():
-      raise ValueError, "You have to provide a argument Granularity=<desired_granularity>"
+      raise ValueError, "You have to provide a argument Granularity = <desired_granularity>"
 
     granularity = self.kwargs['Granularity']
 
@@ -62,14 +58,13 @@ class AlarmPolType(object):
       notif = "%s %s is perceived as" % (granularity, self.name)
       notif = notif + " %s. Reason: %s." % (self.res['Status'], self.res['Reason'])
 
-      NOTIF_D = self.getUsersToNotify()
+      NOTIF_D = self._getUsersToNotify()
 
       for notification in NOTIF_D:
         for user in notification['Users']:
           if 'Web' in notification['Notifications']:
             self.nc.addNotificationForUser(user, notif)
           if 'Mail' in notification['Notifications']:
-            #histGetter = getattr( self.rsAPI, 'get%sHistory' % granularity )
 
             kwargs = { '%sName'     : self.name,
                        'statusType' : self.statusType,
@@ -77,8 +72,7 @@ class AlarmPolType(object):
                        'order'      : 'DESC',
                        'limit'      : 1 }
 
-            #was = histGetter( **kwargs )[ 'Value' ][ 0 ]
-            was = self.rsAPI.getElementHistory( granularity, **kwargs )[ 'Value' ][ 0 ]
+            was = Utils.unpack(self.rsAPI.getElementHistory( granularity, **kwargs )[0])
 
             mailMessage = """Granularity = %s
 Name = %s
@@ -86,10 +80,13 @@ New perceived status = %s
 Reason for status change = %s
 Was in status "%s", with reason "%s", since %s
 Setup = %s
-""" % (granularity, self.name, self.res['Status'], self.res['Reason'], was[0], was[1], was[2], self.setup)
+""" % (granularity, self.name, self.res['Status'],
+       self.res['Reason'], was[0], was[1], was[2], self.setup)
 
-            self.nc.sendMail(self.rmDB.getUserRegistryCache(user)[ 'Value' ][0][0],
-                        '[RSS] Status change for site %s: %s -> %s' % (self.name,  self.res['Status'], was[0]), mailMessage)
+            # Actually send the mail!
+            self.nc.sendMail(Utils.unpack(self.rmAPI.getUserRegistryCache(user)[0][2]),
+                             '[RSS] Status change for site %s: %s -> %s'
+                             % (self.name,  self.res['Status'], was[0]), mailMessage)
 
 
 ################################################################################

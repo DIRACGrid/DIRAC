@@ -8,7 +8,7 @@
 """
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO
+from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO, Registry
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
@@ -359,7 +359,8 @@ class SiteDirector( AgentModule ):
 
     queueDict = self.queueDict[queue]['ParametersDict']
 
-    vo = getVO()
+    vo = Registry.getVOForGroup(self.genericPilotGroup)
+    
     if not vo:
       self.log.error( 'Virtual Organization is not defined in the configuration' )
       return None

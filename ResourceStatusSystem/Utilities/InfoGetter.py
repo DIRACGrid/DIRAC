@@ -13,15 +13,8 @@ class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations
   """
 
-  def __init__(self, VOExtension):
-    """
-    Standard constructor
-
-    :params:
-      :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
-    """
-
-    configModule    = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations", VOExtension)
+  def __init__(self):
+    configModule    = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations")
     self.C_Policies = copy.deepcopy(configModule.Policies)
 
 ################################################################################

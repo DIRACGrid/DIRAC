@@ -1,3 +1,59 @@
+[v6r1-pre3]
+
+*RSS
+CHANGE: Major refactoring of the RSS system
+CHANGE: DB.ResourceStatusDB has been refactored, making it a simple wrapper round ResourceStatusDB.sql with only four methods by table ( insert, update, get & delete )
+CHANGE: DB.ResourceStatusDB.sql has been modified to support different statuses per granularity.
+CHANGE: DB.ResourceManagementDB has been refactored, making it a simple wrapper round ResourceStatusDB.sql with only four methods by table ( insert, update, get & delete )
+CHANGE: Service.ResourceStatusHandler has been refactored, removing all data processing, making it an intermediary between client and DB.
+CHANGE: Service.ResourceManagementHandler has been refactored, removing all data processing, making it an intermediary between client and DB.
+NEW: Utilities.ResourceStatusBooster makes use of the 'DB primitives' exposed on the client and does some useful data processing, exposing the new functions on the client.
+NEW: Utilities.ResourceManagementBooster makes use of the 'DB primitives' exposed on the client and does some useful data processing, exposing the new functions on the client.
+CHANGE: Client.ResourceStatusClient has been refactorerd. It connects automatically to DB or to the Service. Exposes DB and booster functions.
+CHANGE: Client.ResourceManagementClient has been refactorerd. It connects automatically to DB or to the Service. Exposes DB and booster functions.
+CHANGE: Agent.ClientsCacheFeederAgent renamed to CacheFeederAgent. The name was not accurate, as it also feeds Accouting Cache tables.
+CHANGE: Agent.InspectorAgent, makes use of automatic API initialization.
+CHANGE: Command. refactor and usage of automatic API initialization.
+CHANGE: PolicySystem.PEP has reusable client connections, which increase significantly performance.
+CHANGE: PolicySystem.PDP has reusable client connections, which increase significantly performance.
+NEW: Utilities.Decorators are syntactic sugar for DB, Handler and Clients.
+NEW: Utilities.MySQLMonkey is a mixture of laziness and refactoring, in order to generate the SQL statements automatically. Not anymore sqlStatemens hardcoded on the RSS.
+NEW: Utilities.Validator are common checks done through RSS modules
+CHANGE: Utilities.Synchronizer syncs users and DIRAC sites
+CHANGE: cosmetic changes everywhere, added HeadURL and RCSID
+CHANGE: Removed all the VOExtension logic on RSS
+BUGFIX: ResourceStatusHandler - getStorageElementStatusWeb(), access mode by default is Read
+
+*dirac-setup-site
+BUGFIX: fixed typos in the Script class name
+
+*Transformation
+FIX: Missing logger in the TaskManager Client (was using agent's one)
+NEW: Added UnitTest class for TaskManager Client
+
+*DIRAC API
+BUGFIX: Dirac.py. If /LocalSite/FileCatalog is not define the default Catalog was not properly set.
+
+*Framework
+NEW: UsersAndGroups agent to synchronize users from VOMRS server.
+
+*dirac-install
+FIX: make Platform.py able to run with python2.3 to be used inside dirac-install
+FIX: protection against the old or pro links pointing to non-existent directories
+
+*WorkloadManagement
+FIX: SiteDirector - change getVO() function call to getVOForGroup()
+
+[v6r0p1]
+
+*Core
+BUGFIX: List.uniqueElements() preserves the other of the remaining elements
+
+*Framework
+CHANGE: By default set authorization rules to authenticated instead of all
+FIX: Use all required arguments in read access data for UserProfileDB
+FIX: NotificationClient - dropped LHCb-Production setup by default in the __getRPSClient()
+
 [v6r0]
 
 *Framework
