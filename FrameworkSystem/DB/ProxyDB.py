@@ -910,6 +910,7 @@ class ProxyDB( DB ):
     return self._update( cmd )
 
   def sendExpirationNotifications( self ):
+    print "KEWL"*10
     result = self.__cleanExpNotifs()
     if not result[ 'OK' ]:
       return result
@@ -932,6 +933,9 @@ class ProxyDB( DB ):
       userDN, group, lTime = row
       #If it's a pilot proxy, skip it
       if Registry.groupHasProperties( group, pilotProps ):
+        continue
+      #IF it dosn't hace the auto upload proxy, skip it
+      if not Registry.getGroupOption( group, "AutoUploadProxy", False ):
         continue
       notKey = ( userDN, group )
       for notifLimit in notifLimits:
