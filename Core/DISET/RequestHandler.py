@@ -371,7 +371,7 @@ class RequestHandler:
       argsString = "<masked>"
     else:
       argsString = "\n\t%s\n" % ",\n\t".join( [ str( arg )[:50] for arg in args ] )
-    gLogger.always( "Executing action", "%s %s(%s)" % ( self.srv_getFormattedRemoteCredentials(),
+    gLogger.notice( "Executing action", "%s %s(%s)" % ( self.srv_getFormattedRemoteCredentials(),
                                                       method,
                                                       argsString ) )
 
@@ -386,7 +386,7 @@ class RequestHandler:
       argsString = "OK"
     else:
       argsString = "ERROR: %s" % retVal[ 'Message' ]
-    gLogger.always( "Returning response", "%s (%.2f secs) %s" % ( self.srv_getFormattedRemoteCredentials(),
+    gLogger.notice( "Returning response", "%s (%.2f secs) %s" % ( self.srv_getFormattedRemoteCredentials(),
                                                                 elapsedTime, argsString ) )
 
 ####
