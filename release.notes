@@ -44,6 +44,11 @@ FIX: protection against the old or pro links pointing to non-existent directorie
 *WorkloadManagement
 FIX: SiteDirector - change getVO() function call to getVOForGroup()
 
+[v6r0p2]
+
+*Framework
+FIX: in services logs change ALWAYS log level for query messages to NOTICE
+
 [v6r0p1]
 
 *Core
