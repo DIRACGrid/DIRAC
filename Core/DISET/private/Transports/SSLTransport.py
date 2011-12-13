@@ -92,6 +92,7 @@ class SSLTransport( BaseTransport ):
       gLogger.debug( "New session connecting from client at %s" % str( self.getRemoteAddress() ) )
     for key in creds.keys():
       self.peerCredentials[ key ] = creds[ key ]
+    return S_OK()
 
   def setClientSocket( self, oSocket ):
     if self.serverMode():
