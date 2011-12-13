@@ -107,8 +107,9 @@ def getSites( grids = ('LCG', 'DIRAC') ):
   return Utils.list_flatten(sites)
 
 def getSiteTier( site ):
-  if isinstance(site, basestring):
-    sites = (site,)
+  if isinstance(site, basestring): sites = (site,)
+  else:                            sites = site
+
   tiers = [getValue("%s/Sites/%s/%s/MoUTierLevel"
                     % (g_BaseResourcesSection, site.split(".")[0], site), 2) for site in sites]
 
