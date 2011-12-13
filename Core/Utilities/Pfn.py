@@ -65,6 +65,10 @@ def pfnunparse( pfnDict ):
 def pfnparse( pfn ):
 
   pfnDict = {'Protocol':'', 'Host':'', 'Port':'', 'WSUrl':'', 'Path':'', 'FileName':''}
+
+  if not pfn:
+    return S_ERROR("wrong 'pfn' argument value in function call, expected non-empty string, got %s" % str(pfn) )
+
   try:
     #gLogger.debug("Pfn.pfnunparse: Attempting to parse pfn %s." % pfn)
     if not re.search( ':', pfn ):
