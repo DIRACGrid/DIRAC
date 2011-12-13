@@ -1,4 +1,4 @@
-[v6r1-pre4]
+[v6r1-pre5]
 
 *RSS
 CHANGE: Major refactoring of the RSS system
@@ -44,6 +44,17 @@ FIX: protection against the old or pro links pointing to non-existent directorie
 
 *WorkloadManagement
 FIX: SiteDirector - change getVO() function call to getVOForGroup()
+
+*Core:
+FIX: Pfn.py - check the sanity of the pfn and catch the erroneous case
+
+[v6r0p3]
+
+*Framework
+FIX: ProxyManager - Registry.groupHasProperties() wasn't returning a result 
+CHANGE: Groups without AutoUploadProxy won't receive expiration notifications 
+FIX: typo dirac-proxy-info -> dirac-proxy-init in the expiration mail contents
+CHANGE: DISET - directly close the connection after a failed handshake
 
 [v6r0p2]
 
