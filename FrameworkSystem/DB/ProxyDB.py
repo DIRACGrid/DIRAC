@@ -756,7 +756,7 @@ class ProxyDB( DB ):
         continue
       fVal = selDict[field]
       if type( fVal ) in ( types.DictType, types.TupleType, types.ListType ):
-        sqlWhere.append( "%s in (%s)" % ( field,", ".join( [ self._escapeString( str( value ) )[ 'Value' ] for value in fVal ] ) ) )
+        sqlWhere.append( "%s in (%s)" % ( field, ", ".join( [ self._escapeString( str( value ) )[ 'Value' ] for value in fVal ] ) ) )
       else:
         sqlWhere.append( "%s = %s" % ( field, self._escapeString( str( fVal ) )[ 'Value' ] ) )
     sqlOrder = []
@@ -910,6 +910,7 @@ class ProxyDB( DB ):
     return self._update( cmd )
 
   def sendExpirationNotifications( self ):
+    print "KEWL"*10
     result = self.__cleanExpNotifs()
     if not result[ 'OK' ]:
       return result
@@ -932,6 +933,9 @@ class ProxyDB( DB ):
       userDN, group, lTime = row
       #If it's a pilot proxy, skip it
       if Registry.groupHasProperties( group, pilotProps ):
+        continue
+      #IF it dosn't hace the auto upload proxy, skip it
+      if not Registry.getGroupOption( group, "AutoUploadProxy", False ):
         continue
       notKey = ( userDN, group )
       for notifLimit in notifLimits:
@@ -983,7 +987,7 @@ Dear %s,
   If you plan on keep using this credentials please upload a newer proxy to 
   DIRAC by executing:
   
-  $ dirac-proxy-info -UP -g %s
+  $ dirac-proxy-init -UP -g %s
   
   If you have been issued different certificate, please make sure you have a 
   proxy uploaded with that certificate.
