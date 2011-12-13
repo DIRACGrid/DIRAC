@@ -111,7 +111,7 @@ def getSiteTiers(sites):
                     % (g_BaseResourcesSection, site.split(".")[0], site), 2) for site in sites]
 
 def getSiteTier(site):
-  return getSiteTiers([site])
+  return getSiteTiers([site])[0]
 
 def getT1s(grids = 'LCG'):
   sites = getSites(grids)
