@@ -1,4 +1,4 @@
-[v6r1-pre6]
+[v6r1-pre7]
 
 *RSS
 CHANGE: Major refactoring of the RSS system
@@ -35,6 +35,8 @@ NEW: Added UnitTest class for TaskManager Client
 
 *DIRAC API
 BUGFIX: Dirac.py. If /LocalSite/FileCatalog is not define the default Catalog was not properly set.
+FIX: Dirac.py - fixed __printOutput to properly interpret the first argument: 0:stdout, 1:stderr
+NEW: Dirac.py - added getConfigurationValue() method
 
 *Framework
 NEW: UsersAndGroups agent to synchronize users from VOMRS server.
@@ -42,6 +44,8 @@ NEW: UsersAndGroups agent to synchronize users from VOMRS server.
 *dirac-install
 FIX: make Platform.py able to run with python2.3 to be used inside dirac-install
 FIX: protection against the old or pro links pointing to non-existent directories
+NEW: make use of the HTTP proxies if available
+FIX: fixed the logic of creating links to /opt/dirac directories to take into account webRoot subdirs
 
 *WorkloadManagement
 FIX: SiteDirector - change getVO() function call to getVOForGroup()
