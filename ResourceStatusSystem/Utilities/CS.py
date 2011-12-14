@@ -115,7 +115,7 @@ def getSiteTier(site):
 
 def getT1s(grids = 'LCG'):
   sites = getSites(grids)
-  tiers = getSiteTier(sites)
+  tiers = getSiteTiers(sites)
   pairs = itertools.izip(sites, tiers)
   return [s for (s, t) in pairs if t == 1]
 
