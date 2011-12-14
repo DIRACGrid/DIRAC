@@ -1130,7 +1130,7 @@ def installExternals( releaseConfig ):
     return ( not cliParams.noAutoBuild ) and compileExternals( externalsVersion )
   logNOTICE( "Fixing externals paths..." )
   fixBuildPaths()
-  logNOTICE( "Runnning externals post install..." )
+  logNOTICE( "Running externals post install..." )
   runExternalsPostInstall()
   checkPlatformAliasLink()
   #lcg utils?
@@ -1161,7 +1161,13 @@ def createBashrc():
         if not os.path.exists( real ):
           os.makedirs( real )
         if os.path.exists( fake ):
-          os.rename( fake, fake+'.bak' )
+          # Try to reproduce the directory structure to avoid lacking directories
+          fakeDirs = os.listdir(fake)
+          for fd in fakeDirs:
+            if os.path.isdir( os.path.join( fake,fd ) ):
+              if not os.path.exists( os.path.join( real,fd ) ):
+                os.makedirs( os.path.join( real,fd ) )
+          os.rename( fake, fake+'.bak' )      
         os.symlink( real, fake )
     except Exception, x:
       logERROR( str( x ) )
@@ -1256,7 +1262,7 @@ if __name__ == "__main__":
       logNOTICE( "Installing %s:%s" % ( modName, modVersion ) )
       if not downloadAndExtractTarball( tarsURL, modName, modVersion ):
         sys.exit( 1 )
-    logNOTICE( "Deloying scripts..." )
+    logNOTICE( "Deploying scripts..." )
     ddeLocation = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" )
     if os.path.isfile( ddeLocation ):
       os.system( ddeLocation )
@@ -1273,3 +1279,4 @@ if __name__ == "__main__":
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )
   sys.exit( 0 )
+
