@@ -1,4 +1,4 @@
-[v6r1-pre7]
+[v6r1-pre8]
 
 *RSS
 CHANGE: Major refactoring of the RSS system
@@ -52,6 +52,9 @@ FIX: SiteDirector - change getVO() function call to getVOForGroup()
 
 *Core:
 FIX: Pfn.py - check the sanity of the pfn and catch the erroneous case
+
+*RequestManagement:
+BUGFIX: RequestContainer.isSubrequestDone() - return 0 if Done check fails
 
 [v6r0p3]
 
