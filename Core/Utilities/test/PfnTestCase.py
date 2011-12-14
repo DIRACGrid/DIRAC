@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse, pfnparse_new
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse, pfnparse_old
 import random, string, timeit
 
 
@@ -50,14 +50,14 @@ class PfnTests( unittest.TestCase ):
       "proto://host:port/wsurl?=/a/b/c" : {'OK': True, 'Value': {'Protocol': 'proto', 'WSUrl': '/wsurl?=', 'FileName': 'c', 'Host': 'host', 'Path': '/a/b', 'Port': 'port'}} }
     
   def test_01_parse( self ):
-    """ pfnparse and pfnparse_new
+    """ pfnparse and pfnparse_old
 
     :param self: self reference
     """
     for pfn, result in self.pfns.items():
-      self.assertEqual( pfnparse( pfn ), result )
+      self.assertEqual( pfnparse_old( pfn ), result )
     for pfn, result in self.pfns.items():
-      self.assertEqual( pfnparse_new( pfn ), result )
+      self.assertEqual( pfnparse( pfn ), result )
 
   def test_02_unparse( self ):
     ## too lazy to write

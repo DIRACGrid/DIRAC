@@ -62,10 +62,14 @@ def pfnunparse( pfnDict ):
     return S_ERROR( errStr )
 
 
-def pfnparse_new( pfn ):
+def pfnparse( pfn ):
+  """ parse pfn and save all bits of information into dictionary
+
+  :param str pfn: pfn string
+  """
   if not pfn:
     return S_ERROR("wrong 'pfn' argument value in function call, expected non-empty string, got %s" % str(pfn) )
-  pfnDict = dict.fromkeys( ["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "" )
+  pfnDict = dict.fromkeys( [ "Protocol", "Host", "Port", "WSUrl", "Path", "FileName" ], "" )
   try:
     if ":" not in pfn:
       # pfn = /a/b/c
@@ -81,7 +85,6 @@ def pfnparse_new( pfn ):
       pfn = pfn[len(pfnDict["Protocol"]):] 
       ## remove :// or :
       pfn = pfn[3:] if pfn.startswith("://") else pfn[1:]
-      
       if pfn.startswith("/"):
         ## /a/b/c
         pfnDict["Path"] = os.path.dirname( pfn )
@@ -119,15 +122,13 @@ def pfnparse_new( pfn ):
             pfn = pfn[ len(pfnDict["WSUrl"]):]
             pfnDict["Path"] = os.path.dirname( pfn )
             pfnDict["FileName"] = os.path.basename( pfn )
-
     return S_OK( pfnDict )
   except Exception:
     errStr = "Pfn.pfnparse: Exception while parsing pfn: " + str( pfn )
     gLogger.exception( errStr )
     return S_ERROR( errStr )
 
-
-def pfnparse( pfn ):
+def pfnparse_old( pfn ):
 
   if not pfn:
     return S_ERROR("wrong 'pfn' argument value in function call, expected non-empty string, got %s" % str(pfn) )
