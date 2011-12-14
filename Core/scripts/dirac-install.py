@@ -771,15 +771,30 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     # set timeout alarm
     signal.alarm( timeout )
   try:
+    if "http_proxy" in os.environ and os.environ['http_proxy']:
+      proxyIP = os.environ['http_proxy'].replace('http://','')
+      proxy = urllib2.ProxyHandler({'http': proxyIP})
+      opener = urllib2.build_opener(proxy)
+      #opener = urllib2.build_opener()
+      urllib2.install_opener(opener)
     remoteFD = urllib2.urlopen( url )
     expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
     localFD = open( fileName, "wb" )
     receivedBytes = 0L
     data = remoteFD.read( 16384 )
+    count = 1
+    progressBar = False
     while data:
       receivedBytes += len( data )
       localFD.write( data )
       data = remoteFD.read( 16384 )
+      if count % 100 == 0:
+        print ".",
+        sys.stdout.flush()
+        progressBar = True
+      count += 1
+    if progressBar:
+      print
     localFD.close()
     remoteFD.close()
     if receivedBytes != expectedBytes:
