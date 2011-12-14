@@ -1,4 +1,4 @@
-[v6r1-pre5]
+[v6r1-pre6]
 
 *RSS
 CHANGE: Major refactoring of the RSS system
@@ -24,6 +24,7 @@ CHANGE: cosmetic changes everywhere, added HeadURL and RCSID
 CHANGE: Removed all the VOExtension logic on RSS
 BUGFIX: ResourceStatusHandler - getStorageElementStatusWeb(), access mode by default is Read
 FIX: RSS __init__.py will not crash anymore if no CS info provided
+BUGFIX: CS.getSiteTier now behaves correctly when a site is passed as a string
 
 *dirac-setup-site
 BUGFIX: fixed typos in the Script class name
