@@ -61,7 +61,7 @@ class Synchronizer(object):
     Sync DB content with sites that are in the CS
     """
     def getGOCTier(sitesList):
-      return "T" + str(min([int(v) for v in CS.getSiteTier(sitesList)]))
+      return "T" + str(min([int(v) for v in CS.getSiteTiers(sitesList)]))
 
     # sites in the DB now
     sitesDB = set((s[0] for s in Utils.unpack(self.rsClient.getSite())))
