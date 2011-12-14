@@ -62,12 +62,77 @@ def pfnunparse( pfnDict ):
     return S_ERROR( errStr )
 
 
-def pfnparse( pfn ):
+def pfnparse_new( pfn ):
+  if not pfn:
+    return S_ERROR("wrong 'pfn' argument value in function call, expected non-empty string, got %s" % str(pfn) )
+  pfnDict = dict.fromkeys( ["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "" )
+  try:
+    if ":" not in pfn:
+      # pfn = /a/b/c
+      pfnDict["Path"] = os.path.dirname( pfn )
+      pfnDict["FileName"] = os.path.basename( pfn )
+    else:
+      # pfn = protocol:/a/b/c
+      # pfn = protocol://host/a/b/c
+      # pfn = protocol://host:port/a/b/c
+      # pfn = protocol://host:port/wsurl?=/a/b/c
+      pfnDict["Protocol"] = pfn[ 0:pfn.index(":") ]
+      ## remove protocol:
+      pfn = pfn[len(pfnDict["Protocol"]):] 
+      ## remove :// or :
+      pfn = pfn[3:] if pfn.startswith("://") else pfn[1:]
+      
+      if pfn.startswith("/"):
+        ## /a/b/c
+        pfnDict["Path"] = os.path.dirname( pfn )
+        pfnDict["FileName"] = os.path.basename( pfn )
+      else:
+        ## host/a/b/c  
+        ## host:port/a/b/c
+        ## host:port/wsurl?=/a/b/c
+        if ":" not in pfn:
+          ## host/a/b/c
+          pfnDict["Host"] = pfn[ 0:pfn.index("/") ]
+          pfn = pfn[len(pfnDict["Host"]):]
+          pfnDict["Path"] = os.path.dirname( pfn )
+          pfnDict["FileName"] = os.path.basename( pfn )
+        else:
+          ## host:port/a/b/c
+          ## host:port/wsurl?=/a/b/c
+          pfnDict["Host"] = pfn[0:pfn.index(":")]
+          ## port/a/b/c
+          ## port/wsurl?=/a/b/c
+          pfn = pfn[ len(pfnDict["Host"])+1: ]
+          pfnDict["Port"] = pfn[0:pfn.index("/")]
+          ## /a/b/c
+          ## /wsurl?=/a/b/c
+          pfn = pfn[ len(pfnDict["Port"]): ]
+          WSUrl = pfn.find("?=")
+          if WSUrl == -1:
+            ## /a/b/c
+            pfnDict["Path"] = os.path.dirname( pfn )
+            pfnDict["FileName"] = os.path.basename( pfn )
+          else:
+            ## /wsurl?=/a/b/c
+            pfnDict["WSUrl"] = pfn[ 0:WSUrl+2 ]
+            ## /a/b/c
+            pfn = pfn[ len(pfnDict["WSUrl"]):]
+            pfnDict["Path"] = os.path.dirname( pfn )
+            pfnDict["FileName"] = os.path.basename( pfn )
 
-  pfnDict = {'Protocol':'', 'Host':'', 'Port':'', 'WSUrl':'', 'Path':'', 'FileName':''}
+    return S_OK( pfnDict )
+  except Exception:
+    errStr = "Pfn.pfnparse: Exception while parsing pfn: " + str( pfn )
+    gLogger.exception( errStr )
+    return S_ERROR( errStr )
+
+
+def pfnparse( pfn ):
 
   if not pfn:
     return S_ERROR("wrong 'pfn' argument value in function call, expected non-empty string, got %s" % str(pfn) )
+
+  pfnDict = {'Protocol':'', 'Host':'', 'Port':'', 'WSUrl':'', 'Path':'', 'FileName':''}
 
   try:
     #gLogger.debug("Pfn.pfnunparse: Attempting to parse pfn %s." % pfn)
