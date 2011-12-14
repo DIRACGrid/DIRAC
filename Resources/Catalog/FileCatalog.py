@@ -265,27 +265,36 @@ class FileCatalog:
     return S_OK( catalogConfig )
 
   def _generateCatalogObject( self, catalogName ):
+    """ Create a file catalog object from its name and CS description
+    """
+    # get the CS description first
+    catalogType = gConfig.getValue('/Resources/FileCatalogs/%s/CatalogType' % catalogName,catalogName)
+    catalogURL = gConfig.getValue('/Resources/FileCatalogs/%s/CatalogURL' % catalogName,'')
+    
     moduleRootPaths = getInstalledExtensions()
     moduleLoaded = False
     for moduleRootPath in moduleRootPaths:
       if moduleLoaded:
         break
       gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
-      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogName )
+      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogType )
       gLogger.verbose( "Looking for file %s" % moduleFile )
       if not os.path.isfile( moduleFile ):
         continue
       try:
         # This inforces the convention that the plug in must be named after the file catalog
-        moduleName = "%sClient" % ( catalogName )
+        moduleName = "%sClient" % ( catalogType )
         catalogModule = __import__( '%s.Resources.Catalog.%s' % ( moduleRootPath, moduleName ),
                                     globals(), locals(), [moduleName] )
       except Exception, x:
-        errStr = "FileCatalog._generateCatalogObject: Failed to import %s: %s" % ( catalogName, x )
+        errStr = "FileCatalog._generateCatalogObject: Failed to import %s: %s" % ( catalogType, x )
         gLogger.exception( errStr )
         return S_ERROR( errStr )
       try:
-        evalString = "catalogModule.%s()" % moduleName
+        if catalogURL:
+          evalString = "catalogModule.%s(url='%s')" % (moduleName,catalogURL)
+        else:  
+          evalString = "catalogModule.%s()" % moduleName
         catalog = eval( evalString )
         if not catalog.isOK():
           errStr = "FileCatalog._generateCatalogObject: Failed to instantiate catalog plug in."
@@ -298,4 +307,4 @@ class FileCatalog:
         return S_ERROR( errStr )
 
     if not moduleLoaded:
-      return S_ERROR( 'Failed to find catalog client %s' % catalogName )
+      return S_ERROR( 'Failed to find catalog client %s of type %s' % (catalogName,catalogType) )
