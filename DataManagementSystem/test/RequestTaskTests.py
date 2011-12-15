@@ -145,7 +145,7 @@ class RequestAgentBaseTests( unittest.TestCase ):
                                                                      "requestName" : "fake name",
                                                                      "requestString" : "",
                                                                      "jobID" : 0,
-                                                                     #"executionOrder" : [],
+                                                                     "executionOrder" : 0,
                                                                      "sourceServer" : "" } }
 
 

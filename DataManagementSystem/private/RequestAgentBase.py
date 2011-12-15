@@ -27,7 +27,7 @@ __RCSID__ = "$Id $"
 import time
 
 ## DIRAC imports 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR, gMonitor
+from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
@@ -151,6 +151,10 @@ class RequestAgentBase( AgentModule ):
     return self.__configPath
 
   def requestsPerCycle( self ):
+    """ get number of request to be processed in one cycle
+    
+    :param self: self reference
+    """
     return self.__requestsPerCycle
 
   @classmethod
@@ -193,6 +197,10 @@ class RequestAgentBase( AgentModule ):
     return S_OK()
 
   def requestCallback( self ):
+    """ get definition of request callback function
+    
+    :param self: self reference
+    """
     return self.__requestCallback
 
   def registerExceptionCallback( self, exceptionCallback ):
@@ -206,6 +214,10 @@ class RequestAgentBase( AgentModule ):
     self.__exceptionCallback = exceptionCallback
 
   def exceptionCallback( self ):
+    """ get definition of exception callbak function
+    
+    :param self: self reference
+    """
     return self.__exceptionCallback
 
 

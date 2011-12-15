@@ -91,6 +91,26 @@ class StrategyHandlerChannelNotDefined( Exception ):
     """
     return "Failed to determine replication tree, channel %s is not defined" % self.channelName
 
+class TransferAgentError( Exception ):
+  """
+  .. class:: TransferAgentError
+
+  Exception raised when neither scheduling nor task execution is enabled in CS.
+  """
+  def __init__( self, msg ):
+    """ c'tor
+    
+    :param self: self reference
+    :param str msg: description
+    """
+    Exception.__init__( self )
+    self.msg = msg 
+  def __str__( self ):
+    """ str() operator
+
+    :param self: self reference
+    """
+    return str( self.msg )
 
 class TransferAgent( RequestAgentBase ):
   """ 
@@ -220,7 +240,8 @@ class TransferAgent( RequestAgentBase ):
 
     ## is there any mode enabled?
     if True not in self.__executionMode.values():
-      return S_ERROR("Agent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
+      self.log.error("TransferAgent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
+      raise TransferAgentError("TransferAgent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
 
     self.log.info("%s has been constructed" % agentName )
 
@@ -476,7 +497,8 @@ class TransferAgent( RequestAgentBase ):
       
      
       if ownerDN["OK"] and ownerDN["Value"]:
-        self.log.info("Request %s has its owner %s, FTS scheduling is disabled" % ( requestDict["requestName"], ownerDN["Value"] ) )
+        self.log.info("Request %s has its owner %s, FTS scheduling is disabled" % ( requestDict["requestName"], 
+                                                                                    ownerDN["Value"] ) )
         failback = True
       
       ## if ownerDN is NOT present and FTS scheduling is enabled we can proceed with it 
@@ -682,7 +704,8 @@ class TransferAgent( RequestAgentBase ):
 
           res = self.transferDB().addReplicationTree( waitingFileID, tree )
           if not res["OK"]:
-            self.log.error("schedule: error adding replication tree for file %s: %s" % ( waitingFileLFN, res["Message"]) )
+            self.log.error("schedule: error adding replication tree for file %s: %s" % ( waitingFileLFN, 
+                                                                                         res["Message"]) )
             continue
           requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", 
                                                       waitingFileLFN, "Status", "Scheduled" )
