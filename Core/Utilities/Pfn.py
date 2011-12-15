@@ -62,6 +62,25 @@ def pfnunparse( pfnDict ):
     return S_ERROR( errStr )
 
 
+def pfnunparse_new( pfnDict ):
+  """ create pfn URI from pfnDict
+
+  TODO: end this shit
+
+  """
+  pfn = ""
+  if "Path" in pfnDict and "FileName" in pfnDict:
+    if pfnDict["Path"] and pfnDict["FileName"]:
+      pfn = os.path.normpath( od.path.join( pfnDict["Path"], pfnDict["FileName"] ) )
+  else:
+    return S_ERROR( "Pfn.pfnunparse: missing 'Path' and/or 'FileName' in pfnDict" )
+  #if not pfn:
+  #  return S_ERROR( "Pfn.pfnunparse: missing values for 'Path' (%s) and/or 'FileName' (%s) in pfnDict" % (  ) )
+  
+
+  return S_OK( pfn )
+
+
 def pfnparse( pfn ):
   """ parse pfn and save all bits of information into dictionary
 

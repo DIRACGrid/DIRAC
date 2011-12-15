@@ -60,9 +60,14 @@ class PfnTests( unittest.TestCase ):
       self.assertEqual( pfnparse( pfn ), result )
 
   def test_02_unparse( self ):
-    ## too lazy to write
-    pass
-      
+    """ pfnunparse
+     
+    :param self: self reference
+    """
+    for pfn, result in self.pfns.items():
+      if result["OK"]:
+        self.assertEqual( pfnunparse( result["Value"] ), { "OK" : True, "Value" : pfn } )
+
 
 ## test execution
 if __name__ == "__main__":
