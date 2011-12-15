@@ -15,6 +15,19 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceS
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
 class AlarmAction(ActionBase):
+  def __init__(self, granularity, name, status_type, pdp_decision, **kw):
+    ActionBase.__init__(self)
+
+    try:
+      self.rsAPI = self.kw["Clients"][ 'ResourceStatusClient' ]
+    except ValueError:
+      self.rsAPI = ResourceStatusClient()
+    try:
+      self.rmAPI = self.kw["Clients"][ 'ResourceManagementClient' ]
+    except ValueError:
+      self.rmAPI = ResourceManagementClient()
+
+
   def _getUsersToNotify(self):
     groups = CS.getTypedDictRootedAt("AssigneeGroups/" + CS.getSetup()).values()
     concerned_groups = [g for g in groups if Utils.dictMatch(self.kw["Params"], g)]
@@ -33,14 +46,6 @@ class AlarmAction(ActionBase):
 
     # Initializing variables
     nc = NotificationClient()
-    try:
-      rsAPI = self.kw["Clients"][ 'ResourceStatusClient' ]
-    except ValueError:
-      rsAPI = ResourceStatusClient()
-    try:
-      rmAPI = self.kw["Clients"][ 'ResourceManagementClient' ]
-    except ValueError:
-      rmAPI = ResourceManagementClient()
 
     # raise alarms, right now makes a simple notification
 
@@ -66,7 +71,7 @@ class AlarmAction(ActionBase):
                        'order'                 : 'DESC',
                        'limit'                 : 1 }
 
-            was = Utils.unpack(rsAPI.getElementHistory( self.granularity, **kwargs )[0])
+            was = Utils.unpack(self.rsAPI.getElementHistory( self.granularity, **kwargs )[0])
 
             mailMessage = """Granularity = %s
 Name = %s
