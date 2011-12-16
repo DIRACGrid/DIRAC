@@ -47,7 +47,8 @@ class PfnTests( unittest.TestCase ):
       "proto:/a/b/c" : {'OK': True, 'Value': {'Protocol': 'proto', 'WSUrl': '', 'FileName': 'c', 'Host': '', 'Path': '/a/b', 'Port': ''}},
       "proto://host/a/b/c" : {'OK': True, 'Value': {'Protocol': 'proto', 'WSUrl': '', 'FileName': 'c', 'Host': 'host', 'Path': '/a/b', 'Port': ''}},
       "proto://host:port/a/b/c" : {'OK': True, 'Value': {'Protocol': 'proto', 'WSUrl': '', 'FileName': 'c', 'Host': 'host', 'Path': '/a/b', 'Port': 'port'}},
-      "proto://host:port/wsurl?=/a/b/c" : {'OK': True, 'Value': {'Protocol': 'proto', 'WSUrl': '/wsurl?=', 'FileName': 'c', 'Host': 'host', 'Path': '/a/b', 'Port': 'port'}} }
+      "proto://host:port/wsurl?=/a/b/c" : {'OK': True, 'Value': {'Protocol': 'proto', 'WSUrl': '/wsurl?=', 'FileName': 'c', 'Host': 'host', 'Path': '/a/b', 'Port': 'port'}},
+      "proto://host:port/wsurl?blah=/a/b/c" : {'OK': True, 'Value': {'Protocol': 'proto', 'WSUrl': '/wsurl?blah=', 'FileName': 'c', 'Host': 'host', 'Path': '/a/b', 'Port': 'port'}}}
     
   def test_01_parse( self ):
     """ pfnparse and pfnparse_old

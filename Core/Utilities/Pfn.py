@@ -129,14 +129,15 @@ def pfnparse( pfn ):
           ## /a/b/c
           ## /wsurl?=/a/b/c
           pfn = pfn[ len(pfnDict["Port"]): ]
-          WSUrl = pfn.find("?=")
-          if WSUrl == -1:
+          WSUrl = pfn.find("?")
+          WSUrlEnd = pfn.find("=")
+          if WSUrl == -1 and WSUrlEnd == -1:
             ## /a/b/c
             pfnDict["Path"] = os.path.dirname( pfn )
             pfnDict["FileName"] = os.path.basename( pfn )
           else:
-            ## /wsurl?=/a/b/c
-            pfnDict["WSUrl"] = pfn[ 0:WSUrl+2 ]
+            ## /wsurl?blah=/a/b/c
+            pfnDict["WSUrl"] = pfn[ 0:WSUrlEnd+1 ]
             ## /a/b/c
             pfn = pfn[ len(pfnDict["WSUrl"]):]
             pfnDict["Path"] = os.path.dirname( pfn )
