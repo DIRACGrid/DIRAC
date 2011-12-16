@@ -23,25 +23,25 @@ class ResourceAction(ActionBase):
     #   token = 'RS_Hold'
     ####################################################################
 
-      self.kw["rsAPI"].modifyElementStatus(self.granularity, self.name, self.status_type,
+      self.kw["rsClient"].modifyElementStatus(self.granularity, self.name, self.status_type,
                                            status = self.new_status[ 'Status' ],
                                            reason = self.new_status[ 'Reason' ],
                                            tokenOwner=token)
 
     else:
-      self.kw["rsAPI"].setReason( self.granularity, self.name,
+      self.kw["rsClient"].setReason( self.granularity, self.name,
                                   self.status_type, self.new_status['Reason'] )
 
     now = datetime.utcnow()
 
     for resP in self.pdp_decision['SinglePolicyResults']:
       if not resP.has_key( 'OLD' ):
-        self.kw["rmAPI"].addOrModifyPolicyResult( self.granularity, self.name,
+        self.kw["rmClient"].addOrModifyPolicyResult( self.granularity, self.name,
                                                   resP['PolicyName'], self.status_type,
                                                   resP['Status'], resP['Reason'], now, now )
 
     if "EndDate" in self.new_status.keys():
-      self.kw["rsAPI"].setDateEnd( self.granularity, self.name,
+      self.kw["rsClient"].setDateEnd( self.granularity, self.name,
                                    self.status_type, self.new_status['EndDate'] )
 
 ################################################################################

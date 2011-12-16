@@ -7,6 +7,7 @@
 
 __RCSID__  = "$Id$"
 
+from DIRAC                                                      import gLogger
 from DIRAC.ResourceStatusSystem.Utilities                       import CS
 from DIRAC.ResourceStatusSystem.Utilities                       import Utils
 from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
@@ -18,15 +19,10 @@ class AlarmAction(ActionBase):
   def __init__(self, granularity, name, status_type, pdp_decision, **kw):
     ActionBase.__init__(self)
 
-    try:
-      self.rsAPI = self.kw["Clients"][ 'ResourceStatusClient' ]
-    except ValueError:
-      self.rsAPI = ResourceStatusClient()
-    try:
-      self.rmAPI = self.kw["Clients"][ 'ResourceManagementClient' ]
-    except ValueError:
-      self.rmAPI = ResourceManagementClient()
-
+    try:             self.rsClient = self.kw["Clients"][ 'ResourceStatusClient' ]
+    except KeyError: self.rsClient = ResourceStatusClient()
+    try:             self.rmClient = self.kw["Clients"][ 'ResourceManagementClient' ]
+    except KeyError: self.rmClient = ResourceManagementClient()
 
   def _getUsersToNotify(self):
     groups = CS.getTypedDictRootedAt("AssigneeGroups/" + CS.getSetup()).values()
@@ -62,30 +58,39 @@ class AlarmAction(ActionBase):
       for notif in users_to_notify:
         for user in notif['Users']:
           if 'Web' in notif['Notifications']:
+            gLogger.info("Sending web notification to user %s" % user)
             nc.addNotificationForUser(user, notif)
           if 'Mail' in notif['Notifications']:
+            gLogger.info("Sending mail notification to user %s" % user)
+            was = Utils.unpack(self.rsClient.getElementHistory(
+                self.granularity, elementName=self.name,
+                statusType=self.status_type,
+                meta = {"order": "DESC", 'limit' : 1,
+                        "columns":  ['Status', 'Reason', 'DateEffective']}))[0]
 
-            kwargs = { self.granularity+'Name' : self.name,
-                       'statusType'            : self.status_type,
-                       'columns'               : ['Status', 'Reason', 'DateEffective'],
-                       'order'                 : 'DESC',
-                       'limit'                 : 1 }
+            mailMessage = """RSS changed the status of the following resource:
 
-            was = Utils.unpack(self.rsAPI.getElementHistory( self.granularity, **kwargs )[0])
+Granularity:\t%s
+Name:\t\t%s
+New status:\t%s
+Reason:\t\t%s
+Was:\t\t%s (%s) since %s
+Setup:\t\t%s
 
-            mailMessage = """Granularity = %s
-Name = %s
-New perceived status = %s
-Reason for status change = %s
-Was in status "%s", with reason "%s", since %s
-Setup = %s
+If you think RSS took the wrong decision, please set the status manually:
+
+Use: dirac-rss-set-status -g <granularity> -n <element_name> -s <desired_status> [-t status_type]
+(if you omit the optional last part of the command, all status types are matched.)
+
+This notification has been sent according to those parameters:
+%s
 """ % (self.granularity, self.name, self.new_status['Status'],
-       self.new_status['Reason'], was[0], was[1], was[2], CS.getSetup())
+       self.new_status['Reason'], was[0], was[1], was[2], CS.getSetup(), str(users_to_notify))
 
             # Actually send the mail!
-            nc.sendMail(Utils.unpack(rmAPI.getUserRegistryCache(user)[0][2]),
-                        '[RSS] Status change for site %s: %s -> %s'
-                        % (self.name,  self.new_status['Status'], was[0]), mailMessage)
+            nc.sendMail(Utils.unpack(self.rmClient.getUserRegistryCache(user))[0][2],
+                        '[RSS][%s][%s] %s -> %s'
+                        % (self.granularity, self.name,  self.new_status['Status'], was[0]), mailMessage)
 
 
 ################################################################################

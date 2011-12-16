@@ -66,18 +66,13 @@ class PEP:
        :attr:`pdp`       : a custom PDP object (optional)
        :attr:`clients`   : a dictionary containing modules corresponding to clients.
     """
-    try:
-      self.rsAPI = clients[ 'ResourceStatusClient' ]
-    except ValueError:
-      self.rsAPI = ResourceStatusClient()
-    try:
-      self.rmAPI = clients[ 'ResourceManagementClient' ]
-    except ValueError:
-      self.rmAPI = ResourceManagementClient()
+    try:             self.rsClient = clients[ 'ResourceStatusClient' ]
+    except KeyError: self.rsClient = ResourceStatusClient()
+    try:             self.rmClient = clients[ 'ResourceManagementClient' ]
+    except KeyError: self.rmClient = ResourceManagementClient()
 
     self.clients = clients
-
-    if pdp is None:
+    if not pdp:
       self.pdp = PDP( **clients )
 
 ################################################################################
@@ -138,8 +133,8 @@ class PEP:
       if 'Resource_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".ResourceAction")
         m.ResourceAction(granularity, name, statusType, resDecisions,
-                         rsAPI=self.rsAPI,
-                         rmAPI=self.rmAPI).run()
+                         rsClient=self.rsClient,
+                         rmClient=self.rmClient).run()
 
       if 'Alarm_PolType' in policyType:
         m = Utils.voimport(actionBaseMod + ".AlarmAction")
