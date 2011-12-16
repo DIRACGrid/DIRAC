@@ -1,3 +1,8 @@
+[v6r1p1]
+
+*RSS
+BUGFIX: Alarm_PolType now really send mails instead of crashing silently.
+
 [v6r1]
 
 *RSS
