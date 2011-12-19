@@ -45,8 +45,8 @@ class ResourceManagementClient:
     The client tries to connect to :class:ResourceManagementDB by default. If it 
     fails, then tries to connect to the Service :class:ResourceManagementHandler.
     '''
-    
-    if serviceIn == None:
+    import types
+    if type( serviceIn ) == types.NoneType:
       try:
         self.gate = ResourceManagementDB()
       except Exception:

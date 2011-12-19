@@ -53,7 +53,8 @@ class ResourceStatusClient:
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
  
-    if serviceIn == None:
+    import types
+    if type( serviceIn ) == types.NoneType:
       try:
         self.gate = ResourceStatusDB()
       except Exception:
