@@ -1,30 +1,31 @@
 ################################################################################
 # $HeadURL $
 ################################################################################
-__RCSID__  = "$Id$"
-
 """
   DIRAC.ResourceStatusSystem package
 """
 
+__RCSID__  = "$Id$"
+
 from DIRAC.ResourceStatusSystem.Utilities import CS
 
 try:
-  gencfg            = CS.getTypedDictRootedAt( "GeneralConfig" )
+  gencfg = CS.getTypedDictRootedAt( "GeneralConfig" )
 except CS.CSError:
-  print "Unable to connect to CS. Do you have a proxy ?"
-  exit(1)
+  gencfg = {}
 
-ValidRes          = gencfg[ 'Granularity' ]
-ValidStatus       = gencfg[ 'Status' ]
-ValidStatusTypes  = gencfg[ 'Resources' ]
-ValidPolicyResult = gencfg[ 'PolicyResult' ] + gencfg[ 'Status' ]
-ValidSiteType     = gencfg[ 'SiteType' ]
-ValidServiceType  = gencfg[ 'ServiceType' ]
-ValidResourceType = gencfg[ 'ResourceType' ]
-PolicyTypes       = gencfg[ 'PolicyTypes' ]
+ValidStatus       = gencfg.get("Status", ["Banned", "Probing", "Bad", "Active"])
+ValidStatusTypes  = gencfg.get("Resources", {"Site": {"StatusType": "''"},
+                                             "Service": {"StatusType": "''"},
+                                             "Resource": {"StatusType": "''"},
+                                             "StorageElement": {"StatusType": ["Read", "Write", "Remove", "Check"]}})
+ValidRes = ValidStatusTypes.keys()
 
-CheckingFreqs     = CS.getTypedDictRootedAt("CheckingFreqs")
+ValidPolicyResult = gencfg.get('PolicyResult', ["Error", "Unknown", "NeedConfirmation", "Banned", "Probing", "Bad", "Active"])
+ValidSiteType     = gencfg.get('SiteType', ["T0", "T1", "T2", "T3"])
+ValidServiceType  = gencfg.get('ServiceType', ["Computing", "Storage", "VO-BOX", "VOMS", "CondDB"])
+ValidResourceType = gencfg.get('ResourceType', ["CE", "CREAMCE", "SE", "LFC_C", "LFC_L", "FTS", "VOMS"])
+PolicyTypes       = gencfg.get('PolicyTypes', ["Resource_PolType", "Alarm_PolType", "Collective_PolType", "RealBan_PolType"])
 
 ################################################################################
 # Web views

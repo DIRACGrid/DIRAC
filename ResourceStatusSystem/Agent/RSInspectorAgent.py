@@ -10,11 +10,11 @@ from DIRAC                                                  import gLogger, S_OK
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem                             import CheckingFreqs
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+from DIRAC.ResourceStatusSystem.Utilities import CS
 
 class RSInspectorAgent( AgentModule ):
   """
@@ -32,7 +32,7 @@ class RSInspectorAgent( AgentModule ):
 
     try:
       self.rsClient             = ResourceStatusClient()
-      self.ResourcesFreqs       = CheckingFreqs[ 'ResourcesFreqs' ]
+      self.ResourcesFreqs       = CS.getTypedDictRootedAt("CheckingFreqs/ResourcesFreqs")
       self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
 

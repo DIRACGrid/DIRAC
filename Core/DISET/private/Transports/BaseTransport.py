@@ -52,7 +52,10 @@ class BaseTransport:
     return self.__keepAliveLapse
 
   def handshake( self ):
-    pass
+    return S_OK()
+
+  def close( self ):
+    self.oSocket.close()
 
   def setAppData( self, appData ):
     self.appData = appData

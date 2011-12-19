@@ -652,7 +652,7 @@ class TransferDB(DB):
     
     for channelID, data, files in res['Value']:
       if channelID in channelTimeDict and channelTimeDict[channelID]:
-        channelDict[channelID] = { 'Throughput': float(data)/channelTimeDict[channelID]
+        channelDict[channelID] = { 'Throughput': float(data)/channelTimeDict[channelID],
                                    'Fileput': float(files)/channelTimeDict[channelID] }
 
     #############################################
