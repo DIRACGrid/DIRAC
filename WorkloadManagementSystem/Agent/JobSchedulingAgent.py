@@ -249,16 +249,13 @@ class JobSchedulingAgent( OptimizerModule ):
     """
     tier1 = ''
     groupName = ''
-    result = getSiteTiers(stagingSites)
-    if result['OK']:
-      tierDict = dict(zip(stagingSites,result['Value']))
-      for tsite in tierDict:
-        if tierDict[tsite] in [0,1]:
-          tier1 = tsite
-        if tierDict[tsite] == 0:
-          break
-    else:
-      return result
+    tierList = getSiteTiers(stagingSites)
+    tierDict = dict(zip(stagingSites,tierList))
+    for tsite in tierDict:
+      if tierDict[tsite] in [0,1]:
+        tier1 = tsite
+      if tierDict[tsite] == 0:
+        break
 
     if tier1:
       grid,sname,ccode = tier1.split('.')

@@ -18,7 +18,7 @@ class TaskManagerAgentBase( AgentModule ):
 
   #############################################################################
 
-  def initialize( self, tsClient = None, wfTasks = None ):
+  def initialize( self, tsClient = None, taskManager = None ):
 
     self.section = self.am_getOption( "section" )
     gMonitor.registerActivity( "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks", gMonitor.OP_ACUM )
@@ -29,11 +29,9 @@ class TaskManagerAgentBase( AgentModule ):
     else:
       self.transClient = tsClient
 
-    if not wfTasks:
-      from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
-      self.wfTasks = WorkflowTasks()
-    else:
-      self.wfTasks = wfTasks
+    self.taskManager = taskManager
+    if not taskManager:
+      return S_ERROR('No task manager provided !')        
 
     self.transType = self.am_getOption( "TransType", ['MCSimulation'] )
     gLogger.info( "Looking for %s" % self.transType )
@@ -124,7 +122,7 @@ class TaskManagerAgentBase( AgentModule ):
       if not res['Value']:
         gLogger.verbose( "updateTaskStatus: No tasks found to update for transformation %s" % transID )
         continue
-      res = self.wfTasks.getSubmittedTaskStatus( res['Value'] )
+      res = self.taskManager.getSubmittedTaskStatus( res['Value'] )
       if not res['OK']:
         gLogger.error( "updateTaskStatus: Failed to get updated task statuses for transformation", "%s %s" % ( transID, res['Message'] ) )
         continue
@@ -159,7 +157,7 @@ class TaskManagerAgentBase( AgentModule ):
       if not res['Value']:
         gLogger.info( "updateFileStatus: No files to be updated for transformation %s." % transID )
         continue
-      res = self.wfTasks.getSubmittedFileStatus( res['Value'] )
+      res = self.taskManager.getSubmittedFileStatus( res['Value'] )
       if not res['OK']:
         gLogger.error( "updateFileStatus: Failed to get updated file statuses for transformation", "%s %s" % ( transID, res['Message'] ) )
         continue
@@ -199,7 +197,7 @@ class TaskManagerAgentBase( AgentModule ):
       if not res['Value']:
         gLogger.verbose( "checkReservedTasks: No Reserved tasks found for transformation %s" % transID )
         continue
-      res = self.wfTasks.updateTransformationReservedTasks( res['Value'] )
+      res = self.taskManager.updateTransformationReservedTasks( res['Value'] )
       if not res['OK']:
         gLogger.info( "checkReservedTasks: No Reserved tasks found for transformation %s" % transID )
         continue
@@ -250,15 +248,15 @@ class TaskManagerAgentBase( AgentModule ):
         gLogger.verbose( "submitTasks: No tasks found for submission for transformation %s" % transID )
         continue
       gLogger.info( "submitTasks: Obtained %d tasks for submission for transformation %s" % ( len( tasks ), transID ) )
-      res = self.wfTasks.prepareTransformationTasks( transBody, tasks, owner, ownerGroup )
+      res = self.taskManager.prepareTransformationTasks( transBody, tasks, owner, ownerGroup )
       if not res['OK']:
         gLogger.error( "submitTasks: Failed to prepare tasks for transformation", "%s %s" % ( transID, res['Message'] ) )
         continue
-      res = self.wfTasks.submitTransformationTasks( res['Value'] )
+      res = self.taskManager.submitTransformationTasks( res['Value'] )
       if not res['OK']:
         gLogger.error( "submitTasks: Failed to submit prepared tasks for transformation", "%s %s" % ( transID, res['Message'] ) )
         continue
-      res = self.wfTasks.updateDBAfterTaskSubmission( res['Value'] )
+      res = self.taskManager.updateDBAfterTaskSubmission( res['Value'] )
       if not res['OK']:
         gLogger.error( "submitTasks: Failed to update DB after task submission for transformation", "%s %s" % ( transID, res['Message'] ) )
         continue
