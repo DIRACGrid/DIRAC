@@ -2,16 +2,20 @@ COMPONENT_NAME = 'TaskManager'
 
 from DIRAC                                                      import gConfig, S_OK, S_ERROR
 
+from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import sortList
-from DIRAC.Interfaces.API.Job                                   import Job
 
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
+from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 
+from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
+from DIRAC.Interfaces.API.Job                                   import Job
 
 import string, re, time, types, os
 
-class TaskBase( object ):
+class TaskBase:
 
   def __init__( self, transClient = None, logger = None ):
 
@@ -23,9 +27,7 @@ class TaskBase( object ):
 
     if not logger:
       from DIRAC import gLogger
-      self.log = gLogger.getSubLogger( 'TaskBase' )
-    else:
-      self.log = logger
+      self.log = gLogger
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
     return S_ERROR( "Not implemented" )
@@ -60,19 +62,9 @@ class TaskBase( object ):
 
 class RequestTasks( TaskBase ):
 
-  def __init__( self, transClient = None, logger = None, requestClient = None ):
-
-    if not logger:
-      from DIRAC import gLogger
-      logger = gLogger.getSubLogger( 'RequestTasks' )
-
-    super( RequestTasks, self ).__init__( transClient, logger )
-
-    if not requestClient:
-      from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-      self.requestClient = RequestClient()
-    else:
-      self.requestClient = requestClient
+  def __init__( self ):
+    TaskBase.__init__( self )
+    self.requestClient = RequestClient()
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
     requestType = 'transfer'
@@ -196,36 +188,13 @@ class RequestTasks( TaskBase ):
 
 class WorkflowTasks( TaskBase ):
 
-  def __init__( self, transClient = None, logger = None, submissionClient = None, jobMonitoringClient = None,
-                outputDataModule = None ):
+  def __init__( self ):
+    TaskBase.__init__( self )
+    self.submissionClient = WMSClient()
+    self.jobMonitoringClient = JobMonitoringClient()
 
-    if not logger:
-      from DIRAC import gLogger
-      logger = gLogger.getSubLogger( 'WorkflowTasks' )
-
-    super( WorkflowTasks, self ).__init__( transClient, logger )
-
-    if not submissionClient:
-      from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
-      self.submissionClient = WMSClient()
-    else:
-      self.submissionClient = submissionClient
-
-    if not jobMonitoringClient:
-      from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-      self.jobMonitoringClient = JobMonitoringClient()
-    else:
-      self.jobMonitoringClient = jobMonitoringClient
-
-    if not outputDataModule:
-      #FIXME: LHCb specific
-      self.outputDataModule = gConfig.getValue( "/DIRAC/VOPolicy/OutputDataModule", "LHCbDIRAC.Core.Utilities.OutputDataPolicy" )
-    else:
-      self.outputDataModule = outputDataModule
-
-  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', job = None ):
+  def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '' ):
     if ( not owner ) or ( not ownerGroup ):
-      from DIRAC.Core.Security.ProxyInfo import getProxyInfo
       res = getProxyInfo( False, False )
       if not res['OK']:
         return res
@@ -233,11 +202,7 @@ class WorkflowTasks( TaskBase ):
       owner = proxyInfo['username']
       ownerGroup = proxyInfo['group']
 
-    if not job:
-      oJob = Job( transBody )
-    else:
-      oJob = job( transBody )
-
+    oJob = Job( transBody )
     for taskNumber in sortList( taskDict.keys() ):
       paramsDict = taskDict[taskNumber]
       transID = paramsDict['TransformationID']
@@ -277,8 +242,7 @@ class WorkflowTasks( TaskBase ):
         if hospitalCEs:
           oJob._addJDLParameter( 'GridRequiredCEs', hospitalCEs )
       taskDict[taskNumber]['TaskObject'] = ''
-      res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID, 'TaskID':taskNumber, 'InputData':inputData},
-                                moduleLocation = self.outputDataModule )
+      res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID, 'TaskID':taskNumber, 'InputData':inputData} )
       if not res ['OK']:
         self.log.error( "Failed to generate output data", res['Message'] )
         continue
@@ -287,9 +251,9 @@ class WorkflowTasks( TaskBase ):
       taskDict[taskNumber]['TaskObject'] = Job( oJob._toXML() )
     return S_OK( taskDict )
 
-  def getOutputData( self, paramDict, moduleLocation ):
+  def getOutputData( self, paramDict ):
     moduleFactory = ModuleFactory()
-
+    moduleLocation = gConfig.getValue( "/DIRAC/VOPolicy/OutputDataModule", "LHCbDIRAC.Core.Utilities.OutputDataPolicy" )
     moduleInstance = moduleFactory.getModule( moduleLocation, paramDict )
     if not moduleInstance['OK']:
       return moduleInstance
