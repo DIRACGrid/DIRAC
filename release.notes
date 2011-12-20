@@ -1,3 +1,8 @@
+[v6r1p2]
+
+*WorkloadManagement
+BUGFIX: use getSiteTiers() with returned direct value and not S_OK
+
 [v6r1p1]
 
 *RSS
