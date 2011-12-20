@@ -1,7 +1,10 @@
 [v6r1p2]
 
 *WorkloadManagement
-BUGFIX: use getSiteTiers() with returned direct value and not S_OK
+BUGFIX: JobSchedulingAgent - use getSiteTiers() with returned direct value and not S_OK
+
+*Transformation
+BUGFIX: Uniform use of the TaskManager in the RequestTaskAgent and WorkflowTaskAgent
 
 [v6r1p1]
 
