@@ -6,12 +6,11 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
-#from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
+from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 
 AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
-#class WorkflowTaskAgent( TaskManagerAgentBase, WorkflowTasks ):
-class WorkflowTaskAgent( TaskManagerAgentBase ):
+class WorkflowTaskAgent( TaskManagerAgentBase, WorkflowTasks ):
   """ An AgentModule class to submit workflow tasks
   """
 
@@ -19,7 +18,7 @@ class WorkflowTaskAgent( TaskManagerAgentBase ):
   def initialize( self ):
     """ Sets defaults """
     TaskManagerAgentBase.initialize( self )
- #   WorkflowTasks.__init__( self )
+    WorkflowTasks.__init__( self )
     self.transType = self.am_getOption( "TransType", ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] )
 
     # This sets the Default Proxy to used as that defined under 
