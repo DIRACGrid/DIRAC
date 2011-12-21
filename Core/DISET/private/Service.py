@@ -291,7 +291,7 @@ class Service:
       #Execute the action
       result = self._processProposal( trid, proposalTuple, handlerObj )
       #Close the connection if required
-      if result[ 'closeTransport' ]:
+      if result[ 'closeTransport' ] or not result[ 'OK' ]:
         self._transportPool.close( trid )
       return result
     finally:
@@ -463,11 +463,10 @@ class Service:
 
   def _executeAction( self, trid, proposalTuple, handlerObj ):
     try:
-      handlerObj._rh_executeAction( proposalTuple )
+      return handlerObj._rh_executeAction( proposalTuple )
     except Exception, e:
       gLogger.exception( "Exception while executing handler action" )
       return S_ERROR( "Server error while executing action: %s" % str( e ) )
-    return S_OK()
 
   def _mbReceivedMsg( self, trid, msgObj ):
     result = self._authorizeProposal( ( 'Message', msgObj.getName() ),
