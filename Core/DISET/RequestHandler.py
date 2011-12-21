@@ -12,7 +12,15 @@ from DIRAC.Core.DISET.private.MessageBroker import getGlobalMessageBroker
 from DIRAC.Core.Utilities import Time
 import DIRAC
 
-class RequestHandler:
+class RequestHandler( object ):
+
+  class ConnectionError( Exception ):
+
+    def __init__( self, msg ):
+      self.__msg = msg
+
+    def __str__( self ):
+      return "ConnectionError: %s" % self.__msg
 
   def __init__( self, serviceInfoDict,
                 trid,
@@ -79,15 +87,19 @@ class RequestHandler:
     gLogger.debug( "Executing %s:%s action" % actionTuple )
     startTime = time.time()
     actionType = actionTuple[0]
-    if actionType == "RPC":
-      retVal = self.__doRPC( actionTuple[1] )
-    elif actionType == "FileTransfer":
-      retVal = self.__doFileTransfer( actionTuple[1] )
-    elif actionType == "Connection":
-      retVal = self.__doConnection( actionTuple[1] )
-    else:
-      raise Exception( "Unknown action (%s)" % actionType )
-    if not retVal:
+    try:
+      if actionType == "RPC":
+        retVal = self.__doRPC( actionTuple[1] )
+      elif actionType == "FileTransfer":
+        retVal = self.__doFileTransfer( actionTuple[1] )
+      elif actionType == "Connection":
+        retVal = self.__doConnection( actionTuple[1] )
+      else:
+        return S_ERROR( "Unknown action %s" % actionType )
+    except ConnectionError, excp:
+      gLogger.error( str( excp ) )
+      return S_ERROR( excp )
+    if  not isReturnStructure( retVal ):
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
       retVal = S_ERROR( message )
@@ -110,9 +122,8 @@ class RequestHandler:
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Error while receiving file description", "%s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                             retVal[ 'Message' ] ) )
-      return S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] )
+      raise ConnectionError( "Error while receiving file description %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+                                                                                retVal[ 'Message' ] ) )
     fileInfo = retVal[ 'Value' ]
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
     if "transfer_%s" % sDirection not in dir( self ):
@@ -186,9 +197,8 @@ class RequestHandler:
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Error receiving arguments", "%s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                             retVal[ 'Message' ] ) )
-      return S_ERROR( "Error while receiving function arguments: %s" % retVal[ 'Message' ] )
+      raise ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+                                                                         retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     self.__logRemoteQuery( "RPC/%s" % method, args )
     return self.__RPCCallFunction( method, args )
@@ -278,9 +288,8 @@ class RequestHandler:
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Error receiving arguments", "%s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                             retVal[ 'Message' ] ) )
-      return S_ERROR( "Error while receiving function arguments: %s" % retVal[ 'Message' ] )
+      raise ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+                                                                         retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     return self._rh_executeConnectionCallback( methodName, args )
 
@@ -356,7 +365,7 @@ class RequestHandler:
     @param method: Method to check
     @return: S_OK/S_ERROR
     """
-    return self.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
+    return self.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
 
   def __logRemoteQuery( self, method, args ):
     """
