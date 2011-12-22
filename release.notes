@@ -72,6 +72,13 @@ BUGFIX: RequestContainer.isSubrequestDone() - return 0 if Done check fails
 *DataManagement
 NEW: FileCatalog - possibility to configure multiple FileCatalog services of the same type
 
+[v6r0p4]
+
+*Framework
+NEW: Pass the monitor down to the request RequestHandler
+FIX: Define the service location for the monitor
+FIX: Close some connections that DISET was leaving open
+
 [v6r0p3]
 
 *Framework
