@@ -25,7 +25,8 @@ class RequestHandler( object ):
   def __init__( self, serviceInfoDict,
                 trid,
                 lockManager,
-                msgBroker ):
+                msgBroker,
+                activityMonitor ):
     """
     Constructor
 
@@ -42,6 +43,7 @@ class RequestHandler( object ):
     self.__lockManager = lockManager
     self.__msgBroker = msgBroker
     self.__trPool = msgBroker.getTransportPool()
+    self.__monitor = activityMonitor
 
   def initialize( self ):
     """
@@ -499,6 +501,9 @@ class RequestHandler( object ):
 
   def srv_getCSServicePath( self ):
     return self.serviceInfoDict[ 'serviceSectionPath' ]
+
+  def srv_getMonitor( self ):
+    return self.__monitor
 
   def srv_msgReply( self, msgObj ):
     return self.__msgBroker.sendMessage( self.__trid, msgObj )

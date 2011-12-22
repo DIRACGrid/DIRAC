@@ -26,12 +26,15 @@ class Service:
                         'Connection' : 'Message' }
   SVC_SECLOG_CLIENT = SecurityLogClient()
 
-  def __init__( self, serviceName ):
+  def __init__( self, serviceName, activityMonitor = False ):
     self._name = serviceName
     self._startTime = Time.dateTime()
     self._cfg = ServiceConfiguration( serviceName )
     self._validNames = [ self._name ]
-    self._monitor = MonitoringClient()
+    if activityMonitor:
+      self._monitor = activityMonitor
+    else:
+      self._monitor = MonitoringClient()
     self.__monitorLastStatsUpdate = time.time()
     self._stats = { 'queries' : 0, 'connections' : 0 }
     self._authMgr = AuthManager( "%s/Authorization" % self._cfg.getServicePath() )
@@ -214,6 +217,7 @@ class Service:
     #Init extra bits of monitoring
     self._monitor.setComponentType( MonitoringClient.COMPONENT_SERVICE )
     self._monitor.setComponentName( self._name )
+    self._monitor.setComponentLocation( self._cfg.getURL() )
     self._monitor.initialize()
     self._monitor.registerActivity( "Connections", "Connections received", "Framework", "connections", MonitoringClient.OP_RATE )
     self._monitor.registerActivity( "Queries", "Queries served", "Framework", "queries", MonitoringClient.OP_RATE )
@@ -415,7 +419,8 @@ class Service:
       handlerInstance = self._handler[ 'class' ]( handlerInitDict,
                                                    trid,
                                                    self._lockManager,
-                                                   self._msgBroker )
+                                                   self._msgBroker,
+                                                   self._monitor )
       handlerInstance.initialize()
     except Exception, e:
       gLogger.exception( S_ERROR( "Server error while initializing handler: %s" % str( e ) ) )
