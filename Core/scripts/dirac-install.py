@@ -772,11 +772,11 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     signal.alarm( timeout )
   try:
     if "http_proxy" in os.environ and os.environ['http_proxy']:
-      proxyIP = os.environ['http_proxy'].replace('http://','')
-      proxy = urllib2.ProxyHandler({'http': proxyIP})
-      opener = urllib2.build_opener(proxy)
+      proxyIP = os.environ['http_proxy'].replace( 'http://', '' )
+      proxy = urllib2.ProxyHandler( {'http': proxyIP} )
+      opener = urllib2.build_opener( [proxy] )
       #opener = urllib2.build_opener()
-      urllib2.install_opener(opener)
+      urllib2.install_opener( opener )
     remoteFD = urllib2.urlopen( url )
     expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
     localFD = open( fileName, "wb" )
@@ -1177,12 +1177,12 @@ def createBashrc():
           os.makedirs( real )
         if os.path.exists( fake ):
           # Try to reproduce the directory structure to avoid lacking directories
-          fakeDirs = os.listdir(fake)
+          fakeDirs = os.listdir( fake )
           for fd in fakeDirs:
-            if os.path.isdir( os.path.join( fake,fd ) ):
-              if not os.path.exists( os.path.join( real,fd ) ):
-                os.makedirs( os.path.join( real,fd ) )
-          os.rename( fake, fake+'.bak' )      
+            if os.path.isdir( os.path.join( fake, fd ) ):
+              if not os.path.exists( os.path.join( real, fd ) ):
+                os.makedirs( os.path.join( real, fd ) )
+          os.rename( fake, fake + '.bak' )
         os.symlink( real, fake )
     except Exception, x:
       logERROR( str( x ) )
