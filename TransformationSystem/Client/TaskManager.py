@@ -141,7 +141,7 @@ class RequestTasks( TaskBase ):
       res = self.requestClient.getRequestInfo( taskName, 'RequestManagement/centralURL' )
       if res['OK']:
         taskNameIDs[taskName] = res['Value'][0]
-      elif re.search( "Failed to retreive RequestID for Request", res['Message'] ):
+      elif re.search( "Failed to retrieve RequestID for Request", res['Message'] ):
         noTasks.append( taskName )
       else:
         self.log.warn( "Failed to get requestID for request", res['Message'] )
@@ -158,7 +158,7 @@ class RequestTasks( TaskBase ):
       newStatus = ''
       if res['OK']:
         newStatus = res['Value']['RequestStatus']
-      elif re.search( "Failed to retreive RequestID for Request", res['Message'] ):
+      elif re.search( "Failed to retrieve RequestID for Request", res['Message'] ):
         newStatus = 'Failed'
       else:
         self.log.info( "getSubmittedTaskStatus: Failed to get requestID for request", res['Message'] )
