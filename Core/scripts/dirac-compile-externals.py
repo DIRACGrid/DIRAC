@@ -278,7 +278,7 @@ packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
 
 
 if compDest:
-  makeArgs .append( "-p '%s'" % os.path.realpath( compDest ) )
+  makeArgs.append( "-p '%s'" % os.path.realpath( compDest ) )
 
 #Substitution of versions 
 finalPackages = []
