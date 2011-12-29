@@ -1,10 +1,17 @@
+[v6r1p4]
+
+*RequestManagement
+BUGFIX: RequestContainer - in isSubRequestDone() treat special case for subrequests with files
+
+*Transformation
+BUGFIX: TransformationCleaningAgent - do not clear requests for tasks with no associated jobs
+
 [v6r1p3]
 
 *Framework
 NEW: Pass the monitor down to the request RequestHandler
 FIX: Define the service location for the monitor
 FIX: Close some connections that DISET was leaving open
-
 
 [v6r1p2]
 
