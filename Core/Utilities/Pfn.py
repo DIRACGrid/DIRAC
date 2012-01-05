@@ -5,7 +5,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gLogger
 import os, re
 
-def pfnunparse( pfnDict ):
+def pfnunparse_old( pfnDict ):
   """ This method takes a dictionary containing a the pfn attributes and constructs it
   """
   #gLogger.debug("Pfn.pfnunparse: Attempting to un-parse pfnDict.")
@@ -62,24 +62,62 @@ def pfnunparse( pfnDict ):
     return S_ERROR( errStr )
 
 
-def pfnunparse_new( pfnDict ):
+def pfnunparse( pfnDict ):
   """ create pfn URI from pfnDict
 
-  TODO: end this shit
-
+  :param dict pfnDict: 
   """
-  pfn = ""
-  if "Path" in pfnDict and "FileName" in pfnDict:
-    if pfnDict["Path"] and pfnDict["FileName"]:
-      pfn = os.path.normpath( od.path.join( pfnDict["Path"], pfnDict["FileName"] ) )
-  else:
-    return S_ERROR( "Pfn.pfnunparse: missing 'Path' and/or 'FileName' in pfnDict" )
-  #if not pfn:
-  #  return S_ERROR( "Pfn.pfnunparse: missing values for 'Path' (%s) and/or 'FileName' (%s) in pfnDict" % (  ) )
-  
 
+  allDict = dict.fromkeys( [ "Protocol", "Host", "Port", "WSUrl", "Path", "FileName" ], "" )
+  try:
+    allDict.update( pfnDict )
+  except TypeError, error:
+    ## if pfnDict isn't iterable 
+    return S_ERROR( "pfnunparse: wrong type for pfnDict argument: %s" % str(error) )
+  pfnDict = allDict
+
+  ## fileName
+  if not pfnDict["FileName"]:
+    return S_ERROR("pfnunparse: 'FileName' value is missing in pfnDict")
+  ## c
+  ## /a/b/c
+  filePath = os.path.normpath( os.path.join( pfnDict["Path"], pfnDict["FileName"] ) ) 
+    
+  ## host
+  uri = pfnDict["Host"]
+  if pfnDict["Host"]:
+    if pfnDict["Port"]:
+      # host:port
+      uri = "%s:%s" % ( pfnDict["Host"], pfnDict["Port"] )
+    if pfnDict["WSUrl"]:
+      if "?" in pfnDict["WSUrl"] and "=" in pfnDict["WSUrl"]:
+        # host/wsurl
+        # host:port/wsurl
+        uri = "%s%s" % ( uri, pfnDict["WSUrl"] )
+      else:
+        # host/wsurl
+        # host:port/wsurl
+        uri = "%s%s?=" % ( uri, pfnDict["WSUrl"] )
+
+  if pfnDict["Protocol"]:
+    if uri:
+      # proto://host
+      # proto://host:port
+      # proto://host:port/wsurl
+      uri = "%s://%s" % ( pfnDict["Protocol"], uri )
+    else:
+      # proto:
+      uri = "%s:" % pfnDict["Protocol"]
+
+  pfn = "%s%s" % ( uri, filePath )
+  # c
+  # /a/b/c
+  # proto:/a/b/c
+  # proto://host/a/b/c
+  # proto://host:port/a/b/c
+  # proto://host:port/wsurl/a/b/c 
+  #gLogger.debug("Pfn.pfnunparse: Successfully un-parsed pfn dictionary.")
   return S_OK( pfn )
-
 
 def pfnparse( pfn ):
   """ parse pfn and save all bits of information into dictionary

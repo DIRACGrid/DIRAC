@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse, pfnparse_old
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse, pfnparse_old, pfnunparse_old
 import random, string, timeit
 
 
@@ -61,12 +61,13 @@ class PfnTests( unittest.TestCase ):
       self.assertEqual( pfnparse( pfn ), result )
 
   def test_02_unparse( self ):
-    """ pfnunparse
+    """ pfnunparse and pfnunparse_old
      
     :param self: self reference
     """
     for pfn, result in self.pfns.items():
       if result["OK"]:
+        self.assertEqual( pfnunparse_old( result["Value"] ), { "OK" : True, "Value" : pfn } )
         self.assertEqual( pfnunparse( result["Value"] ), { "OK" : True, "Value" : pfn } )
 
 
