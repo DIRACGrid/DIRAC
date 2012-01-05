@@ -67,13 +67,16 @@ def pfnunparse( pfnDict ):
 
   :param dict pfnDict: 
   """
-
+  ## make sure all keys are in
   allDict = dict.fromkeys( [ "Protocol", "Host", "Port", "WSUrl", "Path", "FileName" ], "" )
   try:
     allDict.update( pfnDict )
   except TypeError, error:
     ## if pfnDict isn't iterable 
     return S_ERROR( "pfnunparse: wrong type for pfnDict argument: %s" % str(error) )
+  except ValueError, error:
+    ## iterable but not pairwise grouped
+    return S_ERROR( "pfnunparse: wrong value for pfnDict argument: %s" % str(error) )
   pfnDict = allDict
 
   ## fileName
