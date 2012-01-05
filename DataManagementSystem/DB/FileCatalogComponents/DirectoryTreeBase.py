@@ -546,28 +546,35 @@ class DirectoryTreeBase:
     """ Get the total size of the requested directories. If long flag
         is True, get also physical size per Storage Element
     """
-    
-    resultLogical = self._getDirectoryLogicalSize(lfns)
+    result = self.db._getConnection()
+    if not result['OK']:
+      return result
+    connection = result['Value']
+
+    resultLogical = self._getDirectoryLogicalSize(lfns,connection)
     if not resultLogical['OK']:
+      connection.close()
       return resultLogical
     
     resultDict = resultLogical['Value']
     if not resultDict['Successful']:
+      connection.close()
       return resultLogical
     
     if longOutput:
       # Continue with only successful directories
-      resultPhysical = self._getDirectoryPhysicalSize(resultDict['Successful'])
+      resultPhysical = self._getDirectoryPhysicalSize(resultDict['Successful'],connection)
       if not resultPhysical['OK']:
         result = S_OK(resultDict)
         result['Message'] = "Failed to get the physical size on storage"
+        connection.close()
         return result     
       for lfn in resultPhysical['Value']['Successful']:
         resultDict['Successful'][lfn]['PhysicalSize'] = resultPhysical['Value']['Successful'][lfn]
-        
+    connection.close()
     return S_OK(resultDict)            
   
-  def _getDirectoryLogicalSize(self,lfns):
+  def _getDirectoryLogicalSize(self,lfns,connection):
     """ Get the total "logical" size of the requested directories
     """
     paths = lfns.keys()
@@ -582,15 +589,24 @@ class DirectoryTreeBase:
         failed[path] = "Directory not found"
         continue
       dirID = result['Value']
-      result = self.getSubdirectoriesByID(dirID)
+      result = self.getSubdirectoriesByID(dirID,requestString=True)
       if not result['OK']:
         failed[path] = result['Message']
       else:
-        dirList = result['Value'].keys()
-        dirList.append(dirID)
-        dirString = ','.join([ str(x) for x in dirList ])
-        req = "SELECT SUM(Size) FROM FC_Files WHERE DirID IN (%s)" % dirString      
-        result = self.db._query(req)       
+        dirString = result['Value']
+
+        if path == '/':
+          req = "SELECT SUM(Size) FROM FC_Files" 
+          result = self.db._query(req,connection)
+        else:
+          req = "CREATE TEMPORARY TABLE DirTmp ENGINE=MEMORY %s" % dirString
+          result = self.db._query(req,connection)
+          if result['OK']:
+            result = self.db._insert('DirTmp',['DirID'],[dirID],connection) 
+            if result['OK']:           
+              req = "SELECT SUM(F.Size) FROM FC_Files as F, DirTmp as T WHERE F.DirID=T.DirID" 
+              result = self.db._query(req,connection)
+    
         if not result['OK']:
           failed[path] = result['Message']
         elif not result['Value']:
@@ -599,49 +615,50 @@ class DirectoryTreeBase:
           successful[path] = {"LogicalSize":int(result['Value'][0][0])}
         else:
           successful[path] = {"LogicalSize":0}
-          
     return S_OK({'Successful':successful,'Failed':failed})  
   
-  def _getDirectoryPhysicalSize(self,lfns):
+  def _getDirectoryPhysicalSize(self,lfns,connection):
     """ Get the total size of the requested directories
     """
     paths = lfns.keys()
     successful = {}
     failed = {}
     for path in paths:
-      result = self.findDir(path)
-      if not result['OK']:
-        failed[path] = "Directory not found"
-        continue
-      if not result['Value']:
-        failed[path] = "Directory not found"
-        continue
-      dirID = result['Value']
-      result = self.getSubdirectoriesByID(dirID)
+#      result = self.findDir(path)
+#      if not result['OK']:
+#        failed[path] = "Directory not found"
+#        continue
+#      if not result['Value']:
+#        failed[path] = "Directory not found"
+#        continue
+#      dirID = result['Value']
+#      result = self.getSubdirectoriesByID( dirID,requestString=True )
+#      if not result['OK']:
+#        failed[path] = result['Message']
+#      else:
+#        dirString = result['Value']
+      if path == '/':
+        req = "SELECT SUM(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S "
+        req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID "
+        req += "GROUP BY S.SEID"   
+      else:
+        req = "SELECT SUM(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S, DirTmp as T "
+        req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID=T.DirID "
+        req += "GROUP BY S.SEID"        
+      result = self.db._query(req,connection)        
       if not result['OK']:
         failed[path] = result['Message']
+      elif not result['Value']:
+        successful[path] = {}
+      elif result['Value'][0][0]:
+        seDict = {}
+        total = 0
+        for size,seName in result['Value']:
+          seDict[seName] = int(size)
+          total += size
+        seDict['Total'] = int(total)  
+        successful[path] = seDict
       else:
-        dirList = result['Value'].keys()
-        dirList.append(dirID)
-        dirString = ','.join([ str(x) for x in dirList ])
-        req = "SELECT SUM(Size) FROM FC_Files WHERE DirID IN (%s)" % dirString
-        req = "SELECT SUM(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S "
-        req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID IN (%s) " % dirString
-        req += "GROUP BY S.SEID"        
-        result = self.db._query(req)        
-        if not result['OK']:
-          failed[path] = result['Message']
-        elif not result['Value']:
-          successful[path] = {}
-        elif result['Value'][0][0]:
-          seDict = {}
-          total = 0
-          for size,seName in result['Value']:
-            seDict[seName] = int(size)
-            total += size
-          seDict['Total'] = int(total)  
-          successful[path] = seDict
-        else:
-          successful[path] = {} 
+        successful[path] = {} 
           
     return S_OK({'Successful':successful,'Failed':failed}) 
