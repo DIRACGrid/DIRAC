@@ -69,6 +69,14 @@ class PfnTests( unittest.TestCase ):
       if result["OK"]:
         self.assertEqual( pfnunparse_old( result["Value"] ), { "OK" : True, "Value" : pfn } )
         self.assertEqual( pfnunparse( result["Value"] ), { "OK" : True, "Value" : pfn } )
+    self.assertEqual( pfnunparse( None ), 
+                      {'Message': "pfnunparse: wrong type fot pfnDict argument, expected a dict, got <type 'NoneType'>", 'OK': False} )  
+    self.assertEqual( pfnunparse( "Path" ), 
+                      {'Message': "pfnunparse: wrong type fot pfnDict argument, expected a dict, got <type 'str'>", 'OK': False} )  
+    self.assertEqual( pfnunparse( { "FileName" : "" } ),
+                      {'Message': "pfnunparse: 'FileName' value is missing in pfnDict", 'OK': False} )
+    self.assertEqual( pfnunparse( { "FileName" : "", "Path" : "/a/b" } ),
+                      {'Message': "pfnunparse: 'FileName' value is missing in pfnDict", 'OK': False} )
 
 
 ## test execution
