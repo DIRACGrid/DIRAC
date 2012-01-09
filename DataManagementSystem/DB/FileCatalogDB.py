@@ -569,7 +569,7 @@ class FileCatalogDB(DB):
   #  Catalog admin methods
   #
 
-  def getCatalogContents(self,credDict):
+  def getCatalogCounterts(self,credDict):
     counterDict = {}
     res = self._checkAdminPermission(credDict)
     if not res['OK']:
@@ -585,6 +585,10 @@ class FileCatalogDB(DB):
       return res
     counterDict.update(res['Value'])
     res = self.fileManager.getReplicaCounters() 
+    if not res['OK']:
+      return res
+    counterDict.update(res['Value'])
+    res = self.dtree.getDirectoryCounters() 
     if not res['OK']:
       return res
     counterDict.update(res['Value'])
