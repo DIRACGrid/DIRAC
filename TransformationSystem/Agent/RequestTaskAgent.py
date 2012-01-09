@@ -10,15 +10,17 @@ from DIRAC.TransformationSystem.Client.TaskManager                  import Reque
 
 AGENT_NAME = 'Transformation/RequestTaskAgent'
 
-class RequestTaskAgent( TaskManagerAgentBase, RequestTasks ):
+class RequestTaskAgent( TaskManagerAgentBase ):
   """ An AgentModule to submit requests tasks
   """
 
   #############################################################################
   def initialize( self ):
     """ Sets defaults """
-    TaskManagerAgentBase.initialize( self )
-    RequestTasks.__init__( self )
+    
+    taskManager = RequestTasks()
+    
+    TaskManagerAgentBase.initialize( self, taskManager = taskManager )
     self.transType = ['Replication', 'Removal']
 
     # This sets the Default Proxy to used as that defined under 

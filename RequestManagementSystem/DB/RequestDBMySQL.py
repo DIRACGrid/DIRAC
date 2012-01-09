@@ -656,7 +656,7 @@ class RequestDBMySQL( DB ):
       attrValue = res['Value'][0][0]
       return S_OK( attrValue )
     else:
-      errStr = 'Failed to retreive %s for Request %s/%s' % ( attrName, requestID, requestName )
+      errStr = 'Failed to retrieve %s for Request %s/%s' % ( attrName, requestID, requestName )
       return S_ERROR( errStr )
 
   def _setSubRequestAttribute( self, requestID, subRequestID, attrName, attrValue ):
