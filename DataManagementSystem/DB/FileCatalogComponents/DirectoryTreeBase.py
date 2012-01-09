@@ -662,3 +662,17 @@ class DirectoryTreeBase:
         successful[path] = {} 
           
     return S_OK({'Successful':successful,'Failed':failed}) 
+  
+  def getDirectoryCounters( self, connection = False ):
+    """ Get the total number of directories
+    """
+    result = self.db._getConnection(connection)
+    if not result['OK']:
+      return result
+    
+    conn = result['Value']
+    req = "SELECT COUNT(*) from FC_DirectoryInfo"
+    res = self.db._query( req, connection )
+    if not res['OK']:
+      return res
+    return S_OK( {'Directories':res['Value'][0][0]} )

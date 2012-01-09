@@ -35,7 +35,7 @@ class FileManagerBase:
     res = self.db._query( req, connection )
     if not res['OK']:
       return res
-    return S_OK( {'FC_Files':res['Value'][0][0]} )
+    return S_OK( {'Files':res['Value'][0][0]} )
 
   def getReplicaCounters( self, connection = False ):
     connection = self._getConnection( connection )
@@ -43,7 +43,7 @@ class FileManagerBase:
     res = self.db._query( req, connection )
     if not res['OK']:
       return res
-    return S_OK( {'FC_Replicas':res['Value'][0][0]} )
+    return S_OK( {'Replicas':res['Value'][0][0]} )
 
   ######################################################
   #
