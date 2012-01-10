@@ -1464,7 +1464,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       subPath = '%s/%s' % ( path, entry.d_name )
       if verbose:
         statRes = self.__getPathStat( subPath )
-        if res['OK']:
+        if statRes['OK']:
           oPath = statRes['Value']
           pathMetadata['Size'] = oPath.filesize
           pathMetadata['CheckSumType'] = oPath.csumtype
