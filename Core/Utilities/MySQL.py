@@ -323,7 +323,7 @@ class MySQL:
       retDict = S_OK( res )
     except Exception , x:
       self.logger.debug( '_query:', cmd )
-      retDict = self._except( '_query', x, 'Excution failed.' )
+      retDict = self._except( '_query', x, 'Execution failed.' )
 
     try:
       cursor.close()
