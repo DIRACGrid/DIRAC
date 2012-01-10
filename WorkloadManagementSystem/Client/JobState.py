@@ -6,14 +6,100 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 
-class JobDescription:
 
-  def __init__( self ):
+class JobState( object ):
+
+  class TracedMethod( object ):
+
+    def __init__( self, functor ):
+      self.__functor = functor
+
+    #Black magic to map the unbound function received at TracedMethod.__init__ time
+    #to a JobState method with a proper self
+    def __get__( self, obj, type = None ):
+      return self.__class__( self.__func.__get__( obj, type ) )
+
+    def __call__( self, *args, **kwargs ):
+      funcSelf = self.__functor.__self__
+      if funcSelf.traceActions:
+        if kwargs:
+          trace = ( self.__functor.__name__, args, kwargs )
+        else:
+          trace = ( self.__functor.__name__, args )
+        funcSelf.addActionToTrace( trace )
+
+      return self.__functor( *args, **kwargs )
+
+  def __init__( self, jid, keepTrace = False, syncDB = True ):
+    self.__jid = jid
     self.__description = CFG()
-    self.__dirty = False
+    self.__descDirty = False
+    self.__keepTrace = keepTrace
+    self.__syncDB = False
+    self.__useCache = False
+    self.__changes = []
+    self.__dataCache = {}
 
-  def isDirty( self ):
-    return self.__dirty
+  def __cacheData( self, key, value ):
+    self.__dataCache[ key ] = value
+
+  def __getCacheData( self, key ):
+    if not self.__useCache:
+      raise KeyError( "Cache use disabled" )
+    return self.__dataCache[ key ]
+
+
+  @property
+  def jid( self ):
+    return self.__jid
+
+  @property
+  def traceActions( self ):
+    return self.__keepTrace
+
+  def addActionToTrace( self, actionTuple ):
+    self.__changes.append( actionTuple )
+
+#
+# Attributes
+# 
+
+  @TracedMethod
+  def setStatus( self, majorStatus, minorStatus ):
+    self.__cacheData( 'att.status', majorStatus )
+    self.__cacheData( 'att.minorStatus', minorStatus )
+    #TODO: Sync DB
+
+  def getStatus( self ):
+    try:
+      return self.__getCacheData( 'att.status' )
+    except KeyError:
+      pass
+
+
+  @TracedMethod
+  def setMinorStatus( self, minorStatus ):
+    self.__attrCache[ 'minorStatus' ] = minorStatus
+    #TODO: Sync DB
+
+#
+# Params
+#
+
+  @TracedMethod
+  def setParam( self, name, value ):
+    self.__paramCache[ name ] = value
+    #TODO: Sync DB
+
+
+
+#
+# Description stuff
+#
+
+
+  def isDesctiptionDirty( self ):
+    return self.__descDirty
 
   def loadDescription( self, dataString ):
     """
@@ -120,7 +206,7 @@ class JobDescription:
       return S_ERROR( 'Number of Input Data Files (%s) greater than current limit: %s' % ( len( List.fromChar( varValue ) ) , maxNumber ) )
     return S_OK()
 
-  def setVarsFromDict( self, varDict ):
+  def setDescriptionVarsFromDict( self, varDict ):
     for k in sorted( varDict ):
       self.setVar( k, varDict[ k ] )
 
@@ -163,11 +249,11 @@ class JobDescription:
       #return result
     return S_OK()
 
-  def setVar( self, varName, varValue ):
+  def setDescriptionVar( self, varName, varValue ):
     """
     Set a var in job description
     """
-    self.__dirty = True
+    self.__descDirty = True
     levels = List.fromChar( varName, "/" )
     cfg = self.__description
     for l in levels[:-1]:
@@ -176,18 +262,27 @@ class JobDescription:
       cfg = cfg[ l ]
     cfg.setOption( levels[-1], varValue )
 
-  def getVar( self, varName, defaultValue = None ):
+  def getDescriptionVar( self, varName, defaultValue = None ):
+    """
+     Get a variable from the job description
+    """
     cfg = self.__description
     return cfg.getOption( varName, defaultValue )
 
-  def getOptionList( self, section = "" ):
+  def getDescriptionVarList( self, section = "" ):
+    """
+    Get a list of variables in a section of the job description
+    """
     cfg = self.__description.getRecursive( section )
     if not cfg or 'value' not in cfg:
       return []
     cfg = cfg[ 'value' ]
     return cfg.listOptions()
 
-  def getSectionList( self, section = "" ):
+  def getDescriptionSectionList( self, section = "" ):
+    """
+    Get a list of sections in the job description
+    """
     cfg = self.__description.getRecursive( section )
     if not cfg or 'value' not in cfg:
       return []
