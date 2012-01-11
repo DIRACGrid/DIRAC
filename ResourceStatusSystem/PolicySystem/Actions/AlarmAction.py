@@ -11,28 +11,22 @@ from DIRAC                                                      import gLogger
 from DIRAC.ResourceStatusSystem.Utilities                       import CS
 from DIRAC.ResourceStatusSystem.Utilities                       import Utils
 from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.ActionBase import ActionBase
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-class AlarmPolType(object):
-  def __init__(self, name, res, statusType, clients, **kwargs):
-    self.name       = name
-    self.res        = res
-    self.statusType = statusType
-    self.nc         = NotificationClient()
+class AlarmAction(ActionBase):
+  def __init__(self, granularity, name, status_type, pdp_decision, **kw):
+    ActionBase.__init__(self)
 
-    try:    self.rsClient = clients[ 'ResourceStatusClient' ]
-    except: self.rsClient = ResourceStatusClient()
-    try:    self.rmClient = clients[ 'ResourceManagementClient' ]
-    except: self.rmClient = ResourceManagementClient()
-
-    self.kwargs     = kwargs
-    self.setup      = CS.getSetup()
-    self.run()
+    try:             self.rsClient = self.kw["Clients"][ 'ResourceStatusClient' ]
+    except KeyError: self.rsClient = ResourceStatusClient()
+    try:             self.rmClient = self.kw["Clients"][ 'ResourceManagementClient' ]
+    except KeyError: self.rmClient = ResourceManagementClient()
 
   def _getUsersToNotify(self):
-    groups = CS.getTypedDictRootedAt("AssigneeGroups/" + self.setup).values()
-    concerned_groups = [g for g in groups if Utils.dictMatch(self.kwargs, g)]
+    groups = CS.getTypedDictRootedAt("AssigneeGroups/" + CS.getSetup()).values()
+    concerned_groups = [g for g in groups if Utils.dictMatch(self.kw["Params"], g)]
     return [{'Users':g['Users'],
              'Notifications':g['Notifications']} for g in concerned_groups]
 
@@ -45,30 +39,32 @@ class AlarmPolType(object):
     - ServiceType
     - ResourceType
     """
+
+    # Initializing variables
+    nc = NotificationClient()
+
     # raise alarms, right now makes a simple notification
 
-    if 'Granularity' not in self.kwargs.keys():
+    if 'Granularity' not in self.kw.keys():
       raise ValueError, "You have to provide a argument Granularity = <desired_granularity>"
 
-    granularity = self.kwargs['Granularity']
+    if self.new_status['Action']:
 
-    if self.res['Action']:
+      notif = "%s %s is perceived as" % (self.granularity, self.name)
+      notif = notif + " %s. Reason: %s." % (self.new_status['Status'], self.new_status['Reason'])
 
-      notif = "%s %s is perceived as" % (granularity, self.name)
-      notif = notif + " %s. Reason: %s." % (self.res['Status'], self.res['Reason'])
+      users_to_notify = self._getUsersToNotify()
 
-      NOTIF_D = self._getUsersToNotify()
-
-      for notification in NOTIF_D:
-        for user in notification['Users']:
-          if 'Web' in notification['Notifications']:
+      for notif in users_to_notify:
+        for user in notif['Users']:
+          if 'Web' in notif['Notifications']:
             gLogger.info("Sending web notification to user %s" % user)
-            self.nc.addNotificationForUser(user, notif)
-          if 'Mail' in notification['Notifications']:
+            nc.addNotificationForUser(user, notif)
+          if 'Mail' in notif['Notifications']:
             gLogger.info("Sending mail notification to user %s" % user)
             was = Utils.unpack(self.rsClient.getElementHistory(
-                granularity, elementName=self.name,
-                statusType=self.statusType,
+                self.granularity, elementName=self.name,
+                statusType=self.status_type,
                 meta = {"order": "DESC", 'limit' : 1,
                         "columns":  ['Status', 'Reason', 'DateEffective']}))[0]
 
@@ -88,13 +84,13 @@ Use: dirac-rss-set-status -g <granularity> -n <element_name> -s <desired_status>
 
 This notification has been sent according to those parameters:
 %s
-""" % (granularity, self.name, self.res['Status'],
-       self.res['Reason'], was[0], was[1], was[2], self.setup, str(NOTIF_D))
+""" % (self.granularity, self.name, self.new_status['Status'],
+       self.new_status['Reason'], was[0], was[1], was[2], CS.getSetup(), str(users_to_notify))
 
             # Actually send the mail!
-            self.nc.sendMail(Utils.unpack(self.rmClient.getUserRegistryCache(user))[0][2],
-                             '[RSS][%s][%s] %s -> %s'
-                             % (granularity, self.name, self.res['Status'], was[0]), mailMessage)
+            nc.sendMail(Utils.unpack(self.rmClient.getUserRegistryCache(user))[0][2],
+                        '[RSS][%s][%s] %s -> %s'
+                        % (self.granularity, self.name,  self.new_status['Status'], was[0]), mailMessage)
 
 
 ################################################################################

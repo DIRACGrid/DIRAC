@@ -366,7 +366,10 @@ class TransformationCleaningAgent( AgentModule ):
     gLogger.error( "Not removing requests but should do" )
     return S_OK()
 
-  def __removeWMSTasks( self, jobIDs ):
+  def __removeWMSTasks( self, transJobIDs ):
+    
+    # Prevent 0 job IDs
+    jobIDs = [ j for j in transJobIDs if j != 0 ]
     allRemove = True
     for jobList in breakListIntoChunks( jobIDs, 500 ):
 
