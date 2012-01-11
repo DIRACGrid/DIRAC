@@ -362,8 +362,7 @@ class Job:
 
     return S_OK()
 
-<<<<<<< HEAD
-=======
+
   #############################################################################  
   def setGenericParametricInput(self, inputlist):
     """ Helper function
@@ -381,7 +380,6 @@ class Job:
     self.parametric['GenericParameters'] = inputlist
     return S_OK()
   
->>>>>>> master
   #############################################################################
   def setInputDataPolicy( self, policy, dataScheduling = True ):
     """Helper function.
@@ -1138,19 +1136,11 @@ class Job:
           paramsDict['InputSandbox'] = {}
           paramsDict['InputSandbox']['value'] = '%s'
           paramsDict['InputSandbox']['type'] = 'JDL'
-<<<<<<< HEAD
-        self.parametric['files'] = self.parametric['InputSandbox']
-        arguments.append( ' -p ParametricInputSandbox=%s' )
-      if self.parametric.has_key( 'files' ):
-        paramsDict['Parameters'] = {}
-        paramsDict['Parameters']['value'] = self.parametric['files']
-=======
         self.parametric['files']=  self.parametric['InputSandbox']
         arguments.append(' -p ParametricInputSandbox=%s')
       if self.parametric.has_key('files'):   
         paramsDict['Parameters']={}
         paramsDict['Parameters']['value']=";".join(self.parametric['files'])
->>>>>>> master
         paramsDict['Parameters']['type'] = 'JDL'
       if self.parametric.has_key('GenericParameters'):
         paramsDict['Parameters']={}
