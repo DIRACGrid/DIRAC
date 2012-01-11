@@ -1492,6 +1492,19 @@ File Catalog Client $Revision: 1.17 $Date:
         metaDict[name] = mvalue         
     
     return metaDict 
+  
+  def do_stats( self, args ):
+    """ Get the catalog statistics
+    
+        Usage:
+          stats
+    """
+    result = self.fc.getCatalogCounters()
+    if not result['OK']:
+      print ("Error: %s" % result['Message']) 
+      return 
+    for key in result['Value']:
+      print key.rjust(15),':',result['Value'][key]  
       
   def do_exit(self, args):
     """ Exit the shell.
