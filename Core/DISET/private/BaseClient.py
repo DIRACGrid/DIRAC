@@ -39,7 +39,6 @@ class BaseClient:
     self.kwargs = kwargs
     self.__initStatus = S_OK()
     self.__idDict = {}
-    self.__trid = False
     self.__enableThreadCheck = False
     for initFunc in ( self.__discoverSetup, self.__discoverVO, self.__discoverTimeout,
                       self.__discoverURL, self.__discoverCredentialsToUse,
@@ -195,7 +194,6 @@ and this is thread %s
 
 
   def _connect( self ):
-    self.__trid = False
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
     if self.__enableThreadCheck:
@@ -208,15 +206,11 @@ and this is thread %s
         return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, retVal ) )
     except Exception, e:
       return S_ERROR( "Can't connect to %s: %s" % ( self.serviceURL, e ) )
-    self.__trid = getGlobalTransportPool().add( transport )
-    return S_OK( transport )
+    trid = getGlobalTransportPool().add( transport )
+    return S_OK( ( trid, transport ) )
 
-  def _getTrid( self ):
-    return self.__trid
-
-  def _disconnect( self ):
-    if self.__trid:
-      getGlobalTransportPool().close( self.__trid )
+  def _disconnect( self, trid ):
+    getGlobalTransportPool().close( trid )
 
   def _proposeAction( self, transport, action ):
     if not self.__initStatus[ 'OK' ]:
