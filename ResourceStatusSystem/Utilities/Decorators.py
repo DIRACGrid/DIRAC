@@ -136,7 +136,7 @@ class HandlerDec3( object ):
       self.processArgs( *args )
     
     ins = inspect.getargspec( self.f )    
-    if ins.args[-1] == 'kwargs':       
+    if ins.args[-1] == 'meta':       
       kwargs = list( args )[ -1 ]
       args   = tuple( list( args )[ :-1 ] )
 

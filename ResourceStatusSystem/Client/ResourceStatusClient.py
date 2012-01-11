@@ -52,8 +52,7 @@ class ResourceStatusClient:
       The client tries to connect to :class:ResourceStatusDB by default. If it 
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
- 
-    if serviceIn == None:
+    if not serviceIn:
       try:
         self.gate = ResourceStatusDB()
       except Exception:
