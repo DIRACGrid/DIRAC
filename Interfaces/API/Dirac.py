@@ -1170,7 +1170,7 @@ class Dirac:
     else:
       return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
 
-    if not type( maxFilesPerJob ) == type( 2 ):
+    if not type( maxFilesPerJob ) == types.IntType:
       try:
         maxFilesPerJob = int( maxFilesPerJob )
       except Exception, x:
@@ -1954,7 +1954,7 @@ class Dirac:
         jobID = [int( job ) for job in jobID]
       except Exception, x:
         return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
-    elif type( jobID ) == type( 1 ):
+    elif type( jobID ) == types.IntType:
       jobID = [jobID]
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )

@@ -20,7 +20,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions               import Invali
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
 
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.Empty_PolType import EmptyPolTypeActions
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
 
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                   import PDP
 
@@ -66,18 +66,13 @@ class PEP:
        :attr:`pdp`       : a custom PDP object (optional)
        :attr:`clients`   : a dictionary containing modules corresponding to clients.
     """
-    try:
-      self.rsAPI = clients[ 'ResourceStatusClient' ]
-    except ValueError:
-      self.rsAPI = ResourceStatusClient()
-    try:
-      self.rmAPI = clients[ 'ResourceManagementClient' ]
-    except ValueError:
-      self.rmAPI = ResourceManagementClient()
+    try:             self.rsClient = clients[ 'ResourceStatusClient' ]
+    except KeyError: self.rsClient = ResourceStatusClient()
+    try:             self.rmClient = clients[ 'ResourceManagementClient' ]
+    except KeyError: self.rmClient = ResourceManagementClient()
 
     self.clients = clients
-
-    if pdp is None:
+    if not pdp:
       self.pdp = PDP( **clients )
 
 ################################################################################
@@ -130,29 +125,29 @@ class PEP:
 
     # Security mechanism in case there is no PolicyType returned
     if res == {}:
-      EmptyPolTypeActions( granularity, name, resDecisions, res )
+      EmptyAction(granularity, name, statusType, resDecisions).run()
 
     else:
       policyType   = res[ 'PolicyType' ]
 
       if 'Resource_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".Resource_PolType")
-        m.ResourcePolTypeActions( granularity, name, statusType,
-                                  resDecisions, self.rsAPI, self.rmAPI )
+        m = Utils.voimport(actionBaseMod + ".ResourceAction")
+        m.ResourceAction(granularity, name, statusType, resDecisions,
+                         rsClient=self.rsClient,
+                         rmClient=self.rmClient).run()
 
       if 'Alarm_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".Alarm_PolType")
-
-        m.AlarmPolType(name, res, statusType, self.clients,
-                       Granularity = granularity,
-                       SiteType = siteType,
-                       ServiceType = serviceType,
-                       ResourceType = resourceType)
-
+        m = Utils.voimport(actionBaseMod + ".AlarmAction")
+        m.AlarmAction(granularity, name, statusType, resDecisions,
+                       Clients=self.clients,
+                       Params={"Granularity"  : granularity,
+                               "SiteType"     : siteType,
+                               "ServiceType"  : serviceType,
+                               "ResourceType" : resourceType}).run()
 
       if 'RealBan_PolType' in policyType and realBan:
-        m = Utils.voimport(actionBaseMod + ".RealBan_PolType")
-        m.RealBanPolTypeActions(granularity, name, res)
+        m = Utils.voimport(actionBaseMod + ".RealBanAction")
+        m.RealBanAction(granularity, name, resDecisions).run()
 
     return resDecisions
 

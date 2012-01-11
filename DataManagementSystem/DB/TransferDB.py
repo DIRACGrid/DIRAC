@@ -49,19 +49,23 @@ class TransferDB(DB):
     res = self.checkChannelExists(sourceSE,destSE)
     return res
 
-  def checkChannelExists(self,sourceSE,destSE):
+  def checkChannelExists( self, sourceSE, destSE ):
+    """ check existence of FTS channel between :sourceSE: and :destSE: 
+
+    :param self: self reference
+    :param str soucreSE: source SE
+    :param str destSE: target SE
+    """
     req = "SELECT ChannelID FROM Channels WHERE SourceSite = '%s' AND DestinationSite = '%s';" % (sourceSE,destSE)
-    res = self._query(req)
-    if not res['OK']:
+    res = self._query( req )
+    if not res["OK"]:
       err = 'TransferDB._checkChannelExists: Failed to retrieve ChannelID for %s to %s.' % (sourceSE,destSE)
-      return S_ERROR('%s\n%s' % (err,res['Message']))
-    resultDict = {}
-    if res['Value']:
-      resultDict['Exists'] = True
-      resultDict['ChannelID'] = res['Value'][0][0]
-    else:
-      resultDict['Exists'] = False
-    return S_OK(resultDict)
+      return S_ERROR('%s\n%s' % ( err, res['Message'] ) )
+    resultDict = { "Exists" : False }
+    if res["Value"]:
+      resultDict["Exists"] = True
+      resultDict["ChannelID"] = res["Value"][0][0]
+    return S_OK( resultDict )
 
   def getChannelID(self,sourceSE,destSE):
     res = self.checkChannelExists(sourceSE, destSE)
