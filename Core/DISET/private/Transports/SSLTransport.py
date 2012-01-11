@@ -27,8 +27,8 @@ class SSLTransport( BaseTransport ):
 
   def __lock( self, timeout = 1000 ):
     while self.__locked and timeout:
-      time.sleep( 0.1 )
-      timeout -= 0.1
+      time.sleep( 0.01 )
+      timeout -= 0.01
     if not timeout:
       return False
     SSLTransport.__readWriteLock.acquire()
@@ -126,9 +126,9 @@ class SSLTransport( BaseTransport ):
         try:
           return S_OK( self.oSocket.recv( bufSize ) )
         except GSI.SSL.WantReadError:
-          time.sleep( 0.1 )
+          time.sleep( 0.01 )
         except GSI.SSL.WantWriteError:
-          time.sleep( 0.1 )
+          time.sleep( 0.01 )
         except GSI.SSL.ZeroReturnError:
           return S_OK( "" )
         except Exception, e:
@@ -171,9 +171,9 @@ class SSLTransport( BaseTransport ):
           if sent > 0:
             sentBytes += sent
         except GSI.SSL.WantWriteError:
-          time.sleep( 0.1 )
+          time.sleep( 0.01 )
         except GSI.SSL.WantReadError:
-          time.sleep( 0.1 )
+          time.sleep( 0.01 )
         except Exception, e:
           return S_ERROR( "Error while sending: %s" % str( e ) )
       return S_OK( sentBytes )

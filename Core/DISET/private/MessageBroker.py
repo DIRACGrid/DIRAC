@@ -134,7 +134,10 @@ class MessageBroker:
           if len( inList ) == 0:
             continue
         except socket.error:
-          time.sleep( 0.1 )
+          time.sleep( 0.01 )
+          continue
+        except select.error:
+          time.sleep( 0.01 )
           continue
       except:
         from DIRAC import gLogger
