@@ -1,4 +1,4 @@
-[v6r2-pre2]
+[v6r2-pre3]
 
 *Core
 CHANGE: Pfn.py - pfnparse function rewritten for speed up and mem usage, unit test case added
@@ -23,6 +23,7 @@ CHANGE: DFC - optimization of the directory size evaluation
 NEW: Added CREATE TEMPORARY TABLES privilege to FileCatalogDB
 CHANGE: DFC - getCatalogCounters() update to show numbers of directories
 NEW: lfc_dfc_copy script to migrate data from LFC to DFC
+FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
