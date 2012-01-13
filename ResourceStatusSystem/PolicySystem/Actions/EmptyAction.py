@@ -7,6 +7,7 @@
 __RCSID__  = "$Id$"
 
 from DIRAC import gLogger
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.ActionBase import ActionBase
 
 class EmptyAction(ActionBase):
   def run(self):
