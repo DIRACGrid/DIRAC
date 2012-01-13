@@ -224,7 +224,7 @@ class MonitoredStatus_Command( Command ):
 
       res = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[0], toBeFound )
       if res[ 'OK' ]:
-        res = S_OK( res[ 'Value' ][ 0 ][ 0 ] )
+        res = S_OK( res[ 'Value' ][ 0 ] )
 
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
