@@ -52,9 +52,9 @@ class HTTPDISETSocket:
         data = self.gsiSocket.recv( bufSize )
         return S_OK( data )
       except GSI.SSL.WantReadError:
-        time.sleep( 0.01 )
+        time.sleep( 0.001 )
       except GSI.SSL.WantWriteError:
-        time.sleep( 0.01 )
+        time.sleep( 0.001 )
       except GSI.SSL.ZeroReturnError:
         return S_OK( "" )
       except Exception, e:
