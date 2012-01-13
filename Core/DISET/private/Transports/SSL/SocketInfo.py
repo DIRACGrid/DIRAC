@@ -156,7 +156,7 @@ class SocketInfo:
               casFound += 1
             else:
               if casDict[ caID ][0] < caNotAfter:
-                casDict[ caID ] = ( caNotAfter, caCert ) 
+                casDict[ caID ] = ( caNotAfter, caCert )
             continue
           except:
             if fileName.find( ".0" ) == len( fileName ) - 2:
@@ -174,14 +174,14 @@ class SocketInfo:
                 crlsFound += 1
               else:
                 if crlsDict[ crlID ][0] < crlNotAfter:
-                  crlsDict[ crlID ] = ( crlNotAfter, crl ) 
+                  crlsDict[ crlID ] = ( crlNotAfter, crl )
               continue
             except:
               if fileName.find( ".r0" ) == len( fileName ) - 2:
                 gLogger.exception( "LOADING %s" % filePath )
 
         gLogger.debug( "Loaded %s CAs [%s CRLs]" % ( casFound, crlsFound ) )
-        SocketInfo.__cachedCAsCRLs = ( [ casDict[k][1] for k in casDict ], 
+        SocketInfo.__cachedCAsCRLs = ( [ casDict[k][1] for k in casDict ],
                                        [ crlsDict[k][1] for k in crlsDict ] )
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
     except:
@@ -313,9 +313,9 @@ class SocketInfo:
         self.sslSocket.do_handshake()
         break
       except GSI.SSL.WantReadError:
-        time.sleep( 0.1 )
+        time.sleep( 0.001 )
       except GSI.SSL.WantWriteError:
-        time.sleep( 0.1 )
+        time.sleep( 0.001 )
       except GSI.SSL.Error, v:
         #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
         gLogger.warn( "Error while handshaking", v )
