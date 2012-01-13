@@ -10,31 +10,18 @@ __RCSID__ = "$Id:  $"
 
 import urllib2
 
-from DIRAC import gLogger
+from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.Command   import *
 
-def callClient( args, clientIn ):
+def callClient( name, clientIn ):
    
-  name = args[1]
-  name = getGOCSiteName(name)
-  if not name['OK']:
-    raise RSSException, name['Message']
-  name = name['Value']
-  
-  try:
-    openTickets = clientIn.getTicketsList(name)
-    if not openTickets['OK']:
-      return 'Unknown'
-    return openTickets['Value']
-  except urllib2.URLError:
-    gLogger.error("GGUSTicketsClient timed out for " + name)
-    return 'Unknown'
-  except:
-    gLogger.exception("Exception when calling GGUSTicketsClient for " + name)
-    return 'Unknown'
+  name = getGOCSiteName( name )[ 'Value' ]
+    
+  openTickets = clientIn.getTicketsList( name )
+  return openTickets
     
 ################################################################################
 ################################################################################
@@ -53,11 +40,19 @@ class GGUSTickets_Open( Command ):
     super( GGUSTickets_Open, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    openTickets = callClient( self.args, self.APIs[ 'GGUSTicketsClient' ] )
-    if openTickets == 'Unknown':
-      return { 'Result' : 'Unknown' }
-    
-    return { 'Result' : openTickets[ 0 ][ 'open' ] } 
+    try:
+
+      res = callClient( self.args[1], self.APIs[ 'GGUSTicketsClient' ] )
+        
+      if res[ 'OK' ]:
+        res =  S_OK( res[ 'Value' ][ 0 ][ 'open' ] ) 
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
@@ -79,11 +74,20 @@ class GGUSTickets_Link(Command):
     super( GGUSTickets_Link, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    openTickets = callClient( self.args, self.APIs[ 'GGUSTicketsClient' ] )
-    if openTickets == 'Unknown':
-      return { 'GGUS_Link':'Unknown' }
-    
-    return { 'Result': openTickets[1] }
+    try: 
+      
+      res = callClient( self.args[ 1 ], self.APIs[ 'GGUSTicketsClient' ] )
+    #if openTickets == 'Unknown':
+    #  return { 'GGUS_Link':'Unknown' }
+      if res[ 'OK' ]:
+        res = S_OK( res[ 'Value' ][ 1 ] ) 
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
@@ -105,11 +109,21 @@ class GGUSTickets_Info(Command):
     super( GGUSTickets_Info, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    openTickets = callClient( self.args, self.APIs[ 'GGUSTicketsClient' ] )
-    if openTickets == 'Unknown':
-      return { 'GGUS_Info' : 'Unknown' }
-    
-    return { 'Result' : openTickets[ 2 ] }
+    try: 
+      
+      res = callClient( self.args[ 1 ], self.APIs[ 'GGUSTicketsClient' ] )     
+#    if openTickets == 'Unknown':
+#      return { 'GGUS_Info' : 'Unknown' }
+      if res[ 'OK' ]:
+        res = S_OK( res[ 'Value' ][ 2 ] ) 
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
+
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
