@@ -1,4 +1,4 @@
-[v6r2-pre3]
+[v6r2-pre4]
 
 *Core
 CHANGE: Pfn.py - pfnparse function rewritten for speed up and mem usage, unit test case added
@@ -30,6 +30,12 @@ NEW: Job.py - added method to handle the parametric parameters in the workflow.
      They are made available to the workflow_commons via the key 'GenericParameters'.
 FIX: Dirac.py - fix some type checking things
 
+[v6r1p5]
+
+*Core
+FIX: DISET Clients are now thread-safe. Same clients used twice in different threads was not 
+     closing the previous connection
+NEW: reduce wait times in DISET protocol machinery to improve performance   
 
 [v6r1p4]
 
