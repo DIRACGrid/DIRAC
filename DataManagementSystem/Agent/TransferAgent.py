@@ -31,6 +31,7 @@ import random
 ## from DIRAC
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Base.AgentModule import AgentModule
 
 ## base classes
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
@@ -170,10 +171,8 @@ class TransferAgent( RequestAgentBase ):
   __transferDB = None
   ## time scale for throughput
   __throughputTimescale = 3600
-
   ## exectuon modes
   __executionMode = { "Tasks" : True, "FTS" : False }
-
 
   def __init__( self, agentName, baseAgentName=False, properties=dict() ):
     """ c'tor
@@ -184,7 +183,6 @@ class TransferAgent( RequestAgentBase ):
     :param dict properties: whatever else properties
     """
     RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
-
 
     ## gMonitor stuff
     self.monitor.registerActivity( "Replicate and register", "Replicate and register operations", 
@@ -365,7 +363,6 @@ class TransferAgent( RequestAgentBase ):
 
     return S_OK( (sourceSURL, targetSURL, status ) )
 
-
   def collectFiles( self, requestObj, iSubRequest ):
     """ Get SubRequest files with 'Waiting' status, collect their replicas and metadata information from 
     ReplicaManager.
@@ -463,7 +460,7 @@ class TransferAgent( RequestAgentBase ):
 
     :param self: self reference
     """
-    requestCounter = self.__requestsPerCycle
+    requestCounter = self.requestsPerCycle()
     failback = False
 
     if self.__executionMode["FTS"]:

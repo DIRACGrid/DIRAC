@@ -312,11 +312,10 @@ class TarModuleCreator( object ):
       line = rawLine.strip()
       if not line:
         continue
-      if version == False:
-        if line[0] == "[" and line[-1] == "]":
-          version = line[1:-1].strip()
-          relData.append( ( version, { 'comment' : [], 'features' : [] } ) )
-          feature = False
+      if line[0] == "[" and line[-1] == "]":
+        version = line[1:-1].strip()
+        relData.append( ( version, { 'comment' : [], 'features' : [] } ) )
+        feature = False
         continue
       if line[0] == "*":
         feature = line[1:].strip()
@@ -415,8 +414,12 @@ class TarModuleCreator( object ):
       gLogger.notice( "Compiled %s file!" % rstFileName )
     return S_OK()
 
-
   def __compileReleaseNotes( self, rstFile ):
+    notesName = rstFile
+    for ext in ( '.rst', '.txt' ):
+      if rstFile[ -len( ext ): ] == ext:
+        notesName = rstFile[ :-len( ext ) ]
+        break
     relNotesRST = os.path.join( self.params.destination, self.params.name, rstFile )
     if not os.path.isfile( relNotesRST ):
       if self.params.relNotes:
@@ -427,11 +430,7 @@ class TarModuleCreator( object ):
     except ImportError:
       return S_ERROR( "Docutils is not installed. Please install and rerun" )
     #Find basename
-    baseNotesPath = relNotesRST
-    for ext in ( '.rst', '.txt' ):
-      if relNotesRST[ -len( ext ): ] == ext:
-        baseNotesPath = relNotesRST[ :-len( ext ) ]
-        break
+    baseNotesPath = os.path.join( self.params.destination, self.params.name, notesName )
     #To HTML
     try:
       fd = open( relNotesRST )
@@ -445,8 +444,8 @@ class TarModuleCreator( object ):
       return S_ERROR( "Cannot generate the html %s: %s" % ( baseNotesPath, str( excp ) ) )
     baseList = [ baseNotesPath ]
     if self.params.outRelNotes:
-      gLogger.notice( "Leaving a copy of the release notes outside the tarballs" )
-      baseList.append( "%s/releasenotes.%s.%s" % ( self.params.destination, self.params.name, self.params.version ) )
+      gLogger.notice( "Leaving a copy of %s outside the tarballs" % notesName )
+      baseList.append( "%s/%s.%s.%s" % ( self.params.destination, notesName, self.params.name, self.params.version ) )
     for baseFileName in baseList:
       htmlFileName = baseFileName + ".html"
       try:
