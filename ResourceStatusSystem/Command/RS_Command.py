@@ -218,7 +218,7 @@ class MonitoredStatus_Command( Command ):
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
           raise InvalidRes, Utils.where( self, self.doCommand )
         toBeFound = self.APIs[ 'ResourceStatusClient' ].getGeneralName( 
-                      self.args[0], self.args[1], self.args[2] )
+                      self.args[0], self.args[1], self.args[2] )[ 'Value' ]
       else:
         toBeFound = self.args[1]
 
