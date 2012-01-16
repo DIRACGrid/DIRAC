@@ -99,7 +99,7 @@ class CacheFeederAgent( AgentModule ):
         gLogger.info( 'Executed %s' % commandName )
         try:
           self.clientsInvoker.setCommand( co[1] )
-          res = self.clientsInvoker.doCommand()
+          res = self.clientsInvoker.doCommand()['Result']
 
           if not res['OK']:
             gLogger.error( res['Message'] )
@@ -158,7 +158,7 @@ class CacheFeederAgent( AgentModule ):
         try:
           co[1].setArgs( co[2] )
           self.clientsInvoker.setCommand( co[1] )
-          res = self.clientsInvoker.doCommand()
+          res = self.clientsInvoker.doCommand()['Result']
 
           if not res['OK']:
             gLogger.error( res['Message'] )
