@@ -222,7 +222,7 @@ class MonitoredStatus_Command( Command ):
       else:
         toBeFound = self.args[1]
 
-      res = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[0], toBeFound )
+      res = self.APIs[ 'ResourceStatusClient' ].getMonitoredStatus( self.args[2], toBeFound )
       if res[ 'OK' ]:
         res = res[ 'Value' ]
         if res:
