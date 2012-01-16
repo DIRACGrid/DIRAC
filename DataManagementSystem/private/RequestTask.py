@@ -390,6 +390,8 @@ class RequestTask( object ):
         return ownerProxyFile
       ownerProxyFile = ownerProxyFile["Value"]
       self.info( "Will execute request for '%s'@'%s' using proxy file %s" % ( ownerDN, ownerGroup, ownerProxyFile ) )
+    else:
+      self.info( "Will execute request for DataManager using her/his proxy")
 
     #################################################################
     ## execute handlers
@@ -397,9 +399,6 @@ class RequestTask( object ):
       ret = self.handleRequest()
     finally: 
       ## delete owner proxy
-      if ownerProxyFile:
-        os.unlink( ownerProxyFile )
-      ## put back DataManager proxy to env
       if self.__dataManagerProxy:
         os.environ["X509_USER_PROXY"] = self.__dataManagerProxy
     return ret

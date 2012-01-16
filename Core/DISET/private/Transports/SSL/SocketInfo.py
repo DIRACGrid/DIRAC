@@ -313,9 +313,9 @@ class SocketInfo:
         self.sslSocket.do_handshake()
         break
       except GSI.SSL.WantReadError:
-        time.sleep( 0.01 )
+        time.sleep( 0.001 )
       except GSI.SSL.WantWriteError:
-        time.sleep( 0.01 )
+        time.sleep( 0.001 )
       except GSI.SSL.Error, v:
         #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
         gLogger.warn( "Error while handshaking", v )
