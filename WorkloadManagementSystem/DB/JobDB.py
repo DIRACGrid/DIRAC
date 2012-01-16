@@ -57,8 +57,7 @@ from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.Core.Security.CS                                  import getUsernameForDN, getDNForUsername
-#TODO: ADRI JobDescription -> JobState
-#from DIRAC.WorkloadManagementSystem.Client.JobDescription    import JobDescription
+from DIRAC.WorkloadManagementSystem.Client.Job.JobManifest   import JobManifest
 
 DEBUG = 0
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
@@ -1227,15 +1226,15 @@ class JobDB( DB ):
         Set Initial job Attributes and Status
     """
 
-    jDesc = JobDescription()
-    result = jDesc.loadDescription( jdl )
+    jobManifest = JobManifest()
+    result = jobManifest.load( jdl )
     if not result['OK']:
       return result
-    jDesc.setVarsFromDict( { 'OwnerName' : owner,
+    jobManifest.setVarsFromDict( { 'OwnerName' : owner,
                              'OwnerDN' : ownerDN,
                              'OwnerGroup' : ownerGroup,
                              'DIRACSetup' : diracSetup } )
-    result = jDesc.checkDescription()
+    result = jobManifest.check()
     if not result['OK']:
       return result
     jobAttrNames = []
@@ -1250,7 +1249,7 @@ class JobDB( DB ):
       return S_ERROR( 'Can not insert JDL in to DB' )
     jobID = result[ 'Value' ]
 
-    jDesc.setVar( 'JobID', jobID )
+    jobManifest.setVar( 'JobID', jobID )
 
     jobAttrNames.append( 'JobID' )
     jobAttrValues.append( jobID )
@@ -1274,7 +1273,7 @@ class JobDB( DB ):
     jobAttrValues.append( diracSetup )
 
     # 2.- Check JDL and Prepare DIRAC JDL
-    classAdJob = ClassAd( jDesc.dumpDescriptionAsJDL() )
+    classAdJob = ClassAd( jobManifest.dumpAsJDL() )
     classAdReq = ClassAd( '[]' )
     retVal = S_OK( jobID )
     retVal['JobID'] = jobID
