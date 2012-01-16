@@ -285,10 +285,10 @@ class FileCatalogHandler(RequestHandler):
   # Administrative database operations
   #
 
-  types_getCatalogContents = []
-  def export_getCatalogContents(self):
+  types_getCatalogCounters = []
+  def export_getCatalogCounters(self):
     """ Get the number of registered directories, files and replicas in various tables """
-    return fcDB.getCatalogContents(self.getRemoteCredentials())
+    return fcDB.getCatalogCounters(self.getRemoteCredentials())
 
   ########################################################################
   # Metadata Catalog Operations

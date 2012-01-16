@@ -1,3 +1,65 @@
+[v6r2-pre4]
+
+*Core
+CHANGE: Pfn.py - pfnparse function rewritten for speed up and mem usage, unit test case added
+FIX: DISET Clients are now thread-safe. Same clients used twice in different threads was not 
+     closing the previous connection
+NEW: reduce wait times in DISET protocol machinery to improve performance    
+NEW: dirac-fix-mysql-script command to fix the mysql start-up script for the given installation
+
+*RequestManagement:
+FIX: RequestDBFile - more consistent treatment of requestDB Path
+
+*RSS
+CHANGE: RSS Action now inherits from a base class, and Actions are more homogeneous, they all take 
+        a uniform set of arguments. The name of modules has been changed from PolType to Action as well.
+FIX: CacheFeederAgent - too verbose messages moved to debug instead of info level
+BUGFIX: fixed a bug preventing RSS clients to connect to the services        
+
+*DataManagement
+CHANGE: refactoring of DMS agents executing requests, allow requests from arbitrary users
+NEW: DFC - allow to specify multiple replicas, owner, mode when adding files
+CHANGE: DFC - optimization of the directory size evaluation
+NEW: Added CREATE TEMPORARY TABLES privilege to FileCatalogDB
+CHANGE: DFC - getCatalogCounters() update to show numbers of directories
+NEW: lfc_dfc_copy script to migrate data from LFC to DFC
+FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
+
+*Interface
+NEW: Job.py - added method to handle the parametric parameters in the workflow. 
+     They are made available to the workflow_commons via the key 'GenericParameters'.
+FIX: Dirac.py - fix some type checking things
+
+[v6r1p5]
+
+*Core
+FIX: DISET Clients are now thread-safe. Same clients used twice in different threads was not 
+     closing the previous connection
+NEW: reduce wait times in DISET protocol machinery to improve performance   
+
+[v6r1p4]
+
+*RequestManagement
+BUGFIX: RequestContainer - in isSubRequestDone() treat special case for subrequests with files
+
+*Transformation
+BUGFIX: TransformationCleaningAgent - do not clear requests for tasks with no associated jobs
+
+[v6r1p3]
+
+*Framework
+NEW: Pass the monitor down to the request RequestHandler
+FIX: Define the service location for the monitor
+FIX: Close some connections that DISET was leaving open
+
+[v6r1p2]
+
+*WorkloadManagement
+BUGFIX: JobSchedulingAgent - use getSiteTiers() with returned direct value and not S_OK
+
+*Transformation
+BUGFIX: Uniform use of the TaskManager in the RequestTaskAgent and WorkflowTaskAgent
+
 [v6r1p1]
 
 *RSS
@@ -64,6 +126,17 @@ BUGFIX: RequestContainer.isSubrequestDone() - return 0 if Done check fails
 *DataManagement
 NEW: FileCatalog - possibility to configure multiple FileCatalog services of the same type
 
+[v6r0p4]
+
+*Framework
+NEW: Pass the monitor down to the request RequestHandler
+FIX: Define the service location for the monitor
+FIX: Close some connections that DISET was leaving open
+
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/rel-v6r1
 [v6r0p3]
 
 *Framework

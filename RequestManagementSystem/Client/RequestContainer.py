@@ -590,7 +590,10 @@ class RequestContainer:
         if dataset['Status'] != 'Done':
           return S_OK( 0 )
 
-    return S_OK( 0 )
+    if files or datasets:
+      return S_OK( 1 )
+    else:
+      return S_OK( 0 )
 
   def isRequestTypeDone( self, type ):
     """ Check whether the requests of given type are complete

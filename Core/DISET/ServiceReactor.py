@@ -9,7 +9,7 @@ try:
 except:
   multiprocessing = False
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.private.GatewayService import GatewayService
 from DIRAC.Core.Utilities import Network, Time
@@ -32,6 +32,8 @@ class ServiceReactor:
         serviceName = serviceName[1:]
       if serviceName == GatewayService.GATEWAY_NAME:
         self.__services[ serviceName ] = GatewayService()
+      elif len( services ) == 1:
+        self.__services[ serviceName ] = Service( serviceName, gMonitor )
       else:
         self.__services[ serviceName ] = Service( serviceName )
 

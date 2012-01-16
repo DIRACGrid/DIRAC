@@ -26,10 +26,11 @@ class RequestDBFile:
     """ Obtain the root of the requestDB from the configuration
     """
     csSection = csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
-    root = gConfig.getValue( '%s/Path' % csSection )
-    if not root:
-      diracRoot = gConfig.getValue( '/LocalSite/InstancePath', rootPath )
-      root = diracRoot + '/requestdb'
+    root = gConfig.getValue( '%s/Path' % csSection, 'requestdb' )
+    diracRoot = gConfig.getValue( '/LocalSite/InstancePath', rootPath )
+    # if the path return by the gConfig is absolute the following line does not change it,
+    # otherwise it makes it relative to diracRoot
+    root = os.path.join( diracRoot, root )
     if not os.path.exists( root ):
       os.makedirs( root )
     return root

@@ -104,7 +104,7 @@ class CacheFeederAgent( AgentModule ):
           if not res or res is None:
             gLogger.info('  returned empty...')
             continue
-          gLogger.info( res )
+          gLogger.debug( res )
 
           for key in res.keys():
 
@@ -158,7 +158,7 @@ class CacheFeederAgent( AgentModule ):
           if not res or res is None:
             gLogger.info('  returned empty...')
             continue
-          gLogger.info( res )
+          gLogger.debug( res )
 
           plotType = res.keys()[ 0 ]
 

@@ -14,21 +14,28 @@ import DIRAC
 
 class RequestHandler( object ):
 
+  class ConnectionError( Exception ):
+
+    def __init__( self, msg ):
+      self.__msg = msg
+
+    def __str__( self ):
+      return "ConnectionError: %s" % self.__msg
+
+
   def __init__( self, handlerInitDict, trid ):
     """
     Constructor
 
-    @type serviceInfoDict: dictionary
-    @param serviceInfoDict: Information vars for the service
+    @type handlerInitDict: dictionary
+    @param handlerInitDict: Information vars for the service
     @type trid: object
     @param trid: Transport to use
-    @type lockManager: object
-    @param lockManager: Lock manager to use
     """
     #Initially serviceInfoDict is the one base to the RequestHandler
     # the one created in _rh_initializeClass
     #FSM help me for I have made a complex stuff that I will forget in 5 mins :P
-    handlerInitDict.update( self.serviceInfoDict )
+    handlerInitDict.update( self.__srvInfoDict )
     self.serviceInfoDict = handlerInitDict
     self.__trid = trid
 
@@ -38,7 +45,7 @@ class RequestHandler( object ):
     pass
 
   @classmethod
-  def _rh__initializeClass( cls, serviceInfoDict, lockManager, msgBroker ):
+  def _rh__initializeClass( cls, serviceInfoDict, lockManager, msgBroker, monitor ):
     """
     Class initialization (not to be called by hand or overwritten!!)
     
@@ -49,11 +56,19 @@ class RequestHandler( object ):
     @type lockManager: object
     @param lockManager: Lock manager to use
     """
-    cls.serviceInfoDict = serviceInfoDict
-    cls.__svcName = cls.serviceInfoDict[ 'serviceName' ]
+    cls.__srvInfoDict = serviceInfoDict
+    cls.__svcName = cls.__srvInfoDict[ 'serviceName' ]
     cls.__lockManager = lockManager
     cls.__msgBroker = msgBroker
     cls.__trPool = msgBroker.getTransportPool()
+    cls.__monitor = monitor
+
+  def initialize( self ):
+    """
+    Dummy function to be inherited by real handlers. This function will be called when initializing
+    the server.
+    """
+    pass
 
   def getRemoteAddress( self ):
     """
@@ -78,7 +93,7 @@ class RequestHandler( object ):
 
     @return : Value for serviceSection/optionName in the CS being defaultValue the default
     """
-    return gConfig.getValue( "%s/%s" % ( cls.serviceInfoDict[ 'serviceSectionPath' ], optionName ),
+    return gConfig.getValue( "%s/%s" % ( cls.__srvInfoDict[ 'serviceSectionPath' ], optionName ),
                              defaultValue )
 
   def _rh_executeAction( self, proposalTuple ):
@@ -93,14 +108,18 @@ class RequestHandler( object ):
     gLogger.debug( "Executing %s:%s action" % actionTuple )
     startTime = time.time()
     actionType = actionTuple[0]
-    if actionType == "RPC":
-      retVal = self.__doRPC( actionTuple[1] )
-    elif actionType == "FileTransfer":
-      retVal = self.__doFileTransfer( actionTuple[1] )
-    elif actionType == "Connection":
-      retVal = self.__doConnection( actionTuple[1] )
-    else:
-      raise Exception( "Unknown action (%s)" % actionType )
+    try:
+      if actionType == "RPC":
+        retVal = self.__doRPC( actionTuple[1] )
+      elif actionType == "FileTransfer":
+        retVal = self.__doFileTransfer( actionTuple[1] )
+      elif actionType == "Connection":
+        retVal = self.__doConnection( actionTuple[1] )
+      else:
+        return S_ERROR( "Unknown action %s" % actionType )
+    except ConnectionError, excp:
+      gLogger.error( str( excp ) )
+      return S_ERROR( excp )
     if  not isReturnStructure( retVal ):
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
@@ -124,9 +143,8 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Error while receiving file description", "%s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                             retVal[ 'Message' ] ) )
-      return S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] )
+      raise ConnectionError( "Error while receiving file description %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+                                                                                retVal[ 'Message' ] ) )
     fileInfo = retVal[ 'Value' ]
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
     if "transfer_%s" % sDirection not in dir( self ):
@@ -200,9 +218,8 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Error receiving arguments", "%s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                             retVal[ 'Message' ] ) )
-      return S_ERROR( "Error while receiving function arguments: %s" % retVal[ 'Message' ] )
+      raise ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+                                                                         retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     self.__logRemoteQuery( "RPC/%s" % method, args )
     return self.__RPCCallFunction( method, args )
@@ -294,9 +311,8 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Error receiving arguments", "%s %s" % ( self.srv_getFormattedRemoteCredentials(),
-                                                             retVal[ 'Message' ] ) )
-      return S_ERROR( "Error while receiving function arguments: %s" % retVal[ 'Message' ] )
+      raise ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+                                                                         retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     return self._rh_executeConnectionCallback( methodName, args )
 
@@ -364,16 +380,16 @@ class RequestHandler( object ):
 #
 ####
 
-  @classmethod
-  def __authQuery( cls, method ):
-    """
-    Check if connecting user is allowed to perform an action
-
-    @type method: string
-    @param method: Method to check
-    @return: S_OK/S_ERROR
-    """
-    return cls.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
+  #@classmethod
+  #def __authQuery( cls, method ):
+  #  """
+  #  Check if connecting user is allowed to perform an action
+  #
+  #  @type method: string
+  #  @param method: Method to check
+  #  @return: S_OK/S_ERROR
+  #  """
+  #  return cls.__srvInfoDict[ 'authManager' ].authQuery( method, cls.getRemoteCredentials() )
 
   def __logRemoteQuery( self, method, args ):
     """
@@ -485,48 +501,49 @@ class RequestHandler( object ):
 
     @return : Value for serviceSection/optionName in the CS being defaultValue the default
     """
-    return gConfig.getValue( "%s/%s" % ( cls.serviceInfoDict[ 'serviceSectionPath' ], optionName ),
+    return gConfig.getValue( "%s/%s" % ( cls.__srvInfoDict[ 'serviceSectionPath' ], optionName ),
                              defaultValue )
 
   def srv_getTransportID( self ):
     return self.__trid
 
-  @classmethod
   def srv_getClientSetup( self ):
     return self.serviceInfoDict[ 'clientSetup' ]
 
-  @classmethod
   def srv_getClientVO( self ):
     return self.serviceInfoDict[ 'clientVO' ]
 
   @classmethod
-  def srv_getURL( self ):
-    return self.serviceInfoDict[ 'URL' ]
+  def srv_getURL( cls ):
+    return cls.__srvInfoDict[ 'URL' ]
 
   @classmethod
-  def srv_getServiceName( self ):
-    return self.serviceInfoDict[ 'serviceName' ]
+  def srv_getServiceName( cls ):
+    return cls.__srvInfoDict[ 'serviceName' ]
 
   @classmethod
-  def srv_getCSSystemPath( self ):
-    return self.serviceInfoDict[ 'systemSectionPath' ]
+  def srv_getCSSystemPath( cls ):
+    return cls.__srvInfoDict[ 'systemSectionPath' ]
 
   @classmethod
-  def srv_getCSServicePath( self ):
-    return self.serviceInfoDict[ 'serviceSectionPath' ]
+  def srv_getCSServicePath( cls ):
+    return cls.__srvInfoDict[ 'serviceSectionPath' ]
 
   @classmethod
+  def srv_getMonitor( cls ):
+    return cls.__monitor
+
   def srv_msgReply( self, msgObj ):
     return self.__msgBroker.sendMessage( self.__trid, msgObj )
 
   @classmethod
-  def srv_msgSend( self, trid, msgObj ):
-    return self.__msgBroker.sendMessage( trid, msgObj )
+  def srv_msgSend( cls, trid, msgObj ):
+    return cls.__msgBroker.sendMessage( trid, msgObj )
 
   @classmethod
-  def srv_msgCreate( self, msgName ):
-    return self.__msgBroker.getMsgFactory().createMessage( self.__svcName, msgName )
+  def srv_msgCreate( cls, msgName ):
+    return cls.__msgBroker.getMsgFactory().createMessage( cls.__svcName, msgName )
 
   @classmethod
-  def srv_msgDisconnectClient( self, trid ):
-    return self.__msgBroker.removeTransport( trid )
+  def srv_msgDisconnectClient( cls, trid ):
+    return cls.__msgBroker.removeTransport( trid )
