@@ -373,7 +373,7 @@ class RequestHandler( object ):
     @param method: Method to check
     @return: S_OK/S_ERROR
     """
-    return cls.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
+    return cls.serviceInfoDict[ 'authManager' ].authQuery( method, self.getRemoteCredentials() )
 
   def __logRemoteQuery( self, method, args ):
     """
