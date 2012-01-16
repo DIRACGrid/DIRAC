@@ -154,7 +154,7 @@ class Synchronizer(object):
         resourceType = CS.getCEType(site, node)
       if node not in resourcesInDB and node is not None:
         try:
-          siteInGOCDB = self. __getServiceEndpointInfo(node)[0]['SITENAME']
+          siteInGOCDB = self.__getServiceEndpointInfo(node)[0]['SITENAME']
         except IndexError: # No INFO in GOCDB: Node does not exist
           print "Node %s is not in GOCDB!! Considering that it does not exists!" % node
           gLogger.warn("Node %s is not in GOCDB!! Considering that it does not exists!" % node)
@@ -271,11 +271,27 @@ class Synchronizer(object):
     # services in the DB now
     servicesInDB = Utils.unpack(self.rsClient.getService())
     for service_name, service_type, site_name in servicesInDB:
-      if Utils.unpack(self.rsClient.getResource(siteName=site_name, serviceType=service_type)) == [] \
-      and service_type not in ["VO-BOX", "CondDB"]:
-        print "Deleting Service %s since it has no corresponding resources." % service_name
-        gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
-        Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+      if not service_type in ["VO-BOX", "CondDB", "VOMS", "Storage"]:
+        if Utils.unpack(self.rsClient.getResource(siteName=site_name, serviceType=service_type)) == []:
+          print "Deleting Service %s since it has no corresponding resources." % service_name
+          gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
+          Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+      elif service_type == "Storage":
+        res = rsClient.getSite( siteName = site_name, meta = { 'columns' : 'GridSiteName'} )
+        if res[ 'OK' ]:
+          res = res[ 'Value' ]
+        else:
+          res = []
+        
+        if res:
+          if rsClient.getResource( gridSiteName = res[0], serviceType = service_type ) == []:
+            print "Deleting Service %s since it has no corresponding resources." % service_name
+            gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
+            Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+        #else:            
+        #    print "Deleting Service %s since it has no corresponding resources." % service_name
+        #    gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
+        #    Utils.protect2(self.rsClient.removeElement, "Service", service_name)
 
   def _syncRegistryUsers(self):
     users = CS.getTypedDictRootedAt("Users", root= "/Registry")
