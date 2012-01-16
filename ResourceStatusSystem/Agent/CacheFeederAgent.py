@@ -101,6 +101,11 @@ class CacheFeederAgent( AgentModule ):
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()
 
+          if not res['OK']:
+            gLogger.error( res['Message'] )
+            continue
+          res = res[ 'Value' ]
+
           if not res or res is None:
             gLogger.info('  returned empty...')
             continue
@@ -154,6 +159,11 @@ class CacheFeederAgent( AgentModule ):
           co[1].setArgs( co[2] )
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()
+
+          if not res['OK']:
+            gLogger.error( res['Message'] )
+            continue
+          res = res[ 'Value' ]
 
           if not res or res is None:
             gLogger.info('  returned empty...')
