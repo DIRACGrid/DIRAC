@@ -368,7 +368,7 @@ class RequestClient( Client ):
         if jobID:
           monitorServer = RPCClient( "WorkloadManagement/JobMonitoring", useCertificates = True )
           res = monitorServer.getJobPrimarySummary( int( jobID ) )
-          if not res["OK"]:
+          if not res["OK"] or not res["Value"]:
             self.log.error( "finalizeRequest: Failed to get job status" )
           else:
             jobStatus = res["Value"]["Status"]

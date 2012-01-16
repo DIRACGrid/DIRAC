@@ -258,9 +258,8 @@ class ProcessTask:
     except Exception, x:
       self.__exceptionRaised = True
 
-      if not self.__exceptionCallback and gLogger:
+      if gLogger:
         gLogger.exception( "Exception in process of pool" )
-
       if self.__exceptionCallback:
         retDict = S_ERROR( 'Exception' )
         retDict['Value'] = str( x )

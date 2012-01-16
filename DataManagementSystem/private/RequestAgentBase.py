@@ -142,6 +142,10 @@ class RequestAgentBase( AgentModule ):
     self.monitor.registerActivity( "Done", "Request Completed", 
                                    self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
 
+    ## register callbacks
+    self.registerCallBack( defaultCallback )
+    self.registerExceptionCallBack( defaultExceptionCallback )
+
 
   def configPath( self ):
     """ config path getter
@@ -234,14 +238,14 @@ class RequestAgentBase( AgentModule ):
                       "requestName" : str,
                       "sourceServer" : str,
                       "executionOrder" : list,
-                      "jobId" : int }
+                      "jobID" : int }
     """
     ## prepare requestDict
     requestDict = { "requestString" : None,
                     "requestName" : None,
                     "sourceServer" : None,
                     "executionOrder" : None,
-                    "jobId" : None }
+                    "jobID" : None }
     ## get request out of DB
     res = cls.requestClient().getRequest( requestType )
     if not res["OK"]:
@@ -257,11 +261,11 @@ class RequestAgentBase( AgentModule ):
     requestDict["sourceServer"] = res["Value"]["Server"]
     ## get JobID
     try:
-      requestDict["jobId"] = int( res["JobID"] )
+      requestDict["jobID"] = int( res["Value"]["JobID"] )
     except (ValueError, TypeError), exc:
       gLogger.warn( "Cannot read JobID for request %s, setting it to 0: %s" % ( requestDict["requestName"],
                                                                                 str(exc) ) )
-      requestDict["jobId"] = 0
+      requestDict["jobID"] = 0
     ## get the execution order
     res = cls.requestClient().getCurrentExecutionOrder( requestDict["requestName"],
                                                         requestDict["sourceServer"] )
@@ -313,11 +317,15 @@ class RequestAgentBase( AgentModule ):
         requestDict = requestDict["Value"]
         requestDict["configPath"] = self.__configPath
 
-        self.log.always("spawning task %d" % ( self.__requestsPerCycle - taskCounter + 1) ) 
+        self.log.always("spawning task %d" % ( self.__requestsPerCycle - taskCounter + 1 ) )
+
+        callback = self.requestCallback()
+        exceptionCallback = self.exceptionCallback()
+
         enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
                                                          kwargs = requestDict, 
-                                                         callback =  self.__requestCallback,
-                                                         exceptionCallback = self.__exceptionCallback,
+                                                         callback =  callback,
+                                                         exceptionCallback = exceptionCallback,
                                                          blocking = True )
         ## can't enqueue new task?
         if not enqueue["OK"]:
