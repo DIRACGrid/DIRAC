@@ -542,24 +542,27 @@ class TransferAgent( RequestAgentBase ):
       
       ## TransferTask main loop 
       while True:
-        if self.processPool().getFreeSlots():
-          self.log.info("spawning task %d" % ( self.requestsPerCycle() - requestCounter + 1 ) )  
-          enqueue = self.processPool().createAndQueueTask( TransferTask, 
-                                                           kwargs = requestDict, 
-                                                           callback = self.requestCallback(),
+        if not self.processPool().getFreeSlots():
+          self.log.info("No free slots available in processPool, will wait a second to proceed...")
+          time.sleep( 1 )
+        else:
+          taskID = self.requestsPerCycle() - requestCounter + 1
+          self.log.info("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
+          enqueue = self.processPool().createAndQueueTask( TransferTask,
+                                                           kwargs = requestDict,
+                                                           taskID = taskID,
+                                                           callback =  self.requestCallback(),
                                                            exceptionCallback = self.exceptionCallback(),
                                                            blocking = True )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
-            continue
-          ## update request counter
-          requestCounter = requestCounter - 1
-          ## task created, a little time kick to proceed 
-          time.sleep( 0.1 )
-          break
-        else:
-          self.log.info("No free slots available in processPool, will wait a second to proceed...")
-          time.sleep( 1 )
+          else:
+            self.log.info("successfully enqueued request %s to task taskID = %d" % ( requestDict["requestName"], taskID ) )
+            ## update request counter
+            requestCounter = requestCounter - 1
+            ## task created, a little time kick to proceed
+            time.sleep( 0.1 )
+            break
 
     return S_OK()
           
