@@ -49,7 +49,7 @@ def defaultCallback( task, ret ):
   log.showHeaders( True )
   log.setLevel( "INFO" )
 
-  log.info("callback from task %s" % str(task) )
+  log.info("callback from task taskID=%d" % task.getTaskID() )
   if not ret["OK"]: 
     log.error( ret["Message"] )
     return
@@ -71,7 +71,7 @@ def defaultExceptionCallback( task, exc_info ):
   log = gLogger.getSubLogger( "exceptionCallback" )
   log.showHeaders( True )
   log.setLevel( "EXCEPTION" )
-  log.exception( "exception %s from task %s" % ( str(exc_info), str(task) ) )
+  log.exception( "exception %s from task taskID=%d" % ( str(exc_info), task.getTaskID() ) ) )
 
 
 ########################################################################
@@ -304,42 +304,43 @@ class RequestAgentBase( AgentModule ):
     taskCounter = self.__requestsPerCycle 
 
     while taskCounter:
-      if self.processPool().getFreeSlots():
-        requestDict = self.getRequest( self.__requestType ) 
-        ## can't get request?
-        if not requestDict["OK"]:
-          self.log.error( requestDict["Message"] )
-          break
-        ## no more requests?
-        if not requestDict["Value"]:
-          self.log.info("No more waiting requests found.")
-          break
-        requestDict = requestDict["Value"]
-        requestDict["configPath"] = self.__configPath
-
-        self.log.always("spawning task %d" % ( self.__requestsPerCycle - taskCounter + 1 ) )
-
-        callback = self.requestCallback()
-        exceptionCallback = self.exceptionCallback()
-
-        enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
-                                                         kwargs = requestDict, 
-                                                         callback =  callback,
-                                                         exceptionCallback = exceptionCallback,
-                                                         blocking = True )
-        ## can't enqueue new task?
-        if not enqueue["OK"]:
-          self.log.error( enqueue["Message"] )
-          break
-        taskCounter = taskCounter - 1
-        ## time kick 
-        time.sleep( 0.1 )
-      else:
-        self.log.info("No free slots available in processPool, will wait a second to proceed...")
-        time.sleep( 1 )
-
+      requestDict = self.getRequest( self.__requestType ) 
+      ## can't get request?
+      if not requestDict["OK"]:
+        self.log.error( requestDict["Message"] )
+        break
+      ## no more requests?
+      if not requestDict["Value"]:
+        self.log.info("No more waiting requests found.")
+        break
+      ## enqueue
+      requestDict = requestDict["Value"]
+      requestDict["configPath"] = self.__configPath
+      taskID = self.__requestsPerCycle - taskCounter + 1
+      while True:
+        if not self.processPool().getFreeSlots():
+          self.log.info("No free slots available in processPool, will wait a second to proceed...")
+          time.sleep( 1 )
+        else:
+          self.log.always("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
+          enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
+                                                           kwargs = requestDict,
+                                                           taskID = taskID,
+                                                           callback = self.requestCallback(),
+                                                           exceptionCallback = self.exceptionCallback(),
+                                                           blocking = True )
+          ## can't enqueue new task?
+          if not enqueue["OK"]:
+            self.log.error( enqueue["Message"] )
+          else:
+            ## enqueued, decrease taskCounter
+            taskCounter = taskCounter - 1
+            ## time kick 
+            time.sleep( 0.1 )
+            ## break enqueue while
+            break
+      ## process task
       ret = self.processPool().processResults()
-      self.log.debug( ret )
 
     return S_OK()
 
