@@ -69,18 +69,15 @@ class Synchronizer(object):
     # sites in CS now
     sitesCS = set(CS.getSites())
 
-    print "Syncing Sites from CS: %d sites in CS, %d sites in DB" % (len(sitesCS), len(sitesDB))
     gLogger.info("Syncing Sites from CS: %d sites in CS, %d sites in DB" % (len(sitesCS), len(sitesDB)))
 
     # remove sites and associated resources, services, and storage
     # elements from the DB that are not in the CS:
     for s in sitesDB - sitesCS:
-      print "Purging Site %s (not in CS anymore)" % s
       gLogger.info("Purging Site %s (not in CS anymore)" % s)
       self.__purge_site(s)
 
     # add to DB what is missing
-    print "Updating %d Sites in DB" % len(sitesCS - sitesDB)
     gLogger.info("Updating %d Sites in DB" % len(sitesCS - sitesDB))
     for site in sitesCS - sitesDB:
       siteType = site.split(".")[0]
@@ -116,7 +113,6 @@ class Synchronizer(object):
     if res['OK']:
       res = res[ 'Value' ]
     else:
-      print 'Error getting hostname info for %s' % node 
       gLogger.warn( 'Error getting hostname info for %s' % node )
       return []
         
@@ -126,7 +122,6 @@ class Synchronizer(object):
       if res['OK']:
         res = res[ 'Value' ]
       else:
-        print 'Error getting canonical hostname info for %s' % node 
         gLogger.warn( 'Error getting canonical hostname info for %s' % node )
         res = []
       
@@ -136,8 +131,6 @@ class Synchronizer(object):
 
     nodesToUpdate = NodeInCS - resourcesInDB
     if len(nodesToUpdate) > 0:
-#      print str(NodeInCS)
-      print str(nodesToUpdate)
       gLogger.debug(str(NodeInCS))
       gLogger.debug(str(nodesToUpdate))
 
@@ -156,7 +149,6 @@ class Synchronizer(object):
         try:
           siteInGOCDB = self.__getServiceEndpointInfo(node)[0]['SITENAME']
         except IndexError: # No INFO in GOCDB: Node does not exist
-          print "Node %s is not in GOCDB!! Considering that it does not exists!" % node
           gLogger.warn("Node %s is not in GOCDB!! Considering that it does not exists!" % node)
           continue
 
@@ -167,7 +159,6 @@ class Synchronizer(object):
 ################################################################################
 
   def _syncResources( self ):
-    print "Starting sync of Resources"
     gLogger.info("Starting sync of Resources")
 
     # resources in the DB now
@@ -196,13 +187,11 @@ class Synchronizer(object):
     # complete list of resources in CS now
     resourcesInCS = CEInCS | SENodeInCS | LFCNodeInCS_L | LFCNodeInCS_C | FTSNodeInCS | VOMSNodeInCS
 
-    print "  %d resources in CS, %s resources in DB, updating %d resources" % (len(resourcesInCS), len(resourcesInDB), len(resourcesInCS)-len(resourcesInDB))
     gLogger.info("  %d resources in CS, %s resources in DB, updating %d resources" %
                  (len(resourcesInCS), len(resourcesInDB), len(resourcesInCS)-len(resourcesInDB)))
 
     # Remove resources that are not in the CS anymore
     for res in resourcesInDB - resourcesInCS:
-      print "Purging resource %s. Reason: not in CS anywore." % res
       gLogger.info("Purging resource %s. Reason: not in CS anywore." % res)
       self.__purge_resource(res)
 
@@ -240,12 +229,10 @@ class Synchronizer(object):
       Utils.protect2(self.rsClient.removeElement, 'StorageElement', se )
 
     # Add new storage elements
-    print "Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs))
     gLogger.info("Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs)))
     for SE in CSSEs - DBSEs:
       srm = CS.getSEHost( SE )
       if not srm:
-        print "%s has no srm URL in CS!!!" % SE
         gLogger.warn("%s has no srm URL in CS!!!" % SE)
         continue
       #siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
@@ -253,11 +240,9 @@ class Synchronizer(object):
       if siteInGOCDB[ 'OK' ]:
         siteInGOCDB = siteInGOCDB[ 'Value' ]
       else:
-        print "Error getting hostname for %s from GOCDB!!!" % srm
         gLogger.error("Error getting hostname for %s from GOCDB!!!" % srm)
         continue
       if siteInGOCDB == []:
-        print "%s is not in GOCDB!!!" % srm
         gLogger.warn("%s is not in GOCDB!!!" % srm)
         continue
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
@@ -273,7 +258,6 @@ class Synchronizer(object):
     for service_name, service_type, site_name in servicesInDB:
       if not service_type in ["VO-BOX", "CondDB", "VOMS", "Storage"]:
         if Utils.unpack(self.rsClient.getResource(siteName=site_name, serviceType=service_type)) == []:
-          print "Deleting Service %s since it has no corresponding resources." % service_name
           gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
           Utils.protect2(self.rsClient.removeElement, "Service", service_name)
       elif service_type == "Storage":
@@ -285,13 +269,8 @@ class Synchronizer(object):
         
         if res:
           if self.rsClient.getResource( gridSiteName = res[0], serviceType = service_type ) == []:
-            print "Deleting Service %s since it has no corresponding resources." % service_name
             gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
             Utils.protect2(self.rsClient.removeElement, "Service", service_name)
-        #else:            
-        #    print "Deleting Service %s since it has no corresponding resources." % service_name
-        #    gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
-        #    Utils.protect2(self.rsClient.removeElement, "Service", service_name)
 
   def _syncRegistryUsers(self):
     users = CS.getTypedDictRootedAt("Users", root= "/Registry")
