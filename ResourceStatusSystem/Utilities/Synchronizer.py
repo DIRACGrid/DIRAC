@@ -136,7 +136,7 @@ class Synchronizer(object):
 
     nodesToUpdate = NodeInCS - resourcesInDB
     if len(nodesToUpdate) > 0:
-      print str(NodeInCS)
+#      print str(NodeInCS)
       print str(nodesToUpdate)
       gLogger.debug(str(NodeInCS))
       gLogger.debug(str(nodesToUpdate))
