@@ -163,7 +163,7 @@ class GOCDBClient(object):
       serviceXML = self._getServiceEndpointCurlDownload( granularity, entity )
       return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
     except Exception, e:
-      _msg = '%s %s %s' % ( granularity, entity, e )
+      _msg = 'Exception getting information for %s %s' % ( granularity, entity )
       gLogger.exception( _msg )
       return S_ERROR( _msg )
       
