@@ -277,14 +277,14 @@ class Synchronizer(object):
           gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
           Utils.protect2(self.rsClient.removeElement, "Service", service_name)
       elif service_type == "Storage":
-        res = rsClient.getSite( siteName = site_name, meta = { 'columns' : 'GridSiteName'} )
+        res = self.rsClient.getSite( siteName = site_name, meta = { 'columns' : 'GridSiteName'} )
         if res[ 'OK' ]:
           res = res[ 'Value' ]
         else:
           res = []
         
         if res:
-          if rsClient.getResource( gridSiteName = res[0], serviceType = service_type ) == []:
+          if self.rsClient.getResource( gridSiteName = res[0], serviceType = service_type ) == []:
             print "Deleting Service %s since it has no corresponding resources." % service_name
             gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
             Utils.protect2(self.rsClient.removeElement, "Service", service_name)
