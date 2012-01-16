@@ -226,7 +226,7 @@ class MonitoredStatus_Command( Command ):
       if res[ 'OK' ]:
         res = res[ 'Value' ]
         if res:
-          res = S_OK( res[ 0 ] )
+          res = S_OK( res[ 0 ][ 0 ] )
         else:
           res = S_OK( None )  
 
