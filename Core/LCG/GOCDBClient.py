@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from xml.dom import minidom
 import socket
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 
 def _parseSingleElement( element, attributes = None ):
   """
