@@ -547,3 +547,8 @@ class RequestHandler( object ):
   @classmethod
   def srv_msgDisconnectClient( cls, trid ):
     return cls.__msgBroker.removeTransport( trid )
+
+  @property
+  def srv_log( self ):
+    return gLogger
+
