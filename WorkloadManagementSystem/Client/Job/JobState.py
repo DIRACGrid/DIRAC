@@ -8,18 +8,42 @@ class JobState( object ):
 
   __jobDB = None
 
-  def __init__( self, jid ):
+  class RemoteMethod( object ):
+
+    def __init__( self, functor ):
+      self.__functor = functor
+
+    def __get__( self, obj, type = None ):
+      return self.__class__( self.__functor.__get__( obj, type ) )
+
+    def __call__( self, *args, **kwargs ):
+      funcSelf = self.__functor.__self__
+      if kwargs:
+        raise Exception( "JobState.%s does not support keyword arguments" % ( self.__functor.__name ) )
+      if not funcSelf.hasLocalAccess:
+        rpc = funcSelf._getStoreClient()
+        return getattr( rpc, self.__functor.__name__ )( funcSelf.jid, *args )
+      return self.__functor( *args )
+
+
+  def __init__( self, jid, forceLocal = False, getRPCFunctor = False ):
     self.__jid = jid
-    self.__manifest = False
+    self.__forceLocal = forceLocal
+    if getRPCFunctor:
+      self.__getRPCFunctor = getRPCFunctor
+    else:
+      self.__getRPCFunctor = RPCClient
     #Init DB if there
-    if JobState == None:
+    if JobState.__jobDB == None:
       try:
-        from DIRAC.WorkloadManagementSystem.DN.JobDB import JobDB
+        from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
         JobState.__jobDB = JobDB()
-        result = JobState.__jobDB.getConnection()
+        result = JobState.__jobDB._getConnection()
         if not result[ 'OK' ]:
           gLogger.warn( "Could not connect to JobDB (%s). Resorting to RPC" % result[ 'Message' ] )
-        JobState.__jobDB = False
+          JobState.__jobDB = False
+        else:
+          result[ 'Value' ].close()
       except ImportError:
         JobState.__jobDB = False
 
@@ -27,46 +51,59 @@ class JobState( object ):
   def jid( self ):
     return self.__jid
 
-  def __getStore( self ):
-    if JobState.__jobDB:
-      return ( JobState.__jobDB, True )
-    return ( RPCClient( "WorkloadManagement/JobStore" ), False )
+  @property
+  def hasLocalAccess( self ):
+    if JobState.__jobDB or self.__forceLocal:
+      return True
+    return False
 
+  def __getDB( self ):
+    return JobState.__jobDB
 
-  def getManifest( self ):
-    store, local = self.__getStore()
-    if not local:
-      return store.getManifest( self.__jid )
-    #Remote is getManifest, local is setJobJDL directly to the DB
-    #TODO: Automate!
-    return self.__getStore().getManifest( self.__jid )
+  def _getStoreClient( self ):
+    return self.__getRPCFunctor( "WorkloadManagement/JobStore" )
+
+  def getManifest( self, rawData = False ):
+    if self.hasLocalAccess:
+      result = self.__getDB().getJobJDL( self.__jid )
+    else:
+      result = self._getStoreClient().getManifest( self.__jid )
+    if not result[ 'OK' ] or rawData:
+      return result
+    jobManifest = JobManifest()
+    result = jobManifest.loadJDL( result[ 'Value' ] )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( jobManifest )
 
   def setManifest( self, jobManifest ):
+    if isinstance( jobManifest, JobManifest ):
+      manifest = jobManifest.dumpAsJDL()
+    else:
+      manifest = str( jobManifest )
+    if self.hasLocalAccess:
+      return self.__getDB().setJobJDL( self.__jid, manifest )
+    return self._getStoreClient().setManifest( self.__jid, manifest )
 
 #
 # Attributes
 # 
 
+  @RemoteMethod
   def setStatus( self, majorStatus, minorStatus ):
-    if JobState.__jobDB:
-      source = JobState.__jobDB
-    else:
-      source = RPCClient( "WorkloadManagement/JobStateUpdate" )
-    return source.setJobStatus( self.__jid, majorStatus, minorStatus )
+    return JobState.__jobDB.setJobStatus( self.__jid, majorStatus, minorStatus )
 
-
-  def getStatus( self ):
-    if JobState.__jobDB:
-      source = JobState.__jobDB
-      return source.getAttributesForJobList( jobIDs, [ 'Status', 'MinorStatus'] )
-    result = RPCClient( "WorkloadManagement/JobMonitoring" )
-    if not result[ 'OK' ]:
-      return result
-    print result[ 'Value' ]
-
-
-  @TracedMethod
+  @RemoteMethod
   def setMinorStatus( self, minorStatus ):
-    self.__attrCache[ 'minorStatus' ] = minorStatus
-    #TODO: Sync DB
+    return JobState.__jobDB.setJobMinorStatus( self.__jid, minor = minorStatus )
+
+  @RemoteMethod
+  def setAppStatus( self, minorStatus ):
+    return JobState.__jobDB.setJobMinorStatus( self.__jid, application = minorStatus )
+
+  @RemoteMethod
+  def getStatus( self ):
+    return JobState.__jobDB.getAttributesForJobList( jobIDs, [ 'Status', 'MinorStatus', 'ApplicationStatus'] )
+
+
 
