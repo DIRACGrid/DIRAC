@@ -21,7 +21,7 @@ ValidStatusTypes  = gencfg.get("Resources", {"Site": {"StatusType": "''"},
                                              "StorageElement": {"StatusType": ["Read", "Write", "Remove", "Check"]}})
 ValidRes = ValidStatusTypes.keys()
 
-ValidPolicyResult = gencfg.get('PolicyResult', ["Error", "Unknown", "NeedConfirmation", "Banned", "Probing", "Bad", "Active"])
+ValidPolicyResult = gencfg.get('PolicyResult', ["Error", "Unknown", "Banned", "Probing", "Bad", "Active"])
 ValidSiteType     = gencfg.get('SiteType', ["T0", "T1", "T2", "T3"])
 ValidServiceType  = gencfg.get('ServiceType', ["Computing", "Storage", "VO-BOX", "VOMS", "CondDB"])
 ValidResourceType = gencfg.get('ResourceType', ["CE", "CREAMCE", "SE", "LFC_C", "LFC_L", "FTS", "VOMS"])
