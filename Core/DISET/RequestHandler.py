@@ -108,6 +108,7 @@ class RequestHandler( object ):
     gLogger.debug( "Executing %s:%s action" % actionTuple )
     startTime = time.time()
     actionType = actionTuple[0]
+    self.serviceInfoDict[ 'actionTuple' ] = actionTuple
     try:
       if actionType == "RPC":
         retVal = self.__doRPC( actionTuple[1] )
@@ -513,6 +514,11 @@ class RequestHandler( object ):
   def srv_getClientVO( self ):
     return self.serviceInfoDict[ 'clientVO' ]
 
+  def srv_getActionTuple( self ):
+    if not 'actionTuple' in self.serviceInfoDict:
+      return ( 'Unknown yet', )
+    return self.serviceInfoDict[ 'actionTuple' ]
+
   @classmethod
   def srv_getURL( cls ):
     return cls.__srvInfoDict[ 'URL' ]
@@ -547,6 +553,10 @@ class RequestHandler( object ):
   @classmethod
   def srv_msgDisconnectClient( cls, trid ):
     return cls.__msgBroker.removeTransport( trid )
+
+  @classmethod
+  def srv_getLog( cls ):
+    return gLogger
 
   @property
   def srv_log( self ):

@@ -69,11 +69,6 @@ class Service:
     self._handler = result[ 'Value' ]
     #Initialize lock manager
     self._lockManager = LockManager( self._cfg.getMaxWaitingPetitions() )
-    #Load actions
-    result = self._loadActions()
-    if not result[ 'OK' ]:
-      return result
-    self._actions = result[ 'Value' ]
     self._initMonitoring()
     self._threadPool = ThreadPool( 1,
                                     max( 0, self._cfg.getMaxThreads() ),
@@ -105,6 +100,12 @@ class Service:
       errMsg = "Exception while intializing %s" % self._name
       gLogger.exception( errMsg )
       return S_ERROR( errMsg )
+
+    #Load actions after the handler has initialized itself
+    result = self._loadActions()
+    if not result[ 'OK' ]:
+      return result
+    self._actions = result[ 'Value' ]
 
     gThreadScheduler.addPeriodicTask( 30, self.__reportThreadPoolContents )
 

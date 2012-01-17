@@ -7,6 +7,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 class JobState( object ):
 
   __jobDB = None
+  _sDisableLocal = False
 
   class RemoteMethod( object ):
 
@@ -53,6 +54,8 @@ class JobState( object ):
 
   @property
   def hasLocalAccess( self ):
+    if JobState._sDisableLocal:
+      return False
     if JobState.__jobDB or self.__forceLocal:
       return True
     return False
@@ -89,17 +92,34 @@ class JobState( object ):
 # Attributes
 # 
 
+  def __checkType( self, value, tList ):
+    if type( value ) not in tList:
+      raise TypeException( "%s has wrong type. Has to be one of %s" % ( value, tList ) )
+
   @RemoteMethod
   def setStatus( self, majorStatus, minorStatus ):
+    try:
+      self.__checkType( majorStatus, types.StringType )
+      self.__checkType( minorStatus, types.StringType )
+    except TypeException, excp:
+      return S_ERROR( str( excp ) )
     return JobState.__jobDB.setJobStatus( self.__jid, majorStatus, minorStatus )
 
   @RemoteMethod
   def setMinorStatus( self, minorStatus ):
-    return JobState.__jobDB.setJobMinorStatus( self.__jid, minor = minorStatus )
+    try:
+      self.__checkType( minorStatus, types.StringType )
+    except TypeException, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.setJobStatus( self.__jid, minor = minorStatus )
 
   @RemoteMethod
-  def setAppStatus( self, minorStatus ):
-    return JobState.__jobDB.setJobMinorStatus( self.__jid, application = minorStatus )
+  def setAppStatus( self, appStatus ):
+    try:
+      self.__checkType( appStatus, types.StringType )
+    except TypeException, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.setJobStatus( self.__jid, application = appStatus )
 
   @RemoteMethod
   def getStatus( self ):
