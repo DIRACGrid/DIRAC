@@ -306,7 +306,7 @@ class TransferQualityFromCachedPlot_Command(Command):
         if res == []:
           res = S_OK( None )
         else: 
-          res = eval(res[0])
+          res = eval(res[0][0])
       
           s,n = 0,0
           SE = res[ 'data' ].keys()[ 0 ]
