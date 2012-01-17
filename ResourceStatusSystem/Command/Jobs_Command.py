@@ -225,7 +225,7 @@ class JobsEffSimpleCached_Command(Command):
       if res[ 'OK' ]:
         res = res[ 'Value' ]
         if res == None or res == []:
-          return S_OK( 'Idle' )
+          res = S_OK( 'Idle' )
         else:
           res = S_OK( res[ 0 ] )
         
