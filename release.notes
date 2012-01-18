@@ -30,6 +30,11 @@ NEW: Job.py - added method to handle the parametric parameters in the workflow.
      They are made available to the workflow_commons via the key 'GenericParameters'.
 FIX: Dirac.py - fix some type checking things
 
+[v6r1p6]
+
+*Core
+FIX: TransferClient closes connections properly
+
 [v6r1p5]
 
 *Core
