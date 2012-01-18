@@ -30,6 +30,11 @@ NEW: Job.py - added method to handle the parametric parameters in the workflow.
      They are made available to the workflow_commons via the key 'GenericParameters'.
 FIX: Dirac.py - fix some type checking things
 
+[v6r1p7]
+
+*Web
+BUGFIX: fixed scroll bar in the Monitoring plots view
+
 [v6r1p6]
 
 *Core
