@@ -1,10 +1,16 @@
+[v6r1p6]
+*DISET
+FIX: TransferClient closes connections properly
+FIX: DISET Clients are now thread-safe. Same client used twice in different threads will not close the previous connection
+CHANGE: Beautification and reduce wait times to improve performance
+
 [v6r1p3]
 
 *Framework
 NEW: Pass the monitor down to the request RequestHandler
 FIX: Define the service location for the monitor
 FIX: Close some connections that DISET was leaving open
-
+
 [v6r1p2]
 
 *WorkloadManagement
