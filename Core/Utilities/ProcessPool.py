@@ -474,7 +474,6 @@ class ProcessPool:
     """ Kill all children (processes :P) Kill 'em all!
     """
     wpL = [ ( wp, 0 ) for wp in self.__workingProcessList ]
-    print wpL
     self.__workingProcessList = []
     while wpL:
       wp, count = wpL.pop( 0 )
