@@ -71,12 +71,11 @@ has to call::
 __RCSID__ = "$Id$"
 
 import multiprocessing
-import Queue
 import sys
 import time
 import threading
 import os
-import string 
+import signal
 from types import *
 
 try:
@@ -244,15 +243,15 @@ class ProcessTask:
     self.__done = True
     try:
       ## it's a function?
-      if type(self.__taskFunction) is FunctionType:
+      if type( self.__taskFunction ) is FunctionType:
         self.__taskResult = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
       ## or a class? 
-      elif type(self.__taskFunction) in ( TypeType, ClassType ):
+      elif type( self.__taskFunction ) in ( TypeType, ClassType ):
         ## create new instance
         taskObj = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
         ### check if it is callable, raise TypeError if not
-        if not callable(taskObj):
-          raise TypeError("__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
+        if not callable( taskObj ):
+          raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
     except Exception, x:
@@ -471,6 +470,22 @@ class ProcessPool:
       time.sleep( 0.1 )
     self.processResults()
 
+  def filicide( self ):
+    """ Kill all children (processes :P) Kill 'em all!
+    """
+    wpL = [ ( wp, 0 ) for wp in self.__workingProcessList ]
+    print wpL
+    self.__workingProcessList = []
+    while wpL:
+      wp, count = wpL.pop( 0 )
+      if wp.pid == None:
+        if count > 5:
+          wp.terminate()
+        else:
+          wpL.append( ( wp, count + 1 ) )
+        continue
+      os.kill( wp.pid, signal.SIGKILL )
+
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
@@ -502,20 +517,20 @@ class doSomething( object ):
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( "doSomething%s" % self.number )
-  
+
 
   def __call__( self ):
     self.log.error( "in call" )
     rnd = random.randint( 1, 5 )
     print "sleeping %s secs for task number %s" % ( rnd, self.number )
     time.sleep( rnd )
-    
+
     rnd = random.random() * self.number
     if rnd < 3:
       print "raising exception for task %s" % self.number
       raise Exception( "TEST EXCEPTION" )
     print "task number %s done" % self.number
-    return { "OK" : True, "Value" : [1,2,3] }
+    return { "OK" : True, "Value" : [1, 2, 3] }
 
 
 
@@ -543,7 +558,7 @@ if __name__ == "__main__":
       r = random.randint( 1, 5 )
       if r > rmax:
         rmax = r
-      result = pPool.createAndQueueTask( doSomething, 
+      result = pPool.createAndQueueTask( doSomething,
                                          args = ( count, r, ),
                                          callback = showResult,
                                          exceptionCallback = showException )
