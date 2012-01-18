@@ -26,7 +26,6 @@ class JobState( object ):
         return getattr( rpc, self.__functor.__name__ )( funcSelf.jid, *args )
       return self.__functor( *args )
 
-
   def __init__( self, jid, forceLocal = False, getRPCFunctor = False ):
     self.__jid = jid
     self.__forceLocal = forceLocal

@@ -1,13 +1,9 @@
 
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
-from DIRAC.Core.Utilities.CFG import CFG
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
+from DIRAC.WorkloadManagementSystem.Client.Job.JobState import JobState
 
-
-class JobState( object ):
+class CachedJobState( object ):
 
   class TracedMethod( object ):
 
@@ -21,33 +17,14 @@ class JobState( object ):
 
     def __call__( self, *args, **kwargs ):
       funcSelf = self.__functor.__self__
-      if funcSelf.traceActions:
-        if kwargs:
-          trace = ( self.__functor.__name__, args, kwargs )
-        else:
-          trace = ( self.__functor.__name__, args )
-        funcSelf.addActionToTrace( trace )
-
+      funcSelf._addTrace( trace )
       return self.__functor( *args, **kwargs )
 
-  def __init__( self, jid, keepTrace = False, syncDB = True ):
+  def __init__( self, jid ):
     self.__jid = jid
-    self.__description = CFG()
-    self.__descDirty = False
-    self.__keepTrace = keepTrace
-    self.__syncDB = False
-    self.__useCache = False
-    self.__changes = []
-    self.__dataCache = {}
-
-  def __cacheData( self, key, value ):
-    self.__dataCache[ key ] = value
-
-  def __getCacheData( self, key ):
-    if not self.__useCache:
-      raise KeyError( "Cache use disabled" )
-    return self.__dataCache[ key ]
-
+    self.__jobState = JobState( jid )
+    self.__cache = {}
+    self.__trace = []
 
   @property
   def jid( self ):
@@ -57,8 +34,8 @@ class JobState( object ):
   def traceActions( self ):
     return self.__keepTrace
 
-  def addActionToTrace( self, actionTuple ):
-    self.__changes.append( actionTuple )
+  def _addTrace( self, actionTuple ):
+    self.__trace.append( actionTuple )
 
 #
 # Attributes
@@ -66,9 +43,9 @@ class JobState( object ):
 
   @TracedMethod
   def setStatus( self, majorStatus, minorStatus ):
-    self.__cacheData( 'att.status', majorStatus )
-    self.__cacheData( 'att.minorStatus', minorStatus )
-    #TODO: Sync DB
+    self.__cache[ 'att.status' ] = majorStatus
+    self.__cache[ 'att.minorStatus' ] = minorStatus
+    return S_OK()
 
   def getStatus( self ):
     try:
