@@ -88,7 +88,7 @@ class JobState( object ):
     return self._getStoreClient().setManifest( self.__jid, manifest )
 
 #
-# Attributes
+# Status
 # 
 
   def __checkType( self, value, tList ):
@@ -113,6 +113,15 @@ class JobState( object ):
     return JobState.__jobDB.setJobStatus( self.__jid, minor = minorStatus )
 
   @RemoteMethod
+  def getStatus( self ):
+    result = JobState.__jobDB.getJobAttributes( jobIDs, [ 'Status', 'MinorStatus' ] )
+    if not result[ 'OK' ]:
+      return result
+    data = result[ 'Value' ]
+    return S_OK( ( data[ 'Status' ], data[ 'MinorStatus' ] ) )
+
+
+  @RemoteMethod
   def setAppStatus( self, appStatus ):
     try:
       self.__checkType( appStatus, types.StringType )
@@ -121,8 +130,9 @@ class JobState( object ):
     return JobState.__jobDB.setJobStatus( self.__jid, application = appStatus )
 
   @RemoteMethod
-  def getStatus( self ):
-    return JobState.__jobDB.getAttributesForJobList( jobIDs, [ 'Status', 'MinorStatus', 'ApplicationStatus'] )
-
-
+  def getAppStatus( self ):
+    result = obState.__jobDB.getJobAttributes( jobIDs, [ 'ApplicationStatus' ] )
+    if result[ 'OK' ]:
+      result[ 'Value' ] = result[ 'Value' ][ 'ApplicationStatus']
+    return result
 

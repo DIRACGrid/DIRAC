@@ -37,231 +37,76 @@ class CachedJobState( object ):
   def _addTrace( self, actionTuple ):
     self.__trace.append( actionTuple )
 
+  def __cacheExists( self, keyList ):
+    if type( keyList ) in types.StringTypes:
+      keyList = [ keyList ]
+    for key in keyList:
+      if key not in self.__cache:
+        return False
+    return True
+
+  def __memoizedMethod( self, cKey, functor ):
+    if cKey not in self.__cache:
+      result = functor()
+      if not result[ 'OK' ]:
+        return result
+      self.__cache[ cKey ] = result[ 'Value' ]
+    return S_OK( self.__cache[ cKey ] )
+
 #
 # Attributes
 # 
 
   @TracedMethod
   def setStatus( self, majorStatus, minorStatus ):
-    self.__cache[ 'att.status' ] = majorStatus
-    self.__cache[ 'att.minorStatus' ] = minorStatus
+    self.__cache[ 'att.Status' ] = majorStatus
+    self.__cache[ 'att.MinorStatus' ] = minorStatus
     return S_OK()
-
-  def getStatus( self ):
-    try:
-      return self.__getCacheData( 'att.status' )
-    except KeyError:
-      pass
-
 
   @TracedMethod
   def setMinorStatus( self, minorStatus ):
-    self.__attrCache[ 'minorStatus' ] = minorStatus
-    #TODO: Sync DB
+    self.__cache[ 'att.MinorStatus' ] = minorStatus
+    return S_OK()
 
+  def getStatus( self ):
+    cKeys = ( 'att.Status', 'att.MinorStatus' )
+    if not self.__cacheExists( cKeys ):
+      result = self.__jobState.getStatus()
+      if not result[ 'OK' ]:
+        return result
+      data = result[ 'Value' ]
+      for iP in range( len( cKeys ) ):
+        self.__cache[ cKeys[ iP ] ] = data[ iP ]
+    return S_OK( ( self.__cache[ 'att.Status' ], self.__cache[ 'att.MinorStatus' ] ) )
+
+  def setAppStatus( self, appStatus ):
+    self.__cache[ 'att.ApplicationStatus' ] = appStatus
+    return S_OK()
+
+  def getAppStatus( self ):
+    return self.__memoizedMethod( 'att.ApplicationStatus', self.__jobState.getAppStatus )
 #
-# Params
+# Attribs
 #
 
   @TracedMethod
-  def setParam( self, name, value ):
-    self.__paramCache[ name ] = value
-    #TODO: Sync DB
-
-
-
-#
-# Description stuff
-#
-
-
-  def isDesctiptionDirty( self ):
-    return self.__descDirty
-
-  def loadDescription( self, dataString ):
-    """
-    Auto discover format type based on [ .. ] of JDL
-    """
-    dataString = dataString.strip()
-    if dataString[0] == "[" and dataString[-1] == "]":
-      return self.loadDescriptionFromJDL( dataString )
-    else:
-      return self.loadDescriptionFromCFG( dataString )
-
-  def loadDescriptionFromJDL( self, jdlString ):
-    """
-    Load job description from JDL format
-    """
-    result = loadJDLAsCFG( jdlString.strip() )
-    if not result[ 'OK' ]:
-      self.__description = CFG()
-      return result
-    self.__description = result[ 'Value' ][0]
+  def setAttribute( self, name, value ):
+    if type( name ) != types.StringTypes:
+      return S_ERROR( "Attribute name has to be a string" )
+    self.__cache[ "att.%s" % name ] = value
     return S_OK()
 
-  def loadDescriptionFromCFG( self, cfgString ):
-    """
-    Load job description from CFG format
-    """
-    try:
-      self.__description.loadFromBuffer( cfgString )
-    except Exception, e:
-      return S_ERROR( "Can't load description from cfg: %s" % str( e ) )
+  @TracedMethod
+  def setAttributes( self, attDict ):
+    if type( attrDict ) != types.DictType:
+      return S_ERROR( "Attributes has to be a dictionary" )
+    for key in attDict:
+      self.__cache[ 'att.%s' % key ] = attDict[ key ]
     return S_OK()
 
-  def dumpDescriptionAsCFG( self ):
-    return str( self.__description )
+  def getAttribute( self, name ):
+    return self.__memoizedMethod( 'att.%s' % name, self.__jobState.getAttribute )
 
-  def dumpDescriptionAsJDL( self ):
-    return dumpCFGAsJDL( self.__description )
-
-  def __checkNumericalVarInDescription( self, varName, defaultVal, minVal, maxVal ):
-    """
-    Check a numerical var
-    """
-    initialVal = False
-    if varName not in self.__description:
-      varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
-    else:
-      varValue = self.__description[ varName ]
-      initialVal = varValue
-    try:
-      varValue = long( varValue )
-    except:
-      return S_ERROR( "%s must be a number" % varName )
-    minVal = gConfig.getValue( "/JobDescription/Min%s" % varName, minVal )
-    maxVal = gConfig.getValue( "/JobDescription/Max%s" % varName, maxVal )
-    varValue = max( minVal, min( varValue, maxVal ) )
-    if initialVal != varValue:
-      self.__description.setOption( varName, varValue )
-    return S_OK( varValue )
-
-  def __checkChoiceVarInDescription( self, varName, defaultVal, choices ):
-    """
-    Check a choice var
-    """
-    initialVal = False
-    if varName not in self.__description:
-      varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
-    else:
-      varValue = self.__description[ varName ]
-      initialVal = varValue
-    if varValue not in gConfig.getValue( "/JobDescription/Choices%s" % varName , choices ):
-      return S_ERROR( "%s is not a valid value for %s" % ( varValue, varName ) )
-    if initialVal != varValue:
-      self.__description.setOption( varName, varValue )
-    return S_OK( varValue )
-
-  def __checkMultiChoiceInDescription( self, varName, choices ):
-    """
-    Check a multi choice var
-    """
-    initialVal = False
-    if varName not in self.__description:
-      return S_OK()
-    else:
-      varValue = self.__description[ varName ]
-      initialVal = varValue
-    choices = gConfig.getValue( "/JobDescription/Choices%s" % varName , choices )
-    for v in List.fromChar( varValue ):
-      if v not in choices:
-        return S_ERROR( "%s is not a valid value for %s" % ( v, varName ) )
-    if initialVal != varValue:
-      self.__description.setOption( varName, varValue )
-    return S_OK( varValue )
-
-  def __checkMaxInputData( self, maxNumber ):
-    """
-    Check Maximum Number of Input Data files allowed
-    """
-    initialVal = False
-    varName = "InputData"
-    if varName not in self.__description:
-      return S_OK()
-    varValue = self.__description[ varName ]
-    if len( List.fromChar( varValue ) ) > maxNumber:
-      return S_ERROR( 'Number of Input Data Files (%s) greater than current limit: %s' % ( len( List.fromChar( varValue ) ) , maxNumber ) )
-    return S_OK()
-
-  def setDescriptionVarsFromDict( self, varDict ):
-    for k in sorted( varDict ):
-      self.setVar( k, varDict[ k ] )
-
-  def checkDescription( self ):
-    """
-    Check that the description is OK
-    """
-    for k in [ 'OwnerName', 'OwnerDN', 'OwnerGroup', 'DIRACSetup' ]:
-      if k not in self.__description:
-        return S_ERROR( "Missing var %s in description" % k )
-    #Check CPUTime
-    result = self.__checkNumericalVarInDescription( "CPUTime", 86400, 0, 500000 )
-    if not result[ 'OK' ]:
-      return result
-    result = self.__checkNumericalVarInDescription( "Priority", 1, 0, 10 )
-    if not result[ 'OK' ]:
-      return result
-    allowedSubmitPools = []
-    for option in [ "DefaultSubmitPools", "SubmitPools", "AllowedSubmitPools" ]:
-      allowedSubmitPools = gConfig.getValue( "%s/%s" % ( getAgentSection( "WorkloadManagement/TaskQueueDirector" ), option ),
-                                             allowedSubmitPools )
-    result = self.__checkMultiChoiceInDescription( "SubmitPools", allowedSubmitPools )
-    if not result[ 'OK' ]:
-      return result
-    result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
-    if not result[ 'OK' ]:
-      return result
-    result = self.__checkMaxInputData( 500 )
-    if not result[ 'OK' ]:
-      return result
-    result = self.__checkMultiChoiceInDescription( "JobType",
-                                                   gConfig.getValue( "/Operations/JobDescription/AllowedJobTypes",
-                                                                     [] ) )
-    if not result[ 'OK' ]:
-      #HACK to maintain backwards compatibility
-      #If invalid set to "User"
-      #HACKEXPIRATION 05/2009
-      self.setVar( "JobType", "User" )
-      #Uncomment after deletion of hack
-      #return result
-    return S_OK()
-
-  def setDescriptionVar( self, varName, varValue ):
-    """
-    Set a var in job description
-    """
-    self.__descDirty = True
-    levels = List.fromChar( varName, "/" )
-    cfg = self.__description
-    for l in levels[:-1]:
-      if l not in cfg:
-        cfg.createNewSection( l )
-      cfg = cfg[ l ]
-    cfg.setOption( levels[-1], varValue )
-
-  def getDescriptionVar( self, varName, defaultValue = None ):
-    """
-     Get a variable from the job description
-    """
-    cfg = self.__description
-    return cfg.getOption( varName, defaultValue )
-
-  def getDescriptionVarList( self, section = "" ):
-    """
-    Get a list of variables in a section of the job description
-    """
-    cfg = self.__description.getRecursive( section )
-    if not cfg or 'value' not in cfg:
-      return []
-    cfg = cfg[ 'value' ]
-    return cfg.listOptions()
-
-  def getDescriptionSectionList( self, section = "" ):
-    """
-    Get a list of sections in the job description
-    """
-    cfg = self.__description.getRecursive( section )
-    if not cfg or 'value' not in cfg:
-      return []
-    cfg = cfg[ 'value' ]
-    return cfg.listSections()
+  def getAttributeList( self, nameList ):
+    #TODO: cache list of attributes
+    return self.__memoizedMethod( 'att.%s' % name, self.__jobState.getAttribute )
