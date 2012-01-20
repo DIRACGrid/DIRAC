@@ -142,11 +142,10 @@ class WorkingProcess( multiprocessing.Process ):
         task = self.__pendingQueue.get( block = True, timeout = 1 )
       except Queue.Empty:
         if not self.__alive:
-          #If not alive, exit the function
+          #If not alive, exit the funcCore/Utilities/ProcessPool.pytion
           return
         continue
       if task.isBullet():
-	print "RECEIVED BULLET"
         return
       self.__working.value = 1
       if not self.__alive.value:
@@ -304,7 +303,9 @@ class ProcessPool:
     self.__resultsQueue = multiprocessing.Queue( 0 )
     self.__prListLock = threading.Lock()
     self.__workingProcessList = []
+    self.__draining = False
     self.__bullet = BulletTask()
+    self.__bulletCounter = 0
     self.__daemonProcess = False
     self.__spawnNeededWorkingProcesses()
 
@@ -370,6 +371,11 @@ class ProcessPool:
       self.__pendingQueue.put( self.__bullet, block = True )
     except Queue.Full:
       return S_ERROR( "Queue is full" )
+    self.__prListLock.acquire()
+    try:
+      self.__bulletCounter += 1
+    finally:
+      self.__prListLock.release()
     self.__cleanDeadProcesses()
 
   def __cleanDeadProcesses( self ):
@@ -379,7 +385,9 @@ class ProcessPool:
       stillAlive = []
       for wP in self.__workingProcessList:
         if wP.is_alive():
-  	       stillAlive.append( wP )
+          stillAlive.append( wP )
+        else:
+	  self.__bulletCounter -= 1
       self.__workingProcessList = stillAlive
     finally:
       self.__prListLock.release()
@@ -389,6 +397,9 @@ class ProcessPool:
     :param self: self reference
     """
     self.__cleanDeadProcesses()
+    #If we are draining do not spawn processes
+    if self.__draining:
+      return
     while len( self.__workingProcessList ) < self.__minSize:
       self.__spawnWorkingProcess()
 
@@ -500,12 +511,25 @@ class ProcessPool:
       time.sleep( 0.1 )
     self.processResults()
 
-  def closeAllProcesses( self ):
-    for i in range( len( self.__workingProcessList ) ):
-      self.__killWorkingProcess()
-  
-
-  def filicide( self ):
+  def finalize( self, timeout = 10 ):
+    self.processAllResults()
+    self.__draining = True
+    try:
+      bullets = len( self.__workingProcessList ) - self.__bulletCounter
+      for i in range( bullets ):
+	self.__killWorkingProcess()
+      start = time.time()
+      self.__cleanDeadProcesses()
+      while len( self.__workingProcessList ) > 0:
+	if timeout <= 0 or time.time() - start >= timeout:
+	  break
+	time.sleep(0.1)
+	self.__cleanDeadProcesses()
+    finally:
+      self.__draining = False
+    self.__filicide()
+      
+  def __filicide( self ):
     """ Kill all children (processes :P) Kill 'em all!
     """
     wpL = [ ( wp, 0 ) for wp in self.__workingProcessList ]
