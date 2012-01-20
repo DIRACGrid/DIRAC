@@ -387,7 +387,7 @@ class ProcessPool:
         if wP.is_alive():
           stillAlive.append( wP )
         else:
-	  self.__bulletCounter -= 1
+          self.__bulletCounter -= 1
       self.__workingProcessList = stillAlive
     finally:
       self.__prListLock.release()
@@ -517,18 +517,18 @@ class ProcessPool:
     try:
       bullets = len( self.__workingProcessList ) - self.__bulletCounter
       for i in range( bullets ):
-	self.__killWorkingProcess()
+        self.__killWorkingProcess()
       start = time.time()
       self.__cleanDeadProcesses()
       while len( self.__workingProcessList ) > 0:
-	if timeout <= 0 or time.time() - start >= timeout:
-	  break
-	time.sleep(0.1)
-	self.__cleanDeadProcesses()
+        if timeout <= 0 or time.time() - start >= timeout:
+          break
+        time.sleep( 0.1 )
+        self.__cleanDeadProcesses()
     finally:
       self.__draining = False
     self.__filicide()
-      
+
   def __filicide( self ):
     """ Kill all children (processes :P) Kill 'em all!
     """
