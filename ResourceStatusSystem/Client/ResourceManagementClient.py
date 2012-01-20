@@ -48,7 +48,7 @@ class ResourceManagementClient:
     if not serviceIn:
       try:
         self.gate = ResourceManagementDB()
-      except Exception:
+      except:
         self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
     else:
       self.gate = serviceIn    
