@@ -1,7 +1,6 @@
 #################################################################
 # $HeadURL$
 #################################################################
-
 """
 ProcessPool creates a pool of worker subprocesses to handle a queue of tasks
 much like the producers/consumers paradigm. Users just need to fill the queue
@@ -15,7 +14,7 @@ where parameters are::
 
 :param int minSize: at least <minSize> workers will be alive all the time
 :param int maxSize: no more than <maxSize> workers will be alive all the time
-:param int maxQueuedRequests: size for request waiting in a queue to be executed  
+:param int maxQueuedRequests: size for task queue waiting to be executed  
 
 In case another request is added to the full queue, the execution will
 lock until another request is taken out. The ProcessPool will automatically increase and 
@@ -70,6 +69,13 @@ has to call::
 
 __RCSID__ = "$Id$"
 
+##
+# @file ProcessPool.py
+# @author Krzysztof.Ciba@NOSPAMgmail.com
+# @date 2012/01/19 09:32:30
+# @brief Definition of ProcessPool and related classes.
+
+## imports
 import multiprocessing
 import Queue
 import sys
@@ -88,316 +94,207 @@ try:
   from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 except ImportError:
   def S_OK( val = "" ):
-    return { 'OK' : True, 'Value' : val }
-  def S_ERROR( mess ):
-    return { 'OK' : False, 'Message' : mess }
+    return { "OK" : True, "Value" : val }
+  def S_ERROR( message ):
+    return { "OK" : False, "Message" : message }
+
+
+class Assassin( object ):
+  """ 
+  .. class:: Assassin
+  a dummy class to terminate daemon WorkignProcesses
+ 
+  """
+  pass
+
 
 class WorkingProcess( multiprocessing.Process ):
   """
   .. class:: WorkingProcess
 
-  WorkingProcess is a class that represents activity that is run in a separate process. 
+  Task executor in a separate subprocess.
+
   """
-
-  def __init__( self, pendingQueue, resultsQueue ):
+  def __init__( self, inQueue, outQueue, daemon = True ):
     """ c'tor
-
-    :param self: self refernce
-    :param multiprocess.Queue pendingQueue: queue storing ProcessTask before exection
-    :param multiprocess.Queue resultsQueue: queue storing callbacks and exceptionCallbacks
+    
+    :param multiprocessing.Queue inQueue: input queue
+    :param muliiprocessing.Queue iutQueue: output queue
+    :param bool daemon: flag to create daemon or not-daemon process (deafult: daemon)
     """
     multiprocessing.Process.__init__( self )
-    self.daemon = True
-    self.__working = multiprocessing.Value( 'i', 0 )
-    self.__alive = multiprocessing.Value( 'i', 1 )
-    self.__pendingQueue = pendingQueue
-    self.__resultsQueue = resultsQueue
+    if daemon:
+      self.daemon = True 
+    self.__inQueue = inQueue
+    self.__outQueue = outQueue
     self.start()
 
-  def isWorking( self ):
-    """ check if process is running
-
-    :param self: self reference
-    """
-    return self.__working.value == 1
-
-  def kill( self ):
-    """ suspend subprocess exection 
-
-    :param self: self reference
-    """
-    self.__alive.value = 0
-
   def run( self ):
-    """ task execution
-
-    reads and executes ProcessTask :task: out of pending queue and then pushes it 
-    to the results queue for callback execution
+    """ run Forrest, run!
     
     :param self: self reference
     """
-    while self.__alive.value:
-      self.__working.value = 0
-      task = self.__pendingQueue.get( block = True )
-      self.__working.value = 1
-      if not self.__alive.value:
-        self.__pendingQueue.put( task )
-        break
-      task.process()
-      if task.hasCallback():
-        self.__resultsQueue.put( task, block = True )
+    while True:
+      task = self.__inQueue.get( block = True  )
+      if isinstance( task, Assassin ):
+        return
+      else:
+        task.process()
+        if task.hasCallback():
+          self.__outQueue.put( task, block = True )
 
-
-class ProcessTask:
-  """ .. class:: ProcessTask
-  
-  Defines task to be executed in WorkingProcess together with its callbacks.
+class ProcessTask( object ):
   """
+  .. class:: ProcessTask
 
-  def __init__( self,
-                taskFunction,
-                args = None,
-                kwargs = None,
-                taskID = None,
-                callback = None,
-                exceptionCallback = None ):
+  Task to be executed in a subprocess. This is a bag object storing real code to be executed
+  together with its callbacks, results and exceptions raised during run. 
+
+  """
+  __gTaskID = 0
+  
+  def __init__( self, 
+                callMe, 
+                args = None, 
+                kwargs = None, 
+                taskID = None, 
+                callback = None, 
+                exceptCallback = None ):
     """ c'tor
-
-    :warning: taskFunction has to be callable: it could be a function, lambda OR a class with 
-    __call__ operator defined. But be carefull with interpretation of args and kwargs, as they 
-    are passed to different places in above cases:
-
-    1. for functions or lambdas args and kwargs are just treated as function parameters
     
-    2. for callable classess (say MyTask) args and kwargs are passed to class contructor 
-       (MyTask.__init__) and MyTask.__call__ should be a method without parameters, i.e. 
-       MyTask definition should be::
-
-      class MyTask:
-        def __init__( self, *args, **kwargs ):
-          ...
-        def __call__( self ):
-          ...
-
     :param self: self reference
-    :param mixed taskFunction: definition of callable object to be executed in this task
-    :param tuple args: non-keyword arguments
-    :param dict kwargs: keyword arguments
-    :param int taskID: task id
-    :param mixed callback: result callback function 
-    :param mixed exceptionCallback: callback function to be fired upon exception in taskFunction
+    :param callable callMe: callable definition that has to be executed
+    :param tuple args: unnamed args tuple
+    :param dict kwargs: named args dict
+    :param taskID: task ID
+    :param funcdef callback: callback function definition
+    :param funcdef exceptCallback: exception callback function definition 
+
     """
-    self.__taskFunction = taskFunction
-    self.__taskArgs = args or []
-    self.__taskKwArgs = kwargs or {}
+    self.__callMe = callMe
+    self.__args = args or ()
+    self.__kwargs = kwargs or {}
     self.__taskID = taskID
-    self.__resultCallback = callback
-    self.__exceptionCallback = exceptionCallback
+    if not self.__taskID:
+      self.__taskID = str(self)
+    self.__callback = callback
+    self.__exceptCallback = exceptCallback
     self.__done = False
     self.__exceptionRaised = False
     self.__taskException = None
-    self.__taskResult = None
+    self.__result = None
 
   def getTaskID( self ):
     """ taskID getter
+    
+    :param self: self reference
+    """
+    return self.__taskID
 
+  def taskID( self ):
+    """ task ID getter
+    
     :param self: self reference
     """
     return self.__taskID
 
   def hasCallback( self ):
-    """ callback existence checking 
-
-    :param self: self reference
-    :return: True if callbak or exceptionCallback has been defined, False otherwise 
-    """
-    return self.__resultCallback or self.__exceptionCallback
-
-  def exceptionRaised( self ):
-    """ flag to determine exception in process
-
-    :param self: self reference
-    """
-    return self.__exceptionRaised
-
-  def doExceptionCallback( self ):
-    """ execute exceptionCallback 
+    """ checking presence of callback or exceptCallback
     
     :param self: self reference
     """
-    if self.__done and self.__exceptionRaised and self.__exceptionCallback:
-      self.__exceptionCallback( self, self.__taskException )
+    return self.__callback or self.__exceptCallback 
 
-  def doCallback( self ):
-    """ execute result callback function
+  def callback( self ):
+    """ callback execution
 
     :param self: self reference
     """
-    if self.__done and not self.__exceptionRaised and self.__resultCallback:
-      self.__resultCallback( self, self.__taskResult )
+    if self.__done and not self.__exceptionRaised and self.__callback:
+      self.__callback( self, self.__result )
+
+  def exceptCallback( self ):
+    """ exception callback execution
+
+    :param self: self reference
+    """
+    if self.__done and self.__exceptionRaised and self.__exceptCallback:
+      self.__exceptCallback( self, self.__taskException )
+
+  def result( self ):
+    """ results getter
+
+    :param self: self reference
+    """
+    if self.__done and self.__result:
+      return self.__result
 
   def process( self ):
-    """ execute task
+    """ callMe execution
 
     :param self: self reference
     """
-    self.__done = True
     try:
-      ## it's a function?
-      if type(self.__taskFunction) is FunctionType:
-        self.__taskResult = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
-      ## or a class? 
-      elif type(self.__taskFunction) in ( TypeType, ClassType ):
-        ## create new instance
-        taskObj = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
-        ### check if it is callable, raise TypeError if not
+      if type(self.__callMe) is FunctionType:
+        self.__result = self.__callMe( *self.__args, **self.__kwargs )
+      elif type(self.__callMe) in ( TypeType, ClassType ):
+        taskObj = self.__callMe( *self.__args, **self.__kwargs )
         if not callable(taskObj):
           raise TypeError("__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
-        ### call it at least
-        self.__taskResult = taskObj()
-    except Exception, x:
-      self.__exceptionRaised = True
+        self.__result = taskObj()
+    except Exception, error:
+       self.__exceptionRaised = True
+       retDict = { "OK" : False } 
+       retDict["Message"] = "Exception"
+       retDict['Value'] = str( error )
+       retDict['Exc_info'] = sys.exc_info()[1]
+       self.__taskException = retDict
+    self.__done = True 
 
-      if not self.__exceptionCallback and gLogger:
-        gLogger.exception( "Exception in process of pool" )
+class ProcessPool( object ):
+  """ 
+  ... class:: ProcessPool
 
-      if self.__exceptionCallback:
-        retDict = S_ERROR( 'Exception' )
-        retDict['Value'] = str( x )
-        retDict['Exc_info'] = sys.exc_info()[1]
-        self.__taskException = retDict
-
-class ProcessPool:
-  """
-  .. class:: ProcessPool
-
-  
-
+  Sub-processes manager.
   """
 
-  def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10, strictLimits = True ):
+  def __init__( self, minSize=1, maxSize=4, queueSize=10 ):
     """ c'tor
+    
+    :param self: self reference
+    :param int minSize: minimal number of workers in the pool
+    :param int maxSize: maximal number of workers in the pool
+    :param int queueSize: size for queue with waiting tasks 
+    """
+    self.__queueSize = queueSize
+    self.__inQueue = multiprocessing.Queue( queueSize )
+    self.__outQueue = multiprocessing.Queue( 0 )
+    self.__minSize = max( 1, minSize )
+    self.__maxSize = max( minSize, maxSize )
+    self.__daemon = False     
+    self.__workers = list()
+    self.__destroy = False
+
+  def minSize( self ):
+    """ minSize getter
 
     :param self: self reference
-    :param int minSize: minimal number of simultaniously executed tasks
-    :param int maxSize: maximal number of simultaniously executed tasks 
-    :param int maxQueueRequests: size of pending tasks queue
-    :param bool strictLimits: flag to 
     """
-    self.__minSize = max( 1, minSize )
-    self.__maxSize = max( self.__minSize, maxSize )
-    self.__maxQueuedRequests = maxQueuedRequests
-    self.__strictLimits = strictLimits
-    self.__pendingQueue = multiprocessing.Queue( self.__maxQueuedRequests )
-    self.__resultsQueue = multiprocessing.Queue( 0 )
-    self.__workingProcessList = []
-    self.__daemonProcess = False
-    self.__spawnNeededWorkingProcesses()
+    return self.__minSize
 
-  def getMaxSize( self ):
+  def maxSize( self ):
     """ maxSize getter
 
     :param self: self reference
     """
     return self.__maxSize
 
-  def getMinSize( self ):
-    """ minSize getter
-    
-    :param self: self reference
-    """
-    return self.__minSize
-
-  def getNumWorkingProcesses( self ):
-    """ count processes currently being executed  
-    
-    :param self: self reference
-    """
-    counter = 0
-    for proc in self.__workingProcessList:
-      if proc.isWorking():
-        counter += 1
-    return counter
-
-  def getNumIdleProcesses( self ):
-    """ count processes being idle
-    
-    :param self: self reference
-    """
-    counter = 0
-    for proc in self.__workingProcessList:
-      if not proc.isWorking():
-        counter += 1
-    return counter
-
-  def getFreeSlots( self ):
-    return max( 0, self.__maxSize - self.getNumWorkingProcesses() )
-
-  def __spawnWorkingProcess( self ):
-    """ create new process 
+  def queueSize( self ):
+    """ waiting tasks queue size getter
 
     :param self: self reference
     """
-    self.__workingProcessList.append( WorkingProcess( self.__pendingQueue, self.__resultsQueue ) )
-
-  def __killWorkingProcess( self ):
-    """ suspend execution of WorkingProcesses exceeding queue limits
-
-    :param self: self reference
-    """
-    if self.__strictLimits:
-      for i in range( len( self.__workingProcessList ) ):
-        process = self.__workingProcessList[i]
-        if not process.isWorking():
-          process.kill()
-          del( self.__workingProcessList[i] )
-          break
-    else:
-      self.__workingProcessList[0].kill()
-      del( self.__workingProcessList[0] )
-
-  def __spawnNeededWorkingProcesses( self ):
-    """ create N working process (at least self.__minSize, but no more than self.__maxSize)
-   
-    :param self: self reference
-    """
-    while len( self.__workingProcessList ) < self.__minSize:
-      self.__spawnWorkingProcess()
-
-    while self.hasPendingTasks() and \
-          self.getNumIdleProcesses() == 0 and \
-          len( self.__workingProcessList ) < self.__maxSize:
-      self.__spawnWorkingProcess()
-      time.sleep( 0.1 )
-
-  def __killExceedingWorkingProcesses( self ):
-    """ suspend executuion of working processes exceeding the limits
-
-    :param self: self reference
-    """
-    toKill = len( self.__workingProcessList ) - self.__maxSize
-    for i in range ( max( toKill, 0 ) ):
-      self.__killWorkingProcess()
-    toKill = self.getNumIdleProcesses() - self.__minSize
-    for i in range ( max( toKill, 0 ) ):
-      self.__killWorkingProcess()
-
-  def queueTask( self, task, blocking = True ):
-    """ enqueue new task into pending queue
-
-    :param self: self reference
-    :param ProcessTask task: new task to execute
-    :param bool blocking: flag to block if necessary and new empty slot is available (default = block)
-    """
-    if not isinstance( task, ProcessTask ):
-      raise TypeError( "Tasks added to the process pool must be ProcessTask instances" )
-    try:
-      self.__pendingQueue.put( task, block = blocking )
-    except Queue.Full:
-      return S_ERROR( "Queue is full" )
-    # Throttle a bit to allow task state propagation
-    time.sleep( 0.01 )
-    return S_OK()
+    return self.__queueSize
 
   def createAndQueueTask( self,
                           taskFunction,
@@ -421,78 +318,123 @@ class ProcessPool:
     task = ProcessTask( taskFunction, args, kwargs, taskID, callback, exceptionCallback )
     return self.queueTask( task, blocking )
 
-  def hasPendingTasks( self ):
-    """ check if taks are present in pending queue 
-    
-    :param self: self reference
-    """
-    return not self.__pendingQueue.empty()
-
-  def isFull( self ):
-    """ check in peding queue is full
+  def queueTask( self, task, block = True ):
+    """ put task into waiting queue
 
     :param self: self reference
+    :param ProcessTask task: a task to be executed
+    :param bool block: flag for steering queue blocking
     """
-    return self.__pendingQueue.full()
+    if isinstance( task, ProcessTask ) or isinstance( task, Assassin ):
+      while True:
+        try:
+          self.__inQueue.put( task, block = block )
+          self.spawn()
+          break
+        except Queue.Full:
+          pass
+    time.sleep( 1 )
+    return { "OK" : True, "Value" : "" }
 
-  def isWorking( self ):
-    """ check existence of working subprocesses
+  def spawn( self ):
+    """ spawn new worker
 
     :param self: self reference
     """
-    return not self.__pendingQueue.empty() or self.getNumWorkingProcesses()
+    if len( self.__workers ) < self.__maxSize:
+      worker = WorkingProcess( self.__inQueue, self.__outQueue )
+      self.__workers.append( worker )
 
+  def processAllResults( self, closeQueues = True ):
+    """ finalize tasks processing
+
+    :param self: self reference
+    :param bool closeQueues: flag to steer inQueue and outQueue closure
+    """
+    self.finalize( closeQueues )
+
+  def finalize( self, closeQueues = True ):
+    """ finalize processing
+
+    :param self: self reference
+    :param bool closeQueues: flag to steer inQueue and outQueue closure
+    """
+    self.__terminateWorkers()
+    if closeQueues:
+      while True:
+        if self.__inQueue.empty():
+          self.__inQueue.close()
+          self.__inQueue = None
+          break
+      while True:
+        if self.__outQueue.empty():
+          self.__outQueue.close()
+          self.__outQueue = None
+          break
+      
   def processResults( self ):
-    """ execute tasks' callbacks removing them from results queue
+    """ callbak and exception callback execution for results read from outQueue
 
     :param self: self reference
     """
     processed = 0
     while True:
-      self.__spawnNeededWorkingProcesses()
-      time.sleep( 0.1 )
-      if self.__resultsQueue.empty():
-        self.__killExceedingWorkingProcesses()
-        break
-      task = self.__resultsQueue.get()
-      task.doExceptionCallback()
-      task.doCallback()
-      self.__killExceedingWorkingProcesses()
-      processed += 1
+      if self.__outQueue:
+        if self.__outQueue.empty():
+          break
+        task = self.__outQueue.get()
+        task.exceptCallback()
+        task.callback()
     return processed
-
-  def processAllResults( self ):
-    """ process all enqueued tasks at once
-    
-    :param self: self reference
-    """
-    while not self.__pendingQueue.empty() or self.getNumWorkingProcesses():
-      self.processResults()
-      time.sleep( 0.1 )
-    self.processResults()
-
-  def daemonize( self ):
-    """ Make ProcessPool a finite being for opening and closing doors between chambers.
-        Also just run it in a separate background thread to the death of PID 0.
-        
-    :param self: self reference
-    """
-    if self.__daemonProcess:
-      return
-    self.__daemonProcess = threading.Thread( target = self.__backgroundProcess )
-    self.__daemonProcess.setDaemon( 1 )
-    self.__daemonProcess.start()
 
   def __backgroundProcess( self ):
     """ daemon thread target
-    
+
     :param self: self reference
     """
     while True:
-      self.processResults()
-      time.sleep( 1 )
+      self.processResults()        
+      time.sleep(1)
+
+  def daemonize( self ):
+    """ Make ProcessPool a finite being for opening and closing doors between chambers.
+        Also just run it in a separate background thread to the death of PID 0 or parent process.
+
+    :param self: self reference
+    """
+    if self.__daemon:
+      return
+    self.__daemon = threading.Thread( target = self.__backgroundProcess )
+    self.__daemon.setDaemon( 1 )
+    self.__daemon.start()
+
+  def __terminateWorkers( self ):
+    """ retire all workers in the pool 
+
+    :param self: self reference
+    """
+    for i in range(len(self.__workers)):
+      while True:
+        try:
+          assasin = Assassin()
+          self.__inQueue.put( assasin  )
+          time.sleep(1)
+          break
+        except Queue.Full:    
+          pass
+ 
+    while self.__workers:
+      worker = self.__workers.pop()
+      while True:
+        if not worker.is_alive():
+          worker.terminate()
+          break     
 
 class doSomething( object ):
+  """
+  .. class doSomething:: dummy test class
+
+  """
 
   def __init__( self, number, r ):
     self.number = number
@@ -530,28 +472,19 @@ if __name__ == "__main__":
   def showException( task, exc_info ):
     print "Exception %s from %s" % ( exc_info, task )
 
-  pPool = ProcessPool( 1, 20 )
+  pPool = ProcessPool( 1, 4, 10 )
   pPool.daemonize()
 
   count = 0
   rmax = 0
-  while count < 20:
-    print "FREE SLOTS", pPool.getFreeSlots()
-    print "PENDING", pPool.hasPendingTasks()
-    if pPool.getFreeSlots() > 0:
-      print "spawning task %d" % count
-      r = random.randint( 1, 5 )
-      if r > rmax:
-        rmax = r
-      result = pPool.createAndQueueTask( doSomething, 
-                                         args = ( count, r, ),
-                                         callback = showResult,
-                                         exceptionCallback = showException )
-      count += 1
-    else:
-      print "no free slots"
-      time.sleep( 1 )
+  while count < 10:
+    r = random.randint( 1, 5 )
+    if r > rmax:
+      rmax = r
+    result = pPool.createAndQueueTask( doSomething, 
+                                       args = ( count, r, ),
+                                       callback = showResult,
+                                       exceptionCallback = showException )
+    count += 1
 
-  pPool.processAllResults()
-
-  print "Max sleep", rmax
+  pPool.processAllResults( closeQueues = True )
