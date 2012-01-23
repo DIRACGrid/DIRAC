@@ -170,10 +170,7 @@ class AdminRequired( BaseDec ):
     
     self.f.processArgs( *args, **kwargs )
     
-    gLogger.info ( self )
-    gLogger.info ( self.f )
-    gLogger.info ( args )
-    gLogger.info ( kwargs )
+    gLogger.info( dir( args[ 0 ] ) )
     
     okProperties   = set( [ 'SiteAdmin' ] )
     
