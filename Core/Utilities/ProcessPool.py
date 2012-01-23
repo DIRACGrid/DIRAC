@@ -99,13 +99,13 @@ except ImportError:
     return { "OK" : False, "Message" : message }
 
 
-class Assassin( object ):
-  """ 
-  .. class:: Assassin
-  a dummy class to terminate daemon WorkignProcesses
- 
-  """
-  pass
+#class Assassin( object ):
+#  """ 
+#  .. class:: Assassin
+#  a dummy class to terminate daemon WorkignProcesses
+# 
+#  """
+#  pass
 
 
 class WorkingProcess( multiprocessing.Process ):
@@ -136,7 +136,7 @@ class WorkingProcess( multiprocessing.Process ):
     """
     while True:
       task = self.__inQueue.get( block = True  )
-      if isinstance( task, Assassin ):
+      if not isinstance( task, ProcessTask ):
         return
       else:
         task.process()
@@ -258,6 +258,12 @@ class ProcessPool( object ):
   Sub-processes manager.
   """
 
+  class Assassin( object ):
+    """
+    ... class Assassin:: dummy class to terminate workers
+    """
+    pass
+
   def __init__( self, minSize=1, maxSize=4, queueSize=10 ):
     """ c'tor
     
@@ -272,7 +278,7 @@ class ProcessPool( object ):
     self.__minSize = max( 1, minSize )
     self.__maxSize = max( minSize, maxSize )
     self.__daemon = False     
-    self.__workers = list()
+    self.__workers = dict()
     self.__destroy = False
 
   def minSize( self ):
@@ -325,7 +331,7 @@ class ProcessPool( object ):
     :param ProcessTask task: a task to be executed
     :param bool block: flag for steering queue blocking
     """
-    if isinstance( task, ProcessTask ) or isinstance( task, Assassin ):
+    if isinstance( task, ProcessTask ) or task == True :
       while True:
         try:
           self.__inQueue.put( task, block = block )
@@ -343,7 +349,7 @@ class ProcessPool( object ):
     """
     if len( self.__workers ) < self.__maxSize:
       worker = WorkingProcess( self.__inQueue, self.__outQueue )
-      self.__workers.append( worker )
+      self.__workers[worker.pid] = worker 
 
   def processAllResults( self, closeQueues = True ):
     """ finalize tasks processing
@@ -371,6 +377,7 @@ class ProcessPool( object ):
           self.__outQueue.close()
           self.__outQueue = None
           break
+  
       
   def processResults( self ):
     """ callbak and exception callback execution for results read from outQueue
@@ -412,23 +419,27 @@ class ProcessPool( object ):
     """ retire all workers in the pool 
 
     :param self: self reference
+    :param closeQueues: 
     """
-    for i in range(len(self.__workers)):
+    for i in range( len(self.__workers) ):
       while True:
         try:
-          assasin = Assassin()
-          self.__inQueue.put( assasin  )
+          ## sending Dirty Harry with a big Magnum 0.44
+          ## but really it's just a True value
+          self.__inQueue.put( True  )
           time.sleep(1)
           break
         except Queue.Full:    
           pass
- 
+
     while self.__workers:
-      worker = self.__workers.pop()
+      pid, worker = self.__workers.items()[0]
       while True:
         if not worker.is_alive():
           worker.terminate()
+          del self.__workers[pid]
           break     
+
 
 class doSomething( object ):
   """
@@ -439,19 +450,12 @@ class doSomething( object ):
   def __init__( self, number, r ):
     self.number = number
     self.r = r
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine()
-    from DIRAC.FrameworkSystem.Client.Logger import gLogger
-    gLogger.showHeaders( True )
-    self.log = gLogger.getSubLogger( "doSomething%s" % self.number )
-  
 
   def __call__( self ):
-    self.log.error( "in call" )
+    print "in call"
     rnd = random.randint( 1, 5 )
     print "sleeping %s secs for task number %s" % ( rnd, self.number )
-    time.sleep( rnd )
-    
+    time.sleep( rnd )    
     rnd = random.random() * self.number
     if rnd < 3:
       print "raising exception for task %s" % self.number
@@ -459,6 +463,9 @@ class doSomething( object ):
     print "task number %s done" % self.number
     return { "OK" : True, "Value" : [1,2,3] }
 
+
+  def kill( self, timeout ):
+    pass
 
 
 ## test execution
@@ -488,3 +495,10 @@ if __name__ == "__main__":
     count += 1
 
   pPool.processAllResults( closeQueues = True )
+
+
+
+  print "press Ctrl^C to exit..."
+  while True:
+    pass
+
