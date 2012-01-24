@@ -29,21 +29,22 @@ import re
 import random
 
 ## from DIRAC
-from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
+from DIRAC                            import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Base.AgentModule      import AgentModule
 
 ## base classes
-from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
-from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
+from DIRAC.DataManagementSystem.private.RequestAgentBase     import RequestAgentBase
+from DIRAC.DataManagementSystem.Agent.TransferTask           import TransferTask
 
 ## DIRAC tools
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Resources.Storage.StorageFactory import StorageFactory
-from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
-from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+from DIRAC.Core.Utilities.SiteSEMapping                      import getSitesForSE
+from DIRAC.ConfigurationSystem.Client.Helpers.ResourceStatus import getStorageElementStatus
+from DIRAC.DataManagementSystem.Client.ReplicaManager        import ReplicaManager
+from DIRAC.DataManagementSystem.DB.TransferDB                import TransferDB
+from DIRAC.RequestManagementSystem.Client.RequestContainer   import RequestContainer
+from DIRAC.RequestManagementSystem.DB.RequestDBMySQL         import RequestDBMySQL
+from DIRAC.Resources.Storage.StorageFactory                  import StorageFactory
 
 ## agent name
 AGENT_NAME = 'DataManagement/TransferAgent'
@@ -1154,8 +1155,12 @@ class StrategyHandler( object ):
     """
     activeSE = []
     for se in seList:
-      res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
-      if res["OK"] and res["Value"] == "Active":
+      # This will return S_OK( { access : value } ) || S_ERROR
+      res = getStorageElementStatus( se, access , 'Unknown' )
+      
+      #res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
+      #if res["OK"] and res["Value"] == "Active":
+      if res[ "OK" ] and res[ "Value" ][ access ] == "Active":
         activeSE.append( se )
     return activeSE
 
