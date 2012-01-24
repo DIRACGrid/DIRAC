@@ -109,7 +109,6 @@ class WorkingProcess( multiprocessing.Process ):
     multiprocessing.Process.__init__( self )
     self.daemon = True
     self.__working = multiprocessing.Value( 'i', 0 )
-    self.__alive = multiprocessing.Value( 'i', 1 )
     self.__pendingQueue = pendingQueue
     self.__resultsQueue = resultsQueue
     self.start()
@@ -121,13 +120,6 @@ class WorkingProcess( multiprocessing.Process ):
     """
     return self.__working.value == 1
 
-  def kill( self ):
-    """ suspend subprocess exection 
-
-    :param self: self reference
-    """
-    self.__alive.value = 0
-
   def run( self ):
     """ task execution
 
@@ -136,22 +128,18 @@ class WorkingProcess( multiprocessing.Process ):
     
     :param self: self reference
     """
-    while self.__alive.value:
-      self.__working.value = 0
+    while True:
       try:
-        task = self.__pendingQueue.get( block = True, timeout = 1 )
+        task = self.__pendingQueue.get( block = True, timeout = 10 )
       except Queue.Empty:
-        if not self.__alive:
-          #If not alive, exit the funcCore/Utilities/ProcessPool.pytion
-          return
         continue
       if task.isBullet():
-        return
-      self.__working.value = 1
-      if not self.__alive.value:
-        self.__pendingQueue.put( task )
         break
-      task.process()
+      self.__working.value = 1
+      try:
+        task.process()
+      finally:
+        self.__working.value = 0
       if task.hasCallback():
         self.__resultsQueue.put( task, block = True )
 
@@ -508,11 +496,13 @@ class ProcessPool:
     """
     while not self.__pendingQueue.empty() or self.getNumWorkingProcesses():
       self.processResults()
-      time.sleep( 0.1 )
+      time.sleep( 1 ) 
     self.processResults()
 
   def finalize( self, timeout = 10 ):
+    #Process all tasks
     self.processAllResults()
+    #Drain via bullets processes
     self.__draining = True
     try:
       bullets = len( self.__workingProcessList ) - self.__bulletCounter
@@ -527,6 +517,12 @@ class ProcessPool:
         self.__cleanDeadProcesses()
     finally:
       self.__draining = False
+    #Terminate them (just in case)
+    for wp in self.__workingProcessList:
+      if wp.is_alive():
+        wp.terminate()
+    self.__cleanDeadProcesses()
+    #Kill 'em all!!
     self.__filicide()
 
   def __filicide( self ):
@@ -628,3 +624,4 @@ if __name__ == "__main__":
   pPool.processAllResults()
 
   print "Max sleep", rmax
+
