@@ -423,6 +423,7 @@ class ProcessPool:
       self.__pendingQueue.put( task, block = blocking )
     except Queue.Full:
       return S_ERROR( "Queue is full" )
+    self.__spawnNeededWorkingProcesses()
     # Throttle a bit to allow task state propagation
     time.sleep( 0.01 )
     return S_OK()
