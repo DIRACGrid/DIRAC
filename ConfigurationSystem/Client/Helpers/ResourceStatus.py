@@ -53,14 +53,11 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
   def getDictFromList( l ):
     
     res = {}
-    
     for le in l:
-      
       site, sType, status = le
       if not res.has_key( site ):
         res[ site ] = {}
       res[ site ][ sType ] = status
-    
     return res  
       
   
@@ -75,20 +72,31 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
     gLogger.info( _msg % ( elementName, statusType ) )
   
     
-    if statusType is not None:
-      res = gConfig.getOption( "%s/%s/%sAccess" % ( cs_path, elementName, statusType ) )
-      if res[ 'OK' ] and res[ 'Value' ]:
-        return S_OK( { elementName : { statusType : res[ 'Value' ] } }  )
-    else:
-      res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, elementName ) )
-      if res[ 'OK' ] and res[ 'Value' ]:
-        r = {}
-        for k,v in res['Value'].items():
-          k.replace( 'Access', '' )
-          if k in statuses:
-            r[ k ] = v
+    if not isinstance( elementName, list ):
+      elementName = [ elementName ]
+    
+    r = {}
+    for element in elementName:
+    
+      if statusType is not None:
+        res = gConfig.getOption( "%s/%s/%sAccess" % ( cs_path, elementName, statusType ) )
+        if res[ 'OK' ] and res[ 'Value' ]:
+          r[ elementName ] = { statusType : res[ 'Value' ] }
+        
+      else:
+        res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, elementName ) )
+        if res[ 'OK' ] and res[ 'Value' ]:
+          r2 = {}
+          for k,v in res['Value'].items():
+            k.replace( 'Access', '' )
+            if k in statuses:
+              r2[ k ] = v
               
-        return S_OK( { elementName : r } )          
+        r[ elementName ] = r2      
+        #return S_OK( { elementName : r } )          
+    
+    if r:
+      return S_OK( r )
                 
     if default is not None:
       return S_OK( { elementName : { statusType: default } } )
