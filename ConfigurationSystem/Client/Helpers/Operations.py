@@ -50,6 +50,15 @@ class Operations( object ):
 
       mergedCFG = CFG.CFG()
 
+      #Only for the /Operations transition
+      for path in ( "/Operations", "/Operations/%s" % self.__threadData.vo,
+                    "/Operations/%s/%s" % ( self.__threadData.vo, self.__threadData.setup ),
+                    "/Operations/%s" % ( self.__threadData.setup ) ):
+        pathCFG = gConfigurationData.mergedCFG[ path ]
+        if pathCFG:
+          mergedCFG = mergedCFG.mergeWith( pathCFG )
+      #End of migration
+
       for path in ( self.__getDefaultPath(), self.__getSetupPath() ):
         pathCFG = gConfigurationData.mergedCFG[ path ]
         if pathCFG:
