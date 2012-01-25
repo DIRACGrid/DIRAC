@@ -73,10 +73,10 @@ readAllowed  = []
 writeAllowed = []
 checkAllowed = []
 
-#storageCFGBase = "/Resources/StorageElements"
+storageCFGBase = "/Resources/StorageElements"
 for se in ses:
-  #res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
-  res = getStorageElementStatus( se )
+  res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
+  #res = getStorageElementStatus( se )
   if not res[ 'OK' ]:
     gLogger.error( 'Storage Element %s does not exist' % se )
     continue
@@ -95,6 +95,7 @@ for se in ses:
     else:
       gLogger.debug( "Successfully updated %s read access to Active" % se )
       readAllowed.append( se )
+
 #  if write and existingOptions['WriteAccess'] == "InActive":
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if write and existingOptions['Access'] in [ "InActive", "Banned", "Probing" ]:

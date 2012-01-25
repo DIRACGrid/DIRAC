@@ -73,11 +73,11 @@ readBanned  = []
 writeBanned = []
 checkBanned = []
 
-#storageCFGBase = "/Resources/StorageElements"
+storageCFGBase = "/Resources/StorageElements"
 for se in ses:
   
-  res = getStorageElementStatus( se )
-  #res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
+  #res = getStorageElementStatus( se )
+  res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
   if not res['OK']:
     gLogger.error( "Storage Element %s does not exist" % se )
     continue
