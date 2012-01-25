@@ -39,7 +39,7 @@ from DIRAC.DataManagementSystem.Agent.TransferTask         import TransferTask
 
 ## DIRAC tools
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
-from DIRAC.ConfigurationSystem.Client.Helpers              import getStorageElementStatus
+from DIRAC.ConfigurationSystem.Client.Helpers              import ResourceStatus
 from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
 from DIRAC.DataManagementSystem.DB.TransferDB              import TransferDB
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
@@ -1156,7 +1156,7 @@ class StrategyHandler( object ):
     activeSE = []
     for se in seList:
       # This will return S_OK( { access : value } ) || S_ERROR
-      res = getStorageElementStatus( se, access, 'Unknown' )
+      res = ResourceStatus.getStorageElementStatus( se, access, 'Unknown' )
       
       #res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
       #if res["OK"] and res["Value"] == "Active":

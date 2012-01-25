@@ -10,7 +10,7 @@ import DIRAC
 from DIRAC                                             import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient     import gDataStoreClient
-from DIRAC.ConfigurationSystem.Client.Helpers          import getStorageElementStatus
+from DIRAC.ConfigurationSystem.Client.Helpers          import ResourceStatus
 from DIRAC.Core.Utilities.File                         import makeGuid, getSize
 from DIRAC.Core.Utilities.Adler                        import fileAdler, compareAdler
 from DIRAC.Core.Utilities.List                         import sortList, randomize
@@ -2212,7 +2212,7 @@ class ReplicaManager( CatalogToStorage ):
 #    storageCFGBase = "/Resources/StorageElements"
 #    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
     
-    res = getStorageElementStatus( se, default = None )
+    res = ResourceStatus.getStorageElementStatus( se, default = None )
     
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )

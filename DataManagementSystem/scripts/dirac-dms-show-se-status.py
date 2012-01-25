@@ -17,7 +17,7 @@ Script.parseCommandLine()
 
 import DIRAC
 from DIRAC                                    import gConfig,gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers import getStorageElementStatus
+from DIRAC.ConfigurationSystem.Client.Helpers import ResourceStatus
 from DIRAC.Core.Utilities.List                import sortList
 
 storageCFGBase = "/Resources/StorageElements"
@@ -31,7 +31,7 @@ if not res[ 'OK' ]:
 gLogger.info( "%s %s %s" % ( 'Storage Element'.ljust( 25 ), 'Read Status'.rjust( 15 ), 'Write Status'.rjust( 15 ) ) )
 
 for se in sortList( res[ 'Value' ] ):
-  res = getStorageElementStatus( se )
+  res = ResourceStatus.getStorageElementStatus( se )
   #res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
   if not res[ 'OK' ]:
     gLogger.error( "Failed to get options dict for %s" % se )

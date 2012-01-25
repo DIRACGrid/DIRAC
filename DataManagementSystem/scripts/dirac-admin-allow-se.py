@@ -40,7 +40,7 @@ for switch in Script.getUnprocessedSwitches():
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC                                           import gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers        import getStorageElementStatus, setStorageElementStatus
+from DIRAC.ConfigurationSystem.Client.Helpers        import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
 from DIRAC.Core.Utilities.List                       import intListToString
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
@@ -76,7 +76,7 @@ checkAllowed = []
 storageCFGBase = "/Resources/StorageElements"
 for se in ses:
   res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
-  #res = getStorageElementStatus( se )
+  #res = ResourceStatus.getStorageElementStatus( se )
   if not res[ 'OK' ]:
     gLogger.error( 'Storage Element %s does not exist' % se )
     continue
@@ -88,7 +88,7 @@ for se in ses:
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if read and existingOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:
       
-    resR = setStorageElementStatus( se, 'Read', 'Active', reason, userName )
+    resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
     #res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "Active" )
     if not resR['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
@@ -100,7 +100,7 @@ for se in ses:
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if write and existingOptions['Access'] in [ "InActive", "Banned", "Probing" ]:
     #res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "Active" )
-    resW = setStorageElementStatus( se, 'Write', 'Active', reason, userName )
+    resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
@@ -109,7 +109,7 @@ for se in ses:
 #  if check and existingOptions['CheckAccess'] == "InActive":
   # InActive is used on the CS model, Banned is the equivalent in RSS 
   if check and existingOptions['Check'] in [ "InActive", "Banned", "Probing" ]:
-    resC = setStorageElementStatus( se, 'Check', 'Active', reason, userName )
+    resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
     #res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "Active" )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Active" % se )
