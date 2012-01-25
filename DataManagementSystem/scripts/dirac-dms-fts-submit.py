@@ -19,7 +19,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 
 Script.parseCommandLine()
 from DIRAC.DataManagementSystem.Client.FTSRequest     import FTSRequest
-import os, sys
+import os
 
 args = Script.getPositionalArgs()
 
