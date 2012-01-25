@@ -2219,10 +2219,10 @@ class ReplicaManager( CatalogToStorage ):
     
     seStatus = { 'Read' : True, 'Write' : True }
 #    if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
-    if ( res[ 'Value' ].has_key( 'Read' ) ) and ( res[ 'Value' ][ 'Read' ] not in [ 'Active', 'Bad' ] ):
+    if ( res[ 'Value' ][se].has_key( 'Read' ) ) and ( res[ 'Value' ][se][ 'Read' ] not in [ 'Active', 'Bad' ] ):
       seStatus[ 'Read' ] = False
 #    if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
-    if ( res[ 'Value' ].has_key( 'Write' ) ) and ( res[ 'Value' ][ 'Write' ] not in [ 'Active', 'Bad' ] ):
+    if ( res[ 'Value' ][se].has_key( 'Write' ) ) and ( res[ 'Value' ][se][ 'Write' ] not in [ 'Active', 'Bad' ] ):
       seStatus[ 'Write' ] = False
       
     return S_OK( seStatus )
