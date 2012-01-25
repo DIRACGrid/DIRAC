@@ -1154,14 +1154,21 @@ class StrategyHandler( object ):
     :param str access: storage element accesss, could be 'Read' (default), 'Write', 'Check' or 'Remove' 
     """
     activeSE = []
-    for se in seList:
-      # This will return S_OK( { access : value } ) || S_ERROR
-      res = ResourceStatus.getStorageElementStatus( se, access, 'Unknown' )
-      
-      #res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
-      #if res["OK"] and res["Value"] == "Active":
-      if res[ "OK" ] and res[ "Value" ][ access ] in [ "Active", "Bad" ]:
-        activeSE.append( se )
+    
+    # This will return S_OK( { se : { access : value,... },... } ) || S_ERROR
+    res = ResourceStatus.getStorageElementStatus( se, access, 'Unknown' )
+    if res[ 'OK' ] and res['Value']:
+      for v in res['Value'].values():
+        if v.has_key( access ) and v[ access ] in [ 'Active', 'Bad' ]:
+          activeSE.append( se )
+    
+    #for se in seList:  
+    #     
+    #  res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
+    #  #if res["OK"] and res["Value"] == "Active":
+    #  if res[ "OK" ] and res[ "Value" ]:
+    #    if res['Value'][se][ access ] in [ "Active", "Bad" ]:
+    #      activeSE.append( se )
     return activeSE
 
   def __getChannelSitesForSE( self, storageElement ):
