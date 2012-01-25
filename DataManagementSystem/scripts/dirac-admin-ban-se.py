@@ -73,21 +73,20 @@ readBanned  = []
 writeBanned = []
 checkBanned = []
 
-storageCFGBase = "/Resources/StorageElements"
-for se in ses:
+res = ResourceStatus.getStorageElementStatus( ses )
+if not res['OK']:
+  gLogger.error( "Storage Element %s does not exist" % se )
+  continue
+
+reason = 'Forced with dirac-admin-ban-se by %s' % userName
+
+for se,seOptions in res[ 'Value' ].items():  
   
-  #res = ResourceStatus.getStorageElementStatus( se )
-  res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
-  if not res['OK']:
-    gLogger.error( "Storage Element %s does not exist" % se )
-    continue
-  
-  existingOptions = res[ 'Value' ]
-  reason          = 'Forced with dirac-admin-ban-se by %s' % userName
+  resW = resC = resR = { 'OK' : False }
   
   # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
-  if read and existingOptions[ 'Read' ] in [ 'Active', 'Bad' ]:  
-  #if read and existingOptions['ReadAccess'] == "Active":
+  if read and seOptions.has_key( 'Read' ) and seOptions[ 'Read' ] in [ 'Active', 'Bad' ]:  
+
     resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
     if not resR['OK']:
@@ -97,8 +96,8 @@ for se in ses:
       readBanned.append( se )
       
   # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
-  if write and existingOptions[ 'Write' ] in [ 'Active', 'Bad' ]:    
-  #if write and existingOptions['WriteAccess'] == "Active":
+  if write and seOptions.has_key( 'Write' ) and seOptions[ 'Write' ] in [ 'Active', 'Bad' ]:    
+
     resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
     if not resW['OK']:
@@ -108,8 +107,8 @@ for se in ses:
       writeBanned.append( se )
       
   # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
-  if check and existingOptions[ 'Check' ] in [ 'Active', 'Bad' ]:    
-  #if check and existingOptions['CheckAccess'] == "Active":
+  if check and seOptions.has_key( 'Check' ) and seOptions[ 'Check' ] in [ 'Active', 'Bad' ]:    
+
     resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
     if not resC['OK']:
