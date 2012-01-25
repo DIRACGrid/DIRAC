@@ -57,7 +57,9 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
     for le in l:
       
       site, sType, status = le
-      res[ site ]         = { sType : status }
+      if not res.has_key( site ):
+        res[ site ] = {}
+      res[ site ][ sType ] = status
     
     return res  
       
