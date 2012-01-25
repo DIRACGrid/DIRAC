@@ -116,7 +116,7 @@ for se,seOptions in res[ 'Value' ].items():
 
 #res = csAPI.commitChanges()
   if not resR['OK'] or not resW['OK'] or not resC['OK']:
-    gLogger.error( "Failed to commit changes to CS", res['Message'] )
+    gLogger.error( "Failed to commit changes to CS" )
     DIRAC.exit( -1 )
 
 if not ( writeAllowed or readAllowed or checkAllowed ):

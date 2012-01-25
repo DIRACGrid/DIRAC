@@ -118,7 +118,7 @@ for se,seOptions in res[ 'Value' ].items():
       checkBanned.append( se )
  
   if not resR['OK'] or not resW['OK'] or not resC['OK']:
-    gLogger.error( "Failed to commit changes to CS", res['Message'] )
+    gLogger.error( "Failed to commit changes to CS" )
     DIRAC.exit( -1 ) 
       
 #res = csAPI.commitChanges()
