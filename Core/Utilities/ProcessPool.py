@@ -85,6 +85,11 @@ except ImportError:
   gLogger = False
 
 try:
+  from DIRAC.Core.Utilities.LockRing import LockRing
+except ImportError:
+  LockRing = False
+
+try:
   from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 except ImportError:
   def S_OK( val = "" ):
@@ -108,6 +113,11 @@ class WorkingProcess( multiprocessing.Process ):
     """
     multiprocessing.Process.__init__( self )
     self.daemon = True
+    if LockRing:
+      #Reset all locks
+      lr = LockRing()
+      lr._openAll()
+      lr._setAllEvents()
     self.__working = multiprocessing.Value( 'i', 0 )
     self.__pendingQueue = pendingQueue
     self.__resultsQueue = resultsQueue
@@ -497,7 +507,7 @@ class ProcessPool:
     """
     while not self.__pendingQueue.empty() or self.getNumWorkingProcesses():
       self.processResults()
-      time.sleep( 1 ) 
+      time.sleep( 1 )
     self.processResults()
 
   def finalize( self, timeout = 10 ):

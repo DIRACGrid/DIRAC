@@ -2,7 +2,6 @@
 __RCSID__ = "$Id$"
 
 import tarfile
-import threading
 import os
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
