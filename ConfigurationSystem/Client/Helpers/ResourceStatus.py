@@ -25,9 +25,9 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
   
   example:
     >>> getStorageElementStatus( 'CERN-USER', 'Read' )
-        S_OK( { 'Read': 'Active' } )
+        S_OK( { 'CERN-USER' : { 'Read': 'Active' } } )
     >>> getStorageElementStatus( 'CERN-USER', 'Write' )
-        S_OK( {'Read': 'Active', 'Write': 'Active', 'Check': 'Banned', 'Remove': 'Banned'} )
+        S_OK( { 'CERN-USER' : {'Read': 'Active', 'Write': 'Active', 'Check': 'Banned', 'Remove': 'Banned'}} )
     >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType' ) 
         S_ERROR( xyz.. )
     >>> getStorageElementStatus( 'CERN-USER', 'ThisIsAWrongStatusType', 'Unknown' ) 
@@ -35,7 +35,7 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
   
   '''
   
-  meta        = { 'columns' : [ 'StatusType','Status' ] }
+  meta        = { 'columns' : [ 'StorageElementName','StatusType','Status' ] }
   kwargs      = { 
                   'elementName' : elementName,
                   'statusType'  : statusType, 
@@ -50,12 +50,24 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
   else:
     statuses = []  
   
+  def getDictFromList( l ):
+    
+    res = {}
+    
+    for le in l:
+      
+      site, sType, status = le
+      res[ site ]         = { sType : status }
+    
+    return res  
+      
+  
   try:
   
     #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
     res = rsc.getElementStatus( 'StorageElement', **kwargs )
     if res[ 'OK' ] and res['Value']:
-      return S_OK( dict( res['Value'] ) )
+      return S_OK( getDictFromList( res['Value'] ) )
   
     _msg = "StorageElement '%s', with statusType '%s' not found in RSS"
     gLogger.info( _msg % ( elementName, statusType ) )
@@ -64,7 +76,7 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
     if statusType is not None:
       res = gConfig.getOption( "%s/%s/%sAccess" % ( cs_path, elementName, statusType ) )
       if res[ 'OK' ] and res[ 'Value' ]:
-        return S_OK( { statusType : res[ 'Value' ] } )
+        return S_OK( { elementName : { statusType : res[ 'Value' ] } }  )
     else:
       res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, elementName ) )
       if res[ 'OK' ] and res[ 'Value' ]:
@@ -74,10 +86,10 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
           if k in statuses:
             r[ k ] = v
               
-        return S_OK( r )          
+        return S_OK( { elementName : r } )          
                 
     if default is not None:
-      return S_OK( { statusType: default } )
+      return S_OK( { elementName : { statusType: default } } )
   
     _msg = "StorageElement '%s', with statusType '%s' is unknown for RSS and CS"
     return S_ERROR( _msg % ( elementName, statusType ) )
