@@ -534,7 +534,8 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    queryTime = res['Value'].get('QueryTime',-1.)
+    return S_OK( {'Successful':successful,'Failed':failed,'QueryTime':queryTime} )
     
   #######################################################################
   #
@@ -622,3 +623,4 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
+  

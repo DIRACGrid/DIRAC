@@ -542,10 +542,12 @@ class DirectoryTreeBase:
         
     return S_OK({'Successful':successful,'Failed':failed})      
   
-  def getDirectorySize(self,lfns,longOutput=False):
+  def getDirectorySize(self,lfns,longOutput=False,rawFileTables=False):
     """ Get the total size of the requested directories. If long flag
         is True, get also physical size per Storage Element
     """
+    start = time.time()
+
     result = self.db._getConnection()
     if not result['OK']:
       return result
@@ -563,8 +565,12 @@ class DirectoryTreeBase:
     
     if longOutput:
       # Continue with only successful directories
-      resultPhysical = self._getDirectoryPhysicalSize(resultDict['Successful'],connection)
+      if rawFileTables:
+        resultPhysical = self._getDirectoryPhysicalSize(resultDict['Successful'],connection)
+      else:
+        resultPhysical = self._getDirectoryPhysicalSizeFromUsage(resultDict['Successful'],connection)
       if not resultPhysical['OK']:
+        resultDict['QueryTime'] = time.time() - start
         result = S_OK(resultDict)
         result['Message'] = "Failed to get the physical size on storage"
         connection.close()
@@ -572,6 +578,7 @@ class DirectoryTreeBase:
       for lfn in resultPhysical['Value']['Successful']:
         resultDict['Successful'][lfn]['PhysicalSize'] = resultPhysical['Value']['Successful'][lfn]
     connection.close()
+    resultDict['QueryTime'] = time.time() - start
     return S_OK(resultDict)            
   
   def _getDirectoryLogicalSize(self,lfns,connection):
@@ -581,41 +588,99 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for path in paths:
-      result = self.findDir(path)
-      if not result['OK']:
-        failed[path] = "Directory not found"
-        continue
-      if not result['Value']:
-        failed[path] = "Directory not found"
-        continue
-      dirID = result['Value']
-      result = self.getSubdirectoriesByID(dirID,requestString=True)
-      if not result['OK']:
-        failed[path] = result['Message']
-      else:
-        dirString = result['Value']
 
-        if path == '/':
-          req = "SELECT SUM(Size) FROM FC_Files" 
-          result = self.db._query(req,connection)
-        else:
-          req = "CREATE TEMPORARY TABLE DirTmp ENGINE=MEMORY %s" % dirString
-          result = self.db._query(req,connection)
-          if result['OK']:
-            result = self.db._insert('DirTmp',['DirID'],[dirID],connection) 
-            if result['OK']:           
-              req = "SELECT SUM(F.Size) FROM FC_Files as F, DirTmp as T WHERE F.DirID=T.DirID" 
-              result = self.db._query(req,connection)
-    
+      if path == "/":
+        req = "SELECT SUM(Size),COUNT(*) FROM FC_Files" 
+        reqDir = "SELECT count(*) FROM FC_DirectoryInfo"
+      else:
+        result = self.findDir(path)
+        if not result['OK']:
+          failed[path] = "Directory not found"
+          continue
+        if not result['Value']:
+          failed[path] = "Directory not found"
+          continue
+        dirID = result['Value']
+        result = self.getSubdirectoriesByID(dirID,requestString=True,includeParent=True)
         if not result['OK']:
           failed[path] = result['Message']
-        elif not result['Value']:
-          successful[path] = {"LogicalSize":0}
-        elif result['Value'][0][0]:
-          successful[path] = {"LogicalSize":int(result['Value'][0][0])}
+          continue
         else:
-          successful[path] = {"LogicalSize":0}
+          dirString = result['Value']
+          req = "SELECT SUM(F.Size),COUNT(*) FROM FC_Files as F JOIN (%s) as T WHERE F.DirID=T.DirID" % dirString 
+          reqDir = dirString.replace('SELECT DirID FROM','SELECT count(*) FROM')
+
+      result = self.db._query(req,connection)
+      if not result['OK']:
+        failed[path] = result['Message']
+      elif not result['Value']:
+        successful[path] = {"LogicalSize":0,"LogicalFiles":0,'LogicalDirectories':0}
+      elif result['Value'][0][0]:
+        successful[path] = {"LogicalSize":int(result['Value'][0][0]),
+                            "LogicalFiles":int(result['Value'][0][1])}
+        result = self.db._query(reqDir,connection)
+        if result['OK'] and result['Value']:
+          successful[path]['LogicalDirectories'] = result['Value'][0][0]
+        else:
+          successful[path]['LogicalDirectories'] = -1
+
+         
+      else:
+        successful[path] = {"LogicalSize":0,"LogicalFiles":0,'LogicalDirectories':0}
+
     return S_OK({'Successful':successful,'Failed':failed})  
+  
+  def _getDirectoryPhysicalSizeFromUsage(self,lfns,connection):
+    """ Get the total size of the requested directories
+    """
+    paths = lfns.keys()
+    successful = {}
+    failed = {}
+    for path in paths:
+
+      if path == '/':
+        req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
+        req += "  WHERE S.SEID=D.SEID"
+      else:
+        result = self.findDir(path)
+        if not result['OK']:
+          failed[path] = "Directory not found"
+          continue
+        if not result['Value']:
+          failed[path] = "Directory not found"
+          continue
+        dirID = result['Value']
+        result = self.getSubdirectoriesByID(dirID,requestString=True,includeParent=True)
+        if not result['OK']:
+          return result
+        subDirString = result['Value'] 
+        req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
+        req += " JOIN (%s) AS F" % subDirString
+        req += " WHERE S.SEID=D.SEID AND D.DirID=F.DirID"
+
+      result = self.db._query(req,connection)       
+      if not result['OK']:
+        failed[path] = result['Message']
+      elif not result['Value']:
+        successful[path] = {}
+      elif result['Value'][0][0]:
+        seDict = {}
+        totalSize = 0
+        totalFiles = 0
+        for seName,seSize,seFiles in result['Value']:
+          sfDict = seDict.get( seName,{'Size':0,'Files':0} )
+          sfDict['Size'] += seSize
+          sfDict['Files'] += seFiles
+          seDict[seName] = sfDict
+          totalSize += seSize
+          totalFiles += seFiles
+        seDict['TotalSize'] = int(totalSize)
+        seDict['TotalFiles'] = int(totalFiles)  
+        successful[path] = seDict  
+      else:
+        successful[path] = {} 
+          
+    return S_OK({'Successful':successful,'Failed':failed})       
   
   def _getDirectoryPhysicalSize(self,lfns,connection):
     """ Get the total size of the requested directories
@@ -624,27 +689,30 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for path in paths:
-#      result = self.findDir(path)
-#      if not result['OK']:
-#        failed[path] = "Directory not found"
-#        continue
-#      if not result['Value']:
-#        failed[path] = "Directory not found"
-#        continue
-#      dirID = result['Value']
-#      result = self.getSubdirectoriesByID( dirID,requestString=True )
-#      if not result['OK']:
-#        failed[path] = result['Message']
-#      else:
-#        dirString = result['Value']
       if path == '/':
-        req = "SELECT SUM(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S "
+        req = "SELECT SUM(F.Size),COUNT(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S "
         req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID "
         req += "GROUP BY S.SEID"   
       else:
-        req = "SELECT SUM(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S, DirTmp as T "
-        req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID=T.DirID "
-        req += "GROUP BY S.SEID"        
+        result = self.findDir(path)
+        if not result['OK']:
+          failed[path] = "Directory not found"
+          continue
+        if not result['Value']:
+          failed[path] = "Directory not found"
+          continue
+        dirID = result['Value']
+        result = self.getSubdirectoriesByID( dirID,requestString=True,includeParent=True )
+        if not result['OK']:
+          failed[path] = result['Message']
+          continue
+        else:
+          dirString = result['Value']
+
+          req = "SELECT SUM(F.Size),COUNT(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S JOIN (%s) as T " % dirString
+          req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID=T.DirID "
+          req += "GROUP BY S.SEID"        
+
       result = self.db._query(req,connection)        
       if not result['OK']:
         failed[path] = result['Message']
@@ -652,11 +720,14 @@ class DirectoryTreeBase:
         successful[path] = {}
       elif result['Value'][0][0]:
         seDict = {}
-        total = 0
-        for size,seName in result['Value']:
-          seDict[seName] = int(size)
-          total += size
-        seDict['Total'] = int(total)  
+        totalSize = 0
+        totalFiles = 0
+        for size,files,seName in result['Value']:
+          seDict[seName] = {"Size":int(size),"Files":int(files)}
+          totalSize += size
+          totalFiles += files
+        seDict['TotalSize'] = int(totalSize)
+        seDict['TotalFiles'] = int(totalFiles)  
         successful[path] = seDict
       else:
         successful[path] = {} 
