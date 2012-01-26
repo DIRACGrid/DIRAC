@@ -167,7 +167,6 @@ class RequestAgentBase( AgentModule ):
   def deleteRequest( self, requestName ):
     """ delete request from requestHolder
 
-<<<<<<< HEAD
     :param self: self reference
     """
     if requestName in self.__requestHolder:
@@ -191,12 +190,10 @@ class RequestAgentBase( AgentModule ):
         self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
       self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
-=======
+
     ## register callbacks
     self.registerCallBack( defaultCallback )
     self.registerExceptionCallBack( defaultExceptionCallback )
-
->>>>>>> 49151b99fe9a8f20f117cf312fa4aa8f944b29d1
 
   def configPath( self ):
     """ config path getter
@@ -380,11 +377,7 @@ class RequestAgentBase( AgentModule ):
           self.log.always("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
                                                            kwargs = requestDict,
-<<<<<<< HEAD
                                                            taskID = requestDict["requestName"],
-=======
-                                                           taskID = taskID,
->>>>>>> 49151b99fe9a8f20f117cf312fa4aa8f944b29d1
                                                            callback = self.requestCallback(),
                                                            exceptionCallback = self.exceptionCallback(),
                                                            blocking = True )
@@ -398,11 +391,6 @@ class RequestAgentBase( AgentModule ):
             time.sleep( 0.1 )
             ## break enqueue while
             break
-<<<<<<< HEAD
-=======
-      ## process task
-      ret = self.processPool().processResults()
->>>>>>> 49151b99fe9a8f20f117cf312fa4aa8f944b29d1
 
     return S_OK()
 
