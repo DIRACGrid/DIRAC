@@ -169,17 +169,7 @@ class PDP:
       if res['Status'] == 'Unknown':
         res = self.__useOldPolicyRes(name = name, policyName = pName)
 
-      if res['Status'] == 'NeedConfirmation':
-        pName = p['ConfirmationPolicy']
-        triggeredPolicy = self.ig.C_Policies[pName]
-        pModule = triggeredPolicy['module']
-        extraArgs = triggeredPolicy['args']
-        commandIn = triggeredPolicy['commandIn']
-        res = self.pc.policyInvocation(granularity = granularity, name = name,
-                                       status = status, policy = policy, args = args, pName = pName,
-                                       pModule = pModule, extraArgs = extraArgs, commandIn = commandIn)
-
-      if res['Status'] not in ('Error', 'Unknown', 'NeedConfirmation'):
+      if res['Status'] not in ( 'Error', 'Unknown' ):
         policyResults.append(res)
 
     return policyResults
