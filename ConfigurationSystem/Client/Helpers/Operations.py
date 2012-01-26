@@ -1,7 +1,7 @@
 import threading
 import types
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import CFG
+from DIRAC.Core.Utilities import CFG, LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -9,7 +9,7 @@ class Operations( object ):
 
   __cache = {}
   __cacheVersion = 0
-  __cacheLock = threading.Lock()
+  __cacheLock = LockRing.LockRing().getLock( "CSOperations.cache" )
 
   def __init__( self, vo = False, group = False, setup = False ):
     self.__threadData = threading.local()
