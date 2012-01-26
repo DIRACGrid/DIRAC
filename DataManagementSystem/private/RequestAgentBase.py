@@ -45,7 +45,7 @@ def defaultCallback( task, ret ):
   :param task: subprocess task
   :param ret: return from RequestTask.__call__ (S_OK/S_ERROR)
   """
-  log = gLogger.getSubLogger( "defaultCallback" )
+  log = gLogger.getSubLogger( "defaultCallback/%s" % task.getTaskID() )
   log.showHeaders( True )
   log.setLevel( "INFO" )
 
@@ -53,7 +53,13 @@ def defaultCallback( task, ret ):
   if not ret["OK"]: 
     log.error( ret["Message"] )
     return
-  log.always( ret["Value"] )
+  log.info( ret["Value"] )
+
+  ## remove request from agent cache
+  for item in globals():
+    if isinstance( item, RequestAgentBase ):
+      item.deleteRequest( test.getTaskID() )
+
   if "monitor" in ret["Value"]:
     monitor = ret["Value"]["monitor"]
     for mark, value in monitor.items():
@@ -68,10 +74,19 @@ def defaultExceptionCallback( task, exc_info ):
   :param task: subprocess task
   :param exc_info: exception info
   """
-  log = gLogger.getSubLogger( "exceptionCallback" )
+  log = gLogger.getSubLogger( "exceptionCallback/%s" % task.getTaskID() )
   log.showHeaders( True )
   log.setLevel( "EXCEPTION" )
   log.exception( "exception %s from task taskID=%d" % ( str(exc_info), task.getTaskID() ) ) )
+<<<<<<< HEAD
+
+  ## remove request from agent cache
+  for item in globals():
+    if isinstance( item, RequestAgentBase ):
+      item.deleteRequest( task.getTaskDI() )
+
+=======
+>>>>>>> 49151b99fe9a8f20f117cf312fa4aa8f944b29d1
 
 
 ########################################################################
@@ -104,6 +119,8 @@ class RequestAgentBase( AgentModule ):
   __exceptionCallback = None
   ## config path in CS
   __configPath = None
+  ## read request holder 
+  __requestHolder = None
 
   def __init__( self, agentName, baseAgentName=False, properties=dict() ):
     """ c'tor
@@ -118,7 +135,7 @@ class RequestAgentBase( AgentModule ):
     ## save config path
     self.__configPath = PathFinder.getAgentSection( agentName )
     self.log.info( "Will use %s config path" % self.__configPath )
-  
+    
 
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", 10 )
     self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
@@ -135,17 +152,51 @@ class RequestAgentBase( AgentModule ):
     self.log.info( "Will use DataManager proxy by default." )
 
     ## common monitor activity 
-    self.monitor.registerActivity( "Iteration", "Agent Loops", 
-                                   self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Execute", "Request Processed", 
-                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Done", "Request Completed", 
-                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
-
+    self.monitor.registerActivity( "Iteration", "Agent Loops", self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Execute", "Request Processed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Done", "Request Completed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+      
     ## register callbacks
     self.registerCallBack( defaultCallback )
     self.registerExceptionCallBack( defaultExceptionCallback )
 
+    ## create request dict
+    self.__requestHolder = dict()
+
+  @classmethod
+  def deleteRequest( self, requestName ):
+    """ delete request from requestHolder
+
+<<<<<<< HEAD
+    :param self: self reference
+    """
+    if requestName in self.__requestHolder:
+      del self.__requestHolder[requestName]
+
+  def saveRequest( self, requestName, requestString, requestServer ):
+    if requestName not in self.__requestHolder:
+      self.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
+      return S_OK()
+    return S_ERROR("saveRequest: request %s canot be saved, it's already in requestHolder")
+
+  def resetRequests( self ):
+    """ put back requests without callback called into requestClient 
+
+    :param self: self reference
+    """
+    for requestName, requestTuple  in self.__requestHolder:
+      requestString, requestServer = requestTuple
+      reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
+      if not reset["OK"]:
+        self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        continue
+      self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
+=======
+    ## register callbacks
+    self.registerCallBack( defaultCallback )
+    self.registerExceptionCallBack( defaultExceptionCallback )
+
+>>>>>>> 49151b99fe9a8f20f117cf312fa4aa8f944b29d1
 
   def configPath( self ):
     """ config path getter
@@ -274,7 +325,11 @@ class RequestAgentBase( AgentModule ):
       gLogger.error( msg, res["Message"] )
       return res
     requestDict["executionOrder"] = res["Value"]
-    ## return requestDict
+    ## save this request
+    self.saveRequest( requestDict["requestName"], 
+                      requestDict["requestString"], 
+                      requestDict["sourceServer"] )
+    ## return requestDict at least
     return S_OK( requestDict )
 
   def setRequestType( self, requestType ):
@@ -325,7 +380,11 @@ class RequestAgentBase( AgentModule ):
           self.log.always("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
                                                            kwargs = requestDict,
+<<<<<<< HEAD
+                                                           taskID = requestDict["requestName"],
+=======
                                                            taskID = taskID,
+>>>>>>> 49151b99fe9a8f20f117cf312fa4aa8f944b29d1
                                                            callback = self.requestCallback(),
                                                            exceptionCallback = self.exceptionCallback(),
                                                            blocking = True )
@@ -339,8 +398,11 @@ class RequestAgentBase( AgentModule ):
             time.sleep( 0.1 )
             ## break enqueue while
             break
+<<<<<<< HEAD
+=======
       ## process task
       ret = self.processPool().processResults()
+>>>>>>> 49151b99fe9a8f20f117cf312fa4aa8f944b29d1
 
     return S_OK()
 
@@ -349,6 +411,10 @@ class RequestAgentBase( AgentModule ):
 
     :param self: self reference
     """
+    ## finalize all processing
     self.processPool().processAllResults()
+    ## reset failover requests for further processing 
+    self.resetRequests()
+    ## good bye, all done!
     return S_OK()
   
