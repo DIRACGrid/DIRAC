@@ -1,10 +1,10 @@
 
 import os
-import threading
 import cStringIO
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List, Time
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -387,7 +387,7 @@ class TransferRelay( TransferClient ):
 class MessageForwarder:
 
   def __init__( self, msgBroker ):
-    self.__inOutLock = threading.Lock()
+    self.__inOutLock = LockRing().getLock( "DISET.MsgFwd.IO" )
     self.__msgBroker = msgBroker
     self.__byClient = {}
     self.__srvToCliTrid = {}

@@ -4,10 +4,10 @@ __RCSID__ = "$Id$"
 import time
 import copy
 import os.path
-import threading
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.Network import checkHostsMatch
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -16,7 +16,7 @@ class SocketInfo:
 
   __cachedCAsCRLs = False
   __cachedCAsCRLsLastLoaded = 0
-  __cachedCAsCRLsLoadLock = threading.Lock()
+  __cachedCAsCRLsLoadLock = LockRing().getLock( "DISET.SocketInfo.CAs" )
 
 
   def __init__( self, infoDict, sslContext = False ):

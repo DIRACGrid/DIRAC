@@ -71,18 +71,23 @@ has to call::
 __RCSID__ = "$Id$"
 
 import multiprocessing
-import Queue
 import sys
 import time
 import threading
 import os
-import string 
+import signal
+import Queue
 from types import *
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
 except ImportError:
   gLogger = False
+
+try:
+  from DIRAC.Core.Utilities.LockRing import LockRing
+except ImportError:
+  LockRing = False
 
 try:
   from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -108,8 +113,12 @@ class WorkingProcess( multiprocessing.Process ):
     """
     multiprocessing.Process.__init__( self )
     self.daemon = True
+    if LockRing:
+      #Reset all locks
+      lr = LockRing()
+      lr._openAll()
+      lr._setAllEvents()
     self.__working = multiprocessing.Value( 'i', 0 )
-    self.__alive = multiprocessing.Value( 'i', 1 )
     self.__pendingQueue = pendingQueue
     self.__resultsQueue = resultsQueue
     self.start()
@@ -121,13 +130,6 @@ class WorkingProcess( multiprocessing.Process ):
     """
     return self.__working.value == 1
 
-  def kill( self ):
-    """ suspend subprocess exection 
-
-    :param self: self reference
-    """
-    self.__alive.value = 0
-
   def run( self ):
     """ task execution
 
@@ -136,17 +138,24 @@ class WorkingProcess( multiprocessing.Process ):
     
     :param self: self reference
     """
-    while self.__alive.value:
-      self.__working.value = 0
-      task = self.__pendingQueue.get( block = True )
-      self.__working.value = 1
-      if not self.__alive.value:
-        self.__pendingQueue.put( task )
+    while True:
+      try:
+        task = self.__pendingQueue.get( block = True, timeout = 10 )
+      except Queue.Empty:
+        continue
+      if task.isBullet():
         break
-      task.process()
+      self.__working.value = 1
+      try:
+        task.process()
+      finally:
+        self.__working.value = 0
       if task.hasCallback():
         self.__resultsQueue.put( task, block = True )
 
+class BulletTask:
+  def isBullet( self ):
+    return True
 
 class ProcessTask:
   """ .. class:: ProcessTask
@@ -198,6 +207,9 @@ class ProcessTask:
     self.__taskException = None
     self.__taskResult = None
 
+  def isBullet( self ):
+    return False
+
   def getTaskID( self ):
     """ taskID getter
 
@@ -238,21 +250,21 @@ class ProcessTask:
 
   def process( self ):
     """ execute task
-
+    
     :param self: self reference
     """
     self.__done = True
     try:
       ## it's a function?
-      if type(self.__taskFunction) is FunctionType:
+      if type( self.__taskFunction ) is FunctionType:
         self.__taskResult = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
       ## or a class? 
-      elif type(self.__taskFunction) in ( TypeType, ClassType ):
+      elif type( self.__taskFunction ) in ( TypeType, ClassType ):
         ## create new instance
         taskObj = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
         ### check if it is callable, raise TypeError if not
-        if not callable(taskObj):
-          raise TypeError("__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
+        if not callable( taskObj ):
+          raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
     except Exception, x:
@@ -270,9 +282,6 @@ class ProcessTask:
 class ProcessPool:
   """
   .. class:: ProcessPool
-
-  
-
   """
 
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10, strictLimits = True ):
@@ -290,7 +299,11 @@ class ProcessPool:
     self.__strictLimits = strictLimits
     self.__pendingQueue = multiprocessing.Queue( self.__maxQueuedRequests )
     self.__resultsQueue = multiprocessing.Queue( 0 )
+    self.__prListLock = threading.Lock()
     self.__workingProcessList = []
+    self.__draining = False
+    self.__bullet = BulletTask()
+    self.__bulletCounter = 0
     self.__daemonProcess = False
     self.__spawnNeededWorkingProcesses()
 
@@ -314,9 +327,13 @@ class ProcessPool:
     :param self: self reference
     """
     counter = 0
-    for proc in self.__workingProcessList:
-      if proc.isWorking():
-        counter += 1
+    self.__prListLock.acquire()
+    try:
+      for proc in self.__workingProcessList:
+        if proc.isWorking():
+          counter += 1
+    finally:
+      self.__prListLock.release()
     return counter
 
   def getNumIdleProcesses( self ):
@@ -325,9 +342,13 @@ class ProcessPool:
     :param self: self reference
     """
     counter = 0
-    for proc in self.__workingProcessList:
-      if not proc.isWorking():
-        counter += 1
+    self.__prListLock.acquire()
+    try:
+      for proc in self.__workingProcessList:
+        if not proc.isWorking():
+          counter += 1
+    finally:
+      self.__prListLock.release()
     return counter
 
   def getFreeSlots( self ):
@@ -342,25 +363,41 @@ class ProcessPool:
 
   def __killWorkingProcess( self ):
     """ suspend execution of WorkingProcesses exceeding queue limits
-
     :param self: self reference
     """
-    if self.__strictLimits:
-      for i in range( len( self.__workingProcessList ) ):
-        process = self.__workingProcessList[i]
-        if not process.isWorking():
-          process.kill()
-          del( self.__workingProcessList[i] )
-          break
-    else:
-      self.__workingProcessList[0].kill()
-      del( self.__workingProcessList[0] )
+    try:
+      self.__pendingQueue.put( self.__bullet, block = True )
+    except Queue.Full:
+      return S_ERROR( "Queue is full" )
+    self.__prListLock.acquire()
+    try:
+      self.__bulletCounter += 1
+    finally:
+      self.__prListLock.release()
+    self.__cleanDeadProcesses()
+
+  def __cleanDeadProcesses( self ):
+    #Check wounded processes
+    self.__prListLock.acquire()
+    try:
+      stillAlive = []
+      for wP in self.__workingProcessList:
+        if wP.is_alive():
+          stillAlive.append( wP )
+        else:
+          self.__bulletCounter -= 1
+      self.__workingProcessList = stillAlive
+    finally:
+      self.__prListLock.release()
 
   def __spawnNeededWorkingProcesses( self ):
     """ create N working process (at least self.__minSize, but no more than self.__maxSize)
-   
     :param self: self reference
     """
+    self.__cleanDeadProcesses()
+    #If we are draining do not spawn processes
+    if self.__draining:
+      return
     while len( self.__workingProcessList ) < self.__minSize:
       self.__spawnWorkingProcess()
 
@@ -375,6 +412,7 @@ class ProcessPool:
 
     :param self: self reference
     """
+    self.__cleanDeadProcesses()
     toKill = len( self.__workingProcessList ) - self.__maxSize
     for i in range ( max( toKill, 0 ) ):
       self.__killWorkingProcess()
@@ -395,6 +433,7 @@ class ProcessPool:
       self.__pendingQueue.put( task, block = blocking )
     except Queue.Full:
       return S_ERROR( "Queue is full" )
+    self.__spawnNeededWorkingProcesses()
     # Throttle a bit to allow task state propagation
     time.sleep( 0.01 )
     return S_OK()
@@ -468,8 +507,49 @@ class ProcessPool:
     """
     while not self.__pendingQueue.empty() or self.getNumWorkingProcesses():
       self.processResults()
-      time.sleep( 0.1 )
+      time.sleep( 1 )
     self.processResults()
+
+  def finalize( self, timeout = 10 ):
+    #Process all tasks
+    self.processAllResults()
+    #Drain via bullets processes
+    self.__draining = True
+    try:
+      bullets = len( self.__workingProcessList ) - self.__bulletCounter
+      for i in range( bullets ):
+        self.__killWorkingProcess()
+      start = time.time()
+      self.__cleanDeadProcesses()
+      while len( self.__workingProcessList ) > 0:
+        if timeout <= 0 or time.time() - start >= timeout:
+          break
+        time.sleep( 0.1 )
+        self.__cleanDeadProcesses()
+    finally:
+      self.__draining = False
+    #Terminate them (just in case)
+    for wp in self.__workingProcessList:
+      if wp.is_alive():
+        wp.terminate()
+    self.__cleanDeadProcesses()
+    #Kill 'em all!!
+    self.__filicide()
+
+  def __filicide( self ):
+    """ Kill all children (processes :P) Kill 'em all!
+    """
+    wpL = [ ( wp, 0 ) for wp in self.__workingProcessList ]
+    self.__workingProcessList = []
+    while wpL:
+      wp, count = wpL.pop( 0 )
+      if wp.pid == None:
+        if count > 5:
+          wp.terminate()
+        else:
+          wpL.append( ( wp, count + 1 ) )
+        continue
+      os.kill( wp.pid, signal.SIGKILL )
 
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
@@ -502,20 +582,20 @@ class doSomething( object ):
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( "doSomething%s" % self.number )
-  
+
 
   def __call__( self ):
     self.log.error( "in call" )
     rnd = random.randint( 1, 5 )
     print "sleeping %s secs for task number %s" % ( rnd, self.number )
     time.sleep( rnd )
-    
+
     rnd = random.random() * self.number
     if rnd < 3:
       print "raising exception for task %s" % self.number
       raise Exception( "TEST EXCEPTION" )
     print "task number %s done" % self.number
-    return { "OK" : True, "Value" : [1,2,3] }
+    return { "OK" : True, "Value" : [1, 2, 3] }
 
 
 
@@ -543,7 +623,7 @@ if __name__ == "__main__":
       r = random.randint( 1, 5 )
       if r > rmax:
         rmax = r
-      result = pPool.createAndQueueTask( doSomething, 
+      result = pPool.createAndQueueTask( doSomething,
                                          args = ( count, r, ),
                                          callback = showResult,
                                          exceptionCallback = showException )
@@ -555,3 +635,4 @@ if __name__ == "__main__":
   pPool.processAllResults()
 
   print "Max sleep", rmax
+

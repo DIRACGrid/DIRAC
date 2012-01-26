@@ -4,8 +4,8 @@ __RCSID__ = "$Id$"
 import os
 import types
 import time
-import threading
 import GSI
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -18,7 +18,7 @@ GSI.SSL.set_thread_safe()
 
 class SSLTransport( BaseTransport ):
 
-  __readWriteLock = threading.Lock()
+  __readWriteLock = LockRing().getLock( "DISET.SSLTrans.RW" )
 
   def __init__( self, *args, **kwargs ):
     self.__writesDone = 0

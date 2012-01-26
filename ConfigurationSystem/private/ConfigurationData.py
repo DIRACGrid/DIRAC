@@ -10,14 +10,16 @@ import DIRAC
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 class ConfigurationData:
 
   def __init__( self, loadDefaultCFG = True ):
-    self.threadingEvent = threading.Event()
+    lr = LockRing()
+    self.threadingEvent = lr.getEvent( "configdata.dangerZone" )
     self.threadingEvent.set()
-    self.threadingLock = threading.Lock()
+    self.threadingLock = lr.getLock( "configdata.update" )
     self.runningThreadsNumber = 0
     self.compressedConfigurationData = ""
     self.configurationPath = "/DIRAC/Configuration"
