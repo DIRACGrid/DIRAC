@@ -1,4 +1,4 @@
-[v6r2-pre4]
+[v6r2-pre5]
 
 *Core
 CHANGE: Pfn.py - pfnparse function rewritten for speed up and mem usage, unit test case added
@@ -6,6 +6,13 @@ FIX: DISET Clients are now thread-safe. Same clients used twice in different thr
      closing the previous connection
 NEW: reduce wait times in DISET protocol machinery to improve performance    
 NEW: dirac-fix-mysql-script command to fix the mysql start-up script for the given installation
+FIX: TransferClient closes connections properly
+FIX: DISET Clients are now thread-safe. Same client used twice in different threads will not close the previous connection
+CHANGE: Beautification and reduce wait times to improve performance
+NEW: ProcessPool - added functionality to kill all children processes properly when destroying ProcessPool objects
+NEW: CS Helper for LocalSite section, with gridEnv method
+NEW: Grid module will use Local.gridEnv if nothing passed in the arguments
+CHANGE: Add deprecated sections in the CS Operations helper to ease the transition
 
 *RequestManagement:
 FIX: RequestDBFile - more consistent treatment of requestDB Path
@@ -14,7 +21,14 @@ FIX: RequestDBFile - more consistent treatment of requestDB Path
 CHANGE: RSS Action now inherits from a base class, and Actions are more homogeneous, they all take 
         a uniform set of arguments. The name of modules has been changed from PolType to Action as well.
 FIX: CacheFeederAgent - too verbose messages moved to debug instead of info level
-BUGFIX: fixed a bug preventing RSS clients to connect to the services        
+BUGFIX: fixed a bug preventing RSS clients to connect to the services     
+FIX: Proper services synchronization
+FIX: Better handling of exceptions due to timeouts in GOCDBClient   
+FIX: RSS.Notification emails are sent again
+FIX: Commands have been modified to return S_OK, S_ERROR inside the Result dict. This way, policies get a 
+     S_ERROR / S_OK object. CacheFeederAgent has been updated accordingly.
+FIX: allow clients, if db connection fails, to reconnect ( or at least try ) to the servers.
+CHANGE: access control using CS Authentication options. Default is SiteManager, and get methods are all.
 
 *DataManagement
 CHANGE: refactoring of DMS agents executing requests, allow requests from arbitrary users
@@ -24,11 +38,17 @@ NEW: Added CREATE TEMPORARY TABLES privilege to FileCatalogDB
 CHANGE: DFC - getCatalogCounters() update to show numbers of directories
 NEW: lfc_dfc_copy script to migrate data from LFC to DFC
 FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
+FIX: FTS testing scripts were using sys.argv and getting confused if options are passed
+NEW: DFC - use DirectoryUsage tables for the storage usage evaluations
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
      They are made available to the workflow_commons via the key 'GenericParameters'.
 FIX: Dirac.py - fix some type checking things
+
+*WMS
+FIX: removed dependency of the JobSchedulingAgent on RSS. Move the getSiteTier functionality to a new CS Helper.
+
 
 [v6r1p7]
 
