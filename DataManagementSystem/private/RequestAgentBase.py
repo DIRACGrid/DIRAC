@@ -49,7 +49,7 @@ def defaultCallback( task, ret ):
   log.showHeaders( True )
   log.setLevel( "INFO" )
 
-  log.info("callback from task taskID=%d" % task.getTaskID() )
+  log.info("callback from task taskID=%s" % task.getTaskID() )
   if not ret["OK"]: 
     log.error( ret["Message"] )
     return
@@ -78,15 +78,12 @@ def defaultExceptionCallback( task, exc_info ):
   log.showHeaders( True )
   log.setLevel( "EXCEPTION" )
   log.exception( "exception %s from task taskID=%d" % ( str(exc_info), task.getTaskID() ) ) )
-<<<<<<< HEAD
 
   ## remove request from agent cache
   for item in globals():
     if isinstance( item, RequestAgentBase ):
       item.deleteRequest( task.getTaskDI() )
 
-=======
->>>>>>> 49151b99fe9a8f20f117cf312fa4aa8f944b29d1
 
 
 ########################################################################
@@ -139,7 +136,7 @@ class RequestAgentBase( AgentModule ):
 
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", 10 )
     self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
-    self.__minProcess = self.am_getOption( "MinProcess", 2 )
+    self.__minProcess = self.am_getOption( "MinProcess", 1 )
     self.log.info("ProcessPool min process = %d" % self.__minProcess )
     self.__maxProcess = self.am_getOption( "MaxProcess", 4 )
     self.log.info("ProcessPool max process = %d" % self.__maxProcess )

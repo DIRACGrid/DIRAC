@@ -527,6 +527,10 @@ class TransferAgent( RequestAgentBase ):
           self.log.info( str(error) )
           failback = True
 
+      if not failback:
+        self.deleteRequest( requestDict["requestName"] )
+        continue 
+
       ## failback 
       if failback:
         if self.__executionMode["Tasks"]:
@@ -546,7 +550,7 @@ class TransferAgent( RequestAgentBase ):
           self.log.info("No free slots available in processPool, will wait a second to proceed...")
           time.sleep( 1 )
         else:
-          taskID = self.requestsPerCycle() - requestCounter + 1
+          taskID = requestDict["requestName"]
           self.log.info("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
           enqueue = self.processPool().createAndQueueTask( TransferTask,
                                                            kwargs = requestDict,
