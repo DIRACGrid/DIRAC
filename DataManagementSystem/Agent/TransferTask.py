@@ -137,7 +137,7 @@ class TransferTask(RequestTask):
     failed = {}
 
     catalog = ""
-    if "Catalogue" in subAttrs:
+    if "Catalogue" in subAttrs and subAttrs["Catalogue"]:
       catalog = subAttrs["Catalogue"]
 
     for subRequestFile in subFiles:
@@ -151,9 +151,15 @@ class TransferTask(RequestTask):
       
       for targetSE in targetSEs:
         self.addMark( "Put and register", 1 )
-        pfn = subRequestFile["PFN"]
-        guid = subRequestFile["GUID"]
-        addler = subRequestFile["Addler"]
+
+        pfn = subRequestFile["PFN"] if subRequestFile["PFN"] else ""
+        guid = subRequestFile["GUID"] if subRequestFile["GUID"] else ""
+        addler = subRequestFile["Addler"] if subRequestFile["Addler"] else ""
+        #if "" in ( pfn, guid, addler ):
+        #  errStr = "one of ReplicaManager args is missing for %s (pfn=%s guid=%s checksum=%s)" % (lfn, pfn, guid, addler)
+        #  self.error( errStr )
+        #  failed[lfn][targetSE] = errStr
+        #  continue
         putAndRegister = self.replicaManager().putAndRegister( lfn, 
                                                                pfn, 
                                                                targetSE, 
@@ -161,8 +167,11 @@ class TransferTask(RequestTask):
                                                                checksum = addler, 
                                                                catalog = catalog )
         if putAndRegister["OK"]:
+
           if lfn in putAndRegister["Value"]["Successful"]:
+
             if "put" not in putAndRegister["Value"]["Successful"][lfn]:
+
               self.addMark( "Put failed", 1 )
               self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "TransferAgent" )
               self.info( "Failed to put %s to %s." % ( lfn, targetSE ) )
@@ -227,10 +236,11 @@ class TransferTask(RequestTask):
           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "TransferAgent" )
           self.error ( "Completely failed to put and register file: %s" % putAndRegister["Message"] )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "RM call failure" )
-          subRequestError = "RM call file"
+          subRequestError = "RM call failed"
+          failed[lfn][targetSE] = "RM call failed"
 
       if not failed[lfn]:
-        self.info("File %s processed sucesfull at all targetSEs.")
+        self.info("File %s processed successfully at all targetSEs, settign its startus do 'Done'.")
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
  
     if not subRequestError:

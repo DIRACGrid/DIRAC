@@ -34,7 +34,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
 
 ## base classes
-from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
+from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase, defaultCallback, defaultExceptionCallabck
 from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
 
 ## DIRAC tools
@@ -133,9 +133,9 @@ class TransferAgent( RequestAgentBase ):
   * maximal number of request to be executed in one cycle
     RequestsPerCycle = 10
   * minimal number of sub-processes working togehter
-    MinProcess = 2
+    MinProcess = 1
   * maximal number of sub-processes working togehter
-    MaxProcess = 8
+    MaxProcess = 4
   * results queue size
     ProcessPoolQueueSize = 10
   * request type
@@ -215,11 +215,21 @@ class TransferAgent( RequestAgentBase ):
                                    "TransferAgent", "Failed/min", gMonitor.OP_SUM )
 
 
-    self.__executionMode["Tasks"] = self.am_getOption( "TasksExecuting", True )
+    self.__executionMode["Tasks"] = self.am_getOption( "TaskMode", True )
     self.log.info( "Tasks execution mode is %s." % { True : "enabled", 
                                                      False : "disabled" }[ self.__executionMode["Tasks"] ] )
     
-    self.__executionMode["FTS"] = self.am_getOption( "FTSScheduling", False )
+    if self.__executionMode["Task"]:
+      register = self.registerCallback( defaultCallBack )
+      if not register["OK"]:
+        self.log.error( register["Message"] )
+        raise TransferAgentError( register["Message"] )
+      register = self.registerExceptionCallback( defaultExceptionCallBack )
+      if not register["OK"]:
+        self.log.error( register["Message"] )
+        raise TransferAgentError( register["Message"] )
+
+    self.__executionMode["FTS"] = self.am_getOption( "FTSMode", False )
     self.log.info( "FTS execution mode is %s." % { True : "enabled", 
                                                    False : "disabled" }[ self.__executionMode["FTS"] ] )
 
@@ -489,12 +499,14 @@ class TransferAgent( RequestAgentBase ):
       self.log.info("Processing request (%d) %s" %  ( self.requestsPerCycle() - requestCounter + 1, 
                                                       requestDict["requestName"] ) )
 
+      ## create and store RequestContainer
       requestObj = RequestContainer( requestDict["requestString"] )
-      ownerDN = requestObj.getAttribute( "OwnerDN" )
-      
-     
+      requestDict["requestObj"] = requestObj
+
+      ## check owner
+      ownerDN = requestObj.getAttribute( "OwnerDN" ) 
       if ownerDN["OK"] and ownerDN["Value"]:
-        self.log.info("Request %s has its owner %s, FTS scheduling is disabled" % ( requestDict["requestName"], 
+        self.log.info("Request %s has its owner %s, FTS scheduling is disabled fo it" % ( requestDict["requestName"], 
                                                                                     ownerDN["Value"] ) )
         failback = True
       
@@ -515,6 +527,10 @@ class TransferAgent( RequestAgentBase ):
           self.log.info( str(error) )
           failback = True
 
+      if not failback:
+        self.deleteRequest( requestDict["requestName"] )
+        continue 
+
       ## failback 
       if failback:
         if self.__executionMode["Tasks"]:
@@ -525,28 +541,32 @@ class TransferAgent( RequestAgentBase ):
 
       ## if we land here anyway this request has to be processed by tasks
       requestDict["configPath"] = self.configPath()
+      del requestDict["requestObj"]
       self.log.info("About to process request using TransferTask")
       
       ## TransferTask main loop 
       while True:
-        if self.processPool().getFreeSlots():
-          self.log.info("spawning task %d" % ( self.requestsPerCycle() - requestCounter + 1 ) ) 
-          enqueue = self.processPool().createAndQueueTask( TransferTask, 
-                                                           kwargs = requestDict, 
-                                                           callback =  self.requestCallback,
-                                                           exceptionCallback = self.exceptionCallback,
+        if not self.processPool().getFreeSlots():
+          self.log.info("No free slots available in processPool, will wait a second to proceed...")
+          time.sleep( 1 )
+        else:
+          taskID = requestDict["requestName"]
+          self.log.info("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
+          enqueue = self.processPool().createAndQueueTask( TransferTask,
+                                                           kwargs = requestDict,
+                                                           taskID = taskID,
+                                                           callback =  self.requestCallback(),
+                                                           exceptionCallback = self.exceptionCallback(),
                                                            blocking = True )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
-            continue
-          ## update request counter
-          requestCounter = requestCounter - 1
-          ## task created, a little time kick to proceed 
-          time.sleep( 0.1 )
-          break
-        else:
-          self.log.info("No free slots available in processPool, will wait a second to proceed...")
-          time.sleep( 1 )
+          else:
+            self.log.info("successfully enqueued request %s to task taskID = %d" % ( requestDict["requestName"], taskID ) )
+            ## update request counter
+            requestCounter = requestCounter - 1
+            ## task created, a little time kick to proceed
+            time.sleep( 0.1 )
+            break
 
     return S_OK()
           
@@ -556,8 +576,8 @@ class TransferAgent( RequestAgentBase ):
 
     :param self: self refernce
     """
-    if self.__processPool:
-      self.__processPool.processAllResults()
+    if self.__executionMode["Tasks"]:
+      self.processPool().processAllResults()
     return S_OK()
     
   def schedule( self, requestDict ):

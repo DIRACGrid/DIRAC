@@ -311,7 +311,7 @@ class RequestTask( object ):
     :param str ownerGroup: request owner group
     :return: S_OK with name of newly created owner proxy file
     """
-    ownerProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup )
+    ownerProxy = gProxyManager.downloadVOMSProxy( str(ownerDN), str(ownerGroup) )
     if not ownerProxy["OK"] or not ownerProxy["Value"]:
       reason = ownerProxy["Message"] if "Message" in ownerProxy else "No valid proxy found in ProxyManager." 
       return S_ERROR( "Change proxy error for '%s'@'%s': %s" % ( ownerDN, ownerGroup, reason  ) )
