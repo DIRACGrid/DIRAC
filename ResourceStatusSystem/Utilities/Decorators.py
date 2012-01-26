@@ -170,11 +170,15 @@ class AdminRequired( BaseDec ):
     
     self.f.processArgs( *args, **kwargs )
     
-    credentials = self.f.credentials   
-    credGroup   = credentials.get( 'group', '' )
+    _system,_handler = args[ 0 ].__module__.rsplit( '.', 2 )[-2:]
     
-    if not credGroup == 'diracAdmin':
-      return S_ERROR( 'Not enough permissions to execute this action.' ) 
+    okProperties   = set( [ 'SiteAdmin' ] )
+    
+    credentials    = self.f.credentials   
+    credProperties = set( credentials.get( 'properties', '' ) )   
+    
+    if not credProperties & okProperties: 
+      return S_ERROR( 'Not right property to execute this action.' ) 
     
     return self.f( *args, **kwargs )
 

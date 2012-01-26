@@ -7,7 +7,7 @@ from DIRAC                                             import gConfig, S_OK
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators   import HandlerDec3, AdminRequired
+from DIRAC.ResourceStatusSystem.Utilities.Decorators   import HandlerDec3
 from DIRAC.ResourceStatusSystem.Utilities              import Utils
 db = False
 
@@ -75,7 +75,6 @@ class ResourceStatusHandler( RequestHandler ):
 
 
   types_insert = [ dict, dict ]
-  @AdminRequired
   @HandlerDec3
   def export_insert( self, params, meta ):
     '''
@@ -99,7 +98,6 @@ class ResourceStatusHandler( RequestHandler ):
     return db, credentials
 
   types_update = [ dict, dict ]
-  @AdminRequired
   @HandlerDec3
   def export_update( self, params, meta ):
     '''
@@ -146,7 +144,6 @@ class ResourceStatusHandler( RequestHandler ):
     return db, credentials
 
   types_delete = [ dict, dict ]
-  @AdminRequired
   @HandlerDec3
   def export_delete( self, params, meta ):
     '''
