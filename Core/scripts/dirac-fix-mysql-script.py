@@ -22,7 +22,7 @@ from DIRAC.Core.Utilities import InstallTools
 #
 InstallTools.exitOnError = True
 #
-result = InstallTools.fixMySQLScripts( Script.localCfg, cfg )
+result = InstallTools.fixMySQLScripts()
 if not result['OK']:
   print "ERROR:", result['Message']
   exit( -1 )

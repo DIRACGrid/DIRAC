@@ -17,8 +17,6 @@ class FTSRequest:
 
   def __init__( self ):
 
-    self.gridEnv = '/afs/cern.ch/project/gd/LCG-share/3.2.8-0/etc/profile.d/grid-env'
-
     self.finalStates = ['Canceled', 'Failed', 'Hold', 'Finished', 'FinishedDirty']
     self.failedStates = ['Canceled', 'Failed', 'Hold', 'FinishedDirty']
     self.successfulStates = ['Finished', 'Done']
@@ -515,7 +513,7 @@ class FTSRequest:
     if self.sourceToken:
       comm.append( '-S' )
       comm.append( self.sourceToken )
-    res = executeGridCommand( '', comm, self.gridEnv )
+    res = executeGridCommand( '', comm )
     os.remove( self.surlFile )
     if not res['OK']:
       return res
@@ -528,7 +526,7 @@ class FTSRequest:
     self.ftsGUID = guid
     #if self.priority != 3:
     #  comm = ['glite-transfer-setpriority','-s', self.ftsServer,self.ftsGUID,str(self.priority)]
-    #  executeGridCommand('',comm,self.gridEnv)
+    #  executeGridCommand('',comm)
     return res
 
   def __resolveFTSServer( self ):
@@ -656,7 +654,7 @@ class FTSRequest:
     comm = ['glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID]
     if full:
       comm.append( '-l' )
-    res = executeGridCommand( '', comm, self.gridEnv )
+    res = executeGridCommand( '', comm )
     if not res['OK']:
       return res
     returnCode, output, errStr = res['Value']
@@ -699,7 +697,7 @@ class FTSRequest:
     if not res['OK']:
       return res
     comm = ['glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID]
-    res = executeGridCommand( '', comm, self.gridEnv )
+    res = executeGridCommand( '', comm )
     if not res['OK']:
       return res
     returnCode, output, errStr = res['Value']
@@ -724,7 +722,7 @@ class FTSRequest:
 
   def __getFullOutput( self ):
     comm = ['glite-transfer-status', '-s', self.ftsServer, '-l', self.ftsGUID]
-    res = executeGridCommand( '', comm, self.gridEnv )
+    res = executeGridCommand( '', comm )
     if not res['OK']:
       return res
     returnCode, output, errStr = res['Value']

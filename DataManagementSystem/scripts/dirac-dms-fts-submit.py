@@ -19,15 +19,17 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
 
 Script.parseCommandLine()
 from DIRAC.DataManagementSystem.Client.FTSRequest     import FTSRequest
-import os, sys
+import os
 
-if not len( sys.argv ) >= 4:
+args = Script.getPositionalArgs()
+
+if not len( args ) == 3:
   Script.showHelp()
   DIRAC.exit( -1 )
 else:
-  inputFileName = sys.argv[1]
-  sourceSE = sys.argv[2]
-  targetSE = sys.argv[3]
+  inputFileName = args[0]
+  sourceSE = args[1]
+  targetSE = args[2]
 
 if not os.path.exists( inputFileName ):
   lfns = [inputFileName]
