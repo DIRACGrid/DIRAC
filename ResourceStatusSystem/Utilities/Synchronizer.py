@@ -108,9 +108,23 @@ class Synchronizer(object):
     Utils.protect2(self.rsClient.addOrModifyService, service, type_, site )
 
   def __getServiceEndpointInfo(self, node):
-    res = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ))
+    #res = Utils.unpack( self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ) )
+    res = self.GOCDBClient.getServiceEndpointInfo( 'hostname', node )
+    if res['OK']:
+      res = res[ 'Value' ]
+    else:
+      gLogger.warn( 'Error getting hostname info for %s' % node )
+      return []
+        
     if res == []:
-      res = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo('hostname', Utils.canonicalURL(node)))
+      #res = Utils.unpack( self.GOCDBClient.getServiceEndpointInfo('hostname', Utils.canonicalURL(node)) )
+      res = self.GOCDBClient.getServiceEndpointInfo('hostname', Utils.canonicalURL(node))
+      if res['OK']:
+        res = res[ 'Value' ]
+      else:
+        gLogger.warn( 'Error getting canonical hostname info for %s' % node )
+        res = []
+      
     return res
 
   def __syncNode(self, NodeInCS, resourcesInDB, resourceType, serviceType, site = "NULL"):
@@ -133,7 +147,7 @@ class Synchronizer(object):
         resourceType = CS.getCEType(site, node)
       if node not in resourcesInDB and node is not None:
         try:
-          siteInGOCDB = self. __getServiceEndpointInfo(node)[0]['SITENAME']
+          siteInGOCDB = self.__getServiceEndpointInfo(node)[0]['SITENAME']
         except IndexError: # No INFO in GOCDB: Node does not exist
           gLogger.warn("Node %s is not in GOCDB!! Considering that it does not exists!" % node)
           continue
@@ -221,7 +235,13 @@ class Synchronizer(object):
       if not srm:
         gLogger.warn("%s has no srm URL in CS!!!" % SE)
         continue
-      siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
+      #siteInGOCDB = Utils.unpack(self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm ))
+      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo( 'hostname', srm )
+      if siteInGOCDB[ 'OK' ]:
+        siteInGOCDB = siteInGOCDB[ 'Value' ]
+      else:
+        gLogger.error("Error getting hostname for %s from GOCDB!!!" % srm)
+        continue
       if siteInGOCDB == []:
         gLogger.warn("%s is not in GOCDB!!!" % srm)
         continue
@@ -236,10 +256,21 @@ class Synchronizer(object):
     # services in the DB now
     servicesInDB = Utils.unpack(self.rsClient.getService())
     for service_name, service_type, site_name in servicesInDB:
-      if Utils.unpack(self.rsClient.getResource(siteName=site_name, serviceType=service_type)) == [] \
-      and service_type not in ["VO-BOX", "CondDB"]:
-        gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
-        Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+      if not service_type in ["VO-BOX", "CondDB", "VOMS", "Storage"]:
+        if Utils.unpack(self.rsClient.getResource(siteName=site_name, serviceType=service_type)) == []:
+          gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
+          Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+      elif service_type == "Storage":
+        res = self.rsClient.getSite( siteName = site_name, meta = { 'columns' : 'GridSiteName'} )
+        if res[ 'OK' ]:
+          res = res[ 'Value' ]
+        else:
+          res = []
+        
+        if res:
+          if self.rsClient.getResource( gridSiteName = res[0], serviceType = service_type ) == []:
+            gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
+            Utils.protect2(self.rsClient.removeElement, "Service", service_name)
 
   def _syncRegistryUsers(self):
     users = CS.getTypedDictRootedAt("Users", root= "/Registry")
@@ -264,15 +295,6 @@ class Synchronizer(object):
 
     for u in usersToDel:
       Utils.protect2(self.rmClient.deleteUserRegistryCache, u)
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
