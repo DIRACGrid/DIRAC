@@ -1072,15 +1072,23 @@ File Catalog Client $Revision: 1.17 $Date:
           result =  self.fc.getDirectorySize(path,long)          
           if result['OK']:
             if result['Value']['Successful']:
-              print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize'])
+              print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize']), \
+                    "Files:",result['Value']['Successful'][path]['LogicalFiles'], \
+                    "Directories:",result['Value']['Successful'][path]['LogicalDirectories']
               if long:
                 if "PhysicalSize" in result['Value']['Successful'][path]:
                   print "Physical Size:"
-                  total = result['Value']['Successful'][path]['PhysicalSize']['Total']
-                  for se,size in result['Value']['Successful'][path]['PhysicalSize'].items():
-                    if se != "Total":
-                      print se.rjust(20),':',int_with_commas(size)
-                  print 'Total'.rjust(20),':',int_with_commas(total)   
+                  totalSize = result['Value']['Successful'][path]['PhysicalSize']['TotalSize']
+                  totalFiles = result['Value']['Successful'][path]['PhysicalSize']['TotalFiles'] 
+                  for se,sdata in result['Value']['Successful'][path]['PhysicalSize'].items():
+                    if not se.startswith("Total"):
+                      size = sdata['Size']
+                      nfiles = sdata['Files']
+                      print se.rjust(20),':',int_with_commas(size).ljust(25),"Files:",nfiles
+                  print '='*60
+                  print 'Total'.rjust(20),':',int_with_commas(totalSize).ljust(25),"Files:",totalFiles  
+              if "QueryTime" in result['Value']:
+                print "Query time %.2f sec" % result['Value']['QueryTime']
             else:
               print "Directory size failed:", result['Value']['Failed'][path]
           else:
@@ -1514,3 +1522,4 @@ if __name__ == "__main__":
       cli.cmdloop()  
     else:
       print "Unknown catalog type", catype
+      
