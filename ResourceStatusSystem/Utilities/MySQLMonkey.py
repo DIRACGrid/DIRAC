@@ -394,9 +394,38 @@ class MySQLStatements( object ):
 
       return dict(zip(k,v))
 
+    def parseDict2( mm, table, d ):
+
+      if d is None:
+        return d
+
+      res = []
+
+      for k,v in d.items():
+      #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
+        k = self._checkALPHA( k )
+      
+      
+        dataType = getattr( table, k ).dataType.upper()
+        if not isinstance( v, list ):
+          v = [ v ]
+
+        # always returns a list !!
+        v = getattr( self, '_check%s' % dataType )( v )
+        
+#      if dataType == 'DATETIME':
+#        v = self._checkDATETIME( d.values() )
+#      if dataType == 'STRING':
+#        #v = self.dbWrapper.db._escapeValues( d.values() )[ 'Value' ]
+#        v = self._checkMultipleALPHA( d.values() )
+
+      return dict(zip(k,v))
+
     # table alreadyChecked
+    table = getattr( self.mSchema, parsedKwargs[ 'table' ] )
+    
     # sort
-    if parsedKwargs.has_key( 'sort') and parsedKwargs['sort'] is not None:
+    if parsedKwargs.has_key( 'sort' ) and parsedKwargs['sort'] is not None:
       parsedKwargs[ 'sort'  ] = self._checkMultipleALPHA( parsedKwargs[ 'sort'  ] )#parseMultiple( 'sort' )
     # order
     if parsedKwargs.has_key( 'order') and parsedKwargs[ 'order' ] is not None:
@@ -449,8 +478,6 @@ class MySQLStatements( object ):
 #      raise RSSDBException( res[ 'Message' ] )
 #    parsedKwargs[ 'sort' ] = res[ 'Value' ]
 
-    table = getattr( self.mSchema, parsedKwargs[ 'table' ] )
-
     # parsedArgs
     for k,v in parsedArgs.items():
 
@@ -463,6 +490,7 @@ class MySQLStatements( object ):
         v = [ v ]
 
       v = getattr( self, '_check%s' % dataType )( v )
+      parsedArgs[ k ] = v
 
     #print parsedArgs, parsedKwargs
 
@@ -523,22 +551,26 @@ class MySQLStatements( object ):
   def __insert( self, rDict, **kwargs ):
 
     sqlStatement = self.__insertSQLStatement( rDict, **kwargs )
+    print sqlStatement
     return self.dbWrapper.db._update( sqlStatement )
 
   def __select( self, rDict, **kwargs ):
 
     sqlStatement = self.__selectSQLStatement( rDict, **kwargs )
+    print sqlStatement
     sqlQuery     = self.dbWrapper.db._query( sqlStatement )
     return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )
 
   def __update( self, rDict, **kwargs ):
 
     sqlStatement = self.__updateSQLStatement( rDict, **kwargs )
+    print sqlStatement
     return self.dbWrapper.db._update( sqlStatement )
 
   def __delete( self, rDict, **kwargs ):
 
     sqlStatement = self.__deleteSQLStatement( rDict, **kwargs )
+    print sqlStatement
     return self.dbWrapper.db._update( sqlStatement )
 
 ################################################################################
