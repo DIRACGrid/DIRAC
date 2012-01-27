@@ -601,7 +601,8 @@ class MySQLStatements( object ):
     whereElements = self.__getWhereElements( rDict, **kwargs )
 
     req = 'UPDATE %s SET ' % table
-    req += ','.join( '%s="%s"' % (key,value) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] and value is not None ) )
+    #req += ','.join( '%s="%s"' % (key,value) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] and value is not None ) )
+    req += ','.join( '%s=%s' % (key,value[0]) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] and value is not None ) )
     # This was a bug, but is quite handy.
     # Prevents users from updating the whole table in one go if on the client
     # they execute updateX() without arguments for the uniqueKeys values
