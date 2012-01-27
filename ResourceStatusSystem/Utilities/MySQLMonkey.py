@@ -384,20 +384,20 @@ class MySQLStatements( object ):
         raise RSSDBException( res[ 'Message' ] )
       return res[ 'Value' ]
 
-    def parseDict( d, dataType ):
-
-      if d is None:
-        return d
-
-      #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
-      k = self._checkMultipleALPHA( d.keys() )
-      if dataType == 'DATETIME':
-        v = self._checkDATETIME( d.values() )
-      if dataType == 'STRING':
-        #v = self.dbWrapper.db._escapeValues( d.values() )[ 'Value' ]
-        v = self._checkMultipleALPHA( d.values() )
-
-      return dict(zip(k,v))
+#    def parseDict( d, dataType ):
+#
+#      if d is None:
+#        return d
+#
+#      #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
+#      k = self._checkMultipleALPHA( d.keys() )
+#      if dataType == 'DATETIME':
+#        v = self._checkDATETIME( d.values() )
+#      if dataType == 'STRING':
+#        #v = self.dbWrapper.db._escapeValues( d.values() )[ 'Value' ]
+#        v = self._checkMultipleALPHA( d.values() )
+#
+#      return dict(zip(k,v))
 
     def parseDict2( mm, table, d ):
 
@@ -408,7 +408,7 @@ class MySQLStatements( object ):
 
       for k,v in d.items():
       #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
-        k = self._checkALPHA( k )
+        k = self._checkVARCHAR( k )[ 0 ]
       
         dataType = getattr( table, k ).dataType.upper()
         if not isinstance( v, list ):
