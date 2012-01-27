@@ -410,21 +410,15 @@ class MySQLStatements( object ):
       #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
         k = self._checkALPHA( k )
       
-      
         dataType = getattr( table, k ).dataType.upper()
         if not isinstance( v, list ):
           v = [ v ]
 
         # always returns a list !!
         v = getattr( self, '_check%s' % dataType )( v )
+        res.append( ( k,v ) ) 
         
-#      if dataType == 'DATETIME':
-#        v = self._checkDATETIME( d.values() )
-#      if dataType == 'STRING':
-#        #v = self.dbWrapper.db._escapeValues( d.values() )[ 'Value' ]
-#        v = self._checkMultipleALPHA( d.values() )
-
-      return dict(zip(k,v))
+      return dict( res )
 
     # table alreadyChecked
     table = getattr( self.mSchema, parsedKwargs[ 'table' ] )
@@ -474,7 +468,8 @@ class MySQLStatements( object ):
 
     # not ( string )
     if parsedKwargs.has_key( 'not' ) and parsedKwargs[ 'not' ] is not None:
-      parsedKwargs[ 'not' ] = parseDict( parsedKwargs[ 'not' ], 'STRING' )
+#      parsedKwargs[ 'not' ] = parseDict( parsedKwargs[ 'not' ], 'STRING' )
+      parsedKwargs[ 'not' ] = parseDict2( self, table, parsedKwargs[ 'not' ] )
 
 #    if not isinstance( parsedKwargs[ 'sort' ], list ):
 #      parsedKwargs[ 'sort' ] = [ parsedKwargs[ 'sort' ] ]
