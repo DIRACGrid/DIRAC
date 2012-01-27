@@ -554,7 +554,7 @@ class MySQLStatements( object ):
     req = 'INSERT INTO %s (' % table
     req += ','.join( '%s' % key for key in rDict.keys())
     req += ') VALUES ('
-    req += ','.join( '"%s"' % value for value in rDict.values())
+    req += ','.join( '%s' % value[ 0 ] for value in rDict.values())
     req += ')'
 
     return req
