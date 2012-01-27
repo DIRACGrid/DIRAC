@@ -717,9 +717,13 @@ class MySQLStatements( object ):
     if kwargs.has_key( 'minor' ) and kwargs[ 'minor' ] is not None:
 
       for k,v in kwargs[ 'minor' ].items():
-        if v is not None:
+        if v is None:
+          continue
+        
+        if len( v ) != 1:
+          continue
           #items.append( '%s < "%s"' % ( k, v ) )
-          items.append( '%s < %s' % ( k, v ) )
+          items.append( '%s < %s' % ( k, v[ 0 ] ) )
 
     if kwargs.has_key( 'not' ) and kwargs[ 'not' ] is not None:
 
