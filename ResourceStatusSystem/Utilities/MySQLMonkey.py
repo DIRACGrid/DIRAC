@@ -408,7 +408,7 @@ class MySQLStatements( object ):
 
       for k,v in d.items():
       #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
-        k = self._checkVARCHAR( k )[ 0 ]
+        k = '%s' % self._checkVARCHAR( [ k ] )[ 0 ]
       
         dataType = getattr( table, k ).dataType.upper()
         if not isinstance( v, list ):
@@ -723,8 +723,16 @@ class MySQLStatements( object ):
     if kwargs.has_key( 'not' ) and kwargs[ 'not' ] is not None:
 
       for k,v in kwargs[ 'not' ].items():
-        if v is not None:
-          items.append( '%s != "%s"' % ( k, v ) )
+        if v is None:
+          continue  
+        
+        if len(v) > 1:   
+          inStr = ','.join( [ str(vv) for vv in v if vv is not None ] )  
+          items.append( '%s NOT IN ( %s )' % ( k, v ) )
+        elif len(v):
+          if v[ 0 ] is not None:
+            items.append( '%s != %s' % ( k, v[0] ) )
+        else:
           items.append( '%s != %s' % ( k, v ) )
 
     if kwargs.has_key( 'or' ) and kwargs[ 'or' ] is not None:
