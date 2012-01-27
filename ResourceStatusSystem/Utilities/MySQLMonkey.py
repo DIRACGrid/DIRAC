@@ -522,13 +522,14 @@ class MySQLStatements( object ):
       if not isinstance( s, datetime ):
         raise RSSDBException( 'Non datetime value "%s"' % s )
       
-    return [ "%s" % s.replace( microsecond = 0 ) for s in suspicious ]
+    return [ '"%s"' % s.replace( microsecond = 0 ) for s in suspicious ]
 
   def _checkFLOAT(self, suspicious):
     for i in list(suspicious):
       if type(i) not in (int, float):
         raise RSSDBException( 'Non numeric value "%s"' % suspicious )
-    return suspicious
+    
+    return [ '"%s"' % s.replace( microsecond = 0 ) for s in suspicious ]
 
   _checkNUMERIC  = _checkFLOAT
   _checkDECIMAL  = _checkFLOAT
