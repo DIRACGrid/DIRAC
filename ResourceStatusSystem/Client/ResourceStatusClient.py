@@ -2324,9 +2324,11 @@ class ResourceStatusClient:
     else: 
       sqlQuery = self._insertElement( element, **kwargs )
       if sqlQuery[ 'OK' ]:       
-        return self.__setElementInitStatus( element, **kwargs )
-      else:
-        return sqlQuery  
+        res = self.__setElementInitStatus( element, **kwargs )
+        if not res[ 'OK' ]:
+          return res
+        
+      return sqlQuery  
 
   def __setElementInitStatus( self, element, **kwargs ):
     
