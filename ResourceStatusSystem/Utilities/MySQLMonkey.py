@@ -466,6 +466,7 @@ class MySQLStatements( object ):
     if parsedKwargs.has_key( 'minor' ) and parsedKwargs[ 'minor' ] is not None:
 #      parsedKwargs[ 'minor' ] = parseDict( parsedKwargs[ 'minor' ], 'DATETIME' )
       parsedKwargs[ 'minor' ] = parseDict2( self, table, parsedKwargs[ 'minor' ] )
+      print parsedKwargs[ 'minor' ]
 
     # not ( string )
     if parsedKwargs.has_key( 'not' ) and parsedKwargs[ 'not' ] is not None:
@@ -521,7 +522,7 @@ class MySQLStatements( object ):
       if not isinstance( s, datetime ):
         raise RSSDBException( 'Non datetime value "%s"' % s )
       
-    return [ '%s' % s[0].replace( microsecond = 0 ) for s in suspicious ]
+    return [ '%s' % s.replace( microsecond = 0 ) for s in suspicious ]
 
   def _checkFLOAT(self, suspicious):
     for i in list(suspicious):
