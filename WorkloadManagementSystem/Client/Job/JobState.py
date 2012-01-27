@@ -114,7 +114,7 @@ class JobState( object ):
 
   @RemoteMethod
   def getStatus( self ):
-    result = JobState.__jobDB.getJobAttributes( jobIDs, [ 'Status', 'MinorStatus' ] )
+    result = JobState.__jobDB.getJobAttributes( self.__jid, [ 'Status', 'MinorStatus' ] )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
@@ -131,8 +131,45 @@ class JobState( object ):
 
   @RemoteMethod
   def getAppStatus( self ):
-    result = obState.__jobDB.getJobAttributes( jobIDs, [ 'ApplicationStatus' ] )
+    result = JobState.__jobDB.getJobAttributes( self.__jid, [ 'ApplicationStatus' ] )
     if result[ 'OK' ]:
       result[ 'Value' ] = result[ 'Value' ][ 'ApplicationStatus']
     return result
+
+#Attributes
+
+  @RemoteMethod
+  def setAttribute( self, name, value ):
+    try:
+      self.__checkType( name, types.StringType )
+      self.__checkType( value, types.StringType )
+    except TypeException, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.setJobAttribute( self.__jid, name, value )
+
+  @RemoteMethod
+  def setAttributes( self, attDict ):
+    try:
+      self.__checkType( attDict, types.DictType )
+    except TypeException, excp:
+      return S_ERROR( str( excp ) )
+    keys = [ key for key in attDict ]
+    values = [ attDict[ key ] for key in keys ]
+    return JobState.__jobDB.setJobAttributes( self.__jid, keys, values )
+
+  @RemoteMethod
+  def getAttribute( self, name ):
+    try:
+      self.__checkType( name , types.StringTypes )
+    except TypeException, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.getJobAttribute( self.__jid, name )
+
+  @RemoteMethod
+  def getAttributeList( self, nameList ):
+    try:
+      self.__checkType( nameList , ( types.ListType, types.TupleType ) )
+    except TypeException, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.getJobAttributes( self.__jid, nameList )
 

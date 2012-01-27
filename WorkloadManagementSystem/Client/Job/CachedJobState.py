@@ -1,6 +1,6 @@
 
 import types
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.Job.JobState import JobState
 
 class CachedJobState( object ):
@@ -17,6 +17,8 @@ class CachedJobState( object ):
 
     def __call__( self, *args, **kwargs ):
       funcSelf = self.__functor.__self__
+      trace = args
+      print "trace is %s" % str( args )
       funcSelf._addTrace( trace )
       return self.__functor( *args, **kwargs )
 
@@ -45,15 +47,47 @@ class CachedJobState( object ):
         return False
     return True
 
-  def __memoizedMethod( self, cKey, functor ):
-    if cKey not in self.__cache:
-      result = functor()
+  def __cacheResult( self, cKey, functor ):
+    keyType = type( cKey )
+    #If it's a string
+    if keyType in types.StringTypes:
+      if cKey not in self.__cache:
+        result = functor()
+        if not result[ 'OK' ]:
+          return result
+        data = result[ 'Value' ]
+        self.__cache[ cKey ] = data
+      return S_OK( self.__cache[ cKey ] )
+    #Tuple/List
+    elif keyType in ( types.ListType, types.TupleType ):
+      if not self.__cacheExists( cKeys ):
+        result = functor()
+        if not result[ 'OK' ]:
+          return result
+        data = result[ 'Value' ]
+        if len( cKey ) != len( data ):
+          gLogger.warn( "CachedJobState.__memorize( %s, %s = %s ) doesn't receive the same amount of values as keys" % ( cKey,
+                                                                                                           functor, data ) )
+          return data
+        for i in range( len( cKey ) ):
+          self.__cache[ cKey[ i ] ] = data[i]
+      #Prepare result
+      return S_OK( tuple( [ self.__cache[ cK ]  for cK in cKey ] ) )
+    else:
+      raise RuntimeError( "Cache key %s does not have a valid type" % cKey )
+
+  def __cacheDict( self, prefix, keyList, functor ):
+    cKeys = [ "%s.%s" % ( prefix, key ) for key in keyList ]
+    if not self.__cacheExists( cKeys ):
+      result = functor( keyList )
       if not result[ 'OK' ]:
         return result
-      self.__cache[ cKey ] = result[ 'Value' ]
-    return S_OK( self.__cache[ cKey ] )
+      data = result [ 'Value' ]
+      for key in keyList:
+        self.__cache[ "%s.%s" % ( prefix, key ) ] = data[ key ]
+    return S_OK( dict( [ ( "%s.%s" % ( prefix, key ), data[ key ] ) for key in keyList ] ) )
 
-#
+
 # Attributes
 # 
 
@@ -69,22 +103,15 @@ class CachedJobState( object ):
     return S_OK()
 
   def getStatus( self ):
-    cKeys = ( 'att.Status', 'att.MinorStatus' )
-    if not self.__cacheExists( cKeys ):
-      result = self.__jobState.getStatus()
-      if not result[ 'OK' ]:
-        return result
-      data = result[ 'Value' ]
-      for iP in range( len( cKeys ) ):
-        self.__cache[ cKeys[ iP ] ] = data[ iP ]
-    return S_OK( ( self.__cache[ 'att.Status' ], self.__cache[ 'att.MinorStatus' ] ) )
+    self.__cacheResult( ( 'att.Status', 'att.MinorStatus' ), self.__jobState.getStatus )
 
+  @TracedMethod
   def setAppStatus( self, appStatus ):
     self.__cache[ 'att.ApplicationStatus' ] = appStatus
     return S_OK()
 
   def getAppStatus( self ):
-    return self.__memoizedMethod( 'att.ApplicationStatus', self.__jobState.getAppStatus )
+    return self.__cacheResult( 'att.ApplicationStatus', self.__jobState.getAppStatus )
 #
 # Attribs
 #
@@ -105,8 +132,7 @@ class CachedJobState( object ):
     return S_OK()
 
   def getAttribute( self, name ):
-    return self.__memoizedMethod( 'att.%s' % name, self.__jobState.getAttribute )
+    return self.__cacheResult( 'att.%s' % name, self.__jobState.getAttribute )
 
   def getAttributeList( self, nameList ):
-    #TODO: cache list of attributes
-    return self.__memoizedMethod( 'att.%s' % name, self.__jobState.getAttribute )
+    return self.__cacheDict( 'att', nameList, self.__jobState.getAttributeList )
