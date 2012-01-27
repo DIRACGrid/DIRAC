@@ -729,7 +729,7 @@ class MySQLStatements( object ):
         
         if len(v) > 1:   
           inStr = ','.join( [ str(vv) for vv in v if vv is not None ] )  
-          items.append( '%s NOT IN ( %s )' % ( k, v ) )
+          items.append( '%s NOT IN ( %s )' % ( k, inStr ) )
         elif len(v):
           if v[ 0 ] is not None:
             items.append( '%s != %s' % ( k, v[0] ) )
