@@ -384,37 +384,19 @@ class MySQLStatements( object ):
         raise RSSDBException( res[ 'Message' ] )
       return res[ 'Value' ]
 
-#    def parseDict( d, dataType ):
-#
-#      if d is None:
-#        return d
-#
-#      #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
-#      k = self._checkMultipleALPHA( d.keys() )
-#      if dataType == 'DATETIME':
-#        v = self._checkDATETIME( d.values() )
-#      if dataType == 'STRING':
-#        #v = self.dbWrapper.db._escapeValues( d.values() )[ 'Value' ]
-#        v = self._checkMultipleALPHA( d.values() )
-#
-#      return dict(zip(k,v))
-
     def parseDict2( mm, table, d ):
 
       if d is None:
         return d
-
       res = []
 
       for k,v in d.items():
       
         k = self._checkALPHA( k )
-      
+        # get type for check
         dataType = getattr( table, k ).dataType.upper()
         if not isinstance( v, list ):
           v = [ v ]
-
-        # always returns a list !!
         v = getattr( self, '_check%s' % dataType )( v )
         res.append( ( k,v ) ) 
         
@@ -464,21 +446,11 @@ class MySQLStatements( object ):
 
     # minor ( datetime )
     if parsedKwargs.has_key( 'minor' ) and parsedKwargs[ 'minor' ] is not None:
-#      parsedKwargs[ 'minor' ] = parseDict( parsedKwargs[ 'minor' ], 'DATETIME' )
       parsedKwargs[ 'minor' ] = parseDict2( self, table, parsedKwargs[ 'minor' ] )
-      print parsedKwargs[ 'minor' ]
 
     # not ( string )
     if parsedKwargs.has_key( 'not' ) and parsedKwargs[ 'not' ] is not None:
-#      parsedKwargs[ 'not' ] = parseDict( parsedKwargs[ 'not' ], 'STRING' )
       parsedKwargs[ 'not' ] = parseDict2( self, table, parsedKwargs[ 'not' ] )
-
-#    if not isinstance( parsedKwargs[ 'sort' ], list ):
-#      parsedKwargs[ 'sort' ] = [ parsedKwargs[ 'sort' ] ]
-#    res = self.dbWrapper.db._escapeValues( parsedKwargs[ 'sort' ] )
-#    if not res[ 'OK' ]:
-#      raise RSSDBException( res[ 'Message' ] )
-#    parsedKwargs[ 'sort' ] = res[ 'Value' ]
 
     # parsedArgs
     for k,v in parsedArgs.items():
