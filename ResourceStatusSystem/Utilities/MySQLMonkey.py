@@ -362,8 +362,13 @@ class MySQLStatements( object ):
   def __parseEvil( self, parsedArgs, parsedKwargs ):
 
     #First parameters, then meta
-
     if self.mSchema is None:
+  
+      for k,v in parsedArgs.items():
+        if not isinstance( v, list ):
+          v = [ v ]
+        parsedArgs[ k ] = self._checkVARCHAR( v )
+
       return parsedArgs, parsedKwargs
 
     #parsedMeta
