@@ -408,7 +408,7 @@ class MySQLStatements( object ):
 
       for k,v in d.items():
       
-        k_escaped = self._checkVARCHAR( [ k ] )[ 0 ]
+        k = self._checkALPHA( k )
       
         dataType = getattr( table, k ).dataType.upper()
         if not isinstance( v, list ):
@@ -416,7 +416,7 @@ class MySQLStatements( object ):
 
         # always returns a list !!
         v = getattr( self, '_check%s' % dataType )( v )
-        res.append( ( k_escaped,v ) ) 
+        res.append( ( k,v ) ) 
         
       return dict( res )
 
@@ -729,12 +729,12 @@ class MySQLStatements( object ):
         
         if len(v) > 1:   
           inStr = ','.join( [ str(vv) for vv in v if vv is not None ] )  
-          items.append( '"%s" NOT IN ( %s )' % ( k, v ) )
+          items.append( '%s NOT IN ( %s )' % ( k, v ) )
         elif len(v):
           if v[ 0 ] is not None:
-            items.append( '"%s" != %s' % ( k, v[0] ) )
+            items.append( '%s != %s' % ( k, v[0] ) )
         else:
-          items.append( '"%s" != %s' % ( k, v ) )
+          items.append( '%s != %s' % ( k, v ) )
 
     if kwargs.has_key( 'or' ) and kwargs[ 'or' ] is not None:
 
