@@ -723,7 +723,7 @@ class MySQLStatements( object ):
         if len( v ) != 1:
           continue
           #items.append( '%s < "%s"' % ( k, v ) )
-          items.append( '%s < %s' % ( k, v[ 0 ] ) )
+        items.append( '%s < %s' % ( k, v[ 0 ] ) )
 
     if kwargs.has_key( 'not' ) and kwargs[ 'not' ] is not None:
 
