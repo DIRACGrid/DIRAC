@@ -76,14 +76,13 @@ class CachedJobState( object ):
     else:
       raise RuntimeError( "Cache key %s does not have a valid type" % cKey )
 
-  def __cacheDict( self, prefix, keyList, functor ):
-    cKeys = [ "%s.%s" % ( prefix, key ) for key in keyList ]
-    if not self.__cacheExists( cKeys ):
+  def __cacheDict( self, prefix, functor, keyList = None ):
+    if not keyKist or not self.__cacheExists( [ "%s.%s" % ( prefix, key ) for key in keyList ] ):
       result = functor( keyList )
       if not result[ 'OK' ]:
         return result
       data = result [ 'Value' ]
-      for key in keyList:
+      for key in data:
         self.__cache[ "%s.%s" % ( prefix, key ) ] = data[ key ]
     return S_OK( dict( [ ( "%s.%s" % ( prefix, key ), data[ key ] ) for key in keyList ] ) )
 
@@ -134,5 +133,5 @@ class CachedJobState( object ):
   def getAttribute( self, name ):
     return self.__cacheResult( 'att.%s' % name, self.__jobState.getAttribute )
 
-  def getAttributeList( self, nameList ):
-    return self.__cacheDict( 'att', nameList, self.__jobState.getAttributeList )
+  def getAttributeList( self, nameList = None ):
+    return self.__cacheDict( 'att', self.__jobState.getAttributeList, nameList )

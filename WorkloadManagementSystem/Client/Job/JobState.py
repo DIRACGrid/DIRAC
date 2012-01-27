@@ -166,9 +166,10 @@ class JobState( object ):
     return JobState.__jobDB.getJobAttribute( self.__jid, name )
 
   @RemoteMethod
-  def getAttributeList( self, nameList ):
+  def getAttributeList( self, nameList = None ):
     try:
-      self.__checkType( nameList , ( types.ListType, types.TupleType ) )
+      self.__checkType( nameList , ( types.ListType, types.TupleType,
+                                     types.NoneType ) )
     except TypeException, excp:
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.getJobAttributes( self.__jid, nameList )
