@@ -345,7 +345,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getReplicas( self, lfn, allStatus = False ):
+  def getReplicasOld( self, lfn, allStatus = False ):
     """ Returns replicas for an LFN or list of LFNs
     """
     res = self.__checkArgumentFormat( lfn )
@@ -366,6 +366,66 @@ class LcgFileCatalogClient( FileCatalogueBase ):
         successful[lfn] = res['Value']
     if created:
       self.__closeSession()
+    resDict = {'Failed':failed, 'Successful':successful}
+    return S_OK( resDict )
+
+  def getReplicas( self, lfn, allStatus = False ):
+    """ Returns replicas for an LFN or list of LFNs
+    """
+    res = self.__checkArgumentFormat( lfn )
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    lfnChunks = breakListIntoChunks( lfns.keys(), 1000 )
+    # If we have less than three groups to query a session doesn't make sense
+    created = False
+    if len( lfnChunks ) > 2:
+      created = self.__openSession()
+    failed = {}
+    successful = {}
+    for lfnList in lfnChunks:
+      fullLfnList = []
+      for lfn in lfnList:
+        fullLfn = '%s%s' % ( self.prefix, lfn )
+        fullLfnList.append ( fullLfn )
+      value, replicaList = lfc.lfc_getreplicasl( fullLfnList, '' )
+      if value != 0:
+        for lfn in lfnList:
+          failed[lfn] = lfc.sstrerror( lfc.cvar.serrno )
+        continue
+      guid = ''
+      it = iter( lfnList )
+      replicas = {}
+      for oReplica in replicaList:
+        if oReplica.errcode != 0:
+          if ( oReplica.guid == '' ) or ( oReplica.guid != guid ):
+            if len( replicas ):
+              successful[lfn] = replicas
+              replicas = {}
+            lfn = it.next()
+            failed[lfn] = lfc.sstrerror( oReplica.errcode )
+            guid = oReplica.guid
+        elif oReplica.sfn == '':
+          if len( replicas ):
+            successful[lfn] = replicas
+            replicas = {}
+          lfn = it.next()
+          failed[lfn] = 'File has zero replicas'
+          guid = oReplica.guid
+        else:
+          if ( oReplica.guid != guid ):
+            if len( replicas ):
+              successful[lfn] = replicas
+              replicas = {}
+            lfn = it.next()
+            guid = oReplica.guid
+          if ( oReplica.status != 'P' ) or allStatus:
+            se = oReplica.host
+            pfn = oReplica.sfn#.strip()
+            replicas[se] = pfn
+      if len( replicas ):
+        successful[lfn] = replicas
+    if created: self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
@@ -1565,7 +1625,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
 
   def __readLink( self, link ):
     fullLink = '%s%s' % ( self.prefix, link )
-    buff = " " * ( lfc.CA_MAXNAMELEN + 1 )
+    buff = " " * ( lfc.CA_MAXPATHLEN + 1 )
     chars = lfc.lfc_readlink( fullLink, buff, lfc.CA_MAXPATHLEN )
     if chars > 0:
       return S_OK( buff[:chars].replace( self.prefix, '' ).replace( '\x00', '' ) )
