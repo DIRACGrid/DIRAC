@@ -2500,7 +2500,8 @@ class ResourceStatusClient:
     
     # EHistory.DateEnd = EStatus.DateEffective
     # This is vital for the views !!!!
-    #sqlQ[ 6 ] = args[ 5 ]   
+    #sqlQ[ 6 ] = args[ 5 ]  
+      
 
     #return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )  
     res = self._insertElement( 'ElementHistory', **sqlDict )
