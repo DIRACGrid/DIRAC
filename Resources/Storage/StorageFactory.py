@@ -40,7 +40,7 @@ class StorageFactory:
     return self._getConfigStorageName( initialName )
 
   def getStorage( self, parameterDict ):
-    """ This instanciates a single storage for the details provided and doesn't check the CS.
+    """ This instantiates a single storage for the details provided and doesn't check the CS.
     """
     # The storage name must be supplied.
     if parameterDict.has_key( 'StorageName' ):
@@ -332,11 +332,11 @@ class StorageFactory:
         evalString = "storageModule.%s(storageName,protocol,path,host,port,spaceToken,wsUrl)" % moduleName
         storage = eval( evalString )
         if not storage.isOK():
-          errStr = "StorageFactory._generateStorageObject: Failed to instatiate storage plug in."
+          errStr = "StorageFactory._generateStorageObject: Failed to instantiate storage plug in."
           gLogger.error( errStr, "%s" % ( moduleName ) )
           return S_ERROR( errStr )
       except Exception, x:
-        errStr = "StorageFactory._generateStorageObject: Failed to instatiate %s(): %s" % ( moduleName, x )
+        errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s(): %s" % ( moduleName, x )
         gLogger.exception( errStr )
         return S_ERROR( errStr )
       return S_OK( storage )

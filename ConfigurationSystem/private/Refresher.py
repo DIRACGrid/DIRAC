@@ -7,7 +7,7 @@ import random
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import List, LockRing
 from DIRAC.Core.Utilities.EventDispatcher import gEventDispatcher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
@@ -38,7 +38,7 @@ class Refresher( threading.Thread ):
     self.__callbacks = { 'newVersion' : [] }
     gEventDispatcher.registerEvent( "CSNewVersion" )
     random.seed()
-    self.__triggeredRefreshLock = threading.Lock()
+    self.__triggeredRefreshLock = LockRing.LockRing().getLock( "Refresher.triggerUpdate" )
 
   def disable( self ):
     self.__refreshEnabled = False

@@ -24,29 +24,34 @@ class DT_Policy(PolicyBase):
         }
     """
     status = super(DT_Policy, self).evaluate()
+    result = {}
 
-    if not status:
-      return {'Status':'Error', 'Reason':'GOCDB request did not succeed'}
+    if not status[ 'OK' ]:
+      result[ 'Status' ] = 'Error'
+      result[ 'Reason' ] = status[ 'Message' ]
+      return result
 
-    if status == 'Unknown':
-      return {'Status':'Unknown'}
+    
+    status = status[ 'Value' ]
+    #elif status == 'Unknown':
+    #  return { 'Status' : 'Unknown' }
 
-    if status['DT'] == None:
-      self.result['Status']  = 'Active'
-      self.result['Reason']  = 'No DownTime announced'
-      return self.result
-
-    elif 'OUTAGE' in status['DT']:
-      self.result['Status']  = 'Banned'
-
+    if status[ 'DT' ] == None:
+      result[ 'Status' ]  = 'Active'
+      result[ 'Reason' ]  = 'No DownTime announced'
+      return result
+    
+    elif 'OUTAGE' in status[ 'DT' ]:
+      result[ 'Status' ]  = 'Banned'
+      
     elif 'WARNING' in status['DT']:
-      self.result['Status']  = 'Bad'
+      result[ 'Status' ]  = 'Bad'
 
     else:
-      return {'Status':'Error', 'Reason':'GOCDB returned an unknown value for DT'}
+      return { 'Status' : 'Error', 'Reason' : 'GOCDB returned an unknown value for DT' }
 
-    self.result['EndDate'] = status['EndDate']
-    self.result['Reason'] = 'DownTime found: %s' % status['DT']
-    return self.result
+    result[ 'EndDate' ] = status[ 'EndDate' ]
+    result[ 'Reason' ]  = 'DownTime found: %s' % status[ 'DT' ]
+    return result
 
   evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__

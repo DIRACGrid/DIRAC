@@ -2,7 +2,6 @@
 __RCSID__ = "$Id$"
 
 import tarfile
-import threading
 import os
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
@@ -100,7 +99,6 @@ class TransferClient( BaseClient ):
       if not retVal[ 'OK' ]:
         return retVal
       retVal = transport.receiveData()
-      self._disconnect()
       if closeAfterUse:
         dS.close()
       return retVal
@@ -146,9 +144,7 @@ class TransferClient( BaseClient ):
       retVal = fileHelper.bulkToNetwork( fileList, compress, onthefly )
       if not retVal[ 'OK' ]:
         return retVal
-      retVal = transport.receiveData()
-      self._disconnect()
-      return retVal
+      retVal = transport.receiveData()      return retVal
     finally:
       self._disconnect( trid )
 
@@ -182,7 +178,6 @@ class TransferClient( BaseClient ):
       if not retVal[ 'OK' ]:
         return retVal
       retVal = transport.receiveData()
-      self._disconnect()
       return retVal
     finally:
       self._disconnect( trid )
@@ -210,7 +205,6 @@ class TransferClient( BaseClient ):
     trid, transport = retVal[ 'Value' ]
     try:
       response = transport.receiveData( 1048576 )
-      self._disconnect()
       return response
     finally:
       self._disconnect( trid )

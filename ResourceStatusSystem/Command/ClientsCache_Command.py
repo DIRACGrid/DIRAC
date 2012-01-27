@@ -10,7 +10,7 @@ __RCSID__ = "$Id:  $"
 
 import datetime
 
-from DIRAC                                        import gLogger
+from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName, getDIRACSiteName
 
 from DIRAC.ResourceStatusSystem.Command.Command   import *
@@ -37,27 +37,32 @@ class JobsEffSimpleEveryOne_Command( Command ):
 
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' } )
-      if not sites['OK']:
-        raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
-      else:
-        sites = [ si[0] for si in sites['Value'] ]
-
     try:
+
+      if sites is None:
+        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' } )
+        
+        if not sites['OK']:
+          return sites
+         
+        sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
+
       res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( sites, self.APIs[ 'WMSAdministrator' ] )
       if res is None:
         res = []
-    except:
-      gLogger.exception( "Exception when calling JobsClient." )
-      return {}
 
-    resToReturn = {}
+      resToReturn = {}
+      for site in res:
+        resToReturn[ site ] = { 'JE_S' : res[ site ] }
 
-    for site in res:
-      resToReturn[site] = {'JE_S': res[site]}
+      res = S_OK( resToReturn )
 
-    return resToReturn
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -81,108 +86,112 @@ class PilotsEffSimpleEverySites_Command( Command ):
 
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    if sites is None:
-      sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' })
-      if not sites['OK']:
-        raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
-      else:
-        sites = [ si[0] for si in sites['Value'] ]
-
     try:
+
+      if sites is None:
+        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' })
+        if not sites['OK']:
+          return sites
+        sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
+
       res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff( 'Site', sites, None, self.APIs[ 'WMSAdministrator' ] )
       if res is None:
         res = []
-    except:
-      gLogger.exception( "Exception when calling PilotsClient." )
-      return {}
 
-    resToReturn = {}
+      resToReturn = {}
 
-    for site in res:
-      resToReturn[site] = {'PE_S': res[site]}
+      for site in res:
+        resToReturn[site] = { 'PE_S' : res[ site ] }
 
-    return resToReturn
+      res = S_OK( resToReturn )
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
-
-class TransferQualityEverySEs_Command( Command ):
-
-  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient' ]
-
-  def doCommand( self, SEs = None ):
-    """ 
-    Returns transfer quality using the DIRAC accounting system for every SE 
-        
-    :params:
-      :attr:`SEs`: list of storage elements (when not given, take every SE)
-    
-    :returns:
-      {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
-    """
-
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-    if SEs is None:
-      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns' : 'StorageElementName' })
-      if not SEs['OK']:
-        raise RSSException, where( self, self.doCommand ) + " " + SEs['Message']
-      else:
-        SEs = SEs['Value']
-
-    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
-
-    fromD = datetime.datetime.utcnow() - datetime.timedelta( hours = 2 )
-    toD = datetime.datetime.utcnow()
-
-    try:
-      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD,
-                                         {'OperationType':'putAndRegister',
-                                          'Destination':SEs}, 'Channel' )
-      if not qualityAll['OK']:
-        raise RSSException, where( self, self.doCommand ) + " " + qualityAll['Message']
-      else:
-        qualityAll = qualityAll['Value']['data']
-
-    except:
-      gLogger.exception( "Exception when calling TransferQualityEverySEs_Command" )
-      return {}
-
-    listOfDestSEs = []
-
-    for k in qualityAll.keys():
-      try:
-        key = k.split( ' -> ' )[1]
-        if key not in listOfDestSEs:
-          listOfDestSEs.append( key )
-      except:
-        continue
-
-    meanQuality = {}
-
-    for destSE in listOfDestSEs:
-      s = 0
-      n = 0
-      for k in qualityAll.keys():
-        try:
-          if k.split( ' -> ' )[1] == destSE:
-            n = n + len( qualityAll[k] )
-            s = s + sum( qualityAll[k].values() )
-        except:
-          continue
-      meanQuality[destSE] = s / n
-
-    resToReturn = {}
-
-    for se in meanQuality:
-      resToReturn[se] = {'TQ': meanQuality[se]}
-
-    return resToReturn
-
-
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#
+#class TransferQualityEverySEs_Command( Command ):
+#
+#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient' ]
+#
+#  def doCommand( self, SEs = None ):
+#    """ 
+#    Returns transfer quality using the DIRAC accounting system for every SE 
+#        
+#    :params:
+#      :attr:`SEs`: list of storage elements (when not given, take every SE)
+#    
+#    :returns:
+#      {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
+#    """
+#
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#
+#    if SEs is None:
+#      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns' : 'StorageElementName' })
+#      if not SEs['OK']:
+#        raise RSSException, where( self, self.doCommand ) + " " + SEs['Message']
+#      else:
+#        SEs = SEs['Value']
+#
+#    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+#
+#    fromD = datetime.datetime.utcnow() - datetime.timedelta( hours = 2 )
+#    toD = datetime.datetime.utcnow()
+#
+#    try:
+#      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD,
+#                                         {'OperationType':'putAndRegister',
+#                                          'Destination':SEs}, 'Channel' )
+#      if not qualityAll['OK']:
+#        raise RSSException, where( self, self.doCommand ) + " " + qualityAll['Message']
+#      else:
+#        qualityAll = qualityAll['Value']['data']
+#
+#    except:
+#      gLogger.exception( "Exception when calling TransferQualityEverySEs_Command" )
+#      return {}
+#
+#    listOfDestSEs = []
+#
+#    for k in qualityAll.keys():
+#      try:
+#        key = k.split( ' -> ' )[1]
+#        if key not in listOfDestSEs:
+#          listOfDestSEs.append( key )
+#      except:
+#        continue
+#
+#    meanQuality = {}
+#
+#    for destSE in listOfDestSEs:
+#      s = 0
+#      n = 0
+#      for k in qualityAll.keys():
+#        try:
+#          if k.split( ' -> ' )[1] == destSE:
+#            n = n + len( qualityAll[k] )
+#            s = s + sum( qualityAll[k].values() )
+#        except:
+#          continue
+#      meanQuality[destSE] = s / n
+#
+#    resToReturn = {}
+#
+#    for se in meanQuality:
+#      resToReturn[se] = {'TQ': meanQuality[se]}
+#
+#    return resToReturn
+#
+#
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
@@ -205,51 +214,62 @@ class DTEverySites_Command( Command ):
 
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    if sites is None:
-      GOC_sites = self.APIs[ 'ResourceStatusClient' ].getGridSite( meta = { 'columns' : 'GridSiteName' })
-      if not GOC_sites['OK']:
-        raise RSSException, where( self, self.doCommand ) + " " + sites['Message']
-      else:
-        GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
-    else:
-      GOC_sites = [ getGOCSiteName( x )['Value'] for x in sites ]
-
     try:
-      res = self.APIs[ 'GOCDBClient' ].getStatus( 'Site', GOC_sites, None, 120 )
-    except:
-      gLogger.exception( "Exception when calling GOCDBClient." )
-      return {}
+      
+      
+      
 
-    if not res['OK']:
-      raise RSSException, where( self, self.doCommand ) + " " + res['Message']
-    else:
-      res = res['Value']
+      if sites is None:
+        GOC_sites = self.APIs[ 'ResourceStatusClient' ].getGridSite( meta = { 'columns' : 'GridSiteName' })
+        if not GOC_sites['OK']:
+          return GOC_sites
+        GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
+      else:
+        GOC_sites = [ getGOCSiteName( x )['Value'] for x in sites ]
 
-    if res == None:
-      return {}
+      resGOC = self.APIs[ 'GOCDBClient' ].getStatus( 'Site', GOC_sites, None, 120 )
 
-    resToReturn = {}
+      if not resGOC['OK']:
+        return resGOC
+      
+      resGOC = resGOC['Value']
 
-    for dt_ID in res:
-      try:
-        dt                = {}
-        dt['ID']          = dt_ID
-        dt['StartDate']   = res[dt_ID]['FORMATED_START_DATE']
-        dt['EndDate']     = res[dt_ID]['FORMATED_END_DATE']
-        dt['Severity']    = res[dt_ID]['SEVERITY']
-        dt['Description'] = res[dt_ID]['DESCRIPTION'].replace( '\'', '' )
-        dt['Link']        = res[dt_ID]['GOCDB_PORTAL_URL']
+      if resGOC == None:
+        resGOC = []
+
+      res = {}
+
+      for dt_ID in resGOC:
         
-        DIRACnames = getDIRACSiteName( res[dt_ID]['SITENAME'] )
-        if not DIRACnames['OK']:
-          raise RSSException, DIRACnames['Message']
-        DIRACnames = DIRACnames['Value']
-        for DIRACname in DIRACnames:
-          resToReturn[dt_ID.split()[0] + ' ' + DIRACname] = dt
-      except KeyError:
-        continue
+        try:
+          
+          dt                = {}
+          dt['ID']          = dt_ID
+          dt['StartDate']   = resGOC[dt_ID]['FORMATED_START_DATE']
+          dt['EndDate']     = resGOC[dt_ID]['FORMATED_END_DATE']
+          dt['Severity']    = resGOC[dt_ID]['SEVERITY']
+          dt['Description'] = resGOC[dt_ID]['DESCRIPTION'].replace( '\'', '' )
+          dt['Link']        = resGOC[dt_ID]['GOCDB_PORTAL_URL']
+        
+          DIRACnames = getDIRACSiteName( res[dt_ID]['SITENAME'] )
+          
+          if not DIRACnames['OK']:
+            return DIRACnames
+          
+          for DIRACname in DIRACnames['Value']:
+            res[dt_ID.split()[0] + ' ' + DIRACname] = dt
+            
+        except KeyError:
+          continue
 
-    return resToReturn
+      res = S_OK( res )        
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -274,40 +294,45 @@ class DTEveryResources_Command( Command ):
 
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    if resources is None:
-      resources = self.APIs[ 'ResourceStatusClient' ].getResource( meta = { 'columns' : 'ResourceName' })
-      if not resources['OK']:
-        raise RSSException, where( self, self.doCommand ) + " " + resources['Message']
-      else:
+    try:
+
+      if resources is None:
+        meta = { 'columns' : 'ResourceName' }
+        resources = self.APIs[ 'ResourceStatusClient' ].getResource( meta = meta )
+        if not resources['OK']:
+          return resources
         resources = [ re[0] for re in resources['Value'] ]
 
-    try:
-      res = self.APIs[ 'GOCDBClient' ].getStatus( 'Resource', resources, None, 120 )
-    except:
-      gLogger.exception( "Exception when calling GOCDBClient." )
-      return {}
+      resGOC = self.APIs[ 'GOCDBClient' ].getStatus( 'Resource', resources, None, 120 )
+    
+      if not resGOC['OK']:
+        return resGOC
+    
+      resGOC = resGOC['Value']
 
-    if not res['OK']:
-      raise RSSException, where( self, self.doCommand ) + " " + res['Message']
-    else:
-      res = res['Value']
+      if resGOC == None:
+        resGOC = []
 
-    if res == None:
-      return {}
+      res = {}
 
-    resToReturn = {}
+      for dt_ID in resGOC:
+        dt                 = {}
+        dt['ID']           = dt_ID
+        dt['StartDate']    = resGOC[dt_ID]['FORMATED_START_DATE']
+        dt['EndDate']      = resGOC[dt_ID]['FORMATED_END_DATE']
+        dt['Severity']     = resGOC[dt_ID]['SEVERITY']
+        dt['Description']  = resGOC[dt_ID]['DESCRIPTION'].replace( '\'', '' )
+        dt['Link']         = resGOC[dt_ID]['GOCDB_PORTAL_URL']
+        res[dt_ID] = dt
 
-    for dt_ID in res:
-      dt                 = {}
-      dt['ID']           = dt_ID
-      dt['StartDate']    = res[dt_ID]['FORMATED_START_DATE']
-      dt['EndDate']      = res[dt_ID]['FORMATED_END_DATE']
-      dt['Severity']     = res[dt_ID]['SEVERITY']
-      dt['Description']  = res[dt_ID]['DESCRIPTION'].replace( '\'', '' )
-      dt['Link']         = res[dt_ID]['GOCDB_PORTAL_URL']
-      resToReturn[dt_ID] = dt
+      res = S_OK( res )
 
-    return resToReturn
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 

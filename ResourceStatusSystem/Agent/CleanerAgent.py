@@ -6,7 +6,7 @@ AGENT_NAME = 'ResourceStatus/CleanerAgent'
 
 from datetime                                             import datetime,timedelta
 
-from DIRAC                                                import S_OK, S_ERROR
+from DIRAC                                                import S_OK, S_ERROR, gLogger
 from DIRAC                                                import gLogger
 from DIRAC.Core.Base.AgentModule                          import AgentModule
 
@@ -62,6 +62,7 @@ class CleanerAgent( AgentModule ):
         #deleter = getattr( self.rsClient, 'delete%sHistory' % g )
         
         kwargs = { 'meta' : { 'minor' : { 'DateEnd' : sixMonthsAgo } } }
+        gLogger.info( 'Deleting %sHistory older than %s' % ( g, sixMonthsAgo ) )
         res = self.rsClient.deleteElementHistory( g, **kwargs )
         if not res[ 'OK' ]:
           gLogger.error( res[ 'Message' ] )            
@@ -78,12 +79,17 @@ class CleanerAgent( AgentModule ):
       opt_IDs = self.rmClient.getClientCache( **kwargs )              
       opt_IDs = [ ID[ 0 ] for ID in opt_IDs[ 'Value' ] ]
       
+      if opt_IDs:
+        gLogger.info( 'Found %s ClientCache items to be deleted' % len( opt_IDs) )
+        gLogger.debug( opt_IDs )
+      
       res = self.rmClient.deleteClientCache( opt_ID = opt_IDs )
       if not res[ 'OK' ]:
         gLogger.error( res[ 'Message' ] )
       
       # Cleans AccountingCache table from plots not updated nor checked in the last 30 mins      
       anHourAgo = now - timedelta( minutes = 30 )
+      gLogger.info( 'Deleting AccountingCache older than %s' % ( anHourAgo ) )
       res = self.rmClient.deleteAccountingCache( meta = {'minor': { 'LastCheckTime' : anHourAgo }} )
       if not res[ 'OK' ]:
         gLogger.error( res[ 'Message' ] )

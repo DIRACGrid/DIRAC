@@ -17,7 +17,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 
 class AlarmAction(ActionBase):
   def __init__(self, granularity, name, status_type, pdp_decision, **kw):
-    ActionBase.__init__(self)
+    ActionBase.__init__( self, granularity, name, status_type, pdp_decision, **kw )
 
     try:             self.rsClient = self.kw["Clients"][ 'ResourceStatusClient' ]
     except KeyError: self.rsClient = ResourceStatusClient()
@@ -45,7 +45,7 @@ class AlarmAction(ActionBase):
 
     # raise alarms, right now makes a simple notification
 
-    if 'Granularity' not in self.kw.keys():
+    if 'Granularity' not in self.kw['Params'].keys():
       raise ValueError, "You have to provide a argument Granularity = <desired_granularity>"
 
     if self.new_status['Action']:
@@ -68,7 +68,10 @@ class AlarmAction(ActionBase):
                 meta = {"order": "DESC", 'limit' : 1,
                         "columns":  ['Status', 'Reason', 'DateEffective']}))[0]
 
-            mailMessage = """RSS changed the status of the following resource:
+            mailMessage = """                             ---TESTING---
+--------------------------------------------------------------------------------
+            
+RSS changed the status of the following resource:
 
 Granularity:\t%s
 Name:\t\t%s
