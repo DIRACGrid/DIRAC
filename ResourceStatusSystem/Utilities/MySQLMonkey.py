@@ -407,8 +407,8 @@ class MySQLStatements( object ):
       res = []
 
       for k,v in d.items():
-      #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
-        k = '%s' % self._checkVARCHAR( [ k ] )[ 0 ]
+      
+        k_escaped = self._checkVARCHAR( [ k ] )[ 0 ]
       
         dataType = getattr( table, k ).dataType.upper()
         if not isinstance( v, list ):
@@ -416,7 +416,7 @@ class MySQLStatements( object ):
 
         # always returns a list !!
         v = getattr( self, '_check%s' % dataType )( v )
-        res.append( ( k,v ) ) 
+        res.append( ( k_escaped,v ) ) 
         
       return dict( res )
 
@@ -464,7 +464,8 @@ class MySQLStatements( object ):
 
     # minor ( datetime )
     if parsedKwargs.has_key( 'minor' ) and parsedKwargs[ 'minor' ] is not None:
-      parsedKwargs[ 'minor' ] = parseDict( parsedKwargs[ 'minor' ], 'DATETIME' )
+#      parsedKwargs[ 'minor' ] = parseDict( parsedKwargs[ 'minor' ], 'DATETIME' )
+      parsedKwargs[ 'minor' ] = parseDict2( self, table, parsedKwargs[ 'minor' ] )
 
     # not ( string )
     if parsedKwargs.has_key( 'not' ) and parsedKwargs[ 'not' ] is not None:
