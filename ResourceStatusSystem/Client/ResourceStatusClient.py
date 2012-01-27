@@ -2503,7 +2503,12 @@ class ResourceStatusClient:
     #sqlQ[ 6 ] = args[ 5 ]   
 
     #return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )  
-    return self._insertElement( 'ElementHistory', **sqlDict )
+    res = self._insertElement( 'ElementHistory', **sqlDict )
+    if not res[ 'OK' ]:
+      return res
+    
+    return updateSQLQuery
+      
   
   '''
   ##############################################################################
