@@ -492,8 +492,6 @@ class MySQLStatements( object ):
       v = getattr( self, '_check%s' % dataType )( v )
       parsedArgs[ k ] = v
 
-    #print parsedArgs, parsedKwargs
-
     return parsedArgs, parsedKwargs
 
   def _checkMultipleALPHA( self,suspicious ):
@@ -669,7 +667,7 @@ class MySQLStatements( object ):
     count   = kwargs[ 'count' ]
 
     if columnsList is None:
-      columnsList = [ "*" ]
+      columnsList = [ '*' ]
 
     # Either True, or a string value
     if count == True:
@@ -705,24 +703,28 @@ class MySQLStatements( object ):
           items.append( '%s IN %s' % ( k, tuple( [ str(vv) for vv in v if vv is not None ] ) ) )
         elif len(v):
           if v[ 0 ] is not None:
-            items.append( '%s="%s"' % ( k, v[0] ) )
+            items.append( '%s=%s' % ( k, v[0] ) )
+            #items.append( '%s="%s"' % ( k, v[0] ) )
         else:
           items.append( '%s=""' % k )
           #raise NameError( rDict )
       else:
-        items.append( '%s="%s"' % ( k, v ) )
+        #items.append( '%s="%s"' % ( k, v ) )
+        items.append( '%s=%s' % ( k, v ) )
 
     if kwargs.has_key( 'minor' ) and kwargs[ 'minor' ] is not None:
 
       for k,v in kwargs[ 'minor' ].items():
         if v is not None:
-          items.append( '%s < "%s"' % ( k, v ) )
+          #items.append( '%s < "%s"' % ( k, v ) )
+          items.append( '%s < %s' % ( k, v ) )
 
     if kwargs.has_key( 'not' ) and kwargs[ 'not' ] is not None:
 
       for k,v in kwargs[ 'not' ].items():
         if v is not None:
           items.append( '%s != "%s"' % ( k, v ) )
+          items.append( '%s != %s' % ( k, v ) )
 
     if kwargs.has_key( 'or' ) and kwargs[ 'or' ] is not None:
 
