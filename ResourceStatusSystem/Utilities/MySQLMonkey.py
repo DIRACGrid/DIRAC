@@ -525,26 +525,22 @@ class MySQLStatements( object ):
   def __insert( self, rDict, **kwargs ):
 
     sqlStatement = self.__insertSQLStatement( rDict, **kwargs )
-    print sqlStatement
     return self.dbWrapper.db._update( sqlStatement )
 
   def __select( self, rDict, **kwargs ):
 
     sqlStatement = self.__selectSQLStatement( rDict, **kwargs )
-    print sqlStatement
     sqlQuery     = self.dbWrapper.db._query( sqlStatement )
     return S_OK( [ list(rQ) for rQ in sqlQuery[ 'Value' ]] )
 
   def __update( self, rDict, **kwargs ):
 
     sqlStatement = self.__updateSQLStatement( rDict, **kwargs )
-    print sqlStatement
     return self.dbWrapper.db._update( sqlStatement )
 
   def __delete( self, rDict, **kwargs ):
 
     sqlStatement = self.__deleteSQLStatement( rDict, **kwargs )
-    print sqlStatement
     return self.dbWrapper.db._update( sqlStatement )
 
 ################################################################################
