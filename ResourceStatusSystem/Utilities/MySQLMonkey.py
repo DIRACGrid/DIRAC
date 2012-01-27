@@ -705,7 +705,8 @@ class MySQLStatements( object ):
 
       elif isinstance( v, list ):
         if len(v) > 1:
-          items.append( '%s IN %s' % ( k, tuple( [ str(vv) for vv in v if vv is not None ] ) ) )
+          inStr = ','.join( [ str(vv) for vv in v if vv is not None ] )
+          items.append( '%s IN ( %s )' % ( k, inStr ) )
         elif len(v):
           if v[ 0 ] is not None:
             items.append( '%s=%s' % ( k, v[0] ) )
