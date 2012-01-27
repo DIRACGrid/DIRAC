@@ -520,7 +520,8 @@ class MySQLStatements( object ):
     for s in suspicious:
       if not isinstance( s, datetime ):
         raise RSSDBException( 'Non datetime value "%s"' % s )
-    return '%s' % suspicious[0].replace( microsecond = 0 )
+      
+    return [ '%s' % s[0].replace( microsecond = 0 ) for s in suspicious ]
 
   def _checkFLOAT(self, suspicious):
     for i in list(suspicious):
