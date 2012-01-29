@@ -451,6 +451,8 @@ class DirectoryMetadata:
             return S_ERROR( 'Contradictory query for key %s' % mk )
           else:
             resultDict[mk] = mv
+       
+    resultDict['DirectoryMetadataInfo'] = metaTypeDict        
     return S_OK( resultDict )
 
   def findDirectoriesByMetadata( self, queryDict, credDict ):
@@ -460,6 +462,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     metaDict = result['Value']
+    metaInfo = result['Value']['DirectoryMetadataInfo']
     dirList = []
     first = True
     for meta, value in metaDict.items():
@@ -484,6 +487,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     dirNameDict = result['Value']
+    dirNameDict['DirectoryMetadataInfo'] = metaInfo
     return S_OK(dirNameDict)
 
   def findFilesByMetadata( self, metaDict, credDict ):

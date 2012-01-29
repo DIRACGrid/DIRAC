@@ -89,3 +89,86 @@ class FileMetadata:
         metaDict[key] = value
 
     return S_OK( metaDict )
+  
+  def getFileMetadataFields( self ):
+    """  Get file metadata fields
+    """
+    
+    # Use unindexed field for the moment, to be changed later A.T.
+    req = "SELECT DISTINCT(MetaKey) FROM FC_FileMeta"
+    result = self.db._query( req )
+    if not result['OK']:
+      return result 
+    
+    metaDict = {}
+    for row in result['Value']:
+      metaDict[row[0]] = "String"
+      
+    return S_OK(metaDict)  
+  
+  def filterByFileMetadata( self,fileList,metaDict ):
+    """ Filter the given file list by file metadata
+    """
+    
+    result = self.getFileMetadataFields()
+    if not result['OK']:
+      return result 
+    
+    fileMetaInfo = result['Value']
+    
+    metaParameters = {}
+    for meta in metaDict.keys():
+      if meta in fileMetaInfo.keys():
+        metaParameters.append[meta] = metaDict[meta]
+      
+    if not metaParameters:
+      return S_OK(fileList)
+    
+    reqList = []
+    for key,value in metaParameters.items():
+      reqList.append( "%s='%s'" % (key,value) )
+    condString = ' AND '.join(reqList)
+    fileIDString = ','.join( [ str(x[0]) for x in fileList ] )
+    
+    req = "SELECT FileID FROM FC_FileMeta WHERE %s AND FileID in (%s)" % (condString,fileIDString)  
+    result = self.db._query( req )
+    if not result['OK']:
+      return result 
+    
+    if not result['Value']:
+      return S_OK([])
+    
+    selectedFiles = [ int(x[0]) for x in result['Value'] ]
+    resultList = []
+    for f in fileList:
+      if f[0] in selectedFiles:
+        resultList.append(f)
+        
+    return S_OK(resultList)      
+  
+  def findFilesByMetadata( self, metaDict, credDict ):
+    """ Find Files satisfying the given metadata
+    """
+
+    result = self.db.dmeta.findDirectoriesByMetadata( metaDict, credDict )
+    if not result['OK']:
+      return result
+
+    # Find 
+    dirMetaInfo = result['Value']['DirectoryMetadataInfo']
+
+    dirDict = result['Value']
+    dirList = dirDict.keys()
+    fileList = []
+    result = self.db.dtree.getFilesInDirectory( dirList, credDict )
+    if not result['OK']:
+      return result
+    
+    result = self.filterByFileMetadata( self,result['Value'],metaDict )
+    if not result['OK']:
+      return result
+    
+    for fileID,dirID,fname in result['Value']:
+      fileList.append( dirDict[dirID] + '/' + os.path.basename( fname ) )
+
+    return S_OK( fileList )

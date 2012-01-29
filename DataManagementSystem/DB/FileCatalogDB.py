@@ -570,7 +570,7 @@ class FileCatalogDB(DB):
   #  Catalog admin methods
   #
 
-  def getCatalogCounterts(self,credDict):
+  def getCatalogCounters(self,credDict):
     counterDict = {}
     res = self._checkAdminPermission(credDict)
     if not res['OK']:
