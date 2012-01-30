@@ -93,14 +93,14 @@ class JobState( object ):
 
   def __checkType( self, value, tList ):
     if type( value ) not in tList:
-      raise TypeException( "%s has wrong type. Has to be one of %s" % ( value, tList ) )
+      raise TypeError( "%s has wrong type. Has to be one of %s" % ( value, tList ) )
 
   @RemoteMethod
   def setStatus( self, majorStatus, minorStatus ):
     try:
       self.__checkType( majorStatus, types.StringType )
       self.__checkType( minorStatus, types.StringType )
-    except TypeException, excp:
+    except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.setJobStatus( self.__jid, majorStatus, minorStatus )
 
@@ -108,7 +108,7 @@ class JobState( object ):
   def setMinorStatus( self, minorStatus ):
     try:
       self.__checkType( minorStatus, types.StringType )
-    except TypeException, excp:
+    except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.setJobStatus( self.__jid, minor = minorStatus )
 
@@ -125,7 +125,7 @@ class JobState( object ):
   def setAppStatus( self, appStatus ):
     try:
       self.__checkType( appStatus, types.StringType )
-    except TypeException, excp:
+    except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.setJobStatus( self.__jid, application = appStatus )
 
@@ -133,7 +133,7 @@ class JobState( object ):
   def getAppStatus( self ):
     result = JobState.__jobDB.getJobAttributes( self.__jid, [ 'ApplicationStatus' ] )
     if result[ 'OK' ]:
-      result[ 'Value' ] = result[ 'Value' ][ 'ApplicationStatus']
+      result[ 'Value' ] = result[ 'Value' ][ 'ApplicationStatus' ]
     return result
 
 #Attributes
@@ -143,7 +143,7 @@ class JobState( object ):
     try:
       self.__checkType( name, types.StringType )
       self.__checkType( value, types.StringType )
-    except TypeException, excp:
+    except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.setJobAttribute( self.__jid, name, value )
 
@@ -151,7 +151,7 @@ class JobState( object ):
   def setAttributes( self, attDict ):
     try:
       self.__checkType( attDict, types.DictType )
-    except TypeException, excp:
+    except TypeError, excp:
       return S_ERROR( str( excp ) )
     keys = [ key for key in attDict ]
     values = [ attDict[ key ] for key in keys ]
@@ -161,16 +161,69 @@ class JobState( object ):
   def getAttribute( self, name ):
     try:
       self.__checkType( name , types.StringTypes )
-    except TypeException, excp:
+    except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.getJobAttribute( self.__jid, name )
 
   @RemoteMethod
-  def getAttributeList( self, nameList = None ):
+  def getAttributes( self, nameList = None ):
     try:
       self.__checkType( nameList , ( types.ListType, types.TupleType,
                                      types.NoneType ) )
-    except TypeException, excp:
+    except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.getJobAttributes( self.__jid, nameList )
 
+#Optimizer parameters
+
+  @RemoteMethod
+  def setOptParameter( self, name, value ):
+    try:
+      self.__checkType( name, types.StringType )
+      self.__checkType( value, types.StringType )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.setJobOptParameter( self.__jid, name, value )
+
+  @RemoteMethod
+  def setOptParameters( self, pDict ):
+    try:
+      self.__checkType( pDict, types.DictType )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    for name in pDict:
+      result = JobState.__jobDB.setJobOptParameter( self.__jid, name, pDict[ name ] )
+      if not result[ 'OK' ]:
+        return result
+    return S_OK()
+
+  @RemoteMethod
+  def removeOptParameters( self, nameList ):
+    if type( nameList ) in types.StringTypes:
+      nameList = [ nameList ]
+    try:
+      self.__checkType( nameList, ( types.ListType, types.TupleType ) )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    for name in nameList:
+      result = JobState.__jobDB.removeJobOptParameter( self.__jid, name )
+      if not result[ 'OK' ]:
+        return result
+    return S_OK()
+
+  @RemoteMethod
+  def getOptParameter( self, name ):
+    try:
+      self.__checkType( name, types.StringType )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.getJobOptParameter( self.__jid, name )
+
+  @RemoteMethod
+  def getOptParameters( self, nameList = None ):
+    try:
+      self.__checkType( nameList, ( types.ListType, types.TupleType,
+                                     types.NoneType ) )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.getJobOptParameters( self.__jid, nameList )
