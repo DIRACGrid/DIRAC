@@ -69,12 +69,14 @@ class MessageClient( BaseClient ):
     if self.__trid != trid:
       gLogger.error( "OOps. trid's don't match. This shouldn't happen! (%s vs %s)" % ( self.__trid, trid ) )
       return S_ERROR( "OOOPS" )
+    self.__trid = False
     for cb in self.__specialCallbacks[ 'drop' ]:
       try:
         cb( self )
+      except SystemExit:
+        raise
       except:
         gLogger.exception( "Exception while processing disconnect callbacks" )
-    self.__trid = False
 
   def __cbRecvMsg( self, trid, msgObj ):
     msgName = msgObj.getName()
@@ -94,7 +96,7 @@ class MessageClient( BaseClient ):
     if msgName not in self.__callbacks:
       return S_ERROR( "Unexpected message" )
     try:
-      result = self.__callbacks[ msgName ]( self, msgObj )
+      result = self.__callbacks[ msgName ]( msgObj )
       if not isReturnStructure( result ):
         gLogger.error( "Callback for message %s does not return S_OK/S_ERROR" % msgName )
         return S_ERROR( "No response" )

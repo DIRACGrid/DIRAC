@@ -33,6 +33,7 @@ def initializeSandboxStoreHandler( serviceInfo ):
   global sandboxDB, gSBDeletionPool
   random.seed()
   sandboxDB = SandboxMetadataDB()
+  print sandboxDB
   return S_OK()
 
 class SandboxStoreHandler( RequestHandler ):

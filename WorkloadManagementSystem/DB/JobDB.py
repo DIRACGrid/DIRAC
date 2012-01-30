@@ -57,7 +57,7 @@ from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.Core.Security.CS                                  import getUsernameForDN, getDNForUsername
-from DIRAC.WorkloadManagementSystem.Client.JobDescription    import JobDescription
+from DIRAC.WorkloadManagementSystem.Client.Job.JobManifest   import JobManifest
 
 DEBUG = 0
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',
@@ -1226,15 +1226,15 @@ class JobDB( DB ):
         Set Initial job Attributes and Status
     """
 
-    jDesc = JobDescription()
-    result = jDesc.loadDescription( jdl )
+    jobManifest = JobManifest()
+    result = jobManifest.load( jdl )
     if not result['OK']:
       return result
-    jDesc.setVarsFromDict( { 'OwnerName' : owner,
+    jobManifest.setVarsFromDict( { 'OwnerName' : owner,
                              'OwnerDN' : ownerDN,
                              'OwnerGroup' : ownerGroup,
                              'DIRACSetup' : diracSetup } )
-    result = jDesc.checkDescription()
+    result = jobManifest.check()
     if not result['OK']:
       return result
     jobAttrNames = []
@@ -1249,7 +1249,7 @@ class JobDB( DB ):
       return S_ERROR( 'Can not insert JDL in to DB' )
     jobID = result[ 'Value' ]
 
-    jDesc.setVar( 'JobID', jobID )
+    jobManifest.setVar( 'JobID', jobID )
 
     jobAttrNames.append( 'JobID' )
     jobAttrValues.append( jobID )
@@ -1273,7 +1273,7 @@ class JobDB( DB ):
     jobAttrValues.append( diracSetup )
 
     # 2.- Check JDL and Prepare DIRAC JDL
-    classAdJob = ClassAd( jDesc.dumpDescriptionAsJDL() )
+    classAdJob = ClassAd( jobManifest.dumpAsJDL() )
     classAdReq = ClassAd( '[]' )
     retVal = S_OK( jobID )
     retVal['JobID'] = jobID
@@ -1332,10 +1332,10 @@ class JobDB( DB ):
     classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
 
     jobJDL = classAdJob.asJDL()
-    
+
     # Replace the JobID placeholder if any
-    if jobJDL.find('%j') != -1:
-      jobJDL = jobJDL.replace('%j',str(jobID))
+    if jobJDL.find( '%j' ) != -1:
+      jobJDL = jobJDL.replace( '%j', str( jobID ) )
 
     result = self.setJobJDL( jobID, jobJDL )
     if not result['OK']:
@@ -1415,7 +1415,7 @@ class JobDB( DB ):
     classAdJob.insertAttributeString( 'OwnerGroup', ownerGroup )
     if vo:
       classAdJob.insertAttributeString( 'VirtualOrganization', vo )
-      submitPool = getVOOption(vo,'SubmitPools')
+      submitPool = getVOOption( vo, 'SubmitPools' )
       if submitPool and not classAdJob.lookupAttribute( 'SubmitPools' ):
         classAdJob.insertAttributeString( 'SubmitPools', submitPool )
 
@@ -1664,8 +1664,8 @@ class JobDB( DB ):
     site = classAdJob.getAttributeString( 'Site' )
     if not site:
       site = 'ANY'
-    elif site.find(',') > 0:
-      site = "Multiple"  
+    elif site.find( ',' ) > 0:
+      site = "Multiple"
     jobAttrNames.append( 'Site' )
     jobAttrValues.append( site )
 

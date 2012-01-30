@@ -17,6 +17,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities import Time, MemStat
 
 def _checkDir( path ):
@@ -120,7 +121,8 @@ class AgentModule:
                                 'standalone' : standaloneModule,
                                 'cyclesDone' : 0,
                                 'totalElapsedTime' : 0,
-                                'setup' : gConfig.getValue( "/DIRAC/Setup", "Unknown" ) }
+                                'setup' : gConfig.getValue( "/DIRAC/Setup", "Unknown" ),
+                                'alive' : True }
     self.__moduleProperties[ 'system' ], self.__moduleProperties[ 'agentName' ] = agentName.split( "/" )
     self.__configDefaults = {}
     self.__configDefaults[ 'MonitoringEnabled'] = True
@@ -142,7 +144,6 @@ class AgentModule:
       for key in properties:
         self.__moduleProperties[ key ] = properties[ key ]
       self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
-      self.__moduleProperties[ 'alive' ] = True
       self.__moduleProperties[ 'shifterProxy' ] = False
 
     self.__monitorLastStatsUpdate = -1
@@ -173,7 +174,7 @@ class AgentModule:
     agentName = self.am_getModuleParam( 'fullName' )
     result = self.initialize( *initArgs )
     if result == None:
-      return S_ERROR( "Error while initializing %s module: initialize must return S_OK/S_ERROR" % agentName )
+      return S_ERROR( "initialize must return S_OK/S_ERROR" )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
     _checkDir( self.am_getControlDirectory() )
@@ -305,21 +306,28 @@ class AgentModule:
       name = str( functor )
     try:
       result = functor( *args )
-      if result == None:
-        return S_ERROR( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
+      if not isReturnStructure( result ):
+        raise Exception( "%s method for %s module has to return S_OK/S_ERROR" % ( name, self.__moduleProperties[ 'fullName' ] ) )
       return result
     except Exception, e:
       self.log.exception( "Exception while calling %s method" % name )
       return S_ERROR( "Exception while calling %s method: %s" % ( name, str( e ) ) )
 
-  def am_go( self ):
-    #Set the shifter proxy if required
+
+  def _setShifterProxy( self ):
     if self.__moduleProperties[ 'shifterProxy' ]:
       result = setupShifterProxyInEnv( self.__moduleProperties[ 'shifterProxy' ],
                                        self.am_getShifterProxyLocation() )
       if not result[ 'OK' ]:
         self.log.error( result['Message'] )
         return result
+    return S_OK()
+
+  def am_go( self ):
+    #Set the shifter proxy if required
+    result = self._setShifterProxy()
+    if not result[ 'OK' ]:
+      return result
     self.log.notice( "-"*40 )
     self.log.notice( "Starting cycle for module %s" % self.__moduleProperties[ 'fullName' ] )
     mD = self.am_getMaxCycles()
@@ -328,10 +336,10 @@ class AgentModule:
       self.log.notice( "Remaining %s of %s cycles" % ( mD - cD, mD ) )
     self.log.notice( "-"*40 )
     elapsedTime = time.time()
-    cpuStats = self.__startReportToMonitoring()
+    cpuStats = self._startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
     if cpuStats:
-      self.__endReportToMonitoring( *cpuStats )
+      self._endReportToMonitoring( *cpuStats )
     #Increment counters
     self.__moduleProperties[ 'cyclesDone' ] += 1
     #Show status
@@ -355,7 +363,7 @@ class AgentModule:
     self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )
     return cycleResult
 
-  def __startReportToMonitoring( self ):
+  def _startReportToMonitoring( self ):
     try:
       now = time.time()
       stats = os.times()
@@ -373,7 +381,7 @@ class AgentModule:
     except Exception:
       return False
 
-  def __endReportToMonitoring( self, initialWallTime, initialCPUTime ):
+  def _endReportToMonitoring( self, initialWallTime, initialCPUTime ):
     wallTime = time.time() - initialWallTime
     stats = os.times()
     cpuTime = stats[0] + stats[2] - initialCPUTime

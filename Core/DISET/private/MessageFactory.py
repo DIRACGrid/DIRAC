@@ -55,18 +55,37 @@ class MessageFactory:
       self.__svcHandlers[ serviceName ] = result[ 'Value' ]
     self.__definitions[ serviceName ] = {}
     handlerClass = self.__svcHandlers[ serviceName ]
-    if 'MSG_DEFINITIONS' not in dir( handlerClass ):
+    #Load message definition starting with ancestors, children override the ancestors as usual
+    result = self.__loadMessagesForAncestry( handlerClass )
+    if not result[ 'OK' ]:
+      return result
+    msgDefs = result[ 'Value' ]
+    if not msgDefs:
       return S_ERROR( "%s does not have messages defined" % serviceName )
+    self.__definitions[ serviceName ] = msgDefs
+    return S_OK()
+
+  def __loadMessagesForAncestry( self, handlerClass ):
+    print "LOADING MESSAGES FOR %s" % handlerClass.__name__
+    finalDefs = {}
+    for ancestor in handlerClass.__bases__:
+      result = self.__loadMessagesForAncestry( ancestor )
+      if not result[ 'OK' ]:
+        return result
+      ancestorDefs = result[ 'Value' ]
+      for msgName in ancestorDefs:
+        finalDefs[ msgName ] = ancestorDefs[ msgName ]
+    if 'MSG_DEFINITIONS' not in dir( handlerClass ):
+      return S_OK( finalDefs )
     msgDefs = getattr( handlerClass, 'MSG_DEFINITIONS' )
     if type( msgDefs ) != types.DictType:
-      return S_ERROR( "Message definitions is not a dict" )
+      return S_ERROR( "Message definitions for service %s is not a dict" % handlerClass.__name__ )
     for msgName in msgDefs:
       msgDefDict = msgDefs[ msgName ]
       if type ( msgDefDict ) != types.DictType:
         return S_ERROR( "Type of message definition has to be a dict" )
-      self.__definitions[ serviceName ][ msgName ] = msgDefDict
-    return S_OK()
-
+      finalDefs[ msgName ] = msgDefDict
+    return S_OK( finalDefs )
 
 class Message( object ):
 
@@ -176,7 +195,10 @@ class Message( object ):
     if k not in self.__order:
       raise AttributeError( "%s is not valid for message %s" % ( k, self.__name ) )
     if self.__fDef[ k ] != None and type( v ) not in self.__fDef[ k ]:
-      raise AttributeError( "%s is to be of type %s for attr %s" % ( v, self.__fDef[k], k ) )
+      raise AttributeError( "%s is to be of type %s for attr %s, and is of type %s" % ( v,
+                                                                                        self.__fDef[k],
+                                                                                        k,
+                                                                                        type( v ) ) )
     self.__values[ k ] = v
 
   def __getattr__( self, k ):

@@ -69,11 +69,6 @@ class Service:
     self._handler = result[ 'Value' ]
     #Initialize lock manager
     self._lockManager = LockManager( self._cfg.getMaxWaitingPetitions() )
-    #Load actions
-    result = self._loadActions()
-    if not result[ 'OK' ]:
-      return result
-    self._actions = result[ 'Value' ]
     self._initMonitoring()
     self._threadPool = ThreadPool( 1,
                                     max( 0, self._cfg.getMaxThreads() ),
@@ -85,20 +80,32 @@ class Service:
                                'URL' : self._cfg.getURL(),
                                'systemSectionPath' : self._cfg.getSystemPath(),
                                'serviceSectionPath' : self._cfg.getServicePath(),
-                               'messageSender' : MessageSender( self._msgBroker )
+                               'messageSender' : MessageSender( self._name, self._msgBroker )
                              }
     #Call static initialization function
     try:
+      self._handler[ 'class' ]._rh__initializeClass( dict( self._serviceInfoDict ),
+                                                     self._lockManager,
+                                                     self._msgBroker,
+                                                     self._monitor )
       if self._handler[ 'init' ]:
-        result = self._handler[ 'init' ]( dict( self._serviceInfoDict ) )
+        for initFunc in self._handler[ 'init' ]:
+          gLogger.verbose( "Executing initialization function" )
+          result = initFunc( dict( self._serviceInfoDict ) )
         if not isReturnStructure( result ):
-          return S_ERROR( "Service initialization function must return S_OK/S_ERROR" )
+          return S_ERROR( "Service initialization function %s must return S_OK/S_ERROR" % initFunc )
         if not result[ 'OK' ]:
           return S_ERROR( "Error while initializing %s: %s" % ( self._name, result[ 'Message' ] ) )
     except Exception, e:
       errMsg = "Exception while intializing %s" % self._name
       gLogger.exception( errMsg )
       return S_ERROR( errMsg )
+
+    #Load actions after the handler has initialized itself
+    result = self._loadActions()
+    if not result[ 'OK' ]:
+      return result
+    self._actions = result[ 'Value' ]
 
     gThreadScheduler.addPeriodicTask( 30, self.__reportThreadPoolContents )
 
@@ -126,6 +133,21 @@ class Service:
       gLogger.debug( "%s is not a valid file" % filePath )
     return False
 
+  def __searchInitFunctions( self, handlerClass, currentClass = False ):
+    if not currentClass:
+      currentClass = handlerClass
+    initFuncs = []
+    ancestorHasInit = False
+    for ancestor in currentClass.__bases__:
+      initFuncs += self.__searchInitFunctions( handlerClass, ancestor )
+      if 'initializeHandler' in dir( ancestor ):
+        ancestorHasInit = True
+    if ancestorHasInit:
+      initFuncs.append( super( currentClass, handlerClass ).initializeHandler )
+    if currentClass == handlerClass and 'initializeHandler' in dir( handlerClass ):
+      initFuncs.append( handlerClass.initializeHandler )
+    return initFuncs
+
   def _loadHandler( self ):
     handlerLocation = self._handlerLocation.replace( ".py", "" )
     lServicePath = List.fromChar( handlerLocation, "/" )
@@ -140,18 +162,20 @@ class Service:
       return S_ERROR( "Can't import handler: %s" % str( e ) )
     if not issubclass( handlerClass, RequestHandler ):
       return S_ERROR( "Handler class is not a request handler" )
+    handlerInitMethods = self.__searchInitFunctions( handlerClass )
     try:
-      handlerInitMethod = getattr( handlerModule, "initialize%s" % handlerName )
-      gLogger.debug( "Found initialization function for service" )
+      handlerInitMethods.append( getattr( handlerModule, "initialize%s" % handlerName ) )
     except:
-      handlerInitMethod = False
-      gLogger.debug( "Not found initialization function for service" )
+      gLogger.debug( "Not found global initialization function for service" )
+
+    if handlerInitMethods:
+      gLogger.info( "Found %s initialization methods" % len( handlerInitMethods ) )
 
     handlerInfo = {}
     handlerInfo[ "name" ] = handlerName
     handlerInfo[ "module" ] = handlerModule
     handlerInfo[ "class" ] = handlerClass
-    handlerInfo[ "init" ] = handlerInitMethod
+    handlerInfo[ "init" ] = handlerInitMethods
 
     gLogger.info( "Loaded %s" % self._handlerLocation )
     return S_OK( handlerInfo )
@@ -373,10 +397,10 @@ class Service:
 
         if methodName in hardcodedRulesByType:
           hardcodedMethodAuth = hardcodedRulesByType[ methodName ]
-    #Get the identity string
-    identity = self._createIdentityString( credDict )
     #Auth time!
     if not self._authMgr.authQuery( csAuthPath, credDict, hardcodedMethodAuth ):
+      #Get the identity string
+      identity = self._createIdentityString( credDict )
       gLogger.warn( "Unauthorized query", "to %s:%s by %s" % ( self._name,
                                                                "/".join( actionTuple ),
                                                                identity ) )
@@ -389,6 +413,7 @@ class Service:
     if not tr:
       return S_ERROR( "Client disconnected" )
     sourceAddress = tr.getRemoteAddress()
+    identity = self._createIdentityString( credDict )
     Service.SVC_SECLOG_CLIENT.addMessage( result[ 'OK' ], sourceAddress[0], sourceAddress[1], identity,
                                       self._cfg.getHostname(),
                                       self._cfg.getPort(),
@@ -416,15 +441,11 @@ class Service:
       handlerInitDict[ key ] = clientParams[ key ]
     #Instantiate and initialize
     try:
-      handlerInstance = self._handler[ 'class' ]( handlerInitDict,
-                                                   trid,
-                                                   self._lockManager,
-                                                   self._msgBroker,
-                                                   self._monitor )
+      handlerInstance = self._handler[ 'class' ]( handlerInitDict, trid )
       handlerInstance.initialize()
     except Exception, e:
-      gLogger.exception( S_ERROR( "Server error while initializing handler: %s" % str( e ) ) )
-      return S_ERROR( "Server error while intializing handler" )
+      gLogger.exception( "Server error while loading handler: %s" % str( e ) )
+      return S_ERROR( "Server error while loading handler" )
     return S_OK( handlerInstance )
 
   def _processProposal( self, trid, proposalTuple, handlerObj ):
