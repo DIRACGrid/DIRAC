@@ -14,9 +14,9 @@ from DIRAC.ResourceStatusSystem                           import ValidRes
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-class CleanerAgent( AgentModule ):
+class CacheCleanerAgent( AgentModule ):
   '''
-  The CleanerAgent tidies up the ResourceStatusDB, namely:
+  The CacheCleanerAgent tidies up the ResourceStatusDB, namely:
     o SiteHistory
     o ServiceHistory
     o ResourceHistory
@@ -28,7 +28,7 @@ class CleanerAgent( AgentModule ):
     o AccountingCache
   older than 24 hours for the first one, and 30 minutes for the second one.
   
-  If you want to know more about the CleanerAgent, scroll down to the end of the 
+  If you want to know more about the CacheCleanerAgent, scroll down to the end of the 
   file.   
   '''
 
@@ -43,7 +43,7 @@ class CleanerAgent( AgentModule ):
       return S_OK()
       
     except Exception:
-      errorStr = "CleanerAgent initialization"
+      errorStr = "CacheCleanerAgent initialization"
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
     
@@ -97,7 +97,7 @@ class CleanerAgent( AgentModule ):
       return S_OK()
     
     except Exception:
-      errorStr = "CleanerAgent execution"
+      errorStr = "CacheCleanerAgent execution"
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 
