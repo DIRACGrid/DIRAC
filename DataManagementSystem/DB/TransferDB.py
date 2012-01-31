@@ -317,14 +317,6 @@ class TransferDB( DB ):
     return res
 
 
-  def getFileToCatForFileID( self, fileID ):
-    query = "SELECT * FROM FileToCat WHERE FileID = %s;" % fileID
-    query = self._update( query ):
-    if not query["OK"]:
-      return query
-    
-
-
   def removeFileFromChannel( self, channelID, fileID ):
     
     req = "DELETE FROM Channel WHERE ChannelID = %s and FileID = %s;" % (channelID,fileID)
