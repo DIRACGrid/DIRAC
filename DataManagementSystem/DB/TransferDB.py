@@ -15,10 +15,23 @@ MAGIC_EPOC_NUMBER = 1270000000
 
 gLogger.initialize('DMS','/Databases/TransferDB/Test')
 
-class TransferDB(DB):
+class TransferDB( DB ):
+  """ 
+  .. class:: TransferDB
 
-  def __init__(self, systemInstance ='Default', maxQueueSize=10 ):
-    DB.__init__(self,'TransferDB','RequestManagement/RequestDB',maxQueueSize)
+  This db is holding all information used by FTS systems.
+  """
+
+
+  def __init__( self, systemInstance ='Default', maxQueueSize=10 ):
+    """c'tor
+    
+    :param self: self reference
+    :param str systemInstance: ???
+    :param int maxQueueSize: size of queries queue
+    """
+
+    DB.__init__( self, 'TransferDB', 'RequestManagement/RequestDB', maxQueueSize )
     self.getIdLock = threading.Lock()
 
   def __getFineTime(self):
@@ -303,7 +316,17 @@ class TransferDB(DB):
         return res
     return res
 
-  def removeFileFromChannel(self,channelID,fileID):
+
+  def getFileToCatForFileID( self, fileID ):
+    query = "SELECT * FROM FileToCat WHERE FileID = %s;" % fileID
+    query = self._update( query ):
+    if not query["OK"]:
+      return query
+    
+
+
+  def removeFileFromChannel( self, channelID, fileID ):
+    
     req = "DELETE FROM Channel WHERE ChannelID = %s and FileID = %s;" % (channelID,fileID)
     res = self._update(req)
     if not res['OK']:
@@ -311,7 +334,7 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def updateCompletedChannelStatus(self,channelID,fileIDs):
+  def updateCompletedChannelStatus( self, channelID, fileIDs ):
     time_order = self.__getFineTime()
     req = "select FileID,Status,COUNT(*) from Channel WHERE FileID IN (%s) GROUP BY FileID,Status;" % intListToString(fileIDs)
     res = self._query(req)
@@ -720,8 +743,12 @@ class TransferDB(DB):
   #################################################################################
   # These are the methods for managing the FileToCat table
 
-  def addFileRegistration(self,channelID,fileID,lfn,targetSURL,destSE):
-    req = "INSERT INTO FileToCat (FileID,ChannelID,LFN,PFN,SE,SubmitTime) VALUES (%s,%s,'%s','%s','%s',UTC_TIMESTAMP());" % (fileID,channelID,lfn,targetSURL,destSE)
+  def addFileRegistration( self, channelID, fileID, lfn, targetSURL, destSE ):
+    req = "INSERT INTO FileToCat (FileID,ChannelID,LFN,PFN,SE,SubmitTime) VALUES (%s,%s,'%s','%s','%s',UTC_TIMESTAMP());" % ( fileID,
+                                                                                                                              channelID,
+                                                                                                                              lfn,
+                                                                                                                              targetSURL,
+                                                                                                                              destSE )
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._addFileRegistration: Failed to add registration entry for file %s" % fileID
@@ -734,21 +761,17 @@ class TransferDB(DB):
     if not res['OK']:
       err = "TransferDB._getCompletedReplications: Failed to get completed replications."
       return S_ERROR(err)
-    tuples = []
-    for tuple in res['Value']:
-      tuples.append(tuple)
-    return S_OK(tuples)
+    ## lazy people are using list c'tor
+    return S_OK( list( res["Value"] ) )
 
   def getWaitingRegistrations(self):
-    req = "SELECT FileID,ChannelID,LFN,PFN,SE FROM FileToCat WHERE Status='Waiting';"
+    req = "SELECT FileID, ChannelID, LFN, PFN, SE FROM FileToCat WHERE Status='Waiting';"
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getWaitingRegistrations: Failed to get registrations."
       return S_ERROR(err)
-    tuples = []
-    for tuple in res['Value']:
-      tuples.append(tuple)
-    return S_OK(tuples)
+    ## less typing, use list constructor 
+    return S_OK( list( res["Value"] ) )
 
   def setRegistrationWaiting(self,channelID,fileIDs):
     req = "UPDATE FileToCat SET Status='Waiting' WHERE ChannelID=%s AND Status='Executing' AND FileID IN (%s);" % (channelID,intListToString(fileIDs))
@@ -766,6 +789,33 @@ class TransferDB(DB):
       return S_ERROR(err)
     return S_OK()
 
+
+  def getRegisterFailover( self, fileID ):
+    """ in FTSMonitorAgent on failed registration FileToFTS.Status is set to 'Failed' 
+        but FileToCat.Status is set to 'Waiting' (was Executing) 
+        got to query those for TA, will try to regiter them there
+    """
+
+    query = "SELECT DISTINCT ChannelID, MAX(SubmissionTime) FROM FileToFTS WHERE FileID = %s AND Status = 'Failed' GROUP BY ChannelID;" % fileID
+    res = self._query( query )
+    if not res["OK"]:
+      return res
+    ## get channelIDs
+    channelIDs = [ rec[0] for rec in res["Value"] ]
+    ## no failed files? do nothing, return
+    if not channelIDs:
+      return S_OK()
+    ## query FileToCat for Waiting files = registration has failed, will select them for registration 
+    query = "SELECT PFN, SE, ChannelID FROM FileToCat WHERE Status = 'Waiting' AND FileID = %s AND ChannelID IN (%s);" % ( fileID, 
+                                                                                                                ",".join([channelIDs] ) )
+    
+    res = self._query( query )
+    if not res["OK"]:
+      return res
+    ## return list of tuples ( PFN, SE )
+    return  S_OK( list( res["Value"] ) )
+    
+
   #################################################################################
   # These are the methods used by the monitoring server
 
@@ -775,10 +825,8 @@ class TransferDB(DB):
     if not res['OK']:
       err = "TransferDB.getFTSJobDetail: Failed to get detailed info for FTSReq %s: %s." % (ftsReqID,res['Message'])
       return S_ERROR(err)
-    files = []
-    for tuple in res['Value']:
-      files.append(tuple)
-    return S_OK(files)
+    ## lazy people are using list c'tor
+    return S_OK( list( res["Value"] ) )
 
   def getSites(self):
     req = "SELECT DISTINCT SourceSite FROM Channels;"
@@ -989,7 +1037,6 @@ class TransferDB(DB):
         ValueDict[datasetID][attribute_name] = attribute_value
     """
     return self.__getAttributesForList('Datasets','DatasetID',datasetIDList,attrList)
-
 
   def __getAttributesForList(self,table,tableID,idList,attrList):
     attrNames = string.join(map(lambda x: str(x),attrList ),',')
