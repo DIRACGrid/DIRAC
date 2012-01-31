@@ -6,10 +6,10 @@ __RCSID__  = "$Id:  $"
 import datetime
 
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
+#from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
-csAPI = CSAPI()
+#csAPI = CSAPI()
 rsc   = ResourceStatusClient()
 
 ################################################################################
@@ -127,7 +127,7 @@ def setStorageElementStatus( elementName, statusType, status, reason = None,
         S_OK( 'Unknown' ) 
   '''
   
-  cs_path = "/Resources/StorageElements/%s"
+#  cs_path = "/Resources/StorageElements/%s"
   
   # We set by default the tokenOwner duration to 1 day
   expiration = datetime.datetime.utcnow() + datetime.timedelta( days = 1 )
@@ -146,15 +146,16 @@ def setStorageElementStatus( elementName, statusType, status, reason = None,
     res = rsc.modifyElementStatus( 'StorageElement', elementName, statusType, **kwargs )
     if not res[ 'OK' ]:
       gLogger.warn( 'RSS: %s' % _msg )
-      return res
-      
-    res = csAPI.setOption( "%s/%s/%sAccess" % ( cs_path, elementName, statusType ), status )  
-    if not res[ 'OK' ]:
-      gLogger.warn( 'CS: %s' % _msg )
-      return res
-    
-    res = csAPI.commitChanges()
     return res
+      
+# WE DO NOT WRITE TO CS !      
+#    res = csAPI.setOption( "%s/%s/%sAccess" % ( cs_path, elementName, statusType ), status )  
+#    if not res[ 'OK' ]:
+#      gLogger.warn( 'CS: %s' % _msg )
+#      return res
+#    
+#    res = csAPI.commitChanges()
+#    return res
 
   except Exception, e:
 
@@ -162,8 +163,6 @@ def setStorageElementStatus( elementName, statusType, status, reason = None,
     gLogger.error( _msg % ( elementName, status, statusType ) )
     gLogger.exception( e )
     return S_ERROR( _msg % ( elementName, status, statusType ) )
-
-
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
