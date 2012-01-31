@@ -145,7 +145,7 @@ class CachedJobState( object ):
     return self.__cacheResult( 'att.%s' % name, self.__jobState.getAttribute, ( name, ) )
 
   def getAttributes( self, nameList = None ):
-    return self.__cacheDict( 'att', self.__jobState.getAttributeList, nameList )
+    return self.__cacheDict( 'att', self.__jobState.getAttributes, nameList )
 
 #Optimizer params
 
