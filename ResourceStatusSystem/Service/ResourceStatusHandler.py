@@ -73,7 +73,6 @@ class ResourceStatusHandler( RequestHandler ):
     global db
     db = database
 
-
   types_insert = [ dict, dict ]
   @HandlerDec
   def export_insert( self, params, meta ):
@@ -94,8 +93,7 @@ class ResourceStatusHandler( RequestHandler ):
     '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the insert method returns ( db.insert )
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    return db
 
   types_update = [ dict, dict ]
   @HandlerDec
@@ -117,8 +115,7 @@ class ResourceStatusHandler( RequestHandler ):
     '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the update method returns ( db.update )
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    return db
 
   types_get = [ dict, dict ]
   @HandlerDec
@@ -140,8 +137,7 @@ class ResourceStatusHandler( RequestHandler ):
     '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the get method returns ( db.get )
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    return db
 
   types_delete = [ dict, dict ]
   @HandlerDec
@@ -163,8 +159,7 @@ class ResourceStatusHandler( RequestHandler ):
     '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the delete method returns ( db.delete )
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    return db
 
 #################################################################################
 ##EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
