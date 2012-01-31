@@ -21,7 +21,7 @@ class JobStoreHandler( RequestHandler ):
     #Try to do magic
     myStuff = dir( cls )
     for method in dir( JobState ):
-      if method.find( "set" ) != 0 and method.find( "get" ) != 0:
+      if method.find( "set" ) != 0 and method.find( "get" ) != 0 and method.find( "execute" ) != 0:
         continue
       if "export_%s" % method in myStuff:
         log.info( "Skipping method %s. It's already defined in the Handler" % method )

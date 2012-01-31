@@ -21,12 +21,15 @@ class CachedJobState( object ):
         trace = ( self.__functor.__name__, args, kwargs )
       else:
         trace = ( self.__functor.__name__, args )
-      funcSelf._addTrace( trace )
-      return self.__functor( *args, **kwargs )
+      result = self.__functor( *args, **kwargs )
+      if result[ 'OK' ]:
+        funcSelf._addTrace( trace )
+      return result
 
   log = gLogger.getSubLogger( "CachedJobState" )
 
   def __init__( self, jid ):
+    self.dOnlyCache = False
     self.__jid = jid
     self.__jobState = JobState( jid )
     self.__cache = {}
@@ -36,12 +39,30 @@ class CachedJobState( object ):
   def jid( self ):
     return self.__jid
 
-  @property
-  def traceActions( self ):
-    return self.__keepTrace
-
   def _addTrace( self, actionTuple ):
     self.__trace.append( actionTuple )
+
+  def getTrace( self ):
+    return copy.copy( self.__trace )
+
+  def commitChanges( self ):
+    if not self.__trace:
+      return S_OK()
+    trace = self.__trace
+    result = self.__jobState.executeTrace( trace )
+    done = 0
+    try:
+      result.pop( 'rpcStub' )
+    except KeyError:
+      pass
+    if not result[ 'OK' ]:
+      if 'nProc' in result:
+        done = result[ 'nProc' ]
+    else:
+      done = len( trace )
+    for iP in range( done ):
+      self.__trace.pop( 0 )
+    return result
 
   def __cacheExists( self, keyList ):
     if type( keyList ) in types.StringTypes:
@@ -56,6 +77,8 @@ class CachedJobState( object ):
     #If it's a string
     if keyType in types.StringTypes:
       if cKey not in self.__cache:
+        if self.dOnlyCache:
+          return S_ERROR( "%s is not cached" )
         if not fArgs:
           fArgs = tuple()
         result = functor( *fArgs )
@@ -67,6 +90,8 @@ class CachedJobState( object ):
     #Tuple/List
     elif keyType in ( types.ListType, types.TupleType ):
       if not self.__cacheExists( cKey ):
+        if self.dOnlyCache:
+          return S_ERROR( "%s is not cached" )
         if not fArgs:
           fArgs = tuple()
         result = functor( *fArgs )
@@ -85,17 +110,27 @@ class CachedJobState( object ):
       raise RuntimeError( "Cache key %s does not have a valid type" % cKey )
 
   def __cacheDict( self, prefix, functor, keyList = None ):
-    if not keyKist or not self.__cacheExists( [ "%s.%s" % ( prefix, key ) for key in keyList ] ):
+    if not keyList or not self.__cacheExists( [ "%s.%s" % ( prefix, key ) for key in keyList ] ):
       result = functor( keyList )
       if not result[ 'OK' ]:
         return result
       data = result [ 'Value' ]
       for key in data:
-        self.__cache[ "%s.%s" % ( prefix, key ) ] = data[ key ]
-    return S_OK( dict( [ ( "%s.%s" % ( prefix, key ), data[ key ] ) for key in keyList ] ) )
+        cKey = "%s.%s" % ( prefix, key )
+        #If the key is already in the cache. DO NOT TOUCH. User may have already modified it. 
+        #We update the coming data with the cached data
+        if cKey in self.__cache:
+          data[ key ] = self.__cache[ cKey ]
+        else:
+          self.__cache[ cKey ] = data[ key ]
+      return S_OK( data )
+    return S_OK( dict( [ ( key, self.__cache[ "%s.%s" % ( prefix, key ) ] ) for key in keyList ] ) )
 
   def _inspectCache( self ):
     return copy.deepcopy( self.__cache )
+
+  def clearCache( self ):
+    self.__cache = {}
 
 
 # Attributes
@@ -128,15 +163,15 @@ class CachedJobState( object ):
 
   @TracedMethod
   def setAttribute( self, name, value ):
-    if type( name ) != types.StringTypes:
+    if type( name ) not in types.StringTypes:
       return S_ERROR( "Attribute name has to be a string" )
     self.__cache[ "att.%s" % name ] = value
     return S_OK()
 
   @TracedMethod
   def setAttributes( self, attDict ):
-    if type( attrDict ) != types.DictType:
-      return S_ERROR( "Attributes has to be a dictionary" )
+    if type( attDict ) != types.DictType:
+      return S_ERROR( "Attributes has to be a dictionary and it's %s" % str( type( attDict ) ) )
     for key in attDict:
       self.__cache[ 'att.%s' % key ] = attDict[ key ]
     return S_OK()
@@ -152,7 +187,7 @@ class CachedJobState( object ):
 
   @TracedMethod
   def setOptParameter( self, name, value ):
-    if type( name ) != types.StringTypes:
+    if type( name ) not in types.StringTypes:
       return S_ERROR( "Attribute name has to be a string" )
     self.__cache[ 'optp.%s' % name ] = value
     return S_OK()
@@ -165,6 +200,7 @@ class CachedJobState( object ):
       self.__cache[ 'optp.%s' % key ] = pDict[ key ]
     return S_OK()
 
+  @TracedMethod
   def removeOptParameters( self, nameList ):
     if type( nameList ) in types.StringTypes:
       nameList = [ nameList ]
@@ -175,11 +211,10 @@ class CachedJobState( object ):
         self.__cache.pop( "optp.%s" % name )
       except KeyError:
         pass
-    return self.__jobState.removeOptParameters( nameList )
+    return S_OK()
 
   def getOptParameter( self, name ):
     return self.__cacheResult( "optp.%s" % name, self.__jobState.getOptParameter, ( name, ) )
 
-  @RemoteMethod
   def getOptParameters( self, nameList = None ):
     return self.__cacheDict( 'optp', self.__jobState.getOptParameters, nameList )

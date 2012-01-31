@@ -87,11 +87,58 @@ class JobState( object ):
       return self.__getDB().setJobJDL( self.__jid, manifest )
     return self._getStoreClient().setManifest( self.__jid, manifest )
 
+#Execute traces
+
+  @RemoteMethod
+  def executeTrace( self, trace ):
+    try:
+      self.__checkType( trace , ( types.ListType, types.TupleType ) )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    nProc = 0
+    result = S_OK()
+    for step in trace:
+      if type( step ) != types.TupleType or len( step ) < 2:
+        result = S_ERROR( "Step %s is not properly formatted" % str( step ) )
+        break
+      if type( step[1] ) != types.TupleType:
+        result = S_ERROR( "Step %s is not properly formatted" % str( step ) )
+        break
+      if len( step ) > 2 and type( step[2] ) != types.DictType:
+        result = S_ERROR( "Step %s is not properly formatted" % str( step ) )
+        break
+      try:
+        fT = getattr( self, step[0] )
+      except AttributeError:
+        result = S_ERROR( "Step %s has invalid method name" % str( step ) )
+        break
+      try:
+        args = step[1]
+        if len( step ) > 2:
+          kwargs = step[2]
+          fRes = fT( *args, **kwargs )
+        else:
+          fRes = fT( *args )
+      except Exception, excp:
+        gLogger.exception( "JobState cannot have exceptions like this!" )
+        result = S_ERROR( "Step %s has had an exception! %s" % ( step , excp ) )
+        break
+      if not fRes[ 'OK' ]:
+        result = S_ERROR( "Step %s has gotten error: %s" % ( step, fRes[ 'Message' ] ) )
+        break
+      nProc += 1
+    if not result[ 'OK' ]:
+      result[ 'nProc' ] = nProc
+    else:
+      result[ 'Value' ] = nProc
+    return result
 #
 # Status
 # 
 
   def __checkType( self, value, tList ):
+    if type( tList ) not in ( types.ListType, types.TupleType ):
+      tList = [ tList ]
     if type( value ) not in tList:
       raise TypeError( "%s has wrong type. Has to be one of %s" % ( value, tList ) )
 
