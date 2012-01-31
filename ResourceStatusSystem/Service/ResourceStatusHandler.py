@@ -7,7 +7,7 @@ from DIRAC                                             import gConfig, S_OK
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators   import HandlerDec3
+from DIRAC.ResourceStatusSystem.Utilities.Decorators   import HandlerDec
 from DIRAC.ResourceStatusSystem.Utilities              import Utils
 db = False
 
@@ -75,7 +75,7 @@ class ResourceStatusHandler( RequestHandler ):
 
 
   types_insert = [ dict, dict ]
-  @HandlerDec3
+  @HandlerDec
   def export_insert( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
@@ -98,7 +98,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db, credentials
 
   types_update = [ dict, dict ]
-  @HandlerDec3
+  @HandlerDec
   def export_update( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
@@ -121,7 +121,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db, credentials
 
   types_get = [ dict, dict ]
-  @HandlerDec3
+  @HandlerDec
   def export_get( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It \
@@ -144,7 +144,7 @@ class ResourceStatusHandler( RequestHandler ):
     return db, credentials
 
   types_delete = [ dict, dict ]
-  @HandlerDec3
+  @HandlerDec
   def export_delete( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
