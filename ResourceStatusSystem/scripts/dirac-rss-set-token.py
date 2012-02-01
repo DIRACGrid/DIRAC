@@ -83,7 +83,7 @@ if not params[ 'g' ] in ValidRes:
 if params[ 'k' ] != 'RS_SVC':
   
   rmc = ResourceManagementClient()
-  u   = rmc.getUserRegistry( login = params[ 'k' ] )
+  u   = rmc.getUserRegistryCache( login = params[ 'k' ] )
   
   if not u[ 'OK' ] or not u[ 'Value' ]:
     gLogger.error( '"%s" is not a known user' % params[ 'k' ] )
@@ -127,8 +127,8 @@ for lst in element[ 'Value' ]:
     gLogger.notice( 'TokenOwner for %s (%s) is already %s. Extending period.' % ( params['n'], sType, tOwn ))
     #continue
     
-  res = rsCl.modifyElementStatus( params['g'], params['n'], stype, reason = params['r'], 
-                                  tokenOwner = userName, tokenExpiration = tExp )
+  res = rsCl.modifyElementStatus( params['g'], params['n'], sType, reason = params['r'], 
+                                  tokenOwner = params['k'], tokenExpiration = tExp )
     
   if not res['OK']:
     gLogger.error( res[ 'Message' ] )
