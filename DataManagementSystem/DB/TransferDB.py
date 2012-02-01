@@ -783,29 +783,18 @@ class TransferDB( DB ):
 
 
   def getRegisterFailover( self, fileID ):
-    """ in FTSMonitorAgent on failed registration FileToFTS.Status is set to 'Failed' 
-        but FileToCat.Status is set to 'Waiting' (was Executing) 
+    """ in FTSMonitorAgent on failed registration
+        FileToCat.Status is set to 'Waiting' (was 'Executing') 
         got to query those for TA, will try to regiter them there
     """
-
-    query = "SELECT DISTINCT ChannelID, MAX(SubmissionTime) FROM FileToFTS WHERE FileID = %s AND Status = 'Done' GROUP BY ChannelID;" % fileID
+    query = "SELECT PFN, SE, ChannelID, MAX(SubmitTime) FROM FileToCat WHERE Status = 'Waiting' AND FileID = %s;" % fileID
     res = self._query( query )
     if not res["OK"]:
       return res
-    ## get channelIDs
-    channelIDs = [ rec[0] for rec in res["Value"] ]
-    ## no failed files? do nothing, return
-    if not channelIDs:
-      return S_OK()
-    ## query FileToCat for Waiting files = registration has failed, will select them for registration 
-    query = "SELECT PFN, SE, ChannelID FROM FileToCat WHERE Status = 'Waiting' AND FileID = %s AND ChannelID IN (%s);" % ( fileID, 
-                                                                                                                ",".join([channelIDs] ) )
-    
-    res = self._query( query )
-    if not res["OK"]:
-      return res
-    ## return list of tuples ( PFN, SE )
-    return  S_OK( list( res["Value"] ) )
+    ## from now on don't care about SubmitTime
+    res = [ rec[:3] for rec in res["Value"] ]
+    ## return list of tuples [ ( PFN, SE, ChannelID ), ... ]
+    return  S_OK( res )
     
 
   #################################################################################
