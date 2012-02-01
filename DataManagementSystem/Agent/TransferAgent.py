@@ -726,12 +726,12 @@ class TransferAgent( RequestAgentBase ):
       ## FAILOVER REGISTRATION
       waitingRegistrations = False
       self.log.info( "schedule: *** failover registration *** ")
-      self.log.info( "schedule: obtaining all files for %d SubRequest" % iSubRequest )
+      self.log.info( "schedule: obtaining all files in %d SubRequest" % iSubRequest )
       subRequestFiles = requestObj.getSubRequestFiles( iSubRequest, "transfer" )
       if not subRequestFiles["OK"]:
         return subRequestFiles
       subRequestFiles = subRequestFiles["Value"]
-      self.log.info( "schedule: SubRequest %s found with %s files" % ( iSubRequest, len( subRequestFiles ) ) )
+      self.log.info( "schedule: found %s files" % ( iSubRequest, len( subRequestFiles ) ) )
       for subRequestFile in subRequestFiles:
         status = subRequestFile["Status"]
         LFN = subRequestFile["LFN"]
@@ -752,17 +752,18 @@ class TransferAgent( RequestAgentBase ):
             self.log.debug("schedule: failover registration of %s to %s" % ( LFN, SE ) )
             ## register replica now
             registerReplica = self.replicaManager().registerReplica( ( LFN, PFN, SE ) )
-            if not registerReplica["OK"] or not registerReplica["Value"]:
-              error = registerReplica["Message"] in "Message" in registerReplica else "empty value from RM call"
+            if ( not registerReplica["OK"] ) or ( not registerReplica["Value"] ) or ( LFN in registerReplica["Value"]["Failed"] ):
+              error = registerReplica["Message"] if "Message" in registerReplica else None 
+              if "Value" in registerReplica:
+                if not registerReplica["Value"]:
+                  error = "RM call returned empty value"
+                else:
+                  error = registerReplica["Value"]["Failed"][LFN]
               self.log.error( "schedule: unable to register %s at %s: %s" %  ( LFN, SE, registerReplica["Message"] ) )
-              continue
-            ## RM call OK, registration failed
-            if LFN in registerReplica["Value"]["Failed"]:
-              self.log.debug( "schedule: registration of %s at %s has failed: %s" % ( LFN, SE,
-                                                                                      registerReplica["Value"]["Failed"][LFN] ) )
-              ## set waitingRegistration flag
               waitingRegistrations = True
+
             elif LFN in registerReplica["Value"]["Successfull"]:
+
               ## no other option, it must be in successfull
               updateRegister = self.transferDB().setRegistrationDone( channelID, FileID )
               if not updateRegister["OK"]:
