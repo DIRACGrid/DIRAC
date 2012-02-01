@@ -788,7 +788,7 @@ class TransferDB( DB ):
         got to query those for TA, will try to regiter them there
     """
 
-    query = "SELECT DISTINCT ChannelID, MAX(SubmissionTime) FROM FileToFTS WHERE FileID = %s AND Status = 'Failed' GROUP BY ChannelID;" % fileID
+    query = "SELECT DISTINCT ChannelID, MAX(SubmissionTime) FROM FileToFTS WHERE FileID = %s AND Status = 'Done' GROUP BY ChannelID;" % fileID
     res = self._query( query )
     if not res["OK"]:
       return res
