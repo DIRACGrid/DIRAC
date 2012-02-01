@@ -1,6 +1,6 @@
 ########################################################################
 # $HeadURL$
-# File :   SSHTorqueComputingElement.py
+# File :   SSHGEComputingElement.py
 # Author : A.T. V.H.
 ########################################################################
 
