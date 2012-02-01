@@ -630,14 +630,13 @@ class TransferAgent( RequestAgentBase ):
       ###
 
       ## loop over Scheduled files, failover for registration 
-      self.log.info( "schedule: obtaining 'Waiting' files for %d SubRequest." % iSubRequest )
-      files = self.collectFiles( requestObj, iSubRequest, status = "Scheduled" )
+      self.log.info( "schedule: obtaining 'Done' files for %d SubRequest." % iSubRequest )
+      files = self.collectFiles( requestObj, iSubRequest, status = "Done" )
       if not files["OK"]:
-        self.log.debug("schedule: failed to get 'Scheduled' files from SubRequest.", files["Message"] )
+        self.log.debug("schedule: failed to get 'Done' files from SubRequest.", files["Message"] )
         continue
       scheduledFiles, replicas, metadata = files["Value"]
-      
-      
+       
       for scheduledFileLFN, scheduledFileID in sorted( scheduledFiles.items() ):
         self.log.info("schedule: processing file FileID=%s LFN=%s" % ( scheduledFileID, scheduledFileLFN ) ) 
 
@@ -647,7 +646,7 @@ class TransferAgent( RequestAgentBase ):
           self.log.error( "schedule: %s" % failedToRegister["Message"] )
           return failedToRegister
         if not failedToRegister["Value"]:
-          self.log.debug("schedule: no failed registration found for this file")
+          self.log.debug("schedule: no waiting registrations found for this file")
           continue
         ## loop and try to register
         failedToRegister = failedToRegister["Value"]
@@ -682,7 +681,7 @@ class TransferAgent( RequestAgentBase ):
         ## set file status to Done
         if registerCount = len ( failedToRegister ):
           self.log.debug("schedule: failover registration completed, %s is present at all targets" % scheduledFileLFN )
-          requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", scheduledFileLFN, "Status", "Done" )
+          #requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", scheduledFileLFN, "Status", "Done" )
           continue
 
             
