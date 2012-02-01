@@ -2473,6 +2473,12 @@ class ResourceStatusClient:
     if kwargs[ 'lastCheckTime' ] is None:
       kwargs[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )
     
+    #We give the token owner one day
+    tOwner = kwargs[ 'tokenOwner' ] is not None and kwargs[ 'tokenOwner' ] != 'RS_SVC' 
+    if tOwner and kwargs[ 'tokenExpiration' ] is None:
+      _tomorrow = datetime.utcnow().replace( microsecond = 0 ) + timedelta( days = 1 )
+      kwargs[ 'tokenExpiration' ] = _tomorrow
+    
     #updateSQLQuery = self._updateElement( 'ElementStatus', element, 
     #                                       *tuple( args ) )
     updateSQLQuery = self._updateElement( 'ElementStatus', **kwargs ) 
