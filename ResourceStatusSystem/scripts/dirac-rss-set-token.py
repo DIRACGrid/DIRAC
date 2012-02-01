@@ -24,7 +24,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '\nArguments:',
                                      '  granularity (string): granularity of the resource, e.g. "Site"',
                                      '  element_name (string): name of the resource, e.g. "LCG.CERN.ch"',
-                                     '  token (string): token to be assigned ( "RS_SVC" gives it back to RSS ), e.g. "ubeda"',
+                                     '  token (string, optional): token to be assigned ( "RS_SVC" gives it back to RSS ), e.g. "ubeda"',
                                      '  reason (string, optional): reason for the change, e.g. "I dont like the site admin"',
                                      '  statusType ( string, optional ): defines the status type, otherwise it applies to all',
                                      '  duration( integer, optional ): duration of the token.\n'] ) )
