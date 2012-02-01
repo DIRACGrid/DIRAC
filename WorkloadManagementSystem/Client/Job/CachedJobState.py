@@ -1,5 +1,6 @@
 
 import types, copy
+from DIRAC.Core.Utilities import Time
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.Job.JobState import JobState
 
@@ -17,12 +18,17 @@ class CachedJobState( object ):
 
     def __call__( self, *args, **kwargs ):
       funcSelf = self.__functor.__self__
-      if kwargs:
-        trace = ( self.__functor.__name__, args, kwargs )
-      else:
-        trace = ( self.__functor.__name__, args )
+      funcName = self.__functor.__name__
+      if not funcSelf.valid:
+        return S_ERROR( "CachedJobState( %d ) is not valid" % funcSelf.jid )
       result = self.__functor( *args, **kwargs )
       if result[ 'OK' ]:
+        if funcName in ( "setStatus", "setMinorStatus", "setAppStatus" ):
+          kwargs[ 'updateTime' ] = Time.dateTime()
+        if kwargs:
+          trace = ( funcName, args, kwargs )
+        else:
+          trace = ( funcName, args )
         funcSelf._addTrace( trace )
       return result
 
@@ -33,8 +39,17 @@ class CachedJobState( object ):
     self.__jid = jid
     self.__jobState = JobState( jid )
     self.__cache = {}
-    self.__trace = []
-
+    self.__trace = [] 
+    result = self.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime"] )
+    if result[ 'OK' ]:
+      self.__initState = result[ 'Value' ]
+    else:
+      self.__initState = None 
+      
+  @property
+  def valid(self):
+    return self.__initState != None
+    
   @property
   def jid( self ):
     return self.__jid
@@ -46,23 +61,23 @@ class CachedJobState( object ):
     return copy.copy( self.__trace )
 
   def commitChanges( self ):
+    if self.__initState == None:
+      return S_ERROR( "CachedJobState( %d ) is not valid" % self.__jid )
     if not self.__trace:
       return S_OK()
     trace = self.__trace
-    result = self.__jobState.executeTrace( trace )
-    done = 0
+    result = self.__jobState.executeTrace( self.__initState, trace )
     try:
       result.pop( 'rpcStub' )
     except KeyError:
       pass
     if not result[ 'OK' ]:
-      if 'nProc' in result:
-        done = result[ 'nProc' ]
-    else:
-      done = len( trace )
-    for iP in range( done ):
-      self.__trace.pop( 0 )
-    return result
+      self.__initState = None 
+      return result
+    done = len( self.__trace )
+    self.__trace = []
+    self.__initState = result[ 'Value' ]
+    return S_OK( done )
 
   def __cacheExists( self, keyList ):
     if type( keyList ) in types.StringTypes:
@@ -137,9 +152,10 @@ class CachedJobState( object ):
 # 
 
   @TracedMethod
-  def setStatus( self, majorStatus, minorStatus ):
+  def setStatus( self, majorStatus, minorStatus = None ):
     self.__cache[ 'att.Status' ] = majorStatus
-    self.__cache[ 'att.MinorStatus' ] = minorStatus
+    if minorStatus:
+      self.__cache[ 'att.MinorStatus' ] = minorStatus
     return S_OK()
 
   @TracedMethod

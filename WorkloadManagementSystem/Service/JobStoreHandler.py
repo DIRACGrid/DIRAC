@@ -24,24 +24,46 @@ class JobStoreHandler( RequestHandler ):
       if method.find( "set" ) != 0 and method.find( "get" ) != 0 and method.find( "execute" ) != 0:
         continue
       if "export_%s" % method in myStuff:
-        log.info( "Skipping method %s. It's already defined in the Handler" % method )
-        continue
-      log.info( "Mimicking method %s" % method )
-      setattr( cls, "auth_%s" % method, [ 'all' ] )
-      setattr( cls, "types_%s" % method, [ ( types.IntType, types.LongType ) ] )
-      print "export_%s" % method
-      setattr( cls, "export_%s" % method, cls.__mimeticFunction )
+        log.info( "Wrapping method %s. It's already defined in the Handler" % method )
+        defMeth = getattr( cls, "export_%s" % method )
+        setattr( cls, "_usr_def_%s" % method, defMeth )
+        setattr( cls, "types_%s" % method, [ ( types.IntType, types.LongType ), types.TupleType ] )
+        setattr( cls, "export_%s" % method, cls.__unwrapAndCall )
+      else:
+        log.info( "Mimicking method %s" % method )
+        setattr( cls, "auth_%s" % method, [ 'all' ] )
+        setattr( cls, "types_%s" % method, [ ( types.IntType, types.LongType ), types.TupleType ] )
+        setattr( cls, "export_%s" % method, cls.__mimeticFunction )
     return S_OK()
 
-  def __mimeticFunction( self, *args ):
-    print "MIMETIC!!", self, self.srv_getActionTuple(), args
+  def __unwrapArgs(self, margs ):
+    if len( margs ) < 1 or type( margs[0] ) != types.TupleType or ( len( margs ) > 1 and type( margs[1] ) != types.DictType ):
+      return S_ERROR( "Invalid arg stub. Expected tuple( args, kwargs? ), received %s" % margs )
+    if len( margs ) == 1:
+      return S_OK( ( margs[0], {} ) )
+    else:
+      return S_OK( ( margs[0], margs[1] ) )
+
+  def __mimeticFunction( self, jid, margs ):
     method = self.srv_getActionTuple()[1]
-    jid = args[0]
-    args = args[1:]
+    result = self.__unwrapArgs(margs)
+    if not result[ 'OK' ]:
+      return result
+    args, kwargs = result[ 'Value' ]
     if not self.__clientHasAccess( jid ):
       return S_ERROR( "You're not authorized to access jid %s" % jid )
-    return getattr( self.__getJobState( jid ), method )( *args )
-
+    return getattr( self.__getJobState( jid ), method )( *args, **kwargs )
+  
+  def __unwrapAndCall(self, *margs ):
+    method = self.srv_getActionTuple()[1]
+    result = self.__unwrapArgs(margs)
+    if not result[ 'OK' ]:
+      return result
+    args, kwargs = result[ 'Value' ]
+    if not self.__clientHasAccess( jid ):
+      return S_ERROR( "You're not authorized to access jid %s" % jid )
+    return getattr(cls, "export_%s" % method )( *args, **kwargs )
+  
   def __getJobState( self, jid ):
     return JobState( jid, forceLocal = True )
 
@@ -70,30 +92,5 @@ class JobStoreHandler( RequestHandler ):
   auth_getManifest = "all"
   types_getManifest = [ ( types.IntType, types.LongType ) ]
   def export_getManifest( self, jid ):
-    if not self.__clientHasAccess( jid ):
-      return S_ERROR( "You're not authorized to access jid %s" % jid )
     return self.__getJobState( jid ).getManifest( rawData = True )
-
-  auth_setManifest = "all"
-  types_setManifest = [ ( types.IntType, types.LongType ), types.StringTypes ]
-  def export_setManifest( self, jid, manifest ):
-    if not self.__clientHasAccess( jid ):
-      return S_ERROR( "You're not authorized to access jid %s" % jid )
-    return self.__getJobState( jid ).setManifest( manifest )
-
-#Status
-
-  auth_setStatus = "all"
-  types_setStatus = [ ( types.IntType, types.LongType ), types.StringTypes, types.StringTypes ]
-  def export_setStatus( self, jid, majorStatus, minorStatus ):
-    if not self.__clientHasAccess( jid ):
-      return S_ERROR( "You're not authorized to access jid %s" % jid )
-    return self.__getJobState( jid ).setStatus( majorStatus. minorStatus )
-
-  auth_getStatus = "all"
-  types_getStatus = [ ( types.IntType, types.LongType ) ]
-  def export_getStatus( self, jid ):
-    if not self.__clientHasAccess( jid ):
-      return S_ERROR( "You're not authorized to access jid %s" % jid )
-    return self.__getJobState( jid ).getStatus()
 

@@ -1,12 +1,14 @@
 
 import types
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities import Time
 from DIRAC.WorkloadManagementSystem.Client.Job.JobManifest import JobManifest
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class JobState( object ):
 
   __jobDB = None
+  __jobLogDB = None
   _sDisableLocal = False
 
   class RemoteMethod( object ):
@@ -19,15 +21,18 @@ class JobState( object ):
 
     def __call__( self, *args, **kwargs ):
       funcSelf = self.__functor.__self__
-      if kwargs:
-        raise Exception( "JobState.%s does not support keyword arguments" % ( self.__functor.__name ) )
-      if not funcSelf.hasLocalAccess:
+      if not funcSelf.localAccess:
         rpc = funcSelf._getStoreClient()
-        return getattr( rpc, self.__functor.__name__ )( funcSelf.jid, *args )
-      return self.__functor( *args )
+        if kwargs:
+          fArgs = ( args, kwargs )
+        else:
+          fArgs = ( args, )
+        return getattr( rpc, self.__functor.__name__ )( funcSelf.jid, fArgs )
+      return self.__functor( *args, **kwargs )
 
   def __init__( self, jid, forceLocal = False, getRPCFunctor = False ):
     self.__jid = jid
+    self.__source = "Unknown"
     self.__forceLocal = forceLocal
     if getRPCFunctor:
       self.__getRPCFunctor = getRPCFunctor
@@ -42,17 +47,31 @@ class JobState( object ):
         if not result[ 'OK' ]:
           gLogger.warn( "Could not connect to JobDB (%s). Resorting to RPC" % result[ 'Message' ] )
           JobState.__jobDB = False
+          JobState.__jobLogDB = False
         else:
           result[ 'Value' ].close()
+          from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+          JobState.__jobLogDB = JobLoggingDB()
+          result = JobState.__jobLogDB._getConnection()
+          if not result[ 'OK' ]:
+            gLogger.warn( "Could not connect to JobLoggingDB (%s). Resorting to RPC" % result[ 'Message' ] )
+            JobState.__jobDB = False
+            JobState.__jobLogDB = False
+          else:
+            result[ 'Value' ].close()
       except ImportError:
         JobState.__jobDB = False
+        JobState.__jobLogDB = False
 
   @property
   def jid( self ):
     return self.__jid
+  
+  def setSource(self, source ):
+    self.__source = source 
 
   @property
-  def hasLocalAccess( self ):
+  def localAccess( self ):
     if JobState._sDisableLocal:
       return False
     if JobState.__jobDB or self.__forceLocal:
@@ -90,29 +109,32 @@ class JobState( object ):
 #Execute traces
 
   @RemoteMethod
-  def executeTrace( self, trace ):
+  def executeTrace( self, initialState, trace ):
     try:
+      self.__checkType( initialState , types.DictType )
       self.__checkType( trace , ( types.ListType, types.TupleType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    nProc = 0
-    result = S_OK()
+    result = self.getAttributes( initialState.keys() )
+    if not result[ 'OK' ]:
+      return result
+    if not result[ 'Value' ] == initialState:
+      return S_ERROR( "Initial state was different. Expected %s Received %s" % ( initialState, result[ 'Value' ] ) )
+    gLogger.info( "Job %s: About to execute trace. Current state %s" % ( self.__jid, initialState ) )
+      
     for step in trace:
       if type( step ) != types.TupleType or len( step ) < 2:
-        result = S_ERROR( "Step %s is not properly formatted" % str( step ) )
-        break
+        return S_ERROR( "Step %s is not properly formatted" % str( step ) )
       if type( step[1] ) != types.TupleType:
-        result = S_ERROR( "Step %s is not properly formatted" % str( step ) )
-        break
+        return S_ERROR( "Step %s is not properly formatted" % str( step ) )
       if len( step ) > 2 and type( step[2] ) != types.DictType:
-        result = S_ERROR( "Step %s is not properly formatted" % str( step ) )
-        break
+        return S_ERROR( "Step %s is not properly formatted" % str( step ) )
       try:
         fT = getattr( self, step[0] )
       except AttributeError:
-        result = S_ERROR( "Step %s has invalid method name" % str( step ) )
-        break
+        return S_ERROR( "Step %s has invalid method name" % str( step ) )
       try:
+        gLogger.info( " Job %s: Trace step %s" % ( self.__jid,  step ) )
         args = step[1]
         if len( step ) > 2:
           kwargs = step[2]
@@ -121,17 +143,13 @@ class JobState( object ):
           fRes = fT( *args )
       except Exception, excp:
         gLogger.exception( "JobState cannot have exceptions like this!" )
-        result = S_ERROR( "Step %s has had an exception! %s" % ( step , excp ) )
-        break
+        return S_ERROR( "Step %s has had an exception! %s" % ( step , excp ) )
       if not fRes[ 'OK' ]:
-        result = S_ERROR( "Step %s has gotten error: %s" % ( step, fRes[ 'Message' ] ) )
-        break
-      nProc += 1
-    if not result[ 'OK' ]:
-      result[ 'nProc' ] = nProc
-    else:
-      result[ 'Value' ] = nProc
-    return result
+        return S_ERROR( "Step %s has gotten error: %s" % ( step, fRes[ 'Message' ] ) )
+
+    gLogger.info( "Job %s: Ended trace execution" % self.__jid )
+    #We return a new initial state
+    return self.getAttributes( initialState.keys() ) 
 #
 # Status
 # 
@@ -143,22 +161,35 @@ class JobState( object ):
       raise TypeError( "%s has wrong type. Has to be one of %s" % ( value, tList ) )
 
   @RemoteMethod
-  def setStatus( self, majorStatus, minorStatus ):
+  def setStatus( self, majorStatus, minorStatus = None, updateTime = None ):
     try:
       self.__checkType( majorStatus, types.StringType )
-      self.__checkType( minorStatus, types.StringType )
+      self.__checkType( minorStatus, ( types.StringType, types.NoneType ) )
+      self.__checkType( updateTime, ( types.NoneType, Time._dateTimeType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.setJobStatus( self.__jid, majorStatus, minorStatus )
+    result = JobState.__jobDB.setJobStatus( self.__jid, majorStatus, minorStatus )
+    if not result[ 'OK' ]:
+      return result
+    #HACK: Cause joblogging is crappy
+    if not minorStatus:
+      minorStatus = 'idem'
+    return JobState.__jobLogDB.addLoggingRecord( self.__jid, majorStatus, minorStatus, 
+                                                 date = updateTime, source = self.__source )
 
   @RemoteMethod
-  def setMinorStatus( self, minorStatus ):
+  def setMinorStatus( self, minorStatus, updateTime = None ):
     try:
       self.__checkType( minorStatus, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.setJobStatus( self.__jid, minor = minorStatus )
-
+    result = JobState.__jobDB.setJobStatus( self.__jid, minor = minorStatus )
+    if not result[ 'OK' ]:
+      return result
+    return JobState.__jobLogDB.addLoggingRecord( self.__jid, minor = minorStatus, 
+                                                 date = updateTime, source = self.__source )
+  
+  
   @RemoteMethod
   def getStatus( self ):
     result = JobState.__jobDB.getJobAttributes( self.__jid, [ 'Status', 'MinorStatus' ] )
@@ -169,12 +200,16 @@ class JobState( object ):
 
 
   @RemoteMethod
-  def setAppStatus( self, appStatus ):
+  def setAppStatus( self, appStatus, updateTime = None ):
     try:
       self.__checkType( appStatus, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.setJobStatus( self.__jid, application = appStatus )
+    result = JobState.__jobDB.setJobStatus( self.__jid, application = appStatus )
+    if not result[ 'OK' ]:
+      return result
+    return JobState.__jobLogDB.addLoggingRecord( self.__jid, application = appStatus, 
+                                                 date = updateTime, source = self.__source )
 
   @RemoteMethod
   def getAppStatus( self ):
