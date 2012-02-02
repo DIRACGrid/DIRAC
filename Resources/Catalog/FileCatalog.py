@@ -277,19 +277,19 @@ class FileCatalog:
       if moduleLoaded:
         break
       gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
-      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogType )
-      gLogger.verbose( "Looking for file %s" % moduleFile )
-      if not os.path.isfile( moduleFile ):
-        continue
+      #moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogType )
+      #gLogger.verbose( "Looking for file %s" % moduleFile )
+      #if not os.path.isfile( moduleFile ):
+      #  continue
       try:
         # This inforces the convention that the plug in must be named after the file catalog
         moduleName = "%sClient" % ( catalogType )
         catalogModule = __import__( '%s.Resources.Catalog.%s' % ( moduleRootPath, moduleName ),
                                     globals(), locals(), [moduleName] )
       except Exception, x:
-        errStr = "FileCatalog._generateCatalogObject: Failed to import %s: %s" % ( catalogType, x )
-        gLogger.exception( errStr )
-        return S_ERROR( errStr )
+        errStr = "Failed attempt to import %s from the path %s: %s" % ( catalogType, moduleRootPath, x )
+        gLogger.debug( errStr )
+        continue
       try:
         if catalogURL:
           evalString = "catalogModule.%s(url='%s')" % (moduleName,catalogURL)
