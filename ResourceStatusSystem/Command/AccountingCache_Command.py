@@ -56,6 +56,9 @@ class TransferQualityByDestSplitted_Command( Command ):
           return { 'Result' : sources }
         sources = [ s[0] for s in sources[ 'Value' ] ]
     
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
+    
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
       toD   = datetime.utcnow()
@@ -131,6 +134,9 @@ class TransferQualityByDestSplittedSite_Command( Command ):
         if not sources[ 'OK' ]:
           return { 'Result' : sources } 
         sources = [ si[0] for si in sources[ 'Value' ] ]
+    
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
  
@@ -328,9 +334,6 @@ class FailedTransfersBySourceSplitted_Command( Command ):
 
     try:
       
-      
-      
-
       if SEs is None:
         meta = { 'columns' : 'StorageElementName' }
         SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = meta)
@@ -344,11 +347,14 @@ class FailedTransfersBySourceSplitted_Command( Command ):
         if not sources[ 'OK' ]:
           return { 'Result' : sources } 
         sources = [ si[0] for si in sources[ 'Value' ] ]
-    
+
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
+
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
       fromD = datetime.utcnow()-timedelta( hours = self.args[ 0 ] )
-      toD = datetime.utcnow()
+      toD   = datetime.utcnow()
 
       ft_source = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'FailedTransfers', 
                                                    fromD, toD, 
@@ -414,6 +420,9 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
           return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
     
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
+    
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
       fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
@@ -476,6 +485,9 @@ class FailedJobsBySiteSplitted_Command(Command):
         if not sites['OK']:
           return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
+
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
 
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -540,6 +552,9 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
           return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
 
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
+
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
       fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
@@ -602,6 +617,9 @@ class FailedPilotsBySiteSplitted_Command(Command):
         if not sites['OK']:
           return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
+    
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }    
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -667,6 +685,9 @@ class SuccessfullPilotsByCESplitted_Command(Command):
           return { 'Result' : CEs } 
         CEs = [ ce[0] for ce in CEs['Value'] ]
 
+      if not CEs:
+        return { 'Result' : S_ERROR( 'CEs is empty' ) }
+
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
       fromD = datetime.utcnow() - timedelta(hours = self.args[0])
@@ -730,6 +751,9 @@ class FailedPilotsByCESplitted_Command(Command):
           return { 'Result' : CEs } 
         CEs = [ ce[0] for ce in CEs['Value'] ]
     
+      if not CEs:
+        return { 'Result' : S_ERROR( 'CEs is empty' ) }    
+    
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
       fromD = datetime.utcnow()-timedelta(hours = self.args[0])
@@ -792,6 +816,9 @@ class RunningJobsBySiteSplitted_Command(Command):
         if not sites['OK']:
           return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
+    
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }       
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
