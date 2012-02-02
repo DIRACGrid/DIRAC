@@ -127,6 +127,9 @@ class ExecutorMindHandler( RequestHandler ):
     except:
       gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
     return S_OK()
+  
+  def getTaskIds(self):
+    return self.__eDispatch.getTaskIds()
 
   #######
   # Methods that can be overwritten

@@ -1,8 +1,10 @@
 
 import types, copy
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import Time, Dencode
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.Job.JobState import JobState
+from DIRAC.WorkloadManagementSystem.Client.Job.JobManifest import JobManifest
+from TiffTags import TYPES
 
 class CachedJobState( object ):
 
@@ -34,22 +36,25 @@ class CachedJobState( object ):
 
   log = gLogger.getSubLogger( "CachedJobState" )
 
-  def __init__( self, jid ):
+  def __init__( self, jid, skipInitState = False ):
     self.dOnlyCache = False
     self.__jid = jid
     self.__jobState = JobState( jid )
     self.__cache = {}
-    self.__trace = [] 
-    result = self.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime"] )
-    if result[ 'OK' ]:
-      self.__initState = result[ 'Value' ]
-    else:
-      self.__initState = None 
-      
+    self.__trace = []
+    self.__manifest = False
+    self.__initState = None
+    if skipInitStatue:
+      result = self.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime"] )
+      if result[ 'OK' ]:
+        self.__initState = result[ 'Value' ]
+      else:
+        self.__initState = None
+
   @property
-  def valid(self):
+  def valid( self ):
     return self.__initState != None
-    
+
   @property
   def jid( self ):
     return self.__jid
@@ -71,13 +76,36 @@ class CachedJobState( object ):
       result.pop( 'rpcStub' )
     except KeyError:
       pass
-    if not result[ 'OK' ]:
-      self.__initState = None 
-      return result
-    done = len( self.__trace )
+    trLen = len( self.__trace )
     self.__trace = []
+    if not result[ 'OK' ]:
+      self.__initState = None
+      self.__cache = {}
+      return result
     self.__initState = result[ 'Value' ]
-    return S_OK( done )
+    return S_OK( trLen )
+
+  def serialize( self ):
+    return DEncode.encode( ( self.__jid, self.__cache, self.__trace, self.__initState ) )
+
+  @staticmethod
+  def deserialize( stub ):
+    dataTuple, slen = DEncode.dencode( stub )
+    if len( dataTuple ) != 4:
+      return S_ERROR( "Invalid stub" )
+    if type( dataTuple[0] ) not in ( types.IntType, types.LongType ):
+      return S_ERROR( "Invalid stub" )
+    if type( dataTuple[1] ) != types.DictType:
+      return S_ERROR( "Invalid stub" )
+    if type( dataTuple[2] ) != types.ListType:
+      return S_ERROR( "Invalid stub" )
+    if type( dataTuple[3] ) != types.DictType:
+      return S_ERROR( "Invalid stub" )
+    cjs = CachedJobState( dataTuple[0], skipInitState = True )
+    cjs.__cache = dataTuple[1]
+    cjs.__trace = dataTuple[2]
+    cjs.__initState = dataTuple[3]
+    return S_OK( cjs )
 
   def __cacheExists( self, keyList ):
     if type( keyList ) in types.StringTypes:
@@ -144,9 +172,34 @@ class CachedJobState( object ):
   def _inspectCache( self ):
     return copy.deepcopy( self.__cache )
 
-  def clearCache( self ):
+  def _clearCache( self ):
     self.__cache = {}
 
+#
+# Manifest
+#
+
+  def getManifest( self ):
+    if self.__manifest:
+      result = self.__jobState.getManifest()
+      if not result[ 'OK' ]:
+        return result
+      self.__manifest = result[ 'Value' ]
+    return S_OK( self.__manifest )
+
+  def setManifest( self, manifest ):
+    if not isinstance( manifest, JobManifest ):
+      result = manifest.load( result[ 'Value' ] )
+      if not result[ 'OK' ]:
+        return result
+      manifest = result[ 'Value ']
+    manCFG = manifest.dumpAsCFG()
+    if self.__manifest and self.__manifest.dumpAsCFG() == manCFG:
+      return S_OK()
+    self._addTrace( ( "setManifest", ( manCFG, ) ) )
+    self.__manifest = manifest
+    self.__manifest.markAsNotDirty()
+    return S_OK()
 
 # Attributes
 # 

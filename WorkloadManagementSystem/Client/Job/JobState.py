@@ -66,9 +66,9 @@ class JobState( object ):
   @property
   def jid( self ):
     return self.__jid
-  
-  def setSource(self, source ):
-    self.__source = source 
+
+  def setSource( self, source ):
+    self.__source = source
 
   @property
   def localAccess( self ):
@@ -91,20 +91,22 @@ class JobState( object ):
       result = self._getStoreClient().getManifest( self.__jid )
     if not result[ 'OK' ] or rawData:
       return result
-    jobManifest = JobManifest()
-    result = jobManifest.loadJDL( result[ 'Value' ] )
+    manifest = JobManifest()
+    result = manifest.loadJDL( result[ 'Value' ] )
     if not result[ 'OK' ]:
       return result
-    return S_OK( jobManifest )
+    return S_OK( manifest )
 
-  def setManifest( self, jobManifest ):
-    if isinstance( jobManifest, JobManifest ):
-      manifest = jobManifest.dumpAsJDL()
-    else:
-      manifest = str( jobManifest )
+  def setManifest( self, manifestData ):
+    if not isinstance( manifestData, JobManifest ):
+      manifest = JobManifest()
+      result = manifest.load( manifestData )
+      if not result[ 'OK' ]:
+        return result
+      manifestData = manifest.dumpAsJDL()
     if self.hasLocalAccess:
-      return self.__getDB().setJobJDL( self.__jid, manifest )
-    return self._getStoreClient().setManifest( self.__jid, manifest )
+      return self.__getDB().setJobJDL( self.__jid, manifestData )
+    return self._getStoreClient().setManifest( self.__jid, manifestData )
 
 #Execute traces
 
@@ -121,7 +123,7 @@ class JobState( object ):
     if not result[ 'Value' ] == initialState:
       return S_ERROR( "Initial state was different. Expected %s Received %s" % ( initialState, result[ 'Value' ] ) )
     gLogger.info( "Job %s: About to execute trace. Current state %s" % ( self.__jid, initialState ) )
-      
+
     for step in trace:
       if type( step ) != types.TupleType or len( step ) < 2:
         return S_ERROR( "Step %s is not properly formatted" % str( step ) )
@@ -134,7 +136,7 @@ class JobState( object ):
       except AttributeError:
         return S_ERROR( "Step %s has invalid method name" % str( step ) )
       try:
-        gLogger.info( " Job %s: Trace step %s" % ( self.__jid,  step ) )
+        gLogger.info( " Job %s: Trace step %s" % ( self.__jid, step ) )
         args = step[1]
         if len( step ) > 2:
           kwargs = step[2]
@@ -149,7 +151,7 @@ class JobState( object ):
 
     gLogger.info( "Job %s: Ended trace execution" % self.__jid )
     #We return a new initial state
-    return self.getAttributes( initialState.keys() ) 
+    return self.getAttributes( initialState.keys() )
 #
 # Status
 # 
@@ -174,7 +176,7 @@ class JobState( object ):
     #HACK: Cause joblogging is crappy
     if not minorStatus:
       minorStatus = 'idem'
-    return JobState.__jobLogDB.addLoggingRecord( self.__jid, majorStatus, minorStatus, 
+    return JobState.__jobLogDB.addLoggingRecord( self.__jid, majorStatus, minorStatus,
                                                  date = updateTime, source = self.__source )
 
   @RemoteMethod
@@ -186,10 +188,10 @@ class JobState( object ):
     result = JobState.__jobDB.setJobStatus( self.__jid, minor = minorStatus )
     if not result[ 'OK' ]:
       return result
-    return JobState.__jobLogDB.addLoggingRecord( self.__jid, minor = minorStatus, 
+    return JobState.__jobLogDB.addLoggingRecord( self.__jid, minor = minorStatus,
                                                  date = updateTime, source = self.__source )
-  
-  
+
+
   @RemoteMethod
   def getStatus( self ):
     result = JobState.__jobDB.getJobAttributes( self.__jid, [ 'Status', 'MinorStatus' ] )
@@ -208,7 +210,7 @@ class JobState( object ):
     result = JobState.__jobDB.setJobStatus( self.__jid, application = appStatus )
     if not result[ 'OK' ]:
       return result
-    return JobState.__jobLogDB.addLoggingRecord( self.__jid, application = appStatus, 
+    return JobState.__jobLogDB.addLoggingRecord( self.__jid, application = appStatus,
                                                  date = updateTime, source = self.__source )
 
   @RemoteMethod

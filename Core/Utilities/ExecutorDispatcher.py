@@ -444,6 +444,9 @@ class ExecutorDispatcher:
       return S_ERROR( errMsg )
 
     return result
+  
+  def getTaskIds(self):
+    return self.__tasks.keys()
 
   def addTask( self, taskId, taskObj ):
     if not self.__addTaskIfNew( taskId, taskObj ):
