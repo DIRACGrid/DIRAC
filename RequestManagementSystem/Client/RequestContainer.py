@@ -712,8 +712,7 @@ class RequestContainer:
                                                    self.subRequests[requestType][i] ) )
 
     xmlDoc.appendChild( requestTag )
-    #xmlDoc.normalize()
-    return S_OK( xmlDoc.toprettyxml("  ") )
+    return S_OK( xmlDoc.toprettyxml( " ", encoding="UTF-8" ) )
 
   def toXML( self, desiredType = '' ):
     """ Output the request to XML
