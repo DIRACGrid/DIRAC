@@ -344,11 +344,22 @@ class DirectoryMetadata:
 # Find directories corresponding to the metadata 
 #
 ############################################################################################  
-  def __findSubdirByMeta( self, meta, value, subdirFlag = True ):
+  def __findSubdirByMeta( self, meta, value, path, subdirFlag = True ):
     """ Find directories for the given meta datum. If the the meta datum type is a list,
         combine values in OR. In case the meta datum is 'Any', finds all the subdirectories
         for which the meta datum is defined at all.
     """
+
+    subDirString = ''
+    if path != '/':
+      result = self.findDir(path)
+      if not result['OK']:
+        return result
+      dirID = result['Value'] 
+      result = self.db.dtree.getSubdirectoriesByID(dirID,requestString=True,includeParent=True)
+      if not result['OK']:
+        return result
+      subDirString = result['Value'] 
 
     if type( value ) == types.DictType:
       selectList = []
@@ -435,9 +446,12 @@ class DirectoryMetadata:
       return result
     metaTypeDict = result['Value']
     resultDict = {}
+    extraDict = {}
     for key, value in metaDict.items():
       if not key in metaTypeDict:
-        return S_ERROR( 'Unknown metadata field %s' % key )
+        #return S_ERROR( 'Unknown metadata field %s' % key )
+        extraDict[key] = value
+        continue
       keyType = metaTypeDict[key]
       if keyType != "MetaSet":
         resultDict[key] = value
@@ -451,21 +465,46 @@ class DirectoryMetadata:
             return S_ERROR( 'Contradictory query for key %s' % mk )
           else:
             resultDict[mk] = mv
-       
-    resultDict['DirectoryMetadataInfo'] = metaTypeDict        
-    return S_OK( resultDict )
 
-  def findDirectoriesByMetadata( self, queryDict, credDict ):
+    result = S_OK( resultDict )
+    result['ExtraMetadata'] = extraDict
+    return result 
+ 
+  def findDirectoriesByMetadata( self, queryDict, path, credDict ):
     """ Find Directories satisfying the given metadata
     """
+
+    pathDirList = []
+    if path != '/':
+      result = self.db.dtree.findDir(path)
+      if not result['OK']:
+        return result
+
+
+      print "AT >>> findDirectoriesByMetadata", path, result
+
+      dirID = int(result['Value'])
+      result = self.db.dtree.getSubdirectoriesByID(dirID,includeParent=True)
+      if not result['OK']:
+        return result
+      pathDirList = result['Value'].keys()
+
+    print "AT >>> findDirectoriesByMetadata 1", queryDict, path
+
     result = self.__expandMetaDictionary( queryDict, credDict )
     if not result['OK']:
       return result
     metaDict = result['Value']
-    metaInfo = result['Value']['DirectoryMetadataInfo']
+    extraMetaDict = result.get('ExtraMetadata',{})
+
+
+    print "AT >>> findDirectoriesByMetadata 2", metaDict, extraMetaDict
+
     dirList = []
     first = True
+    dirMetaSelect = False
     for meta, value in metaDict.items():
+      dirMetaSelect = True
       if value == "Missing":
         result = self.__findSubdirMissingMeta( meta )
       else:
@@ -483,18 +522,40 @@ class DirectoryMetadata:
             newList.append( d )
         dirList = newList
 
-    result = self.db.dtree.getDirectoryPaths( dirList )
-    if not result['OK']:
-      return result
-    dirNameDict = result['Value']
-    dirNameDict['DirectoryMetadataInfo'] = metaInfo
-    return S_OK(dirNameDict)
+    
+    finalList = []
+    dirSelect = False
+    if dirMetaSelect:
+      dirSelect = True
+      finalList = dirList
+      if pathDirList:
+        finalList = [ d for d in dirList if d in pathDirList ]  
+    else:
+      if pathDirList:
+        dirSelect = True 
+        finalList = pathDirList
 
-  def findFilesByMetadata( self, metaDict, credDict ):
+    print "AT >>> findDirectoriesByMetadata 3", finalList
+
+    if finalList:
+      result = self.db.dtree.getDirectoryPaths( finalList )
+      if not result['OK']:
+        return result
+      dirNameDict = result['Value']
+    elif dirSelect:
+      dirNameDict = {0:"None"}
+    else:
+      dirNameDict = {0:"All"}  
+
+    result = S_OK(dirNameDict)
+    result['ExtraMetadata'] = extraMetaDict
+    return result
+
+  def findFilesByMetadata( self, metaDict, path, credDict ):
     """ Find Files satisfying the given metadata
     """
 
-    result = self.findDirectoriesByMetadata( metaDict, credDict )
+    result = self.findDirectoriesByMetadata( metaDict, path, credDict )
     if not result['OK']:
       return result
 
@@ -644,5 +705,4 @@ class DirectoryMetadata:
         successful[meta] = 'OK'  
       
     return S_OK({'Successful':successful,'Failed':failed})  
-      
       

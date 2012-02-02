@@ -1125,8 +1125,10 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Metadata related operation
     
         usage:
-          meta index <metaname> <metatype>  - add new metadata index. Possible types are:
-                                              'int', 'float', 'string', 'date'
+          meta index [-d|-f] <metaname> <metatype>  - add new metadata index. Possible types are:
+                                                      'int', 'float', 'string', 'date';
+                                                      -d  directory metadata
+                                                      -f  file metadata
           meta set <directory> <metaname> <metavalue> - set metadata value for directory
           meta get [-e] [<directory>] - get metadata for the given directory
           meta tags <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
@@ -1324,6 +1326,16 @@ File Catalog Client $Revision: 1.17 $Date:
     if len(argss) < 2:
       print "Unsufficient number of arguments"
       return
+    
+    fdType = '-d'
+    if argss[0].lower() in ['-d','-f']:
+      fdType = argss[0]
+      del argss[0] 
+      
+    if len(argss) < 2:
+      print "Unsufficient number of arguments"
+      return  
+    
     mname = argss[0] 
     mtype = argss[1]
     
@@ -1343,7 +1355,7 @@ File Catalog Client $Revision: 1.17 $Date:
       print "Error: illegal metadata type %s" % mtype
       return  
         
-    result =  self.fc.addMetadataField(mname,rtype)
+    result =  self.fc.addMetadataField(mname,rtype,fdType)
     if not result['OK']:
       print ("Error: %s" % result['Message'])
     else:
