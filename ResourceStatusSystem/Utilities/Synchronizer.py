@@ -108,8 +108,8 @@ class Synchronizer(object):
     Utils.protect2(self.rsClient.addOrModifyService, service, type_, site )
 
   def __getServiceEndpointInfo(self, node):
-    res = Utils.unpack( self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ) )
-    #res = self.GOCDBClient.getServiceEndpointInfo( 'hostname', node )
+    #res = Utils.unpack( self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ) )
+    res = self.GOCDBClient.getServiceEndpointInfo( 'hostname', node )
     if res['OK']:
       res = res[ 'Value' ]
     else:
