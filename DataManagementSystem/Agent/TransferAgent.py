@@ -1178,7 +1178,7 @@ class StrategyHandler( object ):
     # This will return S_OK( { se : { access : value,... },... } ) || S_ERROR
     res = ResourceStatus.getStorageElementStatus( selist, access, 'Unknown' )
     if res[ 'OK' ] and res['Value']:
-      for k,v in res['Value'].values():
+      for k,v in res['Value'].items():
         if v.has_key( access ) and v[ access ] in [ 'Active', 'Bad' ]:
           activeSE.append( k )
     
