@@ -128,8 +128,32 @@ class ExecutorMindHandler( RequestHandler ):
       gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
     return S_OK()
   
-  def getTaskIds(self):
+  #######
+  # Utilities functions
+  #######
+
+  @classmethod
+  def getTaskIds( cls ):
     return self.__eDispatch.getTaskIds()
+
+  @classmethod
+  def getExecutorsConnected( cls ):
+    return self.__eDispatch.getExecutorsConnected()
+
+  @classmethod
+  def setFailedOnTooFrozen( self, value ):
+    #If a task is frozen too many times, send error or forget task?
+    self.__eDispatch.setFailedOnTooFrozen( value )
+
+  @classmethod
+  def setFreezeOnFailedDispatch( self, value ):
+    #If a task fails to properly dispatch, freeze it?
+    self.__eDispatch.setFreezeOnFailedDispatch( value )
+
+  @classmethod
+  def setFreezeOnUnknownExecutor( self, value ):
+    #If a task needs to go to an executor that has not connected. Forget the task?
+    self.__eDispatch.setFreezeOnUnknownExecutor( value )
 
   #######
   # Methods that can be overwritten

@@ -258,6 +258,46 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.getJobAttributes( self.__jid, nameList )
 
+#Job parameters
+
+  @RemoteMethod
+  def setParameter( self, name, value ):
+    try:
+      self.__checkType( name, types.StringType )
+      self.__checkType( value, types.StringType )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.setJobParameter( self.__jid, name, value )
+
+  @RemoteMethod
+  def setParameters( self, pDict ):
+    try:
+      self.__checkType( pDict, types.DictType )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    pList = []
+    for name in pDict:
+      pList.append( ( name, pDict[ name ] ) )
+    return JobState.__jobDB.setJobParameters( self.__jid, pList )
+
+  @RemoteMethod
+  def getParameter( self, name ):
+    try:
+      self.__checkType( name, types.StringType )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.getJobParameter( self.__jid, name )
+
+  @RemoteMethod
+  def getParameters( self, nameList = None ):
+    try:
+      self.__checkType( nameList, ( types.ListType, types.TupleType,
+                                     types.NoneType ) )
+    except TypeError, excp:
+      return S_ERROR( str( excp ) )
+    return JobState.__jobDB.getJobParameters( self.__jid, nameList )
+
+
 #Optimizer parameters
 
   @RemoteMethod

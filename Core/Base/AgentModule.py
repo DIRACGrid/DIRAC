@@ -173,7 +173,7 @@ class AgentModule:
   def am_initialize( self, *initArgs ):
     agentName = self.am_getModuleParam( 'fullName' )
     result = self.initialize( *initArgs )
-    if result == None:
+    if not isReturnStructure( result ):
       return S_ERROR( "initialize must return S_OK/S_ERROR" )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )

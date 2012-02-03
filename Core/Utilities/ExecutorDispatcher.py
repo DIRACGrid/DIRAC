@@ -285,6 +285,22 @@ class ExecutorDispatcher:
     self.__queues = ExecutorQueues( self.__log )
     self.__states = ExecutorState( self.__log )
     self.__cbHolder = ExecutorDispatcherCallbacks()
+    #If a task is frozen too many times, send error or forget task?
+    self.__failedOnTooFrozen = True
+    #If a task fails to properly dispatch, freeze or forget task?
+    self.__freezeOnFailedDispatch = True
+    #If a task needs to go to an executor that has not connected. Freeze or forget the task?
+    self.__freezeOnUnknownExecutor = True
+
+  def setFailedOnTooFrozen( self, value ):
+    self.__failedOnTooFrozen = value
+
+  def setFreezeOnFailedDispatch( self, value ):
+    self.__freezeOnFailedDispatch = value
+
+  def setFreezeOnUnknownExecutor( self, value ):
+    self.__freezeOnUnknownExecutor = value
+
 
   def _internals( self ):
     return { 'idMap' : dict( self.__idMap ),
@@ -354,7 +370,10 @@ class ExecutorDispatcher:
       self.__freezerLock.release()
     if not isFrozen:
       self.removeTask( taskId )
-      self.__cbHolder.cbTaskError( taskId, "Retried more than 10 times. Last error: %s" % errMsg )
+      if self.__failedOnTooFrozen:
+        self.__cbHolder.cbTaskError( taskId, "Retried more than 10 times. Last error: %s" % errMsg )
+      return False
+    return True
 
   def __unfreezeTasks( self, eType = False ):
     iP = 0
@@ -407,8 +426,12 @@ class ExecutorDispatcher:
 
     if not result[ 'OK' ]:
       self.__log.warn( "Error while calling dispatch callback: %s" % result[ 'Message' ] )
-      if self.__freezeTask( taskId, result[ 'Message' ] ):
-        return S_OK()
+      if self.__freezeOnFailedDispatch:
+        if self.__freezeTask( taskId, result[ 'Message' ] ):
+          return S_OK()
+        return result
+      self.removeTask( taskId )
+      self.__cbHolder.cbTaskError( taskId, "Could not dispatch task: %s" % errMsg )
       return S_ERROR( "Could not add task. Dispatching task failed" )
 
     eType = result[ 'Value' ]
@@ -418,8 +441,11 @@ class ExecutorDispatcher:
 
     self.__log.info( "Next executor type is %s for task %s" % ( eType, taskId ) )
     if eType not in self.__execTypes:
-      self.__log.info( "Executor type %s is unknown. Freezing task %s" % ( eType, taskId ) )
-      return self.__freezeTask( taskId, "Unknown executor %s type" % eType, eType = eType )
+      if  self.__freezeOnUnknownExecutor:
+        self.__log.info( "Executor type %s has not connected. Freezing task %s" % ( eType, taskId ) )
+        return self.__freezeTask( taskId, "Unknown executor %s type" % eType, eType = eType )
+      self.__log.info( "Executor type %s has not connected. Forgetting task %s" % ( eType, taskId ) )
+      return self.removeTask( taskId )
 
     self.__queues.pushTask( eType, taskId )
     self.__fillExecutors( eType, defrozeIfNeeded = defrozeIfNeeded )
@@ -444,9 +470,19 @@ class ExecutorDispatcher:
       return S_ERROR( errMsg )
 
     return result
-  
-  def getTaskIds(self):
+
+  def getTaskIds( self ):
     return self.__tasks.keys()
+
+  def getExecutorsConnected( self ):
+    eTypes = self.__execTypes.keys()
+    eCon = {}
+    for eType in eTypes:
+      try:
+        eCon[ eTypes ] = len( self.__execTypes[ eType ] )
+      except KeyError:
+        pass
+    return eCon
 
   def addTask( self, taskId, taskObj ):
     if not self.__addTaskIfNew( taskId, taskObj ):

@@ -251,13 +251,35 @@ class CachedJobState( object ):
   def getAttributes( self, nameList = None ):
     return self.__cacheDict( 'att', self.__jobState.getAttributes, nameList )
 
-#Optimizer params
+#Job params
 
+  @TracedMethod
+  def setParameter( self, name, value ):
+    if type( name ) not in types.StringTypes:
+      return S_ERROR( "Job parameter name has to be a string" )
+    self.__cache[ 'jobp.%s' % name ] = value
+    return S_OK()
+
+  @TracedMethod
+  def setParameters( self, pDict ):
+    if type( pDict ) != types.DictType:
+      return S_ERROR( "Job parameters has to be a dictionary" )
+    for key in pDict:
+      self.__cache[ 'jobp.%s' % key ] = pDict[ key ]
+    return S_OK()
+
+  def getParameter( self, name ):
+    return self.__cacheResult( "jobp.%s" % name, self.__jobState.getParameter, ( name, ) )
+
+  def getParameters( self, nameList = None ):
+    return self.__cacheDict( 'jobp', self.__jobState.getParameters, nameList )
+
+#Optimizer params
 
   @TracedMethod
   def setOptParameter( self, name, value ):
     if type( name ) not in types.StringTypes:
-      return S_ERROR( "Attribute name has to be a string" )
+      return S_ERROR( "Optimizer parameter name has to be a string" )
     self.__cache[ 'optp.%s' % name ] = value
     return S_OK()
 

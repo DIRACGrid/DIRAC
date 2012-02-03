@@ -169,7 +169,7 @@ class JobManifest( object ):
       #return result
     return S_OK()
 
-  def setVar( self, varName, varValue ):
+  def setOption( self, varName, varValue ):
     """
     Set a var in job manifest
     """
@@ -182,14 +182,14 @@ class JobManifest( object ):
       cfg = cfg[ l ]
     cfg.setOption( levels[-1], varValue )
 
-  def getVar( self, varName, defaultValue = None ):
+  def getOption( self, varName, defaultValue = None ):
     """
      Get a variable from the job manifest
     """
     cfg = self.__manifest
     return cfg.getOption( varName, defaultValue )
 
-  def getVarList( self, section = "" ):
+  def getOptionList( self, section = "" ):
     """
     Get a list of variables in a section of the job manifest
     """
