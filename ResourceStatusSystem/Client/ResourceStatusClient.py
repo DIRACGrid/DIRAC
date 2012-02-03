@@ -2324,9 +2324,11 @@ class ResourceStatusClient:
     else: 
       sqlQuery = self._insertElement( element, **kwargs )
       if sqlQuery[ 'OK' ]:       
-        return self.__setElementInitStatus( element, **kwargs )
-      else:
-        return sqlQuery  
+        res = self.__setElementInitStatus( element, **kwargs )
+        if not res[ 'OK' ]:
+          return res
+        
+      return sqlQuery  
 
   def __setElementInitStatus( self, element, **kwargs ):
     
@@ -2498,10 +2500,16 @@ class ResourceStatusClient:
     
     # EHistory.DateEnd = EStatus.DateEffective
     # This is vital for the views !!!!
-    #sqlQ[ 6 ] = args[ 5 ]   
+    #sqlQ[ 6 ] = args[ 5 ]
+    
 
     #return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )  
-    return self._insertElement( 'ElementHistory', **sqlDict )
+    res = self._insertElement( 'ElementHistory', **sqlDict )
+    if not res[ 'OK' ]:
+      return res
+    
+    return updateSQLQuery
+      
   
   '''
   ##############################################################################
