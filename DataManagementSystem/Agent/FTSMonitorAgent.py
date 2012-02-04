@@ -141,32 +141,47 @@ class FTSMonitorAgent( AgentModule ):
       return res
     completedFiles = res['Value']
 
+    # An LFN can be included more than once if it was entered into more than one Request. 
+    # FTS will only do the transfer once. We need to identify all FileIDs
+    res = self.TransferDB.getFTSReqFileIDs( ftsReqID )
+    if not res['OK']:
+      gLogger.error( 'Failed to get FileIDs associated to FTS Request', res['Message'] )
+      return res
+    fileIDs = res['Value']
+    res = self.TransferDB.getAttributesForFilesList( fileIDList, ['LFN'] )
+    if not res['OK']:
+      gLogger.error( 'Failed to get LFNs associated to FTS Request', res['Message'] )
+      return res
+    fileIDDict = res['Value']
+
     fileToFTSUpdates = []
     completedFileIDs = []
-    for lfn in completedFiles:
-      fileID = files[lfn]
-      completedFileIDs.append( fileID )
-      transferTime = 0
-      res = oFTSRequest.getTransferTime( lfn )
-      if res['OK']:
-        transferTime = res['Value']
-      fileToFTSUpdates.append( ( fileID, 'Completed', '', 0, transferTime ) )
 
     filesToRetry = []
-    filesToReschedule = []
-    for lfn in failedFiles:
-      fileID = files[lfn]
-      failReason = ''
-      res = oFTSRequest.getFailReason( lfn )
-      if res['OK']:
-        failReason = res['Value']
-      if self.missingSource( failReason ):
-        gLogger.error( 'The source SURL does not exist.', '%s %s' % ( lfn, oFTSRequest.getSourceSURL( lfn ) ) )
-        filesToReschedule.append( fileID )
-      else:
-        filesToRetry.append( fileID )
-      gLogger.error( 'Failed to replicate file on channel.', "%s %s" % ( channelID, failReason ) )
-      fileToFTSUpdates.append( ( fileID, 'Failed', failReason, 0, 0 ) )
+    filesToFail = []
+
+    for fileID, fileDict in fileIDDict:
+      lfn = fileDict['LFN']
+      if lfn in completedFiles:
+        completedFileIDs.append( fileID )
+        transferTime = 0
+        res = oFTSRequest.getTransferTime( lfn )
+        if res['OK']:
+          transferTime = res['Value']
+        fileToFTSUpdates.append( ( fileID, 'Completed', '', 0, transferTime ) )
+
+      if lfn in failedFiles:
+        failReason = ''
+        res = oFTSRequest.getFailReason( lfn )
+        if res['OK']:
+          failReason = res['Value']
+        if self.missingSource( failReason ):
+          gLogger.error( 'The source SURL does not exist.', '%s %s' % ( lfn, oFTSRequest.getSourceSURL( lfn ) ) )
+          filesToFail.append( fileID )
+        else:
+          filesToRetry.append( fileID )
+        gLogger.error( 'Failed to replicate file on channel.', "%s %s" % ( channelID, failReason ) )
+        fileToFTSUpdates.append( ( fileID, 'Failed', failReason, 0, 0 ) )
 
     allUpdated = True
     if filesToRetry:
@@ -175,7 +190,7 @@ class FTSMonitorAgent( AgentModule ):
       if not res['OK']:
         gLogger.error( 'Failed to update the Channel table for file to retry.', res['Message'] )
         allUpdated = False
-    for fileID in filesToReschedule:
+    for fileID in filesToFail:
       gLogger.info( 'Updating the Channel table for files to reschedule' )
       res = self.TransferDB.setFileChannelStatus( channelID, fileID, 'Failed' )
       if not res['OK']:
@@ -192,12 +207,6 @@ class FTSMonitorAgent( AgentModule ):
       res = self.TransferDB.updateAncestorChannelStatus( channelID, completedFileIDs )
       if not res['OK']:
         gLogger.error( 'Failed to update the Channel table for ancestors of successful files.', res['Message'] )
-        allUpdated = False
-      
-      gLogger.info( 'Updating the FileToCat table for successful files' )
-      res = self.TransferDB.setRegistrationWaiting( channelID, completedFileIDs )
-      if not res['OK']:
-        gLogger.error( 'Failed to update the FileToCat table for successful files.', res['Message'] )
         allUpdated = False
 
     if fileToFTSUpdates:
@@ -218,6 +227,43 @@ class FTSMonitorAgent( AgentModule ):
       res = self.TransferDB.addLoggingEvent( ftsReqID, 'Finished' )
       if not res['OK']:
         gLogger.error( 'Failed to add logging event for FTS Request', res['Message'] )
+
+      res = oFTSRequest.getFailedRegistrations()
+      failedRegistrations = res['Value']
+      regFailedFileIDs = []
+      regDoneFileIDs = []
+      regForgetFileIDs = []
+      for fileID, fileDict in fileIDDict:
+        lfn = fileDict['LFN']
+        if lfn in failedRegistrations:
+          gLogger.info( 'Setting failed registration in FileToCat back to Waiting', lfn )
+          regFailedFileIDs.append( fileID )
+          # if the LFN appears more than once, FileToCat needs to be reset only once 
+          del failedRegistrations[lfn]
+        elif lfn in completedFiles:
+          regDoneFileIDs.append( fileID )
+        elif fileID in filesToFail:
+          regForgetFileIDs.append( fileID )
+
+
+      if regFailedFileIDs:
+        res = self.TransferDB.setRegistrationWaiting( channelID, regFailedFileIDs )
+        if not res['OK']:
+          gLogger.error( 'Failed to reset entries in FileToCat', res['Message'] )
+          return res
+
+      if regDoneFileIDs:
+        res = self.TransferDB.setRegistrationDone( channelID, regDoneFileIDs )
+        if not res['OK']:
+          gLogger.error( 'Failed to set entries Done in FileToCat', res['Message'] )
+          return res
+
+      if regForgetFileIDs:
+        # This entries could also be set to Failed, but currently there is no method to do so.
+        res = self.TransferDB.setRegistrationDone( channelID, regForgetFileIDs )
+        if not res['OK']:
+          gLogger.error( 'Failed to set entries Done in FileToCat', res['Message'] )
+          return res
 
       gLogger.info( 'Updating FTS request status' )
       res = self.TransferDB.setFTSReqStatus( ftsReqID, 'Finished' )
