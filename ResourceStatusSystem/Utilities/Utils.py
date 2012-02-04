@@ -127,7 +127,7 @@ def canonicalURL(url):
   try:
     canonical = socket.gethostbyname_ex(url)[0]
     return canonical
-  except socket.gaierror:
+  except:
     return url
 
 # RPC utils

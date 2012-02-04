@@ -118,7 +118,8 @@ class Synchronizer(object):
         
     if res == []:
       #res = Utils.unpack( self.GOCDBClient.getServiceEndpointInfo('hostname', Utils.canonicalURL(node)) )
-      res = self.GOCDBClient.getServiceEndpointInfo('hostname', Utils.canonicalURL(node))
+      url = Utils.canonicalURL(node)
+      res = self.GOCDBClient.getServiceEndpointInfo('hostname', url )
       if res['OK']:
         res = res[ 'Value' ]
       else:
