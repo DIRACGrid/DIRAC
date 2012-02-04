@@ -31,19 +31,20 @@ import random
 ## from DIRAC
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Base.AgentModule      import AgentModule
 
 ## base classes
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase, defaultCallback, defaultExceptionCallabck
-from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
+from DIRAC.DataManagementSystem.Agent.TransferTask       import TransferTask
 
 ## DIRAC tools
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Resources.Storage.StorageFactory import StorageFactory
-from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
-from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
+from DIRAC.ConfigurationSystem.Client.Helpers              import ResourceStatus
+from DIRAC.Resources.Storage.StorageFactory                import StorageFactory
+from DIRAC.DataManagementSystem.DB.TransferDB              import TransferDB
+from DIRAC.RequestManagementSystem.DB.RequestDBMySQL       import RequestDBMySQL
+from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 
 ## agent name
 AGENT_NAME = 'DataManagement/TransferAgent'
@@ -1220,12 +1221,23 @@ class StrategyHandler( object ):
     :param str access: storage element accesss, could be 'Read' (default) or 'Write' 
     """
     activeSE = []
-    for se in seList:
-      res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
-      if res["OK"] and res["Value"] == "Active":
-        activeSE.append( se )
+    
+    # This will return S_OK( { se : { access : value,... },... } ) || S_ERROR
+    res = ResourceStatus.getStorageElementStatus( selist, access, 'Unknown' )
+    if res[ 'OK' ] and res['Value']:
+      for k,v in res['Value'].items():
+        if v.has_key( access ) and v[ access ] in [ 'Active', 'Bad' ]:
+          activeSE.append( k )
+    
+    #for se in seList:
+    #
+    # res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
+    # #if res["OK"] and res["Value"] == "Active":
+    # if res[ "OK" ] and res[ "Value" ]:
+    # if res['Value'][se][ access ] in [ "Active", "Bad" ]:
+    # activeSE.append( se )
     return activeSE
-
+  
   def __getChannelSitesForSE( self, storageElement ):
     """Get sites for given storage element.
     

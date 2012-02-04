@@ -30,18 +30,18 @@ class StorageElement:
     else:
       res = StorageFactory().getStorages( name, protocolList = protocols )
     if not res['OK']:
-      self.valid = False
-      self.name = name
+      self.valid       = False
+      self.name        = name
       self.errorReason = res['Message']
     else:
-      factoryDict = res['Value']
-      self.name = factoryDict['StorageName']
-      self.options = factoryDict['StorageOptions']
-      self.localProtocols = factoryDict['LocalProtocols']
+      factoryDict          = res['Value']
+      self.name            = factoryDict['StorageName']
+      self.options         = factoryDict['StorageOptions']
+      self.localProtocols  = factoryDict['LocalProtocols']
       self.remoteProtocols = factoryDict['RemoteProtocols']
-      self.storages = factoryDict['StorageObjects']
+      self.storages        = factoryDict['StorageObjects']
       self.protocolOptions = factoryDict['ProtocolOptions']
-      self.turlProtocols = factoryDict['TurlProtocols']
+      self.turlProtocols   = factoryDict['TurlProtocols']
 
     self.readMethods = [   'getFile',
                            'getAccessUrl',
@@ -136,13 +136,17 @@ class StorageElement:
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
-    retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
-    retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
-    retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active' )
+    retDict['Read'] = not ( self.options.has_key( 'Read' ) and self.options['Read'] not in [ 'Active', 'Bad' ] )
+    #retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
+    retDict['Write'] = not ( self.options.has_key( 'Write' ) and self.options['Write'] not in [ 'Active', 'Bad' ] )
+    #retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
+    retDict['Remove'] = not ( self.options.has_key( 'Remove' ) and self.options['Remove'] not in [ 'Active', 'Bad' ] )
+    #retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active' )
     if retDict['Read']:
       retDict['Check'] = True
     else:
-      retDict['Check'] = not ( self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] != 'Active' )
+      #retDict['Check'] = not ( self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] != 'Active' )
+      retDict['Check'] = not ( self.options.has_key( 'Check' ) and self.options['Check'] not in [ 'Active', 'Bad' ] )
     diskSE = True
     tapeSE = False
     if self.options.has_key( 'SEType' ):

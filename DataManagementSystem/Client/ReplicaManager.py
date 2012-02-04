@@ -7,15 +7,16 @@ import types
 from datetime import datetime, timedelta
 import DIRAC
 
-from DIRAC                                               import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.AccountingSystem.Client.Types.DataOperation   import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient       import gDataStoreClient
-from DIRAC.Core.Utilities.File                           import makeGuid, getSize
-from DIRAC.Core.Utilities.Adler                          import fileAdler, compareAdler
-from DIRAC.Core.Utilities.List                           import sortList, randomize
-from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite, isSameSiteSE, getSEsForCountry
-from DIRAC.Resources.Storage.StorageElement              import StorageElement
-from DIRAC.Resources.Catalog.FileCatalog                 import FileCatalog
+from DIRAC                                             import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient     import gDataStoreClient
+from DIRAC.ConfigurationSystem.Client.Helpers          import ResourceStatus
+from DIRAC.Core.Utilities.File                         import makeGuid, getSize
+from DIRAC.Core.Utilities.Adler                        import fileAdler, compareAdler
+from DIRAC.Core.Utilities.List                         import sortList, randomize
+from DIRAC.Core.Utilities.SiteSEMapping                import getSEsForSite, isSameSiteSE, getSEsForCountry
+from DIRAC.Resources.Storage.StorageElement            import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog               import FileCatalog
 
 class CatalogBase:
 
@@ -2208,15 +2209,22 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( replicaDict )
 
   def __SEActive( self, se ):
-    storageCFGBase = "/Resources/StorageElements"
-    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
-    if not res['OK']:
-      return S_ERROR( "SE not known" )
-    seStatus = {'Read':True, 'Write':True}
-    if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
-      seStatus['Read'] = False
-    if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
-      seStatus['Write'] = False
+#    storageCFGBase = "/Resources/StorageElements"
+#    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
+    
+    res = ResourceStatus.getStorageElementStatus( se, default = None )
+    
+    if not res[ 'OK' ]:
+      return S_ERROR( 'SE not known' )
+    
+    seStatus = { 'Read' : True, 'Write' : True }
+#    if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
+    if ( res[ 'Value' ][se].has_key( 'Read' ) ) and ( res[ 'Value' ][se][ 'Read' ] not in [ 'Active', 'Bad' ] ):
+      seStatus[ 'Read' ] = False
+#    if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
+    if ( res[ 'Value' ][se].has_key( 'Write' ) ) and ( res[ 'Value' ][se][ 'Write' ] not in [ 'Active', 'Bad' ] ):
+      seStatus[ 'Write' ] = False
+      
     return S_OK( seStatus )
 
   def __initialiseAccountingObject( self, operation, se, files ):
