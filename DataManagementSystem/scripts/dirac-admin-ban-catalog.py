@@ -42,7 +42,7 @@ for site in sites:
     gLogger.error( "The provided site (%s) does not have an associated catalog." % site )
     continue
 
-  res = csAPI.setOption( "%s/%s/Status" % ( storageCFGBase, site ), "InActive" )
+  res = csAPI.setOption( "%s/%s/Status" % ( catalogCFGBase, site ), "InActive" )
   if not res['OK']:
     gLogger.error( "Failed to update %s catalog status to InActive" % site )
   else:

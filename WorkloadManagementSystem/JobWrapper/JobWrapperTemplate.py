@@ -71,7 +71,7 @@ def execute ( arguments ):
         raise JobWrapperError( result['Message'] )
     except Exception:
       gLogger.exception( 'JobWrapper failed to download input sandbox' )
-      rescheduleFailedJob( jobID, 'Input Sandbox Download' )
+      rescheduleFailedJob( jobID, 'Input Sandbox Download', gJobReport )
       job.sendWMSAccounting( 'Failed', 'Input Sandbox Download' )
       return 1
   else:
@@ -88,7 +88,7 @@ def execute ( arguments ):
           raise JobWrapperError( result['Message'] )
       except Exception, x:
         gLogger.exception( 'JobWrapper failed to resolve input data' )
-        rescheduleFailedJob( jobID, 'Input Data Resolution' )
+        rescheduleFailedJob( jobID, 'Input Data Resolution', gJobReport )
         job.sendWMSAccounting( 'Failed', 'Input Data Resolution' )
         return 1
     else:
