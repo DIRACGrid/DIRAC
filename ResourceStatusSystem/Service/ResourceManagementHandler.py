@@ -7,7 +7,7 @@ from DIRAC                                              import S_OK
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators    import HandlerDec3
+from DIRAC.ResourceStatusSystem.Utilities.Decorators    import HandlerDec
 
 db = False
 
@@ -59,7 +59,7 @@ class ResourceManagementHandler( RequestHandler ):
     db = database
 
   types_insert = [ dict, dict ]
-  @HandlerDec3
+  @HandlerDec
   def export_insert( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
@@ -78,11 +78,10 @@ class ResourceManagementHandler( RequestHandler ):
     '''
     # It returns a db object, which is picked by the decorator and return whatever
     # the insert method returns ( db.insert )    
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    return db
 
   types_update = [ dict, dict ]
-  @HandlerDec3
+  @HandlerDec
   def export_update( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
@@ -101,11 +100,10 @@ class ResourceManagementHandler( RequestHandler ):
     '''      
     # It returns a db object, which is picked by the decorator and return whatever
     # the update method returns ( db.update )    
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    return db
 
   types_get = [ dict, dict ]
-  @HandlerDec3
+  @HandlerDec
   def export_get( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceManagementDB` remotely. 
@@ -124,11 +122,10 @@ class ResourceManagementHandler( RequestHandler ):
     '''      
     # It returns a db object, which is picked by the decorator and return whatever
     # the get method returns ( db.get )    
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    return db
 
   types_delete = [ dict, dict ]
-  @HandlerDec3
+  @HandlerDec
   def export_delete( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely.\
@@ -147,8 +144,7 @@ class ResourceManagementHandler( RequestHandler ):
     '''         
     # It returns a db object, which is picked by the decorator and return whatever
     # the delete method returns ( db.delete )    
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    return db
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
