@@ -46,15 +46,18 @@ class TransferQualityByDestSplitted_Command( Command ):
         meta = { 'columns' : 'StorageElementName' }
         SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = meta )
         if not SEs[ 'OK' ]:
-          return SEs 
+          return { 'Result' : SEs } 
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
       if sources is None:
         meta = { 'columns' : 'SiteName' }
         sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = meta )      
         if not sources[ 'OK' ]:
-          return sources 
+          return { 'Result' : sources }
         sources = [ s[0] for s in sources[ 'Value' ] ]
+    
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -70,7 +73,7 @@ class TransferQualityByDestSplitted_Command( Command ):
                                                     'Destination' )
       
       if not qualityAll[ 'OK' ]:
-        return qualityAll
+        return { 'Result' : qualityAll }
       
       qualityAll    = qualityAll[ 'Value' ]
       listOfDestSEs = qualityAll[ 'data' ].keys()
@@ -123,14 +126,17 @@ class TransferQualityByDestSplittedSite_Command( Command ):
       if SEs is None:
         SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns': 'StorageElementName' })
         if not SEs[ 'OK' ]:
-          return SEs 
+          return { 'Result' : SEs } 
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
       if sources is None:
         sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )
         if not sources[ 'OK' ]:
-          return sources 
+          return { 'Result' : sources } 
         sources = [ si[0] for si in sources[ 'Value' ] ]
+    
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
  
@@ -145,7 +151,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
                                                      }, 
                                                      'Destination' )
       if not qualityAll[ 'OK' ]:
-        return qualityAll 
+        return { 'Result' : qualityAll } 
       
       qualityAll = qualityAll[ 'Value' ]
       listOfDest = qualityAll[ 'data' ].keys()
@@ -154,7 +160,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
                                                                 { 'StorageElementName': listOfDest }, 0, 300 )
     
       if not storSitesWeb[ 'OK' ]:
-        return storSitesWeb 
+        return { 'Result' : storSitesWeb } 
       
       storSitesWeb  = storSitesWeb[ 'Value' ][ 'Records' ]
       SESiteMapping = {}
@@ -328,27 +334,27 @@ class FailedTransfersBySourceSplitted_Command( Command ):
 
     try:
       
-      
-      
-
       if SEs is None:
         meta = { 'columns' : 'StorageElementName' }
         SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = meta)
         if not SEs[ 'OK' ]:
-          return SEs 
+          return { 'Result' : SEs } 
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
       if sources is None:
         meta = { 'columns' : 'SiteName' }
         sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = meta )      
         if not sources[ 'OK' ]:
-          return sources 
+          return { 'Result' : sources } 
         sources = [ si[0] for si in sources[ 'Value' ] ]
-    
+
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
+
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
       fromD = datetime.utcnow()-timedelta( hours = self.args[ 0 ] )
-      toD = datetime.utcnow()
+      toD   = datetime.utcnow()
 
       ft_source = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'FailedTransfers', 
                                                    fromD, toD, 
@@ -359,7 +365,7 @@ class FailedTransfersBySourceSplitted_Command( Command ):
                                                     }, 
                                                     'Source' )
       if not ft_source[ 'OK' ]:
-        return ft_source 
+        return { 'Result' : ft_source } 
       
       ft_source = ft_source[ 'Value' ]
       listOfSources = ft_source[ 'data' ].keys()   
@@ -411,8 +417,11 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName' })
         if not sites['OK']:
-          return sites 
+          return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
+    
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -422,7 +431,7 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
       succ_jobs = self.APIs[ 'ReportsClient' ].getReport('Job', 'NumberOfJobs', fromD, toD, 
                                         {'FinalStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_jobs['OK']:
-        return succ_jobs 
+        return { 'Result' : succ_jobs } 
 
       succ_jobs   = succ_jobs['Value']
       listOfSites = succ_jobs['data'].keys()   
@@ -474,8 +483,11 @@ class FailedJobsBySiteSplitted_Command(Command):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns' : 'SiteName'} )      
         if not sites['OK']:
-          return sites 
+          return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
+
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
 
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -485,7 +497,7 @@ class FailedJobsBySiteSplitted_Command(Command):
       failed_jobs = self.APIs[ 'ReportsClient' ].getReport('Job', 'NumberOfJobs', fromD, toD, 
                                           {'FinalStatus':['Failed'], 'Site':sites}, 'Site')
       if not failed_jobs['OK']:
-        return failed_jobs 
+        return { 'Result' : failed_jobs } 
       
       failed_jobs = failed_jobs['Value']   
       listOfSites = failed_jobs['data'].keys()   
@@ -537,8 +549,11 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns':'SiteName'} )      
         if not sites['OK']:
-          return sites 
+          return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
+
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
 
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -548,7 +563,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       succ_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                         {'GridStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_pilots['OK']:
-        return succ_pilots 
+        return { 'Result' : succ_pilots } 
       
       succ_pilots = succ_pilots['Value']
       listOfSites = succ_pilots['data'].keys()   
@@ -600,8 +615,11 @@ class FailedPilotsBySiteSplitted_Command(Command):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )      
         if not sites['OK']:
-          return sites 
+          return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
+    
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }    
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -611,7 +629,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
       failed_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                           {'GridStatus':['Aborted'], 'Site':sites}, 'Site')
       if not failed_pilots['OK']:
-        return failed_pilots 
+        return { 'Result' : failed_pilots } 
       
       failed_pilots = failed_pilots['Value']   
       listOfSites   = failed_pilots['data'].keys() 
@@ -664,8 +682,11 @@ class SuccessfullPilotsByCESplitted_Command(Command):
         meta = {'columns':'ResourceName'}
         CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], meta = meta )
         if not CEs['OK']:
-          return CEs 
+          return { 'Result' : CEs } 
         CEs = [ ce[0] for ce in CEs['Value'] ]
+
+      if not CEs:
+        return { 'Result' : S_ERROR( 'CEs is empty' ) }
 
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -675,11 +696,11 @@ class SuccessfullPilotsByCESplitted_Command(Command):
       succ_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                           {'GridStatus':['Done'], 'GridCE':CEs}, 'GridCE')
       if not succ_pilots['OK']:
-        return succ_pilots 
+        return { 'Result' : succ_pilots } 
       
       succ_pilots = succ_pilots['Value']
-      listOfCEs = succ_pilots['data'].keys()    
-      plotGran = succ_pilots['granularity']
+      listOfCEs   = succ_pilots['data'].keys()    
+      plotGran    = succ_pilots['granularity']
       singlePlots = {}
     
       for CE in listOfCEs:
@@ -727,8 +748,11 @@ class FailedPilotsByCESplitted_Command(Command):
       if CEs is None:
         CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], meta = {'columns': 'ResourceName'})     
         if not CEs['OK']:
-          return CEs 
+          return { 'Result' : CEs } 
         CEs = [ ce[0] for ce in CEs['Value'] ]
+    
+      if not CEs:
+        return { 'Result' : S_ERROR( 'CEs is empty' ) }    
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -738,7 +762,7 @@ class FailedPilotsByCESplitted_Command(Command):
       failed_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                             {'GridStatus':['Aborted'], 'GridCE':CEs}, 'GridCE')
       if not failed_pilots['OK']:
-        return failed_pilots
+        return { 'Result' : failed_pilots }
 
       failed_pilots = failed_pilots['Value']
       listOfCEs     = failed_pilots['data'].keys()
@@ -790,8 +814,11 @@ class RunningJobsBySiteSplitted_Command(Command):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )
         if not sites['OK']:
-          return sites 
+          return { 'Result' : sites } 
         sites = [ si[0] for si in sites['Value'] ]
+    
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }       
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -801,7 +828,7 @@ class RunningJobsBySiteSplitted_Command(Command):
       run_jobs = self.APIs[ 'ReportsClient' ].getReport('WMSHistory', 'NumberOfJobs', fromD, toD, 
                                        {}, 'Site')
       if not run_jobs['OK']:
-        return run_jobs 
+        return { 'Result' : run_jobs } 
 
       run_jobs    = run_jobs['Value']
       listOfSites = run_jobs['data'].keys()

@@ -43,7 +43,7 @@ class JobsEffSimpleEveryOne_Command( Command ):
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' } )
         
         if not sites['OK']:
-          return sites
+          return { 'Result' : sites }
          
         sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
 
@@ -91,7 +91,7 @@ class PilotsEffSimpleEverySites_Command( Command ):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' })
         if not sites['OK']:
-          return sites
+          return { 'Result' : sites }
         sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
 
       res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff( 'Site', sites, None, self.APIs[ 'WMSAdministrator' ] )
@@ -216,13 +216,10 @@ class DTEverySites_Command( Command ):
 
     try:
       
-      
-      
-
       if sites is None:
         GOC_sites = self.APIs[ 'ResourceStatusClient' ].getGridSite( meta = { 'columns' : 'GridSiteName' })
         if not GOC_sites['OK']:
-          return GOC_sites
+          return { 'Result' : GOC_sites }
         GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
       else:
         GOC_sites = [ getGOCSiteName( x )['Value'] for x in sites ]
@@ -230,7 +227,7 @@ class DTEverySites_Command( Command ):
       resGOC = self.APIs[ 'GOCDBClient' ].getStatus( 'Site', GOC_sites, None, 120 )
 
       if not resGOC['OK']:
-        return resGOC
+        return { 'Result' : resGOC }
       
       resGOC = resGOC['Value']
 
@@ -254,7 +251,7 @@ class DTEverySites_Command( Command ):
           DIRACnames = getDIRACSiteName( res[dt_ID]['SITENAME'] )
           
           if not DIRACnames['OK']:
-            return DIRACnames
+            return { 'Result' : DIRACnames }
           
           for DIRACname in DIRACnames['Value']:
             res[dt_ID.split()[0] + ' ' + DIRACname] = dt
@@ -300,13 +297,13 @@ class DTEveryResources_Command( Command ):
         meta = { 'columns' : 'ResourceName' }
         resources = self.APIs[ 'ResourceStatusClient' ].getResource( meta = meta )
         if not resources['OK']:
-          return resources
+          return { 'Result' : resources }
         resources = [ re[0] for re in resources['Value'] ]
 
       resGOC = self.APIs[ 'GOCDBClient' ].getStatus( 'Resource', resources, None, 120 )
     
       if not resGOC['OK']:
-        return resGOC
+        return { 'Result' : resGOC }
     
       resGOC = resGOC['Value']
 
