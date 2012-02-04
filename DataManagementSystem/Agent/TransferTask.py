@@ -46,13 +46,15 @@ class TransferTask(RequestTask):
     ## set request type
     self.setRequestType( "transfer" )
     ## operation handlers
-    self.addOperationAction( "put", self.put )
     self.addOperationAction( "putAndRegister", self.putAndRegister )
-    self.addOperationAction( "putAndRegisterAndRemove", self.putAndRegister )
-    self.addOperationAction( "replicate", self.replicate )
     self.addOperationAction( "replicateAndRegister", self.replicateAndRegister )
-    self.addOperationAction( "replicateAndRegisterAndRemove", self.replicateAndRegister )
-    self.addOperationAction( "get", self.get )
+
+    ## obsolete
+    #self.addOperationAction( "put", self.put )
+    #self.addOperationAction( "putAndRegisterAndRemove", self.putAndRegister )
+    #self.addOperationAction( "replicate", self.replicate )
+    #self.addOperationAction( "replicateAndRegisterAndRemove", self.replicateAndRegister )
+    #self.addOperationAction( "get", self.get )
 
   def put( self, index, requestObj, subAttrs, subFiles ):
     """ put operation processing

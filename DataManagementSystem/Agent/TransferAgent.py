@@ -373,8 +373,8 @@ class TransferAgent( RequestAgentBase ):
 
     return S_OK( (sourceSURL, targetSURL, status ) )
 
-  def collectFiles( self, requestObj, iSubRequest ):
-    """ Get SubRequest files with 'Waiting' status, collect their replicas and metadata information from 
+  def collectFiles( self, requestObj, iSubRequest, status='Waiting' ):
+    """ Get SubRequest files with status :status:, collect their replicas and metadata information from 
     ReplicaManager.
 
     :param self: self reference
@@ -396,9 +396,8 @@ class TransferAgent( RequestAgentBase ):
     for subRequestFile in subRequestFiles:
       fileStatus = subRequestFile["Status"]
       fileLFN = subRequestFile["LFN"]
-      if fileStatus != "Waiting":
-        self.log.debug("collectFiles: File %s won't be processed as it is in '%s' status." % ( fileLFN, 
-                                                                                               fileStatus ) )
+      if fileStatus != status:
+        self.log.debug("collectFiles: skipping %s file, status is '%s'" % ( fileLFN, fileStatus ) )
         continue
       else:
         waitingFiles.setdefault( fileLFN, subRequestFile["FileID"] )
@@ -472,7 +471,6 @@ class TransferAgent( RequestAgentBase ):
     """
     requestCounter = self.requestsPerCycle()
     failback = False
-
     if self.__executionMode["FTS"]:
       self.log.info( "Will setup StrategyHandler for FTS scheduling...")
       self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', 3600 )
@@ -599,14 +597,13 @@ class TransferAgent( RequestAgentBase ):
 
     res = requestObj.getNumSubRequests( "transfer" )
     if not res["OK"]:
-      self.log.error( "schedule: Failed to get number of SubRequests.", res["Message"] )
-      return S_ERROR( "schedule: Failed to get number of SubRequests." )
+      self.log.error( "schedule: Failed to get number of SubRequests", res["Message"] )
+      return S_ERROR( "schedule: Failed to get number of SubRequests" )
     numberRequests = res["Value"]
-    self.log.info( "schedule: '%s' found with %s 'transfer' SubRequests." % ( requestDict["requestName"], 
+    self.log.info( "schedule: '%s' found with %s 'transfer' SubRequest(s)" % ( requestDict["requestName"], 
                                                                               numberRequests ) )
-
     for iSubRequest in range( numberRequests ):
-      self.log.info( "schedule: Treating SubRequest %s from '%s'." % ( iSubRequest, 
+      self.log.info( "schedule: treating SubRequest %s from '%s'." % ( iSubRequest, 
                                                                        requestDict["requestName"] ) )
       subAttrs = requestObj.getSubRequestAttributes( iSubRequest, "transfer" )["Value"]
       subRequestStatus = subAttrs["Status"]
@@ -615,7 +612,7 @@ class TransferAgent( RequestAgentBase ):
         self.log.info( "schedule: SubRequest %s status is '%s', it won't be executed." % ( iSubRequest, 
                                                                                            subRequestStatus ) )
         continue
-
+      
       ## get source SE
       sourceSE = subAttrs["SourceSE"]
       ## get target SEs, no matter what's a type we need a list
@@ -627,9 +624,10 @@ class TransferAgent( RequestAgentBase ):
 
       ## get subrequest files  
       self.log.info( "schedule: obtaining 'Waiting' files for %d SubRequest." % iSubRequest )
-      files = self.collectFiles( requestObj, iSubRequest )
+      files = self.collectFiles( requestObj, iSubRequest, status = "Waiting" )
       if not files["OK"]:
         self.log.debug("schedule: failed to get 'Waiting' files from SubRequest.", files["Message"] )
+        continue
       waitingFiles, replicas, metadata = files["Value"]
 
       if not waitingFiles or not replicas or not metadata:
@@ -653,16 +651,14 @@ class TransferAgent( RequestAgentBase ):
         ## set target SEs for this file
         waitingFileTargets = [ targetSE for targetSE in targetSEs if targetSE not in waitingFileReplicas ]
         if not waitingFileTargets:
-          self.log.info( "schedule: %s present at all targets." % waitingFileLFN  )
+          self.log.info( "schedule: %s is present at all targets" % waitingFileLFN  )
           requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", waitingFileLFN, "Status", "Done" )
           continue
         
-        self.log.info( "Processing file %s size=%s replicas=%d targetSEs=%s" % ( waitingFileLFN, 
-                                                                                 waitingFileSize, 
-                                                                                 len(waitingFileReplicas), 
-                                                                                 str(waitingFileTargets) ) ) 
-        
-
+        self.log.info( "schedule: file %s size=%s replicas=%d targetSEs=%s" % ( waitingFileLFN, 
+                                                                                waitingFileSize, 
+                                                                                len(waitingFileReplicas), 
+                                                                                str(waitingFileTargets) ) ) 
         ## get the tree at least
         tree = self.strategyHandler().determineReplicationTree( sourceSE, 
                                                                 waitingFileTargets, 
@@ -678,9 +674,8 @@ class TransferAgent( RequestAgentBase ):
           self.log.error("schedule: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
           continue
         else:
-          self.log.debug( "replicationTree: %s" % tree )
+          self.log.debug( "schedule: replicationTree: %s" % tree )
 
-        
         for channelID, repDict in tree.items():
           self.log.info( "schedule: processing channel %d %s" % ( channelID, str( repDict ) ) )
           transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
@@ -699,7 +694,7 @@ class TransferAgent( RequestAgentBase ):
                                                     waitingFileStatus )
           if not res["OK"]:
             self.log.error( "schedule: Failed to add file to channel." , "%s %s" % ( str(waitingFileID), 
-                                                                                           str(channelID) ) )
+                                                                                     str(channelID) ) )
             return res
 
           res = self.transferDB().addFileRegistration( channelID, 
@@ -710,7 +705,7 @@ class TransferAgent( RequestAgentBase ):
           if not res["OK"]:
             errStr = res["Message"]
             self.log.error( "schedule: Failed to add File registration.", "%s %s" % ( waitingFileID, 
-                                                                                     channelID ) )
+                                                                                      channelID ) )
             result = self.transferDB().removeFileFromChannel( channelID, waitingFileID )
             if not result["OK"]:
               errStr += result["Message"]
@@ -718,26 +713,78 @@ class TransferAgent( RequestAgentBase ):
                                                                                             channelID ) )
               return S_ERROR( errStr )
         
-
           res = self.transferDB().addReplicationTree( waitingFileID, tree )
           if not res["OK"]:
             self.log.error("schedule: error adding replication tree for file %s: %s" % ( waitingFileLFN, 
                                                                                          res["Message"]) )
             continue
+          ## update File status to 'Scheduled'
           requestObj.setSubRequestFileAttributeValue( iSubRequest, "transfer", 
                                                       waitingFileLFN, "Status", "Scheduled" )
           self.log.info( "schedule: status of %s file set to 'Scheduled'" % waitingFileLFN )
-          
-      if requestObj.isSubRequestEmpty( iSubRequest, "transfer" )["Value"]:
+
+      ## FAILOVER REGISTRATION
+      waitingRegistrations = False
+      self.log.info( "schedule: *** failover registration *** ")
+      self.log.info( "schedule: obtaining all files in %d SubRequest" % iSubRequest )
+      subRequestFiles = requestObj.getSubRequestFiles( iSubRequest, "transfer" )
+      if not subRequestFiles["OK"]:
+        return subRequestFiles
+      subRequestFiles = subRequestFiles["Value"]
+      self.log.info( "schedule: found %s files" % ( iSubRequest, len( subRequestFiles ) ) )
+      for subRequestFile in subRequestFiles:
+        status = subRequestFile["Status"]
+        LFN = subRequestFile["LFN"]
+        FileID = subRequestFile["FileID"]
+        self.log.info("schedule: processing file FileID=%s LFN=%s Status=%s" % ( FileID, LFN, status ) )
+        if status == "Done":
+          ## get failed to register [ ( PFN, SE, ChannelID ), ... ] 
+          toRegister = self.transferDB().getRegisterFailover( FileID )
+          if not failedToRegister["OK"]:
+            self.log.error( "schedule: %s" % toRegister["Message"] )
+            return toRegister
+          if not toRegister["Value"]:
+            self.log.debug("schedule: no waiting registrations found for %s file" % LFN )
+            continue
+          ## loop and try to register
+          toRegister = toRegister["Value"]
+          for PFN, SE, channelID in toRegister.items():
+            self.log.debug("schedule: failover registration of %s to %s" % ( LFN, SE ) )
+            ## register replica now
+            registerReplica = self.replicaManager().registerReplica( ( LFN, PFN, SE ) )
+            if ( not registerReplica["OK"] ) or ( not registerReplica["Value"] ) or ( LFN in registerReplica["Value"]["Failed"] ):
+              error = registerReplica["Message"] if "Message" in registerReplica else None 
+              if "Value" in registerReplica:
+                if not registerReplica["Value"]:
+                  error = "RM call returned empty value"
+                else:
+                  error = registerReplica["Value"]["Failed"][LFN]
+              self.log.error( "schedule: unable to register %s at %s: %s" %  ( LFN, SE, registerReplica["Message"] ) )
+              waitingRegistrations = True
+
+            elif LFN in registerReplica["Value"]["Successfull"]:
+
+              ## no other option, it must be in successfull
+              updateRegister = self.transferDB().setRegistrationDone( channelID, FileID )
+              if not updateRegister["OK"]:
+              self.log.error("schedule: unable to set registration Done for %s fileID=%s channelID=%s: %s" % ( LFN,
+                                                                                                               FileID,
+                                                                                                               channelID,
+                                                                                                               updateRegister["Message"] ) )
+              return updateRegister
+
+      if not waitingRegistrations and requestObj.isSubRequestEmpty( iSubRequest, "transfer" )["Value"]:
         self.log.info("schedule: setting sub-request %d status to 'Scheduled'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Scheduled" )
         
-    ## update Request in DB after operation
+    ## update Request in DB after operation 
+    ## if all subRequests are statuses = Done, 
+    ## this will also set the Request status to Done
     requestString = requestObj.toXML()["Value"]
     res = self.requestDBMySQL().updateRequest( requestName, requestString )
     if not res["OK"]:
       self.log.error( "schedule: failed to update request", "%s %s" % ( requestName, res["Message"] ) )
-      
+    
     return S_OK()
 
 class StrategyHandler( object ):
