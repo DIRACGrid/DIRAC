@@ -4,7 +4,9 @@
 The Data Management Request contains all the necessary information for
 a data management operation
 """
-import os, xml.dom.minidom, types, time, copy, datetime
+import os, xml.dom.minidom, time, copy, datetime
+from types import DictType, ListType, NoneType, StringTypes
+
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR, Time
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -14,11 +16,18 @@ from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 __RCSID__ = "$Id$"
 
 class RequestContainer:
+  """
+  .. class:: RequestContainer
+
+  Bag object holding all information about Request.
+  """
+  
 
   def __init__( self, request = None, init = True ):
 
     # This is a list of attributes - mandatory parameters
-    self.attributeNames = ['Status', 'RequestName', 'RequestID', 'DIRACSetup', 'OwnerDN', 'OwnerGroup', 'SourceComponent', 'CreationTime', 'LastUpdate', 'JobID']
+    self.attributeNames = ['Status', 'RequestName', 'RequestID', 'DIRACSetup', 'OwnerDN', 
+                           'OwnerGroup', 'SourceComponent', 'CreationTime', 'LastUpdate', 'JobID']
 
     # This dictionary contains all the request attributes
     self.attributes = {}
@@ -35,7 +44,7 @@ class RequestContainer:
   def initialize( self, request ):
     """ Set default values to attributes,parameters
     """
-    if type( request ) == types.NoneType:
+    if type( request ) == NoneType:
       # Set some defaults
       for name in self.attributeNames:
         self.attributes[name] = 'Unknown'
@@ -48,18 +57,18 @@ class RequestContainer:
         if 'group' in proxyDict:
           self.attributes['OwnerGroup'] = proxyDict[ 'group' ]
       self.attributes['DIRACSetup'] = gConfig.getValue( '/DIRAC/Setup', 'Unknown' )
-    elif type( request ) == types.InstanceType:
+    elif isinstance( request, RequestContainer ):
       for attr in self.attributeNames:
         self.attributes[attr] = request.attributes[attr]
 
     # initialize request from an XML string
-    if type( request ) in types.StringTypes:
+    if type( request ) in StringTypes:
       for name in self.attributeNames:
         self.attributes[name] = 'Unknown'
       self.parseRequest( request )
 
     # Initialize request from another request
-    elif type( request ) == types.InstanceType:
+    elif isinstance( request, RequestContainer ):
       self.subRequests = copy.deepcopy( request.subrequests )
 
   #####################################################################
@@ -644,9 +653,71 @@ class RequestContainer:
     reqfile.close()
     return S_OK()
 
+
+  def __listToXML_new( self, xmldoc, tagName, aList ):
+    ## create 
+    tag = xmldoc.createElement( tagName )
+    tag.setAttribute( "element_type", "list" )
+    encodedStringTag = xmldoc.createElement( "EncodedString" )
+    encodedStringTag.setAttribute( "element_type", "leaf" )
+    encodedStringCDATA = xmldoc.createCDATASection( DEncode.encode( aList ) )    
+    ## appending 
+    encodedStringTag.appendChild( encodedStringCDATA ) 
+    tag.appendChild( encodedStringTag )
+    ## returning 
+    return tag    
+
+  def __dictToXML( self, xmldoc, tagName, aDict ):
+    tag = xmldoc.createElement( tagName )
+    tag.setAttribute( "element_type", "dictionary" )
+    for key, value in aDict.items():
+      if type( value ) == DictType:
+        tag.appendChild( self.__dictToXML( xmldoc, key, value ) )
+      elif type( value ) == ListType:
+        tag.appendChild( self.__listToXML_new( xmldoc, key, value ) )
+      else:
+        ## creating
+        childTag = xmldoc.createElement( str(key) )
+        childTag.setAttribute( "element_type", "leaf" )
+        childText = xmldoc.createCDATASection( str(value) )
+        ## appending
+        childTag.appendChild( childText )
+        tag.appendChild( childTag )
+    return tag
+        
+  def toXML_new( self, desiredType = None ):
+    ## create new doc
+    xmlDoc = xml.dom.minidom.Document()
+    ## <DIRAC_REQUEST />
+    requestTag = xmlDoc.createElement( "DIRAC_REQUEST" )
+    ## <Header/> 
+    headerTag = xmlDoc.createElement( "Header" )
+    ## <Header> attrs 
+    for attrName, attrValue in self.attributes.items():
+      headerTag.setAttribute( str(attrName), str(attrValue) )
+    requestTag.appendChild( headerTag )
+
+    requestTypes = self.getSubRequestTypes()['Value']
+    if desiredType:
+      if self.getNumSubRequests( desiredType )["Value"]:
+        requestTypes = [ desiredType ]
+      else:
+        return S_ERROR("toXML: sub-requests of type=%s not found in this request" % desiredType )
+
+    for requestType in requestTypes:
+      for i in range( self.getNumSubRequests( requestType )['Value'] ):
+        ## <REQUESTTYPE_SUBREQUEST />
+        requestTag.appendChild ( self.__dictToXML( xmlDoc,   
+                                                   "%s_SUBREQUEST" % requestType.upper(), 
+                                                   self.subRequests[requestType][i] ) )
+
+    xmlDoc.appendChild( requestTag )
+    return S_OK( xmlDoc.toprettyxml( " ", encoding="UTF-8" ) )
+
   def toXML( self, desiredType = '' ):
     """ Output the request to XML
     """
+    
     out = '<?xml version="1.0" encoding="UTF-8" ?>\n\n'
     out = '%s<DIRAC_REQUEST>\n\n' % out
 
@@ -687,15 +758,15 @@ class RequestContainer:
     xml_attributes = ''
     xml_elements = []
     for attr, value in dict.items():
-      if type( value ) is types.DictType:
+      if type( value ) is DictType:
         xml_elements.append( self.__dictionaryToXML( attr, value, indent + 1 ) )
-      elif type( value ) is types.ListType:
+      elif type( value ) is ListType:
         xml_elements.append( self.__listToXML( attr, value, indent + 1 ) )
       else:
         xml_attributes += ' ' * ( indent + 1 ) * 8 + '<%s element_type="leaf"><![CDATA[%s]]></%s>\n' % ( attr, str( value ), attr )
 
     for attr, value in attributes.items():
-      xml_attributes += ' ' * ( indent + 1 ) * 8 + '<%s element_type="leaf">![CDATA[%s]]</%s>\n' % ( attr, str( value ), attr )
+      xml_attributes += ' ' * ( indent + 1 ) * 8 + '<%s element_type="leaf"><![CDATA[%s]]></%s>\n' % ( attr, str( value ), attr )
 
     out = ' ' * indent * 8 + '<%s element_type="dictionary">\n%s\n' % ( name, xml_attributes[:-1] )
     for el in xml_elements:
@@ -703,16 +774,16 @@ class RequestContainer:
     out += ' ' * indent * 8 + '</%s>\n' % name
     return out
 
-  def __listToXML( self, name, list, indent = 0, attributes = {} ):
+  def __listToXML( self, name, aList, indent = 0, attributes = {} ):
     """ Utility to convert a list to XML
     """
     """
     xml_attributes = ''
     xml_elements = []
     for element in list:
-      if type(element) is types.DictType:
+      if type(element) is DictType:
         xml_elements.append(self.__dictionaryToXML(name[:-1],element,indent+1))
-      elif type(value) is types.ListType:
+      elif type(value) is ListType:
         xml_elements.append(self.__listToXML(name[:-1],element,indent+1))
       else:
         xml_attributes += ' '*(indent+1)*8+'<%s element_type="leaf"><![CDATA[%s]]></%s>\n' % (name[:-1],str(element),name[:-1])
@@ -726,8 +797,8 @@ class RequestContainer:
     out += ' '*indent*8+'</%s>\n' % name
     """
     out = ''
-    if list:
-      den = DEncode.encode( list )
+    if aList:
+      den = DEncode.encode( aList )
       out += ' ' * indent * 8 + '<%s element_type="list">\n' % ( name )
       out += ' ' * ( indent + 1 ) * 8 + '<EncodedString element_type="leaf"><![CDATA[%s]]></EncodedString>\n' % ( den )
       out += ' ' * indent * 8 + '</%s>\n' % name

@@ -45,11 +45,15 @@ class RemovalTask( RequestTask ):
     """
     RequestTask.__init__( self, *args, **kwargs )
     self.setRequestType( "removal" )
-    self.addOperationAction( "physicalRemoval" , self.physicalRemoval )
+
+    ## operation handlers
     self.addOperationAction( "removeFile", self.removeFile )
     self.addOperationAction( "replicaRemoval", self.replicaRemoval )
-    self.addOperationAction( "reTransfer", self.reTransfer )
-      
+    self.addOperationAction( "reTransfer", self.reTransfer ) 
+    ## obsolete
+    #self.addOperationAction( "physicalRemoval" , self.physicalRemoval )
+
+
   def physicalRemoval( self, index, requestObj, subRequestAttrs, subRequestFiles ):
     """ action for 'physicalRemoval' operation  
 
