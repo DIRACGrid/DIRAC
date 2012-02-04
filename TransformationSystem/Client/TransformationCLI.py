@@ -32,6 +32,7 @@ class TransformationCLI( cmd.Cmd, API ):
     self.server = TransformationClient()
     self.indentSpace = 4
     cmd.Cmd.__init__( self )
+    API.__init__( self )
 
   def printPair( self, key, value, separator = ":" ):
     valueList = value.split( "\n" )
