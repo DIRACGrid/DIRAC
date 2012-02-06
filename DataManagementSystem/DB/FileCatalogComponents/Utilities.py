@@ -12,7 +12,7 @@ try:
 except:
   import md5
 
-import random, os
+import random, os, time
 from types import *
 from DIRAC import S_OK, S_ERROR
 
