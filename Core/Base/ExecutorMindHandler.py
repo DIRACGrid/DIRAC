@@ -134,61 +134,61 @@ class ExecutorMindHandler( RequestHandler ):
 
   @classmethod
   def getTaskIds( cls ):
-    return self.__eDispatch.getTaskIds()
+    return cls.__eDispatch.getTaskIds()
 
   @classmethod
   def getExecutorsConnected( cls ):
-    return self.__eDispatch.getExecutorsConnected()
+    return cls.__eDispatch.getExecutorsConnected()
 
   @classmethod
-  def setFailedOnTooFrozen( self, value ):
+  def setFailedOnTooFrozen( cls, value ):
     #If a task is frozen too many times, send error or forget task?
-    self.__eDispatch.setFailedOnTooFrozen( value )
+    cls.__eDispatch.setFailedOnTooFrozen( value )
 
   @classmethod
-  def setFreezeOnFailedDispatch( self, value ):
+  def setFreezeOnFailedDispatch( cls, value ):
     #If a task fails to properly dispatch, freeze it?
-    self.__eDispatch.setFreezeOnFailedDispatch( value )
+    cls.__eDispatch.setFreezeOnFailedDispatch( value )
 
   @classmethod
-  def setFreezeOnUnknownExecutor( self, value ):
+  def setFreezeOnUnknownExecutor( cls, value ):
     #If a task needs to go to an executor that has not connected. Forget the task?
-    self.__eDispatch.setFreezeOnUnknownExecutor( value )
+    cls.__eDispatch.setFreezeOnUnknownExecutor( value )
 
   #######
   # Methods that can be overwritten
   #######
 
   @classmethod
-  def exec_disconnectExecutor( self, trid ):
-    return self.srv_msgDisconnectClient( trid )
+  def exec_disconnectExecutor( cls, trid ):
+    return cls.srv_msgDisconnectClient( trid )
 
   ########
   #  Methods to be used by the real services
   ########
 
   @classmethod
-  def executeTask( self, taskId, taskObj ):
-    return self.__eDispatch.addTask( taskId, taskObj )
+  def executeTask( cls, taskId, taskObj ):
+    return cls.__eDispatch.addTask( taskId, taskObj )
 
   ########
   #  Methods that need to be overwritten
   ########
 
   @classmethod
-  def exec_dispatch( self, taskId, taskObj, pathExecuted ):
+  def exec_dispatch( cls, taskId, taskObj, pathExecuted ):
     raise Exception( "No exec_dispatch defined or it is not a classmethod!!" )
 
   @classmethod
-  def exec_serializeTask( self, taskObj ):
+  def exec_serializeTask( cls, taskObj ):
     raise Exception( "No exec_serializeTask defined or it is not a classmethod!!" )
 
   @classmethod
-  def exec_deserializeTask( self, taskStub ):
+  def exec_deserializeTask( cls, taskStub ):
     raise Exception( "No exec_deserializeTask defined or it is not a classmethod!!" )
 
   @classmethod
-  def exec_taskError( self, taskId, errorMsg ):
+  def exec_taskError( cls, taskId, errorMsg ):
     raise Exception( "No exec_taskError defined or it is not a classmethod!!" )
 
 

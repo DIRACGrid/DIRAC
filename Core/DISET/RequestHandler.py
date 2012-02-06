@@ -62,6 +62,7 @@ class RequestHandler( object ):
     cls.__msgBroker = msgBroker
     cls.__trPool = msgBroker.getTransportPool()
     cls.__monitor = monitor
+    cls.log = gLogger
 
   def initialize( self ):
     """
@@ -553,12 +554,4 @@ class RequestHandler( object ):
   @classmethod
   def srv_msgDisconnectClient( cls, trid ):
     return cls.__msgBroker.removeTransport( trid )
-
-  @classmethod
-  def srv_getLog( cls ):
-    return gLogger
-
-  @property
-  def srv_log( self ):
-    return gLogger
 
