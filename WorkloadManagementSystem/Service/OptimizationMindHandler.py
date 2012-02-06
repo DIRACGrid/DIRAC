@@ -14,7 +14,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
 
   @classmethod
   def __loadJobs( cls ):
-    log = cls.srv_log()
+    log = cls.log
     if cls.__loadTaskId:
       period = cls.srv_getCSOption( "LoadJobPeriod", 300 )
       ThreadScheduler.gThreadScheduler.setTaskPeriod( cls.__loadTaskId, period )
@@ -45,11 +45,11 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     cls.setFailedOnTooFrozen( False )
     cls.setFreezeOnFailedDispatch( False )
     cls.setFreezeOnUnknownExecutor( False )
-
-  @classmethod
-  def setFreezeOnUnknownExecutor( self, value ):
     period = cls.srv_getCSOption( "LoadJobPeriod", 60 )
-    cls.__loadTaskId = ThreadScheduler.gThreadScheduler.addPeriodicTask( period, cls.__loadJobs )
+    result = ThreadScheduler.gThreadScheduler.addPeriodicTask( period, cls.__loadJobs )
+    if not result[ 'OK' ]:
+      return result
+    cls.__loadTaskId = result[ 'Value' ]
     return cls.__loadJobs()
 
   @classmethod

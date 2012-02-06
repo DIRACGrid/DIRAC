@@ -18,7 +18,10 @@ class JobManifest( object ):
   def isDirty( self ):
     return self.__dirty
 
-  def markAsNotDirty( self ):
+  def setDirty( self ):
+    self.__dirty = True
+
+  def clearDirty( self ):
     self.__dirty = False
 
   def load( self, dataString ):

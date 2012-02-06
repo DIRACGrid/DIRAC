@@ -85,7 +85,7 @@ class JobState( object ):
     return self.__getRPCFunctor( "WorkloadManagement/JobStore" )
 
   def getManifest( self, rawData = False ):
-    if self.hasLocalAccess:
+    if self.localAccess:
       result = self.__getDB().getJobJDL( self.__jid )
     else:
       result = self._getStoreClient().getManifest( self.__jid )
@@ -104,7 +104,7 @@ class JobState( object ):
       if not result[ 'OK' ]:
         return result
       manifestData = manifest.dumpAsJDL()
-    if self.hasLocalAccess:
+    if self.localAccess:
       return self.__getDB().setJobJDL( self.__jid, manifestData )
     return self._getStoreClient().setManifest( self.__jid, manifestData )
 

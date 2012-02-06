@@ -14,9 +14,8 @@ class JobStoreHandler( RequestHandler ):
   def initializeHandler( cls, serviceInfoDict ):
     cls.jobDB = JobDB()
     result = cls.jobDB._getConnection()
-    log = cls.srv_getLog()
     if not result[ 'OK' ]:
-      log.warn( "Could not connect to JobDB (%s). Resorting to RPC" % result[ 'Message' ] )
+      cls.log.warn( "Could not connect to JobDB (%s). Resorting to RPC" % result[ 'Message' ] )
     result[ 'Value' ].close()
     #Try to do magic
     myStuff = dir( cls )
@@ -24,21 +23,21 @@ class JobStoreHandler( RequestHandler ):
       if method.find( "set" ) != 0 and method.find( "get" ) != 0 and method.find( "execute" ) != 0:
         continue
       if "export_%s" % method in myStuff:
-        log.info( "Wrapping method %s. It's already defined in the Handler" % method )
-        defMeth = getattr( cls, "export_%s" % method )
-        setattr( cls, "_usr_def_%s" % method, defMeth )
-        setattr( cls, "types_%s" % method, [ ( types.IntType, types.LongType ), types.TupleType ] )
-        setattr( cls, "export_%s" % method, cls.__unwrapAndCall )
+        cls.log.info( "Wrapping method %s. It's already defined in the Handler" % method )
+#        defMeth = getattr( cls, "export_%s" % method )
+#        setattr( cls, "_usr_def_%s" % method, defMeth )
+#        setattr( cls, "types_%s" % method, [ ( types.IntType, types.LongType ), types.TupleType ] )
+#        setattr( cls, "export_%s" % method, cls.__unwrapAndCall )
       else:
-        log.info( "Mimicking method %s" % method )
+        cls.log.info( "Mimicking method %s" % method )
         setattr( cls, "auth_%s" % method, [ 'all' ] )
         setattr( cls, "types_%s" % method, [ ( types.IntType, types.LongType ), types.TupleType ] )
         setattr( cls, "export_%s" % method, cls.__mimeticFunction )
     return S_OK()
 
-  def __unwrapArgs(self, margs ):
+  def __unwrapArgs( self, margs ):
     if len( margs ) < 1 or type( margs[0] ) != types.TupleType or ( len( margs ) > 1 and type( margs[1] ) != types.DictType ):
-      return S_ERROR( "Invalid arg stub. Expected tuple( args, kwargs? ), received %s" % margs )
+      return S_ERROR( "Invalid arg stub. Expected tuple( args, kwargs? ), received %s" % str( margs ) )
     if len( margs ) == 1:
       return S_OK( ( margs[0], {} ) )
     else:
@@ -46,24 +45,24 @@ class JobStoreHandler( RequestHandler ):
 
   def __mimeticFunction( self, jid, margs ):
     method = self.srv_getActionTuple()[1]
-    result = self.__unwrapArgs(margs)
+    result = self.__unwrapArgs( margs )
     if not result[ 'OK' ]:
       return result
     args, kwargs = result[ 'Value' ]
     if not self.__clientHasAccess( jid ):
       return S_ERROR( "You're not authorized to access jid %s" % jid )
     return getattr( self.__getJobState( jid ), method )( *args, **kwargs )
-  
-  def __unwrapAndCall(self, *margs ):
+
+  def __unwrapAndCall( self, jid, margs ):
     method = self.srv_getActionTuple()[1]
-    result = self.__unwrapArgs(margs)
+    result = self.__unwrapArgs( margs )
     if not result[ 'OK' ]:
       return result
     args, kwargs = result[ 'Value' ]
     if not self.__clientHasAccess( jid ):
       return S_ERROR( "You're not authorized to access jid %s" % jid )
-    return getattr(cls, "export_%s" % method )( *args, **kwargs )
-  
+    return getattr( self, "_usr_def_%s" % method )( jid, *args, **kwargs )
+
   def __getJobState( self, jid ):
     return JobState( jid, forceLocal = True )
 
@@ -75,16 +74,16 @@ class JobStoreHandler( RequestHandler ):
     credDict = self.srv_getRemoteCredentials()
     idString = "%s@%s (%s)" % ( credDict[ 'username' ], credDict[ 'group' ], credDict[ 'DN' ] )
     if Properties.JOB_ADMINISTRATOR in credDict[ 'properties' ]:
-      self.srv_log.verbose( "%s is job admin of jid %s" % ( idString, jid ) )
+      self.log.verbose( "%s is job admin of jid %s" % ( idString, jid ) )
       return True
     if credDict[ 'username' ] == ownerDict[ 'Owner' ]:
-      self.srv_log.verbose( "%s is owner of jid %s" % ( idString, jid ) )
+      self.log.verbose( "%s is owner of jid %s" % ( idString, jid ) )
       return True
     if Properties.JOB_SHARING in credDict[ 'properties' ] and \
         credDict[ 'group' ] == ownerDict[ 'OwnerGroup' ]:
-      self.srv_log.verbose( "%s is sharing group with jid %s" % ( idString, jid ) )
+      self.log.verbose( "%s is sharing group with jid %s" % ( idString, jid ) )
       return True
-    self.srv_log.verbose( "%s is NOT allowed to access jid %s" % ( idString, jid ) )
+    self.log.verbose( "%s is NOT allowed to access jid %s" % ( idString, jid ) )
     return False
 
 #Manifests

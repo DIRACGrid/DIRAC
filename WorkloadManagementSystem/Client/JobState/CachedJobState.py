@@ -44,8 +44,8 @@ class CachedJobState( object ):
     self.__trace = []
     self.__manifest = False
     self.__initState = None
-    if skipInitStatue:
-      result = self.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime"] )
+    if not skipInitState:
+      result = self.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime" ] )
       if result[ 'OK' ]:
         self.__initState = result[ 'Value' ]
       else:
@@ -86,25 +86,48 @@ class CachedJobState( object ):
     return S_OK( trLen )
 
   def serialize( self ):
-    return DEncode.encode( ( self.__jid, self.__cache, self.__trace, self.__initState ) )
+    if self.__manifest:
+      manifest = ( self.__manifest.dumpAsCFG(), self.__manifest.isDirty() )
+    else:
+      manifest = None
+    return DEncode.encode( ( self.__jid, self.__cache, self.__trace, manifest, self.__initState ) )
 
   @staticmethod
   def deserialize( stub ):
-    dataTuple, slen = DEncode.dencode( stub )
-    if len( dataTuple ) != 4:
+    dataTuple, slen = DEncode.decode( stub )
+    if len( dataTuple ) != 5:
       return S_ERROR( "Invalid stub" )
+    #jid
     if type( dataTuple[0] ) not in ( types.IntType, types.LongType ):
       return S_ERROR( "Invalid stub" )
+    #cache
     if type( dataTuple[1] ) != types.DictType:
       return S_ERROR( "Invalid stub" )
+    #trace
     if type( dataTuple[2] ) != types.ListType:
       return S_ERROR( "Invalid stub" )
-    if type( dataTuple[3] ) != types.DictType:
+    #manifest
+    tdt3 = type( dataTuple[3] )
+    if tdt3 != types.NoneType and ( tdt3 != types.TupleType and len( dataTuple[3] ) != 2 ):
+      return S_ERROR( "Invalid stub" )
+    #initstate
+    if type( dataTuple[4] ) != types.DictType:
       return S_ERROR( "Invalid stub" )
     cjs = CachedJobState( dataTuple[0], skipInitState = True )
     cjs.__cache = dataTuple[1]
     cjs.__trace = dataTuple[2]
-    cjs.__initState = dataTuple[3]
+    dt3 = dataTuple[3]
+    if dataTuple[3]:
+      manifest = JobManifest()
+      result = manifest.loadCFG( dt3[0] )
+      if not result[ 'OK' ]:
+        return result
+      if dt3[1]:
+        manifest.setDirty()
+      else:
+        manifest.clearDirty()
+      cjs.__manifest = manifest
+    cjs.__initState = dataTuple[4]
     return S_OK( cjs )
 
   def __cacheExists( self, keyList ):
@@ -175,12 +198,21 @@ class CachedJobState( object ):
   def _clearCache( self ):
     self.__cache = {}
 
+  @property
+  def _internals( self ):
+    if self.__manifest:
+      manifest = ( self.__manifest.dumpAsCFG(), self.__manifest.isDirty() )
+    else:
+      manifest = None
+    return ( self.__jid, self.dOnlyCache, dict( self.__cache ),
+             tuple( self.__trace ), manifest, dict( self.__initState ) )
+
 #
 # Manifest
 #
 
   def getManifest( self ):
-    if self.__manifest:
+    if not self.__manifest:
       result = self.__jobState.getManifest()
       if not result[ 'OK' ]:
         return result
@@ -194,11 +226,11 @@ class CachedJobState( object ):
         return result
       manifest = result[ 'Value ']
     manCFG = manifest.dumpAsCFG()
-    if self.__manifest and self.__manifest.dumpAsCFG() == manCFG:
+    if self.__manifest and ( self.__manifest.dumpAsCFG() == manCFG and not manifest.isDirty() ):
       return S_OK()
     self._addTrace( ( "setManifest", ( manCFG, ) ) )
     self.__manifest = manifest
-    self.__manifest.markAsNotDirty()
+    self.__manifest.clearDirty()
     return S_OK()
 
 # Attributes
