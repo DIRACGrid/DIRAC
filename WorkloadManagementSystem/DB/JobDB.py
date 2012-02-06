@@ -1230,10 +1230,10 @@ class JobDB( DB ):
     result = jobManifest.load( jdl )
     if not result['OK']:
       return result
-    jobManifest.setVarsFromDict( { 'OwnerName' : owner,
-                             'OwnerDN' : ownerDN,
-                             'OwnerGroup' : ownerGroup,
-                             'DIRACSetup' : diracSetup } )
+    jobManifest.setOptionsFromDict( { 'OwnerName' : owner,
+                                      'OwnerDN' : ownerDN,
+                                      'OwnerGroup' : ownerGroup,
+                                      'DIRACSetup' : diracSetup } )
     result = jobManifest.check()
     if not result['OK']:
       return result
@@ -1249,7 +1249,7 @@ class JobDB( DB ):
       return S_ERROR( 'Can not insert JDL in to DB' )
     jobID = result[ 'Value' ]
 
-    jobManifest.setVar( 'JobID', jobID )
+    jobManifest.setOption( 'JobID', jobID )
 
     jobAttrNames.append( 'JobID' )
     jobAttrValues.append( jobID )
