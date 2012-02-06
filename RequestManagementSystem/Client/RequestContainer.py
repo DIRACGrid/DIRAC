@@ -2,7 +2,7 @@
 
 """
 The Data Management Request contains all the necessary information for
-a data management operation
+a data management operation.
 """
 import os, xml.dom.minidom, time, copy, datetime
 from types import DictType, ListType, NoneType, StringTypes
@@ -42,7 +42,7 @@ class RequestContainer:
       self.initialize( request )
 
   def initialize( self, request ):
-    """ Set default values to attributes,parameters
+    """ Set default values to attributes and parameters
     """
     if type( request ) == NoneType:
       # Set some defaults
