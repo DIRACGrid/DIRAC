@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 
 import time, os, types
 from DIRAC import S_OK, S_ERROR
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 
 class DirectoryMetadata:
 
@@ -344,11 +345,8 @@ class DirectoryMetadata:
 # Find directories corresponding to the metadata 
 #
 ############################################################################################  
-  def __findSubdirByMeta( self, meta, value, subdirFlag = True ):
-    """ Find directories for the given meta datum. If the the meta datum type is a list,
-        combine values in OR. In case the meta datum is 'Any', finds all the subdirectories
-        for which the meta datum is defined at all.
-    """
+
+  def __createMetaSelection( self,meta,value,table='' ):
 
     if type( value ) == types.DictType:
       selectList = []
@@ -357,33 +355,54 @@ class DirectoryMetadata:
           if type( operand ) == types.ListType:
             return S_ERROR( 'Illegal query: list of values for comparison operation' )
           if type( operand ) in [types.IntType, types.LongType]:
-            selectList.append( "Value%s%d" % ( operation, operand ) )
+            selectList.append( "%sValue%s%d" % ( table, operation, operand ) )
           elif type( operand ) == types.FloatType:
-            selectList.append( "Value%s%f" % ( operation, operand ) )
+            selectList.append( "%sValue%s%f" % ( table, operation, operand ) )
           else:
-            selectList.append( "Value%s'%s'" % ( operation, operand ) )
+            selectList.append( "%sValue%s'%s'" % ( table, operation, operand ) )
         elif operation == 'in' or operation == "=":
           if type( operand ) == types.ListType:
             vString = ','.join( [ "'" + str( x ) + "'" for x in operand] )
-            selectList.append( "Value IN (%s)" % vString )
+            selectList.append( "%sValue IN (%s)" % ( table, vString) )
           else:
-            selectList.append( "Value='%s'" % operand )
+            selectList.append( "%sValue='%s'" % ( table, operand ) )
         elif operation == 'nin' or operation == "!=":
           if type( operand ) == types.ListType:
             vString = ','.join( [ "'" + str( x ) + "'" for x in operand] )
-            selectList.append( "Value NOT IN (%s)" % vString )
+            selectList.append( "%sValue NOT IN (%s)" % ( table, vString ) )
           else:
-            selectList.append( "Value!='%s'" % operand )
+            selectList.append( "%sValue!='%s'" % ( table, operand ) )
         selectString = ' AND '.join( selectList )
-        req = " SELECT DirID FROM FC_Meta_%s WHERE %s" % ( meta, selectString )
     elif type( value ) == types.ListType:
       vString = ','.join( [ "'" + str( x ) + "'" for x in value] )
-      req = " SELECT DirID FROM FC_Meta_%s WHERE Value IN (%s) " % ( meta, vString )
+      selectString = "%sValue in %s" % ( table, vString )
     else:
       if value == "Any":
-        req = " SELECT DirID FROM FC_Meta_%s " % meta
+        selectString = ''
       else:
-        req = " SELECT DirID FROM FC_Meta_%s WHERE Value='%s' " % ( meta, value )
+        selectString = "%sValue='%s' " % ( table, value )
+
+    return S_OK(selectString)
+
+  def __findSubdirByMeta( self, meta, value, pathSelection='', subdirFlag = True ):
+    """ Find directories for the given meta datum. If the the meta datum type is a list,
+        combine values in OR. In case the meta datum is 'Any', finds all the subdirectories
+        for which the meta datum is defined at all.
+    """
+
+    result = self.__createMetaSelection( meta, value, "M." )
+    if not result['OK']:
+      return result
+    selectString = result['Value']
+
+    req = " SELECT M.DirID FROM FC_Meta_%s AS M" %  meta
+    if pathSelection:
+      req += " JOIN ( %s ) AS P WHERE M.DirID=P.DirID"
+    if selectString:
+      if pathSelection:
+        req += " AND %s" % selectString
+      else:
+        req += " WHERE %s" % selectString
 
     result = self.db._query( req )
     if not result['OK']:
@@ -408,10 +427,10 @@ class DirectoryMetadata:
 
     return S_OK( dirList )
 
-  def __findSubdirMissingMeta( self, meta ):
+  def __findSubdirMissingMeta( self, meta, pathSelection ): 
     """ Find directories not having the given meta datum defined
     """
-    result = self.__findSubdirByMeta( meta, 'Any' )
+    result = self.__findSubdirByMeta( meta, 'Any', pathSelection )
     if not result['OK']:
       return result
     dirList = result['Value']
@@ -435,9 +454,12 @@ class DirectoryMetadata:
       return result
     metaTypeDict = result['Value']
     resultDict = {}
+    extraDict = {}
     for key, value in metaDict.items():
       if not key in metaTypeDict:
-        return S_ERROR( 'Unknown metadata field %s' % key )
+        #return S_ERROR( 'Unknown metadata field %s' % key )
+        extraDict[key] = value
+        continue
       keyType = metaTypeDict[key]
       if keyType != "MetaSet":
         resultDict[key] = value
@@ -451,46 +473,114 @@ class DirectoryMetadata:
             return S_ERROR( 'Contradictory query for key %s' % mk )
           else:
             resultDict[mk] = mv
-    return S_OK( resultDict )
 
-  def findDirectoriesByMetadata( self, queryDict, credDict ):
-    """ Find Directories satisfying the given metadata
+    result = S_OK( resultDict )
+    result['ExtraMetadata'] = extraDict
+    return result 
+ 
+  @queryTime
+  def findDirIDsByMetadata( self, queryDict, path, credDict ):
+    """ Find Directories satisfying the given metadata and being subdirectories of 
+        the given path
     """
+
+    pathDirList = []
+    pathDirID = 0
+    if path != '/':
+      result = self.db.dtree.findDir(path)
+      if not result['OK']:
+        return result
+      pathDirID = int(result['Value'])
+
     result = self.__expandMetaDictionary( queryDict, credDict )
     if not result['OK']:
       return result
     metaDict = result['Value']
-    dirList = []
-    first = True
-    for meta, value in metaDict.items():
-      if value == "Missing":
-        result = self.__findSubdirMissingMeta( meta )
-      else:
-        result = self.__findSubdirByMeta( meta, value )
-      if not result['OK']:
-        return result
-      mList = result['Value']
-      if first:
-        dirList = mList
-        first = False
-      else:
-        newList = []
-        for d in dirList:
-          if d in mList:
-            newList.append( d )
-        dirList = newList
+    if metaDict: 
+      pathSelection = ''
+      if pathDirID:
+        result = self.db.dtree.getSubdirectoriesByID(pathDirID,includeParent=True,requestString=True)
+        if not result['OK']:
+          return result
+        pathSelection = result['Value']
+      dirList = []
+      first = True
+      for meta, value in metaDict.items():
+        if value == "Missing":
+          result = self.__findSubdirMissingMeta( meta, pathSelection )
+        else:
+          result = self.__findSubdirByMeta( meta, value, pathSelection )
+        if not result['OK']:
+          return result
+        mList = result['Value']
+        if first:
+          dirList = mList
+          first = False
+        else:
+          newList = []
+          for d in dirList:
+            if d in mList:
+              newList.append( d )
+          dirList = newList
+    else:
+      if pathDirID:
+        result = self.db.dtree.getSubdirectoriesByID(pathDirID,includeParent=True)
+        if not result['OK']:
+          return result
+        pathDirList = result['Value'].keys()
+    
+    finalList = []
+    dirSelect = False
+    if metaDict:
+      dirSelect = True
+      finalList = dirList
+      if pathDirList:
+        finalList = [ d for d in dirList if d in pathDirList ]  
+    else:
+      if pathDirList:
+        dirSelect = True 
+        finalList = pathDirList
+    result = S_OK(finalList)
 
-    result = self.db.dtree.getDirectoryPaths( dirList )
+    if finalList:
+      result['Selection'] = 'Done'
+    elif dirSelect:
+      result['Selection'] = 'None'
+    else:
+      result['Selection'] = 'All'
+
+    return result
+
+  @queryTime
+  def findDirectoriesByMetadata( self, queryDict, path, credDict ):
+    """ Find Directory names satisfying the given metadata and being subdirectories of 
+        the given path
+    """
+
+    result = self.findDirIDsByMetadata( queryDict, path, credDict )
     if not result['OK']:
       return result
-    dirNameDict = result['Value']
+
+    dirIDList = result['Value'] 
+
+    dirNameDict = {}
+    if dirIDList:
+      result = self.db.dtree.getDirectoryPaths( dirIDList )
+      if not result['OK']:
+        return result
+      dirNameDict = result['Value']
+    elif result['Selection'] == 'None':
+      dirNameDict = { 0:"None" }
+    elif result['Selection'] == 'All':
+      dirNameDict = { 0:"All" }
+
     return S_OK(dirNameDict)
 
-  def findFilesByMetadata( self, metaDict, credDict ):
+  def findFilesByMetadata( self, metaDict, path, credDict ):
     """ Find Files satisfying the given metadata
     """
 
-    result = self.findDirectoriesByMetadata( metaDict, credDict )
+    result = self.findDirectoriesByMetadata( metaDict, path, credDict )
     if not result['OK']:
       return result
 
@@ -640,5 +730,4 @@ class DirectoryMetadata:
         successful[meta] = 'OK'  
       
     return S_OK({'Successful':successful,'Failed':failed})  
-      
       
