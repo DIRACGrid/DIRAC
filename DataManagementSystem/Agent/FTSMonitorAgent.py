@@ -83,7 +83,7 @@ class FTSMonitorAgent( AgentModule ):
     infoStr = "%s%s%s\n\n" % ( infoStr, 'FTS Server:'.ljust( 20 ), ftsServer )
     gLogger.info( infoStr )
     res = oFTSRequest.summary()
-    self.TransferDB.setFTSReqLastMonitor( ftsReqID )
+    self.TransferDB.setFTSReqLastMonitor( ftsReqID, channelID, sourceSE )
     if not res['OK']:
       gLogger.error( "Failed to update the FTS request summary", res['Message'] )
       return res

@@ -553,6 +553,9 @@ class TransferDB(DB):
 
     ## failover  mechnism for removed Requests  
     if missingFiles:
+      ## no channelID or sourceSE --> return S_ERROR
+      if not channelID and not sourceSE:
+        return S_ERROR("TransferDB.getFTSReqLFNs: missing records in Files table: %s" % ", ".join( missingFiles ) )
       ## create storage element 
       sourceSE = StorageElement( sourceSE )
       ## get FileID, SourceSURL pairs for missing FileIDs and channelID used in this FTSReq  
@@ -578,6 +581,7 @@ class TransferDB(DB):
         if not insert["OK"]:
           gLogger.error("TransferDB.getFTSReqLFNs: unable to insert fake Files records for missing LFNs: %s" % insert["Message"])
           return insert
+    
     ## return files dict
     return S_OK( files )
 
