@@ -129,9 +129,9 @@ class JobManifest( object ):
       return S_ERROR( 'Number of Input Data Files (%s) greater than current limit: %s' % ( len( List.fromChar( varValue ) ) , maxNumber ) )
     return S_OK()
 
-  def setVarsFromDict( self, varDict ):
+  def setOptionsFromDict( self, varDict ):
     for k in sorted( varDict ):
-      self.setVar( k, varDict[ k ] )
+      self.setOption( k, varDict[ k ] )
 
   def check( self ):
     """

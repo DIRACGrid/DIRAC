@@ -48,7 +48,7 @@ class ExecutorMindHandler( RequestHandler ):
     cls.__eDispatch = ExecutorDispatcher()
     cls.__callbacks = ExecutorMindHandler.MindCallbacks( cls.__sendTask,
                                                          cls.exec_dispatch,
-                                                         cls.exec_disconnectExecutor,
+                                                         cls.__execDisconnected,
                                                          cls.exec_taskError )
     cls.__eDispatch.setCallbacks( cls.__callbacks )
 
@@ -72,6 +72,13 @@ class ExecutorMindHandler( RequestHandler ):
     msgObj.taskStub = taskStub
     return self.srv_msgSend( eId, msgObj )
 
+  @classmethod
+  def __execDisconnected( cls, trid ):
+    result = cls.srv_msgDisconnectClient( trid )
+    if not result[ 'OK' ]:
+      return result
+    return cls.exec_executorDisconnected( trid )
+
   auth_conn_new = [ 'all' ]
   def conn_new( self, trid, identity, kwargs ):
     if 'executorName' not in kwargs or not kwargs[ 'executorName']:
@@ -85,7 +92,7 @@ class ExecutorMindHandler( RequestHandler ):
     except:
       numTasks = 1
     self.__eDispatch.addExecutor( kwargs[ 'executorName' ], trid )
-    return S_OK()
+    return self.exec_executorConnected( kwargs[ 'executorName' ], trid )
 
   auth_conn_drop = [ 'all' ]
   def conn_drop( self, trid ):
@@ -160,8 +167,12 @@ class ExecutorMindHandler( RequestHandler ):
   #######
 
   @classmethod
-  def exec_disconnectExecutor( cls, trid ):
-    return cls.srv_msgDisconnectClient( trid )
+  def exec_executorDisconnected( cls, trid ):
+    return S_OK()
+
+  @classmethod
+  def exec_executorConnected( cls, execName, trid ):
+    return S_OK()
 
   ########
   #  Methods to be used by the real services
@@ -190,5 +201,6 @@ class ExecutorMindHandler( RequestHandler ):
   @classmethod
   def exec_taskError( cls, taskId, errorMsg ):
     raise Exception( "No exec_taskError defined or it is not a classmethod!!" )
+
 
 

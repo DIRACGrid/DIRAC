@@ -431,7 +431,7 @@ class ExecutorDispatcher:
           return S_OK()
         return result
       self.removeTask( taskId )
-      self.__cbHolder.cbTaskError( taskId, "Could not dispatch task: %s" % errMsg )
+      self.__cbHolder.cbTaskError( taskId, "Could not dispatch task: %s" % result[ 'Message' ] )
       return S_ERROR( "Could not add task. Dispatching task failed" )
 
     eType = result[ 'Value' ]
@@ -475,14 +475,7 @@ class ExecutorDispatcher:
     return self.__tasks.keys()
 
   def getExecutorsConnected( self ):
-    eTypes = self.__execTypes.keys()
-    eCon = {}
-    for eType in eTypes:
-      try:
-        eCon[ eTypes ] = len( self.__execTypes[ eType ] )
-      except KeyError:
-        pass
-    return eCon
+    return dict( self.__execTypes )
 
   def addTask( self, taskId, taskObj ):
     if not self.__addTaskIfNew( taskId, taskObj ):

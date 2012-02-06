@@ -7,15 +7,18 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import Cached
 class OptimizerExecutor( Executor ):
 
   def initialize( self ):
-    self.__optimizerName = self.am_getModuleParam( 'fullName' )
-    self.__optimizerName = "/".join( agentName.split( "/" )[1:] )
+    opName = self.am_getModuleParam( 'fullName' )
+    opName = "/".join( opName.split( "/" )[1:] )
+    if opName.find( "Agent" ) == len( opName ) - 5:
+      opName = opName[ :-5]
+    self.__optimizerName = opName
     result = self.connect( "WorkloadManagement/OptimizationMind", name = self.__optimizerName )
     if not result[ 'OK' ]:
       return result
     self.am_setOption( "ReconnectRetries", 10 )
     self.am_setOption( "ReconnectWaitTime", 10 )
     self.am_setModuleParam( 'optimizerName', self.__optimizerName )
-    return initializeOptimizer()
+    return self.initializeOptimizer()
 
   def am_optimizerName( self ):
     return self.__optimizerName
@@ -25,20 +28,25 @@ class OptimizerExecutor( Executor ):
 
   def processTask( self, jid, jobState ):
     result = self.optimizeJob( jid, jobState )
+    if not result[ 'OK' ]:
+      return result
     #If the manifest is dirty, update it!
-    manifest = jobState.getManifest()
+    result = jobState.getManifest()
+    if not result[ 'OK' ]:
+      return result
+    manifest = result[ 'Value' ]
     if manifest.isDirty():
       jobState.setManifest( manifest )
     #Did it go as expected? If not Failed!
     if not result[ 'OK' ]:
       return jobState.setStatus( "Failed", result[ 'Message' ] )
-    return self.__setNextOptimizer()
+    return self.__setNextOptimizer( jobState )
 
 
   def optimizeJob( self, jid, jobState ):
     raise Exception( "You need to overwrite this method to optimize the job!" )
 
-  def __setNextOptimizer( self ):
+  def __setNextOptimizer( self, jobState ):
     result = jobState.getOptParameter( 'OptimizerChain' )
     if not result['OK']:
       return result

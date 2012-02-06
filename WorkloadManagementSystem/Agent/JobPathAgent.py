@@ -1,7 +1,6 @@
 ########################################################################
 # $HeadURL$
 # File :    JobPathAgent.py
-# Author :  Stuart Paterson
 ########################################################################
 """ 
   The Job Path Agent determines the chain of Optimizing Agents that must
@@ -13,16 +12,9 @@
 
 """
 __RCSID__ = "$Id$"
-
-from DIRAC.WorkloadManagementSystem.Agent.OptimizerExecutor  import OptimizerExecutor
-from DIRAC                                                 import S_OK, S_ERROR, List
-
-
-from DIRAC.ConfigurationSystem.Client.Config               import gConfig
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
-from DIRAC.Core.Utilities.ModuleFactory                    import ModuleFactory
-#TODO: ADRI JobDescription -> JobState
-from DIRAC.WorkloadManagementSystem.Client.JobDescription  import JobDescription
+from DIRAC import S_OK, S_ERROR, List
+from DIRAC.WorkloadManagementSystem.Agent.Base.OptimizerExecutor  import OptimizerExecutor
+from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 
 class JobPathAgent( OptimizerExecutor ):
   """
@@ -33,7 +25,7 @@ class JobPathAgent( OptimizerExecutor ):
   """
 
   def initializeOptimizer( self ):
-    self.__voModules = {}
+    self.__voPlugins = {}
     return S_OK()
 
   def __setOptimizerChain( self, jobState, opChain ):
@@ -44,19 +36,25 @@ class JobPathAgent( OptimizerExecutor ):
       return result
     return jobState.setParameter( "JobPath", opChain )
 
-  def __executeVOPlugin( self, voPlugin ):
-    if voPlugin not in self.__voModules:
+  def __executeVOPlugin( self, voPlugin, jobState ):
+    if voPlugin not in self.__voPlugins:
       modName = List.fromChar( voPlugin, "." )[-1]
       try:
-        self.__voModules[ voPlugin ] = __import__( voPlugin, globals(), locals(), [ modName ] )
+        module = __import__( voPlugin, globals(), locals(), [ modName ] )
       except ImportError, excp:
+        self.log.exception( "Could not import VO plugin %s" % voPlugin )
         return S_ERROR( "Could not import VO plugin %s: %s" % ( voPlugin, excp ) )
 
-    argsDict = { 'JobID':job,
+      try:
+        self.__voPlugins[ voPlugin ] = getattr( module, modName )
+      except AttributeError, excp:
+        return S_ERROR( "Could not get plugin %s from module %s: %s" % ( modName, voPlugin, str( excp ) ) )
+
+    argsDict = { 'JobID': jobState.jid,
                  'JobState' : jobState,
                  'ConfigPath':self.am_getModuleParam( "section" ) }
     try:
-      modInstance = self.__voModules[ voPlugin ]( argsDict )
+      modInstance = self.__voPlugins[ voPlugin ]( argsDict )
       result = modInstance.execute()
     except Exception, excp:
       self.log.exception( "Excp while executing %s" % voPlugin )
@@ -71,7 +69,10 @@ class JobPathAgent( OptimizerExecutor ):
 
 
   def optimizeJob( self, jid, jobState ):
-    jobManifest = jobState.getManifest()
+    result = jobState.getManifest()
+    if not result[ 'OK' ]:
+      return result
+    jobManifest = result[ 'Value' ]
     opChain = jobManifest.getOption( "JobPath", [] )
     if opChain:
       self.log.info( 'Job %s defines its own optimizer chain %s' % ( job, jobPath ) )
@@ -81,7 +82,7 @@ class JobPathAgent( OptimizerExecutor ):
     voPlugin = self.am_getOption( 'VOPlugin', '' )
     #Specific VO path
     if voPlugin:
-      result = self.__executeVOPlugin( voPlugin )
+      result = self.__executeVOPlugin( voPlugin, jobState )
       if not result[ 'OK' ]:
         return result
       extraPath = result[ 'Value' ]
