@@ -82,7 +82,7 @@ def defaultExceptionCallback( task, exc_info ):
   ## remove request from agent cache
   for item in globals():
     if isinstance( item, RequestAgentBase ):
-      item.deleteRequest( task.getTaskDI() )
+      item.deleteRequest( task.getTaskID() )
 
 
 
