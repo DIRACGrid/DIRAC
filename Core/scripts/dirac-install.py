@@ -922,6 +922,16 @@ def runExternalsPostInstall():
       logERROR( "Post installation script %s failed. Check %s.err" % ( scriptPath, scriptPath ) )
       sys.exit( 1 )
 
+def fixMySQLScript():
+  """
+   Update the mysql.server script (if installed) to point to the proper datadir
+  """
+  scriptPath = os.path.join( cliParams.targetPath, 'scripts', 'dirac-fix-mysql-script' )
+  if os.path.exists( scriptPath ):
+    logNOTICE( "Executing %s..." % scriptPath )
+    os.system( "%s > /dev/null " % scriptPath )
+
+
 def checkPlatformAliasLink():
   """
   Make a link if there's an alias
@@ -1288,6 +1298,7 @@ if __name__ == "__main__":
   logNOTICE( "Installing %s externals..." % cliParams.externalsType )
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
+  fixMySQLScript()
   if not createBashrc():
     sys.exit( 1 )
   writeDefaultConfiguration()
