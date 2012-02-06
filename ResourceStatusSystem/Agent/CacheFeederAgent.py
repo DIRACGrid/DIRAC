@@ -102,7 +102,7 @@ class CacheFeederAgent( AgentModule ):
           res = self.clientsInvoker.doCommand()['Result']
 
           if not res['OK']:
-            gLogger.error( res['Message'] )
+            gLogger.warn( res['Message'] )
             continue
           res = res[ 'Value' ]
 
@@ -161,7 +161,7 @@ class CacheFeederAgent( AgentModule ):
           res = self.clientsInvoker.doCommand()['Result']
 
           if not res['OK']:
-            gLogger.error( res['Message'] )
+            gLogger.warn( res['Message'] )
             continue
           res = res[ 'Value' ]
 

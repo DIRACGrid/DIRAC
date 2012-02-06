@@ -1,4 +1,7 @@
-[v6r2-pre5]
+[v6r2-pre6]
+
+*Accounting
+CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
 
 *Core
 CHANGE: Pfn.py - pfnparse function rewritten for speed up and mem usage, unit test case added
@@ -29,6 +32,9 @@ FIX: Commands have been modified to return S_OK, S_ERROR inside the Result dict.
      S_ERROR / S_OK object. CacheFeederAgent has been updated accordingly.
 FIX: allow clients, if db connection fails, to reconnect ( or at least try ) to the servers.
 CHANGE: access control using CS Authentication options. Default is SiteManager, and get methods are all.
+BUGFIX: MySQLMonkey - properly escaped all parameters of the SQL queries, other fixes.
+NEW: CleanerAgent renamed to CacheCleanerAgent
+NEW: Updated RSS scripts, to set element statuses and / or tokens.
 
 *DataManagement
 CHANGE: refactoring of DMS agents executing requests, allow requests from arbitrary users
@@ -40,6 +46,11 @@ NEW: lfc_dfc_copy script to migrate data from LFC to DFC
 FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
 FIX: FTS testing scripts were using sys.argv and getting confused if options are passed
 NEW: DFC - use DirectoryUsage tables for the storage usage evaluations
+NEW: DFC - search by metadata can be limited to a given directory subtree
+NEW: DFC - search by both directory and file indexed metadata
+FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting registration requests
+     in FileToCat table for later retry
+FIX: Failover registration request in the FTS agents.      
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
@@ -49,6 +60,21 @@ FIX: Dirac.py - fix some type checking things
 *WMS
 FIX: removed dependency of the JobSchedulingAgent on RSS. Move the getSiteTier functionality to a new CS Helper.
 
+*Resources
+NEW: Added SSH Grid Engine Computing Element
+NEW: Added SSH Computing Element
+
+*Transformation
+FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and
+     the new status is "unused"
+
+[v6r1p8]
+
+*Web
+FIX: restored Run panel in the production monitor
+
+*Resources
+FIX: FileCatalog - do not check existence of the catalog client module file
 
 [v6r1p7]
 
@@ -81,7 +107,7 @@ BUGFIX: TransformationCleaningAgent - do not clear requests for tasks with no as
 NEW: Pass the monitor down to the request RequestHandler
 FIX: Define the service location for the monitor
 FIX: Close some connections that DISET was leaving open
-
+
 [v6r1p2]
 
 *WorkloadManagement
