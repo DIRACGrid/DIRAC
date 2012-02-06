@@ -1117,7 +1117,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print "ERROR:",result['Message']
     except Exception, x:
       print "guid failed: ", x   
- 
+
 ##################################################################################
 #  Metadata methods
       
@@ -1125,8 +1125,10 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Metadata related operation
     
         usage:
-          meta index <metaname> <metatype>  - add new metadata index. Possible types are:
-                                              'int', 'float', 'string', 'date'
+          meta index [-d|-f] <metaname> <metatype>  - add new metadata index. Possible types are:
+                                                      'int', 'float', 'string', 'date';
+                                                      -d  directory metadata
+                                                      -f  file metadata
           meta set <directory> <metaname> <metavalue> - set metadata value for directory
           meta get [-e] [<directory>] - get metadata for the given directory
           meta tags <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
@@ -1324,6 +1326,16 @@ File Catalog Client $Revision: 1.17 $Date:
     if len(argss) < 2:
       print "Unsufficient number of arguments"
       return
+    
+    fdType = '-d'
+    if argss[0].lower() in ['-d','-f']:
+      fdType = argss[0]
+      del argss[0] 
+      
+    if len(argss) < 2:
+      print "Unsufficient number of arguments"
+      return  
+    
     mname = argss[0] 
     mtype = argss[1]
     
@@ -1343,12 +1355,12 @@ File Catalog Client $Revision: 1.17 $Date:
       print "Error: illegal metadata type %s" % mtype
       return  
         
-    result =  self.fc.addMetadataField(mname,rtype)
+    result =  self.fc.addMetadataField(mname,rtype,fdType)
     if not result['OK']:
       print ("Error: %s" % result['Message'])
     else:
       print "Added metadata field %s of type %s" % (mname,mtype)        
-  
+ 
   def registerMetaset(self,argss):
     """ Add metadata set
     """
@@ -1371,14 +1383,24 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage: find <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
-    
-    if args[0] == '{':
-      metaDict = eval(args)
+   
+    argss = args.split()
+    path = argss[0]
+    del argss[0]
+ 
+    if argss[0][0] == '{':
+      metaDict = eval(argss[0])
     else:  
-      metaDict = self.__createQuery(args)
+
+      print ' '.join(argss)
+
+      metaDict = self.__createQuery(' '.join(argss))
       print "Query:",metaDict
-          
-    result = self.fc.findFilesByMetadata(metaDict)
+      
+
+    print metaDict,path
+    
+    result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
@@ -1390,13 +1412,15 @@ File Catalog Client $Revision: 1.17 $Date:
     """    
     argss = args.split()
     result = self.fc.getMetadataFields()
+
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return None
     if not result['Value']:
       print "Error: no metadata fields defined"
       return None
-    typeDict = result['Value']
+    typeDict = result['Value']['FileMetaFields']
+    typeDict.update(result['Value']['DirectoryMetaFields'])
     metaDict = {}
     contMode = False
     for arg in argss:
@@ -1492,6 +1516,19 @@ File Catalog Client $Revision: 1.17 $Date:
         metaDict[name] = mvalue         
     
     return metaDict 
+
+  def do_stats( self, args ):
+    """ Get the catalog statistics
+    
+        Usage:
+          stats
+    """
+    result = self.fc.getCatalogCounters()
+    if not result['OK']:
+      print ("Error: %s" % result['Message']) 
+      return 
+    for key in result['Value']:
+      print key.rjust(15),':',result['Value'][key]  
       
   def do_exit(self, args):
     """ Exit the shell.

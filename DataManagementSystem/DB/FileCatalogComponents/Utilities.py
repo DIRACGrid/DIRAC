@@ -88,3 +88,13 @@ def generateGuid( checksum, checksumtype ):
                               md5HexString[20:32] )
   guid = guid.upper()
   return guid
+
+def queryTime(f):
+  """ Decorator to measure the function call time
+  """
+  def measureQueryTime(*args, **kwargs):
+    start = time.time()
+    result = f(*args, **kwargs)
+    result['QueryTime'] = time.time() - start
+    return result
+  return measureQueryTime
