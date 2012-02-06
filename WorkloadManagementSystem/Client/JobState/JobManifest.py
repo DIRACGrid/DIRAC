@@ -185,6 +185,18 @@ class JobManifest( object ):
       cfg = cfg[ l ]
     cfg.setOption( levels[-1], varValue )
 
+  def removeOption( self, opName ):
+    levels = List.fromChar( opName, "/" )
+    cfg = self.__manifest
+    for l in levels[:-1]:
+      if l not in cfg:
+        return S_ERROR( "%s does not exist" % opName )
+      cfg = cfg[ l ]
+    if cfg.deleteKey( levels[ -1 ] ):
+      self.__dirty = True
+      return S_OK()
+    return S_ERROR( "%s does not exist" % opName )
+
   def getOption( self, varName, defaultValue = None ):
     """
      Get a variable from the job manifest

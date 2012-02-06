@@ -97,16 +97,17 @@ class JobState( object ):
       return result
     return S_OK( manifest )
 
-  def setManifest( self, manifestData ):
-    if not isinstance( manifestData, JobManifest ):
+  def setManifest( self, manifest ):
+    if not isinstance( manifest, JobManifest ):
+      manifestStr = manifest
       manifest = JobManifest()
-      result = manifest.load( manifestData )
+      result = manifest.load( manifestStr )
       if not result[ 'OK' ]:
         return result
-      manifestData = manifest.dumpAsJDL()
+    manifestJDL = manifest.dumpAsJDL()
     if self.localAccess:
-      return self.__getDB().setJobJDL( self.__jid, manifestData )
-    return self._getStoreClient().setManifest( self.__jid, manifestData )
+      return self.__getDB().setJobJDL( self.__jid, manifestJDL )
+    return self._getStoreClient().setManifest( self.__jid, manifestJDL )
 
 #Execute traces
 
