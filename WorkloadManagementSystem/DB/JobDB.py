@@ -57,7 +57,7 @@ from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption
 from DIRAC.Core.Base.DB                                      import DB
 from DIRAC.Core.Security.CS                                  import getUsernameForDN, getDNForUsername
-from DIRAC.WorkloadManagementSystem.Client.Job.JobManifest   import JobManifest
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
 
 DEBUG = 0
 JOB_STATES = ['Received', 'Checking', 'Staging', 'Waiting', 'Matched',

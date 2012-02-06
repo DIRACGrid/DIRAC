@@ -3,8 +3,8 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.Client.Job.JobState import JobState
-from DIRAC.WorkloadManagementSystem.Client.Job.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 
 class OptimizationMindHandler( ExecutorMindHandler ):
 

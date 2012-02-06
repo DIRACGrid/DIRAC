@@ -2,7 +2,7 @@
 import types
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
-from DIRAC.WorkloadManagementSystem.Client.Job.JobManifest import JobManifest
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class JobState( object ):

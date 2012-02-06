@@ -2,7 +2,7 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.Executor import Executor
-from DIRAC.WorkloadManagementSystem.Client.Job.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 
 class OptimizerExecutor( Executor ):
 

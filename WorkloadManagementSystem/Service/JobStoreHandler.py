@@ -4,7 +4,7 @@ from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.Client.Job.JobState import JobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 
 class JobStoreHandler( RequestHandler ):
 

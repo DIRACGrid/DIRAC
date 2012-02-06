@@ -1,9 +1,9 @@
 
 import types, copy
-from DIRAC.Core.Utilities import Time, Dencode
+from DIRAC.Core.Utilities import Time, DEncode
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.WorkloadManagementSystem.Client.Job.JobState import JobState
-from DIRAC.WorkloadManagementSystem.Client.Job.JobManifest import JobManifest
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from TiffTags import TYPES
 
 class CachedJobState( object ):
