@@ -529,8 +529,6 @@ class TransferDB(DB):
   # These are the methods for managing the FileToFTS table
 
   def getFTSReqLFNs(self, ftsReqID, channelID=None, sourceSE=None ):
-    channelID = channelID
-    sourceSE = sourceSE
 
     req = "SELECT ftf.FileID,f.LFN from FileToFTS as ftf LEFT JOIN Files as f ON (ftf.FileID=f.FileID) WHERE ftf.FTSReqID = %s;" % ftsReqID
     res = self._query(req)
