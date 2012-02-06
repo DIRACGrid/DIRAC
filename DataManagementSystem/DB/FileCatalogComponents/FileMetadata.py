@@ -10,6 +10,7 @@ __RCSID__ = "$Id:  $"
 
 import time, os, types
 from DIRAC import S_OK, S_ERROR
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryTime
 
 class FileMetadata:
 
@@ -30,7 +31,7 @@ class FileMetadata:
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
 
-    result = self.getMetadataFields( credDict )
+    result = self.getFileMetadataFields( credDict )
     if not result['OK']:
       return result
     if pname in result['Value'].keys():
@@ -92,7 +93,7 @@ class FileMetadata:
   def setMetadata( self, path, metadict, credDict ):
     """ Set the value of a given metadata field for the the given directory path
     """
-    result = self.getMetadataFields( credDict )
+    result = self.getFileMetadataFields( credDict )
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -245,6 +246,80 @@ class FileMetadata:
     result = self.db._update( req )
     return result
 
+  def __createMetaSelection( self,meta,value,table='' ):
+
+    if type( value ) == types.DictType:
+      selectList = []
+      for operation, operand in value.items():
+        if operation in ['>', '<', '>=', '<=']:
+          if type( operand ) == types.ListType:
+            return S_ERROR( 'Illegal query: list of values for comparison operation' )
+          if type( operand ) in [types.IntType, types.LongType]:
+            selectList.append( "%sValue%s%d" % ( table, operation, operand ) )
+          elif type( operand ) == types.FloatType:
+            selectList.append( "%sValue%s%f" % ( table, operation, operand ) )
+          else:
+            selectList.append( "%sValue%s'%s'" % ( table, operation, operand ) )
+        elif operation == 'in' or operation == "=":
+          if type( operand ) == types.ListType:
+            vString = ','.join( [ "'" + str( x ) + "'" for x in operand] )
+            selectList.append( "%sValue IN (%s)" % ( table, vString) )
+          else:
+            selectList.append( "%sValue='%s'" % ( table, operand ) )
+        elif operation == 'nin' or operation == "!=":
+          if type( operand ) == types.ListType:
+            vString = ','.join( [ "'" + str( x ) + "'" for x in operand] )
+            selectList.append( "%sValue NOT IN (%s)" % ( table, vString ) )
+          else:
+            selectList.append( "%sValue!='%s'" % ( table, operand ) )
+        selectString = ' AND '.join( selectList )
+    elif type( value ) == types.ListType:
+      vString = ','.join( [ "'" + str( x ) + "'" for x in value] )
+      selectString = "%sValue in %s" % ( table, vString )
+    else:
+      if value == "Any":
+        selectString = ''
+      else:
+        selectString = "%sValue='%s' " % ( table, value )
+
+    return S_OK(selectString)
+
+  def __findFilesForMetaValue( self, meta, value, dirList ):
+    """ Find files in the given list of directories corresponding to the given
+        selection criteria
+    """
+
+    result = self.__createMetaSelection( meta, value, "M." )
+    if not result['OK']:
+      return result
+    selectString = result['Value']
+
+    dirString = ','.join([ str(x) for x in dirList])
+
+    req = " SELECT F.FileID, F.DirID FROM FC_FileMeta_%s AS M, FC_Files AS F" % meta
+    if dirString:
+      req += " WHERE F.DirID in (%s)" % dirString
+    if selectString:
+      if dirString:
+        req += " AND %s AND F.FileID=M.FileID" % selectString
+      else:
+        req += " WHERE %s AND F.FileID=M.FileID" % selectString
+
+
+    result = self.db._query( req )
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_OK( [] )
+
+    fileList = []
+    for row in result['Value']:
+      fileID = row[0]
+      fileList.append( fileID )
+
+    return S_OK( fileList )
+
+
   def __findFilesByMetadata( self,metaDict,dirList,credDict ):
 
     result = self.getFileMetadataFields( credDict )
@@ -253,98 +328,67 @@ class FileMetadata:
 
     fileMetaInfo = result['Value']
 
-    metaParameters = {}
-    for meta in metaDict.keys():
-      if meta in fileMetaInfo.keys():
-        metaParameters[meta] = metaDict[meta]
+    fileList = []
+    first = True    
+    for meta,value in metaDict.items():
+      result = self.__findFilesForMetaValue( meta,value,dirList )
+      if not result['OK']:
+        return result
+      mList = result['Value']
+      if first:
+        fileList = mList
+        first = False
+      else:
+        newList = []
+        for f in fileList:
+          if f in mList:
+            newList.append( f )
+        fileList = newList
 
-    if not metaParameters:
-      return S_OK(fileList)
+    return S_OK(fileList)
 
-    reqList = []
-    for key,value in metaParameters.items():
-      reqList.append( "MetaKey='%s' AND MetaValue='%s'" % (key,value) )
-    condString = ' AND '.join(reqList)
-    #fileIDString = ','.join( [ str(x[0]) for x in fileList ] )
-
-    req = "SELECT FileID FROM FC_FileMeta WHERE %s" % condString
-    #if fileList:
-    #  req += " AND FileID in (%s)" % fileIDString
-
-    print "AT >>> __findFilesByMetadata req", req
-
-    result = self.db._query( req )
-    if not result['OK']:
-      return result
-
-    if not result['Value']:
-      return S_OK([])
-
-    fileIDList = [ int(x[0]) for x in result['Value'] ] 
-    return S_OK(fileIDList)
-
-  
-  def filterByFileMetadata( self,fileList,metaDict,path,credDict ):
-    """ Filter the given file list by file metadata
-    """
-    
-    result = self.__findFilesByMetadata( metaDict,path,credDict )
-    if not result['OK']:
-      return result
-
-    selectedFiles = result['Value']
-
-    print "AT >>> filterByFileMetadata/selectedFiles", selectedFiles, fileList
-
-
-    resultList = []
-    for f in fileList:
-      if f[0] in selectedFiles:
-        resultList.append(f)
-        
-    return S_OK(resultList)      
   
   def findFilesByMetadata( self, metaDict, path, credDict ):
     """ Find Files satisfying the given metadata
     """
 
-    print "AT >>> findFilesByMetadata/path", metaDict, path
+    start = time.time()
 
-    result = self.db.dmeta.findDirectoriesByMetadata( metaDict, path, credDict )
+    result = self.db.dmeta.findDirIDsByMetadata( metaDict, path, credDict )
     if not result['OK']:
       return result
+    dirList = result['Value']
+    dirFlag = result['Selection']
 
-    # Find 
-    extraMetadata = result.get('ExtraMetadata',{})
+    # Find files by metadata
+    result = self.getFileMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    
+    fileMetaDict = {}
+    for key,value in metaDict.items():
+      if key in result['Value']:
+        fileMetaDict[key] = value
 
-    dirDict = result['Value']
-    dirFlag = dirDict.get(0) 
     if dirFlag == "None":
       return S_OK([])
     elif dirFlag == "All":
-      result = self.__findFilesByMetadata( extraMetadata, path, credDict )
+      result = self.__findFilesByMetadata( fileMetaDict, [], credDict )
       if not result['OK']:
         return result
       fileList = result['Value']
       result = self.db.fileManager._getFileLFNs(fileList)
-
-      print "AT >>> findFilesByMetadata _getFileLFNs", result
  
       lfnList = [ x[1] for x in result['Value']['Successful'].items() ]     
       return S_OK(lfnList)    
      
-    dirList = dirDict.keys()
     fileList = []
-    result = self.db.dtree.getFilesInDirectory( dirList, credDict )
-    if not result['OK']:
-      return result
-    
-    if extraMetadata:
-      result = self.filterByFileMetadata( result['Value'],extraMetadata,path,credDict )
+    if fileMetaDict:
+      result = self.__findFilesByMetadata( fileMetaDict,dirList,credDict )
       if not result['OK']:
         return result
-    
-    for fileID,dirID,fname in result['Value']:
-      fileList.append( dirDict[dirID] + '/' + os.path.basename( fname ) )
+      fileList = result['Value']
+      result = self.db.fileManager._getFileLFNs(fileList) 
+      lfnList = [ x[1] for x in result['Value']['Successful'].items() ]     
 
-    return S_OK( fileList )
+    return S_OK( lfnList )

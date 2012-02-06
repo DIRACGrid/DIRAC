@@ -1117,7 +1117,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print "ERROR:",result['Message']
     except Exception, x:
       print "guid failed: ", x   
- 
+
 ##################################################################################
 #  Metadata methods
       
@@ -1360,7 +1360,7 @@ File Catalog Client $Revision: 1.17 $Date:
       print ("Error: %s" % result['Message'])
     else:
       print "Added metadata field %s of type %s" % (mname,mtype)        
-  
+ 
   def registerMetaset(self,argss):
     """ Add metadata set
     """
@@ -1383,14 +1383,24 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage: find <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
-    
-    if args[0] == '{':
-      metaDict = eval(args)
+   
+    argss = args.split()
+    path = argss[0]
+    del argss[0]
+ 
+    if argss[0][0] == '{':
+      metaDict = eval(argss[0])
     else:  
-      metaDict = self.__createQuery(args)
+
+      print ' '.join(argss)
+
+      metaDict = self.__createQuery(' '.join(argss))
       print "Query:",metaDict
-          
-    result = self.fc.findFilesByMetadata(metaDict)
+      
+
+    print metaDict,path
+    
+    result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
@@ -1402,13 +1412,15 @@ File Catalog Client $Revision: 1.17 $Date:
     """    
     argss = args.split()
     result = self.fc.getMetadataFields()
+
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return None
     if not result['Value']:
       print "Error: no metadata fields defined"
       return None
-    typeDict = result['Value']
+    typeDict = result['Value']['FileMetaFields']
+    typeDict.update(result['Value']['DirectoryMetaFields'])
     metaDict = {}
     contMode = False
     for arg in argss:
@@ -1504,7 +1516,7 @@ File Catalog Client $Revision: 1.17 $Date:
         metaDict[name] = mvalue         
     
     return metaDict 
-  
+
   def do_stats( self, args ):
     """ Get the catalog statistics
     
