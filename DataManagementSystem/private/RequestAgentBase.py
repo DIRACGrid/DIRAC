@@ -58,8 +58,8 @@ def defaultCallback( task, ret ):
   ## remove request from agent cache
   for item in globals():
     if isinstance( item, RequestAgentBase ):
-      item.deleteRequest( test.getTaskID() )
-
+      item.deleteRequest( task.getTaskID() )
+  ## put monitored values
   if "monitor" in ret["Value"]:
     monitor = ret["Value"]["monitor"]
     for mark, value in monitor.items():
@@ -77,14 +77,12 @@ def defaultExceptionCallback( task, exc_info ):
   log = gLogger.getSubLogger( "exceptionCallback/%s" % task.getTaskID() )
   log.showHeaders( True )
   log.setLevel( "EXCEPTION" )
-  log.exception( "exception %s from task taskID=%d" % ( str(exc_info), task.getTaskID() ) ) )
+  log.exception( "exception %s from task taskID=%d" % ( str(exc_info), task.getTaskID() ) )
 
   ## remove request from agent cache
   for item in globals():
     if isinstance( item, RequestAgentBase ):
       item.deleteRequest( task.getTaskID() )
-
-
 
 ########################################################################
 class RequestAgentBase( AgentModule ):
@@ -154,26 +152,34 @@ class RequestAgentBase( AgentModule ):
     self.monitor.registerActivity( "Done", "Request Completed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
       
     ## register callbacks
-    self.registerCallBack( defaultCallback )
-    self.registerExceptionCallBack( defaultExceptionCallback )
+    self.registerCallback( defaultCallback )
+    self.registerExceptionCallback( defaultExceptionCallback )
 
     ## create request dict
     self.__requestHolder = dict()
 
   @classmethod
-  def deleteRequest( self, requestName ):
+  def deleteRequest( cls, requestName ):
     """ delete request from requestHolder
 
     :param self: self reference
     """
-    if requestName in self.__requestHolder:
-      del self.__requestHolder[requestName]
+    if requestName in cls.__requestHolder:
+      del cls.__requestHolder[requestName]
 
-  def saveRequest( self, requestName, requestString, requestServer ):
-    if requestName not in self.__requestHolder:
-      self.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
+  @classmethod
+  def saveRequest( cls, requestName, requestString, requestServer ):
+    """ put request into requestHolder
+
+    :param cls: class reference
+    :param str requestName: request name
+    :param str requestString: XML-serialised request
+    :param str requestServer: server URL
+    """
+    if requestName not in cls.__requestHolder:
+      cls.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
       return S_OK()
-    return S_ERROR("saveRequest: request %s canot be saved, it's already in requestHolder")
+    return S_ERROR("saveRequest: request %s cannot be saved, it's already in requestHolder")
 
   def resetRequests( self ):
     """ put back requests without callback called into requestClient 
@@ -189,8 +195,8 @@ class RequestAgentBase( AgentModule ):
       self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
 
     ## register callbacks
-    self.registerCallBack( defaultCallback )
-    self.registerExceptionCallBack( defaultExceptionCallback )
+    self.registerCallback( defaultCallback )
+    self.registerExceptionCallback( defaultExceptionCallback )
 
   def configPath( self ):
     """ config path getter
@@ -234,7 +240,7 @@ class RequestAgentBase( AgentModule ):
       self.__processPool.daemonize()
     return self.__processPool
 
-  def registerCallBack( self, callback ):
+  def registerCallback( self, callback ):
     """ register callback function executed after requestTask call
     
     :param self: self reference
@@ -320,9 +326,9 @@ class RequestAgentBase( AgentModule ):
       return res
     requestDict["executionOrder"] = res["Value"]
     ## save this request
-    self.saveRequest( requestDict["requestName"], 
-                      requestDict["requestString"], 
-                      requestDict["sourceServer"] )
+    cls.saveRequest( requestDict["requestName"], 
+                     requestDict["requestString"], 
+                     requestDict["sourceServer"] )
     ## return requestDict at least
     return S_OK( requestDict )
 
