@@ -334,7 +334,8 @@ class TransferAgent( RequestAgentBase ):
 
     return S_OK()
 
-  def getTransferURLs( self, lfn, repDict, replicas ):
+
+  def getTransferURLs( self, lfn, repDict, replicas, ancestorSwap=None ):
     """ prepare TURLs for given LFN and replication tree
 
     :param self: self reference
@@ -342,9 +343,23 @@ class TransferAgent( RequestAgentBase ):
     :param dict repDict: replication dictionary
     :param dict replicas: LFN replicas 
     """
+
     hopSourceSE = repDict["SourceSE"]
     hopDestSE = repDict["DestSE"]
     hopAncestor = repDict["Ancestor"]
+
+    if ancestorSwap and str(hopAncestor) in ancestorSwap:
+      self.log.debug("getTransferURLs: swapping hopAncestor %s with %s" % ( hopAncestor, 
+                                                                            ancestorSwap[str(hopAncestor)] ) )
+      hopAncestor = ancestorSwap[ str(hopAncestor) ]
+    
+    ## get targetSURL
+    res = self.getSurlForLFN( hopDestSE, lfn )
+    if not res["OK"]:
+      errStr = res["Message"]
+      self.log.error( errStr )
+      return S_ERROR( errStr )
+    targetSURL = res["Value"]
 
     # get the sourceSURL
     if hopAncestor:
@@ -362,16 +377,14 @@ class TransferAgent( RequestAgentBase ):
         sourceSURL = replicas[hopSourceSE]
       else:
         sourceSURL = res["Value"]
-        
-    # get the targetSURL
-    res = self.getSurlForLFN( hopDestSE, lfn )
-    if not res["OK"]:
-      errStr = res["Message"]
-      self.log.error( errStr )
-      return S_ERROR( errStr )
-    targetSURL = res["Value"]
 
-    return S_OK( (sourceSURL, targetSURL, status ) )
+    ## new status - Done or Done%d for TargetSURL = SourceSURL
+    if targetSURL == sourceSURL:
+      status = "Done"
+      if hopAncestor:
+        status = "Done%s" % hopAncestor
+        
+    return S_OK( ( sourceSURL, targetSURL, status ) )
 
   def collectFiles( self, requestObj, iSubRequest, status='Waiting' ):
     """ Get SubRequest files with status :status:, collect their replicas and metadata information from 
@@ -676,12 +689,19 @@ class TransferAgent( RequestAgentBase ):
         else:
           self.log.debug( "schedule: replicationTree: %s" % tree )
 
+        ancestorsToSwap = {}  
         for channelID, repDict in tree.items():
           self.log.info( "schedule: processing channel %d %s" % ( channelID, str( repDict ) ) )
           transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
           if not transferURLs["OK"]:
             return transferURLs
           sourceSURL, targetSURL, waitingFileStatus = transferURLs["Value"]
+
+          ## save ancestor to swap
+          if sourceSURL == targetSURL and waitingFileStatus.startswith( "Done" ):
+            oldAncestor = str(channelID)            
+            newAncestor = waitingFileStatus[5:]
+            ancestorSwap[ oldAncestor ] = newAncestor
 
           ## add file to channel
           res = self.transferDB().addFileToChannel( channelID, 
