@@ -18,6 +18,7 @@
     - FTS channels between SourceSE and TargetSE is not defined 
     - there is a trouble to define correct replication tree 
     - request's owner is different than DataManager
+
    
 """
 
@@ -27,18 +28,15 @@ __RCSID__ = "$Id$"
 import time
 import re
 import random
-
 ## from DIRAC
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
-
 ## base classes
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultCallback
 from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultExceptionCallback
 from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
-
 ## DIRAC tools
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
