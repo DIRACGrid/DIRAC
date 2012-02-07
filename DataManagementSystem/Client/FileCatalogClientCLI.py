@@ -1122,18 +1122,18 @@ File Catalog Client $Revision: 1.17 $Date:
 #  Metadata methods
       
   def do_meta(self,args):
-    """ Metadata related operation
+    """ Metadata related operations
     
         usage:
           meta index [-d|-f] <metaname> <metatype>  - add new metadata index. Possible types are:
                                                       'int', 'float', 'string', 'date';
                                                       -d  directory metadata
                                                       -f  file metadata
-          meta set <directory> <metaname> <metavalue> - set metadata value for directory
-          meta get [-e] [<directory>] - get metadata for the given directory
+          meta set <path> <metaname> <metavalue> - set metadata value for directory or file
+          meta remove <path> <metaname>  - remove metadata value for directory or file
+          meta get [-e] [<path>] - get metadata for the given directory or file
           meta tags <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
-                                                       the metadata selection
-          meta metaset <metaset_name> <key>=<value> [<key>=<value>]
+                                                        the metadata selection
           meta show - show all defined metadata indice
 
     """     
