@@ -113,7 +113,7 @@ class FTSMonitorAgent( AgentModule ):
     #########################################################################
     # Get the LFNS associated to the FTS request
     gLogger.info( 'Obtaining the LFNs associated to this request' )
-    res = self.TransferDB.getFTSReqLFNs( ftsReqID )
+    res = self.TransferDB.getFTSReqLFNs( ftsReqID, channelID, sourceSE )
     if not res['OK']:
       gLogger.error( "Failed to obtain FTS request LFNs", res['Message'] )
       return res
