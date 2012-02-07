@@ -12,6 +12,7 @@
 
 """
 __RCSID__ = "$Id$"
+import types
 from DIRAC import S_OK, S_ERROR, List
 from DIRAC.WorkloadManagementSystem.Agent.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
@@ -31,7 +32,7 @@ class JobPathAgent( OptimizerExecutor ):
   def __setOptimizerChain( self, jobState, opChain ):
     if type( opChain ) not in types.StringTypes:
       opChain = ",".join( opChain )
-    result = jobState.setOpParameter( "OptimizationChain", opChain )
+    result = jobState.setOptParameter( "OptimizationChain", opChain )
     if not result[ 'OK' ]:
       return result
     return jobState.setParameter( "JobPath", opChain )
@@ -75,7 +76,7 @@ class JobPathAgent( OptimizerExecutor ):
     jobManifest = result[ 'Value' ]
     opChain = jobManifest.getOption( "JobPath", [] )
     if opChain:
-      self.log.info( 'Job %s defines its own optimizer chain %s' % ( job, jobPath ) )
+      self.log.info( 'Job %s defines its own optimizer chain %s' % ( jid, jobPath ) )
       return self.__setOptimizerChain( jobState, opChain )
     #Construct path
     opPath = self.am_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
@@ -97,11 +98,11 @@ class JobPathAgent( OptimizerExecutor ):
         return result
       if result['Value']:
         # if the returned tuple is not empty it will evaluate true
-        self.log.info( 'Job %s has an input data requirement' % ( job ) )
+        self.log.info( 'Job %s has an input data requirement' % ( jid ) )
         opPath.extend( self.am_getOption( 'InputData', ['InputData'] ) )
       else:
-        self.log.info( 'Job %s has no input data requirement' % ( job ) )
+        self.log.info( 'Job %s has no input data requirement' % ( jid ) )
     #End of path
     opPath.extend( self.am_getOption( 'EndPath', ['JobScheduling', 'TaskQueue'] ) )
-    self.log.info( 'Constructed path for job %s is: %s' % ( jid, opPath ) )
+    self.log.info( 'Constructed path for job %s is: %s' % ( jid, "->".join( opPath ) ) )
     return self.__setOptimizerChain( jobState, opPath )

@@ -53,7 +53,7 @@ class OptimizerExecutor( Executor ):
     opChain = List.fromChar( result[ 'Value' ], "," )
     opName = self.__optimizerName
     try:
-      opIndex = opChain.find( opName )
+      opIndex = opChain.index( opName )
     except ValueError:
       return S_ERROR( "Optimizer %s is not in the chain!" % opName )
     chainLength = len( opChain )
@@ -63,7 +63,7 @@ class OptimizerExecutor( Executor ):
                          self.am_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ) )
       return S_OK()
     nextOp = opChain[ opIndex + 1 ]
-    return jobState.setState( "Checking", nextOp )
+    return jobState.setStatus( "Checking", nextOp )
 
 
   def deserializeTask( self, taskStub ):

@@ -19,12 +19,12 @@ class ExecutorMindHandler( RequestHandler ):
 
   class MindCallbacks( ExecutorDispatcherCallbacks ):
 
-    def __init__( self, sendTaskCB, dispatchCB, disconnectCB, taskErrCB ):
+    def __init__( self, sendTaskCB, dispatchCB, disconnectCB, taskProcCB, taskErrCB ):
       self.__sendTaskCB = sendTaskCB
       self.__dispatchCB = dispatchCB
       self.__disconnectCB = disconnectCB
+      self.__taskProcDB = taskProcCB
       self.__taskErrCB = taskErrCB
-
 
     def cbSendTask( self, eId, taskId, taskObj ):
       return self.__sendTaskCB( eId, taskId, taskObj )
@@ -38,6 +38,9 @@ class ExecutorMindHandler( RequestHandler ):
     def cbTaskError( self, taskId, errorMsg ):
       return self.__taskErrCB( taskId, errorMsg )
 
+    def cbTaskProcessed( self, taskId, taskObj, eType ):
+      return self.__taskProcDB( taskId, taskObj, eType )
+
   ###
   # End of callbacks
   ###
@@ -49,6 +52,7 @@ class ExecutorMindHandler( RequestHandler ):
     cls.__callbacks = ExecutorMindHandler.MindCallbacks( cls.__sendTask,
                                                          cls.exec_dispatch,
                                                          cls.__execDisconnected,
+                                                         cls.exec_taskProcessed,
                                                          cls.exec_taskError )
     cls.__eDispatch.setCallbacks( cls.__callbacks )
 
@@ -134,7 +138,7 @@ class ExecutorMindHandler( RequestHandler ):
     except:
       gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
     return S_OK()
-  
+
   #######
   # Utilities functions
   #######
@@ -202,5 +206,8 @@ class ExecutorMindHandler( RequestHandler ):
   def exec_taskError( cls, taskId, errorMsg ):
     raise Exception( "No exec_taskError defined or it is not a classmethod!!" )
 
+  @classmethod
+  def exec_taskProcessed( cls, taskId, taskObj, eType ):
+    raise Exception( "No exec_taskProcessed defined or it is not a classmethod!!" )
 
 

@@ -248,6 +248,8 @@ class ExecutorDispatcherCallbacks:
   def cbTaskError( self, taskId, errorMsg ):
     return S_ERROR( "No error callback defined" )
 
+  def cbTaskProcessed( self, taskId, taskObj, eType ):
+    return S_OK()
 
 class ExecutorDispatcher:
 
@@ -451,6 +453,20 @@ class ExecutorDispatcher:
     self.__fillExecutors( eType, defrozeIfNeeded = defrozeIfNeeded )
     return S_OK()
 
+  def __taskProcessedCallback( self, taskId, taskObj, eType ):
+    try:
+      result = self.__cbHolder.cbTaskProcessed( taskId, taskObj, eType )
+    except:
+      self.__log.exception( "Exception while calling taskDone callback" )
+      return S_ERROR( "Exception while calling taskDone callback" )
+
+    if not isReturnStructure( result ):
+      errMsg = "taskDone callback did not return a S_OK/S_ERROR structure"
+      self.__log.fatal( errMsg )
+      return S_ERROR( errMsg )
+
+    return result
+
   def __getNextExecutor( self, taskId ):
     try:
       eTask = self.__tasks[ taskId ]
@@ -516,8 +532,17 @@ class ExecutorDispatcher:
     try:
       eType = self.__idMap[ eId ]
     except KeyError:
-      gLogger.error( "Executor type unknown for %s. Redoing task %s" % ( eId, taskId ) )
-      return self.__dispatchTask( taskId )
+      errMsg = "Executor type unknown for %s. Redoing task %s" % ( eId, taskId )
+      gLogger.error( errMsg )
+      self.__dispatchTask( taskId )
+      return S_ERROR( errMsg )
+    #Call the done callback
+    result = self.__taskProcessedCallback( taskId, taskObj, eType )
+    if not result[ 'OK' ]:
+      return result
+    #Send another task to the executor that just processed the task
+    self.__sendTaskToExecutor( eId, eType )
+    #Up until here it's an executor error. From now on it can be a task error
     try:
       if taskObj:
         self.__tasks[ taskId ].taskObj = taskObj
@@ -526,7 +551,9 @@ class ExecutorDispatcher:
       gLogger.error( "Task %s seems to have been removed while being processed!" % taskId )
       return S_OK()
     self.__log.info( "Executor %s processed task %s" % ( eId, taskId ) )
-    return self.__dispatchTask( taskId )
+    result = self.__dispatchTask( taskId )
+    self.__sendTaskToExecutor( eId, eType )
+    return result
 
   def retryTask( self, eId, taskId ):
     if taskId not in self.__tasks:
@@ -553,28 +580,37 @@ class ExecutorDispatcher:
     eId = self.__states.getIdleExecutor( eType )
     processedTasks = set()
     while eId:
-      taskId = self.__queues.popTask( eType )
-      if taskId == None:
-        self.__log.verbose( "No more tasks for %s" % eType )
-        break
-      if taskId in processedTasks:
-        self.__queues.pushTask( eType, taskId, ahead = True )
-        self.__log.info( "All tasks in the queue have been gone through" )
-        return
-      processedTasks.add( taskId )
-      self.__log.info( "Sending task %s to %s=%s" % ( taskId, eType, eId ) )
-      self.__states.addTask( eId, taskId )
-      result = self.__sendTaskToExecutor( eId, taskId )
+      result = self.__sendTaskToExecutor( eId, eType )
       if not result[ 'OK' ]:
-        self.__log.error( "Could not send task", "to %s: %s" % ( eId, result[ 'Message' ] ) )
-        self.__queues.pushTask( eType, taskId, ahead = True )
-        self.__states.removeTask( taskId )
+        self.log.error( "Could not send task to executor: %s" % result[ 'Message' ] )
       else:
-        self.__log.info( "Task %s was sent to %s" % ( taskId, eId ) )
-        eId = self.__states.getIdleExecutor( eType )
+        if not result[ 'Value' ]:
+          #No more tasks for eType
+          break
+        self.__log.info( "Task %s was sent to %s" % ( result[ 'Value'], eId ) )
+      eId = self.__states.getIdleExecutor( eType )
     self.__log.verbose( "No more idle executors for %s" % eType )
 
-  def __sendTaskToExecutor( self, eId, taskId ):
+  def __sendTaskToExecutor( self, eId, eType = False ):
+    if not eType:
+      try:
+        eType = self.__idMap[ eId ]
+      except KeyError:
+        return S_ERROR( "Executor type unknown for %s" % eId )
+    taskId = self.__queues.popTask( eType )
+    if taskId == None:
+      self.__log.verbose( "No more tasks for %s" % eType )
+      return S_OK()
+    self.__log.info( "Sending task %s to %s=%s" % ( taskId, eType, eId ) )
+    self.__states.addTask( eId, taskId )
+    result = self.__msgTaskToExecutor( eId, taskId )
+    if not result[ 'OK' ]:
+      self.__queues.pushTask( eType, taskId, ahead = True )
+      self.__states.removeTask( taskId )
+      return result
+    return S_OK( taskId )
+
+  def __msgTaskToExecutor( self, eId, taskId ):
     try:
       result = self.__cbHolder.cbSendTask( eId, taskId, self.__tasks[ taskId ].taskObj )
     except:

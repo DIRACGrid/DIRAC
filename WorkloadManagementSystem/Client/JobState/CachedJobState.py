@@ -341,3 +341,8 @@ class CachedJobState( object ):
 
   def getOptParameters( self, nameList = None ):
     return self.__cacheDict( 'optp', self.__jobState.getOptParameters, nameList )
+
+#Other
+
+  def getInputData( self ):
+    return self.__cacheResult( "inputData" , self.__jobState.getInputData )

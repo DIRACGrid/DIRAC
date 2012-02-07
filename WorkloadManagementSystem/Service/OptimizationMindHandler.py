@@ -27,27 +27,36 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       log.info( "No optimizer connected. Skipping load" )
       return S_OK()
     log.info( "Getting jobs for %s" % ",".join( eTypes ) )
-    try:
-      iP = eTypes.index( "JobPath" )
-      eTypes[ iP ] = "Job accepted"
-    except ValueError:
-      pass
-    jobCond = { 'Status': cls.__optimizationStates, 'MinorStatus' : eTypes }
-    jobTypeCondition = cls.srv_getCSOption( "JobTypeRestriction", [] )
-    if jobTypeCondition:
-      jobCond[ 'JobType' ] = jobTypeCondition
-    result = cls.__jobDB.selectJobs( jobCond, limit = cls.srv_getCSOption( "JobQueryLimit", 1000 ) )
-    if not result[ 'OK' ]:
-      return result
-    jidList = result[ 'Value' ]
-    knownJids = cls.getTaskIds()
-    added = 0
-    for jid in jidList:
-      jid = long( jid )
-      if jid not in knownJids:
-        cls.executeTask( jid, CachedJobState( jid ) )
-        added += 1
-    log.info( "Added %s jobs out of %s received" % ( added, len( jidList ) ) )
+    for opState in cls.__optimizationStates:
+      #For Received states
+      if opState == "Received":
+          if 'JobPath' not in eTypes:
+            continue
+          jobCond = { 'Status' : opState }
+      #For checking states
+      if opState == "Checking":
+        eCheckingTypes = eTypes
+        if 'JobPath' in eCheckingTypes:
+          eCheckingTypes.remove( 'JobPath' )
+        if not eCheckingTypes:
+          continue
+        jobCond = { 'Status': opState, 'MinorStatus' : eCheckingTypes }
+      #Do the magic
+      jobTypeCondition = cls.srv_getCSOption( "JobTypeRestriction", [] )
+      if jobTypeCondition:
+        jobCond[ 'JobType' ] = jobTypeCondition
+      result = cls.__jobDB.selectJobs( jobCond, limit = cls.srv_getCSOption( "JobQueryLimit", 1000 ) )
+      if not result[ 'OK' ]:
+        return result
+      jidList = result[ 'Value' ]
+      knownJids = cls.getTaskIds()
+      added = 0
+      for jid in jidList:
+        jid = long( jid )
+        if jid not in knownJids:
+          cls.executeTask( jid, CachedJobState( jid ) )
+          added += 1
+      log.info( "Added %s/%s jobs for %s state" % ( added, len( jidList ), opState ) )
     return S_OK()
 
   @classmethod
@@ -71,13 +80,16 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return cls.__loadJobs( name )
 
   @classmethod
-  def exec_dispatch( cls, jid, cjs, pathExecuted ):
-    cls.log.info( "Saving changes for job %s" % jid )
-    result = cjs.commitChanges()
+  def exec_taskProcessed( cls, jid, jobState, eType ):
+    cls.log.info( "Saving changes for job %s after %s" % ( jid, eType ) )
+    result = jobState.commitChanges()
     if not result[ 'OK' ]:
       cls.log.error( "Could not save changes for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
-      return result
-    result = cjs.getStatus()
+    return result
+
+  @classmethod
+  def exec_dispatch( cls, jid, jobState, pathExecuted ):
+    result = jobState.getStatus()
     if not result[ 'OK' ]:
       cls.log.error( "Could not get status for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
       return S_ERROR( "Could not retrieve status: %s" % result[ 'Message' ] )
@@ -90,7 +102,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     if status == "Received":
       cls.log.error( "Dispatching job %s to JobPath" % jid )
       return S_OK( "JobPath" )
-    result = cjs.getOptParameter( 'OptimizerChain' )
+    result = jobState.getOptParameter( 'OptimizerChain' )
     if not result[ 'OK' ]:
       cls.log.error( "Could not get optimizer chain for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
       return S_ERROR( "Couldn't get OptimizerChain: %s" % result[ 'Message' ] )
@@ -102,8 +114,8 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return S_OK( minorStatus )
 
   @classmethod
-  def exec_serializeTask( cls, cjs ):
-    return S_OK( cjs.serialize() )
+  def exec_serializeTask( cls, jobState ):
+    return S_OK( jobState.serialize() )
 
   @classmethod
   def exec_deserializeTask( cls, taskStub ):

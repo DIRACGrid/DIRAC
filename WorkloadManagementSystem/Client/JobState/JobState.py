@@ -352,3 +352,9 @@ class JobState( object ):
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     return JobState.__jobDB.getJobOptParameters( self.__jid, nameList )
+
+#Other
+
+  @RemoteMethod
+  def getInputData( self ):
+    return JobState.__jobDB.getInputData( self.__jid )
