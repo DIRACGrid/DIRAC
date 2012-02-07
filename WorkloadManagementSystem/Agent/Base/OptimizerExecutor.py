@@ -12,7 +12,8 @@ class OptimizerExecutor( Executor ):
     if opName.find( "Agent" ) == len( opName ) - 5:
       opName = opName[ :-5]
     self.__optimizerName = opName
-    result = self.connect( "WorkloadManagement/OptimizationMind", name = self.__optimizerName )
+    maxTasks = self.am_getOption( 'Tasks', 1 )
+    result = self.connect( "WorkloadManagement/OptimizationMind", maxTasks = maxTasks, name = self.__optimizerName )
     if not result[ 'OK' ]:
       return result
     self.am_setOption( "ReconnectRetries", 10 )
@@ -27,6 +28,7 @@ class OptimizerExecutor( Executor ):
     return S_OK()
 
   def processTask( self, jid, jobState ):
+    self.log.info( "Job %s: Processing" % jid )
     result = self.optimizeJob( jid, jobState )
     if not result[ 'OK' ]:
       return result
@@ -39,6 +41,7 @@ class OptimizerExecutor( Executor ):
       jobState.setManifest( manifest )
     #Did it go as expected? If not Failed!
     if not result[ 'OK' ]:
+      self.log.info( "Job %s: Set to Failed/%s" % ( jid, result[ 'Message' ] ) )
       return jobState.setStatus( "Failed", result[ 'Message' ] )
     return self.__setNextOptimizer( jobState )
 
@@ -63,6 +66,7 @@ class OptimizerExecutor( Executor ):
                          self.am_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ) )
       return S_OK()
     nextOp = opChain[ opIndex + 1 ]
+    self.log.info( "Job %s: Set to Checking/%s" % ( jobState.jid, nextOp ) )
     return jobState.setStatus( "Checking", nextOp )
 
 

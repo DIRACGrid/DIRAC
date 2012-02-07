@@ -506,6 +506,7 @@ class ExecutorDispatcher:
       self.__log.info( "Task %s is already removed" % taskId )
       return S_OK()
     self.__log.info( "Removing task %s" % taskId )
+    eId = self.__states.getExecutorOfTask( taskId )
     self.__queues.popTask( taskId )
     self.__states.removeTask( taskId )
     self.__freezerLock.acquire()
@@ -518,6 +519,9 @@ class ExecutorDispatcher:
         pass
     finally:
       self.__freezerLock.release()
+    if eId:
+      #Send task to executor if idle
+      return self.__sendTaskToExecutor( eId, checkIdle = True )
     return S_OK()
 
   def taskProcessed( self, eId, taskId, taskObj = False ):
@@ -540,8 +544,6 @@ class ExecutorDispatcher:
     result = self.__taskProcessedCallback( taskId, taskObj, eType )
     if not result[ 'OK' ]:
       return result
-    #Send another task to the executor that just processed the task
-    self.__sendTaskToExecutor( eId, eType )
     #Up until here it's an executor error. From now on it can be a task error
     try:
       if taskObj:
@@ -549,6 +551,7 @@ class ExecutorDispatcher:
       self.__tasks[ taskId ].pathExecuted.append( eType )
     except KeyError:
       gLogger.error( "Task %s seems to have been removed while being processed!" % taskId )
+      self.__sendTaskToExecutor( eId, eType )
       return S_OK()
     self.__log.info( "Executor %s processed task %s" % ( eId, taskId ) )
     result = self.__dispatchTask( taskId )
@@ -591,7 +594,9 @@ class ExecutorDispatcher:
       eId = self.__states.getIdleExecutor( eType )
     self.__log.verbose( "No more idle executors for %s" % eType )
 
-  def __sendTaskToExecutor( self, eId, eType = False ):
+  def __sendTaskToExecutor( self, eId, eType = False, checkIdle = False ):
+    if checkIdle and self.__states.freeSlots( eId ) == 0:
+      return S_OK()
     if not eType:
       try:
         eType = self.__idMap[ eId ]

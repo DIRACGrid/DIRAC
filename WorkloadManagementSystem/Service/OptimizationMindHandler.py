@@ -45,7 +45,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       jobTypeCondition = cls.srv_getCSOption( "JobTypeRestriction", [] )
       if jobTypeCondition:
         jobCond[ 'JobType' ] = jobTypeCondition
-      result = cls.__jobDB.selectJobs( jobCond, limit = cls.srv_getCSOption( "JobQueryLimit", 1000 ) )
+      result = cls.__jobDB.selectJobs( jobCond, limit = cls.srv_getCSOption( "JobQueryLimit", 10000 ) )
       if not result[ 'OK' ]:
         return result
       jidList = result[ 'Value' ]
@@ -110,7 +110,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     if minorStatus not in optChain:
       cls.log.error( "Next optimizer is not in the chain for job", "%s: %s not in %s" % ( jid, minorStatus, optChain ) )
       return S_ERROR( "Next optimizer %s not in chain %s" % ( minorStatus, optChain ) )
-    cls.log.error( "Dispatching job %s to %s" % ( jid, minorStatus ) )
+    cls.log.info( "Dispatching job %s to %s" % ( jid, minorStatus ) )
     return S_OK( minorStatus )
 
   @classmethod

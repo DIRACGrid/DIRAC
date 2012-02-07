@@ -14,6 +14,7 @@ class Executor( AgentModule ):
     self.am_setOption( "ReconnectRetries", 10 )
     self.am_setOption( "ReconnectWaitTime", 10 )
     self.__maxTasks = maxTasks
+    self.__useProcesses = useProcesses
     self.__msgClient = MessageClient( mindName )
     self.__msgClient.subscribeToMessage( 'ProcessTask', self.__queueTask )
     self.__msgClient.subscribeToDisconnect( self.__disconnected )
@@ -26,6 +27,7 @@ class Executor( AgentModule ):
         self.__pool = ProcessPool( maxTasks )
       else:
         self.__pool = ThreadPool( maxTasks )
+      self.__pool.daemonize()
     self.__connectKWArgs = { 'executorName' : self.__name,
                               'maxTasks' : maxTasks }
     return self.__msgClient.connect( **self.__connectKWArgs )
@@ -42,7 +44,10 @@ class Executor( AgentModule ):
 
   def __queueTask( self, msgObj ):
     if self.__maxTasks > 1:
-      return self.__pool.createAndQueueTask( self.__executeTask, ( msgObj.taskId, msgObj.taskStub ) )
+      if self.__useProcesses:
+        return self.__pool.createAndQueueTask( self.__executeTask, ( msgObj.taskId, msgObj.taskStub ) )
+      else:
+        return self.__pool.generateJobAndQueueIt( self.__executeTask, ( msgObj.taskId, msgObj.taskStub ) )
     return self.__executeTask( msgObj.taskId, msgObj.taskStub )
 
   def __disconnected( self, msgClient ):
@@ -67,6 +72,7 @@ class Executor( AgentModule ):
 
 
   def __executeTask( self, taskId, taskStub ):
+    self.log.verbose( "Task %s: Received" % str( taskId ) )
     try:
       result = self.deserializeTask( taskStub )
     except Exception, excp:
@@ -75,6 +81,7 @@ class Executor( AgentModule ):
     if not isReturnStructure( result ):
       raise Exception( "deserializeTask does not return a return structure" )
     if not result[ 'OK' ]:
+      self.log.verbose( "Task %s: Cannot deserialize: %s" % ( str( taskId ), result[ 'Message' ] ) )
       return result
     taskObj = result[ 'Value' ]
     try:
@@ -93,6 +100,7 @@ class Executor( AgentModule ):
       return self.__msgClient.sendMessage( msgObj )
 
     if not procResult[ 'OK' ]:
+      self.log.verbose( "Task %s: Sending TaskError %s" % ( str( taskId ), procResult[ 'Message' ] ) )
       result = self.__msgClient.createMessage( "TaskError" )
       if not result[ 'OK' ]:
         return result
@@ -111,11 +119,13 @@ class Executor( AgentModule ):
     if not isReturnStructure( result ):
       raise Exception( "serializeTask does not return a return structure" )
     if not result[ 'OK' ]:
+      self.log.verbose( "Task %s: Cannot serialize: %s" % ( str( taskId ), result[ 'Message' ] ) )
       return result
     taskStub = result[ 'Value' ]
     result = self.__msgClient.createMessage( "TaskDone" )
     if not result[ 'OK' ]:
         return result
+    self.log.verbose( "Task %s: Sending TaskDone" % str( taskId ) )
     msgObj = result[ 'Value' ]
     msgObj.taskId = taskId
     msgObj.taskStub = taskStub
