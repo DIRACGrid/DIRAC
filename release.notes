@@ -1,4 +1,4 @@
-[v6r2-pre6]
+[v6r2-pre7]
 
 *Accounting
 CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
@@ -16,6 +16,7 @@ NEW: ProcessPool - added functionality to kill all children processes properly w
 NEW: CS Helper for LocalSite section, with gridEnv method
 NEW: Grid module will use Local.gridEnv if nothing passed in the arguments
 CHANGE: Add deprecated sections in the CS Operations helper to ease the transition
+FIX: dirac-install - execute dirac-fix-mysql-script, if available, to fix the mysql.server startup script
 
 *RequestManagement:
 FIX: RequestDBFile - more consistent treatment of requestDB Path
@@ -51,6 +52,8 @@ NEW: DFC - search by both directory and file indexed metadata
 FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting registration requests
      in FileToCat table for later retry
 FIX: Failover registration request in the FTS agents.      
+FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed
+     from the RequestManagement 
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
