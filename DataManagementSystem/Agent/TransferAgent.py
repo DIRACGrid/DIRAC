@@ -18,6 +18,7 @@
     - FTS channels between SourceSE and TargetSE is not defined 
     - there is a trouble to define correct replication tree 
     - request's owner is different than DataManager
+
    
 """
 
@@ -27,24 +28,22 @@ __RCSID__ = "$Id$"
 import time
 import re
 import random
-
 ## from DIRAC
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Base.AgentModule      import AgentModule
-
+from DIRAC.Core.Base.AgentModule import AgentModule
 ## base classes
-from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase, defaultCallback, defaultExceptionCallabck
-from DIRAC.DataManagementSystem.Agent.TransferTask       import TransferTask
-
+from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
+from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultCallback
+from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultExceptionCallback
+from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
 ## DIRAC tools
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
-from DIRAC.ConfigurationSystem.Client.Helpers              import ResourceStatus
-from DIRAC.Resources.Storage.StorageFactory                import StorageFactory
-from DIRAC.DataManagementSystem.DB.TransferDB              import TransferDB
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL       import RequestDBMySQL
-from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
+from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
+from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 
 ## agent name
 AGENT_NAME = 'DataManagement/TransferAgent'
@@ -735,44 +734,47 @@ class TransferAgent( RequestAgentBase ):
       self.log.info( "schedule: found %s files" % ( iSubRequest, len( subRequestFiles ) ) )
       for subRequestFile in subRequestFiles:
         status = subRequestFile["Status"]
-        LFN = subRequestFile["LFN"]
-        FileID = subRequestFile["FileID"]
-        self.log.info("schedule: processing file FileID=%s LFN=%s Status=%s" % ( FileID, LFN, status ) )
+        lfn = subRequestFile["LFN"]
+        fileID = subRequestFile["FileID"]
+        self.log.info("schedule: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
         if status == "Done":
           ## get failed to register [ ( PFN, SE, ChannelID ), ... ] 
-          toRegister = self.transferDB().getRegisterFailover( FileID )
-          if not failedToRegister["OK"]:
+          toRegister = self.transferDB().getRegisterFailover( fileID )
+          if not toRegister["OK"]:
             self.log.error( "schedule: %s" % toRegister["Message"] )
             return toRegister
           if not toRegister["Value"]:
-            self.log.debug("schedule: no waiting registrations found for %s file" % LFN )
+            self.log.debug("schedule: no waiting registrations found for %s file" % lfn )
             continue
           ## loop and try to register
           toRegister = toRegister["Value"]
-          for PFN, SE, channelID in toRegister.items():
-            self.log.debug("schedule: failover registration of %s to %s" % ( LFN, SE ) )
+          for pfn, se, channelID in toRegister.items():
+            self.log.debug("schedule: failover registration of %s to %s" % ( lfn, se ) )
             ## register replica now
-            registerReplica = self.replicaManager().registerReplica( ( LFN, PFN, SE ) )
-            if ( not registerReplica["OK"] ) or ( not registerReplica["Value"] ) or ( LFN in registerReplica["Value"]["Failed"] ):
+            registerReplica = self.replicaManager().registerReplica( ( lfn, pfn, se ) )
+            if ( ( not registerReplica["OK"] ) 
+                 or ( not registerReplica["Value"] ) 
+                 or ( lfn in registerReplica["Value"]["Failed"] ) ):
               error = registerReplica["Message"] if "Message" in registerReplica else None 
               if "Value" in registerReplica:
                 if not registerReplica["Value"]:
                   error = "RM call returned empty value"
                 else:
-                  error = registerReplica["Value"]["Failed"][LFN]
-              self.log.error( "schedule: unable to register %s at %s: %s" %  ( LFN, SE, registerReplica["Message"] ) )
+                  error = registerReplica["Value"]["Failed"][lfn]
+              self.log.error( "schedule: unable to register %s at %s: %s" %  ( lfn, se, 
+                                                                               registerReplica["Message"] ) )
               waitingRegistrations = True
 
-            elif LFN in registerReplica["Value"]["Successfull"]:
+            elif lfn in registerReplica["Value"]["Successfull"]:
 
               ## no other option, it must be in successfull
-              updateRegister = self.transferDB().setRegistrationDone( channelID, FileID )
-              if not updateRegister["OK"]:
-              self.log.error("schedule: unable to set registration Done for %s fileID=%s channelID=%s: %s" % ( LFN,
-                                                                                                               FileID,
-                                                                                                               channelID,
-                                                                                                               updateRegister["Message"] ) )
-              return updateRegister
+              register = self.transferDB().setRegistrationDone( channelID, fileID )
+              if not register["OK"]:
+                self.log.error("schedule: register status error %s fileID=%s channelID=%s: %s" % ( lfn,
+                                                                                                   fileID,
+                                                                                                   channelID,
+                                                                                                   register["Message"] ) )
+                return register
 
       if not waitingRegistrations and requestObj.isSubRequestEmpty( iSubRequest, "transfer" )["Value"]:
         self.log.info("schedule: setting sub-request %d status to 'Scheduled'" % iSubRequest )
@@ -1221,23 +1223,12 @@ class StrategyHandler( object ):
     :param str access: storage element accesss, could be 'Read' (default) or 'Write' 
     """
     activeSE = []
-    
-    # This will return S_OK( { se : { access : value,... },... } ) || S_ERROR
-    res = ResourceStatus.getStorageElementStatus( selist, access, 'Unknown' )
-    if res[ 'OK' ] and res['Value']:
-      for k,v in res['Value'].items():
-        if v.has_key( access ) and v[ access ] in [ 'Active', 'Bad' ]:
-          activeSE.append( k )
-    
-    #for se in seList:
-    #
-    # res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
-    # #if res["OK"] and res["Value"] == "Active":
-    # if res[ "OK" ] and res[ "Value" ]:
-    # if res['Value'][se][ access ] in [ "Active", "Bad" ]:
-    # activeSE.append( se )
+    for se in seList:
+      res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
+      if res["OK"] and res["Value"] == "Active":
+        activeSE.append( se )
     return activeSE
-  
+
   def __getChannelSitesForSE( self, storageElement ):
     """Get sites for given storage element.
     
