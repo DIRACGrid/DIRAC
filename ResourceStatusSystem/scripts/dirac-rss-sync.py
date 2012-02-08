@@ -117,7 +117,7 @@ elif granularity == 'Resource':
   
   syncResources()
 
-elif granularity == 'StorageElements':
+elif granularity == 'StorageElement':
   
   syncStorageElements()
   
