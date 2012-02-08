@@ -113,6 +113,7 @@ class TransferAgentError( Exception ):
     """
     return str( self.msg )
 
+
 class TransferAgent( RequestAgentBase ):
   """ 
   .. class:: TransferAgent
@@ -333,6 +334,32 @@ class TransferAgent( RequestAgentBase ):
     self.strategyHandler().reset()
 
     return S_OK()
+
+  def ancestorSortKeys( self, aDict, aKey="hopAncestor" ):
+    """ sorting keys of replicationTree by its hopAncestor value 
+    
+    replicationTree is a dict ( channelID : { ... }, (...) }
+    
+    :param self: self reference
+    :param dict aDict: replication tree  to sort
+    :param str aKey: a key in value dict used to sort 
+    """
+    if False in [ bool(aKey in v) for v in aDict.values() ]:
+      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" )
+    ## put parents of all parents
+    sortedKeys = [ k for k in aDict if aKey in aDict[k] and not aDict[k][aKey] ]
+    ## get children
+    pairs = dict( [ (  k, v[aKey] ) for k, v in aDict.items() if v[aKey] ] )
+    while pairs:
+      for key, ancestor in dict(pairs).items():
+        if key not in sortedKeys and ancestor in sortedKeys:
+          sortedKeys.insert( sortedKeys.index(ancestor), key )
+          del pairs[key]
+    ## need to revese this one, as we're instering child before its parent 
+    sortedKeys.reverse()
+    if sorted( sortedKeys ) != sorted( aDict.keys() ):
+      return S_ERROR( "ancestorSortKeys: cannot sort, some keys are missing!")
+    return S_OK( sortedKeys )
 
 
   def getTransferURLs( self, lfn, repDict, replicas, ancestorSwap=None ):
@@ -688,9 +715,18 @@ class TransferAgent( RequestAgentBase ):
           continue
         else:
           self.log.debug( "schedule: replicationTree: %s" % tree )
-
-        ancestorsToSwap = {}  
-        for channelID, repDict in tree.items():
+ 
+        ## sorting keys by hopAncestor
+        sortedKeys = self.ancestorSortKeys( tree, "hopAncestor" )
+        if not sortedKeys["OK"]:
+          self.log.warn( "schedule: unable to sort replication tree by hopAncestor: %s"% sortedKeys["Message"] )
+          sortedKeys = tree.keys()
+        else:
+          sortedKeys = sortedKeys["Value"]
+        ## dict holding swap parent with child for same SURLs
+        ancestorsToSwap = {} 
+        for channelID in sortedKeys:
+          repDict = tree[channelID]
           self.log.info( "schedule: processing channel %d %s" % ( channelID, str( repDict ) ) )
           transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
           if not transferURLs["OK"]:
