@@ -94,7 +94,7 @@ def syncStorageElementsInit():
       # If there is nothing on the CS, we set the statusType to DEFAULT_STATUS
       DEFAULT_STATUS = 'Active'
     
-      rsc.modifyElementStatus( 'StorageElement', se, statusType, 
+      rsc.modifyElementStatus( 'StorageElement', se, sType, 
                                 status = DEFAULT_STATUS, reason = 'Default status' )
 
 if granularity is None:
