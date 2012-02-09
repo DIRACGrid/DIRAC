@@ -85,7 +85,11 @@ for se,seOptions in res[ 'Value' ].items():
   resW = resC = resR = { 'OK' : False }  
     
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if read and seOptions.has_key( 'Read' ) and seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:    
+  if read and seOptions.has_key( 'Read' ):
+    
+    if not seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ "InActive", "Banned", "Probing" ] ) )    
+      continue
      
     resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
     if not resR['OK']:
@@ -95,7 +99,11 @@ for se,seOptions in res[ 'Value' ].items():
       readAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if write and seOptions.has_key( 'Write' ) and seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
+  if write and seOptions.has_key( 'Write' ):
+    
+    if not seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ "InActive", "Banned", "Probing" ] ) )    
+      continue
     
     resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
     if not resW['OK']:
@@ -105,7 +113,11 @@ for se,seOptions in res[ 'Value' ].items():
       writeAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS 
-  if check and seOptions.has_key( 'Check' ) and seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
+  if check and seOptions.has_key( 'Check' ):
+
+    if not seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ "InActive", "Banned", "Probing" ] ) )    
+      continue
     
     resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
     if not resC['OK']:
