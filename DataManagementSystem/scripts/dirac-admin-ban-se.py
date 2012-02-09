@@ -67,7 +67,7 @@ if site:
 
 if not ses:
   gLogger.error( 'There were no SEs provided' )
-  DIRAC.exit()
+  DIRAC.exit( -1 )
 
 readBanned  = []
 writeBanned = []

@@ -76,7 +76,7 @@ checkAllowed = []
 res = ResourceStatus.getStorageElementStatus( se )
 if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % se )
-  continue
+  DIRAC.exit( -1 )
 
 reason = 'Forced with dirac-admin-ban-se by %s' % userName
 
