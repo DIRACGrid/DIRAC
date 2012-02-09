@@ -73,7 +73,7 @@ readAllowed  = []
 writeAllowed = []
 checkAllowed = []
 
-res = ResourceStatus.getStorageElementStatus( se )
+res = ResourceStatus.getStorageElementStatus( ses )
 if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % ses )
   DIRAC.exit( -1 )
