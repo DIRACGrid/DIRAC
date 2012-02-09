@@ -78,7 +78,7 @@ if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % ses )
   DIRAC.exit( -1 )
 
-reason = 'Forced with dirac-admin-ban-se by %s' % userName
+reason = 'Forced with dirac-admin-allow-se by %s' % userName
 
 for se,seOptions in res[ 'Value' ].items():
   
