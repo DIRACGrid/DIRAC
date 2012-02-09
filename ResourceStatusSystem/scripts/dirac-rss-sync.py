@@ -66,7 +66,6 @@ def syncStorageElementsInit():
   statuses = rsc.getValidStatuses()[ 'Value' ]
   
   for se in ses[ 'Value' ]:
-    gLogger.notice( se )
     opts = gConfig.getOptions( '/Resources/StorageElements/%s' % se )[ 'Value' ]
 
     statusTypes = [ 'Read', 'Write', 'Check', 'Remove' ]
