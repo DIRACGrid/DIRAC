@@ -2,6 +2,7 @@
 import threading, time
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 class ExecutorState:
 
@@ -264,6 +265,7 @@ class ExecutorDispatcher:
       self.frozenCount = 0
       self.frozenMsg = False
       self.eType = False
+      self.sendTime = 0
       self.retries = 0
 
     def __repr__( self ):
@@ -275,7 +277,7 @@ class ExecutorDispatcher:
       return rS
 
 
-  def __init__( self ):
+  def __init__( self, monitor = False ):
     self.__idMap = {}
     self.__execTypes = {}
     self.__executorsLock = threading.Lock()
@@ -287,6 +289,9 @@ class ExecutorDispatcher:
     self.__queues = ExecutorQueues( self.__log )
     self.__states = ExecutorState( self.__log )
     self.__cbHolder = ExecutorDispatcherCallbacks()
+    self.__monitor = monitor
+    if self.__monitor:
+      gThreadScheduler.addPeriodicTask( 200, self.__doMonitoringStuff )
     #If a task is frozen too many times, send error or forget task?
     self.__failedOnTooFrozen = True
     #If a task fails to properly dispatch, freeze or forget task?
@@ -316,6 +321,16 @@ class ExecutorDispatcher:
     self.__cbHolder = callbacksObj
     return S_OK()
 
+  def __doMonitoringStuff( self ):
+    if not self.__monitor:
+      return
+    eTypes = self.__execTypes.keys()
+    for eType in eTypes:
+      try:
+        self.__monitor.addMark( "executors-%s" % eType, self.__execTypes[ eType ] )
+      except KeyError:
+        pass
+
   def addExecutor( self, eType, eId, maxTasks = 1 ):
     self.__log.info( "Adding new %s executor to the pool %s" % ( eId, eType ) )
     self.__executorsLock.acquire()
@@ -325,6 +340,13 @@ class ExecutorDispatcher:
       self.__idMap[ eId ] = eType
       if eType not in self.__execTypes:
         self.__execTypes[ eType ] = 0
+        if self.__monitor:
+          self.__monitor.registerActivity( "executors-%s" % eType, "%s executors connected" % eType,
+                                           "Executors", "executors", self.__monitor.OP_MEAN, 300 )
+          self.__monitor.registerActivity( "tasks-%s" % eType, "Tasks processed by %s" % eType,
+                                           "Executors", "tasks", self.__monitor.OP_RATE )
+          self.__monitor.registerActivity( "taskTime-%s" % eType, "Task processing time for %s" % eType,
+                                           "Executors", "seconds", self.__monitor.OP_MEAN )
       self.__execTypes[ eType ] += 1
       self.__states.addExecutor( eId, eType, maxTasks )
     finally:
@@ -540,6 +562,9 @@ class ExecutorDispatcher:
       gLogger.error( errMsg )
       self.__dispatchTask( taskId )
       return S_ERROR( errMsg )
+    if self.__monitor:
+      self.__monitor.addMark( "taskTime-%s" % eType, time.time() - self.__tasks[ taskId ].sendTime )
+      self.__monitor.addMark( "tasks-%s" % eType, 1 )
     #Call the done callback
     result = self.__taskProcessedCallback( taskId, taskObj, eType )
     if not result[ 'OK' ]:
@@ -621,6 +646,7 @@ class ExecutorDispatcher:
     except:
       self.__log.exception( "Exception while sending task to executor" )
       return S_ERROR( "Exception while sending task to executor" )
+    self.__tasks[ taskId ].sendTime = time.time()
     if isReturnStructure( result ):
       return result
     else:
