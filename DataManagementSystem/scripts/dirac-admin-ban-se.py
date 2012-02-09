@@ -117,14 +117,8 @@ for se,seOptions in res[ 'Value' ].items():
       gLogger.debug( "Successfully updated %s check access to Banned" % se )
       checkBanned.append( se )
  
-  if not resR['OK'] or not resW['OK'] or not resC['OK']:
-    gLogger.error( "Failed to commit changes to CS" )
+  if not( resR['OK'] or resW['OK'] or resC['OK'] ):
     DIRAC.exit( -1 ) 
-      
-#res = csAPI.commitChanges()
-#if not res['OK']:
-#  gLogger.error( "Failed to commit changes to CS", res['Message'] )
-#  DIRAC.exit( -1 )
 
 if not ( writeBanned or readBanned or checkBanned ):
   gLogger.notice( "No storage elements were banned" )

@@ -91,7 +91,7 @@ for se,seOptions in res[ 'Value' ].items():
     if not resR['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s read access to Active" % se )
+      gLogger.notice( "Successfully updated %s read access to Active" % se )
       readAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
@@ -101,7 +101,7 @@ for se,seOptions in res[ 'Value' ].items():
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s write access to Active" % se )
+      gLogger.notice( "Successfully updated %s write access to Active" % se )
       writeAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS 
@@ -111,12 +111,10 @@ for se,seOptions in res[ 'Value' ].items():
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s check access to Active" % se )
+      gLogger.notice( "Successfully updated %s check access to Active" % se )
       checkAllowed.append( se )
 
-#res = csAPI.commitChanges()
-  if not resR['OK'] or not resW['OK'] or not resC['OK']:
-    gLogger.error( "Failed to commit changes to CS" )
+  if not( resR['OK'] or resW['OK'] or resC['OK'] ):
     DIRAC.exit( -1 )
 
 if not ( writeAllowed or readAllowed or checkAllowed ):
