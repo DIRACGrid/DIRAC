@@ -1386,6 +1386,7 @@ File Catalog Client $Revision: 1.17 $Date:
    
     argss = args.split()
     path = argss[0]
+    path = self.getPath(path)
     del argss[0]
  
     if argss[0][0] == '{':
