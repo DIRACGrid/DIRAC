@@ -127,6 +127,7 @@ class Executor( AgentModule ):
 
     if not procResult[ 'OK' ]:
       msgName = "TaskError"
+      self.log.info( "Task %d has had an error: %s" % ( taskId, procResult[ 'Message' ] ) )
     elif self.__taskData.freezeTime:
       msgName = "TaskFreeze"
     else:

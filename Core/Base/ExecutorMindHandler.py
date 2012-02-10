@@ -94,12 +94,16 @@ class ExecutorMindHandler( RequestHandler ):
 
   auth_conn_new = [ 'all' ]
   def conn_new( self, trid, identity, kwargs ):
-    if 'executorName' not in kwargs or not kwargs[ 'executorName']:
-      return S_ERROR( "Only executors are allowed to connect" )
-    return S_OK()
+    if 'executorName' in kwargs and kwargs[ 'executorName' ]:
+      return S_OK()
+    if 'jobManager' in kwargs and kwargs[ 'jobManager' ]:
+      return S_OK()
+    return S_ERROR( "Only executors are allowed to connect" )
 
   auth_conn_connected = [ 'all' ]
   def conn_connected( self, trid, identity, kwargs ):
+    if 'jobManager' in kwargs and kwargs[ 'jobManager' ]:
+      return S_OK()
     try:
       numTasks = max( 1, int( kwargs[ 'maxTasks' ] ) )
     except:

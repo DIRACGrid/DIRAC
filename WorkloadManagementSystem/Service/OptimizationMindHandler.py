@@ -1,4 +1,4 @@
-
+import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
@@ -11,6 +11,20 @@ class OptimizationMindHandler( ExecutorMindHandler ):
   __jobDB = False
   __optimizationStates = [ 'Received', 'Checking' ]
   __loadTaskId = False
+
+  MSG_DEFINITIONS = { 'OptimizeJobs' : { 'jids' : ( types.ListType, types.TupleType ) } }
+
+  auth_msg_OptimizeJob = [ 'all' ]
+  def msg_OptimizeJobs( self, msgObj ):
+    jids = msgObj.jids
+    for jid in msgObj.jids:
+      try:
+        jid = int( jid )
+      except ValueError:
+        self.log.error( "Job ID %s has to be an integer" % jid )
+        continue
+      self.log.info( "Received new job %s" % jid )
+      return self.executeTask( jid, CachedJobState( jid ) )
 
   @classmethod
   def __loadJobs( cls, eType = None ):
@@ -100,7 +114,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       return S_OK()
     #If received send to JobPath
     if status == "Received":
-      cls.log.error( "Dispatching job %s to JobPath" % jid )
+      cls.log.info( "Dispatching job %s to JobPath" % jid )
       return S_OK( "JobPath" )
     result = jobState.getOptParameter( 'OptimizerChain' )
     if not result[ 'OK' ]:

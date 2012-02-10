@@ -32,7 +32,7 @@ class JobPathAgent( OptimizerExecutor ):
   def __setOptimizerChain( self, jobState, opChain ):
     if type( opChain ) not in types.StringTypes:
       opChain = ",".join( opChain )
-    result = jobState.setOptParameter( "OptimizationChain", opChain )
+    result = jobState.setOptParameter( "OptimizerChain", opChain )
     if not result[ 'OK' ]:
       return result
     return jobState.setParameter( "JobPath", opChain )

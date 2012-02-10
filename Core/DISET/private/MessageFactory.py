@@ -32,6 +32,12 @@ class MessageFactory:
       return result
     return S_OK( tuple( self.__definitions[ serviceName ] ) )
 
+  def messageExists( self, serviceName, msgName ):
+    result = self.getMessagesForService( serviceName )
+    if not result[ 'OK' ]:
+      return False
+    return msgName in result[ 'Value' ]
+
   def __loadHandler( self, serviceName ):
     #TODO: Load handlers as the Service does (1. CS 2. SysNameSystem/Service/servNameHandler.py)
     sL = List.fromChar( serviceName, "/" )
@@ -66,7 +72,6 @@ class MessageFactory:
     return S_OK()
 
   def __loadMessagesForAncestry( self, handlerClass ):
-    print "LOADING MESSAGES FOR %s" % handlerClass.__name__
     finalDefs = {}
     for ancestor in handlerClass.__bases__:
       result = self.__loadMessagesForAncestry( ancestor )

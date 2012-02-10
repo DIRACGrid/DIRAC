@@ -354,13 +354,15 @@ class RequestHandler( object ):
 
   def _rh_executeMessageCallback( self, msgObj ):
     msgName = msgObj.getName()
+    if not self.__msgBroker.getMsgFactory().messageExists( self.__svcName, msgName ):
+      return S_ERROR( "Unknown message %s" % msgName )
     methodName = "msg_%s" % msgName
     self.__logRemoteQuery( "Message/%s" % methodName, msgObj.dumpAttrs() )
     startTime = time.time()
     try:
       oMethod = getattr( self, methodName )
     except:
-      return S_ERROR( "Unknown message %s" % msgName )
+      return S_ERROR( "Handler function for message %s does not exist!" % msgName )
     self.__lockManager.lock( methodName )
     try:
       try:
