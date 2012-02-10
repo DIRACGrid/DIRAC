@@ -345,29 +345,6 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def getReplicasOld( self, lfn, allStatus = False ):
-    """ Returns replicas for an LFN or list of LFNs
-    """
-    res = self.__checkArgumentFormat( lfn )
-    if not res['OK']:
-      return res
-    lfns = res['Value']
-    # If we have less than three lfns to query a session doesn't make sense
-    created = False
-    if len( lfns ) > 2:
-      created = self.__openSession()
-    failed = {}
-    successful = {}
-    for lfn in lfns.keys():
-      res = self.__getFileReplicas( lfn, allStatus )
-      if not res['OK']:
-        failed[lfn] = res['Message']
-      else:
-        successful[lfn] = res['Value']
-    if created:
-      self.__closeSession()
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
 
   def getReplicas( self, lfn, allStatus = False ):
     """ Returns replicas for an LFN or list of LFNs
