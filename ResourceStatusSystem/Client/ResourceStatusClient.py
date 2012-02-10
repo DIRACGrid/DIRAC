@@ -2222,7 +2222,7 @@ class ResourceStatusClient:
 
 
       elif granularity == 'StorageElement':
-        if rDict[ 'SiteName' ] == []:#sites_select == []:
+        if rDict[ 'SiteName' ] == [] or rDict[ 'SiteName' ] is None:#sites_select == []:
           kw = { 'meta' : { 'columns' : [ 'SiteName' ] } }
           #sites_select = self.rsClient.getSitePresent( **kw )
           sites_select = self._getElement( 'SitePresent', **kw )
