@@ -1381,7 +1381,7 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
     
-        usage: find <meta_name>=<meta_value> [<meta_name>=<meta_value>]
+        usage: find <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
    
     argss = args.split()
@@ -1392,21 +1392,20 @@ File Catalog Client $Revision: 1.17 $Date:
     if argss[0][0] == '{':
       metaDict = eval(argss[0])
     else:  
-
-      print ' '.join(argss)
-
       metaDict = self.__createQuery(' '.join(argss))
       print "Query:",metaDict
-      
-
-    print metaDict,path
-    
+          
     result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
-    for dir in result['Value']:
-      print dir  
+    if result['Value']:
+      for dir in result['Value']:
+        print dir
+    else:
+      print "No matching data found"      
+    if "QueryTime" in result:
+      print "QueryTime %.2f sec" % result['QueryTime']  
       
   def __createQuery(self,args):
     """ Create the metadata query out of the command line arguments
