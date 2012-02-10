@@ -2028,7 +2028,7 @@ class ResourceStatusClient:
     for k in rDict.keys():
       if selectDict.has_key( k ):
         rDict[ k ] = selectDict[ k ]
-        if not isinstance( rDict, list ):
+        if not isinstance( rDict[ k ], list ):
           rDict[ k ] = [ rDict[ k ] ]
 
     if selectDict.has_key( 'Expanded%sHistory' % granularity ):
