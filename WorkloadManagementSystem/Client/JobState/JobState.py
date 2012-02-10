@@ -123,7 +123,7 @@ class JobState( object ):
       return result
     if not result[ 'Value' ] == initialState:
       return S_ERROR( "Initial state was different. Expected %s Received %s" % ( initialState, result[ 'Value' ] ) )
-    gLogger.info( "Job %s: About to execute trace. Current state %s" % ( self.__jid, initialState ) )
+    gLogger.verbose( "Job %s: About to execute trace. Current state %s" % ( self.__jid, initialState ) )
 
     for step in trace:
       if type( step ) != types.TupleType or len( step ) < 2:
@@ -137,7 +137,7 @@ class JobState( object ):
       except AttributeError:
         return S_ERROR( "Step %s has invalid method name" % str( step ) )
       try:
-        gLogger.info( " Job %s: Trace step %s" % ( self.__jid, step ) )
+        gLogger.verbose( " Job %s: Trace step %s" % ( self.__jid, step ) )
         args = step[1]
         if len( step ) > 2:
           kwargs = step[2]

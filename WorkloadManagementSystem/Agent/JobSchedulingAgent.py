@@ -1,7 +1,6 @@
 ########################################################################
 # $HeadURL: $
 # File :   JobSchedulingAgent.py
-# Author : Stuart Paterson
 ########################################################################
 
 """   The Job Scheduling Agent takes the information gained from all previous
@@ -16,16 +15,14 @@
 """
 __RCSID__ = "$Id: $"
 
-from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule      import OptimizerModule
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight                 import ClassAd
-from DIRAC.Core.Utilities.SiteSEMapping                        import getSEsForSite
-from DIRAC.Core.Utilities.Time                                 import fromString, toEpoch
+from DIRAC import S_OK, S_ERROR, List
+from DIRAC.WorkloadManagementSystem.Agent.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.Core.Utilities.Time import fromString, toEpoch
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC.Resources.Storage.StorageElement                    import StorageElement
-from DIRAC.ResourceStatusSystem.Utilities.CS                   import getSiteTiers
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.ResourceStatusSystem.Utilities.CS import getSiteTiers
 
-
-from DIRAC                                                     import S_OK, S_ERROR, List
 
 import random
 
@@ -36,6 +33,27 @@ class JobSchedulingAgent( OptimizerModule ):
       and it can provide:
       - initializeOptimizer() before each execution cycle
   """
+
+  def optimizeJob( self, jid, jobState ):
+    #Reschedule delay
+    result = jobState.getJobAttributes( [ 'RescheduleCounter', 'RescheduleTime', 'ApplicationStatus' ] )
+    if not result[ 'OK' ]:
+      return result
+    attDict = result[ 'Value' ]
+    reschedules = attDict[ 'RescheduleCounter' ]
+    if reschedules != 0:
+      delays = self.am_getOption( 'RescheduleDelays', [60, 180, 300, 600] )
+      delay = delays[ min( reschedules, len( delays ) ) ]
+      waited = toEpoch() - toEpoch( fromString( attDict[ 'RescheduleTime' ] ) )
+      if waited < delay:
+        if attDict[ 'ApplicationStatus' ].find( 'On Hold: after rescheduling' ) == -1:
+          result = jobState.setApplicationStatus( 'On Hold: after rescheduling #%d' % reschedules )
+          if not result[ 'OK' ]:
+            return result
+        self.freezeTask( delay )
+        return S_OK()
+
+
 
   #############################################################################
   def initializeOptimizer( self ):
@@ -190,7 +208,7 @@ class JobSchedulingAgent( OptimizerModule ):
       # Site is selected for staging, report it
       self.log.verbose( 'Staging site candidate for job %s is %s' % ( job, stagingSite ) )
 
-      result = self.__getStagingSites(stagingSite,destinationSites)
+      result = self.__getStagingSites( stagingSite, destinationSites )
       if not result['OK']:
         stagingSites = [stagingSite]
       else:
@@ -200,7 +218,7 @@ class JobSchedulingAgent( OptimizerModule ):
         self.jobDB.setJobAttribute( job, 'Site', stagingSite )
       else:
         # Get the name of the site group
-        result = self.__getSiteGroup(stagingSites)
+        result = self.__getSiteGroup( stagingSites )
         if result['OK']:
           groupName = result['Value']
           if groupName:
@@ -221,47 +239,47 @@ class JobSchedulingAgent( OptimizerModule ):
     #Finally send job to TaskQueueAgent
     return self.__sendJobToTaskQueue( job, classAdJob, destinationSites, userBannedSites )
 
-  def __getStagingSites(self,stagingSite,destinationSites):
+  def __getStagingSites( self, stagingSite, destinationSites ):
     """ Get a list of sites where the staged data will be available
     """
 
-    result = getSEsForSite(stagingSite)
+    result = getSEsForSite( stagingSite )
     if not result['OK']:
       return result
     stagingSEs = result['Value']
     stagingSites = [stagingSite]
     for s in destinationSites:
       if s != stagingSite:
-        result = getSEsForSite(s)
+        result = getSEsForSite( s )
         if not result['OK']:
           continue
         for se in result['Value']:
           if se in stagingSEs:
-            stagingSites.append(s)
+            stagingSites.append( s )
             break
 
     stagingSites.sort()
-    return S_OK(stagingSites)
+    return S_OK( stagingSites )
 
 
-  def __getSiteGroup(self,stagingSites):
+  def __getSiteGroup( self, stagingSites ):
     """ Get the name of the site group if applicable. Later can be replaced by site groups defined in the CS
     """
     tier1 = ''
     groupName = ''
-    tierList = getSiteTiers(stagingSites)
-    tierDict = dict(zip(stagingSites,tierList))
+    tierList = getSiteTiers( stagingSites )
+    tierDict = dict( zip( stagingSites, tierList ) )
     for tsite in tierDict:
-      if tierDict[tsite] in [0,1]:
+      if tierDict[tsite] in [0, 1]:
         tier1 = tsite
       if tierDict[tsite] == 0:
         break
 
     if tier1:
-      grid,sname,ccode = tier1.split('.')
-      groupName = '.'.join(['Group',sname,ccode])
+      grid, sname, ccode = tier1.split( '.' )
+      groupName = '.'.join( ['Group', sname, ccode] )
 
-    return S_OK(groupName)
+    return S_OK( groupName )
 
   #############################################################################
   def __updateOtherSites( self, job, stagingSite, stagedLFNsPerSE, optInfo ):
@@ -600,18 +618,18 @@ class JobSchedulingAgent( OptimizerModule ):
             self.jobDB.setJobAttribute( job, 'Site', remainingSites[0] )
           else:
             self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( remainingSites ) ) )
-            result = self.jobDB.getJobAttribute(job,'Site')
+            result = self.jobDB.getJobAttribute( job, 'Site' )
             siteGroup = "Multiple"
             if result['OK']:
-              if result['Value'].startswith('Group'):
+              if result['Value'].startswith( 'Group' ):
                 siteGroup = result['Value']
             self.jobDB.setJobAttribute( job, 'Site', siteGroup )
       else:
         self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( siteCandidates ) ) )
-        result = self.jobDB.getJobAttribute(job,'Site')
+        result = self.jobDB.getJobAttribute( job, 'Site' )
         siteGroup = "Multiple"
         if result['OK']:
-          if result['Value'].startswith('Group'):
+          if result['Value'].startswith( 'Group' ):
             siteGroup = result['Value']
         self.jobDB.setJobAttribute( job, 'Site', siteGroup )
     else:

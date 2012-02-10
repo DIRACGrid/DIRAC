@@ -43,13 +43,13 @@ class OptimizerExecutor( Executor ):
     if not result[ 'OK' ]:
       self.log.info( "Job %s: Set to Failed/%s" % ( jid, result[ 'Message' ] ) )
       return jobState.setStatus( "Failed", result[ 'Message' ] )
-    return self.__setNextOptimizer( jobState )
+    return S_OK()
 
 
   def optimizeJob( self, jid, jobState ):
     raise Exception( "You need to overwrite this method to optimize the job!" )
 
-  def __setNextOptimizer( self, jobState ):
+  def setNextOptimizer( self, jobState ):
     result = jobState.getOptParameter( 'OptimizerChain' )
     if not result['OK']:
       return result

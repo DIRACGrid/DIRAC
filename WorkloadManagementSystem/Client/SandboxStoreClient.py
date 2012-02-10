@@ -21,6 +21,7 @@ from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 class SandboxStoreClient:
 
   __validSandboxTypes = ( 'Input', 'Output' )
+  __smdb = None
 
   def __init__( self, useCertificates = False, rpcClient = False, transferClient = False,
                 delegatedDN = None, delegatedGroup = None, setup = None ):
@@ -31,6 +32,17 @@ class SandboxStoreClient:
     self.__delegatedDN = delegatedDN
     self.__delegatedGroup = delegatedGroup
     self.__setup = setup
+    if SandboxStoreClient.__smdb == None:
+      try:
+        from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
+        SandboxStoreClient.__smdb = SandboxMetadataDB()
+        result = SandboxStoreClient.__smdb._getConnection()
+        if not result[ 'OK' ]:
+          SandboxStoreClient.__smdb = False
+        else:
+          result[ 'Value' ].close()
+      except ImportError:
+        SandboxStoreClient.__smdb = False
 
   def __getRPCClient( self ):
     if self.__rpcClient:
@@ -284,6 +296,10 @@ class SandboxStoreClient:
     for sbT in sbList:
       if sbT[1] not in self.__validSandboxTypes:
         return S_ERROR( "Invalid Sandbox type %s" % sbT[1] )
+    if SandboxStoreClient.__smdb and ownerName and ownerGroup:
+      if not eSetup:
+        eSetup = gConfig.getOption( "/DIRAC/Setup", "Production" )
+      return SandboxStoreClient.__smdb.assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
     return self.__getRPCClient().assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
 
   def __assignSandboxToEntity( self, eId, sbLocation, sbType, ownerName = "", ownerGroup = "", eSetup = "" ):
@@ -299,10 +315,3 @@ class SandboxStoreClient:
     Unassign a list of jobs of their respective sandboxes
     """
     return self.__getRPCClient().unassignEntities( eIdList )
-
-  #TODO: DELETEME WHEn OLD SANDBOXES ARE REMOVED
-  def useOldSandboxes( self, prefix = "" ):
-    if prefix:
-      prefix = "%s-" % prefix
-    setup = gConfig.getValue( "/DIRAC/Setup", "Default" )
-    return gConfig.getValue( "/DIRAC/%s%s-UseOldSandboxes" % ( prefix, setup ), False )

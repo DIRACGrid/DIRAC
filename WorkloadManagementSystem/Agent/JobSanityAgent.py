@@ -91,7 +91,7 @@ class JobSanityAgent( OptimizerExecutor ):
       self.log.info( "Job %s: Assigned %s ISBs" % ( jid, result[ 'Value' ] ) )
 
     jobState.setParameter( 'JobSanityCheck', " | ".join( finalMsg ) )
-    return S_OK()
+    return self.setNextOptimizer( jobState )
 
   #############################################################################
   def checkInputData( self, jobState, jobType, voName ):

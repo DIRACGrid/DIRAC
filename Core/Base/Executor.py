@@ -1,4 +1,4 @@
-import sys, time
+import sys, time, threading
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.Core.DISET.MessageClient import MessageClient
@@ -13,6 +13,8 @@ class Executor( AgentModule ):
     self.am_setOption( "AutoReconect", True )
     self.am_setOption( "ReconnectRetries", 10 )
     self.am_setOption( "ReconnectWaitTime", 10 )
+    self.__taskData = threading.local()
+    self.__taskData.freezeTime = 0
     self.__maxTasks = maxTasks
     self.__useProcesses = useProcesses
     self.__msgClient = MessageClient( mindName )
@@ -70,9 +72,17 @@ class Executor( AgentModule ):
     sys.exit( 1 )
 
 
+  def __serialize( self, taskObj ):
+    try:
+      result = self.serializeTask( taskObj )
+    except Exception, excp:
+      gLogger.exception( "Exception while serializing task %s" % taskId )
+      return S_ERROR( "Cannot serialize task %s: %s" % ( taskId, str( excp ) ) )
+    if not isReturnStructure( result ):
+      raise Exception( "serializeTask does not return a return structure" )
+    return result
 
-  def __executeTask( self, taskId, taskStub ):
-    self.log.verbose( "Task %s: Received" % str( taskId ) )
+  def __deserialize( self, taskStub ):
     try:
       result = self.deserializeTask( taskStub )
     except Exception, excp:
@@ -80,8 +90,14 @@ class Executor( AgentModule ):
       return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
     if not isReturnStructure( result ):
       raise Exception( "deserializeTask does not return a return structure" )
+    return result
+
+  def __executeTask( self, taskId, taskStub ):
+    self.__taskData.freezeTime = 0
+    self.log.verbose( "Task %s: Received" % str( taskId ) )
+    result = self.__deserialize( taskStub )
     if not result[ 'OK' ]:
-      self.log.verbose( "Task %s: Cannot deserialize: %s" % ( str( taskId ), result[ 'Message' ] ) )
+      self.log.error( "Task %s: Cannot deserialize: %s" % ( str( taskId ), result[ 'Message' ] ) )
       return result
     taskObj = result[ 'Value' ]
     try:
@@ -99,39 +115,43 @@ class Executor( AgentModule ):
       msgObj.errorMsg = "%s: %s" % ( errMsg, str( e ) )
       return self.__msgClient.sendMessage( msgObj )
 
-    if not procResult[ 'OK' ]:
-      self.log.verbose( "Task %s: Sending TaskError %s" % ( str( taskId ), procResult[ 'Message' ] ) )
-      result = self.__msgClient.createMessage( "TaskError" )
-      if not result[ 'OK' ]:
-        return result
-      msgObj = result[ 'Value' ]
-      msgObj.taskId = taskId
-      msgObj.errorMsg = procResult[ 'Message' ]
-      return self.__msgClient.sendMessage( msgObj )
-
-    try:
-      if procResult[ 'Value' ]:
-        taskObj = procResult[ 'Value' ]
-      result = self.serializeTask( taskObj )
-    except Exception, excp:
-      gLogger.exception( "Exception while serializing task %s" % taskId )
-      return S_ERROR( "Cannot serialize task %s: %s" % ( taskId, str( excp ) ) )
-    if not isReturnStructure( result ):
-      raise Exception( "serializeTask does not return a return structure" )
+    if procResult[ 'OK' ] and procResult[ 'Value' ]:
+      taskObj = procResult[ 'Value' ]
+    result = self.__serialize( taskObj )
     if not result[ 'OK' ]:
       self.log.verbose( "Task %s: Cannot serialize: %s" % ( str( taskId ), result[ 'Message' ] ) )
       return result
     taskStub = result[ 'Value' ]
-    result = self.__msgClient.createMessage( "TaskDone" )
+
+    #Send message back
+
+    if not procResult[ 'OK' ]:
+      msgName = "TaskError"
+    elif self.__taskData.freezeTime:
+      msgName = "TaskFreeze"
+    else:
+      msgName = "TaskDone"
+
+    result = self.__msgClient.createMessage( msgName )
     if not result[ 'OK' ]:
         return result
-    self.log.verbose( "Task %s: Sending TaskDone" % str( taskId ) )
+    self.log.verbose( "Task %s: Sending %s" % ( str( taskId ), msgName ) )
     msgObj = result[ 'Value' ]
     msgObj.taskId = taskId
     msgObj.taskStub = taskStub
+    if not procResult[ 'OK' ]:
+      msgObj.errorMsg = procResult[ 'Message' ]
+    if self.__taskData.freezeTime:
+      msgObj.freezeTime = self.__taskData.freezeTime
     return self.__msgClient.sendMessage( msgObj )
 
 
+  ####
+  # Callable functions
+  ####  
+
+  def freezeTask( self, freezeTime ):
+    self.__taskData.freezeTime = freezeTime
 
   ####
   # Need to overwrite this functions

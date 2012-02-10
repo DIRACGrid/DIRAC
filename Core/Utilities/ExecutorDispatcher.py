@@ -252,6 +252,9 @@ class ExecutorDispatcherCallbacks:
   def cbTaskProcessed( self, taskId, taskObj, eType ):
     return S_OK()
 
+  def cbTaskFreeze( self, taskId, taskObj, eType ):
+    return S_OK()
+
 class ExecutorDispatcher:
 
   class ETask:
@@ -260,6 +263,7 @@ class ExecutorDispatcher:
       self.taskId = taskId
       self.taskObj = taskObj
       self.pathExecuted = []
+      self.freezeTime = 60
       self.frozenTime = 0
       self.frozenSince = 0
       self.frozenCount = 0
@@ -372,7 +376,7 @@ class ExecutorDispatcher:
       self.__log.exception( "Exception while disconnecting agent %s" % eId )
     self.__fillExecutors( eType )
 
-  def __freezeTask( self, taskId, errMsg, eType = False ):
+  def __freezeTask( self, taskId, errMsg, eType = False, freezeTime = 60 ):
     self.__log.info( "Freezing task %s" % taskId )
     self.__freezerLock.acquire()
     try:
@@ -382,6 +386,7 @@ class ExecutorDispatcher:
         eTask = self.__tasks[ taskId ]
       except KeyError:
         return False
+      eTask.freezeTime = freezeTime
       eTask.frozenMessage = errMsg
       eTask.frozenSince = time.time()
       eTask.frozenCount += 1
@@ -402,7 +407,6 @@ class ExecutorDispatcher:
   def __unfreezeTasks( self, eType = False ):
     iP = 0
     while iP < len( self.__taskFreezer ):
-      dispatch = False
       self.__freezerLock.acquire()
       try:
         try:
@@ -416,21 +420,19 @@ class ExecutorDispatcher:
           self.self.__taskFreezer.pop( iP )
           continue
         #Current taskId/eTask is the one to defrost
-        if eType and eType == eTask.eType:
-          dispatch = taskId
-        elif time.time() - eTask.frozenSince > 300:
-          dispatch = taskId
-        if not dispatch:
+        if eType and eType != eTask.eType:
           iP += 1
-        else:
-          self.__taskFreezer.pop( iP )
+          continue
+        if time.time() - eTask.frozenSince < eTask.freezeTime:
+          iP += 1
+          continue
+        self.__taskFreezer.pop( iP )
       finally:
         self.__freezerLock.release()
       #Out of the lock zone to minimize zone of exclusion
-      if dispatch:
-        eTask.frozenTime += time.time() - eTask.frozenSince
-        self.__log.info( "Unfreezed task %s" % taskId )
-        self.__dispatchTask( taskId, defrozeIfNeeded = False )
+      eTask.frozenTime += time.time() - eTask.frozenSince
+      self.__log.info( "Unfreezed task %s" % taskId )
+      self.__dispatchTask( taskId, defrozeIfNeeded = False )
 
   def __addTaskIfNew( self, taskId, taskObj ):
     self.__tasksLock.acquire()
@@ -467,7 +469,8 @@ class ExecutorDispatcher:
     if eType not in self.__execTypes:
       if  self.__freezeOnUnknownExecutor:
         self.__log.info( "Executor type %s has not connected. Freezing task %s" % ( eType, taskId ) )
-        return self.__freezeTask( taskId, "Unknown executor %s type" % eType, eType = eType )
+        self.__freezeTask( taskId, "Unknown executor %s type" % eType, eType = eType )
+        return S_OK()
       self.__log.info( "Executor type %s has not connected. Forgetting task %s" % ( eType, taskId ) )
       return self.removeTask( taskId )
 
@@ -484,6 +487,20 @@ class ExecutorDispatcher:
 
     if not isReturnStructure( result ):
       errMsg = "taskDone callback did not return a S_OK/S_ERROR structure"
+      self.__log.fatal( errMsg )
+      return S_ERROR( errMsg )
+
+    return result
+
+  def __taskFreezeCallback( self, taskId, taskObj, eType ):
+    try:
+      result = self.__cbHolder.cbTaskFreeze( taskId, taskObj, eType )
+    except:
+      self.__log.exception( "Exception while calling taskFreeze callback" )
+      return S_ERROR( "Exception while calling taskFreeze callback" )
+
+    if not isReturnStructure( result ):
+      errMsg = "taskFreeze callback did not return a S_OK/S_ERROR structure"
       self.__log.fatal( errMsg )
       return S_ERROR( errMsg )
 
@@ -546,7 +563,7 @@ class ExecutorDispatcher:
       return self.__sendTaskToExecutor( eId, checkIdle = True )
     return S_OK()
 
-  def taskProcessed( self, eId, taskId, taskObj = False ):
+  def __taskReceived( self, taskId, eId ):
     if taskId not in self.__tasks:
       errMsg = "Task %s is not known" % taskId
       self.__log.error( errMsg )
@@ -565,14 +582,43 @@ class ExecutorDispatcher:
     if self.__monitor:
       self.__monitor.addMark( "taskTime-%s" % eType, time.time() - self.__tasks[ taskId ].sendTime )
       self.__monitor.addMark( "tasks-%s" % eType, 1 )
+    return S_OK( eType )
+
+  def freezeTask( self, eId, taskId, freezeTime, taskObj = False ):
+    result = self.__taskReceived( taskId, eId )
+    if not result[ 'OK' ]:
+      return result
+    eType = result[ 'Value' ]
+    if not taskObj:
+      taskObj = self.__tasks[ taskId ].taskObj
+    result = self.__taskFreezeCallback( taskId, taskObj, eType )
+    if not result[ 'OK' ]:
+      return result
+    try:
+      self.__tasks[ taskId ].taskObj = taskObj
+    except KeyError:
+      gLogger.error( "Task %s seems to have been removed while being processed!" % taskId )
+      self.__sendTaskToExecutor( eId, eType )
+      return S_OK()
+    self.__freezeTask( taskId, "Freeze request by %s executor" % eType,
+                       eType = eType, freezeTime = freezeTime )
+    self.__sendTaskToExecutor( eId, eType )
+    return S_OK()
+
+  def taskProcessed( self, eId, taskId, taskObj = False ):
+    result = self.__taskReceived( taskId, eId )
+    if not result[ 'OK' ]:
+      return result
+    eType = result[ 'Value' ]
     #Call the done callback
+    if not taskObj:
+      taskObj = self.__tasks[ taskId ].taskObj
     result = self.__taskProcessedCallback( taskId, taskObj, eType )
     if not result[ 'OK' ]:
       return result
     #Up until here it's an executor error. From now on it can be a task error
     try:
-      if taskObj:
-        self.__tasks[ taskId ].taskObj = taskObj
+      self.__tasks[ taskId ].taskObj = taskObj
       self.__tasks[ taskId ].pathExecuted.append( eType )
     except KeyError:
       gLogger.error( "Task %s seems to have been removed while being processed!" % taskId )
@@ -642,11 +688,14 @@ class ExecutorDispatcher:
 
   def __msgTaskToExecutor( self, eId, taskId ):
     try:
+      self.__tasks[ taskId ].sendTime = time.time()
+    except KeyError:
+      return S_ERROR( "Task has been deleted" )
+    try:
       result = self.__cbHolder.cbSendTask( eId, taskId, self.__tasks[ taskId ].taskObj )
     except:
       self.__log.exception( "Exception while sending task to executor" )
       return S_ERROR( "Exception while sending task to executor" )
-    self.__tasks[ taskId ].sendTime = time.time()
     if isReturnStructure( result ):
       return result
     else:

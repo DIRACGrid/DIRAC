@@ -105,4 +105,7 @@ class JobPathAgent( OptimizerExecutor ):
     #End of path
     opPath.extend( self.am_getOption( 'EndPath', ['JobScheduling', 'TaskQueue'] ) )
     self.log.info( 'Constructed path for job %s is: %s' % ( jid, "->".join( opPath ) ) )
-    return self.__setOptimizerChain( jobState, opPath )
+    result = self.__setOptimizerChain( jobState, opPath )
+    if not result['OK']:
+      return result
+    return self.setNextOptimizer( jobState )

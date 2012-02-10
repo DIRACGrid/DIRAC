@@ -12,18 +12,23 @@ class ExecutorMindHandler( RequestHandler ):
                                         'taskStub' : types.StringType },
                       'TaskDone' : { 'taskId' : ( types.IntType, types.LongType ),
                                      'taskStub' : types.StringType },
+                      'TaskFreeze' : { 'taskId' : ( types.IntType, types.LongType ),
+                                       'taskStub' : types.StringType,
+                                       'freezeTime' : ( types.IntType, types.LongType ) },
                       'TaskError' : { 'taskId': ( types.IntType, types.LongType ),
-                                      'errorMsg' : types.StringType },
+                                      'errorMsg' : types.StringType,
+                                      'taskStub' : types.StringType },
                       'ExecutorError' : { 'taskId': ( types.IntType, types.LongType ),
                                           'errorMsg' : types.StringType } }
 
   class MindCallbacks( ExecutorDispatcherCallbacks ):
 
-    def __init__( self, sendTaskCB, dispatchCB, disconnectCB, taskProcCB, taskErrCB ):
+    def __init__( self, sendTaskCB, dispatchCB, disconnectCB, taskProcCB, taskFreezeCB, taskErrCB ):
       self.__sendTaskCB = sendTaskCB
       self.__dispatchCB = dispatchCB
       self.__disconnectCB = disconnectCB
       self.__taskProcDB = taskProcCB
+      self.__taskFreezeCB = taskFreezeCB
       self.__taskErrCB = taskErrCB
 
     def cbSendTask( self, eId, taskId, taskObj ):
@@ -41,6 +46,9 @@ class ExecutorMindHandler( RequestHandler ):
     def cbTaskProcessed( self, taskId, taskObj, eType ):
       return self.__taskProcDB( taskId, taskObj, eType )
 
+    def cbTaskFreeze( self, taskId, taskObj, eType ):
+      return self.__taskFreezeCB( taskId, taskObj, eType )
+
   ###
   # End of callbacks
   ###
@@ -53,6 +61,7 @@ class ExecutorMindHandler( RequestHandler ):
                                                          cls.exec_dispatch,
                                                          cls.__execDisconnected,
                                                          cls.exec_taskProcessed,
+                                                         cls.exec_taskFreeze,
                                                          cls.exec_taskError )
     cls.__eDispatch.setCallbacks( cls.__callbacks )
 
@@ -103,7 +112,6 @@ class ExecutorMindHandler( RequestHandler ):
     self.__eDispatch.removeExecutor( trid )
     return S_OK()
 
-
   auth_msg_TaskDone = [ 'all' ]
   def msg_TaskDone( self, msgObj ):
     taskId = msgObj.taskId
@@ -119,12 +127,38 @@ class ExecutorMindHandler( RequestHandler ):
     taskObj = result[ 'Value' ]
     return self.__eDispatch.taskProcessed( self.srv_getTransportID(), msgObj.taskId, taskObj )
 
+  auth_msg_TaskFreeze = [ 'all' ]
+  def msg_TaskFreeze( self, msgObj ):
+    taskId = msgObj.taskId
+    try:
+      result = self.exec_deserializeTask( msgObj.taskStub )
+    except Exception, excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId )
+      return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
+    if not isReturnStructure( result ):
+      raise Exception( "exec_deserializeTask does not return a return structure" )
+    if not result[ 'OK' ]:
+      return result
+    taskObj = result[ 'Value' ]
+    return self.__eDispatch.freezeTask( self.srv_getTransportID(), msgObj.taskId,
+                                        msgObj.freezeTime, taskObj )
+
   auth_msg_TaskError = [ 'all' ]
   def msg_TaskError( self, msgObj ):
+    try:
+      result = self.exec_deserializeTask( msgObj.taskStub )
+    except Exception, excp:
+      gLogger.exception( "Exception while deserializing task %s" % taskId )
+      return S_ERROR( "Cannot deserialize task %s: %s" % ( taskId, str( excp ) ) )
+    if not isReturnStructure( result ):
+      raise Exception( "exec_deserializeTask does not return a return structure" )
+    if not result[ 'OK' ]:
+      return result
+    taskObj = result[ 'Value' ]
     #TODO: Check the executor has privileges over the task
     self.__eDispatch.removeTask( msgObj.taskId )
     try:
-      self.exec_taskError( msgObj.taskId, msgObj.errorMsg )
+      self.exec_taskError( msgObj.taskId, taskObj, msgObj.errorMsg )
     except:
       gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
     return S_OK()
@@ -203,11 +237,14 @@ class ExecutorMindHandler( RequestHandler ):
     raise Exception( "No exec_deserializeTask defined or it is not a classmethod!!" )
 
   @classmethod
-  def exec_taskError( cls, taskId, errorMsg ):
+  def exec_taskError( cls, taskId, taskObj, errorMsg ):
     raise Exception( "No exec_taskError defined or it is not a classmethod!!" )
 
   @classmethod
   def exec_taskProcessed( cls, taskId, taskObj, eType ):
     raise Exception( "No exec_taskProcessed defined or it is not a classmethod!!" )
 
+  @classmethod
+  def exec_taskFreeze( cls, taskId, taskObj, eType ):
+    return S_OK()
 
