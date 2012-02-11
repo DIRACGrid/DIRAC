@@ -17,11 +17,16 @@ from types import *
 fcDB = False
 
 def initializeFileCatalogHandler(serviceInfo):
+  
   global fcDB
-  fcDB = FileCatalogDB()
+  
   serviceCS = serviceInfo ['serviceSectionPath']
+  
+  # Instantiate the requested database
+  dbLocation = gConfig.getValue('%s/Database' % serviceCS,'DataManagement/FileCatalogDB')
+  fcDB = FileCatalogDB(dbLocation)
+  
   databaseConfig = {}
-
   # Obtain the plugins to be used for DB interaction
   gLogger.info("Initializing with FileCatalog with following managers:")
   defaultManagers = {  'UserGroupManager'  : 'UserAndGroupManagerDB',
