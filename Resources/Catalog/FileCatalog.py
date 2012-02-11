@@ -2,13 +2,14 @@
 # $HeadURL$
 ########################################################################
 __RCSID__ = "$Id$"
-""" File catalog class. This is a simple dispatcher for the file catalogue plug-ins.
+""" File catalog class. This is a simple dispatcher for the file catalog plug-ins.
     It ensures that all operations are performed on the desired catalogs.
 """
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 import types, re, os
 
 class FileCatalog:
@@ -267,44 +268,4 @@ class FileCatalog:
   def _generateCatalogObject( self, catalogName ):
     """ Create a file catalog object from its name and CS description
     """
-    # get the CS description first
-    catalogType = gConfig.getValue('/Resources/FileCatalogs/%s/CatalogType' % catalogName,catalogName)
-    catalogURL = gConfig.getValue('/Resources/FileCatalogs/%s/CatalogURL' % catalogName,'')
-    
-    moduleRootPaths = getInstalledExtensions()
-    moduleLoaded = False
-    for moduleRootPath in moduleRootPaths:
-      if moduleLoaded:
-        break
-      gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
-      #moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogType )
-      #gLogger.verbose( "Looking for file %s" % moduleFile )
-      #if not os.path.isfile( moduleFile ):
-      #  continue
-      try:
-        # This inforces the convention that the plug in must be named after the file catalog
-        moduleName = "%sClient" % ( catalogType )
-        catalogModule = __import__( '%s.Resources.Catalog.%s' % ( moduleRootPath, moduleName ),
-                                    globals(), locals(), [moduleName] )
-      except Exception, x:
-        errStr = "Failed attempt to import %s from the path %s: %s" % ( catalogType, moduleRootPath, x )
-        gLogger.debug( errStr )
-        continue
-      try:
-        if catalogURL:
-          evalString = "catalogModule.%s(url='%s')" % (moduleName,catalogURL)
-        else:  
-          evalString = "catalogModule.%s()" % moduleName
-        catalog = eval( evalString )
-        if not catalog.isOK():
-          errStr = "FileCatalog._generateCatalogObject: Failed to instantiate catalog plug in."
-          gLogger.error( errStr, moduleName )
-          return S_ERROR( errStr )
-        return S_OK( catalog )
-      except Exception, x:
-        errStr = "FileCatalog._generateCatalogObject: Failed to instantiate %s()" % ( moduleName )
-        gLogger.exception( errStr, lException = x )
-        return S_ERROR( errStr )
-
-    if not moduleLoaded:
-      return S_ERROR( 'Failed to find catalog client %s of type %s' % (catalogName,catalogType) )
+    return FileCatalogFactory.getCatalog(catalogName)
