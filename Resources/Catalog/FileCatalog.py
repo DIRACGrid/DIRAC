@@ -8,7 +8,6 @@ __RCSID__ = "$Id$"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 import types, re, os
 
@@ -268,4 +267,4 @@ class FileCatalog:
   def _generateCatalogObject( self, catalogName ):
     """ Create a file catalog object from its name and CS description
     """
-    return FileCatalogFactory.getCatalog(catalogName)
+    return FileCatalogFactory().createCatalog(catalogName)

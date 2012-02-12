@@ -8,11 +8,12 @@ __RCSID__ = "$Id$"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getInstalledExtensions
 
 class FileCatalogFactory:
   
   def __init__(self):
-    self.log = gLogger.getSublogger('FileCatalogFactory')
+    self.log = gLogger.getSubLogger('FileCatalogFactory')
   
   def createCatalog( self, catalogName ):
     """ Create a file catalog object from its name and CS description
@@ -22,6 +23,7 @@ class FileCatalogFactory:
     catalogType = gConfig.getValue(catalogPath+'/CatalogType',catalogName)
     catalogURL = gConfig.getValue(catalogPath+'/CatalogURL','')
     
+    self.log.verbose('Creating %s client' % catalogName)
     moduleRootPaths = getInstalledExtensions()
     for moduleRootPath in moduleRootPaths:
       gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
@@ -59,13 +61,16 @@ class FileCatalogFactory:
             evalString = "catalogModule.%s()" % moduleName
         catalog = eval( evalString )
         if not catalog.isOK():
-          errStr = "FileCatalog._generateCatalogObject: Failed to instantiate catalog plug in."
+          errStr = "Failed to instantiate catalog plug in"
           gLogger.error( errStr, moduleName )
           return S_ERROR( errStr )
-        self.log.info('Loaded module %s from %s' % ( catalogType, moduleRootPath ) )
+        self.log.info('Loaded module %sClient from %s' % ( catalogType, moduleRootPath ) )
         return S_OK( catalog )
       except Exception, x:
-        errStr = "FileCatalog._generateCatalogObject: Failed to instantiate %s()" % ( moduleName )
+        errStr = "Failed to instantiate %s()" % ( moduleName )
         gLogger.exception( errStr, lException = x )
         return S_ERROR( errStr )
+      
+    # Catalog module was not loaded  
+    return S_ERROR('No suitable client found for %s' % catalogName)  
  
