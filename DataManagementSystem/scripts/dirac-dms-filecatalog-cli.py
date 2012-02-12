@@ -27,8 +27,9 @@ res = gConfig.getOption("/LocalSite/FileCatalog","")
 if res['OK']:
   fcType = res['Value']
 
+res = gConfig.getSections("/Resources/FileCatalogs",listOrdered = True)
+fcList = res['Value']
 if not fcType:
-  res = gConfig.getSections("/Resources/FileCatalogs",listOrdered = True)
   if res['OK']:
     fcType = res['Value'][0]
 
@@ -45,6 +46,10 @@ from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogCl
 result = FileCatalogFactory().createCatalog(fcType)
 if not result['OK']:
   print result['Message']
+  if fcList:
+    print "Possible choices are:"
+    for fc in fcList:
+      print ' '*5,fc
   sys.exit(1)
 print "Starting %s client" % fcType
 catalog = result['Value']
