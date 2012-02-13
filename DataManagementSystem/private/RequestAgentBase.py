@@ -34,56 +34,6 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 from DIRAC.Core.Base.AgentModule import AgentModule
 
-def defaultCallback( task, ret ):
-  """ default callback function
-
-  on S_ERROR, error message is reported to the logger
-  if S_OK["Value"]["monitor"] all values from it are passed to 
-  monitoring services by calling gMonitor.addMark (and catching all 
-  exceptions over there btw, in case some metric wasn't defined and so) 
-
-  :param task: subprocess task
-  :param ret: return from RequestTask.__call__ (S_OK/S_ERROR)
-  """
-  log = gLogger.getSubLogger( "defaultCallback/%s" % task.getTaskID() )
-  log.showHeaders( True )
-  log.setLevel( "INFO" )
-
-  log.info("callback from task taskID=%s" % task.getTaskID() )
-  if not ret["OK"]: 
-    log.error( ret["Message"] )
-    return
-  log.info( ret["Value"] )
-
-  ## remove request from agent cache
-  for item in globals():
-    if isinstance( item, RequestAgentBase ):
-      item.deleteRequest( task.getTaskID() )
-  ## put monitored values
-  if "monitor" in ret["Value"]:
-    monitor = ret["Value"]["monitor"]
-    for mark, value in monitor.items():
-      try:
-        gMonitor.addMark( mark, value )
-      except Exception, error:
-        log.exception( str(error) )
-    
-def defaultExceptionCallback( task, exc_info ):
-  """ default exception callbak, just printing to gLogger.exception
-
-  :param task: subprocess task
-  :param exc_info: exception info
-  """
-  log = gLogger.getSubLogger( "exceptionCallback/%s" % task.getTaskID() )
-  log.showHeaders( True )
-  log.setLevel( "EXCEPTION" )
-  log.exception( "exception %s from task taskID=%d" % ( str(exc_info), task.getTaskID() ) )
-
-  ## remove request from agent cache
-  for item in globals():
-    if isinstance( item, RequestAgentBase ):
-      item.deleteRequest( task.getTaskID() )
-
 ########################################################################
 class RequestAgentBase( AgentModule ):
   """
@@ -115,23 +65,22 @@ class RequestAgentBase( AgentModule ):
   ## config path in CS
   __configPath = None
   ## read request holder 
-  __requestHolder = None
+  __requestHolder = dict()
 
   def __init__( self, agentName, baseAgentName=False, properties=dict() ):
     """ c'tor
 
     :param self: self reference
     :param str agentName: name of agent
-    :param bool baseAgentName: ???
-    :param dict properties: whatever
+    :param bool baseAgentName: whatever  
+    :param dict properties: whatever else
     """
     AgentModule.__init__( self, agentName, baseAgentName, properties )
 
     ## save config path
     self.__configPath = PathFinder.getAgentSection( agentName )
     self.log.info( "Will use %s config path" % self.__configPath )
-    
-
+  
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", 10 )
     self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
     self.__minProcess = self.am_getOption( "MinProcess", 1 )
@@ -151,10 +100,6 @@ class RequestAgentBase( AgentModule ):
     self.monitor.registerActivity( "Execute", "Request Processed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
     self.monitor.registerActivity( "Done", "Request Completed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
       
-    ## register callbacks
-    self.registerCallback( defaultCallback )
-    self.registerExceptionCallback( defaultExceptionCallback )
-
     ## create request dict
     self.__requestHolder = dict()
 
@@ -166,6 +111,8 @@ class RequestAgentBase( AgentModule ):
     """
     if requestName in cls.__requestHolder:
       del cls.__requestHolder[requestName]
+      return S_OK()
+    return S_ERROR("%s not found in requestHolder" % requestName )
 
   @classmethod
   def saveRequest( cls, requestName, requestString, requestServer ):
@@ -193,10 +140,6 @@ class RequestAgentBase( AgentModule ):
         self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
       self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
-
-    ## register callbacks
-    self.registerCallback( defaultCallback )
-    self.registerExceptionCallback( defaultExceptionCallback )
 
   def configPath( self ):
     """ config path getter
@@ -233,48 +176,51 @@ class RequestAgentBase( AgentModule ):
       minProcess = max( 1, self.__minProcess ) 
       maxProcess = max( self.__minProcess, self.__maxProcess )
       queueSize = max( self.__requestsPerCycle, self.__queueSize )
-      self.log.info("ProcessPool minProcess = %d maxProcess = %d queueSize = %d" % ( minProcess, 
-                                                                                     maxProcess, 
-                                                                                     queueSize ) )
-      self.__processPool = ProcessPool( minProcess, maxProcess, queueSize )
+      self.log.info( "ProcessPool: minProcess = %d maxProcess = %d queueSize = %d" % ( minProcess, 
+                                                                                       maxProcess, 
+                                                                                       queueSize ) )
+      self.log.info( "ProcessPool: tasks will use callbacks attached to ProcessPool" )
+      self.__processPool = ProcessPool( minProcess, 
+                                        maxProcess, 
+                                        queueSize, 
+                                        poolCallback = self.resultCallback,
+                                        poolExceptionCallback = self.exceptionCallback )
       self.__processPool.daemonize()
     return self.__processPool
 
-  def registerCallback( self, callback ):
-    """ register callback function executed after requestTask call
-    
-    :param self: self reference
-    :param callback: function definition
-    """
-    if not callable( callback ):
-      return S_ERROR("Request callback cannot be registered, passed object '%s' isn't callable" % str(callback) )
-    self.__requestCallback = callback
-    return S_OK()
-
-  def requestCallback( self ):
-    """ get definition of request callback function
+  def resultCallback( self, task ):
+    """ definition of request callback function
     
     :param self: self reference
     """
-    return self.__requestCallback
+    self.log.info("resultCallback from task %s" % task.getTaskID() )
+    results = task.taskResult()
 
-  def registerExceptionCallback( self, exceptionCallback ):
-    """ register exception callback, executed when requestTask raise an exception
- 
-    :param self: self reference
-    :param exceptionCallback: function definition
-    """
-    if not callable( exceptionCallback ):
-      return S_ERROR("Exception callback cannot be registered, object '%s' isn't callable." % str(exceptionCallback) )
-    self.__exceptionCallback = exceptionCallback
+    ## delete this one from request holder
+    self.deleteRequest( task.getTaskID() )
 
-  def exceptionCallback( self ):
-    """ get definition of exception callbak function
+    if not results["OK"]:
+      self.log.error( results["Message"] )
+      return
+    results = results["Value"]
+
+    if "monitor" in results:
+      monitor = results["monitor"]
+      for mark, value in monitor.items():
+        try:
+          gMonitor.addMark( mark, value )
+        except Exception, error:
+          log.exception( str(error) )
+    
+
+  def exceptionCallback( self, task ):
+    """ definition of exception callbak function
     
     :param self: self reference
     """
-    return self.__exceptionCallback
-
+    self.log.error( "exceptionCallback from task %s" % task.getTaskID() )
+    exception = task.taskException()
+    self.log.error( exception )
 
   @classmethod
   def getRequest( cls, requestType ):
@@ -371,28 +317,26 @@ class RequestAgentBase( AgentModule ):
       ## enqueue
       requestDict = requestDict["Value"]
       requestDict["configPath"] = self.__configPath
-      taskID = self.__requestsPerCycle - taskCounter + 1
+      taskID = requestDict["requestName"]
       while True:
         if not self.processPool().getFreeSlots():
           self.log.info("No free slots available in processPool, will wait a second to proceed...")
           time.sleep( 1 )
         else:
-          self.log.always("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
+          self.log.always("spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
                                                            kwargs = requestDict,
                                                            taskID = requestDict["requestName"],
-                                                           callback = self.requestCallback(),
-                                                           exceptionCallback = self.exceptionCallback(),
-                                                           blocking = True )
-          ## can't enqueue new task?
+                                                           blocking = True,
+                                                           usePoolCallbacks = True )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
-            ## enqueued, decrease taskCounter
-            taskCounter = taskCounter - 1
-            ## time kick 
+            self.log.info("successfully enqueued request %s to task taskID = %s" % ( requestDict["requestName"], taskID ) )
+            ## update request counter
+            requestCounter = requestCounter - 1
+            ## task created, a little time kick to proceed
             time.sleep( 0.1 )
-            ## break enqueue while
             break
 
     return S_OK()

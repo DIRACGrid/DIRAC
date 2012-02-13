@@ -1,8 +1,14 @@
 #################################################################
 # $HeadURL$
 #################################################################
+""" :mod: ProcessPool 
+    =================
+    .. module: ProcessPool
+    :synopsis: ProcessPool and related classes
 
-"""
+ProcessPool
+-----------
+
 ProcessPool creates a pool of worker subprocesses to handle a queue of tasks
 much like the producers/consumers paradigm. Users just need to fill the queue
 with tasks to be executed and worker tasks will execute them.
@@ -66,6 +72,30 @@ has to call::
 
   pool.daemonize()
 
+Callback functions
+------------------
+
+There are two types of callbacks that can be executed for each tasks: exception callback function and 
+results callback function. The the firts one is executed when unhandled excpetion has been raised during 
+task processing, and hence no task results are available, otherwise the execution of second callback type 
+is performed. 
+ 
+The callbacks could be attached in a two places::
+
+- directly in ProcessTask, in that case those have to be shelvable/picklable, so they should be defined as 
+  global functions with the signature :callback( task, taskResult ): where :task: is a :ProcessTask: 
+  reference and :taskResult: is whatever task callable it returning for restuls callback and 
+  :exceptionCallback( task, exc_info): where exc_info is a 
+  :S_ERROR{ "Exception": { "Value" : exceptionName, "Exc_info" : exceptionInfo }:
+
+- in ProcessPool, in that case there is no limitation on the function type, except the signature, which
+  should follow :callback( task ): or :exceptionCallback( task ):, as those callbacks definitions 
+  are not put into the queues
+
+The first types of callbacks could be used in case various callable objects are put into the ProcessPool, 
+so you probably want to handle them differently dependin on their results, while the second types are for 
+executing same type of callables in subprocesses and  hence you are expecting the same type of results
+everywhere. 
 """
 
 __RCSID__ = "$Id$"
@@ -150,7 +180,7 @@ class WorkingProcess( multiprocessing.Process ):
         task.process()
       finally:
         self.__working.value = 0
-      if task.hasCallback():
+      if task.hasCallback() or task.usePoolCallbacks():
         self.__resultsQueue.put( task, block = True )
 
 class BulletTask:
@@ -169,7 +199,8 @@ class ProcessTask:
                 kwargs = None,
                 taskID = None,
                 callback = None,
-                exceptionCallback = None ):
+                exceptionCallback = None,
+                usePoolCallbacks = False ):
     """ c'tor
 
     :warning: taskFunction has to be callable: it could be a function, lambda OR a class with 
@@ -206,7 +237,35 @@ class ProcessTask:
     self.__exceptionRaised = False
     self.__taskException = None
     self.__taskResult = None
+    self.__usePoolCallbacks = usePoolCallbacks 
 
+  def taskResults( self ):
+    """ get task results
+
+    :param self: self reference
+    """
+    return self.__taskResult
+
+  def taskException( self ):
+    """ get task exception
+
+    :param self: self reference
+    """
+    return self.__taskException
+
+  def enablePoolCallbacks( self ):
+    self.__usePoolCallbacks = True
+
+  def disablePoolCallbacks( self ):
+    self.__usePoolCallbacks = False
+
+  def usePoolCallbacks( self ):
+    """ check if results should be processed by callbacks defind in the pool
+
+    :param self: self reference
+    """
+    return self.__usePoolCallbacks
+ 
   def isBullet( self ):
     return False
 
@@ -223,8 +282,8 @@ class ProcessTask:
     :param self: self reference
     :return: True if callbak or exceptionCallback has been defined, False otherwise 
     """
-    return self.__resultCallback or self.__exceptionCallback
-
+    return self.__resultCallback or self.__exceptionCallback or self.__usePoolCallbacks
+ 
   def exceptionRaised( self ):
     """ flag to determine exception in process
 
@@ -281,21 +340,27 @@ class ProcessTask:
 class ProcessPool:
   """
   .. class:: ProcessPool
+  
   """
-
-  def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10, strictLimits = True ):
+  
+  def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10, 
+                strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
     """ c'tor
 
     :param self: self reference
     :param int minSize: minimal number of simultaniously executed tasks
     :param int maxSize: maximal number of simultaniously executed tasks 
     :param int maxQueueRequests: size of pending tasks queue
-    :param bool strictLimits: flag to 
+    :param bool strictLimits: flag to kill/terminate idle workers above the limits 
+    :param callable poolCallbak: results callback
+    :param callable poolExceptionCallback: exception callback
     """
     self.__minSize = max( 1, minSize )
     self.__maxSize = max( self.__minSize, maxSize )
     self.__maxQueuedRequests = maxQueuedRequests
     self.__strictLimits = strictLimits
+    self.__poolCallback = poolCallback
+    self.__poolExceptionCallback = poolExceptionCallback
     self.__pendingQueue = multiprocessing.Queue( self.__maxQueuedRequests )
     self.__resultsQueue = multiprocessing.Queue( 0 )
     self.__prListLock = threading.Lock()
@@ -305,6 +370,22 @@ class ProcessPool:
     self.__bulletCounter = 0
     self.__daemonProcess = False
     self.__spawnNeededWorkingProcesses()
+    
+  def setPoolCallback( self, callback ):
+    """ set ProcessPool callback function
+
+    :param self: self reference
+    :param callable callback: callback function
+    """
+    self.__poolCallback = callback
+
+  def setPoolExceptionCallback( self, exceptionCallback ):
+    """ set ProcessPool exception callback function 
+
+    :param self: self refernce
+    :param callable exceptionCallback: exsception callback function
+    """
+    self.__poolExceptionCallback = exceptionCallback
 
   def getMaxSize( self ):
     """ maxSize getter
@@ -351,6 +432,10 @@ class ProcessPool:
     return counter
 
   def getFreeSlots( self ):
+    """ get number of free slots availablr for workers
+
+    :param self: self reference
+    """
     return max( 0, self.__maxSize - self.getNumWorkingProcesses() )
 
   def __spawnWorkingProcess( self ):
@@ -376,7 +461,7 @@ class ProcessPool:
     self.__cleanDeadProcesses()
 
   def __cleanDeadProcesses( self ):
-    #Check wounded processes
+    ## check wounded processes
     self.__prListLock.acquire()
     try:
       stillAlive = []
@@ -391,6 +476,7 @@ class ProcessPool:
 
   def __spawnNeededWorkingProcesses( self ):
     """ create N working process (at least self.__minSize, but no more than self.__maxSize)
+
     :param self: self reference
     """
     self.__cleanDeadProcesses()
@@ -444,7 +530,8 @@ class ProcessPool:
                           taskID = None,
                           callback = None,
                           exceptionCallback = None,
-                          blocking = True ):
+                          blocking = True,
+                          usePoolCallbacks = False ):
     """ create new processTask and enqueue it in pending task queue
 
     :param self: self reference
@@ -455,14 +542,17 @@ class ProcessPool:
     :param mixed callback: callback handler, callable object executed after task's execution
     :param mixed exceptionCallback: callback handler executed if testFunction had raised an exception
     :param bool blocking: flag to block queue if necessary until free slot is available
+    :param bool usePoolCallbacks: fire execution of pool defined callbacks after task callbacks
     """
-    task = ProcessTask( taskFunction, args, kwargs, taskID, callback, exceptionCallback )
+    task = ProcessTask( taskFunction, args, kwargs, taskID, callback, exceptionCallback, usePoolCallbacks )
     return self.queueTask( task, blocking )
 
   def hasPendingTasks( self ):
     """ check if taks are present in pending queue 
     
     :param self: self reference
+
+    :warning: results may be misleading if elements put into the queue are big
     """
     return not self.__pendingQueue.empty()
 
@@ -470,6 +560,8 @@ class ProcessPool:
     """ check in peding queue is full
 
     :param self: self reference
+
+    :warning: results may be misleading if elements put into the queue are big
     """
     return self.__pendingQueue.full()
 
@@ -493,8 +585,17 @@ class ProcessPool:
         self.__killExceedingWorkingProcesses()
         break
       task = self.__resultsQueue.get()
+
       task.doExceptionCallback()
       task.doCallback()
+      ## execute pool callbacks
+      if task.usePoolCallbacks():
+        ## exception first
+        if self.__poolExceptionCallback and task.taskException():
+          self.__poolExceptionCallback( task ) 
+        elif self.__poolCallback and task.taskResults():
+          self.__poolCallback( task )
+
       self.__killExceedingWorkingProcesses()
       processed += 1
     return processed
@@ -582,7 +683,6 @@ class doSomething( object ):
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( "doSomething%s" % self.number )
 
-
   def __call__( self ):
     self.log.error( "in call" )
     rnd = random.randint( 1, 5 )
@@ -596,6 +696,41 @@ class doSomething( object ):
     print "task number %s done" % self.number
     return { "OK" : True, "Value" : [1, 2, 3] }
 
+
+class PoolOwner( object ):
+
+  def __init__( self ):
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine()
+    from DIRAC.FrameworkSystem.Client.Logger import gLogger
+    gLogger.showHeaders( True )
+    self.log = gLogger.getSubLogger( "PoolOwner" )
+    self.processPool = ProcessPool( poolCallback = self.callback, poolExceptionCallback = self.exceptionCallback )
+    self.processPool.daemonize()
+    
+
+  def callback( self, task ):
+    self.log.always( "PoolOwner callback, task is %s, result is %s" % ( task.getTaskID(), task.taskResults() ) )
+    
+  def exceptionCallback( self, task ):
+    self.log.always( "PoolOwner exceptionCallback, task is %s, exception is %s" % ( task.getTaskID(), task.taskException() ) )
+ 
+  def execute( self ):
+    i = 0
+    while True: 
+      if self.processPool.getFreeSlots() > 0:
+        r = random.randint(1, 5)
+        result = self.processPool.createAndQueueTask( doSomething,
+                                                      taskID = i,
+                                                      args = ( i, r, ),
+                                                      usePoolCallbacks = True )    
+        i += 1
+        self.log.always("doSomething enqueued to task %s" % i )
+      if i == 20:
+        break
+
+    self.processPool.processAllResults() 
+    self.processPool.finalize()
 
 
 ## test execution
@@ -635,3 +770,8 @@ if __name__ == "__main__":
 
   print "Max sleep", rmax
 
+
+  poolOwner = PoolOwner()
+  
+  poolOwner.execute()
+  

@@ -34,8 +34,6 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
 ## base classes
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
-from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultCallback
-from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultExceptionCallback
 from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
 ## DIRAC tools
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
@@ -215,21 +213,11 @@ class TransferAgent( RequestAgentBase ):
     self.monitor.registerActivity( "File registration failed", "Failed file registrations", 
                                    "TransferAgent", "Failed/min", gMonitor.OP_SUM )
 
-
+    ## tasks mode enabled by default
     self.__executionMode["Tasks"] = self.am_getOption( "TaskMode", True )
     self.log.info( "Tasks execution mode is %s." % { True : "enabled", 
                                                      False : "disabled" }[ self.__executionMode["Tasks"] ] )
-    
-    if self.__executionMode["Task"]:
-      register = self.registerCallback( defaultCallBack )
-      if not register["OK"]:
-        self.log.error( register["Message"] )
-        raise TransferAgentError( register["Message"] )
-      register = self.registerExceptionCallback( defaultExceptionCallBack )
-      if not register["OK"]:
-        self.log.error( register["Message"] )
-        raise TransferAgentError( register["Message"] )
-
+    ## but FTS only if requested
     self.__executionMode["FTS"] = self.am_getOption( "FTSMode", False )
     self.log.info( "FTS execution mode is %s." % { True : "enabled", 
                                                    False : "disabled" }[ self.__executionMode["FTS"] ] )
@@ -544,8 +532,8 @@ class TransferAgent( RequestAgentBase ):
       ## check owner
       ownerDN = requestObj.getAttribute( "OwnerDN" ) 
       if ownerDN["OK"] and ownerDN["Value"]:
-        self.log.info("Request %s has its owner %s, FTS scheduling is disabled fo it" % ( requestDict["requestName"], 
-                                                                                    ownerDN["Value"] ) )
+        self.log.info("Request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
+                                                                       ownerDN["Value"] ) )
         failback = True
       
       ## if ownerDN is NOT present and FTS scheduling is enabled we can proceed with it 
@@ -572,7 +560,7 @@ class TransferAgent( RequestAgentBase ):
       ## failback 
       if failback:
         if self.__executionMode["Tasks"]:
-          self.log.info( "Will process request in TransferTask, as FTS scheduling has failed" )
+          self.log.info( "Will process request in TransferTask, as FTS scheduling has failed/disabled" )
         else:
           self.log.error("Not able to process this request, FTS scheduling has failed but task mode is disabled.")
           continue
@@ -589,17 +577,16 @@ class TransferAgent( RequestAgentBase ):
           time.sleep( 1 )
         else:
           taskID = requestDict["requestName"]
-          self.log.info("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
+          self.log.info("spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
           enqueue = self.processPool().createAndQueueTask( TransferTask,
                                                            kwargs = requestDict,
                                                            taskID = taskID,
-                                                           callback =  self.requestCallback(),
-                                                           exceptionCallback = self.exceptionCallback(),
-                                                           blocking = True )
+                                                           blocking = True,
+                                                           usePoolCallbacks = False )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
-            self.log.info("successfully enqueued request %s to task taskID = %d" % ( requestDict["requestName"], taskID ) )
+            self.log.info("successfully enqueued request %s to task taskID = %s" % ( requestDict["requestName"], taskID ) )
             ## update request counter
             requestCounter = requestCounter - 1
             ## task created, a little time kick to proceed
@@ -609,14 +596,14 @@ class TransferAgent( RequestAgentBase ):
     return S_OK()
           
 
-  def finalize( self ):
-    """ finalisation of one agent cycle
-
-    :param self: self refernce
-    """
-    if self.__executionMode["Tasks"]:
-      self.processPool().processAllResults()
-    return S_OK()
+  #def finalize( self ):
+  #  """ finalisation of one agent cycle
+  #
+  #   :param self: self refernce
+  #   """
+  #   if self.__executionMode["Tasks"]:
+  #     self.processPool().processAllResults()
+  #   return S_OK()
     
   def schedule( self, requestDict ):
     """ scheduling files for FTS
