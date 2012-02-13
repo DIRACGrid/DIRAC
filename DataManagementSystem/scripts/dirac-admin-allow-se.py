@@ -40,7 +40,7 @@ for switch in Script.getUnprocessedSwitches():
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC                                           import gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers        import ResourceStatus
+from DIRAC.ResourceStatusSystem.Utilities            import RSSCSSwitch
 from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
 from DIRAC.Core.Utilities.List                       import intListToString
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
@@ -73,7 +73,7 @@ readAllowed  = []
 writeAllowed = []
 checkAllowed = []
 
-res = ResourceStatus.getStorageElementStatus( se )
+res = RSSCSSwitch.getStorageElementStatus( se )
 if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % se )
   continue
@@ -87,7 +87,7 @@ for se,seOptions in res[ 'Value' ].items():
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if read and seOptions.has_key( 'Read' ) and seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:    
      
-    resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
+    resR = RSSCSSwitch.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
     if not resR['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
@@ -97,7 +97,7 @@ for se,seOptions in res[ 'Value' ].items():
   # InActive is used on the CS model, Banned is the equivalent in RSS
   if write and seOptions.has_key( 'Write' ) and seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
     
-    resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
+    resW = RSSCSSwitch.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
@@ -107,7 +107,7 @@ for se,seOptions in res[ 'Value' ].items():
   # InActive is used on the CS model, Banned is the equivalent in RSS 
   if check and seOptions.has_key( 'Check' ) and seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
     
-    resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
+    resC = RSSCSSwitch.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Active" % se )
     else:
