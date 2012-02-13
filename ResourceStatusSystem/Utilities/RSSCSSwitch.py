@@ -199,8 +199,7 @@ def __setCSStorageElementStatus( elementName, statusType, status ):
   
   res = csAPI.commitChanges()
   if not res[ 'OK' ]:
-    gLogger.warn( 'CS: %s' % _msg )
-    return res
+    gLogger.warn( 'CS: %s' % res[ 'Message' ] )
     
   return res
 
