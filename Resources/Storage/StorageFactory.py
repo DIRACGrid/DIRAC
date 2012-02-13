@@ -17,7 +17,7 @@ __RCSID__ = "$Id$"
 from DIRAC                                    import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Utilities.List                import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
-from DIRAC.ConfigurationSystem.Client.Helpers import ResourceStatus
+from DIRAC.ResourceStatusSystem.Utilities     import RSSCSSwitch
 import os
 
 class StorageFactory:
@@ -221,7 +221,7 @@ class StorageFactory:
       optionConfigPath = '%s/%s' % ( storageConfigPath, option )
       optionsDict[option] = gConfig.getValue( optionConfigPath, '' )
     
-    res = ResourceStatus.getStorageElementStatus( storageName )
+    res = RSSCSSwitch.getStorageElementStatus( storageName )
     if not res[ 'OK' ]:
       errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
       gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
