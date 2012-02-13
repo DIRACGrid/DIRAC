@@ -91,20 +91,10 @@ def __getRSSStorageElementStatus( elementName, statusType, default ):
   else:
     statuses = []  
   
-  def getDictFromList( l ):
-    
-    res = {}
-    for le in l:
-      site, sType, status = le
-      if not res.has_key( site ):
-        res[ site ] = {}
-      res[ site ][ sType ] = status
-    return res  
-  
   #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
   res = rsc.getElementStatus( 'StorageElement', **kwargs )
   if res[ 'OK' ] and res['Value']:
-    return S_OK( getDictFromList( res['Value'] ) )
+    return S_OK( __getDictFromList( res['Value'] ) )
   
   if not isinstance( elementName, list ):
     elementName = [ elementName ]
@@ -116,7 +106,7 @@ def __getRSSStorageElementStatus( elementName, statusType, default ):
       statusType = 'none'
     
     defList = [ [ el, statusType, default ] for el in elementName ]
-    return S_OK( getDictFromList( defList ) )
+    return S_OK( __getDictFromList( defList ) )
 
   _msg = "StorageElement '%s', with statusType '%s' is unknown for RSS."
   return S_ERROR( _msg % ( elementName, statusType ) )
@@ -169,7 +159,7 @@ def __getCSStorageElementStatus( elementName, statusType, default ):
       statusType = 'none'
     
     defList = [ [ el, statusType, default ] for el in elementName ]
-    return S_OK( getDictFromList( defList ) )
+    return S_OK( __getDictFromList( defList ) )
 
   _msg = "StorageElement '%s', with statusType '%s' is unknown for CS."
   return S_ERROR( _msg % ( elementName, statusType ) )
@@ -227,5 +217,15 @@ def __getMode():
   if res == 1:
     return True
   return False
+
+def __getDictFromList( l ):
+    
+  res = {}
+  for le in l:
+    site, sType, status = le
+    if not res.has_key( site ):
+      res[ site ] = {}
+    res[ site ][ sType ] = status
+  return res  
   
 ################################################################################
