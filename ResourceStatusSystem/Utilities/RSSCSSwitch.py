@@ -212,8 +212,8 @@ def __getMode():
     we use RSS, if not, we use CS.
   '''
   
-  res = gConfig.getValue( 'Operations/RSSConfiguration/active', 0 )
-  if res == 1:
+  res = gConfig.getValue( 'Operations/RSSConfiguration/Status', 'InActive' )
+  if res == 'Active':
     return True
   return False
 
