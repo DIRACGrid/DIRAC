@@ -144,12 +144,12 @@ def __getCSStorageElementStatus( elementName, statusType, default ):
   for element in elementName:
     
     if statusType is not None:
-      res = gConfig.getOption( "%s/%s/%sAccess" % ( cs_path, elementName, statusType ) )
+      res = gConfig.getOption( "%s/%s/%sAccess" % ( cs_path, element, statusType ) )
       if res[ 'OK' ] and res[ 'Value' ]:
-        r[ elementName ] = { statusType : res[ 'Value' ] }
+        r[ element ] = { statusType : res[ 'Value' ] }
         
     else:
-      res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, elementName ) )
+      res = gConfig.getOptionsDict( "%s/%s" % ( cs_path, element ) )
       if res[ 'OK' ] and res[ 'Value' ]:
         r2 = {}
         for k,v in res['Value'].items():
@@ -157,7 +157,7 @@ def __getCSStorageElementStatus( elementName, statusType, default ):
           if k in statuses:
             r2[ k ] = v
               
-        r[ elementName ] = r2             
+        r[ element ] = r2             
     
   if r:
     return S_OK( r )
@@ -224,7 +224,7 @@ def __getMode():
   '''
   
   res = gConfig.getValue( 'Operations/RSSConfiguration/active', 0 )
-  if res == '1':
+  if res == 1:
     return True
   return False
   
