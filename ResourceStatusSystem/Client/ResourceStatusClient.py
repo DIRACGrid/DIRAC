@@ -84,8 +84,17 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''   
-    return locals()
+    '''     
+    params = {
+               'siteName'     : siteName,
+               'siteType'     : siteType,
+               'gridSiteName' : gridSiteName
+             }
+    
+    meta[ 'table' ] = 'Site'
+    
+    return self.gate.insert( params, meta )    
+#    return locals()
   @ClientFastDec
   def updateSite( self, siteName, siteType, gridSiteName, meta = {} ):
     '''
