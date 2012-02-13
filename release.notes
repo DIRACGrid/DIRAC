@@ -71,6 +71,11 @@ NEW: Added SSH Computing Element
 FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and
      the new status is "unused"
 
+[v6r1p10]
+
+*WorloadManagement
+FIX: JobAgent - set UseServerCertificate option "no" for the job executable
+
 [v6r1p9]
 
 *Core
