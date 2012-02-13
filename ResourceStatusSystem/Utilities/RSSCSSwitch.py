@@ -157,7 +157,7 @@ def __getCSStorageElementStatus( elementName, statusType, default ):
           if k in statuses:
             r2[ k ] = v
               
-      r[ elementName ] = r2             
+        r[ elementName ] = r2             
     
   if r:
     return S_OK( r )
