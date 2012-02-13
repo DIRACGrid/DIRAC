@@ -153,7 +153,7 @@ def __getCSStorageElementStatus( elementName, statusType, default ):
       if res[ 'OK' ] and res[ 'Value' ]:
         r2 = {}
         for k,v in res['Value'].items():
-          k.replace( 'Access', '' )
+          k = k.replace( 'Access', '' )
           if k in statuses:
             r2[ k ] = v
               
