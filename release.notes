@@ -71,6 +71,15 @@ NEW: Added SSH Computing Element
 FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and
      the new status is "unused"
 
+[v6r1p9]
+
+*Core
+FIX: dirac-configure - set the proper /DIRAC/Hostname when defining /LocalInstallation/Host
+
+*DataManagement
+FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
+BUGFIX: dirac-dms-remove-files - fixed crash in case of returned error report in a form of dictionary 
+
 [v6r1p8]
 
 *Web
