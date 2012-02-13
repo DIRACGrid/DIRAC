@@ -16,9 +16,9 @@ Usage:
 Script.parseCommandLine()
 
 import DIRAC
-from DIRAC                                import gConfig,gLogger
-from DIRAC.ResourceStatusSystem.Utilities import RSSCSSwitch
-from DIRAC.Core.Utilities.List            import sortList
+from DIRAC                             import gConfig,gLogger
+from DIRAC.ResourceStatusSystem.Client import ResourceStatus
+from DIRAC.Core.Utilities.List         import sortList
 
 storageCFGBase = "/Resources/StorageElements"
 
@@ -31,7 +31,7 @@ if not res[ 'OK' ]:
 gLogger.info( "%s %s %s" % ( 'Storage Element'.ljust( 25 ), 'Read Status'.rjust( 15 ), 'Write Status'.rjust( 15 ) ) )
 
 seList = sortList( res[ 'Value' ] ) 
-res    = RSSCSSwitch.getStorageElementStatus( seList )
+res    = ResourceStatus.getStorageElementStatus( seList )
 if not res[ 'OK' ]:
   gLogger.error( "Failed to get StorageElement status for %s" % str( seList ) )
 
@@ -48,7 +48,7 @@ for k,v in res[ 'Value' ].items():
 
 
 #for se in sortList( res[ 'Value' ] ):
-#  res = RSSCSSwitch.getStorageElementStatus( se )
+#  res = ResourceStatus.getStorageElementStatus( se )
 #  #res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
 #  if not res[ 'OK' ]:
 #    gLogger.error( "Failed to get options dict for %s" % se )

@@ -40,7 +40,7 @@ for switch in Script.getUnprocessedSwitches():
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC                                           import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Utilities            import RSSCSSwitch
+from DIRAC.ResourceStatusSystem.Client               import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
 from DIRAC.Core.Utilities.List                       import intListToString
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
@@ -73,7 +73,7 @@ readBanned  = []
 writeBanned = []
 checkBanned = []
 
-res = RSSCSSwitch.getStorageElementStatus( ses )
+res = ResourceStatus.getStorageElementStatus( ses )
 if not res['OK']:
   gLogger.error( "Storage Element %s does not exist" % se )
   continue
@@ -87,7 +87,7 @@ for se,seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
   if read and seOptions.has_key( 'Read' ) and seOptions[ 'Read' ] in [ 'Active', 'Bad' ]:  
 
-    resR = RSSCSSwitch.setStorageElementStatus( se, 'Read', 'Banned', reason, userName )
+    resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
     if not resR['OK']:
       gLogger.error( 'Failed to update %s read access to Banned' % se )
@@ -98,7 +98,7 @@ for se,seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
   if write and seOptions.has_key( 'Write' ) and seOptions[ 'Write' ] in [ 'Active', 'Bad' ]:    
 
-    resW = RSSCSSwitch.setStorageElementStatus( se, 'Write', 'Banned', reason, userName )
+    resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Banned" % se )
@@ -109,7 +109,7 @@ for se,seOptions in res[ 'Value' ].items():
   # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
   if check and seOptions.has_key( 'Check' ) and seOptions[ 'Check' ] in [ 'Active', 'Bad' ]:    
 
-    resC = RSSCSSwitch.setStorageElementStatus( se, 'Check', 'Banned', reason, userName )
+    resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Banned" % se )
