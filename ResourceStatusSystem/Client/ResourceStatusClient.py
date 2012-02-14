@@ -3,17 +3,13 @@
 ################################################################################
 __RCSID__ = "$Id:  $"
 
-from DIRAC import S_OK, S_ERROR
-
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
-       
+from DIRAC                                           import S_OK, S_ERROR, gLogger
+from DIRAC.Core.DISET.RPCClient                      import RPCClient        
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName       
-       
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientFastDec     
 from DIRAC.ResourceStatusSystem                      import ValidRes, ValidStatus, \
   ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType       
-
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientFastDec   
 from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node       
        
 from datetime import datetime, timedelta       
@@ -62,7 +58,7 @@ class ResourceStatusClient:
     else:
       self.gate = serviceIn
       
-  def __query( self, **kwargs ):
+  def __query( self, kwargs ):
     '''
       This method is a rather important one. It will format the input for the DB
       queries, instead of doing it on a decorator. Two dictionaries must be passed
@@ -80,7 +76,7 @@ class ResourceStatusClient:
     meta   = kwargs.pop( 'meta' )
     params = kwargs
         
-    for _ifName in INTERNAL_FUNCTIONS:
+    for _ifName in __INTERNAL_FUNCTIONS__:
       
       if fname.startswith( _ifName ):
         
