@@ -75,6 +75,7 @@ class ResourceStatusClient:
     fname  = sys._getframe( 1 ).f_code.co_name
     meta   = kwargs.pop( 'meta' )
     params = kwargs
+    del params[ 'self' ]
         
     for _ifName in __INTERNAL_FUNCTIONS__:
       
@@ -148,7 +149,6 @@ class ResourceStatusClient:
     :return: S_OK() || S_ERROR()
     '''   
     return self.__query( locals() )
-  @ClientFastDec
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
                meta = {} ):
     '''
@@ -168,7 +168,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals()
+    return self.__query( locals() )
   @ClientFastDec
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
                   meta = {} ):
