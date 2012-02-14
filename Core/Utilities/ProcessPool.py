@@ -684,16 +684,16 @@ class doSomething( object ):
     self.log = gLogger.getSubLogger( "doSomething%s" % self.number )
 
   def __call__( self ):
-    self.log.error( "in call" )
+    self.log.always( "in call" )
     rnd = random.randint( 1, 5 )
     print "sleeping %s secs for task number %s" % ( rnd, self.number )
     time.sleep( rnd )
 
     rnd = random.random() * self.number
     if rnd < 3:
-      print "raising exception for task %s" % self.number
+      self.log.always( "raising exception for this task" )
       raise Exception( "TEST EXCEPTION" )
-    print "task number %s done" % self.number
+    self.log.always( "task done" % self.number )
     return { "OK" : True, "Value" : [1, 2, 3] }
 
 
@@ -705,7 +705,8 @@ class PoolOwner( object ):
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( "PoolOwner" )
-    self.processPool = ProcessPool( poolCallback = self.callback, poolExceptionCallback = self.exceptionCallback )
+    self.processPool = ProcessPool( poolCallback = self.callback, 
+                                    poolExceptionCallback = self.exceptionCallback )
     self.processPool.daemonize()
     
 
@@ -770,8 +771,6 @@ if __name__ == "__main__":
 
   print "Max sleep", rmax
 
-
-  poolOwner = PoolOwner()
-  
+  poolOwner = PoolOwner()  
   poolOwner.execute()
   
