@@ -28,20 +28,23 @@ __RCSID__ = "$Id$"
 import time
 import re
 import random
-## from DIRAC
+## from DIRAC globals and Core
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
-## base classes
+from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+## from DMS
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
-## DIRAC tools
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
+## from RMS
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
-from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+## from Resources
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+## from RSS
+from DIRAC.ResourceStatusSystem.Client import ResourceStatus
 
 ## agent name
 AGENT_NAME = 'DataManagement/TransferAgent'
@@ -1265,13 +1268,12 @@ class StrategyHandler( object ):
     :param list seList: stogare element list
     :param str access: storage element accesss, could be 'Read' (default) or 'Write' 
     """
-    activeSE = []
-    for se in seList:
-      res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
-      if res["OK"] and res["Value"] == "Active":
-        activeSE.append( se )
-    return activeSE
-
+    res = ResourceStatus.getStorageElementStatus( seList, statusType = access, default = 'Unknown' )
+    if not res["OK"]:
+      return []
+    res = res["Value"]
+    return [ k for k, v in res.items() if access in v and v[access] in ( "Active", "Bad" ) ]
+   
   def __getChannelSitesForSE( self, storageElement ):
     """Get sites for given storage element.
     
@@ -1279,11 +1281,12 @@ class StrategyHandler( object ):
     :param str storageElement: storage element name
     """
     res = getSitesForSE( storageElement )
+    if not res["OK"]:
+      return []
     sites = []
-    if res["OK"]:
-      for site in res["Value"]:
-        siteName = site.split( "." )
-        if len( siteName ) > 1:
-          if not siteName[1] in sites:
-            sites.append( siteName[1] )
+    for site in res["Value"]:
+      siteName = site.split( "." )
+      if len( siteName ) > 1:
+        if not siteName[1] in sites:
+          sites.append( siteName[1] )
     return sites
