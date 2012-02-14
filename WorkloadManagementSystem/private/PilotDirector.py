@@ -28,7 +28,7 @@ DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem',
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 DIRAC_VERSION = 'Production'
 DIRAC_VERSION = 'HEAD'
-DIRAC_INSTALLATION = ''
+DIRAC_PROJECT = ''
 
 MAX_JOBS_IN_FILLMODE = 2
 
@@ -55,7 +55,7 @@ from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
-
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
 
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
@@ -99,7 +99,7 @@ class PilotDirector:
     self.pilot = DIRAC_PILOT
     self.extraPilotOptions = []
     self.installVersion = DIRAC_VERSION
-    self.installInstallation = DIRAC_INSTALLATION
+    self.installProject = DIRAC_PROJECT
 
     self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
@@ -136,8 +136,8 @@ class PilotDirector:
     section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
     self.installVersion = gConfig.getValue( cfgPath( section, 'PilotVersion' ),
                                          self.installVersion )
-    self.installInstallation = gConfig.getValue( cfgPath( section, 'PilotInstallation' ),
-                                         self.installInstallation )
+    self.installProject = gConfig.getValue( cfgPath( section, 'PilotProject' ),
+                                         self.installProject )
 
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
@@ -146,8 +146,8 @@ class PilotDirector:
     self.log.info( ' Install script: ', self.install )
     self.log.info( ' Pilot script:   ', self.pilot )
     self.log.info( ' Install Ver:    ', self.installVersion )
-    if self.installInstallation:
-      self.log.info( ' Installation:        ', self.installInstallation )
+    if self.installProject:
+      self.log.info( ' Project:        ', self.installProject )
     if self.extraPilotOptions:
       self.log.info( ' Extra Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
@@ -175,7 +175,7 @@ class PilotDirector:
     self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
-    self.installInstallation = gConfig.getValue( mySection + '/Installation'        , self.installInstallation )
+    self.installProject = gConfig.getValue( mySection + '/Project'        , self.installProject )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
     self.targetGrids = gConfig.getValue( mySection + '/TargetGrids'    , self.targetGrids )
 
@@ -325,11 +325,15 @@ class PilotDirector:
     extensionsList = getCSExtensions()
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
-    # Requested version of DIRAC
-    pilotOptions.append( '-r %s' % self.installVersion )
+    #Get DIRAC version and project
+    opsHelper = Operations( group = taskQueueDict['OwnerGroup'], setup = taskQueueDict['Setup'] )
+    # Requested version of DIRAC (it can be a list, so we take the fist one)
+    version = opsHelper.getValue( "Pilot/Version" , [ self.installVersion ] )[0]
+    pilotOptions.append( '-r %s' % version )
     # Requested Project to install
-    if self.installInstallation:
-      pilotOptions.append( '-V %s' % self.installInstallation )
+    installProject = opsHelper.getValue( "Pilot/Project" , self.installProject )
+    if installProject:
+      pilotOptions.append( '-l %s' % installProject )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
 
