@@ -18,6 +18,8 @@ from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node
        
 from datetime import datetime, timedelta       
        
+import sys       
+       
 class ResourceStatusClient:
   """
   The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus` 
@@ -60,13 +62,57 @@ class ResourceStatusClient:
     else:
       self.gate = serviceIn
       
+  def __query( self, **kwargs ):
+    '''
+      This method is a rather important one. It will format the input for the DB
+      queries, instead of doing it on a decorator. Two dictionaries must be passed
+      to the DB. First one contains 'columnName' : value pairs, being the key
+      lower camel case. The second one must have, at lease, a key named 'table'
+      with the right table name. 
+    '''
+    
+    # Functions we can call, just a light safety measure.
+    __INTERNAL_FUNCTIONS__ = [ 'insert', 'update', 'get', 'delete' ]
+    gateFunction           = None
+    
+    # I'm simply lazy, do not want to pass function name as argument. I get it here
+    fname  = sys._getframe( 1 ).f_code.co_name
+    meta   = kwargs.pop( 'meta' )
+    params = kwargs
+        
+    for _ifName in INTERNAL_FUNCTIONS:
+      
+      if fname.startswith( _ifName ):
+        
+        _table = fname.replace( _ifName, '' )
+      
+        # This is an special case with the Element tables.
+        if _table.startswith( 'Element' ):
+          _element = params.pop( 'element' )
+          _table   = _table.replace( 'Element', _element )
+          params[ '%sName' % _element ] = params[ 'elementName' ]
+          del params[ 'elementName' ]
+          
+        meta[ 'table' ] = _table
+        
+        gateFunction = getattr( self.gate, _ifName )
+        continue  
+    
+    # Be careful, __eq__ method cannot be executed if we use server !  
+    if gateFunction is not None:  
+      
+      gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( _ifName, params, meta ) )  
+      return gateFunction( params, meta )     
+    
+    return S_ERROR( 'Cannot find right call for %s' % fname )
+    
+      
   '''
   ##############################################################################
   # SITE FUNCTIONS
   ##############################################################################
   '''      
   
-  @ClientFastDec
   def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
     '''
     Inserts on Site a new row with the arguments given.
@@ -84,18 +130,8 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''     
-    params = {
-               'siteName'     : siteName,
-               'siteType'     : siteType,
-               'gridSiteName' : gridSiteName
-             }
-    
-    meta[ 'table' ] = 'Site'
-    
-    return self.gate.insert( params, meta )    
-#    return locals()
-  @ClientFastDec
+    '''
+    return self.__query( locals() )
   def updateSite( self, siteName, siteType, gridSiteName, meta = {} ):
     '''
     Updates Site with the parameters given. By default, `siteName` will be the \
@@ -115,7 +151,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals()
+    return self.__query( locals() )
   @ClientFastDec
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
                meta = {} ):
