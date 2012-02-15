@@ -16,9 +16,9 @@ Usage:
 Script.parseCommandLine()
 
 import DIRAC
-from DIRAC                                    import gConfig,gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers import ResourceStatus
-from DIRAC.Core.Utilities.List                import sortList
+from DIRAC                             import gConfig,gLogger
+from DIRAC.ResourceStatusSystem.Client import ResourceStatus
+from DIRAC.Core.Utilities.List         import sortList
 
 storageCFGBase = "/Resources/StorageElements"
 

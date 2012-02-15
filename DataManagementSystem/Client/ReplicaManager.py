@@ -10,7 +10,7 @@ import DIRAC
 from DIRAC                                             import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient     import gDataStoreClient
-from DIRAC.ConfigurationSystem.Client.Helpers          import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client                 import ResourceStatus
 from DIRAC.Core.Utilities.File                         import makeGuid, getSize
 from DIRAC.Core.Utilities.Adler                        import fileAdler, compareAdler
 from DIRAC.Core.Utilities.List                         import sortList, randomize
