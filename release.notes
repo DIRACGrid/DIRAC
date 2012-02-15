@@ -71,6 +71,12 @@ NEW: Added SSH Computing Element
 FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and
      the new status is "unused"
 
+[v6r1p11]
+
+*Core
+NEW: dirac-install - caches locally the externals and the grid bundle
+FIX: dirac-distribution - properly generate releasehistory and releasenotes
+
 [v6r1p10]
 
 *WorloadManagement
