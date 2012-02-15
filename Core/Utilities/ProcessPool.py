@@ -107,7 +107,7 @@ import threading
 import os
 import signal
 import Queue
-from types import *
+from types import FunctionType, TypeType, ClassType
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -123,8 +123,10 @@ try:
   from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 except ImportError:
   def S_OK( val = "" ):
+    """ dummy S_OK """
     return { 'OK' : True, 'Value' : val }
   def S_ERROR( mess ):
+    """ dummy S_ERROR """
     return { 'OK' : False, 'Message' : mess }
 
 class WorkingProcess( multiprocessing.Process ):
@@ -184,7 +186,9 @@ class WorkingProcess( multiprocessing.Process ):
         self.__resultsQueue.put( task, block = True )
 
 class BulletTask:
+  """ dum-dum bullet """
   def isBullet( self ):
+    """ Fire in the hole! Take coover! """
     return True
 
 class ProcessTask:
@@ -254,9 +258,11 @@ class ProcessTask:
     return self.__taskException
 
   def enablePoolCallbacks( self ):
+    """ (re)enable use of ProcessPool callbacks """
     self.__usePoolCallbacks = True
 
   def disablePoolCallbacks( self ):
+    """ disable execution of ProcessPool callbacks """
     self.__usePoolCallbacks = False
 
   def usePoolCallbacks( self ):
@@ -267,6 +273,7 @@ class ProcessTask:
     return self.__usePoolCallbacks
  
   def isBullet( self ):
+    """ No, I'm not. """
     return False
 
   def getTaskID( self ):
@@ -461,13 +468,14 @@ class ProcessPool:
     self.__cleanDeadProcesses()
 
   def __cleanDeadProcesses( self ):
+    """ delete references of dead workingProcesses from ProcessPool.__workingProcessList """
     ## check wounded processes
     self.__prListLock.acquire()
     try:
       stillAlive = []
-      for wP in self.__workingProcessList:
-        if wP.is_alive():
-          stillAlive.append( wP )
+      for workingProcess in self.__workingProcessList:
+        if workingProcess.is_alive():
+          stillAlive.append( workingProcess )
         else:
           self.__bulletCounter -= 1
       self.__workingProcessList = stillAlive
@@ -480,7 +488,7 @@ class ProcessPool:
     :param self: self reference
     """
     self.__cleanDeadProcesses()
-    #If we are draining do not spawn processes
+    # If we are draining do not spawn processes
     if self.__draining:
       return
     while len( self.__workingProcessList ) < self.__minSize:
@@ -498,12 +506,14 @@ class ProcessPool:
     :param self: self reference
     """
     self.__cleanDeadProcesses()
-    toKill = len( self.__workingProcessList ) - self.__maxSize
-    for i in range ( max( toKill, 0 ) ):
+    toKill = max( len( self.__workingProcessList ) - self.__maxSize, 0 )
+    while toKill:
       self.__killWorkingProcess()
-    toKill = self.getNumIdleProcesses() - self.__minSize
-    for i in range ( max( toKill, 0 ) ):
+      toKill = toKill - 1
+    toKill = max( self.getNumIdleProcesses() - self.__minSize, 0 )
+    while toKill:
       self.__killWorkingProcess()
+      toKill = toKill - 1
 
   def queueTask( self, task, blocking = True, usePoolCallbacks= False ):
     """ enqueue new task into pending queue
@@ -615,14 +625,20 @@ class ProcessPool:
     self.processResults()
 
   def finalize( self, timeout = 10 ):
+    """ drain pool, shutdown processing in more or less clean way
+
+    :param self: self reference
+    :param timeout: seconds to wait before killing 
+    """
     #Process all tasks
     self.processAllResults()
     #Drain via bullets processes
     self.__draining = True
     try:
       bullets = len( self.__workingProcessList ) - self.__bulletCounter
-      for i in range( bullets ):
+      while bullets:
         self.__killWorkingProcess()
+        bullets = bullets - 1 
       start = time.time()
       self.__cleanDeadProcesses()
       while len( self.__workingProcessList ) > 0:
@@ -632,16 +648,16 @@ class ProcessPool:
         self.__cleanDeadProcesses()
     finally:
       self.__draining = False
-    #Terminate them (just in case)
+    # terminate them as it should be done
     for wp in self.__workingProcessList:
       if wp.is_alive():
         wp.terminate()
     self.__cleanDeadProcesses()
-    #Kill 'em all!!
+    # Kill 'em all!!
     self.__filicide()
 
   def __filicide( self ):
-    """ Kill all children (processes :P) Kill 'em all!
+    """ Kill all children (processes :P) Kill'em all! ...and justice for all!
     """
     wpL = [ ( wp, 0 ) for wp in self.__workingProcessList ]
     self.__workingProcessList = []
