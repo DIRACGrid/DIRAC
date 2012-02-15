@@ -28,22 +28,23 @@ __RCSID__ = "$Id$"
 import time
 import re
 import random
-## from DIRAC
+## from DIRAC globals and Core
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
-## base classes
-from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
-from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultCallback
-from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultExceptionCallback
-from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
-## DIRAC tools
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Resources.Storage.StorageFactory import StorageFactory
-from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+## from DMS
+from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
+from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
+## from RMS
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
+## from Resources
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+## from RSS
+from DIRAC.ResourceStatusSystem.Client import ResourceStatus
 
 ## agent name
 AGENT_NAME = 'DataManagement/TransferAgent'
@@ -112,6 +113,7 @@ class TransferAgentError( Exception ):
     :param self: self reference
     """
     return str( self.msg )
+
 
 class TransferAgent( RequestAgentBase ):
   """ 
@@ -214,21 +216,11 @@ class TransferAgent( RequestAgentBase ):
     self.monitor.registerActivity( "File registration failed", "Failed file registrations", 
                                    "TransferAgent", "Failed/min", gMonitor.OP_SUM )
 
-
+    ## tasks mode enabled by default
     self.__executionMode["Tasks"] = self.am_getOption( "TaskMode", True )
     self.log.info( "Tasks execution mode is %s." % { True : "enabled", 
                                                      False : "disabled" }[ self.__executionMode["Tasks"] ] )
-    
-    if self.__executionMode["Task"]:
-      register = self.registerCallback( defaultCallBack )
-      if not register["OK"]:
-        self.log.error( register["Message"] )
-        raise TransferAgentError( register["Message"] )
-      register = self.registerExceptionCallback( defaultExceptionCallBack )
-      if not register["OK"]:
-        self.log.error( register["Message"] )
-        raise TransferAgentError( register["Message"] )
-
+    ## but FTS only if requested
     self.__executionMode["FTS"] = self.am_getOption( "FTSMode", False )
     self.log.info( "FTS execution mode is %s." % { True : "enabled", 
                                                    False : "disabled" }[ self.__executionMode["FTS"] ] )
@@ -334,7 +326,34 @@ class TransferAgent( RequestAgentBase ):
 
     return S_OK()
 
-  def getTransferURLs( self, lfn, repDict, replicas ):
+  def ancestorSortKeys( self, aDict, aKey="hopAncestor" ):
+    """ sorting keys of replicationTree by its hopAncestor value 
+    
+    replicationTree is a dict ( channelID : { ... }, (...) }
+    
+    :param self: self reference
+    :param dict aDict: replication tree  to sort
+    :param str aKey: a key in value dict used to sort 
+    """
+    if False in [ bool(aKey in v) for v in aDict.values() ]:
+      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" )
+    ## put parents of all parents
+    sortedKeys = [ k for k in aDict if aKey in aDict[k] and not aDict[k][aKey] ]
+    ## get children
+    pairs = dict( [ (  k, v[aKey] ) for k, v in aDict.items() if v[aKey] ] )
+    while pairs:
+      for key, ancestor in dict(pairs).items():
+        if key not in sortedKeys and ancestor in sortedKeys:
+          sortedKeys.insert( sortedKeys.index(ancestor), key )
+          del pairs[key]
+    ## need to revese this one, as we're instering child before its parent 
+    sortedKeys.reverse()
+    if sorted( sortedKeys ) != sorted( aDict.keys() ):
+      return S_ERROR( "ancestorSortKeys: cannot sort, some keys are missing!")
+    return S_OK( sortedKeys )
+
+
+  def getTransferURLs( self, lfn, repDict, replicas, ancestorSwap=None ):
     """ prepare TURLs for given LFN and replication tree
 
     :param self: self reference
@@ -342,9 +361,23 @@ class TransferAgent( RequestAgentBase ):
     :param dict repDict: replication dictionary
     :param dict replicas: LFN replicas 
     """
+
     hopSourceSE = repDict["SourceSE"]
     hopDestSE = repDict["DestSE"]
     hopAncestor = repDict["Ancestor"]
+
+    if ancestorSwap and str(hopAncestor) in ancestorSwap:
+      self.log.debug("getTransferURLs: swapping hopAncestor %s with %s" % ( hopAncestor, 
+                                                                            ancestorSwap[str(hopAncestor)] ) )
+      hopAncestor = ancestorSwap[ str(hopAncestor) ]
+    
+    ## get targetSURL
+    res = self.getSurlForLFN( hopDestSE, lfn )
+    if not res["OK"]:
+      errStr = res["Message"]
+      self.log.error( errStr )
+      return S_ERROR( errStr )
+    targetSURL = res["Value"]
 
     # get the sourceSURL
     if hopAncestor:
@@ -362,16 +395,14 @@ class TransferAgent( RequestAgentBase ):
         sourceSURL = replicas[hopSourceSE]
       else:
         sourceSURL = res["Value"]
-        
-    # get the targetSURL
-    res = self.getSurlForLFN( hopDestSE, lfn )
-    if not res["OK"]:
-      errStr = res["Message"]
-      self.log.error( errStr )
-      return S_ERROR( errStr )
-    targetSURL = res["Value"]
 
-    return S_OK( (sourceSURL, targetSURL, status ) )
+    ## new status - Done or Done%d for TargetSURL = SourceSURL
+    if targetSURL == sourceSURL:
+      status = "Done"
+      if hopAncestor:
+        status = "Done%s" % hopAncestor
+        
+    return S_OK( ( sourceSURL, targetSURL, status ) )
 
   def collectFiles( self, requestObj, iSubRequest, status='Waiting' ):
     """ Get SubRequest files with status :status:, collect their replicas and metadata information from 
@@ -460,7 +491,7 @@ class TransferAgent( RequestAgentBase ):
     res = self.replicaManager().getPfnForProtocol( [pfn], sourceSE )
     if not res["OK"]:
       return res
-    if pfn in res["Value"]["Failed"].keys():
+    if pfn in res["Value"]["Failed"]:
       return S_ERROR( res["Value"]["Failed"][pfn] )
     return S_OK( res["Value"]["Successful"][pfn] )
 
@@ -472,15 +503,14 @@ class TransferAgent( RequestAgentBase ):
     requestCounter = self.requestsPerCycle()
     failback = False
     if self.__executionMode["FTS"]:
-      self.log.info( "Will setup StrategyHandler for FTS scheduling...")
+      self.log.info( "execute: will setup StrategyHandler for FTS scheduling...")
       self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', 3600 )
-      self.log.debug( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
-
+      self.log.debug( "execute: ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
       ## setup strategy handler
       setupStrategyHandler = self.setupStrategyHandler()
       if not setupStrategyHandler["OK"]:
         self.log.error( setupStrategyHandler["Message"] )
-        self.log.error( "Disabling FTS scheduling in this cycle...")
+        self.log.error( "execute: disabling FTS scheduling in this cycle...")
         failback = True 
 
     ## loop over requests
@@ -488,94 +518,101 @@ class TransferAgent( RequestAgentBase ):
 
       requestDict = self.getRequest( "transfer" )
       if not requestDict["OK"]:
-        self.log.error("Error when getteing 'transfer' requests out of RequestDB: %s" % requestDict["Message"] )
+        self.log.error("execute: error when getteing 'transfer' request: %s" % requestDict["Message"] )
         return requestDict 
       if not requestDict["Value"]:
-        self.log.info("No more 'Waiting' requests found in RequestDB")
+        self.log.info("execute: no more 'Waiting' requests found in RequestDB")
         return S_OK()
       requestDict = requestDict["Value"]
-      self.log.info("Processing request (%d) %s" %  ( self.requestsPerCycle() - requestCounter + 1, 
-                                                      requestDict["requestName"] ) )
 
-      ## create and store RequestContainer
-      requestObj = RequestContainer( requestDict["requestString"] )
-      requestDict["requestObj"] = requestObj
+      self.log.info("execute: processing request (%d) %s" %  ( self.requestsPerCycle() - requestCounter + 1, 
+                                                               requestDict["requestName"] ) )
 
-      ## check owner
-      ownerDN = requestObj.getAttribute( "OwnerDN" ) 
-      if ownerDN["OK"] and ownerDN["Value"]:
-        self.log.info("Request %s has its owner %s, FTS scheduling is disabled fo it" % ( requestDict["requestName"], 
-                                                                                    ownerDN["Value"] ) )
-        failback = True
-      
-      ## if ownerDN is NOT present and FTS scheduling is enabled we can proceed with it 
-      if not failback and self.__executionMode["FTS"]:
-        self.log.info("About to schedule files for FTS")
-        try:
-          schedule = self.schedule( requestDict )
-          if schedule["OK"]:
-            self.log.info("Request %s has been scheduled for FTS" % requestDict["requestName"] )
-            requestCounter = requestCounter - 1
-            failback = False
-            continue
-          else:
-            self.log.error( schedule["Message"] )
-            failback = True
-        except StrategyHandlerChannelNotDefined, error:
-          self.log.info( str(error) )
+      ## FTS scheduling
+      if self.__executionMode["FTS"] and not failback:
+        self.log.info("execute: about to process request using FTS")
+        executeFTS = self.executeFTS( requestDict )
+        if not executeFTS["OK"]:
+          self.log.error( executeFTS["Message"] )
           failback = True
-
-      if not failback:
-        self.deleteRequest( requestDict["requestName"] )
-        continue 
+        elif executeFTS["OK"]:
+          if executeFTS["Value"]:
+            self.log.info("execute: request %s has been scheduled for FTS" % requestDict["requestName"] )
+            requestCounter = requestCounter - 1
+            self.deleteRequest( requestDict["requestName"] )
+            continue 
+          else:
+            failback = True
 
       ## failback 
-      if failback:
-        if self.__executionMode["Tasks"]:
-          self.log.info( "Will process request in TransferTask, as FTS scheduling has failed" )
-        else:
-          self.log.error("Not able to process this request, FTS scheduling has failed but task mode is disabled.")
+      if failback and not self.__executionMode["Tasks"]:
+        self.log.error("execute: not able to process %s request" % requestDict["requestName"] )
+        self.log.error("execute: FTS scheduling has failed and Task mode is disabled" ) 
+        continue
+
+      ## Task
+      self.log.info("execute: about to process request using TransferTask")
+      if self.__executionMode["Tasks"]: 
+        res = self.executeTask( requestDict )
+        if res["OK"]:
+          requestCounter = requestCounter - 1
           continue
 
-      ## if we land here anyway this request has to be processed by tasks
-      requestDict["configPath"] = self.configPath()
-      del requestDict["requestObj"]
-      self.log.info("About to process request using TransferTask")
-      
-      ## TransferTask main loop 
-      while True:
-        if not self.processPool().getFreeSlots():
-          self.log.info("No free slots available in processPool, will wait a second to proceed...")
-          time.sleep( 1 )
-        else:
-          taskID = requestDict["requestName"]
-          self.log.info("spawning task %d for request %s" % ( taskID, requestDict["requestName"] ) )
-          enqueue = self.processPool().createAndQueueTask( TransferTask,
-                                                           kwargs = requestDict,
-                                                           taskID = taskID,
-                                                           callback =  self.requestCallback(),
-                                                           exceptionCallback = self.exceptionCallback(),
-                                                           blocking = True )
-          if not enqueue["OK"]:
-            self.log.error( enqueue["Message"] )
-          else:
-            self.log.info("successfully enqueued request %s to task taskID = %d" % ( requestDict["requestName"], taskID ) )
-            ## update request counter
-            requestCounter = requestCounter - 1
-            ## task created, a little time kick to proceed
-            time.sleep( 0.1 )
-            break
-
     return S_OK()
-          
 
-  def finalize( self ):
-    """ finalisation of one agent cycle
+  def executeFTS( self, requestDict ):
+    """ execute Request in FTS mode
 
-    :param self: self refernce
+    :param self: self reference
+    :param dict requestDict: request dictionary
     """
-    if self.__executionMode["Tasks"]:
-      self.processPool().processAllResults()
+    requestObj = RequestContainer( requestDict["requestString"] )
+    requestDict["requestObj"] = requestObj
+    ownerDN = requestObj.getAttribute( "OwnerDN" ) 
+    if ownerDN["OK"] and ownerDN["Value"]:
+      self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
+                                                                                ownerDN["Value"] ) )
+      return S_OK( False )
+    try:
+      schedule = self.schedule( requestDict )
+      if schedule["OK"]:
+        self.log.info("executeFTS: request %s has been scheduled for FTS" % requestDict["requestName"] )
+      else:
+        self.log.error( schedule["Message"] )
+        return schedule 
+    except StrategyHandlerChannelNotDefined, error:
+      self.log.info( str(error) )
+      return S_OK( False )
+    
+    return S_OK( True )
+          
+  def executeTask( self, requestDict ):
+    """ create and queue task into the processPool
+
+    :param self: self reference
+    :param dict requestDict: requestDict
+    """
+    requestDict["configPath"] = self.configPath()
+    taskID = requestDict["requestName"]
+    while True:
+      if not self.processPool().getFreeSlots():
+        self.log.info("createTask: no free slots available in processPool, will wait a second to proceed...")
+        time.sleep( 1 )
+      else:
+        self.log.info("createTask: spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
+        enqueue = self.processPool().createAndQueueTask( TransferTask,
+                                                         kwargs = requestDict,
+                                                         taskID = taskID,
+                                                         blocking = True,
+                                                         usePoolCallbacks = True )
+        if not enqueue["OK"]:
+          self.log.error( enqueue["Message"] )
+        else:
+          self.log.info("createTask: successfully enqueued request %s" % taskID )
+          ## task created, a little time kick to proceed
+          time.sleep( 0.1 )
+          break
+
     return S_OK()
     
   def schedule( self, requestDict ):
@@ -675,13 +712,29 @@ class TransferAgent( RequestAgentBase ):
           continue
         else:
           self.log.debug( "schedule: replicationTree: %s" % tree )
-
-        for channelID, repDict in tree.items():
+ 
+        ## sorting keys by hopAncestor
+        sortedKeys = self.ancestorSortKeys( tree, "hopAncestor" )
+        if not sortedKeys["OK"]:
+          self.log.warn( "schedule: unable to sort replication tree by hopAncestor: %s"% sortedKeys["Message"] )
+          sortedKeys = tree.keys()
+        else:
+          sortedKeys = sortedKeys["Value"]
+        ## dict holding swap parent with child for same SURLs
+        ancestorSwap = {} 
+        for channelID in sortedKeys:
+          repDict = tree[channelID]
           self.log.info( "schedule: processing channel %d %s" % ( channelID, str( repDict ) ) )
           transferURLs = self.getTransferURLs( waitingFileLFN, repDict, waitingFileReplicas )
           if not transferURLs["OK"]:
             return transferURLs
           sourceSURL, targetSURL, waitingFileStatus = transferURLs["Value"]
+
+          ## save ancestor to swap
+          if sourceSURL == targetSURL and waitingFileStatus.startswith( "Done" ):
+            oldAncestor = str(channelID)            
+            newAncestor = waitingFileStatus[5:]
+            ancestorSwap[ oldAncestor ] = newAncestor
 
           ## add file to channel
           res = self.transferDB().addFileToChannel( channelID, 
@@ -731,7 +784,7 @@ class TransferAgent( RequestAgentBase ):
       if not subRequestFiles["OK"]:
         return subRequestFiles
       subRequestFiles = subRequestFiles["Value"]
-      self.log.info( "schedule: found %s files" % ( iSubRequest, len( subRequestFiles ) ) )
+      self.log.info( "schedule: found %s files" % len( subRequestFiles ) ) 
       for subRequestFile in subRequestFiles:
         status = subRequestFile["Status"]
         lfn = subRequestFile["LFN"]
@@ -770,10 +823,10 @@ class TransferAgent( RequestAgentBase ):
               ## no other option, it must be in successfull
               register = self.transferDB().setRegistrationDone( channelID, fileID )
               if not register["OK"]:
-                self.log.error("schedule: register status error %s fileID=%s channelID=%s: %s" % ( lfn,
-                                                                                                   fileID,
-                                                                                                   channelID,
-                                                                                                   register["Message"] ) )
+                self.log.error("schedule: set status error %s fileID=%s channelID=%s: %s" % ( lfn,
+                                                                                              fileID,
+                                                                                              channelID,
+                                                                                              register["Message"] ) )
                 return register
 
       if not waitingRegistrations and requestObj.isSubRequestEmpty( iSubRequest, "transfer" )["Value"]:
@@ -1222,13 +1275,12 @@ class StrategyHandler( object ):
     :param list seList: stogare element list
     :param str access: storage element accesss, could be 'Read' (default) or 'Write' 
     """
-    activeSE = []
-    for se in seList:
-      res = gConfig.getOption( "/Resources/StorageElements/%s/%sAccess" % ( se, access ), "Unknown" )
-      if res["OK"] and res["Value"] == "Active":
-        activeSE.append( se )
-    return activeSE
-
+    res = ResourceStatus.getStorageElementStatus( seList, statusType = access, default = 'Unknown' )
+    if not res["OK"]:
+      return []
+    res = res["Value"]
+    return [ k for k, v in res.items() if access in v and v[access] in ( "Active", "Bad" ) ]
+   
   def __getChannelSitesForSE( self, storageElement ):
     """Get sites for given storage element.
     
@@ -1236,11 +1288,12 @@ class StrategyHandler( object ):
     :param str storageElement: storage element name
     """
     res = getSitesForSE( storageElement )
+    if not res["OK"]:
+      return []
     sites = []
-    if res["OK"]:
-      for site in res["Value"]:
-        siteName = site.split( "." )
-        if len( siteName ) > 1:
-          if not siteName[1] in sites:
-            sites.append( siteName[1] )
+    for site in res["Value"]:
+      siteName = site.split( "." )
+      if len( siteName ) > 1:
+        if not siteName[1] in sites:
+          sites.append( siteName[1] )
     return sites
