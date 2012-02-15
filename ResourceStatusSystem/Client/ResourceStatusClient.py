@@ -2028,7 +2028,7 @@ class ResourceStatusClient:
     for k in rDict.keys():
       if selectDict.has_key( k ):
         rDict[ k ] = selectDict[ k ]
-        if not isinstance( rDict, list ):
+        if not isinstance( rDict[ k ], list ):
           rDict[ k ] = [ rDict[ k ] ]
 
     if selectDict.has_key( 'Expanded%sHistory' % granularity ):
@@ -2059,9 +2059,10 @@ class ResourceStatusClient:
       kwargs = { 'meta' : { 'columns' : paramsList }}  
       if granularity == 'Site':
         
-        kwargs[ 'siteName' ] = rDict['SiteName']
-        kwargs[ 'status' ]   = rDict['Status']
-        kwargs[ 'siteType' ] = rDict['SiteType']
+        kwargs[ 'siteName' ]   = rDict[ 'SiteName' ]
+        kwargs[ 'statusType' ] = rDict[ 'StatusType' ]
+        kwargs[ 'status' ]     = rDict[ 'Status' ]
+        kwargs[ 'siteType' ]   = rDict[ 'SiteType' ]
         
         sitesList = self._getElement( 'SitePresent', **kwargs )  
         #sitesList = self.rsClient.getSitePresent( siteName = rDict['SiteName'], 
@@ -2092,11 +2093,12 @@ class ResourceStatusClient:
 
       elif granularity == 'Service':
         
-        kwargs[ 'serviceName' ] = rDict['ServiceName']
-        kwargs[ 'siteName' ]    = rDict['SiteName']
-        kwargs[ 'status' ]      = rDict['Status']
-        kwargs[ 'siteType' ]    = rDict['SiteType']
-        kwargs[ 'serviceType' ] = rDict['ServiceType']
+        kwargs[ 'serviceName' ] = rDict[ 'ServiceName' ]
+        kwargs[ 'siteName' ]    = rDict[ 'SiteName' ]
+        kwargs[ 'statusType' ]  = rDict[ 'StatusType' ]
+        kwargs[ 'status' ]      = rDict[ 'Status' ]
+        kwargs[ 'siteType' ]    = rDict[ 'SiteType' ]
+        kwargs[ 'serviceType' ] = rDict[ 'ServiceType' ]
         
         servicesList = self._getElement( 'ServicePresent', **kwargs )
         #servicesList = self.rsClient.getServicesPresent( serviceName = rDict['ServiceName'],
@@ -2148,10 +2150,11 @@ class ResourceStatusClient:
         
         gridSites_select = [ x[ 0 ] for x in gridSites_select[ 'Value' ] ]
 
-        kwargs[ 'resourceName' ] = rDict['ResourceName']
-        kwargs[ 'status' ]       = rDict['Status']
-        kwargs[ 'siteType' ]     = rDict['SiteType']
-        kwargs[ 'resourceType' ] = rDict['ResourceType']
+        kwargs[ 'resourceName' ] = rDict[ 'ResourceName' ]
+        kwargs[ 'statusType' ]   = rDict[ 'StatusType' ]
+        kwargs[ 'status' ]       = rDict[ 'Status' ]
+        kwargs[ 'siteType' ]     = rDict[ 'SiteType' ]
+        kwargs[ 'resourceType' ] = rDict[ 'ResourceType' ]
         kwargs[ 'gridSiteName' ] = gridSites_select
 
         resourcesList = self._getElement( 'ResourcePresent', **kwargs )
@@ -2222,7 +2225,7 @@ class ResourceStatusClient:
 
 
       elif granularity == 'StorageElement':
-        if rDict[ 'SiteName' ] == []:#sites_select == []:
+        if rDict[ 'SiteName' ] == [] or rDict[ 'SiteName' ] is None:#sites_select == []:
           kw = { 'meta' : { 'columns' : [ 'SiteName' ] } }
           #sites_select = self.rsClient.getSitePresent( **kw )
           sites_select = self._getElement( 'SitePresent', **kw )
@@ -2242,6 +2245,7 @@ class ResourceStatusClient:
         gridSites_select = [ x[ 0 ] for x in gridSites_select[ 'Value' ] ]
 
         kwargs[ 'storageElementName' ] = rDict[ 'StorageElementName' ]
+        kwargs[ 'statusType' ]         = rDict[ 'StatusType' ]
         kwargs[ 'status' ]             = rDict[ 'Status' ]
         kwargs[ 'gridSiteName']        = gridSites_select 
 
