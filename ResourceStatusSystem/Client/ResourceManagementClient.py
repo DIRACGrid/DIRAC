@@ -3,10 +3,8 @@
 ################################################################################
 __RCSID__ = "$Id:  $"
 
-from DIRAC.Core.DISET.RPCClient                                     import RPCClient
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB             import ResourceManagementDB
-
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientFastDec
+from DIRAC.Core.DISET.RPCClient                         import RPCClient
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
 from datetime import datetime
 
@@ -53,7 +51,68 @@ class ResourceManagementClient:
     else:
       self.gate = serviceIn    
 
-  @ClientFastDec
+  def __query( self, queryType, tableName, kwargs ):
+    '''
+      This method is a rather important one. It will format the input for the DB
+      queries, instead of doing it on a decorator. Two dictionaries must be passed
+      to the DB. First one contains 'columnName' : value pairs, being the key
+      lower camel case. The second one must have, at lease, a key named 'table'
+      with the right table name. 
+    '''
+    # Functions we can call, just a light safety measure.
+    _gateFunctions = [ 'insert', 'update', 'get', 'delete' ] 
+    if not queryType in _gateFunctions:
+      return S_ERROR( '"%s" is not a proper gate call' % queryType )
+    
+    gateFunction = getattr( self.gate, queryType )
+    
+    meta   = kwargs.pop( 'meta' )
+    params = kwargs
+    del params[ 'self' ]     
+        
+    meta[ 'table' ] = tableName
+    
+    gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
+    return gateFunction( params, meta )
+
+#  def __query( self, kwargs ):
+#    '''
+#      This method is a rather important one. It will format the input for the DB
+#      queries, instead of doing it on a decorator. Two dictionaries must be passed
+#      to the DB. First one contains 'columnName' : value pairs, being the key
+#      lower camel case. The second one must have, at lease, a key named 'table'
+#      with the right table name. 
+#    '''
+#    
+#    # Functions we can call, just a light safety measure.
+#    __INTERNAL_FUNCTIONS__ = [ 'insert', 'update', 'get', 'delete' ]
+#    gateFunction           = None
+#    
+#    # I'm simply lazy, do not want to pass function name as argument. I get it here
+#    fname  = sys._getframe( 1 ).f_code.co_name
+#    meta   = kwargs.pop( 'meta' )
+#    params = kwargs
+#    del params[ 'self' ]
+#        
+#    for _ifName in __INTERNAL_FUNCTIONS__:
+#      
+#      if fname.startswith( _ifName ):
+#        
+#        _table = fname.replace( _ifName, '' )
+#          
+#        meta[ 'table' ] = _table
+#        
+#        gateFunction = getattr( self.gate, _ifName )
+#        continue  
+#    
+#    # Be careful, __eq__ method cannot be executed if we use server !  
+#    if gateFunction is not None:  
+#      
+#      gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( _ifName, params, meta ) )  
+#      return gateFunction( params, meta )     
+#    
+#    return S_ERROR( 'Cannot find right call for %s' % fname )
+
   def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
     '''
     Inserts on EnvironmentCache a new row with the arguments given.
@@ -71,8 +130,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    return locals()
-  @ClientFastDec
+    return self.__query( 'insert', 'EnvironmentCache', locals() )
   def updateEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
     '''
     Updates EnvironmentCache with the parameters given. By default, `hashEnv`
@@ -91,8 +149,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'update', 'EnvironmentCache', locals() )
   def getEnvironmentCache( self, hashEnv = None, siteName = None, 
                            environment = None, meta = {} ):
     '''
@@ -111,8 +168,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    return locals()
-  @ClientFastDec
+    return self.__query( 'get', 'EnvironmentCache', locals() )
   def deleteEnvironmentCache( self, hashEnv = None, siteName = None, 
                               environment = None, meta = {} ):
     '''
@@ -131,8 +187,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    return locals()
-  @ClientFastDec
+    return self.__query( 'delete', 'EnvironmentCache', locals() )
   def insertPolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime,
                           meta = {} ):
@@ -164,8 +219,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    return locals() 
-  @ClientFastDec
+    return self.__query( 'insert', 'PolicyResult', locals() ) 
   def updatePolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime, 
                           meta = {} ):
@@ -198,8 +252,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    return locals()
-  @ClientFastDec
+    return self.__query( 'update', 'PolicyResult', locals() )
   def getPolicyResult( self, granularity = None, name = None, policyName = None, 
                        statusType = None, status = None, reason = None, 
                        dateEffective = None, lastCheckTime = None, meta = {} ):
@@ -231,8 +284,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    return locals()
-  @ClientFastDec
+    return self.__query( 'get', 'PolicyResult', locals() )
   def deletePolicyResult( self, granularity = None, name = None, 
                           policyName = None, statusType = None, status = None, 
                           reason = None, dateEffective = None, 
@@ -265,8 +317,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
-    return locals()
-  @ClientFastDec
+    return self.__query( 'delete', 'PolicyResult', locals() )
   def insertClientCache( self, name, commandName, opt_ID, value, result,
                          dateEffective, lastCheckTime, meta = {} ):
     '''
@@ -293,8 +344,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'insert', 'ClientCache', locals() )
   def updateClientCache( self, name, commandName, opt_ID, value, result,
                          dateEffective, lastCheckTime, meta = {} ):
     '''
@@ -322,8 +372,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'update', 'ClientCache', locals() )
   def getClientCache( self, name = None, commandName = None, opt_ID = None, 
                       value = None, result = None, dateEffective = None, 
                       lastCheckTime = None, meta = {} ):
@@ -351,8 +400,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec 
+    return self.__query( 'get', 'ClientCache', locals() )
   def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
                          lastCheckTime = None, meta = {} ):
@@ -380,8 +428,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'delete', 'ClientCache', locals() )
   def insertAccountingCache( self, name, plotType, plotName, result, 
                              dateEffective, lastCheckTime, meta = {} ):
     '''
@@ -406,8 +453,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'insert', 'AccountingCache', locals() )
   def updateAccountingCache( self, name, plotType, plotName, result, 
                              dateEffective, lastCheckTime, meta = {} ):
     '''
@@ -433,8 +479,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'update', 'AccountingCache', locals() )
   def getAccountingCache( self, name = None, plotType = None, plotName = None, 
                           result = None, dateEffective = None, 
                           lastCheckTime = None, meta = {} ):
@@ -460,8 +505,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'get', 'AccountingCache', locals() )
   def deleteAccountingCache( self, name = None, plotType = None, 
                              plotName = None, result = None, 
                              dateEffective = None, lastCheckTime = None, 
@@ -488,8 +532,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'delete', 'AccountingCache', locals() )
   def insertUserRegistryCache( self, login, name, email, meta = {} ):
     '''
     Inserts on UserRegistryCache a new row with the arguments given.
@@ -507,8 +550,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'insert', 'UserRegistryCache', locals() )
   def updateUserRegistryCache( self, login, name, email, meta = {} ):
     '''
     Updates UserRegistryCache with the parameters given. By default, `login` 
@@ -527,8 +569,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    return self.__query( 'update', 'UserRegistryCache', locals() )
   def getUserRegistryCache( self, login = None, name = None, email = None, 
                             meta = {} ):
     '''
@@ -547,8 +588,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec 
+    return self.__query( 'get', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                meta = {} ):                                            
     '''
@@ -567,7 +607,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
+    return self.__query( 'delete', 'UserRegistryCache', locals() )
 
   '''
   ##############################################################################
@@ -712,25 +752,25 @@ class ResourceManagementClient:
   ##############################################################################
   '''
 
-  def _insertElement( self, element, **kwargs ):
+  def _insertElement( self, element, kwargs ):
     
     fname = 'insert%s' % element
     f = getattr( self, fname )
     return f( **kwargs )
 
-  def _updateElement( self, element, **kwargs ): 
+  def _updateElement( self, element, kwargs ): 
     
     fname = 'update%s' % element
     f = getattr( self, fname )
     return f( **kwargs )
 
-  def _getElement( self, element, **kwargs ):
+  def _getElement( self, element, kwargs ):
     
     fname = 'get%s' % element
     f = getattr( self, fname )
     return f( **kwargs )
 
-  def _deleteElement( self, element, **kwargs ):    
+  def _deleteElement( self, element, kwargs ):    
     fname = 'delete%s' % element
     f = getattr( self, fname )
     return f( **kwargs )
@@ -746,7 +786,7 @@ class ResourceManagementClient:
        
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
     
-    sqlQuery = self._getElement( element, **kwargs )   
+    sqlQuery = self._getElement( element, kwargs )   
         
     del kwargs[ 'meta' ]
     
@@ -755,7 +795,7 @@ class ResourceManagementClient:
       if kwargs.has_key( 'lastCheckTime' ):
         kwargs[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )      
       
-      return self._updateElement( element, **kwargs )
+      return self._updateElement( element, kwargs )
     else: 
       
       if kwargs.has_key( 'lastCheckTime' ):
@@ -763,7 +803,7 @@ class ResourceManagementClient:
       if kwargs.has_key( 'dateEffective' ):
         kwargs[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
       
-      return self._insertElement( element, **kwargs ) 
+      return self._insertElement( element, kwargs ) 
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
