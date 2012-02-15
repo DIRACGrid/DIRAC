@@ -300,15 +300,26 @@ class TransferDB( DB ):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def updateAncestorChannelStatus(self,channelID,fileIDs):
-    if not len(fileIDs) >0:
+  def updateAncestorChannelStatus( self, channelID, fileIDs ):
+    """ update Channel.Status 
+          
+          WaitingN => Waiting 
+          DoneN => Done 
+
+    :param self: self reference
+    :param int channelID: Channel.ChannelID 
+    :param list fileIDs: list of Files.FileID 
+    """
+    if not fileIDs:
       return S_OK()
-    strFileIDs = intListToString(fileIDs)
-    req = "UPDATE Channel SET Status = 'Waiting' WHERE FileID IN (%s) AND Status = 'Waiting%s';" % (strFileIDs,channelID)
+    strFileIDs = intListToString( fileIDs )
+    req  = "UPDATE Channel SET Status = "
+    req += "CASE WHEN Status = 'Waiting%s' THEN 'Waiting' WHEN Status = 'Done%s' THEN 'Done' END " % ( channelID, channelID )
+    req += "WHERE FileID IN (%s) AND ( Status = 'Waiting%s' OR Status = 'Done%s');" % ( strFileIDs, channelID, channelID )
     res = self._update(req)
     if not res['OK']:
-      err = "TransferDB._updateAncestorChannelStatus: Failed to update status."
-      return S_ERROR('%s\n%s' % (err,res['Message']))
+      err = "TransferDB.updateAncestorChannelStatus: Failed to update status"
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
   def removeFilesFromChannel(self,channelID,fileIDs):
