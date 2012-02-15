@@ -92,7 +92,7 @@ def getStorageElementStatus( elementName, statusType = None, default = None ):
             if k in statuses:
               r2[ k ] = v
               
-        r[ elementName ] = r2      
+          r[ elementName ] = r2      
         #return S_OK( { elementName : r } )          
     
     if r:

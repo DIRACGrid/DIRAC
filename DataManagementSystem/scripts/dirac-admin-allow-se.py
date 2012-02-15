@@ -73,50 +73,60 @@ readAllowed  = []
 writeAllowed = []
 checkAllowed = []
 
-res = ResourceStatus.getStorageElementStatus( se )
+res = ResourceStatus.getStorageElementStatus( ses )
 if not res[ 'OK' ]:
-  gLogger.error( 'Storage Element %s does not exist' % se )
-  continue
+  gLogger.error( 'Storage Element %s does not exist' % ses )
+  DIRAC.exit( -1 )
 
-reason = 'Forced with dirac-admin-ban-se by %s' % userName
+reason = 'Forced with dirac-admin-allow-se by %s' % userName
 
 for se,seOptions in res[ 'Value' ].items():
   
   resW = resC = resR = { 'OK' : False }  
     
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if read and seOptions.has_key( 'Read' ) and seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:    
+  if read and seOptions.has_key( 'Read' ):
+    
+    if not seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ "InActive", "Banned", "Probing" ] ) )    
+      continue
      
     resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
     if not resR['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s read access to Active" % se )
+      gLogger.notice( "Successfully updated %s read access to Active" % se )
       readAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if write and seOptions.has_key( 'Write' ) and seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
+  if write and seOptions.has_key( 'Write' ):
+    
+    if not seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ "InActive", "Banned", "Probing" ] ) )    
+      continue
     
     resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s write access to Active" % se )
+      gLogger.notice( "Successfully updated %s write access to Active" % se )
       writeAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS 
-  if check and seOptions.has_key( 'Check' ) and seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
+  if check and seOptions.has_key( 'Check' ):
+
+    if not seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ "InActive", "Banned", "Probing" ] ) )    
+      continue
     
     resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s check access to Active" % se )
+      gLogger.notice( "Successfully updated %s check access to Active" % se )
       checkAllowed.append( se )
 
-#res = csAPI.commitChanges()
-  if not resR['OK'] or not resW['OK'] or not resC['OK']:
-    gLogger.error( "Failed to commit changes to CS" )
+  if not( resR['OK'] or resW['OK'] or resC['OK'] ):
     DIRAC.exit( -1 )
 
 if not ( writeAllowed or readAllowed or checkAllowed ):
