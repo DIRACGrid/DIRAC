@@ -12,6 +12,7 @@ import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
@@ -35,9 +36,9 @@ class TaskQueueDB( DB ):
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 0.001, 10 )
     self.__groupShares = {}
-    self.__csSection = "/Operations/Scheduling/%s/" % gConfig.getValue( "/DIRAC/Setup" )
+    self.__opsHelper = Operations()
     self.__ensureInsertionIsSingle = False
-    self.__sharesCorrector = SharesCorrector( self.__csSection )
+    self.__sharesCorrector = SharesCorrector( self.__opsHelper )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ] )
@@ -55,7 +56,7 @@ class TaskQueueDB( DB ):
     return self.__multiValueMatchFields
 
   def __getCSOption( self, optionName, defValue ):
-    return gConfig.getValue( "%s/%s" % ( self.__csSection, optionName ), defValue )
+    return self.__opsHelper.getValue( "Matching/%s" % optionName, defValue )
 
   def getPrivatePilots( self ):
     return self.__getCSOption( "PrivatePilotTypes", [ 'private' ] )
@@ -458,7 +459,7 @@ class TaskQueueDB( DB ):
       gLogger.warn( "Found two task queues for the same requirements", self.__strDict( tqDefDict ) )
     return S_OK( { 'found' : True, 'tqId' : data[0][0] } )
 
-  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 10, numQueuesPerTry = 10, extraConditions = {} ):
+  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 10, numQueuesPerTry = 10, negativeCond = {} ):
     """
     Match a job
     """
@@ -482,10 +483,10 @@ class TaskQueueDB( DB ):
         retVal = self.matchAndGetTaskQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
         preJobSQL = "%s AND `tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] )
       else:
-        retVal = self.matchAndGetTaskQueue( tqMatchDict, 
-                                            numQueuesToGet = numQueuesPerTry, 
-                                            skipMatchDictDef = True, 
-                                            extraConditions = extraConditions,
+        retVal = self.matchAndGetTaskQueue( tqMatchDict,
+                                            numQueuesToGet = numQueuesPerTry,
+                                            skipMatchDictDef = True,
+                                            negativeCond = negativeCond,
                                             connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
@@ -526,8 +527,8 @@ class TaskQueueDB( DB ):
     self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
     return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
-  def matchAndGetTaskQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, 
-                                  extraConditions = {}, connObj = False ):
+  def matchAndGetTaskQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False,
+                                  negativeCond = {}, connObj = False ):
     """
     Get a queue that matches the requirements
     """
@@ -537,7 +538,7 @@ class TaskQueueDB( DB ):
       retVal = self._checkMatchDefinition( tqMatchDict )
       if not retVal[ 'OK' ]:
         return retVal
-    retVal = self.__generateTQMatchSQL( tqMatchDict, numQueuesToGet = numQueuesToGet, extraConditions = extraConditions )
+    retVal = self.__generateTQMatchSQL( tqMatchDict, numQueuesToGet = numQueuesToGet, negativeCond = negativeCond )
     if not retVal[ 'OK' ]:
       return retVal
     matchSQL = retVal[ 'Value' ]
@@ -554,24 +555,25 @@ class TaskQueueDB( DB ):
       sqlORList.append( sqlString % str( v ).strip() )
     return "( %s )" % ( " %s " % boolOp ).join( sqlORList )
 
-  def __generateExtraSQL( self, extraConditions ):
-    """ Generate extra conditions due to site throttling
+  def __generateNotSQL( self, negativeCond ):
+    """ Generate negative conditions
     """
-
     condList = []
-    for field in extraConditions:
+    for field in negativeCond:
       if field in self.__multiValueMatchFields:
-        tableName = '`tq_TQTo%ss`' % field
-        for value in extraConditions[field]:
-          sql = "'%s' NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( value, tableName, tableName, tableName )
-          condList.append(sql)
-      else:
-        for value in extraConditions[field]:
-          sql = "'%s' <> tq_TaskQueues.%s " % (value,field)
-          condList.append(sql) 
-    return condList 
+        tableName = "`tq_TQTo%ss`" % field
+        for value in negativeCond[ field ]:
+          value = self._escapeString( value )[ 'Value' ]
+          sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( value, tableName, tableName, tableName )
+          condList.append( sql )
+      elif field in self.__singleValueDefFields:
+        for value in negativeCond[field]:
+          value = self._escapeString( value )[ 'Value' ]
+          sql = "%s != `tq_TaskQueues`.%s " % ( value, field )
+          condList.append( sql )
+    return condList
 
-  def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1, extraConditions={} ):
+  def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1, negativeCond = {} ):
     """
     Generate the SQL needed to match a task queue
     """
@@ -645,8 +647,8 @@ class TaskQueueDB( DB ):
     if 'PilotType' not in tqMatchDict:
       sqlCondList.append( "( SELECT COUNT(`tq_TQToPilotTypes`.Value) FROM `tq_TQToPilotTypes` WHERE `tq_TQToPilotTypes`.TQId = `tq_TaskQueues`.TQId ) = 0 " )
     # Add extra conditions
-    if extraConditions:
-      sqlCondList += self.__generateExtraSQL(extraConditions)
+    if negativeCond:
+      sqlCondList += self.__generateNotSQL( negativeCond )
     #Generate the final query string
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.OwnerDN, `tq_TaskQueues`.OwnerGroup FROM %s WHERE %s" % ( ", ".join( sqlTables ),
                                                                                                                       " AND ".join( sqlCondList ) )
