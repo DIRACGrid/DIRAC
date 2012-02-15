@@ -347,7 +347,7 @@ class FileMetadata:
 
     return S_OK(fileList)
 
-  
+  @queryTime
   def findFilesByMetadata( self, metaDict, path, credDict ):
     """ Find Files satisfying the given metadata
     """
@@ -364,7 +364,7 @@ class FileMetadata:
     result = self.getFileMetadataFields( credDict )
     if not result['OK']:
       return result
-    
+
     fileMetaDict = {}
     for key,value in metaDict.items():
       if key in result['Value']:
@@ -377,18 +377,22 @@ class FileMetadata:
       if not result['OK']:
         return result
       fileList = result['Value']
-      result = self.db.fileManager._getFileLFNs(fileList)
- 
-      lfnList = [ x[1] for x in result['Value']['Successful'].items() ]     
-      return S_OK(lfnList)    
+      if fileList:
+        result = self.db.fileManager._getFileLFNs(fileList)
+        lfnList = [ x[1] for x in result['Value']['Successful'].items() ]   
+        return S_OK(lfnList)  
+      else:
+        return S_OK([])
      
     fileList = []
+    lfnList = []
     if fileMetaDict:
       result = self.__findFilesByMetadata( fileMetaDict,dirList,credDict )
       if not result['OK']:
         return result
       fileList = result['Value']
-      result = self.db.fileManager._getFileLFNs(fileList) 
-      lfnList = [ x[1] for x in result['Value']['Successful'].items() ]     
+      if fileList:
+        result = self.db.fileManager._getFileLFNs(fileList)
+        lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
 
     return S_OK( lfnList )

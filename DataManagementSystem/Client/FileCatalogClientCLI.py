@@ -1122,18 +1122,18 @@ File Catalog Client $Revision: 1.17 $Date:
 #  Metadata methods
       
   def do_meta(self,args):
-    """ Metadata related operation
+    """ Metadata related operations
     
         usage:
           meta index [-d|-f] <metaname> <metatype>  - add new metadata index. Possible types are:
                                                       'int', 'float', 'string', 'date';
                                                       -d  directory metadata
                                                       -f  file metadata
-          meta set <directory> <metaname> <metavalue> - set metadata value for directory
-          meta get [-e] [<directory>] - get metadata for the given directory
+          meta set <path> <metaname> <metavalue> - set metadata value for directory or file
+          meta remove <path> <metaname>  - remove metadata value for directory or file
+          meta get [-e] [<path>] - get metadata for the given directory or file
           meta tags <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
-                                                       the metadata selection
-          meta metaset <metaset_name> <key>=<value> [<key>=<value>]
+                                                        the metadata selection
           meta show - show all defined metadata indice
 
     """     
@@ -1381,31 +1381,31 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
     
-        usage: find <meta_name>=<meta_value> [<meta_name>=<meta_value>]
+        usage: find <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
    
     argss = args.split()
     path = argss[0]
+    path = self.getPath(path)
     del argss[0]
  
     if argss[0][0] == '{':
       metaDict = eval(argss[0])
     else:  
-
-      print ' '.join(argss)
-
       metaDict = self.__createQuery(' '.join(argss))
       print "Query:",metaDict
-      
-
-    print metaDict,path
-    
+          
     result = self.fc.findFilesByMetadata(metaDict,path)
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
-    for dir in result['Value']:
-      print dir  
+    if result['Value']:
+      for dir in result['Value']:
+        print dir
+    else:
+      print "No matching data found"      
+    if "QueryTime" in result:
+      print "QueryTime %.2f sec" % result['QueryTime']  
       
   def __createQuery(self,args):
     """ Create the metadata query out of the command line arguments

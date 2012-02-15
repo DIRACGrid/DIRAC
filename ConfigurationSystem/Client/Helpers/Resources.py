@@ -34,3 +34,8 @@ def getSiteGrid( site ):
   if len( sitetuple ) != 3:
     return S_ERROR( 'Wrong Site Name format' )
   return S_OK( sitetuple[0] )
+
+def getCatalogPath(catalogName):
+  """  Return the configuration path of the description for a a given catalog
+  """
+  return '/Resources/FileCatalogs/%s' % catalogName
