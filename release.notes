@@ -1,8 +1,122 @@
-[v6r1p6]
-*DISET
+[v6r2-pre7]
+
+*Accounting
+CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
+
+*Core
+CHANGE: Pfn.py - pfnparse function rewritten for speed up and mem usage, unit test case added
+FIX: DISET Clients are now thread-safe. Same clients used twice in different threads was not 
+     closing the previous connection
+NEW: reduce wait times in DISET protocol machinery to improve performance    
+NEW: dirac-fix-mysql-script command to fix the mysql start-up script for the given installation
 FIX: TransferClient closes connections properly
 FIX: DISET Clients are now thread-safe. Same client used twice in different threads will not close the previous connection
 CHANGE: Beautification and reduce wait times to improve performance
+NEW: ProcessPool - added functionality to kill all children processes properly when destroying ProcessPool objects
+NEW: CS Helper for LocalSite section, with gridEnv method
+NEW: Grid module will use Local.gridEnv if nothing passed in the arguments
+CHANGE: Add deprecated sections in the CS Operations helper to ease the transition
+FIX: dirac-install - execute dirac-fix-mysql-script, if available, to fix the mysql.server startup script
+
+*RequestManagement:
+FIX: RequestDBFile - more consistent treatment of requestDB Path
+
+*RSS
+CHANGE: RSS Action now inherits from a base class, and Actions are more homogeneous, they all take 
+        a uniform set of arguments. The name of modules has been changed from PolType to Action as well.
+FIX: CacheFeederAgent - too verbose messages moved to debug instead of info level
+BUGFIX: fixed a bug preventing RSS clients to connect to the services     
+FIX: Proper services synchronization
+FIX: Better handling of exceptions due to timeouts in GOCDBClient   
+FIX: RSS.Notification emails are sent again
+FIX: Commands have been modified to return S_OK, S_ERROR inside the Result dict. This way, policies get a 
+     S_ERROR / S_OK object. CacheFeederAgent has been updated accordingly.
+FIX: allow clients, if db connection fails, to reconnect ( or at least try ) to the servers.
+CHANGE: access control using CS Authentication options. Default is SiteManager, and get methods are all.
+BUGFIX: MySQLMonkey - properly escaped all parameters of the SQL queries, other fixes.
+NEW: CleanerAgent renamed to CacheCleanerAgent
+NEW: Updated RSS scripts, to set element statuses and / or tokens.
+
+*DataManagement
+CHANGE: refactoring of DMS agents executing requests, allow requests from arbitrary users
+NEW: DFC - allow to specify multiple replicas, owner, mode when adding files
+CHANGE: DFC - optimization of the directory size evaluation
+NEW: Added CREATE TEMPORARY TABLES privilege to FileCatalogDB
+CHANGE: DFC - getCatalogCounters() update to show numbers of directories
+NEW: lfc_dfc_copy script to migrate data from LFC to DFC
+FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
+FIX: FTS testing scripts were using sys.argv and getting confused if options are passed
+NEW: DFC - use DirectoryUsage tables for the storage usage evaluations
+NEW: DFC - search by metadata can be limited to a given directory subtree
+NEW: DFC - search by both directory and file indexed metadata
+FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting registration requests
+     in FileToCat table for later retry
+FIX: Failover registration request in the FTS agents.      
+FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed
+     from the RequestManagement 
+
+*Interface
+NEW: Job.py - added method to handle the parametric parameters in the workflow. 
+     They are made available to the workflow_commons via the key 'GenericParameters'.
+FIX: Dirac.py - fix some type checking things
+
+*WMS
+FIX: removed dependency of the JobSchedulingAgent on RSS. Move the getSiteTier functionality to a new CS Helper.
+
+*Resources
+NEW: Added SSH Grid Engine Computing Element
+NEW: Added SSH Computing Element
+
+*Transformation
+FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and
+     the new status is "unused"
+
+[v6r1p10]
+
+*WorloadManagement
+FIX: JobAgent - set UseServerCertificate option "no" for the job executable
+
+[v6r1p9]
+
+*Core
+FIX: dirac-configure - set the proper /DIRAC/Hostname when defining /LocalInstallation/Host
+
+*DataManagement
+FIX: dirac-dms-user-lfns - fixed the case when the baseDir is specified
+BUGFIX: dirac-dms-remove-files - fixed crash in case of returned error report in a form of dictionary 
+
+[v6r1p8]
+
+*Web
+FIX: restored Run panel in the production monitor
+
+*Resources
+FIX: FileCatalog - do not check existence of the catalog client module file
+
+[v6r1p7]
+
+*Web
+BUGFIX: fixed scroll bar in the Monitoring plots view
+
+[v6r1p6]
+
+*Core
+FIX: TransferClient closes connections properly
+
+[v6r1p5]
+
+*Core
+FIX: DISET Clients are now thread-safe. Same clients used twice in different threads was not 
+     closing the previous connection
+NEW: reduce wait times in DISET protocol machinery to improve performance   
+
+[v6r1p4]
+
+*RequestManagement
+BUGFIX: RequestContainer - in isSubRequestDone() treat special case for subrequests with files
+
+*Transformation
+BUGFIX: TransformationCleaningAgent - do not clear requests for tasks with no associated jobs
 
 [v6r1p3]
 
@@ -92,10 +206,6 @@ NEW: Pass the monitor down to the request RequestHandler
 FIX: Define the service location for the monitor
 FIX: Close some connections that DISET was leaving open
 
-<<<<<<< HEAD
-=======
-
->>>>>>> upstream/rel-v6r1
 [v6r0p3]
 
 *Framework
