@@ -505,16 +505,20 @@ class ProcessPool:
     for i in range ( max( toKill, 0 ) ):
       self.__killWorkingProcess()
 
-  def queueTask( self, task, blocking = True ):
+  def queueTask( self, task, blocking = True, usePoolCallbacks= False ):
     """ enqueue new task into pending queue
 
     :param self: self reference
     :param ProcessTask task: new task to execute
     :param bool blocking: flag to block if necessary and new empty slot is available (default = block)
+    :param bool usePoolCallbacks: flag to trigger execution of pool callbacks (default = don't execute)
+
     """
     if not isinstance( task, ProcessTask ):
       raise TypeError( "Tasks added to the process pool must be ProcessTask instances" )
     try:
+      if usePoolCallbacks and ( self.__poolCallback or self.__poolExceptionCallback ):
+        task.enablePoolCallbacks()
       self.__pendingQueue.put( task, block = blocking )
     except Queue.Full:
       return S_ERROR( "Queue is full" )
@@ -672,105 +676,3 @@ class ProcessPool:
       self.processResults()
       time.sleep( 1 )
 
-class doSomething( object ):
-
-  def __init__( self, number, r ):
-    self.number = number
-    self.r = r
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine()
-    from DIRAC.FrameworkSystem.Client.Logger import gLogger
-    gLogger.showHeaders( True )
-    self.log = gLogger.getSubLogger( "doSomething%s" % self.number )
-
-  def __call__( self ):
-    self.log.always( "in call" )
-    rnd = random.randint( 1, 5 )
-    print "sleeping %s secs for task number %s" % ( rnd, self.number )
-    time.sleep( rnd )
-
-    rnd = random.random() * self.number
-    if rnd < 3:
-      self.log.always( "raising exception for this task" )
-      raise Exception( "TEST EXCEPTION" )
-    self.log.always( "task done" % self.number )
-    return { "OK" : True, "Value" : [1, 2, 3] }
-
-
-class PoolOwner( object ):
-
-  def __init__( self ):
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine()
-    from DIRAC.FrameworkSystem.Client.Logger import gLogger
-    gLogger.showHeaders( True )
-    self.log = gLogger.getSubLogger( "PoolOwner" )
-    self.processPool = ProcessPool( poolCallback = self.callback, 
-                                    poolExceptionCallback = self.exceptionCallback )
-    self.processPool.daemonize()
-    
-
-  def callback( self, task ):
-    self.log.always( "PoolOwner callback, task is %s, result is %s" % ( task.getTaskID(), task.taskResults() ) )
-    
-  def exceptionCallback( self, task ):
-    self.log.always( "PoolOwner exceptionCallback, task is %s, exception is %s" % ( task.getTaskID(), task.taskException() ) )
- 
-  def execute( self ):
-    i = 0
-    while True: 
-      if self.processPool.getFreeSlots() > 0:
-        r = random.randint(1, 5)
-        result = self.processPool.createAndQueueTask( doSomething,
-                                                      taskID = i,
-                                                      args = ( i, r, ),
-                                                      usePoolCallbacks = True )    
-        i += 1
-        self.log.always("doSomething enqueued to task %s" % i )
-      if i == 20:
-        break
-
-    self.processPool.processAllResults() 
-    self.processPool.finalize()
-
-
-## test execution
-if __name__ == "__main__":
-
-  import random
-
-  def showResult( task, ret ):
-    print "Result %s from %s" % ( ret, task )
-
-  def showException( task, exc_info ):
-    print "Exception %s from %s" % ( exc_info, task )
-
-  pPool = ProcessPool( 1, 20 )
-  pPool.daemonize()
-
-  count = 0
-  rmax = 0
-  while count < 20:
-    print "FREE SLOTS", pPool.getFreeSlots()
-    print "PENDING", pPool.hasPendingTasks()
-    if pPool.getFreeSlots() > 0:
-      print "spawning task %d" % count
-      r = random.randint( 1, 5 )
-      if r > rmax:
-        rmax = r
-      result = pPool.createAndQueueTask( doSomething,
-                                         args = ( count, r, ),
-                                         callback = showResult,
-                                         exceptionCallback = showException )
-      count += 1
-    else:
-      print "no free slots"
-      time.sleep( 1 )
-
-  pPool.processAllResults()
-
-  print "Max sleep", rmax
-
-  poolOwner = PoolOwner()  
-  poolOwner.execute()
-  

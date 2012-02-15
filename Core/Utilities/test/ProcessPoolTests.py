@@ -32,10 +32,9 @@ import time
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 ## SUT
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 def ResultCallback( task, taskResult ):
   """ dummy result callback """
@@ -78,9 +77,63 @@ class TaskCallbacksTests(unittest.TestCase):
   """
 
   def setUp( self ):
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine()
+    from DIRAC.FrameworkSystem.Client.Logger import gLogger
+    gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
-    self.processPool = ProcessPool( ) 
+    self.processPool = ProcessPool() 
     self.processPool.daemonize()
+
+  def testCallableClass( self ):
+    """ CallableClass and task callbacks test """
+    i = 0
+    while True:
+      if self.processPool.getFreeSlots() > 0:
+        timeWait = random.randint(0, 5)
+        raiseException = False
+        if not timeWait:
+          raiseException = True 
+        result = self.processPool.createAndQueueTask( CallableClass,
+                                                      taskID = i,
+                                                      args = ( timeWait, raiseException ),  
+                                                      callback = ResultCallback,
+                                                      exceptionCallback = ExceptionCallback,
+                                                      blocking = True )    
+        if result["OK"]:
+          i += 1
+          self.log.always("CallableClass enqueued to task %s" % i )
+        else:
+          continue
+      if i == 10:
+        break
+    self.processPool.processAllResults() 
+    self.processPool.finalize()
+
+  def testCallableFunc( self ):
+    """ CallableFunc and task callbacks test """
+    i = 0
+    while True:
+      if self.processPool.getFreeSlots() > 0:
+        timeWait = random.randint(0, 5)
+        raiseException = False
+        if not timeWait:
+          raiseException = True 
+        result = self.processPool.createAndQueueTask( CallableFunc,
+                                                      taskID = i,
+                                                      args = ( timeWait, raiseException ),  
+                                                      callback = ResultCallback,
+                                                      exceptionCallback = ExceptionCallback,
+                                                      blocking = True )    
+        if result["OK"]:
+          i += 1
+          self.log.always("CallableClass enqueued to task %s" % i )
+        else:
+          continue
+      if i == 10:
+        break
+    self.processPool.processAllResults() 
+    self.processPool.finalize()
 
 
 ########################################################################
@@ -110,8 +163,8 @@ class ProcessPoolCallbacksTests( unittest.TestCase ):
   def poolExceptionCallback( self, task ):
     self.log.always( "exception callback executed for task %s" % task.getTaskID() )
   
-  def test( self ):
-    """ pool callbacks test """
+  def testCallableClass( self ):
+    """ CallableClass and pool callbacks test """
     i = 0
     while True:
       if self.processPool.getFreeSlots() > 0:
@@ -131,15 +184,41 @@ class ProcessPoolCallbacksTests( unittest.TestCase ):
           continue
       if i == 10:
         break
-      
     self.processPool.processAllResults() 
     self.processPool.finalize()
 
-## execution
+
+  def testCallableFunc( self ):
+    """ CallableFunc and pool callbacks test """
+    i = 0
+    while True:
+      if self.processPool.getFreeSlots() > 0:
+        timeWait = random.randint(0, 5)
+        raiseException = False
+        if not timeWait:
+          raiseException = True 
+        result = self.processPool.createAndQueueTask( CallableFunc,
+                                                      taskID = i,
+                                                      args = ( timeWait, raiseException ),  
+                                                      usePoolCallbacks = True,
+                                                      blocking = True )    
+        if result["OK"]:
+          i += 1
+          self.log.always("CallableClass enqueued to task %s" % i )
+        else:
+          continue
+      if i == 10:
+        break
+    self.processPool.processAllResults() 
+    self.processPool.finalize()
+
+
+## SUT suite execution
 if __name__ == "__main__":
 
   testLoader = unittest.TestLoader()
-  suitePPCT = testLoader.loadTestsFromTestCase( ProcessPoolCallbacksTests )     
-  suite = unittest.TestSuite( [ suitePPCT ] )
+  suitePPCT = testLoader.loadTestsFromTestCase( ProcessPoolCallbacksTests )  
+  suiteTCT = testLoader.loadTestsFromTestCase( TaskCallbacksTests )
+  suite = unittest.TestSuite( [ suitePPCT, suiteTCT ] )
   unittest.TextTestRunner(verbosity=3).run(suite)
 
