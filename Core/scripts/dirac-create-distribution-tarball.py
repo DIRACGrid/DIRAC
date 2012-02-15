@@ -430,7 +430,12 @@ class TarModuleCreator( object ):
     except ImportError:
       return S_ERROR( "Docutils is not installed. Please install and rerun" )
     #Find basename
-    baseNotesPath = os.path.join( self.params.destination, self.params.name, notesName )
+    baseRSTFile = rstFile
+    for ext in ( '.rst', '.txt' ):
+      if baseRSTFile[ -len( ext ): ] == ext:
+        baseRSTFile = baseRSTFile[ :-len( ext ) ]
+        break
+    baseNotesPath = os.path.join( self.params.destination, self.params.name, baseRSTFile )
     #To HTML
     try:
       fd = open( relNotesRST )
@@ -444,8 +449,8 @@ class TarModuleCreator( object ):
       return S_ERROR( "Cannot generate the html %s: %s" % ( baseNotesPath, str( excp ) ) )
     baseList = [ baseNotesPath ]
     if self.params.outRelNotes:
-      gLogger.notice( "Leaving a copy of %s outside the tarballs" % notesName )
-      baseList.append( "%s/%s.%s.%s" % ( self.params.destination, notesName, self.params.name, self.params.version ) )
+      gLogger.notice( "Leaving a copy of the release notes outside the tarballs" )
+      baseList.append( "%s/%s.%s.%s" % ( self.params.destination, baseRSTFile, self.params.name, self.params.version ) )
     for baseFileName in baseList:
       htmlFileName = baseFileName + ".html"
       try:
@@ -460,7 +465,7 @@ class TarModuleCreator( object ):
       if os.system( pdfCmd ):
         gLogger.warn( "Could not generate PDF version of %s" % baseNotesPath )
     #Unlink if not necessary
-    if not cliParams.relNotes:
+    if False and not cliParams.relNotes:
       try:
         os.unlink( relNotesRST )
       except:
