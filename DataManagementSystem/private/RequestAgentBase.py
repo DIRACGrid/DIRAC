@@ -332,9 +332,9 @@ class RequestAgentBase( AgentModule ):
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
-            self.log.info("successfully enqueued request %s to task taskID = %s" % ( requestDict["requestName"], taskID ) )
+            self.log.info("successfully enqueued task %s" % taskID )
             ## update request counter
-            requestCounter = requestCounter - 1
+            taskCounter = taskCounter - 1
             ## task created, a little time kick to proceed
             time.sleep( 0.1 )
             break

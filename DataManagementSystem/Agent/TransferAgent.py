@@ -608,7 +608,7 @@ class TransferAgent( RequestAgentBase ):
         if not enqueue["OK"]:
           self.log.error( enqueue["Message"] )
         else:
-          self.log.info("createTask: successfully enqueued request %s to task taskID = %s" % ( taskID, taskID ) )
+          self.log.info("createTask: successfully enqueued request %s" % taskID )
           ## task created, a little time kick to proceed
           time.sleep( 0.1 )
           break
