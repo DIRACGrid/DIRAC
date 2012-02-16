@@ -40,7 +40,7 @@ for switch in Script.getUnprocessedSwitches():
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC                                           import gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers        import ResourceStatus 
+from DIRAC.ResourceStatusSystem.Client               import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
 from DIRAC.Core.Utilities.List                       import intListToString
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient

@@ -17,7 +17,7 @@ __RCSID__ = "$Id$"
 from DIRAC                                    import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Utilities.List                import sortList
 from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
-from DIRAC.ConfigurationSystem.Client.Helpers import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client        import ResourceStatus
 import os
 
 class StorageFactory:
