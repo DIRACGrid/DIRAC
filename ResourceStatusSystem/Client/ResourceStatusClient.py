@@ -953,7 +953,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return self.__query( locals() )
+    return self.__query( 'insert', 'ElementScheduledStatus', locals() )
   def updateElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
@@ -994,7 +994,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return self.__query( locals() )
+    return self.__query( 'update', 'ElementScheduledStatus', locals() )
   def getElementScheduledStatus( self, element, elementName = None, 
                                  statusType = None, status = None, 
                                  reason = None, dateCreated = None, 
@@ -1035,7 +1035,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return self.__query( locals() )
+    return self.__query( 'get', 'ElementScheduledStatus', locals() )
   def deleteElementScheduledStatus( self, element, elementName = None, 
                                     statusType = None, status = None, 
                                     reason = None, dateCreated = None,
@@ -1077,7 +1077,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return self.__query( locals() )
+    return self.__query( 'delete', 'ElementScheduledStatus', locals() )
       
   '''
   ##############################################################################
@@ -1122,7 +1122,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return self.__query( locals() )
+    return self.__query( 'insert', 'ElementHistory', locals() )
   def updateElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
@@ -1163,7 +1163,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return self.__query( locals() )
+    return self.__query( 'update', 'ElementHistory', locals() )
   def getElementHistory( self, element, elementName = None, statusType = None, 
                          status = None, reason = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, 
@@ -1203,7 +1203,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return self.__query( locals() )
+    return self.__query( 'get', 'ElementHistory', locals() )
   def deleteElementHistory( self, element, elementName = None, 
                             statusType = None, status = None, reason = None, 
                             dateCreated = None, dateEffective = None, 
@@ -1244,7 +1244,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return self.__query( locals() ) 
+    return self.__query( 'delete', 'ElementHistory', locals() ) 
 
   '''
   ##############################################################################
