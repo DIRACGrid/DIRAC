@@ -500,7 +500,7 @@ class JobAgent( AgentModule ):
     jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
     jobFileContents = \
 """#!/bin/sh
-%s %s -o LogLevel=%s
+%s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
 """ % ( dPython, jobWrapperFile, logLevel )
     jobFile = open( jobExeFile, 'w' )
     jobFile.write( jobFileContents )

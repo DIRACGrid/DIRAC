@@ -83,7 +83,7 @@ def getRequest( operation ):
                "Status" : "Waiting" } ]    
   requestContainer.setSubRequestFiles( 0, "transfer", files )
   return { "OK" : True, "Value" : { "requestName" : "%s.xml" % operation,
-                                    "requestString" : requestContainer.toXML()["Value"],
+                                    "requestString" : requestContainer.toXML_new()["Value"],
                                     "requestObj" : requestContainer,
                                     "jobID" : 1,
                                     "executionOrder" : 0,

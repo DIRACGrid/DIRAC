@@ -7,7 +7,9 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
+from DIRAC.Resources.Storage.StorageElement import StorageElement 
 import threading,types,string,time,datetime
+
 
 __RCSID__ = "$Id$"
 
@@ -15,10 +17,23 @@ MAGIC_EPOC_NUMBER = 1270000000
 
 gLogger.initialize('DMS','/Databases/TransferDB/Test')
 
-class TransferDB(DB):
+class TransferDB( DB ):
+  """ 
+  .. class:: TransferDB
 
-  def __init__(self, systemInstance ='Default', maxQueueSize=10 ):
-    DB.__init__(self,'TransferDB','RequestManagement/RequestDB',maxQueueSize)
+  This db is holding all information used by FTS systems.
+  """
+
+
+  def __init__( self, systemInstance ='Default', maxQueueSize=10 ):
+    """c'tor
+    
+    :param self: self reference
+    :param str systemInstance: ???
+    :param int maxQueueSize: size of queries queue
+    """
+
+    DB.__init__( self, 'TransferDB', 'RequestManagement/RequestDB', maxQueueSize )
     self.getIdLock = threading.Lock()
 
   def __getFineTime(self):
@@ -285,15 +300,26 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def updateAncestorChannelStatus(self,channelID,fileIDs):
-    if not len(fileIDs) >0:
+  def updateAncestorChannelStatus( self, channelID, fileIDs ):
+    """ update Channel.Status 
+          
+          WaitingN => Waiting 
+          DoneN => Done 
+
+    :param self: self reference
+    :param int channelID: Channel.ChannelID 
+    :param list fileIDs: list of Files.FileID 
+    """
+    if not fileIDs:
       return S_OK()
-    strFileIDs = intListToString(fileIDs)
-    req = "UPDATE Channel SET Status = 'Waiting' WHERE FileID IN (%s) AND Status = 'Waiting%s';" % (strFileIDs,channelID)
+    strFileIDs = intListToString( fileIDs )
+    req  = "UPDATE Channel SET Status = "
+    req += "CASE WHEN Status = 'Waiting%s' THEN 'Waiting' WHEN Status = 'Done%s' THEN 'Done' END " % ( channelID, channelID )
+    req += "WHERE FileID IN (%s) AND ( Status = 'Waiting%s' OR Status = 'Done%s');" % ( strFileIDs, channelID, channelID )
     res = self._update(req)
     if not res['OK']:
-      err = "TransferDB._updateAncestorChannelStatus: Failed to update status."
-      return S_ERROR('%s\n%s' % (err,res['Message']))
+      err = "TransferDB.updateAncestorChannelStatus: Failed to update status"
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
   def removeFilesFromChannel(self,channelID,fileIDs):
@@ -303,7 +329,9 @@ class TransferDB(DB):
         return res
     return res
 
-  def removeFileFromChannel(self,channelID,fileID):
+
+  def removeFileFromChannel( self, channelID, fileID ):
+    
     req = "DELETE FROM Channel WHERE ChannelID = %s and FileID = %s;" % (channelID,fileID)
     res = self._update(req)
     if not res['OK']:
@@ -311,7 +339,7 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def updateCompletedChannelStatus(self,channelID,fileIDs):
+  def updateCompletedChannelStatus( self, channelID, fileIDs ):
     time_order = self.__getFineTime()
     req = "select FileID,Status,COUNT(*) from Channel WHERE FileID IN (%s) GROUP BY FileID,Status;" % intListToString(fileIDs)
     res = self._query(req)
@@ -520,28 +548,66 @@ class TransferDB(DB):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
+  
+
 
   #################################################################################
   # These are the methods for managing the FileToFTS table
 
-  def getFTSReqLFNs(self,ftsReqID):
+  def getFTSReqLFNs(self, ftsReqID, channelID=None, sourceSE=None ):
+
     req = "SELECT ftf.FileID,f.LFN from FileToFTS as ftf LEFT JOIN Files as f ON (ftf.FileID=f.FileID) WHERE ftf.FTSReqID = %s;" % ftsReqID
     res = self._query(req)
     if not res['OK']:
-      err = "TransferDB._getFTSReqLFNs: Failed to get LFNs for FTSReq %s." % ftsReqID
+      err = "TransferDB.getFTSReqLFNs: Failed to get LFNs for FTSReq %s." % ftsReqID
       return S_ERROR('%s\n%s' % (err,res['Message']))
     if not res['Value']:
-      err = "TransferDB._getFTSReqLFNs: No LFNs found for FTSReq %s." % ftsReqID
+      err = "TransferDB.getFTSReqLFNs: No LFNs found for FTSReq %s." % ftsReqID
       return S_ERROR(err)
+    ## list of missing fileIDs
+    missingFiles = [] 
     files = {}
-    for fileID,lfn in res['Value']:
+    for fileID, lfn in res['Value']:
       if lfn:
         files[lfn] = fileID
       else:
         error = "TransferDB.getFTSReqLFNs: File does not exist in the Files table."
-        gLogger.error(error,fileID)
-        return S_ERROR(error)
-    return S_OK(files)
+        gLogger.warn( error, fileID )
+        missingFiles.append( fileID )
+
+    ## failover  mechnism for removed Requests  
+    if missingFiles:
+      ## no channelID or sourceSE --> return S_ERROR
+      if not channelID and not sourceSE:
+        return S_ERROR("TransferDB.getFTSReqLFNs: missing records in Files table: %s" % ", ".join( missingFiles ) )
+      ## create storage element 
+      sourceSE = StorageElement( sourceSE )
+      ## get FileID, SourceSURL pairs for missing FileIDs and channelID used in this FTSReq  
+      query = "SELECT FileID, SourceSURL FROM Channel WHERE ChannelID = %s and FileID in (%s);" % ( channelID, ",".join( missingFiles ) )
+      query = self._query( query )
+      if not query["OK"]:
+        gLogger.error("TransferDB.getFSTReqLFNs: unabler to select PFNs for missing Files records: %s" % query["Message"])
+        return query
+      ## guess LFN from StorageElement, prepare query for inserting records, save lfn in files dict 
+      insertTemplate = "INSERT INTO Files (SubRequestID, FileID, LFN, Status) VALUES (0, %s, %s, 'Scheduled');"
+      insertQuery = []
+      for fileID, pfn in query["Value"]:
+        lfn = sourceSE.getPfnPath( pfn )
+        if not lfn["OK"]:
+          gLogger.error("TransferDB.getFTSReqLFNs: %s" % lfn["Message"] )
+          return lfn
+        lfn = lfn["Value"]        
+        files[lfn] = fileID
+        insertQuery.append( insertTemplate % ( fileID, lfn ) )
+      ## insert missing 'fake' records
+      if insertQuery:
+        insert = self._update( "\n".join( insertQuery ) )
+        if not insert["OK"]:
+          gLogger.error("TransferDB.getFTSReqLFNs: unable to insert fake Files records for missing LFNs: %s" % insert["Message"])
+          return insert
+    
+    ## return files dict
+    return S_OK( files )
 
   def setFTSReqFiles(self,ftsReqID,channelID,fileAttributes):
     for fileID,fileSize in fileAttributes:
@@ -720,8 +786,12 @@ class TransferDB(DB):
   #################################################################################
   # These are the methods for managing the FileToCat table
 
-  def addFileRegistration(self,channelID,fileID,lfn,targetSURL,destSE):
-    req = "INSERT INTO FileToCat (FileID,ChannelID,LFN,PFN,SE,SubmitTime) VALUES (%s,%s,'%s','%s','%s',UTC_TIMESTAMP());" % (fileID,channelID,lfn,targetSURL,destSE)
+  def addFileRegistration( self, channelID, fileID, lfn, targetSURL, destSE ):
+    req = "INSERT INTO FileToCat (FileID,ChannelID,LFN,PFN,SE,SubmitTime) VALUES (%s,%s,'%s','%s','%s',UTC_TIMESTAMP());" % ( fileID,
+                                                                                                                              channelID,
+                                                                                                                              lfn,
+                                                                                                                              targetSURL,
+                                                                                                                              destSE )
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._addFileRegistration: Failed to add registration entry for file %s" % fileID
@@ -734,21 +804,17 @@ class TransferDB(DB):
     if not res['OK']:
       err = "TransferDB._getCompletedReplications: Failed to get completed replications."
       return S_ERROR(err)
-    tuples = []
-    for tuple in res['Value']:
-      tuples.append(tuple)
-    return S_OK(tuples)
+    ## lazy people are using list c'tor
+    return S_OK( list( res["Value"] ) )
 
   def getWaitingRegistrations(self):
-    req = "SELECT FileID,ChannelID,LFN,PFN,SE FROM FileToCat WHERE Status='Waiting';"
+    req = "SELECT FileID, ChannelID, LFN, PFN, SE FROM FileToCat WHERE Status='Waiting';"
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getWaitingRegistrations: Failed to get registrations."
       return S_ERROR(err)
-    tuples = []
-    for tuple in res['Value']:
-      tuples.append(tuple)
-    return S_OK(tuples)
+    ## less typing, use list constructor 
+    return S_OK( list( res["Value"] ) )
 
   def setRegistrationWaiting(self,channelID,fileIDs):
     req = "UPDATE FileToCat SET Status='Waiting' WHERE ChannelID=%s AND Status='Executing' AND FileID IN (%s);" % (channelID,intListToString(fileIDs))
@@ -766,6 +832,22 @@ class TransferDB(DB):
       return S_ERROR(err)
     return S_OK()
 
+
+  def getRegisterFailover( self, fileID ):
+    """ in FTSMonitorAgent on failed registration
+        FileToCat.Status is set to 'Waiting' (was 'Executing') 
+        got to query those for TA, will try to regiter them there
+    """
+    query = "SELECT PFN, SE, ChannelID, MAX(SubmitTime) FROM FileToCat WHERE Status = 'Waiting' AND FileID = %s;" % fileID
+    res = self._query( query )
+    if not res["OK"]:
+      return res
+    ## from now on don't care about SubmitTime
+    res = [ rec[:3] for rec in res["Value"] ]
+    ## return list of tuples [ ( PFN, SE, ChannelID ), ... ]
+    return  S_OK( res )
+    
+
   #################################################################################
   # These are the methods used by the monitoring server
 
@@ -775,10 +857,8 @@ class TransferDB(DB):
     if not res['OK']:
       err = "TransferDB.getFTSJobDetail: Failed to get detailed info for FTSReq %s: %s." % (ftsReqID,res['Message'])
       return S_ERROR(err)
-    files = []
-    for tuple in res['Value']:
-      files.append(tuple)
-    return S_OK(files)
+    ## lazy people are using list c'tor
+    return S_OK( list( res["Value"] ) )
 
   def getSites(self):
     req = "SELECT DISTINCT SourceSite FROM Channels;"
@@ -989,7 +1069,6 @@ class TransferDB(DB):
         ValueDict[datasetID][attribute_name] = attribute_value
     """
     return self.__getAttributesForList('Datasets','DatasetID',datasetIDList,attrList)
-
 
   def __getAttributesForList(self,table,tableID,idList,attrList):
     attrNames = string.join(map(lambda x: str(x),attrList ),',')

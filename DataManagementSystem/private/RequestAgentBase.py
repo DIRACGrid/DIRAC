@@ -34,46 +34,6 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 from DIRAC.Core.Base.AgentModule import AgentModule
 
-def defaultCallback( task, ret ):
-  """ default callback function
-
-  on S_ERROR, error message is reported to the logger
-  if S_OK["Value"]["monitor"] all values from it are passed to 
-  monitoring services by calling gMonitor.addMark (and catching all 
-  exceptions over there btw, in case some metric wasn't defined and so) 
-
-  :param task: subprocess task
-  :param ret: return from RequestTask.__call__ (S_OK/S_ERROR)
-  """
-  log = gLogger.getSubLogger( "defaultCallback" )
-  log.showHeaders( True )
-  log.setLevel( "INFO" )
-
-  log.info("callback from task %s" % str(task) )
-  if not ret["OK"]: 
-    log.error( ret["Message"] )
-    return
-  log.always( ret["Value"] )
-  if "monitor" in ret["Value"]:
-    monitor = ret["Value"]["monitor"]
-    for mark, value in monitor.items():
-      try:
-        gMonitor.addMark( mark, value )
-      except Exception, error:
-        log.exception( str(error) )
-    
-def defaultExceptionCallback( task, exc_info ):
-  """ default exception callbak, just printing to gLogger.exception
-
-  :param task: subprocess task
-  :param exc_info: exception info
-  """
-  log = gLogger.getSubLogger( "exceptionCallback" )
-  log.showHeaders( True )
-  log.setLevel( "EXCEPTION" )
-  log.exception( "exception %s from task %s" % ( str(exc_info), str(task) ) )
-
-
 ########################################################################
 class RequestAgentBase( AgentModule ):
   """
@@ -104,14 +64,16 @@ class RequestAgentBase( AgentModule ):
   __exceptionCallback = None
   ## config path in CS
   __configPath = None
+  ## read request holder 
+  __requestHolder = dict()
 
   def __init__( self, agentName, baseAgentName=False, properties=dict() ):
     """ c'tor
 
     :param self: self reference
     :param str agentName: name of agent
-    :param bool baseAgentName: ???
-    :param dict properties: whatever
+    :param bool baseAgentName: whatever  
+    :param dict properties: whatever else
     """
     AgentModule.__init__( self, agentName, baseAgentName, properties )
 
@@ -119,10 +81,9 @@ class RequestAgentBase( AgentModule ):
     self.__configPath = PathFinder.getAgentSection( agentName )
     self.log.info( "Will use %s config path" % self.__configPath )
   
-
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", 10 )
     self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
-    self.__minProcess = self.am_getOption( "MinProcess", 2 )
+    self.__minProcess = self.am_getOption( "MinProcess", 1 )
     self.log.info("ProcessPool min process = %d" % self.__minProcess )
     self.__maxProcess = self.am_getOption( "MaxProcess", 4 )
     self.log.info("ProcessPool max process = %d" % self.__maxProcess )
@@ -135,13 +96,50 @@ class RequestAgentBase( AgentModule ):
     self.log.info( "Will use DataManager proxy by default." )
 
     ## common monitor activity 
-    self.monitor.registerActivity( "Iteration", "Agent Loops", 
-                                   self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Execute", "Request Processed", 
-                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Done", "Request Completed", 
-                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Iteration", "Agent Loops", self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Execute", "Request Processed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Done", "Request Completed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+      
+    ## create request dict
+    self.__requestHolder = dict()
 
+  @classmethod
+  def deleteRequest( cls, requestName ):
+    """ delete request from requestHolder
+
+    :param self: self reference
+    """
+    if requestName in cls.__requestHolder:
+      del cls.__requestHolder[requestName]
+      return S_OK()
+    return S_ERROR("%s not found in requestHolder" % requestName )
+
+  @classmethod
+  def saveRequest( cls, requestName, requestString, requestServer ):
+    """ put request into requestHolder
+
+    :param cls: class reference
+    :param str requestName: request name
+    :param str requestString: XML-serialised request
+    :param str requestServer: server URL
+    """
+    if requestName not in cls.__requestHolder:
+      cls.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
+      return S_OK()
+    return S_ERROR("saveRequest: request %s cannot be saved, it's already in requestHolder")
+
+  def resetRequests( self ):
+    """ put back requests without callback called into requestClient 
+
+    :param self: self reference
+    """
+    for requestName, requestTuple  in self.__requestHolder:
+      requestString, requestServer = requestTuple
+      reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
+      if not reset["OK"]:
+        self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        continue
+      self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
 
   def configPath( self ):
     """ config path getter
@@ -178,48 +176,51 @@ class RequestAgentBase( AgentModule ):
       minProcess = max( 1, self.__minProcess ) 
       maxProcess = max( self.__minProcess, self.__maxProcess )
       queueSize = max( self.__requestsPerCycle, self.__queueSize )
-      self.log.info("ProcessPool minProcess = %d maxProcess = %d queueSize = %d" % ( minProcess, 
-                                                                                     maxProcess, 
-                                                                                     queueSize ) )
-      self.__processPool = ProcessPool( minProcess, maxProcess, queueSize )
+      self.log.info( "ProcessPool: minProcess = %d maxProcess = %d queueSize = %d" % ( minProcess, 
+                                                                                       maxProcess, 
+                                                                                       queueSize ) )
+      self.log.info( "ProcessPool: tasks will use callbacks attached to ProcessPool" )
+      self.__processPool = ProcessPool( minProcess, 
+                                        maxProcess, 
+                                        queueSize, 
+                                        poolCallback = self.resultCallback,
+                                        poolExceptionCallback = self.exceptionCallback )
       self.__processPool.daemonize()
     return self.__processPool
 
-  def registerCallBack( self, callback ):
-    """ register callback function executed after requestTask call
-    
-    :param self: self reference
-    :param callback: function definition
-    """
-    if not callable( callback ):
-      return S_ERROR("Request callback cannot be registered, passed object '%s' isn't callable" % str(callback) )
-    self.__requestCallback = callback
-    return S_OK()
-
-  def requestCallback( self ):
-    """ get definition of request callback function
+  def resultCallback( self, task ):
+    """ definition of request callback function
     
     :param self: self reference
     """
-    return self.__requestCallback
+    self.log.info("resultCallback from task %s" % task.getTaskID() )
+    results = task.taskResult()
 
-  def registerExceptionCallback( self, exceptionCallback ):
-    """ register exception callback, executed when requestTask raise an exception
- 
-    :param self: self reference
-    :param exceptionCallback: function definition
-    """
-    if not callable( exceptionCallback ):
-      return S_ERROR("Exception callback cannot be registered, object '%s' isn't callable." % str(exceptionCallback) )
-    self.__exceptionCallback = exceptionCallback
+    ## delete this one from request holder
+    self.deleteRequest( task.getTaskID() )
 
-  def exceptionCallback( self ):
-    """ get definition of exception callbak function
+    if not results["OK"]:
+      self.log.error( results["Message"] )
+      return
+    results = results["Value"]
+
+    if "monitor" in results:
+      monitor = results["monitor"]
+      for mark, value in monitor.items():
+        try:
+          gMonitor.addMark( mark, value )
+        except Exception, error:
+          log.exception( str(error) )
+    
+
+  def exceptionCallback( self, task ):
+    """ definition of exception callbak function
     
     :param self: self reference
     """
-    return self.__exceptionCallback
-
+    self.log.error( "exceptionCallback from task %s" % task.getTaskID() )
+    exception = task.taskException()
+    self.log.error( exception )
 
   @classmethod
   def getRequest( cls, requestType ):
@@ -234,14 +235,14 @@ class RequestAgentBase( AgentModule ):
                       "requestName" : str,
                       "sourceServer" : str,
                       "executionOrder" : list,
-                      "jobId" : int }
+                      "jobID" : int }
     """
     ## prepare requestDict
     requestDict = { "requestString" : None,
                     "requestName" : None,
                     "sourceServer" : None,
                     "executionOrder" : None,
-                    "jobId" : None }
+                    "jobID" : None }
     ## get request out of DB
     res = cls.requestClient().getRequest( requestType )
     if not res["OK"]:
@@ -257,11 +258,11 @@ class RequestAgentBase( AgentModule ):
     requestDict["sourceServer"] = res["Value"]["Server"]
     ## get JobID
     try:
-      requestDict["jobId"] = int( res["JobID"] )
+      requestDict["jobID"] = int( res["Value"]["JobID"] )
     except (ValueError, TypeError), exc:
       gLogger.warn( "Cannot read JobID for request %s, setting it to 0: %s" % ( requestDict["requestName"],
                                                                                 str(exc) ) )
-      requestDict["jobId"] = 0
+      requestDict["jobID"] = 0
     ## get the execution order
     res = cls.requestClient().getCurrentExecutionOrder( requestDict["requestName"],
                                                         requestDict["sourceServer"] )
@@ -270,7 +271,11 @@ class RequestAgentBase( AgentModule ):
       gLogger.error( msg, res["Message"] )
       return res
     requestDict["executionOrder"] = res["Value"]
-    ## return requestDict
+    ## save this request
+    cls.saveRequest( requestDict["requestName"], 
+                     requestDict["requestString"], 
+                     requestDict["sourceServer"] )
+    ## return requestDict at least
     return S_OK( requestDict )
 
   def setRequestType( self, requestType ):
@@ -300,38 +305,39 @@ class RequestAgentBase( AgentModule ):
     taskCounter = self.__requestsPerCycle 
 
     while taskCounter:
-      if self.processPool().getFreeSlots():
-        requestDict = self.getRequest( self.__requestType ) 
-        ## can't get request?
-        if not requestDict["OK"]:
-          self.log.error( requestDict["Message"] )
-          break
-        ## no more requests?
-        if not requestDict["Value"]:
-          self.log.info("No more waiting requests found.")
-          break
-        requestDict = requestDict["Value"]
-        requestDict["configPath"] = self.__configPath
-
-        self.log.always("spawning task %d" % ( self.__requestsPerCycle - taskCounter + 1) ) 
-        enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
-                                                         kwargs = requestDict, 
-                                                         callback =  self.__requestCallback,
-                                                         exceptionCallback = self.__exceptionCallback,
-                                                         blocking = True )
-        ## can't enqueue new task?
-        if not enqueue["OK"]:
-          self.log.error( enqueue["Message"] )
-          break
-        taskCounter = taskCounter - 1
-        ## time kick 
-        time.sleep( 0.1 )
-      else:
-        self.log.info("No free slots available in processPool, will wait a second to proceed...")
-        time.sleep( 1 )
-
-      ret = self.processPool().processResults()
-      self.log.debug( ret )
+      requestDict = self.getRequest( self.__requestType ) 
+      ## can't get request?
+      if not requestDict["OK"]:
+        self.log.error( requestDict["Message"] )
+        break
+      ## no more requests?
+      if not requestDict["Value"]:
+        self.log.info("No more waiting requests found.")
+        break
+      ## enqueue
+      requestDict = requestDict["Value"]
+      requestDict["configPath"] = self.__configPath
+      taskID = requestDict["requestName"]
+      while True:
+        if not self.processPool().getFreeSlots():
+          self.log.info("No free slots available in processPool, will wait a second to proceed...")
+          time.sleep( 1 )
+        else:
+          self.log.always("spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
+          enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
+                                                           kwargs = requestDict,
+                                                           taskID = requestDict["requestName"],
+                                                           blocking = True,
+                                                           usePoolCallbacks = True )
+          if not enqueue["OK"]:
+            self.log.error( enqueue["Message"] )
+          else:
+            self.log.info("successfully enqueued task %s" % taskID )
+            ## update request counter
+            taskCounter = taskCounter - 1
+            ## task created, a little time kick to proceed
+            time.sleep( 0.1 )
+            break
 
     return S_OK()
 
@@ -340,6 +346,10 @@ class RequestAgentBase( AgentModule ):
 
     :param self: self reference
     """
+    ## finalize all processing
     self.processPool().processAllResults()
+    ## reset failover requests for further processing 
+    self.resetRequests()
+    ## good bye, all done!
     return S_OK()
   

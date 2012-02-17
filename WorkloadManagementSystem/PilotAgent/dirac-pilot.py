@@ -307,6 +307,10 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   if os.environ['GLITE_WMS_JOBID'] != 'N/A':
     cliParams.flavour = 'gLite'
     pilotRef = os.environ['GLITE_WMS_JOBID']
+    
+if os.environ.has_key( 'JOB_ID' ):
+    cliParams.flavour = 'SSHGE'
+    pilotRef = os.environ['JOB_ID']
 
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':

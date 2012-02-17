@@ -371,18 +371,17 @@ class DirectoryLevelTree(DirectoryTreeBase):
     
     return S_OK([ x[0] for x in result['Value'] ])
   
-  def getSubdirectoriesByID(self,dirID,level=0,requestString=False):
+  def getSubdirectoriesByID(self,dirID,requestString=False,includeParent=False):
     """ Get all the subdirectories of the given directory at a given level
     """
 
-    if not level:
-      req = "SELECT Level FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
-      result = self.db._query(req)
-      if not result['OK']:
-        return result
-      if not result['Value']:
-        return S_ERROR('Directory %d not found' % dirID)
-      level = result['Value'][0][0]
+    req = "SELECT Level FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
+    result = self.db._query(req)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR('Directory %d not found' % dirID)
+    level = result['Value'][0][0]
 
     sPaths = []
     if requestString:
@@ -399,7 +398,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
       for i in range(1,level+1):
         sPaths.append('F1.LPATH%d=F2.LPATH%d' % (i,i))
       pString = ' AND '.join(sPaths)
-      req += "%s AND F1.Level > %d" % (pString,level)
+      if includeParent:
+        req += "%s AND F1.Level >= %d" % (pString,level)
+      else:
+        req += "%s AND F1.Level > %d" % (pString,level)
 
     if requestString:
       return S_OK(req)
@@ -459,5 +461,4 @@ class DirectoryLevelTree(DirectoryTreeBase):
     
     result = self.getSubdirectoriesByID(dirID,level)
     return result
-    
     

@@ -6,7 +6,7 @@ AGENT_NAME = 'ResourceStatus/CleanerAgent'
 
 from datetime                                             import datetime,timedelta
 
-from DIRAC                                                import S_OK, S_ERROR
+from DIRAC                                                import S_OK, S_ERROR, gLogger
 from DIRAC                                                import gLogger
 from DIRAC.Core.Base.AgentModule                          import AgentModule
 
@@ -14,9 +14,9 @@ from DIRAC.ResourceStatusSystem                           import ValidRes
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-class CleanerAgent( AgentModule ):
+class CacheCleanerAgent( AgentModule ):
   '''
-  The CleanerAgent tidies up the ResourceStatusDB, namely:
+  The CacheCleanerAgent tidies up the ResourceStatusDB, namely:
     o SiteHistory
     o ServiceHistory
     o ResourceHistory
@@ -28,7 +28,7 @@ class CleanerAgent( AgentModule ):
     o AccountingCache
   older than 24 hours for the first one, and 30 minutes for the second one.
   
-  If you want to know more about the CleanerAgent, scroll down to the end of the 
+  If you want to know more about the CacheCleanerAgent, scroll down to the end of the 
   file.   
   '''
 
@@ -43,7 +43,7 @@ class CleanerAgent( AgentModule ):
       return S_OK()
       
     except Exception:
-      errorStr = "CleanerAgent initialization"
+      errorStr = "CacheCleanerAgent initialization"
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
     
@@ -62,6 +62,7 @@ class CleanerAgent( AgentModule ):
         #deleter = getattr( self.rsClient, 'delete%sHistory' % g )
         
         kwargs = { 'meta' : { 'minor' : { 'DateEnd' : sixMonthsAgo } } }
+        gLogger.info( 'Deleting %sHistory older than %s' % ( g, sixMonthsAgo ) )
         res = self.rsClient.deleteElementHistory( g, **kwargs )
         if not res[ 'OK' ]:
           gLogger.error( res[ 'Message' ] )            
@@ -78,12 +79,17 @@ class CleanerAgent( AgentModule ):
       opt_IDs = self.rmClient.getClientCache( **kwargs )              
       opt_IDs = [ ID[ 0 ] for ID in opt_IDs[ 'Value' ] ]
       
+      if opt_IDs:
+        gLogger.info( 'Found %s ClientCache items to be deleted' % len( opt_IDs) )
+        gLogger.debug( opt_IDs )
+      
       res = self.rmClient.deleteClientCache( opt_ID = opt_IDs )
       if not res[ 'OK' ]:
         gLogger.error( res[ 'Message' ] )
       
       # Cleans AccountingCache table from plots not updated nor checked in the last 30 mins      
       anHourAgo = now - timedelta( minutes = 30 )
+      gLogger.info( 'Deleting AccountingCache older than %s' % ( anHourAgo ) )
       res = self.rmClient.deleteAccountingCache( meta = {'minor': { 'LastCheckTime' : anHourAgo }} )
       if not res[ 'OK' ]:
         gLogger.error( res[ 'Message' ] )
@@ -91,7 +97,7 @@ class CleanerAgent( AgentModule ):
       return S_OK()
     
     except Exception:
-      errorStr = "CleanerAgent execution"
+      errorStr = "CacheCleanerAgent execution"
       gLogger.exception( errorStr )
       return S_ERROR( errorStr )
 

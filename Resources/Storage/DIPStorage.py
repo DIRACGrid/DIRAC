@@ -520,7 +520,7 @@ class DIPStorage( StorageBase ):
     urls = res['Value']
     successful = {}
     failed = {}
-    gLogger.debug( "DIPStorage.removeDirectory: Attemping to remove %s directories." % len( urls ) )
+    gLogger.debug( "DIPStorage.removeDirectory: Attempting to remove %s directories." % len( urls ) )
     serviceClient = RPCClient( self.url )
     for url in urls:
       res = serviceClient.removeDirectory( url, '' )

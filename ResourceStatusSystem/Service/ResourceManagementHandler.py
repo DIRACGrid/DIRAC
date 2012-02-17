@@ -3,11 +3,9 @@
 ################################################################################
 __RCSID__ = "$Id:  $"
 
-from DIRAC                                              import S_OK
+from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
-
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators    import HandlerDec3, AdminRequired
 
 db = False
 
@@ -59,8 +57,6 @@ class ResourceManagementHandler( RequestHandler ):
     db = database
 
   types_insert = [ dict, dict ]
-  @AdminRequired
-  @HandlerDec3
   def export_insert( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
@@ -77,14 +73,20 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # It returns a db object, which is picked by the decorator and return whatever
-    # the insert method returns ( db.insert )    
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    
+    gLogger.info( 'insert: %s %s' % ( params, meta ) )
+    
+    try:
+      res = db.insert( params, meta )
+      gLogger.debug( 'insert %s' % res )
+    except Exception, e:
+      _msg = 'Exception calling db.insert: \n %s' % e
+      gLogger.exception( _msg )
+      res = S_ERROR( _msg )
+    
+    return res   
 
   types_update = [ dict, dict ]
-  @AdminRequired
-  @HandlerDec3
   def export_update( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
@@ -101,13 +103,20 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''      
-    # It returns a db object, which is picked by the decorator and return whatever
-    # the update method returns ( db.update )    
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+
+    gLogger.info( 'update: %s %s' % ( params, meta ) )
+    
+    try:
+      res = db.update( params, meta )
+      gLogger.debug( 'update %s' % res )
+    except Exception, e:
+      _msg = 'Exception calling db.update: \n %s' % e
+      gLogger.exception( _msg )
+      res = S_ERROR( _msg )
+    
+    return res  
 
   types_get = [ dict, dict ]
-  @HandlerDec3
   def export_get( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceManagementDB` remotely. 
@@ -124,14 +133,20 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''      
-    # It returns a db object, which is picked by the decorator and return whatever
-    # the get method returns ( db.get )    
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+    
+    gLogger.info( 'get: %s %s' % ( params, meta ) )
+    
+    try:
+      res = db.get( params, meta )
+      gLogger.debug( 'get %s' % res )
+    except Exception, e:
+      _msg = 'Exception calling db.get: \n %s' % e
+      gLogger.exception( _msg )
+      res = S_ERROR( _msg )
+    
+    return res  
 
   types_delete = [ dict, dict ]
-  @AdminRequired
-  @HandlerDec3
   def export_delete( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely.\
@@ -148,10 +163,18 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''         
-    # It returns a db object, which is picked by the decorator and return whatever
-    # the delete method returns ( db.delete )    
-    credentials = self.getRemoteCredentials()
-    return db, credentials
+
+    gLogger.info( 'delete: %s %s' % ( params, meta ) )
+    
+    try:
+      res = db.delete( params, meta )
+      gLogger.debug( 'delete %s' % res )
+    except Exception, e:
+      _msg = 'Exception calling db.delete: \n %s' % e
+      gLogger.exception( _msg )
+      res = S_ERROR( _msg )
+    
+    return res  
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -246,6 +246,14 @@ CREATE TABLE FC_MetaFields (
 );
 
 -- ------------------------------------------------------------------------------
+drop table if exists FC_FileMetaFields;
+CREATE TABLE FC_FileMetaFields (
+  MetaID INT AUTO_INCREMENT PRIMARY KEY,
+  MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  MetaType VARCHAR(128) NOT NULL
+);
+
+-- ------------------------------------------------------------------------------
 drop table if exists FC_MetaSetNames;
 CREATE TABLE FC_MetaSetNames (
   MetaSetID INT AUTO_INCREMENT PRIMARY KEY,

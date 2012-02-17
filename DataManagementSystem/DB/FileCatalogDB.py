@@ -23,10 +23,16 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             i
 #############################################################################
 class FileCatalogDB(DB):
 
-  def __init__( self, maxQueueSize=10 ):
+  def __init__( self, databaseLocation='DataManagement/FileCatalogDB', maxQueueSize=10 ):
     """ Standard Constructor
     """
-    DB.__init__(self,'FileCatalogDB','DataManagement/FileCatalogDB',maxQueueSize)
+    
+    # The database location can be specified in System/Database form or in just the Database name
+    # in the DataManagement system 
+    db = databaseLocation
+    if db.find('/') == -1:
+      db = 'DataManagement/' + db
+    DB.__init__(self,'FileCatalogDB',db,maxQueueSize)
 
   def setConfig(self,databaseConfig):
 
@@ -534,7 +540,8 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    queryTime = res['Value'].get('QueryTime',-1.)
+    return S_OK( {'Successful':successful,'Failed':failed,'QueryTime':queryTime} )
     
   #######################################################################
   #
@@ -569,7 +576,7 @@ class FileCatalogDB(DB):
   #  Catalog admin methods
   #
 
-  def getCatalogCounterts(self,credDict):
+  def getCatalogCounters(self,credDict):
     counterDict = {}
     res = self._checkAdminPermission(credDict)
     if not res['OK']:
@@ -622,3 +629,4 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
+  

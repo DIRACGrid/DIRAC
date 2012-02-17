@@ -61,7 +61,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, getVO
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, getVO, cfgPath
 
 import sys, os
 
@@ -297,6 +297,9 @@ else:
   # will be removed later but it is necessary to initialized the CS in script mode
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
 
+host = DIRAC.gConfig.getValue( cfgInstallPath( "Host" ), "" )
+if host:
+  DIRAC.gConfig.setOptionValue( cfgPath( "DIRAC", "Hostname" ), host )
 
 if skipCAChecks:
   DIRAC.gLogger.debug( '/DIRAC/Security/SkipCAChecks =', 'yes' )

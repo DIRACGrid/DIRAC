@@ -17,11 +17,16 @@ from types import *
 fcDB = False
 
 def initializeFileCatalogHandler(serviceInfo):
+  
   global fcDB
-  fcDB = FileCatalogDB()
+  
   serviceCS = serviceInfo ['serviceSectionPath']
+  
+  # Instantiate the requested database
+  dbLocation = gConfig.getValue('%s/Database' % serviceCS,'DataManagement/FileCatalogDB')
+  fcDB = FileCatalogDB(dbLocation)
+  
   databaseConfig = {}
-
   # Obtain the plugins to be used for DB interaction
   gLogger.info("Initializing with FileCatalog with following managers:")
   defaultManagers = {  'UserGroupManager'  : 'UserAndGroupManagerDB',
@@ -295,10 +300,15 @@ class FileCatalogHandler(RequestHandler):
   #
 
   types_addMetadataField = [ StringTypes, StringTypes ]
-  def export_addMetadataField(self, fieldName, fieldType ):
+  def export_addMetadataField(self, fieldName, fieldType, metaType='-d' ):
     """ Add a new metadata field of the given type
     """
-    return fcDB.dmeta.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
+    if metatype.lower() == "-d":
+      return fcDB.dmeta.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
+    elif metatype.lower() == "-f":
+      return fcDB.fmeta.addUserMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
+    else:
+      return S_ERROR('Unknown metadata type %s' % metaType)
 
   types_deleteMetadataField = [ StringTypes ]
   def export_deleteMetadataField(self, fieldName ):
@@ -310,7 +320,15 @@ class FileCatalogHandler(RequestHandler):
   def export_getMetadataFields(self):
     """ Get all the metadata fields
     """
-    return fcDB.dmeta.getMetadataFields(self.getRemoteCredentials())
+    resultDir = fcDB.dmeta.getMetadataFields(self.getRemoteCredentials())
+    if not resultDir['OK']:
+      return resultDir
+    resultFile = fcDB.fmeta.getFileMetadataFields(self.getRemoteCredentials())
+    if not resultFile['OK']:
+      return resultFile
+    
+    resultDict = {'DirectoryMetaFields':resultDir['Value'],'FileMetaFields':resultFile['Value']}
+    return  S_OK(resultDict)
 
   types_setMetadata = [ StringTypes, DictType ]
   def export_setMetadata(self, path, metadatadict ):
@@ -336,11 +354,11 @@ class FileCatalogHandler(RequestHandler):
     """
     return fcDB.dmeta.findDirectoriesByMetadata(metaDict, self.getRemoteCredentials())
   
-  types_findFilesByMetadata = [ DictType ]
-  def export_findFilesByMetadata(self,metaDict):
+  types_findFilesByMetadata = [ DictType, StringTypes ]
+  def export_findFilesByMetadata(self,metaDict,path='/'):
     """ Find all the files satisfying the given metadata set
     """
-    return fcDB.dmeta.findFilesByMetadata(metaDict, self.getRemoteCredentials())
+    return fcDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
   
   types_getCompatibleMetadata = [ DictType ]
   def export_getCompatibleMetadata(self,metaDict):

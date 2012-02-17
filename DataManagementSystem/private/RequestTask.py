@@ -185,13 +185,7 @@ class RequestTask( object ):
     if "X509_USER_PROXY" in os.environ:
       self.info("saving path to current proxy file")
       self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
-
-    #self.always( os.path.join( configPath, self.__class__.__name__ ) )
-    #self.__log.initialize( self.__class__.__name__, configPath  )
-    #self.always( self.__log.initialized()  )
-
       
-
   def addMark( self, name, value = 1 ):
     """ add mark to __monitor dict
     
@@ -311,7 +305,7 @@ class RequestTask( object ):
     :param str ownerGroup: request owner group
     :return: S_OK with name of newly created owner proxy file
     """
-    ownerProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup )
+    ownerProxy = gProxyManager.downloadVOMSProxy( str(ownerDN), str(ownerGroup) )
     if not ownerProxy["OK"] or not ownerProxy["Value"]:
       reason = ownerProxy["Message"] if "Message" in ownerProxy else "No valid proxy found in ProxyManager." 
       return S_ERROR( "Change proxy error for '%s'@'%s': %s" % ( ownerDN, ownerGroup, reason  ) )
@@ -415,7 +409,7 @@ class RequestTask( object ):
     ##############################################################
     res = self.requestObj.getNumSubRequests( self.__requestType )
     if not res["OK"]:
-      errMsg = "handleRequest: Failed to obtain number of '%s' subrequests." % self.__requestType
+      errMsg = "handleRequest: failed to obtain number of '%s' subrequests." % self.__requestType
       self.error( errMsg, res["Message"]  )
       return S_ERROR( res["Message"] )
 
@@ -425,7 +419,7 @@ class RequestTask( object ):
     self.addMark( "Execute", 1 )
     ## process sub requests
     for index in range( res["Value"] ):
-      self.info( "handleRequest: Processing SubRequest %s." % str(index) )
+      self.info( "handleRequest: processing subrequest %s." % str(index) )
       subRequestAttrs = self.requestObj.getSubRequestAttributes( index, self.__requestType )["Value"]
       if subRequestAttrs["ExecutionOrder"]:
         subExecutionOrder = int( subRequestAttrs["ExecutionOrder"] )
@@ -448,7 +442,7 @@ class RequestTask( object ):
           ################################################
           #  Determine whether there are any active files
           if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
-            self.info("Subrequest is empty, will set its status to 'Done'")
+            self.info("handleRequest: subrequest is empty, will set its status to 'Done'")
             self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
             continue
           ## get files
@@ -461,7 +455,7 @@ class RequestTask( object ):
           ################################################
           ## error in operation action?
           if not ret["OK"]:
-            self.error( "Error when handling subrequest %s: %s" % ( str(index),  ret["Message"] ) )
+            self.error( "handleRequest: error when handling subrequest %s: %s" % ( str(index),  ret["Message"] ) )
             self.requestObj.setSubRequestAttributeValue( index, self.__requestType, "Error", ret["Message"] )
           else:
             ## update ref to requestObj
@@ -474,11 +468,11 @@ class RequestTask( object ):
               canFinalize = False 
             else:
               if not subRequestDone["Value"]:
-                self.warn("SubRequest %s is not done yet, request finalisation is disabled" % str(index) )
+                self.warn("handleRequest: subrequest %s is not done yet, request finalisation is disabled" % str(index) )
                 canFinalize = False
 
           if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
-            self.info("No more waiting files in subrequest, will set its status to 'Done'")
+            self.info("handleRequest: no more waiting files in subrequest, will set its status to 'Done'")
             self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
 
     ################################################
@@ -490,7 +484,7 @@ class RequestTask( object ):
         self.error( "handleRequest: error when updating request: %s" % update["Message"] )
         return update
       ## finalize request if jobID is present
-      if self.jobID and canFinalize:
+      if self.jobID and canFinalize and requestObj.isRequestDone():
         finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
         if not finalize["OK"]:
           self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )

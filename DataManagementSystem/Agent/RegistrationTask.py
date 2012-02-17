@@ -51,29 +51,29 @@ class RegistrationTask( RequestTask ):
     :param subRequestAttrs: SubRequest attributes
     :param subRequestFiles: subRequest files
     """
-    self.always( "Processing subrequest %d registerFile" % index )
+    self.info( "registerFile: processing subrequest %d" % index )
 
     ## list of targetSE
     targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") ] ) )
     if not targetSEs:
+      self.warn( "registerFile: no TargetSE specified! will use default 'CERN-FAILOVER'")
       targetSEs = [ "CERN-FAILOVER" ]
     ## dict for failed LFNs
     failed = {}
     ## subrequest error if any
     subRequestError = ""
 
-    catalogue = subRequestAttrs["Catalogue"]
-    if not catalogue:
-      catalogue = ""
-    elif catalogue == "BookkeepingDB":
+    catalogue = subRequestAttrs["Catalogue"] if subRequestAttrs["Catalogue"] else ""
+    if catalogue == "BookkeepingDB":
+      self.warn( "registerFile: catalogue set to 'BookkeepingDB', set it to 'CERN-HIST'")
       catalogue = "CERN-HIST"
 
     for subRequestFile in subRequestFiles:
       lfn = subRequestFile.get( "LFN", "" ) 
       failed.setdefault( lfn, {} )
-      self.info("Processing file %s" % lfn )
+      self.info("registerFile: processing file %s" % lfn )
       if subRequestFile["Status"] != "Waiting":
-        self.info("Skipping file %s, status is %s" % ( lfn, subRequestFile["Status"] ) )
+        self.info("registerFile: skipping file %s, status is %s" % ( lfn, subRequestFile["Status"] ) )
         continue
       pfn = subRequestFile.get( "PFN", "" ) 
       size = subRequestFile.get( "Size", 0 ) 
@@ -81,7 +81,9 @@ class RegistrationTask( RequestTask ):
       addler = subRequestFile.get( "Addler", "" ) 
 
       for targetSE in targetSEs:
+        
         fileTuple = ( lfn, pfn, size, targetSE, guid, addler )
+  
         res = self.replicaManager().registerFile( fileTuple, catalogue )
         
         if not res["OK"] or lfn in res["Value"]["Failed"]:
@@ -90,23 +92,22 @@ class RegistrationTask( RequestTask ):
           errorStr = "Failed to register LFN %s: %s" % ( lfn, reason )
           failed[lfn][targetSE] = reason
           subRequestError = reason
-          self.error( errorStr )
+          self.error( "registerFile: %s" % errorStr )
         else:
           self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegistrationTask" )
-          self.info( "File %s has been registered at %s." % ( lfn, targetSE ) )
+          self.info( "registerFile: file %s has been registered at %s" % ( lfn, targetSE ) )
      
       if not failed[lfn]:
         requestObj.setSubRequestFileAttributeValue( index, "register", lfn, "Status", "Done")
-        self.info( "File %s has been registered at all targetSEs" % lfn )
+        self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )
 
     ##################################################################
     ## all files were registered or no files at all in this subrequest
     if not subRequestError:
       requestObj.setSubRequestStatus( index, "register", "Done" )
-      self.debug( "Subrequest %d status has been set to 'Done'." % index )
+      self.debug( "registerFile: subrequest %d status has been set to 'Done'." % index )
     else:
-      subRequestError = "Registration failed for LFNs: %s" % ", ".join( failed.keys() )  
-      return S_ERROR( subRequestError )
+      self.error( "registerFile: registration failed for LFNs: %s" % ", ".join( failed.keys() ) ) 
     ## return requestObj
     return S_OK( requestObj )
           

@@ -20,8 +20,8 @@ from DIRAC.WorkloadManagementSystem.Agent.Base.OptimizerExecutor import Optimize
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.Time import fromString, toEpoch
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.ResourceStatusSystem.Utilities.CS import getSiteTiers
+from DIRAC.Resources.Storage.StorageElement                    import StorageElement
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources        import getSiteTier
 
 
 import random
@@ -435,13 +435,16 @@ class JobSchedulingAgent( OptimizerExecutor ):
     """
     tier1 = ''
     groupName = ''
-    tierList = getSiteTiers( stagingSites )
-    tierDict = dict( zip( stagingSites, tierList ) )
-    for tsite in tierDict:
-      if tierDict[tsite] in [0, 1]:
-        tier1 = tsite
-      if tierDict[tsite] == 0:
-        break
+    for site in stagingSites:
+      result = getSiteTier( site )
+      if not result['OK']:
+        self.log.error( result['Message'] )
+        continue
+      tier = result['Value']
+      if tier in [0, 1]:
+        tier1 = site
+        if tier == 0:
+          break
 
     if tier1:
       grid, sname, ccode = tier1.split( '.' )
