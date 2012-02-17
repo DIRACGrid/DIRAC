@@ -596,10 +596,10 @@ class TransferAgent( RequestAgentBase ):
     taskID = requestDict["requestName"]
     while True:
       if not self.processPool().getFreeSlots():
-        self.log.info("createTask: no free slots available in processPool, will wait a second to proceed...")
+        self.log.info("executeTask: no free slots available in processPool, will wait a second to proceed...")
         time.sleep( 1 )
       else:
-        self.log.info("createTask: spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
+        self.log.info("executeTask: spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
         enqueue = self.processPool().createAndQueueTask( TransferTask,
                                                          kwargs = requestDict,
                                                          taskID = taskID,
@@ -608,9 +608,9 @@ class TransferAgent( RequestAgentBase ):
         if not enqueue["OK"]:
           self.log.error( enqueue["Message"] )
         else:
-          self.log.info("createTask: successfully enqueued request %s" % taskID )
+          self.log.info("executeTask: successfully enqueued request %s" % taskID )
           ## task created, a little time kick to proceed
-          time.sleep( 0.1 )
+          time.sleep( 0.2 )
           break
 
     return S_OK()
