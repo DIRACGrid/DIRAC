@@ -196,6 +196,8 @@ class ProcessTask:
   
   Defines task to be executed in WorkingProcess together with its callbacks.
   """
+  ## taskID
+  taskID = 0
 
   def __init__( self,
                 taskFunction,
@@ -204,7 +206,8 @@ class ProcessTask:
                 taskID = None,
                 callback = None,
                 exceptionCallback = None,
-                usePoolCallbacks = False ):
+                usePoolCallbacks = False,  
+                timeOut = 0 ):
     """ c'tor
 
     :warning: taskFunction has to be callable: it could be a function, lambda OR a class with 
@@ -223,20 +226,27 @@ class ProcessTask:
         def __call__( self ):
           ...
 
+    :warning: depending on :timeOut: value, taskFunction execution can be forcefully terminated 
+    using SIGALRM after :timeOut: seconds spent, :timeOut: equal to zero means there is no any 
+    time out at all, except those during :ProcessPool: finalization 
+    
     :param self: self reference
     :param mixed taskFunction: definition of callable object to be executed in this task
     :param tuple args: non-keyword arguments
     :param dict kwargs: keyword arguments
-    :param int taskID: task id
+    :param int taskID: task id, if not set, 
+    :param int timeOut: estimated time to execute taskFunction in seconds (default = 0, no timeOut at all) 
     :param mixed callback: result callback function 
     :param mixed exceptionCallback: callback function to be fired upon exception in taskFunction
     """
     self.__taskFunction = taskFunction
     self.__taskArgs = args or []
     self.__taskKwArgs = kwargs or {}
-    self.__taskID = taskID
+    self.__taskID = taskID 
     self.__resultCallback = callback
     self.__exceptionCallback = exceptionCallback
+    ## set time out
+    self.setTimeOut( timeOut )
     self.__done = False
     self.__exceptionRaised = False
     self.__taskException = None
@@ -266,11 +276,44 @@ class ProcessTask:
     self.__usePoolCallbacks = False
 
   def usePoolCallbacks( self ):
-    """ check if results should be processed by callbacks defind in the pool
+    """ check if results should be processed by callbacks defined in the :ProcessPool:
 
     :param self: self reference
     """
     return self.__usePoolCallbacks
+
+  def hasPoolCallback( self ):
+    """ check if asked to execute :ProcessPool: callbacks
+
+    :param self: self reference
+    """
+    return self.__usePoolCallbacks
+
+  def setTimeOut( self, timeOut ):
+    """ set time out (in seconds)
+
+    :param self: selt reference
+    :param int timeOut: new time out value
+    """
+    try:
+      self.__timeOut = int( timeOut )
+      return { "OK" : True, "Value" : self.__timeOut }
+    except (TypeError, ValueError), error:
+      return { "OK" : False, "Message" : str(error) }  
+
+  def getTimeOut( self ):
+    """ get timeOut value
+    
+    :param self: self reference
+    """
+    return self.__timeOut 
+
+  def hasTimeOutSet( self ):
+    """ check if timeout is set 
+
+    :param self: self reference
+    """
+    return bool( self.__timeOut != 0 )
  
   def isBullet( self ):
     """ No, I'm not. """
@@ -314,11 +357,23 @@ class ProcessTask:
     if self.__done and not self.__exceptionRaised and self.__resultCallback:
       self.__resultCallback( self, self.__taskResult )
 
+
   def process( self ):
     """ execute task
     
     :param self: self reference
     """
+    class TimeOutError( Exception ):
+      """ dummy exception raised after :timeOut: seconds """
+      pass
+    ## reference to SIGALRM handler 
+    saveHandler = None 
+
+    if self.hasTimeOutSet():      
+      def timeOutHandler( singnum, frame ):
+        raise TimeOutError()   
+      saveHandler = signal.signal(signal.SIGALRM, timeOutHandler) 
+      signal.alarm(self.__timeOut) 
     self.__done = True
     try:
       ## it's a function?
@@ -333,16 +388,22 @@ class ProcessTask:
           raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
+    except TimeOutError, error:
+      self.__taskResult = { "OK" : False, "Message" : "timed out after %s seconds" % self.__timeOut }
     except Exception, x:
       self.__exceptionRaised = True
-
       if gLogger:
         gLogger.exception( "Exception in process of pool" )
-      if self.__exceptionCallback:
+      if self.__exceptionCallback or self.usePoolCallbacks():
         retDict = S_ERROR( 'Exception' )
         retDict['Value'] = str( x )
         retDict['Exc_info'] = sys.exc_info()[1]
         self.__taskException = retDict
+    finally:
+      if self.hasTimeOutSet() and saveHandler:
+        signal.signal(signal.SIGALRM, saveHandler) 
+    ## reset alarm signal 
+    signal.alarm(0)
 
 class ProcessPool:
   """
@@ -545,7 +606,8 @@ class ProcessPool:
                           callback = None,
                           exceptionCallback = None,
                           blocking = True,
-                          usePoolCallbacks = False ):
+                          usePoolCallbacks = False,
+                          timeOut = 0):
     """ create new processTask and enqueue it in pending task queue
 
     :param self: self reference
@@ -557,8 +619,9 @@ class ProcessPool:
     :param mixed exceptionCallback: callback handler executed if testFunction had raised an exception
     :param bool blocking: flag to block queue if necessary until free slot is available
     :param bool usePoolCallbacks: fire execution of pool defined callbacks after task callbacks
+    :param int timeOut: time you want to spend executing :taskFunction:
     """
-    task = ProcessTask( taskFunction, args, kwargs, taskID, callback, exceptionCallback, usePoolCallbacks )
+    task = ProcessTask( taskFunction, args, kwargs, taskID, callback, exceptionCallback, usePoolCallbacks, timeOut )
     return self.queueTask( task, blocking )
 
   def hasPendingTasks( self ):
@@ -604,11 +667,10 @@ class ProcessPool:
       task.doCallback()
       ## execute pool callbacks
       if task.usePoolCallbacks():
-        ## exception first
-        if self.__poolExceptionCallback and task.taskException():
-          self.__poolExceptionCallback( task ) 
-        elif self.__poolCallback and task.taskResults():
-          self.__poolCallback( task )
+        if self.__poolExceptionCallback and task.exceptionRaised():
+          self.__poolExceptionCallback( task.getTaskID(), task.taskException() ) 
+        if self.__poolCallback and task.taskResults():
+          self.__poolCallback( task.getTaskID(), task.taskResults() )
 
       self.__killExceedingWorkingProcesses()
       processed += 1
