@@ -87,14 +87,14 @@ class RegistrationTask( RequestTask ):
         res = self.replicaManager().registerFile( fileTuple, catalogue )
         
         if not res["OK"] or lfn in res["Value"]["Failed"]:
-          self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationTask" )
+          self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationAgent" )
           reason = res["Message"] if not res["OK"] else "registration in ReplicaManager failed"
           errorStr = "Failed to register LFN %s: %s" % ( lfn, reason )
           failed[lfn][targetSE] = reason
           subRequestError = reason
           self.error( "registerFile: %s" % errorStr )
         else:
-          self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegistrationTask" )
+          self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegistrationAgent" )
           self.info( "registerFile: file %s has been registered at %s" % ( lfn, targetSE ) )
      
       if not failed[lfn]:
