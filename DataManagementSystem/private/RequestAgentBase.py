@@ -136,7 +136,7 @@ class RequestAgentBase( AgentModule ):
 
     :param self: self reference
     """
-    for requestName, requestTuple  in self.__requestHolder:
+    for requestName, requestTuple  in self.__requestHolder.items():
       requestString, requestServer = requestTuple
       reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
       if not reset["OK"]:
@@ -189,6 +189,7 @@ class RequestAgentBase( AgentModule ):
                                         poolCallback = self.resultCallback,
                                         poolExceptionCallback = self.exceptionCallback )
       self.__processPool.daemonize()
+      self.log.info( "ProcessPool: daemonized and ready")
     return self.__processPool
 
   def hasProcessPool( self ):
