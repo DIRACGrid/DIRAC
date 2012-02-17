@@ -129,6 +129,12 @@ class JobManifest( object ):
       return S_ERROR( 'Number of Input Data Files (%s) greater than current limit: %s' % ( len( List.fromChar( varValue ) ) , maxNumber ) )
     return S_OK()
 
+
+  def __contains__( key ):
+    """ Check if the manifest has the required key
+    """
+    return key in self.__manifest
+
   def setOptionsFromDict( self, varDict ):
     for k in sorted( varDict ):
       self.setOption( k, varDict[ k ] )
@@ -161,16 +167,38 @@ class JobManifest( object ):
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoice( "JobType",
-                                                   gConfig.getValue( "/Operations/JobManifest/AllowedJobTypes",
-                                                                     [] ) )
+                                      gConfig.getValue( "/Operations/JobManifest/AllowedJobTypes", [] ) )
     if not result[ 'OK' ]:
       #HACK to maintain backwards compatibility
       #If invalid set to "User"
       #HACKEXPIRATION 05/2009
-      self.setVar( "JobType", "User" )
+      self.setOption( "JobType", "User" )
       #Uncomment after deletion of hack
       #return result
     return S_OK()
+
+  def createSection( self, secName, contents = False ):
+    if secName not in self.__manifest:
+      if contents and not isinstance( contents, CFG ):
+        return S_ERROR( "Contents for section %s is not a cfg object" % secName )
+      S_OK( self.__manifest.createSection( secName, contents = contents ) )
+    return S_ERROR( "Section %s already exists" % secName )
+
+  def getSection( self, secName ):
+    sec = self.__manifest[ secName ]
+    if not sec:
+      return S_ERROR( "%s does not exist" )
+    return S_OK( sec )
+
+
+  def setSectionContents( self, secName, contents ):
+    if contents and not isinstance( contents, CFG ):
+      return S_ERROR( "Contents for section %s is not a cfg object" % secName )
+    if secName in self.__manifest:
+      self.__manifest[ secName ].reset()
+      self.__manifest[ secName ].mergeWith( contents )
+    else:
+      self.__manifest.createNewSection( sectionName, contents = contents )
 
   def setOption( self, varName, varValue ):
     """

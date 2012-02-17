@@ -43,6 +43,7 @@ class OptimizerExecutor( Executor ):
     if not result[ 'OK' ]:
       self.log.info( "Job %s: Set to Failed/%s" % ( jid, result[ 'Message' ] ) )
       return jobState.setStatus( "Failed", result[ 'Message' ] )
+
     return S_OK()
 
 
@@ -68,6 +69,8 @@ class OptimizerExecutor( Executor ):
     nextOp = opChain[ opIndex + 1 ]
     self.log.info( "Job %s: Set to Checking/%s" % ( jobState.jid, nextOp ) )
     return jobState.setStatus( "Checking", nextOp )
+
+
 
 
   def deserializeTask( self, taskStub ):

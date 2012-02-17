@@ -154,6 +154,9 @@ class Executor( AgentModule ):
   def freezeTask( self, freezeTime ):
     self.__taskData.freezeTime = freezeTime
 
+  def isTaskFrozen( self ):
+    return self.__taskData.freezeTime
+
   ####
   # Need to overwrite this functions
   ####

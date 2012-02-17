@@ -26,7 +26,7 @@ from DIRAC.ResourceStatusSystem.Utilities.CS import getSiteTiers
 
 import random
 
-class JobSchedulingAgent( OptimizerModule ):
+class JobSchedulingAgent( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
       - checkJob() - the main method called for each job
@@ -52,6 +52,174 @@ class JobSchedulingAgent( OptimizerModule ):
             return result
         self.freezeTask( delay )
         return S_OK()
+
+    #Get site requirements
+    result = self.__getSitesRequired( jobState )
+    if not result[ 'OK' ]:
+      return result
+    userSites, userBannedSites = result[ 'Value' ]
+
+    #Get active and banned sites from DIRAC
+    result = self.jobDB.getSiteMask( 'Active' )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot retrieve active sites from JobDB" )
+    wmsActiveSites = result[ 'Value' ]
+    result = self.jobDB.getSiteMask( 'Banned' )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot retrieve banned sites from JobDB" )
+    wmsBannedSites = result[ 'Value' ]
+
+    #If the user has selected any site, filter them and hold the job if not able to run
+    if sites:
+      sites = self.__applySiteFilter( userSites, wmsActiveSites, wmsBannedSites )
+      if not sites:
+        return self.__holdJob( jobState, "Sites are inactive or banned" )
+
+    #Get the Input data
+    # Third, check if there is input data
+    result = jobState.getInputData()
+    if not result['OK']:
+      self.log.error( "Job %s: Cannot get input data %s" % ( jid, result['Message'] ) )
+      return S_ERROR( 'Failed to get input data from JobDB' )
+
+    if not result['Value']:
+      #No input data? Generate requirements and next
+      return self.__sendToTQ( jobState, userSites, userBannedSites )
+
+    self.log.verbose( 'Job %s: has an input data requirement' % jid )
+    result = jobState.getOp
+    #Check input data agent result and limit site candidates accordingly
+    dataResult = self.getOptimizerJobInfo( job, self.dataAgentName )
+    if dataResult['OK'] and len( dataResult['Value'] ):
+      self.log.verbose( 'Retrieved from %s Optimizer Info for Job %s:' % ( self.dataAgentName, job ), dataResult )
+      if 'SiteCandidates' in dataResult['Value']:
+        return S_OK( dataResult['Value'] )
+
+
+
+  def __applySiteFilter( self, sites, active = False, banned = False ):
+    filtered = list( sites )
+    if active:
+      for site in sites:
+        if site in filtered:
+          filtered.remove( site )
+    if banned:
+      for site in banned:
+        if site in filtered:
+          filtered.remove( site )
+    return filtered
+
+  def __holdJob( self, jobState, holdMsg ):
+    self.freezeTask( self.am_getOption( "HoldTime", 300 ) )
+    jid = jobState.jid
+    self.log.info( "Job %s: On hold -> %s" % holdMsg )
+    return jobSate.setApplicationStatus( holdMsg )
+
+  def __getSitesRequired( self, jobState ):
+    """Returns any candidate sites specified by the job or sites that have been
+       banned and could affect the scheduling decision.
+    """
+
+    result = jobState.getManifest()
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve manifest: %s" % result[ 'Message' ] )
+    manifest = result[ 'Value' ]
+
+    bannedSites = manifest.getValue( "BannedSites", [] )
+    if bannedSites:
+      self.log.info( "Job %s has banned %s sites" % ", ".join( bannedSites ) )
+
+    sites = manifest.getValue( "Site", [] )
+
+    if len( sites ) == 1:
+      self.log.info( 'Job %s has single chosen site %s specified' % ( job, site[0] ) )
+
+    if sites:
+      sites = self.__applySiteFilter( sites, banned = bannedSites )
+      if not sites:
+        return S_ERROR( "Impossible site requirement" )
+
+    return S_OK( ( sites, bannedSites ) )
+
+
+  def __sendToTQ( self, jobState, sites, bannedSites ):
+    """This method sends jobs to the task queue agent and if candidate sites
+       are defined, updates job JDL accordingly.
+    """
+    result = jobState.getManifest()
+    if not result[ 'OK' ]:
+      return S_ERROR( "Could not retrieve manifest: %s" % result[ 'Message' ] )
+    manifest = result[ 'Value' ]
+
+    reqSection = "JobRequirements"
+
+    if reqSection in manifest:
+      result = manifest.getSection( reqSection )
+    else:
+      result = manifest.createSection( reqSection )
+    if not result[ 'OK' ]:
+      self.log.error( "Job %s: Cannot create %s: %s" % reqSection, result[ 'Value' ] )
+      return S_ERROR( "Cannot create %s in the manifest" % reqSection )
+    reqCfg = result[ 'Value' ]
+
+    if sites:
+      reqCfg.setOption( "Sites", ", ".join( sites ) )
+    if bannedSites:
+      reqCfg.setOption( "BannedSites", ", ".join( bannedSites ) )
+
+    for key in ( 'SubmitPools', "GridMiddleware", "PilotTypes", "JobType", "GridRequiredCEs" ):
+      reqKey = key
+      if key == "JobType":
+        reqKey = "JobTypes"
+      elif key == "GridRequiredCEs":
+        reqKey = "GridCEs"
+      if key in manifest:
+        reqCfg.setOption( reqKey, ", ".join( manifest.getOption( key, [] ) ) )
+
+    if not sites:
+      self.log.verbose( 'All sites are eligible for job %s' % jobState.jid )
+      result = jobState.setAttribute( "Site", "ANY" )
+      if not result[ 'OK' ]:
+        return result
+    elif len( sites ) == 1:
+      self.log.verbose( 'Individual site candidate for job %s is %s' % ( job, siteCandidates[0] ) )
+      result = jobState.setAttribute( "Site", sites[0] )
+      if not result[ 'OK' ]:
+        return result
+    else:
+      #TODO: Check if it has to show a group.site.cc
+      #For now just set it to multiple
+      self.log.verbose( 'Site candidates for job %s are %s' % ( job, str( siteCandidates ) ) )
+      result = jobState.setAttribute( "Site", "Multiple" )
+      if not result[ 'OK' ]:
+        return result
+
+    return self.setNextOptimizer( jobState )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
