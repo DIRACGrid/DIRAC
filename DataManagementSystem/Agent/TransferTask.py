@@ -49,78 +49,6 @@ class TransferTask( RequestTask ):
     self.addOperationAction( "putAndRegister", self.putAndRegister )
     self.addOperationAction( "replicateAndRegister", self.replicateAndRegister )
 
-    ## obsolete, to be removed
-    #self.addOperationAction( "put", self.put )
-    #self.addOperationAction( "putAndRegisterAndRemove", self.putAndRegister )
-    #self.addOperationAction( "replicate", self.replicate )
-    #self.addOperationAction( "replicateAndRegisterAndRemove", self.replicateAndRegister )
-    #self.addOperationAction( "get", self.get )
-
-  # def put( self, index, requestObj, subAttrs, subFiles ):
-  #   """ put operation processing
-    
-  #   :param self: self reference
-  #   :param int index: execution order
-  #   :param RequestContainer requestObj: request object
-  #   :param dict subAttrs: sub-request attributes 
-  #   :param list subFiles: sub-request files
-  #   :return: S_OK( requestObj ) 
-  #   """
-  #   ## holder for error
-  #   subRequestError = ""    
-  #   ## list ot targetSEs
-  #   targetSEs = list(set([ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",")]))
-  #   ## dict for failed LFNs
-  #   failed = {}
-
-  #   for subRequestFile in subFiles:
-  #     lfn = subRequestFile["LFN"]
-  #     failed.setdefault( lfn, {} )
-  #     self.info("Processing file %s" % lfn )
-        
-  #     if subRequestFile["Status"] != "Waiting":
-  #       self.info("Skipping file %s, status is %s" % ( lfn, subRequestFile["Status"] ) )
-  #       continue
-  #     self.addMark( "Put", 1 ) 
-
-  #     for targetSE in targetSEs:
-  #       pfn = subRequestFile["PFN"]
-  #       put = self.replicaManager().put( lfn, pfn, targetSE )
-  #       if put["OK"]:
-  #         if lfn in put["Value"]["Successful"]:
-  #           self.addMark( "Put successful", 1 )
-  #           self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "TransferAgent" )
-  #           putTime = put["Value"]["Successful"][lfn] 
-  #           self.info( "Successfully put %s to %s in %s seconds." % ( lfn, targetSE, putTime ) )
-  #         else:
-  #           self.addMark( "Put failed", 1 )
-  #           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "TransferAgent" )
-  #           self.error( "Failed to put file %s at %s: %s" % ( lfn, 
-  #                                                             targetSE, 
-  #                                                             put["Value"]["Failed"][lfn] ) )
-  #           subRequestError = "Put operation failed for %s to %s" % ( lfn, targetSE )
-  #           failed[lfn][targetSE] = "Put failed"
-  #           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "Put failed" )
-  #       else:
-  #         self.addMark( "Put failed", 1 )
-  #         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "TransferAgent" )
-  #         self.error( "Completely failed to put file %s at %s: %s" % ( lfn, targetSE, put["Message"] ) )
-  #         subRequestError = "Put RM call failed for %s to %s" % ( lfn, targetSE )
-  #         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "Put RM call failed" )
-  #         failed[lfn][targetSE] = put["Message"]
-          
-  #     if not failed[lfn]:
-  #       self.info("File %s has been processed sucessfully at all targetSEs." % lfn )
-  #       requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
-
-  #   if not subRequestError:
-  #     self.info("All files processed successfully, setting subrequest status to 'Done'")
-  #     requestObj.setSubRequestStatus( index, "transfer", "Done" )
-  #   else:
-  #     self.error( subRequestError )
-
-  #   return S_OK( requestObj )
-
   def putAndRegister( self, index, requestObj, subAttrs, subFiles ):
     """ putAndRegister operation processing
 
@@ -138,7 +66,7 @@ class TransferTask( RequestTask ):
     if len(targetSEs) != 1:
       self.error("putAndRegister: wrong value for TargetSE list = %s, should contain one target!" % targetSEs )
       ## TODO set Failed status!
-      return S_ERROR( "putAndRegister: wrong value for TargetSE list = %s, TargetSE should contain one target!" % targetSEs )
+      return S_ERROR( "putAndRegister: TargetSE should contain one target, got %s" % targetSEs )
 
     targetSE = targetSEs[0]
     ## dict for failed LFNs
@@ -165,10 +93,10 @@ class TransferTask( RequestTask ):
 
       ## missing parameters
       if "" in [ lfn, pfn, guid, addler ]:
-        self.error( "putAndRegister: missing parameters %s" % ( ", ".join( [ k for k,v in {"PFN" : pfn, 
-                                                                                           "GUID" : guid, 
-                                                                                           "Addler" : addler, 
-                                                                                           "LFN" : lfn  }.items() 
+        self.error( "putAndRegister: missing parameters %s" % ( ", ".join( [ k for k, v in {"PFN" : pfn, 
+                                                                                            "GUID" : guid, 
+                                                                                            "Addler" : addler, 
+                                                                                            "LFN" : lfn  }.items() 
                                                                              if v in ( "", None ) ] ) ) )
         self.error( "putAndRegister: setting file status to 'WrongParams'")
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "WrongParams" )
@@ -231,7 +159,9 @@ class TransferTask( RequestTask ):
             putTime = putAndRegister["Value"]["Successful"][lfn]["put"]
             self.info( "putAndRegister: successfully put %s to %s in %s seconds" % ( lfn, targetSE, putTime ) )
             registerTime = putAndRegister["Value"]["Successful"][lfn]["register"] 
-            self.info( "putAndRegister: successfully registered %s to %s in %s seconds" % ( lfn, targetSE, registerTime ) )
+            self.info( "putAndRegister: successfully registered %s to %s in %s seconds" % ( lfn, 
+                                                                                            targetSE, 
+                                                                                            registerTime ) )
             
         else:
 
@@ -266,75 +196,8 @@ class TransferTask( RequestTask ):
           
     return S_OK( requestObj )
 
-  # def replicate( self, index, requestObj, subAttrs, subFiles ):
-  #   """ replicate operation processing
-
-  #   :param self: self reference
-  #   :param int index: execution order
-  #   :param RequestContainer requestObj: request object
-  #   :param dict subAttrs: sub-request attributes 
-  #   :param list subFiles: sub-request files
-  #   :return: S_OK ( requestObj )
-  #   """
-  #   ## holder for subrequest error
-  #   subRequestError = ""
-  #   ## list of targetSEs
-  #   targetSEs = list(set([ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",")]))
-  #   ## dict for failed LFNs
-  #   failed = {}
-
-  #   sourceSE = subAttrs["SourceSE"]
-
-  #   for subRequestFile in subFiles:
-  #     lfn = subRequestFile["LFN"]
-  #     failed.setdefault( lfn, {} )
-  #     self.info( "Processing file %s" % lfn )
-
-  #     if subRequestFile["Status"] != "Waiting":
-  #       self.info( "Skipping file %s, status is '%s'" % ( lfn, subRequestFile["Status"] ) )
-  #       continue
-      
-  #     for targetSE in targetSEs:
-  #       self.addMark( "Replicate", 1 )
-  #       res = self.replicaManager().replicate( lfn, targetSE, sourceSE = sourceSE )
-  #       if res["OK"]:
-  #         if lfn in res["Value"]["Successful"]:
-  #           self.addMark( "Replication successful", 1 )
-  #           replicaTime = res['Value']['Successful'][lfn]
-  #           self.info( "Successfully replicated %s to %s in %s seconds." % ( lfn, targetSE, replicaTime ) )
-  #         else:            
-  #           self.addMark( "Replication failed", 1 )
-  #           self.error( "Failed to replicate file %s at %s: %s" % ( lfn, 
-  #                                                                   targetSE, 
-  #                                                                   res["Value"]["Failed"][lfn] ) )
-  #           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "Replicate failed" )
-  #           failed[lfn][targetSE] = "Replicate failed"
-  #           subRequestError = "Replicate failed"
-  #       else:
-  #         self.addMark( "Replication failed", 1 )
-  #         self.error( "Completely failed to replicate file.", res["Message"] ) 
-  #         failed[lfn][targetSE] = res["Message"]
-  #         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "Replicate RM call failed" )
-  #         subRequestError = "RM call failed"
-      
-  #     ## all targetSEs processed, set status to 'Done' if not failed
-  #     if not failed[lfn]:
-  #       self.info( "File %s processed sucessfully at all targetSEs, setting its status to 'Done'" % lfn )
-  #       requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
-        
-  #   if not subRequestError:
-  #     self.info("All files processed successfully, will set subrequest status to 'Done'")
-  #     requestObj.setSubRequestStatus( index, "replicate", "Done" )
-  #   else:
-  #     self.error( subRequestError )
-
-  #     #self.info("Some replications have failed, will set subrequest status to 'Error'")
-  #     #requestObj.setSubRequestStatus( index, "replicate", "Error" )
-      
-  #   return S_OK( requestObj )
-
   def replicateAndRegister( self, index, requestObj, subAttrs, subFiles ):
-    """ replicateAndRegsiter operation processing
+    """ replicateAndRegister operation processing
 
     :param self: self reference
     :param int index: execution order
@@ -423,70 +286,4 @@ class TransferTask( RequestTask ):
     else:
       self.error( subRequestError )
 
-      
     return S_OK( requestObj )
-  
-  # def get( self, index, requestObj, subAttrs, subFiles ):
-  #   """ get operation processing
-
-  #   :param self: self reference
-  #   :param int index: current execution order index
-  #   :param RequestContainer requestObj: request object
-  #   :param dict subAttrs: sub-request attributes 
-  #   :param list subFiles: sub-request files
-  #   :return: S_ERROR or S_OK( requestObj )
-  #   """
-  #   ## holder for subrequest error
-  #   subRequestError = ""
-  #   ## list of targetSEs
-  #   targetSEs = list(set([targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",")]))
-  #   # dict for failed LFNs
-  #   failed = {}
-
-  #   for subRequestFile in subFiles:
-  #     lfn = subRequestFile["LFN"]
-  #     failed.setdefault( lfn, {} )
-  #     self.info("Processing file %s" % lfn )
-  #     if subRequestFile["Status"] != "Waiting":
-  #       self.info( "Skipping file %s, status is %s" % ( lfn, subRequestFile["Status"] ) )
-  #       continue
-  #     pfn = subRequestFile["PFN"]
-  #     get = { "OK" : False, "Message" : "" }
-  #     if pfn:
-  #       for targetSE in targetSEs:
-  #         get = self.replicaManager().getStorageFile( pfn, targetSE )
-  #         if get["OK"]:
-  #           if pfn in get["Value"]["Successful"]:
-  #             self.info("Sucessfully got %s at %s" % ( pfn, targetSE ) )
-  #           else:
-  #             failed[lfn][targetSE] = get["Value"]["Failure"][pfn]
-  #             self.error("Cannot get %s at %s: %s" % ( pfn, targetSE, get["Value"]["Failed"][lfn] ) )
-  #         else:
-  #           self.error( "Failed to get %s file at %s: %s" % ( lfn, targetSE, get["Message"] ) )
-  #           failed[lfn][targetSE] = get["Message"]
-  #     else:
-  #       get = self.replicaManager().getFile( lfn )
-  #       if get["OK"]:
-  #         if lfn in get["Value"]["Successful"]: 
-  #           self.info( "Successfully got %s" % ( lfn ) )
-  #         else:
-  #           failed[lfn][lfn] =  get["Value"]["Failed"][lfn]
-  #       else:
-  #         self.error( "Failed to get %s file: %s" % ( lfn, get["Message"] ) )
-  #         failed[lfn][lfn] = get["Message"]
-  #         subRequestError = get["Message"]
-
-  #     if not failed[lfn]:
-  #       self.info("File %s sucessfully processed at all targetSEs." % lfn )
-  #       requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
-
-  #   if not subRequestError:
-  #     self.info("All files processed successfully, seting subrequest status to 'Done'.")
-  #     requestObj.setSubRequestStatus( index, "transfer", "Done" )
-  #   else:
-  #     self.error( subRequestError )
-      
-  #   return S_OK( requestObj )
-
-
-

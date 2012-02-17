@@ -7,7 +7,9 @@
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
+from DIRAC.Resources.Storage.StorageElement import StorageElement 
 import threading,types,string,time,datetime
+
 
 __RCSID__ = "$Id$"
 
@@ -298,15 +300,26 @@ class TransferDB( DB ):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
-  def updateAncestorChannelStatus(self,channelID,fileIDs):
-    if not len(fileIDs) >0:
+  def updateAncestorChannelStatus( self, channelID, fileIDs ):
+    """ update Channel.Status 
+          
+          WaitingN => Waiting 
+          DoneN => Done 
+
+    :param self: self reference
+    :param int channelID: Channel.ChannelID 
+    :param list fileIDs: list of Files.FileID 
+    """
+    if not fileIDs:
       return S_OK()
-    strFileIDs = intListToString(fileIDs)
-    req = "UPDATE Channel SET Status = 'Waiting' WHERE FileID IN (%s) AND Status = 'Waiting%s';" % (strFileIDs,channelID)
+    strFileIDs = intListToString( fileIDs )
+    req  = "UPDATE Channel SET Status = "
+    req += "CASE WHEN Status = 'Waiting%s' THEN 'Waiting' WHEN Status = 'Done%s' THEN 'Done' END " % ( channelID, channelID )
+    req += "WHERE FileID IN (%s) AND ( Status = 'Waiting%s' OR Status = 'Done%s');" % ( strFileIDs, channelID, channelID )
     res = self._update(req)
     if not res['OK']:
-      err = "TransferDB._updateAncestorChannelStatus: Failed to update status."
-      return S_ERROR('%s\n%s' % (err,res['Message']))
+      err = "TransferDB.updateAncestorChannelStatus: Failed to update status"
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
   def removeFilesFromChannel(self,channelID,fileIDs):
@@ -535,28 +548,66 @@ class TransferDB( DB ):
       return S_ERROR('%s\n%s' % (err,res['Message']))
     return res
 
+  
+
 
   #################################################################################
   # These are the methods for managing the FileToFTS table
 
-  def getFTSReqLFNs(self,ftsReqID):
+  def getFTSReqLFNs(self, ftsReqID, channelID=None, sourceSE=None ):
+
     req = "SELECT ftf.FileID,f.LFN from FileToFTS as ftf LEFT JOIN Files as f ON (ftf.FileID=f.FileID) WHERE ftf.FTSReqID = %s;" % ftsReqID
     res = self._query(req)
     if not res['OK']:
-      err = "TransferDB._getFTSReqLFNs: Failed to get LFNs for FTSReq %s." % ftsReqID
+      err = "TransferDB.getFTSReqLFNs: Failed to get LFNs for FTSReq %s." % ftsReqID
       return S_ERROR('%s\n%s' % (err,res['Message']))
     if not res['Value']:
-      err = "TransferDB._getFTSReqLFNs: No LFNs found for FTSReq %s." % ftsReqID
+      err = "TransferDB.getFTSReqLFNs: No LFNs found for FTSReq %s." % ftsReqID
       return S_ERROR(err)
+    ## list of missing fileIDs
+    missingFiles = [] 
     files = {}
-    for fileID,lfn in res['Value']:
+    for fileID, lfn in res['Value']:
       if lfn:
         files[lfn] = fileID
       else:
         error = "TransferDB.getFTSReqLFNs: File does not exist in the Files table."
-        gLogger.error(error,fileID)
-        return S_ERROR(error)
-    return S_OK(files)
+        gLogger.warn( error, fileID )
+        missingFiles.append( fileID )
+
+    ## failover  mechnism for removed Requests  
+    if missingFiles:
+      ## no channelID or sourceSE --> return S_ERROR
+      if not channelID and not sourceSE:
+        return S_ERROR("TransferDB.getFTSReqLFNs: missing records in Files table: %s" % ", ".join( missingFiles ) )
+      ## create storage element 
+      sourceSE = StorageElement( sourceSE )
+      ## get FileID, SourceSURL pairs for missing FileIDs and channelID used in this FTSReq  
+      query = "SELECT FileID, SourceSURL FROM Channel WHERE ChannelID = %s and FileID in (%s);" % ( channelID, ",".join( missingFiles ) )
+      query = self._query( query )
+      if not query["OK"]:
+        gLogger.error("TransferDB.getFSTReqLFNs: unabler to select PFNs for missing Files records: %s" % query["Message"])
+        return query
+      ## guess LFN from StorageElement, prepare query for inserting records, save lfn in files dict 
+      insertTemplate = "INSERT INTO Files (SubRequestID, FileID, LFN, Status) VALUES (0, %s, %s, 'Scheduled');"
+      insertQuery = []
+      for fileID, pfn in query["Value"]:
+        lfn = sourceSE.getPfnPath( pfn )
+        if not lfn["OK"]:
+          gLogger.error("TransferDB.getFTSReqLFNs: %s" % lfn["Message"] )
+          return lfn
+        lfn = lfn["Value"]        
+        files[lfn] = fileID
+        insertQuery.append( insertTemplate % ( fileID, lfn ) )
+      ## insert missing 'fake' records
+      if insertQuery:
+        insert = self._update( "\n".join( insertQuery ) )
+        if not insert["OK"]:
+          gLogger.error("TransferDB.getFTSReqLFNs: unable to insert fake Files records for missing LFNs: %s" % insert["Message"])
+          return insert
+    
+    ## return files dict
+    return S_OK( files )
 
   def setFTSReqFiles(self,ftsReqID,channelID,fileAttributes):
     for fileID,fileSize in fileAttributes:

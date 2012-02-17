@@ -933,7 +933,7 @@ class RequestDBMySQL( DB ):
     current_order = 999
     for row in result['Value']:
       status, order = row
-      if status == "Waiting" and order < current_order:
+      if status != "Done" and order < current_order:
         current_order = order
 
     return S_OK( current_order )

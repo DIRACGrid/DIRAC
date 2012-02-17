@@ -205,7 +205,7 @@ class DistributionMaker:
 
 
   def getAvailableExternals( self ):
-    packagesURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars/tars.list"
+    packagesURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/installSource/tars.list"
     try:
       remoteFile = urllib2.urlopen( packagesURL )
     except urllib2.URLError:

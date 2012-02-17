@@ -484,7 +484,7 @@ class RequestTask( object ):
         self.error( "handleRequest: error when updating request: %s" % update["Message"] )
         return update
       ## finalize request if jobID is present
-      if self.jobID and canFinalize ans requestObj.isRequestDone():
+      if self.jobID and canFinalize and requestObj.isRequestDone():
         finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
         if not finalize["OK"]:
           self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
