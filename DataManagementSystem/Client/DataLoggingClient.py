@@ -37,7 +37,9 @@ class DataLoggingClient:
     :param list fileTuples: list of tuples with file information
     """
     if not self.url:
-      return S_ERROR("URL for DataManagement/DataLogging not specified!")
+      gLogger.warn("addFileRecords: service URL is NOT defined!")
+      return S_OK()
+
     try:
       client = RPCClient( self.url, timeout=120 )
       return client.addFileRecords( fileTuples )
@@ -57,7 +59,8 @@ class DataLoggingClient:
     :param str source: source of new state
     """
     if not self.url:
-      return S_ERROR("URL for DataManagement/DataLogging not specified!")
+      gLogger.warn("addFileRecord: service URL is NOT defined!")
+      return S_OK()
     try:
       client = RPCClient( self.url, timeout=120 )
       return client.addFileRecord( lfn, status, minor, date, source )
