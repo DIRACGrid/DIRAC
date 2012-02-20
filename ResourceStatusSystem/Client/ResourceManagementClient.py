@@ -47,6 +47,9 @@ class ResourceManagementClient:
       try:
         self.gate = ResourceManagementDB()
       except SystemExit:
+        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )
+      except ImportError:
+        # Pilots will connect here, as MySQLdb is not installed for them        
         self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
     else:
       self.gate = serviceIn    
