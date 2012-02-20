@@ -90,6 +90,10 @@ for se,seOptions in res[ 'Value' ].items():
     if not seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:
       gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ "InActive", "Banned", "Probing" ] ) )    
       continue
+    
+    if 'ARCHIVE' in se:
+      gLogger.notice( '%s is not supposed to change status to Acctive' % se )
+      continue
      
     resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
     if not resR['OK']:
