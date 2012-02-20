@@ -256,7 +256,7 @@ def loadObjects( path, reFilter = None, parentClass = None ):
       if reFilter.match( objFile ):
         pythonClassName = objFile[:-3]
         if pythonClassName not in objectsToLoad:
-          gLogger.info( "Adding to load queue %s/%s/%s" % ( parentModule, path, pythonClassName ) )
+          gLogger.info( "Adding to message load queue %s/%s/%s" % ( parentModule, path, pythonClassName ) )
           objectsToLoad[ pythonClassName ] = parentModule
 
   #Load them!
@@ -273,7 +273,7 @@ def loadObjects( path, reFilter = None, parentClass = None ):
                                locals(), pythonClassName )
       objClass = getattr( objModule, pythonClassName )
     except Exception, e:
-      gLogger.error( "Can't load type %s/%s: %s" % ( parentModule, pythonClassName, str( e ) ) )
+      gLogger.exception( "Can't load type %s/%s: %s" % ( parentModule, pythonClassName, str( e ) ) )
       continue
     if parentClass == objClass:
       continue

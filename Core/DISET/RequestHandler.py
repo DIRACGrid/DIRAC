@@ -48,7 +48,7 @@ class RequestHandler( object ):
   def _rh__initializeClass( cls, serviceInfoDict, lockManager, msgBroker, monitor ):
     """
     Class initialization (not to be called by hand or overwritten!!)
-    
+
     @type serviceInfoDict: dictionary
     @param serviceInfoDict: Information vars for the service
     @type msgBroker: object
@@ -266,7 +266,7 @@ class RequestHandler( object ):
       oTypesList = getattr( self, sListName )
     except:
       gLogger.error( "There's no types info for method export_%s" % method )
-      return S_ERROR( "Handler error for server %s while processing method %s" % ( 
+      return S_ERROR( "Handler error for server %s while processing method %s" % (
                                                                                   self.serviceInfoDict[ 'serviceName' ],
                                                                                   method ) )
     try:
@@ -298,7 +298,7 @@ class RequestHandler( object ):
 
 ####
 #
-#  Connection methods 
+#  Connection methods
 #
 ####
 
@@ -471,7 +471,7 @@ class RequestHandler( object ):
 
 ####
 #
-#  Utilities methods 
+#  Utilities methods
 #
 ####
 
@@ -554,6 +554,11 @@ class RequestHandler( object ):
     return cls.__msgBroker.getMsgFactory().createMessage( cls.__svcName, msgName )
 
   @classmethod
-  def srv_msgDisconnectClient( cls, trid ):
+  def srv_disconnectClient( cls, trid ):
     return cls.__msgBroker.removeTransport( trid )
+
+  def srv_disconnect( self, trid = None ):
+    if not trid:
+      trid = self.srv_getTransportID()
+    return self.__msgBroker.removeTransport( trid )
 

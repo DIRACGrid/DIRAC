@@ -637,7 +637,7 @@ class JobDB( DB ):
     if not res['OK']:
       return res
 
-    return S_OK( [ self._to_value( i ) for i in  res['Value'] if i.strip() ] )
+    return S_OK( [ i[0] for i in res['Value'] if i[0].strip() ] )
 
 #############################################################################
   def setInputData ( self, jobID, inputData ):

@@ -37,7 +37,7 @@ class DB( MySQL ):
       localHostName = socket.getfqdn()
       if localHostName == self.dbHost:
         self.dbHost = 'localhost'
-        
+
     self.dbPort = 3306
     result = gConfig.getOption( self.cs_path + '/Port' )
     if not result['OK']:
@@ -47,7 +47,7 @@ class DB( MySQL ):
         self.dbPort = int(result['Value'])
     else:
       self.dbPort = int(result['Value'])
-        
+
     self.dbUser = ''
     result = gConfig.getOption( self.cs_path + '/User' )
     if not result['OK']:
@@ -81,9 +81,7 @@ class DB( MySQL ):
                    self.dbName, self.dbPort, maxQueueSize = maxQueueSize )
 
     if not self._connected:
-      err = 'Can not connect to DB, exiting...'
-      self.log.fatal( err )
-      sys.exit( err )
+      raise RuntimeError( 'Can not connect to DB %s, exiting...' % dbname )
 
 
     self.log.info( "==================================================" )

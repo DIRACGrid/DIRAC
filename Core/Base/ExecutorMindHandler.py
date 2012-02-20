@@ -9,7 +9,8 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 class ExecutorMindHandler( RequestHandler ):
 
   MSG_DEFINITIONS = { 'ProcessTask' : { 'taskId' : ( types.IntType, types.LongType ),
-                                        'taskStub' : types.StringType },
+                                        'taskStub' : types.StringType,
+                                        'eType' : types.StringType },
                       'TaskDone' : { 'taskId' : ( types.IntType, types.LongType ),
                                      'taskStub' : types.StringType },
                       'TaskFreeze' : { 'taskId' : ( types.IntType, types.LongType ),
@@ -30,9 +31,10 @@ class ExecutorMindHandler( RequestHandler ):
       self.__taskProcDB = taskProcCB
       self.__taskFreezeCB = taskFreezeCB
       self.__taskErrCB = taskErrCB
+      self.__allowedClients = []
 
-    def cbSendTask( self, eId, taskId, taskObj ):
-      return self.__sendTaskCB( eId, taskId, taskObj )
+    def cbSendTask( self, taskId, taskObj, eId, eType ):
+      return self.__sendTaskCB(  taskId, taskObj, eId, eType )
 
     def cbDispatch( self, taskId, taskObj, pathExecuted ):
       return self.__dispatchCB( taskId, taskObj, pathExecuted )
@@ -64,9 +66,23 @@ class ExecutorMindHandler( RequestHandler ):
                                                          cls.exec_taskFreeze,
                                                          cls.exec_taskError )
     cls.__eDispatch.setCallbacks( cls.__callbacks )
+    cls.__allowedClients = []
 
   @classmethod
-  def __sendTask( self, eId, taskId, taskObj ):
+  def setAllowedClients( cls, aClients ):
+    if type( aClients ) not in ( types.ListType, types.TupleType ):
+      aClients = ( aClients, )
+    cls.__allowedClients = aClients
+
+  @classmethod
+  def __sendTask( self, taskId, taskObj, eId, eType ):
+    try:
+      result = self.exec_prepareToSend( taskId, taskObj, eId )
+      if not result[ 'OK' ]:
+        return result
+    except Exception, excp:
+      gLogger.exception( "Exception while executing prepareToSend: %s" % str( excp ) )
+      return S_ERROR( "Cannot presend task" )
     try:
       result = self.exec_serializeTask( taskObj )
     except Exception, excp:
@@ -83,33 +99,36 @@ class ExecutorMindHandler( RequestHandler ):
     msgObj = result[ 'Value' ]
     msgObj.taskId = taskId
     msgObj.taskStub = taskStub
+    msgObj.eType = eType
     return self.srv_msgSend( eId, msgObj )
 
   @classmethod
   def __execDisconnected( cls, trid ):
-    result = cls.srv_msgDisconnectClient( trid )
+    result = cls.srv_disconnectClient( trid )
     if not result[ 'OK' ]:
       return result
     return cls.exec_executorDisconnected( trid )
 
   auth_conn_new = [ 'all' ]
   def conn_new( self, trid, identity, kwargs ):
-    if 'executorName' in kwargs and kwargs[ 'executorName' ]:
+    if 'executorTypes' in kwargs and kwargs[ 'executorTypes' ]:
       return S_OK()
-    if 'jobManager' in kwargs and kwargs[ 'jobManager' ]:
-      return S_OK()
+    for aClient in self.__allowedClients:
+      if aClient in kwargs and kwargs[ aClient ]:
+        return S_OK()
     return S_ERROR( "Only executors are allowed to connect" )
 
   auth_conn_connected = [ 'all' ]
   def conn_connected( self, trid, identity, kwargs ):
-    if 'jobManager' in kwargs and kwargs[ 'jobManager' ]:
-      return S_OK()
+    for aClient in self.__allowedClients:
+      if aClient in kwargs and kwargs[ aClient ]:
+        return S_OK()
     try:
       numTasks = max( 1, int( kwargs[ 'maxTasks' ] ) )
     except:
       numTasks = 1
-    self.__eDispatch.addExecutor( kwargs[ 'executorName' ], trid )
-    return self.exec_executorConnected( kwargs[ 'executorName' ], trid )
+    self.__eDispatch.addExecutor( trid, kwargs[ 'executorTypes' ] )
+    return self.exec_executorConnected( trid, kwargs[ 'executorTypes' ] )
 
   auth_conn_drop = [ 'all' ]
   def conn_drop( self, trid ):
@@ -167,15 +186,11 @@ class ExecutorMindHandler( RequestHandler ):
       gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
     return S_OK()
 
-  auth_msg_executorError = [ 'all' ]
-  def msg_executorError( self, msgObj ):
-    #TODO: Check the executor has privileges over the task
-    self.__eDispatch.removeTask( msgObj.taskId )
-    try:
-      self.exec_taskError( msgObj.taskId, msgObj.errorMsg )
-    except:
-      gLogger.exception( "Exception when processing task %s" % msgObj.taskId )
-    return S_OK()
+  auth_msg_ExecutorError = [ 'all' ]
+  def msg_ExecutorError( self, msgObj ):
+    gLogger.info( "Disconnecting executor by error: %s" % msgObj.errorMsg )
+    self.__eDispatch.removeExecutor( self.srv_getTransportID() )
+    return self.srv_disconnect()
 
   #######
   # Utilities functions
@@ -214,6 +229,10 @@ class ExecutorMindHandler( RequestHandler ):
 
   @classmethod
   def exec_executorConnected( cls, execName, trid ):
+    return S_OK()
+
+  @classmethod
+  def exec_prepareToSend( cls, taskId, taskObj, eId ):
     return S_OK()
 
   ########

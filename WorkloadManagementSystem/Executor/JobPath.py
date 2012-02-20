@@ -2,7 +2,7 @@
 # $HeadURL$
 # File :    JobPathAgent.py
 ########################################################################
-""" 
+"""
   The Job Path Agent determines the chain of Optimizing Agents that must
   work on the job prior to the scheduling decision.
 
@@ -14,19 +14,20 @@
 __RCSID__ = "$Id$"
 import types
 from DIRAC import S_OK, S_ERROR, List
-from DIRAC.WorkloadManagementSystem.Agent.Base.OptimizerExecutor  import OptimizerExecutor
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 
-class JobPathAgent( OptimizerExecutor ):
+class JobPath( OptimizerExecutor ):
   """
       The specific Optimizer must provide the following methods:
       - checkJob() - the main method called for each job
       and it can provide:
-      - initializeOptimizer() before each execution cycle      
+      - initializeOptimizer() before each execution cycle
   """
 
-  def initializeOptimizer( self ):
-    self.__voPlugins = {}
+  @classmethod
+  def initializeOptimizer( cls ):
+    cls.__voPlugins = {}
     return S_OK()
 
   def __setOptimizerChain( self, jobState, opChain ):
@@ -43,7 +44,7 @@ class JobPathAgent( OptimizerExecutor ):
       try:
         module = __import__( voPlugin, globals(), locals(), [ modName ] )
       except ImportError, excp:
-        self.log.exception( "Could not import VO plugin %s" % voPlugin )
+        self.jobLog.exception( "Could not import VO plugin %s" % voPlugin )
         return S_ERROR( "Could not import VO plugin %s: %s" % ( voPlugin, excp ) )
 
       try:
@@ -53,12 +54,12 @@ class JobPathAgent( OptimizerExecutor ):
 
     argsDict = { 'JobID': jobState.jid,
                  'JobState' : jobState,
-                 'ConfigPath':self.am_getModuleParam( "section" ) }
+                 'ConfigPath':self.ex_getModuleParam( "section" ) }
     try:
       modInstance = self.__voPlugins[ voPlugin ]( argsDict )
       result = modInstance.execute()
     except Exception, excp:
-      self.log.exception( "Excp while executing %s" % voPlugin )
+      self.jobLog.exception( "Excp while executing %s" % voPlugin )
       return S_ERROR( "Could not execute VO plugin %s: %s" % ( voPlugin, excp ) )
 
     if not result['OK']:
@@ -76,11 +77,11 @@ class JobPathAgent( OptimizerExecutor ):
     jobManifest = result[ 'Value' ]
     opChain = jobManifest.getOption( "JobPath", [] )
     if opChain:
-      self.log.info( 'Job %s defines its own optimizer chain %s' % ( jid, jobPath ) )
+      self.jobLog.info( 'Job defines its own optimizer chain %s' % jobPath )
       return self.__setOptimizerChain( jobState, opChain )
     #Construct path
-    opPath = self.am_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
-    voPlugin = self.am_getOption( 'VOPlugin', '' )
+    opPath = self.ex_getOption( 'BasePath', ['JobPath', 'JobSanity'] )
+    voPlugin = self.ex_getOption( 'VOPlugin', '' )
     #Specific VO path
     if voPlugin:
       result = self.__executeVOPlugin( voPlugin, jobState )
@@ -89,22 +90,22 @@ class JobPathAgent( OptimizerExecutor ):
       extraPath = result[ 'Value' ]
       if extraPath:
         opPath.extend( extraPath )
-        self.log.verbose( 'Adding extra VO specific optimizers to path: %s' % ( extraPath ) )
+        self.jobLog.verbose( 'Adding extra VO specific optimizers to path: %s' % ( extraPath ) )
     else:
       #Generic path: Should only rely on an input data setting in absence of VO plugin
-      self.log.verbose( 'No VO specific plugin module specified' )
+      self.jobLog.verbose( 'No VO specific plugin module specified' )
       result = jobState.getInputData()
       if not result['OK']:
         return result
       if result['Value']:
         # if the returned tuple is not empty it will evaluate true
-        self.log.info( 'Job %s has an input data requirement' % ( jid ) )
-        opPath.extend( self.am_getOption( 'InputData', ['InputData'] ) )
+        self.jobLog.info( 'Input data requirement found' )
+        opPath.extend( self.ex_getOption( 'InputData', ['InputData'] ) )
       else:
-        self.log.info( 'Job %s has no input data requirement' % ( jid ) )
+        self.jobLog.info( 'No input data requirement' )
     #End of path
-    opPath.extend( self.am_getOption( 'EndPath', ['JobScheduling', 'TaskQueue'] ) )
-    self.log.info( 'Constructed path for job %s is: %s' % ( jid, "->".join( opPath ) ) )
+    opPath.extend( self.ex_getOption( 'EndPath', ['JobScheduling'] ) )
+    self.jobLog.info( 'Constructed path is: %s' % "->".join( opPath ) )
     result = self.__setOptimizerChain( jobState, opPath )
     if not result['OK']:
       return result

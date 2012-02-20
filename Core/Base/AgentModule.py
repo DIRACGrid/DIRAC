@@ -315,8 +315,8 @@ class AgentModule:
 
 
   def _setShifterProxy( self ):
-    if self.__moduleProperties[ 'shifterProxy' ]:
-      result = setupShifterProxyInEnv( self.__moduleProperties[ 'shifterProxy' ],
+    if self.__moduleProperties[ "shifterProxy" ]:
+      result = setupShifterProxyInEnv( self.__moduleProperties[ "shifterProxy" ],
                                        self.am_getShifterProxyLocation() )
       if not result[ 'OK' ]:
         self.log.error( result['Message'] )

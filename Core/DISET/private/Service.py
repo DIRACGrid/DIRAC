@@ -320,6 +320,8 @@ class Service:
       result = self._processProposal( trid, proposalTuple, handlerObj )
       #Close the connection if required
       if result[ 'closeTransport' ] or not result[ 'OK' ]:
+        if not result[ 'OK' ]:
+          gLogger.error( "Error processing proposal: %s" % result[ 'Message' ] )
         self._transportPool.close( trid )
       return result
     finally:
@@ -475,8 +477,10 @@ class Service:
     if result[ 'OK' ] and messageConnection:
       self._msgBroker.listenToTransport( trid )
       result = self._mbConnect( trid, handlerObj )
+      if not result[ 'OK' ]:
+        self._msgBroker.removeTransport( trid )
 
-    result[ 'closeTransport' ] = not messageConnection
+    result[ 'closeTransport' ] = not messageConnection or not result[ 'OK' ]
     return result
 
   def _mbConnect( self, trid, handlerObj = False ):

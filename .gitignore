@@ -25,3 +25,8 @@ pip-log.txt
 .settings
 .metadata
 
+# Vim 
+.*.sw[a-z]
+*.un~
+Session.vim
+

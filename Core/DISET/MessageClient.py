@@ -23,6 +23,7 @@ class MessageClient( BaseClient ):
 
   def _initialize( self ):
     self.__trid = False
+    self.__transport = False
     self.__uniqueName = self.__generateUniqueClientName()
     self.__msgBroker = getGlobalMessageBroker()
     self.__callbacks = {}
@@ -59,6 +60,7 @@ class MessageClient( BaseClient ):
                                                            receiveMessageCallback = self.__cbRecvMsg,
                                                            disconnectCallback = self.__cbDisconnect ) )
       self.__trid = trid
+      self.__transport = transport
     except self.MSGException, e:
       return S_ERROR( str( e ) )
     return S_OK()
@@ -70,6 +72,10 @@ class MessageClient( BaseClient ):
       gLogger.error( "OOps. trid's don't match. This shouldn't happen! (%s vs %s)" % ( self.__trid, trid ) )
       return S_ERROR( "OOOPS" )
     self.__trid = False
+    try:
+      self.__transport.close()
+    except:
+      pass
     for cb in self.__specialCallbacks[ 'drop' ]:
       try:
         cb( self )

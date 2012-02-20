@@ -7,8 +7,19 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class JobState( object ):
 
-  __jobDB = None
-  __jobLogDB = None
+  class DBHold:
+
+    def __init__( self ):
+      self.checked = False
+      self.reset()
+
+    def reset( self ):
+      self.job = False
+      self.log = False
+      self.tq = False
+
+  __db = DBHold()
+
   _sDisableLocal = False
 
   class RemoteMethod( object ):
@@ -39,29 +50,29 @@ class JobState( object ):
     else:
       self.__getRPCFunctor = RPCClient
     #Init DB if there
-    if JobState.__jobDB == None:
-      try:
-        from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-        JobState.__jobDB = JobDB()
-        result = JobState.__jobDB._getConnection()
-        if not result[ 'OK' ]:
-          gLogger.warn( "Could not connect to JobDB (%s). Resorting to RPC" % result[ 'Message' ] )
-          JobState.__jobDB = False
-          JobState.__jobLogDB = False
-        else:
-          result[ 'Value' ].close()
-          from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-          JobState.__jobLogDB = JobLoggingDB()
-          result = JobState.__jobLogDB._getConnection()
+    if not JobState.__db.checked:
+      JobState.__db.checked = True
+      for varName, dbName in ( ( 'job', 'JobDB' ), ( 'log', 'JobLoggingDB' ),
+                               ( 'tq', 'TaskQueueDB' ) ):
+        try:
+          dbImp = "DIRAC.WorkloadManagementSystem.DB.%s" % dbName
+          dbMod = __import__( dbImp, fromlist = [ dbImp ] )
+          dbClass = getattr( dbMod, dbName )
+          dbInstance = dbClass()
+          setattr( JobState.__db, varName, dbInstance )
+          result = dbInstance._getConnection()
           if not result[ 'OK' ]:
-            gLogger.warn( "Could not connect to JobLoggingDB (%s). Resorting to RPC" % result[ 'Message' ] )
-            JobState.__jobDB = False
-            JobState.__jobLogDB = False
+            gLogger.warn( "Could not connect to %s (%s). Resorting to RPC" % ( dbName, result[ 'Message' ] ) )
+            JobState.__db.reset()
+            break
           else:
             result[ 'Value' ].close()
-      except ImportError:
-        JobState.__jobDB = False
-        JobState.__jobLogDB = False
+        except RuntimeError:
+          JobState.__db.reset()
+          break
+        except ImportError:
+          JobState.__db.reset()
+          break
 
   @property
   def jid( self ):
@@ -74,12 +85,12 @@ class JobState( object ):
   def localAccess( self ):
     if JobState._sDisableLocal:
       return False
-    if JobState.__jobDB or self.__forceLocal:
+    if JobState.__db.job or self.__forceLocal:
       return True
     return False
 
   def __getDB( self ):
-    return JobState.__jobDB
+    return JobState.__db.job
 
   def _getStoreClient( self ):
     return self.__getRPCFunctor( "WorkloadManagement/JobStore" )
@@ -155,7 +166,7 @@ class JobState( object ):
     return self.getAttributes( initialState.keys() )
 #
 # Status
-# 
+#
 
   def __checkType( self, value, tList ):
     if type( tList ) not in ( types.ListType, types.TupleType ):
@@ -171,13 +182,13 @@ class JobState( object ):
       self.__checkType( updateTime, ( types.NoneType, Time._dateTimeType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    result = JobState.__jobDB.setJobStatus( self.__jid, majorStatus, minorStatus )
+    result = JobState.__db.job.setJobStatus( self.__jid, majorStatus, minorStatus )
     if not result[ 'OK' ]:
       return result
     #HACK: Cause joblogging is crappy
     if not minorStatus:
       minorStatus = 'idem'
-    return JobState.__jobLogDB.addLoggingRecord( self.__jid, majorStatus, minorStatus,
+    return JobState.__db.log.addLoggingRecord( self.__jid, majorStatus, minorStatus,
                                                  date = updateTime, source = self.__source )
 
   @RemoteMethod
@@ -186,16 +197,16 @@ class JobState( object ):
       self.__checkType( minorStatus, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    result = JobState.__jobDB.setJobStatus( self.__jid, minor = minorStatus )
+    result = JobState.__db.job.setJobStatus( self.__jid, minor = minorStatus )
     if not result[ 'OK' ]:
       return result
-    return JobState.__jobLogDB.addLoggingRecord( self.__jid, minor = minorStatus,
+    return JobState.__db.log.addLoggingRecord( self.__jid, minor = minorStatus,
                                                  date = updateTime, source = self.__source )
 
 
   @RemoteMethod
   def getStatus( self ):
-    result = JobState.__jobDB.getJobAttributes( self.__jid, [ 'Status', 'MinorStatus' ] )
+    result = JobState.__db.job.getJobAttributes( self.__jid, [ 'Status', 'MinorStatus' ] )
     if not result[ 'OK' ]:
       return result
     data = result[ 'Value' ]
@@ -208,15 +219,15 @@ class JobState( object ):
       self.__checkType( appStatus, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    result = JobState.__jobDB.setJobStatus( self.__jid, application = appStatus )
+    result = JobState.__db.job.setJobStatus( self.__jid, application = appStatus )
     if not result[ 'OK' ]:
       return result
-    return JobState.__jobLogDB.addLoggingRecord( self.__jid, application = appStatus,
+    return JobState.__db.log.addLoggingRecord( self.__jid, application = appStatus,
                                                  date = updateTime, source = self.__source )
 
   @RemoteMethod
   def getAppStatus( self ):
-    result = JobState.__jobDB.getJobAttributes( self.__jid, [ 'ApplicationStatus' ] )
+    result = JobState.__db.job.getJobAttributes( self.__jid, [ 'ApplicationStatus' ] )
     if result[ 'OK' ]:
       result[ 'Value' ] = result[ 'Value' ][ 'ApplicationStatus' ]
     return result
@@ -230,7 +241,7 @@ class JobState( object ):
       self.__checkType( value, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.setJobAttribute( self.__jid, name, value )
+    return JobState.__db.job.setJobAttribute( self.__jid, name, value )
 
   @RemoteMethod
   def setAttributes( self, attDict ):
@@ -240,7 +251,7 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     keys = [ key for key in attDict ]
     values = [ attDict[ key ] for key in keys ]
-    return JobState.__jobDB.setJobAttributes( self.__jid, keys, values )
+    return JobState.__db.job.setJobAttributes( self.__jid, keys, values )
 
   @RemoteMethod
   def getAttribute( self, name ):
@@ -248,7 +259,7 @@ class JobState( object ):
       self.__checkType( name , types.StringTypes )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.getJobAttribute( self.__jid, name )
+    return JobState.__db.job.getJobAttribute( self.__jid, name )
 
   @RemoteMethod
   def getAttributes( self, nameList = None ):
@@ -257,7 +268,7 @@ class JobState( object ):
                                      types.NoneType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.getJobAttributes( self.__jid, nameList )
+    return JobState.__db.job.getJobAttributes( self.__jid, nameList )
 
 #Job parameters
 
@@ -268,7 +279,7 @@ class JobState( object ):
       self.__checkType( value, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.setJobParameter( self.__jid, name, value )
+    return JobState.__db.job.setJobParameter( self.__jid, name, value )
 
   @RemoteMethod
   def setParameters( self, pDict ):
@@ -279,7 +290,7 @@ class JobState( object ):
     pList = []
     for name in pDict:
       pList.append( ( name, pDict[ name ] ) )
-    return JobState.__jobDB.setJobParameters( self.__jid, pList )
+    return JobState.__db.job.setJobParameters( self.__jid, pList )
 
   @RemoteMethod
   def getParameter( self, name ):
@@ -287,7 +298,7 @@ class JobState( object ):
       self.__checkType( name, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.getJobParameter( self.__jid, name )
+    return JobState.__db.job.getJobParameter( self.__jid, name )
 
   @RemoteMethod
   def getParameters( self, nameList = None ):
@@ -296,7 +307,7 @@ class JobState( object ):
                                      types.NoneType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.getJobParameters( self.__jid, nameList )
+    return JobState.__db.job.getJobParameters( self.__jid, nameList )
 
 
 #Optimizer parameters
@@ -308,7 +319,7 @@ class JobState( object ):
       self.__checkType( value, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.setJobOptParameter( self.__jid, name, value )
+    return JobState.__db.job.setJobOptParameter( self.__jid, name, value )
 
   @RemoteMethod
   def setOptParameters( self, pDict ):
@@ -317,7 +328,7 @@ class JobState( object ):
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     for name in pDict:
-      result = JobState.__jobDB.setJobOptParameter( self.__jid, name, pDict[ name ] )
+      result = JobState.__db.job.setJobOptParameter( self.__jid, name, pDict[ name ] )
       if not result[ 'OK' ]:
         return result
     return S_OK()
@@ -331,7 +342,7 @@ class JobState( object ):
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     for name in nameList:
-      result = JobState.__jobDB.removeJobOptParameter( self.__jid, name )
+      result = JobState.__db.job.removeJobOptParameter( self.__jid, name )
       if not result[ 'OK' ]:
         return result
     return S_OK()
@@ -342,7 +353,7 @@ class JobState( object ):
       self.__checkType( name, types.StringType )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.getJobOptParameter( self.__jid, name )
+    return JobState.__db.job.getJobOptParameter( self.__jid, name )
 
   @RemoteMethod
   def getOptParameters( self, nameList = None ):
@@ -351,10 +362,52 @@ class JobState( object ):
                                      types.NoneType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    return JobState.__jobDB.getJobOptParameters( self.__jid, nameList )
+    return JobState.__db.job.getJobOptParameters( self.__jid, nameList )
 
 #Other
 
   @RemoteMethod
   def getInputData( self ):
-    return JobState.__jobDB.getInputData( self.__jid )
+    return JobState.__db.job.getInputData( self.__jid )
+
+  @RemoteMethod
+  def insertIntoTQ( self ):
+    result = self.getManifest()
+    if not result[ 'OK' ]:
+      return result
+    manifest = result[ 'Value' ]
+
+    reqSection = "JobRequirements"
+
+    result = manifest.getSection( reqSection )
+    if not result[ 'OK' ]:
+      return S_ERROR( "No %s section in the job manifest" % reqSection )
+    reqCfg = result[ 'Value' ]
+
+    jobReqDict = {}
+    for name in JobState.__db.tq.getSingleValueTQDefFields():
+      if name in reqCfg:
+        if name == 'CPUTime':
+          jobReqDict[ name ] = int( reqCfg[ name ] )
+        else:
+          jobReqDict[ name ] = reqCfg[ name ]
+
+    for name in JobState.__db.tq.getMultiValueTQDefFields():
+      if name in reqCfg:
+        jobReqDict[ name ] = reqCfg.getOption( name, [] )
+
+    jobPriority = reqCfg.getOption( 'UserPriority', 1 )
+
+    result = JobState.__db.tq.insertJob( self.__jid, jobReqDict, jobPriority )
+    if not result[ 'OK' ]:
+      errMsg = result[ 'Message' ]
+      # Force removing the job from the TQ if it was actually inserted
+      result = JobState.__db.tq.deleteJob( self.__jid )
+      if result['OK']:
+        if result['Value']:
+          self.log.info( "Job %s removed from the TQ" % self.__jid )
+      return S_ERROR( "Cannot insert in task queue: %s" % errMsg )
+    return S_OK()
+
+
+

@@ -16,7 +16,6 @@ localCfg = LocalConfiguration()
 
 positionalArgs = localCfg.getPositionalArguments()
 if len( positionalArgs ) == 0:
-  gLogger.initialize( "NOT SPECIFIED", "/" )
   gLogger.fatal( "You must specify which server to run!" )
   sys.exit( 1 )
 

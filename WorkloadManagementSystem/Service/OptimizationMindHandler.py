@@ -2,7 +2,6 @@ import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 
@@ -27,34 +26,30 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       return self.executeTask( jid, CachedJobState( jid ) )
 
   @classmethod
-  def __loadJobs( cls, eType = None ):
+  def __loadJobs( cls, eTypes = None ):
     log = cls.log
     if cls.__loadTaskId:
       period = cls.srv_getCSOption( "LoadJobPeriod", 300 )
       ThreadScheduler.gThreadScheduler.setTaskPeriod( cls.__loadTaskId, period )
-    if not eType:
+    if not eTypes:
       eConn = cls.getExecutorsConnected()
       eTypes = [ eType for eType in eConn if eConn[ eType ] > 0 ]
-    else:
-      eTypes = [ eType ]
     if not eTypes:
       log.info( "No optimizer connected. Skipping load" )
       return S_OK()
     log.info( "Getting jobs for %s" % ",".join( eTypes ) )
+    checkingMinors = [ eType.split("/")[1] for eType in eTypes if eType != "WorkloadManagement/JobPath" ]
     for opState in cls.__optimizationStates:
       #For Received states
       if opState == "Received":
-          if 'JobPath' not in eTypes:
-            continue
-          jobCond = { 'Status' : opState }
+        if 'WorkloadManagement/JobPath' not in eTypes:
+          continue
+        jobCond = { 'Status' : opState }
       #For checking states
       if opState == "Checking":
-        eCheckingTypes = eTypes
-        if 'JobPath' in eCheckingTypes:
-          eCheckingTypes.remove( 'JobPath' )
-        if not eCheckingTypes:
+        if not checkingMinors:
           continue
-        jobCond = { 'Status': opState, 'MinorStatus' : eCheckingTypes }
+        jobCond = { 'Status': opState, 'MinorStatus' : checkingMinors }
       #Do the magic
       jobTypeCondition = cls.srv_getCSOption( "JobTypeRestriction", [] )
       if jobTypeCondition:
@@ -76,12 +71,14 @@ class OptimizationMindHandler( ExecutorMindHandler ):
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     try:
+      from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
       cls.__jobDB = JobDB()
     except Exception, excp:
-      return S_ERROR( "Could not connect to JobDB" )
+      return S_ERROR( "Could not connect to JobDB: %s" % str( excp ) )
     cls.setFailedOnTooFrozen( False )
     cls.setFreezeOnFailedDispatch( False )
     cls.setFreezeOnUnknownExecutor( False )
+    cls.setAllowedClients( "JobManager" )
     period = cls.srv_getCSOption( "LoadJobPeriod", 60 )
     result = ThreadScheduler.gThreadScheduler.addPeriodicTask( period, cls.__loadJobs )
     if not result[ 'OK' ]:
@@ -90,12 +87,20 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     return cls.__loadJobs()
 
   @classmethod
-  def exec_executorConnected( cls, name, trid ):
-    return cls.__loadJobs( name )
+  def exec_executorConnected( cls, trid, eTypes ):
+    return cls.__loadJobs( eTypes )
 
   @classmethod
   def exec_taskProcessed( cls, jid, jobState, eType ):
     cls.log.info( "Saving changes for job %s after %s" % ( jid, eType ) )
+    result = jobState.commitChanges()
+    if not result[ 'OK' ]:
+      cls.log.error( "Could not save changes for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
+    return result
+
+  @classmethod
+  def exec_taskFreeze( cls, jid, jobState, eType ):
+    cls.log.info( "Saving changes for job %s before freezing from %s" % ( jid, eType ) )
     result = jobState.commitChanges()
     if not result[ 'OK' ]:
       cls.log.error( "Could not save changes for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
@@ -115,7 +120,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     #If received send to JobPath
     if status == "Received":
       cls.log.info( "Dispatching job %s to JobPath" % jid )
-      return S_OK( "JobPath" )
+      return S_OK( "WorkloadManagement/JobPath" )
     result = jobState.getOptParameter( 'OptimizerChain' )
     if not result[ 'OK' ]:
       cls.log.error( "Could not get optimizer chain for job", "%s: %s" % ( jid, result[ 'Message' ] ) )
@@ -125,7 +130,11 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       cls.log.error( "Next optimizer is not in the chain for job", "%s: %s not in %s" % ( jid, minorStatus, optChain ) )
       return S_ERROR( "Next optimizer %s not in chain %s" % ( minorStatus, optChain ) )
     cls.log.info( "Dispatching job %s to %s" % ( jid, minorStatus ) )
-    return S_OK( minorStatus )
+    return S_OK( "WorkloadManagement/%s" % minorStatus )
+
+  @classmethod
+  def exec_prepareToSend( cls, jid, jobState, eId ):
+    return jobState.recheckValidity()
 
   @classmethod
   def exec_serializeTask( cls, jobState ):

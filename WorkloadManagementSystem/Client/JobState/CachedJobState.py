@@ -1,10 +1,9 @@
 
-import types, copy
+import types, copy, time
 from DIRAC.Core.Utilities import Time, DEncode
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
-from TiffTags import TYPES
 
 class CachedJobState( object ):
 
@@ -44,12 +43,26 @@ class CachedJobState( object ):
     self.__trace = []
     self.__manifest = False
     self.__initState = None
+    self.__lastValidState = time.time()
     if not skipInitState:
       result = self.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime" ] )
       if result[ 'OK' ]:
         self.__initState = result[ 'Value' ]
       else:
         self.__initState = None
+
+  def recheckValidity( self, graceTime = 600 ):
+    now = time.time()
+    if graceTime <= 0 or now - self.__lastValidState > graceTime:
+      self.__lastValidState = now
+      result =  self.__jobState.getAttributes( [ "Status", "MinorStatus", "LastUpdateTime" ] )
+      if not result[ 'OK' ]:
+        return result
+      currentState = result[ 'Value' ]
+      if not currentState == self.__initState:
+        return S_OK( False )
+      return S_OK( True )
+    return S_OK( self.valid )
 
   @property
   def valid( self ):
@@ -83,6 +96,7 @@ class CachedJobState( object ):
       self.__cache = {}
       return result
     self.__initState = result[ 'Value' ]
+    self.__lastValidState = time.time()
     return S_OK( trLen )
 
   def serialize( self ):
@@ -183,7 +197,7 @@ class CachedJobState( object ):
       data = result [ 'Value' ]
       for key in data:
         cKey = "%s.%s" % ( prefix, key )
-        #If the key is already in the cache. DO NOT TOUCH. User may have already modified it. 
+        #If the key is already in the cache. DO NOT TOUCH. User may have already modified it.
         #We update the coming data with the cached data
         if cKey in self.__cache:
           data[ key ] = self.__cache[ cKey ]
@@ -234,7 +248,7 @@ class CachedJobState( object ):
     return S_OK()
 
 # Attributes
-# 
+#
 
   @TracedMethod
   def setStatus( self, majorStatus, minorStatus = None ):
@@ -346,3 +360,9 @@ class CachedJobState( object ):
 
   def getInputData( self ):
     return self.__cacheResult( "inputData" , self.__jobState.getInputData )
+
+  @TracedMethod
+  def insertIntoTQ( self ):
+    if self.valid:
+      return S_OK()
+    return S_ERROR( "Cached state is invalid" )

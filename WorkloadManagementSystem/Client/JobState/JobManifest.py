@@ -130,7 +130,7 @@ class JobManifest( object ):
     return S_OK()
 
 
-  def __contains__( key ):
+  def __contains__( self, key ):
     """ Check if the manifest has the required key
     """
     return key in self.__manifest

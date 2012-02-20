@@ -46,6 +46,14 @@ def initializeJobManagerHandler( serviceInfo ):
 
 class JobManagerHandler( RequestHandler ):
 
+  @classmethod
+  def initializeHandler( cls, serviceInfoDict ):
+    cls.msgClient = MessageClient( "WorkloadManagement/OptimizationMind" )
+    result = cls.msgClient.connect( JobManager = True )
+    if not result[ 'OK' ]:
+      cls.log.error( "Cannot connect to OptimizationMind!", result[ 'Message' ] )
+    return result
+
   def initialize( self ):
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
@@ -57,10 +65,7 @@ class JobManagerHandler( RequestHandler ):
     serviceSectionPath = self.serviceInfoDict['serviceSectionPath']
     self.maxParametricJobs = gConfig.getValue( '%s/MaxParametricJobs' % serviceSectionPath, MAX_PARAMETRIC_JOBS )
     self.jobPolicy = JobPolicy( self.ownerDN, self.ownerGroup, self.userProperties )
-    self.msgClient = MessageClient( "WorkloadManagement/OptimizationMind" )
-    result = self.msgClient.connect( jobManager = True )
-    if not result[ 'OK' ]:
-      self.log.error( "Cannot connect to OptimizationMind!", result[ 'Message' ] )
+    return S_OK()
 
   def __sendNewJobsToMind( self, jids ):
     result = self.msgClient.createMessage( "OptimizeJobs" )
