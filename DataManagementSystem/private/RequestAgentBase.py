@@ -96,9 +96,12 @@ class RequestAgentBase( AgentModule ):
     self.log.info( "Will use DataManager proxy by default." )
 
     ## common monitor activity 
-    self.monitor.registerActivity( "Iteration", "Agent Loops", self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Execute", "Request Processed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Done", "Request Completed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Iteration", "Agent Loops", 
+                                   self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Execute", "Request Processed", 
+                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Done", "Request Completed", 
+                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
       
     ## create request dict
     self.__requestHolder = dict()
@@ -133,7 +136,7 @@ class RequestAgentBase( AgentModule ):
 
     :param self: self reference
     """
-    for requestName, requestTuple  in self.__requestHolder:
+    for requestName, requestTuple  in self.__requestHolder.items():
       requestString, requestServer = requestTuple
       reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
       if not reset["OK"]:
@@ -186,41 +189,42 @@ class RequestAgentBase( AgentModule ):
                                         poolCallback = self.resultCallback,
                                         poolExceptionCallback = self.exceptionCallback )
       self.__processPool.daemonize()
+      self.log.info( "ProcessPool: daemonized and ready")
     return self.__processPool
 
-  def resultCallback( self, task ):
+  def hasProcessPool( self ):
+    """ check if ProcessPool exist to speed up finalization """
+    return bool( self.__processPool )
+
+  def resultCallback( self, taskID, taskResult ):
     """ definition of request callback function
     
     :param self: self reference
     """
-    self.log.info("resultCallback from task %s" % task.getTaskID() )
-    results = task.taskResult()
+    self.log.info("resultCallback from task %s" % taskID )
 
     ## delete this one from request holder
-    self.deleteRequest( task.getTaskID() )
+    self.deleteRequest( taskID )
 
-    if not results["OK"]:
-      self.log.error( results["Message"] )
+    if not taskResult["OK"]:
+      self.log.error( taskResult["Message"] )
       return
-    results = results["Value"]
-
-    if "monitor" in results:
-      monitor = results["monitor"]
-      for mark, value in monitor.items():
-        try:
-          gMonitor.addMark( mark, value )
-        except Exception, error:
-          log.exception( str(error) )
+    taskResult = taskResult["Value"]
+    ## add monitoring info
+    monitor = taskResult["monitor"] if "monitor" in taskResult else {}
+    for mark, value in monitor.items():
+      try:
+        gMonitor.addMark( mark, value )
+      except Exception, error:
+        self.log.exception( str(error) )
     
-
-  def exceptionCallback( self, task ):
+  def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callbak function
     
     :param self: self reference
     """
-    self.log.error( "exceptionCallback from task %s" % task.getTaskID() )
-    exception = task.taskException()
-    self.log.error( exception )
+    self.log.error( "exceptionCallback from task %s" % taskID )
+    self.log.error( taskException )
 
   @classmethod
   def getRequest( cls, requestType ):
@@ -347,7 +351,9 @@ class RequestAgentBase( AgentModule ):
     :param self: self reference
     """
     ## finalize all processing
-    self.processPool().processAllResults()
+    if self.hasProcessPool():
+      self.processPool().processAllResults()
+      self.processPool().finalize()
     ## reset failover requests for further processing 
     self.resetRequests()
     ## good bye, all done!
