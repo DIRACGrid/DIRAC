@@ -91,7 +91,7 @@ class RemovalTask( RequestTask ):
         self.error("removeFile: completely failed to remove files: %s" % removal["Message"] )
     
     if requestObj.isSubRequestEmpty( index, "removal" ) or requestObj.isSubRequestDone( index, "removal" ):
-      requestObj.setSubRequestStatus( "Done" )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
       
     return S_OK( requestObj )
 
@@ -109,17 +109,17 @@ class RemovalTask( RequestTask ):
               if subRequestFile["Status"] == "Waiting" ]
     failed = {}
     errMsg = {}
-    timeOutCounter = 0
+    #timeOutCounter = 0
     self.addMark( 'ReplicaRemovalAtt', len( lfns ) )
     self.debug( "replicaRemoval: found %s replicas to delete from %s sites" % ( len(lfns), len(diracSEs) ) )
 
     for diracSE in diracSEs:
-      self.debug( "replicaRemoval: deletin gfiles from %s" % diracSE )
+      self.debug( "replicaRemoval: deleting files from %s" % diracSE )
       removeReplica = self.replicaManager().removeReplica( diracSE, lfns )
       if removeReplica["OK"]:
         for lfn, error in removeReplica["Value"]["Failed"].items():
-          if error.find( 'seconds timeout for "__gfal_wrapper" call' ) != -1:
-            timeOutCounter += 1
+          #if error.find( 'seconds timeout for "__gfal_wrapper" call' ) != -1:
+          #  timeOutCounter += 1
           if lfn not in failed:
             failed.setdefault( lfn, {} )
           failed[lfn][diracSE] = error
@@ -146,7 +146,7 @@ class RemovalTask( RequestTask ):
           if re.search( "no such file or directory", error.lower() ):
             self.info( "replicaRemoval: file %s doesn't exist at %s" % ( lfn, diracSE ) )
             ## set the status to 'Done' anyway
-            res = requestObj.setSUbRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
+            res = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
             if not res["OK"]:
               self.error( "replicaRemoval: error setting status to 'Done' for %s" % lfn )
           else:
@@ -157,7 +157,7 @@ class RemovalTask( RequestTask ):
         self.error("Completely failed to remove replicas at %s" % diracSE )
 
     if requestObj.isSubRequestEmpty( index, "removal" ) or requestObj.isSubRequestDone( index, "removal" ):
-      requestObj.setSubRequestStatus( "Done" )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
       
     ## return requestObj at least
     return S_OK( requestObj )
