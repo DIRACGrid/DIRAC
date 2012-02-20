@@ -54,6 +54,9 @@ class ResourceStatusClient:
         self.gate = ResourceStatusDB()
       except SystemExit:
         self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
+      except ImportError:
+        # Pilots will connect here, as MySQLdb is not installed for them
+        self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
     else:
       self.gate = serviceIn
            

@@ -122,13 +122,12 @@ def __getCSStorageElementStatus( elementName, statusType, default ):
   if not isinstance( elementName, list ):
     elementName = [ elementName ]
 
-  rsc      = ResourceStatusClient()
-  statuses = rsc.getValidStatusTypes()
-  
+  statuses = gConfig.getOptionsDict( '/Operations/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
+    
   if statuses[ 'OK' ]:
-    statuses = statuses[ 'Value' ][ 'StorageElement' ][ 'StatusType' ]
+    statuses = statuses[ 'Value' ][ 'StatusType' ]
   else:
-    statuses = []  
+    statuses = [ 'Read', 'Write' ]  
     
   r = {}
   for element in elementName:
