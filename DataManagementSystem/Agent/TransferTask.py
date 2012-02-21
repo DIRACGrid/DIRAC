@@ -62,12 +62,13 @@ class TransferTask( RequestTask ):
     ## holder for error
     subRequestError = ""
     ## list of targetSEs
-    targetSEs = list(set([ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",")]))
+    targetSEs = list( set( [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") 
+                             if targetSE.strip() ] ) )
     if len(targetSEs) != 1:
       self.error("putAndRegister: wrong value for TargetSE list = %s, should contain one target!" % targetSEs )
       ## TODO set Failed status!
       return S_ERROR( "putAndRegister: TargetSE should contain one target, got %s" % targetSEs )
-
+    
     targetSE = targetSEs[0]
     ## dict for failed LFNs
     failed = {}
@@ -210,7 +211,8 @@ class TransferTask( RequestTask ):
     # holder for subrequest error
     subRequestError = ""
     ## list of targetSEs
-    targetSEs = list(set([ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") ]))
+    targetSEs = list( set( [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") 
+                             if targetSE.strip() ] ) )
     ## dict for failed LFNs
     failed = {}
     sourceSE = subAttrs["SourceSE"] if subAttrs["SourceSE"] != "None" else ""
