@@ -62,9 +62,9 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       os.environ['LCG_GFAL_INFOSYS'] = infosys
 
     if not 'LFC_CONRETRYINT' in os.environ:
-      os.environ['LFC_CONRETRYINT'] = 5
+      os.environ['LFC_CONRETRYINT'] = '5'
     if not 'LFC_CONNTIMEOUT' in os.environ:
-      os.environ['LFC_CONNTIMEOUT'] = 5
+      os.environ['LFC_CONNTIMEOUT'] = '5'
 
     self.prefix = '/grid'
     self.session = False
