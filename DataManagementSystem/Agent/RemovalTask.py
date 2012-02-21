@@ -25,8 +25,8 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import re
-## from DIRAC
 from types import StringTypes
+## from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 
@@ -64,7 +64,7 @@ class RemovalTask( RequestTask ):
     self.info( "removeFile: processing subrequest %s" % index  )
     lfns = [ str( subRequestFile["LFN"] ) for subRequestFile in subRequestFiles 
              if subRequestFile["Status"] == "Waiting" ]
-    self.debug( "removeFile: got %d files to remove" % len(lfns) )
+    self.debug( "removeFile: about to remove %d files" % len(lfns) )
 
     self.addMark( "RemoveFileAtt", len( lfns ) )
     if lfns:
@@ -74,18 +74,21 @@ class RemovalTask( RequestTask ):
       if removal["OK"]:
         for lfn in removal["Value"]["Successful"]:
           self.info("removeFile: successfully removed %s" % lfn )
-          updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
+          updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", 
+                                                                     lfn, "Status", "Done" )
           if not updateStatus["OK"]:
             self.error("removeFile: unable to change status to 'Done' for %s" % lfn )
-        for lfn, error in removal["Value"]["Failed"].items():
+    
+        for lfn, error in removal["Value"]["Failed"].items():  
           if type(error) in StringTypes:
             if re.search( "no such file or directory", error.lower() ):
               self.info("removeFile: file %s didn't exist, setting its status to 'Done'" % lfn )
-              updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done")
+              updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", 
+                                                                         lfn, "Status", "Done")
               if not updateStatus["OK"]:
                 self.error("removeFile: unable to change status to 'Done' for %s" % lfn )
             else:
-              self.error("removeFile: unable to remove file '%s' : %s" % ( lfn, error ) )
+              self.error("removeFile: unable to remove file %s : %s" % ( lfn, error ) )
       else:
         self.addMark( 'RemoveFileFail', len( lfns ) )
         self.error("removeFile: completely failed to remove files: %s" % removal["Message"] )
@@ -104,57 +107,58 @@ class RemovalTask( RequestTask ):
     :param dict subRequestAttrs: subRequest's attributes
     :param dict subRequestFiles: subRequest's files
     """
-    diracSEs = list(set([targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",")]))
+    targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
+                            if targetSE.strip() ] ) )
     lfns =  [ str( subRequestFile["LFN"] ) for subRequestFile in subRequestFiles 
               if subRequestFile["Status"] == "Waiting" ]
     failed = {}
     errMsg = {}
-    #timeOutCounter = 0
-    self.addMark( 'ReplicaRemovalAtt', len( lfns ) )
-    self.debug( "replicaRemoval: found %s replicas to delete from %s sites" % ( len(lfns), len(diracSEs) ) )
 
-    for diracSE in diracSEs:
-      self.debug( "replicaRemoval: deleting files from %s" % diracSE )
-      removeReplica = self.replicaManager().removeReplica( diracSE, lfns )
+    self.addMark( 'ReplicaRemovalAtt', len( lfns ) )
+    self.debug( "replicaRemoval: found %s replicas to delete from %s sites" % ( len(lfns), len(targetSEs) ) )
+
+    for targetSE in targetSEs:
+      self.debug( "replicaRemoval: deleting files from %s" % targetSE )
+      removeReplica = self.replicaManager().removeReplica( targetSE, lfns )
       if removeReplica["OK"]:
         for lfn, error in removeReplica["Value"]["Failed"].items():
-          #if error.find( 'seconds timeout for "__gfal_wrapper" call' ) != -1:
-          #  timeOutCounter += 1
           if lfn not in failed:
             failed.setdefault( lfn, {} )
-          failed[lfn][diracSE] = error
+          failed[lfn][targetSE] = error
       else:
-        errMsg[diracSE] = removeReplica["Message"]
+        errMsg[targetSE] = removeReplica["Message"]
         for lfn in lfns:
           if lfn not in failed:
             failed.setdefault( lfn, {} )
-          failed[lfn][diracSE] = "Completely"
+          failed[lfn][targetSE] = "Completely"
+
     removedLFNs = [ lfn for lfn in lfns if lfn not in failed.keys() ]
     self.addMark( 'ReplicaRemovalDone', len( removedLFNs ) )
+
     ## set status for removed to Done
     for lfn in removedLFNs:
-      self.info("replicaRemoval: successfully removed %s at %s" % ( lfn, str(diracSEs) ) )
+      self.info("replicaRemoval: successfully removed %s from %s" % ( lfn, str(targetSEs) ) )
       res = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
       if not res["OK"]:
         self.error( "replicaRemoval: error setting status to 'Done' for %s" % lfn )
+
     ## check failed
     if failed:
       self.addMark( 'ReplicaRemovalFail', len( failed ) )
-      for lfn, diracSE in failed.iteritems():
-        error = failed[lfn][diracSE]
-        if type( error ) in StringTypes:
-          if re.search( "no such file or directory", error.lower() ):
-            self.info( "replicaRemoval: file %s doesn't exist at %s" % ( lfn, diracSE ) )
-            ## set the status to 'Done' anyway
-            res = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
-            if not res["OK"]:
-              self.error( "replicaRemoval: error setting status to 'Done' for %s" % lfn )
-          else:
-            self.error( "replicaRemoval: failed to remove file %s at %s" % ( lfn, diracSE ) )
+      for lfn, errors in failed.items():
+        for targetSE, error in errors.items(): 
+          if type( error ) in StringTypes:
+            if re.search( "no such file or directory", error.lower() ):
+              self.info( "replicaRemoval: file %s doesn't exist at %s" % ( lfn, targetSE ) )
+              res = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
+              if not res["OK"]:
+                self.error( "replicaRemoval: error setting status to 'Done' for %s" % lfn )
+            else:
+              self.error( "replicaRemoval: failed to remove file %s at %s" % ( lfn, targetSE ) )
 
-    if errMsg:
-      for diracSE, error in errMsg.iteritems():
-        self.error("Completely failed to remove replicas at %s" % diracSE )
+    ## check errMsg
+    for targetSE, error in errMsg.items():
+      self.error("replicaRemoval: failed to remove replicas at %s: %s" % ( targetSE, error ) )
 
     if requestObj.isSubRequestEmpty( index, "removal" ) or requestObj.isSubRequestDone( index, "removal" ):
       requestObj.setSubRequestStatus( index, "removal", "Done" )
@@ -171,7 +175,8 @@ class RemovalTask( RequestTask ):
     :param dict subRequestAttrs: subRequest's attributes
     :param dict subRequestFiles: subRequest's files    
     """
-    targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") ]))
+    targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
+                             if targetSE.strip() ] ) )
     lfnsPfns = [ ( subFile["LFN"], subFile["PFN"], subFile["Status"] ) for subFile in subRequestFiles ]
     subRequestError = False
     failed = {}
@@ -188,15 +193,15 @@ class RemovalTask( RequestTask ):
           if pfn in reTransfer["Value"]["Successful"]:
             self.info("reTransfer: succesfully requested retransfer of %s" % pfn )
           else:
-            self.error( "reTransfer: failed to retransfer request for %s at %s: %s" % ( pfn, 
-                                                                                        targetSE, 
-                                                                                        reTransfer["Value"]["Failed"][pfn] ) )
+            reason = reTransfer["Value"]["Failed"][pfn]
+            self.error( "reTransfer: failed to set retransfer request for %s at %s: %s" % ( pfn, targetSE, reason ) )
             failed[lfn][targetSE] = reTransfer["Value"]["Failed"][pfn]
             subRequestError = True 
         else:
           self.error( "reTransfer: completely failed to retransfer: %s" % reTransfer["Message"] )
           failed[lfn][targetSE] = reTransfer["Message"]
           subRequestError = True
+
       if not failed[lfn]:
         self.info("reTransfer: file %s sucessfully processed at all targetSEs" % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )

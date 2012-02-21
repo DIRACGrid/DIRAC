@@ -497,7 +497,7 @@ class TransferAgent( RequestAgentBase ):
     
     if not ( len( waitingFiles ) == len( replicas ) == len( metadata ) ):
       self.log.warn( "collectFiles: Not all requested information available!" )
-    
+          
     return S_OK( ( waitingFiles, replicas, metadata ) )
 
   ###################################################################################
@@ -657,11 +657,10 @@ class TransferAgent( RequestAgentBase ):
                                                                                           subRequestStatus ) )
         continue
 
-
       ## failover registration 
       registerFiles = self.registerFiles( requestObj, iSubRequest )
       if not registerFiles["OK"]:
-        self.log.error("schedule: error during failover registration: %s" % registerFiles["Message"] )
+        self.log.error("schedule: %s" % registerFiles["Message"] )
         continue
       ## get modified request obj
       requestObj = registerFiles["Value"]
@@ -669,16 +668,17 @@ class TransferAgent( RequestAgentBase ):
       ## schedule files
       scheduleFiles = self.scheduleFiles( requestObj, iSubRequest, subAttrs )
       if not scheduleFiles["OK"]:
-        self.log.error("schedule: error during scheduleFiles: %s" % scheduleFiles["Message"] )
+        self.log.error("schedule: %s" % scheduleFiles["Message"] )
         continue
       ## get modified request obj
       requestObj = scheduleFiles["Value"]
 
+      ## all files non-waiting
       if requestObj.isSubRequestEmpty( iSubRequest, "transfer" )["Value"]:
         self.log.info("schedule: setting sub-request %d status to 'Scheduled'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Scheduled" )
-        
-      if requestObj.isSubRequestDone( iSubRequest, "transfer" )["Valuex"]:
+      ## all files Done
+      if requestObj.isSubRequestDone( iSubRequest, "transfer" )["Value"]:
         self.log.info("schedule: setting sub-request %d status to 'Done'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
 
@@ -692,7 +692,7 @@ class TransferAgent( RequestAgentBase ):
     
     return S_OK()
 
-  def scheduleFiles( self, index, requestObj, subAttrs ):
+  def scheduleFiles( self, requestObj, index, subAttrs ):
     """ schedule files for subrequest :index:
 
     :param self: self reference
@@ -700,6 +700,8 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
+
+    self.log.info( "scheduleFiles: *** FTS scheduling ***")
     self.log.info("scheduleFiles: processing subrequest %s" % index )
     ## get source SE
     sourceSE = subAttrs["SourceSE"]
@@ -718,8 +720,12 @@ class TransferAgent( RequestAgentBase ):
 
     waitingFiles, replicas, metadata = files["Value"]
 
-    if not waitingFiles or not replicas or not metadata:
-      return S_ERROR( "waiting files, replica or metadata info is missing" )
+    if not waitingFiles:
+      self.log.info("scheduleFTS: not 'Waiting' files found in this subrequest" )
+      return S_OK( requestObj )
+
+    if not replicas or not metadata:
+      return S_ERROR( "replica or metadata info is missing" )
 
     ## loop over waiting files, get replication tree 
     for waitingFileLFN, waitingFileID in sorted( waitingFiles.items() ):
@@ -831,7 +837,7 @@ class TransferAgent( RequestAgentBase ):
     ## return modified requestObj 
     return S_OK( requestObj )
 
-  def registerFiles( self, index, requestObj ):
+  def registerFiles( self, requestObj, index ):
     """ failover registration for files in subrequest :index:
 
     :param self: self reference
@@ -839,9 +845,6 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
-
-    waitingRegistrations = False
-
     self.log.info( "registerFiles: *** failover registration *** ")
     self.log.info( "registerFiles: obtaining all files in %d SubRequest" % index )
     subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
@@ -855,18 +858,18 @@ class TransferAgent( RequestAgentBase ):
       lfn = subRequestFile["LFN"]
       fileID = subRequestFile["FileID"]
       self.log.info("registerFiles: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
-      if status == "Waiting":
+      if status in ( "Waiting", "Scheduled" ):
         ## get failed to register [ ( PFN, SE, ChannelID ), ... ] 
         toRegister = self.transferDB().getRegisterFailover( fileID )
         if not toRegister["OK"]:
           self.log.error( "registerFiles: %s" % toRegister["Message"] )
           return toRegister
-        if not toRegister["Value"]:
+        if not toRegister["Value"] or len(toRegister["Value"]) == 0:
           self.log.debug("registerFiles: no waiting registrations found for %s file" % lfn )
           continue
         ## loop and try to register
         toRegister = toRegister["Value"]
-        for pfn, se, channelID in toRegister.items():
+        for pfn, se, channelID in toRegister:
           self.log.debug("registerFiles: failover registration of %s to %s" % ( lfn, se ) )
           ## register replica now
           registerReplica = self.replicaManager().registerReplica( ( lfn, pfn, se ) )
