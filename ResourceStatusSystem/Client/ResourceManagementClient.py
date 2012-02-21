@@ -3,6 +3,7 @@
 ################################################################################
 __RCSID__ = "$Id:  $"
 
+from DIRAC                                              import gLogger 
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
