@@ -718,54 +718,70 @@ class MySQL:
         if type( attrValue ) == types.ListType:
           retDict = self._escapeValues( attrValue )
           if not retDict['OK']:
-            return retDict
-          escapeInValues = retDict['Value']
-          multiValue = ', '.join( escapeInValues )
-          condition = ' %s %s `%s` IN ( %s )' % ( condition,
-                                              conjunction,
-                                              str( attrName ),
-                                              multiValue )
+            self.logger.error( redDict['Message'] )
+          else:
+            escapeInValues = retDict['Value']
+            multiValue = ', '.join( escapeInValues )
+            condition = ' %s %s `%s` IN ( %s )' % ( condition,
+                                                    conjunction,
+                                                    str( attrName ),
+                                                    multiValue )
+            conjunction = "AND"
+
         else:
           retDict = self._escapeValues( [ attrValue ] )
           if not retDict['OK']:
-            return retDict
-          escapeInValue = retDict['Value'][0]
-
-          condition = ' %s %s `%s` = %s' % ( condition,
-                                             conjunction,
-                                             str( attrName ),
-                                             escapeInValue )
-        conjunction = "AND"
+            self.logger.error( redDict['Message'] )
+          else:
+            escapeInValue = retDict['Value'][0]
+            condition = ' %s %s `%s` = %s' % ( condition,
+                                               conjunction,
+                                               str( attrName ),
+                                               escapeInValue )
+            conjunction = "AND"
 
     if timeStamp:
-      if older:
-        retDict = self._escapeValues( [ older ] )
-        if not retDict['OK']:
-          return retDict
-        escapeInValue = retDict['Value'][0]
-        condition = ' %s %s `%s` < %s' % ( condition,
-                                             conjunction,
-                                             timeStamp,
-                                             escapeInValue )
-        conjunction = "AND"
-
       if newer:
         retDict = self._escapeValues( [ newer ] )
         if not retDict['OK']:
-          return retDict
-        escapeInValue = retDict['Value'][0]
-        condition = ' %s %s `%s` >= %s' % ( condition,
-                                               conjunction,
-                                               timeStamp,
-                                               escapeInValue )
+          self.logger.error( redDict['Message'] )
+        else:
+          escapeInValue = retDict['Value'][0]
+          condition = ' %s %s `%s` >= %s' % ( condition,
+                                              conjunction,
+                                              timeStamp,
+                                              escapeInValue )
+          conjunction = "AND"
+      if older:
+        retDict = self._escapeValues( [ older ] )
+        if not retDict['OK']:
+          self.logger.error( redDict['Message'] )
+        else:
+          escapeInValue = retDict['Value'][0]
+          condition = ' %s %s `%s` < %s' % ( condition,
+                                             conjunction,
+                                             timeStamp,
+                                             escapeInValue )
 
+    orderList = []
+    orderAttrList = orderAttribute
     if type( orderAttribute ) in types.StringTypes:
-      orderFields = orderAttribute.split( ':' )
-      condition = "%s ORDER BY %s" % ( condition, ' '.join( orderFields ) )
+      orderAttrList = [ orderAttribute ]
+    if type( orderAttrList ) == types.ListType:
+      for orderAttr in orderAttrList:
+        if type( orderAttr ) not in types.StringTypes:
+          continue
+        if len( orderAttr.split( ':' ) ) == 2:
+          orderField = orderAttr.split( ':' )[0]
+          orderType = orderAttr.split( ':' )[1].upper()
+          if orderType in [ 'ASC', 'DESC']:
+            orderList.append( '`%s` %s' % ( orderField, orderType ) )
+        else:
+          orderList.append( '`%s`' % orderAttr )
+    if orderList:
+      condition = "%s ORDER BY %s" % ( condition, ', '.join( orderList ) )
 
     if limit:
       condition = "%s LIMIT %d" % ( condition, limit )
 
     return condition
-
-
