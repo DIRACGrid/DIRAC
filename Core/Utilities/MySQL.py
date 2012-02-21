@@ -729,27 +729,35 @@ class MySQL:
           retDict = self._escapeValues( [ attrValue ] )
           if not retDict['OK']:
             return retDict
-          escapeInValues = retDict['Value'][0]
+          escapeInValue = retDict['Value'][0]
 
-          condition = ' %s %s `%s` = %s' ( condition,
+          condition = ' %s %s `%s` = %s' % ( condition,
                                              conjunction,
                                              str( attrName ),
-                                             escapeInValues )
+                                             escapeInValue )
         conjunction = "AND"
 
     if timeStamp:
       if older:
-        condition = ' %s %s %s < \'%s\'' % ( condition,
+        retDict = self._escapeValues( [ older ] )
+        if not retDict['OK']:
+          return retDict
+        escapeInValue = retDict['Value'][0]
+        condition = ' %s %s `%s` < %s' % ( condition,
                                              conjunction,
                                              timeStamp,
-                                             str( older ) )
+                                             escapeInValue )
         conjunction = "AND"
 
       if newer:
-        condition = ' %s %s %s >= \'%s\'' % ( condition,
+        retDict = self._escapeValues( [ newer ] )
+        if not retDict['OK']:
+          return retDict
+        escapeInValue = retDict['Value'][0]
+        condition = ' %s %s `%s` >= %s' % ( condition,
                                                conjunction,
                                                timeStamp,
-                                               str( newer ) )
+                                               escapeInValue )
 
     if type( orderAttribute ) in types.StringTypes:
       orderFields = orderAttribute.split( ':' )
