@@ -1,4 +1,4 @@
-[v6r2-pre9]
+[v6r2-pre10]
 
 *Accounting
 CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
@@ -67,6 +67,7 @@ FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting re
 FIX: Failover registration request in the FTS agents.      
 FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed
      from the RequestManagement 
+FIX: StorageElement - check if SE has been properly initialized before executing any method     
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
