@@ -89,6 +89,7 @@ for se,seOptions in res[ 'Value' ].items():
     
     if not seOptions[ 'Read' ] in [ 'Active', 'Bad' ]:
       gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ 'Active', 'Bad' ] ) )    
+      gLogger.notice( 'Try specifying the command switchs' )
       continue        
 
     resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Banned', reason, userName )
@@ -104,6 +105,7 @@ for se,seOptions in res[ 'Value' ].items():
 
     if not seOptions[ 'Write' ] in [ 'Active', 'Bad' ]:
       gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ 'Active', 'Bad' ] ) )    
+      gLogger.notice( 'Try specifying the command switchs' )
       continue        
 
     resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Banned', reason, userName )
@@ -119,6 +121,7 @@ for se,seOptions in res[ 'Value' ].items():
 
     if not seOptions[ 'Check' ] in [ 'Active', 'Bad' ]:
       gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ 'Active', 'Bad' ] ) )    
+      gLogger.notice( 'Try specifying the command switchs' )
       continue        
 
     resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Banned', reason, userName )
