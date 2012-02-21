@@ -121,7 +121,7 @@ class MySQL:
   """
   __initialized = False
 
-  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3):
+  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3 ):
     """
     set MySQL connection parameters and try to connect
     """
@@ -697,5 +697,67 @@ class MySQL:
         return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
     except Exception, x:
       return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
+
+########################################################################################
+#
+#  Utility functions
+#
+########################################################################################
+  def buildCondition( self, condDict = None, older = None, newer = None,
+                      timeStamp = None, orderAttribute = None, limit = False ):
+    """ Build SQL condition statement from provided condDict and other extra check on
+        a specified time stamp.
+        The conditions dictionary specifies for each attribute one or a List of possible
+        values
+    """
+    condition = ''
+    conjunction = "WHERE"
+
+    if condDict != None:
+      for attrName, attrValue in condDict.items():
+        if type( attrValue ) == types.ListType:
+          retDict = self._escapeValues( attrValue )
+          if not retDict['OK']:
+            return retDict
+          escapeInValues = retDict['Value']
+          multiValue = ', '.join( escapeInValues )
+          condition = ' %s %s `%s` IN ( %s )' % ( condition,
+                                              conjunction,
+                                              str( attrName ),
+                                              multiValue )
+        else:
+          retDict = self._escapeValues( [ attrValue ] )
+          if not retDict['OK']:
+            return retDict
+          escapeInValues = retDict['Value'][0]
+
+          condition = ' %s %s `%s` = %s' ( condition,
+                                             conjunction,
+                                             str( attrName ),
+                                             escapeInValues )
+        conjunction = "AND"
+
+    if timeStamp:
+      if older:
+        condition = ' %s %s %s < \'%s\'' % ( condition,
+                                             conjunction,
+                                             timeStamp,
+                                             str( older ) )
+        conjunction = "AND"
+
+      if newer:
+        condition = ' %s %s %s >= \'%s\'' % ( condition,
+                                               conjunction,
+                                               timeStamp,
+                                               str( newer ) )
+
+    if type( orderAttribute ) in types.StringTypes:
+      orderFields = orderAttribute.split( ':' )
+      condition = "%s ORDER BY %s" % ( condition, ' '.join( orderFields ) )
+
+    if limit:
+      condition = "%s LIMIT %d" % ( condition, limit )
+
+    return condition
 
 
