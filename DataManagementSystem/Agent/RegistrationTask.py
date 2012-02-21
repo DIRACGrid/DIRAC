@@ -54,7 +54,8 @@ class RegistrationTask( RequestTask ):
     self.info( "registerFile: processing subrequest %d" % index )
 
     ## list of targetSE
-    targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") ] ) )
+    targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") 
+                             if targetSE.strip() ] ) )
     if not targetSEs:
       self.warn( "registerFile: no TargetSE specified! will use default 'CERN-FAILOVER'")
       targetSEs = [ "CERN-FAILOVER" ]
@@ -83,7 +84,9 @@ class RegistrationTask( RequestTask ):
       for targetSE in targetSEs:
         
         fileTuple = ( lfn, pfn, size, targetSE, guid, addler )
-  
+        if "" in fileTuple:
+          self.warn( "registerFile: missing arg in (LFN, PFN, Size, TargetSE, GUID, Addler) = %s" % str(fileTuple) )
+
         res = self.replicaManager().registerFile( fileTuple, catalogue )
         
         if not res["OK"] or lfn in res["Value"]["Failed"]:
