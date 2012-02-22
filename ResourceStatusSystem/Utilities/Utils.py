@@ -171,9 +171,6 @@ def list_(a):
   [a]"""
   return (list(a) if type(a) != str else [a])
 
-def list_split(l):
-  return [i[0] for i in l], [i[1] for i in l]
-
 def list_combine(l1, l2):
   return list(imap(lambda x,y: (x,y), l1, l2))
 
