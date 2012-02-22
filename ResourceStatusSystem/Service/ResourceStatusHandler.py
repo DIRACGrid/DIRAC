@@ -212,7 +212,7 @@ class ResourceStatusHandler( RequestHandler ):
 ##      resQuery = rsDB.getPeriods( granularity, name, status, int( hours ) )
 ##      gLogger.info( "ResourceStatusHandler.getPeriods: got %s periods" % name )
 ##      return resQuery
-##    except RSSDBException, x:
+##    except Exception, x:
 ##      errorStr = whoRaised( x )
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )
@@ -548,7 +548,7 @@ class ResourceStatusHandler( RequestHandler ):
 ##      rsDB.setToken( granularity, name, tokenOwner, tokenNewExpiration )
 ##      gLogger.info( "ResourceStatusHandler.extendToken: extended token %s: %s for %i hours" % ( granularity, name, hrs ) )
 ##      return S_OK()
-##    except RSSDBException, x:
+##    except Exception, x:
 ##      errorStr = whoRaised( x )
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )
