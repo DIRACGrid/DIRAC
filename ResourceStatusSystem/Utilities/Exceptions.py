@@ -37,21 +37,6 @@ class RSSDBException( RSSException ):
 
 ################################################################################
 
-class ValidatorException( RSSException ):
-  """
-  Validator exception
-  """
-
-  def __init__( self, message = "" ):
-    self.message = message
-    RSSException.__init__( self, message )
-
-  def __str__( self ):
-    return "Validator Exception: /n" + repr( self.message )
-
-
-################################################################################
-
 class InvalidRes(RSSException):
   def __init__(self, message = ""):
     self.message = message
