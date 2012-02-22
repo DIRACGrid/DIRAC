@@ -154,12 +154,6 @@ def isiterable(obj):
 
 # Type conversion
 
-def bool_of_string(s):
-  """Convert a string into a boolean in a SANE manner."""
-  if s.lower() == "true"    : return True
-  elif s.lower() == "false" : return False
-  else                      : raise ValueError, "Cannot convert %s to a boolean value" % s
-
 def typedobj_of_string(s):
   if s == '_none_':
     return []
