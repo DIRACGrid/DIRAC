@@ -16,8 +16,7 @@ from DIRAC.ResourceStatusSystem.Utilities                          import Utils
 from DIRAC.ResourceStatusSystem                                    import ValidRes, ValidStatus, ValidStatusTypes, \
     ValidSiteType, ValidServiceType, ValidResourceType
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions               import InvalidRes, InvalidStatus, \
-    InvalidSiteType
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions               import InvalidRes, InvalidStatus
 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
