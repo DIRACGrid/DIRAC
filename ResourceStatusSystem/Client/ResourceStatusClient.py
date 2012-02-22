@@ -1991,7 +1991,7 @@ class ResourceStatusClient:
     elements = elements[ 'Value' ]
     for gSite in elements:
       
-      dSite = getDIRACSiteName( gSite[ 0 ].setdefault( 'Value', [] ) )
+      dSite = getDIRACSiteName( gSite[ 0 ] ).setdefault( 'Value', [] )
       for ds in dSite:
         res.add( ds )
     
