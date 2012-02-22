@@ -153,53 +153,6 @@ class AdminRequired( BaseDec ):
       return S_ERROR( 'Not right property to execute this action.' ) 
     
     return self.f( *args, **kwargs )
-
-################################################################################
-
-class ClientFastDec( BaseDec ):
-  
-  def __call__( self, *args, **kwargs ):
-
-    INTERNAL_FUNCTIONS = [ 'insert', 'update', 'get', 'delete' ]
-
-    fname   = self.f.__name__   
-    client = args[ 0 ].gate
-    try:
-      fKwargs1 = self.f( *args,**kwargs )
-    except Exception, x:
-      return S_ERROR( x )  
-    del fKwargs1[ 'self' ]
-    
-    import copy
-    # Avoids messing pointers while doing the pop of meta
-    fKwargs = copy.deepcopy( fKwargs1 )
-    meta    = fKwargs.pop( 'meta', {} )
-    
-    try:    
-
-      _fname, _table = fname,''   
-      
-      for _if in INTERNAL_FUNCTIONS:
-        if fname.startswith( _if ):
-          _fname = _if
-          _table = fname.replace( _if, '' )
-      
-          if _table.startswith( 'Element' ):
-            _element = fKwargs.pop( 'element')
-            _table   = _table.replace( 'Element', _element )
-            fKwargs[ '%sName' % _element ] = fKwargs[ 'elementName' ]
-            del fKwargs[ 'elementName' ]
-          meta[ 'table' ] = _table
-          
-      gateFunction      = getattr( client, _fname )
-
-    except Exception, x:
-      return S_ERROR( x )  
-
-#    try:
-    return gateFunction( fKwargs, meta )
-#    except Exception, x:
-#      return S_ERROR( x )
-            
+           
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    
