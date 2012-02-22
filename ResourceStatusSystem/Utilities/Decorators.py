@@ -129,30 +129,6 @@ class HandlerDecCredentials( object ):
       return S_ERROR( x )
     
     return resQuery   
-
-################################################################################
-
-class AdminRequired( BaseDec ):
-  '''
-  This decorator for services is not used, but we keep it. It might be useful in
-  the future. Goes on top of HandlerDecCredentials.
-  '''
-  
-  def __call__( self, *args, **kwargs ):
-    
-    self.f.processArgs( *args, **kwargs )
-    
-    _system,_handler = args[ 0 ].__module__.rsplit( '.', 2 )[-2:]
-    
-    okProperties   = set( [ 'SiteAdmin' ] )
-    
-    credentials    = self.f.credentials   
-    credProperties = set( credentials.get( 'properties', '' ) )   
-    
-    if not credProperties & okProperties: 
-      return S_ERROR( 'Not right property to execute this action.' ) 
-    
-    return self.f( *args, **kwargs )
            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    
