@@ -243,8 +243,6 @@
 #          for oldStatus in ValidStatus:
 #            if status == oldStatus:
 #              continue
-#            self.failUnlessRaises(InvalidStatus, PEP, self.VO, granularity, 'XX', 'actives', oldStatus, 'XX')
-#            self.failUnlessRaises(InvalidStatus, PEP, self.VO, granularity, 'XX', status, 'banneds', 'XX')
 #
 #
 ##############################################################################
@@ -357,8 +355,6 @@
 #        for status in ValidStatus:
 #          if status == oldStatus:
 #            continue
-#          self.failUnlessRaises(InvalidStatus, PDP, self.VO, granularity, 'XX', 'actives', oldStatus, 'XX')
-#          self.failUnlessRaises(InvalidStatus, PDP, self.VO, granularity, 'XX', status, 'banneds', 'XX')
 #
 ##############################################################################
 #
