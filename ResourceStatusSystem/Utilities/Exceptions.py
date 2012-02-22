@@ -75,15 +75,5 @@ class InvalidServiceType(RSSException):
   def __str__(self):
     return "Invalid service type: \nshould be in " + repr(ValidServiceType) + repr(self.message)
 
-#################################################################################
-
-class InvalidResourceType(RSSException):
-  def __init__(self, message = ""):
-    self.message = message
-    RSSException.__init__(self, message)
-
-  def __str__(self):
-    return "Invalid resource type: \nshould be in " + repr(ValidResourceType) + repr(self.message)
-            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
