@@ -11,19 +11,14 @@
 """
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.ResourceStatusSystem.Utilities                          import Utils
-
-from DIRAC.ResourceStatusSystem                                    import ValidRes, ValidStatus, ValidStatusTypes, \
+from DIRAC.ResourceStatusSystem  import ValidRes, ValidStatus, ValidStatusTypes, \
     ValidSiteType, ValidServiceType, ValidResourceType
-
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions               import InvalidRes, InvalidStatus
 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
-
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
-
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction   import EmptyAction
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                   import PDP
+from DIRAC.ResourceStatusSystem.Utilities                          import Utils
 
 class PEP:
   """
