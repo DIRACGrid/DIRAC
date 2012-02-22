@@ -171,9 +171,6 @@ def list_(a):
   [a]"""
   return (list(a) if type(a) != str else [a])
 
-def list_combine(l1, l2):
-  return list(imap(lambda x,y: (x,y), l1, l2))
-
 def list_flatten(l):
   try:
     return [ee for e in l for ee in e]
