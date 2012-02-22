@@ -1978,7 +1978,7 @@ class ResourceStatusClient:
       
     return S_OK( tree )  
 
-  def getSESitestList( self ):
+  def getSESitesList( self ):
        
     kwargs = { 'statusType' : 'Read', 'meta' : { 'columns' : 'GridSiteName' } }
     elements = self._getElement( 'StorageElementPresent', kwargs )
