@@ -458,7 +458,7 @@ class ResourceManagementHandler( RequestHandler ):
 ##             pep.enforce( rsDBIn = rsDB, dbIn = db )
 #
 ##         res = publisher.getInfo( granularity, name, useNewRes )
-##       except InvalidRes, x:
+##       except Exception, x:
 ##         errorStr = "Invalid granularity"
 ##         gLogger.exception( whoRaised( x ) + errorStr )
 ##         return S_ERROR( errorStr )

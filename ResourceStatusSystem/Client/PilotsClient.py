@@ -3,7 +3,7 @@
 ################################################################################
 __RCSID__  = "$Id$"
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes, RSSException
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
 class PilotsClient( object ):
@@ -64,7 +64,7 @@ class PrivatePilotsClient( object ):
 
       res = RPC.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 50 )
     else:
-      raise InvalidRes, where( self, self.getPilotsSimpleEff )
+      return {}
 
     if not res['OK']:
       raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res['Message']

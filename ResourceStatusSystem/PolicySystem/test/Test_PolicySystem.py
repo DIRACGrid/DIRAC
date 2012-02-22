@@ -236,7 +236,6 @@
 #        for oldStatus in ValidStatus:
 #          if status == oldStatus:
 #            continue
-#          self.failUnlessRaises(InvalidRes, PEP, self.VO, 'sites', 'LCG.Ferrara.it', status, oldStatus, 'XX')
 #    for policyType in PolicyTypes:
 #      for granularity in ValidRes:
 #        for status in ValidStatus:
@@ -349,7 +348,6 @@
 #      for oldStatus in ValidStatus:
 #        if status == oldStatus:
 #          continue
-#        self.failUnlessRaises(InvalidRes, PDP, self.VO, 'sites', 'XX', status, oldStatus, 'XX')
 #    for granularity in ValidRes:
 #      for oldStatus in ValidStatus:
 #        for status in ValidStatus:
@@ -415,7 +413,6 @@
 #class PolicyBaseFailure(PolicySystemTestCase):
 #
 #  def test_setBadArgs(self):
-#    self.failUnlessRaises(InvalidRes, self.pb.setArgs, ('Sites', 'XX'))
 #
 #
 #    # 6 arguments should be handled with no problem: why the limitation to 5 ?! (removing this test)

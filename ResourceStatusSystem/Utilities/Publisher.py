@@ -13,7 +13,7 @@ from DIRAC.ResourceStatusSystem.Utilities.CS            import getStorageElement
 
 from DIRAC.ResourceStatusSystem                         import ValidRes
 from DIRAC.ResourceStatusSystem.Utilities               import Utils
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions    import RSSException, InvalidRes
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions    import RSSException
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
@@ -78,7 +78,7 @@ class Publisher:
     """
 
     if granularity not in ValidRes:
-      raise InvalidRes, Utils.where(self, self.getInfo)
+      return {}
 
     self.infoForPanel_res = {}
 
