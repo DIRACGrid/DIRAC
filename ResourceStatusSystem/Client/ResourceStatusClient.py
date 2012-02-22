@@ -2181,7 +2181,6 @@ class ResourceStatusClient:
             GridSiteName = resource[ 3 ]  #self.getGridSiteName(granularity, resource[0])
             DIRACsites = getDIRACSiteName( GridSiteName )
             if not DIRACsites[ 'OK' ]:
-              #raise RSSException, 'Error executing getDIRACSiteName'
               return S_ERROR( 'Error executing getDIRACSiteName' )
             DIRACsites = DIRACsites[ 'Value' ]
             DIRACsite_comp = ''
@@ -2254,7 +2253,6 @@ class ResourceStatusClient:
         for storageElement in storageElementsList[ 'Value' ]:
           DIRACsites = getDIRACSiteName( storageElement[ 2 ] )
           if not DIRACsites[ 'OK' ]:
-            #raise RSSException, 'Error executing getDIRACSiteName'
             return S_ERROR( 'Error executing getDIRACSiteName' )
           DIRACsites = DIRACsites[ 'Value' ]
           DIRACsite_comp = ''

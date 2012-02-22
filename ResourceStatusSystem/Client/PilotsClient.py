@@ -3,9 +3,6 @@
 ################################################################################
 __RCSID__  = "$Id$"
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
-
 class PilotsClient( object ):
   """ 
   PilotsClient class is a client to get pilots stats.
@@ -57,7 +54,9 @@ class PrivatePilotsClient( object ):
         rsClient = ResourceStatusClient()
         siteName = rsClient.getGeneralName( granularity, name, 'Site' )
         if not siteName[ 'OK' ]:
-          raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res[ 'Message' ]
+          print res[ 'Message' ]
+          return {}
+  
         if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
           return {}
         siteName = siteName['Value']
@@ -67,9 +66,10 @@ class PrivatePilotsClient( object ):
       return {}
 
     if not res['OK']:
-      raise RSSException, where( self, self.getPilotsSimpleEff ) + " " + res['Message']
-    else:
-      res = res['Value']['Records']
+      print res[ 'Message' ]
+      return {}
+    
+    res = res['Value']['Records']
 
     if len(res) == 0:
       return {}

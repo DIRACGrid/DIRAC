@@ -3,7 +3,7 @@
 ################################################################################
 __RCSID__ = "$Id:  $"
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC import gLogger
 
 class Command( object ):
   """ 
@@ -46,7 +46,7 @@ class Command( object ):
     """
 
     if self.args is None:
-      raise RSSException, "Before, set `self.args` with `self.setArgs(a)` function."
+      gLogger.error( "Before, set `self.args` with `self.setArgs(a)` function." )
     
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  

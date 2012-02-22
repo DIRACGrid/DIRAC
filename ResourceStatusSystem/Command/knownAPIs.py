@@ -6,7 +6,6 @@ __RCSID__ = "$Id:  $"
 from DIRAC                                           import gLogger
 from DIRAC.Core.DISET.RPCClient                      import RPCClient
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 '''
   Here are all known and relevant APIs for the ResourceStatusSystem Commands
@@ -31,7 +30,8 @@ __APIs__ = {
 def initAPIs( desiredAPIs, knownAPIs, force = False ):
 
   if not isinstance( desiredAPIs, list ):
-    raise RSSException, 'Got "%s" instead of list while initializing APIs' % desiredAPIs
+    gLogger.error( 'Got "%s" instead of list while initializing APIs' % desiredAPIs )
+    return knownAPIs
 
   # Remove duplicated
   desiredAPIs = list(set( desiredAPIs ) )
@@ -42,7 +42,8 @@ def initAPIs( desiredAPIs, knownAPIs, force = False ):
       continue
 
     if not dAPI in __APIs__.keys():
-      raise RSSException, '"%s" is not a known client on initAPIs' % dAPI
+      gLogger.error( '"%s" is not a known client on initAPIs' % dAPI )
+      return knownAPIs
 
     try:
 
@@ -55,19 +56,9 @@ def initAPIs( desiredAPIs, knownAPIs, force = False ):
       gLogger.info( 'API %s initialized' % dAPI )
 
     except Exception, x:
-      raise RSSException, 'Exception %s while importing "%s - %s"' % ( x, dAPI, __APIs__[ dAPI ] )
+      gLogger.exception( 'Exception %s while importing "%s - %s"' % ( x, dAPI, __APIs__[ dAPI ] ) )
 
   return knownAPIs
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

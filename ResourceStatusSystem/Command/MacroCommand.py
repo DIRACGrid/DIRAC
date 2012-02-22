@@ -8,8 +8,8 @@ __RCSID__ = "$Id:  $"
   for interacting with multiple commands
 """
 
+from DIRAC                                      import gLogger
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
 
 class MacroCommand(Command):
   
@@ -54,7 +54,7 @@ class MacroCommand(Command):
     elif len(self.args) == 1:
       commArgs = [(self.commands[x], self.args[0]) for x in range(len(self.commands))]
     else:
-      raise RSSException, "Tuples or `args` provided are nor 1 nor the same number of the commands"
+      gLogger.error( "Tuples or `args` provided are nor 1 nor the same number of the commands" )
     
     for command, arg in commArgs:
       command.setArgs(arg)
@@ -80,8 +80,8 @@ class MacroCommand(Command):
     elif len(self.args) == 1:
       commArgs = [(self.commands[x], self.clients[0]) for x in range(len(self.commands))]
     else:
-      raise RSSException, "`clients` provided are nor 1 nor the same number of the commands"
-    
+      gLogger.error( "`clients` provided are nor 1 nor the same number of the commands" )
+          
     for command, client in commArgs:
       command.setClient(client)
 
@@ -98,15 +98,5 @@ class MacroCommand(Command):
       res.append(command.doCommand())
     return res
   
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
-
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

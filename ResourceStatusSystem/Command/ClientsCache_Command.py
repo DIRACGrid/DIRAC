@@ -137,7 +137,6 @@ class PilotsEffSimpleEverySites_Command( Command ):
 #    if SEs is None:
 #      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns' : 'StorageElementName' })
 #      if not SEs['OK']:
-#        raise RSSException, where( self, self.doCommand ) + " " + SEs['Message']
 #      else:
 #        SEs = SEs['Value']
 #
@@ -151,7 +150,6 @@ class PilotsEffSimpleEverySites_Command( Command ):
 #                                         {'OperationType':'putAndRegister',
 #                                          'Destination':SEs}, 'Channel' )
 #      if not qualityAll['OK']:
-#        raise RSSException, where( self, self.doCommand ) + " " + qualityAll['Message']
 #      else:
 #        qualityAll = qualityAll['Value']['data']
 #

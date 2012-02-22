@@ -8,8 +8,6 @@ __RCSID__  = "$Id$"
 """
 
 from DIRAC                                                  import gLogger 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 from DIRAC.ResourceStatusSystem                             import ValidRes
 
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker      import ClientsInvoker
@@ -128,19 +126,10 @@ class PolicyBase(object):
       if self.infoName in result.keys():
         result = result[self.infoName]
       else:
-        raise RSSException, "missing 'infoName' in result"
+        gLogger.error( "missing 'infoName' in result" )
+        return None
 
     return result
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

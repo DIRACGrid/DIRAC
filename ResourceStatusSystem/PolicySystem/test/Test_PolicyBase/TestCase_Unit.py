@@ -66,8 +66,6 @@ class TestCase_Unit( unittest.TestCase ):
     res = self.pb.evaluate()
     self.assertEquals( res, None )
 
-    self.pb.infoName  = 'Result1'
-    self.assertRaises( self._mockMods[ 'RSSException' ], self.pb.evaluate, )
     #res = self.pb.evaluate()
     #self.assertEquals( res, None )
 ################################################################################

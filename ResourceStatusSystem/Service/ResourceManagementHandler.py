@@ -330,9 +330,9 @@ class ResourceManagementHandler( RequestHandler ):
 #
 #        finalDict[ 'Extras' ] = DT_links
 #
-#      except RSSDBException, x:
+#      except Exception, x:
 #        gLogger.error( whoRaised( x ) )
-#      except RSSException, x:
+#      except Exception, x:
 #        gLogger.error( whoRaised( x ) )
 #
 #      gLogger.info( "ResourceManagementHandler.getDownTimesWeb: got DT list" )
@@ -373,9 +373,9 @@ class ResourceManagementHandler( RequestHandler ):
 #                   serviceType, resourceType, tokenOwner, useNewRes )
 #        pep.enforce( rsDBIn = rsDB, dbIn = db )
 #
-#      except RSSDBException, x:
+#      except Exception, x:
 #        gLogger.error( whoRaised( x ) )
-#      except RSSException, x:
+#      except Exception, x:
 #        gLogger.error( whoRaised( x ) )
 #
 #      msg = "ResourceManagementHandler.enforcePolicies: enforced for %s: %s" % ( granularity, name )
@@ -462,8 +462,8 @@ class ResourceManagementHandler( RequestHandler ):
 ##         errorStr = "Invalid granularity"
 ##         gLogger.exception( whoRaised( x ) + errorStr )
 ##         return S_ERROR( errorStr )
-##       except RSSException, x:
-##         errorStr = "RSSException"
+##       except Exception, x:
+##         errorStr = "Exception"
 ##         gLogger.exception( whoRaised( x ) + errorStr )
 #
 ##       gLogger.info( "ResourceManagementHandler.publisher: got info for %s: %s" % ( granularity, name ) )

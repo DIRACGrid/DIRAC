@@ -205,7 +205,6 @@
 #
 #  def test_PEPFail(self):
 #
-#    self.mock_pdp.takeDecision.side_effect = RSSException()
 #    for policyType in PolicyTypes:
 #      for granularity in ValidRes:
 #        for status in ValidStatus:
@@ -331,7 +330,6 @@
 ##############################################################################
 #
 #  def test_PolicyFail(self):
-#    self.mock_p.evaluate.side_effect = RSSException()
 #    for granularity in ValidRes:
 #      for status in ValidStatus:
 #        for oldStatus in ValidStatus:
@@ -419,11 +417,8 @@
 #    # self.pb.setArgs(('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'))
 #    # self.mock_command.doCommand.return_value = {'Result':'aRes'}
 #    # self.pb.setCommand(self.mock_command)
-#    # self.failUnlessRaises(RSSException, self.pb.evaluate)
-#
 #    # Lists are unsupported by Command for now, useless to test.
 #    # self.pb.setArgs([('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'), ('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH')])
-#    # self.failUnlessRaises(RSSException, self.pb.evaluate)
 #
 ##############################################################################
 #
@@ -451,7 +446,6 @@
 ## class PolicyInvokerFailure(PolicySystemTestCase):
 #
 ##   def test_policyFail(self):
-##     self.mock_policy.evaluate.side_effect = RSSException()
 ##     for granularity in ValidRes:
 ##       self.failUnlessRaises(Exception, self.pi.evaluatePolicy)
 #
