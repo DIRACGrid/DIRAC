@@ -103,8 +103,12 @@ def getLFCSites():
   return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
                              % g_BaseResourcesSection, True))
 
-def getLFCNode( sites = getLFCSites(),
+def getLFCNode( sites = None,
                 readable = ('ReadOnly', 'ReadWrite')):
+  
+  if sites is None:
+    sites = getLFCSites()
+  
   def getLFCURL(site, mode):
     return gConfig.getValue("%s/FileCatalogs/LcgFileCatalogCombined/%s/%s"
                             % ((g_BaseResourcesSection, site, mode)), "")
@@ -115,7 +119,6 @@ def getLFCNode( sites = getLFCSites(),
   node = [[getLFCURL(site, r) for r in readable] for site in sites]
   node = [url for urlgroup in node for url in urlgroup] # Flatten the list
   return [n for n in node if n != ""]                   # Filter empty string
-
 
 # Storage Elements functions ########
 
