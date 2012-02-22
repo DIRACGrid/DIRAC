@@ -958,8 +958,8 @@ class TransferDB( DB ):
     res = self._query( query )
     if not res["OK"]:
       return res
-    ## from now on don't care about SubmitTime
-    res = [ rec[:3] for rec in res["Value"] in None not in rec[:3] ]
+    ## from now on don't care about SubmitTime and empty records
+    res = [ rec[:3] for rec in res["Value"] if None not in rec[:3] ]
     ## return list of tuples [ ( PFN, SE, ChannelID ), ... ]
     return  S_OK( res )
     

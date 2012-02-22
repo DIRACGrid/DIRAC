@@ -134,11 +134,7 @@ class RequestTask( object ):
 
     ## DIRAC fixtures
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
-
-    self.__log = gLogger.getSubLogger( self.__class__.__name__ )
-    #self.__log.initialize( self.__class__.__name__, os.path.join( configPath, self.__class__.__name__ ) )
-    #self.__log = gLogger.getSubLogger( self.__class__.__name__ )
-    #self.__log.showHeaders( True ) #  = gLogger.getSubLogger( self.__class__.__name__ )
+    self.__log = gLogger.getSubLogger( "%s/%s" % ( self.__class__.__name__, str(requestName) ) )
 
     self.always = self.__log.always
     self.notice = self.__log.notice
@@ -381,7 +377,13 @@ class RequestTask( object ):
     if ownerDN and ownerGroup:
       ownerProxyFile = self.changeProxy( ownerDN, ownerGroup )
       if not ownerProxyFile["OK"]:
+        self.error( "Unable to get proxy for '%s'@'%s': %s" % ( ownerDN, ownerGroup, ownerProxyFile["Message"] ) )
+        update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
+        if not update["OK"]:
+          self.error( "handleRequest: error when updating request: %s" % update["Message"] )
+          return update
         return ownerProxyFile
+
       ownerProxyFile = ownerProxyFile["Value"]
       self.info( "Will execute request for '%s'@'%s' using proxy file %s" % ( ownerDN, ownerGroup, ownerProxyFile ) )
     else:
@@ -395,6 +397,14 @@ class RequestTask( object ):
       ## delete owner proxy
       if self.__dataManagerProxy:
         os.environ["X509_USER_PROXY"] = self.__dataManagerProxy
+      if not ret["OK"]:
+        self.error( "handleRequest: error during request processing: %s" % ret["Message"] )
+        self.error( "handleRequest: will put original request back" )
+        update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
+        if not update["OK"]:
+          self.error( "handleRequest: error when putting back request: %s" % update["Message"] )
+          
+    ## return at least
     return ret
 
   def handleRequest( self ):
@@ -410,7 +420,7 @@ class RequestTask( object ):
     res = self.requestObj.getNumSubRequests( self.__requestType )
     if not res["OK"]:
       errMsg = "handleRequest: failed to obtain number of '%s' subrequests." % self.__requestType
-      self.error( errMsg, res["Message"]  )
+      self.error( errMsg, res["Message"] )
       return S_ERROR( res["Message"] )
 
     ## flag to mark that some modifications has been done in Request
@@ -437,7 +447,7 @@ class RequestTask( object ):
           self.error( "handleRequest: '%s' operation not supported, request finalisation is disabled" % operation )
           canFinalize = False
         else:
-          self.info( "handleRequest: will execute %s '%s' subrequest." % ( str(index), operation ) )
+          self.info( "handleRequest: will execute %s '%s' subrequest" % ( str(index), operation ) )
 
           ################################################
           #  Determine whether there are any active files
@@ -468,7 +478,7 @@ class RequestTask( object ):
               canFinalize = False 
             else:
               if not subRequestDone["Value"]:
-                self.warn("handleRequest: subrequest %s is not done yet, request finalisation is disabled" % str(index) )
+                self.warn("handleRequest: subrequest %s is not done yet, finalisation is disabled" % str(index) )
                 canFinalize = False
 
           if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
@@ -478,22 +488,33 @@ class RequestTask( object ):
     ################################################
     #  Generate the new request string after operation
     newRequestString = self.requestObj.toXML()['Value']
-    if self.requestString != newRequestString:
-      update = self.requestClient().updateRequest( self.requestName, newRequestString, self.sourceServer )
-      if not update["OK"]:
-        self.error( "handleRequest: error when updating request: %s" % update["Message"] )
-        return update
-      ## finalize request if jobID is present
-      if self.jobID and canFinalize and requestObj.isRequestDone():
-        finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
-        if not finalize["OK"]:
-          self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
-          return finalize
+    update = self.putBackRequest( self.requestName, newRequestString, self.sourceServer )
+    if not update["OK"]:
+      self.error( "handleRequest: error when updating request: %s" % update["Message"] )
+      return update
+    ## finalize request if jobID is present
+    if self.jobID and canFinalize and self.requestObj.isRequestDone():
+      finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
+      if not finalize["OK"]:
+        self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
+        return finalize
 
     ## for gMonitor    
     self.addMark( "Done", 1 )
 
     ## should  return S_OK with monitor dict
     return S_OK( { "monitor" : self.monitor() } )
-
  
+  def putBackRequest( self, requestName, requestString, sourceServer ):
+    """ put request back
+
+    :param self: self reference
+    :param str requestName: request name
+    :param str requestString: XML-serilised request
+    :param str sourceServer: request server URL
+    """
+    update = self.requestClient().updateRequest( requestName, requestString, sourceServer )
+    if not update["OK"]:
+      self.error( "putBackRequest: error when updating request: %s" % update["Message"] )
+      return update
+    return S_OK()
