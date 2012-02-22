@@ -214,27 +214,6 @@ def dictMatch(dict1, dict2):
 
   return numMatch
 
-def dict_split(d):
-  def dict_one_split(d):
-    def dict_copy(d, k, v):
-      copy_of_d = copy.deepcopy(d)
-      copy_of_d[k] = v
-      return copy_of_d
-
-    for (k,v) in d.items():
-      if type(v) == list:
-        return [dict_copy(d,k,i) for i in v]
-
-    return [d]
-
-  def dict_split(ds):
-    res = [dict_one_split(d) for d in ds]
-    res = list_flatten(res)
-    if res != ds: return dict_split(res)
-    else:         return res
-
-  return dict_split([d])
-
 def dict_invert(dict_):
   res = {}
   for k in dict_:
