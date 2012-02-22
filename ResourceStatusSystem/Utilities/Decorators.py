@@ -3,9 +3,9 @@
 ################################################################################
 __RCSID__  = "$Id$"
 
-import inspect, types
+import types
 
-from DIRAC import S_ERROR, gLogger
+from DIRAC import S_ERROR
 
 class BaseDec( object ):
 
