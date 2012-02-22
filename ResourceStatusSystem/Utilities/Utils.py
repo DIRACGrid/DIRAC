@@ -214,19 +214,6 @@ def dictMatch(dict1, dict2):
 
   return numMatch
 
-def dict_invert(dict_):
-  res = {}
-  for k in dict_:
-    if not isiterable(dict_[k]):
-      dict_[k] = [dict_[k]]
-    for i in dict_[k]:
-      try:
-        res[i].append(k)
-      except KeyError:
-        res[i] = [k]
-
-  return res
-
 # XML utils
 
 def xml_append(doc, tag, value_=None, elt_=None, **kw):
