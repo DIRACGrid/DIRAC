@@ -1978,6 +1978,26 @@ class ResourceStatusClient:
       
     return S_OK( tree )  
 
+  def getSESitestList( self ):
+       
+    kwargs = { 'statusType' : 'Read', 'meta' : { 'columns' : 'GridSiteName' } }
+    elements = self._getElement( 'StorageElementPresent', kwargs )
+
+    from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
+    res = set( [] )
+    if not elements[ 'OK' ]:
+      return S_OK( [] )
+    
+    elements = elements[ 'Value' ]
+    for gSite in elements:
+      
+      dSite = getDIRACSiteName( gSite[ 0 ].setdefault( 'Value', [] ) )
+      for ds in dSite:
+        res.add( ds )
+    
+    res = list( res )
+    return S_OK( res )        
+
   def getMonitoredStatus( self, granularity, name ):
     '''
     Gets from <granularity>Present the present status of name.
