@@ -164,17 +164,6 @@ def typedobj_of_string(s):
   except (ValueError, SyntaxError): # Probably it's just a string
     return s
 
-# String utils
-
-def CountCommonLetters(S1, S2):
-  count = 0
-  target = S2
-  for l in S1:
-    if l in S2:
-      count = count+1
-      target = target.strip(l)
-  return count
-
 # List utils
 
 def list_(a):
