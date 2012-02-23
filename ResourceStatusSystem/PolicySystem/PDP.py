@@ -9,7 +9,6 @@ from DIRAC.ResourceStatusSystem.PolicySystem                import Status
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller   import PolicyCaller
 from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
-from DIRAC.ResourceStatusSystem.Utilities                   import Utils
 
 class PDP:
   """
@@ -257,7 +256,12 @@ class PDP:
     """ Use the RSS Service to get an old policy result.
         If such result is older than 2 hours, it returns {'Status':'Unknown'}
     """
-    res = Utils.unpack(self.clients['ResourceManagementClient'].getPolicyResult( name = name, policyName = policyName ))
+    res = self.clients['ResourceManagementClient'].getPolicyResult( name = name, policyName = policyName )
+    
+    if not res[ 'OK' ]:
+      return { 'Status' : 'Unknown' }
+    
+    res = res[ 'Value' ]
 
     if res == []:
       return {'Status':'Unknown'}
@@ -269,14 +273,14 @@ class PDP:
     lastCheckTime = res[8]
 
     if ( lastCheckTime + datetime.timedelta(hours = 2) ) < datetime.datetime.utcnow():
-      return {'Status':'Unknown'}
+      return { 'Status' : 'Unknown' }
 
     result = {}
 
-    result['Status'] = oldStatus
-    result['Reason'] = oldReason
-    result['OLD'] = True
-    result['PolicyName'] = policyName
+    result[ 'Status' ] = oldStatus
+    result[ 'Reason' ] = oldReason
+    result[ 'OLD' ] = True
+    result[ 'PolicyName' ] = policyName
 
     return result
 
