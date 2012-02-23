@@ -14,7 +14,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
-from DIRAC.ResourceStatusSystem.Utilities import CS
+from DIRAC.ResourceStatusSystem.Utilities                   import CS
 
 class RSInspectorAgent( AgentModule ):
   """
@@ -32,7 +32,7 @@ class RSInspectorAgent( AgentModule ):
 
     try:
       self.rsClient             = ResourceStatusClient()
-      self.ResourcesFreqs       = CS.getTypedDictRootedAt("CheckingFreqs/ResourcesFreqs")
+      self.ResourcesFreqs       = CS.getTypedDictRootedAt( 'CheckingFreqs/ResourcesFreqs' )
       self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
 
@@ -67,15 +67,14 @@ class RSInspectorAgent( AgentModule ):
       kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
       resQuery = self.rsClient.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
+      if not resQuery[ 'OK' ]:
+        self.log.error( resQuery[ 'Message' ] )
+        return resQuery
 
-      self.log.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
+      resQuery = resQuery[ 'Value' ]  
+      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
 
-      for resourceTuple in resQuery[ 'Value' ]:
-
-        #THIS IS IMPORTANT !!
-        #Ignore all elements with token != RS_SVC
-        #if resourceTuple[ 6 ] != 'RS_SVC':
-        #  continue
+      for resourceTuple in resQuery:
 
         if ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) in self.ResourceNamesInCheck:
           self.log.info( '%s(%s) discarded, already on the queue' % ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
