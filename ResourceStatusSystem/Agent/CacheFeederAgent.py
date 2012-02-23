@@ -7,7 +7,6 @@ AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 from datetime import datetime
 
 from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC                                                      import gLogger
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -84,7 +83,7 @@ class CacheFeederAgent( AgentModule ):
 
     except Exception:
       errorStr = "CacheFeederAgent initialization"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
 ################################################################################
@@ -102,14 +101,14 @@ class CacheFeederAgent( AgentModule ):
           res = self.clientsInvoker.doCommand()['Result']
 
           if not res['OK']:
-            gLogger.warn( res['Message'] )
+            self.log.warn( res['Message'] )
             continue
           res = res[ 'Value' ]
 
           if not res or res is None:
-            gLogger.info('  returned empty...')
+            self.log.info('  returned empty...')
             continue
-          gLogger.debug( res )
+          self.log.debug( res )
 
           for key in res.keys():
 
@@ -124,7 +123,7 @@ class CacheFeederAgent( AgentModule ):
 
                   resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
                   if not resQuery[ 'OK' ]:
-                    gLogger.error( resQuery[ 'Message' ] )
+                    self.log.error( resQuery[ 'Message' ] )
 
             else:
               for value in res[key].keys():
@@ -133,10 +132,10 @@ class CacheFeederAgent( AgentModule ):
 
                 resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
                 if not resQuery[ 'OK' ]:
-                  gLogger.error( resQuery[ 'Message' ] )
+                  self.log.error( resQuery[ 'Message' ] )
 
         except:
-          gLogger.exception( "Exception when executing " + co[0][1] )
+          self.log.exception( "Exception when executing " + co[0][1] )
           continue
 
       now = datetime.utcnow().replace( microsecond = 0 )
@@ -153,7 +152,7 @@ class CacheFeederAgent( AgentModule ):
         commandName = co[0][1].split( '_' )[0]
         plotName    = commandName + '_' + str( co[2][0] )
 
-        gLogger.info( 'Executed %s with args %s %s' % ( commandName, co[0][2], co[0][3] ) )
+        self.log.info( 'Executed %s with args %s %s' % ( commandName, co[0][2], co[0][3] ) )
 
         try:
           co[1].setArgs( co[2] )
@@ -161,20 +160,20 @@ class CacheFeederAgent( AgentModule ):
           res = self.clientsInvoker.doCommand()['Result']
 
           if not res['OK']:
-            gLogger.warn( res['Message'] )
+            self.log.warn( res['Message'] )
             continue
           res = res[ 'Value' ]
 
           if not res or res is None:
-            gLogger.info('  returned empty...')
+            self.log.info('  returned empty...')
             continue
-          gLogger.debug( res )
+          self.log.debug( res )
 
           plotType = res.keys()[ 0 ]
 
           if not res[ plotType ]:
-            gLogger.info('  returned empty...')
-          gLogger.debug( res )
+            self.log.info('  returned empty...')
+          self.log.debug( res )
 
           for name in res[ plotType ].keys():
 
@@ -182,17 +181,17 @@ class CacheFeederAgent( AgentModule ):
             accountingClient = ( name, plotType, plotName, str(res[plotType][name]), None, None )
             resQuery = self.rmClient.addOrModifyAccountingCache( *accountingClient )
             if not resQuery[ 'OK' ]:
-              gLogger.error( resQuery[ 'Message' ] )
+              self.log.error( resQuery[ 'Message' ] )
 
         except:
-          gLogger.exception( "Exception when executing " + commandName )
+          self.log.exception( "Exception when executing " + commandName )
           continue
 
       return S_OK()
 
     except Exception:
       errorStr = "CacheFeederAgent execution"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
 ################################################################################

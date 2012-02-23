@@ -7,7 +7,6 @@ AGENT_NAME = 'ResourceStatus/TokenAgent'
 import datetime
 
 from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC                                                      import gLogger
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
 
@@ -39,9 +38,8 @@ class TokenAgent( AgentModule ):
       return S_OK()
     except Exception:
       errorStr = "TokenAgent initialization"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
-
 
 ################################################################################
 
@@ -74,7 +72,7 @@ class TokenAgent( AgentModule ):
           stype = token[ 2 ]
           user  = token[ 9 ]
 
-          print self.rsClient.setToken( g, name, stype, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ) )
+          self.rsClient.setToken( g, name, stype, reason, 'RS_SVC', datetime.datetime( 9999, 12, 31, 23, 59, 59 ) )
           adminMail += ' %s %s %s\n' %( user.ljust(20), name.ljust(15), stype )
 
       #notify token owners
@@ -137,7 +135,7 @@ class TokenAgent( AgentModule ):
 
     except Exception:
       errorStr = "TokenAgent execution"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
 ################################################################################
