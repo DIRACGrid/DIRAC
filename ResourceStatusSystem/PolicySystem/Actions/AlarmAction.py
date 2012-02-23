@@ -62,11 +62,17 @@ class AlarmAction(ActionBase):
             nc.addNotificationForUser(user, notif)
           if 'Mail' in notif['Notifications']:
             gLogger.info("Sending mail notification to user %s" % user)
-            was = Utils.unpack(self.rsClient.getElementHistory(
-                self.granularity, elementName=self.name,
-                statusType=self.status_type,
-                meta = {"order": "DESC", 'limit' : 1,
-                        "columns":  ['Status', 'Reason', 'DateEffective']}))[0]
+            
+            was = self.rsClient.getElementHistory( self.granularity, 
+                                                   elementName = self.name,
+                                                   statusType = self.status_type,
+                                                   meta = {"order": "DESC", 'limit' : 1,
+                                                    "columns":  ['Status', 'Reason', 'DateEffective']})#[0]
+            
+            if not was[ 'OK' ]:
+              gLogger.error( was[ 'Message' ] )
+              continue
+            was = was[ 'Value' ][ 0 ]
 
             mailMessage = """                             ---TESTING---
 --------------------------------------------------------------------------------
@@ -91,7 +97,14 @@ This notification has been sent according to those parameters:
        self.new_status['Reason'], was[0], was[1], was[2], CS.getSetup(), str(users_to_notify))
 
             # Actually send the mail!
-            nc.sendMail(Utils.unpack(self.rmClient.getUserRegistryCache(user))[0][2],
+            
+            resUser = self.rmClient.getUserRegistryCache( user )
+            if not resUser[ 'OK' ]:
+              gLogger.error( resUser[ 'Message' ] )
+              continue
+            resUser = resUser[ 'Value' ][ 0 ][ 2 ]
+                       
+            nc.sendMail(resUser,
                         '[RSS][%s][%s] %s -> %s'
                         % (self.granularity, self.name,  self.new_status['Status'], was[0]), mailMessage)
 
