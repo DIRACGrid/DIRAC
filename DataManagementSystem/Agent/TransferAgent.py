@@ -462,7 +462,7 @@ class TransferAgent( RequestAgentBase ):
     if not subRequestFiles["OK"]:
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
-    self.log.info( "collectFiles: SubRequest %s found with %d files." % ( iSubRequest, len( subRequestFiles ) ) )
+    self.log.info( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, len( subRequestFiles ) ) )
     
     for subRequestFile in subRequestFiles:
       fileStatus = subRequestFile["Status"]
@@ -476,19 +476,19 @@ class TransferAgent( RequestAgentBase ):
     if waitingFiles:     
       replicas = self.replicaManager().getCatalogReplicas( waitingFiles.keys() )
       if not replicas["OK"]:
-        self.log.error( "collectFiles: Failed to get replica information.", replicas["Message"] )
+        self.log.error( "collectFiles: failed to get replica information", replicas["Message"] )
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
-        self.log.error( "collectFiles: Failed to get replicas.", "%s: %s" % ( lfn, failure ) )    
+        self.log.error( "collectFiles: Failed to get replicas %s: %s" % ( lfn, failure ) )    
       replicas = replicas["Value"]["Successful"]
 
       if replicas:
         metadata = self.replicaManager().getCatalogFileMetadata( replicas.keys() )
         if not metadata["OK"]:
-          self.log.error( "collectFiles: Failed to get file size information.", metadata["Message"] )
+          self.log.error( "collectFiles: failed to get file size information", metadata["Message"] )
           return metadata
         for lfn, failure in metadata["Value"]["Failed"].items():
-          self.log.error( "collectFiles: Failed to get file size.", "%s: %s" % ( lfn, failure ) )
+          self.log.error( "collectFiles: failed to get file size %s: %s" % ( lfn, failure ) )
         metadata = metadata["Value"]["Successful"] 
    
     self.log.info( "collectFiles: waitingFiles=%d replicas=%d metadata=%d" % ( len(waitingFiles), 
@@ -545,7 +545,7 @@ class TransferAgent( RequestAgentBase ):
           failback = True
         elif executeFTS["OK"]:
           if executeFTS["Value"]:
-            self.log.info("execute: request %s has been scheduled for FTS" % requestDict["requestName"] )
+            self.log.info("execute: request %s has been processed in FTS" % requestDict["requestName"] )
             requestCounter = requestCounter - 1
             self.deleteRequest( requestDict["requestName"] )
             continue 
@@ -556,11 +556,21 @@ class TransferAgent( RequestAgentBase ):
       if failback and not self.__executionMode["Tasks"]:
         self.log.error("execute: not able to process %s request" % requestDict["requestName"] )
         self.log.error("execute: FTS scheduling has failed and Task mode is disabled" ) 
+        ## put request back to RequestClient
+        res = self.requestClient().updateRequest( requestDict["requestName"], 
+                                                  requestDict["requestString"], 
+                                                  requestDict["sourceServer"] )
+        if not res["OK"]:
+          self.log.error( "execute: failed to update request %s: %s" % ( requestDict["requestName"], res["Message"] ) )
+        ## delete it from requestHolder
+        self.deleteRequest( requestDict["requestName"] )
+        ## decrease request counter 
+        requestCounter = requestCounter - 1
         continue
 
       ## Task execution
-      self.log.info("execute: about to process request using TransferTask")
       if self.__executionMode["Tasks"]: 
+        self.log.info("execute: about to process request using TransferTask")
         res = self.executeTask( requestDict )
         if res["OK"]:
           requestCounter = requestCounter - 1
@@ -587,7 +597,7 @@ class TransferAgent( RequestAgentBase ):
     try:
       schedule = self.schedule( requestDict )
       if schedule["OK"]:
-        self.log.info("executeFTS: request %s has been scheduled for FTS" % requestDict["requestName"] )
+        self.log.info("executeFTS: request %s has been processed" % requestDict["requestName"] )
       else:
         self.log.error( schedule["Message"] )
         return schedule 
@@ -603,14 +613,19 @@ class TransferAgent( RequestAgentBase ):
     :param self: self reference
     :param dict requestDict: requestDict
     """
+    ## add confing path
     requestDict["configPath"] = self.configPath()
+    ## remove requestObj
+    if "requestObj" in requestDict:
+      del requestDict["requestObj"]
+
     taskID = requestDict["requestName"]
     while True:
       if not self.processPool().getFreeSlots():
-        self.log.info("executeTask: no free slots available in processPool, will wait a second to proceed...")
-        time.sleep( 1 )
+        self.log.info("executeTask: no free slots available in pool, will wait 2 seconds to proceed...")
+        time.sleep( 2 )
       else:
-        self.log.info("executeTask: spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
+        self.log.info("executeTask: spawning task %s for request %s" % ( taskID, taskID ) )
         enqueue = self.processPool().createAndQueueTask( TransferTask,
                                                          kwargs = requestDict,
                                                          taskID = taskID,
@@ -627,11 +642,20 @@ class TransferAgent( RequestAgentBase ):
     return S_OK()
 
 
+  ###################################################################################
+  # FST scheduling 
+  ###################################################################################
   def schedule( self, requestDict ):
     """ scheduling files for FTS
 
-    :todo: needs splitting 
-  
+    here requestDict
+    requestDict = { "requestString" : str,
+                    "requestName" : str,
+                    "sourceServer" : str,
+                    "executionOrder" : list,
+                    "jobID" : int,
+                    "requestObj" : RequestContainer }
+
     :param self: self reference
     :param dict requestDict: request dictionary 
     """
@@ -651,45 +675,70 @@ class TransferAgent( RequestAgentBase ):
                                                                        requestName ) )
       subAttrs = requestObj.getSubRequestAttributes( iSubRequest, "transfer" )["Value"]
       subRequestStatus = subAttrs["Status"]
-      if subRequestStatus != "Waiting":
+
+      if subRequestStatus != "Waiting" :
         ## sub-request is already in terminal state
         self.log.info( "schedule: subrequest %s status is '%s', it won't be executed" % ( iSubRequest, 
                                                                                           subRequestStatus ) )
         continue
 
-      ## failover registration 
+      ## check already replicated files
+      checkReadyReplicas = self.checkReadyReplicas( requestObj, iSubRequest, subAttrs )
+      if not checkReadyReplicas["OK"]:
+        self.log.error("schedule: %s" % checkReadyReplicas["Message"] )
+        continue
+      requestObj = checkReadyReplicas["Value"]
+
+      ## failover registration (file has been transfered but registration failed)
       registerFiles = self.registerFiles( requestObj, iSubRequest )
       if not registerFiles["OK"]:
         self.log.error("schedule: %s" % registerFiles["Message"] )
         continue
       ## get modified request obj
       requestObj = registerFiles["Value"]
-   
-      ## schedule files
-      scheduleFiles = self.scheduleFiles( requestObj, iSubRequest, subAttrs )
-      if not scheduleFiles["OK"]:
-        self.log.error("schedule: %s" % scheduleFiles["Message"] )
-        continue
-      ## get modified request obj
-      requestObj = scheduleFiles["Value"]
 
-      ## all files non-waiting
-      if requestObj.isSubRequestEmpty( iSubRequest, "transfer" )["Value"]:
-        self.log.info("schedule: setting sub-request %d status to 'Scheduled'" % iSubRequest )
-        requestObj.setSubRequestStatus( iSubRequest, "transfer", "Scheduled" )
-      ## all files Done
-      if requestObj.isSubRequestDone( iSubRequest, "transfer" )["Value"]:
-        self.log.info("schedule: setting sub-request %d status to 'Done'" % iSubRequest )
+      subRequestEmpty = requestObj.isSubRequestEmpty( iSubRequest, "transfer" )
+      subRequestEmpty = subRequestEmpty["Value"] if "Value" in subRequestEmpty else False
+
+      ## schedule files, some are still in Waiting State
+      if not subRequestEmpty:
+        scheduleFiles = self.scheduleFiles( requestObj, iSubRequest, subAttrs )
+        if not scheduleFiles["OK"]:
+          self.log.error("schedule: %s" % scheduleFiles["Message"] )
+          continue
+        ## get modified request obj
+        requestObj = scheduleFiles["Value"]
+      else:
+        self.log.info("schedule: subrequest %d is empty" % iSubRequest )
+        self.log.info("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
+        requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
+
+      ## check if all files are in 'Done' status
+      subRequestDone = requestObj.isSubRequestDone( iSubRequest, "transfer" )
+      subRequestDone = subRequestDone["Value"] if "Value" in subRequestDone else False
+      ## all files Done, make this subrequest Done too 
+      if subRequestDone:
+        self.log.info("schedule: subrequest %s is done" % iSubRequest )
+        self.log.info("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
 
     ## update Request in DB after operation 
     ## if all subRequests are statuses = Done, 
     ## this will also set the Request status to Done
     requestString = requestObj.toXML()["Value"]
-    res = self.requestDBMySQL().updateRequest( requestName, requestString )
+    res = self.requestClient().updateRequest( requestName, requestString, requestDict["sourceServer"] )
     if not res["OK"]:
       self.log.error( "schedule: failed to update request", "%s %s" % ( requestName, res["Message"] ) )
-    
+
+    ## finalisation
+    requestDone = requestObj.isRequestDone()
+    requestDone = requestDone["Value"] if "Value" in requestDone else False
+    ## fianlize request, it's status is Done
+    if requestDict["jobID"] and requestDone:
+      res = self.requestClient().finalizeRequest( requestName,  requestDict["jobID"], requestDict["sourceServer"] )
+      if not res["OK"]:
+        self.log.error( "schedule: unable to finalize request %s: %s " % ( requestName, res["Message"] ) )
+
     return S_OK()
 
   def scheduleFiles( self, requestObj, index, subAttrs ):
@@ -702,11 +751,11 @@ class TransferAgent( RequestAgentBase ):
     """
 
     self.log.info( "scheduleFiles: *** FTS scheduling ***")
-    self.log.info("scheduleFiles: processing subrequest %s" % index )
+    self.log.info( "scheduleFiles: processing subrequest %s" % index )
     ## get source SE
     sourceSE = subAttrs["SourceSE"]
     ## get target SEs, no matter what's a type we need a list
-    targetSEs = [ target.strip() for target in subAttrs["TargetSE"].split(",") ]
+    targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
     ## get replication strategy
     operation = subAttrs["Operation"]
     strategy = { False : None, 
@@ -837,6 +886,59 @@ class TransferAgent( RequestAgentBase ):
     ## return modified requestObj 
     return S_OK( requestObj )
 
+
+  def checkReadyReplicas( self, requestObj, index, subAttrs ):
+    """ check if Files are already replicated, mark thiose as Done
+
+    :param self: self reference
+    :param RequestContainer requestObj: request being processed
+    :param index: subrequest index
+    :param dict subAttrs: subrequest attributes
+    """
+    self.log.info( "checkReadyReplicas: *** check done replications ***" )
+    self.log.info( "checkReadyReplicas: obtaining all files in %d subrequest" % index )
+    
+    ## get targetSEs
+    targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
+
+    ## get subrequest files
+    subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
+    if not subRequestFiles["OK"]:
+      return subRequestFiles
+    subRequestFiles = subRequestFiles["Value"]
+    self.log.info( "checkReadyReplicas: found %s files" % len( subRequestFiles ) ) 
+
+    fileLFNs = []
+    for subRequestFile in subRequestFiles:
+      status = subRequestFile["Status"]
+      if status != "Done":
+        fileLFNs.append( subRequestFile["LFN"] )
+  
+    replicas = None
+    if fileLFNs:      
+      self.log.debug( "checkReadyReplicas: got %s not-done files" % str(len(fileLFNs) ) )
+      replicas = self.replicaManager().getCatalogReplicas( fileLFNs )
+      if not replicas["OK"]:
+        return replicas
+      for lfn, failure in replicas["Value"]["Failed"].items():
+        self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
+      replicas = replicas["Value"]["Successful"]
+
+    ## are there any replicas?
+    if replicas:
+      for fileLFN in fileLFNs:
+        self.log.debug( "checkReadyReplicas: processing file %s" % fileLFN )
+        fileReplicas = [] if fileLFN not in replicas else replicas[fileLFN]
+        fileTargets = [ targetSE for targetSE in targetSEs if targetSE not in fileReplicas ]
+        if not fileTargets:
+          self.log.info( "checkReadyReplicas: %s is present at all targets, setting its status to 'Done'" % fileLFN )
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", fileLFN, "Status", "Done" )
+          continue    
+        else:
+          self.log.debug( "checkReadyReplicas: file %s still needs to be replicated at %s" % ( fileLFN, fileTargets ) )
+      
+    return S_OK( requestObj )
+  
   def registerFiles( self, requestObj, index ):
     """ failover registration for files in subrequest :index:
 
@@ -846,7 +948,7 @@ class TransferAgent( RequestAgentBase ):
     :param dict subAttrs: subrequest's attributes
     """
     self.log.info( "registerFiles: *** failover registration *** ")
-    self.log.info( "registerFiles: obtaining all files in %d SubRequest" % index )
+    self.log.info( "registerFiles: obtaining all files in %d subrequest" % index )
     subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
     if not subRequestFiles["OK"]:
       return subRequestFiles
