@@ -7,8 +7,7 @@ __RCSID__  = "$Id$"
   The Policy class is a simple base class for all the policies
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+from DIRAC                                                  import gLogger 
 from DIRAC.ResourceStatusSystem                             import ValidRes
 
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker      import ClientsInvoker
@@ -45,7 +44,7 @@ class PolicyBase(object):
     self.args = argsIn
 
     if self.args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.setArgs)
+      gLogger.error( 'PolicyBase.setArgs got wrong ValidRes' )
 
 ################################################################################
 
@@ -127,19 +126,10 @@ class PolicyBase(object):
       if self.infoName in result.keys():
         result = result[self.infoName]
       else:
-        raise RSSException, "missing 'infoName' in result"
+        gLogger.error( "missing 'infoName' in result" )
+        return None
 
     return result
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

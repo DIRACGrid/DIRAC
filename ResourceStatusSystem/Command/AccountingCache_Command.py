@@ -229,14 +229,12 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 #    if SEs is None:
 #      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
 #      if not SEs[ 'OK' ]:
-#        raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
 #      else:
 #        SEs = SEs[ 'Value' ]
 #    
 #    if sources is None:
 #      sources = self.APIs[ 'ResourceStatusClient' ].getSitesList()
 #      if not sources[ 'OK' ]:
-#        raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
 #      else:
 #        sources = sources[ 'Value' ]
 #    
@@ -251,7 +249,6 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 #                                            'Source': sources + SEs, 'Destination': sources + SEs }, 
 #                                          'Destination')
 #      if not qualityAll[ 'OK' ]:
-#        raise RSSException, where( self, self.doCommand ) + " " + qualityAll[ 'Message' ] 
 #      else:
 #        qualityAll = qualityAll[ 'Value' ]
 #
@@ -268,7 +265,6 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 #      return {}
 #    
 #    if not storSitesWeb[ 'OK' ]:
-#      raise RSSException, where( self, self.doCommand ) + " " + storSitesWeb[ 'Message' ] 
 #    else:
 #      storSitesWeb = storSitesWeb[ 'Value' ][ 'Records' ]
 #    

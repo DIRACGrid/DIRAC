@@ -9,20 +9,16 @@
        b. raising alarms
        c. other....
 """
-from DIRAC.ResourceStatusSystem.Utilities                          import Utils
+from DIRAC import S_OK, S_ERROR
 
-from DIRAC.ResourceStatusSystem                                    import ValidRes, ValidStatus, ValidStatusTypes, \
+from DIRAC.ResourceStatusSystem  import ValidRes, ValidStatus, ValidStatusTypes, \
     ValidSiteType, ValidServiceType, ValidResourceType
-
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions               import InvalidRes, InvalidStatus, \
-    InvalidResourceType, InvalidServiceType, InvalidSiteType
 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
-
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
-
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction   import EmptyAction
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                   import PDP
+from DIRAC.ResourceStatusSystem.Utilities                          import Utils
 
 class PEP:
   """
@@ -78,45 +74,50 @@ class PEP:
 ################################################################################
 
   def enforce( self, granularity = None, name = None, statusType = None,
-                status = None, formerStatus = None, reason = None, siteType = None,
-                serviceType = None, resourceType = None, tokenOwner = None,
-                useNewRes = False, knownInfo = None  ):
+               status = None, formerStatus = None, reason = None, 
+               siteType = None, serviceType = None, resourceType = None, 
+               tokenOwner = None, useNewRes = False, knownInfo = None  ):
 
-    ###################
-    #  real ban flag  #
-    ###################
+    ##  real ban flag  #########################################################
 
     realBan = False
     if tokenOwner is not None:
       if tokenOwner == 'RS_SVC':
         realBan = True
 
-    ################
-    # policy setup #
-    ################
+    ## sanitize input ##########################################################
+    ## IS IT REALLY NEEDED ??
+        
+    if granularity is not None and granularity not in ValidRes:
+      return S_ERROR( 'Granularity "%s" not valid' % granularity )
 
-    granularity = Utils.assignOrRaise( granularity, ValidRes, InvalidRes, self, self.__init__ )
-    try:
-      statusType   = Utils.assignOrRaise( statusType, ValidStatusTypes[ granularity ]['StatusType'], \
-                                            InvalidStatus, self, self.enforce )
-    except KeyError:
-      statusType = "''" # "strange" default value returned by CS
+    if statusType is not None and statusType not in ValidStatusTypes[ granularity ]['StatusType']:
+      return S_ERROR( 'StatusType "%s" not valid' % statusType )
+    
+    if status is not None and status not in ValidStatus:
+      return S_ERROR( 'Status "%s" not valid' % status )
 
-    status       = Utils.assignOrRaise( status, ValidStatus, InvalidStatus, self, self.enforce )
-    formerStatus = Utils.assignOrRaise( formerStatus, ValidStatus, InvalidStatus, self, self.enforce )
-    siteType     = Utils.assignOrRaise( siteType, ValidSiteType, InvalidSiteType, self, self.enforce )
-    serviceType  = Utils.assignOrRaise( serviceType, ValidServiceType, InvalidServiceType, self, self.enforce )
-    resourceType = Utils.assignOrRaise( resourceType, ValidResourceType, InvalidResourceType, self, self.enforce )
+    if formerStatus is not None and formerStatus not in ValidStatus:
+      return S_ERROR( 'FormerStatus "%s" not valid' % formerStatus )
 
-    self.pdp.setup(granularity = granularity, name = name,
+    if siteType is not None and siteType not in ValidSiteType:
+      return S_ERROR( 'SiteType "%s" not valid' % siteType )
+
+    if serviceType is not None and serviceType not in ValidServiceType:
+      return S_ERROR( 'ServiceType "%s" not valid' % serviceType )
+
+    if resourceType is not None and resourceType not in ValidResourceType:
+      return S_ERROR( 'ResourceType "%s" not valid' % resourceType )
+    
+    ## policy setup ############################################################  
+
+    self.pdp.setup( granularity = granularity, name = name, 
                     statusType = statusType, status = status,
-                    formerStatus = formerStatus, reason = reason, siteType = siteType,
-                    serviceType = serviceType, resourceType = resourceType,
-                    useNewRes = useNewRes )
+                    formerStatus = formerStatus, reason = reason, 
+                    siteType = siteType, serviceType = serviceType, 
+                    resourceType = resourceType, useNewRes = useNewRes )
 
-    ###################
-    # policy decision #
-    ###################
+    ## policy decision #########################################################
 
     resDecisions = self.pdp.takeDecision( knownInfo = knownInfo )
 
