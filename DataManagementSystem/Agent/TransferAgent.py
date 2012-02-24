@@ -7,7 +7,7 @@
 """ :mod: TransferAgent 
     ===================
 
-    TransferAgent executes 'transfer' requests read from the RequestDB.
+    TransferAgent executes 'transfer' requests read from the RequestClient.
     
     This agent has two modes of operation:
     - standalone, when all Requests are handled using ProcessPool and TransferTask

@@ -11,8 +11,7 @@
     :synopsis: base class for requests execution in separate subprocesses
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    Base class for requests execution in separate subprocesses.
-
+    Base class for requests execution in a separate subprocesses.
 """
 
 __RCSID__ = "$Id $"
