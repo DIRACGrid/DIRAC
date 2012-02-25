@@ -219,7 +219,7 @@ shutil.rmtree( workingDirectory )
     result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
     # submit submitFile to the batch system
     executablePath = '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) )
-    cmd = "chdir %(execArea)s; chmod +x %(executable)s; %(executable)s 1>&2 > %(executable)s.out &" % \
+    cmd = "chmod +x %(executable)s; %(executable)s 1>&2 > %(executable)s.out &" % \
       {'numberOfJobs': numberOfJobs, 'executable': executablePath, 'execArea': self.executableArea}
 
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
@@ -231,7 +231,7 @@ shutil.rmtree( workingDirectory )
       self.log.debug( result )
       return S_ERROR( result['Value'] )
     else:
-      self.log.debug( 'Torque CE result OK' )
+      self.log.debug( 'SSH CE result OK' )
 
     batchIDList = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
 
