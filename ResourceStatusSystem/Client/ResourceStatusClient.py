@@ -145,6 +145,7 @@ class ResourceStatusClient:
   ##############################################################################
   '''      
   
+  # pylint: disable-msg=W0613
   def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
     '''
     Inserts on Site a new row with the arguments given.
