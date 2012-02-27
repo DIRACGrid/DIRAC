@@ -34,9 +34,13 @@ class CacheCleanerAgent( AgentModule ):
   If you want to know more about the CacheCleanerAgent, scroll down to the end of the 
   file.   
   '''
+  
+  # Too many public methods
+  # pylint: disable-msg=R0904
 
   def initialize( self ):
     
+    # Attribute defined outside __init__  
     # pylint: disable-msg=W0201
     
     try:

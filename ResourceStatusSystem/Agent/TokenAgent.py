@@ -24,10 +24,15 @@ class TokenAgent( AgentModule ):
     Notifications are sent to those users owning expiring tokens.
   '''
 
+  # Too many public methods
+  # pylint: disable-msg=R0904
+
   def initialize( self ):
     '''
     TokenAgent initialization
     '''
+    
+    # Attribute defined outside __init__
     # pylint: disable-msg=W0201
 
     self.notifyHours = self.am_getOption( 'notifyHours', 10 )

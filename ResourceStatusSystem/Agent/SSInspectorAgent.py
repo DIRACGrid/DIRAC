@@ -32,8 +32,12 @@ class SSInspectorAgent( AgentModule ):
     end of the file.
   '''
 
+  # Too many public methods
+  # pylint: disable-msg=R0904
+
   def initialize( self ):
 
+    # Attribute defined outside __init__
     # pylint: disable-msg=W0201
 
     try:
