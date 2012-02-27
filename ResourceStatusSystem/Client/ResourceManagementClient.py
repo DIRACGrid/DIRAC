@@ -83,44 +83,6 @@ class ResourceManagementClient:
     gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
     return gateFunction( params, meta )
 
-#  def __query( self, kwargs ):
-#    '''
-#      This method is a rather important one. It will format the input for the DB
-#      queries, instead of doing it on a decorator. Two dictionaries must be passed
-#      to the DB. First one contains 'columnName' : value pairs, being the key
-#      lower camel case. The second one must have, at lease, a key named 'table'
-#      with the right table name. 
-#    '''
-#    
-#    # Functions we can call, just a light safety measure.
-#    __INTERNAL_FUNCTIONS__ = [ 'insert', 'update', 'get', 'delete' ]
-#    gateFunction           = None
-#    
-#    # I'm simply lazy, do not want to pass function name as argument. I get it here
-#    fname  = sys._getframe( 1 ).f_code.co_name
-#    meta   = kwargs.pop( 'meta' )
-#    params = kwargs
-#    del params[ 'self' ]
-#        
-#    for _ifName in __INTERNAL_FUNCTIONS__:
-#      
-#      if fname.startswith( _ifName ):
-#        
-#        _table = fname.replace( _ifName, '' )
-#          
-#        meta[ 'table' ] = _table
-#        
-#        gateFunction = getattr( self.gate, _ifName )
-#        continue  
-#    
-#    # Be careful, __eq__ method cannot be executed if we use server !  
-#    if gateFunction is not None:  
-#      
-#      gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( _ifName, params, meta ) )  
-#      return gateFunction( params, meta )     
-#    
-#    return S_ERROR( 'Cannot find right call for %s' % fname )
-
   def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
     '''
     Inserts on EnvironmentCache a new row with the arguments given.
