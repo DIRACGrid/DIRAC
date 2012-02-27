@@ -1,14 +1,18 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' MySQLMonkey
 
-from DIRAC import S_OK#, S_ERROR
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
+  Module that generates SQL statemens in the fly out of two dictionaries.
+
+'''
+
+import re
 
 from datetime import datetime
 
-import re
+from DIRAC                                           import S_OK
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
+
+__RCSID__  = '$Id: $'
 
 ################################################################################
 # MySQL Monkey

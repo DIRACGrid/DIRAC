@@ -1,26 +1,27 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' Publisher
+
+  Module not used. Will be back to life whenever the portal is ready.
+
+'''
 
 import copy
 import threading
 
-from DIRAC import gLogger
-
+from DIRAC                                              import gLogger
+from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.Core.Utilities.ThreadPool                    import ThreadPool
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping        import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Utilities.CS            import getStorageElementStatus
-
 from DIRAC.ResourceStatusSystem                         import ValidRes
-from DIRAC.ResourceStatusSystem.Utilities               import Utils
-
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 from DIRAC.ResourceStatusSystem.Command.CommandCaller   import CommandCaller
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.Utilities               import Utils
+from DIRAC.ResourceStatusSystem.Utilities.CS            import getStorageElementStatus
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter    import InfoGetter
-from DIRAC.Core.DISET.RPCClient                         import RPCClient
+
+__RCSID__ = '$Id: $'
 
 class Publisher:
   """
