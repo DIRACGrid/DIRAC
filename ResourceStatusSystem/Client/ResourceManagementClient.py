@@ -104,6 +104,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'EnvironmentCache', locals() )
   def updateEnvironmentCache( self, hashEnv, siteName, environment, meta = None ):
     '''
@@ -123,6 +124,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'EnvironmentCache', locals() )
   def getEnvironmentCache( self, hashEnv = None, siteName = None, 
                            environment = None, meta = None ):
@@ -142,6 +144,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'EnvironmentCache', locals() )
   def deleteEnvironmentCache( self, hashEnv = None, siteName = None, 
                               environment = None, meta = None ):
@@ -161,6 +164,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'EnvironmentCache', locals() )
   
 ################################################################################
@@ -197,6 +201,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'PolicyResult', locals() ) 
   def updatePolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime, 
@@ -230,6 +235,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'PolicyResult', locals() )
   def getPolicyResult( self, granularity = None, name = None, policyName = None, 
                        statusType = None, status = None, reason = None, 
@@ -262,6 +268,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'PolicyResult', locals() )
   def deletePolicyResult( self, granularity = None, name = None, 
                           policyName = None, statusType = None, status = None, 
@@ -295,6 +302,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'PolicyResult', locals() )
   
 ################################################################################
@@ -326,6 +334,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'ClientCache', locals() )
   def updateClientCache( self, name, commandName, opt_ID, value, result,
                          dateEffective, lastCheckTime, meta = None ):
@@ -354,6 +363,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'ClientCache', locals() )
   def getClientCache( self, name = None, commandName = None, opt_ID = None, 
                       value = None, result = None, dateEffective = None, 
@@ -382,6 +392,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ClientCache', locals() )
   def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
@@ -410,6 +421,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ClientCache', locals() )
   
 ################################################################################
@@ -439,6 +451,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'AccountingCache', locals() )
   def updateAccountingCache( self, name, plotType, plotName, result, 
                              dateEffective, lastCheckTime, meta = None ):
@@ -465,6 +478,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'AccountingCache', locals() )
   def getAccountingCache( self, name = None, plotType = None, plotName = None, 
                           result = None, dateEffective = None, 
@@ -491,6 +505,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'AccountingCache', locals() )
   def deleteAccountingCache( self, name = None, plotType = None, 
                              plotName = None, result = None, 
@@ -518,6 +533,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'AccountingCache', locals() )
   
 ################################################################################
@@ -540,6 +556,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'UserRegistryCache', locals() )
   def updateUserRegistryCache( self, login, name, email, meta = None ):
     '''
@@ -559,6 +576,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'UserRegistryCache', locals() )
   def getUserRegistryCache( self, login = None, name = None, email = None, 
                             meta = None ):
@@ -578,6 +596,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                meta = None ):                                            
@@ -597,6 +616,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'UserRegistryCache', locals() )
 
 ################################################################################
@@ -620,8 +640,8 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'EnvironmentCache', locals() )
-
   def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime ):
     '''
@@ -653,8 +673,8 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'PolicyResult', locals() )
-
   def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
                               dateEffective, lastCheckTime ):
     '''
@@ -682,8 +702,8 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'ClientCache', locals() )
-
   def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
                                   dateEffective, lastCheckTime ):
     '''
@@ -709,8 +729,8 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'AccountingCache', locals() )
-
   def addOrModifyUserRegistryCache( self, login, name, email ):
     '''
     Using `login` to query the database, decides whether to insert or update 
@@ -729,6 +749,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'UserRegistryCache', locals() ) 
 
 ################################################################################
