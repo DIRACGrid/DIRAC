@@ -13,7 +13,10 @@ __RCSID__ = '$Id: $'
 db        = False
 
 def initializeResourceManagementHandler( _serviceInfo ):
-
+  '''
+    Handler initialization, where we set the ResourceManagementDB as global db.
+  '''
+  
   global db
   db = ResourceManagementDB()
 
