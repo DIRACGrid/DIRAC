@@ -92,7 +92,7 @@ class ResourceStatusDB( object ):
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
    
-    self.mm    = MySQLMonkey( self )  
+    self.mm = MySQLMonkey( self )  
 
   @CheckDBExecution
   @ValidateDBTypes

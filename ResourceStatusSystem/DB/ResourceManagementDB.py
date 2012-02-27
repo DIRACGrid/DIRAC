@@ -71,14 +71,14 @@ class ResourceManagementDB(object):
   def __init__( self, *args, **kwargs ):
     """Constructor."""
     if len(args) == 1:
-      if isinstance(args[0], str):
-        maxQueueSize=10
-      if isinstance(args[0], int):
-        maxQueueSize=args[0]
+      if isinstance( args[ 0 ], str ):
+        maxQueueSize = 10
+      if isinstance( args[ 0 ], int ):
+        maxQueueSize = args[ 0 ]
     elif len(args) == 2:
-      maxQueueSize=args[1]
+      maxQueueSize = args[ 1 ]
     elif len(args) == 0:
-      maxQueueSize=10
+      maxQueueSize = 10
 
     if 'DBin' in kwargs.keys():
       DBin = kwargs[ 'DBin' ]
@@ -91,7 +91,7 @@ class ResourceManagementDB(object):
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceManagementDB', 'ResourceStatus/ResourceManagementDB', maxQueueSize )
 
-    self.mm    = MySQLMonkey( self )
+    self.mm = MySQLMonkey( self )
 
   @CheckDBExecution
   @ValidateDBTypes
