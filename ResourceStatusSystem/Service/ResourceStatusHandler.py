@@ -1,14 +1,17 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceStatusHandler
+
+  Module that allows users to access the ResourceStatusDB remotely.  
+
+'''
 
 from DIRAC                                             import gConfig, S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.Utilities              import Utils
-db = False
+
+__RCSID__ = '$Id: $'
+db        = False
 
 def initializeResourceStatusHandler( _serviceInfo ):
 

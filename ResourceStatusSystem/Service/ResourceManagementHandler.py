@@ -1,13 +1,16 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceManagementHandler
+
+  Module that allows users to access the ResourceManagementDB remotely.
+
+'''
 
 from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
-db = False
+__RCSID__ = '$Id: $'
+db        = False
 
 def initializeResourceManagementHandler( _serviceInfo ):
 
