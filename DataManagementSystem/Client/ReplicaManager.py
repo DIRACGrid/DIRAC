@@ -1,3 +1,6 @@
+###########################################################################
+# $HeadURL$
+###########################################################################
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
 __RCSID__ = "$Id$"
@@ -5,6 +8,7 @@ __RCSID__ = "$Id$"
 import re, time, commands, random, os, fnmatch
 import types
 from datetime import datetime, timedelta
+## from DIRAC
 import DIRAC
 
 from DIRAC                                             import S_OK, S_ERROR, gLogger, gConfig
@@ -19,6 +23,8 @@ from DIRAC.Resources.Storage.StorageElement            import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog               import FileCatalog
 
 class CatalogBase:
+  """
+  .. class:: CatalogBase
 
   def __init__( self ):
     """ This class stores the two wrapper functions for interacting with the FileCatalog:
@@ -61,6 +67,8 @@ class CatalogBase:
   def _executeFileCatalogFunction( self, lfn, method, argsDict = {}, catalogs = [] ):
     """ A simple wrapper around the file catalog functionality
     """
+    argsDict = {} if not argsDict else argsDict
+    catalogs = [] if not catalogs else catalogs 
     # First check the supplied lfn(s) are the correct format.
     if type( lfn ) in types.StringTypes:
       lfns = {lfn:False}
@@ -83,6 +91,7 @@ class CatalogBase:
     # Check we can instantiate the file catalog correctly
     fileCatalog = FileCatalog( catalogs )
     # Generate the execution string
+    ### Where's The Food???
     if argsDict:
       execString = "res = fileCatalog.%s(lfns" % method
       for argument, value in argsDict.items():
@@ -893,6 +902,10 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     return S_OK( resDict )
 
 class ReplicaManager( CatalogToStorage ):
+  """
+  .. class:: ReplicaManager
+
+  """
 
   def __init__( self ):
     """ Constructor function.
@@ -906,6 +919,8 @@ class ReplicaManager( CatalogToStorage ):
     """ Set Accounting Client instance
     """
     self.accountingClient = client
+
+  
 
   def __verifyOperationPermission( self, path ):
     """  Check if we have write permission to the given directory
@@ -1182,6 +1197,8 @@ class ReplicaManager( CatalogToStorage ):
 
   def putAndRegister( self, lfn, file, diracSE, guid = None, path = None, checksum = None, catalog = None, ancestors = [] ):
     """ Put a local file to a Storage Element and register in the File Catalogues
+
+    :warning: 'file' is a bad choice for argument name...
 
         'lfn' is the file LFN
         'file' is the full path to the local file
