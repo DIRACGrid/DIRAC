@@ -18,33 +18,36 @@ statesInfo = {
   'Active'  : (3, set(), id_fun)
   }
 
-################################################################################
-
-def value_of_status(s):
-  try:
-    return int(s)
+def value_of_status( status ):
+  '''
+  Given an status, returns its index
+  '''
+  try:   
+    return int( status )
   except ValueError:
     try:
-      return statesInfo[s][0]
+      return statesInfo[ status ][ 0 ]
     except KeyError:
       #Temporary fix, not anymore InvalidStatus exception raising
-      gLogger.error( 'value_of_status returning -1')
+      gLogger.error( 'value_of_status returning -1' )
       return -1
 
-################################################################################
+def value_of_policy( policy ):
+  '''
+  Given a policy, returns its status
+  '''
+  return value_of_status( policy[ 'Status' ] )
 
-def value_of_policy(p):
-  return value_of_status(p['Status'])
-
-################################################################################
-
-def status_of_value(v):
+def status_of_value( value ):
+  '''
+  To be refactored
+  '''
   # Hack: rely on the order of values in ValidStatus
   try:
-    return ValidStatus[v]
+    return ValidStatus[ value ]
   except IndexError:
     #Temporary fix, not anymore InvalidStatus exception raising
-    gLogger.error( 'status_of_value returning -1')
+    gLogger.error( 'status_of_value returning -1' )
     return -1
         
 ################################################################################
