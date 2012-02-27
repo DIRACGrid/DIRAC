@@ -763,25 +763,25 @@ class ResourceManagementClient:
   def _insertElement( self, element, kwargs ):
     
     fname = 'insert%s' % element
-    f = getattr( self, fname )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **kwargs )
 
   def _updateElement( self, element, kwargs ): 
     
     fname = 'update%s' % element
-    f = getattr( self, fname )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **kwargs )
 
   def _getElement( self, element, kwargs ):
     
     fname = 'get%s' % element
-    f = getattr( self, fname )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **kwargs )
 
   def _deleteElement( self, element, kwargs ):    
     fname = 'delete%s' % element
-    f = getattr( self, fname )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **kwargs )
 
   '''
   ##############################################################################

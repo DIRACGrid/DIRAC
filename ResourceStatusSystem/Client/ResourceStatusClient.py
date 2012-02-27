@@ -2547,29 +2547,29 @@ class ResourceStatusClient:
   def _insertElement( self, elementTable, paramsDict ):
     
     fname = 'insert%s' % elementTable
-    f = getattr( self, fname )
-    return f( **paramsDict )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
 
 #  def _updateElement( self, elementTable, **kwargs ):
   def _updateElement( self, elementTable, paramsDict ):
     
     fname = 'update%s' % elementTable
-    f = getattr( self, fname )
-    return f( **paramsDict )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
 
 #  def _getElement( self, elementTable, **kwargs ):
   def _getElement( self, elementTable, paramsDict ):
     
     fname = 'get%s' % elementTable
-    f = getattr( self, fname )
-    return f( **paramsDict )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
   
 #  def _deleteElement( self, elementTable, **kwargs ):
   def _deleteElement( self, elementTable, paramsDict ): 
     
     fname = 'delete%s' % elementTable
-    f = getattr( self, fname )
-    return f( **paramsDict )     
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )     
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    
