@@ -1,12 +1,15 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' Status
 
-from DIRAC                                           import gLogger
+  Module that keeps the StateMachine.
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils      import id_fun
-from DIRAC.ResourceStatusSystem                      import ValidStatus
+'''
+
+from DIRAC                                      import gLogger
+from DIRAC.ResourceStatusSystem.Utilities.Utils import id_fun
+from DIRAC.ResourceStatusSystem                 import ValidStatus
+
+__RCSID__  = '$Id: $'
 
 statesInfo = {
   'Banned'  : (0, set([0,1]), max),

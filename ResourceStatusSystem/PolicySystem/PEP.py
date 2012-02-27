@@ -1,24 +1,24 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
+''' PEP
+
   Module used for enforcing policies. Its class is used for:
     1. invoke a PDP and collects results
     2. enforcing results by:
        a. saving result on a DB
        b. raising alarms
        c. other....
-"""
-from DIRAC import S_OK, S_ERROR
+'''
 
-from DIRAC.ResourceStatusSystem  import ValidRes, ValidStatus, ValidStatusTypes, \
-    ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC                                                       import S_OK, S_ERROR
+from DIRAC.ResourceStatusSystem                                  import ValidRes, \
+    ValidStatus, ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP                 import PDP
+from DIRAC.ResourceStatusSystem.Utilities                        import Utils
 
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction   import EmptyAction
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP                   import PDP
-from DIRAC.ResourceStatusSystem.Utilities                          import Utils
+__RCSID__  = '$Id: $'
 
 class PEP:
   """

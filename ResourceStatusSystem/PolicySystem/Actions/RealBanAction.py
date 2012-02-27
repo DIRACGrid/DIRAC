@@ -1,15 +1,18 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
-  RealBan_PolType Actions
-"""
+''' RealBanAction
+  
+  RealBan_PolType Actions.
+    
+'''
+
 import time
 
 from DIRAC.ResourceStatusSystem.Utilities                       import CS
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.ActionBase import ActionBase
 from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.CSAPI                     import CSAPI
+
+__RCSID__  = '$Id: $'
 
 da    = DiracAdmin()
 csAPI = CSAPI()

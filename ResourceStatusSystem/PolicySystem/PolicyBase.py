@@ -1,19 +1,18 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
-
-"""
-  The Policy class is a simple base class for all the policies
-"""
+''' PolicyBase
+  
+  The Policy class is a simple base class for all the policies.
+  
+'''
 
 from DIRAC                                                  import gLogger 
 from DIRAC.ResourceStatusSystem                             import ValidRes
-
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker      import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
 
-class PolicyBase(object):
+__RCSID__  = '$Id: $'
+
+class PolicyBase( object ):
   """
   Base class for all the policies. Do not instantiate directly.
   To use, you should call at least `setArgs` and, alternatively,

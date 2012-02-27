@@ -1,14 +1,18 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' PDP
+
+  PolicyDecissionPoint
+
+'''
 
 import datetime
 
-from DIRAC.ResourceStatusSystem.PolicySystem                import Status
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
-from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller   import PolicyCaller
-from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
+from DIRAC.ResourceStatusSystem.PolicySystem              import Status
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
+from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
+from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
+
+__RCSID__  = '$Id: $'
 
 class PDP:
   """

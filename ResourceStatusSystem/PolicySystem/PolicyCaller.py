@@ -1,13 +1,16 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
+''' PolicyCaller
+
   Module used for calling policies. Its class is used for invoking
-  real policies, based on the policy name
-"""
-from DIRAC import gLogger
+  real policies, based on the policy name.
+  
+'''
+
+from DIRAC                                            import gLogger
 from DIRAC.ResourceStatusSystem.Utilities             import Utils
 from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
+
+__RCSID__  = '$Id: $'
 
 class PolicyCaller:
   def __init__( self, commandCallerIn = None, **clients ):
