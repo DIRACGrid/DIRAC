@@ -25,9 +25,11 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import re
+import os
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
 
 ########################################################################
 class RemovalTask( RequestTask ):
@@ -56,7 +58,6 @@ class RemovalTask( RequestTask ):
     :param self: self reference
     :param str lfn: LFN
     """
-
     dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
     if not dirMeta["OK"]:
       return dirMeta
@@ -84,9 +85,7 @@ class RemovalTask( RequestTask ):
     if not dumpToFile["OK"]:
       self.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
       return dumpToFile
-    
     dumpToFile = dumpToFile["Value"]
-    #prevProxyEnv = os.environ[ 'X509_USER_PROXY' ]
     os.environ["X509_USER_PROXY"] = dumpToFile
 
     return S_OK()
