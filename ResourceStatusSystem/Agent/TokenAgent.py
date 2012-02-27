@@ -28,9 +28,8 @@ class TokenAgent( AgentModule ):
     '''
     TokenAgent initialization
     '''
+    # pylint: disable-msg=W0201
 
-    # Why only Site and StorageElement ??
-    # self.ELEMENTS    = [ 'Site', 'StorageElement' ]
     self.notifyHours = self.am_getOption( 'notifyHours', 10 )
 
     try:

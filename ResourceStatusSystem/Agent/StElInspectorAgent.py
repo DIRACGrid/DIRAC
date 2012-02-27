@@ -34,6 +34,8 @@ class StElInspectorAgent( AgentModule ):
 
   def initialize( self ):
 
+    # pylint: disable-msg=W0201
+
     try:
       self.rsClient                    = ResourceStatusClient()
       self.storageElementsFreqs        = CS.getTypedDictRootedAt( 'CheckingFreqs/StorageElementsFreqs' )

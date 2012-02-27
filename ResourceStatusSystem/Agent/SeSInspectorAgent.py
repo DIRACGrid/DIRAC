@@ -34,6 +34,8 @@ class SeSInspectorAgent( AgentModule ):
 
   def initialize( self ):
 
+    # pylint: disable-msg=W0201
+
     try:
       self.rsClient      = ResourceStatusClient()
       self.servicesFreqs = CS.getTypedDictRootedAt( 'CheckingFreqs/ServicesFreqs' )

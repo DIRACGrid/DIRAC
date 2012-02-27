@@ -37,6 +37,8 @@ class CacheCleanerAgent( AgentModule ):
 
   def initialize( self ):
     
+    # pylint: disable-msg=W0201
+    
     try:
       
       self.rsClient      = ResourceStatusClient()

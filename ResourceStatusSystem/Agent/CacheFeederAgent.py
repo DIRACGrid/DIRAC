@@ -26,6 +26,8 @@ class CacheFeederAgent( AgentModule ):
 
   def initialize( self ):
 
+    # pylint: disable-msg=W0201
+    
     try:
 
       self.rmClient       = ResourceManagementClient()
