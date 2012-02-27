@@ -31,14 +31,14 @@ class CacheFeederAgent( AgentModule ):
       self.rmClient       = ResourceManagementClient()
       self.clientsInvoker = ClientsInvoker()
 
-      commandsList_ClientsCache = [
+      commandsListClientsCache = [
         ( 'ClientsCache_Command', 'JobsEffSimpleEveryOne_Command'     ),
         ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
         ( 'ClientsCache_Command', 'DTEverySites_Command'              ),
         ( 'ClientsCache_Command', 'DTEveryResources_Command'          )
         ]
 
-      commandsList_AccountingCache =  [
+      commandsListAccountingCache =  [
         ( 'AccountingCache_Command', 'TransferQualityByDestSplitted_Command',     ( 2, ),    'Always' ),
         ( 'AccountingCache_Command', 'FailedTransfersBySourceSplitted_Command',   ( 2, ),    'Always' ),
         ( 'AccountingCache_Command', 'TransferQualityByDestSplittedSite_Command', ( 24, ),   'Hourly' ),
@@ -54,33 +54,33 @@ class CacheFeederAgent( AgentModule ):
         ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 8760, ), 'Daily'  ),
         ]
 
-      self.commandObjectsList_ClientsCache    = []
-      self.commandObjectsList_AccountingCache = []
+      self.commandObjectsListClientsCache    = []
+      self.commandObjectsListAccountingCache = []
 
       cc = CommandCaller()
 
       # We know beforehand which APIs are we going to need, so we initialize them
       # first, making everything faster.
-      APIs = [ 'ResourceStatusClient', 'WMSAdministrator', 'ReportGenerator',
-               'JobsClient', 'PilotsClient', 'GOCDBClient', 'ReportsClient' ]
-      APIs = initAPIs( APIs, {} )
+      knownAPIs = [ 'ResourceStatusClient', 'WMSAdministrator', 'ReportGenerator',
+                    'JobsClient', 'PilotsClient', 'GOCDBClient', 'ReportsClient' ]
+      knownAPIs = initAPIs( knownAPIs, {} )
 
-      for command in commandsList_ClientsCache:
+      for command in commandsListClientsCache:
 
         cObj = cc.setCommandObject( command )
-        for apiName, apiInstance in APIs.items():
+        for apiName, apiInstance in knownAPIs.items():
           cc.setAPI( cObj, apiName, apiInstance )
 
-        self.commandObjectsList_ClientsCache.append( ( command, cObj ) )
+        self.commandObjectsListClientsCache.append( ( command, cObj ) )
 
-      for command in commandsList_AccountingCache:
+      for command in commandsListAccountingCache:
 
         cObj = cc.setCommandObject( command )
-        for apiName, apiInstance in APIs.items():
+        for apiName, apiInstance in knownAPIs.items():
           cc.setAPI( cObj, apiName, apiInstance )
         cArgs = command[ 2 ]
 
-        self.commandObjectsList_AccountingCache.append( ( command, cObj, cArgs ) )
+        self.commandObjectsListAccountingCache.append( ( command, cObj, cArgs ) )
 
       return S_OK()
 
@@ -95,10 +95,10 @@ class CacheFeederAgent( AgentModule ):
 
     try:
 
-      for co in self.commandObjectsList_ClientsCache:
+      for co in self.commandObjectsListClientsCache:
 
         commandName = co[0][1].split( '_' )[0]
-        gLogger.info( 'Executed %s' % commandName )
+        self.log.info( 'Executed %s' % commandName )
         try:
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()['Result']
@@ -143,7 +143,7 @@ class CacheFeederAgent( AgentModule ):
 
       now = datetime.utcnow().replace( microsecond = 0 )
 
-      for co in self.commandObjectsList_AccountingCache:
+      for co in self.commandObjectsListAccountingCache:
 
         if co[0][3] == 'Hourly':
           if now.minute >= 10:

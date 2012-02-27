@@ -5,7 +5,8 @@
 
 '''
 
-import Queue, time
+import Queue
+import time
 
 from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
@@ -20,7 +21,7 @@ __RCSID__  = '$Id:  $'
 AGENT_NAME = 'ResourceStatus/SSInspectorAgent'
 
 class SSInspectorAgent( AgentModule ):
-  """
+  '''
     The SSInspector agent ( SiteInspectorAgent ) is one of the four
     InspectorAgents of the RSS.
 
@@ -29,15 +30,15 @@ class SSInspectorAgent( AgentModule ):
 
     If you want to know more about the SSInspectorAgent, scroll down to the
     end of the file.
-  """
+  '''
 
   def initialize( self ):
 
     try:
       self.rsClient         = ResourceStatusClient()
-      self.SitesFreqs       = CS.getTypedDictRootedAt( 'CheckingFreqs/SitesFreqs' )
-      self.SitesToBeChecked = Queue.Queue()
-      self.SiteNamesInCheck = []
+      self.sitesFreqs       = CS.getTypedDictRootedAt( 'CheckingFreqs/SitesFreqs' )
+      self.sitesToBeChecked = Queue.Queue()
+      self.siteNamesInCheck = []
 
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
       self.threadPool         = ThreadPool( self.maxNumberOfThreads,
@@ -56,9 +57,6 @@ class SSInspectorAgent( AgentModule ):
       self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
-################################################################################
-################################################################################
-
   def execute( self ):
 
     try:
@@ -68,7 +66,7 @@ class SSInspectorAgent( AgentModule ):
                                     'FormerStatus', 'SiteType', 'TokenOwner']
       kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
-      resQuery = self.rsClient.getStuffToCheck( 'Site', self.SitesFreqs, **kwargs )
+      resQuery = self.rsClient.getStuffToCheck( 'Site', self.sitesFreqs, **kwargs )
       if not resQuery[ 'OK' ]:
         self.log.error( resQuery[ 'Message' ] )
         return resQuery
@@ -78,14 +76,14 @@ class SSInspectorAgent( AgentModule ):
 
       for siteTuple in resQuery:
 
-        if ( siteTuple[ 0 ],siteTuple[ 1 ] ) in self.SiteNamesInCheck:
+        if ( siteTuple[ 0 ], siteTuple[ 1 ] ) in self.siteNamesInCheck:
           self.log.info( '%s(%s) discarded, already on the queue' % ( siteTuple[ 0 ],siteTuple[ 1 ] ) )
           continue
 
         resourceL = [ 'Site' ] + siteTuple
 
-        self.SiteNamesInCheck.insert( 0, ( siteTuple[ 0 ], siteTuple[ 1 ] ) )
-        self.SitesToBeChecked.put( resourceL )
+        self.siteNamesInCheck.insert( 0, ( siteTuple[ 0 ], siteTuple[ 1 ] ) )
+        self.sitesToBeChecked.put( resourceL )
 
       return S_OK()
 
@@ -94,24 +92,27 @@ class SSInspectorAgent( AgentModule ):
       self.log.exception( errorStr, lException = x )
       return S_ERROR( errorStr )
 
-################################################################################
-################################################################################
-
   def finalize( self ):
-    if self.SiteNamesInCheck:
+    '''
+      Method executed at the end of the last cycle. It waits until the queue
+      is empty.
+    '''
+    if self.siteNamesInCheck:
       _msg = "Wait for queue to get empty before terminating the agent (%d tasks)"
-      _msg = _msg % len( self.SiteNamesInCheck )
+      _msg = _msg % len( self.siteNamesInCheck )
       self.log.info( _msg )
-      while self.SiteNamesInCheck:
+      while self.siteNamesInCheck:
         time.sleep( 2 )
       self.log.info( "Queue is empty, terminating the agent..." )
     return S_OK()
 
 ################################################################################
-################################################################################
 
   def _executeCheck( self, _arg ):
-
+    '''
+      Method executed by the threads in the pool. Picks one element from the
+      common queue, and enforces policies on that element.
+    '''
     # Init the APIs beforehand, and reuse them.
     __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient', 'GGUSTicketsClient' ]
     clients = knownAPIs.initAPIs( __APIs__, {} )
@@ -143,13 +144,13 @@ class SSInspectorAgent( AgentModule ):
                           ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
 
         # remove from InCheck list
-        self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
+        self.siteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
       except Exception:
         self.log.exception( "SSInspector._executeCheck Checking Site %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
         try:
-          self.SiteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
+          self.siteNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
 

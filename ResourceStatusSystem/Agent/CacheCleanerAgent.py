@@ -6,7 +6,7 @@
 
 '''
 
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
@@ -61,12 +61,12 @@ class CacheCleanerAgent( AgentModule ):
       now          = datetime.utcnow().replace( microsecond = 0, second = 0 )
       sixMonthsAgo = now - timedelta( days = 180 )
       
-      for g in ValidRes:
+      for granularity in ValidRes:
         #deleter = getattr( self.rsClient, 'delete%sHistory' % g )
         
         kwargs = { 'meta' : { 'minor' : { 'DateEnd' : sixMonthsAgo } } }
-        self.log.info( 'Deleting %sHistory older than %s' % ( g, sixMonthsAgo ) )
-        res = self.rsClient.deleteElementHistory( g, **kwargs )
+        self.log.info( 'Deleting %sHistory older than %s' % ( granularity, sixMonthsAgo ) )
+        res = self.rsClient.deleteElementHistory( granularity, **kwargs )
         if not res[ 'OK' ]:
           self.log.error( res[ 'Message' ] )            
 
