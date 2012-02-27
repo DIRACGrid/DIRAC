@@ -1,8 +1,9 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id:  $"
-AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
+''' RSInspectorAgent
+
+  This agent inspect Resources, and evaluates policies that apply.
+
+'''
 
 import Queue, time
 
@@ -15,6 +16,9 @@ from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 from DIRAC.ResourceStatusSystem.Utilities                   import CS
+
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
 
 class RSInspectorAgent( AgentModule ):
   """

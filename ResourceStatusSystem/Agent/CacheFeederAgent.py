@@ -1,18 +1,21 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id:  $"
-AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
+''' CacheFeederAgent
+
+  This agent feeds the Cache tables with the outputs of the cache commands.
+
+'''
 
 from datetime import datetime
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
-
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.CommandCaller           import CommandCaller
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker          import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Command.knownAPIs               import initAPIs
+
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
 class CacheFeederAgent( AgentModule ):
   '''

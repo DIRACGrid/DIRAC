@@ -1,19 +1,22 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id:  $"
-AGENT_NAME = 'ResourceStatus/TokenAgent'
+''' TokenAgent
+
+  This agent inspect all elements, and resets their tokens if necessary.
+
+'''
 
 import datetime
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
-
 from DIRAC.ResourceStatusSystem                                 import ValidRes
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
+
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/TokenAgent'
 
 class TokenAgent( AgentModule ):
   """

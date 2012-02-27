@@ -1,20 +1,23 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id: $"
-AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
+''' SeSInspectorAgent
+
+  This agent inspect Services, and evaluates policies that apply.
+
+'''
 
 import Queue, time
 
 from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
-
 from DIRAC.ResourceStatusSystem.Utilities                   import CS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
 
 class SeSInspectorAgent( AgentModule ):
   """
