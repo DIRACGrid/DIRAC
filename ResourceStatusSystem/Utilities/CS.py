@@ -1,23 +1,26 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' CS
+ 
+  This module offers "helpers" to access the CS, and do some processing.
+  
+'''
 
 import itertools
 
-from DIRAC                                                      import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities                                       import List
+from DIRAC                                import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities                 import List
+from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-from DIRAC.ResourceStatusSystem.Utilities                       import Utils
+__RCSID__  = '$Id: $'
 
-g_BaseRegistrySection   = "/Registry"
-g_BaseResourcesSection  = "/Resources"
-g_BaseOperationsSection = "/Operations"
-g_BaseConfigSection     = "/Operations/RSSConfiguration"
+g_BaseRegistrySection   = '/Registry'
+g_BaseResourcesSection  = '/Resources'
+g_BaseOperationsSection = '/Operations'
+g_BaseConfigSection     = '/Operations/RSSConfiguration'
 
 ### CS HELPER FUNCTIONS
 
-class CSError(Exception):
+class CSError( Exception ):
   pass
 
 def getValue(v, default):
