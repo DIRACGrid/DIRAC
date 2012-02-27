@@ -122,7 +122,7 @@ class PDP:
       singlePolicyResults = policyIn.evaluate()
 
     else:
-      singlePolicyResults = self._invocation( elf.__granularity,
+      singlePolicyResults = self._invocation( self.__granularity,
                                               self.__name, self.__status, policyIn,
                                               argsIn, polToEval['Policies'] )
 
@@ -214,9 +214,9 @@ class PDP:
       _prio, access_list, gofun = Status.statesInfo[ self.__status ]
       if access_list != set():
         # Restrictions on transitions, checking if one is suitable:
-        for p in pol_results:
-          if Status.value_of_policy( p ) in access_list:
-            newStatus = Status.value_of_policy( p )
+        for polRes in pol_results:
+          if Status.value_of_policy( polRes ) in access_list:
+            newStatus = Status.value_of_policy( polRes )
             break
 
         # No status from policies suitable, applying stategy and
@@ -241,21 +241,28 @@ class PDP:
                      if Status.value_of_policy( p ) == newStatus ]
 
     # Concatenate reasons
-    def getReason( p ):
+    def getReason( pol ):
       try:
-        res = p[ 'Reason' ]
+        res = pol[ 'Reason' ]
       except KeyError:
         res = ''
       return res
 
     worstResultsReasons = [ getReason( p ) for p in worstResults ]
 
-    def catRes( x, y ):
-      if x and y : return x + ' |###| ' + y
-      elif x or y:
-        if x: return x
-        else: return y
-      else       : return ''
+    def catRes( xVal, yVal ):
+      '''
+        Concatenate xVal and yVal.
+      '''
+      if xVal and yVal : 
+        return xVal + ' |###| ' + yVal
+      elif xVal or yVal:
+        if xVal: 
+          return xVal
+        else: 
+          return yVal
+      else: 
+        return ''
 
     concatenatedRes = reduce( catRes, worstResultsReasons, '' )
 

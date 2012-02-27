@@ -64,7 +64,7 @@ class PEP:
     '''
     
     if clients is None:
-      clients= {}
+      clients = {}
     
     try:             
       self.rsClient = clients[ 'ResourceStatusClient' ]
