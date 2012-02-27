@@ -1,22 +1,20 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' GOCDBStatus_Command 
   The GOCDBStatus_Command class is a command class to know about 
   present downtimes
-"""
+'''
 
 import urllib2
+
 from datetime import datetime
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
-
 from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils   import convertTime
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
