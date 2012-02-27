@@ -576,7 +576,6 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    # pylint: disable-msg=W0613
     return self.__query( 'update', 'UserRegistryCache', locals() )
   def getUserRegistryCache( self, login = None, name = None, email = None, 
                             meta = None ):
