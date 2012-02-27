@@ -1,13 +1,17 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceManagementClient
+
+  Client to interact with the ResourceManagementDB.
+
+'''
+
+from datetime import datetime
 
 from DIRAC                                              import gLogger 
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
-from datetime import datetime
+__RCSID__ = '$Id: $'
 
 class ResourceManagementClient:
   """

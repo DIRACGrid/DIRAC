@@ -1,7 +1,13 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceStatusClient
+
+  Client to interact with the ResourceStatusDB.
+
+'''
+
+import sys   
+
+from datetime import datetime, timedelta
 
 from DIRAC                                           import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RPCClient                      import RPCClient        
@@ -10,10 +16,8 @@ from DIRAC.ResourceStatusSystem                      import ValidRes, ValidStatu
   ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType       
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
 from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node       
-       
-from datetime import datetime, timedelta       
-       
-import sys       
+
+__RCSID__ = '$Id: $'
        
 class ResourceStatusClient:
   """
