@@ -81,12 +81,12 @@ class ResourceManagementDB(object):
       maxQueueSize = 10
 
     if 'DBin' in kwargs.keys():
-      DBin = kwargs[ 'DBin' ]
+      dbIn = kwargs[ 'DBin' ]
       if isinstance(DBin, list):
         from DIRAC.Core.Utilities.MySQL import MySQL
-        self.db = MySQL( 'localhost', DBin[0], DBin[1], 'ResourceManagementDB' )
+        self.db = MySQL( 'localhost', dbIn[0], dbIn[1], 'ResourceManagementDB' )
       else:
-        self.db = DBin
+        self.db = dbIn
     else:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceManagementDB', 'ResourceStatus/ResourceManagementDB', maxQueueSize )
@@ -223,9 +223,6 @@ class ResourceManagementDB(object):
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
 
-'''
-This will go to the booster
-
 ################################################################################
 ## Web functions
 ################################################################################
@@ -291,4 +288,3 @@ This will go to the booster
 #    return finalDict
 #
 ################################################################################
-'''
