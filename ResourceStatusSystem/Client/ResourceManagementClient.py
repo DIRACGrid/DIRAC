@@ -576,6 +576,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'UserRegistryCache', locals() )
   def getUserRegistryCache( self, login = None, name = None, email = None, 
                             meta = None ):
@@ -595,6 +596,7 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                meta = None ):                                            
@@ -754,24 +756,33 @@ class ResourceManagementClient:
 # Getter functions
 
   def _insertElement( self, element, kwargs ):
-    
+    '''
+      Method that executes the insert method of the given element.
+    '''
     fname = 'insert%s' % element
     fElem = getattr( self, fname )
     return fElem( **kwargs )
 
   def _updateElement( self, element, kwargs ): 
-    
+    '''
+      Method that executes the update method of the given element.
+    '''    
     fname = 'update%s' % element
     fElem = getattr( self, fname )
     return fElem( **kwargs )
 
   def _getElement( self, element, kwargs ):
-    
+    '''
+      Method that executes the get method of the given element.
+    '''
     fname = 'get%s' % element
     fElem = getattr( self, fname )
     return fElem( **kwargs )
 
-  def _deleteElement( self, element, kwargs ):    
+  def _deleteElement( self, element, kwargs ):
+    '''
+      Method that executes the delete method of the given element.
+    '''    
     fname = 'delete%s' % element
     fElem = getattr( self, fname )
     return fElem( **kwargs )
@@ -780,7 +791,10 @@ class ResourceManagementClient:
 # addOrModify PRIVATE FUNCTIONS
 
   def __addOrModifyElement( self, element, kwargs ):
-       
+    '''
+      Method that executes update if the item is not new, otherwise inserts it
+      on the element table.
+    '''
     del kwargs[ 'self' ]
        
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }

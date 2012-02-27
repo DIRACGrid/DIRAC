@@ -2499,30 +2499,34 @@ class ResourceStatusClient:
 ################################################################################
 # Getter functions
 
-#  def _insertElement( self, elementTable, **kwargs ):
   def _insertElement( self, elementTable, paramsDict ):
-    
+    '''
+      Method that executes the insert method of the given element.
+    '''    
     fname = 'insert%s' % elementTable
     fElem = getattr( self, fname )
     return fElem( **paramsDict )
 
-#  def _updateElement( self, elementTable, **kwargs ):
   def _updateElement( self, elementTable, paramsDict ):
-    
+    '''
+      Method that executes the update method of the given element.
+    '''        
     fname = 'update%s' % elementTable
     fElem = getattr( self, fname )
     return fElem( **paramsDict )
 
-#  def _getElement( self, elementTable, **kwargs ):
   def _getElement( self, elementTable, paramsDict ):
-    
+    '''
+      Method that executes the get method of the given element.
+    '''
     fname = 'get%s' % elementTable
     fElem = getattr( self, fname )
     return fElem( **paramsDict )
   
-#  def _deleteElement( self, elementTable, **kwargs ):
   def _deleteElement( self, elementTable, paramsDict ): 
-    
+    '''
+      Method that executes the delete method of the given element.
+    '''        
     fname = 'delete%s' % elementTable
     fElem = getattr( self, fname )
     return fElem( **paramsDict )     
