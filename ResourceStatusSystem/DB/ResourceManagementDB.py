@@ -1,10 +1,14 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceManagementDB
+
+  Module that provides basic methods to access the ResourceManagementDB.
+
+'''
 
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckDBExecution, ValidateDBTypes
+from DIRAC.ResourceStatusSystem.Utilities.Decorators  import CheckDBExecution, ValidateDBTypes
+
+__RCSID__ = '$Id: $'
 
 class ResourceManagementDB(object):
   """
