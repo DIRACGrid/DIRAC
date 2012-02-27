@@ -48,6 +48,8 @@ class ResourceStatusClient:
   the client considerably.    
   """
 
+  # pylint: disable-msg=I0011
+
   def __init__( self , serviceIn = None ):
     '''
       The client tries to connect to :class:ResourceStatusDB by default. If it 
@@ -137,15 +139,13 @@ class ResourceStatusClient:
     meta[ 'table' ] = tableName
     
     gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
-    return gateFunction( params, meta )
-          
+    return gateFunction( params, meta )    
+
   '''
   ##############################################################################
   # SITE FUNCTIONS
   ##############################################################################
   '''      
-  
-  # pylint: disable-msg=W0613
   def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
     '''
     Inserts on Site a new row with the arguments given.
@@ -164,6 +164,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Site', locals() )
   def updateSite( self, siteName, siteType, gridSiteName, meta = {} ):
     '''
@@ -184,6 +185,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'Site', locals() )
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
                meta = {} ):
@@ -204,6 +206,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'Site', locals() )
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
                   meta = {} ):
@@ -224,6 +227,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'Site', locals() )
   def getSitePresent( self, siteName = None, siteType = None, 
                       gridSiteName = None, gridTier = None, statusType = None, 
@@ -266,6 +270,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'SitePresent', locals() )
 
   '''
@@ -291,6 +296,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Service', locals() )
   def updateService( self, serviceName, serviceType, siteName, meta = {} ):
     '''
@@ -311,6 +317,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'Service', locals() )
   def getService( self, serviceName = None, serviceType = None, siteName = None, 
                   meta = {} ):
@@ -331,6 +338,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'Service', locals() )
   def deleteService( self, serviceName = None, serviceType = None, 
                      siteName = None, meta = {} ):
@@ -351,6 +359,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'Service', locals() )
   def getServicePresent( self, serviceName = None, siteName = None, 
                          siteType = None, serviceType = None, statusType = None, 
@@ -395,6 +404,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ServicePresent', locals() )
 
   '''
@@ -425,6 +435,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Resource', locals() )
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, meta = {} ):
@@ -450,6 +461,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'Resource', locals() )
   def getResource( self, resourceName = None, resourceType = None, 
                    serviceType = None, siteName = None, gridSiteName = None, 
@@ -475,6 +487,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'Resource', locals() )
   def deleteResource( self, resourceName = None, resourceType = None, 
                       serviceType = None, siteName = None, gridSiteName = None, 
@@ -500,6 +513,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'Resource', locals() )
   def getResourcePresent( self, resourceName = None, siteName = None, 
                           serviceType = None, gridSiteName = None, 
@@ -551,6 +565,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ResourcePresent', locals() )
 
   '''
@@ -575,7 +590,8 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''  
+    # pylint: disable-msg=W0613  
     return self.__query( 'insert', 'StorageElement', locals() )
   def updateStorageElement( self, storageElementName, resourceName, 
                             gridSiteName, meta = {} ):
@@ -596,6 +612,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'StorageElement', locals() )
   def getStorageElement( self, storageElementName = None, resourceName = None, 
                          gridSiteName = None, meta = {} ):
@@ -614,7 +631,8 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''   
+    # pylint: disable-msg=W0613 
     return self.__query( 'get', 'StorageElement', locals() )
   def deleteStorageElement( self, storageElementName = None, 
                             resourceName = None, gridSiteName = None, 
@@ -635,6 +653,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'StorageElement', locals() )    
   def getStorageElementPresent( self, storageElementName = None, 
                                 resourceName = None, gridSiteName = None, 
@@ -680,6 +699,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'StorageElementPresent', locals() )
 
   '''
@@ -702,6 +722,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'GridSite', locals() )
   def updateGridSite( self, gridSiteName, gridTier, meta = {} ):
     '''
@@ -719,6 +740,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'GridSite', locals() )   
   def getGridSite( self, gridSiteName = None, gridTier = None, meta = {} ):
     '''
@@ -735,6 +757,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'GridSite', locals() )
   def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = {} ): 
     '''
@@ -750,7 +773,8 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''           
+    '''     
+    # pylint: disable-msg=W0613      
     return self.__query( 'delete', 'GridSite', locals() )
 
   '''
@@ -796,6 +820,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'ElementStatus', locals() )
   def updateElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
@@ -836,6 +861,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'ElementStatus', locals() )
   def getElementStatus( self, element, elementName = None, statusType = None, 
                         status = None, reason = None, dateCreated = None, 
@@ -876,6 +902,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ElementStatus', locals() )
   def deleteElementStatus( self, element, elementName = None, statusType = None, 
                            status = None, reason = None, dateCreated = None, 
@@ -916,6 +943,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementStatus', locals() )
 
   '''
@@ -961,6 +989,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'ElementScheduledStatus', locals() )
   def updateElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
@@ -1002,6 +1031,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'ElementScheduledStatus', locals() )
   def getElementScheduledStatus( self, element, elementName = None, 
                                  statusType = None, status = None, 
@@ -1043,6 +1073,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ElementScheduledStatus', locals() )
   def deleteElementScheduledStatus( self, element, elementName = None, 
                                     statusType = None, status = None, 
@@ -1085,6 +1116,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementScheduledStatus', locals() )
       
   '''
@@ -1130,6 +1162,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'ElementHistory', locals() )
   def updateElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
@@ -1171,6 +1204,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'ElementHistory', locals() )
   def getElementHistory( self, element, elementName = None, statusType = None, 
                          status = None, reason = None, dateCreated = None, 
@@ -1211,6 +1245,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ElementHistory', locals() )
   def deleteElementHistory( self, element, elementName = None, 
                             statusType = None, status = None, reason = None, 
@@ -1252,9 +1287,10 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementHistory', locals() ) 
-
-  '''
+  
+  ''' 
   ##############################################################################
   # CS VALID ELEMENTS
   ##############################################################################
@@ -1338,6 +1374,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Site', locals() )
 
   def addOrModifyService( self, serviceName, serviceType, siteName ):
@@ -1356,6 +1393,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Service', locals() )
 
   def addOrModifyResource( self, resourceName, resourceType, serviceType, 
@@ -1379,6 +1417,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Resource', locals() )
 
   def addOrModifyStorageElement( self, storageElementName, resourceName, 
@@ -1397,6 +1436,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'StorageElement', locals() )
 
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
@@ -1462,6 +1502,7 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # pylint: disable-msg=W0613
     return self.__modifyElementStatus( locals() )
 
   def removeElement( self, element, elementName ):
@@ -1478,6 +1519,7 @@ class ResourceStatusClient:
     
     :return: S_OK() || S_ERROR()
     '''       
+    # pylint: disable-msg=W0613
     return self.__removeElement( element, elementName )
 
   def getServiceStats( self, siteName, statusType = None ):
