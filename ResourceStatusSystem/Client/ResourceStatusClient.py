@@ -20,7 +20,7 @@ from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node
 __RCSID__ = '$Id: $'
        
 class ResourceStatusClient:
-  """
+  '''
   The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus` 
   API. All functions you need are on this client.
   
@@ -46,9 +46,7 @@ class ResourceStatusClient:
   All functions calling methods exposed on the database or on the booster are 
   making use of some syntactic sugar, in this case a decorator that simplifies
   the client considerably.    
-  """
-
-  # pylint: disable-msg=I0011
+  '''
 
   def __init__( self , serviceIn = None ):
     '''
@@ -96,11 +94,9 @@ class ResourceStatusClient:
     gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
     return gateFunction( params, meta )    
 
-  '''
-  ##############################################################################
-  # SITE FUNCTIONS
-  ##############################################################################
-  '''      
+################################################################################
+# SITE FUNCTIONS
+      
   def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
     '''
     Inserts on Site a new row with the arguments given.
@@ -228,11 +224,9 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'SitePresent', locals() )
 
-  '''
-  ##############################################################################
-  # SERVICE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# SERVICE FUNCTIONS
+
   def insertService( self, serviceName, serviceType, siteName, meta = {} ):
     '''
     Inserts on Service a new row with the arguments given.
@@ -362,11 +356,10 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'ServicePresent', locals() )
 
-  '''
-  ##############################################################################
-  # RESOURCE FUNCTIONS
-  ##############################################################################
-  '''
+
+################################################################################
+# RESOURCE FUNCTIONS
+
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, meta = {} ):
     '''
@@ -523,11 +516,9 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'ResourcePresent', locals() )
 
-  '''
-  ##############################################################################
-  # STORAGE ELEMENT FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# STORAGE ELEMENT FUNCTIONS
+
   def insertStorageElement( self, storageElementName, resourceName, 
                             gridSiteName, meta = {} ):
     '''
@@ -657,11 +648,9 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'StorageElementPresent', locals() )
 
-  '''
-  ##############################################################################
-  # GRID SITE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# GRID SITE FUNCTIONS
+
   def insertGridSite( self, gridSiteName, gridTier, meta = {} ):
     '''
     Inserts on GridSite a new row with the arguments given.
@@ -732,11 +721,9 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613      
     return self.__query( 'delete', 'GridSite', locals() )
 
-  '''
-  ##############################################################################
-  # ELEMENT STATUS FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# ELEMENT STATUS FUNCTIONS
+
   def insertElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
@@ -901,11 +888,9 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementStatus', locals() )
 
-  '''
-  ##############################################################################
-  # ELEMENT SCHEDULED STATUS FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# ELEMENT SCHEDULED STATUS FUNCTIONS
+
   def insertElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
@@ -1073,12 +1058,10 @@ class ResourceStatusClient:
     '''    
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementScheduledStatus', locals() )
-      
-  '''
-  ##############################################################################
-  # ELEMENT HISTORY FUNCTIONS
-  ##############################################################################
-  '''
+
+################################################################################
+# ELEMENT HISTORY FUNCTIONS
+
   def insertElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
@@ -1245,11 +1228,8 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementHistory', locals() ) 
   
-  ''' 
-  ##############################################################################
-  # CS VALID ELEMENTS
-  ##############################################################################
-  '''
+################################################################################
+# CS VALID ELEMENTS
   
   def getValidElements( self ):
     '''
@@ -1307,11 +1287,8 @@ class ResourceStatusClient:
     '''    
     return S_OK( ValidResourceType )
 
-  '''
-  ##############################################################################
-  # EXTENDED FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# EXTENDED FUNCTIONS
 
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
     '''
@@ -2312,11 +2289,9 @@ class ResourceStatusClient:
   
 ################################################################################
 
-  '''
-  ##############################################################################
-  # addOrModify PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# addOrModify PRIVATE FUNCTIONS
+
 
   def __addOrModifyElement( self, element, kwargs ):
 
@@ -2425,11 +2400,8 @@ class ResourceStatusClient:
 
     return iDict
 
-  '''
-  ##############################################################################
-  # Modify PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# Modify PRIVATE FUNCTIONS
   
   def __modifyElementStatus( self,kwargs ):
       
@@ -2488,11 +2460,8 @@ class ResourceStatusClient:
     
     return updateSQLQuery  
   
-  '''
-  ##############################################################################
-  # remove PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# remove PRIVATE FUNCTIONS
   
   def __removeElement( self, element, elementName ):
   
@@ -2511,11 +2480,8 @@ class ResourceStatusClient:
 
     return sqlQuery   
   
-  '''
-  ##############################################################################
-  # stats PRIVATE FUNCTIONS
-  ##############################################################################
-  '''          
+################################################################################
+# stats PRIVATE FUNCTIONS      
      
   def __getStats( self, sqlQuery ):
     
@@ -2532,14 +2498,8 @@ class ResourceStatusClient:
     count['Total'] = sum( count.values() )
     return S_OK( count ) 
 
-
 ################################################################################
-
-  '''
-  ##############################################################################
-  # Getter functions
-  ##############################################################################
-  '''
+# Getter functions
 
 #  def _insertElement( self, elementTable, **kwargs ):
   def _insertElement( self, elementTable, paramsDict ):

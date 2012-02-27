@@ -83,6 +83,9 @@ class ResourceManagementClient:
     gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
     return gateFunction( params, meta )
 
+################################################################################
+# ENVIRONMENT CACHE FUNCTIONS
+
   def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
     '''
     Inserts on EnvironmentCache a new row with the arguments given.
@@ -158,6 +161,10 @@ class ResourceManagementClient:
     :return: S_OK() || S_ERROR()
     '''
     return self.__query( 'delete', 'EnvironmentCache', locals() )
+  
+################################################################################
+# POLICY RESULT FUNCTIONS
+
   def insertPolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime,
                           meta = {} ):
@@ -288,6 +295,10 @@ class ResourceManagementClient:
     :return: S_OK() || S_ERROR()
     '''
     return self.__query( 'delete', 'PolicyResult', locals() )
+  
+################################################################################
+# CLIENT CACHE FUNCTIONS
+
   def insertClientCache( self, name, commandName, opt_ID, value, result,
                          dateEffective, lastCheckTime, meta = {} ):
     '''
@@ -399,6 +410,10 @@ class ResourceManagementClient:
     :return: S_OK() || S_ERROR()
     '''    
     return self.__query( 'delete', 'ClientCache', locals() )
+  
+################################################################################
+# ACCOUNTING CACHE FUNCTIONS
+
   def insertAccountingCache( self, name, plotType, plotName, result, 
                              dateEffective, lastCheckTime, meta = {} ):
     '''
@@ -503,6 +518,10 @@ class ResourceManagementClient:
     :return: S_OK() || S_ERROR()
     '''    
     return self.__query( 'delete', 'AccountingCache', locals() )
+  
+################################################################################
+# USER REGISTRY CACHE FUNCTIONS
+
   def insertUserRegistryCache( self, login, name, email, meta = {} ):
     '''
     Inserts on UserRegistryCache a new row with the arguments given.
@@ -579,11 +598,8 @@ class ResourceManagementClient:
     '''    
     return self.__query( 'delete', 'UserRegistryCache', locals() )
 
-  '''
-  ##############################################################################
-  # EXTENDED BASE API METHODS
-  ##############################################################################
-  '''
+################################################################################
+# EXTENDED BASE API METHODS
 
   def addOrModifyEnvironmentCache( self, hashEnv, siteName, environment ):
     '''
@@ -715,12 +731,8 @@ class ResourceManagementClient:
     return self.__addOrModifyElement( 'UserRegistryCache', locals() ) 
 
 ################################################################################
+# Getter functions
 
-  '''
-  ##############################################################################
-  # Getter functions
-  ##############################################################################
-  '''
 
   def _insertElement( self, element, kwargs ):
     
@@ -745,11 +757,9 @@ class ResourceManagementClient:
     fElem = getattr( self, fname )
     return fElem( **kwargs )
 
-  '''
-  ##############################################################################
-  # addOrModify PRIVATE FUNCTIONS
-  ##############################################################################
-  ''' 
+################################################################################
+# addOrModify PRIVATE FUNCTIONS
+
   def __addOrModifyElement( self, element, kwargs ):
        
     del kwargs[ 'self' ]
