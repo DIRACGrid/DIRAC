@@ -5,8 +5,6 @@
 
 '''
 
-import sys   
-
 from datetime import datetime, timedelta
 
 from DIRAC                                           import S_OK, S_ERROR, gLogger
@@ -79,7 +77,8 @@ class ResourceStatusClient:
     
     gateFunction = getattr( self.gate, queryType )
     
-    meta   = kwargs.pop( 'meta' )
+    # If meta is None, we set it to {}
+    meta   = ( kwargs.pop( 'meta' ) and True ) or {}
     params = kwargs
     del params[ 'self' ]     
         
@@ -97,7 +96,7 @@ class ResourceStatusClient:
 ################################################################################
 # SITE FUNCTIONS
       
-  def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
+  def insertSite( self, siteName, siteType, gridSiteName, meta = None ):
     '''
     Inserts on Site a new row with the arguments given.
     
@@ -117,7 +116,7 @@ class ResourceStatusClient:
     '''
     # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Site', locals() )
-  def updateSite( self, siteName, siteType, gridSiteName, meta = {} ):
+  def updateSite( self, siteName, siteType, gridSiteName, meta = None ):
     '''
     Updates Site with the parameters given. By default, `siteName` will be the \
     parameter used to select the row. 
@@ -139,7 +138,7 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'Site', locals() )
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
-               meta = {} ):
+               meta = None ):
     '''
     Gets from Site all rows that match the parameters given.
     
@@ -160,7 +159,7 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'Site', locals() )
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
-                  meta = {} ):
+                  meta = None ):
     '''
     Deletes from Site all rows that match the parameters given.
     
@@ -184,7 +183,7 @@ class ResourceStatusClient:
                       gridSiteName = None, gridTier = None, statusType = None, 
                       status = None, dateEffective = None, reason = None, 
                       lastCheckTime = None, tokenOwner = None, 
-                      tokenExpiration = None, formerStatus = None, meta = {} ):
+                      tokenExpiration = None, formerStatus = None, meta = None ):
     '''
     Gets from the view composed by Site, SiteStatus and SiteHistory all rows 
     that match the parameters given ( not necessarily returns the same number 
@@ -227,7 +226,7 @@ class ResourceStatusClient:
 ################################################################################
 # SERVICE FUNCTIONS
 
-  def insertService( self, serviceName, serviceType, siteName, meta = {} ):
+  def insertService( self, serviceName, serviceType, siteName, meta = None ):
     '''
     Inserts on Service a new row with the arguments given.
     
@@ -247,7 +246,7 @@ class ResourceStatusClient:
     '''   
     # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Service', locals() )
-  def updateService( self, serviceName, serviceType, siteName, meta = {} ):
+  def updateService( self, serviceName, serviceType, siteName, meta = None ):
     '''
     Updates Service with the parameters given. By default, `serviceName` will \
     be the parameter used to select the row.
@@ -269,7 +268,7 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'Service', locals() )
   def getService( self, serviceName = None, serviceType = None, siteName = None, 
-                  meta = {} ):
+                  meta = None ):
     '''
     Gets from Service all rows that match the parameters given.
     
@@ -290,7 +289,7 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'Service', locals() )
   def deleteService( self, serviceName = None, serviceType = None, 
-                     siteName = None, meta = {} ):
+                     siteName = None, meta = None ):
     '''
     Deletes from Service all rows that match the parameters given.
     
@@ -315,7 +314,7 @@ class ResourceStatusClient:
                          status = None, dateEffective = None, reason = None, 
                          lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, formerStatus = None, 
-                         meta = {} ):
+                         meta = None ):
     '''
     Gets from the view composed by Service, ServiceStatus and ServiceHistory all 
     rows that match the parameters given ( not necessarily returns the same 
@@ -356,12 +355,11 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'ServicePresent', locals() )
 
-
 ################################################################################
 # RESOURCE FUNCTIONS
 
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
-                      gridSiteName, meta = {} ):
+                      gridSiteName, meta = None ):
     '''
     Inserts on Resource a new row with the arguments given.
     
@@ -386,7 +384,7 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Resource', locals() )
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
-                      gridSiteName, meta = {} ):
+                      gridSiteName, meta = None ):
     '''
     Updates Resource with the parameters given. By default, `resourceName` will 
     be the parameter used to select the row.
@@ -413,7 +411,7 @@ class ResourceStatusClient:
     return self.__query( 'update', 'Resource', locals() )
   def getResource( self, resourceName = None, resourceType = None, 
                    serviceType = None, siteName = None, gridSiteName = None, 
-                   meta = {} ):
+                   meta = None ):
     '''
     Gets from Resource all rows that match the parameters given.
     
@@ -439,7 +437,7 @@ class ResourceStatusClient:
     return self.__query( 'get', 'Resource', locals() )
   def deleteResource( self, resourceName = None, resourceType = None, 
                       serviceType = None, siteName = None, gridSiteName = None, 
-                      meta = {} ):
+                      meta = None ):
     '''
     Deletes from Resource all rows that match the parameters given.
     
@@ -470,7 +468,7 @@ class ResourceStatusClient:
                           dateEffective = None, reason = None, 
                           lastCheckTime = None, tokenOwner = None, 
                           tokenExpiration = None, formerStatus = None, 
-                          meta = {} ):
+                          meta = None ):
     '''
     Gets from the view composed by Resource, ResourceStatus and ResourceHistory 
     all rows that match the parameters given ( not necessarily returns the same 
@@ -520,7 +518,7 @@ class ResourceStatusClient:
 # STORAGE ELEMENT FUNCTIONS
 
   def insertStorageElement( self, storageElementName, resourceName, 
-                            gridSiteName, meta = {} ):
+                            gridSiteName, meta = None ):
     '''
     Inserts on StorageElement a new row with the arguments given.
     
@@ -540,7 +538,7 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613  
     return self.__query( 'insert', 'StorageElement', locals() )
   def updateStorageElement( self, storageElementName, resourceName, 
-                            gridSiteName, meta = {} ):
+                            gridSiteName, meta = None ):
     '''
     Updates StorageElement with the parameters given. By default, 
     `storageElementName` will be the parameter used to select the row.
@@ -561,7 +559,7 @@ class ResourceStatusClient:
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'StorageElement', locals() )
   def getStorageElement( self, storageElementName = None, resourceName = None, 
-                         gridSiteName = None, meta = {} ):
+                         gridSiteName = None, meta = None ):
     '''
     Gets from StorageElement all rows that match the parameters given.
     
@@ -582,7 +580,7 @@ class ResourceStatusClient:
     return self.__query( 'get', 'StorageElement', locals() )
   def deleteStorageElement( self, storageElementName = None, 
                             resourceName = None, gridSiteName = None, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Deletes from StorageElement all rows that match the parameters given.
     
@@ -607,7 +605,7 @@ class ResourceStatusClient:
                                 status = None, dateEffective = None, 
                                 reason = None, lastCheckTime = None, 
                                 tokenOwner = None, tokenExpiration = None, 
-                                formerStatus = None, meta = {} ):
+                                formerStatus = None, meta = None ):
     '''
     Gets from the view composed by StorageElement, StorageElementStatus and 
     StorageElementHistory all rows that match the parameters given ( not 
@@ -651,7 +649,7 @@ class ResourceStatusClient:
 ################################################################################
 # GRID SITE FUNCTIONS
 
-  def insertGridSite( self, gridSiteName, gridTier, meta = {} ):
+  def insertGridSite( self, gridSiteName, gridTier, meta = None ):
     '''
     Inserts on GridSite a new row with the arguments given.
     
@@ -668,7 +666,7 @@ class ResourceStatusClient:
     '''    
     # pylint: disable-msg=W0613
     return self.__query( 'insert', 'GridSite', locals() )
-  def updateGridSite( self, gridSiteName, gridTier, meta = {} ):
+  def updateGridSite( self, gridSiteName, gridTier, meta = None ):
     '''
     Updates GridSite with the parameters given. By default, 
     `gridSiteName` will be the parameter used to select the row.
@@ -686,7 +684,7 @@ class ResourceStatusClient:
     '''    
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'GridSite', locals() )   
-  def getGridSite( self, gridSiteName = None, gridTier = None, meta = {} ):
+  def getGridSite( self, gridSiteName = None, gridTier = None, meta = None ):
     '''
     Gets from GridSite all rows that match the parameters given.
 
@@ -703,7 +701,7 @@ class ResourceStatusClient:
     '''    
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'GridSite', locals() )
-  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = {} ): 
+  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = None ): 
     '''
     Deletes from GridSite all rows that match the parameters given.
     
@@ -727,7 +725,7 @@ class ResourceStatusClient:
   def insertElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
-                           meta = {} ): 
+                           meta = None ): 
     '''
     Inserts on <element>Status a new row with the arguments given.
     
@@ -767,7 +765,7 @@ class ResourceStatusClient:
   def updateElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
-                           meta = {} ):
+                           meta = None ):
     '''
     Updates <element>Status with the parameters given. By default, 
     `elementName` and 'statusType' will be the parameters used to select the row.
@@ -809,7 +807,7 @@ class ResourceStatusClient:
                         status = None, reason = None, dateCreated = None, 
                         dateEffective = None, dateEnd = None, 
                         lastCheckTime = None, tokenOwner = None, 
-                        tokenExpiration = None, meta = {} ):
+                        tokenExpiration = None, meta = None ):
     '''
     Gets from <element>Status all rows that match the parameters given.
     
@@ -850,7 +848,7 @@ class ResourceStatusClient:
                            status = None, reason = None, dateCreated = None, 
                            dateEffective = None, dateEnd = None, 
                            lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, meta = {} ):
+                           tokenExpiration = None, meta = None ):
     '''
     Deletes from <element>Status all rows that match the parameters given.
     
@@ -894,7 +892,7 @@ class ResourceStatusClient:
   def insertElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
-                                    tokenExpiration, meta = {} ): 
+                                    tokenExpiration, meta = None ): 
     '''
     Inserts on <element>ScheduledStatus a new row with the arguments given.
     
@@ -934,7 +932,7 @@ class ResourceStatusClient:
   def updateElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
-                                    tokenExpiration, meta = {} ):
+                                    tokenExpiration, meta = None ):
     '''
     Updates <element>ScheduledStatus with the parameters given. By default, 
     `elementName`, 'statusType' and `dateEffective` will be the parameters used 
@@ -978,7 +976,7 @@ class ResourceStatusClient:
                                  reason = None, dateCreated = None, 
                                  dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None, tokenOwner = None, 
-                                 tokenExpiration = None, meta = {} ):
+                                 tokenExpiration = None, meta = None ):
     '''
     Gets from <element>ScheduledStatus all rows that match the parameters given.
     
@@ -1020,7 +1018,7 @@ class ResourceStatusClient:
                                     reason = None, dateCreated = None,
                                     dateEffective = None, dateEnd = None, 
                                     lastCheckTime = None, tokenOwner = None, 
-                                    tokenExpiration = None, meta = {} ):
+                                    tokenExpiration = None, meta = None ):
     '''
     Deletes from <element>ScheduledStatus all rows that match the parameters 
     given.
@@ -1065,7 +1063,7 @@ class ResourceStatusClient:
   def insertElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
-                            meta = {} ): 
+                            meta = None ): 
     '''
     Inserts on <element>History a new row with the arguments given.
     
@@ -1105,7 +1103,7 @@ class ResourceStatusClient:
   def updateElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Updates <element>History with the parameters given. By default, 
     `elementName`, 'statusType', `reason` and `dateEnd` will be the parameters 
@@ -1148,7 +1146,7 @@ class ResourceStatusClient:
                          status = None, reason = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, 
                          lastCheckTime = None, tokenOwner = None, 
-                         tokenExpiration = None, meta = {} ):
+                         tokenExpiration = None, meta = None ):
     '''
     Gets from <element>History all rows that match the parameters given.
     
@@ -1190,7 +1188,7 @@ class ResourceStatusClient:
                             dateCreated = None, dateEffective = None, 
                             dateEnd = None, lastCheckTime = None, 
                             tokenOwner = None, tokenExpiration = None, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Deletes from <element>History all rows that match the parameters given.
 

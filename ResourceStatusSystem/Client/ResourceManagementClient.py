@@ -74,7 +74,8 @@ class ResourceManagementClient:
     
     gateFunction = getattr( self.gate, queryType )
     
-    meta   = kwargs.pop( 'meta' )
+    # If meta is None, we set it to {}
+    meta   = ( kwargs.pop( 'meta' ) and True ) or {}
     params = kwargs
     del params[ 'self' ]     
         
@@ -86,7 +87,7 @@ class ResourceManagementClient:
 ################################################################################
 # ENVIRONMENT CACHE FUNCTIONS
 
-  def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
+  def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = None ):
     '''
     Inserts on EnvironmentCache a new row with the arguments given.
     
@@ -104,7 +105,7 @@ class ResourceManagementClient:
     :return: S_OK() || S_ERROR()
     '''
     return self.__query( 'insert', 'EnvironmentCache', locals() )
-  def updateEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
+  def updateEnvironmentCache( self, hashEnv, siteName, environment, meta = None ):
     '''
     Updates EnvironmentCache with the parameters given. By default, `hashEnv`
     will be the parameter used to select the row. 
@@ -124,7 +125,7 @@ class ResourceManagementClient:
     '''    
     return self.__query( 'update', 'EnvironmentCache', locals() )
   def getEnvironmentCache( self, hashEnv = None, siteName = None, 
-                           environment = None, meta = {} ):
+                           environment = None, meta = None ):
     '''
     Gets from EnvironmentCache all rows that match the parameters given.
     
@@ -143,7 +144,7 @@ class ResourceManagementClient:
     '''
     return self.__query( 'get', 'EnvironmentCache', locals() )
   def deleteEnvironmentCache( self, hashEnv = None, siteName = None, 
-                              environment = None, meta = {} ):
+                              environment = None, meta = None ):
     '''
     Deletes from EnvironmentCache all rows that match the parameters given.
     
@@ -167,7 +168,7 @@ class ResourceManagementClient:
 
   def insertPolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime,
-                          meta = {} ):
+                          meta = None ):
     '''
     Inserts on PolicyResult a new row with the arguments given.
     
@@ -199,7 +200,7 @@ class ResourceManagementClient:
     return self.__query( 'insert', 'PolicyResult', locals() ) 
   def updatePolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime, 
-                          meta = {} ):
+                          meta = None ):
     '''
     Updates PolicyResult with the parameters given. By default, `name`, 
     `policyName` and `statusType` will be the parameters used to select the row.
@@ -232,7 +233,7 @@ class ResourceManagementClient:
     return self.__query( 'update', 'PolicyResult', locals() )
   def getPolicyResult( self, granularity = None, name = None, policyName = None, 
                        statusType = None, status = None, reason = None, 
-                       dateEffective = None, lastCheckTime = None, meta = {} ):
+                       dateEffective = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
     
@@ -265,7 +266,7 @@ class ResourceManagementClient:
   def deletePolicyResult( self, granularity = None, name = None, 
                           policyName = None, statusType = None, status = None, 
                           reason = None, dateEffective = None, 
-                          lastCheckTime = None, meta = {} ):
+                          lastCheckTime = None, meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -300,7 +301,7 @@ class ResourceManagementClient:
 # CLIENT CACHE FUNCTIONS
 
   def insertClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, meta = {} ):
+                         dateEffective, lastCheckTime, meta = None ):
     '''
     Inserts on ClientCache a new row with the arguments given.
     
@@ -327,7 +328,7 @@ class ResourceManagementClient:
     '''    
     return self.__query( 'insert', 'ClientCache', locals() )
   def updateClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, meta = {} ):
+                         dateEffective, lastCheckTime, meta = None ):
     '''
     Updates ClientCache with the parameters given. By default, `name`, 
     `commandName` and `value` will be the parameters used to select the row.
@@ -356,7 +357,7 @@ class ResourceManagementClient:
     return self.__query( 'update', 'ClientCache', locals() )
   def getClientCache( self, name = None, commandName = None, opt_ID = None, 
                       value = None, result = None, dateEffective = None, 
-                      lastCheckTime = None, meta = {} ):
+                      lastCheckTime = None, meta = None ):
     '''
     Gets from ClientCache all rows that match the parameters given.
     
@@ -384,7 +385,7 @@ class ResourceManagementClient:
     return self.__query( 'get', 'ClientCache', locals() )
   def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
-                         lastCheckTime = None, meta = {} ):
+                         lastCheckTime = None, meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -415,7 +416,7 @@ class ResourceManagementClient:
 # ACCOUNTING CACHE FUNCTIONS
 
   def insertAccountingCache( self, name, plotType, plotName, result, 
-                             dateEffective, lastCheckTime, meta = {} ):
+                             dateEffective, lastCheckTime, meta = None ):
     '''
     Inserts on AccountingCache a new row with the arguments given.
     
@@ -440,7 +441,7 @@ class ResourceManagementClient:
     '''    
     return self.__query( 'insert', 'AccountingCache', locals() )
   def updateAccountingCache( self, name, plotType, plotName, result, 
-                             dateEffective, lastCheckTime, meta = {} ):
+                             dateEffective, lastCheckTime, meta = None ):
     '''
     Updates AccountingCache with the parameters given. By default, `name`, 
     `plotType` and `plotName` will be the parameters used to select the row.
@@ -467,7 +468,7 @@ class ResourceManagementClient:
     return self.__query( 'update', 'AccountingCache', locals() )
   def getAccountingCache( self, name = None, plotType = None, plotName = None, 
                           result = None, dateEffective = None, 
-                          lastCheckTime = None, meta = {} ):
+                          lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
     
@@ -494,7 +495,7 @@ class ResourceManagementClient:
   def deleteAccountingCache( self, name = None, plotType = None, 
                              plotName = None, result = None, 
                              dateEffective = None, lastCheckTime = None, 
-                             meta = {} ):
+                             meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -522,7 +523,7 @@ class ResourceManagementClient:
 ################################################################################
 # USER REGISTRY CACHE FUNCTIONS
 
-  def insertUserRegistryCache( self, login, name, email, meta = {} ):
+  def insertUserRegistryCache( self, login, name, email, meta = None ):
     '''
     Inserts on UserRegistryCache a new row with the arguments given.
     
@@ -540,7 +541,7 @@ class ResourceManagementClient:
     :return: S_OK() || S_ERROR()
     '''    
     return self.__query( 'insert', 'UserRegistryCache', locals() )
-  def updateUserRegistryCache( self, login, name, email, meta = {} ):
+  def updateUserRegistryCache( self, login, name, email, meta = None ):
     '''
     Updates UserRegistryCache with the parameters given. By default, `login` 
     will be the parameter used to select the row.
@@ -560,7 +561,7 @@ class ResourceManagementClient:
     '''    
     return self.__query( 'update', 'UserRegistryCache', locals() )
   def getUserRegistryCache( self, login = None, name = None, email = None, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Gets from UserRegistryCache all rows that match the parameters given.
     
@@ -579,7 +580,7 @@ class ResourceManagementClient:
     '''    
     return self.__query( 'get', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
-                               meta = {} ):                                            
+                               meta = None ):                                            
     '''
     Deletes from UserRegistryCache all rows that match the parameters given.
     
@@ -732,7 +733,6 @@ class ResourceManagementClient:
 
 ################################################################################
 # Getter functions
-
 
   def _insertElement( self, element, kwargs ):
     
