@@ -396,7 +396,7 @@ class FileMetadata:
         return result
       fileList = result['Value']
     else:
-      result = self.db.dtree.getFileLFNsInDirectory( dirList, credDict )
+      result = self.db.dtree.getFileLFNsInDirectoryByDirectory( dirList, credDict )
       return result
 
     if fileList:
