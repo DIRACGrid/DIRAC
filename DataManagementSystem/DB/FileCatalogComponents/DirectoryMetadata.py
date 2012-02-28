@@ -397,7 +397,7 @@ class DirectoryMetadata:
 
     req = " SELECT M.DirID FROM FC_Meta_%s AS M" % meta
     if pathSelection:
-      req += " JOIN ( %s ) AS P WHERE M.DirID=P.DirID"
+      req += " JOIN ( %s ) AS P WHERE M.DirID=P.DirID" % pathSelection
     if selectString:
       if pathSelection:
         req += " AND %s" % selectString
@@ -730,3 +730,4 @@ class DirectoryMetadata:
         successful[meta] = 'OK'
 
     return S_OK( {'Successful':successful, 'Failed':failed} )
+

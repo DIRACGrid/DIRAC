@@ -49,3 +49,27 @@ class FileCatalogClient(Client):
   def getDirectoryReplicas(self,lfns,allStatus=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.getDirectoryReplicas(lfns,allStatus)
+
+  def findFilesByMetadata(self,metaDict,path='/',rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    result = rpcClient.findFilesByMetadata(metaDict,path)
+    if not result['OK']:
+      return result
+    if type(result['Value']) == types.ListType:
+      return result
+    elif type(result['Value']) == types.DictType:
+      # Process into the lfn list
+      fileList = []
+      for dir,fList in result['Value'].items():
+        for f in fList:
+          fileList.append(dir+'/'+f)
+      result['Value'] = fileList    
+      return result
+    else:
+      return S_ERROR( 'Illegal return value type %s' % type( result['Value'] ) )    
+     
+    
+    
+  
+  
+  
