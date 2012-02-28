@@ -1,4 +1,4 @@
-[v6r2-pre11]
+[v6r2-pre12]
 
 *Accounting
 CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
