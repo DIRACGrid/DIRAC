@@ -66,7 +66,7 @@ class RemovalTask( RequestTask ):
     ownerDN = dirMeta["OwnerDN"]
 
     ownerProxy = None
-    for ownerGroup in self.registry().getGroupsWithVOMSAttribute( ownerRole ):
+    for ownerGroup in getGroupsWithVOMSAttribute( ownerRole ):
       vomsProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup, limited = True,
                                                    requiredVOMSAttribute = ownerRole )
       if not vomsProxy["OK"]:
@@ -251,7 +251,7 @@ class RemovalTask( RequestTask ):
         self.error( "replicaRemoval: error setting status to 'Failed' for %s" % lfn )
 
     self.addMark( "ReplicaRemovalDone", replicasRemoved )
-    self.addMark( "ReplicaRemovalFailed", replicasFailed )
+    self.addMark( "ReplicaRemovalFail", replicasFailed )
 
     ## no 'Waiting' files or all 'Done' 
     if requestObj.isSubRequestEmpty( index, "removal" ) or requestObj.isSubRequestDone( index, "removal" ):

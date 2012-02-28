@@ -84,8 +84,6 @@ class RequestTask( object ):
   __replicaManager = None
   ## reference to DataLoggingClient
   __dataLoggingClient = None
-  ## reference to Registry
-  __registry = None
   ## reference to RequestClient
   __requestClient = None
   ## reference to RequestDbMySQL
@@ -148,6 +146,7 @@ class RequestTask( object ):
     from DIRAC import S_OK, S_ERROR
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
+    from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 
     ## export DIRAC global tools and functions
     self.makeGlobal( "S_OK", S_OK )
@@ -155,7 +154,8 @@ class RequestTask( object ):
     self.makeGlobal( "gLogger", gLogger )
     self.makeGlobal( "gConfig", gConfig )
     self.makeGlobal( "gProxyManager", gProxyManager ) 
-    
+    self.makeGlobal( "getGroupsWithVOMSAttribute", getGroupsWithVOMSAttribute )
+
     ## save request string
     self.requestString = requestString
     ## build request object
@@ -302,17 +302,6 @@ class RequestTask( object ):
       cls.__storageFactory = StorageFactory()
     return cls.__storageFactory
 
-  @classmethod
-  def registry( cls ):
-    """ Registry getter
-
-    :param cls:  class reference
-    """
-    if not cls.__registry:
-      from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-      cls.__registry = Registry()
-    return cls.__registry
-
   def changeProxy( self, ownerDN, ownerGroup ):
     """ get proxy from gProxyManager, save it to file
 
@@ -394,8 +383,6 @@ class RequestTask( object ):
     ## save request owner
     self.requestOwnerDN = ownerDN if ownerDN else ""
     self.requestOwnerGroup = ownerGroup if ownerGroup else ""
-    ## placeholder for owner proxy file
-    #self.ownerProxyFile = None
 
     #################################################################
     ## change proxy
@@ -417,6 +404,7 @@ class RequestTask( object ):
 
     #################################################################
     ## execute handlers
+    ret = { "OK" : False, "Message" : "" }
     try:
       ret = self.handleRequest()
     finally: 
