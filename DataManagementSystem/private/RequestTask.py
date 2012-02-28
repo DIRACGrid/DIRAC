@@ -11,8 +11,7 @@
     :synopsis: base class for requests execution in separate subprocesses
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    Base class for requests execution in separate subprocesses.
-
+    Base class for requests execution in a separate subprocesses.
 """
 
 __RCSID__ = "$Id $"
@@ -43,6 +42,7 @@ class RequestTask( object ):
   All currently proxied tools are::
   
   DataLoggingClient -- self.dataLoggingClient()
+  Registry          -- self.registry() (CS helper)
   ReplicaManager    -- self.replicaManager()
   RequestClient     -- self.requestClient()
   RequestDBMySQL    -- self.requestDBMySQL()
@@ -75,7 +75,7 @@ class RequestTask( object ):
 
   Concering :MonitringClient: (or better known its global instance :gMonitor:), if someone wants to send 
   some metric over there, she has to put in agent's code registration of activity and then in a particular 
-  task use :RequestTask.addMark: to save monitoring data. All monitored activities  are held in 
+  task use :RequestTask.addMark: to save monitoring data. All monitored activities are held in 
   :RequestTask.__monitor: dict which at the end of processing is returned from :RequestTask.__call__:. 
   The values are then processed and pushed to the gMonitor instance in the default callback function.
   """
@@ -101,11 +101,9 @@ class RequestTask( object ):
   ## a dictonary 
   ## "operation" => methodToRun
   ## 
-  __operationDispatcher = { } 
-  ## holder of dataManager DN
-  __dataManagerDN = None
-  ## holder of dataManager group
-  __dataManagerGroup = None
+  __operationDispatcher = {} 
+  ## holder for DataManager proxy file
+  __dataManagerProxy = None
   ## monitoring dict
   __monitor = {} 
 
@@ -148,6 +146,7 @@ class RequestTask( object ):
     from DIRAC import S_OK, S_ERROR
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
+    from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 
     ## export DIRAC global tools and functions
     self.makeGlobal( "S_OK", S_OK )
@@ -155,17 +154,21 @@ class RequestTask( object ):
     self.makeGlobal( "gLogger", gLogger )
     self.makeGlobal( "gConfig", gConfig )
     self.makeGlobal( "gProxyManager", gProxyManager ) 
-    
+    self.makeGlobal( "getGroupsWithVOMSAttribute", getGroupsWithVOMSAttribute )
+
     ## save request string
     self.requestString = requestString
     ## build request object
     from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
     self.requestObj = RequestContainer( init = False )
     self.requestObj.parseRequest( request = self.requestString )
-    
+    ## save request name
     self.requestName = requestName
+    ## .. and jobID
     self.jobID = jobID
+    ## .. and execution order
     self.executionOrder = executionOrder
+    ## .. and source server URI
     self.sourceServer = sourceServer
 
     ## save config path 
@@ -177,11 +180,17 @@ class RequestTask( object ):
     ## clear monitoring
     self.__monitor = {}
     ## save DataManager proxy
-    self.__dataManagerProxy = None
     if "X509_USER_PROXY" in os.environ:
       self.info("saving path to current proxy file")
       self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
-      
+
+  def dataManagerProxy( self ):
+    """ get dataManagerProxy file 
+
+    :param self: self reference
+    """
+    return self.__dataManagerProxy
+
   def addMark( self, name, value = 1 ):
     """ add mark to __monitor dict
     
@@ -370,6 +379,10 @@ class RequestTask( object ):
     if not ownerGroup["OK"]:
       return ownerGroup
     ownerGroup = ownerGroup["Value"]
+    
+    ## save request owner
+    self.requestOwnerDN = ownerDN if ownerDN else ""
+    self.requestOwnerGroup = ownerGroup if ownerGroup else ""
 
     #################################################################
     ## change proxy
@@ -377,20 +390,21 @@ class RequestTask( object ):
     if ownerDN and ownerGroup:
       ownerProxyFile = self.changeProxy( ownerDN, ownerGroup )
       if not ownerProxyFile["OK"]:
-        self.error( "Unable to get proxy for '%s'@'%s': %s" % ( ownerDN, ownerGroup, ownerProxyFile["Message"] ) )
+        self.error( "handleReuqest: unable to get proxy for '%s'@'%s': %s" % ( ownerDN, ownerGroup, ownerProxyFile["Message"] ) )
         update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
         if not update["OK"]:
           self.error( "handleRequest: error when updating request: %s" % update["Message"] )
           return update
         return ownerProxyFile
-
       ownerProxyFile = ownerProxyFile["Value"]
+      #self.ownerProxyFile = ownerProxyFile
       self.info( "Will execute request for '%s'@'%s' using proxy file %s" % ( ownerDN, ownerGroup, ownerProxyFile ) )
     else:
       self.info( "Will execute request for DataManager using her/his proxy")
 
     #################################################################
     ## execute handlers
+    ret = { "OK" : False, "Message" : "" }
     try:
       ret = self.handleRequest()
     finally: 

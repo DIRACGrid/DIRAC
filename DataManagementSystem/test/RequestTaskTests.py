@@ -39,7 +39,7 @@ from mock import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule 
-from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase, defaultCallback, defaultExceptionCallback
+from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.Core.Utilities.ProcessPool import ProcessTask, ProcessPool
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -89,36 +89,31 @@ class RequestTaskTests( unittest.TestCase ):
                     "jobID" : 0,
                     #"executionOrder" : [],
                     "sourceServer" : "" }
-    
     print "IDLE: ", self.__processPool.getNumIdleProcesses()
 
   def tearDown( self ):
-
     if self.__processPool:
       while self.__processPool.hasPendingTasks() or self.__processPool.isWorking():
         self.__processPool.processResults()
         time.sleep( 5 )
-
       if not self.__processPool.isWorking():
         self.__processPool = None
-
 
   def test__01_createTask( self ):
     """ test InheritedTask c'tor
 
     """
     self.assertEqual( isinstance( InheritedTask( **self.kwargs ), InheritedTask ), True, "c'tor not working" )
-    self.assertEqual( issubclass( InheritedTask, RequestTask ), True, "bag inheritance" )
+    self.assertEqual( issubclass( InheritedTask, RequestTask ), True, "bad inheritance" )
     
   def test__02_queueTask( self ):
     """ ProcessPool.queueTask test
 
     """
-    processTask = ProcessTask( InheritedTask, kwargs = self.kwargs, callback = defaultCallback )
+    processTask = ProcessTask( InheritedTask, kwargs = self.kwargs )
     self.assertEqual( isinstance( processTask, ProcessTask ), True )
     self.__processPool.queueTask( processTask, blocking  = True )
     self.__processPool.processResults()
-
 
   def test__03_createAndQueueTask( self ):
     """ ProcessPool.createAndQueueTask test
@@ -126,7 +121,6 @@ class RequestTaskTests( unittest.TestCase ):
     """
     self.__processPool.createAndQueueTask( InheritedTask, 
                                            kwargs = self.kwargs, 
-                                           callback = defaultCallback,
                                            blocking = True )
     self.__processPool.processResults()
 
@@ -148,7 +142,6 @@ class RequestAgentBaseTests( unittest.TestCase ):
                                                                      "executionOrder" : 0,
                                                                      "sourceServer" : "" } }
 
-
   def test__01_execute( self ):
     self.agent.initialize()
     print "init done"
@@ -157,6 +150,8 @@ class RequestAgentBaseTests( unittest.TestCase ):
     self.agent.finalize()
     print "finalize done"
 
+
+## tests execution
 if __name__ == "__main__":
   
   testLoader = unittest.TestLoader()
