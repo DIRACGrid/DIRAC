@@ -489,6 +489,24 @@ class DirectoryTreeBase:
     req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( %s )" % dirListString
     result = self.db._query(req)
     return result
+
+  def getFileLFNsInDirectory(self,dirID,credDict):
+    """ Get file lfns for the given directory or directory list 
+    """
+    dirs = dirID
+    if type(dirID) != ListType:
+      dirs = [dirID]
+      
+    dirListString = ','.join( [ str(dir) for dir in dirs ] )
+
+    treeTable = self.getTreeTable()
+    req = "SELECT CONCAT(D.DirName,'/',F.FileName) FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
+    req = req % ( treeTable,dirListString )
+    result = self.db._query(req)
+    if not result['OK']:
+      return result
+    lfnList = [ x[0] for x in result['Value'] ]
+    return S_OK(lfnList)
  
   def __getDirectoryContents(self,path,details=False):
     """ Get contents of a given directory
