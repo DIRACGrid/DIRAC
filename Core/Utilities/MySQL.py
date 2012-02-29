@@ -109,7 +109,7 @@ def _checkFields( inFields, inValues ):
     return S_OK()
 
   if len( inFields ) != len( inValues ):
-    return S_ERROR( 'Missmatch between inFields and inValues.' )
+    return S_ERROR( 'Mismatch between inFields and inValues.' )
   return S_OK()
 
 
@@ -549,7 +549,9 @@ class MySQL:
 
   def _getFields( self, tableName, outFields = None,
                   inFields = None, inValues = None,
-                  limit = 0, conn = None ):
+                  limit = False, conn = None,
+                  older = None, newer = None,
+                  timeStamp = None, orderAttribute = None ):
     """
     Select "outFields" from "tableName" with
     conditions lInFields = lInValues
@@ -557,8 +559,8 @@ class MySQL:
     return S_OK( tuple(Field,Value) )
     if outFields == None all fields in "tableName" are returned
     if inFields and inValues are None, no condition is imposed
-    if limit is not 0, the given limit is set
-    Strings inValues are properly escaped using the _escape_string method.
+    if limit is not False, the given limit is set
+    inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
     """
     self.logger.debug( '_getFields:', 'selecting fields %s from table `%s`.' %
                           ( str( outFields ), tableName ) )
@@ -577,28 +579,89 @@ class MySQL:
       self.logger.debug( '_getFields: %s' % retDict['Message'] )
       return retDict
 
-    retDict = self._escapeValues( inValues )
-    if not retDict['OK']:
-      return retDict
-    escapeInValues = retDict['Value']
+    condDict = dict( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
 
-    condition = ''
-
-    for i in range( len( inFields ) ):
-      field = inFields[i]
-      value = escapeInValues[i]
-      if condition:
-        condition += ' AND'
-      condition += ' `%s`=%s' % ( field, value )
-
-    if condition:
-      condition = 'WHERE %s ' % condition
-
-    if limit:
-      condition += 'LIMIT %s' % limit
+    condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
+                      timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
 
     return self._query( 'SELECT %s FROM `%s` %s' %
                         ( outFieldString, tableName, condition ), conn )
+
+  def _updateFields( self, tableName, updateFields = None, updateValues = None,
+                     inFields = None, inValues = None,
+                     limit = False, conn = None,
+                     older = None, newer = None,
+                     timeStamp = None, orderAttribute = None ):
+    """
+    Update "updateFields" from "tableName" with "updateValues".
+    conditions lInFields = lInValues
+    N records can match the condition
+    return S_OK( tuple(Field,Value) )
+    if outFields == None all fields in "tableName" are returned
+    if inFields and inValues are None, no condition is imposed
+    if limit is not False, the given limit is set
+    inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+    """
+    self.logger.debug( '_updateFields:', 'updating fields %s from table `%s`.' %
+                          ( str( updateFields ), tableName ) )
+
+    retDict = _checkFields( updateFields, updateValues )
+    if not retDict['OK']:
+      error = 'Mismatch between updateFields and updateValues.'
+      self.logger.debug( '_updateFields: %s' % error )
+      return S_ERROR( error )
+
+    if not updateFields:
+      return S_OK( 0 )
+
+    retDict = _checkFields( inFields, inValues )
+    if not retDict['OK']:
+      self.logger.debug( '_updateFields: %s' % retDict['Message'] )
+      return retDict
+
+    quotedUpdateFields = []
+    if updateFields != None:
+      for field in updateFields:
+        quotedUpdateFields.append( '`%s`' % field )
+    updateFieldString = ', '.join( quotedUpdateFields )
+
+
+
+    condDict = dict( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
+
+    condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
+                      timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
+
+    return self._query( 'SELECT %s FROM `%s` %s' %
+                        ( outFieldString, tableName, condition ), conn )
+
+  def _delete( self, tableName,
+               inFields = None, inValues = None,
+               limit = False, conn = None,
+               older = None, newer = None,
+               timeStamp = None, orderAttribute = None ):
+    """
+    Delete rows from "tableName" with
+    conditions lInFields = lInValues
+    N records can match the condition
+    if inFields and inValues are None, no condition is imposed
+    if limit is not False, the given limit is set
+    inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+    """
+    self.logger.debug( '_delete:', 'deleting rows from table `%s`.' % tableName )
+
+    retDict = _checkFields( inFields, inValues )
+    if not retDict['OK']:
+      self.logger.debug( '_delete: %s' % retDict['Message'] )
+      return retDict
+
+    condDict = dict( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
+
+    condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
+                                     timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
+
+    return self._query( 'DELETE FROM `%s` %s' %
+                        ( tableName, condition ), conn )
 
 
   def _to_value( self, param ):
