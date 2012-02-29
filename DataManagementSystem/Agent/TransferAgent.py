@@ -697,6 +697,18 @@ class TransferAgent( RequestAgentBase ):
       ## get modified request obj
       requestObj = registerFiles["Value"]
 
+      ## get subrequest files, filer not-Done
+      subRequestFiles = requestObj.getSubRequestFiles( iSubRequest, "transfer" )
+      if not subRequestFiles["OK"]:
+        return subRequestFiles
+      subRequestFiles = subRequestFiles["Value"]
+      ## collect not done LFNs
+      notDoneLFNs = []
+      for subRequestFile in subRequestFiles:
+        status = subRequestFile["Status"]
+        if status != "Done":
+          notDoneLFNs.append( subRequestFile["LFN"] )
+
       subRequestEmpty = requestObj.isSubRequestEmpty( iSubRequest, "transfer" )
       subRequestEmpty = subRequestEmpty["Value"] if "Value" in subRequestEmpty else False
 
@@ -708,7 +720,11 @@ class TransferAgent( RequestAgentBase ):
           continue
         ## get modified request obj
         requestObj = scheduleFiles["Value"]
+      elif notDoneLFNs:
+        ## maybe some are not Done yet?
+        self.log.info("schedule: not-Done files found in subrequest")
       else:
+        ## nope, all Done or no Waiting found
         self.log.info("schedule: subrequest %d is empty" % iSubRequest )
         self.log.info("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
@@ -760,6 +776,21 @@ class TransferAgent( RequestAgentBase ):
     operation = subAttrs["Operation"]
     strategy = { False : None, 
                  True: operation }[ operation in self.strategyHandler().getSupportedStrategies() ]
+
+    
+    ## get subrequest files
+    subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
+    if not subRequestFiles["OK"]:
+      return subRequestFiles
+    subRequestFiles = subRequestFiles["Value"]
+    self.log.info( "scheduleFiles: found %s files" % len( subRequestFiles ) ) 
+    ## collect not done LFNS
+    notDoneLFNs = []
+    for subRequestFile in subRequestFiles:
+      status = subRequestFile["Status"]
+      if status != "Done":
+        notDoneLFNs.append( subRequestFile["LFN"] )
+
     ## get subrequest files  
     self.log.info( "scheduleFiles: obtaining 'Waiting' files for %d subrequest" % index )
     files = self.collectFiles( requestObj, index, status = "Waiting" )
@@ -770,7 +801,7 @@ class TransferAgent( RequestAgentBase ):
     waitingFiles, replicas, metadata = files["Value"]
 
     if not waitingFiles:
-      self.log.info("scheduleFTS: not 'Waiting' files found in this subrequest" )
+      self.log.info("scheduleFiles: not 'Waiting' files found in this subrequest" )
       return S_OK( requestObj )
 
     if not replicas or not metadata:

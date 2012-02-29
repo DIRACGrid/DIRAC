@@ -113,8 +113,11 @@ class RemovalTask( RequestTask ):
         if not self.requestOwnerDN:
           getProxyForLFN = self.getProxyForLFN( lfn )
           if not getProxyForLFN["OK"]:
-            ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
-            self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+            if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
+              removalStatus[lfn] = ""
+            else:
+              ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
+              self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
             continue
         removal = self.replicaManager().removeFile( lfn )
       finally:
@@ -187,17 +190,18 @@ class RemovalTask( RequestTask ):
 
     ## loop over LFNs
     for lfn in lfns:
-
       self.info("replicaRemoval: processing file %s" % lfn )
       try:
         ## are you DataManager?
         if not self.requestOwnerDN:
           getProxyForLFN = self.getProxyForLFN( lfn )
           if not getProxyForLFN["OK"]:
-            ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
-            self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+            if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
+              removalStatus[lfn] = dict.fromkeys( targetSEs, "" )
+            else:
+              ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
+              self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
             continue
-
         ## loop over targetSEs
         for targetSE in targetSEs:
           ## prepare status dict
