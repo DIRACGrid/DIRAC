@@ -26,19 +26,18 @@ __RCSID__ = "$Id$"
 import time
 import re
 import random
-## from DIRAC globals and Core
+## from DIRAC (globals and Core)
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 ## from DMS
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
-from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
+## task to be executed
+from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
 ## from RMS
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 ## from Resources
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 ## from RSS
@@ -163,13 +162,11 @@ class TransferAgent( RequestAgentBase ):
   """
   ## placeholder for ReplicaManager instance
   __replicaManager = None
-  ## placeholder for RequestDBMySQL instance
-  __requestDBMySQL = None
   ## placeholder for StorageFactory instance
   __storageFactory = None
   ## placeholder for StrategyHandler instance
   __strategyHandler = None
-  ## placeholder for  TransferDB instance (for FTS mode)
+  ## placeholder for TransferDB instance (for FTS mode)
   __transferDB = None
   ## time scale for throughput
   __throughputTimescale = 3600
@@ -227,11 +224,12 @@ class TransferAgent( RequestAgentBase ):
 
     ## get TransferDB instance 
     if self.__executionMode["FTS"]:
+      transferDB = None
       try:
-        self.__transferDB = TransferDB()
+        transferDB = self.transferDB()
       except Exception, error:
         self.log.exception( error )
-      if not isinstance( self.__transferDB, TransferDB ):
+      if not transferDB:
         self.log.warn("Can't create TransferDB instance, disabling FTS execution mode.")
         self.__executionMode["FTS"] = False
       else:
@@ -257,15 +255,6 @@ class TransferAgent( RequestAgentBase ):
       self.__replicaManager = ReplicaManager()
     return self.__replicaManager
 
-  def requestDBMySQL( self ):
-    """ RequestDBMySQL instance getter 
-
-    :param self: self reference
-    """
-    if not self.__requestDBMySQL:
-      self.__requestDBMySQL = RequestDBMySQL()
-    return self.__requestDBMySQL
-
   def storageFactory( self ):
     """ StorageFactory instance getter 
 
@@ -278,10 +267,16 @@ class TransferAgent( RequestAgentBase ):
   def transferDB( self ):
     """ TransferDB instance getter
 
+    :warning: Need to put import over here, ONLINE hasn't got MySQLdb module.
+
     :param self: self reference
     """
     if not self.__transferDB:
-      self.__transferDB = TransferDB()
+      try:
+        from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
+        self.__transferDB = TransferDB()
+      except Exception, error:
+        self.log.error( "transferDB: unable to create TransferDB instance: %s" % str(error) )        
     return self.__transferDB
 
   ###################################################################################

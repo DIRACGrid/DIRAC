@@ -59,14 +59,11 @@ class TransferTask( RequestTask ):
     :param dict subFiles: sub-request files
     :return: S_OK( requestObj ) or S_ERROR
     """
-    ## holder for error
-    subRequestError = ""
     ## list of targetSEs
     targetSEs = list( set( [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") 
                              if targetSE.strip() ] ) )
     if len(targetSEs) != 1:
       self.error("putAndRegister: wrong value for TargetSE list = %s, should contain one target!" % targetSEs )
-      ## TODO set Failed status!
       return S_ERROR( "putAndRegister: TargetSE should contain one target, got %s" % targetSEs )
     
     targetSE = targetSEs[0]
@@ -99,8 +96,9 @@ class TransferTask( RequestTask ):
                                                                                             "Addler" : addler, 
                                                                                             "LFN" : lfn  }.items() 
                                                                              if v in ( "", None ) ] ) ) )
-        self.error( "putAndRegister: setting file status to 'WrongParams'")
+        self.error( "putAndRegister: setting file status to 'Failed' and Error to 'WrongParams'")
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "WrongParams" )
+        requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
         continue
 
       ## call RM at least
@@ -119,9 +117,10 @@ class TransferTask( RequestTask ):
             self.addMark( "Put failed", 1 )
             self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "TransferAgent" )
             self.info( "putAndRegister: failed to put %s to %s." % ( lfn, targetSE ) )
-            subRequestError = "Put operation failed for %s to %s" % ( lfn, targetSE )
-            failed[lfn][targetSE] = "put failed"
+            failed[lfn][targetSE] = "put failed at %s" % targetSE
+            self.info( "putAndRegister: setting file status to 'Failed' and Error to 'FailedToPut'")
             requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "FailedToPut" )
+            #requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
 
           elif "register" not in putAndRegister["Value"]["Successful"][lfn]:
               
@@ -137,7 +136,6 @@ class TransferTask( RequestTask ):
 
             requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "FailedToRegister" )
 
-            subRequestError = "Registration failed for %s at %s" % ( lfn, targetSE )
             fileDict = putAndRegister["Value"]["Failed"][lfn]["register"]
             registerRequestDict = { 
               "Attributes": { 
@@ -174,7 +172,6 @@ class TransferTask( RequestTask ):
                                                                                          reason ) )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "Complete file failure" )
           failed[lfn][targetSE] = "Complete file failure"
-          subRequestError = "Failed to put and register file."
 
       else:
 
@@ -182,19 +179,16 @@ class TransferTask( RequestTask ):
         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "TransferAgent" )
         self.error ( "putAndRegister: completely failed to put and register file: %s" % putAndRegister["Message"] )
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "RM call failure" )
-        subRequestError = "RM call failed"
         failed[lfn][targetSE] = "RM call failed"
         
-        if not failed[lfn]:
-          self.info("putAndRegister: file %s processed successfully, setting its startus do 'Done'.")
-          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
+      if not failed[lfn]:
+        self.info("putAndRegister: file %s processed successfully, setting its startus do 'Done'.")
+        requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
  
-    if not subRequestError:
-      self.info("putAndRegister: all files processed successfully, setting subrequest status to 'Done'")
+    if requestObj.isSubRequestDone( index, "transfer" ) or requestObj.isSubRequestEmpty( index, "transfer" ):
+      self.info("putAndRegister: all files processed, will set subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "transfer", "Done" )
-    else:
-      self.error( subRequestError )
-          
+             
     return S_OK( requestObj )
 
   def replicateAndRegister( self, index, requestObj, subAttrs, subFiles ):
@@ -220,13 +214,12 @@ class TransferTask( RequestTask ):
     for subRequestFile in subFiles:
 
       lfn = subRequestFile["LFN"]
-      failed.setdefault( lfn, {} )
       self.info("replicateAndRegister: processing %s file" % lfn )  
-
       if subRequestFile["Status"] != "Waiting":
         self.info("replicateAndRegister: skipping %s file, status is %s" % ( lfn, subRequestFile["Status"] ) ) 
         continue
-          
+      failed.setdefault( lfn, {} )
+
       for targetSE in targetSEs:
         self.addMark( "Replicate and register", 1 )
         res = self.replicaManager().replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
@@ -282,10 +275,8 @@ class TransferTask( RequestTask ):
         self.info("replicateAndRegister: file has been %s successfully processed at all targetSEs" % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
 
-    if not subRequestError:
-      self.info("replicateAndRegister: all files processed successfully, will set subrequest status to 'Done'")
+    if requestObj.isSubRequestDone( index, "transfer" ) or requestObj.isSubRequestEmpty( index, "transfer" ):
+      self.info("replicateAndRegister: all files processed, will set subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "transfer", "Done" )
-    else:
-      self.error( subRequestError )
-
+ 
     return S_OK( requestObj )

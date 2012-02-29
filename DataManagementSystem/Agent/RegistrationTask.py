@@ -59,10 +59,9 @@ class RegistrationTask( RequestTask ):
     if not targetSEs:
       self.warn( "registerFile: no TargetSE specified! will use default 'CERN-FAILOVER'")
       targetSEs = [ "CERN-FAILOVER" ]
+
     ## dict for failed LFNs
     failed = {}
-    ## subrequest error if any
-    subRequestError = ""
 
     catalogue = subRequestAttrs["Catalogue"] if subRequestAttrs["Catalogue"] else ""
     if catalogue == "BookkeepingDB":
@@ -71,11 +70,12 @@ class RegistrationTask( RequestTask ):
 
     for subRequestFile in subRequestFiles:
       lfn = subRequestFile.get( "LFN", "" ) 
-      failed.setdefault( lfn, {} )
       self.info("registerFile: processing file %s" % lfn )
       if subRequestFile["Status"] != "Waiting":
         self.info("registerFile: skipping file %s, status is %s" % ( lfn, subRequestFile["Status"] ) )
         continue
+
+      failed.setdefault( lfn, {} )
       pfn = subRequestFile.get( "PFN", "" ) 
       size = subRequestFile.get( "Size", 0 ) 
       guid = subRequestFile.get( "GUID", "" ) 
@@ -92,9 +92,8 @@ class RegistrationTask( RequestTask ):
         if not res["OK"] or lfn in res["Value"]["Failed"]:
           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationAgent" )
           reason = res["Message"] if not res["OK"] else "registration in ReplicaManager failed"
-          errorStr = "Failed to register LFN %s: %s" % ( lfn, reason )
+          errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
           failed[lfn][targetSE] = reason
-          subRequestError = reason
           self.error( "registerFile: %s" % errorStr )
         else:
           self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegistrationAgent" )
@@ -102,15 +101,14 @@ class RegistrationTask( RequestTask ):
      
       if not failed[lfn]:
         requestObj.setSubRequestFileAttributeValue( index, "register", lfn, "Status", "Done")
-        self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )
+        self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )        
 
     ##################################################################
     ## all files were registered or no files at all in this subrequest
-    if not subRequestError:
+    if requestObj.isSubRequestDone( index, "register" ) or requestObj.isSubRequestEmpty( index, "register" ):
+      self.info("registerFile: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "register", "Done" )
-      self.debug( "registerFile: subrequest %d status has been set to 'Done'." % index )
-    else:
-      self.error( "registerFile: registration failed for LFNs: %s" % ", ".join( failed.keys() ) ) 
+
     ## return requestObj
     return S_OK( requestObj )
           

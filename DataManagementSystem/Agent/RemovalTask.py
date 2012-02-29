@@ -163,7 +163,8 @@ class RemovalTask( RequestTask ):
     self.addMark( "RemoveFileFail", filesFailed )
     
     ## no 'Waiting' or all 'Done'?
-    if requestObj.isSubRequestEmpty( index, "removal" ) or requestObj.isSubRequestDone( index, "removal" ):
+    if requestObj.isSubRequestDone( index, "removal" ) or requestObj.isSubRequestEmpty( index, "removal" ):
+      self.info("removeFile: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
       
     return S_OK( requestObj )
@@ -258,7 +259,8 @@ class RemovalTask( RequestTask ):
     self.addMark( "ReplicaRemovalFail", replicasFailed )
 
     ## no 'Waiting' files or all 'Done' 
-    if requestObj.isSubRequestEmpty( index, "removal" ) or requestObj.isSubRequestDone( index, "removal" ):
+    if requestObj.isSubRequestDone( index, "removal" ) or requestObj.isSubRequestEmpty( index, "removal" ):
+      self.info("replicaRemoval: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
       
     ## return requestObj at least
@@ -277,15 +279,14 @@ class RemovalTask( RequestTask ):
     targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
                              if targetSE.strip() ] ) )
     lfnsPfns = [ ( subFile["LFN"], subFile["PFN"], subFile["Status"] ) for subFile in subRequestFiles ]
-    subRequestError = False
+ 
     failed = {}
     for lfn, pfn, status in lfnsPfns:
       self.info("reTransfer: processing file %s" % lfn )
-      failed.setdefault( lfn, {} )
       if status != "Waiting":
         self.info("reTransfer: skipping file %s, status is %s" % ( lfn, status ) )
         continue 
-
+      failed.setdefault( lfn, {} )
       for targetSE in targetSEs:
         reTransfer = self.replicaManager().onlineRetransfer( targetSE, pfn )
         if reTransfer["OK"]:
@@ -294,20 +295,18 @@ class RemovalTask( RequestTask ):
           else:
             reason = reTransfer["Value"]["Failed"][pfn]
             self.error( "reTransfer: failed to set retransfer request for %s at %s: %s" % ( pfn, targetSE, reason ) )
-            failed[lfn][targetSE] = reTransfer["Value"]["Failed"][pfn]
-            subRequestError = True 
+            failed[lfn][targetSE] = reason
         else:
           self.error( "reTransfer: completely failed to retransfer: %s" % reTransfer["Message"] )
           failed[lfn][targetSE] = reTransfer["Message"]
-          subRequestError = True
-
       if not failed[lfn]:
         self.info("reTransfer: file %s sucessfully processed at all targetSEs" % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
-
-    if not subRequestError:
-      self.info("reTransfer: all files processed successfully, setting subrequest status to 'Done'")
+       
+    ## subrequest empty or all Files done?
+    if requestObj.isSubRequestDone( index, "removal" ) or requestObj.isSubRequestEmpty( index, "removal" ):
+      self.info("reTransfer: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
-      
+
     return S_OK( requestObj )
   
