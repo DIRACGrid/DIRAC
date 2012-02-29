@@ -212,9 +212,9 @@ class ResourceStatusHandler( RequestHandler ):
 ##      resQuery = rsDB.getPeriods( granularity, name, status, int( hours ) )
 ##      gLogger.info( "ResourceStatusHandler.getPeriods: got %s periods" % name )
 ##      return resQuery
-##    except RSSDBException, x:
+##    except Exception, x:
 ##      errorStr = whoRaised( x )
-##    except RSSException, x:
+##    except Exception, x:
 ##      errorStr = whoRaised( x )
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )
@@ -364,9 +364,9 @@ class ResourceStatusHandler( RequestHandler ):
 ##        finalDict['Extras'] = DT_links
 ##
 ##
-##      except RSSDBException, x:
+##      except Exception, x:
 ##        gLogger.error(whoRaised(x))
-##      except RSSException, x:
+##      except Exception, x:
 ##        gLogger.error(whoRaised(x))
 ##      gLogger.info("ResourceStatusHandler.getDownTimesWeb: got DT list")
 ##      return S_OK(finalDict)
@@ -401,9 +401,9 @@ class ResourceStatusHandler( RequestHandler ):
 ##                  serviceType, resourceType, tokenOwner, useNewRes)
 ##        pep.enforce(rsDBIn = rsDB)
 ##
-##      except RSSDBException, x:
+##      except Exception, x:
 ##        gLogger.error(whoRaised(x))
-##      except RSSException, x:
+##      except Exception, x:
 ##        gLogger.error(whoRaised(x))
 ##      gLogger.info("ResourceStatusHandler.enforcePolicies: enforced for %s: %s" % (granularity, name))
 ##      return S_OK("ResourceStatusHandler.enforcePolicies: enforced for %s: %s" % (granularity, name))
@@ -477,12 +477,12 @@ class ResourceStatusHandler( RequestHandler ):
 ##            pep.enforce(rsDBIn = rsDB)
 ##
 ##        res = publisher.getInfo(granularity, name, useNewRes)
-##      except InvalidRes, x:
+##      except Exception, x:
 ##        errorStr = "Invalid granularity"
 ##        gLogger.exception(whoRaised(x) + errorStr)
 ##        return S_ERROR(errorStr)
-##      except RSSException, x:
-##        errorStr = "RSSException"
+##      except Exception, x:
+##        errorStr = "Exception"
 ##        gLogger.exception(whoRaised(x) + errorStr)
 ##      gLogger.info("ResourceStatusHandler.publisher: got info for %s: %s" % (granularity, name))
 ##      return S_OK(res)
@@ -514,9 +514,9 @@ class ResourceStatusHandler( RequestHandler ):
 ##
 ##      gLogger.info( "ResourceStatusHandler.reAssignToken: re-assigned token %s: %s: %s" % ( granularity, name, requester ) )
 ##      return S_OK()
-##    except RSSDBException, x:
+##    except Exception, x:
 ##      errorStr = whoRaised( x )
-##    except RSSException, x:
+##    except Exception, x:
 ##      errorStr = whoRaised( x )
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )
@@ -548,9 +548,9 @@ class ResourceStatusHandler( RequestHandler ):
 ##      rsDB.setToken( granularity, name, tokenOwner, tokenNewExpiration )
 ##      gLogger.info( "ResourceStatusHandler.extendToken: extended token %s: %s for %i hours" % ( granularity, name, hrs ) )
 ##      return S_OK()
-##    except RSSDBException, x:
+##    except Exception, x:
 ##      errorStr = whoRaised( x )
-##    except RSSException, x:
+##    except Exception, x:
 ##      errorStr = whoRaised( x )
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )

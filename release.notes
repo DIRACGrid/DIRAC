@@ -1,4 +1,4 @@
-[v6r2-pre9]
+[v6r2-pre13]
 
 *Accounting
 CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
@@ -45,7 +45,8 @@ FIX: Removed useless decorator from RSS handlers
 CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects
         created if the system is InActive
 CHANGE: Removed ClientFastDec decorator, using a more verbose alternative.
-CHANGE: Removed useless usage of **kwargs on helper functions.        
+CHANGE: Removed useless usage of **kwargs on helper functions.  
+NEW: added getSESitesList method to RSSClient      
 
 *DataManagement
 CHANGE: refactoring of DMS agents executing requests, allow requests from arbitrary users
@@ -67,6 +68,7 @@ FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting re
 FIX: Failover registration request in the FTS agents.      
 FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed
      from the RequestManagement 
+FIX: StorageElement - check if SE has been properly initialized before executing any method     
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
@@ -77,6 +79,7 @@ FIX: Dirac.py - fix some type checking things
 FIX: removed dependency of the JobSchedulingAgent on RSS. Move the getSiteTier functionality to a new CS Helper.
 FIX: WMSAdministratorHandler - Replace StringType by StringTypes in the export methods argument type
 FIX: JobAgent - Set explicitly UseServerCertificate to "no" for the job executable
+NEW: dirac-pilot - change directory to $OSG_WN_TMP on OSG sites
 
 *Resources
 NEW: Added SSH Grid Engine Computing Element

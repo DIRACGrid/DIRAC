@@ -3,9 +3,6 @@
 ################################################################################
 __RCSID__  = "$Id$"
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-
 class JobsClient( object ):
   """ 
   JobResultsClient class is a client to get jobs' stats.
@@ -52,7 +49,8 @@ class PrivateJobsClient( object ):
 
     res = RPC.getSiteSummaryWeb( { 'Site' : name }, [] , 0, 500 )
     if not res[ 'OK' ]:
-      raise RSSException, where(self, self.getJobsSimpleEff) + " " + res['Message'] + " " + str(name)
+      print res[ 'Message' ]
+      return None
     else:
       res = res[ 'Value' ][ 'Records' ]
     

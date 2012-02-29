@@ -10,11 +10,10 @@ from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem.Utilities import CS
+from DIRAC.ResourceStatusSystem.Utilities                   import CS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
-from DIRAC.ResourceStatusSystem.Utilities                   import Utils
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
 class SeSInspectorAgent( AgentModule ):
@@ -32,9 +31,9 @@ class SeSInspectorAgent( AgentModule ):
   def initialize( self ):
 
     try:
-      self.rsClient            = ResourceStatusClient()
-      self.ServicesFreqs       = CS.getTypedDictRootedAt("CheckingFreqs/ServicesFreqs")
-      self.queue = Queue.Queue()
+      self.rsClient      = ResourceStatusClient()
+      self.ServicesFreqs = CS.getTypedDictRootedAt( 'CheckingFreqs/ServicesFreqs' )
+      self.queue         = Queue.Queue()
 
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
       self.threadPool         = ThreadPool( self.maxNumberOfThreads,
@@ -59,16 +58,20 @@ class SeSInspectorAgent( AgentModule ):
   def execute( self ):
 
     try:
-      meta = { "columns": [ 'ServiceName', 'StatusType', 'Status',
-                            'FormerStatus', 'SiteType',
-                            'ServiceType', 'TokenOwner' ]}
+      
+      kwargs = { 'meta' : {} }
+      kwargs['meta']['columns'] = [ 'ServiceName', 'StatusType', 'Status',
+                                    'FormerStatus', 'SiteType',
+                                    'ServiceType', 'TokenOwner' ]
+      kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
-      resQuery = Utils.unpack(
-        self.rsClient.getStuffToCheck( 'Service',
-                                       self.ServicesFreqs,
-                                       tokenOwner = "RS_SVC", meta = meta))
+      resQuery = self.rsClient.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
+      if not resQuery[ 'OK' ]:
+        self.log.error( resQuery[ 'Message' ] )
+        return resQuery
 
-      self.log.info( 'Found %d candidates to be checked.' % len(resQuery) )
+      resQuery = resQuery[ 'Value' ]
+      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
 
       for r in resQuery:
         resourceL = [ 'Service' ] + r

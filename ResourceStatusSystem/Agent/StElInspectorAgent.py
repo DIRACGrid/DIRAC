@@ -6,11 +6,11 @@ AGENT_NAME = 'ResourceStatus/StElInspectorAgent'
 
 import Queue, time
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
-from DIRAC.ResourceStatusSystem.Utilities import CS
+from DIRAC.ResourceStatusSystem.Utilities                   import CS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
@@ -32,7 +32,7 @@ class StElInspectorAgent( AgentModule ):
 
     try:
       self.rsClient                    = ResourceStatusClient()
-      self.StorageElementsFreqs        = CS.getTypedDictRootedAt("CheckingFreqs/StorageElementsFreqs")
+      self.StorageElementsFreqs        = CS.getTypedDictRootedAt( 'CheckingFreqs/StorageElementsFreqs' )
       self.StorageElementsToBeChecked  = Queue.Queue()
       self.StorageElementsNamesInCheck = []
 
@@ -50,7 +50,7 @@ class StElInspectorAgent( AgentModule ):
 
     except Exception:
       errorStr = "StElInspectorAgent initialization"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
 ################################################################################
@@ -60,9 +60,6 @@ class StElInspectorAgent( AgentModule ):
 
     try:
 
-#      kwargs = { 'meta' : { 'columns' : [ 'StorageElementName', 'StatusType', 'Status', \
-#                              'FormerStatus', 'SiteType', 'TokenOwner' ] } }
-
       kwargs = { 'meta' : {} }
       kwargs['meta']['columns'] = [ 'StorageElementName', 'StatusType',
                                     'Status', 'FormerStatus', 'SiteType', \
@@ -70,18 +67,17 @@ class StElInspectorAgent( AgentModule ):
       kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
       resQuery = self.rsClient.getStuffToCheck( 'StorageElement', self.StorageElementsFreqs, **kwargs )
+      if not resQuery[ 'OK' ]:
+        self.log.error( resQuery[ 'Message' ] )
+        return resQuery
 
-      gLogger.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
+      resQuery = resQuery[ 'Value' ]  
+      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
 
-      for seTuple in resQuery[ 'Value' ]:
-
-        #THIS IS IMPORTANT !!
-        #Ignore all elements with token != RS_SVC
-#        if seTuple[ 5 ] != 'RS_SVC':
-#          continue
+      for seTuple in resQuery:
 
         if ( seTuple[ 0 ], seTuple[ 1 ] ) in self.StorageElementsNamesInCheck:
-          gLogger.info( '%s(%s) discarded, already on the queue' % ( seTuple[ 0 ], seTuple[ 1 ] ) )
+          self.log.info( '%s(%s) discarded, already on the queue' % ( seTuple[ 0 ], seTuple[ 1 ] ) )
           continue
 
         resourceL = [ 'StorageElement' ] + seTuple
@@ -94,7 +90,7 @@ class StElInspectorAgent( AgentModule ):
 
     except Exception, x:
       errorStr = where( self, self.execute )
-      gLogger.exception( errorStr, lException = x )
+      self.log.exception( errorStr, lException = x )
       return S_ERROR( errorStr )
 
 ################################################################################
@@ -104,10 +100,10 @@ class StElInspectorAgent( AgentModule ):
     if self.StorageElementsNamesInCheck:
       _msg = "Wait for queue to get empty before terminating the agent (%d tasks)"
       _msg = _msg % len( self.StorageElementsNamesInCheck )
-      gLogger.info( _msg )
+      self.log.info( _msg )
       while self.StorageElementsNamesInCheck:
         time.sleep( 2 )
-      gLogger.info( "Queue is empty, terminating the agent..." )
+      self.log.info( "Queue is empty, terminating the agent..." )
     return S_OK()
 
 ################################################################################
@@ -135,7 +131,7 @@ class StElInspectorAgent( AgentModule ):
 
       try:
 
-        gLogger.info( "Checking StorageElement %s, with type/status: %s/%s" % \
+        self.log.info( "Checking StorageElement %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
 
         pepRes = pep.enforce( **pepDict )
@@ -149,7 +145,7 @@ class StElInspectorAgent( AgentModule ):
         self.StorageElementsNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
       except Exception:
-        gLogger.exception( 'StElInspector._executeCheck' )
+        self.log.exception( 'StElInspector._executeCheck' )
         try:
           self.StorageElementsNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:

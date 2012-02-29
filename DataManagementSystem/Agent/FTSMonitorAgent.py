@@ -148,7 +148,7 @@ class FTSMonitorAgent( AgentModule ):
       gLogger.error( 'Failed to get FileIDs associated to FTS Request', res['Message'] )
       return res
     fileIDs = res['Value']
-    res = self.TransferDB.getAttributesForFilesList( fileIDList, ['LFN'] )
+    res = self.TransferDB.getAttributesForFilesList( fileIDs, ['LFN'] )
     if not res['OK']:
       gLogger.error( 'Failed to get LFNs associated to FTS Request', res['Message'] )
       return res
@@ -160,7 +160,7 @@ class FTSMonitorAgent( AgentModule ):
     filesToRetry = []
     filesToFail = []
 
-    for fileID, fileDict in fileIDDict:
+    for fileID, fileDict in fileIDDict.items():
       lfn = fileDict['LFN']
       if lfn in completedFiles:
         completedFileIDs.append( fileID )
@@ -233,7 +233,7 @@ class FTSMonitorAgent( AgentModule ):
       regFailedFileIDs = []
       regDoneFileIDs = []
       regForgetFileIDs = []
-      for fileID, fileDict in fileIDDict:
+      for fileID, fileDict in fileIDDict.items():
         lfn = fileDict['LFN']
         if lfn in failedRegistrations:
           gLogger.info( 'Setting failed registration in FileToCat back to Waiting', lfn )
@@ -272,12 +272,17 @@ class FTSMonitorAgent( AgentModule ):
     return S_OK()
 
   def missingSource( self, failReason ):
-    missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
-                           'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
-                           'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
-                           'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
-                           'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
-                           'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist']
+    """ check if message sent by FTS server is concering missing source file 
+    
+    :param self: self reference
+    :param str failReason: message sent by FTS server
+    """
+    missingSourceErrors = [ 'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
+                            'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
+                            'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
+                            'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
+                            'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
+                            'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist' ]
     for error in missingSourceErrors:
       if re.search( error, failReason ):
         return 1

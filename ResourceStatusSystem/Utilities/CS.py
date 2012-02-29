@@ -28,28 +28,6 @@ def getValue(v, default):
   else:
     return Utils.typedobj_of_string(res)
 
-def getTypedDict(sectionPath):
-  """
-  DEPRECATED: use getTypedDictRootedAt instead. This function does
-  probably not do what you want.
-
-  Wrapper around gConfig.getOptionsDict. Returns a dict where values are
-  typed instead of a dict where values are strings."""
-  def typed_dict_of_dict(d):
-    for k in d:
-      if type(d[k]) == dict:
-        d[k] = typed_dict_of_dict(d[k])
-      else:
-        if d[k].find(",") > -1:
-          d[k] = [Utils.typedobj_of_string(e) for e in List.fromChar(d[k])]
-        else:
-          d[k] = Utils.typedobj_of_string(d[k])
-    return d
-
-  res = gConfig.getOptionsDict(g_BaseConfigSection + "/" + sectionPath)
-  if res['OK'] == False: raise CSError, res['Message']
-  else:                  return typed_dict_of_dict(res['Value'])
-
 def getTypedDictRootedAt(relpath = "", root = g_BaseConfigSection):
   """Gives the configuration rooted at path in a Python dict. The
   result is a Python dictionnary that reflects the structure of the
@@ -125,8 +103,12 @@ def getLFCSites():
   return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
                              % g_BaseResourcesSection, True))
 
-def getLFCNode( sites = getLFCSites(),
+def getLFCNode( sites = None,
                 readable = ('ReadOnly', 'ReadWrite')):
+  
+  if sites is None:
+    sites = getLFCSites()
+  
   def getLFCURL(site, mode):
     return gConfig.getValue("%s/FileCatalogs/LcgFileCatalogCombined/%s/%s"
                             % ((g_BaseResourcesSection, site, mode)), "")
@@ -137,7 +119,6 @@ def getLFCNode( sites = getLFCSites(),
   node = [[getLFCURL(site, r) for r in readable] for site in sites]
   node = [url for urlgroup in node for url in urlgroup] # Flatten the list
   return [n for n in node if n != ""]                   # Filter empty string
-
 
 # Storage Elements functions ########
 

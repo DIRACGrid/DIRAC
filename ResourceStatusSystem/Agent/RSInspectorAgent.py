@@ -6,7 +6,7 @@ AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
 
 import Queue, time
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
@@ -14,7 +14,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
-from DIRAC.ResourceStatusSystem.Utilities import CS
+from DIRAC.ResourceStatusSystem.Utilities                   import CS
 
 class RSInspectorAgent( AgentModule ):
   """
@@ -32,7 +32,7 @@ class RSInspectorAgent( AgentModule ):
 
     try:
       self.rsClient             = ResourceStatusClient()
-      self.ResourcesFreqs       = CS.getTypedDictRootedAt("CheckingFreqs/ResourcesFreqs")
+      self.ResourcesFreqs       = CS.getTypedDictRootedAt( 'CheckingFreqs/ResourcesFreqs' )
       self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
 
@@ -50,7 +50,7 @@ class RSInspectorAgent( AgentModule ):
 
     except Exception:
       errorStr = "RSInspectorAgent initialization"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
 ################################################################################
@@ -67,18 +67,17 @@ class RSInspectorAgent( AgentModule ):
       kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
       resQuery = self.rsClient.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
+      if not resQuery[ 'OK' ]:
+        self.log.error( resQuery[ 'Message' ] )
+        return resQuery
 
-      gLogger.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
+      resQuery = resQuery[ 'Value' ]  
+      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
 
-      for resourceTuple in resQuery[ 'Value' ]:
-
-        #THIS IS IMPORTANT !!
-        #Ignore all elements with token != RS_SVC
-        #if resourceTuple[ 6 ] != 'RS_SVC':
-        #  continue
+      for resourceTuple in resQuery:
 
         if ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) in self.ResourceNamesInCheck:
-          gLogger.info( '%s(%s) discarded, already on the queue' % ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
+          self.log.info( '%s(%s) discarded, already on the queue' % ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
           continue
 
         resourceL = [ 'Resource' ] + resourceTuple
@@ -90,7 +89,7 @@ class RSInspectorAgent( AgentModule ):
 
     except Exception, x:
       errorStr = where( self, self.execute )
-      gLogger.exception( errorStr,lException=x )
+      self.log.exception( errorStr,lException=x )
       return S_ERROR( errorStr )
 
 ################################################################################
@@ -100,10 +99,10 @@ class RSInspectorAgent( AgentModule ):
     if self.ResourceNamesInCheck:
       _msg = "Wait for queue to get empty before terminating the agent (%d tasks)"
       _msg = _msg % len( self.ResourceNamesInCheck )
-      gLogger.info( _msg )
+      self.log.info( _msg )
       while self.ResourceNamesInCheck:
         time.sleep( 2 )
-      gLogger.info( "Queue is empty, terminating the agent..." )
+      self.log.info( "Queue is empty, terminating the agent..." )
     return S_OK()
 
 ################################################################################
@@ -146,7 +145,7 @@ class RSInspectorAgent( AgentModule ):
         self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
       except Exception:
-        gLogger.exception( "RSInspector._executeCheck Checking Resource %s, with type/status: %s/%s" % \
+        self.log.exception( "RSInspector._executeCheck Checking Resource %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
         try:
           self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )

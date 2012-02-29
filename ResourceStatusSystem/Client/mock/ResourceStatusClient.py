@@ -4,8 +4,6 @@ from DIRAC.ResourceStatusSystem                             import ValidRes,\
   ValidStatus, ValidStatusTypes, ValidSiteType, ValidServiceType, \
   ValidResourceType 
 
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientFastDec
-
 class ResourceStatusClient( object ):
   
   def __init__( self, serviceIn = None):
@@ -15,21 +13,16 @@ class ResourceStatusClient( object ):
     else:
       self.gate = serviceIn
           
-  @ClientFastDec
   def insertSite( self, siteName, siteType, gridSiteName, **kwargs ):
     return locals()
-  @ClientFastDec
   def updateSite( self, siteName, siteType, gridSiteName, **kwargs ):
     return locals()
-  @ClientFastDec
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
                **kwargs ):
     return locals()
-  @ClientFastDec
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
                   **kwargs ):
     return locals()      
-  @ClientFastDec
   def getSitePresent( self, siteName = None, siteType = None, 
                       gridSiteName = None, gridTier = None, statusType = None, 
                       status = None, dateEffective = None, reason = None, 
@@ -42,21 +35,16 @@ class ResourceStatusClient( object ):
   # SERVICE FUNCTIONS
   ##############################################################################
   '''
-  @ClientFastDec
   def insertService( self, serviceName, serviceType, siteName, **kwargs ):
     return locals()
-  @ClientFastDec
   def updateService( self, serviceName, serviceType, siteName, **kwargs ):
     return locals()
-  @ClientFastDec
   def getService( self, serviceName = None, serviceType = None, siteName = None, 
                   **kwargs ):
     return locals()
-  @ClientFastDec
   def deleteService( self, serviceName = None, serviceType = None, 
                      siteName = None, **kwargs ):
     return locals()
-  @ClientFastDec  
   def getServicePresent( self, serviceName = None, siteName = None, 
                          siteType = None, serviceType = None, statusType = None, 
                          status = None, dateEffective = None, reason = None, 
@@ -70,25 +58,20 @@ class ResourceStatusClient( object ):
   # RESOURCE FUNCTIONS
   ##############################################################################
   '''
-  @ClientFastDec
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, **kwargs ):
     return locals()
-  @ClientFastDec
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
                       gridSiteName, **kwargs ):
     return locals()
-  @ClientFastDec
   def getResource( self, resourceName = None, resourceType = None, 
                    serviceType = None, siteName = None, gridSiteName = None, 
                    **kwargs ):
     return locals()
-  @ClientFastDec
   def deleteResource( self, resourceName = None, resourceType = None, 
                       serviceType = None, siteName = None, gridSiteName = None, 
                       **kwargs ):
-    return locals()
-  @ClientFastDec      
+    return locals() 
   def getResourcePresent( self, resourceName = None, siteName = None, 
                           serviceType = None, gridSiteName = None, 
                           siteType = None, resourceType = None, 
@@ -104,24 +87,19 @@ class ResourceStatusClient( object ):
   # STORAGE ELEMENT FUNCTIONS
   ##############################################################################
   '''
-  @ClientFastDec
   def insertStorageElement( self, storageElementName, resourceName, 
                             gridSiteName, **kwargs ):
     return locals()
-  @ClientFastDec
   def updateStorageElement( self, storageElementName, resourceName, 
                             gridSiteName, **kwargs ):
-    return locals()
-  @ClientFastDec       
+    return locals()    
   def getStorageElement( self, storageElementName = None, resourceName = None, 
                          gridSiteName = None, **kwargs ):
-    return locals()
-  @ClientFastDec       
+    return locals()    
   def deleteStorageElement( self, storageElementName = None, 
                             resourceName = None, gridSiteName = None, 
                             **kwargs ):
-    return locals()    
-  @ClientFastDec      
+    return locals()       
   def getStorageElementPresent( self, storageElementName = None, 
                                 resourceName = None, gridSiteName = None, 
                                 siteType = None, statusType = None, 
@@ -136,16 +114,12 @@ class ResourceStatusClient( object ):
   # GRID SITE FUNCTIONS
   ##############################################################################
   '''
-  @ClientFastDec
   def insertGridSite( self, gridSiteName, gridTier, **kwargs ):
     return locals()
-  @ClientFastDec
   def updateGridSite( self, gridSiteName, gridTier, **kwargs ):
-    return locals()
-  @ClientFastDec    
+    return locals() 
   def getGridSite( self, gridSiteName = None, gridTier = None, **kwargs ):
-    return locals()
-  @ClientFastDec    
+    return locals() 
   def deleteGridSite( self, gridSiteName = None, gridTier = None, **kwargs ):        
     return locals()
 
@@ -154,26 +128,22 @@ class ResourceStatusClient( object ):
   # ELEMENT STATUS FUNCTIONS
   ##############################################################################
   '''
-  @ClientFastDec
   def insertElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
                            **kwargs ): 
     return locals()
-  @ClientFastDec
   def updateElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
                            **kwargs ):
     return locals()
-  @ClientFastDec
   def getElementStatus( self, element, elementName = None, statusType = None, 
                         status = None, reason = None, dateCreated = None, 
                         dateEffective = None, dateEnd = None, 
                         lastCheckTime = None, tokenOwner = None, 
                         tokenExpiration = None, **kwargs ):
     return locals()
-  @ClientFastDec
   def deleteElementStatus( self, element, elementName = None, statusType = None, 
                            status = None, reason = None, dateCreated = None, 
                            dateEffective = None, dateEnd = None, 
@@ -186,19 +156,16 @@ class ResourceStatusClient( object ):
   # ELEMENT SCHEDULED STATUS FUNCTIONS
   ##############################################################################
   '''
-  @ClientFastDec
   def insertElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
                                     tokenExpiration, **kwargs ): 
     return locals()
-  @ClientFastDec
   def updateElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
                                     tokenExpiration, **kwargs ):
     return locals()
-  @ClientFastDec
   def getElementScheduledStatus( self, element, elementName = None, 
                                  statusType = None, status = None, 
                                  reason = None, dateCreated = None, 
@@ -206,7 +173,6 @@ class ResourceStatusClient( object ):
                                  lastCheckTime = None, tokenOwner = None, 
                                  tokenExpiration = None, **kwargs ):
     return locals()
-  @ClientFastDec
   def deleteElementScheduledStatus( self, element, elementName = None, 
                                     statusType = None, status = None, 
                                     reason = None, dateCreated = None,
@@ -220,26 +186,22 @@ class ResourceStatusClient( object ):
   # ELEMENT HISTORY FUNCTIONS
   ##############################################################################
   '''
-  @ClientFastDec
   def insertElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
                             **kwargs ): 
     return locals()
-  @ClientFastDec
   def updateElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
                             **kwargs ):
     return locals()
-  @ClientFastDec
   def getElementHistory( self, element, elementName = None, statusType = None, 
                          status = None, reason = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, 
                          lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, **kwargs ):
     return locals()
-  @ClientFastDec
   def deleteElementHistory( self, element, elementName = None, 
                             statusType = None, status = None, reason = None, 
                             dateCreated = None, dateEffective = None, 

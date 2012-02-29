@@ -354,6 +354,9 @@ class FileMetadata:
 
     start = time.time()
 
+    if not path:
+      path = '/'
+
     result = self.db.dmeta.findDirIDsByMetadata( metaDict, path, credDict )
     if not result['OK']:
       return result
@@ -370,6 +373,9 @@ class FileMetadata:
       if key in result['Value']:
         fileMetaDict[key] = value
 
+    fileList = []
+    lfnList = []
+
     if dirFlag == "None":
       return S_OK([])
     elif dirFlag == "All":
@@ -383,16 +389,18 @@ class FileMetadata:
         return S_OK(lfnList)  
       else:
         return S_OK([])
-     
-    fileList = []
-    lfnList = []
+
     if fileMetaDict:
       result = self.__findFilesByMetadata( fileMetaDict,dirList,credDict )
       if not result['OK']:
         return result
       fileList = result['Value']
-      if fileList:
-        result = self.db.fileManager._getFileLFNs(fileList)
-        lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
+    else:
+      result = self.db.dtree.getFileLFNsInDirectoryByDirectory( dirList, credDict )
+      return result
+
+    if fileList:
+      result = self.db.fileManager._getFileLFNs(fileList)
+      lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
 
     return S_OK( lfnList )

@@ -11,8 +11,7 @@
     :synopsis: base class for requests execution in separate subprocesses
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    Base class for requests execution in separate subprocesses.
-
+    Base class for requests execution in a separate subprocesses.
 """
 
 __RCSID__ = "$Id $"
@@ -43,6 +42,7 @@ class RequestTask( object ):
   All currently proxied tools are::
   
   DataLoggingClient -- self.dataLoggingClient()
+  Registry          -- self.registry() (CS helper)
   ReplicaManager    -- self.replicaManager()
   RequestClient     -- self.requestClient()
   RequestDBMySQL    -- self.requestDBMySQL()
@@ -75,7 +75,7 @@ class RequestTask( object ):
 
   Concering :MonitringClient: (or better known its global instance :gMonitor:), if someone wants to send 
   some metric over there, she has to put in agent's code registration of activity and then in a particular 
-  task use :RequestTask.addMark: to save monitoring data. All monitored activities  are held in 
+  task use :RequestTask.addMark: to save monitoring data. All monitored activities are held in 
   :RequestTask.__monitor: dict which at the end of processing is returned from :RequestTask.__call__:. 
   The values are then processed and pushed to the gMonitor instance in the default callback function.
   """
@@ -101,11 +101,9 @@ class RequestTask( object ):
   ## a dictonary 
   ## "operation" => methodToRun
   ## 
-  __operationDispatcher = { } 
-  ## holder of dataManager DN
-  __dataManagerDN = None
-  ## holder of dataManager group
-  __dataManagerGroup = None
+  __operationDispatcher = {} 
+  ## holder for DataManager proxy file
+  __dataManagerProxy = None
   ## monitoring dict
   __monitor = {} 
 
@@ -134,11 +132,7 @@ class RequestTask( object ):
 
     ## DIRAC fixtures
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
-
-    self.__log = gLogger.getSubLogger( self.__class__.__name__ )
-    #self.__log.initialize( self.__class__.__name__, os.path.join( configPath, self.__class__.__name__ ) )
-    #self.__log = gLogger.getSubLogger( self.__class__.__name__ )
-    #self.__log.showHeaders( True ) #  = gLogger.getSubLogger( self.__class__.__name__ )
+    self.__log = gLogger.getSubLogger( "%s/%s" % ( self.__class__.__name__, str(requestName) ) )
 
     self.always = self.__log.always
     self.notice = self.__log.notice
@@ -152,6 +146,7 @@ class RequestTask( object ):
     from DIRAC import S_OK, S_ERROR
     from DIRAC.ConfigurationSystem.Client.Config import gConfig
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
+    from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 
     ## export DIRAC global tools and functions
     self.makeGlobal( "S_OK", S_OK )
@@ -159,17 +154,21 @@ class RequestTask( object ):
     self.makeGlobal( "gLogger", gLogger )
     self.makeGlobal( "gConfig", gConfig )
     self.makeGlobal( "gProxyManager", gProxyManager ) 
-    
+    self.makeGlobal( "getGroupsWithVOMSAttribute", getGroupsWithVOMSAttribute )
+
     ## save request string
     self.requestString = requestString
     ## build request object
     from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
     self.requestObj = RequestContainer( init = False )
     self.requestObj.parseRequest( request = self.requestString )
-    
+    ## save request name
     self.requestName = requestName
+    ## .. and jobID
     self.jobID = jobID
+    ## .. and execution order
     self.executionOrder = executionOrder
+    ## .. and source server URI
     self.sourceServer = sourceServer
 
     ## save config path 
@@ -181,11 +180,17 @@ class RequestTask( object ):
     ## clear monitoring
     self.__monitor = {}
     ## save DataManager proxy
-    self.__dataManagerProxy = None
     if "X509_USER_PROXY" in os.environ:
       self.info("saving path to current proxy file")
       self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
-      
+
+  def dataManagerProxy( self ):
+    """ get dataManagerProxy file 
+
+    :param self: self reference
+    """
+    return self.__dataManagerProxy
+
   def addMark( self, name, value = 1 ):
     """ add mark to __monitor dict
     
@@ -374,6 +379,10 @@ class RequestTask( object ):
     if not ownerGroup["OK"]:
       return ownerGroup
     ownerGroup = ownerGroup["Value"]
+    
+    ## save request owner
+    self.requestOwnerDN = ownerDN if ownerDN else ""
+    self.requestOwnerGroup = ownerGroup if ownerGroup else ""
 
     #################################################################
     ## change proxy
@@ -381,20 +390,35 @@ class RequestTask( object ):
     if ownerDN and ownerGroup:
       ownerProxyFile = self.changeProxy( ownerDN, ownerGroup )
       if not ownerProxyFile["OK"]:
+        self.error( "handleReuqest: unable to get proxy for '%s'@'%s': %s" % ( ownerDN, ownerGroup, ownerProxyFile["Message"] ) )
+        update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
+        if not update["OK"]:
+          self.error( "handleRequest: error when updating request: %s" % update["Message"] )
+          return update
         return ownerProxyFile
       ownerProxyFile = ownerProxyFile["Value"]
+      #self.ownerProxyFile = ownerProxyFile
       self.info( "Will execute request for '%s'@'%s' using proxy file %s" % ( ownerDN, ownerGroup, ownerProxyFile ) )
     else:
       self.info( "Will execute request for DataManager using her/his proxy")
 
     #################################################################
     ## execute handlers
+    ret = { "OK" : False, "Message" : "" }
     try:
       ret = self.handleRequest()
     finally: 
       ## delete owner proxy
       if self.__dataManagerProxy:
         os.environ["X509_USER_PROXY"] = self.__dataManagerProxy
+      if not ret["OK"]:
+        self.error( "handleRequest: error during request processing: %s" % ret["Message"] )
+        self.error( "handleRequest: will put original request back" )
+        update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
+        if not update["OK"]:
+          self.error( "handleRequest: error when putting back request: %s" % update["Message"] )
+          
+    ## return at least
     return ret
 
   def handleRequest( self ):
@@ -410,7 +434,7 @@ class RequestTask( object ):
     res = self.requestObj.getNumSubRequests( self.__requestType )
     if not res["OK"]:
       errMsg = "handleRequest: failed to obtain number of '%s' subrequests." % self.__requestType
-      self.error( errMsg, res["Message"]  )
+      self.error( errMsg, res["Message"] )
       return S_ERROR( res["Message"] )
 
     ## flag to mark that some modifications has been done in Request
@@ -437,7 +461,7 @@ class RequestTask( object ):
           self.error( "handleRequest: '%s' operation not supported, request finalisation is disabled" % operation )
           canFinalize = False
         else:
-          self.info( "handleRequest: will execute %s '%s' subrequest." % ( str(index), operation ) )
+          self.info( "handleRequest: will execute %s '%s' subrequest" % ( str(index), operation ) )
 
           ################################################
           #  Determine whether there are any active files
@@ -468,7 +492,7 @@ class RequestTask( object ):
               canFinalize = False 
             else:
               if not subRequestDone["Value"]:
-                self.warn("handleRequest: subrequest %s is not done yet, request finalisation is disabled" % str(index) )
+                self.warn("handleRequest: subrequest %s is not done yet, finalisation is disabled" % str(index) )
                 canFinalize = False
 
           if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
@@ -478,22 +502,33 @@ class RequestTask( object ):
     ################################################
     #  Generate the new request string after operation
     newRequestString = self.requestObj.toXML()['Value']
-    if self.requestString != newRequestString:
-      update = self.requestClient().updateRequest( self.requestName, newRequestString, self.sourceServer )
-      if not update["OK"]:
-        self.error( "handleRequest: error when updating request: %s" % update["Message"] )
-        return update
-      ## finalize request if jobID is present
-      if self.jobID and canFinalize and requestObj.isRequestDone():
-        finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
-        if not finalize["OK"]:
-          self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
-          return finalize
+    update = self.putBackRequest( self.requestName, newRequestString, self.sourceServer )
+    if not update["OK"]:
+      self.error( "handleRequest: error when updating request: %s" % update["Message"] )
+      return update
+    ## finalize request if jobID is present
+    if self.jobID and canFinalize and self.requestObj.isRequestDone():
+      finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
+      if not finalize["OK"]:
+        self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
+        return finalize
 
     ## for gMonitor    
     self.addMark( "Done", 1 )
 
     ## should  return S_OK with monitor dict
     return S_OK( { "monitor" : self.monitor() } )
-
  
+  def putBackRequest( self, requestName, requestString, sourceServer ):
+    """ put request back
+
+    :param self: self reference
+    :param str requestName: request name
+    :param str requestString: XML-serilised request
+    :param str sourceServer: request server URL
+    """
+    update = self.requestClient().updateRequest( requestName, requestString, sourceServer )
+    if not update["OK"]:
+      self.error( "putBackRequest: error when updating request: %s" % update["Message"] )
+      return update
+    return S_OK()

@@ -1978,6 +1978,26 @@ class ResourceStatusClient:
       
     return S_OK( tree )  
 
+  def getSESitesList( self ):
+       
+    kwargs = { 'statusType' : 'Read', 'meta' : { 'columns' : 'GridSiteName' } }
+    elements = self._getElement( 'StorageElementPresent', kwargs )
+
+    from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
+    res = set( [] )
+    if not elements[ 'OK' ]:
+      return S_OK( [] )
+    
+    elements = elements[ 'Value' ]
+    for gSite in elements:
+      
+      dSite = getDIRACSiteName( gSite[ 0 ] ).setdefault( 'Value', [] )
+      for ds in dSite:
+        res.add( ds )
+    
+    res = list( res )
+    return S_OK( res )        
+
   def getMonitoredStatus( self, granularity, name ):
     '''
     Gets from <granularity>Present the present status of name.
@@ -2181,7 +2201,6 @@ class ResourceStatusClient:
             GridSiteName = resource[ 3 ]  #self.getGridSiteName(granularity, resource[0])
             DIRACsites = getDIRACSiteName( GridSiteName )
             if not DIRACsites[ 'OK' ]:
-              #raise RSSException, 'Error executing getDIRACSiteName'
               return S_ERROR( 'Error executing getDIRACSiteName' )
             DIRACsites = DIRACsites[ 'Value' ]
             DIRACsite_comp = ''
@@ -2254,7 +2273,6 @@ class ResourceStatusClient:
         for storageElement in storageElementsList[ 'Value' ]:
           DIRACsites = getDIRACSiteName( storageElement[ 2 ] )
           if not DIRACsites[ 'OK' ]:
-            #raise RSSException, 'Error executing getDIRACSiteName'
             return S_ERROR( 'Error executing getDIRACSiteName' )
           DIRACsites = DIRACsites[ 'Value' ]
           DIRACsite_comp = ''
