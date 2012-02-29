@@ -99,7 +99,12 @@ class RemovalTask( RequestTask ):
     :param dict subRequestAttrs: subRequest's attributes
     :param dict subRequestFiles: subRequest's files
     """
-    self.info( "removeFile: processing subrequest %s" % index  )
+    self.info( "removeFile: processing subrequest %s" % index )
+    if requestObj.isSubRequestEmpty( index, "removal" ):
+      self.info("removeFile: subrequest %s is empty, setting its status to 'Done'" % index )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
+      return S_OK( requestObj )
+
     lfns = [ str( subRequestFile["LFN"] ) for subRequestFile in subRequestFiles 
              if subRequestFile["Status"] == "Waiting" and  str( subRequestFile["LFN"] ) ]
     self.debug( "removeFile: about to remove %d files" % len(lfns) )
@@ -178,6 +183,12 @@ class RemovalTask( RequestTask ):
     :param dict subRequestAttrs: subRequest's attributes
     :param dict subRequestFiles: subRequest's files
     """
+    self.info( "replicaRemoval: processing subrequest %s" % index )
+    if requestObj.isSubRequestEmpty( index, "removal" ):
+      self.info("replicaRemoval: subrequest %s is empty, setting its status to 'Done'" % index )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
+      return S_OK( requestObj )
+
     targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
                             if targetSE.strip() ] ) )
     lfns =  [ str( subRequestFile["LFN"] ) for subRequestFile in subRequestFiles 
@@ -276,6 +287,11 @@ class RemovalTask( RequestTask ):
     :param dict subRequestFiles: subRequest's files    
     """
     self.info("reTransfer: processing subrequest %s" % index )
+    if requestObj.isSubRequestEmpty( index, "removal" ):
+      self.info("registerFile: subrequest %s is empty, setting its status to 'Done'" % index )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
+      return S_OK( requestObj )
+
     targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
                              if targetSE.strip() ] ) )
     lfnsPfns = [ ( subFile["LFN"], subFile["PFN"], subFile["Status"] ) for subFile in subRequestFiles ]
