@@ -288,7 +288,7 @@ class RemovalTask( RequestTask ):
     """
     self.info("reTransfer: processing subrequest %s" % index )
     if requestObj.isSubRequestEmpty( index, "removal" ):
-      self.info("registerFile: subrequest %s is empty, setting its status to 'Done'" % index )
+      self.info("reTransfer: subrequest %s is empty, setting its status to 'Done'" % index )
       requestObj.setSubRequestStatus( index, "removal", "Done" )
       return S_OK( requestObj )
 
