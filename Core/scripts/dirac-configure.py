@@ -400,6 +400,7 @@ if not useServerCert:
 else:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
 
 if includeAllServers:
   DIRAC.gConfig.setOptionValue( '/DIRAC/Configuration/Servers', ','.join( DIRAC.gConfig.getServersList() ) )
