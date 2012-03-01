@@ -42,12 +42,9 @@ class RequestTask( object ):
   All currently proxied tools are::
   
   DataLoggingClient -- self.dataLoggingClient()
-  Registry          -- self.registry() (CS helper)
   ReplicaManager    -- self.replicaManager()
   RequestClient     -- self.requestClient()
-  RequestDBMySQL    -- self.requestDBMySQL()
   StorageFactory    -- self.storageFactory()
-  TransferDB        -- self.transferDB()
 
   SubLogger message handles for all levels are also proxied, so you can directly use them in your code, i.e.::
 
@@ -86,16 +83,17 @@ class RequestTask( object ):
   __dataLoggingClient = None
   ## reference to RequestClient
   __requestClient = None
-  ## reference to RequestDbMySQL
-  __requestDBMySQL = None
-  ## reference to TransferDB itself
-  __transferDB = None
   ## reference to StotageFactory
   __storageFactory = None
   ## subLogger 
   __log = None
   ## request type 
   __requestType = None
+  ## placeholder for request owner DB
+  requestOwnerDN = None
+  ## placeholder for Request owner group
+  requestOwnerGroup = None
+ 
 
   ## operation dispatcher for SubRequests, 
   ## a dictonary 
@@ -272,26 +270,6 @@ class RequestTask( object ):
     return cls.__requestClient
 
   @classmethod
-  def requestDBMySQL( cls ):
-    """ RequestDBMySQL getter
-    :param cls: class reference
-    """
-    if not cls.__requestDBMySQL:
-      from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
-      cls.__requestDBMySQL = RequestDBMySQL()
-    return cls.__requestDBMySQL
-
-  @classmethod
-  def transferDB( cls ):
-    """ TransferDB getter
-    :param cls: class reference
-    """
-    if not cls.__transferDB:
-      from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-      cls.__transferDB = TransferDB()
-    return cls.__transferDB
-
-  @classmethod
   def storageFactory( cls ):
     """ StorageFactory getter
 
@@ -390,7 +368,9 @@ class RequestTask( object ):
     if ownerDN and ownerGroup:
       ownerProxyFile = self.changeProxy( ownerDN, ownerGroup )
       if not ownerProxyFile["OK"]:
-        self.error( "handleReuqest: unable to get proxy for '%s'@'%s': %s" % ( ownerDN, ownerGroup, ownerProxyFile["Message"] ) )
+        self.error( "handleReuqest: unable to get proxy for '%s'@'%s': %s" % ( ownerDN, 
+                                                                               ownerGroup, 
+                                                                               ownerProxyFile["Message"] ) )
         update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
         if not update["OK"]:
           self.error( "handleRequest: error when updating request: %s" % update["Message"] )
@@ -465,10 +445,10 @@ class RequestTask( object ):
 
           ################################################
           #  Determine whether there are any active files
-          if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
-            self.info("handleRequest: subrequest is empty, will set its status to 'Done'")
-            self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
-            continue
+          #if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
+          #  self.info("handleRequest: subrequest is empty, will set its status to 'Done'")
+          #  self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
+          #  continue
           ## get files
           subRequestFiles = self.requestObj.getSubRequestFiles( index, self.__requestType )["Value"]          
           ## execute operation action
@@ -495,9 +475,9 @@ class RequestTask( object ):
                 self.warn("handleRequest: subrequest %s is not done yet, finalisation is disabled" % str(index) )
                 canFinalize = False
 
-          if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
-            self.info("handleRequest: no more waiting files in subrequest, will set its status to 'Done'")
-            self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
+          #if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
+          #  self.info("handleRequest: no more waiting files in subrequest, will set its status to 'Done'")
+          #  self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
 
     ################################################
     #  Generate the new request string after operation
@@ -507,7 +487,7 @@ class RequestTask( object ):
       self.error( "handleRequest: error when updating request: %s" % update["Message"] )
       return update
     ## finalize request if jobID is present
-    if self.jobID and canFinalize and self.requestObj.isRequestDone():
+    if self.jobID and canFinalize and self.requestObj.isRequestDone()["Value"]:
       finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
       if not finalize["OK"]:
         self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )

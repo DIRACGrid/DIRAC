@@ -99,7 +99,12 @@ class RemovalTask( RequestTask ):
     :param dict subRequestAttrs: subRequest's attributes
     :param dict subRequestFiles: subRequest's files
     """
-    self.info( "removeFile: processing subrequest %s" % index  )
+    self.info( "removeFile: processing subrequest %s" % index )
+    if requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
+      self.info("removeFile: subrequest %s is empty, setting its status to 'Done'" % index )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
+      return S_OK( requestObj )
+
     lfns = [ str( subRequestFile["LFN"] ) for subRequestFile in subRequestFiles 
              if subRequestFile["Status"] == "Waiting" and  str( subRequestFile["LFN"] ) ]
     self.debug( "removeFile: about to remove %d files" % len(lfns) )
@@ -113,8 +118,11 @@ class RemovalTask( RequestTask ):
         if not self.requestOwnerDN:
           getProxyForLFN = self.getProxyForLFN( lfn )
           if not getProxyForLFN["OK"]:
-            ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
-            self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+            if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
+              removalStatus[lfn] = ""
+            else:
+              ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
+              self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
             continue
         removal = self.replicaManager().removeFile( lfn )
       finally:
@@ -152,17 +160,17 @@ class RemovalTask( RequestTask ):
         fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", error[:255] )
         if not fileError["OK"]:
           self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
-        updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )
-        if not updateStatus["OK"]:
-          self.error("removeFile: unable to change status to 'Failed' for %s" % lfn )
-          
+           
     self.addMark( "RemoveFileDone", filesRemoved )
     self.addMark( "RemoveFileFail", filesFailed )
     
-    ## no 'Waiting' or all 'Done'?
-    if requestObj.isSubRequestEmpty( index, "removal" ) or requestObj.isSubRequestDone( index, "removal" ):
+    ## all 'Done'?
+    if requestObj.isSubRequestDone( index, "removal" )["Value"]:
+      self.info("removeFile: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
-      
+    elif filesFailed:
+      self.info("removeFile: all files processed, %s files failed to remove" % filesFailed )
+
     return S_OK( requestObj )
 
   def replicaRemoval( self, index, requestObj, subRequestAttrs, subRequestFiles ):
@@ -174,6 +182,12 @@ class RemovalTask( RequestTask ):
     :param dict subRequestAttrs: subRequest's attributes
     :param dict subRequestFiles: subRequest's files
     """
+    self.info( "replicaRemoval: processing subrequest %s" % index )
+    if requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
+      self.info("replicaRemoval: subrequest %s is empty, setting its status to 'Done'" % index )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
+      return S_OK( requestObj )
+
     targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
                             if targetSE.strip() ] ) )
     lfns =  [ str( subRequestFile["LFN"] ) for subRequestFile in subRequestFiles 
@@ -187,17 +201,18 @@ class RemovalTask( RequestTask ):
 
     ## loop over LFNs
     for lfn in lfns:
-
       self.info("replicaRemoval: processing file %s" % lfn )
       try:
         ## are you DataManager?
         if not self.requestOwnerDN:
           getProxyForLFN = self.getProxyForLFN( lfn )
           if not getProxyForLFN["OK"]:
-            ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
-            self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+            if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
+              removalStatus[lfn] = dict.fromkeys( targetSEs, "" )
+            else:
+              ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
+              self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
             continue
-
         ## loop over targetSEs
         for targetSE in targetSEs:
           ## prepare status dict
@@ -246,17 +261,17 @@ class RemovalTask( RequestTask ):
       fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", fileError )
       if not fileError["OK"]:
         self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
-      updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )
-      if not updateStatus["OK"]:
-        self.error( "replicaRemoval: error setting status to 'Failed' for %s" % lfn )
-
+ 
     self.addMark( "ReplicaRemovalDone", replicasRemoved )
     self.addMark( "ReplicaRemovalFail", replicasFailed )
 
     ## no 'Waiting' files or all 'Done' 
-    if requestObj.isSubRequestEmpty( index, "removal" ) or requestObj.isSubRequestDone( index, "removal" ):
+    if requestObj.isSubRequestDone( index, "removal" )["Value"]:
+      self.info("replicaRemoval: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
-      
+    elif replicasFailed:
+      self.info("replicaRemoval: all files processed, failed to remove %s replicas" % replicasFailed )
+
     ## return requestObj at least
     return S_OK( requestObj )
 
@@ -270,18 +285,22 @@ class RemovalTask( RequestTask ):
     :param dict subRequestFiles: subRequest's files    
     """
     self.info("reTransfer: processing subrequest %s" % index )
+    if requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
+      self.info("reTransfer: subrequest %s is empty, setting its status to 'Done'" % index )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
+      return S_OK( requestObj )
+
     targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
                              if targetSE.strip() ] ) )
     lfnsPfns = [ ( subFile["LFN"], subFile["PFN"], subFile["Status"] ) for subFile in subRequestFiles ]
-    subRequestError = False
+ 
     failed = {}
     for lfn, pfn, status in lfnsPfns:
       self.info("reTransfer: processing file %s" % lfn )
-      failed.setdefault( lfn, {} )
       if status != "Waiting":
         self.info("reTransfer: skipping file %s, status is %s" % ( lfn, status ) )
         continue 
-
+      failed.setdefault( lfn, {} )
       for targetSE in targetSEs:
         reTransfer = self.replicaManager().onlineRetransfer( targetSE, pfn )
         if reTransfer["OK"]:
@@ -290,20 +309,18 @@ class RemovalTask( RequestTask ):
           else:
             reason = reTransfer["Value"]["Failed"][pfn]
             self.error( "reTransfer: failed to set retransfer request for %s at %s: %s" % ( pfn, targetSE, reason ) )
-            failed[lfn][targetSE] = reTransfer["Value"]["Failed"][pfn]
-            subRequestError = True 
+            failed[lfn][targetSE] = reason
         else:
           self.error( "reTransfer: completely failed to retransfer: %s" % reTransfer["Message"] )
           failed[lfn][targetSE] = reTransfer["Message"]
-          subRequestError = True
-
       if not failed[lfn]:
         self.info("reTransfer: file %s sucessfully processed at all targetSEs" % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
-
-    if not subRequestError:
-      self.info("reTransfer: all files processed successfully, setting subrequest status to 'Done'")
+       
+    ## subrequest empty or all Files done?
+    if requestObj.isSubRequestDone( index, "removal" )["Value"]:
+      self.info("reTransfer: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
-      
+
     return S_OK( requestObj )
   
