@@ -761,7 +761,7 @@ class FTSRequest:
       return S_OK( ( 0, len( toRegister ) ) )
     for lfn, error in res['Value']['Failed'].items():
       self.failedRegistrations[lfn] = toRegister[lfn]
-      gLogger( 'Registration of Replica failed', '%s : %s' % ( lfn, str( error ) ) )
+      gLogger.error( 'Registration of Replica failed', '%s : %s' % ( lfn, str( error ) ) )
     return S_OK( ( len( res['Value']['Successful'] ), len( toRegister ) ) )
 
   def __sendAccounting( self, regSuc, regTotal, regTime, transEndTime, transDict ):

@@ -744,7 +744,7 @@ class TransferDB( DB ):
       return S_OK()
 
     keysTuple = ( "FTSReqID", "FTSGuid", "FTSServer", "ChannelID", 
-                  "SubmitTime", "NumberOfFiles", "TotalSize", "SourceSE", "TargetSE" ) 
+                  "SubmitTime", "SourceSE", "TargetSE", "NumberOfFiles", "TotalSize" ) 
     ftsReqs = [ dict( zip( keysTuple, recordTuple ) ) for recordTuple in res["Value"] ]
     return S_OK(ftsReqs)
 
