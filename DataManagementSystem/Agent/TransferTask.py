@@ -60,10 +60,10 @@ class TransferTask( RequestTask ):
     :return: S_OK( requestObj ) or S_ERROR
     """
     self.info( "putAndRegister: processing subrequest %s" % index )
-    if requestObj.isSubRequestEmpty( index, "transfer" ):
-      self.info("putAndRegister: subrequest %s is empty, setting its status to 'Done'" % index )
-      requestObj.setSubRequestStatus( index, "transfer", "Done" )
-      return S_OK( requestObj )
+    #if requestObj.isSubRequestEmpty( index, "transfer" ):
+    #  self.info("putAndRegister: subrequest %s is empty, setting its status to 'Done'" % index )
+    #  requestObj.setSubRequestStatus( index, "transfer", "Done" )
+    #  return S_OK( requestObj )
 
     ## list of targetSEs
     targetSEs = list( set( [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") 
@@ -209,10 +209,10 @@ class TransferTask( RequestTask ):
     :return: a tuple ( requestObj, modified, subRequestError )
     """    
     self.info( "replicateAndRegister: processing subrequest %s" % index )
-    if requestObj.isSubRequestEmpty( index, "transfer" ):
-      self.info("replicateAndRegister: subrequest %s is empty, setting its status to 'Done'" % index )
-      requestObj.setSubRequestStatus( index, "transfer", "Done" )
-      return S_OK( requestObj )
+    #if requestObj.isSubRequestEmpty( index, "transfer" ):
+    #  self.info("replicateAndRegister: subrequest %s is empty, setting its status to 'Done'" % index )
+    #  requestObj.setSubRequestStatus( index, "transfer", "Done" )
+    #  return S_OK( requestObj )
 
     # holder for subrequest error
     subRequestError = ""

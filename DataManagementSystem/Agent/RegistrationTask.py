@@ -52,10 +52,10 @@ class RegistrationTask( RequestTask ):
     :param subRequestFiles: subRequest files
     """
     self.info( "registerFile: processing subrequest %s" % index )
-    if requestObj.isSubRequestEmpty( index, "register" ):
-      self.info("registerFile: subrequest %s is empty, setting its status to 'Done'" % index )
-      requestObj.setSubRequestStatus( index, "register", "Done" )
-      return S_OK( requestObj )
+    #if requestObj.isSubRequestEmpty( index, "register" ):
+    #  self.info("registerFile: subrequest %s is empty, setting its status to 'Done'" % index )
+    #  requestObj.setSubRequestStatus( index, "register", "Done" )
+    #  return S_OK( requestObj )
 
     ## list of targetSE
     targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") 
