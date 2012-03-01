@@ -589,6 +589,21 @@ class TransferAgent( RequestAgentBase ):
       self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
                                                                                 ownerDN["Value"] ) )
       return S_OK( False )
+
+    res = requestObj.getNumSubRequests( "transfer" )
+    if not res["OK"]:
+      self.log.error( "executeFTS: failed to get number of 'transfer' subrequests", res["Message"] )
+      return S_OK( False )
+    numberRequests = res["Value"]
+    for iSubRequest in range( numberRequests ):
+      subAttrs = requestObj.getSubRequestAttributes( iSubRequest, "transfer" )["Value"]
+      status = subAttrs["Status"]
+      operation = subAttrs["Operation"]
+      if status == "Waiting" and operation != "replicateAndRegister":
+        self.log.error("executeFTS: operation %s for subrequest %s is not supported in FTS mode" % ( operation, 
+                                                                                                     iSubRequest ) )
+        return S_OK( False )
+    
     try:
       schedule = self.schedule( requestDict )
       if schedule["OK"]:
