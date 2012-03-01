@@ -47,7 +47,8 @@ class RemovalTask( RequestTask ):
     """
     RequestTask.__init__( self, *args, **kwargs )
     self.setRequestType( "removal" )
-    ## operation handlers
+    ## operation handlers physicalRemoval
+    self.addOperationAction( "physicalRemoval", self.physicalRemoval )
     self.addOperationAction( "removeFile", self.removeFile )
     self.addOperationAction( "replicaRemoval", self.replicaRemoval )
     self.addOperationAction( "reTransfer", self.reTransfer ) 
@@ -324,3 +325,74 @@ class RemovalTask( RequestTask ):
 
     return S_OK( requestObj )
   
+  def physicalRemoval( self, index, requestObj, subRequestAttrs, subRequestFiles ):
+    """ action for 'physicalRemoval' operation
+
+    :param self: self reference
+    :param int index: subRequest index in execution order
+    :param RequestContainer requestObj: request
+    :param dict subRequestAttrs: subRequest's attributes
+    :param dict subRequestFiles: subRequest's files
+    """
+    self.info("physicalRemoval: processing subrequest %s" % index )
+    if requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
+      self.info("physicalRemoval: subrequest %s is empty, setting its status to 'Done'" % index )
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
+      return S_OK( requestObj )
+
+    targetSEs = list(set([ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
+                           if targetSE.strip() ] ) )
+    pfns = []
+    pfnToLfn = {}
+    for subRequestFile in subRequestFiles:
+      if subRequestFile["Status"] == "Waiting":
+        pfn = subRequestFile["PFN"]
+        lfn = subRequestFile["LFN"]
+        pfnToLfn[pfn] = lfn
+        pfns.append( pfn )
+    failed = {}
+    errors = {}
+    self.addMark( 'PhysicalRemovalAtt', len( pfns ) )
+    for targetSE in targetSEs:
+      remove = self.replicaManager().removeStorageFiles( pfns, targetSE )
+      if remove["OK"]:
+        for pfn in remove["Value"]["Failed"]:
+          if pfn not in failed:
+            failed[pfn] = {}
+          failed[pfn][targetSE] = remove["Value"]["Failed"][pfn]
+      else:
+        errors[targetSE] = remove["Message"]
+        for pfn in pfns:
+          if pfn not in failed:
+            failed[pfn] = {}
+          failed[pfn][targetSE] = "Completely"
+    failedPFNs = failed.keys()
+    pfnsOK = [ pfn for pfn in pfns if pfn not in failedPFNs ]
+    self.addMark( 'PhysicalRemovalDone', len( pfnsOK ) )
+    for pfn in pfnsOK:
+      self.info("physicalRemoval: succesfully removed %s from %s" % ( pfn, str(targetSEs) ) )
+      res = requestObj.setSubRequestFileAttributeValue( index, "removal", pfnToLfn[pfn], "Status", "Done" )
+      if not res["OK"]:
+        self.error("physicalRemoval: error setting status to 'Done' for %s" % pfnToLfn[pfn])
+
+    if failed:
+      self.addMark( 'PhysicalRemovalFail', len( failedPFNs ) )
+      for pfn in failed:
+        for targetSE in failed[pfn]:
+          if type( failed[pfn][targetSE] ) in StringTypes:
+            if re.search("no such file or directory", failed[pfn][targetSE].lower()):
+              self.info("physicalRemoval: file %s did not exist" % pfn )
+              res = requestObj.setSubRequestFileAttributeValue( index, "removal", pfnToLfn[pfn], "Status", "Done" )
+              if not res["OK"]:
+                self.error("physicalRemoval: error setting status to 'Done' for %s" % pfnToLfn[pfn] )
+
+    if errors:
+      for targetSE in errors:
+        self.error("physicalRemoval: completely failed to remove files at %s" % targetSE )
+
+    ## subrequest empty or all Files done?
+    if requestObj.isSubRequestDone( index, "removal" )["Value"]:
+      self.info("reTransfer: all files processed, setting subrequest status to 'Done'")
+      requestObj.setSubRequestStatus( index, "removal", "Done" )
+
+    return S_OK( requestObj )
