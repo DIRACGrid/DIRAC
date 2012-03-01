@@ -1500,7 +1500,11 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     links = {}
     files = {}
     for i in  range( nbfiles ):
-      entry, fileInfo = lfc.lfc_readdirxr( oDirectory, "" )
+      result = lfc.lfc_readdirxr( oDirectory, "" )
+      if not result:
+        # In some rare cases we reach the end of oDirectory, before nbfiles iterations (!!!)
+        break
+      entry, fileInfo = result
       pathMetadata = {}
       pathMetadata['Mode'] = S_IMODE( entry.filemode )
       subPath = '%s/%s' % ( path, entry.d_name )
