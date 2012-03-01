@@ -445,10 +445,10 @@ class RequestTask( object ):
 
           ################################################
           #  Determine whether there are any active files
-          if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
-            self.info("handleRequest: subrequest is empty, will set its status to 'Done'")
-            self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
-            continue
+          #if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
+          #  self.info("handleRequest: subrequest is empty, will set its status to 'Done'")
+          #  self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
+          #  continue
           ## get files
           subRequestFiles = self.requestObj.getSubRequestFiles( index, self.__requestType )["Value"]          
           ## execute operation action
@@ -475,9 +475,9 @@ class RequestTask( object ):
                 self.warn("handleRequest: subrequest %s is not done yet, finalisation is disabled" % str(index) )
                 canFinalize = False
 
-          if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
-            self.info("handleRequest: no more waiting files in subrequest, will set its status to 'Done'")
-            self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
+          #if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
+          #  self.info("handleRequest: no more waiting files in subrequest, will set its status to 'Done'")
+          #  self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
 
     ################################################
     #  Generate the new request string after operation
@@ -487,7 +487,7 @@ class RequestTask( object ):
       self.error( "handleRequest: error when updating request: %s" % update["Message"] )
       return update
     ## finalize request if jobID is present
-    if self.jobID and canFinalize and self.requestObj.isRequestDone():
+    if self.jobID and canFinalize and self.requestObj.isRequestDone()["Value"]:
       finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
       if not finalize["OK"]:
         self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
