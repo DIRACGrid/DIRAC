@@ -331,7 +331,7 @@ class TransferAgent( RequestAgentBase ):
     :param str aKey: a key in value dict used to sort 
     """
     if False in [ bool(aKey in v) for v in aDict.values() ]:
-      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" )
+      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" % aKey )
     ## put parents of all parents
     sortedKeys = [ k for k in aDict if aKey in aDict[k] and not aDict[k][aKey] ]
     ## get children
@@ -584,12 +584,15 @@ class TransferAgent( RequestAgentBase ):
     """
     requestObj = RequestContainer( requestDict["requestString"] )
     requestDict["requestObj"] = requestObj
+
+    ## check request owner
     ownerDN = requestObj.getAttribute( "OwnerDN" ) 
     if ownerDN["OK"] and ownerDN["Value"]:
       self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
                                                                                 ownerDN["Value"] ) )
       return S_OK( False )
 
+    ## check operation
     res = requestObj.getNumSubRequests( "transfer" )
     if not res["OK"]:
       self.log.error( "executeFTS: failed to get number of 'transfer' subrequests", res["Message"] )
