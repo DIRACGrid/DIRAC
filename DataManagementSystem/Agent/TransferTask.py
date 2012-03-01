@@ -189,14 +189,13 @@ class TransferTask( RequestTask ):
         self.info("putAndRegister: file %s processed successfully, setting its startus do 'Done'" % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
       else:
-        self.error("putAndRegister: processing of file %s failed, setting its status do 'Failed'" % lfn )
+        self.error("putAndRegister: processing of file %s failed" % lfn )
         self.error("putAndRegister: reason: %s" % failed[lfn] )
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
-
-    if requestObj.isSubRequestDone( index, "transfer" )["Value"] and not failed:
+   
+    if requestObj.isSubRequestDone( index, "transfer" )["Value"]:
       self.info("putAndRegister: all files processed, will set subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "transfer", "Done" )
-             
+      
     return S_OK( requestObj )
 
   def replicateAndRegister( self, index, requestObj, subAttrs, subFiles ):
@@ -291,12 +290,10 @@ class TransferTask( RequestTask ):
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
       else:
         errorSeen = True 
-        self.error("replicateAndRegister: replication of %s failed, setting it's status to 'Failed' " % lfn )
+        self.error("replicateAndRegister: replication of %s failed" % lfn )
         for targetSE, reason in failed[lfn]:
           self.error("replicateAndRegister: at %s: %s" % ( targetSE, reason ) )
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
    
-
     if requestObj.isSubRequestDone( index, "transfer" )["Value"] and not errorSeen:
       self.info("replicateAndRegister: all files processed, will set subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "transfer", "Done" )

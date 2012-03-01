@@ -66,6 +66,7 @@ class RegistrationTask( RequestTask ):
 
     ## dict for failed LFNs
     failed = {}
+    failedFiles = 0
 
     catalogue = subRequestAttrs["Catalogue"] if subRequestAttrs["Catalogue"] else ""
     if catalogue == "BookkeepingDB":
@@ -99,6 +100,7 @@ class RegistrationTask( RequestTask ):
           errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
           failed[lfn][targetSE] = reason
           self.error( "registerFile: %s" % errorStr )
+          failedFiles += 1
         else:
           self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegistrationAgent" )
           self.info( "registerFile: file %s has been registered at %s" % ( lfn, targetSE ) )
@@ -106,13 +108,14 @@ class RegistrationTask( RequestTask ):
       if not failed[lfn]:
         requestObj.setSubRequestFileAttributeValue( index, "register", lfn, "Status", "Done")
         self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )        
-
+     
     ##################################################################
     ## all files were registered or no files at all in this subrequest
-    if requestObj.isSubRequestDone( index, "register" )["Value"] or requestObj.isSubRequestEmpty( index, "register" )["Value"]:
+    if requestObj.isSubRequestDone( index, "register" )["Value"]:
       self.info("registerFile: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "register", "Done" )
-
+    elif failedFiles:
+      self.info("registerFile: all files processed, %s files failed to register" % failedFiles )
     ## return requestObj
     return S_OK( requestObj )
           

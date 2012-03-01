@@ -160,18 +160,17 @@ class RemovalTask( RequestTask ):
         fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", error[:255] )
         if not fileError["OK"]:
           self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
-        updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )
-        if not updateStatus["OK"]:
-          self.error("removeFile: unable to change status to 'Failed' for %s" % lfn )
-          
+           
     self.addMark( "RemoveFileDone", filesRemoved )
     self.addMark( "RemoveFileFail", filesFailed )
     
-    ## no 'Waiting' or all 'Done'?
-    if requestObj.isSubRequestDone( index, "removal" )["Value"] or requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
+    ## all 'Done'?
+    if requestObj.isSubRequestDone( index, "removal" )["Value"]:
       self.info("removeFile: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
-      
+    elif filesFailed:
+      self.info("removeFile: all files processed, %s files failed to remove" % filesFailed )
+
     return S_OK( requestObj )
 
   def replicaRemoval( self, index, requestObj, subRequestAttrs, subRequestFiles ):
@@ -262,18 +261,17 @@ class RemovalTask( RequestTask ):
       fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", fileError )
       if not fileError["OK"]:
         self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
-      updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )
-      if not updateStatus["OK"]:
-        self.error( "replicaRemoval: error setting status to 'Failed' for %s" % lfn )
-
+ 
     self.addMark( "ReplicaRemovalDone", replicasRemoved )
     self.addMark( "ReplicaRemovalFail", replicasFailed )
 
     ## no 'Waiting' files or all 'Done' 
-    if requestObj.isSubRequestDone( index, "removal" )["Value"] or requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
+    if requestObj.isSubRequestDone( index, "removal" )["Value"]:
       self.info("replicaRemoval: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
-      
+    elif replicasFailed:
+      self.info("replicaRemoval: all files processed, failed to remove %s replicas" % replicasFailed )
+
     ## return requestObj at least
     return S_OK( requestObj )
 
@@ -320,7 +318,7 @@ class RemovalTask( RequestTask ):
         requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
        
     ## subrequest empty or all Files done?
-    if requestObj.isSubRequestDone( index, "removal" )["Value"] or requestObj.isSubRequestEmpty( index, "removal" )["Value"]:
+    if requestObj.isSubRequestDone( index, "removal" )["Value"]:
       self.info("reTransfer: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
 
