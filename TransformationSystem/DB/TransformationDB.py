@@ -980,16 +980,17 @@ class TransformationDB( DB ):
         if type( parameterValue ) in [IntType, LongType]:
           parameterType = 'Integer'
           parameterValue = str( parameterValue )
-      insertTuples.append( "(%d,'%s','%s','%s')" % ( transID, parameterName, parameterValue, parameterType ) )
-    if not insertTuples:
-      return S_ERROR( "No input data query to be inserted" )
-    req = "INSERT INTO TransformationInputDataQuery (TransformationID,ParameterName,ParameterValue,ParameterType) VALUES %s" % ','.join( insertTuples )
-    res = self._update( req, connection )
-    if not res['OK']:
-      message = 'Failed to add input data query'
-      self.deleteTransformationInputDataQuery( transID, connection = connection )
-    else:
-      message = 'Added input data query'
+        if type( parameterValue ) == DictType:
+          parameterType = 'Dict'
+          parameterValue = str( parameterValue )    
+      res = self._insert('TransformationInputDataQuery',['TransformationID','ParameterName','ParameterValue','ParameterType'],
+                         [transID, parameterName, parameterValue, parameterType], connection = connection)
+      if not res['OK']:
+        message = 'Failed to add input data query'
+        self.deleteTransformationInputDataQuery( transID, connection = connection )
+        break
+      else:
+        message = 'Added input data query'      
     self.__updateTransformationLogging( transID, message, author, connection = connection )
     return res
 
@@ -1027,6 +1028,8 @@ class TransformationDB( DB ):
           parameterValue = [int( x ) for x in parameterValue]
       elif parameterType == 'Integer':
         parameterValue = int( parameterValue )
+      elif parameterType == 'Dict':
+        parameterValue = eval( parameterValue )    
       queryDict[parameterName] = parameterValue
     if not queryDict:
       return S_ERROR( "No InputDataQuery found for transformation" )
