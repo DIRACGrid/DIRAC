@@ -82,7 +82,7 @@ class Dirac:
     self.client = WMSClient( jobManagerClient, sbRPCClient, sbTransferClient, useCertificates )
     self.pPrint = pprint.PrettyPrinter()
     # Determine the default file catalog
-    defaultFC = gConfig.getValue( self.section + '/FileCatalog', '' )
+    defaultFC = gConfig.getValue( self.section + '/FileCatalog', [] )
     if not defaultFC:
       result = gConfig.getSections( 'Resources/FileCatalogs', listOrdered = True )
       if result['OK']:
@@ -1018,17 +1018,17 @@ class Dirac:
   def __printOutput( self, fd = None, message = '' ):
     """Internal callback function to return standard output when running locally.
     """
-    if fd: 
-      if type(fd) == types.IntType:
+    if fd:
+      if type( fd ) == types.IntType:
         if fd == 0:
           print >> sys.stdout, message
         elif fd == 1:
           print >> sys.stderr, message
         else:
           print message
-      elif type(fd) == types.FileType:
-        print >> fd, message      
-    else:  
+      elif type( fd ) == types.FileType:
+        print >> fd, message
+    else:
       print message
 
   #############################################################################
@@ -2813,11 +2813,11 @@ class Dirac:
     self.log.info( '<=====%s=====>' % ( self.diracInfo ) )
     self.log.verbose( self.cvsVersion )
     self.log.verbose( 'DIRAC is running at %s in setup %s' % ( DIRAC.siteName(), self.setup ) )
-    
-  def getConfigurationValue(self,option,default):
+
+  def getConfigurationValue( self, option, default ):
     """ Export the configuration client getValue() function
-    """  
-    
-    return gConfig.getValue(option,default)
+    """
+
+    return gConfig.getValue( option, default )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
