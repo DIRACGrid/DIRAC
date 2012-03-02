@@ -1,73 +1,100 @@
+####################################################################################
+# $HeadURL$
+####################################################################################
+
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
 __RCSID__ = "$Id$"
 
-import re, time, commands, random, os, fnmatch
+## imports
+import re
+import time
+import commands
+import random
+import os
+import fnmatch
 import types
+from types import StringTypes, ListType, DictType
 from datetime import datetime, timedelta
+## from DIRAC
 import DIRAC
-
-from DIRAC                                             import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient     import gDataStoreClient
-from DIRAC.ResourceStatusSystem.Client                 import ResourceStatus
-from DIRAC.Core.Utilities.File                         import makeGuid, getSize
-from DIRAC.Core.Utilities.Adler                        import fileAdler, compareAdler
-from DIRAC.Core.Utilities.List                         import sortList, randomize
-from DIRAC.Core.Utilities.SiteSEMapping                import getSEsForSite, isSameSiteSE, getSEsForCountry
-from DIRAC.Resources.Storage.StorageElement            import StorageElement
-from DIRAC.Resources.Catalog.FileCatalog               import FileCatalog
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.ResourceStatusSystem.Client import ResourceStatus
+from DIRAC.Core.Utilities.File import makeGuid, getSize
+from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
+from DIRAC.Core.Utilities.List import sortList, randomize
+from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite, isSameSiteSE, getSEsForCountry
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 class CatalogBase:
+  """ 
+  .. class:: CatalogBase
+ 
+  This class stores the two wrapper functions for interacting with the FileCatalog:
 
-  def __init__( self ):
-    """ This class stores the two wrapper functions for interacting with the FileCatalog:
+     _executeFileCatalogFunction(lfn,method,argsDict={},catalogs=[])
+  
 
-        _executeFileCatalogFunction(lfn,method,argsDict={},catalogs=[])
-          Is a wrapper around the available FileCatlog() functions.
-          The 'lfn' and 'method' arguments must be provided:
-            'lfn' contains a single file string or a list or dictionary containing the required files.
-            'method' is the name of the FileCatalog() to be invoked.
-          'argsDict' contains aditional arguments that are requred for the method.
-          'catalogs' is the list of catalogs the operation is to be performed on.
-             By default this is all available catalogs.
-             Examples are 'LcgFileCatalogCombined', 'BookkeepingDB', 'ProductionDB'
+  Is a wrapper around the available FileCatlog() functions.
+  The 'lfn' and 'method' arguments must be provided:
+  'lfn' contains a single file string or a list or dictionary containing the required files.
+  'method' is the name of the FileCatalog() to be invoked.
+  'argsDict' contains aditional arguments that are requred for the method.
+  'catalogs' is the list of catalogs the operation is to be performed on.
+  By default this is all available catalogs.
+  Examples are 'LcgFileCatalogCombined', 'BookkeepingDB', 'ProductionDB'
+     
+     _executeSingleFileCatalogFunction(lfn,method,argsDict={},catalogs=[])
+     
+  Is a wrapper around _executeFileCatalogFunction().
+  It parses the output of _executeFileCatalogFunction() for the first file provided as input.
+  If this file is found in:
+  res['Value']['Successful'] an S_OK() is returned with the value.
+  res['Value']['Failed'] an S_ERROR() is returned with the error message.
+  """
 
-        _executeSingleFileCatalogFunction(lfn,method,argsDict={},catalogs=[])
-          Is a wrapper around _executeFileCatalogFunction().
-          It parses the output of _executeFileCatalogFunction() for the first file provided as input.
-          If this file is found in:
-            res['Value']['Successful'] an S_OK() is returned with the value.
-            res['Value']['Failed'] an S_ERROR() is returned with the error message.
+  def _executeSingleFileCatalogFunction( self, lfn, method, argsDict = None, catalogs = None ):
+    """ wrapper around _executeFileCatalogFunction
+
+    :param self: self reference
+    :param mixed lfn: LFN as string or list with LFNs or dict with LFNs as keys
+    :param str method: method name
+    :param dict argsDict: kwargs of method
+    :param list catalogs: list with catalog names
     """
-    pass
+    argsDict = argsDict if argsDict else dict()
+    catalogs = catalogs if catalogs else list()
+    if not lfn or type(lfn) not (ListType, StringTypes, DictType) :
+      return S_ERROR( "wrong type (%s) for argument 'lfn'" % type(lfn) )
+    singleLfn = lfn
+    if type( lfn ) == ListType:
+      singleLfn = lfn[0] 
+    elif type( lfn ) == DictType:
+      singleLfn = lfn.keys()[0] 
 
-  def _executeSingleFileCatalogFunction( self, lfn, method, argsDict = {}, catalogs = [] ):
     res = self._executeFileCatalogFunction( lfn, method, argsDict, catalogs = catalogs )
-    if type( lfn ) == types.ListType:
-      singleLfn = lfn[0]
-    elif type( lfn ) == types.DictType:
-      singleLfn = lfn.keys()[0]
-    else:
-      singleLfn = lfn
-    if not res['OK']:
+    
+    if not res["OK"]:
       return res
-    elif res['Value']['Failed'].has_key( singleLfn ):
-      errorMessage = res['Value']['Failed'][singleLfn]
-      return S_ERROR( errorMessage )
-    else:
-      return S_OK( res['Value']['Successful'][singleLfn] )
+    elif singleLfn in res["Value"]["Failed"]:
+      return S_ERROR( res["Value"]["Failed"][singleLfn] )
+    
+    return S_OK( res["Value"]["Successful"][singleLfn] )
 
-  def _executeFileCatalogFunction( self, lfn, method, argsDict = {}, catalogs = [] ):
+  def _executeFileCatalogFunction( self, lfn, method, argsDict = None, catalogs = None ):
     """ A simple wrapper around the file catalog functionality
     """
     # First check the supplied lfn(s) are the correct format.
-    if type( lfn ) in types.StringTypes:
-      lfns = {lfn:False}
+    argsDict = arsgDict if argsDict else dict()
+    catalogs = catalogs if catalogs else list()
+
+    if type( lfn ) in StringTypes:
+      lfns = { lfn : False }
     elif type( lfn ) == types.ListType:
-      lfns = {}
-      for lfn in lfn:
-        lfns[lfn] = False
+      lfns = dict.fromkeys( lfn, False  )
     elif type( lfn ) == types.DictType:
       lfns = lfn.copy()
     else:
@@ -82,6 +109,19 @@ class CatalogBase:
     gLogger.debug( "ReplicaManager._executeFileCatalogFunction: Attempting to perform '%s' operation with %s lfns." % ( method, len( lfns ) ) )
     # Check we can instantiate the file catalog correctly
     fileCatalog = FileCatalog( catalogs )
+    if not hasattr( fileCatalog, method ):
+      gLogger.error( "ReplicaManager._executeFileCatalogFunction: symbol %s is not defined in FileCatalog" % method )
+    fcFcn = getattr( fileCatalog, method )
+    if not callable( fcFcn ):
+      gLogger.error( "ReplicaManager._executeFileCatalogFunction: symbol %s isn't a member function in FileCatalog" % method )
+
+      ## 
+    res = fcFcn( lfns, **argsDict )  
+    if not res['OK']:
+      errStr = "ReplicaManager._executeFileCatalogFunction: Completely failed to perform %s." % method
+      gLogger.error( errStr, res['Message'] )
+    return res
+
     # Generate the execution string
     if argsDict:
       execString = "res = fileCatalog.%s(lfns" % method
