@@ -34,11 +34,10 @@ MAX_JOBS_IN_FILLMODE = 2
 
 ERROR_CLEAR_TIME = 60 * 60  # 1 hour
 ERROR_TICKET_TIME = 60 * 60  # 1 hour (added to the above)
-FROM_MAIL = "lhcb-dirac@cern.ch"
+FROM_MAIL = "diracproject@gmail.com"
 
-PILOT_DN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
 PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
-PILOT_GROUP = 'lhcb_pilot'
+PILOT_GROUP = 'dirac_pilot'
 
 VIRTUAL_ORGANIZATION = 'dirac'
 
@@ -271,8 +270,8 @@ class PilotDirector:
 
   def _getPilotOptions( self, taskQueueDict, pilotsToSubmit ):
 
-    # Need to limit the maximum number of pilots to submit at once 
-    # For generic pilots this is limited by the number of use of the tokens and the 
+    # Need to limit the maximum number of pilots to submit at once
+    # For generic pilots this is limited by the number of use of the tokens and the
     # maximum number of jobs in Filling mode, but for private Jobs we need an extra limitation:
     pilotsToSubmit = min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) )
     pilotOptions = []
