@@ -392,6 +392,7 @@ class PilotDirector:
     """
      To be overwritten if a given Pilot does not require a full proxy
     """
+    self.log.info( "Downloading %s@%s proxy" % ( ownerDN, ownerGroup ) )
     return gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft )
 
   def exceptionCallBack( self, threadedJob, exceptionInfo ):
