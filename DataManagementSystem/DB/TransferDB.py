@@ -1,14 +1,22 @@
 ########################################################################
 # $HeadURL$
+# File: TransferDB.py
 ########################################################################
-""" TransferDB is a front end to the RequestDB database. 
-    In fact mysql TransferDB is build on top of RequestDB.
+""" :mod: TransferDB 
+    ================
+
+    TransferDB is a front end to the TransferDB mysql database, built 
+    on top of RequestDB.
+
+    This database holds all information used by DIRAC FTS subsystem. 
+    It is mainly used by FTSSubmitAgent, FTSMonitorAgent and TransferAgent.     
 """
+
+__RCSID__ = "$Id$"
+
 ## imports 
 import threading
-#import types
 from types import ListType
-#import string
 import time
 import datetime
 import random
@@ -18,11 +26,10 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.Resources.Storage.StorageElement import StorageElement 
 
-__RCSID__ = "$Id$"
-
 ## it's a magic! 
 MAGIC_EPOC_NUMBER = 1270000000
 
+## create logger
 gLogger.initialize( "DMS", "/Databases/TransferDB/Test" )
 
 class TransferDB( DB ):
@@ -614,10 +621,10 @@ class TransferDB( DB ):
     if not res['Value']:
       return S_OK()
 
+    keysTuple = ( "FileID", "SourceSURL", "TargetSURL", "Size", "LFN" )
     resDict = { "SourceSE" : sourceSE, 
                 "TargetSE" : targetSE,
-                "Files" : [ dict( zip( ( "FileID", "SourceSURL", "TargetSURL", "LFN", "Size" ), 
-                                       record ) ) for record in res["Value"] ] }
+                "Files" : [ dict( zip( keysTuple, recordTuple ) ) for recordTuple in res["Value"] ] }
     return S_OK(resDict)
 
   def getChannelQueues( self, status=None ):
@@ -666,7 +673,6 @@ class TransferDB( DB ):
     :param str ftsServer: FTS server URI
     :param int channelID: Channel.ChannelID
     """
-
     self.getIdLock.acquire()
     req = "INSERT INTO FTSReq (FTSGUID,FTSServer,ChannelID,SubmitTime,LastMonitor) " \
         "VALUES ('%s','%s',%s,UTC_TIMESTAMP(),UTC_TIMESTAMP());" % ( ftsGUID, ftsServer, channelID )
@@ -738,7 +744,7 @@ class TransferDB( DB ):
       return S_OK()
 
     keysTuple = ( "FTSReqID", "FTSGuid", "FTSServer", "ChannelID", 
-                  "SubmitTime", "NumberOfFiles", "TotalSize", "SourceSE", "TargetSE" ) 
+                  "SubmitTime", "SourceSE", "TargetSE", "NumberOfFiles", "TotalSize" ) 
     ftsReqs = [ dict( zip( keysTuple, recordTuple ) ) for recordTuple in res["Value"] ]
     return S_OK(ftsReqs)
 
@@ -1150,14 +1156,16 @@ class TransferDB( DB ):
 
   def setRegistrationDone( self, channelID, fileID ):
     """ set FileToCat.Status to 'Done' for given :channelID: and :fileID:, 
-    update FileToCat.CompleteTime timestamp
+        update FileToCat.CompleteTime timestamp
 
     :param self: self reference
     :param int channelID: Channel.ChanneID
-    :param int fileID: Files.FileID
+    :param list fileID: Files.FileID or list of Files.FileID
     """
+    if type(fileID) == int:
+      fileID = [ fileID ]
     req = "UPDATE FileToCat SET Status='Done',CompleteTime=UTC_TIMESTAMP() " \
-        "WHERE FileID=%s AND ChannelID=%s AND Status='Waiting';" % ( fileID, channelID )
+        "WHERE FileID IN (%s) AND ChannelID=%s AND Status='Waiting';" % ( intListToString(fileID), channelID )
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._setRegistrationDone: Failed to update %s status." % fileID

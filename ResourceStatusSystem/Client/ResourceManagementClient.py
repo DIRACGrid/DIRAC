@@ -7,7 +7,7 @@
 
 from datetime import datetime
 
-from DIRAC                                              import gLogger 
+from DIRAC                                              import gLogger, S_ERROR 
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 

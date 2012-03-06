@@ -7,7 +7,7 @@
 """ :mod: TransferAgent 
     ===================
 
-    TransferAgent executes 'transfer' requests read from the RequestDB.
+    TransferAgent executes 'transfer' requests read from the RequestClient.
     
     This agent has two modes of operation:
     - standalone, when all Requests are handled using ProcessPool and TransferTask
@@ -26,19 +26,18 @@ __RCSID__ = "$Id$"
 import time
 import re
 import random
-## from DIRAC globals and Core
+## from DIRAC (globals and Core)
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 ## from DMS
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
-from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
+## task to be executed
+from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
 ## from RMS
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 ## from Resources
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 ## from RSS
@@ -163,13 +162,11 @@ class TransferAgent( RequestAgentBase ):
   """
   ## placeholder for ReplicaManager instance
   __replicaManager = None
-  ## placeholder for RequestDBMySQL instance
-  __requestDBMySQL = None
   ## placeholder for StorageFactory instance
   __storageFactory = None
   ## placeholder for StrategyHandler instance
   __strategyHandler = None
-  ## placeholder for  TransferDB instance (for FTS mode)
+  ## placeholder for TransferDB instance (for FTS mode)
   __transferDB = None
   ## time scale for throughput
   __throughputTimescale = 3600
@@ -227,11 +224,12 @@ class TransferAgent( RequestAgentBase ):
 
     ## get TransferDB instance 
     if self.__executionMode["FTS"]:
+      transferDB = None
       try:
-        self.__transferDB = TransferDB()
+        transferDB = self.transferDB()
       except Exception, error:
         self.log.exception( error )
-      if not isinstance( self.__transferDB, TransferDB ):
+      if not transferDB:
         self.log.warn("Can't create TransferDB instance, disabling FTS execution mode.")
         self.__executionMode["FTS"] = False
       else:
@@ -257,15 +255,6 @@ class TransferAgent( RequestAgentBase ):
       self.__replicaManager = ReplicaManager()
     return self.__replicaManager
 
-  def requestDBMySQL( self ):
-    """ RequestDBMySQL instance getter 
-
-    :param self: self reference
-    """
-    if not self.__requestDBMySQL:
-      self.__requestDBMySQL = RequestDBMySQL()
-    return self.__requestDBMySQL
-
   def storageFactory( self ):
     """ StorageFactory instance getter 
 
@@ -278,10 +267,16 @@ class TransferAgent( RequestAgentBase ):
   def transferDB( self ):
     """ TransferDB instance getter
 
+    :warning: Need to put import over here, ONLINE hasn't got MySQLdb module.
+
     :param self: self reference
     """
     if not self.__transferDB:
-      self.__transferDB = TransferDB()
+      try:
+        from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
+        self.__transferDB = TransferDB()
+      except Exception, error:
+        self.log.error( "transferDB: unable to create TransferDB instance: %s" % str(error) )        
     return self.__transferDB
 
   ###################################################################################
@@ -336,7 +331,7 @@ class TransferAgent( RequestAgentBase ):
     :param str aKey: a key in value dict used to sort 
     """
     if False in [ bool(aKey in v) for v in aDict.values() ]:
-      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" )
+      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" % aKey )
     ## put parents of all parents
     sortedKeys = [ k for k in aDict if aKey in aDict[k] and not aDict[k][aKey] ]
     ## get children
@@ -589,11 +584,29 @@ class TransferAgent( RequestAgentBase ):
     """
     requestObj = RequestContainer( requestDict["requestString"] )
     requestDict["requestObj"] = requestObj
+
+    ## check request owner
     ownerDN = requestObj.getAttribute( "OwnerDN" ) 
     if ownerDN["OK"] and ownerDN["Value"]:
       self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
                                                                                 ownerDN["Value"] ) )
       return S_OK( False )
+
+    ## check operation
+    res = requestObj.getNumSubRequests( "transfer" )
+    if not res["OK"]:
+      self.log.error( "executeFTS: failed to get number of 'transfer' subrequests", res["Message"] )
+      return S_OK( False )
+    numberRequests = res["Value"]
+    for iSubRequest in range( numberRequests ):
+      subAttrs = requestObj.getSubRequestAttributes( iSubRequest, "transfer" )["Value"]
+      status = subAttrs["Status"]
+      operation = subAttrs["Operation"]
+      if status == "Waiting" and operation != "replicateAndRegister":
+        self.log.error("executeFTS: operation %s for subrequest %s is not supported in FTS mode" % ( operation, 
+                                                                                                     iSubRequest ) )
+        return S_OK( False )
+    
     try:
       schedule = self.schedule( requestDict )
       if schedule["OK"]:
@@ -697,6 +710,18 @@ class TransferAgent( RequestAgentBase ):
       ## get modified request obj
       requestObj = registerFiles["Value"]
 
+      ## get subrequest files, filer not-Done
+      subRequestFiles = requestObj.getSubRequestFiles( iSubRequest, "transfer" )
+      if not subRequestFiles["OK"]:
+        return subRequestFiles
+      subRequestFiles = subRequestFiles["Value"]
+      ## collect not done LFNs
+      notDoneLFNs = []
+      for subRequestFile in subRequestFiles:
+        status = subRequestFile["Status"]
+        if status != "Done":
+          notDoneLFNs.append( subRequestFile["LFN"] )
+
       subRequestEmpty = requestObj.isSubRequestEmpty( iSubRequest, "transfer" )
       subRequestEmpty = subRequestEmpty["Value"] if "Value" in subRequestEmpty else False
 
@@ -708,7 +733,11 @@ class TransferAgent( RequestAgentBase ):
           continue
         ## get modified request obj
         requestObj = scheduleFiles["Value"]
+      elif notDoneLFNs:
+        ## maybe some are not Done yet?
+        self.log.info("schedule: not-Done files found in subrequest")
       else:
+        ## nope, all Done or no Waiting found
         self.log.info("schedule: subrequest %d is empty" % iSubRequest )
         self.log.info("schedule: setting subrequest %d status to 'Done'" % iSubRequest )
         requestObj.setSubRequestStatus( iSubRequest, "transfer", "Done" )
@@ -760,6 +789,21 @@ class TransferAgent( RequestAgentBase ):
     operation = subAttrs["Operation"]
     strategy = { False : None, 
                  True: operation }[ operation in self.strategyHandler().getSupportedStrategies() ]
+
+    
+    ## get subrequest files
+    subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
+    if not subRequestFiles["OK"]:
+      return subRequestFiles
+    subRequestFiles = subRequestFiles["Value"]
+    self.log.info( "scheduleFiles: found %s files" % len( subRequestFiles ) ) 
+    ## collect not done LFNS
+    notDoneLFNs = []
+    for subRequestFile in subRequestFiles:
+      status = subRequestFile["Status"]
+      if status != "Done":
+        notDoneLFNs.append( subRequestFile["LFN"] )
+
     ## get subrequest files  
     self.log.info( "scheduleFiles: obtaining 'Waiting' files for %d subrequest" % index )
     files = self.collectFiles( requestObj, index, status = "Waiting" )
@@ -770,7 +814,7 @@ class TransferAgent( RequestAgentBase ):
     waitingFiles, replicas, metadata = files["Value"]
 
     if not waitingFiles:
-      self.log.info("scheduleFTS: not 'Waiting' files found in this subrequest" )
+      self.log.info("scheduleFiles: not 'Waiting' files found in this subrequest" )
       return S_OK( requestObj )
 
     if not replicas or not metadata:

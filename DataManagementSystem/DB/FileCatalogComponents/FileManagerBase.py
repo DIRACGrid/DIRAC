@@ -104,29 +104,59 @@ class FileManagerBase:
     """To be implemented on derived class
     """
     return S_ERROR( "To be implemented on derived class" )
-    
+
   def _getFileLFNs(self,fileIDs):
     """ Get the file LFNs for a given list of file IDs
+    """
+
+    start = time.time()
+
+    stringIDs = intListToString(fileIDs)
+    treeTable = self.db.dtree.getTreeTable()
+
+    req = "SELECT F.FileID, CONCAT(D.DirName,'/',F.FileName) from FC_Files as F, %s as D WHERE F.FileID IN ( %s ) AND F.DirID=D.DirID" % (treeTable,stringIDs)
+    result = self.db._query(req)
+    if not result['OK']:
+      return result
+
+    fileNameDict = {}
+    for row in result['Value']:
+      fileNameDict[row[0]] = row[1]
+    
+    failed = {}
+    successful = fileNameDict
+    if len(fileNameDict) != len(fileIDs):
+      for id in fileIDs:
+        if not id in fileNameDict:
+          failed[id] = "File ID not found"
+
+    return S_OK({'Successful':successful,'Failed':failed})
+    
+  def _getFileLFNs_old(self,fileIDs):
+    """ Get the file LFNs for a given list of file IDs
     """        
+
+    start = time.time()
     
     stringIDs = intListToString(fileIDs)
     req = "SELECT DirID, FileID, FileName from FC_Files WHERE FileID IN ( %s )" % stringIDs
     result = self.db._query(req)
     if not result['OK']:
       return result
+
     dirPathDict = {}  
     fileNameDict = {}
     for row in result['Value']:
       if not row[0] in dirPathDict:
         dirPathDict[row[0]] = self.db.dtree.getDirectoryPath(row[0])['Value']      
       fileNameDict[row[1]] = '%s/%s' % (dirPathDict[row[0]],row[2])
-      
+
     failed = {}
     successful = fileNameDict
     for id in fileIDs:
       if not id in fileNameDict:
         failed[id] = "File ID not found"
-        
+
     return S_OK({'Successful':successful,'Failed':failed})          
                                     
 
