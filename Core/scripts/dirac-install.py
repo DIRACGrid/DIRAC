@@ -851,7 +851,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
       except Exception, e:
         logERROR( "Cannot download %s: %s" % ( md5Name, str( e ) ) )
         return False
-    #Read md5  
+    #Read md5
     fd = open( os.path.join( cliParams.targetPath, md5Name ), "r" )
     md5Expected = fd.read().strip()
     fd.close()
@@ -904,8 +904,8 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
 
 def fixBuildPaths():
   """
-  At compilation time many scripts get the building directory inserted, 
-  this needs to be changed to point to the current installation path: 
+  At compilation time many scripts get the building directory inserted,
+  this needs to be changed to point to the current installation path:
   cliParams.targetPath
 """
 
@@ -1178,7 +1178,6 @@ def installExternals( releaseConfig ):
     logNOTICE( "Fixing externals paths..." )
     fixBuildPaths()
   logNOTICE( "Running externals post install..." )
-  runExternalsPostInstall()
   checkPlatformAliasLink()
   #lcg utils?
   #LCG utils if required
@@ -1323,6 +1322,7 @@ if __name__ == "__main__":
   fixMySQLScript()
   if not createBashrc():
     sys.exit( 1 )
+  runExternalsPostInstall()
   writeDefaultConfiguration()
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )
