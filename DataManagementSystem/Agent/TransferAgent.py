@@ -35,7 +35,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 ## task to be executed
-from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
+from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 ## from Resources

@@ -16,7 +16,7 @@ from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool, ProcessTask
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.DataManagementSystem.Agent.RemovalTask import RemovalTask
+from DIRAC.DataManagementSystem.private.RemovalTask import RemovalTask
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
