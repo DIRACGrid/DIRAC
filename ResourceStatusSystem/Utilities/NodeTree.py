@@ -1,3 +1,10 @@
+# $HeadURL $
+''' Node
+
+  Module used to inspect the DB. Will be obsolete soon.
+
+'''
+
 class Node( object ):
   
   def __init__( self, name, level, cLevel, pLevel ):
@@ -55,8 +62,5 @@ class Node( object ):
 #    msg += ','.join( [ '<%s>' % k for k in self._levels[ self.childrenLevel ].keys() ] ) 
 #    return msg   
   
-  
-   
-        
-  
-  
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

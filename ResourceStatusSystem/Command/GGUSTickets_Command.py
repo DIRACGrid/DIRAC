@@ -1,20 +1,19 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' GGUSTickets_Command
+ 
   The GGUSTickets_Command class is a command class to know about 
-  the number of active present opened tickets
-"""
+  the number of active present opened tickets.
+  
+'''
 
 import urllib2
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
-
 from DIRAC.ResourceStatusSystem.Command.Command   import *
+from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
+
+__RCSID__ = '$Id: $'
 
 def callClient( name, clientIn ):
    

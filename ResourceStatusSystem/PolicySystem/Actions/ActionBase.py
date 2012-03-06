@@ -1,13 +1,14 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
-Base class for Actions
-"""
+''' ActionBase
+  
+  Base class for Actions.
+  
+'''
 
-__RCSID__  = "$Id$"
+__RCSID__  = '$Id: $'
 
-class ActionBase(object):
+class ActionBase( object ):
+  
   def __init__(self, granularity, name, status_type, pdp_decision, **kw):
     """Base class for actions. Arguments are:
     - granularity : string
