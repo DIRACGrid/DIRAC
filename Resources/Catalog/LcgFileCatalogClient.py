@@ -1072,21 +1072,19 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def __executeOperation( self, path, method ):
     """ Executes the requested functionality with the supplied path
     """
-    execString = "res = self.%s(path)" % method
-    try:
-      exec( execString )
-      if type( path ) == types.DictType:
-        path = path.keys()[0]
-      if not res['OK']:
-        return res
-      elif not res['Value']['Successful'].has_key( path ):
-        return S_ERROR( res['Value']['Failed'][path] )
-      else:
-        return S_OK( res['Value']['Successful'][path] )
-    except AttributeError, errMessage:
-      exceptStr = "LcgFileCatalogClient.__executeOperation: Exception while perfoming %s." % method
-      gLogger.exception( exceptStr, '', errMessage )
-      return S_ERROR( "%s%s" % ( exceptStr, errMessage ) )
+    fcn = None
+    if hasattr( self, method ) and callable( getattr(self, method) ):
+      fcn = getattr( self, method )
+    if not fcn:
+      return S_ERROR("Unable to invoke %s, it isn't a member function of LcgFileCatalogClient" % method )
+    res = fcn( path )
+    if type( path ) == types.DictType:
+      path = path.keys()[0]
+    if not res['OK']:
+      return res
+    elif path not in res['Value']['Successful']:
+      return S_ERROR( res['Value']['Failed'][path] )
+    return S_OK( res['Value']['Successful'][path] )
 
   def __getLFNForPFN( self, pfn ):
     fstat = lfc.lfc_filestatg()

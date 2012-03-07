@@ -1,14 +1,16 @@
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Interfaces/API/Transformation.py $
-__RCSID__ = "$Id: Transformation.py 19505 $"
+######################################################################################################
+# $HeadURL $
+######################################################################################################
+__RCSID__ = "$Id$"
 
 #from DIRAC.Core.Base import Script
 #Script.parseCommandLine()
 
 import string, os, shutil, types, pprint
 
-from DIRAC                                                        import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.API                                          import API
-from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.API import API
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 COMPONENT_NAME = 'Transformation'
 
@@ -112,13 +114,13 @@ class Transformation( API ):
       return S_OK( self.paramTypes.keys() )
     if self.item_called == 'Parameters':
       return S_OK( self.paramValues )
-    if self.item_called in self.paramValues.keys():
+    if self.item_called in self.paramValues:
       return S_OK( self.paramValues[self.item_called] )
     raise AttributeError, "Unknown parameter for transformation: %s" % self.item_called
 
   def __setParam( self, value ):
     change = False
-    if self.item_called in self.paramTypes.keys():
+    if self.item_called in self.paramTypes:
       oldValue = self.paramValues[self.item_called]
       if oldValue != value:
         if type( value ) in self.paramTypes[self.item_called]:
@@ -156,8 +158,14 @@ class Transformation( API ):
       return res
     transParams = res['Value']
     for paramName, paramValue in transParams.items():
-      execString = "self.set%s(paramValue)" % paramName
-      exec( execString )
+      setter = None
+      setterName = "set%s" % paramName
+      if hasattr( self, setterName ) and callable( getattr( self, setterName ) ):
+        setter = getattr( self, setterName )
+      if not setterName:
+        gLogger.error("Unable to invoke setter %s, it isn't a member function" % setterName )
+        continue
+      setter( paramValue )
     if printOutput:
       gLogger.info( "No printing available yet" )
     return S_OK( transParams )
@@ -219,8 +227,12 @@ class Transformation( API ):
       gLogger.fatal( "No TransformationID known" )
       return S_ERROR()
     printOutput = kwds.pop( 'printOutput' )
-    execString = "res = self.transClient.%s(transID,*parms,**kwds)" % operation
-    exec( execString )
+    fcn = None
+    if hasattr( self.transClient, operation ) and callable( getattr( self.transClient, operation) ):
+      fcn = getattr( self.transClient, operation )
+    if not fcn:
+      return S_ERROR("Unable to invoke %s, it isn't a member funtion of TransformationClient" )
+    res = fcn( transID, *param, **kwds )
     if printOutput:
       self._prettyPrint( res )
     return res
@@ -349,8 +361,13 @@ class Transformation( API ):
       if not res['OK']:
         return res
     plugin = self.paramValues['Plugin']
-    execString = "res = self._check%sPlugin()" % plugin
-    exec( execString )
+    checkPlugin = "_check%sPlugin" % plugin
+    fcn = None 
+    if hasattr( self, checkPlugin ) and callable( getattr( self, checkPlugin ) ):
+      fcn = getattr( self, checkPlugin )
+    if not fcn:
+      return S_ERROR("Unable to invoke %s, it isn't a member function" % checkPlugin )
+    res = fcn()
     return res
 
   def _checkBySizePlugin( self ):
@@ -377,9 +394,14 @@ class Transformation( API ):
         if not res['OK']:
           return res
         paramValue = res['Value']
+        setter = None
+        setterName = "set%s" % requiredParam
+        if hasattr( self, setterName ) and callable( getattr( self, setterName ) ):
+          setter = getattr( self, setterName )
+        if not setter:
+          return S_ERROR("Unable to invoke %s, this function hasn't been implemented." % setterName )
         ses = paramValue.replace( ',', ' ' ).split()
-        execString = "res = self.set%s(ses)" % requiredParam
-        exec( execString )
+        res = setter( ses )
         if not res['OK']:
           return res
     return S_OK()
@@ -404,8 +426,13 @@ class Transformation( API ):
     gLogger.info( "%s will be set to '%s'" % ( parameter, res['Value'] ) )
     paramValue = res['Value']
     if insert:
-      execString = "res = self.set%s(paramValue)" % parameter
-      exec( execString )
+      setter = None
+      setterName = "set%s" % parameter 
+      if hasattr( self, setterName ) and callable( getattr( self, setterName ) ):
+        setter = getattr( self, setterName )
+      if not setter:
+        return S_ERROR( "Unable to invoke %s, it isn't a member function of Tranferomation!" )
+      res = setter( paramValue )
       if not res['OK']:
         return res
     return S_OK( paramValue )

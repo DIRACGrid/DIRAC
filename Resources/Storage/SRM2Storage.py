@@ -827,28 +827,27 @@ class SRM2Storage( StorageBase ):
   def __executeOperation( self, url, method ):
     """ Executes the requested functionality with the supplied url
     """
-    execString = "res = self.%s(url)" % method
-    try:
-      exec( execString )
-      if not res['OK']:
-        return S_ERROR( res['Message'] )
-      elif not res['Value']['Successful'].has_key( url ):
-        if not res['Value']['Failed'].has_key( url ):
-          if res['Value']['Failed'].values():
-            return S_ERROR( res['Value']['Failed'].values()[0] )
-          elif res['Value']['Successful'].values():
-            return S_OK( res['Value']['Successful'].values()[0] )
-          else:
-            gLogger.error( 'Wrong Return structure', str( res['Value'] ) )
-            return S_ERROR( 'Wrong Return structure' )
-        return S_ERROR( res['Value']['Failed'][url] )
-      else:
-        return S_OK( res['Value']['Successful'][url] )
-    except AttributeError, errMessage:
-      exceptStr = "SRM2Storage.__executeOperation: Exception while perfoming %s." % method
-      gLogger.exception( exceptStr, '', errMessage )
-      return S_ERROR( "%s%s" % ( exceptStr, errMessage ) )
+    fcn = None
+    if hasattr( self, method ) and callable( getattr(self, method) ):
+      fcn = getattr( self, method )
+    if not fcn:
+      return S_ERROR("Unable to invoke %s, it isn't a member funtion of SRM2Storage" % method )
+    res = fcn( url )
 
+    if not res['OK']:
+      return res
+    elif url not in res['Value']['Successful']:
+      if url not in res['Value']['Failed']:
+        if res['Value']['Failed'].values():
+          return S_ERROR( res['Value']['Failed'].values()[0] )
+        elif res['Value']['Successful'].values():
+          return S_OK( res['Value']['Successful'].values()[0] )
+        else:
+          gLogger.error( 'Wrong Return structure', str( res['Value'] ) )
+          return S_ERROR( 'Wrong Return structure' )
+      return S_ERROR( res['Value']['Failed'][url] )
+    return S_OK( res['Value']['Successful'][url] )
+   
   ############################################################################################
   #
   # Directory based methods
@@ -1852,27 +1851,23 @@ class SRM2Storage( StorageBase ):
       
     """
     gLogger.debug( "SRM2Storage.__gfal_exec: Performing %s." % method )
-    execString = "errCode,gfalObject,errMessage = self.gfal.%s(gfalObject)" % method
-    try:
-      if timeout_sendreceive:
-        # For asynchronous methods this timeout defines how long the connection to set the 
-        # request can take
-        self.gfal.gfal_set_timeout_sendreceive( timeout_sendreceive )
-      exec( execString )
-      if not errCode == 0:
-        errStr = "SRM2Storage.__gfal_exec: Failed to perform %s." % method
-        if not errMessage:
-          errMessage = os.strerror( errCode )
-        gLogger.error( errStr, errMessage )
-        return S_ERROR( "%s%s" % ( errStr, errMessage ) )
-      else:
-        gLogger.debug( "SRM2Storage.__gfal_exec: Successfully performed %s." % method )
-        return S_OK( gfalObject )
-    except AttributeError, errMessage:
-      exceptStr = "SRM2Storage.__gfal_exec: Exception while perfoming %s." % method
-      gLogger.exception( exceptStr, '', errMessage )
-      return S_ERROR( "%s%s" % ( exceptStr, errMessage ) )
-
+    fcn = None
+    if hasattr( self.gfal, method ) and callable( getattr( self.gfal, method) ):
+      fcn = getattr( self.gfal, method )
+    if not fcn:
+      return S_ERROR( "Unable to invoke %s for gfal, it isn't a member function" % method )
+    if timeout_sendreceive:
+      self.gfal.gfal_set_timeout_sendreceive( timeout_sendreceive )
+    errCode, gfalObject, errMessage = fcn( gfalObject )
+    if errCode:
+      errStr = "SRM2Storage.__gfal_exec: Failed to perform %s." % method
+      if not errMessage:
+        errMessage = os.strerror( errCode )
+      gLogger.error( errStr, errMessage )
+      return S_ERROR( "%s%s" % ( errStr, errMessage ) )
+    gLogger.debug( "SRM2Storage.__gfal_exec: Successfully performed %s." % method )
+    return S_OK( gfalObject )
+    
   # These methods are for retrieving output information
 
   def __get_results( self, gfalObject ):
