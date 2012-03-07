@@ -501,7 +501,7 @@ class MySQLStatements( object ):
       if type(i) not in (int, float):
         raise RSSDBException( 'Non numeric value "%s"' % suspicious )
     
-    return [ '"%s"' % s.replace( microsecond = 0 ) for s in suspicious ]
+    return suspicious
 
   _checkNUMERIC  = _checkFLOAT
   _checkDECIMAL  = _checkFLOAT
