@@ -1,4 +1,4 @@
-[v6r2-pre12]
+[v6r2-pre14]
 
 *Accounting
 CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
@@ -69,6 +69,8 @@ FIX: Failover registration request in the FTS agents.
 FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed
      from the RequestManagement 
 FIX: StorageElement - check if SE has been properly initialized before executing any method     
+CHANGE: LFC client getReplica() - make use of the new bulk method lfc.lfc_getreplicasl()
+FIX: LFC client - protect against getting None in lfc.lfc_readdirxr( oDirectory, "" )  
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
