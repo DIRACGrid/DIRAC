@@ -8,7 +8,7 @@
 """
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO, Registry
+from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO, Registry, Operations
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
@@ -358,32 +358,29 @@ class SiteDirector( AgentModule ):
     result = S_OK( executable )
     return result
 
-#####################################################################################    
+#####################################################################################
   def __getPilotOptions( self, queue, pilotsToSubmit ):
     """ Prepare pilot options
     """
 
     queueDict = self.queueDict[queue]['ParametersDict']
 
-    vo = Registry.getVOForGroup( self.genericPilotGroup )
+    opsHelper = Operations( group = self.genericPilotGroup, setup = setup )
 
-    if not vo:
-      self.log.error( 'Virtual Organization is not defined in the configuration' )
-      return None
-    pilotOptions = [ "-V '%s'" % vo ]
     setup = gConfig.getValue( "/DIRAC/Setup", "unknown" )
     if setup == 'unknown':
       self.log.error( 'Setup is not defined in the configuration' )
       return None
     pilotOptions.append( '-S %s' % setup )
-    diracVersion = gConfig.getValue( "/Operations/%s/%s/Versions/PilotVersion" % ( vo, setup ), "unknown" )
-    if diracVersion == 'unknown':
-      self.log.error( 'PilotVersion is not defined in the configuration' )
+    diracVersion = opsHelper.getValue( "Pilot/Version", [] )
+    if not diracVersion:
+      self.log.error( 'Pilot/Version is not defined in the configuration' )
       return None
+    diracVersion = diracVersion[ 0 ]
     pilotOptions.append( '-r %s' % diracVersion )
-    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotInstallation" % ( vo, setup ), "" )
+    projectName = opsHelper.getValue( "Pilot/Project", "" )
     if projectName == '':
-      self.log.info( 'DIRAC installation will be installed by pilots' )
+      self.log.info( 'DIRAC project will be installed by pilots' )
     else:
       pilotOptions.append( '-l %s' % projectName )
 
@@ -431,7 +428,7 @@ class SiteDirector( AgentModule ):
 
     return pilotOptions
 
-#####################################################################################    
+#####################################################################################
   def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admixt the proxy if given
     """
@@ -455,7 +452,7 @@ import os, tempfile, sys, shutil, base64, bz2
 try:
   pilotExecDir = '%(pilotExecDir)s'
   if not pilotExecDir:
-    pilotExecDir = None 
+    pilotExecDir = None
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix = 'DIRAC_', dir = pilotExecDir )
   pilotWorkingDirectory = os.path.realpath( pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
@@ -562,7 +559,7 @@ EOF
         if newStatus:
           self.log.info( 'Updating status to %s for pilot %s' % ( newStatus, pRef ) )
           result = pilotAgentsDB.setPilotStatus( pRef, newStatus, '', 'Updated by SiteDirector' )
-        # Retrieve the pilot output now 
+        # Retrieve the pilot output now
         if newStatus in FINAL_PILOT_STATUS:
           if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
             self.log.info( 'Retrieving output for pilot %s' % pRef )
