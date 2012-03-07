@@ -2322,7 +2322,9 @@ class ResourceStatusClient:
        
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
     sqlQuery = self._getElement( element, kwargs )
-     
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery
+         
     del kwargs[ 'meta' ] 
        
     if sqlQuery[ 'Value' ]:      
@@ -2380,6 +2382,8 @@ class ResourceStatusClient:
              }
 
     sqlQuery = self._getElement( 'ElementStatus', kwargs )
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery
 
     rDict[ 'element' ] = element
 
