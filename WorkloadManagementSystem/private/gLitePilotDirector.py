@@ -13,6 +13,7 @@ from DIRAC import gConfig, List
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 
 import os, time, re
+from hashlib import md5
 
 # Some default values
 
@@ -65,7 +66,7 @@ class gLitePilotDirector( GridPilotDirector ):
     # This allows to set it to '' for LHCB and prevent CREAM CEs to reuse old proxies
     # For this to work with parametric jobs it requires the UI default configuration files to properly defined a
     #  consistent default.
-    # For other VOs it allows to set a proper MyProxyServer for automatic renewal 
+    # For other VOs it allows to set a proper MyProxyServer for automatic renewal
     #  of pilot credentials for private pilots
     self.myProxyServer = gConfig.getValue( mySection + '/MyProxyServer'         , self.myProxyServer )
 
@@ -95,6 +96,10 @@ class gLitePilotDirector( GridPilotDirector ):
       else:
         extraReq = "AllowsGenericPilot"
 
+    myProxyServer = self.myProxyServer
+    if not myProxyServer.strip():
+      myProxyServer = md5( str( time.time() ) ).hexdigest()
+
     wmsClientJDL = """
 
 RetryCount = 0;
@@ -121,10 +126,10 @@ JdlDefaultAttributes =  [
     PerusalFileEnable  =  false;
     ];
 ];
-""" % ( self.myProxyServer, extraReq,
+""" % ( myProxyServer, extraReq,
         workingDirectory, workingDirectory,
         workingDirectory, ', '.join( rbList ),
-        ', '.join( lbList ), self.myProxyServer )
+        ', '.join( lbList ), myProxyServer )
 
     if pilotsToSubmit > 1:
       wmsClientJDL += """

@@ -26,9 +26,9 @@ import DIRAC
 # Some reasonable Defaults
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
-DIRAC_VERSION = 'Production'
-DIRAC_VERSION = 'HEAD'
+DIRAC_VERSION = 'Integration'
 DIRAC_PROJECT = ''
+DIRAC_INSTALLATION = ''
 
 MAX_JOBS_IN_FILLMODE = 2
 
@@ -99,6 +99,7 @@ class PilotDirector:
     self.extraPilotOptions = []
     self.installVersion = DIRAC_VERSION
     self.installProject = DIRAC_PROJECT
+    self.installation = DIRAC_INSTALLATION
 
     self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
@@ -133,11 +134,12 @@ class PilotDirector:
 
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
     section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
-    self.installVersion = gConfig.getValue( cfgPath( section, 'PilotVersion' ),
+    self.installVersion = gConfig.getValue( cfgPath( section, 'Pilot', 'Version' ),
                                          self.installVersion )
-    self.installProject = gConfig.getValue( cfgPath( section, 'PilotProject' ),
+    self.installProject = gConfig.getValue( cfgPath( section, 'Pilot', 'Project' ),
                                          self.installProject )
-
+    self.installation = gConfig.getValue( cfgPath( section, 'Pilot', 'Installation' ),
+                                         self.installation )
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
     self.log.info( '' )
@@ -147,6 +149,8 @@ class PilotDirector:
     self.log.info( ' Install Ver:    ', self.installVersion )
     if self.installProject:
       self.log.info( ' Project:        ', self.installProject )
+    if self.installation:
+      self.log.info( ' Installation:   ', self.installation )
     if self.extraPilotOptions:
       self.log.info( ' Extra Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
@@ -171,10 +175,13 @@ class PilotDirector:
       reload from CS
     """
     self.pilot = gConfig.getValue( mySection + '/PilotScript'          , self.pilot )
+    #TODO: Remove this DIRACVersion after 06/2012
     self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.installVersion )
+    self.installVersion = gConfig.getValue( mySection + '/Version'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
     self.installProject = gConfig.getValue( mySection + '/Project'        , self.installProject )
+    self.installation = gConfig.getValue( mySection + '/Installation'        , self.installation )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
     self.targetGrids = gConfig.getValue( mySection + '/TargetGrids'    , self.targetGrids )
 
@@ -333,6 +340,9 @@ class PilotDirector:
     installProject = opsHelper.getValue( "Pilot/Project" , self.installProject )
     if installProject:
       pilotOptions.append( '-l %s' % installProject )
+    installation = opsHelper.getValue( "Pilot/Installation", self.installation )
+    if installation:
+      pilotOptions.append( "-V %s" % installation )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
 

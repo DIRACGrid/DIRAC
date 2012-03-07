@@ -364,25 +364,34 @@ class SiteDirector( AgentModule ):
     """
 
     queueDict = self.queueDict[queue]['ParametersDict']
-
-    opsHelper = Operations( group = self.genericPilotGroup, setup = setup )
+    pilotOptions = []
 
     setup = gConfig.getValue( "/DIRAC/Setup", "unknown" )
     if setup == 'unknown':
       self.log.error( 'Setup is not defined in the configuration' )
       return None
     pilotOptions.append( '-S %s' % setup )
+    opsHelper = Operations.Operations( group = self.genericPilotGroup, setup = setup )
+
+    #Installation defined?
+    installationName = opsHelper.getValue( "Pilot/Installation", "" )
+    if installationName:
+      pilotOptions.append( '-V %s' % installationName )
+
+    #Project defined?
+    projectName = opsHelper.getValue( "Pilot/Project", "" )
+    if projectName:
+      pilotOptions.append( '-l %s' % projectName )
+    else:
+      self.log.info( 'DIRAC project will be installed by pilots' )
+
+    #Request a release
     diracVersion = opsHelper.getValue( "Pilot/Version", [] )
     if not diracVersion:
       self.log.error( 'Pilot/Version is not defined in the configuration' )
       return None
-    diracVersion = diracVersion[ 0 ]
-    pilotOptions.append( '-r %s' % diracVersion )
-    projectName = opsHelper.getValue( "Pilot/Project", "" )
-    if projectName == '':
-      self.log.info( 'DIRAC project will be installed by pilots' )
-    else:
-      pilotOptions.append( '-l %s' % projectName )
+    #diracVersion is a list of accepted releases. Just take the first one
+    pilotOptions.append( '-r %s' % diracVersion[0] )
 
     ownerDN = self.genericPilotDN
     ownerGroup = self.genericPilotGroup
