@@ -78,7 +78,7 @@ class ResourceStatusClient:
     gateFunction = getattr( self.gate, queryType )
     
     # If meta is None, we set it to {}
-    meta   = ( kwargs.pop( 'meta' ) and True ) or {}
+    meta   = ( True and kwargs.pop( 'meta' ) ) or {}
     params = kwargs
     del params[ 'self' ]     
         
