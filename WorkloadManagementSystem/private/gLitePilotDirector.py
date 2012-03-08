@@ -13,7 +13,6 @@ from DIRAC import gConfig, List
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 
 import os, time, re
-from hashlib import md5
 
 # Some default values
 
@@ -96,37 +95,35 @@ class gLitePilotDirector( GridPilotDirector ):
       else:
         extraReq = "AllowsGenericPilot"
 
-    myProxyServer = self.myProxyServer
-    if not myProxyServer.strip():
-      myProxyServer = md5( str( time.time() ) ).hexdigest()
+    myProxyServer = self.myProxyServer.strip()
+    if myProxyServer:
+      myProxyServer = 'MyProxyServer = "%s";' % myProxyServer
 
     wmsClientJDL = """
-
 RetryCount = 0;
 ShallowRetryCount = 0;
-MyProxyServer = "%s";
-
 AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
 Requirements = pilotRequirements && %s;
+%s
 WmsClient = [
-ErrorStorage = "%s/pilotError";
-OutputStorage = "%s/pilotOutput";
+  ErrorStorage = "%s/pilotError";
+  OutputStorage = "%s/pilotOutput";
 # ListenerPort = 44000;
-ListenerStorage = "%s/Storage";
-RetryCount = 0;
-ShallowRetryCount = 0;
-WMProxyEndPoints = { %s };
-LBEndPoints = { %s };
-MyProxyServer = "%s";
-EnableServiceDiscovery = false;
-JdlDefaultAttributes =  [
+  ListenerStorage = "%s/Storage";
+  RetryCount = 0;
+  ShallowRetryCount = 0;
+  WMProxyEndPoints = { %s };
+  LBEndPoints = { %s };
+  EnableServiceDiscovery = false;
+  %s
+  JdlDefaultAttributes =  [
     requirements  =  ( other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special" );
     AllowZippedISB  =  true;
     SignificantAttributes  =  {"Requirements", "Rank", "FuzzyRank"};
     PerusalFileEnable  =  false;
-    ];
+  ];
 ];
-""" % ( myProxyServer, extraReq,
+""" % ( extraReq, myProxyServer,
         workingDirectory, workingDirectory,
         workingDirectory, ', '.join( rbList ),
         ', '.join( lbList ), myProxyServer )
