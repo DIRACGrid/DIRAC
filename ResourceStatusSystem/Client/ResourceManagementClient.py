@@ -81,7 +81,7 @@ class ResourceManagementClient:
         
     meta[ 'table' ] = tableName
     
-    gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
+    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
     return gateFunction( params, meta )
 
 ################################################################################
