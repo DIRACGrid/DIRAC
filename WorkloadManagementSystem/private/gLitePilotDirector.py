@@ -14,6 +14,8 @@ from DIRAC.Core.Utilities.Grid import executeGridCommand
 
 import os, time, re
 
+from hashlib import md5
+
 # Some default values
 
 BROKERS = ['wms206.cern.ch']
@@ -96,15 +98,16 @@ class gLitePilotDirector( GridPilotDirector ):
         extraReq = "AllowsGenericPilot"
 
     myProxyServer = self.myProxyServer.strip()
-    if myProxyServer:
-      myProxyServer = 'MyProxyServer = "%s";' % myProxyServer
+    if not myProxyServer:
+      #Random string to avoid caching
+      myProxyServer = md5( str( time.time() ) ).hexdigest()
 
     wmsClientJDL = """
 RetryCount = 0;
 ShallowRetryCount = 0;
 AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
 Requirements = pilotRequirements && %s;
-%s
+MyProxyServer = "%s";
 WmsClient = [
   ErrorStorage = "%s/pilotError";
   OutputStorage = "%s/pilotOutput";
@@ -115,7 +118,7 @@ WmsClient = [
   WMProxyEndPoints = { %s };
   LBEndPoints = { %s };
   EnableServiceDiscovery = false;
-  %s
+  MyProxyServer = "%s";
   JdlDefaultAttributes =  [
     requirements  =  ( other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special" );
     AllowZippedISB  =  true;
