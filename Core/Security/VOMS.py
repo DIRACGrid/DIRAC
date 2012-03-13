@@ -93,8 +93,8 @@ class VOMS( BaseSecurity ):
           2. Proxy Certificate Timeleft in seconds (the output is an int)
           3. DN
           4. voms group (if any)
-        @type  proxy_file: a string
-        @param proxy_file: the proxy certificate location.
+        @type  proxy: a string
+        @param proxy: the proxy certificate location.
         @type  option: a string
         @param option: None is the default value. Other option available are:
           - timeleft
@@ -224,6 +224,8 @@ class VOMS( BaseSecurity ):
     newProxyLocation = retVal[ 'Value' ]
 
     cmdArgs = []
+    if chain.isLimitedProxy()[ 'Value' ]:
+      cmdArgs.append( '-limited' )
     cmdArgs.append( '-cert "%s"' % proxyLocation )
     cmdArgs.append( '-key "%s"' % proxyLocation )
     cmdArgs.append( '-out "%s"' % newProxyLocation )
@@ -246,7 +248,7 @@ class VOMS( BaseSecurity ):
 
     if not result['OK']:
       self._unlinkFiles( newProxyLocation )
-      return S_ERROR( 'Failed to call voms-proxy-init' )
+      return S_ERROR( 'Failed to call voms-proxy-init: %s' % result['Message'] )
 
     status, output, error = result['Value']
 

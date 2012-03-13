@@ -28,6 +28,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import *
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Security.CS import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
 
 import threading
 
@@ -54,7 +55,7 @@ def initializeWMSAdministratorHandler( serviceInfo ):
 class WMSAdministratorHandler(RequestHandler):
 
 ###########################################################################
-  types_setMask = [StringType]
+  types_setMask = [StringTypes]
   def export_setSiteMask(self, siteList, comment='No comment'):
     """ Set the site mask for matching. The mask is given in a form of Classad
         string.
@@ -86,7 +87,7 @@ class WMSAdministratorHandler(RequestHandler):
       return S_ERROR('Failed to get the mask from the Job DB')
 
 ##############################################################################
-  types_banSite = [StringType]
+  types_banSite = [StringTypes]
   def export_banSite(self, site,comment='No comment'):
     """ Ban the given site in the site mask
     """
@@ -102,7 +103,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
 ##############################################################################
-  types_allowSite = [StringType]
+  types_allowSite = [StringTypes]
   def export_allowSite(self,site,comment='No comment'):
     """ Allow the given site in the site mask
     """
@@ -210,7 +211,7 @@ class WMSAdministratorHandler(RequestHandler):
 
 
   ##############################################################################
-  types_getPilotOutput = [StringType]
+  types_getPilotOutput = [StringTypes]
   def export_getPilotOutput(self,pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
@@ -219,7 +220,7 @@ class WMSAdministratorHandler(RequestHandler):
     return self.__getGridJobOutput(pilotReference)
 
   ##############################################################################
-  types_getPilotInfo = [ [StringType,ListType] ]
+  types_getPilotInfo = [ [StringTypes,ListType] ]
   def export_getPilotInfo(self,pilotReference):
     """ Get the info about a given pilot job reference
     """
@@ -240,7 +241,7 @@ class WMSAdministratorHandler(RequestHandler):
     return pilotDB.storePilotOutput(pilotReference,output,error)
 
   ##############################################################################
-  types_getPilotLoggingInfo = [StringType]
+  types_getPilotLoggingInfo = [StringTypes]
   def export_getPilotLoggingInfo(self,pilotReference):
     """ Get the pilot logging info for the Grid job reference
     """
@@ -253,6 +254,7 @@ class WMSAdministratorHandler(RequestHandler):
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
 
+    group = getGroupOption(group,'VOMSRole',group)
     ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
     if not ret['OK']:
       gLogger.error( ret['Message'] )
@@ -326,18 +328,17 @@ class WMSAdministratorHandler(RequestHandler):
         return S_ERROR('Empty pilot output found')
 
     gridType = pilotDict['GridType']
-    if gridType in ["DIRAC","CREAM"]:
-      # For the moment return with error. Later can try to get the output from the CE
-      return S_ERROR('Pilot output is not yet retrieved') 
-    elif gridType in ["LCG","gLite"]:
+    if gridType in ["LCG","gLite","CREAM"]:
+      group = getGroupOption(group,'VOMSRole',group)
       ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
       if not ret['OK']:
         gLogger.error( ret['Message'] )
         gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
         return S_ERROR("Failed to get the pilot's owner proxy")
       proxy = ret['Value']
-  
-      result = getPilotOutput( proxy, gridType, pilotReference )
+ 
+      pilotStamp = pilotDict['PilotStamp'] 
+      result = getPilotOutput( proxy, gridType, pilotReference, pilotStamp )
       if not result['OK']:
         return S_ERROR('Failed to get pilot output: '+result['Message'])
       # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
@@ -486,7 +487,7 @@ class WMSAdministratorHandler(RequestHandler):
     return pilotDB.getPilotInfo(pilotID=pilots)
 
   ##############################################################################
-  types_setJobForPilot = [ [IntType,LongType], StringType]
+  types_setJobForPilot = [ [IntType,LongType], StringTypes]
   def export_setJobForPilot(self,jobID,pilotRef,destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
@@ -503,7 +504,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##########################################################################################
-  types_setPilotBenchmark = [StringType, FloatType]
+  types_setPilotBenchmark = [StringTypes, FloatType]
   def export_setPilotBenchmark(self,pilotRef,mark):
     """ Set the pilot agent benchmark
     """
@@ -511,7 +512,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
   
   ##########################################################################################
-  types_setAccountingFlag = [StringType]
+  types_setAccountingFlag = [StringTypes]
   def export_setAccountingFlag(self,pilotRef,mark='True'):
     """ Set the pilot AccountingSent flag
     """
@@ -519,7 +520,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##########################################################################################
-  types_setPilotStatus = [StringType, StringType]
+  types_setPilotStatus = [StringTypes, StringTypes]
   def export_setPilotStatus(self,pilotRef,status,destination=None,reason=None,gridSite=None,queue=None):
     """ Set the pilot agent status
     """

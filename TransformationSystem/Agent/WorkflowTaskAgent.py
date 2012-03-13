@@ -10,15 +10,19 @@ from DIRAC.TransformationSystem.Client.TaskManager                  import Workf
 
 AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
-class WorkflowTaskAgent( TaskManagerAgentBase, WorkflowTasks ):
+#class WorkflowTaskAgent( TaskManagerAgentBase, WorkflowTasks ):
+class WorkflowTaskAgent( TaskManagerAgentBase ):
   """ An AgentModule class to submit workflow tasks
   """
 
   #############################################################################
   def initialize( self ):
     """ Sets defaults """
-    TaskManagerAgentBase.initialize( self )
-    WorkflowTasks.__init__( self )
+    
+    taskManager = WorkflowTasks()
+    
+    TaskManagerAgentBase.initialize( self, taskManager = taskManager )
+ #   WorkflowTasks.__init__( self )
     self.transType = self.am_getOption( "TransType", ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] )
 
     # This sets the Default Proxy to used as that defined under 

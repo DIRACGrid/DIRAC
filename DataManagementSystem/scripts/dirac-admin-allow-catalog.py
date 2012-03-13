@@ -19,7 +19,7 @@ sites = Script.getPositionalArgs()
 
 from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
-from DIRAC.Core.Security.Misc                         import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
 from DIRAC                                            import gConfig, gLogger
 csAPI = CSAPI()
 
@@ -42,7 +42,7 @@ for site in sites:
     gLogger.error( "The provided site (%s) does not have an associated catalog." % site )
     continue
 
-  res = csAPI.setOption( "%s/%s/Status" % ( storageCFGBase, site ), "Active" )
+  res = csAPI.setOption( "%s/%s/Status" % ( catalogCFGBase, site ), "Active" )
   if not res['OK']:
     gLogger.error( "Failed to update %s catalog status to Active" % site )
   else:

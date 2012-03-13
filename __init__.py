@@ -74,10 +74,10 @@ import sys, os, platform
 
 # Define Version
 
-majorVersion = 5
-minorVersion = 12
-patchLevel = 25
-preVersion = 0
+majorVersion = 6
+minorVersion = 0
+patchLevel = 0
+preVersion = 4
 
 version = "v%sr%s" % ( majorVersion, minorVersion )
 buildVersion = "v%dr%d" % ( majorVersion, minorVersion )

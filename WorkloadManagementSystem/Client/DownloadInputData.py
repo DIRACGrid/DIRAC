@@ -153,22 +153,27 @@ class DownloadInputData:
     for lfn in downloadReplicas.keys():
       result = self.__getPFN( downloadReplicas[lfn]['PFN'],
                               downloadReplicas[lfn]['SE'],
-                              downloadReplicas[lfn]['Size'],
                               downloadReplicas[lfn]['GUID'] )
       if not result['OK']:
         self.log.warn( 'Download of file from localSE failed with message:\n%s' % ( result ) )
         result = self.__getLFN( lfn, downloadReplicas[lfn]['PFN'],
                                 downloadReplicas[lfn]['SE'],
-                                downloadReplicas[lfn]['Size'],
                                 downloadReplicas[lfn]['GUID'] )
         if not result['OK']:
           self.log.warn( 'Download of file from any SE failed with message:\n%s' % ( result ) )
           failedReplicas.append( lfn )
-        else:
-          resolvedData[lfn] = result['Value']
       else:
-        resolvedData[lfn] = result['Value']
         localSECount += 1
+      if result['OK']:
+        # Rename file if downloaded FileName does not match the LFN
+        lfnName = os.path.basename( lfn )
+        oldPath = result['Value']['path']
+        fileName = os.path.basename( oldPath )
+        if lfnName != fileName:
+          newPath = os.path.join( os.path.dirname( oldPath, lfnName ) )
+          os.rename( oldPath, newPath )
+          result['Value']['path'] = newPath
+        resolvedData[lfn] = result['Value']
 
     #Report datasets that could not be downloaded
     report = ''
@@ -211,7 +216,7 @@ class DownloadInputData:
       return S_ERROR( msg )
 
   #############################################################################
-  def __getLFN( self, lfn, pfn, se, size, guid ):
+  def __getLFN( self, lfn, pfn, se, guid ):
     """ Download a local copy of a single LFN from the specified Storage Element.
         This is used as a last resort to attempt to retrieve the file.  The Replica
         Manager will perform an LFC lookup to refresh the stored result.
@@ -231,8 +236,12 @@ class DownloadInputData:
     if not result['OK']:
       return result
     self.log.verbose( result )
-    fileName = os.path.basename( result['Value'] )
-    localFile = '%s/%s' % ( downloadDir, fileName )
+    if lfn in result['Value']['Failed']:
+      return S_ERROR( 'Download failed with error %s' % result['Value']['Failed'][lfn] )
+    if lfn not in result['Value']['Successful']:
+      return S_ERROR( 'Donwload failed' )
+    fileName = os.path.basename( result['Value']['Successful'][lfn] )
+    localFile = os.path.join( downloadDir, fileName )
     if os.path.exists( localFile ):
       self.log.verbose( 'File %s exists in current directory' % ( fileName ) )
       fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':se, 'pfn':pfn, 'guid':guid, 'path':localFile}
@@ -242,21 +251,21 @@ class DownloadInputData:
       return S_ERROR( 'OK download result but file missing in current directory' )
 
   #############################################################################
-  def __getPFN( self, pfn, se, size, guid ):
+  def __getPFN( self, pfn, se, guid ):
     """ Download a local copy of a single PFN from the specified Storage Element.
     """
     if not pfn:
       return S_ERROR( 'Assume file is not at this site' )
 
     fileName = os.path.basename( pfn )
-    if os.path.exists( '%s/%s' % ( os.getcwd(), fileName ) ):
+    if os.path.exists( fileName ):
       self.log.verbose( 'File already %s exists in current directory' % ( fileName ) )
       fileDict = { 'turl':'LocalData',
                    'protocol':'LocalData',
                    'se':se,
                    'pfn':pfn,
                    'guid':guid,
-                   'path':'%s/%s' % ( os.getcwd(), fileName )}
+                   'path': os.path.join( os.getcwd(), fileName )}
       return S_OK( fileDict )
 
     start = os.getcwd()
@@ -274,7 +283,7 @@ class DownloadInputData:
       return result
     self.log.verbose( result )
 
-    localFile = '%s/%s' % ( downloadDir, fileName )
+    localFile = os.path.join( downloadDir, fileName )
     if os.path.exists( localFile ):
       self.log.verbose( 'File %s exists in current directory' % ( fileName ) )
       fileDict = {'turl':'Downloaded', 'protocol':'Downloaded', 'se':se, 'pfn':pfn, 'guid':guid, 'path':localFile}

@@ -57,6 +57,7 @@ from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
 
 import cx_Oracle
+import types
 
 gInstancesCount = 0
 
@@ -65,7 +66,7 @@ import time
 import threading
 
 maxConnectRetry = 100
-maxArraysize = 5000 #max allowed 
+maxArraysize = 5000 #max allowed
 class OracleDB:
   """
   Basic multithreaded DIRAC Oracle Client Class
@@ -203,7 +204,7 @@ class OracleDB:
     except Exception , x:
 
       self.logger.debug( '_query:', cmd )
-      retDict = self._except( '_query', x, 'Excution failed.' )
+      retDict = self._except( '_query', x, 'Execution failed.' )
       self.logger.debug( 'Start Roolback transaktio!' )
       connection.rollback()
       self.logger.debug( 'End Roolback transaktio!' )
@@ -231,9 +232,15 @@ class OracleDB:
       cursor = connection.cursor()
       result = None
       results = None
-      if array != None:
-        result = cursor.arrayvar( cx_Oracle.STRING, array )
-        parameters += [result]
+      if array != None and len(array) > 0:
+        if type(array[0]) == types.StringType:
+          result = cursor.arrayvar( cx_Oracle.STRING, array )
+          parameters += [result]
+        elif type(array[0]) == types.LongType or type(array[0]) == types.IntType:
+          result = cursor.arrayvar( cx_Oracle.NUMBER, array )
+          parameters += [result]
+        else:
+          return S_ERROR('The array type is not supported!!!')
       if output == True:
         result = connection.cursor()
         result.arraysize = maxArraysize # 500x faster!!
@@ -246,7 +253,7 @@ class OracleDB:
     except Exception , x:
 
       self.logger.debug( '_query:', packageName + "(" + str( parameters ) + ")" )
-      retDict = self._except( '_query', x, 'Excution failed.' )
+      retDict = self._except( '_query', x, 'Execution failed.' )
       connection.rollback()
 
 
@@ -259,6 +266,7 @@ class OracleDB:
       self.__putConnection( connection )
 
     return retDict
+
 
   def executeStoredFunctions( self, packageName, returnType, parameters = None, conn = False ):
     if parameters == None:

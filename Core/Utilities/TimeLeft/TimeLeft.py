@@ -156,10 +156,10 @@ class TimeLeft:
     return S_OK( batchInstance )
 
 #############################################################################
-def runCommand( cmd ):
+def runCommand( cmd, timeout = 120 ):
   """Wrapper around shellCall to return S_OK(stdout) or S_ERROR(message)
   """
-  result = shellCall( 0, cmd )
+  result = shellCall( timeout, cmd )
   if not result['OK']:
     return result
   status = result['Value'][0]

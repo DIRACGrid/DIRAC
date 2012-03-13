@@ -1,33 +1,34 @@
 ########################################################################
-# $Id$
+# $HeadURL$
 ########################################################################
-
 """ DataLoggingHandler is the implementation of the Data Logging
-    service in the DISET framework
+    service in the DISET framework.
 
-    The following methods are available in the Service interface
+    The following methods are available in the Service interface::
 
-    addFileRecord()
-    addFileRecords()
-    getFileLoggingInfo()
+    * addFileRecord()
+    * addFileRecords()
+    * getFileLoggingInfo()
 
 """
-
 __RCSID__ = "$Id$"
-from DIRAC                                          import gLogger, gConfig, rootPath, S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler                import RequestHandler
-from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
-from types import *
-import time, os
 
-from DIRAC.ConfigurationSystem.Client               import PathFinder
+## imports
+import os
+from types import StringType, ListType, TupleType, DictType
+## from DIRAC
+from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.DataManagementSystem.DB.DataLoggingDB import DataLoggingDB
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
-# This is a global instance of the DataLoggingDB class
+## global instance of the DataLoggingDB
 logDB = False
+## global data path 
 dataPath = False
 
 def initializeDataLoggingHandler( serviceInfo ):
-
+  """ handler initialisation """
   global dataPath
   global logDB
   logDB = DataLoggingDB()
@@ -35,11 +36,11 @@ def initializeDataLoggingHandler( serviceInfo ):
   monitoringSection = PathFinder.getServiceSection( "DataManagement/DataLogging" )
   #Get data location
   retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection, "dataLoggingPlots" )
-  if not retDict[ 'OK' ]:
+  if not retDict["OK"]:
     return retDict
-  dataPath = retDict[ 'Value' ].strip()
-  if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
+  dataPath = retDict["Value"].strip()
+  if not os.path.isabs(dataPath):
+    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( "/LocalSite/InstancePath", rootPath ), dataPath ) )
   gLogger.info( "Data will be written into %s" % dataPath )
   try:
     os.makedirs( dataPath )
@@ -56,28 +57,38 @@ def initializeDataLoggingHandler( serviceInfo ):
   return S_OK()
 
 class DataLoggingHandler( RequestHandler ):
+  """ 
+  .. class:: DataLoggingClient
+  
+  Request handler for DataLogging service.
+  """
 
-  ###########################################################################
-  types_addFileRecord = [[StringType, ListType], StringType, StringType, StringType, StringType]
+  types_addFileRecord = [ [StringType, ListType], StringType, StringType, StringType, StringType ]
   def export_addFileRecord( self, lfn, status, minor, date, source ):
     """ Add a logging record for the given file
+    
+    :param self: self reference
+    :param mixed lfn: list of strings or a string with LFN
+    :param str status: file status
+    :param str minor: minor status (additional information)
+    :param mixed date: datetime.datetime or str(datetime.datetime) or ""
+    :param str source: source setting a new status 
     """
     if type( lfn ) == StringType:
-      lfns = [lfn]
+      lfns = [ lfn ]
     else:
       lfns = lfn
     result = logDB.addFileRecord( lfns, status, minor, date, source )
     return result
 
-  types_addFileRecords = [[ListType, TupleType]]
+  types_addFileRecords = [ [ ListType, TupleType ] ]
   def export_addFileRecords( self, fileTuples ):
     """ Add a group of logging records
     """
     result = logDB.addFileRecords( fileTuples )
     return result
 
-  ###########################################################################
-  types_getFileLoggingInfo = [StringType]
+  types_getFileLoggingInfo = [ StringType ]
   def export_getFileLoggingInfo( self, lfn ):
     """ Get the file logging information
     """
@@ -91,23 +102,22 @@ class DataLoggingHandler( RequestHandler ):
     result = logDB.getUniqueStates()
     return result
 
-  types_plotView = [DictType]
+  types_plotView = [ DictType ]
   def export_plotView( self, paramsDict ):
     """  Plot the view for the supplied parameters
+
+    :warn: obsolete? TBR
     """
 
-    startState = paramsDict['StartState']
-    endState = paramsDict['EndState']
-    startTime = ''
-    endTime = ''
-    title = '%s till %s' % ( startState, endState )
-    if paramsDict.has_key( 'StartTime' ):
-      startTime = paramsDict['StartTime']
-    if paramsDict.has_key( 'EndTime' ):
-      endTime = paramsDict['EndTime']
-    xlabel = 'Time (seconds)'
-    ylabel = ''
-    outputFile = '%s/%s-%s' % ( dataPath, startState, endState )
+    startState = paramsDict["StartState"]
+    endState = paramsDict["EndState"]
+    startTime = paramsDict["StartTime"] if "StartTime" in paramsDict else ""
+    endTime = paramsDict["EndTime"] if "EndTime" in paramsDict else ""
+    title = "%s till %s" % ( startState, endState )
+
+    xlabel = "Time (seconds)"
+    ylabel = ""
+    outputFile = "%s/%s-%s" % ( dataPath, startState, endState )
     res = logDB.getStateDiff( startState, endState, startTime, endTime )
     if not res['OK']:
       return S_ERROR( 'Failed to get DB info: %s' % res['Message'] )

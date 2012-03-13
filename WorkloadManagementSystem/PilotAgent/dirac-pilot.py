@@ -43,7 +43,7 @@ except Exception, x:
 
 class CliParams:
 
-  MAX_CYCLES = 5
+  MAX_CYCLES = 100
 
   def __init__( self ):
     self.debug = False
@@ -56,12 +56,12 @@ class CliParams:
     self.platform = ""
     self.minDiskSpace = 2560 #MB
     self.jobCPUReq = 900
-    self.pythonVersion = '25'
+    self.pythonVersion = '26'
     self.userGroup = ""
     self.userDN = ""
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
-    self.gridVersion = '2009-08-13'
+    self.gridVersion = '2010-11-20'
     self.pilotReference = ''
     self.releaseVersion = ''
 
@@ -121,6 +121,25 @@ pilotRootPath = os.path.dirname( pilotScript )
 rootPath = os.getcwd()
 
 installScriptName = 'dirac-install.py'
+
+rootPath = os.getcwd()
+
+if os.environ.has_key('OSG_WN_TMP'):
+  os.chdir(os.environ['OSG_WN_TMP'])
+  for path in ( pilotRootPath, rootPath ):
+    installScript = os.path.join( path, installScriptName )
+    if os.path.isfile( installScript ):
+      try:
+        shutil.copy(installScript, os.path.join(os.environ['OSG_WN_TMP'],installScriptName))
+      except Exception, x:
+        print sys.executable
+        print sys.version
+        print os.uname()
+        print x
+        raise x
+      break
+
+rootPath = os.getcwd()
 
 for path in ( pilotRootPath, rootPath ):
   installScript = os.path.join( path, installScriptName )
@@ -256,10 +275,9 @@ for o, v in optList:
   elif o in ( '-U', '--Upload' ):
     #TODO
     pass
-  elif o in ( '-V', '--VO' ):
-    configureOpts.append( '-V "%s"' % v )
-    #HACK while VO == project in dirac-install
+  elif o in ( '-V', '--installation' ):
     installOpts.append( '-V "%s"' % v )
+    configureOpts.append( 'defaults-%s.cfg' % v )
   elif o in ( '-W', '--gateway' ):
     configureOpts.append( '-W "%s"' % v )
   elif o == '-E' or o == '--server':
@@ -308,6 +326,10 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   if os.environ['GLITE_WMS_JOBID'] != 'N/A':
     cliParams.flavour = 'gLite'
     pilotRef = os.environ['GLITE_WMS_JOBID']
+    
+if os.environ.has_key( 'JOB_ID' ):
+    cliParams.flavour = 'SSHGE'
+    pilotRef = os.environ['JOB_ID']
 
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
@@ -318,22 +340,30 @@ if pilotRef != 'Unknown':
 ###
 #cliParams.ceName = 'Local'
 if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
-  if os.environ.has_key( 'OSG_APP' ):
-    retCode, CE = executeAndGetOutput( 'echo $OSG_HOSTNAME' )
-  else:
-    retCode, CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
+  retCode, CE = executeAndGetOutput( 'glite-brokerinfo getCE || edg-brokerinfo getCE' )
   if not retCode:
     cliParams.ceName = CE.split( ':' )[0]
-    cliParams.queueName = CE.split( '/' )[1]
+    if len( CE.split( '/' ) ) > 1:
+      cliParams.queueName = CE.split( '/' )[1]
+    configureOpts.append( '-N "%s"' % cliParams.ceName )
+  elif os.environ.has_key( 'OSG_JOB_CONTACT' ):
+    # OSG_JOB_CONTACT String specifying the endpoint to use within the job submission 
+    #                 for reaching the site (e.g. manager.mycluster.edu/jobmanager-pbs )
+    CE = os.environ['OSG_JOB_CONTACT']
+    cliParams.ceName = CE.split( '/' )[0]
+    if len( CE.split( '/' ) ) > 1:
+      cliParams.queueName = CE.split( '/' )[1]
     configureOpts.append( '-N "%s"' % cliParams.ceName )
   else:
     logERROR( "There was an error executing brokerinfo. Setting ceName to local " )
 elif cliParams.flavour == "CREAM":
   if os.environ.has_key( 'CE_ID' ):
     cliParams.ceName = os.environ['CE_ID'].split( ':' )[0]
-    cliParams.queueName = os.environ['CE_ID'].split( '/' )[1]
+    if os.environ['CE_ID'].count( "/" ):
+      cliParams.queueName = os.environ['CE_ID'].split( '/' )[1]
     configureOpts.append( '-N "%s"' % cliParams.ceName )
-    configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
+    #if cliParams.queueName:
+    #  configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
 
 if cliParams.queueName:
   configureOpts.append( '-o /LocalSite/CEQueue=%s' % cliParams.queueName )

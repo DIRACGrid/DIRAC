@@ -43,27 +43,9 @@ class StorageElement:
       self.protocolOptions = factoryDict['ProtocolOptions']
       self.turlProtocols = factoryDict['TurlProtocols']
 
-    self.readMethods = [  'getStorageElementName',
-                           'getProtocols',
-                           'getRemoteProtocols',
-                           'getLocalProtocols',
-                           'getStorageElementOption',
-                           'getStorageParameters',
-                           'isLocalSE',
-                           'getPfnForProtocol',
-                           'getPfnPath',
-                           'getPfnForLfn',
-                           'exists',
-                           'isFile',
-                           'getFile',
-                           'getFileMetadata',
-                           'getFileSize',
+    self.readMethods = [   'getFile',
                            'getAccessUrl',
                            'getTransportURL',
-                           'isDirectory',
-                           'getDirectoryMetadata',
-                           'getDirectorySize',
-                           'listDirectory',
                            'getDirectory']
     self.writeMethods = [  'retransferOnlineFile',
                            'putFile',
@@ -79,6 +61,26 @@ class StorageElement:
                            'removeFile',
                            'removeDirectory',
                           ]
+    self.checkMethods = [
+                         'exists',
+                         'getDirectoryMetadata',
+                         'getDirectorySize',
+                         'getFileSize',
+                         'getFileMetadata',
+                         'getLocalProtocols',
+                         'getPfnForProtocol',
+                         'getPfnForLfn',
+                         'getPfnPath',
+                         'getProtocols',
+                         'getRemoteProtocols',
+                         'getStorageElementName',
+                         'getStorageElementOption',
+                         'getStorageParameters',
+                         'listDirectory',
+                         'isDirectory',
+                         'isFile',
+                         'isLocalSE'
+                         ]
 
   def dump( self ):
     """
@@ -114,6 +116,7 @@ class StorageElement:
       - Read: True (is allowed), False (it is not allowed)
       - Write: True (is allowed), False (it is not allowed)
       - Remove: True (is allowed), False (it is not allowed)
+      - Check: True (is allowed), False (it is not allowed). NB: Check always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
       - DiskSE: True if TXDY with Y > 0 (defaults to True)
       - TapeSE: True if TXDY with X > 0 (defaults to False)
       - TotalCapacityTB: float (-1 if not defined)
@@ -124,6 +127,7 @@ class StorageElement:
       retDict['Read'] = False
       retDict['Write'] = False
       retDict['Remove'] = False
+      retDict['Check'] = False
       retDict['DiskSE'] = False
       retDict['TapeSE'] = False
       retDict['TotalCapacityTB'] = -1
@@ -132,9 +136,17 @@ class StorageElement:
 
     # If nothing is defined in the CS Access is allowed
     # If something is defined, then it must be set to Active
-    retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
-    retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
-    retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active' )
+    retDict['Read'] = not ( self.options.has_key( 'Read' ) and self.options['Read'] not in [ 'Active', 'Bad' ] )
+    #retDict['Read'] = not ( self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active' )
+    retDict['Write'] = not ( self.options.has_key( 'Write' ) and self.options['Write'] not in [ 'Active', 'Bad' ] )
+    #retDict['Write'] = not ( self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active' )
+    retDict['Remove'] = not ( self.options.has_key( 'Remove' ) and self.options['Remove'] not in [ 'Active', 'Bad' ] )
+    #retDict['Remove'] = not ( self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active' )
+    if retDict['Read']:
+      retDict['Check'] = True
+    else:
+      #retDict['Check'] = not ( self.options.has_key( 'CheckAccess' ) and self.options['CheckAccess'] != 'Active' )
+      retDict['Check'] = not ( self.options.has_key( 'Check' ) and self.options['Check'] not in [ 'Active', 'Bad' ] )
     diskSE = True
     tapeSE = False
     if self.options.has_key( 'SEType' ):
@@ -156,26 +168,27 @@ class StorageElement:
     return S_OK( retDict )
 
   def isValid( self, operation = '' ):
+    gLogger.debug( "StorageElement.isValid: Determining whether the StorageElement %s is valid for %s" % ( self.name, operation ) )
     if self.overwride:
       return S_OK()
     gLogger.verbose( "StorageElement.isValid: Determining whether the StorageElement %s is valid for use." % self.name )
     if not self.valid:
       gLogger.error( "StorageElement.isValid: Failed to create StorageElement plugins.", self.errorReason )
       return S_ERROR( self.errorReason )
-    # Determine wheter the StorageElement is valid for reading and writing
-    reading = True
-    if self.options.has_key( 'ReadAccess' ) and self.options['ReadAccess'] != 'Active':
-      reading = False
-    writing = True
-    if self.options.has_key( 'WriteAccess' ) and self.options['WriteAccess'] != 'Active':
-      writing = False
-    removing = True
-    if self.options.has_key( 'RemoveAccess' ) and self.options['RemoveAccess'] != 'Active':
-      removing = False
+    # Determine whether the StorageElement is valid for checking, reading, writing
+    res = self.getStatus()
+    if not res[ 'OK' ]:
+      gLogger.error( "Could not call getStatus" )
+      return S_ERROR( "StorageElement.isValid could not call the getStatus method" )
+    checking = res[ 'Value' ][ 'Check' ]
+    reading = res[ 'Value' ][ 'Read' ]
+    writing = res[ 'Value' ][ 'Write' ]
+    removing = res[ 'Value' ][ 'Remove' ]
+
     # Determine whether the requested operation can be fulfilled    
-    if ( not operation ) and ( not reading ) and ( not writing ):
-      gLogger.error( "StorageElement.isValid: Read and write access not permitted." )
-      return S_ERROR( "StorageElement.isValid: Read and write access not permitted." )
+    if ( not operation ) and ( not reading ) and ( not writing ) and ( not checking ):
+      gLogger.error( "StorageElement.isValid: Read, write and check access not permitted." )
+      return S_ERROR( "StorageElement.isValid: Read, write and check access not permitted." )
     if not operation:
       gLogger.warn( "StorageElement.isValid: The 'operation' argument is not supplied. It should be supplied in the future." )
       return S_OK()
@@ -186,10 +199,18 @@ class StorageElement:
       operation = 'Write'
     elif operation in self.removeMethods or ( operation.lower() == 'remove' ):
       operation = 'Remove'
+    elif operation in self.checkMethods or ( operation.lower() == 'check' ):
+      operation = 'Check'
     else:
       gLogger.error( "StorageElement.isValid: The supplied operation is not known.", operation )
       return S_ERROR( "StorageElement.isValid: The supplied operation is not known." )
+    gLogger.debug( "in isValid check the operation: %s " % operation )
     # Check if the operation is valid
+    if operation == 'Check':
+      if not reading:
+        if not checking:
+          gLogger.error( "StorageElement.isValid: Check access not currently permitted." )
+          return S_ERROR( "StorageElement.isValid: Check access not currently permitted." )
     if operation == 'Read':
       if not reading:
         gLogger.error( "StorageElement.isValid: Read access not currently permitted." )
@@ -207,6 +228,8 @@ class StorageElement:
   def getProtocols( self ):
     """ Get the list of all the protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getProtocols: Obtaining all protocols for %s." % self.name )
     allProtocols = self.localProtocols + self.remoteProtocols
     return S_OK( allProtocols )
@@ -214,18 +237,24 @@ class StorageElement:
   def getRemoteProtocols( self ):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name )
     return S_OK( self.remoteProtocols )
 
   def getLocalProtocols( self ):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getLocalProtocols: Obtaining local protocols for %s." % self.name )
     return S_OK( self.localProtocols )
 
   def getStorageElementOption( self, option ):
     """ Get the value for the option supplied from self.options
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getStorageElementOption: Obtaining %s option for Storage Element %s." % ( option, self.name ) )
     if self.options.has_key( option ):
       optionValue = self.options[option]
@@ -240,6 +269,8 @@ class StorageElement:
     """
     gLogger.verbose( "StorageElement.getStorageParameters: Obtaining storage parameters for %s protocol %s." % ( self.name, protocol ) )
     res = self.getProtocols()
+    if not res['OK']:
+      return res
     availableProtocols = res['Value']
     if not protocol in availableProtocols:
       errStr = "StorageElement.getStorageParameters: Requested protocol not available for SE."
@@ -274,6 +305,8 @@ class StorageElement:
     """ Transform the input pfn into another with the given protocol for the Storage Element.
     """
     res = self.getProtocols()
+    if not res['OK']:
+      return res
     if type( protocol ) == types.StringType:
       protocols = [protocol]
     elif type( protocol ) == types.ListType:
@@ -309,8 +342,10 @@ class StorageElement:
 
   def getPfnPath( self, pfn ):
     """  Get the part of the PFN path below the basic storage path.
-         This path must coinside with the LFN of the file in order to be compliant with the LHCb conventions.
+         This path must coincide with the LFN of the file in order to be compliant with the LHCb conventions.
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     res = pfnparse( pfn )
     if not res['OK']:
       return res
@@ -341,6 +376,8 @@ class StorageElement:
   def getPfnForLfn( self, lfn ):
     """ Get the full PFN constructed from the LFN.
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     for storage in self.storages:
       res = storage.getPFNBase()
       if res['OK']:
@@ -536,6 +573,10 @@ class StorageElement:
       res = self.isValid( operation = method )
       if not res['OK']:
         return res
+    else:
+      if not self.valid:
+        return S_ERROR( self.errorReason )
+
 
     successful = {}
     failed = {}

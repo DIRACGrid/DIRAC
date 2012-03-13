@@ -1,22 +1,29 @@
-""" The GOCDBStatus_Command class is a command class to know about 
-    present downtimes
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The GOCDBStatus_Command class is a command class to know about 
+  present downtimes
 """
 
 import urllib2
-import time
-import datetime
+from datetime import datetime
 
-from DIRAC import gLogger
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC                                        import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import convertTime
+from DIRAC.ResourceStatusSystem.Command.Command   import *
+from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
+from DIRAC.ResourceStatusSystem.Utilities.Utils   import convertTime
 
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-
-#############################################################################
+################################################################################
+################################################################################
 
 class GOCDBStatus_Command(Command):
+  
+  __APIs__ = [ 'GOCDBClient' ]
   
   def doCommand(self):
     """ 
@@ -30,145 +37,83 @@ class GOCDBStatus_Command(Command):
      - args[2]: string: optional, number of hours in which 
      the down time is starting
     """
-    super(GOCDBStatus_Command, self).doCommand()
-
-    if self.client is None:
-      # use standard GOC DB Client
-      from DIRAC.Core.LCG.GOCDBClient import GOCDBClient   
-      self.client = GOCDBClient()
     
-    granularity = self.args[0]
-    name = self.args[1]  
-    try:  
-      hours = self.args[2]
-    except IndexError:
-      hours = None
-
-    if granularity in ('Site', 'Sites'):
-      name = getGOCSiteName(name)
-      if not name['OK']:
-        raise RSSException, name['Message']
-      name = name['Value']
-
+    timeFormat = "%Y-%m-%d %H:%M"
+    
+    super(GOCDBStatus_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    
     try:
-      res = self.client.getStatus(granularity, name, None, hours, self.timeout)
+
+      granularity = self.args[0]
+      name        = self.args[1]  
+      if len( self.args ) > 2:
+        hours = self.args[2]
+      else:
+        hours = None  
+      
+      if granularity == 'Site':
+        name = getGOCSiteName( name )[ 'Value' ]
+      
+      res = self.APIs[ 'GOCDBClient' ].getStatus( granularity, name, None, hours )
+
       if not res['OK']:
-        return {'Result':'Unknown'}
+        return { 'Result' : res }     
+        
       res = res['Value']
+       
       if res is None or res == {}:
-        return {'Result':{'DT':None}}
-      
+        return { 'Result' : S_OK( { 'DT' : None } ) }
+          
       DT_dict_result = {}
+      now = datetime.utcnow().replace( microsecond = 0, second = 0 )
       
-      now = datetime.datetime.utcnow().replace(microsecond = 0, second = 0)
-      
-      if len(res) > 1:
+      if len( res ) > 1:
         #there's more than one DT
+        resDT = None
+          
         for dt_ID in res:
           #looking for an ongoing one
-          startSTR = res[dt_ID]['FORMATED_START_DATE']
-          start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
+          startSTR = res[ dt_ID ][ 'FORMATED_START_DATE' ]
+          start_datetime = datetime.strptime( startSTR, timeFormat )
           if start_datetime < now:
-            resDT = res[dt_ID]
+            resDT = res[ dt_ID ]
             break
-        try:
-          resDT
-        except:
-          #if I'm here, there's no OnGoing DT
+
+        #if I'm here, there's no OnGoing DT
+        if resDT is None:
           resDT = res[res.keys()[0]]
         res = resDT
+            
       else:
         res = res[res.keys()[0]]
 
-      DT_dict_result['DT'] = res['SEVERITY']
+      DT_dict_result['DT']      = res['SEVERITY']
       DT_dict_result['EndDate'] = res['FORMATED_END_DATE']
-      startSTR = res['FORMATED_START_DATE']
-      start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-      if start_datetime > now:
-        diff = convertTime(start_datetime - now, 'hours')
-        DT_dict_result['DT'] = DT_dict_result['DT'] + " in " + str(diff) + ' hours'
+      startSTR                  = res['FORMATED_START_DATE']
+      start_datetime = datetime.strptime( startSTR, timeFormat )
           
-      return {'Result':DT_dict_result}
+      if start_datetime > now:
+        diff = convertTime( start_datetime - now, 'hours' )
+        DT_dict_result[ 'DT' ] = DT_dict_result['DT'] + " in " + str( diff ) + ' hours'
+          
+      res = S_OK( DT_dict_result )
         
-    except urllib2.URLError:
-      gLogger.error("GOCDB timed out for " + granularity + " " + name )
-      return  {'Result':'Unknown'}      
-    except:
-      gLogger.exception("Exception when calling GOCDBClient for " + granularity + " " + name )
-      return {'Result':'Unknown'}
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
-
-#class GOCDBInfo_Command(Command):
-#  
-#  def doCommand(self):
-#    """ Return all info from GOC DB Client
-#    
-#         :attr:`args`: 
-#           - args[0]: string: should be a ValidRes
-#      
-#           - args[1]: string: should be the name of the ValidRes
-#    """
-#
-#    if self.client is None:
-#      # use standard GOC DB Client
-#      from DIRAC.Core.LCG.GOCDBClient import GOCDBClient   
-#      self.client = GOCDBClient()
-#      
-#    granularity = self.args[0]
-#    name = self.args[1]  
-#    try:  
-#      hours = self.args[2]
-#    except IndexError:
-#      hours = None
-#
-#    if granularity in ('Site', 'Sites'):
-#      name = getGOCSiteName(name)['Value']
-#
-#    try:
-#
-#      res = self.client.getStatus(granularity, name, None, hours, self.timeout)
-#      if not res['OK']:
-#        return {'Result':'Unknown'}
-#      res = res['Value']
-#      
-#      if res is None or res == []:
-#        return {'DT':'None'}
-#
-#      if isinstance(res, list):
-#        #there's more than one DT
-#        for dt in res:
-#          if dt['Type'] == 'OnGoing':
-#            resDT = dt
-#            break
-#        try:
-#          resDT
-#        except:
-#          #if I'm here, there's no OnGoing DT
-#          resDT = res[0]
-#
-#      else:
-#        resDT = res
-#
-#      if resDT['Type'] == 'Programmed':
-#        resDT['DT'] = resDT['DT'] + " in " + str(resDT['InHours']) + ' hours'
-#
-#      return {'Result':resDT}
-#        
-#    except urllib2.URLError:
-#      gLogger.error("GOCDB timed out for " + granularity + " " + name )
-#      return {'Result':'Unknown'}    
-#    except:
-#      gLogger.exception("Exception when calling GOCDBClient for " + granularity + " " + name )
-#      return {'Result':'Unknown'}
-#
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
-    
-#############################################################################
+################################################################################
+################################################################################
 
 class DTCached_Command(Command):
+  
+  __APIs__ = [ 'ResourceManagementClient' ]
   
   def doCommand(self):
     """ 
@@ -182,55 +127,90 @@ class DTCached_Command(Command):
        - args[2]: string: optional, number of hours in which 
        the down time is starting
     """
-    super(DTCached_Command, self).doCommand()
-
-    granularity = self.args[0]
-    name = self.args[1]
-
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-      self.client = ResourceManagementClient(timeout = self.timeout)
-
-    now = datetime.datetime.utcnow().replace(microsecond = 0, second = 0)
     
+    timeFormat = "%Y-%m-%d %H:%M"
+    
+    super(DTCached_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+
     try:
-      if granularity in ('Site', 'Sites'):
+
+      granularity = self.args[0]
+      name        = self.args[1]
+
+      now = datetime.utcnow().replace(microsecond = 0, second = 0)
+          
+      if granularity == 'Site':
         commandName = 'DTEverySites'
-      elif self.args[0] in ('Resource', 'Resources'):
-        commandName = 'DTEveryResources'
+      elif granularity == 'Resource':
+        commandName = 'DTEveryResources'  
 
-      res = self.client.getCachedIDs(name, commandName)
-      if len(res) == 0:
-        return {'Result':{'DT':None}}
-
-      if len(res) > 1:
+      meta = { 'columns': 'opt_ID' }
+      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( name = name, commandName = commandName, meta = meta)
+    
+      if not res[ 'OK' ]:
+        return { 'Result' : res }
+    
+      res = res[ 'Value' ]
+        
+      if res is None or len( res ) == 0:
+        return { 'Result' : S_OK( { 'DT' : None } ) }
+      
+      #CachedResult
+      clientDict = { 
+                   'name'        : name,
+                   'commandName' : commandName,
+                   'value'       : None,
+                   'opt_ID'      : None,
+                   'meta'        : { 'columns' : 'Result' }
+                 } 
+      
+      if len( res ) > 1:
         #there's more than one DT
+      
+        dt_ID_startingSoon     = res[0]
+        clientDict[ 'value' ]  = 'StartDate'
+        clientDict[ 'opt_ID' ] = dt_ID_startingSoon 
         
-        dt_ID_startingSoon = res[0]
-        startSTR_startingSoon = self.client.getCachedResult(name, commandName, 
-                                                            'StartDate', dt_ID_startingSoon)[0]
-        start_datetime_startingSoon = datetime.datetime( *time.strptime(startSTR_startingSoon,
-                                                                "%Y-%m-%d %H:%M")[0:5] )
-        endSTR_startingSoon = self.client.getCachedResult(name, commandName, 
-                                                          'EndDate', dt_ID_startingSoon)[0]
-        end_datetime_startingSoon = datetime.datetime( *time.strptime(endSTR_startingSoon,
-                                                             "%Y-%m-%d %H:%M")[0:5] )
+        startSTR_startingSoon = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+        if startSTR_startingSoon:
+          startSTR_startingSoon = startSTR_startingSoon[0][0]    
+                 
+        clientDict[ 'value' ]  = 'EndDate'
+        clientDict[ 'opt_ID' ] = dt_ID_startingSoon
+        endSTR_startingSoon = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]            
+        if endSTR_startingSoon:
+          endSTR_startingSoon = endSTR_startingSoon[0][0]
+        start_datetime_startingSoon = datetime.strptime( startSTR_startingSoon, timeFormat )
         
+        end_datetime_startingSoon   = datetime.strptime( endSTR_startingSoon, timeFormat )        
+
+        DT_ID = None
+
         if start_datetime_startingSoon < now:
           if end_datetime_startingSoon > now:
-            #ongoing downtime found!
+              #ongoing downtime found!
             DT_ID = dt_ID_startingSoon
-        
-        try:
-          DT_ID
-        except:
+      
+        if DT_ID is None:
+          
           for dt_ID in res[1:]:
             #looking for an ongoing one
-            startSTR = self.client.getCachedResult(name, commandName, 'StartDate', dt_ID)[0]
-            start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-            endSTR = self.client.getCachedResult(name, commandName, 'EndDate', dt_ID)[0]
-            end_datetime = datetime.datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
-
+            clientDict[ 'value' ]  = 'StartDate'
+            clientDict[ 'opt_ID' ] = dt_ID 
+            startSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+            if startSTR:
+              startSTR = startSTR[0][0]
+         
+            clientDict[ 'value' ]  = 'EndDate'
+            clientDict[ 'opt_ID' ] = dt_ID 
+            endSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+            if endSTR:
+              endSTR = endSTR[0][0]
+              
+            start_datetime = datetime.strptime( startSTR, timeFormat )
+            end_datetime   = datetime.strptime( endSTR, timeFormat )
+            
             if start_datetime < now:
               if end_datetime > now:
                 #ongoing downtime found!
@@ -239,53 +219,65 @@ class DTCached_Command(Command):
             if start_datetime < start_datetime_startingSoon:
               #the DT starts before the former considered one
               dt_ID_startingSoon = dt_ID
-          try:
-            DT_ID
-          except:
+          
+          if DT_ID is None:
             #if I'm here, there's no OnGoing DT
             DT_ID = dt_ID_startingSoon
-
       else:
         DT_ID = res[0]
-
+        
       DT_dict_result = {}
-
-      endSTR = self.client.getCachedResult(name, commandName, 'EndDate', DT_ID)[0]
-      end_datetime = datetime.datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
+      clientDict[ 'value' ]  = 'StartDate'
+      clientDict[ 'opt_ID' ] = DT_ID 
+      startSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+      if startSTR:
+        startSTR = startSTR[0][0]
+    
+      clientDict[ 'value' ]  = 'EndDate'
+      clientDict[ 'opt_ID' ] = DT_ID 
+      endSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+      if endSTR:
+        endSTR = endSTR[0][0]
+          
+      start_datetime = datetime.strptime(startSTR, timeFormat )
+      end_datetime   = datetime.strptime(endSTR, timeFormat )      
+    
       if end_datetime < now:
-        return {'Result': {'DT':None}}
+        return { 'Result' : S_OK( { 'DT' : None } ) } 
+      
+      clientDict[ 'value' ]  = 'Severity'
+      clientDict[ 'opt_ID' ] = DT_ID 
+    
+      DT_dict_result['DT'] = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+      if DT_dict_result['DT']:
+        DT_dict_result['DT'] = DT_dict_result['DT'][0][0]
       DT_dict_result['EndDate'] = endSTR
-      DT_dict_result['DT'] = self.client.getCachedResult(name, commandName, 'Severity', DT_ID)[0]
-      startSTR = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)[0]
-      start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-      
-      
+    
       if start_datetime > now:
-        try:
-          self.args[2]
-          diff = convertTime(start_datetime - now, 'hours')
-          if diff > self.args[2]:
-            return {'Result': {'DT':None}}
-          
-          DT_dict_result['DT'] = DT_dict_result['DT'] + " in " + str(diff) + ' hours'
-        except:
-          # Searching only for onGoing DT, got future ones 
-          return {'Result': {'DT':None}}
-          
-      return {'Result':DT_dict_result}
-
-    except urllib2.URLError:
-      gLogger.error("GOCDB timed out for " + self.args[0] + " " + self.args[1] )
-      return  {'Result':'Unknown'}      
-    except:
-      gLogger.exception("Exception when calling GOCDBClient for " + self.args[0] + " " + self.args[1] )
-      return {'Result':'Unknown'}
+        self.args[2]
+        diff = convertTime(start_datetime - now, 'hours')
+        if diff > self.args[2]:
+          return { 'Result' : S_OK( { 'DT' : None } ) }
       
+        DT_dict_result['DT'] = DT_dict_result['DT'] + " in " + str(diff) + ' hours'
+      
+      res = S_OK( DT_dict_result )
+      
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }      
+            
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class DTInfo_Cached_Command(Command):
+  
+  __APIs__ = [ 'ResourceManagementClient' ]
   
   def doCommand(self):
     """ 
@@ -299,109 +291,160 @@ class DTInfo_Cached_Command(Command):
        - args[2]: string: optional, number of hours in which 
        the down time is starting
     """
-    super(DTInfo_Cached_Command, self).doCommand()
-
-    granularity = self.args[0]
-    name = self.args[1]
-
-    if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      self.client = ResourceStatusClient(timeout = self.timeout)
-
-    now = datetime.datetime.utcnow().replace(microsecond = 0, second = 0)
     
+    timeFormat = "%Y-%m-%d %H:%M"
+    
+    super(DTInfo_Cached_Command, self).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )     
+
     try:
-      if granularity in ('Site', 'Sites'):
+
+      granularity = self.args[0]
+      name        = self.args[1]
+
+      now = datetime.utcnow().replace( microsecond = 0, second = 0 )
+    
+      if granularity == 'Site':
         commandName = 'DTEverySites'
-      elif self.args[0] in ('Resource', 'Resources'):
+      elif granularity == 'Resource':
         commandName = 'DTEveryResources'
 
-      res = self.client.getCachedIDs(name, commandName)
-      if len(res) == 0:
-        return {'Result':{'DT':None}}
-
+      meta = { 'columns': 'opt_ID' }
+      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( name = name, commandName = commandName, meta = meta )
+      
+      if not res[ 'OK' ]:
+        return { 'Result' : res }
+      
+      res = res[ 'Value' ]    
+      
+      #CachedResult
+      clientDict = { 
+                     'name'        : name,
+                     'commandName' : commandName,
+                     'value'       : None,
+                     'opt_ID'      : None,
+                     'meta'        : { 'columns'     : 'Result' }
+                   }
+       
       if len(res) > 1:
         #there's more than one DT
         
-        dt_ID_startingSoon = res[0]
-        startSTR_startingSoon = self.client.getCachedResult(name, commandName, 
-                                                            'StartDate', dt_ID_startingSoon)[0]
-        start_datetime_startingSoon = datetime.datetime( *time.strptime(startSTR_startingSoon,
-                                                                "%Y-%m-%d %H:%M")[0:5] )
-        endSTR_startingSoon = self.client.getCachedResult(name, commandName, 
-                                                          'EndDate', dt_ID_startingSoon)[0]
-        end_datetime_startingSoon = datetime.datetime( *time.strptime(endSTR_startingSoon,
-                                                             "%Y-%m-%d %H:%M")[0:5] )
+        dt_ID_startingSoon    = res[0]
+        clientDict[ 'value' ] = 'StartDate'
+        clientDict[ 'optID' ] = dt_ID_startingSoon 
+        startSTR_startingSoon = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+        if startSTR_startingSoon:
+          startSTR_startingSoon = startSTR_startingSoon[0][0]
+                                                          
+        clientDict[ 'value' ] = 'EndDate'
+        clientDict[ 'optID' ] = dt_ID_startingSoon 
+        endSTR_startingSoon = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+        if endSTR_startingSoon:
+          endSTR_startingSoon = endSTR_startingSoon[0][0]
+      
+        start_datetime_startingSoon = datetime.strptime(startSTR_startingSoon,
+                                                                timeFormat )
+        end_datetime_startingSoon = datetime.strptime(endSTR_startingSoon,
+                                                             timeFormat )
+        
+        DT_ID = None
         
         if start_datetime_startingSoon < now:
           if end_datetime_startingSoon > now:
             #ongoing downtime found!
             DT_ID = dt_ID_startingSoon
-        
-        try:
-          DT_ID
-        except:
+      
+        if DT_ID is None:
+          
           for dt_ID in res[1:]:
             #looking for an ongoing one
-            startSTR = self.client.getCachedResult(name, commandName, 'StartDate', dt_ID)[0]
-            start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-            endSTR = self.client.getCachedResult(name, commandName, 'EndDate', dt_ID)[0]
-            end_datetime = datetime.datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
-
+            clientDict[ 'value' ] = 'StartDate'
+            clientDict[ 'optID' ] = dt_ID 
+            startSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+            if startSTR:
+              startSTR = startSTR[0][0]
+          
+            clientDict[ 'value' ] = 'EndDate'
+            clientDict[ 'optID' ] = dt_ID 
+            endSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+            if endSTR:
+              endSTR = endSTR[0][0]
+         
+            start_datetime = datetime.strptime( startSTR, timeFormat )
+            end_datetime   = datetime.strptime( endSTR, timeFormat )
             if start_datetime < now:
               if end_datetime > now:
-                #ongoing downtime found!
+                  #ongoing downtime found!
                 DT_ID = dt_ID
               break
             if start_datetime < start_datetime_startingSoon:
               #the DT starts before the former considered one
               dt_ID_startingSoon = dt_ID
-          try:
-            DT_ID
-          except:
+          
+          if DT_ID is None:
             #if I'm here, there's no OnGoing DT
-            DT_ID = dt_ID_startingSoon
+           DT_ID = dt_ID_startingSoon
 
       else:
         DT_ID = res[0]
 
       DT_dict_result = {}
 
-      endSTR = self.client.getCachedResult(name, commandName, 'EndDate', DT_ID)[0]
-      end_datetime = datetime.datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
+      clientDict[ 'value' ] = 'EndDate'
+      clientDict[ 'optID' ] = DT_ID 
+      endSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+      if endSTR:
+        endSTR = endSTR[0][0]
+      end_datetime = datetime.strptime( endSTR, timeFormat )
       if end_datetime < now:
-        return {'Result': {'DT':None}}
+        return { 'Result' : S_OK( { 'DT' : None } ) }
+    
       DT_dict_result['EndDate'] = endSTR
-      DT_dict_result['DT'] = self.client.getCachedResult(name, commandName, 'Severity', DT_ID)[0]
-      DT_dict_result['StartDate'] = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)[0]
-      DT_dict_result['Description'] = self.client.getCachedResult(name, commandName, 'Description', DT_ID)[0]
-      DT_dict_result['Link'] = self.client.getCachedResult(name, commandName, 'Link', DT_ID)[0]
-      startSTR = self.client.getCachedResult(name, commandName, 'StartDate', DT_ID)[0]
-      start_datetime = datetime.datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-      
-      
+    
+      clientDict[ 'value' ] = 'Severity'
+      clientDict[ 'optID' ] = DT_ID 
+      DT_dict_result['DT']  = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+      if DT_dict_result['DT']:
+        DT_dict_result['DT'] = DT_dict_result['DT'][0][0]
+     
+      clientDict[ 'value' ] = 'StartDate'
+      clientDict[ 'optID' ] = DT_ID 
+      DT_dict_result['StartDate'] = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+      if DT_dict_result['StartDate']:
+        DT_dict_result['StartDate'] = DT_dict_result['StartDate'][0][0] 
+    
+      clientDict[ 'value' ] = 'Description'
+      clientDict[ 'optID' ] = DT_ID 
+      DT_dict_result['Description'] = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+      if DT_dict_result['Description']:
+        DT_dict_result['Description'] = DT_dict_result['Description'][0][0]
+    
+      clientDict[ 'value' ] = 'Link'
+      clientDict[ 'optID' ] = DT_ID 
+      DT_dict_result['Link'] = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
+      if DT_dict_result['Link']:
+        DT_dict_result['Link'] = DT_dict_result['Link'][0][0]
+    
+      start_datetime = datetime.strptime( DT_dict_result['StartDate'], timeFormat )
+    
       if start_datetime > now:
-        try:
           self.args[2]
           diff = convertTime(start_datetime - now, 'hours')
           if diff > self.args[2]:
-            return {'Result': {'DT':None}}
-          
+            return { 'Result': S_OK( { 'DT' : None } ) }
+        
           DT_dict_result['DT'] = DT_dict_result['DT'] + " in " + str(diff) + ' hours'
-        except:
-          # Searching only for onGoing DT, got future ones 
-          return {'Result': {'DT':None}}
-          
-      return {'Result':DT_dict_result}
+        
+      res = S_OK( DT_dict_result )
 
-    except urllib2.URLError:
-      gLogger.error("GOCDB timed out for " + self.args[0] + " " + self.args[1] )
-      return  {'Result':'Unknown'}      
-    except:
-      gLogger.exception("Exception when calling GOCDBClient for " + self.args[0] + " " + self.args[1] )
-      return {'Result':'Unknown'}
-      
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }      
+
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
-    
-#############################################################################
-  
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

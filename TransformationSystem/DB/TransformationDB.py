@@ -15,7 +15,7 @@ from DIRAC                                                             import gC
 from DIRAC.Core.Base.DB                                                import DB
 from DIRAC.DataManagementSystem.Client.ReplicaManager                  import CatalogDirectory
 from DIRAC.Core.DISET.RPCClient                                        import RPCClient
-from DIRAC.Core.Security.Misc                                          import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                                     import getProxyInfo
 from DIRAC.Core.Utilities.List                                         import stringListToString, intListToString, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                                import getSEsForSite, getSitesForSE
 from DIRAC.Core.Utilities.Shifter                                      import setupShifterProxyInEnv
@@ -30,11 +30,19 @@ MAX_ERROR_COUNT = 10
 
 class TransformationDB( DB ):
 
-  def __init__( self, dbname, dbconfig, maxQueueSize = 10 ):
+  def __init__( self, dbname = None, dbconfig = None, maxQueueSize = 10, dbIn = None, logger = None ):
     """ The standard constructor takes the database name (dbname) and the name of the
         configuration section (dbconfig)
     """
-    DB.__init__( self, dbname, dbconfig, maxQueueSize )
+
+    if not dbname:
+      dbname = 'TransformationDB'
+    if not dbconfig:
+      dbconfig = 'Transformation/TransformationDB'
+
+    if not dbIn:
+      DB.__init__( self, dbname, dbconfig, maxQueueSize )
+
     self.lock = threading.Lock()
     self.dbname = dbname
     res = self.__updateFilters()
@@ -593,11 +601,15 @@ class TransformationDB( DB ):
       elif ( currentStatus == status ):
         successful[lfn] = 'Status not changed'
         req = ''
-      elif ( status.lower() == 'unused' ) and ( errorCount >= MAX_ERROR_COUNT ) and ( not force ):
-        failed[lfn] = 'Max number of resets reached'
-        req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % ( transID, fileID )
       elif ( status.lower() == 'unused' ):
-        req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1 WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
+        if errorCount >= MAX_ERROR_COUNT:
+          if force:
+            req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=0 WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
+          else:  
+            failed[lfn] = 'Max number of resets reached'
+            req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % ( transID, fileID )
+        else:
+          req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1 WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
       else:
         req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
       if not req:
@@ -792,7 +804,8 @@ class TransformationDB( DB ):
     result['ParameterNames'] = self.TASKSPARAMS
     return result
 
-  def getTasksForSubmission( self, transName, numTasks = 1, site = '', statusList = ['Created'], older = None, newer = None, connection = False ):
+  def getTasksForSubmission( self, transName, numTasks = 1, site = '', statusList = ['Created'],
+                             older = None, newer = None, connection = False ):
     """ Select tasks with the given status (and site) for submission """
     res = self._getConnectionTransID( connection, transName )
     if not res['OK']:
@@ -804,19 +817,16 @@ class TransformationDB( DB ):
       condDict["ExternalStatus"] = statusList
     if site:
       numTasks = 0
-    res = self.getTransformationTasks( condDict = condDict, older = older, newer = newer, timeStamp = 'CreationTime', orderAttribute = None, limit = numTasks, inputVector = True, connection = connection )
+    res = self.getTransformationTasks( condDict = condDict, older = older, newer = newer,
+                                       timeStamp = 'CreationTime', orderAttribute = None, limit = numTasks,
+                                       inputVector = True, connection = connection )
     if not res['OK']:
       return res
     tasks = res['Value']
-    # Prepare Site->SE resolution mapping
-    selSEs = []
-    if site:
-      res = getSEsForSite( site )
-      if not res['OK']:
-        return res
-      selSEs = res['Value']
+
     # Now prepare the tasks
     resultDict = {}
+
     for taskDict in tasks:
       if len( resultDict ) >= numTasks:
         break
@@ -826,24 +836,10 @@ class TransformationDB( DB ):
       taskDict.pop( 'CreationTime' )
       taskDict.pop( 'ExternalID' )
       taskID = taskDict['TaskID']
-      se = taskDict['TargetSE']
       resultDict[taskID] = taskDict
-      if not site:
-        if taskDict['InputData']:
-          res = getSitesForSE( se, 'LCG' )
-          if not res['OK']:
-            continue
-          usedSite = res['Value']
-          if len( usedSite ) == 1:
-            usedSite = usedSite[0]
-        else:
-          usedSite = 'ANY'
-        resultDict[taskID]['Site'] = usedSite
-      elif site and ( se in selSEs ):
-        resultDict[taskID]['Site'] = usedSite
-      else:
-        resultDict.pop( taskID )
-        gLogger.warn( "Can not find corresponding site for se", se )
+      if site:
+        resultDict[taskID]['Site'] = site
+
     return S_OK( resultDict )
 
   def deleteTasks( self, transName, taskIDbottom, taskIDtop, author = '', connection = False ):

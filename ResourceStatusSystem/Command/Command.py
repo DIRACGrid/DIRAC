@@ -1,16 +1,21 @@
-""" The Command class is a simple base class for all the commands
-    for interacting with the clients
-"""
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
 
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC import gLogger
 
 class Command( object ):
+  """ 
+    The Command class is a simple base class for all the commands
+    for interacting with the clients
+  """
 
   def __init__( self ):
-    self.args = None
-    self.client = None
-    self.RPC = None
-    self.timeout = 10
+    self.args    = None
+    self.APIs    = {}
+
+################################################################################
 
   def setArgs( self, argsIn ):
     """
@@ -23,37 +28,17 @@ class Command( object ):
 
         - `args[1]` should be the name of the ValidRes
     """
-    if not isinstance( argsIn, tuple ):
-      raise TypeError, "`Args` of commands should be in a tuple."
+    if type(argsIn) != tuple:
+      raise TypeError("`Args` of commands should be in a tuple.")
 
     self.args = argsIn
 
-  def setClient( self, clientIn = None ):
-    """
-    set `self.client`. If not set, a standard client will be instantiated.
+################################################################################
 
-    :params:
-      :attr:`clientIn`: a client object
-    """
-    self.client = clientIn
+  def setAPI( self, apiName, apiInstance ):
+    self.APIs[ apiName ] = apiInstance
 
-  def setRPC( self, RPCIn = None ):
-    """
-    set `self.RPC`. If not set, a standard RPC will be instantiated.
-
-    :params:
-      :attr:`RPCIn`: a client object
-    """
-    self.RPC = RPCIn
-
-  def setTimeOut( self, timeout = None ):
-    """
-    set `self.timeout`. If not set, a standard RPC will be instantiated.
-
-    :params:
-      :attr:`timeout`: a client object
-    """
-    self.timeout = timeout
+################################################################################
 
   #to be extended by real commands
   def doCommand( self ):
@@ -61,4 +46,17 @@ class Command( object ):
     """
 
     if self.args is None:
-      raise RSSException, "Before, set `self.args` with `self.setArgs(a)` function."
+      gLogger.error( "Before, set `self.args` with `self.setArgs(a)` function." )
+    
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

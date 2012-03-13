@@ -11,7 +11,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC                                     import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 
 import os, commands
 
@@ -20,7 +19,6 @@ class WMSClient:
   def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False, useCertificates = False, timeout = 120 ):
     """ WMS Client constructor
     """
-    gProxyManager.uploadProxy()
     self.useCertificates = useCertificates
     self.jobManagerClient = jobManagerClient
     self.sbRPCClient = sbRPCClient
@@ -58,7 +56,7 @@ class WMSClient:
     realFiles = []
     for file in inputSandbox:
       valid = True
-      for tag  in ( 'lfn:', 'LFN:', 'SB:','%s' ):#in case of parametric input sandbox, there is %s passed, so have to ignore it also 
+      for tag  in ( 'lfn:', 'LFN:', 'SB:', '%s' ):#in case of parametric input sandbox, there is %s passed, so have to ignore it also 
         if file.find( tag ) == 0:
           valid = False
           break
@@ -143,7 +141,9 @@ class WMSClient:
       return result
     jobID = result['Value']
     if 'requireProxyUpload' in result and result[ 'requireProxyUpload' ]:
-      gProxyManager.uploadProxy()
+      #TODO: We should notify the user to upload a proxy with proxy-upload
+      pass
+
 
     #print "Sandbox uploading"
     return S_OK( jobID )

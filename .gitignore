@@ -22,4 +22,6 @@ pip-log.txt
 .project
 .pydevproject
 .pyproject
+.settings
+.metadata
 

@@ -12,10 +12,11 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
+from DIRAC.Core.Utilities.List                           import breakListIntoChunks
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
 from DIRAC                                               import gConfig
-from DIRAC.Core.Security.Misc                            import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 import os, sys, time, re, socket, stat, shutil
 import string, shutil, bz2, base64, tempfile
@@ -174,7 +175,7 @@ class SSHTorqueComputingElement( ComputingElement ):
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
 
-      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
+      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
       compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
 
       wrapperContent = """#!/usr/bin/env python
@@ -293,35 +294,38 @@ shutil.rmtree( workingDirectory )
   def getJobStatus( self, jobIDList ):
     """ Get the status information for the given list of jobs
     """
-    jobDict = {}
-    for job in jobIDList:
-      jobNumber = job.split( '.' )[0]
-      if jobNumber:
-        jobDict[jobNumber] = job
-
-    cmd = [ 'qstat', ' '.join( jobIDList ) ]
-    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
-    result = ssh.sshCall( 10, cmd )
-    if not result['OK']:
-      return result
 
     resultDict = {}
-    output = result['Value'][1].replace( '\r', '' )
-    lines = output.split( '\n' )
-    for job in jobDict:
-      resultDict[jobDict[job]] = 'Unknown'
-      for line in lines:
-        if line.find( job ) != -1:
-          if line.find( 'Unknown' ) != -1:
-            resultDict[jobDict[job]] = 'Unknown'
-          else:
-            torqueStatus = line.split()[4]
-            if torqueStatus in ['E', 'C']:
-              resultDict[jobDict[job]] = 'Done'
-            elif torqueStatus in ['R']:
-              resultDict[jobDict[job]] = 'Running'
-            elif torqueStatus in ['S', 'W', 'Q', 'H', 'T']:
-              resultDict[jobDict[job]] = 'Waiting'
+    ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
+    
+    for jobList in breakListIntoChunks(jobIDList,100):
+      jobDict = {}
+      for job in jobList:
+        jobNumber = job.split('.')[0]
+        if jobNumber:
+          jobDict[jobNumber] = job
+      
+      cmd = [ 'qstat', ' '.join( jobList ) ]
+      result = ssh.sshCall( 10, cmd )
+      if not result['OK']:
+        return result
+  
+      output = result['Value'][1].replace( '\r', '' )
+      lines = output.split( '\n' )
+      for job in jobDict:
+        resultDict[jobDict[job]] = 'Unknown'
+        for line in lines:
+          if line.find( job ) != -1:
+            if line.find( 'Unknown' ) != -1:
+              resultDict[jobDict[job]] = 'Unknown'
+            else:
+              torqueStatus = line.split()[4]
+              if torqueStatus in ['E', 'C']:
+                resultDict[jobDict[job]] = 'Done'
+              elif torqueStatus in ['R']:
+                resultDict[jobDict[job]] = 'Running'
+              elif torqueStatus in ['S', 'W', 'Q', 'H', 'T']:
+                resultDict[jobDict[job]] = 'Waiting'
 
     return S_OK( resultDict )
 

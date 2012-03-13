@@ -1,11 +1,26 @@
 # $HeadURL$
+"""
+ Set of utilities to retrieve Information from proxy
+"""
 __RCSID__ = "$Id$"
 import base64
 import types
+import inspect
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
+
+__NOTIFIED_CALLERS = set()
+stack = inspect.stack()
+caller = ( stack[1][1], stack[1][2] )
+if caller not in __NOTIFIED_CALLERS:
+  print
+  print 'From %s at line %s:' % caller
+  print '[Deprecation warning] DIRAC.Core.Security.Misc will not be available in next release,'
+  print '                      use DIRAC.Core.Security.ProxyInfo instead.'
+  print
+  __NOTIFIED_CALLERS.add( caller )
 
 
 def getProxyInfo( proxy = False, disableVOMS = False ):
@@ -65,6 +80,9 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
   return S_OK( infoDict )
 
 def getProxyInfoAsString( proxyLoc = False, disableVOMS = False ):
+  """
+    return the info as a printable string
+  """
   retVal = getProxyInfo( proxyLoc, disableVOMS )
   if not retVal[ 'OK' ]:
     return retVal
@@ -72,6 +90,9 @@ def getProxyInfoAsString( proxyLoc = False, disableVOMS = False ):
   return S_OK( formatProxyInfoAsString( infoDict ) )
 
 def formatProxyInfoAsString( infoDict ):
+  """
+    convert a proxy infoDict into a string
+  """
   leftAlign = 13
   contentList = []
   for field in ( 'subject', 'issuer', 'identity', ( 'secondsLeft', 'timeleft' ),
@@ -98,6 +119,10 @@ def formatProxyInfoAsString( infoDict ):
 
 
 def getProxyStepsInfo( chain ):
+  """
+   Extended information of all Steps in the ProxyChain
+   Returns a list of dictionary with Info for each Step.
+  """
   infoList = []
   nC = chain.getNumCertsInChain()['Value']
   for i in range( nC ):
@@ -119,6 +144,9 @@ def getProxyStepsInfo( chain ):
   return S_OK( infoList )
 
 def formatProxyStepsInfoAsString( infoList ):
+  """
+  Format the List of Proxy steps dictionaries as a printable string.
+  """
   contentsList = []
   for i in range( len( infoList ) ):
     contentsList.append( " + Step %s" % i )

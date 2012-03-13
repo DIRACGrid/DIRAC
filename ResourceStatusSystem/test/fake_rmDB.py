@@ -1,21 +1,14 @@
-""" fake ResourceStatusDB class. 
-    Every function can simply return S_OK() (or nothing)
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
+""" 
+  fake ResourceStatusDB class. 
+  Every function can simply return S_OK() (or nothing)
 """
 
-import datetime
-
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC import S_OK
-
-
-#############################################################################
-
-class RSSManagementDBException(RSSException):
-  pass
-
-#############################################################################
 
 class ResourceManagementDB:
   
@@ -87,44 +80,6 @@ class ResourceManagementDB:
             ('LCG.UKI-LT2-QMUL.uk', '34207G0 UKI-LT2-QMUL', 'Description', 'Reboot of NAT and se03 into new kernel.', 'DTEverySites'), 
             ('LCG.UKI-LT2-QMUL.uk', '34207G0 UKI-LT2-QMUL', 'Link', 'https://next.gocdb.eu/portal/index.php?Page_Type=View_Object&object_id=21326&grid_id=0', 'DTEverySites'), 
             ('LCG.UKI-LT2-QMUL.uk', '34207G0 UKI-LT2-QMUL', 'Severity', 'AT_RISK', 'DTEverySites'))
-    
-    
-#    return (('LCG.SPACI-LECCE.it', 78805473L, 'StartDate', '2010-06-21 09:24', 'DTEverySites'), 
-#            ('LCG.SPACI-LECCE.it', 78805473L, 'Description', 'Server Room maintenance', 'DTEverySites'), 
-#            ('LCG.SPACI-LECCE.it', 78805473L, 'EndDate', '2010-07-14 09:24', 'DTEverySites'), 
-#            ('LCG.SPACI-LECCE.it', 78805473L, 'Severity', 'OUTAGE', 'DTEverySites'), 
-#            ('LCG.Lancashire.uk', 78805481L, 'StartDate', '2010-06-28 07:30', 'DTEverySites'), 
-#            ('LCG.Lancashire.uk', 78805481L, 'Description', 'Site will be at risk', 'DTEverySites'), 
-#            ('LCG.Lancashire.uk', 78805481L, 'EndDate', '2010-06-28 18:30', 'DTEverySites'), 
-#            ('LCG.Lancashire.uk', 78805481L, 'Severity', 'AT_RISK', 'DTEverySites'), 
-#            ('LCG.ESA-ESRIN.it', 78805480L, 'StartDate', '2010-06-27 20:20', 'DTEverySites'), 
-#            ('LCG.ESA-ESRIN.it', 78805480L, 'Description', 'Waiting to establish a new INFN RA.', 'DTEverySites'), 
-#            ('LCG.ESA-ESRIN.it', 78805480L, 'EndDate', '2010-07-05 15:30', 'DTEverySites'), 
-#            ('LCG.ESA-ESRIN.it', 78805480L, 'Severity', 'OUTAGE', 'DTEverySites'), 
-#            ('LCG.RAL.uk', 78705450L, 'StartDate', '2010-06-28 07:30', 'DTEverySites'), 
-#            ('LCG.RAL.uk', 78705450L, 'Description', 'At Risk for site during maintenance work ', 'DTEverySites'), 
-#            ('LCG.RAL.uk', 78705450L, 'EndDate', '2010-06-30 16:00', 'DTEverySites'), 
-#            ('LCG.RAL.uk', 78705450L, 'Severity', 'AT_RISK', 'DTEverySites'), 
-#            ('LCG.WCSS.pl', 79605440L, 'StartDate', '2010-06-29 06:00', 'DTEverySites'), 
-#            ('LCG.WCSS.pl', 79605440L, 'Description', 'Power configuration change', 'DTEverySites'), 
-#            ('LCG.WCSS.pl', 79605440L, 'EndDate', '2010-06-30 16:00', 'DTEverySites'), 
-#            ('LCG.WCSS.pl', 79605440L, 'Severity', 'OUTAGE', 'DTEverySites'), 
-#            ('LCG.Ferrara.it', 79655445L, 'StartDate', '2010-06-28 12:00', 'DTEverySites'), 
-#            ('LCG.Ferrara.it', 79655445L, 'Description', 'software update', 'DTEverySites'), 
-#            ('LCG.Ferrara.it', 79655445L, 'EndDate', '2010-06-28 16:00', 'DTEverySites'), 
-#            ('LCG.Ferrara.it', 79655445L, 'Severity', 'AT_RISK', 'DTEverySites'), 
-#            ('LCG.RUG.nl', 79055443L, 'StartDate', '2010-07-01 15:00', 'DTEverySites'), 
-#            ('LCG.RUG.nl', 79055443L, 'Description', 'Maintenance', 'DTEverySites'), 
-#            ('LCG.RUG.nl', 79055443L, 'EndDate', '2010-07-02 10:00', 'DTEverySites'), 
-#            ('LCG.RUG.nl', 79055443L, 'Severity', 'OUTAGE', 'DTEverySites'), 
-#            ('LCG.ESA-ESRIN.it', 79905437L, 'StartDate', '2010-06-27 20:20', 'DTEverySites'), 
-#            ('LCG.ESA-ESRIN.it', 79905437L, 'Description', 'Waiting to establish a new INFN RA at ESRIN.', 'DTEverySites'), 
-#            ('LCG.ESA-ESRIN.it', 79905437L, 'EndDate', '2010-07-05 15:30', 'DTEverySites'), 
-#            ('LCG.ESA-ESRIN.it', 79905437L, 'Severity', 'OUTAGE', 'DTEverySites'), 
-#            ('LCG.Pisa.it', 79955437L, 'StartDate', '2010-06-30 08:00', 'DTEverySites'), 
-#            ('LCG.Pisa.it', 79955437L, 'Description', 'hardware reconfiguration of the networking', 'DTEverySites'), 
-#            ('LCG.Pisa.it', 79955437L, 'EndDate', '2010-07-01 18:00', 'DTEverySites'), 
-#            ('LCG.Pisa.it', 79955437L, 'Severity', 'OUTAGE', 'DTEverySites'))
 
   def addStatus(self, status, description=''):
     pass
@@ -134,3 +89,16 @@ class ResourceManagementDB:
 
   def getStatusList(self):   
     return []
+  
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

@@ -121,7 +121,7 @@ class MySQL:
   """
   __initialized = False
 
-  def __init__( self, hostName, userName, passwd, dbName, maxQueueSize = 3 ):
+  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3):
     """
     set MySQL connection parameters and try to connect
     """
@@ -143,6 +143,7 @@ class MySQL:
     self.__userName = str( userName )
     self.__passwd = str( passwd )
     self.__dbName = str( dbName )
+    self.__port = port
     # Create the connection Queue to reuse connections
     self.__connectionQueue = Queue.Queue( maxQueueSize )
     # Create the connection Semaphore to limit total number of open connection
@@ -322,7 +323,7 @@ class MySQL:
       retDict = S_OK( res )
     except Exception , x:
       self.logger.debug( '_query:', cmd )
-      retDict = self._except( '_query', x, 'Excution failed.' )
+      retDict = self._except( '_query', x, 'Execution failed.' )
 
     try:
       cursor.close()
@@ -615,6 +616,7 @@ class MySQL:
     self.logger.debug( '__newConnection:' )
 
     connection = MySQLdb.connect( host = self.__hostName,
+                                  port = self.__port,
                                   user = self.__userName,
                                   passwd = self.__passwd,
                                   db = self.__dbName )

@@ -16,12 +16,31 @@ import types
 import random, time
 
 class RequestDBMySQL( DB ):
+  """
+  .. class:: RequestDBmySQL 
+
+  An interface to mysql RequestDB database. 
+  """
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
+    """ c'tor
+    
+    :param self: self reference
+    :param str systemInstance: ??? 
+    :param int maxQueueSize: queue size
+    
+    """
     DB.__init__( self, 'RequestDB', 'RequestManagement/RequestDB', maxQueueSize )
     self.getIdLock = threading.Lock()
 
   def _setRequestStatus( self, requestType, requestName, status ):
+    """ ste request Status to :status:
+
+    :param self: self reference
+    :param str requestType: request type
+    :param str requestName: requets name
+    :param str status: new status
+    """
     attrName = 'RequestID'
     res = self._getRequestAttribute( attrName, requestName = requestName )
     if not res['OK']:
@@ -34,6 +53,10 @@ class RequestDBMySQL( DB ):
 
   def _getSubRequests( self, requestID ):
     """ Get subrequest IDs for the given request
+
+    :param self: self reference
+    :param int requestID: Requests.RequestID 
+    :return: list with SubRequestIDs
     """
     subRequestList = []
     req = "SELECT SubRequestID FROM SubRequests WHERE RequestID=%d" % requestID
@@ -212,11 +235,50 @@ class RequestDBMySQL( DB ):
       files[lfn] = status
     return S_OK( files )
 
-  def getRequest( self, requestType = '' ):
+  def yieldRequests( self, requestType="", limit = 1 ):
+    """ quick and dirty request generator
+
+    :param self: self reference
+    :param str requestType: request type
+    :param int limit: number of requests to be served
+    """
+    servedRequests  = []
+    while True:
+      if len(servedRequests) > limit:
+        raise StopIteration()
+      requestDict = self.getRequest( requestType )
+      ## error getting request or not requests of that type at all at all
+      if not requestDict["OK"] or not requestDict["Value"]: 
+        yield requestDict
+        raise StopIteration()
+      ## not served yet?  
+      if requestDict["Value"]["RequestName"] not in servedRequests:
+        servedRequests.append( requestDict["Value"]["RequestName"] )
+        yield requestDict
+        
+
+  def yieldSubRequests( self, requestID ):
+    
+
+    pass
+
+  def yieldSubRequestFiles( self, subRequestID ):
+    pass
+
+
+  def getRequest( self, requestType = "" ):
     """ Get a request of a given type
     """
     # RG: What if requestType is not given?
     # the first query will return nothing.
+    # KC: maybe returning S_ERROR would be enough?
+    # alternatively we should check if requestType is known (in 'transfer', 'removal', 'register' and 'diset') 
+
+    if not requestType:
+      return S_ERROR( "Request type not given.")
+    if requestType not in ( 'transfer', 'removal', 'register', 'diset' ):
+      return S_ERROR( "Unknown request type %s" % requestType )
+
     start = time.time()
     dmRequest = RequestContainer( init = False )
     requestID = 0
@@ -656,7 +718,7 @@ class RequestDBMySQL( DB ):
       attrValue = res['Value'][0][0]
       return S_OK( attrValue )
     else:
-      errStr = 'Failed to retreive %s for Request %s/%s' % ( attrName, requestID, requestName )
+      errStr = 'Failed to retrieve %s for Request %s/%s' % ( attrName, requestID, requestName )
       return S_ERROR( errStr )
 
   def _setSubRequestAttribute( self, requestID, subRequestID, attrName, attrValue ):
@@ -871,7 +933,7 @@ class RequestDBMySQL( DB ):
     current_order = 999
     for row in result['Value']:
       status, order = row
-      if status == "Waiting" and order < current_order:
+      if status != "Done" and order < current_order:
         current_order = order
 
     return S_OK( current_order )

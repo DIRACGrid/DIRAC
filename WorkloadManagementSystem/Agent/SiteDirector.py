@@ -8,9 +8,10 @@
 """
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO
+from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO, Registry
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
@@ -44,29 +45,35 @@ class SiteDirector( AgentModule ):
     """
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
+    self.queueDict = {}
+    
+    return S_OK()
+  
+  def beginExecution( self ):
+
+    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() ) 
+    self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
+    self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
+    self.pilot = DIRAC_PILOT
+    self.install = DIRAC_INSTALL
+    self.workingDirectory = self.am_getOption( 'WorkDirectory' )
+    self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400*3 )
+
+    # Flags
+    self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
+    self.getOutput = self.am_getOption( 'GetPilotOutput', True )
+    self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
 
     # Get the site description dictionary
     siteNames = self.am_getOption( 'Site', [] )
     if not siteNames:
       siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
       if siteName == 'Unknown':
-        return S_ERROR( 'Unknown site' )
+        return S_OK( 'No site specified for the SiteDirector' )
       else:
         siteNames = [siteName]
-
     self.siteNames = siteNames
-    self.gridEnv = self.am_getOption( "GridEnv", '' )
-
-    self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
-    self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
-    self.pilot = DIRAC_PILOT
-    self.install = DIRAC_INSTALL
-    self.workingDirectory = self.am_getOption( 'WorkDirectory' )
-
-    # Flags
-    self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
-    self.getOutput = self.am_getOption( 'GetPilotOutput', True )
-    self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
+ 
     if self.updateStatus:
       self.log.always( 'Pilot status update requested' )
     if self.getOutput:
@@ -86,7 +93,6 @@ class SiteDirector( AgentModule ):
 
     self.localhost = socket.getfqdn()
     self.proxy = ''
-    self.queueDict = {}
     result = self.getQueues()
     if not result['OK']:
       return result
@@ -104,6 +110,7 @@ class SiteDirector( AgentModule ):
     """ Get the list of relevant CEs and their descriptions
     """
 
+    self.queueDict = {}
     ceFactory = ComputingElementFactory()
     ceTypes = self.am_getOption( 'CETypes', [] )
     ceConfList = self.am_getOption( 'CEs', [] )
@@ -163,7 +170,7 @@ class SiteDirector( AgentModule ):
             self.queueDict[queueName]['ParametersDict']['CPUTime'] = int( queueCPUTime )
           qwDir = os.path.join( self.workingDirectory, queue )
           if not os.path.exists( qwDir ):
-            os.mkdir( qwDir )
+            os.makedirs( qwDir )
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
           queueDict = dict( ceDict )
           queueDict.update( self.queueDict[queueName]['ParametersDict'] )
@@ -189,6 +196,11 @@ class SiteDirector( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
+
+    if not self.queueDict:
+      self.log.warn('No site defined, exiting the cycle')
+      return S_OK()
+
     result = self.submitJobs()
     if not result['OK']:
       self.log.error( 'Errors in the job submission: %s' % result['Message'] )
@@ -223,6 +235,8 @@ class SiteDirector( AgentModule ):
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
       else:
         return S_ERROR( 'CPU time limit is not specified for queue %s' % queue )
+      if queueCPUTime > self.maxQueueLength:
+        queueCPUTime = self.maxQueueLength
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
@@ -335,7 +349,7 @@ class SiteDirector( AgentModule ):
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
     executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy )
-    result = S_OK(executable)
+    result = S_OK( executable )
     return result
 
 #####################################################################################    
@@ -345,7 +359,8 @@ class SiteDirector( AgentModule ):
 
     queueDict = self.queueDict[queue]['ParametersDict']
 
-    vo = getVO()
+    vo = Registry.getVOForGroup(self.genericPilotGroup)
+    
     if not vo:
       self.log.error( 'Virtual Organization is not defined in the configuration' )
       return None
@@ -360,9 +375,9 @@ class SiteDirector( AgentModule ):
       self.log.error( 'PilotVersion is not defined in the configuration' )
       return None
     pilotOptions.append( '-r %s' % diracVersion )
-    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotProject" % ( vo, setup ), "unknown" )
-    if projectName == 'unknown':
-      self.log.info( 'PilotProject is not defined in the configuration' )
+    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotInstallation" % ( vo, setup ), "" )
+    if projectName == '':
+      self.log.info( 'DIRAC installation will be installed by pilots' )
     else:
       pilotOptions.append( '-l %s' % projectName )
 
@@ -419,7 +434,7 @@ class SiteDirector( AgentModule ):
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
       if proxy:
-        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
+        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
         proxyFlag = 'True'
       compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) ).replace( '\n', '' )
       compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) ).replace( '\n', '' )
@@ -585,20 +600,21 @@ EOF
         self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
         continue
       pilotDict = result['Value']
-      for pRef in pilotRefs:
-        self.log.info( 'Retrieving output for pilot %s' % pRef )
-        pilotStamp = pilotDict[pRef]['PilotStamp']
-        pRefStamp = pRef
-        if pilotStamp:
-          pRefStamp = pRef + ':::' + pilotStamp
-        result = ce.getJobOutput( pRefStamp )
-        if not result['OK']:
-          self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
-        else:
-          output, error = result['Value']
-          result = pilotAgentsDB.storePilotOutput( pRef, output, error )
+      if self.getOutput:
+        for pRef in pilotRefs:
+          self.log.info( 'Retrieving output for pilot %s' % pRef )
+          pilotStamp = pilotDict[pRef]['PilotStamp']
+          pRefStamp = pRef
+          if pilotStamp:
+            pRefStamp = pRef + ':::' + pilotStamp
+          result = ce.getJobOutput( pRefStamp )
           if not result['OK']:
-            self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
+            self.log.error( 'Failed to get pilot output: %s' % result['Message'] )
+          else:
+            output, error = result['Value']
+            result = pilotAgentsDB.storePilotOutput( pRef, output, error )
+            if not result['OK']:
+              self.log.error( 'Failed to store pilot output: %s' % result['Message'] )
 
       # Check if the accounting is to be sent
       if self.sendAccounting:
@@ -677,5 +693,3 @@ EOF
       return result
 
     return S_OK()
-
-

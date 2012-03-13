@@ -17,7 +17,7 @@ Script.parseCommandLine( ignoreErrors = False )
 
 import DIRAC
 from DIRAC import gLogger, gConfig
-from DIRAC.Core.Security.Misc import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 res = getProxyInfo( False, False )
 if not res['OK']:

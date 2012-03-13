@@ -1,148 +1,155 @@
-########################################################################
+################################################################################
 # $HeadURL:  $
-########################################################################
-
-import copy
-import Queue
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-
-from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-
-
-__RCSID__ = "$Id:  $"
-
+################################################################################
+__RCSID__  = "$Id:  $"
 AGENT_NAME = 'ResourceStatus/StElInspectorAgent'
 
-class StElInspectorAgent(AgentModule):
-  """ Class StElInspectorAgent is in charge of going through StorageElements
-      table, and pass StorageElement and Status to the PEP
+import Queue, time
+
+from DIRAC                                                  import S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
+
+from DIRAC.ResourceStatusSystem.Utilities                   import CS
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+
+class StElInspectorAgent( AgentModule ):
+  """
+    The StElInspector agent ( StorageElementInspectorAgent ) is one of the four
+    InspectorAgents of the RSS.
+
+    This Agent takes care of the StorageElements. In order to do so, it gathers
+    the eligible ones and then evaluates their statuses with the PEP.
+
+    If you want to know more about the StElInspectorAgent, scroll down to the
+    end of the file.
   """
 
-#############################################################################
+  def initialize( self ):
 
-  def initialize(self):
-    """ Standard constructor
-    """
-    
     try:
-      self.rsDB = ResourceStatusDB()
-      self.rmDB = ResourceManagementDB()
-      
-      self.StorageElementToBeChecked = Queue.Queue()
-      self.StorageElementInCheck = []
-      
+      self.rsClient                    = ResourceStatusClient()
+      self.StorageElementsFreqs        = CS.getTypedDictRootedAt( 'CheckingFreqs/StorageElementsFreqs' )
+      self.StorageElementsToBeChecked  = Queue.Queue()
+      self.StorageElementsNamesInCheck = []
+
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-      self.threadPool = ThreadPool( self.maxNumberOfThreads,
-                                    self.maxNumberOfThreads )
-
+      self.threadPool         = ThreadPool( self.maxNumberOfThreads,
+                                            self.maxNumberOfThreads )
       if not self.threadPool:
-        self.log.error('Can not create Thread Pool')
-        return S_ERROR('Can not create Thread Pool')
-      
-      self.setup = getSetup()['Value']
+        self.log.error( 'Can not create Thread Pool' )
+        return S_ERROR( 'Can not create Thread Pool' )
 
-      self.VOExtension = getExt()
+      for _i in xrange( self.maxNumberOfThreads ):
+        self.threadPool.generateJobAndQueueIt( self._executeCheck, args = ( None, ) )
 
-      configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
-                                globals(), locals(), ['*'])
-      
-      self.StorageElements_check_freq = copy.deepcopy(configModule.StorageElements_check_freq)
-      
-      self.nc = NotificationClient()
-
-      self.diracAdmin = DiracAdmin()
-
-      self.csAPI = CSAPI()      
-      
-      for i in xrange(self.maxNumberOfThreads):
-        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (None, ) )  
-        
       return S_OK()
 
     except Exception:
       errorStr = "StElInspectorAgent initialization"
-      gLogger.exception(errorStr)
-      return S_ERROR(errorStr)
+      self.log.exception( errorStr )
+      return S_ERROR( errorStr )
 
-#############################################################################
+################################################################################
+################################################################################
 
-  def execute(self):
-    """ 
-    The main RSInspectorAgent execution method.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and 
-    put result in self.StorageElementToBeChecked (a Queue) and in self.StorageElementInCheck (a list)
-    """
-    
+  def execute( self ):
+
     try:
 
-      res = self.rsDB.getStuffToCheck('StorageElements', self.StorageElements_check_freq) 
-   
-      for resourceTuple in res:
-        if resourceTuple[0] in self.StorageElementInCheck:
-          break
-        resourceL = ['StorageElement']
-        for x in resourceTuple:
-          resourceL.append(x)
-        self.StorageElementInCheck.insert(0, resourceL[1])
-        self.StorageElementToBeChecked.put(resourceL)
+      kwargs = { 'meta' : {} }
+      kwargs['meta']['columns'] = [ 'StorageElementName', 'StatusType',
+                                    'Status', 'FormerStatus', 'SiteType', \
+                                    'TokenOwner' ]
+      kwargs[ 'tokenOwner' ]    = 'RS_SVC'
+
+      resQuery = self.rsClient.getStuffToCheck( 'StorageElement', self.StorageElementsFreqs, **kwargs )
+      if not resQuery[ 'OK' ]:
+        self.log.error( resQuery[ 'Message' ] )
+        return resQuery
+
+      resQuery = resQuery[ 'Value' ]  
+      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
+
+      for seTuple in resQuery:
+
+        if ( seTuple[ 0 ], seTuple[ 1 ] ) in self.StorageElementsNamesInCheck:
+          self.log.info( '%s(%s) discarded, already on the queue' % ( seTuple[ 0 ], seTuple[ 1 ] ) )
+          continue
+
+        resourceL = [ 'StorageElement' ] + seTuple
+
+        # the tuple consists on ( SEName, SEStatusType )
+        self.StorageElementsNamesInCheck.insert( 0, ( resourceL[ 1 ], resourceL[ 2 ] ) )
+        self.StorageElementsToBeChecked.put( resourceL )
 
       return S_OK()
 
     except Exception, x:
-      errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-      
-        
-#############################################################################
+      errorStr = where( self, self.execute )
+      self.log.exception( errorStr, lException = x )
+      return S_ERROR( errorStr )
 
-  def _executeCheck(self, arg):
-    """ 
-    Create instance of a PEP, instantiated popping a resource from lists.
-    """
-    
-    
+################################################################################
+################################################################################
+
+  def finalize( self ):
+    if self.StorageElementsNamesInCheck:
+      _msg = "Wait for queue to get empty before terminating the agent (%d tasks)"
+      _msg = _msg % len( self.StorageElementsNamesInCheck )
+      self.log.info( _msg )
+      while self.StorageElementsNamesInCheck:
+        time.sleep( 2 )
+      self.log.info( "Queue is empty, terminating the agent..." )
+    return S_OK()
+
+################################################################################
+################################################################################
+
+  def _executeCheck( self, _arg ):
+
+    # Init the APIs beforehand, and reuse them.
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+    clients = knownAPIs.initAPIs( __APIs__, {} )
+
+    pep = PEP( clients = clients )
+
     while True:
-      
+
+      toBeChecked = self.StorageElementsToBeChecked.get()
+
+      pepDict = { 'granularity'  : toBeChecked[ 0 ],
+                  'name'         : toBeChecked[ 1 ],
+                  'statusType'   : toBeChecked[ 2 ],
+                  'status'       : toBeChecked[ 3 ],
+                  'formerStatus' : toBeChecked[ 4 ],
+                  'siteType'     : toBeChecked[ 5 ],
+                  'tokenOwner'   : toBeChecked[ 6 ] }
+
       try:
-      
-        toBeChecked = self.StorageElementToBeChecked.get()
-     
-        granularity = toBeChecked[0]
-        storageElementName = toBeChecked[1]
-        status = toBeChecked[2]
-        formerStatus = toBeChecked[3]
-        siteType = toBeChecked[4]
-        tokenOwner = toBeChecked[5]
-       
-        gLogger.info("Checking StorageElement %s, with status %s" % (storageElementName, status))
-        
-        newPEP = PEP(self.VOExtension, granularity = granularity, name = storageElementName, 
-                     status = status, formerStatus = formerStatus, siteType = siteType, 
-                     tokenOwner = tokenOwner)
-        
-        newPEP.enforce(rsDBIn = self.rsDB, rmDBIn = self.rmDB, setupIn = self.setup, ncIn = self.nc, 
-                       daIn = self.diracAdmin, csAPIIn = self.csAPI)
-    
+
+        self.log.info( "Checking StorageElement %s, with type/status: %s/%s" % \
+                      ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
+
+        pepRes = pep.enforce( **pepDict )
+        if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
+          pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
+          if pepStatus != pepDict[ 'status' ]:
+            gLogger.info( 'Updated Site %s (%s) from %s to %s' %
+                          ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
+
         # remove from InCheck list
-        self.StorageElementInCheck.remove(toBeChecked[1])
+        self.StorageElementsNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
       except Exception:
-        gLogger.exception('StElInspector._executeCheck')
+        self.log.exception( 'StElInspector._executeCheck' )
         try:
-          self.StorageElementInCheck.remove(storageElementName)
+          self.StorageElementsNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
 
-#############################################################################
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

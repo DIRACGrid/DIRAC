@@ -7,15 +7,16 @@ import types
 from datetime import datetime, timedelta
 import DIRAC
 
-from DIRAC                                               import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.AccountingSystem.Client.Types.DataOperation   import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient       import gDataStoreClient
-from DIRAC.Core.Utilities.File                           import makeGuid, getSize
-from DIRAC.Core.Utilities.Adler                          import fileAdler, compareAdler
-from DIRAC.Core.Utilities.List                           import sortList, randomize
-from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite, isSameSiteSE, getSEsForCountry
-from DIRAC.Resources.Storage.StorageElement              import StorageElement
-from DIRAC.Resources.Catalog.FileCatalog                 import FileCatalog
+from DIRAC                                             import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient     import gDataStoreClient
+from DIRAC.ResourceStatusSystem.Client                 import ResourceStatus
+from DIRAC.Core.Utilities.File                         import makeGuid, getSize
+from DIRAC.Core.Utilities.Adler                        import fileAdler, compareAdler
+from DIRAC.Core.Utilities.List                         import sortList, randomize
+from DIRAC.Core.Utilities.SiteSEMapping                import getSEsForSite, isSameSiteSE, getSEsForCountry
+from DIRAC.Resources.Storage.StorageElement            import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog               import FileCatalog
 
 class CatalogBase:
 
@@ -916,17 +917,17 @@ class ReplicaManager( CatalogToStorage ):
       return res
 
     paths = path
-    if type(path) in types.StringTypes:
+    if type( path ) in types.StringTypes:
       paths = [path]
 
     for p in paths:
       if not res['Value']['Successful'].has_key( p ):
-        return S_OK(False)
+        return S_OK( False )
       catalogPerm = res['Value']['Successful'][p]
       if not ( catalogPerm.has_key( 'Write' ) and catalogPerm['Write'] ):
-        return S_OK(False)
+        return S_OK( False )
 
-    return S_OK(True)
+    return S_OK( True )
 
   ##########################################################################
   #
@@ -1816,6 +1817,7 @@ class ReplicaManager( CatalogToStorage ):
           storageElementDict[se] = []
         storageElementDict[se].append( ( lfn, pfn ) )
     failed = {}
+    successful = {}
     for storageElementName, fileTuple in storageElementDict.items():
       res = self.__removeReplica( storageElementName, fileTuple )
       if not res['OK']:
@@ -1833,9 +1835,14 @@ class ReplicaManager( CatalogToStorage ):
     for lfn in lfnDict.keys():
       if not failed.has_key( lfn ):
         completelyRemovedFiles.append( lfn )
-    res = self.fileCatalogue.removeFile( completelyRemovedFiles )
-    failed.update( res['Value']['Failed'] )
-    successful = res['Value']['Successful']
+    if completelyRemovedFiles:
+      res = self.fileCatalogue.removeFile( completelyRemovedFiles )
+      if not res['OK']:
+        for lfn in completelyRemovedFiles:
+          failed[lfn] = "Failed to remove file from the catalog: %s" % res['Message']
+      else:
+        failed.update( res['Value']['Failed'] )
+        successful = res['Value']['Successful']
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
@@ -1910,8 +1917,8 @@ class ReplicaManager( CatalogToStorage ):
     for pfn, error in res['Value']['Failed'].items():
       failed[pfnDict[pfn]] = error
     replicaTuples = []
-    for pfn in res['Value']['Successful'].keys():
-      replicaTuple = ( pfnDict[pfn], pfn, storageElementName )
+    for pfn, surl in res['Value']['Successful'].items():
+      replicaTuple = ( pfnDict[pfn], surl, storageElementName )
       replicaTuples.append( replicaTuple )
     successful = {}
     res = self.__removeCatalogReplica( replicaTuples )
@@ -2081,6 +2088,12 @@ class ReplicaManager( CatalogToStorage ):
       gDataStoreClient.addRegister( oDataOperation )
       infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued accounting removal request."
       gLogger.info( infoStr )
+      for surl, value in res['Value']['Successful'].items():
+        ret = storageElement.getPfnForProtocol( surl, self.registrationProtocol, withPort = False )
+        if not ret['OK']:
+          res['Value']['Successful'][surl] = surl
+        else:
+          res['Value']['Successful'][surl] = ret['Value']
       return res
 
   #########################################################################
@@ -2196,15 +2209,22 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( replicaDict )
 
   def __SEActive( self, se ):
-    storageCFGBase = "/Resources/StorageElements"
-    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
-    if not res['OK']:
-      return S_ERROR( "SE not known" )
-    seStatus = {'Read':True, 'Write':True}
-    if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
-      seStatus['Read'] = False
-    if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
-      seStatus['Write'] = False
+#    storageCFGBase = "/Resources/StorageElements"
+#    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
+    
+    res = ResourceStatus.getStorageElementStatus( se, default = None )
+    
+    if not res[ 'OK' ]:
+      return S_ERROR( 'SE not known' )
+    
+    seStatus = { 'Read' : True, 'Write' : True }
+#    if ( res['Value'].has_key( "ReadAccess" ) ) and ( res['Value']['ReadAccess'] != 'Active' ):
+    if ( res[ 'Value' ][se].has_key( 'Read' ) ) and ( res[ 'Value' ][se][ 'Read' ] not in [ 'Active', 'Bad' ] ):
+      seStatus[ 'Read' ] = False
+#    if ( res['Value'].has_key( "WriteAccess" ) ) and ( res['Value']['WriteAccess'] != 'Active' ):
+    if ( res[ 'Value' ][se].has_key( 'Write' ) ) and ( res[ 'Value' ][se][ 'Write' ] not in [ 'Active', 'Bad' ] ):
+      seStatus[ 'Write' ] = False
+      
     return S_OK( seStatus )
 
   def __initialiseAccountingObject( self, operation, se, files ):

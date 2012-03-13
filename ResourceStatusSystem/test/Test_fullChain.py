@@ -1,12 +1,18 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
 import sys
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations import *
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
-from DIRAC import gConfig
-import DIRAC.ResourceStatusSystem.test.fake_rsDB
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
+
+from DIRAC.ResourceStatusSystem.Utilities.Utils  import *
+from DIRAC.ResourceStatusSystem                  import *
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
+from DIRAC                                       import gConfig
+import DIRAC.ResourceStatusSystem.test.fake_rsDB
 
 VO = gConfig.getValue("DIRAC/Extensions")
 if 'LHCb' in VO:
@@ -238,3 +244,16 @@ for status in ValidStatus:
 #            )
 #  res = pdp.takeDecision()
 #  print res
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+    
+    will come soon...
+'''
+            
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

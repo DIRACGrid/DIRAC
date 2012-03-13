@@ -13,6 +13,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Security import Properties, CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
@@ -32,12 +33,49 @@ def initializeProxyManagerHandler( serviceInfo ):
     return S_ERROR( "Can't initialize ProxyDB" )
   gThreadScheduler.addPeriodicTask( 900, gProxyDB.purgeExpiredTokens, elapsedTime = 900 )
   gThreadScheduler.addPeriodicTask( 900, gProxyDB.purgeExpiredRequests, elapsedTime = 900 )
+  gThreadScheduler.addPeriodicTask( 3600, gProxyDB.purgeLogs )
+  gThreadScheduler.addPeriodicTask( 3600, gProxyDB.purgeExpiredProxies )
   gLogger.info( "VOMS: %s\nMyProxy: %s\n MyProxy Server: %s" % ( requireVoms, useMyProxy, gProxyDB.getMyProxyServer() ) )
   return S_OK()
 
 class ProxyManagerHandler( RequestHandler ):
 
   __maxExtraLifeFactor = 1.5
+
+  def __generateUserProxiesInfo( self ):
+    proxiesInfo = {}
+    credDict = self.getRemoteCredentials()
+    result = Registry.getDNForUsername( credDict[ 'username' ] )
+    if not result[ 'OK' ]:
+      return retDict
+    selDict = { 'UserDN' : result[ 'Value' ] }
+    result = gProxyDB.getProxiesContent( selDict, {}, 0, 0 )
+    if not result[ 'OK']:
+      return retDict
+    contents = result[ 'Value' ]
+    userDNIndex = contents[ 'ParameterNames' ].index( "UserDN" )
+    userGroupIndex = contents[ 'ParameterNames' ].index( "UserGroup" )
+    expirationIndex = contents[ 'ParameterNames' ].index( "ExpirationTime" )
+    for record in contents[ 'Records' ]:
+      userDN = record[ userDNIndex ]
+      if userDN not in proxiesInfo:
+        proxiesInfo[ userDN ] = {}
+      userGroup = record[ userGroupIndex ]
+      proxiesInfo[ userDN ][ userGroup ] = record[ expirationIndex  ]
+    return proxiesInfo
+
+  def __addKnownUserProxiesInfo( self, retDict ):
+    """ Given a S_OK/S_ERR add a proxies entry with info of all the proxies a user has uploaded
+    """
+    retDict[ 'proxies' ] = self.__generateUserProxiesInfo()
+    return retDict
+
+  auth_getUserProxiesInfo = [ 'authenticated' ]
+  types_getUserProxiesInfo = []
+  def export_getUserProxiesInfo( self ):
+    """ Get the info about the user proxies in the system
+    """
+    return S_OK( self.__generateUserProxiesInfo() )
 
   types_requestDelegationUpload = [ ( types.IntType, types.LongType ), ( types.StringType, types.BooleanType ) ]
   def export_requestDelegationUpload( self, requestedUploadTime, userGroup ):
@@ -48,21 +86,24 @@ class ProxyManagerHandler( RequestHandler ):
     userName = credDict[ 'username' ]
     if not userGroup:
       userGroup = credDict[ 'group' ]
-    retVal = CS.getGroupsForUser( credDict[ 'username' ] )
+    retVal = Registry.getGroupsForUser( credDict[ 'username' ] )
     if not retVal[ 'OK' ]:
       return retVal
     groupsAvailable = retVal[ 'Value' ]
     if userGroup not in groupsAvailable:
       return S_ERROR( "%s is not a valid group for user %s" % ( userGroup, userName ) )
+    clientChain = credDict[ 'x509Chain' ]
+    clientSecs = clientChain.getIssuerCert()[ 'Value' ].getRemainingSecs()[ 'Value' ]
+    requestedUploadTime = min( requestedUploadTime, clientSecs )
     retVal = gProxyDB.getRemainingTime( userDN, userGroup )
     if not retVal[ 'OK' ]:
       return retVal
     remainingSecs = retVal[ 'Value' ]
-    csOption = "%s/SkipUploadLifeTime" % self.serviceInfoDict[ 'serviceSectionPath' ]
     #If we have a proxy longer than the one uploading it's not needed
-    if remainingSecs > requestedUploadTime:
+    #ten minute margin to compensate just in case
+    if remainingSecs >= requestedUploadTime - 600:
       gLogger.info( "Upload request not necessary by %s:%s" % ( userName, userGroup ) )
-      return S_OK()
+      return self.__addKnownUserProxiesInfo( S_OK() )
     result = gProxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], userDN )
     if result[ 'OK' ]:
       gLogger.info( "Upload request by %s:%s given id %s" % ( userName, userGroup, result['Value']['id'] ) )
@@ -75,13 +116,13 @@ class ProxyManagerHandler( RequestHandler ):
     """ Upload result of delegation
     """
     credDict = self.getRemoteCredentials()
-    userId = "%s:%s" % ( credDict[ 'username' ], credDict[ 'group' ]  )
+    userId = "%s:%s" % ( credDict[ 'username' ], credDict[ 'group' ] )
     retVal = gProxyDB.completeDelegation( requestId, credDict[ 'DN' ], pemChain )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Upload proxy failed", "id: %s user: %s message: %s" %( requestId, userId, retVal[ 'Message' ] ) )
-      return retVal
+      gLogger.error( "Upload proxy failed", "id: %s user: %s message: %s" % ( requestId, userId, retVal[ 'Message' ] ) )
+      return self.__addKnownUserProxiesInfo( retVal )
     gLogger.info( "Upload %s by %s completed" % ( requestId, userId ) )
-    return S_OK()
+    return self.__addKnownUserProxiesInfo( S_OK() )
 
   types_getRegisteredUsers = []
   def export_getRegisteredUsers( self, validSecondsRequired = 0 ):
@@ -92,7 +133,7 @@ class ProxyManagerHandler( RequestHandler ):
     """
     credDict = self.getRemoteCredentials()
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
-      gProxyDB.getUsers( validSecondsRequired, dnMask = [ credDict[ 'DN' ] ] )
+      return gProxyDB.getUsers( validSecondsRequired, userMask = [ credDict[ 'username' ] ] )
     return gProxyDB.getUsers( validSecondsRequired )
 
   def __checkProperties( self, requestedUserDN, requestedUserGroup ):
@@ -107,7 +148,7 @@ class ProxyManagerHandler( RequestHandler ):
     if Properties.PRIVATE_LIMITED_DELEGATION in credDict[ 'properties' ]:
       if credDict[ 'DN' ] != requestedUserDN:
         return S_ERROR( "You are not allowed to download any proxy" )
-      if Properties.PRIVATE_LIMITED_DELEGATION in CS.getPropertiesForGroup( requestedUserGroup ):
+      if Properties.PRIVATE_LIMITED_DELEGATION in Registry.getPropertiesForGroup( requestedUserGroup ):
         return S_ERROR( "You can't download proxies for that group" )
       return S_OK( True )
     #Not authorized!
@@ -216,10 +257,10 @@ class ProxyManagerHandler( RequestHandler ):
     deleted = 0
     for id in idList:
       if len( id ) != 2:
-        errorInDelete.append( "%s doesn't have two fields" % str(id) )
+        errorInDelete.append( "%s doesn't have two fields" % str( id ) )
       retVal = self.export_deleteProxy( id[0], id[1] )
       if not retVal[ 'OK' ]:
-        errorInDelete.append( "%s : %s" %( str(id), retVal[ 'Message' ] ) )
+        errorInDelete.append( "%s : %s" % ( str( id ), retVal[ 'Message' ] ) )
       else:
         deleted += 1
     if errorInDelete:
@@ -235,7 +276,7 @@ class ProxyManagerHandler( RequestHandler ):
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
       if userDN != credDict[ 'DN' ]:
         return S_ERROR( "You aren't allowed! Bad boy!" )
-    retVal =  gProxyDB.deleteProxy( userDN, userGroup )
+    retVal = gProxyDB.deleteProxy( userDN, userGroup )
     if not retVal[ 'OK' ]:
       return retVal
     gProxyDB.logAction( "delete proxy", credDict[ 'DN' ], credDict[ 'group' ],
@@ -250,10 +291,7 @@ class ProxyManagerHandler( RequestHandler ):
     """
     credDict = self.getRemoteCredentials()
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
-      result = CS.getDNForUsername( credDict[ 'username' ] )
-      if not result[ 'OK' ]:
-        return S_ERROR( "You are not a valid user!" )
-      selDict[ 'UserDN' ] = result[ 'Value' ]
+      selDict[ 'UserName' ] = credDict[ 'username' ]
     return gProxyDB.getProxiesContent( selDict, sortDict, start, limit )
 
   types_getLogContents = [ types.DictType, ( types.ListType, types.TupleType ),
@@ -294,7 +332,7 @@ class ProxyManagerHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     if not result[ 'Value' ]:
-      return S_ERROR( "Proxy token is invalid"  )
+      return S_ERROR( "Proxy token is invalid" )
     gProxyDB.logAction( "used token", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
 
     result = self.__checkProperties( userDN, userGroup )

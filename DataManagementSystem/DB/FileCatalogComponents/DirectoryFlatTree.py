@@ -209,7 +209,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
       pelements.append(dPath)
       
     pathString = [ "'"+p+"'" for p in pelements ]
-    req = "SELECT DirID FROM DirectoryInfo WHERE DirName in (%s) ORDER BY DirID" % pathString
+    req = "SELECT DirID FROM DirectoryInfo WHERE DirName in (%s) ORDER BY DirID" % ','.join(pathString) 
     result = self.db._query(req)
     if not result['OK']:
       return result

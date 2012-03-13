@@ -1,23 +1,29 @@
-""" The AccountingCache_Command class is a command module that collects command classes to store
-    accounting results in the accounting cache.
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The AccountingCache_Command class is a command module that collects command 
+  classes to store accounting results in the accounting cache.
 """
 
-import datetime
+from datetime                                     import datetime, timedelta
 
-from DIRAC import gLogger
+from DIRAC                                        import gLogger, S_OK, S_ERROR
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
+from DIRAC.ResourceStatusSystem.Command.Command   import *
+from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
+from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
-#from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+################################################################################
+################################################################################
 
-#############################################################################
-
-class TransferQualityByDestSplitted_Command(Command):
+class TransferQualityByDestSplitted_Command( Command ):
   
-  def doCommand(self, sources = None, SEs = None):
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
+  
+  def doCommand( self, sources = None, SEs = None ):
     """ 
     Returns transfer quality using the DIRAC accounting system for every SE 
     for the last self.args[0] hours 
@@ -31,73 +37,74 @@ class TransferQualityByDestSplitted_Command(Command):
       
     """
 
-    if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC_RSS.getStorageElementsList()
-      if not SEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
-      else:
-        SEs = SEs['Value']
-    
-    if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sources = RPC_RSS.getSitesList()
-      if not sources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sources['Message'] 
-      else:
-        sources = sources['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    super( TransferQualityByDestSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
-                                         {'OperationType':'putAndRegister', 
-                                          'Source':sources + SEs, 'Destination':sources + SEs}, 
-                                          'Destination')
-      if not qualityAll['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + qualityAll['Message'] 
-      else:
-        qualityAll = qualityAll['Value']
 
-    except:
-      gLogger.exception("Exception when calling TransferQualityByDestSplitted_Command")
-      return {}
+      if SEs is None:
+        meta = { 'columns' : 'StorageElementName' }
+        SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = meta )
+        if not SEs[ 'OK' ]:
+          return { 'Result' : SEs } 
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
-    listOfDestSEs = qualityAll['data'].keys()
+      if sources is None:
+        meta = { 'columns' : 'SiteName' }
+        sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = meta )      
+        if not sources[ 'OK' ]:
+          return { 'Result' : sources }
+        sources = [ s[0] for s in sources[ 'Value' ] ]
     
-    plotGran = qualityAll['granularity']
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
     
-    singlePlots = {}
-    
-    for SE in listOfDestSEs:
-      plot = {}
-      plot['data'] = {SE: qualityAll['data'][SE]}
-      plot['granularity'] = plotGran
-      singlePlots[SE] = plot
-    
-    resToReturn = {'DataOperation': singlePlots}
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    return resToReturn
+      toD   = datetime.utcnow()
+      fromD = toD - timedelta( hours = self.args[ 0 ] )
 
+      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', 
+                                                    fromD, toD, 
+                                                    { 'OperationType':'putAndRegister', 
+                                                      'Source': sources + SEs, 
+                                                      'Destination': sources + SEs 
+                                                    }, 
+                                                    'Destination' )
+      
+      if not qualityAll[ 'OK' ]:
+        return { 'Result' : qualityAll }
+      
+      qualityAll    = qualityAll[ 'Value' ]
+      listOfDestSEs = qualityAll[ 'data' ].keys()
+      plotGran      = qualityAll[ 'granularity' ]
+      singlePlots   = {}
+    
+      for SE in listOfDestSEs:
+        plot                  = {}
+        plot[ 'data' ]        = { SE: qualityAll[ 'data' ][ SE ] }
+        plot[ 'granularity' ] = plotGran
+        singlePlots[ SE ]     = plot
+    
+      res = S_OK( { 'DataOperation' : singlePlots } )
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
-class TransferQualityByDestSplittedSite_Command(Command):
+class TransferQualityByDestSplittedSite_Command( Command ):
   
-  def doCommand(self, sources = None, SEs = None):
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]   
+  
+  def doCommand( self, sources = None, SEs = None ):
     """ 
     Returns transfer quality using the DIRAC accounting system for every SE
     of a single site for the last self.args[0] hours 
@@ -110,216 +117,201 @@ class TransferQualityByDestSplittedSite_Command(Command):
     :returns:
       
     """
-
-    if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC_RSS.getStorageElementsList()
-      if not SEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
-      else:
-        SEs = SEs['Value']
-    
-    if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sources = RPC_RSS.getSitesList()
-      if not sources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sources['Message'] 
-      else:
-        sources = sources['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
-
-    try:
-      qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
-                                         {'OperationType':'putAndRegister', 
-                                          'Source':sources + SEs, 'Destination':sources + SEs}, 
-                                          'Destination')
-      if not qualityAll['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + qualityAll['Message'] 
-      else:
-        qualityAll = qualityAll['Value']
-
-    except:
-      gLogger.exception("Exception when calling TransferQualityByDestSplittedSite_Command")
-      return {}
-    
-    listOfDest = qualityAll['data'].keys()
-    
-    try:
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb({'StorageElementName':listOfDest}, [], 0, 300)
-    except NameError:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb({'StorageElementName':listOfDest}, [], 0, 300)
-    
-    if not storSitesWeb['OK']:
-      raise RSSException, where(self, self.doCommand) + " " + storSitesWeb['Message'] 
-    else:
-      storSitesWeb = storSitesWeb['Value']['Records']
-    
-    SESiteMapping = {}
-    siteSEMapping = {}
-    
-    for r in storSitesWeb:
-      sites = r[2].split(' ')[:-1]
-      SESiteMapping[r[0]] = sites
-      
-    for SE in SESiteMapping.keys():
-      for site in SESiteMapping[SE]:
-        try:
-          l = siteSEMapping[site]
-          l.append(SE)
-          siteSEMapping[site] = l
-        except KeyError:
-          siteSEMapping[site] = [SE]
    
-    
-    plotGran = qualityAll['granularity']
-    
-    singlePlots = {}
-    
-    for site in siteSEMapping.keys():
-      plot = {}
-      plot['data'] = {}
-      for SE in siteSEMapping[site]:
-        plot['data'][SE] = qualityAll['data'][SE]
-      plot['granularity'] = plotGran
-    
-      singlePlots[site] = plot
-    
-    resToReturn = {'DataOperation': singlePlots}
+    super( TransferQualityByDestSplittedSite_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    return resToReturn
+    try:
+      
+      if SEs is None:
+        SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns': 'StorageElementName' })
+        if not SEs[ 'OK' ]:
+          return { 'Result' : SEs } 
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
+    
+      if sources is None:
+        sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )
+        if not sources[ 'OK' ]:
+          return { 'Result' : sources } 
+        sources = [ si[0] for si in sources[ 'Value' ] ]
+    
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
+    
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+ 
+      fromD = datetime.utcnow() - timedelta( hours = self.args[ 0 ] )
+      toD   = datetime.utcnow()
+
+      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', 
+                                                    fromD, toD, 
+                                                    {'OperationType':'putAndRegister', 
+                                                     'Source':sources + SEs, 
+                                                     'Destination':sources + SEs 
+                                                     }, 
+                                                     'Destination' )
+      if not qualityAll[ 'OK' ]:
+        return { 'Result' : qualityAll } 
+      
+      qualityAll = qualityAll[ 'Value' ]
+      listOfDest = qualityAll[ 'data' ].keys()
+    
+      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', 
+                                                                { 'StorageElementName': listOfDest }, 0, 300 )
+    
+      if not storSitesWeb[ 'OK' ]:
+        return { 'Result' : storSitesWeb } 
+      
+      storSitesWeb  = storSitesWeb[ 'Value' ][ 'Records' ]
+      SESiteMapping = {}
+      siteSEMapping = {}
+    
+      for r in storSitesWeb:
+        sites               = r[ 2 ].split( ' ' )[ :-1 ]
+        SESiteMapping[ r[ 0 ] ] = sites
+      
+      for SE in SESiteMapping.keys():
+        for site in SESiteMapping[ SE ]:
+          try:
+            l = siteSEMapping[ site ]
+            l.append( SE )
+            siteSEMapping[ site ] = l
+          except KeyError:
+            siteSEMapping[ site ] = [ SE ]
+   
+      plotGran = qualityAll[ 'granularity' ]
+      singlePlots = {}
+    
+      for site in siteSEMapping.keys():
+        plot           = {}
+        plot[ 'data' ] = {}
+        for SE in siteSEMapping[site]:
+          plot[ 'data' ][ SE ] = qualityAll[ 'data' ][ SE ]
+        plot[ 'granularity' ] = plotGran
+    
+        singlePlots[ site ] = plot
+    
+      res = S_OK( { 'DataOperation': singlePlots } )
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
-class TransferQualityBySourceSplittedSite_Command(Command):
+#class TransferQualityBySourceSplittedSite_Command( Command ):
+#  
+#  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
+#  
+#  def doCommand( self, sources = None, SEs = None ):
+#    """ 
+#    Returns transfer quality using the DIRAC accounting system for every SE
+#    of a single site and for the site itself for the last self.args[0] hours 
+#        
+#    :params:
+#      :attr:`dests`: list of destinations (when not given, take everything)
+#    
+#      :attr:`SEs`: list of storage elements (when not given, take every SE)
+#
+#    :returns:
+#      
+#    """
+#  
+#    super( TransferQualityBySourceSplittedSite_Command, self ).doCommand()
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#
+#    if SEs is None:
+#      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
+#      if not SEs[ 'OK' ]:
+#      else:
+#        SEs = SEs[ 'Value' ]
+#    
+#    if sources is None:
+#      sources = self.APIs[ 'ResourceStatusClient' ].getSitesList()
+#      if not sources[ 'OK' ]:
+#      else:
+#        sources = sources[ 'Value' ]
+#    
+#    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+#
+#    fromD = datetime.utcnow()-timedelta( hours = self.args[ 0 ] )
+#    toD = datetime.utcnow()
+#
+#    try:
+#      qualityAll = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD, 
+#                                          { 'OperationType':'putAndRegister', 
+#                                            'Source': sources + SEs, 'Destination': sources + SEs }, 
+#                                          'Destination')
+#      if not qualityAll[ 'OK' ]:
+#      else:
+#        qualityAll = qualityAll[ 'Value' ]
+#
+#    except:
+#      gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
+#      return {}
+#    
+#    listOfDest = qualityAll[ 'data' ].keys()
+#    
+#    try:
+#      storSitesWeb = self.APIs[ 'ResourceStatusClient' ].getMonitoredsStatusWeb( 'StorageElement', { 'StorageElementName': listOfDest }, 0, 300)
+#    except:
+#      gLogger.exception( "Exception when calling TransferQualityByDestSplittedSite_Command" )
+#      return {}
+#    
+#    if not storSitesWeb[ 'OK' ]:
+#    else:
+#      storSitesWeb = storSitesWeb[ 'Value' ][ 'Records' ]
+#    
+#    SESiteMapping = {}
+#    siteSEMapping = {}
+#    
+#    for r in storSitesWeb:
+#      sites                   = r[ 2 ].split( ' ' )[ :-1 ]
+#      SESiteMapping[ r[ 0 ] ] = sites
+#      
+#    for SE in SESiteMapping.keys():
+#      for site in SESiteMapping[ SE ]:
+#        try:
+#          l = siteSEMapping[ site ]
+#          l.append( SE )
+#          siteSEMapping[ site ] = l
+#        except KeyError:
+#          siteSEMapping[ site ] = [ SE ]
+#   
+#    
+#    plotGran = qualityAll[ 'granularity' ]
+#    
+#    singlePlots = {}
+#    
+#    for site in siteSEMapping.keys():
+#      plot           = {}
+#      plot[ 'data' ] = {}
+#      for SE in siteSEMapping[ site ]:
+#        plot[ 'data' ][ SE ] = qualityAll[ 'data' ][ SE ]
+#      plot[ 'granularity' ] = plotGran
+#    
+#      singlePlots[ site ] = plot
+#    
+#    resToReturn = { 'DataOperation': singlePlots }
+#
+#    return resToReturn
+#
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+
+################################################################################
+################################################################################
+
+class FailedTransfersBySourceSplitted_Command( Command ):
   
-  def doCommand(self, sources = None, SEs = None):
-    """ 
-    Returns transfer quality using the DIRAC accounting system for every SE
-    of a single site and for the site itself for the last self.args[0] hours 
-        
-    :params:
-      :attr:`dests`: list of destinations (when not given, take everything)
-    
-      :attr:`SEs`: list of storage elements (when not given, take every SE)
-
-    :returns:
-      
-    """
-
-    if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC_RSS.getStorageElementsList()
-      if not SEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
-      else:
-        SEs = SEs['Value']
-    
-    if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sources = RPC_RSS.getSitesList()
-      if not sources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sources['Message'] 
-      else:
-        sources = sources['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
-
-    try:
-      qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
-                                         {'OperationType':'putAndRegister', 
-                                          'Source':sources + SEs, 'Destination':sources + SEs}, 
-                                          'Destination')
-      if not qualityAll['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + qualityAll['Message'] 
-      else:
-        qualityAll = qualityAll['Value']
-
-    except:
-      gLogger.exception("Exception when calling TransferQualityByDestSplittedSite_Command")
-      return {}
-    
-    listOfDest = qualityAll['data'].keys()
-    
-    try:
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb({'StorageElementName':listOfDest}, [], 0, 300)
-    except NameError:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      storSitesWeb = RPC_RSS.getStorageElementsStatusWeb({'StorageElementName':listOfDest}, [], 0, 300)
-    
-    if not storSitesWeb['OK']:
-      raise RSSException, where(self, self.doCommand) + " " + storSitesWeb['Message'] 
-    else:
-      storSitesWeb = storSitesWeb['Value']['Records']
-    
-    SESiteMapping = {}
-    siteSEMapping = {}
-    
-    for r in storSitesWeb:
-      sites = r[2].split(' ')[:-1]
-      SESiteMapping[r[0]] = sites
-      
-    for SE in SESiteMapping.keys():
-      for site in SESiteMapping[SE]:
-        try:
-          l = siteSEMapping[site]
-          l.append(SE)
-          siteSEMapping[site] = l
-        except KeyError:
-          siteSEMapping[site] = [SE]
-   
-    
-    plotGran = qualityAll['granularity']
-    
-    singlePlots = {}
-    
-    for site in siteSEMapping.keys():
-      plot = {}
-      plot['data'] = {}
-      for SE in siteSEMapping[site]:
-        plot['data'][SE] = qualityAll['data'][SE]
-      plot['granularity'] = plotGran
-    
-      singlePlots[site] = plot
-    
-    resToReturn = {'DataOperation': singlePlots}
-
-    return resToReturn
-
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
-
-#############################################################################
-
-class FailedTransfersBySourceSplitted_Command(Command):
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
   
-  def doCommand(self, sources = None, SEs = None):
+  def doCommand( self, sources = None, SEs = None ):
     """ 
     Returns failed transfer using the DIRAC accounting system for every SE 
     for the last self.args[0] hours 
@@ -332,75 +324,74 @@ class FailedTransfersBySourceSplitted_Command(Command):
     :returns:
       
     """
-
-    if SEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC_RSS.getStorageElementsList()
-      if not SEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
-      else:
-        SEs = SEs['Value']
-    
-    if sources is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sources = RPC_RSS.getSitesList()
-      if not sources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sources['Message'] 
-      else:
-        sources = sources['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+  
+    super( FailedTransfersBySourceSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      ft_source = self.client.getReport('DataOperation', 'FailedTransfers', 
-                                         fromD, toD, 
-                                         {'OperationType':'putAndRegister', 
-                                          'Source':sources + SEs, 'Destination':sources + SEs,
-                                          'FinalStatus':['Failed']}, 
-                                         'Source')
-      if not ft_source['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + ft_source['Message'] 
-      else:
-        ft_source = ft_source['Value']
+      
+      if SEs is None:
+        meta = { 'columns' : 'StorageElementName' }
+        SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = meta)
+        if not SEs[ 'OK' ]:
+          return { 'Result' : SEs } 
+        SEs = [ se[0] for se in SEs[ 'Value' ] ]
+    
+      if sources is None:
+        meta = { 'columns' : 'SiteName' }
+        sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = meta )      
+        if not sources[ 'OK' ]:
+          return { 'Result' : sources } 
+        sources = [ si[0] for si in sources[ 'Value' ] ]
 
-    except:
-      gLogger.exception("Exception when calling FailedTransfersBySourceSplitted_Command")
-      return {}
-    
-    listOfSources = ft_source['data'].keys()
-    
-    plotGran = ft_source['granularity']
-    
-    singlePlots = {}
-    
-    for source in listOfSources:
-      if source in sources:
-        plot = {}
-        plot['data'] = {source: ft_source['data'][source]}
-        plot['granularity'] = plotGran
-        singlePlots[source] = plot
-    
-    resToReturn = {'DataOperation': singlePlots}
+      if not sources + SEs:
+        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
 
-    return resToReturn
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
+      fromD = datetime.utcnow()-timedelta( hours = self.args[ 0 ] )
+      toD   = datetime.utcnow()
+
+      ft_source = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'FailedTransfers', 
+                                                   fromD, toD, 
+                                                   { 'OperationType':'putAndRegister', 
+                                                     'Source': sources + SEs, 
+                                                     'Destination': sources + SEs,
+                                                     'FinalStatus':[ 'Failed' ] 
+                                                    }, 
+                                                    'Source' )
+      if not ft_source[ 'OK' ]:
+        return { 'Result' : ft_source } 
+      
+      ft_source = ft_source[ 'Value' ]
+      listOfSources = ft_source[ 'data' ].keys()   
+      plotGran      = ft_source[ 'granularity' ]
+      singlePlots   = {}
+    
+      for source in listOfSources:
+        if source in sources:
+          plot                  = {}
+          plot[ 'data' ]        = { source: ft_source[ 'data' ][ source ] }
+          plot[ 'granularity' ] = plotGran
+          singlePlots[ source ] = plot
+    
+      res = S_OK( { 'DataOperation': singlePlots } )
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
-class SuccessfullJobsBySiteSplitted_Command(Command):
+class SuccessfullJobsBySiteSplitted_Command( Command ):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -414,61 +405,59 @@ class SuccessfullJobsBySiteSplitted_Command(Command):
       
     """
 
-    if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
-      if not sites['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
-      else:
-        sites = sites['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    super( SuccessfullJobsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      succ_jobs = self.client.getReport('Job', 'NumberOfJobs', fromD, toD, 
+
+      if sites is None:
+        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName' })
+        if not sites['OK']:
+          return { 'Result' : sites } 
+        sites = [ si[0] for si in sites['Value'] ]
+    
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
+    
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+      fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+      toD   = datetime.utcnow()
+
+      succ_jobs = self.APIs[ 'ReportsClient' ].getReport('Job', 'NumberOfJobs', fromD, toD, 
                                         {'FinalStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_jobs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + succ_jobs['Message'] 
-      else:
-        succ_jobs = succ_jobs['Value']
+        return { 'Result' : succ_jobs } 
 
-    except:
-      gLogger.exception("Exception when calling SuccessfullJobsBySiteSplitted_Command")
-      return {}
+      succ_jobs   = succ_jobs['Value']
+      listOfSites = succ_jobs['data'].keys()   
+      plotGran    = succ_jobs['granularity']
+      singlePlots = {}
     
-    listOfSites = succ_jobs['data'].keys()
+      for site in listOfSites:
+        if site in sites:
+          plot = {}
+          plot['data'] = {site: succ_jobs['data'][site]}
+          plot['granularity'] = plotGran
+          singlePlots[site] = plot
     
-    plotGran = succ_jobs['granularity']
-    
-    singlePlots = {}
-    
-    for site in listOfSites:
-      if site in sites:
-        plot = {}
-        plot['data'] = {site: succ_jobs['data'][site]}
-        plot['granularity'] = plotGran
-        singlePlots[site] = plot
-    
-    resToReturn = {'Job': singlePlots}
+      res = S_OK( { 'Job' : singlePlots } )
 
-    return resToReturn
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class FailedJobsBySiteSplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -481,61 +470,60 @@ class FailedJobsBySiteSplitted_Command(Command):
     :returns:
       
     """
-
-    if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
-      if not sites['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
-      else:
-        sites = sites['Value']
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    super( FailedJobsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      failed_jobs = self.client.getReport('Job', 'NumberOfJobs', fromD, toD, 
+
+      if sites is None:
+        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns' : 'SiteName'} )      
+        if not sites['OK']:
+          return { 'Result' : sites } 
+        sites = [ si[0] for si in sites['Value'] ]
+
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
+
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+      fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+      toD   = datetime.utcnow()
+
+      failed_jobs = self.APIs[ 'ReportsClient' ].getReport('Job', 'NumberOfJobs', fromD, toD, 
                                           {'FinalStatus':['Failed'], 'Site':sites}, 'Site')
       if not failed_jobs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + failed_jobs['Message'] 
-      else:
-        failed_jobs = failed_jobs['Value']
+        return { 'Result' : failed_jobs } 
+      
+      failed_jobs = failed_jobs['Value']   
+      listOfSites = failed_jobs['data'].keys()   
+      plotGran    = failed_jobs['granularity']
+      singlePlots = {}
+    
+      for site in listOfSites:
+        if site in sites:
+          plot = {}
+          plot['data'] = {site: failed_jobs['data'][site]}
+          plot['granularity'] = plotGran
+          singlePlots[site] = plot
+    
+      res = S_OK( { 'Job': singlePlots } )
 
-    except:
-      gLogger.exception("Exception when calling FailedJobsBySiteSplitted_Command")
-      return {}
-    
-    listOfSites = failed_jobs['data'].keys()
-    
-    plotGran = failed_jobs['granularity']
-    
-    singlePlots = {}
-    
-    for site in listOfSites:
-      if site in sites:
-        plot = {}
-        plot['data'] = {site: failed_jobs['data'][site]}
-        plot['granularity'] = plotGran
-        singlePlots[site] = plot
-    
-    resToReturn = {'Job': singlePlots}
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    return resToReturn
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class SuccessfullPilotsBySiteSplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
   
   def doCommand(self, sites = None):
     """ 
@@ -548,62 +536,60 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
     :returns:
       
     """
-
-    if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
-      if not sites['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
-      else:
-        sites = sites['Value']
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    super( SuccessfullPilotsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      succ_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
+
+      if sites is None:
+        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns':'SiteName'} )      
+        if not sites['OK']:
+          return { 'Result' : sites } 
+        sites = [ si[0] for si in sites['Value'] ]
+
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }
+
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+      fromD = datetime.utcnow()-timedelta( hours = self.args[0] )
+      toD   = datetime.utcnow()
+
+      succ_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                         {'GridStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_pilots['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + succ_pilots['Message'] 
-      else:
-        succ_pilots = succ_pilots['Value']
+        return { 'Result' : succ_pilots } 
+      
+      succ_pilots = succ_pilots['Value']
+      listOfSites = succ_pilots['data'].keys()   
+      plotGran    = succ_pilots['granularity']
+      singlePlots = {}
+    
+      for site in listOfSites:
+        if site in sites:
+          plot = {}
+          plot['data']        = { site: succ_pilots['data'][site] }
+          plot['granularity'] = plotGran
+          singlePlots[site]   = plot
+    
+      res = S_OK( { 'Pilot' : singlePlots } )
 
-    except:
-      gLogger.exception("Exception when calling SuccessfullPilotsBySiteSplitted_Command")
-      return {}
-    
-    listOfSites = succ_pilots['data'].keys()
-    
-    plotGran = succ_pilots['granularity']
-    
-    singlePlots = {}
-    
-    for site in listOfSites:
-      if site in sites:
-        plot = {}
-        plot['data'] = {site: succ_pilots['data'][site]}
-        plot['granularity'] = plotGran
-        singlePlots[site] = plot
-    
-    resToReturn = {'Pilot': singlePlots}
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    return resToReturn
-
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class FailedPilotsBySiteSplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -617,60 +603,59 @@ class FailedPilotsBySiteSplitted_Command(Command):
       
     """
 
-    if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
-      if not sites['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
-      else:
-        sites = sites['Value']
+    super( FailedPilotsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
+    try:    
+
+      if sites is None:
+        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )      
+        if not sites['OK']:
+          return { 'Result' : sites } 
+        sites = [ si[0] for si in sites['Value'] ]
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }    
+    
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+      fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+      toD   = datetime.utcnow()
 
-    try:
-      failed_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
+      failed_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                           {'GridStatus':['Aborted'], 'Site':sites}, 'Site')
       if not failed_pilots['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + failed_pilots['Message'] 
-      else:
-        failed_pilots = failed_pilots['Value']
+        return { 'Result' : failed_pilots } 
+      
+      failed_pilots = failed_pilots['Value']   
+      listOfSites   = failed_pilots['data'].keys() 
+      plotGran      = failed_pilots['granularity']    
+      singlePlots   = {}
 
-    except:
-      gLogger.exception("Exception when calling FailedPilotsBySiteSplitted_Command")
-      return {}
+      for site in listOfSites:
+        if site in sites:
+          plot = {}
+          plot['data']        = { site: failed_pilots['data'][site] }
+          plot['granularity'] = plotGran
+          singlePlots[site]   = plot
     
-    listOfSites = failed_pilots['data'].keys()
-    
-    plotGran = failed_pilots['granularity']
-    
-    singlePlots = {}
+      res = S_OK( { 'Pilot': singlePlots } )
 
-    for site in listOfSites:
-      if site in sites:
-        plot = {}
-        plot['data'] = {site: failed_pilots['data'][site]}
-        plot['granularity'] = plotGran
-        singlePlots[site] = plot
-    
-    resToReturn = {'Pilot': singlePlots}
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    return resToReturn
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class SuccessfullPilotsByCESplitted_Command(Command):
+
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
   
   def doCommand(self, CEs = None):
     """ 
@@ -683,62 +668,61 @@ class SuccessfullPilotsByCESplitted_Command(Command):
     :returns:
       
     """
-
-    if CEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      CEs = RPC_RSS.getCEsList()
-      if not CEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + CEs['Message'] 
-      else:
-        CEs = CEs['Value']
     
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    super( SuccessfullPilotsByCESplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      succ_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
+
+      if CEs is None:
+        meta = {'columns':'ResourceName'}
+        CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], meta = meta )
+        if not CEs['OK']:
+          return { 'Result' : CEs } 
+        CEs = [ ce[0] for ce in CEs['Value'] ]
+
+      if not CEs:
+        return { 'Result' : S_ERROR( 'CEs is empty' ) }
+
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+      fromD = datetime.utcnow() - timedelta(hours = self.args[0])
+      toD   = datetime.utcnow()
+
+      succ_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                           {'GridStatus':['Done'], 'GridCE':CEs}, 'GridCE')
       if not succ_pilots['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + succ_pilots['Message'] 
-      else:
-        succ_pilots = succ_pilots['Value']
+        return { 'Result' : succ_pilots } 
+      
+      succ_pilots = succ_pilots['Value']
+      listOfCEs   = succ_pilots['data'].keys()    
+      plotGran    = succ_pilots['granularity']
+      singlePlots = {}
+    
+      for CE in listOfCEs:
+        if CE in CEs:
+          plot = {}
+          plot['data'] = {CE: succ_pilots['data'][CE]}
+          plot['granularity'] = plotGran
+          singlePlots[CE] = plot
+    
+      res = S_OK( { 'Pilot': singlePlots } )
 
-    except:
-      gLogger.exception("Exception when calling SuccessfullPilotsByCESplitted_Command")
-      return {}
-    
-    listOfCEs = succ_pilots['data'].keys()
-    
-    plotGran = succ_pilots['granularity']
-    
-    singlePlots = {}
-    
-    for CE in listOfCEs:
-      if CE in CEs:
-        plot = {}
-        plot['data'] = {CE: succ_pilots['data'][CE]}
-        plot['granularity'] = plotGran
-        singlePlots[CE] = plot
-    
-    resToReturn = {'Pilot': singlePlots}
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
-    return resToReturn
-
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class FailedPilotsByCESplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
   
   def doCommand(self, CEs = None):
     """ 
@@ -752,60 +736,59 @@ class FailedPilotsByCESplitted_Command(Command):
       
     """
 
-    if CEs is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      CEs = RPC_RSS.getCEsList()
-      if not CEs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + CEs['Message'] 
-      else:
-        CEs = CEs['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    super( FailedPilotsByCESplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      failed_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
+
+      if CEs is None:
+        CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], meta = {'columns': 'ResourceName'})     
+        if not CEs['OK']:
+          return { 'Result' : CEs } 
+        CEs = [ ce[0] for ce in CEs['Value'] ]
+    
+      if not CEs:
+        return { 'Result' : S_ERROR( 'CEs is empty' ) }    
+    
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+      fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+      toD   = datetime.utcnow()
+
+      failed_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                             {'GridStatus':['Aborted'], 'GridCE':CEs}, 'GridCE')
       if not failed_pilots['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + failed_pilots['Message'] 
-      else:
-        failed_pilots = failed_pilots['Value']
+        return { 'Result' : failed_pilots }
 
-    except:
-      gLogger.exception("Exception when calling FailedPilotsByCESplitted_Command")
-      return {}
-    
-    listOfCEs = failed_pilots['data'].keys()
-    
-    plotGran = failed_pilots['granularity']
-    
-    singlePlots = {}
+      failed_pilots = failed_pilots['Value']
+      listOfCEs     = failed_pilots['data'].keys()
+      plotGran      = failed_pilots['granularity']
+      singlePlots   = {}
 
-    for CE in listOfCEs:
-      if CE in CEs:
-        plot = {}
-        plot['data'] = {CE: failed_pilots['data'][CE]}
-        plot['granularity'] = plotGran
-        singlePlots[CE] = plot
+      for CE in listOfCEs:
+        if CE in CEs:
+          plot = {}
+          plot['data']        = { CE : failed_pilots['data'][CE] } 
+          plot['granularity'] = plotGran
+          singlePlots[CE]     = plot
     
-    resToReturn = {'Pilot': singlePlots}
+      res = S_OK( { 'Pilot': singlePlots } )
 
-    return resToReturn
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
+################################################################################
+################################################################################
 
 class RunningJobsBySiteSplitted_Command(Command):
+  
+  __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
   def doCommand(self, sites = None):
     """ 
@@ -819,57 +802,52 @@ class RunningJobsBySiteSplitted_Command(Command):
       
     """
 
-    if sites is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC_RSS.getSitesList()
-      if not sites['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
-      else:
-        sites = sites['Value']
-    
-    if self.RPC is None:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
-      
-    if self.client is None:
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient(rpcClient = self.RPC)
-
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
-    toD = datetime.datetime.utcnow()
+    super( RunningJobsBySiteSplitted_Command, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
-      run_jobs = self.client.getReport('WMSHistory', 'NumberOfJobs', fromD, toD, 
+
+      if sites is None:
+        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )
+        if not sites['OK']:
+          return { 'Result' : sites } 
+        sites = [ si[0] for si in sites['Value'] ]
+    
+      if not sites:
+        return { 'Result' : S_ERROR( 'Sites is empty' ) }       
+    
+      self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+
+      fromD = datetime.utcnow()-timedelta(hours = self.args[0])
+      toD   = datetime.utcnow()
+
+      run_jobs = self.APIs[ 'ReportsClient' ].getReport('WMSHistory', 'NumberOfJobs', fromD, toD, 
                                        {}, 'Site')
       if not run_jobs['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + run_jobs['Message'] 
-      else:
-        run_jobs = run_jobs['Value']
+        return { 'Result' : run_jobs } 
 
-    except:
-      gLogger.exception("Exception when calling RunningJobsBySiteSplitted_Command")
-      return {}
+      run_jobs    = run_jobs['Value']
+      listOfSites = run_jobs['data'].keys()
+      plotGran    = run_jobs['granularity']
+      singlePlots = {}
     
-    listOfSites = run_jobs['data'].keys()
+      for site in listOfSites:
+        if site in sites:
+          plot = {}
+          plot['data'] = {site: run_jobs['data'][site]}
+          plot['granularity'] = plotGran
+          singlePlots[site] = plot
     
-    plotGran = run_jobs['granularity']
-    
-    singlePlots = {}
-    
-    for site in listOfSites:
-      if site in sites:
-        plot = {}
-        plot['data'] = {site: run_jobs['data'][site]}
-        plot['granularity'] = plotGran
-        singlePlots[site] = plot
-    
-    resToReturn = {'WMSHistory': singlePlots}
+      res = S_OK( { 'WMSHistory' : singlePlots } )
 
-    return resToReturn
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
+    return { 'Result' : res } 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
-#############################################################################
-
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

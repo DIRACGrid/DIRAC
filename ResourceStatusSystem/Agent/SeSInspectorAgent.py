@@ -1,149 +1,145 @@
-########################################################################
+################################################################################
 # $HeadURL:  $
-########################################################################
-
-import copy
-import Queue
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-
-from DIRAC.ResourceStatusSystem.Utilities.CS import getSetup, getExt
-from DIRAC.ResourceStatusSystem.Utilities.Utils import where
-
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB 
-
-
-__RCSID__ = "$Id: $"
-
+################################################################################
+__RCSID__  = "$Id: $"
 AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
 
-class SeSInspectorAgent(AgentModule):
-  """ Class SeSInspectorAgent is in charge of going through Services
-      table, and pass Service and Status to the PEP
+import Queue, time
+
+from DIRAC                                                  import S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
+
+from DIRAC.ResourceStatusSystem.Utilities                   import CS
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+
+class SeSInspectorAgent( AgentModule ):
+  """
+    The SeSInspector agent ( ServiceInspectorAgent ) is one of the four
+    InspectorAgents of the RSS.
+
+    This Agent takes care of the Service. In order to do so, it gathers
+    the eligible ones and then evaluates their statuses with the PEP.
+
+    If you want to know more about the SeSInspectorAgent, scroll down to the
+    end of the file.
   """
 
-#############################################################################
+  def initialize( self ):
 
-  def initialize(self):
-    """ Standard constructor
-    """
-    
     try:
-      self.rsDB = ResourceStatusDB()
-      self.rmDB = ResourceManagementDB()
-      
-      self.ServicesToBeChecked = Queue.Queue()
-      self.ServiceNamesInCheck = []
-      
+      self.rsClient      = ResourceStatusClient()
+      self.ServicesFreqs = CS.getTypedDictRootedAt( 'CheckingFreqs/ServicesFreqs' )
+      self.queue         = Queue.Queue()
+
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-      self.threadPool = ThreadPool( self.maxNumberOfThreads,
-                                    self.maxNumberOfThreads )
-
+      self.threadPool         = ThreadPool( self.maxNumberOfThreads,
+                                            self.maxNumberOfThreads )
       if not self.threadPool:
-        self.log.error('Can not create Thread Pool')
-        return S_ERROR('Can not create Thread Pool')
-      
-      self.setup = getSetup()['Value']
+        self.log.error( 'Can not create Thread Pool' )
+        return S_ERROR( 'Can not create Thread Pool' )
 
-      self.VOExtension = getExt()
+      for _i in xrange( self.maxNumberOfThreads ):
+        self.threadPool.generateJobAndQueueIt( self._executeCheck )
 
-      configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
-                                globals(), locals(), ['*'])
-      
-      self.Services_check_freq = copy.deepcopy(configModule.Services_check_freq)
-      
-      self.nc = NotificationClient()
-
-      self.diracAdmin = DiracAdmin()
-
-      self.csAPI = CSAPI()      
-      
-      for i in xrange(self.maxNumberOfThreads):
-        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (None, ) )  
-        
       return S_OK()
 
     except Exception:
       errorStr = "SeSInspectorAgent initialization"
-      gLogger.exception(errorStr)
-      return S_ERROR(errorStr)
+      self.log.exception( errorStr )
+      return S_ERROR( errorStr )
 
+################################################################################
+################################################################################
 
-#############################################################################
+  def execute( self ):
 
-  def execute(self):
-    """ 
-    The main SSInspectorAgent execution method.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and 
-    put result in self.ServicesToBeChecked (a Queue) and in self.ServiceNamesInCheck (a list)
-    """
-    
     try:
+      
+      kwargs = { 'meta' : {} }
+      kwargs['meta']['columns'] = [ 'ServiceName', 'StatusType', 'Status',
+                                    'FormerStatus', 'SiteType',
+                                    'ServiceType', 'TokenOwner' ]
+      kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
-      res = self.rsDB.getStuffToCheck('Services', self.Services_check_freq) 
-   
-      for resourceTuple in res:
-        if resourceTuple[0] in self.ServiceNamesInCheck:
-          break
-        resourceL = ['Service']
-        for x in resourceTuple:
-          resourceL.append(x)
-        self.ServiceNamesInCheck.insert(0, resourceL[1])
-        self.ServicesToBeChecked.put(resourceL)
+      resQuery = self.rsClient.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
+      if not resQuery[ 'OK' ]:
+        self.log.error( resQuery[ 'Message' ] )
+        return resQuery
+
+      resQuery = resQuery[ 'Value' ]
+      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
+
+      for r in resQuery:
+        resourceL = [ 'Service' ] + r
+        # Here we peek INSIDE the Queue to know if the item is already
+        # here. It's ok _here_ since (i.e. I know what I'm doing):
+        # - It is a read only operation.
+        # - We do not need exact accuracy, it's ok to have 2 times the same item in the queue sometimes.
+        if resourceL not in self.queue.queue:
+          self.queue.put( resourceL )
 
       return S_OK()
 
     except Exception, x:
-      errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-      
-#############################################################################
+      errorStr = where( self, self.execute )
+      self.log.exception( errorStr, lException = x )
+      return S_ERROR( errorStr )
 
-  def _executeCheck(self, toBeChecked):
-    """ 
-    Create instance of a PEP, instantiated popping a service from lists.
-    """
-    
-    
+################################################################################
+################################################################################
+
+  def finalize( self ):
+    if not self.queue.empty():
+      self.log.info( "Wait for queue to get empty before terminating the agent"  )
+      while not self.queue.empty():
+        time.sleep( 2 )
+      self.log.info( "Queue is empty, terminating the agent..." )
+    return S_OK()
+
+################################################################################
+################################################################################
+
+  def _executeCheck(self):
+
+    # Init the APIs beforehand, and reuse them.
+    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+    clients = knownAPIs.initAPIs( __APIs__, {} )
+
+    pep = PEP( clients = clients )
+
     while True:
-      
+      toBeChecked = self.queue.get()
+
+      pepDict = { 'granularity'  : toBeChecked[ 0 ],
+                  'name'         : toBeChecked[ 1 ],
+                  'statusType'   : toBeChecked[ 2 ],
+                  'status'       : toBeChecked[ 3 ],
+                  'formerStatus' : toBeChecked[ 4 ],
+                  'siteType'     : toBeChecked[ 5 ],
+                  'serviceType'  : toBeChecked[ 6 ],
+                  'tokenOwner'   : toBeChecked[ 7 ]}
+
       try:
-      
-        toBeChecked = self.ServicesToBeChecked.get()
-      
-        granularity = toBeChecked[0]
-        serviceName = toBeChecked[1]
-        status = toBeChecked[2]
-        formerStatus = toBeChecked[3]
-        siteType = toBeChecked[4]
-        serviceType = toBeChecked[5]
-        tokenOwner = toBeChecked[6]
-        
-        gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
-        
-        newPEP = PEP(self.VOExtension, granularity = granularity, name = serviceName, status = status, 
-                     formerStatus = formerStatus, siteType = siteType, 
-                     serviceType = serviceType, tokenOwner = tokenOwner)
-        
-        newPEP.enforce(rsDBIn = self.rsDB, rmDBIn = self.rmDB, setupIn = self.setup, ncIn = self.nc, 
-                       daIn = self.diracAdmin, csAPIIn = self.csAPI)
-    
-        # remove from InCheck list
-        self.ServiceNamesInCheck.remove(toBeChecked[1])
+        self.log.info( "Checking Service %s, with type/status: %s/%s" %
+                      ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
+
+        pepRes = pep.enforce( **pepDict )
+        if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
+          pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
+          if pepStatus != pepDict[ 'status' ]:
+            self.log.info( 'Updated %s %s from %s/%s to %s/%s' %
+                          ( pepDict["granularity"],
+                            pepDict['name'],
+                            pepDict['statusType'], pepDict['status'],
+                            pepDict['statusType'], pepStatus ))
 
       except Exception:
-        gLogger.exception('SeSInspector._executeCheck')
-        try:
-          self.ServiceNamesInCheck.remove(serviceName)
-        except IndexError:
-          pass
+        self.log.exception( "SeSInspector._executeCheck Checking Service %s, with type/status: %s/%s" %
+                           ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
 
-#############################################################################    
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

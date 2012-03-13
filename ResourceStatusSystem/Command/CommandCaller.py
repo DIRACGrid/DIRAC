@@ -1,110 +1,77 @@
-"""
-    Module used for calling policies. Its class is used for invoking
-    real policies, based on the policy name
-"""
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
 
+from DIRAC import gLogger
+from DIRAC.ResourceStatusSystem.Utilities              import Utils
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
 
 class CommandCaller:
+  """
+    Module used for calling policies. Its class is used for invoking
+    real policies, based on the policy name
+  """
 
-#############################################################################
-
-  def commandInvocation(self, granularity = None, name = None, command = None,  
+  def commandInvocation(self, granularity = None, name = None, command = None,
                         args = None, comm = None, extraArgs = None):
-    
-    c = command
-#    a = args
-    
-    if c is None: 
-      c = self.setCommandObject(comm)
 
-    a = (granularity, name)
-#    if a is None:
-#      a = self.setCommandArgs(comm)
-#      if a is None:
-#        a = (granularity, name)
-
-    if extraArgs is not None:
-      a = a + extraArgs
+    c = command if command else self.setCommandObject(comm)
+    a = (granularity, name) if not extraArgs else (granularity, name) + extraArgs
 
     res = self._innerCall(c, a)
-
     return res
 
-    
-#############################################################################
+################################################################################
 
-  def setCommandObject(self, comm):
-    """ 
+  def setCommandObject( self, comm ):
+    """
     Returns a command object, given comm
-    
+
     :params:
       `comm`: a tuple, where comm[0] is a module name and comm[1] is a class name (inside the module)
-    """ 
-
-    moduleBase = "DIRAC.ResourceStatusSystem.Command."
-    
+    """
     try:
       cModule = comm[0]
       cClass = comm[1]
-      module = moduleBase + cModule
-      commandModule = __import__(module, globals(), locals(), ['*'])
+      commandModule = Utils.voimport("DIRAC.ResourceStatusSystem.Command." + cModule)
     except ImportError:
-      cModule = "Command"
-      cClass = "Command"
-      module = moduleBase + cModule
-      commandModule = __import__(module, globals(), locals(), ['*'])
-      
+      gLogger.warn("Command %s/%s not found, using dummy command DoNothing_Command." % (cModule, cClass))
+      cClass = "DoNothing_Command"
+      commandModule = __import__("DIRAC.ResourceStatusSystem.Command.DoNothing_Command", globals(), locals(), ['*'])
+
     c = getattr(commandModule, cClass)()
 
     return c
-  
-#############################################################################
-  
-#  def setCommandArgs(self, comm):
-#
-#    if comm == 'GGUS_Link' or comm == 'GGUS_Info':
-#      return (name, )
-#
-#    else:
-#      return None
-  
-#############################################################################
 
-  def setCommandClient(self, comm, cObj, RPCWMSAdmin = None, RPCAccounting = None):
-    
-    client = None
-    
-    if comm == 'JobsEffSimpleEveryOne_Command':
-      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
-      client = JobsClient()
-      cObj.setRPC(RPCWMSAdmin)
+################################################################################
 
-    elif comm == 'PilotsEffSimpleEverySites_Command':
-      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
-      client = PilotsClient()
-      cObj.setRPC(RPCWMSAdmin)
-      
-    elif comm in ('TransferQualityEverySEs_Command', 'TransferQualityEverySEsSplitted_Command'):
-      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      client = ReportsClient(rpcClient = RPCAccounting)
-      cObj.setRPC(RPCAccounting)
-      
-    cObj.setClient(client)
+  def setAPI( self, cObj, apiName, apiInstance ):
+    cObj.setAPI( apiName, apiInstance )
 
-#############################################################################
-  
+################################################################################
+
   def _innerCall(self, c, a):#, clientIn = None):
     """ command call
     """
     clientsInvoker = ClientsInvoker()
-  
+
     c.setArgs(a)
-#    c.setClient(clientIn)
     clientsInvoker.setCommand(c)
-    
+
     res = clientsInvoker.doCommand()
 
-    return res 
-      
-#############################################################################
+    return res
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+################################################################################
+
+'''
+  HOW DOES THIS WORK.
+
+    will come soon...
+'''
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

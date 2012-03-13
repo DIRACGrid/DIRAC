@@ -210,17 +210,20 @@ for o, v in optList:
       sys.exit( 1 )
     makeArgs.append( "-j %d" % int( v ) )
 
-if not compDest:
-  basePath = os.path.dirname( os.path.realpath( __file__ ) )
-  diracRoot = findDIRACRoot( basePath )
-  if not diracRoot:
-    print "Error: Could not find DIRAC root"
-    sys.exit( 1 )
+#Find platform
+basePath = os.path.dirname( os.path.realpath( __file__ ) )
+diracRoot = findDIRACRoot( basePath )
+if diracRoot:
   platformPath = os.path.join( diracRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
   platFD = open( platformPath, "r" )
   Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
   platFD.close()
   platform = Platform.getPlatformString()
+
+if not compDest:
+  if not diracRoot:
+    print "Error: Could not find DIRAC root"
+    sys.exit( 1 )
   print "Using platform %s" % platform
   if not platform or platform == "ERROR":
     print >> sys.stderr, "Can not determine local platform"
@@ -275,13 +278,26 @@ packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
 
 
 if compDest:
-  makeArgs .append( "-p '%s'" % os.path.realpath( compDest ) )
+  makeArgs.append( "-p '%s'" % os.path.realpath( compDest ) )
 
 #Substitution of versions 
 finalPackages = []
 for prog in packagesToBuild:
   for k in compVersionDict:
     finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
+
+print "Trying to get a raw environment"
+patDet = os.path.join( diracRoot, platform )
+for envVar in ( 'LD_LIBRARY_PATH', 'PATH' ):
+  if envVar not in os.environ:
+    continue
+  envValue = os.environ[ envVar ]
+  valList = [ val.strip() for val in envValue.split( ":" ) if envValue.strip() ]
+  fixedValList = []
+  for value in valList:
+    if value.find( patDet ) != 0:
+      fixedValList.append( value )
+  os.environ[ envVar ] = ":".join( fixedValList )
 
 makeArgs = " ".join( makeArgs )
 print "Building %s" % ", ".join ( finalPackages )

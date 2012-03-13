@@ -1,88 +1,102 @@
-""" The GGUSTickets_Command class is a command class to know about 
-    the number of active present opened tickets
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__ = "$Id:  $"
+
+""" 
+  The GGUSTickets_Command class is a command class to know about 
+  the number of active present opened tickets
 """
 
 import urllib2
 
-from DIRAC import gLogger
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC                                        import gLogger, S_OK, S_ERROR
+from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
+from DIRAC.ResourceStatusSystem.Command.Command   import *
 
-def callClient(args, clientIn = None):
-
-  if clientIn is not None:
-    c = clientIn
-  else:
-    # use standard GGUSTickets Client
-    from DIRAC.Core.LCG.GGUSTicketsClient import GGUSTicketsClient   
-    c = GGUSTicketsClient()
+def callClient( name, clientIn ):
+   
+  name = getGOCSiteName( name )[ 'Value' ]
     
-  name = args[1]
-  
-  name = getGOCSiteName(name)
-  if not name['OK']:
-    raise RSSException, name['Message']
-  name = name['Value']
-  
-  try:
-    openTickets = c.getTicketsList(name)
-    if not openTickets['OK']:
-      return 'Unknown'
-    return openTickets['Value']
-  except urllib2.URLError:
-    gLogger.error("GGUSTicketsClient timed out for " + name)
-    return 'Unknown'
-  except:
-    gLogger.exception("Exception when calling GGUSTicketsClient for " + name)
-    return 'Unknown'
+  openTickets = clientIn.getTicketsList( name )
+  return openTickets
     
-        
-#############################################################################
+################################################################################
+################################################################################
 
-class GGUSTickets_Open(Command):
+class GGUSTickets_Open( Command ):
   
-  def doCommand(self):
+  __APIs__ = [ 'GGUSTicketsClient' ]
+  
+  def doCommand( self ):
     """ 
     Return getTicketsList from GGUSTickets Client  
     `args`: 
       - args[0]: string: should be the name of the site
     """
-    super(GGUSTickets_Open, self).doCommand()
-
-    openTickets = callClient(self.args, self.client)
-    if openTickets == 'Unknown':
-      return {'Result':'Unknown'}
     
-    return {'Result': openTickets[0]['open']} 
+    super( GGUSTickets_Open, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
+    try:
+
+      res = callClient( self.args[1], self.APIs[ 'GGUSTicketsClient' ] )
+        
+      if res[ 'OK' ]:
+        res =  S_OK( res[ 'Value' ][ 0 ][ 'open' ] ) 
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class GGUSTickets_Link(Command):
   
-  def doCommand(self):
+  __APIs__ = [ 'GGUSTicketsClient' ]
+  
+  def doCommand( self ):
     """ 
     Use CallClient to get GGUS link  
 
    :attr:`args`: 
      - args[0]: string: should be the name of the site
     """
-    super(GGUSTickets_Link, self).doCommand()
-
-    openTickets = callClient(self.args, self.client)
-    if openTickets == 'Unknown':
-      return {'GGUS_Link':'Unknown'}
     
-    return {'Result': openTickets[1]}
+    super( GGUSTickets_Link, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
+    try: 
+      
+      res = callClient( self.args[ 1 ], self.APIs[ 'GGUSTicketsClient' ] )
+    #if openTickets == 'Unknown':
+    #  return { 'GGUS_Link':'Unknown' }
+      if res[ 'OK' ]:
+        res = S_OK( res[ 'Value' ][ 1 ] ) 
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+################################################################################
 
 class GGUSTickets_Info(Command):
+  
+  __APIs__ = [ 'GGUSTicketsClient' ]
   
   def doCommand(self):
     """ 
@@ -91,14 +105,27 @@ class GGUSTickets_Info(Command):
    :attr:`args`: 
      - args[0]: string: should be the name of the site
     """
-    super(GGUSTickets_Info, self).doCommand()
-
-    openTickets = callClient(self.args, self.client)
-    if openTickets == 'Unknown':
-      return {'GGUS_Info':'Unknown'}
     
-    return {'Result': openTickets[2]}
+    super( GGUSTickets_Info, self ).doCommand()
+    self.APIs = initAPIs( self.__APIs__, self.APIs )
+
+    try: 
+      
+      res = callClient( self.args[ 1 ], self.APIs[ 'GGUSTicketsClient' ] )     
+#    if openTickets == 'Unknown':
+#      return { 'GGUS_Info' : 'Unknown' }
+      if res[ 'OK' ]:
+        res = S_OK( res[ 'Value' ][ 2 ] ) 
+
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
+
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
-#############################################################################
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -142,9 +142,9 @@ class ProxyManagerClient:
       else:
         return S_ERROR( "Can't find a valid proxy" )
       chain = X509Chain()
-      retVal = chain.loadProxyFromFile( proxyLocation )
-      if not retVal[ 'OK' ]:
-        return S_ERROR( "Can't load %s: %s " % ( proxyLocation, retVal[ 'Message' ] ) )
+      result = chain.loadProxyFromFile( proxyLocation )
+      if not result[ 'OK' ]:
+        return S_ERROR( "Can't load %s: %s " % ( proxyLocation, result[ 'Message' ] ) )
 
     if not chainToConnect:
       chainToConnect = chain
@@ -156,13 +156,16 @@ class ProxyManagerClient:
     #rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
     rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
     #Get a delegation request
-    retVal = rpcClient.requestDelegationUpload( chain.getRemainingSecs()['Value'], diracGroup )
-    if not retVal[ 'OK' ]:
-      return retVal
+    result = rpcClient.requestDelegationUpload( chain.getRemainingSecs()['Value'], diracGroup )
+    if not result[ 'OK' ]:
+      return result
     #Check if the delegation has been granted
-    if 'Value' not in retVal or not retVal[ 'Value' ]:
-      return S_OK()
-    reqDict = retVal[ 'Value' ]
+    if 'Value' not in result or not result[ 'Value' ]:
+      if 'proxies' in result:
+        return S_OK( result[ 'proxies' ] )
+      else:
+        return S_OK()
+    reqDict = result[ 'Value' ]
     #Generate delegated chain
     chainLifeTime = chain.getRemainingSecs()[ 'Value' ] - 60
     if restrictLifeTime and restrictLifeTime < chainLifeTime:
@@ -173,7 +176,13 @@ class ProxyManagerClient:
     if not retVal[ 'OK' ]:
       return retVal
     #Upload!
-    return rpcClient.completeDelegationUpload( reqDict[ 'id' ], retVal[ 'Value' ] )
+    result = rpcClient.completeDelegationUpload( reqDict[ 'id' ], retVal[ 'Value' ] )
+    if not result[ 'OK' ]:
+      return result
+    if 'proxies' in result:
+      return S_OK( result[ 'proxies' ] )
+    return S_OK()
+
 
   @gProxiesSync
   def downloadProxy( self, userDN, userGroup, limited = False, requiredTimeLeft = 43200, proxyToConnect = False, token = False ):
@@ -335,16 +344,20 @@ class ProxyManagerClient:
     """
     Dump a proxy to a file. It's cached so multiple calls won't generate extra files
     """
-    if self.__filesCache.exists( chain, requiredTimeLeft ):
-      filepath = self.__filesCache.get( chain )
+    result = chain.hash()
+    if not result[ 'OK' ]:
+      return result
+    hash = result[ 'Value' ]
+    if self.__filesCache.exists( hash, requiredTimeLeft ):
+      filepath = self.__filesCache.get( hash )
       if os.path.isfile( filepath ):
         return S_OK( filepath )
-      self.__filesCache.delete( filepath )
+      self.__filesCache.delete( hash )
     retVal = chain.dumpAllToFile( destinationFile )
     if not retVal[ 'OK' ]:
       return retVal
     filename = retVal[ 'Value' ]
-    self.__filesCache.add( chain, chain.getRemainingSecs()['Value'], filename )
+    self.__filesCache.add( hash, chain.getRemainingSecs()['Value'], filename )
     return S_OK( filename )
 
   def deleteGeneratedProxyFile( self, chain ):
@@ -382,7 +395,7 @@ class ProxyManagerClient:
       return S_OK()
 
     if not proxyToConnect:
-      proxyToConnectDict = proxyToRenewDict
+      proxyToConnectDict = { 'chain': False, 'tempFile': False }
     else:
       retVal = File.multiProxyArgument( proxyToConnect )
       if not retVal[ 'Value' ]:
@@ -426,10 +439,12 @@ class ProxyManagerClient:
     if not retVal[ 'OK' ]:
       return retVal
 
-    if not proxyToRenewDict[ 'tempFile' ]:
-      return proxyToRenewDict[ 'chain' ].dumpAllToFile( proxyToRenewDict[ 'file' ] )
+    chain = retVal['Value']
 
-    return S_OK( proxyToRenewDict[ 'chain' ] )
+    if not proxyToRenewDict[ 'tempFile' ]:
+      return chain.dumpAllToFile( proxyToRenewDict[ 'file' ] )
+
+    return S_OK( chain )
 
   def getDBContents( self, condDict = {} ):
     """
@@ -464,6 +479,14 @@ class ProxyManagerClient:
         secondsLeft = td.days * 86400 + td.seconds
         return S_OK( max( 0, secondsLeft ) )
     return S_OK( 0 )
+
+  def getUserProxiesInfo( self ):
+    """ Get the user proxies uploaded info
+    """
+    result = RPCClient( "Framework/ProxyManager", timeout = 120 ).getUserProxiesInfo()
+    if 'rpcStub' in result:
+      result.pop( 'rpcStub' )
+    return result
 
 
 gProxyManager = ProxyManagerClient()

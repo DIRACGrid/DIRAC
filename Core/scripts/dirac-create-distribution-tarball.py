@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 ########################################################################
 # $HeadURL$
 # File :    dirac-distribution-create-tarball
@@ -13,7 +14,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess
 
-import sys, os, shutil, tempfile, getpass
+import sys, os, shutil, tempfile, getpass, subprocess
 
 class TarModuleCreator( object ):
 
@@ -78,8 +79,8 @@ class TarModuleCreator( object ):
     def setReleaseNotes( self, opVal ):
       self.relNotes = opVal
       return S_OK()
-    
-    def setOutReleaseNotes(self, opVal ):
+
+    def setOutReleaseNotes( self, opVal ):
       self.outRelNotes = True
       return S_OK()
 
@@ -220,8 +221,39 @@ class TarModuleCreator( object ):
 
     return S_OK()
 
+  @classmethod
+  def replaceKeywordsWithGit( cls, dirToDo ):
+    for fileName in os.listdir( dirToDo ):
+      objPath = os.path.join( dirToDo, fileName )
+      if os.path.isdir( objPath ):
+        TarModuleCreator.replaceKeywordsWithGit( objPath )
+      elif os.path.isfile( objPath ):
+        if fileName.find( '.py', len( fileName ) - 3 ) == len( fileName ) - 3 :
+          fd = open( objPath, "r" )
+          fileContents = fd.read()
+          fd.close()
+          changed = False
+          for keyWord, cmdArgs in ( ( '$Id$', '--pretty="%h (%ad) %an <%aE>" --date=iso' ),
+                                    ( '$SHA1$', '--pretty="%H"' ) ):
+            foundKeyWord = fileContents.find( keyWord )
+            if foundKeyWord > -1 :
+              po2 = subprocess.Popen( "git log -n 1 %s '%s' 2>/dev/null" % ( cmdArgs, fileName ),
+                                       stdout = subprocess.PIPE, cwd = dirToDo, shell = True )
+              exitStatus = po2.wait()
+              if po2.returncode:
+                continue
+              toReplace = po2.stdout.read().strip()
+              toReplace = "".join( i for i in toReplace if ord( i ) < 128 )
+              fileContents = fileContents.replace( keyWord, toReplace )
+              changed = True
+
+          fd = open( objPath, "w" )
+          fd.write( fileContents )
+          fd.close()
+
+
   def __checkoutFromGit( self ):
-    if self.params.vcsBranch: 
+    if self.params.vcsBranch:
       brCmr = "-b %s" % self.params.vcsBranch
     else:
       brCmr = ""
@@ -235,10 +267,22 @@ class TarModuleCreator( object ):
 
     branchName = "DIRACDistribution-%s" % os.getpid()
 
-    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % ( fDirName, branchName, self.params.version )
+    isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % ( fDirName, self.params.version )
+    if os.system( isTagCmd ):
+      #No tag found, assume branch
+      branchSource = 'origin/%s' % self.params.version
+    else:
+      branchSource = self.params.version
+
+    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % ( fDirName, branchName, branchSource )
 
     gLogger.verbose( "Executing: %s" % cmd )
     exportRes = os.system( cmd )
+
+    #Add the keyword substitution
+    gLogger.notice( "Replacing keywords (can take a while)..." )
+    self.replaceKeywordsWithGit( fDirName )
+
     shutil.rmtree( "%s/.git" % fDirName )
 
     if exportRes:
@@ -268,11 +312,10 @@ class TarModuleCreator( object ):
       line = rawLine.strip()
       if not line:
         continue
-      if version == False:
-        if line[0] == "[" and line[-1] == "]":
-          version = line[1:-1].strip()
-          relData.append( ( version, { 'comment' : [], 'features' : [] } ) )
-          feature = False
+      if line[0] == "[" and line[-1] == "]":
+        version = line[1:-1].strip()
+        relData.append( ( version, { 'comment' : [], 'features' : [] } ) )
+        feature = False
         continue
       if line[0] == "*":
         feature = line[1:].strip()
@@ -366,13 +409,17 @@ class TarModuleCreator( object ):
         continue
       result = self.__compileReleaseNotes( rstFileName )
       if not result[ 'OK' ]:
-        gLogger.error( "Could not compile %s: %s" % ( rstFileName,  result[ 'Message' ] ) )
+        gLogger.error( "Could not compile %s: %s" % ( rstFileName, result[ 'Message' ] ) )
         continue
       gLogger.notice( "Compiled %s file!" % rstFileName )
     return S_OK()
 
-
   def __compileReleaseNotes( self, rstFile ):
+    notesName = rstFile
+    for ext in ( '.rst', '.txt' ):
+      if rstFile[ -len( ext ): ] == ext:
+        notesName = rstFile[ :-len( ext ) ]
+        break
     relNotesRST = os.path.join( self.params.destination, self.params.name, rstFile )
     if not os.path.isfile( relNotesRST ):
       if self.params.relNotes:
@@ -383,11 +430,12 @@ class TarModuleCreator( object ):
     except ImportError:
       return S_ERROR( "Docutils is not installed. Please install and rerun" )
     #Find basename
-    baseNotesPath = relNotesRST
+    baseRSTFile = rstFile
     for ext in ( '.rst', '.txt' ):
-      if relNotesRST[ -len( ext ): ] == ext:
-        baseNotesPath = relNotesRST[ :-len( ext ) ]
+      if baseRSTFile[ -len( ext ): ] == ext:
+        baseRSTFile = baseRSTFile[ :-len( ext ) ]
         break
+    baseNotesPath = os.path.join( self.params.destination, self.params.name, baseRSTFile )
     #To HTML
     try:
       fd = open( relNotesRST )
@@ -401,9 +449,8 @@ class TarModuleCreator( object ):
       return S_ERROR( "Cannot generate the html %s: %s" % ( baseNotesPath, str( excp ) ) )
     baseList = [ baseNotesPath ]
     if self.params.outRelNotes:
-      print "ASDAS"
       gLogger.notice( "Leaving a copy of the release notes outside the tarballs" )
-      baseList.append( "%s/releasenotes.%s.%s" % ( self.params.destination, self.params.name, self.params.version ) )
+      baseList.append( "%s/%s.%s.%s" % ( self.params.destination, baseRSTFile, self.params.name, self.params.version ) )
     for baseFileName in baseList:
       htmlFileName = baseFileName + ".html"
       try:
@@ -418,7 +465,7 @@ class TarModuleCreator( object ):
       if os.system( pdfCmd ):
         gLogger.warn( "Could not generate PDF version of %s" % baseNotesPath )
     #Unlink if not necessary
-    if not cliParams.relNotes:
+    if False and not cliParams.relNotes:
       try:
         os.unlink( relNotesRST )
       except:
@@ -471,7 +518,7 @@ if __name__ == "__main__":
   Script.registerSwitch( "b:", "branch=", "VCS branch (if needed)", cliParams.setVCSBranch )
   Script.registerSwitch( "p:", "path=", "VCS path (if needed)", cliParams.setVCSPath )
   Script.registerSwitch( "K:", "releasenotes=", "Path to the release notes", cliParams.setReleaseNotes )
-  Script.registerSwitch( "A",  "notesoutside", "Leave a copy of the compiled release notes outside the tarball", cliParams.setOutReleaseNotes )
+  Script.registerSwitch( "A", "notesoutside", "Leave a copy of the compiled release notes outside the tarball", cliParams.setOutReleaseNotes )
 
 
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
@@ -495,3 +542,4 @@ if __name__ == "__main__":
     gLogger.error( "Could not create the tarball: %s" % result[ 'Message' ] )
     sys.exit( 1 )
   gLogger.always( "Tarball successfully created at %s" % result[ 'Value' ] )
+  sys.exit( 0 )

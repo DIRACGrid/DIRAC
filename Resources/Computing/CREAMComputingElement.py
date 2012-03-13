@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
 from DIRAC                                               import gConfig
-from DIRAC.Core.Security.Misc                            import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 import os, sys, time, re, socket, stat, shutil
 import string, shutil, tempfile
@@ -78,7 +78,7 @@ class CREAMComputingElement( ComputingElement ):
 
   def reset( self ):
     self.queue = self.ceParameters['Queue']
-    self.outputURL = self.ceParameters['OutputURL']
+    self.outputURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
     self.gridEnv = self.ceParameters['GridEnv']
 
   #############################################################################
@@ -100,7 +100,12 @@ class CREAMComputingElement( ComputingElement ):
       result = executeGridCommand( self.proxy, cmd, self.gridEnv )
 
       if result['OK']:
+        if result['Value'][0]:
+          # We have got a non-zero status code
+          return S_ERROR('Pilot submission failed with error: %s ' % result['Value'][2].strip())
         pilotJobReference = result['Value'][1].strip()
+        if not pilotJobReference:
+          return S_ERROR('No pilot reference returned from the glite job submission command')
         batchIDList.append( pilotJobReference )
         stampDict[pilotJobReference] = diracStamp
       os.unlink( jdlName )
@@ -137,7 +142,7 @@ class CREAMComputingElement( ComputingElement ):
       result = S_ERROR('No pilot references obtained from the glite job submission')  
     return result
 
-  #############################################################################
+#############################################################################
   def getDynamicInfo( self ):
     """ Method to return information on running and pending jobs.
     """
@@ -149,6 +154,11 @@ class CREAMComputingElement( ComputingElement ):
     resultDict = {}
     if not result['OK']:
       return result
+    if result['Value'][0]:
+      if result['Value'][2]:
+        return S_ERROR(result['Value'][2])
+      else:
+        return S_ERROR('Error while interrogating CE status')
     if result['Value'][1]:
       resultDict = self.__parseJobStatus( result['Value'][1] )
 
@@ -185,8 +195,16 @@ class CREAMComputingElement( ComputingElement ):
     if not result['OK']:
       self.log.error('Failed to get job status',result['Message'])
       return result
+    if result['Value'][0]:
+      if result['Value'][2]:
+        return S_ERROR(result['Value'][2])
+      else:
+        return S_ERROR('Error while interrogating job statuses')
     if result['Value'][1]:
       resultDict = self.__parseJobStatus( result['Value'][1] )
+     
+    if not resultDict:
+      return  S_ERROR('No job statuses returned')
 
     # If CE does not know about a job, set the status to Unknown
     for job in jobIDList:
@@ -242,7 +260,7 @@ class CREAMComputingElement( ComputingElement ):
     if not stamp:
       return S_ERROR( 'Pilot stamp not defined for %s' % pilotRef )
 
-    outURL = self.ceParameters['OutputURL']
+    outURL = self.ceParameters.get( 'OutputURL', 'gsiftp://localhost' )
     if outURL == 'gsiftp://localhost':
       result = self.__resolveOutputURL( pilotRef )
       if not result['OK']:

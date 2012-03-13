@@ -126,7 +126,7 @@ class ConfigurationClient:
       try:
         return S_OK( optionValue.lower() in ( "y", "yes", "true", "1" ) )
       except Exception:
-        return S_ERROR( "Can't convert value (%s) to comma separated list" % str( optionValue ) )
+        return S_ERROR( "Can't convert value (%s) to Boolean" % str( optionValue ) )
     else:
       try:
         return S_OK( defaultType( optionValue ) )

@@ -28,6 +28,7 @@ DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem',
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 DIRAC_VERSION = 'Production'
 DIRAC_VERSION = 'HEAD'
+DIRAC_INSTALLATION = ''
 
 MAX_JOBS_IN_FILLMODE = 2
 
@@ -39,6 +40,8 @@ PILOT_DN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=St
 PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
 PILOT_GROUP = 'lhcb_pilot'
 
+VIRTUAL_ORGANIZATION = 'dirac'
+
 ENABLE_LISTMATCH = 1
 LISTMATCH_DELAY = 5
 
@@ -49,8 +52,10 @@ ERROR_TOKEN = 'Invalid proxy token request'
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
-from DIRAC.Core.Security.CS                                import getPropertiesForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO
+from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
+from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
+
 
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
@@ -66,7 +71,7 @@ class PilotDirector:
       * configure( self, csSection, submitPool ):
           that must call the parent class configure method and the do its own configuration
       * _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit, ceMask,
-                      submitPrivatePilot, privateTQ, proxy )
+                      submitPrivatePilot, privateTQ, proxy, pilotsPerJob )
           actual method doing the submission to the backend once the submitPilots method
           has prepared the common part
 
@@ -77,8 +82,10 @@ class PilotDirector:
     If additional datamembers are defined, they must:
       - be declared in the __init__
       - be reconfigured in the configureFromSection method by executing
-        self.reloadConfiguration( csSection, submitPool ) in theri configure method
+        self.reloadConfiguration( csSection, submitPool ) in their configure method
   """
+  gridMiddleware = ''
+
   def __init__( self, submitPool ):
     """
      Define the logger and some defaults
@@ -91,14 +98,13 @@ class PilotDirector:
 
     self.pilot = DIRAC_PILOT
     self.extraPilotOptions = []
-    setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = getVO()
-    self.installVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( vo, setup ),
-                                         DIRAC_VERSION )
-    self.installProject = gConfig.getValue( '/Operations/%s/%s/Versions/PilotProject' % ( vo, setup ),
-                                         "" )
+    self.installVersion = DIRAC_VERSION
+    self.installInstallation = DIRAC_INSTALLATION
+
+    self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
+    self.targetGrids = [ self.gridMiddleware ]
 
 
     self.genericPilotDN = PILOT_DN
@@ -127,22 +133,23 @@ class PilotDirector:
     self.reloadConfiguration( csSection, submitPool )
 
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = getVO()
-    self.installVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( vo, setup ),
+    section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
+    self.installVersion = gConfig.getValue( cfgPath( section, 'PilotVersion' ),
                                          self.installVersion )
-    self.installProject = gConfig.getValue( '/Operations/%s/%s/Versions/PilotProject' % ( vo, setup ),
-                                         "" )
+    self.installInstallation = gConfig.getValue( cfgPath( section, 'PilotInstallation' ),
+                                         self.installInstallation )
 
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
     self.log.info( '' )
+    self.log.info( ' Target Grids:   ', ', '.join( self.targetGrids ) )
     self.log.info( ' Install script: ', self.install )
     self.log.info( ' Pilot script:   ', self.pilot )
     self.log.info( ' Install Ver:    ', self.installVersion )
-    if self.installProject:
-      self.log.info( ' Project:        ', self.installProject )
+    if self.installInstallation:
+      self.log.info( ' Installation:        ', self.installInstallation )
     if self.extraPilotOptions:
-      self.log.info( ' Exta Options:   ', ' '.join( self.extraPilotOptions ) )
+      self.log.info( ' Extra Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
     self.log.info( ' Private %:      ', self.privatePilotFraction * 100 )
     if self.enableListMatch:
@@ -155,9 +162,8 @@ class PilotDirector:
     """
     mySection = csSection + '/' + self.gridMiddleware
     self.configureFromSection( mySection )
-    """
-     And Again for each SubmitPool
-    """
+
+    # And Again for each SubmitPool
     mySection = csSection + '/' + submitPool
     self.configureFromSection( mySection )
 
@@ -169,8 +175,9 @@ class PilotDirector:
     self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
-    self.installProject = gConfig.getValue( mySection + '/InstallProject'        , self.installProject )
+    self.installInstallation = gConfig.getValue( mySection + '/Installation'        , self.installInstallation )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
+    self.targetGrids = gConfig.getValue( mySection + '/TargetGrids'    , self.targetGrids )
 
     self.enableListMatch = gConfig.getValue( mySection + '/EnableListMatch'      , self.enableListMatch )
     self.listMatchDelay = gConfig.getValue( mySection + '/ListMatchDelay'       , self.listMatchDelay )
@@ -183,13 +190,21 @@ class PilotDirector:
     self.genericPilotGroup = gConfig.getValue( mySection + '/GenericPilotGroup'    , self.genericPilotGroup )
     self.privatePilotFraction = gConfig.getValue( mySection + '/PrivatePilotFraction' , self.privatePilotFraction )
 
+    virtualOrganization = gConfig.getValue( mySection + '/VirtualOrganization' , '' )
+    if not virtualOrganization:
+      virtualOrganization = getVOForGroup( 'NonExistingGroup' )
+      if not virtualOrganization:
+        virtualOrganization = self.virtualOrganization
+    self.virtualOrganization = virtualOrganization
+
   def _resolveCECandidates( self, taskQueueDict ):
     """
       Return a list of CEs for this TaskQueue
     """
     # assume user knows what they're doing and avoid site mask e.g. sam jobs
     if 'GridCEs' in taskQueueDict and taskQueueDict['GridCEs']:
-      self.log.info( 'CEs requested by TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( taskQueueDict['GridCEs'] ) )
+      self.log.info( 'CEs requested by TaskQueue %s:' % taskQueueDict['TaskQueueID'],
+                     ', '.join( taskQueueDict['GridCEs'] ) )
       return taskQueueDict['GridCEs']
 
     # Get the mask
@@ -225,27 +240,27 @@ class PilotDirector:
     # Get CE's associates to the given site Names
     ceMask = []
 
-    section = '/Resources/Sites/%s' % self.gridMiddleware
-    ret = gConfig.getSections( section )
-    if not ret['OK']:
-      # To avoid duplicating sites listed in LCG for gLite for example.
-      # This could be passed as a parameter from
-      # the sub class to avoid below...
-      section = '/Resources/Sites/LCG'
+    for grid in self.targetGrids:
+
+      section = '/Resources/Sites/%s' % grid
       ret = gConfig.getSections( section )
+      if not ret['OK']:
+        # this is hack, maintained until LCG is added as TargetGrid for the gLite SubmitPool
+        section = '/Resources/Sites/LCG'
+        ret = gConfig.getSections( section )
 
-    if not ret['OK'] or not ret['Value']:
-      self.log.error( 'Could not obtain CEs from CS', ret['Message'] )
-      return []
+      if not ret['OK']:
+        self.log.error( 'Could not obtain CEs from CS', ret['Message'] )
+        continue
 
-    gridSites = ret['Value']
-    for siteName in gridSites:
-      if siteName in siteMask:
-        ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName ), [] )
-        for ce in ret:
-          submissionMode = gConfig.getValue( '%s/%s/CEs/%s/SubmissionMode' % ( section, siteName, ce ), 'gLite' )
-          if submissionMode == self.gridMiddleware:
-            ceMask.append( ce )
+      gridSites = ret['Value']
+      for siteName in gridSites:
+        if siteName in siteMask:
+          ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName ), [] )
+          for ce in ret:
+            submissionMode = gConfig.getValue( '%s/%s/CEs/%s/SubmissionMode' % ( section, siteName, ce ), 'gLite' )
+            if submissionMode == self.gridMiddleware and ce not in ceMask:
+              ceMask.append( ce )
 
     if not ceMask:
       self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( siteMask ) )
@@ -260,7 +275,7 @@ class PilotDirector:
     # For generic pilots this is limited by the number of use of the tokens and the 
     # maximum number of jobs in Filling mode, but for private Jobs we need an extra limitation:
     pilotsToSubmit = min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) )
-    pilotOptions = [ "-V %s" % getVO( "lhcb" ) ]
+    pilotOptions = []
     privateIfGenericTQ = self.privatePilotFraction > random.random()
     privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
     forceGeneric = 'ForceGeneric' in taskQueueDict
@@ -313,7 +328,8 @@ class PilotDirector:
     # Requested version of DIRAC
     pilotOptions.append( '-r %s' % self.installVersion )
     # Requested Project to install
-    pilotOptions.append( '-l %s' % self.installProject )
+    if self.installInstallation:
+      pilotOptions.append( '-V %s' % self.installInstallation )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
 
@@ -323,7 +339,7 @@ class PilotDirector:
     return S_OK( ( pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) )
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
-                     ceMask, submitPrivatePilot, privateTQ, proxy ):
+                     ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
     """
       This method must be implemented on the Backend specific derived class.
       This is problem with the Director, not with the Job so we must return S_OK
@@ -364,7 +380,7 @@ class PilotDirector:
                                  submitPrivatePilot, privateTQ,
                                  proxy, pilotsPerJob )
 
-    except Exception, x:
+    except Exception:
       self.log.exception( 'Error in Pilot Submission' )
 
     return S_OK( 0 )

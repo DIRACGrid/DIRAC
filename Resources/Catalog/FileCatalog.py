@@ -2,13 +2,13 @@
 # $HeadURL$
 ########################################################################
 __RCSID__ = "$Id$"
-""" File catalog class. This is a simple dispatcher for the file catalogue plug-ins.
+""" File catalog class. This is a simple dispatcher for the file catalog plug-ins.
     It ensures that all operations are performed on the desired catalogs.
 """
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
+from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 import types, re, os
 
 class FileCatalog:
@@ -201,7 +201,7 @@ class FileCatalog:
     return S_OK()
 
   def _getCatalogs( self ):
-    res = gConfig.getSections( self.rootConfigPath )
+    res = gConfig.getSections( self.rootConfigPath, listOrdered = True )
     if not res['OK']:
       errStr = "FileCatalog._getCatalogs: Failed to get file catalog configuration."
       gLogger.error( errStr, res['Message'] )
@@ -265,37 +265,6 @@ class FileCatalog:
     return S_OK( catalogConfig )
 
   def _generateCatalogObject( self, catalogName ):
-    moduleRootPaths = getInstalledExtensions()
-    moduleLoaded = False
-    for moduleRootPath in moduleRootPaths:
-      if moduleLoaded:
-        break
-      gLogger.verbose( "Trying to load from root path %s" % moduleRootPath )
-      moduleFile = os.path.join( rootPath, moduleRootPath, "Resources", "Catalog", "%sClient.py" % catalogName )
-      gLogger.verbose( "Looking for file %s" % moduleFile )
-      if not os.path.isfile( moduleFile ):
-        continue
-      try:
-        # This inforces the convention that the plug in must be named after the file catalog
-        moduleName = "%sClient" % ( catalogName )
-        catalogModule = __import__( '%s.Resources.Catalog.%s' % ( moduleRootPath, moduleName ),
-                                    globals(), locals(), [moduleName] )
-      except Exception, x:
-        errStr = "FileCatalog._generateCatalogObject: Failed to import %s: %s" % ( catalogName, x )
-        gLogger.exception( errStr )
-        return S_ERROR( errStr )
-      try:
-        evalString = "catalogModule.%s()" % moduleName
-        catalog = eval( evalString )
-        if not catalog.isOK():
-          errStr = "FileCatalog._generateCatalogObject: Failed to instantiate catalog plug in."
-          gLogger.error( errStr, moduleName )
-          return S_ERROR( errStr )
-        return S_OK( catalog )
-      except Exception, x:
-        errStr = "FileCatalog._generateCatalogObject: Failed to instantiate %s()" % ( moduleName )
-        gLogger.exception( errStr, lException = x )
-        return S_ERROR( errStr )
-
-    if not moduleLoaded:
-      return S_ERROR( 'Failed to find catalog client %s' % catalogName )
+    """ Create a file catalog object from its name and CS description
+    """
+    return FileCatalogFactory().createCatalog(catalogName)

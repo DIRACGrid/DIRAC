@@ -1,6 +1,12 @@
+################################################################################
+# $HeadURL $
+################################################################################
+__RCSID__  = "$Id$"
+
+from DIRAC                                           import gLogger
+
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import id_fun
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidStatus
-from DIRAC.ResourceStatusSystem.PolicySystem.Configurations  import ValidStatus
+from DIRAC.ResourceStatusSystem                      import ValidStatus
 
 statesInfo = {
   'Banned'  : (0, set([0,1]), max),
@@ -9,6 +15,8 @@ statesInfo = {
   'Active'  : (3, set(), id_fun)
   }
 
+################################################################################
+
 def value_of_status(s):
   try:
     return int(s)
@@ -16,14 +24,25 @@ def value_of_status(s):
     try:
       return statesInfo[s][0]
     except KeyError:
-      raise InvalidStatus
+      #Temporary fix, not anymore InvalidStatus exception raising
+      gLogger.error( 'value_of_status returning -1')
+      return -1
+
+################################################################################
 
 def value_of_policy(p):
   return value_of_status(p['Status'])
+
+################################################################################
 
 def status_of_value(v):
   # Hack: rely on the order of values in ValidStatus
   try:
     return ValidStatus[v]
   except IndexError:
-    raise InvalidStatus
+    #Temporary fix, not anymore InvalidStatus exception raising
+    gLogger.error( 'status_of_value returning -1')
+    return -1
+        
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

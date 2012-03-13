@@ -9,90 +9,126 @@ import cmd
 import sys
 import pprint
 import getpass
+from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from DIRAC.Core.Utilities import List
 from DIRAC import gConfig
 
-def printTable(fields,records):
+def printTable( fields, records ):
   """ Utility function to pretty print table data
   """
   if not records:
     print "No output"
-    return  
-    
-  nFields = len(fields)
-  if nFields != len(records[0]):
+    return
+
+  nFields = len( fields )
+  if nFields != len( records[0] ):
     print "Incorrect data structure to print"
     return
 
   lengths = []
-  for i in range(nFields):
-    lengths.append(len(fields[i]))
+  for i in range( nFields ):
+    lengths.append( len( fields[i] ) )
     for r in records:
-      if len(r[i]) > lengths[i]:
-        lengths[i] = len(r[i])
-  
+      if len( r[i] ) > lengths[i]:
+        lengths[i] = len( r[i] )
+
   totalLength = 0
   for i in lengths:
     totalLength += i
     totalLength += 2
-        
-  print ' '*3,      
-  for i in range(nFields):
-    print fields[i].ljust(lengths[i]+1),
+
+  print ' ' * 3,
+  for i in range( nFields ):
+    print fields[i].ljust( lengths[i] + 1 ),
   print
-  print '='*totalLength
+  print '=' * totalLength
   count = 1
   for r in records:
-    print str(count).rjust(3),
-    for i in range(nFields):
-      print r[i].ljust(lengths[i]+1),
-    print    
+    print str( count ).rjust( 3 ),
+    for i in range( nFields ):
+      print r[i].ljust( lengths[i] + 1 ),
+    print
     count += 1
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
   """ 
   """
+
+  def __errMsg( self, errMsg ):
+    print "%s %s" % ( colorize( "[ERROR]", "red" ), errMsg )
+
   def __init__( self, host = None ):
     cmd.Cmd.__init__( self )
     # Check if Port is given
     self.host = None
     self.port = None
-    self.prompt = 'nohost >'
-    self.__setHost( host )
+    self.prompt = '(%s)> ' % colorize( "no host", "yellow" )
+    if host:
+      self.__setHost( host )
 
   def __setHost( self, host ):
-    if host:
-      self.prompt = '%s >' % host
-      hostList = host.split( ':' )
-      self.host = hostList[0]
-      if len( hostList ) == 2:
-        self.port = hostList[1]
+    hostList = host.split( ':' )
+    self.host = hostList[0]
+    if len( hostList ) == 2:
+      self.port = hostList[1]
+    else:
+      self.port = None
+    print "Pinging %s..." % self.host
+    result = self.__getClient().ping()
+    if result[ 'OK' ]:
+      colorHost = colorize( host, "green" )
+    else:
+      self.__errMsg( "Could not connect to %s: %s" % ( self.host, result[ 'Message' ] ) )
+      colorHost = colorize( host, "red" )
+    self.prompt = '(%s)> ' % colorHost
+
+  def __getClient( self ):
+    return SystemAdministratorClient( self.host, self.port )
 
   def do_set( self, args ):
     """
-        Set the host to be managed
+        Set options
     
         usage:
         
-          set host <hostname>
+          set host <hostname>     - Set the hostname to work with
+          set project <project>   - Set the project to install/upgrade in the host
     """
-    argss = args.split()
-    if len( argss ) < 2:
-      print self.do_set.__doc__
-      return
+    cmds = { 'host' : ( 1, self.__do_set_host ),
+             'project' : ( 1, self.__do_set_project ) }
 
-    option = argss[0]
-    del argss[0]
-    if option == 'host':
-      host = argss[0]
-      if host.find( '.' ) == -1:
-        print "ERROR: you should provide the full host name including its domain"
-        return
-      self.__setHost( host )
+    args = List.fromChar( args, " " )
+
+    found = False
+    for cmd in cmds:
+      if cmd == args[0]:
+        if len( args ) != 1 + cmds[ cmd ][0]:
+          self.__errMsg( "Missing arguments" )
+          print self.do_set.__doc__
+          return
+        return cmds[ cmd ][1]( args[1:] )
+    self.__errMsg( "Invalid command" )
+    print self.do_set.__doc__
+    return
+
+  def __do_set_host( self, args ):
+    host = args[0]
+    if host.find( '.' ) == -1:
+      self.__errMsg( "Provide the full host name including its domain" )
+      return
+    self.__setHost( host )
+
+  def __do_set_project( self, args ):
+    project = args[0]
+    result = self.__getClient().setProject( project )
+    if not result[ 'OK' ]:
+      self.__errMsg( "Cannot set project: %s" % result[ 'Message' ] )
     else:
-      print "Unknown option:", option
+      print "Project set to %s" % project
+
 
   def do_show( self, args ):
     """ 
@@ -103,6 +139,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           show software      - show components for which software is available
           show installed     - show components installed in the host with runit system
           show setup         - show components set up for automatic running in the host
+          show project       - show project to install or upgrade
           show status        - show status of the installed components
           show database      - show status of the databases
           show mysql         - show status of the MySQL server
@@ -121,11 +158,12 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     option = argss[0]
     del argss[0]
+
     if option == 'software':
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getSoftwareComponents()
       if not result['OK']:
-        print " ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         print
         pprint.pprint( result['Value'] )
@@ -133,7 +171,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getInstalledComponents()
       if not result['OK']:
-        print " ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         print
         pprint.pprint( result['Value'] )
@@ -141,19 +179,25 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getSetupComponents()
       if not result['OK']:
-        print " ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         print
         pprint.pprint( result['Value'] )
+    elif option == 'project':
+      result = SystemAdministratorClient( self.host, self.port ).getProject()
+      if not result['OK']:
+        self.__errMsg( result['Message'] )
+      else:
+        print "Current project is %s" % result[ 'Value' ]
     elif option == 'status':
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getOverallStatus()
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         rDict = result['Value']
         print
-        print "   System", ' '*20, 'Name', ' '*15, 'Type', ' '*13, 'Setup    Installed   Runit    Uptime    PID'
+        print "   System", ' ' * 20, 'Name', ' ' * 15, 'Type', ' ' * 13, 'Setup    Installed   Runit    Uptime    PID'
         print '-' * 116
         for compType in rDict:
           for system in rDict[compType]:
@@ -179,11 +223,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       InstallTools.getMySQLPasswords()
       result = client.getDatabases( InstallTools.mysqlRootPwd )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
         return
       resultSW = client.getAvailableDatabases()
       if not resultSW['OK']:
-        print "ERROR:", resultSW['Message']
+        self.__errMsg( resultSW['Message'] )
         return
 
       sw = resultSW['Value']
@@ -200,7 +244,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getMySQLStatus()
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       elif result['Value']:
         print
         for par, value in result['Value'].items():
@@ -213,7 +257,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getInfo()
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         print
         print "Setup:", result['Value']['Setup']
@@ -222,49 +266,49 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           for e, v in result['Value']['Extensions'].items():
             print "%s version" % e, v
         print
-    elif option == "errors":    
+    elif option == "errors":
       self.getErrors( argss )
     else:
       print "Unknown option:", option
-      
+
   def getErrors( self, argss ):
     """ Get and print out errors from the logs of specified components
-    """       
+    """
     component = ''
-    if len(argss) < 1:
+    if len( argss ) < 1:
       component = '*'
     else:
       system = argss[0]
       if system == "*":
         component = '*'
       else:
-        if len(argss) < 2:
+        if len( argss ) < 2:
           print
           print self.do_show.__doc__
-          return 
+          return
         comp = argss[1]
-        component = '/'.join([system,comp])
-    
-    client = SystemAdministratorClient( self.host, self.port )   
-    result = client.checkComponentLog(component)  
+        component = '/'.join( [system, comp] )
+
+    client = SystemAdministratorClient( self.host, self.port )
+    result = client.checkComponentLog( component )
     if not result['OK']:
-      print "ERROR:", result['Message']
+      self.__errMsg( result['Message'] )
     else:
-      fields = ['System','Component','Last hour','Last day','Last error']
+      fields = ['System', 'Component', 'Last hour', 'Last day', 'Last error']
       records = []
       for cname in result['Value']:
-        system,component = cname.split('/')
+        system, component = cname.split( '/' )
         errors_1 = result['Value'][cname]['ErrorsHour']
         errors_24 = result['Value'][cname]['ErrorsDay']
         lastError = result['Value'][cname]['LastError']
         lastError.strip()
-        if len(lastError) > 80:
-          lastError = lastError[:80]+'...'
-        records.append([system,component,str(errors_1),str(errors_24),lastError])
-      records.sort()  
-      printTable(fields,records)    
-    
-      
+        if len( lastError ) > 80:
+          lastError = lastError[:80] + '...'
+        records.append( [system, component, str( errors_1 ), str( errors_24 ), lastError] )
+      records.sort()
+      printTable( fields, records )
+
+
   def getLog( self, argss ):
     """ Get the tail of the log file of the given component
     """
@@ -281,7 +325,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     client = SystemAdministratorClient( self.host, self.port )
     result = client.getLogTail( system, component, nLines )
     if not result['OK']:
-      print "ERROR:", result['Message']
+      self.__errMsg( result['Message'] )
     elif result['Value']:
       for line in result['Value']['_'.join( [system, component] )].split( '\n' ):
         print '   ', line
@@ -315,7 +359,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       InstallTools.getMySQLPasswords()
       result = client.installMySQL( InstallTools.mysqlRootPwd, InstallTools.mysqlPassword )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         print "MySQL:", result['Value']
         print "You might need to restart SystemAdministrator service to take new settings into account"
@@ -328,20 +372,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
       result = client.getAvailableDatabases()
       if not result['OK']:
-        print "ERROR: can not get database list: %s" % result['Message']
+        self.__errMsg( "Can not get database list: %s" % result['Message'] )
         return
       if not result['Value'].has_key( database ):
-        print "ERROR: unknown database %s: " % database
+        self.__errMsg( "Unknown database %s: " % database )
         return
       system = result['Value'][database]['System']
       setup = gConfig.getValue( '/DIRAC/Setup', '' )
       if not setup:
-        print "ERROR: unknown current setup"
+        self.__errMsg( "Unknown current setup" )
         return
       instance = gConfig.getValue( '/DIRAC/Setups/%s/%s' % ( setup, system ), '' )
       if not instance:
-        print "ERROR: no instance defined for system %s" % system
-        print "       Add new instance with 'add instance %s <instance_name>'" % system
+        self.__errMsg( "No instance defined for system %s" % system )
+        self.__errMsg( "\tAdd new instance with 'add instance %s <instance_name>'" % system )
         return
 
       if not InstallTools.mysqlPassword:
@@ -349,18 +393,18 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       InstallTools.getMySQLPasswords()
       result = client.installDatabase( database, InstallTools.mysqlRootPwd )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
         return
       extension, system = result['Value']
       # result = client.addDatabaseOptionsToCS( system, database )
       InstallTools.mysqlHost = self.host
       result = client.getInfo()
       if not result['OK']:
-        print "Error:", result['Message']
+        self.__errMsg( result['Message'] )
       hostSetup = result['Value']['Setup']
       result = InstallTools.addDatabaseOptionsToCS( gConfig, system, database, hostSetup )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
         return
       print "Database %s from %s/%s installed successfully" % ( database, extension, system )
     elif option == "service" or option == "agent":
@@ -376,16 +420,17 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       InstallTools.host = self.host
       result = client.getInfo()
       if not result['OK']:
-        print "Error:", result['Message']
+        self.__errMsg( result['Message'] )
+        return
       hostSetup = result['Value']['Setup']
       result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, getCSExtensions(), hostSetup )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
         return
       # Then we can install and start the component
       result = client.setupComponent( option, system, component )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
         return
       compType = result['Value']['ComponentType']
       runit = result['Value']['RunitStatus']
@@ -420,7 +465,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       result = client.startComponent( system, component )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         if system != '*' and component != '*':
           print "\n%s_%s started successfully, runit status:\n" % ( system, component )
@@ -458,7 +503,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         if system == '*':
           print "All systems are restarted, connection to SystemAdministrator is lost"
         else:
-          print "ERROR:", result['Message']
+          self.__errMsg( result['Message'] )
       else:
         if system != '*' and component != '*':
           print "\n%s_%s started successfully, runit status:\n" % ( system, component )
@@ -487,7 +532,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       result = client.stopComponent( system, component )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         if system != '*' and component != '*':
           print "\n%s_%s stopped successfully, runit status:\n" % ( system, component )
@@ -511,7 +556,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     print "Software update can take a while, please wait ..."
     result = client.updateSoftware( version )
     if not result['OK']:
-      print "ERROR: Failed to update the software"
+      self.__errMsg( "Failed to update the software" )
       print result['Message']
     else:
       print "Software successfully updated."
@@ -535,18 +580,18 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getInfo()
       if not result['OK']:
-        print "Error:", result['Message']
+        self.__errMsg( result['Message'] )
       hostSetup = result['Value']['Setup']
       instanceName = gConfig.getValue( '/DIRAC/Setups/%s/%s' % ( hostSetup, system ), '' )
       if instanceName:
         if instanceName == instance:
           print "System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup )
         else:
-          print "ERROR: System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup )
+          self.__errMsg( "System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup ) )
         return
       result = InstallTools.addSystemInstance( system, instance, hostSetup )
       if not result['OK']:
-        print "ERROR:", result['Message']
+        self.__errMsg( result['Message'] )
       else:
         print "%s system instance %s added successfully" % ( system, instance )
     else:
@@ -562,13 +607,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     client = SystemAdministratorClient( self.host, self.port )
     result = client.executeCommand( args )
     if not result['OK']:
-      print "ERROR:", result['Message']
+      self.__errMsg( result['Message'] )
     status, output, error = result['Value']
     print
     for line in output.split( '\n' ):
       print line
     if error:
-      print "Error:", status
+      self.__errMsg( status )
       for line in error.split( '\n' ):
         print line
 

@@ -1,6 +1,7 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
+import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
@@ -57,6 +58,23 @@ def getHostnameForDN( dn ):
 def getDefaultUserGroup():
   return gConfig.getValue( "/%s/DefaultGroup" % gBaseSecuritySection, "user" )
 
+def findDefaultGroupForDN( dn ):
+  result = getUsernameForDN( dn )
+  if not result[ 'OK' ]:
+    return result
+  return findDefaultGroupForUser( result[ 'Value' ] )
+
+def findDefaultGroupForUser( userName ):
+  defGroups = gConfig.getValue( "/%s/DefaultGroup" % gBaseSecuritySection, [ "user" ] )
+  result = getGroupsForUser( userName )
+  if not result[ 'OK' ]:
+    return result
+  userGroups = result[ 'Value' ]
+  for group in defGroups:
+    if group in userGroups:
+      return S_OK( group )
+  return S_OK( False )
+
 def getAllUsers():
   retVal = gConfig.getSections( "%s/Users" % gBaseSecuritySection )
   if not retVal[ 'OK' ]:
@@ -94,11 +112,41 @@ def getPropertiesForEntity( group, name = "", dn = "", defaultValue = None ):
   else:
     return getPropertiesForGroup( group, defaultValue )
 
+def __matchProps( sProps, rProps ):
+  foundProps = []
+  for prop in sProps:
+    if prop in rProps:
+      foundProps.append( prop )
+  return foundProps
+
+def groupHasProperties( groupName, propList ):
+  if type( propList ) in types.StringTypes:
+    propList = [ propList ]
+  return __matchProps( propList, getPropertiesForGroup( groupName ) )
+
+def hostHasProperties( hostName, propList ):
+  if type( propList ) in types.StringTypes:
+    propList = [ propList ]
+  return __matchProps( propList, getPropertiesForHost( hostName ) )
+
+def getUserOption( userName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Users/%s/%s" % ( gBaseSecuritySection, userName, optName ), defaultValue )
+
+def getGroupOption( groupName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Groups/%s/%s" % ( gBaseSecuritySection, groupName, optName ), defaultValue )
+
+def getHostOption( hostName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/Hosts/%s/%s" % ( gBaseSecuritySection, hostName, optName ), defaultValue )
+
+def getVOOption( voName, optName, defaultValue = "" ):
+  return gConfig.getValue( "%s/VO/%s/%s" % ( gBaseSecuritySection, voName, optName ), defaultValue )
+
+
 def getBannedIPs():
   return gConfig.getValue( "%s/BannedIPs" % gBaseSecuritySection, [] )
 
 def getVOForGroup( group ):
-  voName = gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+  voName = getVO()
   if voName:
     return voName
   return gConfig.getValue( "%s/Groups/%s/VO" % ( gBaseSecuritySection, group ), "" )

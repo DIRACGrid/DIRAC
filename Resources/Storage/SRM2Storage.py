@@ -4,7 +4,8 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
-from DIRAC.ConfigurationSystem.Client.Helpers           import getVO
+from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess                    import pythonCall
 from DIRAC.Core.Utilities.Pfn                           import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.List                          import breakListIntoChunks
@@ -12,9 +13,8 @@ from DIRAC.Core.Utilities.File                          import getSize
 from DIRAC.AccountingSystem.Client.Types.DataOperation  import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient      import gDataStoreClient
 
-
-from stat import *
-import types, re, os, time, sys, string
+from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
+import types, re, os, time
 
 class SRM2Storage( StorageBase ):
 
@@ -32,17 +32,21 @@ class SRM2Storage( StorageBase ):
     self.wspath = wspath
     self.spaceToken = spaceToken
     self.cwd = self.path
-    apply( StorageBase.__init__, ( self, self.name, self.path ) )
+    StorageBase.__init__( self, self.name, self.path )
 
     self.timeout = 100
     self.long_timeout = 1200
+    self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
     self.defaulttype = 2
-    self.vo = getVO( 'lhcb' )
+    self.voName = None
+    ret = getProxyInfo( disableVOMS = True )
+    if ret['OK'] and 'group' in ret['Value']:
+      self.voName = getVOForGroup( ret['Value']['group'] )
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0
@@ -63,7 +67,6 @@ class SRM2Storage( StorageBase ):
     except Exception, x:
       errStr = "SRM2Storage.__init__: Failed to import lcg_util"
       gLogger.exception( errStr, '', x )
-      ISOK = False
       return S_ERROR( errStr )
     try:
       import gfalthr as gfal
@@ -83,7 +86,6 @@ class SRM2Storage( StorageBase ):
       except Exception, x:
         errStr = "SRM2Storage.__init__: Failed to import gfal"
         gLogger.exception( errStr, '', x )
-        ISOK = False
         return S_ERROR( errStr )
     self.lcg_util = lcg_util
     self.gfal = gfal
@@ -219,7 +221,8 @@ class SRM2Storage( StorageBase ):
         gLogger.debug( "SRM2Storage.createDirectory: Successfully created directory on storage: %s" % url )
         successful[url] = True
       else:
-        gLogger.error( "SRM2Storage.createDirectory: Failed to create directory on storage.", "%s: %s" % ( url, res['Message'] ) )
+        gLogger.error( "SRM2Storage.createDirectory: Failed to create directory on storage.",
+                       "%s: %s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
@@ -230,7 +233,6 @@ class SRM2Storage( StorageBase ):
     dfile.write( " " )
     dfile.close()
     destFile = '%s/%s' % ( path, 'dirac_directory.%s' % time.time() )
-    directoryDict = {destFile:srcFile}
     res = self.__putFile( srcFile, destFile, 0 )
     if os.path.exists( srcFile ):
       os.remove( srcFile )
@@ -240,19 +242,19 @@ class SRM2Storage( StorageBase ):
   def __makeDirs( self, path ):
     """  Black magic contained within....
     """
-    dir = os.path.dirname( path )
+    dirName = os.path.dirname( path )
     res = self.__executeOperation( path, 'exists' )
     if not res['OK']:
       return res
     if res['Value']:
       return S_OK()
-    res = self.__executeOperation( dir, 'exists' )
+    res = self.__executeOperation( dirName, 'exists' )
     if not res['OK']:
       return res
     if res['Value']:
       res = self.__makeDir( path )
     else:
-      res = self.__makeDirs( dir )
+      res = self.__makeDirs( dirName )
       if not res['OK']:
         return res
       res = self.__makeDir( path )
@@ -358,6 +360,9 @@ class SRM2Storage( StorageBase ):
         if urlDict['status'] == 0:
           gLogger.debug( "SRM2Storage.prestageFile: Issued stage request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
+        elif urlDict['status'] == 1:
+          gLogger.debug( "SRM2Storage.prestageFile: File found to be already staged.", pathSURL )
+          successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
           errMessage = "SRM2Storage.prestageFile: File does not exist."
           gLogger.error( errMessage, pathSURL )
@@ -378,7 +383,8 @@ class SRM2Storage( StorageBase ):
       return res
     urls = res['Value']
 
-    gLogger.debug( "SRM2Storage.prestageFileStatus: Attempting to get status of stage requests for %s file(s)." % len( urls ) )
+    gLogger.debug( "SRM2Storage.prestageFileStatus: Attempting to get status "
+                   "of stage requests for %s file(s)." % len( urls ) )
     resDict = self.__gfal_prestagestatus_wrapper( urls )['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
@@ -682,7 +688,8 @@ class SRM2Storage( StorageBase ):
       nbstreams = 1
     gLogger.info( "SRM2Storage.__putFile: Using %d streams" % nbstreams )
     gLogger.info( "SRM2Storage.__putFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
-    res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url, srctype, dsttype, nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
+    res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url,
+                      srctype, dsttype, nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
     if not res['OK']:
       # Remove the failed replica, just in case
       result = self.__executeOperation( dest_url, 'removeFile' )
@@ -723,19 +730,25 @@ class SRM2Storage( StorageBase ):
       gLogger.debug( "SRM2Storage.__putFile: Unable to remove remote file remnant %s." % dest_url )
     return S_ERROR( errorMessage )
 
-  def __lcg_cp_wrapper( self, src_url, dest_url, srctype, dsttype, nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc ):
+  def __lcg_cp_wrapper( self, src_url, dest_url, srctype, dsttype, nbstreams,
+                        timeout, src_spacetokendesc, dest_spacetokendesc ):
     try:
-      errCode, errStr = self.lcg_util.lcg_cp3( src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout, src_spacetokendesc, dest_spacetokendesc )
+      errCode, errStr = self.lcg_util.lcg_cp3( src_url, dest_url, self.defaulttype, srctype,
+                                               dsttype, self.nobdii, self.voName, nbstreams, self.conf_file,
+                                               self.insecure, self.verbose, timeout, src_spacetokendesc,
+                                               dest_spacetokendesc )
       if type( errCode ) not in [types.IntType]:
-        gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer", "%s %s" % ( errCode, type( errCode ) ) )
+        gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer",
+                       "%s %s" % ( errCode, type( errCode ) ) )
         if type( errCode ) in [types.ListType]:
-          msg = ()
+          msg = []
           for err in errCode:
-            msg.append( '% of type %' % ( err, type( err ) ) )
+            msg.append( '%s of type %s' % ( err, type( err ) ) )
           gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was List:\n" , "\n".join( msg ) )
         return S_ERROR( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer" )
       if type( errStr ) not in types.StringTypes:
-        gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string", "%s %s" % ( errCode, type( errStr ) ) )
+        gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string",
+                       "%s %s" % ( errCode, type( errStr ) ) )
         return S_ERROR( "SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string" )
       return S_OK( ( errCode, errStr ) )
     except Exception, x:
@@ -785,7 +798,8 @@ class SRM2Storage( StorageBase ):
     nbstreams = 1
     gLogger.info( "SRM2Storage.__getFile: Using %d streams" % nbstreams )
     gLogger.info( "SRM2Storage.__getFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
-    res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url, srctype, dsttype, nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
+    res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url, srctype, dsttype,
+                      nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
     if not res['OK']:
       return res
     res = res['Value']
@@ -936,7 +950,7 @@ class SRM2Storage( StorageBase ):
       directorySize = 0
       directoryFiles = 0
       filesDict = dirDict['Files']
-      for fileURL, fileDict in filesDict.items():
+      for fileDict in filesDict.itervalues():
         directorySize += fileDict['Size']
         directoryFiles += 1
       gLogger.debug( "SRM2Storage.getDirectorySize: Successfully obtained size of %s." % directory )
@@ -1050,9 +1064,9 @@ class SRM2Storage( StorageBase ):
     contents = os.listdir( src_directory )
     allSuccessful = True
     directoryFiles = {}
-    for file in contents:
-      localPath = '%s/%s' % ( src_directory, file )
-      remotePath = '%s/%s' % ( dest_directory, file )
+    for fileName in contents:
+      localPath = '%s/%s' % ( src_directory, fileName )
+      remotePath = '%s/%s' % ( dest_directory, fileName )
       if not os.path.isdir( localPath ):
         directoryFiles[remotePath] = localPath
       else:
@@ -1072,7 +1086,7 @@ class SRM2Storage( StorageBase ):
         gLogger.error( "SRM2Storage.__putDir: Failed to put files to storage.", res['Message'] )
         allSuccessful = False
       else:
-        for pfn, fileSize in res['Value']['Successful'].items():
+        for fileSize in res['Value']['Successful'].itervalues():
           filesPut += 1
           sizePut += fileSize
         if res['Value']['Failed']:
@@ -1145,7 +1159,7 @@ class SRM2Storage( StorageBase ):
       gLogger.error( "SRM2Storage.__getDir: Failed to get files from storage.", res['Message'] )
       allSuccessful = False
     else:
-      for pfn, fileSize in res['Value']['Successful'].items():
+      for fileSize in res['Value']['Successful'].itervalues():
         filesGot += 1
         sizeGot += fileSize
       if res['Value']['Failed']:
@@ -1276,7 +1290,8 @@ class SRM2Storage( StorageBase ):
           resDict['SizeRemoved'] += filesToRemove[removedSurl]
         if len( res['Value']['Failed'].keys() ) != 0:
           resDict['AllRemoved'] = False
-    gLogger.debug( "SRM2Storage.__removeDirectoryFiles: Removed %s files of size %s bytes." % ( resDict['FilesRemoved'], resDict['SizeRemoved'] ) )
+    gLogger.debug( "SRM2Storage.__removeDirectoryFiles:",
+                   "Removed %s files of size %s bytes." % ( resDict['FilesRemoved'], resDict['SizeRemoved'] ) )
     return resDict
 
   def __removeSubDirectories( self, subDirectories ):
@@ -1287,11 +1302,17 @@ class SRM2Storage( StorageBase ):
         for removedSubDir, removedDict in res['Value']['Successful'].items():
           resDict['FilesRemoved'] += removedDict['FilesRemoved']
           resDict['SizeRemoved'] += removedDict['SizeRemoved']
-          gLogger.debug( "SRM2Storage.__removeSubDirectories: Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'], removedDict['SizeRemoved'], removedSubDir ) )
+          gLogger.debug( "SRM2Storage.__removeSubDirectories:",
+                         "Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'],
+                                                                          removedDict['SizeRemoved'],
+                                                                          removedSubDir ) )
         for removedSubDir, removedDict in res['Value']['Failed'].items():
           resDict['FilesRemoved'] += removedDict['FilesRemoved']
           resDict['SizeRemoved'] += removedDict['SizeRemoved']
-          gLogger.debug( "SRM2Storage.__removeSubDirectories: Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'], removedDict['SizeRemoved'], removedSubDir ) )
+          gLogger.debug( "SRM2Storage.__removeSubDirectories:",
+                         "Removed %s files of size %s bytes from %s." % ( removedDict['FilesRemoved'],
+                                                                          removedDict['SizeRemoved'],
+                                                                          removedSubDir ) )
         if len( res['Value']['Failed'].keys() ) != 0:
           resDict['AllRemoved'] = False
     return resDict
@@ -1358,7 +1379,7 @@ class SRM2Storage( StorageBase ):
         protPath = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( self.name, section )
         siteProtocols = gConfig.getValue( protPath, [] )
         if siteProtocols:
-          gLogger.debug( 'Found SE protocols list to override defaults: %s' % ( string.join( siteProtocols, ', ' ) ) )
+          gLogger.debug( 'Found SE protocols list to override defaults:', ', '.join( siteProtocols, ) )
           protocolsList = siteProtocols
 
     if not protocolsList:
@@ -1469,8 +1490,8 @@ class SRM2Storage( StorageBase ):
     for urls in listOfLists:
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] = len( urls )
-      gfalDict['timeout'] = self.fileTimeout * len( urls )
-      res = self.__gfal_operation_wrapper( 'gfal_prestage', gfalDict )
+      gfalDict['timeout'] = self.stageTimeout
+      res = self.__gfal_operation_wrapper( 'gfal_prestage', gfalDict, timeout_sendreceive = self.fileTimeout * len( urls ) )
       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
         for url in urls:
@@ -1676,7 +1697,7 @@ class SRM2Storage( StorageBase ):
     resDict['Failed'] = failed
     return S_OK( resDict )
 
-  def __gfal_operation_wrapper( self, operation, gfalDict, srmRequestID = None ):
+  def __gfal_operation_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
 
     # Create an accounting DataOperation record for each operation
     oDataOperation = self.__initialiseAccountingObject( operation, self.name, gfalDict['nbfiles'] )
@@ -1695,7 +1716,9 @@ class SRM2Storage( StorageBase ):
 
 
     timeout = gfalDict['timeout']
-    res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID )
+    if timeout_sendreceive:
+      timeout = timeout_sendreceive
+    res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID, timeout_sendreceive )
     end = time.time()
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', end - start )
@@ -1713,7 +1736,7 @@ class SRM2Storage( StorageBase ):
     res['AccountingOperation'] = oDataOperation
     return res
 
-  def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None ):
+  def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
 
     res = self.__create_gfal_object( gfalDict )
     if not res['OK']:
@@ -1727,7 +1750,7 @@ class SRM2Storage( StorageBase ):
         result = S_ERROR( res['Message'] )
         return result
 
-    res = self.__gfal_exec( gfalObject, operation )
+    res = self.__gfal_exec( gfalObject, operation, timeout_sendreceive )
     if not res['OK']:
       result = S_ERROR( res['Message'] )
       return result
@@ -1746,9 +1769,9 @@ class SRM2Storage( StorageBase ):
 
     resultList = []
     pfnRes = res['Value']
-    for dict in pfnRes:
-      dict['SRMReqID'] = newSRMRequestID
-      resultList.append( dict )
+    for myDict in pfnRes:
+      myDict['SRMReqID'] = newSRMRequestID
+      resultList.append( myDict )
 
     self.__destroy_gfal_object( gfalObject )
     result = S_OK( resultList )
@@ -1810,10 +1833,31 @@ class SRM2Storage( StorageBase ):
 
   # These methods are for the execution of the functionality
 
-  def __gfal_exec( self, gfalObject, method ):
+  def __gfal_exec( self, gfalObject, method, timeout_sendreceive = None ):
+    """
+      In gfal, for every method (synchronous or asynchronous), you can define a sendreceive timeout and a connect timeout.
+      The connect timeout sets the maximum amount of time a client accepts to wait before establishing a successful TCP connection to SRM (default 60 seconds).
+      The sendreceive timeout, allows a client to set the maximum time the send
+      of a request to SRM can take (normally all send operations return immediately unless there is no free TCP buffer) 
+      and the maximum time to receive a reply (a token for example). Default 0, i.e. no timeout.
+      The srm timeout for asynchronous requests default to 3600 seconds
+    
+      gfal_set_timeout_connect (int value)
+
+      gfal_set_timeout_sendreceive (int value)
+
+      gfal_set_timeout_bdii (int value)
+
+      gfal_set_timeout_srm (int value)
+      
+    """
     gLogger.debug( "SRM2Storage.__gfal_exec: Performing %s." % method )
     execString = "errCode,gfalObject,errMessage = self.gfal.%s(gfalObject)" % method
     try:
+      if timeout_sendreceive:
+        # For asynchronous methods this timeout defines how long the connection to set the 
+        # request can take
+        self.gfal.gfal_set_timeout_sendreceive( timeout_sendreceive )
       exec( execString )
       if not errCode == 0:
         errStr = "SRM2Storage.__gfal_exec: Failed to perform %s." % method

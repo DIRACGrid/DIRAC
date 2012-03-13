@@ -22,6 +22,7 @@ class Params:
   steps = False
   checkValid = False
   checkClock = True
+  uploadedInfo = False
 
   def showVersion( self, arg ):
     print "Version:"
@@ -57,6 +58,10 @@ class Params:
     self.checkClock = False
     return DIRAC.S_OK()
 
+  def setManagerInfo( self, arg ):
+    self.uploadedInfo = True
+    return DIRAC.S_OK()
+
 params = Params()
 
 Script.registerSwitch( "f:", "file=", "File to use as user key", params.setProxyLocation )
@@ -66,6 +71,7 @@ Script.registerSwitch( "v", "checkvalid", "Return error if the proxy is invalid"
 Script.registerSwitch( "x", "nocs", "Disable CS", params.disableCS )
 Script.registerSwitch( "e", "steps", "Show steps info", params.showSteps )
 Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck )
+Script.registerSwitch( "m", "uploadedinto", "Show uploaded proxies info", params.setManagerInfo )
 
 Script.disableCS()
 Script.parseCommandLine()
@@ -75,37 +81,63 @@ if params.csEnabled:
   if not retVal[ 'OK' ]:
     print "Cannot contact CS to get user list"
 
-from DIRAC.Core.Security.Misc import *
-from DIRAC.Core.Security import CS, VOMS
+from DIRAC import gLogger
+from DIRAC.Core.Security.ProxyInfo import *
+from DIRAC.Core.Security import VOMS
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 if params.checkClock:
   result = getClockDeviation()
   if result[ 'OK' ]:
     deviation = result[ 'Value' ]
     if deviation > 600:
-      print "Error: Your host clock seems to be off by more than TEN MINUTES! Thats really bad."
+      gLogger.error( "Your host clock seems to be off by more than TEN MINUTES! Thats really bad." )
     elif deviation > 180:
-      print "Error: Your host clock seems to be off by more than THREE minutes! Thats bad."
+      gLogger.error( "Your host clock seems to be off by more than THREE minutes! Thats bad." )
     elif deviation > 60:
-      print "Error: Your host clock seems to be off by more than a minute! Thats not good."
+      gLogger.error( "Your host clock seems to be off by more than a minute! Thats not good." )
 
 
 result = getProxyInfo( params.proxyLoc, not params.vomsEnabled )
 if not result[ 'OK' ]:
-  print "Error: %s" % result[ 'Message' ]
+  gLogger.error( result[ 'Message' ] )
   sys.exit( 1 )
 infoDict = result[ 'Value' ]
-print formatProxyInfoAsString( infoDict )
+gLogger.notice( formatProxyInfoAsString( infoDict ) )
 
 if params.steps:
-  print "== Steps extended info =="
+  gLogger.notice( "== Steps extended info ==" )
   chain = infoDict[ 'chain' ]
   stepInfo = getProxyStepsInfo( chain )[ 'Value' ]
-  print formatProxyStepsInfoAsString( stepInfo )
+  gLogger.notice( formatProxyStepsInfoAsString( stepInfo ) )
 
 def invalidProxy( msg ):
-  print "[INVALID] %s" % msg
+  gLogger.error( "Invalid proxy:", msg )
   sys.exit( 1 )
+
+if params.uploadedInfo:
+  result = gProxyManager.getUserProxiesInfo()
+  if not result[ 'OK' ]:
+    gLogger.error( "Could not retrieve the uploaded proxies info", result[ 'Message' ] )
+  else:
+    uploadedInfo = result[ 'Value' ]
+    if not uploadedInfo:
+      gLogger.notice( "== No proxies uploaded ==" )
+    if uploadedInfo:
+      gLogger.notice( "== Proxies uploaded ==" )
+      maxDNLen = 0
+      maxGroupLen = 0
+      for userDN in uploadedInfo:
+        maxDNLen = max( maxDNLen, len( userDN ) )
+        for group in uploadedInfo[ userDN ]:
+          maxGroupLen = max( maxGroupLen, len( group ) )
+      gLogger.notice( " %s | %s | Until (GMT)" % ( "DN".ljust( maxDNLen ), "Group".ljust( maxGroupLen ) ) )
+      for userDN in uploadedInfo:
+        for group in uploadedInfo[ userDN ]:
+          gLogger.notice( " %s | %s | %s" % ( userDN.ljust( maxDNLen ),
+                                                  group.ljust( maxGroupLen ),
+                                                  uploadedInfo[ userDN ][ group ].strftime( "%Y/%m/%d %H:%M" ) ) )
 
 if params.checkValid:
   if infoDict[ 'secondsLeft' ] == 0:
@@ -113,7 +145,7 @@ if params.checkValid:
   if params.csEnabled and not infoDict[ 'validGroup' ]:
     invalidProxy( "Group %s is not valid" % infoDict[ 'group' ] )
   if 'hasVOMS' in infoDict and infoDict[ 'hasVOMS' ]:
-    requiredVOMS = CS.getVOMSAttributeForGroup( infoDict[ 'group' ] )
+    requiredVOMS = Registry.getVOMSAttributeForGroup( infoDict[ 'group' ] )
     if 'VOMS' not in infoDict or not infoDict[ 'VOMS' ]:
       invalidProxy( "Unable to retrieve VOMS extension" )
     if len( infoDict[ 'VOMS' ] ) > 1:

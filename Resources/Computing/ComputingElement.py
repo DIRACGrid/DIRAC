@@ -10,12 +10,18 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
-from DIRAC.ConfigurationSystem.Client.Config        import gConfig
-from DIRAC.Core.Security                            import File
-from DIRAC.Core.Security.Misc                       import getProxyInfoAsString
-from DIRAC.Core.Utilities.Time                      import dateTime, second
-from DIRAC                                          import S_OK, S_ERROR, gLogger, version
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight        import *
+from DIRAC.ConfigurationSystem.Client.Config          import gConfig
+from DIRAC.Core.Security                              import File
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfoAsString
+from DIRAC.Core.Security.ProxyInfo                    import formatProxyInfoAsString
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
+from DIRAC.Core.Security.VOMS                         import VOMS
+from DIRAC.Core.Security                              import CS
+from DIRAC.Core.Security                              import Properties
+from DIRAC.Core.Utilities.Time                        import dateTime, second
+from DIRAC                                            import S_OK, S_ERROR, gLogger, version
 
 import os, re, string
 
@@ -40,6 +46,10 @@ class ComputingElement:
     self.ceParameters = {}
     self.proxy = ''
     self.valid = None
+
+    self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
+    self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 ) #secs
+    self.proxyCheckPeriod = gConfig.getValue( '/Registry/ProxyCheckingPeriod', 3600 ) #secs
 
     self.ceConfigDict = getLocalCEConfigDict( ceName )
     self.initializeParameters()
@@ -360,6 +370,91 @@ class ComputingElement:
       print result['Value']
 
     return S_OK( proxyLocation )
+
+  #############################################################################
+  def _monitorProxy( self, pilotProxy, payloadProxy ):
+    """Base class for the monitor and update of the payload proxy, to be used in
+      derived classes for the basic renewal of the proxy, if further actions are 
+      necessary they should be implemented there
+    """
+    retVal = getProxyInfo( payloadProxy )
+    if not retVal['OK']:
+      self.log.error( 'Could not get payload proxy info', retVal )
+      return retVal
+    self.log.verbose( 'Payload Proxy information:\n%s' % formatProxyInfoAsString( retVal['Value'] ) )
+
+    payloadProxyDict = retVal['Value']
+    payloadSecs = payloadProxyDict[ 'chain' ].getRemainingSecs()[ 'Value' ]
+    if payloadSecs > self.minProxyTime:
+      self.log.verbose( 'No need to renew payload Proxy' )
+      return S_OK()
+
+    # if there is no pilot proxy, assume there is a certificate and try a renewal
+    if not pilotProxy:
+      self.log.info( 'Using default credentials to get a new payload Proxy' )
+      return gProxyManager.renewProxy( proxyToBeRenewed = payloadProxy, minLifeTime = self.minProxyTime,
+                                       newProxyLifeTime = self.defaultProxyTime,
+                                       proxyToConnect = pilotProxy )
+
+    # if there is pilot proxy 
+    retVal = getProxyInfo( pilotProxy, disableVOMS = True )
+    if not retVal['OK']:
+      return retVal
+    pilotProxyDict = retVal['Value']
+
+    if not 'groupProperties' in pilotProxyDict:
+      self.log.error( 'Invalid Pilot Proxy', 'Group has no properties defined' )
+      return S_ERROR( 'Proxy has no group properties defined' )
+
+
+    pilotProps = pilotProxyDict['groupProperties']
+
+    # if running with a pilot proxy, use it to renew the proxy of the payload
+    if Properties.PILOT in pilotProps or Properties.GENERIC_PILOT in pilotProps:
+      self.log.info( 'Using Pilot credentials to get a new payload Proxy' )
+      return gProxyManager.renewProxy( proxyToBeRenewed = payloadProxy, minLifeTime = self.minProxyTime,
+                                       newProxyLifeTime = self.defaultProxyTime,
+                                       proxyToConnect = pilotProxy )
+
+    # if we are running with other type of proxy check if they are for the same user and group
+    # and copy the pilot proxy if necessary
+
+    self.log.info( 'Trying to copy pilot Proxy to get a new payload Proxy' )
+    pilotProxySecs = pilotProxyDict[ 'chain' ].getRemainingSecs()[ 'Value' ]
+    if pilotProxySecs <= payloadSecs:
+      errorStr = 'Pilot Proxy is not longer than payload Proxy'
+      self.log.error( errorStr )
+      return S_ERROR( 'Can not renew by copy: %s' % errorStr )
+
+    # check if both proxies belong to the same user and group
+    pilotDN = pilotProxyDict[ 'chain' ].getIssuerCert()[ 'Value' ].getSubjectDN()[ 'Value' ]
+    retVal = pilotProxyDict[ 'chain' ].getDIRACGroup()
+    if not retVal[ 'OK' ]:
+      return retVal
+    pilotGroup = retVal[ 'Value' ]
+
+    payloadDN = payloadProxyDict[ 'chain' ].getIssuerCert()[ 'Value' ].getSubjectDN()[ 'Value' ]
+    retVal = payloadProxyDict[ 'chain' ].getDIRACGroup()
+    if not retVal[ 'OK' ]:
+      return retVal
+    payloadGroup = retVal[ 'Value' ]
+    if pilotDN != payloadDN or pilotGroup != payloadGroup:
+      errorStr = 'Pilot Proxy and payload Proxy do not have same DN and Group'
+      self.log.error( errorStr )
+      return S_ERROR( 'Can not renew by copy: %s' % errorStr )
+
+    if not 'hasVOMS' in payloadProxyDict or not payloadProxyDict[ 'hasVOMS' ]:
+      return pilotProxyDict[ 'chain' ].dumpAllToFile( payloadProxy )
+
+    attribute = CS.getVOMSAttributeForGroup( payloadGroup )
+    vo = CS.getVOMSVOForGroup( payloadGroup )
+
+    retVal = VOMS().setVOMSAttributes( pilotProxyDict[ 'chain' ], attribute = attribute, vo = vo )
+    if not retVal['OK']:
+      return retVal
+
+    chain = retVal['Value']
+    return chain.dumpAllToFile( payloadProxy )
 
   #############################################################################
   def getJDL( self ):

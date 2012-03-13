@@ -34,20 +34,21 @@ Script.initialize()
 
 __RCSID__ = "$Id$"
 
-import string, re, os, time, shutil, types, copy
+import re, os, types
 
-from DIRAC.Core.Workflow.Parameter                  import *
-from DIRAC.Core.Workflow.Module                     import *
-from DIRAC.Core.Workflow.Step                       import *
-from DIRAC.Core.Workflow.Workflow                   import *
-from DIRAC.Core.Workflow.WorkflowReader             import *
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
-from DIRAC.ConfigurationSystem.Client.Config        import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers       import getVO
-from DIRAC.Core.Utilities.Subprocess                import shellCall
-from DIRAC.Core.Utilities.List                      import uniqueElements
-from DIRAC.Core.Utilities.SiteCEMapping             import getSiteForCE, getSiteCEMapping
-from DIRAC                                          import gLogger
+from DIRAC.Core.Workflow.Parameter                            import *
+from DIRAC.Core.Workflow.Module                               import *
+from DIRAC.Core.Workflow.Step                                 import *
+from DIRAC.Core.Workflow.Workflow                             import *
+from DIRAC.Core.Workflow.WorkflowReader                       import *
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight                import ClassAd
+from DIRAC.ConfigurationSystem.Client.Config                  import gConfig
+from DIRAC.Core.Security.ProxyInfo                            import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGroup
+from DIRAC.Core.Utilities.Subprocess                          import shellCall
+from DIRAC.Core.Utilities.List                                import uniqueElements
+from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
+from DIRAC                                                    import gLogger
 
 COMPONENT_NAME = '/Interfaces/API/Job'
 
@@ -70,7 +71,11 @@ class Job:
     self.name = 'Name'
     self.type = 'User'
     self.priority = 1
-    self.group = getVO( 'lhcb' )
+    vo = ''
+    ret = getProxyInfo( disableVOMS = True )
+    if ret['OK'] and 'group' in ret['Value']:
+      vo = getVOForGroup( ret['Value']['group'] )
+    self.group = vo
     self.site = 'ANY' #ANY
     #self.setup = 'Development'
     self.origin = 'DIRAC'
@@ -127,7 +132,8 @@ class Job:
        @type logFile: string
     """
     kwargs = {'executable':executable, 'arguments':arguments, 'logFile':logFile}
-    if not type( executable ) == type( ' ' ) or not type( arguments ) == type( ' ' ) or not type( logFile ) == type( ' ' ):
+    if not type( executable ) == type( ' ' ) or not type( arguments ) == type( ' ' ) or \
+       not type( logFile ) == type( ' ' ):
       return self._reportError( 'Expected strings for executable and arguments', **kwargs )
 
     if os.path.exists( executable ):
@@ -216,13 +222,13 @@ class Job:
     """
     if type( files ) == list and len( files ):
       resolvedFiles = self._resolveInputSandbox( files )
-      fileList = string.join( resolvedFiles, ";" )
+      fileList = ';'.join( resolvedFiles )
       description = 'Input sandbox file list'
       self._addParameter( self.workflow, 'InputSandbox', 'JDL', fileList, description )
       #self.sandboxFiles=resolvedFiles
     elif type( files ) == type( " " ):
       resolvedFiles = self._resolveInputSandbox( [files] )
-      fileList = string.join( resolvedFiles, ";" )
+      fileList = ';'.join( resolvedFiles )
       description = 'Input sandbox file'
       #self.sandboxFiles = [files]
       self._addParameter( self.workflow, 'InputSandbox', 'JDL', fileList, description )
@@ -249,23 +255,23 @@ class Job:
     """
     kwargs = {'files':files}
     if type( files ) == list and len( files ):
-      for file in files:
-        if not file.lower().count("lfn:"):
-          return self._reportError('All files should be LFNs', **kwargs )
+      for fileName in files:
+        if not fileName.lower().count( "lfn:" ):
+          return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( files )
-      fileList = string.join( resolvedFiles, ";" )
-      self.parametric['InputSandbox']=fileList
+      fileList = ";".join( resolvedFiles )
+      self.parametric['InputSandbox'] = fileList
       #self.sandboxFiles=resolvedFiles
     elif type( files ) == type( " " ):
-      if not files.lower().count("lfn:"):
-        return self._reportError('All files should be LFNs', **kwargs )
+      if not files.lower().count( "lfn:" ):
+        return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( [files] )
-      fileList = string.join( resolvedFiles, ";" )
-      self.parametric['InputSandbox']=fileList
+      fileList = ";".join( resolvedFiles )
+      self.parametric['InputSandbox'] = fileList
       #self.sandboxFiles = [files]
     else:
       return self._reportError( 'Expected file string or list of files for input sandbox contents', **kwargs )
-    
+
     return S_OK()
 
   #############################################################################
@@ -286,7 +292,7 @@ class Job:
 
     """
     if type( files ) == list and len( files ):
-      fileList = string.join( files, ";" )
+      fileList = ';'.join( files )
       description = 'Output sandbox file list'
       self._addParameter( self.workflow, 'OutputSandbox', 'JDL', fileList, description )
     elif type( files ) == type( " " ):
@@ -316,7 +322,7 @@ class Job:
       for i in xrange( len( lfns ) ):
         lfns[i] = lfns[i].replace( 'LFN:', '' )
       inputData = map( lambda x: 'LFN:' + x, lfns )
-      inputDataStr = string.join( inputData, ';' )
+      inputDataStr = ';'.join( inputData )
       description = 'List of input data specified by LFNs'
       self._addParameter( self.workflow, 'InputData', 'JDL', inputDataStr, description )
     elif type( lfns ) == type( ' ' ):  #single LFN
@@ -327,7 +333,7 @@ class Job:
       return self._reportError( 'Expected lfn string or list of lfns for input data', **kwargs )
 
     return S_OK()
-  
+
   #############################################################################
   def setParametricInputData( self, lfns ):
     """Helper function.
@@ -346,14 +352,31 @@ class Job:
       for i in xrange( len( lfns ) ):
         lfns[i] = lfns[i].replace( 'LFN:', '' )
       inputData = map( lambda x: 'LFN:' + x, lfns )
-      inputDataStr = string.join( inputData, ';' )
-      self.parametric['InputData']=inputDataStr
+      inputDataStr = ';'.join( inputData )
+      self.parametric['InputData'] = inputDataStr
     elif type( lfns ) == type( ' ' ):  #single LFN
-      self.parametric['InputData']=lfns
+      self.parametric['InputData'] = lfns
     else:
       kwargs = {'lfns':lfns}
       return self._reportError( 'Expected lfn string or list of lfns for parametric input data', **kwargs )
+
+    return S_OK()
+
+  #############################################################################  
+  def setGenericParametricInput(self, inputlist):
+    """ Helper function
     
+       Define a generic parametric job with this function. Should not be used when 
+       the ParametricInputData of ParametricInputSandbox are used.
+       
+       @param inputlist: Input list of parameters to build the parametric job
+       @type inputlist: list
+    
+    """
+    kwargs = {'inputlist':inputlist}
+    if not type( inputlist ) == type( [] ):
+      return self._reportError( 'Expected list for parameters', **kwargs )
+    self.parametric['GenericParameters'] = inputlist
     return S_OK()
   
   #############################################################################
@@ -376,16 +399,18 @@ class Job:
     csSection = '/Operations/InputDataPolicy'
     possible = ['Download', 'Protocol']
     finalPolicy = ''
-    for p in possible:
-      if string.lower( policy ) == string.lower( p ):
-        finalPolicy = p
+    for value in possible:
+      if policy.lower() == value.lower():
+        finalPolicy = value
 
     if not finalPolicy:
-      return self._reportError( 'Expected one of %s for input data policy' % ( string.join( possible, ', ' ) ), __name__, **kwargs )
+      return self._reportError( 'Expected one of %s for input data policy' % ( ', '.join( possible ) ),
+                                __name__, **kwargs )
 
     jobPolicy = gConfig.getValue( '%s/%s' % ( csSection, finalPolicy ), '' )
     if not jobPolicy:
-      return self._reportError( 'Could not get value for CS option %s/%s' % ( csSection, finalPolicy ), __name__, **kwargs )
+      return self._reportError( 'Could not get value for CS option %s/%s' % ( csSection, finalPolicy ),
+                                __name__, **kwargs )
 
     description = 'User specified input data policy'
     self._addParameter( self.workflow, 'InputDataPolicy', 'JDL', jobPolicy, description )
@@ -396,12 +421,13 @@ class Job:
 
     if not dataScheduling and policy.lower() != 'download':
       self.log.error( 'Expected policy to be "download" for bypassing data scheduling' )
-      return self._reportError( 'Expected policy to be "download" for bypassing data scheduling', __name__, **kwargs )
+      return self._reportError( 'Expected policy to be "download" for bypassing data scheduling',
+                                __name__, **kwargs )
 
     return S_OK()
 
   #############################################################################
-  def setOutputData( self, lfns, OutputSE = [], OutputPath = '' ):
+  def setOutputData( self, lfns, outputSE = None, outputPath = '' ):
     """Helper function.
 
        For specifying output data to be registered in Grid storage.  If a list
@@ -417,15 +443,17 @@ class Job:
 
        @param lfns: Output data file or files
        @type lfns: Single string or list of strings ['','']
-       @param OutputSE: Optional parameter to specify the Storage Element
-       @param OutputPath: Optional parameter to specify part of the path in the storage (see above)
+       @param outputSE: Optional parameter to specify the Storage Element
+       @param outputPath: Optional parameter to specify part of the path in the storage (see above)
        Element to store data or files, e.g. CERN-tape
-       @type OutputSE: string or list
-       @type OutputPath: string
+       @type outputSE: string or list
+       @type outputPath: string
     """
-    kwargs = {'lfns':lfns, 'OutputSE':OutputSE, 'OutputPath':OutputPath}
+    if outputSE == None:
+      outputSE = []
+    kwargs = {'lfns':lfns, 'OutputSE':outputSE, 'OutputPath':outputPath}
     if type( lfns ) == list and len( lfns ):
-      outputDataStr = string.join( lfns, ';' )
+      outputDataStr = ';'.join( lfns )
       description = 'List of output data files'
       self._addParameter( self.workflow, 'OutputData', 'JDL', outputDataStr, description )
     elif type( lfns ) == type( " " ):
@@ -434,22 +462,24 @@ class Job:
     else:
       return self._reportError( 'Expected file name string or list of file names for output data', **kwargs )
 
-    if OutputSE:
+    if outputSE:
       description = 'User specified Output SE'
-      if type( OutputSE ) in types.StringTypes:
-        OutputSE = [OutputSE]
-      elif type( OutputSE ) != types.ListType:
+      if type( outputSE ) in types.StringTypes:
+        outputSE = [outputSE]
+      elif type( outputSE ) != types.ListType:
         return self._reportError( 'Expected string or list for OutputSE', **kwargs )
-      OutputSE = ';'.join( OutputSE )
-      self._addParameter( self.workflow, 'OutputSE', 'JDL', OutputSE, description )
+      outputSE = ';'.join( outputSE )
+      self._addParameter( self.workflow, 'OutputSE', 'JDL', outputSE, description )
 
-    if OutputPath:
+    if outputPath:
       description = 'User specified Output Path'
-      if not type( OutputPath ) in types.StringTypes:
+      if not type( outputPath ) in types.StringTypes:
         return self._reportError( 'Expected string for OutputPath', **kwargs )
       # Remove leading "/" that might cause problems with os.path.join
-      while OutputPath[0] == '/': OutputPath = OutputPath[1:]
-      self._addParameter( self.workflow, 'OutputPath', 'JDL', OutputPath, description )
+      # FIXME: this will prevent to set OutputPath outside the Home of the User
+      while outputPath[0] == '/':
+        outputPath = outputPath[1:]
+      self._addParameter( self.workflow, 'OutputPath', 'JDL', outputPath, description )
 
     return S_OK()
 
@@ -513,7 +543,7 @@ class Job:
     if not type( timeInSecs ) == int:
       try:
         timeInSecs = int( timeInSecs )
-      except Exception, x:
+      except Exception:
         if not re.search( '{{', timeInSecs ):
           return self._reportError( 'Expected numerical string or int for CPU time in seconds', **kwargs )
 
@@ -551,7 +581,7 @@ class Job:
           result = self.__checkSiteIsValid( site )
           if not result['OK']:
             return self._reportError( '%s is not a valid destination site' % ( destination ), **kwargs )
-      destSites = string.join( destination, ';' )
+      destSites = ';'.join( destination )
       description = 'List of sites selected by user'
       self._addParameter( self.workflow, 'Site', 'JDLReqt', destSites, description )
     else:
@@ -580,9 +610,9 @@ class Job:
     kwargs = {'ceName':ceName}
     diracSite = getSiteForCE( ceName )
     if not diracSite['OK']:
-      return self.__reportError( diracSite['Message'], **kwargs )
+      return self._reportError( diracSite['Message'], **kwargs )
     if not diracSite['Value']:
-      return self.__reportErrror( 'No DIRAC site name found for CE %s' % ( ceName ), **kwargs )
+      return self._reportError( 'No DIRAC site name found for CE %s' % ( ceName ), **kwargs )
 
     diracSite = diracSite['Value']
     self.setDestination( diracSite )
@@ -606,7 +636,7 @@ class Job:
        @type sites: string or list
     """
     if type( sites ) == list and len( sites ):
-      bannedSites = string.join( sites, ';' )
+      bannedSites = ';'.join( sites )
       description = 'List of sites excluded by user'
       self._addParameter( self.workflow, 'BannedSites', 'JDLReqt', bannedSites, description )
     elif type( sites ) == type( " " ):
@@ -673,7 +703,7 @@ class Job:
     if type( tags ) == type( " " ):
       self._addParameter( self.workflow, 'SoftwareTag', 'JDL', tags, 'VO software tag' )
     elif type( tags ) == list:
-      swTags = string.join( tags, ';' )
+      swTags = ';'.join( tags )
       self._addParameter( self.workflow, 'SoftwareTag', 'JDL', swTags, 'List of VO software tags' )
     else:
       kwargs = {'tags':tags}
@@ -777,7 +807,7 @@ class Job:
        Example usage:
 
        >>> job = Job()
-       >>> job.setExecutionEnviroment({'<MYVARIABLE>':'<VALUE>'})
+       >>> job.setExecutionEnv({'<MYVARIABLE>':'<VALUE>'})
 
        @param environmentDict: Environment variables
        @type environmentDict: dictionary
@@ -789,11 +819,11 @@ class Job:
     environment = []
     for var, val in environmentDict.items():
       try:
-        environment.append( string.join( [str( var ), str( val )], '=' ) )
-      except Exception, x:
+        environment.append( '='.join( [str( var ), str( val )] ) )
+      except Exception:
         return self._reportError( 'Expected string for environment variable key value pairs', **kwargs )
 
-    envStr = string.join( environment, ';' )
+    envStr = ';'.join( environment )
     description = 'Env vars specified by user'
     self._addParameter( self.workflow, 'ExecutionEnvironment', 'JDL', envStr, description )
     return S_OK()
@@ -815,8 +845,9 @@ class Job:
   def execute( self ):
     """Developer function. Executes the job locally.
     """
-    code = self.createCode()
-    #eval(compile(code,'<string>','exec'))
+    self.createCode()
+    # code = self.createCode()
+    # eval(compile(code,'<string>','exec'))
     self.workflow.execute()
 
   #############################################################################
@@ -826,8 +857,8 @@ class Job:
     """
     wfParams = {}
     params = self.workflow.parameters
-    for p in params:
-      wfParams[p.getName()] = p.getValue()
+    for par in params:
+      wfParams[par.getName()] = par.getValue()
     return wfParams
 
   #############################################################################
@@ -862,7 +893,7 @@ class Job:
     """
     self._addParameter( self.workflow, 'JobType', 'JDL', self.type, 'Job Type' )
     self._addParameter( self.workflow, 'Priority', 'JDL', self.priority, 'User Job Priority' )
-    self._addParameter( self.workflow, 'JobGroup', 'JDL', self.group, 'Corresponding VOMS role' )
+    self._addParameter( self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup' )
     self._addParameter( self.workflow, 'JobName', 'JDL', self.name, 'Name of Job' )
     #self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
     self._addParameter( self.workflow, 'SystemConfig', 'JDLReqt', self.systemConfig, 'System configuration for job' )
@@ -873,11 +904,15 @@ class Job:
     self._addParameter( self.workflow, 'InputData', 'JDL', '', 'Default null input data value' )
     self._addParameter( self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level' )
     #Those 2 below are need for on-site resolution
-    self._addParameter( self.workflow, 'ParametricInputData', 'JDL', '', 'Default null parametric input data value' )
-    self._addParameter( self.workflow, 'ParametricInputSandbox', 'JDL', '', 'Default null parametric input sandbox value' )
+    self._addParameter( self.workflow, 'ParametricInputData', 'JDL', '',
+                        'Default null parametric input data value' )
+    self._addParameter( self.workflow, 'ParametricInputSandbox', 'JDL', '',
+                        'Default null parametric input sandbox value' )
+    self._addParameter( self.workflow, 'ParametricParameters', 'JDL', '', 
+                        'Default null parametric input parameters value' )
 
   #############################################################################
-  def _addParameter( self, object, name, ptype, value, description, io = 'input' ):
+  def _addParameter( self, wObject, name, ptype, value, description, io = 'input' ):
     """ Internal Function
 
         Adds a parameter to the object.
@@ -891,9 +926,9 @@ class Job:
     else:
       raise TypeError, 'I/O flag is either input or output'
 
-    p = Parameter( name, value, ptype, "", "", inBool, outBool, description )
-    object.addParameter( Parameter( parameter = p ) )
-    return p
+    par = Parameter( name, value, ptype, "", "", inBool, outBool, description )
+    wObject.addParameter( Parameter( parameter = par ) )
+    return par
 
   ############################################################################
   def _resolveInputSandbox( self, inputSandbox ):
@@ -908,14 +943,14 @@ class Job:
         if not os.path.isdir( i ):
           resolvedIS.append( i )
 
-    for f in inputSandbox:
-      if re.search( '\*', f ): #escape the star character...
-        cmd = 'ls -d ' + f
+    for name in inputSandbox:
+      if re.search( '\*', name ): #escape the star character...
+        cmd = 'ls -d ' + name
         output = shellCall( 10, cmd )
         if not output['OK']:
           self.log.error( 'Could not perform: %s' % ( cmd ) )
         else:
-          files = string.split( output['Value'] )
+          files = output['Value'].split()
           for check in files:
             if os.path.isfile( check ):
               self.log.verbose( 'Found file ' + check + ' appending to Input Sandbox' )
@@ -936,12 +971,12 @@ class Job:
               resolvedIS.append( tarname + '.tar.gz' )
               self.log.verbose( 'Found directory ' + check + ', appending ' + check + '.tar.gz to Input Sandbox' )
 
-      if os.path.isdir( f ):
-        self.log.verbose( 'Found specified directory ' + f + ', appending ' + f + '.tar.gz to Input Sandbox' )
-        if re.search( '/$', f ): #users can specify e.g. /my/dir/lib/
-          f = f[:-1]
-        tarname = os.path.basename( f )
-        directory = os.path.dirname( f ) #if just the directory this is null
+      if os.path.isdir( name ):
+        self.log.verbose( 'Found specified directory ' + name + ', appending ' + name + '.tar.gz to Input Sandbox' )
+        if re.search( '/$', name ): #users can specify e.g. /my/dir/lib/
+          name = name[:-1]
+        tarname = os.path.basename( name )
+        directory = os.path.dirname( name ) #if just the directory this is null
         if directory:
           cmd = 'tar cfz ' + tarname + '.tar.gz ' + ' -C ' + directory + ' ' + tarname
         else:
@@ -1039,41 +1074,41 @@ class Job:
 
     #To add any additional files to input and output sandboxes
     if self.addToInputSandbox:
-      extraFiles = string.join( self.addToInputSandbox, ';' )
+      extraFiles = ';'.join( self.addToInputSandbox )
       if paramsDict.has_key( 'InputSandbox' ):
         currentFiles = paramsDict['InputSandbox']['value']
         finalInputSandbox = currentFiles + ';' + extraFiles
         uniqueInputSandbox = uniqueElements( finalInputSandbox.split( ';' ) )
-        paramsDict['InputSandbox']['value'] = string.join( uniqueInputSandbox, ';' )
-        self.log.verbose( 'Final unique Input Sandbox %s' % ( string.join( uniqueInputSandbox, ';' ) ) )
+        paramsDict['InputSandbox']['value'] = ';'.join( uniqueInputSandbox )
+        self.log.verbose( 'Final unique Input Sandbox %s' % ( ';'.join( uniqueInputSandbox ) ) )
       else:
         paramsDict['InputSandbox'] = {}
         paramsDict['InputSandbox']['value'] = extraFiles
         paramsDict['InputSandbox']['type'] = 'JDL'
 
     if self.addToOutputSandbox:
-      extraFiles = string.join( self.addToOutputSandbox, ';' )
+      extraFiles = ';'.join( self.addToOutputSandbox )
       if paramsDict.has_key( 'OutputSandbox' ):
         currentFiles = paramsDict['OutputSandbox']['value']
         finalOutputSandbox = currentFiles + ';' + extraFiles
         uniqueOutputSandbox = uniqueElements( finalOutputSandbox.split( ';' ) )
-        paramsDict['OutputSandbox']['value'] = string.join( uniqueOutputSandbox, ';' )
-        self.log.verbose( 'Final unique Output Sandbox %s' % ( string.join( uniqueOutputSandbox, ';' ) ) )
+        paramsDict['OutputSandbox']['value'] = ';'.join( uniqueOutputSandbox )
+        self.log.verbose( 'Final unique Output Sandbox %s' % ( ';'.join( uniqueOutputSandbox ) ) )
       else:
         paramsDict['OutputSandbox'] = {}
         paramsDict['OutputSandbox']['value'] = extraFiles
         paramsDict['OutputSandbox']['type'] = 'JDL'
 
     if self.addToInputData:
-      extraFiles = string.join( self.addToInputData, ';' )
+      extraFiles = ';'.join( self.addToInputData )
       if paramsDict.has_key( 'InputData' ):
         currentFiles = paramsDict['InputData']['value']
         finalInputData = extraFiles
         if currentFiles:
           finalInputData = currentFiles + ';' + extraFiles
         uniqueInputData = uniqueElements( finalInputData.split( ';' ) )
-        paramsDict['InputData']['value'] = string.join( uniqueInputData, ';' )
-        self.log.verbose( 'Final unique Input Data %s' % ( string.join( uniqueInputData, ';' ) ) )
+        paramsDict['InputData']['value'] = ';'.join( uniqueInputData )
+        self.log.verbose( 'Final unique Input Data %s' % ( ';'.join( uniqueInputData ) ) )
       else:
         paramsDict['InputData'] = {}
         paramsDict['InputData']['value'] = extraFiles
@@ -1081,20 +1116,20 @@ class Job:
 
     ###Here handle the Parametric values
     if self.parametric:
-      if self.parametric.has_key('InputData'):
-        if paramsDict.has_key('InputData'):
+      if self.parametric.has_key( 'InputData' ):
+        if paramsDict.has_key( 'InputData' ):
           if paramsDict['InputData']['value']:
-            currentFiles = paramsDict['InputData']['value']+";%s"
-            paramsDict['InputData']['value'] =currentFiles
+            currentFiles = paramsDict['InputData']['value'] + ";%s"
+            paramsDict['InputData']['value'] = currentFiles
           else:
             paramsDict['InputData'] = {}
             paramsDict['InputData']['value'] = "%s"
             paramsDict['InputData']['type'] = 'JDL'
-        self.parametric['files']=  self.parametric['InputData']
-        arguments.append(' -p ParametricInputData=%s')
-      elif self.parametric.has_key('InputSandbox'):
+        self.parametric['files'] = self.parametric['InputData']
+        arguments.append( ' -p ParametricInputData=%s' )
+      elif self.parametric.has_key( 'InputSandbox' ):
         if paramsDict.has_key( 'InputSandbox' ):
-          currentFiles = paramsDict['InputSandbox']['value']+";%s"
+          currentFiles = paramsDict['InputSandbox']['value'] + ";%s"
           paramsDict['InputSandbox']['value'] = currentFiles
         else:
           paramsDict['InputSandbox'] = {}
@@ -1104,17 +1139,21 @@ class Job:
         arguments.append(' -p ParametricInputSandbox=%s')
       if self.parametric.has_key('files'):   
         paramsDict['Parameters']={}
-        paramsDict['Parameters']['value']=self.parametric['files']
+        paramsDict['Parameters']['value']=";".join(self.parametric['files'])
         paramsDict['Parameters']['type'] = 'JDL'
-
+      if self.parametric.has_key('GenericParameters'):
+        paramsDict['Parameters']={}
+        paramsDict['Parameters']['value']=";".join(self.parametric['GenericParameters'])
+        paramsDict['Parameters']['type'] = 'JDL'
+        arguments.append(' -p ParametricParameters=%s')
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
-    classadJob.insertAttributeString( 'Arguments', string.join( arguments, ' ' ) )
+    classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
     #Add any JDL parameters to classad obeying lists with ';' rule
     requirements = False
     for name, props in paramsDict.items():
-      ptype = paramsDict[name]['type']
-      value = paramsDict[name]['value']
+      ptype = props['type']
+      value = props['value']
       if name.lower() == 'requirements' and ptype == 'JDL':
         self.log.verbose( 'Found existing requirements: %s' % ( value ) )
         requirements = True
@@ -1123,7 +1162,7 @@ class Job:
         if not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
           classadJob.insertAttributeString( name, value )
         else:
-          classadJob.insertAttributeVectorString( name, string.split( value, ';' ) )
+          classadJob.insertAttributeVectorString( name, value.split( ';' ) )
 
     if not requirements:
       reqtsDict = self.reqParams
@@ -1153,8 +1192,8 @@ class Job:
     self.addToOutputSandbox.remove( self.stdout )
     self.addToOutputSandbox.remove( self.stderr )
     jdl = classadJob.asJDL()
-    start = string.find( jdl, '[' )
-    end = string.rfind( jdl, ']' )
+    start = jdl.find( '[' )
+    end = jdl.rfind( ']' )
     return jdl[( start + 1 ):( end - 1 )]
 
   #############################################################################
@@ -1191,7 +1230,8 @@ class Job:
     for key in kwargs:
       if kwargs[key]:
         arguments.append( '%s = %s ( %s )' % ( key, kwargs[key], type( kwargs[key] ) ) )
-    finalReport = 'Problem with %s.%s() call:\nArguments: %s\nMessage: %s\n' % ( className, methodName, string.join( arguments, ', ' ), message )
+    finalReport = 'Problem with %s.%s() call:\nArguments: %s\nMessage: %s\n' % ( className, methodName,
+                                                                                 ', '.join( arguments ), message )
     if self.errorDict.has_key( methodName ):
       tmp = self.errorDict[methodName]
       tmp.append( finalReport )

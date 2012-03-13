@@ -9,12 +9,12 @@ from datetime import datetime, timedelta
 from xml.dom import minidom
 import socket
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR, gLogger
 
 def _parseSingleElement( element, attributes = None ):
   """
-  Given a minidom element, return a dictionary of its 
-  child elements and values (as strings). 
+  Given a DOM Element, return a dictionary of its
+  child elements and values (as strings).
   """
 
   handler = {}
@@ -34,46 +34,46 @@ def _parseSingleElement( element, attributes = None ):
 #############################################################################
 
 
-class GOCDBClient:
+class GOCDBClient(object):
   # FIXME: Why is this a class and not just few methods?
 
 #############################################################################
 
   def getStatus( self, granularity, name = None, startDate = None,
                 startingInHours = None, timeout = None ):
-    """  
+    """
     Return actual GOCDB status of entity in `name`
-        
+
     :params:
       :attr:`granularity`: string: should be a ValidRes
-      
-      :attr:`name`: should be the name(s) of the ValidRes. 
-      Could be a list of basestring or simply one basestring. 
-      If not given, fetches the complete list. 
-      
+
+      :attr:`name`: should be the name(s) of the ValidRes.
+      Could be a list of basestring or simply one basestring.
+      If not given, fetches the complete list.
+
       :attr:`startDate`: if not given, takes only ongoing DownTimes.
-      if given, could be a datetime or a string ("YYYY-MM-DD"), and download 
+      if given, could be a datetime or a string ("YYYY-MM-DD"), and download
       DownTimes starting after that date.
-      
-      :attr:`startingInHours`: optional integer. If given, donwload 
-      DownTimes starting in the next given hours (startDate is then useless)  
+
+      :attr:`startingInHours`: optional integer. If given, donwload
+      DownTimes starting in the next given hours (startDate is then useless)
 
     :return: (example)
-      {'OK': True, 
-      'Value': {'78305448': 
+      {'OK': True,
+      'Value': {'78305448':
                   {
-                  'SITENAME': 'UKI-LT2-QMUL', 
-                  'FORMATED_END_DATE': '2010-06-22 19:00', 
-                  'SEVERITY': 'OUTAGE', 
-                  'FORMATED_START_DATE': '2010-06-18 09:00', 
+                  'SITENAME': 'UKI-LT2-QMUL',
+                  'FORMATED_END_DATE': '2010-06-22 19:00',
+                  'SEVERITY': 'OUTAGE',
+                  'FORMATED_START_DATE': '2010-06-18 09:00',
                   'DESCRIPTION': 'Electrical work in the building housing the cluster.'
-                  }, 
-                '78905446': 
+                  },
+                '78905446':
                   {
-                  'SITENAME': 'NCP-LCG2', 
-                  'FORMATED_END_DATE': '2010-06-22 19:40', 
-                  'SEVERITY': 'OUTAGE', 
-                  'FORMATED_START_DATE': '2010-06-20 19:43', 
+                  'SITENAME': 'NCP-LCG2',
+                  'FORMATED_END_DATE': '2010-06-22 19:40',
+                  'SEVERITY': 'OUTAGE',
+                  'FORMATED_START_DATE': '2010-06-20 19:43',
                   'DESCRIPTION': "Problem at Service provider's end"
                   }
                 }
@@ -103,16 +103,16 @@ class GOCDBClient:
     if startingInHours is not None:
     # make 2 queries and later merge the results
 
-      # first call: pass the startDate argument as None, 
+      # first call: pass the startDate argument as None,
       # so the curlDownload method will search for only ongoing DTs
-      resXML_ongoing = self._downTimeCurlDonwload( name )
+      resXML_ongoing = self._downTimeCurlDownload( name )
       if resXML_ongoing is None:
         res_ongoing = {}
       else:
         res_ongoing = self._downTimeXMLParsing( resXML_ongoing, granularity, name )
 
       # second call: pass the startDate argument
-      resXML_startDate = self._downTimeCurlDonwload( name, startDate_STR )
+      resXML_startDate = self._downTimeCurlDownload( name, startDate_STR )
       if resXML_startDate is None:
         res_startDate = {}
       else:
@@ -127,7 +127,7 @@ class GOCDBClient:
 
     else:
       #just query for onGoing downtimes
-      resXML = self._downTimeCurlDonwload( name, startDate_STR )
+      resXML = self._downTimeCurlDownload( name, startDate_STR )
       if resXML is None:
         return S_OK( None )
 
@@ -136,7 +136,7 @@ class GOCDBClient:
     # Common: build URL
 #    if res is None or res == []:
 #      return S_OK(None)
-#      
+#
 #    self.buildURL(res)
 
 
@@ -151,35 +151,40 @@ class GOCDBClient:
   def getServiceEndpointInfo( self, granularity, entity ):
     """
     Get service endpoint info (in a dictionary)
-    
+
     :params:
-      :attr:`granularity` : a string. Could be in ('hostname', 'sitename', 'roc', 
+      :attr:`granularity` : a string. Could be in ('hostname', 'sitename', 'roc',
       'country', 'service_type', 'monitored')
-      
+
       :attr:`entity` : a string. Actual name of the entity.
     """
-
-    serviceXML = self._getServiceEndpointCurlDonwload( granularity, entity )
-    return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
-
+    assert(type(granularity) == str and type(entity) == str)
+    try:
+      serviceXML = self._getServiceEndpointCurlDownload( granularity, entity )
+      return S_OK( self._serviceEndpointXMLParsing( serviceXML ) )
+    except Exception, e:
+      _msg = 'Exception getting information for %s %s' % ( granularity, entity )
+      gLogger.exception( _msg )
+      return S_ERROR( _msg )
+      
 #############################################################################
 
 #  def getSiteInfo(self, site):
 #    """
 #    Get site info (in a dictionary)
-#    
+#
 #    :params:
 #      :attr:`entity` : a string. Actual name of the site.
 #    """
-#    
-#    siteXML = self._getSiteCurlDonwload(site)
+#
+#    siteXML = self._getSiteCurlDownload(site)
 #    return S_OK(self._siteXMLParsing(siteXML))
 
 #############################################################################
 
 #  def buildURL(self, DTList):
 #    '''build the URL relative to the DT '''
-#    baseURL = "https://goc.gridops.org/downtime/list?id="
+#    baseURL = "https://goc.egi.eu/downtime/list?id="
 #    for dt in DTList:
 #      id = str(dt['id'])
 #      url = baseURL + id
@@ -187,14 +192,14 @@ class GOCDBClient:
 
 #############################################################################
 
-  def _downTimeCurlDonwload( self, entity = None, startDate = None ):
+  def _downTimeCurlDownload( self, entity = None, startDate = None ):
     """ Download ongoing downtimes for entity using the GOC DB programmatic interface
     """
 
     #GOCDB-PI url and method settings
     #
     # Set the GOCDB URL
-    gocdbpi_url = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_downtime"
+    gocdbpi_url = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_downtime"
     # Set the desidered start date
     if startDate is None:
       when = "&ongoing_only=yes"
@@ -219,37 +224,39 @@ class GOCDBClient:
 
 #############################################################################
 
-  def _getServiceEndpointCurlDonwload( self, granularity, entity ):
-    """ 
+  def _getServiceEndpointCurlDownload( self, granularity, entity ):
+    """
     Calls method `get_service_endpoint` from the GOC DB programmatic interface.
-    
+
     :params:
-      :attr:`granularity` : a string. Could be in ('hostname', 'sitename', 'roc', 
+      :attr:`granularity` : a string. Could be in ('hostname', 'sitename', 'roc',
       'country', 'service_type', 'monitored')
-      
+
       :attr:`entity` : a string. Actual name of the entity.
     """
+    if type(granularity) != str or type(entity) != str:
+      raise ValueError, "Arguments must be strings."
 
     # GOCDB-PI query
-    gocdb_ep = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_service_endpoint&" + granularity + '=' + entity
+    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_service_endpoint&" \
+        + granularity + '=' + entity
 
-    req = urllib2.Request( gocdb_ep )
-    service_endpoint_page = urllib2.urlopen( req )
+    service_endpoint_page = urllib2.urlopen( gocdb_ep )
 
     return service_endpoint_page.read()
 
 #############################################################################
 
-#  def _getSiteCurlDonwload(self, site):
-#    """ 
+#  def _getSiteCurlDownload(self, site):
+#    """
 #    Calls method `get_site` from the GOC DB programmatic interface.
-#    
+#
 #    :params:
 #      :attr:`site` : a string. Actual name of the site.
 #    """
-#    
+#
 #    # GOCDB-PI query
-#    gocdb_ep = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_site&sitename="+site
+#    gocdb_ep = "https://goc.egi.eu/gocdbpi_v4/public/?method=get_site&sitename="+site
 #
 #    req = urllib2.Request(gocdb_ep)
 #    site_page = urllib2.urlopen(req)
@@ -309,19 +316,10 @@ class GOCDBClient:
 #############################################################################
 
   def _serviceEndpointXMLParsing( self, serviceXML ):
-    """ Performs xml parsing from the service endpoint string (returns a dictionary)
+    """ Performs xml parsing from the service endpoint string
+    Returns a list.
     """
     doc = minidom.parseString( serviceXML )
-
     services = doc.getElementsByTagName( "SERVICE_ENDPOINT" )
-
-    servicesList = []
-
-    for service in services:
-      handler = _parseSingleElement( service )
-      servicesList.append( handler )
-
-    return servicesList
-
-#############################################################################
-
+    services = [_parseSingleElement(s) for s in services]
+    return services
