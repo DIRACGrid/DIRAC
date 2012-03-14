@@ -46,18 +46,18 @@ class SiteDirector( AgentModule ):
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
     self.queueDict = {}
-    
+
     return S_OK()
-  
+
   def beginExecution( self ):
 
-    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() ) 
+    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
     self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
     self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
-    self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400*3 )
+    self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -73,7 +73,7 @@ class SiteDirector( AgentModule ):
       else:
         siteNames = [siteName]
     self.siteNames = siteNames
- 
+
     if self.updateStatus:
       self.log.always( 'Pilot status update requested' )
     if self.getOutput:
@@ -198,7 +198,7 @@ class SiteDirector( AgentModule ):
     """
 
     if not self.queueDict:
-      self.log.warn('No site defined, exiting the cycle')
+      self.log.warn( 'No site defined, exiting the cycle' )
       return S_OK()
 
     result = self.submitJobs()
@@ -283,7 +283,13 @@ class SiteDirector( AgentModule ):
         self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
 
         bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
-        result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy )
+        jobExecDir = ''
+        if ceType == 'CREAM':
+          jobExecDir = '.'
+        jobExecDir = self.queueDict[queue].get( 'JobExecDir', jobExecDir )
+        httpProxy = self.queueDict[queue].get( 'BundleProxy', '' )
+
+        result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
         if not result['OK']:
           return result
 
@@ -338,7 +344,7 @@ class SiteDirector( AgentModule ):
     return S_OK()
 
 #####################################################################################
-  def __getExecutable( self, queue, pilotsToSubmit, bundleProxy = True ):
+  def __getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
     """ Prepare the full executable for queue
     """
 
@@ -348,7 +354,7 @@ class SiteDirector( AgentModule ):
     pilotOptions = self.__getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
-    executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy )
+    executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
     result = S_OK( executable )
     return result
 
@@ -359,8 +365,8 @@ class SiteDirector( AgentModule ):
 
     queueDict = self.queueDict[queue]['ParametersDict']
 
-    vo = Registry.getVOForGroup(self.genericPilotGroup)
-    
+    vo = Registry.getVOForGroup( self.genericPilotGroup )
+
     if not vo:
       self.log.error( 'Virtual Organization is not defined in the configuration' )
       return None
@@ -426,7 +432,7 @@ class SiteDirector( AgentModule ):
     return pilotOptions
 
 #####################################################################################    
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '' ):
+  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admixt the proxy if given
     """
 
@@ -447,7 +453,11 @@ class SiteDirector( AgentModule ):
 #
 import os, tempfile, sys, shutil, base64, bz2
 try:
-  pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
+  pilotExecDir = '%(pilotExecDir)s'
+  if not pilotExecDir:
+    pilotExecDir = None 
+  pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix = 'DIRAC_', dir = pilotExecDir )
+  pilotWorkingDirectory = os.path.realpath( pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
   if %(proxyFlag)s:
     open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
@@ -479,11 +489,12 @@ os.system( cmd )
 shutil.rmtree( pilotWorkingDirectory )
 
 EOF
-""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
-        'compressedAndEncodedPilot': compressedAndEncodedPilot, \
-        'compressedAndEncodedInstall': compressedAndEncodedInstall, \
-        'httpProxy': httpProxy, \
-        'pilotScript': os.path.basename( self.pilot ), \
+""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy,
+        'compressedAndEncodedPilot': compressedAndEncodedPilot,
+        'compressedAndEncodedInstall': compressedAndEncodedInstall,
+        'httpProxy': httpProxy,
+        'pilotExecDir': pilotExecDir,
+        'pilotScript': os.path.basename( self.pilot ),
         'installScript': os.path.basename( self.install ),
         'pilotOptions': ' '.join( pilotOptions ),
         'proxyFlag': proxyFlag }
