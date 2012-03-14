@@ -1,4 +1,7 @@
-[v6r2-pre14]
+[v6r2-pre15]
+
+*General
+FIX: replaced use of exec() python statement in favor of object method execution
 
 *Accounting
 CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
@@ -18,6 +21,11 @@ NEW: Grid module will use Local.gridEnv if nothing passed in the arguments
 CHANGE: Add deprecated sections in the CS Operations helper to ease the transition
 FIX: dirac-install - execute dirac-fix-mysql-script, if available, to fix the mysql.server startup script
 FIX: dirac-distribution - Changed obsoleted tar.list file URL
+FIX: typo in dirac-admin-add-host in case of error
+CHANGE: dirac-admin-allow(ban)-se - use diracAdmin.sendMail() instead of NotificationClient.sendMail()
+
+*Framework
+BUGFIX: UserProfileDB - no more use of "type" variable as it is a reserved keyword 
 
 *RequestManagement:
 FIX: RequestDBFile - more consistent treatment of requestDB Path
@@ -47,6 +55,7 @@ CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects
 CHANGE: Removed ClientFastDec decorator, using a more verbose alternative.
 CHANGE: Removed useless usage of **kwargs on helper functions.  
 NEW: added getSESitesList method to RSSClient      
+FIX: _checkFloat() checks INTEGERS, not datetimes
 
 *DataManagement
 CHANGE: refactoring of DMS agents executing requests, allow requests from arbitrary users
@@ -71,17 +80,24 @@ FIX: FTSMonitor - enabled to register new replicas if even the corresponding req
 FIX: StorageElement - check if SE has been properly initialized before executing any method     
 CHANGE: LFC client getReplica() - make use of the new bulk method lfc.lfc_getreplicasl()
 FIX: LFC client - protect against getting None in lfc.lfc_readdirxr( oDirectory, "" )  
+FIX: add extra protection in dump method of StorageElement base class
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
      They are made available to the workflow_commons via the key 'GenericParameters'.
 FIX: Dirac.py - fix some type checking things
+FIX: Dirac.py - the addFile() method can now register to more than 1 catalog.
 
 *WMS
 FIX: removed dependency of the JobSchedulingAgent on RSS. Move the getSiteTier functionality to a new CS Helper.
 FIX: WMSAdministratorHandler - Replace StringType by StringTypes in the export methods argument type
 FIX: JobAgent - Set explicitly UseServerCertificate to "no" for the job executable
 NEW: dirac-pilot - change directory to $OSG_WN_TMP on OSG sites
+FIX: SiteDirector passes jobExecDir to pilot, this defaults to "." for CREAM CEs. It can be set in the CS. 
+     It will not make use of $TMPDIR in this case.
+FIX: Set proper project and release version to the SiteDirector     
+NEW: Added "JobDelay" option for the matching, refactored and added CS options to the matcher
+FIX: Added installation as an option to the pilots and random MyProxyServer
 
 *Resources
 NEW: Added SSH Grid Engine Computing Element
@@ -91,6 +107,15 @@ FIX: make sure lfc client will not try to connect for several days
 *Transformation
 FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and
      the new status is "unused"
+NEW: TransformationDB - added support for dictionary in metadata for the InputDataQuery mechanism     
+
+[v6r1p12]
+
+*Accounting
+FIX: Properly delete cached plots
+
+*Core
+FIX: dirac-install - run externals post install after generating the versions dir
 
 [v6r1p11]
 
