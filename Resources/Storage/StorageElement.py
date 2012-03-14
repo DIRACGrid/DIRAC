@@ -87,6 +87,9 @@ class StorageElement:
       Dump to the logger a summary of the StorageElement items
     """
     gLogger.info( "StorageElement.dump: Preparing dump for StorageElement %s." % self.name )
+    if not self.valid:
+      gLogger.error( "StorageElement.dump: Failed to create StorageElement plugins.", self.errorReason )
+      return
     i = 1
     outStr = "\n\n============ Options ============\n"
     for key in sortList( self.options.keys() ):
