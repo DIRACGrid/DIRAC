@@ -347,12 +347,15 @@ class FileMetadata:
 
     return S_OK(fileList)
 
-  
+  @queryTime
   def findFilesByMetadata( self, metaDict, path, credDict ):
     """ Find Files satisfying the given metadata
     """
 
     start = time.time()
+
+    if not path:
+      path = '/'
 
     result = self.db.dmeta.findDirIDsByMetadata( metaDict, path, credDict )
     if not result['OK']:
@@ -364,11 +367,14 @@ class FileMetadata:
     result = self.getFileMetadataFields( credDict )
     if not result['OK']:
       return result
-    
+
     fileMetaDict = {}
     for key,value in metaDict.items():
       if key in result['Value']:
         fileMetaDict[key] = value
+
+    fileList = []
+    lfnList = []
 
     if dirFlag == "None":
       return S_OK([])
@@ -377,18 +383,24 @@ class FileMetadata:
       if not result['OK']:
         return result
       fileList = result['Value']
-      result = self.db.fileManager._getFileLFNs(fileList)
- 
-      lfnList = [ x[1] for x in result['Value']['Successful'].items() ]     
-      return S_OK(lfnList)    
-     
-    fileList = []
+      if fileList:
+        result = self.db.fileManager._getFileLFNs(fileList)
+        lfnList = [ x[1] for x in result['Value']['Successful'].items() ]   
+        return S_OK(lfnList)  
+      else:
+        return S_OK([])
+
     if fileMetaDict:
       result = self.__findFilesByMetadata( fileMetaDict,dirList,credDict )
       if not result['OK']:
         return result
       fileList = result['Value']
-      result = self.db.fileManager._getFileLFNs(fileList) 
-      lfnList = [ x[1] for x in result['Value']['Successful'].items() ]     
+    else:
+      result = self.db.dtree.getFileLFNsInDirectoryByDirectory( dirList, credDict )
+      return result
+
+    if fileList:
+      result = self.db.fileManager._getFileLFNs(fileList)
+      lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
 
     return S_OK( lfnList )

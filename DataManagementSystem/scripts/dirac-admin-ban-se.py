@@ -6,10 +6,10 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                   import Script
 
-read  = True
+read = True
 write = True
 check = True
-site  = ''
+site = ''
 
 Script.setUsageMessage( """
 Ban one or more Storage Elements for usage
@@ -39,20 +39,34 @@ for switch in Script.getUnprocessedSwitches():
     site = switch[1]
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
+from DIRAC.Interfaces.API.DiracAdmin                 import DiracAdmin
 from DIRAC                                           import gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers        import ResourceStatus 
+from DIRAC.ResourceStatusSystem.Client               import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
 from DIRAC.Core.Utilities.List                       import intListToString
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 #csAPI = CSAPI()
+
+diracAdmin = DiracAdmin()
+exitCode = 0
+errorList = []
+address = gConfig.getValue( '/Operations/EMail/Production', '' )
+setup = gConfig.getValue( '/DIRAC/Setup', '' )
+if not address or not setup:
+  print 'ERROR: Could not contact Configuration Service'
+  exitCode = 2
+  DIRAC.exit( exitCode )
 
 res = getProxyInfo()
 if not res[ 'OK' ]:
   gLogger.error( 'Failed to get proxy information', res[ 'Message' ] )
   DIRAC.exit( 2 )
 
-userName = res[ 'Value' ][ 'username' ]
-group    = res[ 'Value' ][ 'group' ]
+userName = diracAdmin._getCurrentUser()
+if not userName['OK']:
+  print 'ERROR: Could not obtain current username from proxy'
+  exitCode = 2
+  DIRAC.exit( exitCode )
+userName = userName['Value']
 
 if not type( ses ) == type( [] ):
   Script.showHelp()
@@ -67,64 +81,73 @@ if site:
 
 if not ses:
   gLogger.error( 'There were no SEs provided' )
-  DIRAC.exit()
+  DIRAC.exit( -1 )
 
-readBanned  = []
+readBanned = []
 writeBanned = []
 checkBanned = []
 
 res = ResourceStatus.getStorageElementStatus( ses )
 if not res['OK']:
-  gLogger.error( "Storage Element %s does not exist" % se )
-  continue
+  gLogger.error( "Storage Element %s does not exist" % ses )
+  DIRAC.exit( -1 )
 
 reason = 'Forced with dirac-admin-ban-se by %s' % userName
 
-for se,seOptions in res[ 'Value' ].items():  
-  
+for se, seOptions in res[ 'Value' ].items():
+
   resW = resC = resR = { 'OK' : False }
-  
-  # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
-  if read and seOptions.has_key( 'Read' ) and seOptions[ 'Read' ] in [ 'Active', 'Bad' ]:  
+
+  # Eventually, we will get rid of the notion of InActive, as we always write Banned.
+  if read and seOptions.has_key( 'Read' ):
+
+    if not seOptions[ 'Read' ] in [ 'Active', 'Bad' ]:
+      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ 'Active', 'Bad' ] ) )
+      gLogger.notice( 'Try specifying the command switchs' )
+      continue
 
     resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
     if not resR['OK']:
       gLogger.error( 'Failed to update %s read access to Banned' % se )
     else:
-      gLogger.debug( 'Successfully updated %s read access to Banned' % se )
+      gLogger.notice( 'Successfully updated %s read access to Banned' % se )
       readBanned.append( se )
-      
-  # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
-  if write and seOptions.has_key( 'Write' ) and seOptions[ 'Write' ] in [ 'Active', 'Bad' ]:    
+
+  # Eventually, we will get rid of the notion of InActive, as we always write Banned.
+  if write and seOptions.has_key( 'Write' ):
+
+    if not seOptions[ 'Write' ] in [ 'Active', 'Bad' ]:
+      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ 'Active', 'Bad' ] ) )
+      gLogger.notice( 'Try specifying the command switchs' )
+      continue
 
     resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Banned" % se )
     else:
-      gLogger.debug( "Successfully updated %s write access to Banned" % se )
+      gLogger.notice( "Successfully updated %s write access to Banned" % se )
       writeBanned.append( se )
-      
-  # Eventually, we will get rid of the notion of InActive, as we always write Banned. 
-  if check and seOptions.has_key( 'Check' ) and seOptions[ 'Check' ] in [ 'Active', 'Bad' ]:    
+
+  # Eventually, we will get rid of the notion of InActive, as we always write Banned.
+  if check and seOptions.has_key( 'Check' ):
+
+    if not seOptions[ 'Check' ] in [ 'Active', 'Bad' ]:
+      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ 'Active', 'Bad' ] ) )
+      gLogger.notice( 'Try specifying the command switchs' )
+      continue
 
     resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Banned" % se )
     else:
-      gLogger.debug( "Successfully updated %s check access to Banned" % se )
+      gLogger.notice( "Successfully updated %s check access to Banned" % se )
       checkBanned.append( se )
- 
-  if not resR['OK'] or not resW['OK'] or not resC['OK']:
-    gLogger.error( "Failed to commit changes to CS" )
-    DIRAC.exit( -1 ) 
-      
-#res = csAPI.commitChanges()
-#if not res['OK']:
-#  gLogger.error( "Failed to commit changes to CS", res['Message'] )
-#  DIRAC.exit( -1 )
+
+  if not( resR['OK'] or resW['OK'] or resC['OK'] ):
+    DIRAC.exit( -1 )
 
 if not ( writeBanned or readBanned or checkBanned ):
   gLogger.notice( "No storage elements were banned" )
@@ -146,5 +169,5 @@ if check:
   for se in checkBanned:
     body = "%s\n%s" % ( body, se )
 
-NotificationClient().sendMail( address, subject, body, '%s@cern.ch' % userName )
+diracAdmin.sendMail( address, subject, body )
 DIRAC.exit( 0 )

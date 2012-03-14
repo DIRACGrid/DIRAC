@@ -1,21 +1,21 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
-  This module contains a class to synchronize the content of the DataBase with what is the CS
-"""
+''' Synchronizer
+
+  Module that keeps in sync the CS and the RSS database.
+
+'''
 
 from DIRAC                                                      import gLogger, S_OK
+from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
 from DIRAC.Core.Utilities.SiteCEMapping                         import getSiteCEMapping
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName, getDIRACSiteName
-
-from DIRAC.ResourceStatusSystem.Utilities                       import CS, Utils
-from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
-
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Utilities                       import CS, Utils
 
-class Synchronizer(object):
+__RCSID__ = '$Id: $'
+
+class Synchronizer( object ):
 
   def __init__( self, rsClient = None, rmClient = None ):
 

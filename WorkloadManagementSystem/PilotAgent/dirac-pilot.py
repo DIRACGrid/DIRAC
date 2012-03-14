@@ -123,6 +123,25 @@ rootPath = os.getcwd()
 
 installScriptName = 'dirac-install.py'
 
+rootPath = os.getcwd()
+
+if os.environ.has_key('OSG_WN_TMP'):
+  os.chdir(os.environ['OSG_WN_TMP'])
+  for path in ( pilotRootPath, rootPath ):
+    installScript = os.path.join( path, installScriptName )
+    if os.path.isfile( installScript ):
+      try:
+        shutil.copy(installScript, os.path.join(os.environ['OSG_WN_TMP'],installScriptName))
+      except Exception, x:
+        print sys.executable
+        print sys.version
+        print os.uname()
+        print x
+        raise x
+      break
+
+rootPath = os.getcwd()
+
 for path in ( pilotRootPath, rootPath ):
   installScript = os.path.join( path, installScriptName )
   if os.path.isfile( installScript ):

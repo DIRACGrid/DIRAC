@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.ProcessPool import ProcessPool, ProcessTask
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
-from DIRAC.DataManagementSystem.Agent.RegistrationTask import RegistrationTask
+from DIRAC.DataManagementSystem.private.RegistrationTask import RegistrationTask
 
 ## agent name
 AGENT_NAME = 'DataManagement/RegistrationAgent'
@@ -48,14 +48,9 @@ class RegistrationAgent( RequestAgentBase ):
     :param self: self reference
     """
     RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
+    self.setRequestTask( RegistrationTask )
     self.log.info("%s has been constructed" % agentName  )
     
-    #self.setRequestTask( RegistrationTask )
-    #self.log.info("Will use '%s' for task processing." % RegistrationTask.__class__.__name__ )
-    #self.__configPath = PathFinder.getAgentSection( AGENT_NAME )    
-    #self.am_setOption( "shifterProxy", "DataManager" )
-    #self.log.info("Will use DataManager proxy for processing requests." )
-    #return S_OK()
   
 
 

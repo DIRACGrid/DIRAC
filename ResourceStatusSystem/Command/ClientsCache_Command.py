@@ -1,21 +1,20 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ClientsCache_Command 
 
-""" 
-  The ClientsCache_Command class is a command module to know about collective clients results 
-  (to be cached)
-"""
+  The ClientsCache_Command class is a command module to know about collective 
+  clients results (to be cached).
+  
+'''
 
 import datetime
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName, getDIRACSiteName
-
 from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
@@ -137,7 +136,6 @@ class PilotsEffSimpleEverySites_Command( Command ):
 #    if SEs is None:
 #      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns' : 'StorageElementName' })
 #      if not SEs['OK']:
-#        raise RSSException, where( self, self.doCommand ) + " " + SEs['Message']
 #      else:
 #        SEs = SEs['Value']
 #
@@ -151,7 +149,6 @@ class PilotsEffSimpleEverySites_Command( Command ):
 #                                         {'OperationType':'putAndRegister',
 #                                          'Destination':SEs}, 'Channel' )
 #      if not qualityAll['OK']:
-#        raise RSSException, where( self, self.doCommand ) + " " + qualityAll['Message']
 #      else:
 #        qualityAll = qualityAll['Value']['data']
 #

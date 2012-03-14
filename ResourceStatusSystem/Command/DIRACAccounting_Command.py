@@ -1,21 +1,19 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' DIRACAccounting_Command
+ 
   The DIRACAccounting_Command class is a command class to 
   interrogate the DIRAC Accounting.
-"""
+  
+'''
 
 from datetime                                        import datetime, timedelta
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command      import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
@@ -76,7 +74,7 @@ class DIRACAccounting_Command( Command ):
           elif granularity == 'Site':
             conditions[ 'Site' ] = [ name ]
           else:
-            raise InvalidRes( '%s is not a valid granularity' % granularity )
+            return { 'Result' : S_ERROR( '%s is not a valid granularity' % granularity ) }
         elif accounting == 'DataOperation':
           conditions[ 'Destination' ] = [ name ]
 

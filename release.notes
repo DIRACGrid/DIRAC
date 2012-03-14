@@ -1,4 +1,4 @@
-[v6r2-pre7]
+[v6r2-pre14]
 
 *Accounting
 CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 (closes #457)
@@ -17,9 +17,12 @@ NEW: CS Helper for LocalSite section, with gridEnv method
 NEW: Grid module will use Local.gridEnv if nothing passed in the arguments
 CHANGE: Add deprecated sections in the CS Operations helper to ease the transition
 FIX: dirac-install - execute dirac-fix-mysql-script, if available, to fix the mysql.server startup script
+FIX: dirac-distribution - Changed obsoleted tar.list file URL
 
 *RequestManagement:
 FIX: RequestDBFile - more consistent treatment of requestDB Path
+FIX: RequestMySQL - Execution order is evaluated based on not Done state of subrequests
+NEW: RequestCleaningAgent - resetting Assigned requests to Waiting after a configurable period of time
 
 *RSS
 CHANGE: RSS Action now inherits from a base class, and Actions are more homogeneous, they all take 
@@ -36,6 +39,14 @@ CHANGE: access control using CS Authentication options. Default is SiteManager, 
 BUGFIX: MySQLMonkey - properly escaped all parameters of the SQL queries, other fixes.
 NEW: CleanerAgent renamed to CacheCleanerAgent
 NEW: Updated RSS scripts, to set element statuses and / or tokens.
+NEW: Added a new script, dirac-rss-synch
+BUGFIX: Minor bugfixes spotted on the Web development
+FIX: Removed useless decorator from RSS handlers
+CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects
+        created if the system is InActive
+CHANGE: Removed ClientFastDec decorator, using a more verbose alternative.
+CHANGE: Removed useless usage of **kwargs on helper functions.  
+NEW: added getSESitesList method to RSSClient      
 
 *DataManagement
 CHANGE: refactoring of DMS agents executing requests, allow requests from arbitrary users
@@ -49,11 +60,17 @@ FIX: FTS testing scripts were using sys.argv and getting confused if options are
 NEW: DFC - use DirectoryUsage tables for the storage usage evaluations
 NEW: DFC - search by metadata can be limited to a given directory subtree
 NEW: DFC - search by both directory and file indexed metadata
+BUGFIX: DFC - avoid crash if no directories or files found in metadata query
+NEW: DFC FileCatalogHandler - define database location in the configuration
+NEW: DFC - new FileCatalogFactory class, possibility to use named DFC services
 FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting registration requests
      in FileToCat table for later retry
 FIX: Failover registration request in the FTS agents.      
 FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed
      from the RequestManagement 
+FIX: StorageElement - check if SE has been properly initialized before executing any method     
+CHANGE: LFC client getReplica() - make use of the new bulk method lfc.lfc_getreplicasl()
+FIX: LFC client - protect against getting None in lfc.lfc_readdirxr( oDirectory, "" )  
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
@@ -62,14 +79,24 @@ FIX: Dirac.py - fix some type checking things
 
 *WMS
 FIX: removed dependency of the JobSchedulingAgent on RSS. Move the getSiteTier functionality to a new CS Helper.
+FIX: WMSAdministratorHandler - Replace StringType by StringTypes in the export methods argument type
+FIX: JobAgent - Set explicitly UseServerCertificate to "no" for the job executable
+NEW: dirac-pilot - change directory to $OSG_WN_TMP on OSG sites
 
 *Resources
 NEW: Added SSH Grid Engine Computing Element
 NEW: Added SSH Computing Element
+FIX: make sure lfc client will not try to connect for several days
 
 *Transformation
 FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and
      the new status is "unused"
+
+[v6r1p11]
+
+*Core
+NEW: dirac-install - caches locally the externals and the grid bundle
+FIX: dirac-distribution - properly generate releasehistory and releasenotes
 
 [v6r1p10]
 
@@ -206,10 +233,6 @@ NEW: Pass the monitor down to the request RequestHandler
 FIX: Define the service location for the monitor
 FIX: Close some connections that DISET was leaving open
 
-<<<<<<< HEAD
-=======
-
->>>>>>> upstream/rel-v6r1
 [v6r0p3]
 
 *Framework

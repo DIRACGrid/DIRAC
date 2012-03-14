@@ -1,17 +1,20 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
-  ResourcePolType Actions
-"""
+''' ResourceAction
+  
+  ResourcePolType Actions.
+  
+'''
 
-__RCSID__  = "$Id$"
-
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.ActionBase import ActionBase
 from datetime import datetime
 
-class ResourceAction(ActionBase):
-  def run(self):
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.ActionBase import ActionBase
+
+__RCSID__  = '$Id: $'
+
+class ResourceAction( ActionBase ):
+  
+  def run( self ):
+    
     token = 'RS_SVC'
 
     if self.new_status['Action']:

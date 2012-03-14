@@ -30,18 +30,18 @@ class StorageElement:
     else:
       res = StorageFactory().getStorages( name, protocolList = protocols )
     if not res['OK']:
-      self.valid       = False
-      self.name        = name
+      self.valid = False
+      self.name = name
       self.errorReason = res['Message']
     else:
-      factoryDict          = res['Value']
-      self.name            = factoryDict['StorageName']
-      self.options         = factoryDict['StorageOptions']
-      self.localProtocols  = factoryDict['LocalProtocols']
+      factoryDict = res['Value']
+      self.name = factoryDict['StorageName']
+      self.options = factoryDict['StorageOptions']
+      self.localProtocols = factoryDict['LocalProtocols']
       self.remoteProtocols = factoryDict['RemoteProtocols']
-      self.storages        = factoryDict['StorageObjects']
+      self.storages = factoryDict['StorageObjects']
       self.protocolOptions = factoryDict['ProtocolOptions']
-      self.turlProtocols   = factoryDict['TurlProtocols']
+      self.turlProtocols = factoryDict['TurlProtocols']
 
     self.readMethods = [   'getFile',
                            'getAccessUrl',
@@ -87,6 +87,9 @@ class StorageElement:
       Dump to the logger a summary of the StorageElement items
     """
     gLogger.info( "StorageElement.dump: Preparing dump for StorageElement %s." % self.name )
+    if not self.valid:
+      gLogger.error( "StorageElement.dump: Failed to create StorageElement plugins.", self.errorReason )
+      return
     i = 1
     outStr = "\n\n============ Options ============\n"
     for key in sortList( self.options.keys() ):
@@ -228,6 +231,8 @@ class StorageElement:
   def getProtocols( self ):
     """ Get the list of all the protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getProtocols: Obtaining all protocols for %s." % self.name )
     allProtocols = self.localProtocols + self.remoteProtocols
     return S_OK( allProtocols )
@@ -235,18 +240,24 @@ class StorageElement:
   def getRemoteProtocols( self ):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getRemoteProtocols: Obtaining remote protocols for %s." % self.name )
     return S_OK( self.remoteProtocols )
 
   def getLocalProtocols( self ):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getLocalProtocols: Obtaining local protocols for %s." % self.name )
     return S_OK( self.localProtocols )
 
   def getStorageElementOption( self, option ):
     """ Get the value for the option supplied from self.options
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     gLogger.verbose( "StorageElement.getStorageElementOption: Obtaining %s option for Storage Element %s." % ( option, self.name ) )
     if self.options.has_key( option ):
       optionValue = self.options[option]
@@ -261,6 +272,8 @@ class StorageElement:
     """
     gLogger.verbose( "StorageElement.getStorageParameters: Obtaining storage parameters for %s protocol %s." % ( self.name, protocol ) )
     res = self.getProtocols()
+    if not res['OK']:
+      return res
     availableProtocols = res['Value']
     if not protocol in availableProtocols:
       errStr = "StorageElement.getStorageParameters: Requested protocol not available for SE."
@@ -295,6 +308,8 @@ class StorageElement:
     """ Transform the input pfn into another with the given protocol for the Storage Element.
     """
     res = self.getProtocols()
+    if not res['OK']:
+      return res
     if type( protocol ) == types.StringType:
       protocols = [protocol]
     elif type( protocol ) == types.ListType:
@@ -330,8 +345,10 @@ class StorageElement:
 
   def getPfnPath( self, pfn ):
     """  Get the part of the PFN path below the basic storage path.
-         This path must coinside with the LFN of the file in order to be compliant with the LHCb conventions.
+         This path must coincide with the LFN of the file in order to be compliant with the LHCb conventions.
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     res = pfnparse( pfn )
     if not res['OK']:
       return res
@@ -362,6 +379,8 @@ class StorageElement:
   def getPfnForLfn( self, lfn ):
     """ Get the full PFN constructed from the LFN.
     """
+    if not self.valid:
+      return S_ERROR( self.errorReason )
     for storage in self.storages:
       res = storage.getPFNBase()
       if res['OK']:
@@ -557,6 +576,10 @@ class StorageElement:
       res = self.isValid( operation = method )
       if not res['OK']:
         return res
+    else:
+      if not self.valid:
+        return S_ERROR( self.errorReason )
+
 
     successful = {}
     failed = {}
@@ -587,26 +610,18 @@ class StorageElement:
           gLogger.verbose( "StorageElement.__executeFunction No pfns generated for protocol %s." % protocolName )
         else:
           gLogger.verbose( "StorageElement.__executeFunction: Attempting to perform '%s' for %s physical files." % ( method, len( pfnDict.keys() ) ) )
+          fcn = None
+          if hasattr( storage, method ) and callable( getattr( storage, method ) ):
+            fcn = getattr( storage, method )
+          if not fcn:
+            return S_ERROR("StorageElement.__executeFunction: unable to invoke %s, it isn't a member function of storage")
+          
           pfnsToUse = {}
           for pfn in pfnDict.keys():
             pfnsToUse[pfn] = pfns[pfnDict[pfn]]
-          if argsDict:
-            execString = "res = storage.%s(pfnsToUse" % method
-            for argument, value in argsDict.items():
-              if type( value ) == types.StringType:
-                execString = "%s, %s='%s'" % ( execString, argument, value )
-              else:
-                execString = "%s, %s=%s" % ( execString, argument, value )
-            execString = "%s)" % execString
-          else:
-            execString = "res = storage.%s(pfnsToUse)" % method
-          try:
-            exec( execString )
-          except AttributeError, errMessage:
-            exceptStr = "StorageElement.__executeFunction: Exception while performing %s." % method
-            gLogger.exception( exceptStr, str( errMessage ) )
-            res = S_ERROR( exceptStr )
-
+            
+          res = fcn( pfnsToUse, **argsDict )
+          
           if not res['OK']:
             errStr = "StorageElement.__executeFunction: Completely failed to perform %s." % method
             gLogger.error( errStr, '%s for protocol %s: %s' % ( self.name, protocolName, res['Message'] ) )

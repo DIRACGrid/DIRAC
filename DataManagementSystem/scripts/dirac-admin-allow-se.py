@@ -6,10 +6,10 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-read  = True
+read = True
 write = True
 check = True
-site  = ''
+site = ''
 
 Script.setUsageMessage( """
 Enable using one or more Storage Elements
@@ -39,21 +39,35 @@ for switch in Script.getUnprocessedSwitches():
     site = switch[1]
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
+from DIRAC.Interfaces.API.DiracAdmin                 import DiracAdmin
 from DIRAC                                           import gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers        import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client               import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
 from DIRAC.Core.Utilities.List                       import intListToString
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 #csAPI = CSAPI()
+
+diracAdmin = DiracAdmin()
+exitCode = 0
+errorList = []
+address = gConfig.getValue( '/Operations/EMail/Production', '' )
+setup = gConfig.getValue( '/DIRAC/Setup', '' )
+if not address or not setup:
+  print 'ERROR: Could not contact Configuration Service'
+  exitCode = 2
+  DIRAC.exit( exitCode )
 
 res = getProxyInfo()
 if not res[ 'OK' ]:
   gLogger.error( 'Failed to get proxy information', res[ 'Message' ] )
   DIRAC.exit( 2 )
 
-userName = res[ 'Value' ][ 'username' ]
-group    = res[ 'Value' ][ 'group' ]
+userName = diracAdmin._getCurrentUser()
+if not userName['OK']:
+  print 'ERROR: Could not obtain current username from proxy'
+  exitCode = 2
+  DIRAC.exit( exitCode )
+userName = userName['Value']
 
 if not type( ses ) == type( [] ):
   Script.showHelp()
@@ -69,54 +83,71 @@ if not ses:
   gLogger.error( 'There were no SEs provided' )
   DIRAC.exit()
 
-readAllowed  = []
+readAllowed = []
 writeAllowed = []
 checkAllowed = []
 
-res = ResourceStatus.getStorageElementStatus( se )
+res = ResourceStatus.getStorageElementStatus( ses )
 if not res[ 'OK' ]:
-  gLogger.error( 'Storage Element %s does not exist' % se )
-  continue
+  gLogger.error( 'Storage Element %s does not exist' % ses )
+  DIRAC.exit( -1 )
 
-reason = 'Forced with dirac-admin-ban-se by %s' % userName
+reason = 'Forced with dirac-admin-allow-se by %s' % userName
 
-for se,seOptions in res[ 'Value' ].items():
-  
-  resW = resC = resR = { 'OK' : False }  
-    
+for se, seOptions in res[ 'Value' ].items():
+
+  resW = resC = resR = { 'OK' : False }
+
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if read and seOptions.has_key( 'Read' ) and seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:    
-     
+  if read and seOptions.has_key( 'Read' ):
+
+    if not seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Try specifying the command switchs' )
+      continue
+
+    if 'ARCHIVE' in se:
+      gLogger.notice( '%s is not supposed to change Read status to Active' % se )
+      continue
+
     resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
     if not resR['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s read access to Active" % se )
+      gLogger.notice( "Successfully updated %s read access to Active" % se )
       readAllowed.append( se )
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
-  if write and seOptions.has_key( 'Write' ) and seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
-    
+  if write and seOptions.has_key( 'Write' ):
+
+    if not seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Try specifying the command switchs' )
+      continue
+
     resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s write access to Active" % se )
+      gLogger.notice( "Successfully updated %s write access to Active" % se )
       writeAllowed.append( se )
 
-  # InActive is used on the CS model, Banned is the equivalent in RSS 
-  if check and seOptions.has_key( 'Check' ) and seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
-    
+  # InActive is used on the CS model, Banned is the equivalent in RSS
+  if check and seOptions.has_key( 'Check' ):
+
+    if not seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
+      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Try specifying the command switchs' )
+      continue
+
     resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Active" % se )
     else:
-      gLogger.debug( "Successfully updated %s check access to Active" % se )
+      gLogger.notice( "Successfully updated %s check access to Active" % se )
       checkAllowed.append( se )
 
-#res = csAPI.commitChanges()
-  if not resR['OK'] or not resW['OK'] or not resC['OK']:
-    gLogger.error( "Failed to commit changes to CS" )
+  if not( resR['OK'] or resW['OK'] or resC['OK'] ):
     DIRAC.exit( -1 )
 
 if not ( writeAllowed or readAllowed or checkAllowed ):
@@ -139,7 +170,7 @@ if check:
   for se in checkAllowed:
     body = "%s\n%s" % ( body, se )
 
-NotificationClient().sendMail( address, subject, body, '%s@cern.ch' % userName )
+diracAdmin.sendMail( address, subject, body )
 DIRAC.exit( 0 )
 
 ################################################################################

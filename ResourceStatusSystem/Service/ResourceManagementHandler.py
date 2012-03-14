@@ -1,18 +1,22 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceManagementHandler
 
-from DIRAC                                              import S_OK
+  Module that allows users to access the ResourceManagementDB remotely.
+
+'''
+
+from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
-
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-from DIRAC.ResourceStatusSystem.Utilities.Decorators    import HandlerDec
 
-db = False
+__RCSID__ = '$Id: $'
+db        = False
 
 def initializeResourceManagementHandler( _serviceInfo ):
-
+  '''
+    Handler initialization, where we set the ResourceManagementDB as global db.
+  '''
+  
   global db
   db = ResourceManagementDB()
 
@@ -59,7 +63,6 @@ class ResourceManagementHandler( RequestHandler ):
     db = database
 
   types_insert = [ dict, dict ]
-  @HandlerDec
   def export_insert( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
@@ -76,12 +79,20 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''
-    # It returns a db object, which is picked by the decorator and return whatever
-    # the insert method returns ( db.insert )    
-    return db
+    
+    gLogger.info( 'insert: %s %s' % ( params, meta ) )
+    
+    try:
+      res = db.insert( params, meta )
+      gLogger.debug( 'insert %s' % res )
+    except Exception, e:
+      _msg = 'Exception calling db.insert: \n %s' % e
+      gLogger.exception( _msg )
+      res = S_ERROR( _msg )
+    
+    return res   
 
   types_update = [ dict, dict ]
-  @HandlerDec
   def export_update( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely. It 
@@ -98,12 +109,20 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''      
-    # It returns a db object, which is picked by the decorator and return whatever
-    # the update method returns ( db.update )    
-    return db
+
+    gLogger.info( 'update: %s %s' % ( params, meta ) )
+    
+    try:
+      res = db.update( params, meta )
+      gLogger.debug( 'update %s' % res )
+    except Exception, e:
+      _msg = 'Exception calling db.update: \n %s' % e
+      gLogger.exception( _msg )
+      res = S_ERROR( _msg )
+    
+    return res  
 
   types_get = [ dict, dict ]
-  @HandlerDec
   def export_get( self, params, meta ):
     '''
     This method is a bridge to access :class:`ResourceManagementDB` remotely. 
@@ -120,12 +139,20 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''      
-    # It returns a db object, which is picked by the decorator and return whatever
-    # the get method returns ( db.get )    
-    return db
+    
+    gLogger.info( 'get: %s %s' % ( params, meta ) )
+    
+    try:
+      res = db.get( params, meta )
+      gLogger.debug( 'get %s' % res )
+    except Exception, e:
+      _msg = 'Exception calling db.get: \n %s' % e
+      gLogger.exception( _msg )
+      res = S_ERROR( _msg )
+    
+    return res  
 
   types_delete = [ dict, dict ]
-  @HandlerDec
   def export_delete( self, params, meta ):
     '''   
     This method is a bridge to access :class:`ResourceManagementDB` remotely.\
@@ -142,9 +169,18 @@ class ResourceManagementHandler( RequestHandler ):
 
     :return: S_OK() || S_ERROR()
     '''         
-    # It returns a db object, which is picked by the decorator and return whatever
-    # the delete method returns ( db.delete )    
-    return db
+
+    gLogger.info( 'delete: %s %s' % ( params, meta ) )
+    
+    try:
+      res = db.delete( params, meta )
+      gLogger.debug( 'delete %s' % res )
+    except Exception, e:
+      _msg = 'Exception calling db.delete: \n %s' % e
+      gLogger.exception( _msg )
+      res = S_ERROR( _msg )
+    
+    return res  
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
@@ -300,9 +336,9 @@ class ResourceManagementHandler( RequestHandler ):
 #
 #        finalDict[ 'Extras' ] = DT_links
 #
-#      except RSSDBException, x:
+#      except Exception, x:
 #        gLogger.error( whoRaised( x ) )
-#      except RSSException, x:
+#      except Exception, x:
 #        gLogger.error( whoRaised( x ) )
 #
 #      gLogger.info( "ResourceManagementHandler.getDownTimesWeb: got DT list" )
@@ -343,9 +379,9 @@ class ResourceManagementHandler( RequestHandler ):
 #                   serviceType, resourceType, tokenOwner, useNewRes )
 #        pep.enforce( rsDBIn = rsDB, dbIn = db )
 #
-#      except RSSDBException, x:
+#      except Exception, x:
 #        gLogger.error( whoRaised( x ) )
-#      except RSSException, x:
+#      except Exception, x:
 #        gLogger.error( whoRaised( x ) )
 #
 #      msg = "ResourceManagementHandler.enforcePolicies: enforced for %s: %s" % ( granularity, name )
@@ -428,12 +464,12 @@ class ResourceManagementHandler( RequestHandler ):
 ##             pep.enforce( rsDBIn = rsDB, dbIn = db )
 #
 ##         res = publisher.getInfo( granularity, name, useNewRes )
-##       except InvalidRes, x:
+##       except Exception, x:
 ##         errorStr = "Invalid granularity"
 ##         gLogger.exception( whoRaised( x ) + errorStr )
 ##         return S_ERROR( errorStr )
-##       except RSSException, x:
-##         errorStr = "RSSException"
+##       except Exception, x:
+##         errorStr = "Exception"
 ##         gLogger.exception( whoRaised( x ) + errorStr )
 #
 ##       gLogger.info( "ResourceManagementHandler.publisher: got info for %s: %s" % ( granularity, name ) )

@@ -1,15 +1,18 @@
-""" DIRAC.ResourceStatusSystem.Policy.Configurations Module
+# $HeadURL $
+''' Configurations
 
-    collects everything needed to configure policies
-"""
-
-__RCSID__ = "$Id: "
+  Collects everything needed to configure policies.
+  
+'''
 
 from DIRAC.ResourceStatusSystem.Utilities import CS
 
-pp = CS.getTypedDictRootedAt("PolicyParameters")
+__RCSID__ = '$Id: $'
+
+pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
 
 Policies = {
+            
   'DT_OnGoing_Only' :
     {
       'Description' : "Ongoing down-times",
@@ -37,4 +40,8 @@ Policies = {
       'commandIn'   : None,
       'args'        : None
     }
+            
   }
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -1,18 +1,21 @@
-################################################################################
 # $HeadURL$
-################################################################################
-__RCSID__  = "$Id$"
-AGENT_NAME = 'ResourceStatus/CleanerAgent'
+''' CacheCleanerAgent
 
-from datetime                                             import datetime,timedelta
+  This agent cleans the history tables, and the cache ones if entries older
+  than a certan period.
 
-from DIRAC                                                import S_OK, S_ERROR, gLogger
-from DIRAC                                                import gLogger
-from DIRAC.Core.Base.AgentModule                          import AgentModule
+'''
 
-from DIRAC.ResourceStatusSystem                           import ValidRes  
+from datetime import datetime, timedelta
+
+from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                                import AgentModule
+from DIRAC.ResourceStatusSystem                                 import ValidRes  
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/CleanerAgent'
 
 class CacheCleanerAgent( AgentModule ):
   '''
@@ -31,20 +34,26 @@ class CacheCleanerAgent( AgentModule ):
   If you want to know more about the CacheCleanerAgent, scroll down to the end of the 
   file.   
   '''
+  
+  # Too many public methods
+  # pylint: disable-msg=R0904
 
   def initialize( self ):
     
+    # Attribute defined outside __init__  
+    # pylint: disable-msg=W0201
+    
     try:
       
-      self.rsClient         = ResourceStatusClient()
-      self.rmClient         = ResourceManagementClient()  
+      self.rsClient      = ResourceStatusClient()
+      self.rmClient      = ResourceManagementClient()  
       self.historyTables = [ '%sHistory' % x for x in ValidRes ]
 
       return S_OK()
       
     except Exception:
       errorStr = "CacheCleanerAgent initialization"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
     
 ################################################################################
@@ -58,14 +67,14 @@ class CacheCleanerAgent( AgentModule ):
       now          = datetime.utcnow().replace( microsecond = 0, second = 0 )
       sixMonthsAgo = now - timedelta( days = 180 )
       
-      for g in ValidRes:
+      for granularity in ValidRes:
         #deleter = getattr( self.rsClient, 'delete%sHistory' % g )
         
         kwargs = { 'meta' : { 'minor' : { 'DateEnd' : sixMonthsAgo } } }
-        gLogger.info( 'Deleting %sHistory older than %s' % ( g, sixMonthsAgo ) )
-        res = self.rsClient.deleteElementHistory( g, **kwargs )
+        self.log.info( 'Deleting %sHistory older than %s' % ( granularity, sixMonthsAgo ) )
+        res = self.rsClient.deleteElementHistory( granularity, **kwargs )
         if not res[ 'OK' ]:
-          gLogger.error( res[ 'Message' ] )            
+          self.log.error( res[ 'Message' ] )            
 
       # Cleans ClientsCache table from DownTimes older than a day.
       aDayAgo = now - timedelta( days = 1 )
@@ -80,25 +89,25 @@ class CacheCleanerAgent( AgentModule ):
       opt_IDs = [ ID[ 0 ] for ID in opt_IDs[ 'Value' ] ]
       
       if opt_IDs:
-        gLogger.info( 'Found %s ClientCache items to be deleted' % len( opt_IDs) )
-        gLogger.debug( opt_IDs )
+        self.log.info( 'Found %s ClientCache items to be deleted' % len( opt_IDs) )
+        self.log.debug( opt_IDs )
       
       res = self.rmClient.deleteClientCache( opt_ID = opt_IDs )
       if not res[ 'OK' ]:
-        gLogger.error( res[ 'Message' ] )
+        self.log.error( res[ 'Message' ] )
       
       # Cleans AccountingCache table from plots not updated nor checked in the last 30 mins      
       anHourAgo = now - timedelta( minutes = 30 )
-      gLogger.info( 'Deleting AccountingCache older than %s' % ( anHourAgo ) )
+      self.log.info( 'Deleting AccountingCache older than %s' % ( anHourAgo ) )
       res = self.rmClient.deleteAccountingCache( meta = {'minor': { 'LastCheckTime' : anHourAgo }} )
       if not res[ 'OK' ]:
-        gLogger.error( res[ 'Message' ] )
+        self.log.error( res[ 'Message' ] )
 
       return S_OK()
     
     except Exception:
       errorStr = "CacheCleanerAgent execution"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
 ################################################################################

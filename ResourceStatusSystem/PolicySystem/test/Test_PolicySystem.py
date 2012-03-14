@@ -205,7 +205,6 @@
 #
 #  def test_PEPFail(self):
 #
-#    self.mock_pdp.takeDecision.side_effect = RSSException()
 #    for policyType in PolicyTypes:
 #      for granularity in ValidRes:
 #        for status in ValidStatus:
@@ -236,15 +235,12 @@
 #        for oldStatus in ValidStatus:
 #          if status == oldStatus:
 #            continue
-#          self.failUnlessRaises(InvalidRes, PEP, self.VO, 'sites', 'LCG.Ferrara.it', status, oldStatus, 'XX')
 #    for policyType in PolicyTypes:
 #      for granularity in ValidRes:
 #        for status in ValidStatus:
 #          for oldStatus in ValidStatus:
 #            if status == oldStatus:
 #              continue
-#            self.failUnlessRaises(InvalidStatus, PEP, self.VO, granularity, 'XX', 'actives', oldStatus, 'XX')
-#            self.failUnlessRaises(InvalidStatus, PEP, self.VO, granularity, 'XX', status, 'banneds', 'XX')
 #
 #
 ##############################################################################
@@ -334,7 +330,6 @@
 ##############################################################################
 #
 #  def test_PolicyFail(self):
-#    self.mock_p.evaluate.side_effect = RSSException()
 #    for granularity in ValidRes:
 #      for status in ValidStatus:
 #        for oldStatus in ValidStatus:
@@ -351,14 +346,11 @@
 #      for oldStatus in ValidStatus:
 #        if status == oldStatus:
 #          continue
-#        self.failUnlessRaises(InvalidRes, PDP, self.VO, 'sites', 'XX', status, oldStatus, 'XX')
 #    for granularity in ValidRes:
 #      for oldStatus in ValidStatus:
 #        for status in ValidStatus:
 #          if status == oldStatus:
 #            continue
-#          self.failUnlessRaises(InvalidStatus, PDP, self.VO, granularity, 'XX', 'actives', oldStatus, 'XX')
-#          self.failUnlessRaises(InvalidStatus, PDP, self.VO, granularity, 'XX', status, 'banneds', 'XX')
 #
 ##############################################################################
 #
@@ -419,18 +411,14 @@
 #class PolicyBaseFailure(PolicySystemTestCase):
 #
 #  def test_setBadArgs(self):
-#    self.failUnlessRaises(InvalidRes, self.pb.setArgs, ('Sites', 'XX'))
 #
 #
 #    # 6 arguments should be handled with no problem: why the limitation to 5 ?! (removing this test)
 #    # self.pb.setArgs(('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'))
 #    # self.mock_command.doCommand.return_value = {'Result':'aRes'}
 #    # self.pb.setCommand(self.mock_command)
-#    # self.failUnlessRaises(RSSException, self.pb.evaluate)
-#
 #    # Lists are unsupported by Command for now, useless to test.
 #    # self.pb.setArgs([('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'), ('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH')])
-#    # self.failUnlessRaises(RSSException, self.pb.evaluate)
 #
 ##############################################################################
 #
@@ -458,7 +446,6 @@
 ## class PolicyInvokerFailure(PolicySystemTestCase):
 #
 ##   def test_policyFail(self):
-##     self.mock_policy.evaluate.side_effect = RSSException()
 ##     for granularity in ValidRes:
 ##       self.failUnlessRaises(Exception, self.pi.evaluatePolicy)
 #

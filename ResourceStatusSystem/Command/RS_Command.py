@@ -1,19 +1,15 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
-RS_Command
-"""
+''' RS_Command
 
-__RCSID__ = "$Id:  $"
+'''
 
 from DIRAC                                            import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command       import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions  import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities             import Utils
 from DIRAC.ResourceStatusSystem                       import ValidRes
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
@@ -170,7 +166,7 @@ class StorageElementsStats_Command( Command ):
         granularity = self.args[0]
         name        = self.args[1]
       else:
-        raise InvalidRes( '%s is not a valid granularity' % self.args[ 0 ] )
+        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
 
       res = self.APIs[ 'ResourceStatusClient' ].getStorageElementStats( granularity, name, statusType = None )
       
@@ -216,7 +212,7 @@ class MonitoredStatus_Command( Command ):
 
       if len( self.args ) == 3:
         if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
-          raise InvalidRes, Utils.where( self, self.doCommand )
+          return { 'Result' : S_ERROR( 'Error in MonitoredStatus_Command' ) }
         toBeFound = self.APIs[ 'ResourceStatusClient' ].getGeneralName( 
                       self.args[0], self.args[1], self.args[2] )[ 'Value' ]
       else:

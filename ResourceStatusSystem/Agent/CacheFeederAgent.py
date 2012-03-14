@@ -1,19 +1,21 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id:  $"
-AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
+''' CacheFeederAgent
+
+  This agent feeds the Cache tables with the outputs of the cache commands.
+
+'''
 
 from datetime import datetime
 
 from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC                                                      import gLogger
 from DIRAC.Core.Base.AgentModule                                import AgentModule
-
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.CommandCaller           import CommandCaller
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker          import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Command.knownAPIs               import initAPIs
+
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
 class CacheFeederAgent( AgentModule ):
   '''
@@ -22,21 +24,27 @@ class CacheFeederAgent( AgentModule ):
   tables.
   '''
 
+  # Too many public methods
+  # pylint: disable-msg=R0904  
+
   def initialize( self ):
 
+    # Attribute defined outside __init__ 
+    # pylint: disable-msg=W0201
+    
     try:
 
       self.rmClient       = ResourceManagementClient()
       self.clientsInvoker = ClientsInvoker()
 
-      commandsList_ClientsCache = [
+      commandsListClientsCache = [
         ( 'ClientsCache_Command', 'JobsEffSimpleEveryOne_Command'     ),
         ( 'ClientsCache_Command', 'PilotsEffSimpleEverySites_Command' ),
         ( 'ClientsCache_Command', 'DTEverySites_Command'              ),
         ( 'ClientsCache_Command', 'DTEveryResources_Command'          )
         ]
 
-      commandsList_AccountingCache =  [
+      commandsListAccountingCache =  [
         ( 'AccountingCache_Command', 'TransferQualityByDestSplitted_Command',     ( 2, ),    'Always' ),
         ( 'AccountingCache_Command', 'FailedTransfersBySourceSplitted_Command',   ( 2, ),    'Always' ),
         ( 'AccountingCache_Command', 'TransferQualityByDestSplittedSite_Command', ( 24, ),   'Hourly' ),
@@ -52,39 +60,39 @@ class CacheFeederAgent( AgentModule ):
         ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 8760, ), 'Daily'  ),
         ]
 
-      self.commandObjectsList_ClientsCache    = []
-      self.commandObjectsList_AccountingCache = []
+      self.commandObjectsListClientsCache    = []
+      self.commandObjectsListAccountingCache = []
 
       cc = CommandCaller()
 
       # We know beforehand which APIs are we going to need, so we initialize them
       # first, making everything faster.
-      APIs = [ 'ResourceStatusClient', 'WMSAdministrator', 'ReportGenerator',
-               'JobsClient', 'PilotsClient', 'GOCDBClient', 'ReportsClient' ]
-      APIs = initAPIs( APIs, {} )
+      knownAPIs = [ 'ResourceStatusClient', 'WMSAdministrator', 'ReportGenerator',
+                    'JobsClient', 'PilotsClient', 'GOCDBClient', 'ReportsClient' ]
+      knownAPIs = initAPIs( knownAPIs, {} )
 
-      for command in commandsList_ClientsCache:
+      for command in commandsListClientsCache:
 
         cObj = cc.setCommandObject( command )
-        for apiName, apiInstance in APIs.items():
+        for apiName, apiInstance in knownAPIs.items():
           cc.setAPI( cObj, apiName, apiInstance )
 
-        self.commandObjectsList_ClientsCache.append( ( command, cObj ) )
+        self.commandObjectsListClientsCache.append( ( command, cObj ) )
 
-      for command in commandsList_AccountingCache:
+      for command in commandsListAccountingCache:
 
         cObj = cc.setCommandObject( command )
-        for apiName, apiInstance in APIs.items():
+        for apiName, apiInstance in knownAPIs.items():
           cc.setAPI( cObj, apiName, apiInstance )
         cArgs = command[ 2 ]
 
-        self.commandObjectsList_AccountingCache.append( ( command, cObj, cArgs ) )
+        self.commandObjectsListAccountingCache.append( ( command, cObj, cArgs ) )
 
       return S_OK()
 
     except Exception:
       errorStr = "CacheFeederAgent initialization"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
 ################################################################################
@@ -93,23 +101,23 @@ class CacheFeederAgent( AgentModule ):
 
     try:
 
-      for co in self.commandObjectsList_ClientsCache:
+      for co in self.commandObjectsListClientsCache:
 
         commandName = co[0][1].split( '_' )[0]
-        gLogger.info( 'Executed %s' % commandName )
+        self.log.info( 'Executed %s' % commandName )
         try:
           self.clientsInvoker.setCommand( co[1] )
           res = self.clientsInvoker.doCommand()['Result']
 
           if not res['OK']:
-            gLogger.warn( res['Message'] )
+            self.log.warn( res['Message'] )
             continue
           res = res[ 'Value' ]
 
           if not res or res is None:
-            gLogger.info('  returned empty...')
+            self.log.info('  returned empty...')
             continue
-          gLogger.debug( res )
+          self.log.debug( res )
 
           for key in res.keys():
 
@@ -124,7 +132,7 @@ class CacheFeederAgent( AgentModule ):
 
                   resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
                   if not resQuery[ 'OK' ]:
-                    gLogger.error( resQuery[ 'Message' ] )
+                    self.log.error( resQuery[ 'Message' ] )
 
             else:
               for value in res[key].keys():
@@ -133,15 +141,15 @@ class CacheFeederAgent( AgentModule ):
 
                 resQuery = self.rmClient.addOrModifyClientCache( *clientCache )
                 if not resQuery[ 'OK' ]:
-                  gLogger.error( resQuery[ 'Message' ] )
+                  self.log.error( resQuery[ 'Message' ] )
 
         except:
-          gLogger.exception( "Exception when executing " + co[0][1] )
+          self.log.exception( "Exception when executing " + co[0][1] )
           continue
 
       now = datetime.utcnow().replace( microsecond = 0 )
 
-      for co in self.commandObjectsList_AccountingCache:
+      for co in self.commandObjectsListAccountingCache:
 
         if co[0][3] == 'Hourly':
           if now.minute >= 10:
@@ -153,7 +161,7 @@ class CacheFeederAgent( AgentModule ):
         commandName = co[0][1].split( '_' )[0]
         plotName    = commandName + '_' + str( co[2][0] )
 
-        gLogger.info( 'Executed %s with args %s %s' % ( commandName, co[0][2], co[0][3] ) )
+        self.log.info( 'Executed %s with args %s %s' % ( commandName, co[0][2], co[0][3] ) )
 
         try:
           co[1].setArgs( co[2] )
@@ -161,20 +169,20 @@ class CacheFeederAgent( AgentModule ):
           res = self.clientsInvoker.doCommand()['Result']
 
           if not res['OK']:
-            gLogger.warn( res['Message'] )
+            self.log.warn( res['Message'] )
             continue
           res = res[ 'Value' ]
 
           if not res or res is None:
-            gLogger.info('  returned empty...')
+            self.log.info('  returned empty...')
             continue
-          gLogger.debug( res )
+          self.log.debug( res )
 
           plotType = res.keys()[ 0 ]
 
           if not res[ plotType ]:
-            gLogger.info('  returned empty...')
-          gLogger.debug( res )
+            self.log.info('  returned empty...')
+          self.log.debug( res )
 
           for name in res[ plotType ].keys():
 
@@ -182,17 +190,17 @@ class CacheFeederAgent( AgentModule ):
             accountingClient = ( name, plotType, plotName, str(res[plotType][name]), None, None )
             resQuery = self.rmClient.addOrModifyAccountingCache( *accountingClient )
             if not resQuery[ 'OK' ]:
-              gLogger.error( resQuery[ 'Message' ] )
+              self.log.error( resQuery[ 'Message' ] )
 
         except:
-          gLogger.exception( "Exception when executing " + commandName )
+          self.log.exception( "Exception when executing " + commandName )
           continue
 
       return S_OK()
 
     except Exception:
       errorStr = "CacheFeederAgent execution"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
 ################################################################################

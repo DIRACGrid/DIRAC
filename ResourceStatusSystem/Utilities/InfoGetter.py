@@ -1,13 +1,17 @@
-################################################################################
-# $HeadURL:  $
-################################################################################
-__RCSID__ = "$Id:  $"
+# $HeadURL: $
+''' InfoGetter
+
+  Module used to map the policies with the CS.
+
+'''
 
 import copy
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAt
 from DIRAC.ResourceStatusSystem.Utilities    import Utils
 from DIRAC.ResourceStatusSystem              import views_panels
+
+__RCSID__ = '$Id: $'
 
 class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations

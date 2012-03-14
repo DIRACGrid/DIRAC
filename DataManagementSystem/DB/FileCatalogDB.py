@@ -23,10 +23,16 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             i
 #############################################################################
 class FileCatalogDB(DB):
 
-  def __init__( self, maxQueueSize=10 ):
+  def __init__( self, databaseLocation='DataManagement/FileCatalogDB', maxQueueSize=10 ):
     """ Standard Constructor
     """
-    DB.__init__(self,'FileCatalogDB','DataManagement/FileCatalogDB',maxQueueSize)
+    
+    # The database location can be specified in System/Database form or in just the Database name
+    # in the DataManagement system 
+    db = databaseLocation
+    if db.find('/') == -1:
+      db = 'DataManagement/' + db
+    DB.__init__(self,'FileCatalogDB',db,maxQueueSize)
 
   def setConfig(self,databaseConfig):
 

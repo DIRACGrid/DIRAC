@@ -51,17 +51,22 @@ class RegistrationTask( RequestTask ):
     :param subRequestAttrs: SubRequest attributes
     :param subRequestFiles: subRequest files
     """
-    self.info( "registerFile: processing subrequest %d" % index )
+    self.info( "registerFile: processing subrequest %s" % index )
+    if requestObj.isSubRequestEmpty( index, "register" )["Value"]:
+      self.info("registerFile: subrequest %s is empty, setting its status to 'Done'" % index )
+      requestObj.setSubRequestStatus( index, "register", "Done" )
+      return S_OK( requestObj )
 
     ## list of targetSE
-    targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") ] ) )
+    targetSEs = list( set( [ targetSE.strip() for targetSE in  subRequestAttrs["TargetSE"].split(",") 
+                             if targetSE.strip() ] ) )
     if not targetSEs:
       self.warn( "registerFile: no TargetSE specified! will use default 'CERN-FAILOVER'")
       targetSEs = [ "CERN-FAILOVER" ]
+
     ## dict for failed LFNs
     failed = {}
-    ## subrequest error if any
-    subRequestError = ""
+    failedFiles = 0
 
     catalogue = subRequestAttrs["Catalogue"] if subRequestAttrs["Catalogue"] else ""
     if catalogue == "BookkeepingDB":
@@ -70,11 +75,12 @@ class RegistrationTask( RequestTask ):
 
     for subRequestFile in subRequestFiles:
       lfn = subRequestFile.get( "LFN", "" ) 
-      failed.setdefault( lfn, {} )
       self.info("registerFile: processing file %s" % lfn )
       if subRequestFile["Status"] != "Waiting":
         self.info("registerFile: skipping file %s, status is %s" % ( lfn, subRequestFile["Status"] ) )
         continue
+
+      failed.setdefault( lfn, {} )
       pfn = subRequestFile.get( "PFN", "" ) 
       size = subRequestFile.get( "Size", 0 ) 
       guid = subRequestFile.get( "GUID", "" ) 
@@ -83,31 +89,33 @@ class RegistrationTask( RequestTask ):
       for targetSE in targetSEs:
         
         fileTuple = ( lfn, pfn, size, targetSE, guid, addler )
-  
+        if "" in fileTuple:
+          self.warn( "registerFile: missing arg in (LFN, PFN, Size, TargetSE, GUID, Addler) = %s" % str(fileTuple) )
+
         res = self.replicaManager().registerFile( fileTuple, catalogue )
         
         if not res["OK"] or lfn in res["Value"]["Failed"]:
-          self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationTask" )
+          self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationAgent" )
           reason = res["Message"] if not res["OK"] else "registration in ReplicaManager failed"
-          errorStr = "Failed to register LFN %s: %s" % ( lfn, reason )
+          errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
           failed[lfn][targetSE] = reason
-          subRequestError = reason
           self.error( "registerFile: %s" % errorStr )
+          failedFiles += 1
         else:
-          self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegistrationTask" )
+          self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegistrationAgent" )
           self.info( "registerFile: file %s has been registered at %s" % ( lfn, targetSE ) )
      
       if not failed[lfn]:
         requestObj.setSubRequestFileAttributeValue( index, "register", lfn, "Status", "Done")
-        self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )
-
+        self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )        
+     
     ##################################################################
     ## all files were registered or no files at all in this subrequest
-    if not subRequestError:
+    if requestObj.isSubRequestDone( index, "register" )["Value"]:
+      self.info("registerFile: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "register", "Done" )
-      self.debug( "registerFile: subrequest %d status has been set to 'Done'." % index )
-    else:
-      self.error( "registerFile: registration failed for LFNs: %s" % ", ".join( failed.keys() ) ) 
+    elif failedFiles:
+      self.info("registerFile: all files processed, %s files failed to register" % failedFiles )
     ## return requestObj
     return S_OK( requestObj )
           
