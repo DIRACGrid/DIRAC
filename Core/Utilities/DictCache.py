@@ -6,7 +6,7 @@ import datetime
 
 class DictCache:
 
-  def __init__(self, deleteFunction = False ):
+  def __init__( self, deleteFunction = False ):
     """
     Initialize the dict cache.
       If a delete function is specified it will be invoked when deleting a cached object
@@ -61,6 +61,8 @@ class DictCache:
         - validSeconds : valid seconds of this record
         - value : value of the record
     """
+    if max( 0, validSeconds ) == 0:
+      return
     self.__lock.acquire()
     try:
       vD = { 'expirationTime' : datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ),
@@ -91,7 +93,7 @@ class DictCache:
     finally:
       self.__lock.release()
 
-  def showContentsInString(self):
+  def showContentsInString( self ):
     """
     Return a human readable string to represent the contents
     """
@@ -140,7 +142,7 @@ class DictCache:
     finally:
       self.__lock.release()
 
-  def purgeAll(self):
+  def purgeAll( self ):
     """
     Purge all entries
     """

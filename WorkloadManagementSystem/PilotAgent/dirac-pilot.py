@@ -64,6 +64,7 @@ class CliParams:
     self.gridVersion = '2010-11-20'
     self.pilotReference = ''
     self.releaseVersion = ''
+    self.releaseProject = ''
 
 cliParams = CliParams()
 
@@ -231,6 +232,7 @@ for o, v in optList:
     cliParams.pythonVersion = v
   elif o in ( '-l', '--project' ):
     installOpts.append( "-l '%s'" % v )
+    cliParams.releaseProject = v
   elif o == '-n' or o == '--name':
     configureOpts.append( '-n "%s"' % v )
     cliParams.site = v
@@ -371,6 +373,8 @@ if cliParams.ceName:
   configureOpts.append( '-o /LocalSite/GridCE=%s' % cliParams.ceName )
 if cliParams.releaseVersion:
   configureOpts.append( '-o /LocalSite/ReleaseVersion=%s' % cliParams.releaseVersion )
+if cliParams.releaseProject:
+  configureOpts.append( '-o /LocalSite/ReleaseProject=%s' % cliParams.releaseProject )
 
 ###
 # Set the platform if defined
