@@ -610,26 +610,18 @@ class StorageElement:
           gLogger.verbose( "StorageElement.__executeFunction No pfns generated for protocol %s." % protocolName )
         else:
           gLogger.verbose( "StorageElement.__executeFunction: Attempting to perform '%s' for %s physical files." % ( method, len( pfnDict.keys() ) ) )
+          fcn = None
+          if hasattr( storage, method ) and callable( getattr( storage, method ) ):
+            fcn = getattr( storage, method )
+          if not fcn:
+            return S_ERROR("StorageElement.__executeFunction: unable to invoke %s, it isn't a member function of storage")
+          
           pfnsToUse = {}
           for pfn in pfnDict.keys():
             pfnsToUse[pfn] = pfns[pfnDict[pfn]]
-          if argsDict:
-            execString = "res = storage.%s(pfnsToUse" % method
-            for argument, value in argsDict.items():
-              if type( value ) == types.StringType:
-                execString = "%s, %s='%s'" % ( execString, argument, value )
-              else:
-                execString = "%s, %s=%s" % ( execString, argument, value )
-            execString = "%s)" % execString
-          else:
-            execString = "res = storage.%s(pfnsToUse)" % method
-          try:
-            exec( execString )
-          except AttributeError, errMessage:
-            exceptStr = "StorageElement.__executeFunction: Exception while performing %s." % method
-            gLogger.exception( exceptStr, str( errMessage ) )
-            res = S_ERROR( exceptStr )
-
+            
+          res = fcn( pfnsToUse, **argsDict )
+          
           if not res['OK']:
             errStr = "StorageElement.__executeFunction: Completely failed to perform %s." % method
             gLogger.error( errStr, '%s for protocol %s: %s' % ( self.name, protocolName, res['Message'] ) )
