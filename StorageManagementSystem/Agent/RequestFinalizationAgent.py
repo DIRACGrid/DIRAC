@@ -1,4 +1,6 @@
+##########################################################################
 # $HeadURL$
+##########################################################################
 
 __RCSID__ = "$Id$"
 
@@ -111,9 +113,13 @@ class RequestFinalizationAgent( AgentModule ):
     gLogger.debug( "RequestFinalization.__performCallback: Attempting to perform call back for %s with %s status" % ( sourceTask, status ) )
     client = RPCClient( service )
     gLogger.debug( "RequestFinalization.__performCallback: Created RPCClient to %s" % service )
-    execString = "res = client.%s('%s','%s')" % ( method, sourceTask, status )
+    fcn = None
+    if hasattr( client, method ) and callable( getattr( client, method ) ):
+      fcn = getattr( client, method )
+    if not fcn:
+      return S_ERROR( "Unable to invoke %s, it isn't a member funtion of %s" % ( method, service ) )
     gLogger.debug( "RequestFinalization.__performCallback: Attempting to invoke %s service method" % method )
-    exec( execString )
+    res = fcn( sourceTask, status )
     if not res['OK']:
       gLogger.error( "RequestFinalization.__performCallback: Failed to perform callback", res['Message'] )
     else:
