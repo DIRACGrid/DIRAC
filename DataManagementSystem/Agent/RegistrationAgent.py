@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.ProcessPool import ProcessPool, ProcessTask
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
-from DIRAC.DataManagementSystem.Agent.RegistrationTask import RegistrationTask
+from DIRAC.DataManagementSystem.private.RegistrationTask import RegistrationTask
 
 ## agent name
 AGENT_NAME = 'DataManagement/RegistrationAgent'

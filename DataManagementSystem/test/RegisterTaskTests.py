@@ -42,7 +42,7 @@ DataLoggingClient = Mock(spec=DataLoggingClient)
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 ReplicaManager = Mock(spec=ReplicaManager)
-from DIRAC.DataManagementSystem.Agent.RegistrationTask import RegistrationTask
+from DIRAC.DataManagementSystem.private.RegistrationTask import RegistrationTask
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
 gProxyManager = Mock( spec=gProxyManager.__class__ )
