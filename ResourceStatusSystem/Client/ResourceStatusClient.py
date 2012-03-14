@@ -1,7 +1,11 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceStatusClient
+
+  Client to interact with the ResourceStatusDB.
+
+'''
+
+from datetime import datetime, timedelta
 
 from DIRAC                                           import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RPCClient                      import RPCClient        
@@ -10,13 +14,11 @@ from DIRAC.ResourceStatusSystem                      import ValidRes, ValidStatu
   ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType       
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
 from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node       
-       
-from datetime import datetime, timedelta       
-       
-import sys       
+
+__RCSID__ = '$Id: $'
        
 class ResourceStatusClient:
-  """
+  '''
   The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus` 
   API. All functions you need are on this client.
   
@@ -42,7 +44,7 @@ class ResourceStatusClient:
   All functions calling methods exposed on the database or on the booster are 
   making use of some syntactic sugar, in this case a decorator that simplifies
   the client considerably.    
-  """
+  '''
 
   def __init__( self , serviceIn = None ):
     '''
@@ -59,51 +61,6 @@ class ResourceStatusClient:
         self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
     else:
       self.gate = serviceIn
-           
-#  def __query( self, kwargs ):
-#    '''
-#      This method is a rather important one. It will format the input for the DB
-#      queries, instead of doing it on a decorator. Two dictionaries must be passed
-#      to the DB. First one contains 'columnName' : value pairs, being the key
-#      lower camel case. The second one must have, at lease, a key named 'table'
-#      with the right table name. 
-#    '''
-#    
-#    # Functions we can call, just a light safety measure.
-#    __INTERNAL_FUNCTIONS__ = [ 'insert', 'update', 'get', 'delete' ]
-#    gateFunction           = None
-#    
-#    # I'm simply lazy, do not want to pass function name as argument. I get it here
-#    fname  = sys._getframe( 1 ).f_code.co_name
-#    meta   = kwargs.pop( 'meta' )
-#    params = kwargs
-#    del params[ 'self' ]
-#        
-#    for _ifName in __INTERNAL_FUNCTIONS__:
-#      
-#      if fname.startswith( _ifName ):
-#        
-#        _table = fname.replace( _ifName, '' )
-#      
-#        # This is an special case with the Element tables.
-#        if _table.startswith( 'Element' ):
-#          _element = params.pop( 'element' )
-#          _table   = _table.replace( 'Element', _element )
-#          params[ '%sName' % _element ] = params[ 'elementName' ]
-#          del params[ 'elementName' ]
-#          
-#        meta[ 'table' ] = _table
-#        
-#        gateFunction = getattr( self.gate, _ifName )
-#        continue  
-#    
-#    # Be careful, __eq__ method cannot be executed if we use server !  
-#    if gateFunction is not None:  
-#      
-#      gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( _ifName, params, meta ) )  
-#      return gateFunction( params, meta )     
-#    
-#    return S_ERROR( 'Cannot find right call for %s' % fname )
 
   def __query( self, queryType, tableName, kwargs ):
     '''
@@ -120,7 +77,8 @@ class ResourceStatusClient:
     
     gateFunction = getattr( self.gate, queryType )
     
-    meta   = kwargs.pop( 'meta' )
+    # If meta is None, we set it to {}
+    meta   = ( True and kwargs.pop( 'meta' ) ) or {}
     params = kwargs
     del params[ 'self' ]     
         
@@ -132,16 +90,13 @@ class ResourceStatusClient:
           
     meta[ 'table' ] = tableName
     
-    gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
-    return gateFunction( params, meta )
-          
-  '''
-  ##############################################################################
-  # SITE FUNCTIONS
-  ##############################################################################
-  '''      
-  
-  def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
+    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
+    return gateFunction( params, meta )    
+
+################################################################################
+# SITE FUNCTIONS
+      
+  def insertSite( self, siteName, siteType, gridSiteName, meta = None ):
     '''
     Inserts on Site a new row with the arguments given.
     
@@ -159,8 +114,10 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Site', locals() )
-  def updateSite( self, siteName, siteType, gridSiteName, meta = {} ):
+  def updateSite( self, siteName, siteType, gridSiteName, meta = None ):
     '''
     Updates Site with the parameters given. By default, `siteName` will be the \
     parameter used to select the row. 
@@ -178,10 +135,12 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''   
+    '''
+    # Unused argument   
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'Site', locals() )
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
-               meta = {} ):
+               meta = None ):
     '''
     Gets from Site all rows that match the parameters given.
     
@@ -199,9 +158,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'Site', locals() )
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
-                  meta = {} ):
+                  meta = None ):
     '''
     Deletes from Site all rows that match the parameters given.
     
@@ -219,12 +180,14 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'Site', locals() )
   def getSitePresent( self, siteName = None, siteType = None, 
                       gridSiteName = None, gridTier = None, statusType = None, 
                       status = None, dateEffective = None, reason = None, 
                       lastCheckTime = None, tokenOwner = None, 
-                      tokenExpiration = None, formerStatus = None, meta = {} ):
+                      tokenExpiration = None, formerStatus = None, meta = None ):
     '''
     Gets from the view composed by Site, SiteStatus and SiteHistory all rows 
     that match the parameters given ( not necessarily returns the same number 
@@ -260,15 +223,15 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''   
+    '''
+    # Unused argument   
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'SitePresent', locals() )
 
-  '''
-  ##############################################################################
-  # SERVICE FUNCTIONS
-  ##############################################################################
-  '''
-  def insertService( self, serviceName, serviceType, siteName, meta = {} ):
+################################################################################
+# SERVICE FUNCTIONS
+
+  def insertService( self, serviceName, serviceType, siteName, meta = None ):
     '''
     Inserts on Service a new row with the arguments given.
     
@@ -286,8 +249,10 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Service', locals() )
-  def updateService( self, serviceName, serviceType, siteName, meta = {} ):
+  def updateService( self, serviceName, serviceType, siteName, meta = None ):
     '''
     Updates Service with the parameters given. By default, `serviceName` will \
     be the parameter used to select the row.
@@ -306,9 +271,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'Service', locals() )
   def getService( self, serviceName = None, serviceType = None, siteName = None, 
-                  meta = {} ):
+                  meta = None ):
     '''
     Gets from Service all rows that match the parameters given.
     
@@ -326,9 +293,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'Service', locals() )
   def deleteService( self, serviceName = None, serviceType = None, 
-                     siteName = None, meta = {} ):
+                     siteName = None, meta = None ):
     '''
     Deletes from Service all rows that match the parameters given.
     
@@ -346,13 +315,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'Service', locals() )
   def getServicePresent( self, serviceName = None, siteName = None, 
                          siteType = None, serviceType = None, statusType = None, 
                          status = None, dateEffective = None, reason = None, 
                          lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, formerStatus = None, 
-                         meta = {} ):
+                         meta = None ):
     '''
     Gets from the view composed by Service, ServiceStatus and ServiceHistory all 
     rows that match the parameters given ( not necessarily returns the same 
@@ -390,15 +361,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ServicePresent', locals() )
 
-  '''
-  ##############################################################################
-  # RESOURCE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# RESOURCE FUNCTIONS
+
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
-                      gridSiteName, meta = {} ):
+                      gridSiteName, meta = None ):
     '''
     Inserts on Resource a new row with the arguments given.
     
@@ -420,9 +391,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'Resource', locals() )
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
-                      gridSiteName, meta = {} ):
+                      gridSiteName, meta = None ):
     '''
     Updates Resource with the parameters given. By default, `resourceName` will 
     be the parameter used to select the row.
@@ -445,10 +418,12 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'Resource', locals() )
   def getResource( self, resourceName = None, resourceType = None, 
                    serviceType = None, siteName = None, gridSiteName = None, 
-                   meta = {} ):
+                   meta = None ):
     '''
     Gets from Resource all rows that match the parameters given.
     
@@ -470,10 +445,12 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'Resource', locals() )
   def deleteResource( self, resourceName = None, resourceType = None, 
                       serviceType = None, siteName = None, gridSiteName = None, 
-                      meta = {} ):
+                      meta = None ):
     '''
     Deletes from Resource all rows that match the parameters given.
     
@@ -495,6 +472,8 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'Resource', locals() )
   def getResourcePresent( self, resourceName = None, siteName = None, 
                           serviceType = None, gridSiteName = None, 
@@ -503,7 +482,7 @@ class ResourceStatusClient:
                           dateEffective = None, reason = None, 
                           lastCheckTime = None, tokenOwner = None, 
                           tokenExpiration = None, formerStatus = None, 
-                          meta = {} ):
+                          meta = None ):
     '''
     Gets from the view composed by Resource, ResourceStatus and ResourceHistory 
     all rows that match the parameters given ( not necessarily returns the same 
@@ -546,15 +525,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ResourcePresent', locals() )
 
-  '''
-  ##############################################################################
-  # STORAGE ELEMENT FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# STORAGE ELEMENT FUNCTIONS
+
   def insertStorageElement( self, storageElementName, resourceName, 
-                            gridSiteName, meta = {} ):
+                            gridSiteName, meta = None ):
     '''
     Inserts on StorageElement a new row with the arguments given.
     
@@ -570,10 +549,12 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''  
+    # Unused argument
+    # pylint: disable-msg=W0613  
     return self.__query( 'insert', 'StorageElement', locals() )
   def updateStorageElement( self, storageElementName, resourceName, 
-                            gridSiteName, meta = {} ):
+                            gridSiteName, meta = None ):
     '''
     Updates StorageElement with the parameters given. By default, 
     `storageElementName` will be the parameter used to select the row.
@@ -591,9 +572,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'StorageElement', locals() )
   def getStorageElement( self, storageElementName = None, resourceName = None, 
-                         gridSiteName = None, meta = {} ):
+                         gridSiteName = None, meta = None ):
     '''
     Gets from StorageElement all rows that match the parameters given.
     
@@ -609,11 +592,13 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''   
+    # Unused argument
+    # pylint: disable-msg=W0613 
     return self.__query( 'get', 'StorageElement', locals() )
   def deleteStorageElement( self, storageElementName = None, 
                             resourceName = None, gridSiteName = None, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Deletes from StorageElement all rows that match the parameters given.
     
@@ -630,6 +615,8 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'StorageElement', locals() )    
   def getStorageElementPresent( self, storageElementName = None, 
                                 resourceName = None, gridSiteName = None, 
@@ -637,7 +624,7 @@ class ResourceStatusClient:
                                 status = None, dateEffective = None, 
                                 reason = None, lastCheckTime = None, 
                                 tokenOwner = None, tokenExpiration = None, 
-                                formerStatus = None, meta = {} ):
+                                formerStatus = None, meta = None ):
     '''
     Gets from the view composed by StorageElement, StorageElementStatus and 
     StorageElementHistory all rows that match the parameters given ( not 
@@ -674,15 +661,15 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'StorageElementPresent', locals() )
 
-  '''
-  ##############################################################################
-  # GRID SITE FUNCTIONS
-  ##############################################################################
-  '''
-  def insertGridSite( self, gridSiteName, gridTier, meta = {} ):
+################################################################################
+# GRID SITE FUNCTIONS
+
+  def insertGridSite( self, gridSiteName, gridTier, meta = None ):
     '''
     Inserts on GridSite a new row with the arguments given.
     
@@ -696,9 +683,11 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'GridSite', locals() )
-  def updateGridSite( self, gridSiteName, gridTier, meta = {} ):
+  def updateGridSite( self, gridSiteName, gridTier, meta = None ):
     '''
     Updates GridSite with the parameters given. By default, 
     `gridSiteName` will be the parameter used to select the row.
@@ -714,8 +703,10 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'GridSite', locals() )   
-  def getGridSite( self, gridSiteName = None, gridTier = None, meta = {} ):
+  def getGridSite( self, gridSiteName = None, gridTier = None, meta = None ):
     '''
     Gets from GridSite all rows that match the parameters given.
 
@@ -730,8 +721,10 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'GridSite', locals() )
-  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = {} ): 
+  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = None ): 
     '''
     Deletes from GridSite all rows that match the parameters given.
     
@@ -745,18 +738,18 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''           
+    '''     
+    # Unused argument
+    # pylint: disable-msg=W0613      
     return self.__query( 'delete', 'GridSite', locals() )
 
-  '''
-  ##############################################################################
-  # ELEMENT STATUS FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# ELEMENT STATUS FUNCTIONS
+
   def insertElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
-                           meta = {} ): 
+                           meta = None ): 
     '''
     Inserts on <element>Status a new row with the arguments given.
     
@@ -791,11 +784,13 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'ElementStatus', locals() )
   def updateElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
-                           meta = {} ):
+                           meta = None ):
     '''
     Updates <element>Status with the parameters given. By default, 
     `elementName` and 'statusType' will be the parameters used to select the row.
@@ -831,12 +826,14 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'ElementStatus', locals() )
   def getElementStatus( self, element, elementName = None, statusType = None, 
                         status = None, reason = None, dateCreated = None, 
                         dateEffective = None, dateEnd = None, 
                         lastCheckTime = None, tokenOwner = None, 
-                        tokenExpiration = None, meta = {} ):
+                        tokenExpiration = None, meta = None ):
     '''
     Gets from <element>Status all rows that match the parameters given.
     
@@ -871,12 +868,14 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ElementStatus', locals() )
   def deleteElementStatus( self, element, elementName = None, statusType = None, 
                            status = None, reason = None, dateCreated = None, 
                            dateEffective = None, dateEnd = None, 
                            lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, meta = {} ):
+                           tokenExpiration = None, meta = None ):
     '''
     Deletes from <element>Status all rows that match the parameters given.
     
@@ -911,17 +910,17 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementStatus', locals() )
 
-  '''
-  ##############################################################################
-  # ELEMENT SCHEDULED STATUS FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# ELEMENT SCHEDULED STATUS FUNCTIONS
+
   def insertElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
-                                    tokenExpiration, meta = {} ): 
+                                    tokenExpiration, meta = None ): 
     '''
     Inserts on <element>ScheduledStatus a new row with the arguments given.
     
@@ -956,11 +955,13 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'ElementScheduledStatus', locals() )
   def updateElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
-                                    tokenExpiration, meta = {} ):
+                                    tokenExpiration, meta = None ):
     '''
     Updates <element>ScheduledStatus with the parameters given. By default, 
     `elementName`, 'statusType' and `dateEffective` will be the parameters used 
@@ -997,13 +998,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'ElementScheduledStatus', locals() )
   def getElementScheduledStatus( self, element, elementName = None, 
                                  statusType = None, status = None, 
                                  reason = None, dateCreated = None, 
                                  dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None, tokenOwner = None, 
-                                 tokenExpiration = None, meta = {} ):
+                                 tokenExpiration = None, meta = None ):
     '''
     Gets from <element>ScheduledStatus all rows that match the parameters given.
     
@@ -1038,13 +1041,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ElementScheduledStatus', locals() )
   def deleteElementScheduledStatus( self, element, elementName = None, 
                                     statusType = None, status = None, 
                                     reason = None, dateCreated = None,
                                     dateEffective = None, dateEnd = None, 
                                     lastCheckTime = None, tokenOwner = None, 
-                                    tokenExpiration = None, meta = {} ):
+                                    tokenExpiration = None, meta = None ):
     '''
     Deletes from <element>ScheduledStatus all rows that match the parameters 
     given.
@@ -1080,17 +1085,17 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementScheduledStatus', locals() )
-      
-  '''
-  ##############################################################################
-  # ELEMENT HISTORY FUNCTIONS
-  ##############################################################################
-  '''
+
+################################################################################
+# ELEMENT HISTORY FUNCTIONS
+
   def insertElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
-                            meta = {} ): 
+                            meta = None ): 
     '''
     Inserts on <element>History a new row with the arguments given.
     
@@ -1125,11 +1130,13 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'ElementHistory', locals() )
   def updateElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Updates <element>History with the parameters given. By default, 
     `elementName`, 'statusType', `reason` and `dateEnd` will be the parameters 
@@ -1166,12 +1173,14 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'ElementHistory', locals() )
   def getElementHistory( self, element, elementName = None, statusType = None, 
                          status = None, reason = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, 
                          lastCheckTime = None, tokenOwner = None, 
-                         tokenExpiration = None, meta = {} ):
+                         tokenExpiration = None, meta = None ):
     '''
     Gets from <element>History all rows that match the parameters given.
     
@@ -1206,13 +1215,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ElementHistory', locals() )
   def deleteElementHistory( self, element, elementName = None, 
                             statusType = None, status = None, reason = None, 
                             dateCreated = None, dateEffective = None, 
                             dateEnd = None, lastCheckTime = None, 
                             tokenOwner = None, tokenExpiration = None, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Deletes from <element>History all rows that match the parameters given.
 
@@ -1247,13 +1258,12 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ElementHistory', locals() ) 
-
-  '''
-  ##############################################################################
-  # CS VALID ELEMENTS
-  ##############################################################################
-  '''
+  
+################################################################################
+# CS VALID ELEMENTS
   
   def getValidElements( self ):
     '''
@@ -1311,11 +1321,8 @@ class ResourceStatusClient:
     '''    
     return S_OK( ValidResourceType )
 
-  '''
-  ##############################################################################
-  # EXTENDED FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# EXTENDED FUNCTIONS
 
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
     '''
@@ -1333,6 +1340,8 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Site', locals() )
 
   def addOrModifyService( self, serviceName, serviceType, siteName ):
@@ -1351,6 +1360,8 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Service', locals() )
 
   def addOrModifyResource( self, resourceName, resourceType, serviceType, 
@@ -1373,7 +1384,9 @@ class ResourceStatusClient:
         name of the grid site the resource belongs ( if any )  
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Resource', locals() )
 
   def addOrModifyStorageElement( self, storageElementName, resourceName, 
@@ -1391,7 +1404,9 @@ class ResourceStatusClient:
         name of the grid site the storage element belongs
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'StorageElement', locals() )
 
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
@@ -1457,6 +1472,8 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__modifyElementStatus( locals() )
 
   def removeElement( self, element, elementName ):
@@ -1472,7 +1489,9 @@ class ResourceStatusClient:
         name of the individual of class element  
     
     :return: S_OK() || S_ERROR()
-    '''       
+    '''
+    # Unused argument       
+    # pylint: disable-msg=W0613
     return self.__removeElement( element, elementName )
 
   def getServiceStats( self, siteName, statusType = None ):
@@ -2310,11 +2329,9 @@ class ResourceStatusClient:
   
 ################################################################################
 
-  '''
-  ##############################################################################
-  # addOrModify PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# addOrModify PRIVATE FUNCTIONS
+
 
   def __addOrModifyElement( self, element, kwargs ):
 
@@ -2322,7 +2339,9 @@ class ResourceStatusClient:
        
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
     sqlQuery = self._getElement( element, kwargs )
-     
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery
+         
     del kwargs[ 'meta' ] 
        
     if sqlQuery[ 'Value' ]:      
@@ -2380,6 +2399,8 @@ class ResourceStatusClient:
              }
 
     sqlQuery = self._getElement( 'ElementStatus', kwargs )
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery
 
     rDict[ 'element' ] = element
 
@@ -2423,11 +2444,8 @@ class ResourceStatusClient:
 
     return iDict
 
-  '''
-  ##############################################################################
-  # Modify PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# Modify PRIVATE FUNCTIONS
   
   def __modifyElementStatus( self,kwargs ):
       
@@ -2486,11 +2504,8 @@ class ResourceStatusClient:
     
     return updateSQLQuery  
   
-  '''
-  ##############################################################################
-  # remove PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# remove PRIVATE FUNCTIONS
   
   def __removeElement( self, element, elementName ):
   
@@ -2509,11 +2524,8 @@ class ResourceStatusClient:
 
     return sqlQuery   
   
-  '''
-  ##############################################################################
-  # stats PRIVATE FUNCTIONS
-  ##############################################################################
-  '''          
+################################################################################
+# stats PRIVATE FUNCTIONS      
      
   def __getStats( self, sqlQuery ):
     
@@ -2530,42 +2542,40 @@ class ResourceStatusClient:
     count['Total'] = sum( count.values() )
     return S_OK( count ) 
 
-
 ################################################################################
+# Getter functions
 
-  '''
-  ##############################################################################
-  # Getter functions
-  ##############################################################################
-  '''
-
-#  def _insertElement( self, elementTable, **kwargs ):
   def _insertElement( self, elementTable, paramsDict ):
-    
+    '''
+      Method that executes the insert method of the given element.
+    '''    
     fname = 'insert%s' % elementTable
-    f = getattr( self, fname )
-    return f( **paramsDict )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
 
-#  def _updateElement( self, elementTable, **kwargs ):
   def _updateElement( self, elementTable, paramsDict ):
-    
+    '''
+      Method that executes the update method of the given element.
+    '''        
     fname = 'update%s' % elementTable
-    f = getattr( self, fname )
-    return f( **paramsDict )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
 
-#  def _getElement( self, elementTable, **kwargs ):
   def _getElement( self, elementTable, paramsDict ):
-    
+    '''
+      Method that executes the get method of the given element.
+    '''
     fname = 'get%s' % elementTable
-    f = getattr( self, fname )
-    return f( **paramsDict )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
   
-#  def _deleteElement( self, elementTable, **kwargs ):
   def _deleteElement( self, elementTable, paramsDict ): 
-    
+    '''
+      Method that executes the delete method of the given element.
+    '''        
     fname = 'delete%s' % elementTable
-    f = getattr( self, fname )
-    return f( **paramsDict )     
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )     
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

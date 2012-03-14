@@ -1,10 +1,14 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceStatusDB
+
+  Module that provides basic methods to access the ResourceStatusDB.
+
+'''
 
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
 from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckDBExecution, ValidateDBTypes
+
+__RCSID__ = '$Id: $'
 
 class ResourceStatusDB( object ):
   """
@@ -78,17 +82,17 @@ class ResourceStatusDB( object ):
       maxQueueSize = 10
 
     if 'DBin' in kwargs.keys():
-      DBin = kwargs[ 'DBin' ]
+      dbIn = kwargs[ 'DBin' ]
       if isinstance( DBin, list ):
         from DIRAC.Core.Utilities.MySQL import MySQL
-        self.db = MySQL( 'localhost', DBin[ 0 ], DBin[ 1 ], 'ResourceStatusDB' )
+        self.db = MySQL( 'localhost', dbIn[ 0 ], dbIn[ 1 ], 'ResourceStatusDB' )
       else:
-        self.db = DBin
+        self.db = dbIn
     else:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceStatusDB', 'ResourceStatus/ResourceStatusDB', maxQueueSize )
    
-    self.mm    = MySQLMonkey( self )  
+    self.mm = MySQLMonkey( self )  
 
   @CheckDBExecution
   @ValidateDBTypes

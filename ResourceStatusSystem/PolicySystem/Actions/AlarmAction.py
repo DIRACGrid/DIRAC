@@ -1,11 +1,9 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
-  AlarmPolType Actions
-"""
-
-__RCSID__  = "$Id$"
+''' AlarmAction
+  
+  AlarmPolType Actions.
+  
+'''
 
 from DIRAC                                                      import gLogger
 from DIRAC.ResourceStatusSystem.Utilities                       import CS
@@ -15,7 +13,10 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Actions.ActionBase import ActionBas
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
-class AlarmAction(ActionBase):
+__RCSID__  = '$Id: $'
+
+class AlarmAction( ActionBase ):
+  
   def __init__(self, granularity, name, status_type, pdp_decision, **kw):
     ActionBase.__init__( self, granularity, name, status_type, pdp_decision, **kw )
 

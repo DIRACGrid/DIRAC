@@ -1,18 +1,15 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
-RS_Command
-"""
+''' RS_Command
 
-__RCSID__ = "$Id:  $"
+'''
 
 from DIRAC                                            import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command       import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities             import Utils
 from DIRAC.ResourceStatusSystem                       import ValidRes
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################

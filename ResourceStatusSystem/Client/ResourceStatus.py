@@ -1,13 +1,17 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id:  $"
+''' ResourceStatus
+
+  Module use to switch between the CS and the RSS.
+
+'''
 
 import datetime
 
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+
+__RCSID__  = '$Id: $'
 
 def getStorageElementStatus( elementName, statusType = None, default = None ):
   '''
@@ -227,3 +231,4 @@ def __getDictFromList( l ):
   return res  
   
 ################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
