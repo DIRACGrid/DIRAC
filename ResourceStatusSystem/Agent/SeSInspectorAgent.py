@@ -1,23 +1,27 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id: $"
-AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
+''' SeSInspectorAgent
 
-import Queue, time
+  This agent inspect Services, and evaluates policies that apply.
+
+'''
+
+import Queue
+import time
 
 from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
-
 from DIRAC.ResourceStatusSystem.Utilities                   import CS
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/SeSInspectorAgent'
+
 class SeSInspectorAgent( AgentModule ):
-  """
+  '''
     The SeSInspector agent ( ServiceInspectorAgent ) is one of the four
     InspectorAgents of the RSS.
 
@@ -26,13 +30,19 @@ class SeSInspectorAgent( AgentModule ):
 
     If you want to know more about the SeSInspectorAgent, scroll down to the
     end of the file.
-  """
+  '''
+
+  # Too many public methods
+  # pylint: disable-msg=R0904
 
   def initialize( self ):
 
+    # Attribute defined outside __init__ 
+    # pylint: disable-msg=W0201
+
     try:
       self.rsClient      = ResourceStatusClient()
-      self.ServicesFreqs = CS.getTypedDictRootedAt( 'CheckingFreqs/ServicesFreqs' )
+      self.servicesFreqs = CS.getTypedDictRootedAt( 'CheckingFreqs/ServicesFreqs' )
       self.queue         = Queue.Queue()
 
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
@@ -52,9 +62,6 @@ class SeSInspectorAgent( AgentModule ):
       self.log.exception( errorStr )
       return S_ERROR( errorStr )
 
-################################################################################
-################################################################################
-
   def execute( self ):
 
     try:
@@ -65,7 +72,7 @@ class SeSInspectorAgent( AgentModule ):
                                     'ServiceType', 'TokenOwner' ]
       kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
-      resQuery = self.rsClient.getStuffToCheck( 'Service', self.ServicesFreqs, **kwargs )
+      resQuery = self.rsClient.getStuffToCheck( 'Service', self.servicesFreqs, **kwargs )
       if not resQuery[ 'OK' ]:
         self.log.error( resQuery[ 'Message' ] )
         return resQuery
@@ -73,8 +80,8 @@ class SeSInspectorAgent( AgentModule ):
       resQuery = resQuery[ 'Value' ]
       self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
 
-      for r in resQuery:
-        resourceL = [ 'Service' ] + r
+      for service in resQuery:
+        resourceL = [ 'Service' ] + service
         # Here we peek INSIDE the Queue to know if the item is already
         # here. It's ok _here_ since (i.e. I know what I'm doing):
         # - It is a read only operation.
@@ -89,10 +96,11 @@ class SeSInspectorAgent( AgentModule ):
       self.log.exception( errorStr, lException = x )
       return S_ERROR( errorStr )
 
-################################################################################
-################################################################################
-
   def finalize( self ):
+    '''
+      Method executed at the end of the last cycle. It waits until the queue
+      is empty.
+    '''
     if not self.queue.empty():
       self.log.info( "Wait for queue to get empty before terminating the agent"  )
       while not self.queue.empty():
@@ -101,10 +109,12 @@ class SeSInspectorAgent( AgentModule ):
     return S_OK()
 
 ################################################################################
-################################################################################
 
   def _executeCheck(self):
-
+    '''
+      Method executed by the threads in the pool. Picks one element from the
+      common queue, and enforces policies on that element.
+    '''
     # Init the APIs beforehand, and reuse them.
     __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
     clients = knownAPIs.initAPIs( __APIs__, {} )

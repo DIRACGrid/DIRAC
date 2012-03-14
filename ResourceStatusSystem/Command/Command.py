@@ -1,9 +1,13 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' Command
+
+  Base class for all commands.
+
+'''
 
 from DIRAC import gLogger
+
+__RCSID__ = '$Id: $'
 
 class Command( object ):
   """ 
@@ -12,8 +16,8 @@ class Command( object ):
   """
 
   def __init__( self ):
-    self.args    = None
-    self.APIs    = {}
+    self.args = None
+    self.APIs = {}
 
 ################################################################################
 
@@ -48,15 +52,5 @@ class Command( object ):
     if self.args is None:
       gLogger.error( "Before, set `self.args` with `self.setArgs(a)` function." )
     
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-    
-    will come soon...
-'''
-
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

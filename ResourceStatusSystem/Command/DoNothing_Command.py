@@ -1,18 +1,22 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' DoNothing_Command
+
+  Demo Command.
+
+'''
 
 from DIRAC.ResourceStatusSystem.Command.Command import *
 
-class DoNothing_Command(Command):
-  
-  def doCommand(self):
-    """ 
-    """
-    super(DoNothing_Command, self).doCommand()
+__RCSID__ = '$Id: $'
 
-    return {'Result':None}
+class DoNothing_Command( Command ):
+  
+  def doCommand( self ):
+    ''' Do nothing.       
+    '''
+    super( DoNothing_Command, self ).doCommand()
+
+    return { 'Result' : None }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     

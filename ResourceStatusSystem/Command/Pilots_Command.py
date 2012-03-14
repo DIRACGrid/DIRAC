@@ -1,18 +1,17 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' Pilots_Command
+ 
   The Pilots_Command class is a command class to know about
-  present pilots efficiency
-"""
+  present pilots efficiency.
+  
+'''
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command      import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
