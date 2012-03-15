@@ -1107,7 +1107,7 @@ class Job:
             paramsDict['InputData']['value'] = "%s"
             paramsDict['InputData']['type'] = 'JDL'
         self.parametric['files'] = self.parametric['InputData']
-        arguments.append( ' -p ParametricInputData=%s' )
+        arguments.append( ' -p ParametricInputData="%s"' )
       elif self.parametric.has_key( 'InputSandbox' ):
         if paramsDict.has_key( 'InputSandbox' ):
           currentFiles = paramsDict['InputSandbox']['value'] + ";%s"
@@ -1117,7 +1117,7 @@ class Job:
           paramsDict['InputSandbox']['value'] = '%s'
           paramsDict['InputSandbox']['type'] = 'JDL'
         self.parametric['files'] = self.parametric['InputSandbox']
-        arguments.append( ' -p ParametricInputSandbox=%s' )
+        arguments.append( ' -p ParametricInputSandbox="%s"' )
       if self.parametric.has_key( 'files' ):
         paramsDict['Parameters'] = {}
         paramsDict['Parameters']['value'] = self.parametric['files']
