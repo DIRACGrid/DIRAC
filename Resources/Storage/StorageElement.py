@@ -116,7 +116,8 @@ class StorageElement:
       - Read: True (is allowed), False (it is not allowed)
       - Write: True (is allowed), False (it is not allowed)
       - Remove: True (is allowed), False (it is not allowed)
-      - Check: True (is allowed), False (it is not allowed). NB: Check always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
+      - Check: True (is allowed), False (it is not allowed). 
+      NB: Check always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
       - DiskSE: True if TXDY with Y > 0 (defaults to True)
       - TapeSE: True if TXDY with X > 0 (defaults to False)
       - TotalCapacityTB: float (-1 if not defined)
@@ -551,6 +552,8 @@ class StorageElement:
         'pfn' is the physical file name (as registered in the LFC)
         'method' is the functionality to be executed
     """
+    ## default args  = no args  
+    argsDict = argsDict if argsDict else {}
     if type( pfn ) in types.StringTypes:
       pfns = {pfn:False}
     elif type( pfn ) == types.ListType:

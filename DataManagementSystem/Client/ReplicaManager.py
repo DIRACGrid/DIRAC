@@ -63,7 +63,7 @@ class CatalogBase:
     argsDict = argsDict if argsDict else dict()
     catalogs = catalogs if catalogs else list()
     ## checjk type
-    if not lfn or type(lfn) not in ( ListType, StringTypes, DictType ):
+    if not lfn or type(lfn) not in StringTypes + ( ListType, DictType ):
       return S_ERROR( "wrong type (%s) for argument 'lfn'" % type(lfn) )
     singleLfn = lfn
     if type( lfn ) == ListType:
@@ -96,7 +96,7 @@ class CatalogBase:
     argsDict = argsDict if argsDict else dict()
     catalogs = catalogs if catalogs else list()
     lfns = None
-    if not lfn or type(lfn) not in ( StringTypes, ListType, DictType ):
+    if not lfn or type(lfn) not in StringTypes + ( ListType, DictType ):
       errStr = "ReplicaManager._callFileCatalogFcn: Wrong 'lfn' argument."
       gLogger.error( errStr )
       return S_ERROR( errStr )
@@ -462,7 +462,7 @@ class StorageBase:
     :param str method: name of the :StorageElement: method to be invoked
     :param dict argsDict: additional keyword arguments that are required for the :method:
     """
-    argsDict = argsDict if argsDict else dict()
+    argsDict = argsDict if argsDict else {}
     ## check type
     if type( pfn ) == ListType:
       pfn = pfn[0]
@@ -866,7 +866,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param dict argsDict: kwargs of :method:
     """
     ## default value
-    argsDict = argsDict if argsDict else dict()
+    argsDict = argsDict if argsDict else {}
     ## get single LFN
     singleLfn = lfn
     if type( lfn ) == ListType:
@@ -890,7 +890,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     :param mixed lfn: a LFN str, list of LFNs or dict with LFNs as keys
     """
     ## default value
-    argsDict = argsDict if argsDict else dict()
+    argsDict = argsDict if argsDict else {}
     ## get replicas for lfn
     res = self._callFileCatalogFcn( lfn, "getReplicas" )
     if not res["OK"]:
