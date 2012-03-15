@@ -980,7 +980,7 @@ class TransformationDB( DB ):
           parameterType = 'Dict'
           parameterValue = str( parameterValue )    
       res = self._insert('TransformationInputDataQuery',['TransformationID','ParameterName','ParameterValue','ParameterType'],
-                         [transID, parameterName, parameterValue, parameterType], connection = connection)
+                         [transID, parameterName, parameterValue, parameterType], conn = connection)
       if not res['OK']:
         message = 'Failed to add input data query'
         self.deleteTransformationInputDataQuery( transID, connection = connection )
