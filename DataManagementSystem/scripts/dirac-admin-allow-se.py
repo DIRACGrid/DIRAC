@@ -170,7 +170,13 @@ if check:
   for se in checkAllowed:
     body = "%s\n%s" % ( body, se )
 
-diracAdmin.sendMail( address, subject, body )
+res = diracAdmin.sendMail( address, subject, body )
+gLogger.notice( 'Notifying %s' % address )
+if res[ 'OK' ]:
+  gLogger.notice( res[ 'Value' ] )
+else:
+  gLogger.notice( res[ 'Message' ] )
+  
 DIRAC.exit( 0 )
 
 ################################################################################
