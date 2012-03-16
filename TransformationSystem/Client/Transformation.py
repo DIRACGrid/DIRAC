@@ -232,7 +232,7 @@ class Transformation( API ):
       fcn = getattr( self.transClient, operation )
     if not fcn:
       return S_ERROR("Unable to invoke %s, it isn't a member funtion of TransformationClient" )
-    res = fcn( transID, *param, **kwds )
+    res = fcn( transID, *parms, **kwds )
     if printOutput:
       self._prettyPrint( res )
     return res
