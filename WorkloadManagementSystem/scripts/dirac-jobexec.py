@@ -75,6 +75,12 @@ parDict = {}
 for switch, parameter in parList:
   if switch == "p":
     name, value = parameter.split( '=' )
+    value = value.strip()
+    
+    # The comma separated list in curly brackets is interpreted as a list
+    if value.startswith("{"):
+      value = value[1:-1].replace('"','').replace(" ",'').split(',')
+      
     parDict[name] = value
 gLogger.verbose( 'PYTHONPATH:\n%s' % ( string.join( sys.path, '\n' ) ) )
 result = jobexec( jobXMLfile, parDict )

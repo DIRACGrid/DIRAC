@@ -132,7 +132,17 @@ class JobManagerHandler( RequestHandler ):
         
       jobDescList = []
       for n,p in enumerate(parameterList):
-        jobDescList.append( jobDesc.replace('%s',str(p)).replace('%n',str(n)) )
+        newJobDesc = jobDesc.replace('%s',str(p)).replace('%n',str(n))
+        newClassAd = ClassAd(newJobDesc)
+        for attr in ['Parameters','ParameterStep','ParameterFactor']:
+          newClassAd.deleteAttribute(attr)
+        if p.startswith('{'):
+          newClassAd.insertAttributeInt( 'Parameter',str(p) )
+        else:
+          newClassAd.insertAttributeString( 'Parameter',str(p) )
+        newClassAd.insertAttributeInt('ParameterNumber',n)
+        newJDL = newClassAd.asJDL()
+        jobDescList.append( newJDL )
     else:
       jobDescList = [ jobDesc ]     
 
