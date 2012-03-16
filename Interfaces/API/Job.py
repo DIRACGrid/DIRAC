@@ -353,7 +353,7 @@ class Job:
             lfns[i][k] = 'LFN:' + lfns[i][k].replace( 'LFN:', '' )
         else:  
           lfns[i] = 'LFN:' + lfns[i].replace( 'LFN:', '' )
-      self.parametric['InputData'] = inputData
+      self.parametric['InputData'] = lfns
     elif type( lfns ) == type( ' ' ):  #single LFN
       self.parametric['InputData'] = lfns
     else:
@@ -1126,7 +1126,7 @@ class Job:
             paramsDict['InputData']['value'] = "%s"
             paramsDict['InputData']['type'] = 'JDL'
         self.parametric['files'] = self.parametric['InputData']
-        arguments.append( ' -p ParametricInputData="%s"' )
+        arguments.append( ' -p ParametricInputData=%s' )
       elif self.parametric.has_key( 'InputSandbox' ):
         if paramsDict.has_key( 'InputSandbox' ):
           currentFiles = paramsDict['InputSandbox']['value'] + ";%s"
@@ -1136,7 +1136,7 @@ class Job:
           paramsDict['InputSandbox']['value'] = '%s'
           paramsDict['InputSandbox']['type'] = 'JDL'
         self.parametric['files'] = self.parametric['InputSandbox']
-        arguments.append(' -p ParametricInputSandbox="%s"')
+        arguments.append(' -p ParametricInputSandbox=%s')
       if self.parametric.has_key('files'):   
         paramsDict['Parameters']={}
         paramsDict['Parameters']['value'] = self.parametric['files']
@@ -1145,7 +1145,7 @@ class Job:
         paramsDict['Parameters']={}
         paramsDict['Parameters']['value'] = self.parametric['GenericParameters']
         paramsDict['Parameters']['type'] = 'JDL'
-        arguments.append(' -p ParametricParameters="%s"')
+        arguments.append(' -p ParametricParameters=%s')
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
@@ -1164,9 +1164,11 @@ class Job:
             classadJob.insertAttributeVectorStringList( name, value )
           else:
             classadJob.insertAttributeVectorString( name, value )  
+        elif value == "%s":
+          classadJob.insertAttributeInt( name, value )    
         elif not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
           classadJob.insertAttributeString( name, value )
-        else:
+        else:  
           classadJob.insertAttributeVectorString( name, value.split( ';' ) )
 
     if not requirements:
