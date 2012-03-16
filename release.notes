@@ -1,4 +1,4 @@
-[v6r2-pre15]
+[v6r2-pre16]
 
 *General
 FIX: replaced use of exec() python statement in favor of object method execution
@@ -81,6 +81,7 @@ FIX: StorageElement - check if SE has been properly initialized before executing
 CHANGE: LFC client getReplica() - make use of the new bulk method lfc.lfc_getreplicasl()
 FIX: LFC client - protect against getting None in lfc.lfc_readdirxr( oDirectory, "" )  
 FIX: add extra protection in dump method of StorageElement base class
+CHANGE: FailoverTransfer - create subrequest per catalog if more than one catalog
 
 *Interface
 NEW: Job.py - added method to handle the parametric parameters in the workflow. 
@@ -98,6 +99,7 @@ FIX: SiteDirector passes jobExecDir to pilot, this defaults to "." for CREAM CEs
 FIX: Set proper project and release version to the SiteDirector     
 NEW: Added "JobDelay" option for the matching, refactored and added CS options to the matcher
 FIX: Added installation as an option to the pilots and random MyProxyServer
+NEW: Support for parametric jobs with parameters that can be of List type
 
 *Resources
 NEW: Added SSH Grid Engine Computing Element
