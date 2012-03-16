@@ -134,8 +134,8 @@ class ClassAd:
 
     listOfLists = []
     for stringList in attributelist:
-      tmp = map ( lambda x : '"' + x + '"', stringList )
-      tmpstr = ','.join( tmp )
+      #tmp = map ( lambda x : '"' + x + '"', stringList )
+      tmpstr = ','.join( stringList )
       listOfLists.append('{' + tmpstr + '}')
     self.contents[name] = '{' + ','.join(listOfLists) + '}'    
 
