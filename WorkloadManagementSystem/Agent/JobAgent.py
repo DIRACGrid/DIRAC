@@ -544,7 +544,7 @@ class JobAgent( AgentModule ):
       classAdJob = ClassAd( jdl )
       paramsDict = classAdJob.contents
       for param, value in paramsDict.items():
-        if re.search( '{', value ):
+        if value.strip().startswith('{'):
           self.log.debug( 'Found list type parameter %s' % ( param ) )
           rawValues = value.replace( '{', '' ).replace( '}', '' ).replace( '"', '' ).split()
           valueList = []
