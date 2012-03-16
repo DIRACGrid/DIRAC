@@ -1136,7 +1136,7 @@ class Job:
           paramsDict['InputSandbox']['value'] = '%s'
           paramsDict['InputSandbox']['type'] = 'JDL'
         self.parametric['files']=  self.parametric['InputSandbox']
-        arguments.append(' -p ParametricInputSandbox=%s')
+        arguments.append(' -p ParametricInputSandbox="%s"')
       if self.parametric.has_key('files'):   
         paramsDict['Parameters']={}
         paramsDict['Parameters']['value']=";".join(self.parametric['files'])
@@ -1145,7 +1145,7 @@ class Job:
         paramsDict['Parameters']={}
         paramsDict['Parameters']['value']=";".join(self.parametric['GenericParameters'])
         paramsDict['Parameters']['type'] = 'JDL'
-        arguments.append(' -p ParametricParameters=%s')
+        arguments.append(' -p ParametricParameters="%s"')
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
