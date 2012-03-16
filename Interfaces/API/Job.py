@@ -904,11 +904,11 @@ class Job:
     self._addParameter( self.workflow, 'InputData', 'JDL', '', 'Default null input data value' )
     self._addParameter( self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level' )
     #Those 2 below are need for on-site resolution
-    self._addParameter( self.workflow, 'ParametricInputData', 'WF', '',
+    self._addParameter( self.workflow, 'ParametricInputData', 'string', '',
                         'Default null parametric input data value' )
-    self._addParameter( self.workflow, 'ParametricInputSandbox', 'WF', '',
+    self._addParameter( self.workflow, 'ParametricInputSandbox', 'string', '',
                         'Default null parametric input sandbox value' )
-    self._addParameter( self.workflow, 'ParametricParameters', 'WF', '', 
+    self._addParameter( self.workflow, 'ParametricParameters', 'string', '', 
                         'Default null parametric input parameters value' )
 
   #############################################################################
