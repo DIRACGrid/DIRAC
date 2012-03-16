@@ -555,8 +555,8 @@ class JobAgent( AgentModule ):
               valueList.append( val )
           parameters[param] = valueList
         else:
-          self.log.debug( 'Found standard parameter %s' % ( param ) )
-          parameters[param] = value.replace( '"', '' )
+          parameters[param] = value.replace( '"', '' ).replace( '{','"{' ).replace( '}','}"' )
+          self.log.debug( 'Found standard parameter %s: %s' % ( param, parameters[param] ) )
       return S_OK( parameters )
     except Exception, x:
       self.log.exception( lException = x )
