@@ -156,7 +156,7 @@ class FailoverTransfer:
     i_catalog = 0  
     for cat in catalog:
       result = self.request.addSubRequest({'Attributes':{'Operation':'registerFile','ExecutionOrder':i_catalog,
-                                                       'TargetSE':se,'Catalogue':catg}},'register')
+                                                       'TargetSE':se,'Catalogue':cat}},'register')
       if not result['OK']:
         return result
         
