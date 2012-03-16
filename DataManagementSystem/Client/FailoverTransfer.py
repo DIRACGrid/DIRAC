@@ -31,6 +31,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
+import types
 
 class FailoverTransfer:
 
@@ -149,15 +150,22 @@ class FailoverTransfer:
     """ Sets a registration request.
     """
     self.log.info('Setting registration request for %s at %s.' % (lfn,se))
-    result = self.request.addSubRequest({'Attributes':{'Operation':'registerFile','ExecutionOrder':0,
-                                                       'TargetSE':se,'Catalogue':catalog}},'register')
-    if not result['OK']:
-      return result
+    if not type(catalog) == types.ListType:
+      catalog = [catalog]
+      
+    i_catalog = 0  
+    for cat in catalog:
+      result = self.request.addSubRequest({'Attributes':{'Operation':'registerFile','ExecutionOrder':i_catalog,
+                                                       'TargetSE':se,'Catalogue':catg}},'register')
+      if not result['OK']:
+        return result
+        
+      i_catalog += 1    
 
-    index = result['Value']
-    if not fileDict.has_key('Status'):
-      fileDict['Status']='Waiting'
-    self.request.setSubRequestFiles(index,'register',[fileDict])
+      index = result['Value']
+      if not fileDict.has_key('Status'):
+        fileDict['Status']='Waiting'
+      self.request.setSubRequestFiles(index,'register',[fileDict])
 
     return S_OK()
 
