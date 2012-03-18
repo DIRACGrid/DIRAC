@@ -136,7 +136,7 @@ class JobManagerHandler( RequestHandler ):
         newClassAd = ClassAd(newJobDesc)
         for attr in ['Parameters','ParameterStep','ParameterFactor']:
           newClassAd.deleteAttribute(attr)
-        if p.startswith('{'):
+        if type( p ) == type ( ' ' ) and p.startswith('{'):
           newClassAd.insertAttributeInt( 'Parameter',str(p) )
         else:
           newClassAd.insertAttributeString( 'Parameter',str(p) )
