@@ -321,12 +321,9 @@ class FileMetadata:
 
 
   def __findFilesByMetadata( self,metaDict,dirList,credDict ):
-
-    result = self.getFileMetadataFields( credDict )
-    if not result['OK']:
-      return result
-
-    fileMetaInfo = result['Value']
+    """ Find a list of file IDs meeting the metaDict requirements and belonging
+        to directories in dirList 
+    """
 
     fileList = []
     first = True    

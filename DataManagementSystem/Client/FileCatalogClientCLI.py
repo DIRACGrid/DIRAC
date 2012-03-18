@@ -1201,7 +1201,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if path == '.':
       path = self.cwd
     elif path[0] != '/':
-      path = self.cwd+'/'+path
+      path = self.getPath(path)
       
     if not dirFlag:
       # Have to decide if it is a file or not
@@ -1213,35 +1213,35 @@ File Catalog Client $Revision: 1.17 $Date:
       dirFlag = not result['Value']['Successful'][path]        
         
     if dirFlag:    
-            result = self.fc.getDirectoryMetadata(path)      
+      result = self.fc.getDirectoryMetadata(path)      
+      if not result['OK']:
+        print ("Error: %s" % result['Message']) 
+        return
+      if result['Value']:
+        metaDict = result['MetadataOwner']
+        metaTypeDict = result['MetadataType']
+        for meta,value in result['Value'].items():
+          setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
+          prefix = ''
+          if setFlag:
+            prefix = "+"
+          if metaDict[meta] == 'ParentMetadata':
+            prefix += "*"
+            print (prefix+meta).rjust(20),':',value
+          elif metaDict[meta] == 'OwnMetadata':
+            prefix += "!"
+            print (prefix+meta).rjust(20),':',value   
+          else:
+            print meta.rjust(20),':',value 
+          if setFlag and expandFlag:
+            result = self.fc.getMetadataSet(value,expandFlag)
             if not result['OK']:
               print ("Error: %s" % result['Message']) 
               return
-            if result['Value']:
-              metaDict = result['MetadataOwner']
-              metaTypeDict = result['MetadataType']
-              for meta,value in result['Value'].items():
-                setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
-                prefix = ''
-                if setFlag:
-                  prefix = "+"
-                if metaDict[meta] == 'ParentMetadata':
-                  prefix += "*"
-                  print (prefix+meta).rjust(20),':',value
-                elif metaDict[meta] == 'OwnMetadata':
-                  prefix += "!"
-                  print (prefix+meta).rjust(20),':',value   
-                else:
-                  print meta.rjust(20),':',value 
-                if setFlag and expandFlag:
-                  result = self.fc.getMetadataSet(value,expandFlag)
-                  if not result['OK']:
-                    print ("Error: %s" % result['Message']) 
-                    return
-                  for m,v in result['Value'].items():
-                    print " "*10,m.rjust(20),':',v      
-            else:
-              print "No metadata defined for directory"   
+            for m,v in result['Value'].items():
+              print " "*10,m.rjust(20),':',v      
+      else:
+        print "No metadata defined for directory"   
     else:
       result = self.fc.getFileUserMetadata(path)      
       if not result['OK']:
