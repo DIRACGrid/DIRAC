@@ -147,9 +147,6 @@ class DirectoryMetadata:
 # Set and get directory metadata
 #
 #############################################################################################  
-  ###########################################################
-  # S. Poss:
-  # Instead of passing individual tags, pass dictionary
 
   def setMetadata( self, dpath, metadict, credDict ):
     """ Set the value of a given metadata field for the the given directory path
@@ -173,8 +170,9 @@ class DirectoryMetadata:
     for metaName, metaValue in metadict.items():
       if not metaName in metaFields:
         result = self.setMetaParameter( dpath, metaName, metaValue, credDict )
-        result['Warning'] = "Added metadata is not searchable"
-        return result
+        if not result['OK']:
+          return result
+        continue
       # Check that the metadata is not defined for the parent directories
       if metaName in dirmeta['Value']:
         return S_ERROR( 'Metadata conflict detected for %s for directory %s' % ( metaName, dpath ) )
