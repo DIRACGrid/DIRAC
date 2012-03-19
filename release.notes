@@ -1,3 +1,9 @@
+[v6r1p2]
+
+*WMS
+BUGFIX: Matcher - restored logic for checking private pilot asking for a given DN for belonging to the same 
+        group with JOB_SHARING property.
+
 [v6r2p1]
 
 *RequestManagementSystem
