@@ -1,3 +1,8 @@
+[v6r2p1]
+
+*RequestManagementSystem
+BUGFIX: RequestCleaningAgent - missing import of the "second" interval definition 
+
 [v6r2]
 
 *General
