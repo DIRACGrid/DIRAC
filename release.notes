@@ -1,4 +1,4 @@
-[v6r2-pre16]
+[v6r2]
 
 *General
 FIX: replaced use of exec() python statement in favor of object method execution
