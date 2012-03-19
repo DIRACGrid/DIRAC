@@ -116,6 +116,11 @@ FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to 
      the new status is "unused"
 NEW: TransformationDB - added support for dictionary in metadata for the InputDataQuery mechanism     
 
+[v6r1p13]
+
+*WMS
+FIX: JobSchedulingAgent - backported from v6r2 use of Resources helper
+
 [v6r1p12]
 
 *Accounting
