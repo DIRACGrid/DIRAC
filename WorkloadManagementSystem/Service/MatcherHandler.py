@@ -145,20 +145,22 @@ class MatcherHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     #Check credentials
     if Properties.GENERIC_PILOT not in credDict[ 'properties' ]:
-      if Properties.JOB_SHARING in credDict[ 'properties' ]:
-        #Job sharing, is the DN in the same group?
-        result = Registry.getGroupsForDN( ownerDN )
-        if not result[ 'OK' ]:
-          return S_ERROR( "Requested owner DN %s does not have any group!" % ownerDN )
-        groups = result[ 'Value' ]
-        if credDict[ 'group' ] not in groups:
-          #DN is not in the same group! bad body.
-          gLogger.notice( "You cannot request jobs from DN %s. It does not belong to your group!" % ownerDN )
+      if 'OwnerDN' in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
+        ownerDN = resourceDict[ 'OwnerDN' ]
+        if Properties.JOB_SHARING in credDict[ 'properties' ]:
+          #Job sharing, is the DN in the same group?
+          result = Registry.getGroupsForDN( ownerDN )
+          if not result[ 'OK' ]:
+            return S_ERROR( "Requested owner DN %s does not have any group!" % ownerDN )
+          groups = result[ 'Value' ]
+          if credDict[ 'group' ] not in groups:
+            #DN is not in the same group! bad boy.
+            gLogger.notice( "You cannot request jobs from DN %s. It does not belong to your group!" % ownerDN )
+            resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
+        else:
+          #No generic pilot and not JobSharing? DN has to be the same!
+          gLogger.notice( "You can only match jobs for your DN (%s)" % credDict[ 'DN' ] )
           resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
-      else:
-        #No generic pilot and not JobSharing? DN has to be the same!
-        gLogger.notice( "You can only match jobs for your DN (%s)" % credDict[ 'DN' ] )
-        resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
       #No pilot? Group has to be the same!
       if Properties.PILOT not in credDict[ 'properties' ]:
         if 'OwnerGroup' in resourceDict and resourceDict[ 'OwnerGroup' ] != credDict[ 'group' ]:
