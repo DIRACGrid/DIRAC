@@ -143,13 +143,18 @@ class MatcherHandler( RequestHandler ):
     resourceDict = self.__processResourceDescription( resourceDescription )
 
     credDict = self.getRemoteCredentials()
-    #Check credentials
+    #Check credentials if not generic pilot
     if Properties.GENERIC_PILOT not in credDict[ 'properties' ]:
-      if 'OwnerDN' in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
-        ownerDN = resourceDict[ 'OwnerDN' ]
-        if Properties.JOB_SHARING in credDict[ 'properties' ]:
-          #Job sharing, is the DN in the same group?
-          result = Registry.getGroupsForDN( ownerDN )
+      #If it's a private pilot, the DN has to be the same
+      if Properties.PILOT in credDict[ 'properties' ]:
+        resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
+      #If it's a job sharing. The group has to be the same and just check that the DN (if any)
+      # belongs to the same group
+      elif Properties.JOB_SHARING in credDict[ 'properties' ]:
+        resourceDict[ 'OwnerGroup' ] = credDict[ 'group' ]
+        if 'OwnerDN'  in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
+          ownerDN = resourceDict[ 'OwnerDN' ]
+          result = Registry.getGroupsForDN( resourceDict[ 'OwnerDN' ] )
           if not result[ 'OK' ]:
             return S_ERROR( "Requested owner DN %s does not have any group!" % ownerDN )
           groups = result[ 'Value' ]
@@ -157,14 +162,9 @@ class MatcherHandler( RequestHandler ):
             #DN is not in the same group! bad boy.
             gLogger.notice( "You cannot request jobs from DN %s. It does not belong to your group!" % ownerDN )
             resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
-        else:
-          #No generic pilot and not JobSharing? DN has to be the same!
-          gLogger.notice( "You can only match jobs for your DN (%s)" % credDict[ 'DN' ] )
-          resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
-      #No pilot? Group has to be the same!
-      if Properties.PILOT not in credDict[ 'properties' ]:
-        if 'OwnerGroup' in resourceDict and resourceDict[ 'OwnerGroup' ] != credDict[ 'group' ]:
-          gLogger.notice( "You can only match jobs for your group (%s)" % credDict[ 'group' ] )
+      #Nothing special, group and DN have to be the same
+      else:
+        resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
         resourceDict[ 'OwnerGroup' ] = credDict[ 'group' ]
 
     # Check the pilot DIRAC version

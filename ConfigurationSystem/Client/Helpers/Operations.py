@@ -27,7 +27,7 @@ class Operations( object ):
     else:
       self.__vo = Registry.getVOForGroup( self.__uGroup )
       if not self.__vo:
-        raise RuntimeError( "Don't know how to discover VO. Please check your VO and groups configuration" )
+        self.__vo = False
     #Set the setup
     self.__setup = False
     if self.__vo:
@@ -50,9 +50,13 @@ class Operations( object ):
       mergedCFG = CFG.CFG()
 
       #Only for the /Operations transition
-      for path in ( "/Operations", "/Operations/%s" % self.__vo,
-                    "/Operations/%s/%s" % ( self.__vo, self.__setup ),
-                    "/Operations/%s" % ( self.__setup ) ):
+      paths = [ "/Operations" ]
+      paths.append( "/Operations/%s" % self.__setup )
+      if self.__vo:
+        paths.append( "/Operations/%s" % self.__vo )
+        paths.append( "/Operations/%s/%s" % ( self.__vo, self.__setup ) )
+
+      for path in paths:
         pathCFG = gConfigurationData.mergedCFG[ path ]
         if pathCFG:
           mergedCFG = mergedCFG.mergeWith( pathCFG )
@@ -89,7 +93,7 @@ class Operations( object ):
 
 
   def __getVOPath( self ):
-    if CSGlobals.getVO():
+    if CSGlobals.getVO() or not self.__vo:
       return "/Operations"
     return "/Operations/%s" % self.__vo
 
