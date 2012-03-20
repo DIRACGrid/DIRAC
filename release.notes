@@ -6,6 +6,10 @@ CHANGE: Matcher - fixed the credentials check in requestJob() to simplify it
 *ConfigurationSystem
 CHANGE: Operations helper - fix that allow no VO to be defined for components that do not need it
 
+*Core
+BUGFIX: InstallTools - when applying runsvctrl to a list of components make sure that
+        the config server is treated first and the sysadmin service - last
+        
 [v6r2p2]
 
 *WMS
