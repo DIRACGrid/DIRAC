@@ -116,7 +116,7 @@ class RequestFinalizationAgent( AgentModule ):
     fcn = None
     if hasattr( client, method ) and callable( getattr( client, method ) ):
       fcn = getattr( client, method )
-    if not fcn:
+    if fcn in None:
       return S_ERROR( "Unable to invoke %s, it isn't a member funtion of %s" % ( method, service ) )
     gLogger.debug( "RequestFinalization.__performCallback: Attempting to invoke %s service method" % method )
     res = fcn( sourceTask, status )
