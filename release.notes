@@ -8,13 +8,13 @@ CHANGE: Operations helper - fix that allow no VO to be defined for components th
 
 *Core
 BUGFIX: InstallTools - when applying runsvctrl to a list of components make sure that
-        the config server is treated first and the sysadmin service - last
+the config server is treated first and the sysadmin service - last
         
 [v6r2p2]
 
 *WMS
 BUGFIX: Matcher - restored logic for checking private pilot asking for a given DN for belonging to the same 
-        group with JOB_SHARING property.
+group with JOB_SHARING property.
 
 [v6r2p1]
 
@@ -32,7 +32,7 @@ CHANGE: Accounting 'byte' units are in powers of 1000 instead of powers of 1024 
 *Core
 CHANGE: Pfn.py - pfnparse function rewritten for speed up and mem usage, unit test case added
 FIX: DISET Clients are now thread-safe. Same clients used twice in different threads was not 
-     closing the previous connection
+closing the previous connection
 NEW: reduce wait times in DISET protocol machinery to improve performance    
 NEW: dirac-fix-mysql-script command to fix the mysql start-up script for the given installation
 FIX: TransferClient closes connections properly
