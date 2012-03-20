@@ -1,4 +1,12 @@
-[v6r1p2]
+[v6r2p3]
+
+*WMS
+CHANGE: Matcher - fixed the credentials check in requestJob() to simplify it
+
+*ConfigurationSystem
+CHANGE: Operations helper - fix that allow no VO to be defined for components that do not need it
+
+[v6r2p2]
 
 *WMS
 BUGFIX: Matcher - restored logic for checking private pilot asking for a given DN for belonging to the same 
