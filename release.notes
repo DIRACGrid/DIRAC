@@ -2,6 +2,7 @@
 
 *WMS
 BUGFIX: StalledJobAgent - protection against jobs with no PilotReference in their parameters
+BUGFIX: WMSAdministratorHandler - wrong argument type specification for getPilotInfo method
 
 *StorageManagement
 BUGFIX: RequestFinalizationAgent - no method existence check when calling RPC method
