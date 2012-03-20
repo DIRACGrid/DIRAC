@@ -147,18 +147,17 @@ class MatcherHandler( RequestHandler ):
     if Properties.GENERIC_PILOT not in credDict[ 'properties' ]:
       #If it's a private pilot, the DN has to be the same
       if Properties.PILOT in credDict[ 'properties' ]:
+        gLogger.notice( "Setting the resource DN to the credentials DN" )
         resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
       #If it's a job sharing. The group has to be the same and just check that the DN (if any)
       # belongs to the same group
       elif Properties.JOB_SHARING in credDict[ 'properties' ]:
         resourceDict[ 'OwnerGroup' ] = credDict[ 'group' ]
+        gLogger.notice( "Setting the resource group to the credentials group" )
         if 'OwnerDN'  in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
           ownerDN = resourceDict[ 'OwnerDN' ]
           result = Registry.getGroupsForDN( resourceDict[ 'OwnerDN' ] )
-          if not result[ 'OK' ]:
-            return S_ERROR( "Requested owner DN %s does not have any group!" % ownerDN )
-          groups = result[ 'Value' ]
-          if credDict[ 'group' ] not in groups:
+          if not result[ 'OK' ] or credDict[ 'group' ] not in result[ 'Value' ]:
             #DN is not in the same group! bad boy.
             gLogger.notice( "You cannot request jobs from DN %s. It does not belong to your group!" % ownerDN )
             resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
