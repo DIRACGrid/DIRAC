@@ -1,3 +1,11 @@
+[v6r2p4]
+
+*WMS
+BUGFIX: StalledJobAgent - protection against jobs with no PilotReference in their parameters
+
+*StorageManagement
+BUGFIX: RequestFinalizationAgent - no method existence check when calling RPC method
+
 [v6r2p3]
 
 *WMS
@@ -7,14 +15,12 @@ CHANGE: Matcher - fixed the credentials check in requestJob() to simplify it
 CHANGE: Operations helper - fix that allow no VO to be defined for components that do not need it
 
 *Core
-BUGFIX: InstallTools - when applying runsvctrl to a list of components make sure that
-the config server is treated first and the sysadmin service - last
+BUGFIX: InstallTools - when applying runsvctrl to a list of components make sure that the config server is treated first and the sysadmin service - last
         
 [v6r2p2]
 
 *WMS
-BUGFIX: Matcher - restored logic for checking private pilot asking for a given DN for belonging to the same 
-group with JOB_SHARING property.
+BUGFIX: Matcher - restored logic for checking private pilot asking for a given DN for belonging to the same group with JOB_SHARING property.
 
 [v6r2p1]
 
@@ -56,15 +62,13 @@ FIX: RequestMySQL - Execution order is evaluated based on not Done state of subr
 NEW: RequestCleaningAgent - resetting Assigned requests to Waiting after a configurable period of time
 
 *RSS
-CHANGE: RSS Action now inherits from a base class, and Actions are more homogeneous, they all take 
-        a uniform set of arguments. The name of modules has been changed from PolType to Action as well.
+CHANGE: RSS Action now inherits from a base class, and Actions are more homogeneous, they all take a uniform set of arguments. The name of modules has been changed from PolType to Action as well.
 FIX: CacheFeederAgent - too verbose messages moved to debug instead of info level
 BUGFIX: fixed a bug preventing RSS clients to connect to the services     
 FIX: Proper services synchronization
 FIX: Better handling of exceptions due to timeouts in GOCDBClient   
 FIX: RSS.Notification emails are sent again
-FIX: Commands have been modified to return S_OK, S_ERROR inside the Result dict. This way, policies get a 
-     S_ERROR / S_OK object. CacheFeederAgent has been updated accordingly.
+FIX: Commands have been modified to return S_OK, S_ERROR inside the Result dict. This way, policies get a S_ERROR / S_OK object. CacheFeederAgent has been updated accordingly.
 FIX: allow clients, if db connection fails, to reconnect ( or at least try ) to the servers.
 CHANGE: access control using CS Authentication options. Default is SiteManager, and get methods are all.
 BUGFIX: MySQLMonkey - properly escaped all parameters of the SQL queries, other fixes.
@@ -73,8 +77,7 @@ NEW: Updated RSS scripts, to set element statuses and / or tokens.
 NEW: Added a new script, dirac-rss-synch
 BUGFIX: Minor bugfixes spotted on the Web development
 FIX: Removed useless decorator from RSS handlers
-CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects
-        created if the system is InActive
+CHANGE: ResourceStatus helper tool moved to RSS/Client directory, no RSS objects created if the system is InActive
 CHANGE: Removed ClientFastDec decorator, using a more verbose alternative.
 CHANGE: Removed useless usage of **kwargs on helper functions.  
 NEW: added getSESitesList method to RSSClient      
@@ -95,11 +98,9 @@ NEW: DFC - search by both directory and file indexed metadata
 BUGFIX: DFC - avoid crash if no directories or files found in metadata query
 NEW: DFC FileCatalogHandler - define database location in the configuration
 NEW: DFC - new FileCatalogFactory class, possibility to use named DFC services
-FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting registration requests
-     in FileToCat table for later retry
+FIX: FTSMonitor, FTSRequest - fixes in handling replica registration, setting registration requests in FileToCat table for later retry
 FIX: Failover registration request in the FTS agents.      
-FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed
-     from the RequestManagement 
+FIX: FTSMonitor - enabled to register new replicas if even the corresponding request were removed from the RequestManagement 
 FIX: StorageElement - check if SE has been properly initialized before executing any method     
 CHANGE: LFC client getReplica() - make use of the new bulk method lfc.lfc_getreplicasl()
 FIX: LFC client - protect against getting None in lfc.lfc_readdirxr( oDirectory, "" )  
@@ -107,8 +108,7 @@ FIX: add extra protection in dump method of StorageElement base class
 CHANGE: FailoverTransfer - create subrequest per catalog if more than one catalog
 
 *Interface
-NEW: Job.py - added method to handle the parametric parameters in the workflow. 
-     They are made available to the workflow_commons via the key 'GenericParameters'.
+NEW: Job.py - added method to handle the parametric parameters in the workflow. They are made available to the workflow_commons via the key 'GenericParameters'.
 FIX: Dirac.py - fix some type checking things
 FIX: Dirac.py - the addFile() method can now register to more than 1 catalog.
 
@@ -117,8 +117,7 @@ FIX: removed dependency of the JobSchedulingAgent on RSS. Move the getSiteTier f
 FIX: WMSAdministratorHandler - Replace StringType by StringTypes in the export methods argument type
 FIX: JobAgent - Set explicitly UseServerCertificate to "no" for the job executable
 NEW: dirac-pilot - change directory to $OSG_WN_TMP on OSG sites
-FIX: SiteDirector passes jobExecDir to pilot, this defaults to "." for CREAM CEs. It can be set in the CS. 
-     It will not make use of $TMPDIR in this case.
+FIX: SiteDirector passes jobExecDir to pilot, this defaults to "." for CREAM CEs. It can be set in the CS. It will not make use of $TMPDIR in this case.
 FIX: Set proper project and release version to the SiteDirector     
 NEW: Added "JobDelay" option for the matching, refactored and added CS options to the matcher
 FIX: Added installation as an option to the pilots and random MyProxyServer
@@ -130,8 +129,7 @@ NEW: Added SSH Computing Element
 FIX: make sure lfc client will not try to connect for several days
 
 *Transformation
-FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and
-     the new status is "unused"
+FIX: TransformationDB - in setFileStatusForTransformation() reset ErrorCount to zero if "force" flag and    the new status is "unused"
 NEW: TransformationDB - added support for dictionary in metadata for the InputDataQuery mechanism     
 
 [v6r1p13]
