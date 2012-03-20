@@ -113,13 +113,8 @@ class RequestFinalizationAgent( AgentModule ):
     gLogger.debug( "RequestFinalization.__performCallback: Attempting to perform call back for %s with %s status" % ( sourceTask, status ) )
     client = RPCClient( service )
     gLogger.debug( "RequestFinalization.__performCallback: Created RPCClient to %s" % service )
-    fcn = None
-    if hasattr( client, method ) and callable( getattr( client, method ) ):
-      fcn = getattr( client, method )
-    if fcn in None:
-      return S_ERROR( "Unable to invoke %s, it isn't a member funtion of %s" % ( method, service ) )
     gLogger.debug( "RequestFinalization.__performCallback: Attempting to invoke %s service method" % method )
-    res = fcn( sourceTask, status )
+    res = getattr( client, method )( sourceTask, status )
     if not res['OK']:
       gLogger.error( "RequestFinalization.__performCallback: Failed to perform callback", res['Message'] )
     else:
