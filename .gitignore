@@ -25,3 +25,5 @@ pip-log.txt
 .settings
 .metadata
 
+#VIM
+*.swp
