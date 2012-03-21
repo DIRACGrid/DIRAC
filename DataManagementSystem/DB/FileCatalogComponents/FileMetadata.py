@@ -1,12 +1,12 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
 
 """ DIRAC FileCatalog plugin class to manage file metadata. This contains only
     non-indexed metadata for the moment.
 """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import time, os, types
 from DIRAC import S_OK, S_ERROR
@@ -438,4 +438,5 @@ class FileMetadata:
       result = self.db.fileManager._getFileLFNs(fileList)
       lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
 
-    return S_OK( lfnList )
+    return S_OK( lfnList ) 
+

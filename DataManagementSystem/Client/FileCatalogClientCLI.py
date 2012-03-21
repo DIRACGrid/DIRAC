@@ -1141,9 +1141,9 @@ File Catalog Client $Revision: 1.17 $Date:
     option = argss[0]
     del argss[0]
     if option == 'set':
-      return self.metaSet(argss)
+      return self.setMeta(argss)
     elif option == 'get':
-      return self.metaGet(argss)  
+      return self.getMeta(argss)  
     elif option[:3] == 'tag':
       return self.metaTag(argss)    
     elif option == 'index':
@@ -1173,14 +1173,14 @@ File Catalog Client $Revision: 1.17 $Date:
       return
     
     metadata = argss[1:]
-    result = self.fc.isFile(path,metadata)
+    result = self.fc.removeMetadata(path,metadata)
     if not result['OK']:
       print "Error:", result['Message']
       if "FailedMetadata" in result:
         for meta,error in result['FailedMetadata']:
           print meta,';',error
      
-  def metaSet(self,argss):
+  def setMeta(self,argss):
     """ Set metadata value for a directory
     """      
     if len(argss) != 3:
@@ -1200,7 +1200,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print ("Error: %s" % result['Message'])     
       
-  def metaGet(self,argss):
+  def getMeta(self,argss):
     """ Get metadata for the given directory
     """            
     expandFlag = False
