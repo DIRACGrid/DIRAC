@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 import threading
 
 class Synchronizer:
-  """ Class enapsulating a lock
+  """ Class encapsulating a lock
   allowing it to be used as a synchronizing
   decorator making the call thread-safe"""
 
