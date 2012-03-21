@@ -131,11 +131,11 @@ class TokenAgent( AgentModule ):
           mailMessage += policyMessage
           adminMail   += policyMessage
 
-          self.noClient.sendMail( self.rmClient.getUserRegistryCache( user )[ 2 ],
+          self.noClient.sendMail( self.rmClient.getUserRegistryCache( user )[ 'Value' ][ 0 ][ 2 ],
                             'Token for %s is expiring' % name, mailMessage )
       if adminMail != '':
         #FIXME: 'ubeda' is not generic ;p
-        self.noClient.sendMail( self.rmClient.getUserRegistryCache( 'ubeda' )[ 2 ],
+        self.noClient.sendMail( self.rmClient.getUserRegistryCache( 'ubeda' )[ 'Value' ][ 0 ][ 2 ],
                             "Token's summary", adminMail )
 
       return S_OK()
