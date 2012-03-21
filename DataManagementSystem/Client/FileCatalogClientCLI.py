@@ -259,7 +259,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     
     if len(argss) < 3:
-      print "Error: unsufficient number of arguments"
+      print "Error: insufficient number of arguments"
     
     lfn = argss[0]
     lfn = self.getPath(lfn)
@@ -1152,6 +1152,8 @@ File Catalog Client $Revision: 1.17 $Date:
       return self.registerMetaset(argss)
     elif option == 'show':
       return self.showMeta()
+    elif option == 'remove' or option == "rm":
+      return self.removeMeta(argss) 
     else:
       print "Unknown option:",option  
       
@@ -1160,8 +1162,24 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     
     argString = " ".join(argss)
-        
-      
+            
+  def removeMeta(self,argss):
+    """ Remove the specified metadata for a directory or file
+    """    
+    apath = argss[0]
+    path = self.getPath(apath)
+    if len(argss) < 2:
+      print "Error: no metadata is specified for removal"
+      return
+    
+    metadata = argss[1:]
+    result = self.fc.isFile(path,metadata)
+    if not result['OK']:
+      print "Error:", result['Message']
+      if "FailedMetadata" in result:
+        for meta,error in result['FailedMetadata']:
+          print meta,';',error
+     
   def metaSet(self,argss):
     """ Set metadata value for a directory
     """      

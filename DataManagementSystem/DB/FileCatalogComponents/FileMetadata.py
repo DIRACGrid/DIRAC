@@ -122,6 +122,44 @@ class FileMetadata:
 
     return S_OK()     
   
+  def removeMetadata( self, path, metadata, credDict ):
+    """ Remove the specified metadata for the given file
+    """
+    result = self.getFileMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    metaFields = result['Value']
+    
+    result = self.db.fileManager._findFiles( [path] )
+    if not result['OK']:
+      return result
+    if result['Value']['Successful']:
+      fileID = result['Value']['Successful'][path]['FileID']
+    else:
+      return S_ERROR('File %s not found' % path)  
+    
+    failedMeta = {}
+    for meta in metadata:
+      if meta in metaFields:
+        # Indexed meta case
+        req = "DELETE FROM FC_FileMeta_%s WHERE FileID=%d" % (meta,fileID)
+        result = self.db._update(req)
+        if not result['OK']:
+          failedMeta[meta] = result['Value']
+      else:
+        # Meta parameter case
+        req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s' AND FileID=%d" % (meta,FileID)
+        result = self.db._update(req)
+        if not result['OK']:
+          failedMeta[meta] = result['Value']    
+          
+    if failedMeta:
+      metaExample = failedMeta.keys()[0]
+      result = S_ERROR('Failed to remove %d metadata, e.g. %s' % (len(failedMeta),failedMeta[metaExample]) )
+      result['FailedMetadata'] = failedMeta
+    else:
+      return S_OK()     
+  
   def __getFileID( self, path ):
     
     result = self.db.fileManager._findFiles( [path] )
