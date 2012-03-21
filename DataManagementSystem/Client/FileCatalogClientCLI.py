@@ -1426,7 +1426,7 @@ File Catalog Client $Revision: 1.17 $Date:
     for arg in argss:
       if not contMode:
         operation = ''
-        for op in ['>','<','>=','<=','!=','=']:
+        for op in ['>=','<=','>','<','!=','=']:
           if arg.find(op) != -1:
             operation = op
             break
