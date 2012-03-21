@@ -329,13 +329,15 @@ class DTInfo_Cached_Command(Command):
         
         dt_ID_startingSoon    = res[0]
         clientDict[ 'value' ] = 'StartDate'
-        clientDict[ 'optID' ] = dt_ID_startingSoon 
+        clientDict[ 'optID' ] = dt_ID_startingSoon
+        clientDict[ 'meta' ]  = { 'columns' : 'Result' }  
         startSTR_startingSoon = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
         if startSTR_startingSoon:
           startSTR_startingSoon = startSTR_startingSoon[0][0]
                                                           
         clientDict[ 'value' ] = 'EndDate'
         clientDict[ 'optID' ] = dt_ID_startingSoon 
+        clientDict[ 'meta' ]  = { 'columns' : 'Result' }
         endSTR_startingSoon = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
         if endSTR_startingSoon:
           endSTR_startingSoon = endSTR_startingSoon[0][0]
@@ -358,12 +360,14 @@ class DTInfo_Cached_Command(Command):
             #looking for an ongoing one
             clientDict[ 'value' ] = 'StartDate'
             clientDict[ 'optID' ] = dt_ID 
+            clientDict[ 'meta' ]  = { 'columns' : 'Result' }
             startSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
             if startSTR:
               startSTR = startSTR[0][0]
           
             clientDict[ 'value' ] = 'EndDate'
-            clientDict[ 'optID' ] = dt_ID 
+            clientDict[ 'optID' ] = dt_ID
+            clientDict[ 'meta' ]  = { 'columns' : 'Result' } 
             endSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
             if endSTR:
               endSTR = endSTR[0][0]
@@ -389,7 +393,8 @@ class DTInfo_Cached_Command(Command):
       DT_dict_result = {}
 
       clientDict[ 'value' ] = 'EndDate'
-      clientDict[ 'optID' ] = DT_ID 
+      clientDict[ 'optID' ] = DT_ID
+      clientDict[ 'meta' ]  = { 'columns' : 'Result' } 
       endSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if endSTR:
         endSTR = endSTR[0][0]
@@ -401,24 +406,28 @@ class DTInfo_Cached_Command(Command):
     
       clientDict[ 'value' ] = 'Severity'
       clientDict[ 'optID' ] = DT_ID 
+      clientDict[ 'meta' ]  = { 'columns' : 'Result' }
       DT_dict_result['DT']  = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if DT_dict_result['DT']:
         DT_dict_result['DT'] = DT_dict_result['DT'][0][0]
      
       clientDict[ 'value' ] = 'StartDate'
       clientDict[ 'optID' ] = DT_ID 
+      clientDict[ 'meta' ]  = { 'columns' : 'Result' }
       DT_dict_result['StartDate'] = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if DT_dict_result['StartDate']:
         DT_dict_result['StartDate'] = DT_dict_result['StartDate'][0][0] 
     
       clientDict[ 'value' ] = 'Description'
-      clientDict[ 'optID' ] = DT_ID 
+      clientDict[ 'optID' ] = DT_ID
+      clientDict[ 'meta' ]  = { 'columns' : 'Result' } 
       DT_dict_result['Description'] = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if DT_dict_result['Description']:
         DT_dict_result['Description'] = DT_dict_result['Description'][0][0]
     
       clientDict[ 'value' ] = 'Link'
-      clientDict[ 'optID' ] = DT_ID 
+      clientDict[ 'optID' ] = DT_ID
+      clientDict[ 'meta' ]  = { 'columns' : 'Result' } 
       DT_dict_result['Link'] = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if DT_dict_result['Link']:
         DT_dict_result['Link'] = DT_dict_result['Link'][0][0]
