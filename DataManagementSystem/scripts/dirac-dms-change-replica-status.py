@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/scripts/dirac-dms-catalog-metadata.py $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-catalog-metadata.py 27909 2010-08-11 09:08:28Z acsmith $"
+__RCSID__   = "$Id$"
 
 from DIRAC.Core.Base import Script 
 
