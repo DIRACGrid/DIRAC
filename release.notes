@@ -1,3 +1,18 @@
+[v6r2p5]
+
+*RSS
+BUGFIX: several minor bug fixes
+
+*RequestManagement
+BUGFIX: RequestDBMySQL - removed unnecessary request type check
+
+*DMS
+BUGFIX: FileCatalogClienctCLI - wrong evaluation of the operation in the find command
+NEW: FileCatalog - added possibility to remove specified metadata for a given path 
+
+*Core
+NEW: dirac-install - generate cshrc DIRAC environment setting file for the (t)csh 
+
 [v6r2p4]
 
 *WMS
