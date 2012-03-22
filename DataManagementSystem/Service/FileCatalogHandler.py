@@ -336,6 +336,12 @@ class FileCatalogHandler(RequestHandler):
     """
     return fcDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
   
+  types_removeMetadata = [ StringTypes, ListType ]
+  def export_removeMetadata(self, path, metadata ):
+    """ Remove the specified metadata for the given path
+    """
+    return fcDB.removeMetadata( path, metadata, self.getRemoteCredentials() )
+  
   types_getDirectoryMetadata = [ StringTypes ]
   def export_getDirectoryMetadata(self,path):
     """ Get all the metadata valid for the given directory path

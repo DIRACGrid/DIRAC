@@ -1,9 +1,9 @@
 ########################################################################
-# $Id: SEManager.py 22623 2010-03-09 19:54:25Z acsmith $
+# $Id$
 ########################################################################
 """ DIRAC FileCatalog Storage Element Manager mix-in class """
 
-__RCSID__ = "$Id: SEManager.py 22623 2010-03-09 19:54:25Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC                        import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities.Pfn     import pfnunparse

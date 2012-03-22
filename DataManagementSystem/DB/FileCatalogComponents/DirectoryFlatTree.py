@@ -1,7 +1,7 @@
 ########################################################################
 # $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/DB/FileCatalogComponents/UserAndGroupManager.py $
 ########################################################################
-__RCSID__ = "$Id: DirectoryFlatTree.py 23183 2010-03-16 13:12:11Z acsmith $"
+__RCSID__ = "$Id$"
 
 """ DIRAC FileCatalog component representing a flat directory tree """
 

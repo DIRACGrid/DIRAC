@@ -1,8 +1,8 @@
 ########################################################################
-# $Id: FileManager.py 22623 2010-03-09 19:54:25Z acsmith $
+# $Id$
 ########################################################################
 
-__RCSID__ = "$Id: FileManager.py 22623 2010-03-09 19:54:25Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                  import S_OK,S_ERROR,gLogger
 from DIRAC.Core.Utilities.List              import stringListToString,intListToString,sortList
