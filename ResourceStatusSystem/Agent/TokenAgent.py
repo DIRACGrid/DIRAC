@@ -121,7 +121,7 @@ class TokenAgent( AgentModule ):
 
           policyMessage = ''
 
-          if pcresult:
+          if pcresult[ 'Action' ]:
 
             policyMessage += "  Policies applied will set status to %s.\n" % pcresult[ 'Status' ]
 
