@@ -9,7 +9,10 @@ from DIRAC.ResourceStatusSystem.Utilities import CS
 
 __RCSID__ = '$Id: $'
 
-pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
+#pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
+
+def getPolicyParameters():
+  return CS.getTypedDictRootedAt( 'PolicyParameters' )
 
 Policies = {
             

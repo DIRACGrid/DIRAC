@@ -127,7 +127,7 @@ class SSInspectorAgent( AgentModule ):
 
     while True:
 
-      toBeChecked  = self.SitesToBeChecked.get()
+      toBeChecked  = self.sitesToBeChecked.get()
 
       pepDict = { 'granularity'  : toBeChecked[ 0 ],
                   'name'         : toBeChecked[ 1 ],
