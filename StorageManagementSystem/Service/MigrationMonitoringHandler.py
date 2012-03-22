@@ -1,6 +1,6 @@
 """ Simple DISET service interface to the Migration Monitoring DB
 """
-__RCSID__ = "$Id: MigrationMonitoringHandler.py,v 1.3 2009/11/02 14:28:46 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC                                                    import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                          import RequestHandler
