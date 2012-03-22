@@ -463,13 +463,13 @@ class StorageBase:
     :param dict argsDict: additional keyword arguments that are required for the :method:
     """
     argsDict = argsDict if argsDict else {}
+    ## call wrapper
+    res = self._callStorageElementFcn( storageElementName, pfn, method, argsDict )
     ## check type
     if type( pfn ) == ListType:
       pfn = pfn[0]
     elif type( pfn ) == DictType:
       pfn = pfn.keys()[0]
-    ## call wrapper
-    res = self._callStorageElementFcn( storageElementName, str(pfn), method, argsDict )
     ## check results
     if not res["OK"]:
       return res
