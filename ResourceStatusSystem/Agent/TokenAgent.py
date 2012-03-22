@@ -112,10 +112,10 @@ class TokenAgent( AgentModule ):
           pcresult = decision[ 'PolicyCombinedResult' ]
           spresult = decision[ 'SinglePolicyResults' ]
 
-          expiration = token[ 2 ]
+          expiration = token[ 10 ]
 
-          mailMessage = "The token for %s %s %s" % ( granularity, name, stype )
-          mailMessage = mailMessage + "will expire on %s\n\n" % expiration
+          mailMessage = "The token for %s %s ( %s )" % ( granularity, name, stype )
+          mailMessage = mailMessage + " will expire on %s\n\n" % expiration
           mailMessage = mailMessage + "You can renew it with command 'dirac-rss-renew-token'.\n"
           mailMessage = mailMessage + "If you don't take any action, RSS will take control of the resource.\n\n"
 
