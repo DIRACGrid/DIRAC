@@ -9,6 +9,7 @@ BUGFIX: RequestDBMySQL - removed unnecessary request type check
 *DMS
 BUGFIX: FileCatalogClienctCLI - wrong evaluation of the operation in the find command
 NEW: FileCatalog - added possibility to remove specified metadata for a given path 
+BUGFIX: ReplicaManager - wrong operation order causing failure of UploadLogFile module
 
 *Core
 NEW: dirac-install - generate cshrc DIRAC environment setting file for the (t)csh 
