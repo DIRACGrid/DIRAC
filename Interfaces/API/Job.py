@@ -1127,7 +1127,7 @@ class Job:
               for pElement in pData:
                 tmpList.append(currentFiles+pElement)
             else:
-              for pList in pData:
+              for pElement in pData:
                 tmpList.append(currentFiles+[pElement])    
             self.parametric[pType] = tmpList
           
