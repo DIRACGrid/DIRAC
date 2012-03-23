@@ -80,8 +80,10 @@ for switch, parameter in parList:
     # The comma separated list in curly brackets is interpreted as a list
     if value.startswith("{"):
       value = value[1:-1].replace('"','').replace(" ",'').split(',')
-      
-    parDict[name] = value
+      value = ';'.join(value)
+
+    parDict[name] = value 
+    
 gLogger.verbose( 'PYTHONPATH:\n%s' % ( string.join( sys.path, '\n' ) ) )
 result = jobexec( jobXMLfile, parDict )
 if not result['OK']:
