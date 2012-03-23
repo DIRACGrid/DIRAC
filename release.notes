@@ -13,6 +13,12 @@ NEW: FileCatalog - added possibility to remove specified metadata for a given pa
 *Core
 NEW: dirac-install - generate cshrc DIRAC environment setting file for the (t)csh 
 
+*Interfaces
+CHANGE: Job - added InputData to each element in the ParametricInputData
+
+*WMS
+CHANGE: dirac-jobexec - pass ParametericInputData to the workflow as a semicolon separated string
+
 [v6r2p4]
 
 *WMS
