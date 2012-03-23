@@ -1114,29 +1114,30 @@ class Job:
         paramsDict['InputData']['value'] = extraFiles
         paramsDict['InputData']['type'] = 'JDL'
 
-    ###Here handle the Parametric values
+    # Handle here the Parametric values
     if self.parametric:
-      if self.parametric.has_key( 'InputData' ):
-        if paramsDict.has_key( 'InputData' ):
-          if paramsDict['InputData']['value']:
-            currentFiles = paramsDict['InputData']['value'] + ";%s"
-            paramsDict['InputData']['value'] = currentFiles
-          else:
-            paramsDict['InputData'] = {}
-            paramsDict['InputData']['value'] = "%s"
-            paramsDict['InputData']['type'] = 'JDL'
-        self.parametric['files'] = self.parametric['InputData']
-        arguments.append( ' -p ParametricInputData=%s' )
-      elif self.parametric.has_key( 'InputSandbox' ):
-        if paramsDict.has_key( 'InputSandbox' ):
-          currentFiles = paramsDict['InputSandbox']['value'] + ";%s"
-          paramsDict['InputSandbox']['value'] = currentFiles
-        else:
-          paramsDict['InputSandbox'] = {}
-          paramsDict['InputSandbox']['value'] = '%s'
-          paramsDict['InputSandbox']['type'] = 'JDL'
-        self.parametric['files'] = self.parametric['InputSandbox']
-        arguments.append(' -p ParametricInputSandbox=%s')
+      for pType in ['InputData','InputSandbox']:
+        if self.parametric.has_key( pType ):
+          if paramsDict.has_key( pType ) and paramsDict[pType]['value']:
+            pData = self.parametric[pType]
+            # List of lists case
+            currentFiles = paramsDict[pType]['value'].split(';')
+            tmpList = []
+            if type(pData[0]) == list:  
+              for pElement in pData:
+                tmpList.append(currentFiles+pElement)
+            else:
+              for pList in pData:
+                tmpList.append(currentFiles+[pElement])    
+            self.parametric[pType] = tmpList
+          
+          paramsDict[pType] = {}
+          paramsDict[pType]['value'] = "%s"
+          paramsDict[pType]['type'] = 'JDL'
+          self.parametric['files'] = self.parametric[pType]
+          arguments.append( ' -p Parametric'+pType+'=%s' )
+          break
+        
       if self.parametric.has_key('files'):   
         paramsDict['Parameters']={}
         paramsDict['Parameters']['value'] = self.parametric['files']
