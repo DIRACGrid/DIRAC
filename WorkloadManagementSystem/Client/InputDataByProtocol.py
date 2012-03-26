@@ -141,6 +141,8 @@ class InputDataByProtocol:
     requestedProtocol = self.configuration.get( 'Protocol', '' )
     for se, lfnDict in seFilesDict.items():
       pfnList = lfnDict.values()
+      if not pnfList:
+        continue
       result = self.rm.getStorageFileAccessUrl( pfnList, se, protocol = requestedProtocol )
       self.log.debug( result )
       if not result['OK']:
