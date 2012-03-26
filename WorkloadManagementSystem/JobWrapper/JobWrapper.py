@@ -23,6 +23,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry              import getVOForGroup
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
+from DIRAC.Core.Utilities.SiteSEMapping                             import getSEsForSite
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess                                import systemCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
@@ -257,7 +258,7 @@ class JobWrapper:
     """The main execution method of the Job Wrapper
     """
     self.log.info( 'Job Wrapper is starting execution phase for job %s' % ( self.jobID ) )
-    os.environ['DIRACJOBID'] = str(self.jobID)
+    os.environ['DIRACJOBID'] = str( self.jobID )
     os.environ['DIRACROOT'] = self.localSiteRoot
     self.log.verbose( 'DIRACROOT = %s' % ( self.localSiteRoot ) )
     os.environ['DIRACPYTHON'] = sys.executable
@@ -840,7 +841,7 @@ class JobWrapper:
         fileGUID = pfnGUID[localfile]
         self.log.verbose( 'Found GUID for file from POOL XML catalogue %s' % localfile )
 
-      outputSEList = List.randomize( outputSE )
+      outputSEList = self.__getSortedSEList( outputSE )
       upload = failoverTransfer.transferAndRegisterFile( localfile, outputFilePath, lfn,
                                                          outputSEList, fileGUID, self.defaultCatalog )
       if upload['OK']:
@@ -860,7 +861,7 @@ class JobWrapper:
         missing.append( outputFile )
         continue
 
-      failoverSEs = List.randomize( self.defaultFailoverSE )
+      failoverSEs = self.__getSortedSEList( self.defaultFailoverSE )
       targetSE = outputSEList[0]
       result = failoverTransfer.transferAndRegisterFileFailover( localfile, outputFilePath,
                                                                  lfn, targetSE, failoverSEs,
@@ -906,6 +907,30 @@ class JobWrapper:
     return S_OK( 'OutputData uploaded successfully' )
 
   #############################################################################
+  def __getSortedSEList( self, seList ):
+    """ Randomize SE, putting first those that are Local/Close to the Site
+    """
+    if not seList:
+      return seList
+
+    localSEs = []
+    otherSEs = []
+    siteSEs = []
+    seMapping = getSEsForSite( DIRAC.siteName() )
+
+    if seMapping['OK'] and seMapping['Value']:
+      siteSEs = seMapping['Value']
+
+    for seName in seList:
+      if seName in siteSEs:
+        localSEs.append( seName )
+      else:
+        otherSEs.append( seName )
+
+    return List.randomize( localSEs ) + List.randomize( otherSEs )
+
+
+  #############################################################################
   def __getLFNfromOutputFile( self, outputFile, outputPath = '' ):
     """Provides a generic convention for VO output data
        files if no path is specified.
@@ -920,13 +945,13 @@ class JobWrapper:
       basePath = '/' + vo + '/user/' + initial + '/' + self.owner
       if outputPath:
         # If output path is given, append it to the user path and put output files in this directory
-        if outputPath.startswith('/'):
+        if outputPath.startswith( '/' ):
           outputPath = outputPath[1:]
-      else:  
+      else:
         # By default the output path is constructed from the job id 
-        subdir = str( self.jobID / 1000 )      
+        subdir = str( self.jobID / 1000 )
         outputPath = subdir + '/' + str( self.jobID )
-      lfn = os.path.join( basePath, outputPath, os.path.basename( localfile ) )  
+      lfn = os.path.join( basePath, outputPath, os.path.basename( localfile ) )
     else:
       # if LFN is given, take it as it is
       localfile = os.path.basename( outputFile.replace( "LFN:", "" ) )
