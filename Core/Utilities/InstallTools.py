@@ -707,8 +707,8 @@ def getSoftwareComponents( extensions ):
   """  Get the list of all the components ( services and agents ) for which the software
        is installed on the system
   """
-
-  services = {}
+  # The Gateway does not need a handler 
+  services = { 'Framework' : ['Gateway'] }
   agents = {}
 
   for extension in ['DIRAC'] + [ x + 'DIRAC' for x in extensions]:
