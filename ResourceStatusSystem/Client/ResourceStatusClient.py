@@ -1756,7 +1756,7 @@ class ResourceStatusClient:
     kw = { 'meta' : {}}
     kw[ 'meta' ][ 'columns' ] = kwargs.pop( 'columns', None )
     if tokenExpiration is not None:
-      kw[ 'meta' ][ 'minor' ]   = { 'tokenExpiration' : tokenExpiration }
+      kw[ 'meta' ][ 'minor' ]   = { 'TokenExpiration' : tokenExpiration }
     kw.update( rDict )
      
     return self._getElement( 'ElementStatus', kw ) 

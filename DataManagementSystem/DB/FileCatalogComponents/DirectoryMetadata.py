@@ -187,7 +187,44 @@ class DirectoryMetadata:
           return result
 
     return S_OK()
+  
+  def removeMetadata( self, dpath, metadata, credDict ):
+    """ Remove the specified metadata for the given directory
+    """
+    result = self.getMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    metaFields = result['Value']
 
+    result = self.db.dtree.findDir( dpath )
+    if not result['OK']:
+      return result
+    dirID = result['Value']
+    if not dirID:
+      return S_ERROR( '%s: directory not found' % dpath )
+
+    failedMeta = {}
+    for meta in metadata:
+      if meta in metaFields:
+        # Indexed meta case
+        req = "DELETE FROM FC_Meta_%s WHERE DirID=%d" % (meta,dirID)
+        result = self.db._update(req)
+        if not result['OK']:
+          failedMeta[meta] = result['Value']
+      else:
+        # Meta parameter case
+        req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s' AND DirID=%d" % (meta,dirID)
+        result = self.db._update(req)
+        if not result['OK']:
+          failedMeta[meta] = result['Value']    
+          
+    if failedMeta:
+      metaExample = failedMeta.keys()[0]
+      result = S_ERROR('Failed to remove %d metadata, e.g. %s' % (len(failedMeta),failedMeta[metaExample]) )
+      result['FailedMetadata'] = failedMeta
+    else:
+      return S_OK()        
+    
   def setMetaParameter( self, dpath, metaName, metaValue, credDict ):
     """ Set an meta parameter - metadata which is not used in the the data
         search operations

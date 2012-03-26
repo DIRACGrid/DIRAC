@@ -112,16 +112,16 @@ class TokenAgent( AgentModule ):
           pcresult = decision[ 'PolicyCombinedResult' ]
           spresult = decision[ 'SinglePolicyResults' ]
 
-          expiration = token[ 2 ]
+          expiration = token[ 10 ]
 
-          mailMessage = "The token for %s %s %s" % ( granularity, name, stype )
-          mailMessage = mailMessage + "will expire on %s\n\n" % expiration
+          mailMessage = "The token for %s %s ( %s )" % ( granularity, name, stype )
+          mailMessage = mailMessage + " will expire on %s\n\n" % expiration
           mailMessage = mailMessage + "You can renew it with command 'dirac-rss-renew-token'.\n"
           mailMessage = mailMessage + "If you don't take any action, RSS will take control of the resource.\n\n"
 
           policyMessage = ''
 
-          if pcresult:
+          if pcresult[ 'Action' ]:
 
             policyMessage += "  Policies applied will set status to %s.\n" % pcresult[ 'Status' ]
 
@@ -131,11 +131,11 @@ class TokenAgent( AgentModule ):
           mailMessage += policyMessage
           adminMail   += policyMessage
 
-          self.noClient.sendMail( self.rmClient.getUserRegistryCache( user )[ 2 ],
+          self.noClient.sendMail( self.rmClient.getUserRegistryCache( user )[ 'Value' ][ 0 ][ 2 ],
                             'Token for %s is expiring' % name, mailMessage )
       if adminMail != '':
         #FIXME: 'ubeda' is not generic ;p
-        self.noClient.sendMail( self.rmClient.getUserRegistryCache( 'ubeda' )[ 2 ],
+        self.noClient.sendMail( self.rmClient.getUserRegistryCache( 'ubeda' )[ 'Value' ][ 0 ][ 2 ],
                             "Token's summary", adminMail )
 
       return S_OK()

@@ -461,6 +461,7 @@ class MySQLStatements( object ):
 
       self._checkALPHA( k )
       if v is None:
+        del parsedArgs[ k ]
         continue
 
       dataType = getattr( table, k ).dataType.upper()

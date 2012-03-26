@@ -1,9 +1,9 @@
 ########################################################################
-# $Id: FileCatalogDB.py 22623 2010-03-09 19:54:25Z acsmith $
+# $Id$
 ########################################################################
 """ DIRAC DirectoryTree base class """
 
-__RCSID__ = "$Id: FileCatalogDB.py 22623 2010-03-09 19:54:25Z acsmith $"
+__RCSID__ = "$Id$"
 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import * 
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
