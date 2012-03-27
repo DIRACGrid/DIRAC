@@ -35,7 +35,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 ## task to be executed
-from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
+from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 ## from Resources
@@ -233,7 +233,7 @@ class TransferAgent( RequestAgentBase ):
         self.log.warn("Can't create TransferDB instance, disabling FTS execution mode.")
         self.__executionMode["FTS"] = False
       else:
-        self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', 3600 )
+        self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
         self.log.debug( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
 
     ## is there any mode enabled?
@@ -507,7 +507,7 @@ class TransferAgent( RequestAgentBase ):
     failback = False
     if self.__executionMode["FTS"]:
       self.log.info( "execute: will setup StrategyHandler for FTS scheduling...")
-      self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', 3600 )
+      self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
       self.log.debug( "execute: ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
       ## setup strategy handler
       setupStrategyHandler = self.setupStrategyHandler()

@@ -466,25 +466,25 @@ class UserProfileDB( DB ):
     finally:
       connObj.close()
 
-  def __profilesCondGenerator( self, value, type, initialValue = False ):
+  def __profilesCondGenerator( self, value, varType, initialValue = False ):
     if type( value ) in types.StringTypes:
       value = [ value ]
     ids = []
     if initialValue:
       ids.append( initialValue )
     for val in value:
-      if type == 'user':
+      if varType == 'user':
         result = self.__getUserId( val, insertIfMissing = False )
-      elif type == 'group':
+      elif varType == 'group':
         result = self.__getGroupId( val, insertIfMissing = False )
       else:
         result = self.__getVOId( val, insertIfMissing = False )
       if not result[ 'OK' ]:
           continue
       ids.append( result[ 'Value' ] )
-    if type == 'user':
+    if varType == 'user':
       fieldName = 'UserId'
-    elif type == 'group':
+    elif varType == 'group':
       fieldName = 'GroupId'
     else:
       fieldName = 'VOId'

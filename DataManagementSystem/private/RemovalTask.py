@@ -354,7 +354,7 @@ class RemovalTask( RequestTask ):
     errors = {}
     self.addMark( 'PhysicalRemovalAtt', len( pfns ) )
     for targetSE in targetSEs:
-      remove = self.replicaManager().removeStorageFiles( pfns, targetSE )
+      remove = self.replicaManager().removeStorageFile( pfns, targetSE )
       if remove["OK"]:
         for pfn in remove["Value"]["Failed"]:
           if pfn not in failed:

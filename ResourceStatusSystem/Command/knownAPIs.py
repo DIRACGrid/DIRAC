@@ -1,11 +1,14 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' knownAPIs
+
+  Module used to speed up API instantiation.
+
+'''
 
 from DIRAC                                           import gLogger
 from DIRAC.Core.DISET.RPCClient                      import RPCClient
 
+__RCSID__ = '$Id: $'
 
 '''
   Here are all known and relevant APIs for the ResourceStatusSystem Commands

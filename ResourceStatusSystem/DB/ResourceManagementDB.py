@@ -1,10 +1,14 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceManagementDB
+
+  Module that provides basic methods to access the ResourceManagementDB.
+
+'''
 
 from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import CheckDBExecution, ValidateDBTypes
+from DIRAC.ResourceStatusSystem.Utilities.Decorators  import CheckDBExecution, ValidateDBTypes
+
+__RCSID__ = '$Id: $'
 
 class ResourceManagementDB(object):
   """
@@ -67,27 +71,27 @@ class ResourceManagementDB(object):
   def __init__( self, *args, **kwargs ):
     """Constructor."""
     if len(args) == 1:
-      if isinstance(args[0], str):
-        maxQueueSize=10
-      if isinstance(args[0], int):
-        maxQueueSize=args[0]
+      if isinstance( args[ 0 ], str ):
+        maxQueueSize = 10
+      if isinstance( args[ 0 ], int ):
+        maxQueueSize = args[ 0 ]
     elif len(args) == 2:
-      maxQueueSize=args[1]
+      maxQueueSize = args[ 1 ]
     elif len(args) == 0:
-      maxQueueSize=10
+      maxQueueSize = 10
 
     if 'DBin' in kwargs.keys():
-      DBin = kwargs[ 'DBin' ]
+      dbIn = kwargs[ 'DBin' ]
       if isinstance(DBin, list):
         from DIRAC.Core.Utilities.MySQL import MySQL
-        self.db = MySQL( 'localhost', DBin[0], DBin[1], 'ResourceManagementDB' )
+        self.db = MySQL( 'localhost', dbIn[0], dbIn[1], 'ResourceManagementDB' )
       else:
-        self.db = DBin
+        self.db = dbIn
     else:
       from DIRAC.Core.Base.DB import DB
       self.db = DB( 'ResourceManagementDB', 'ResourceStatus/ResourceManagementDB', maxQueueSize )
 
-    self.mm    = MySQLMonkey( self )
+    self.mm = MySQLMonkey( self )
 
   @CheckDBExecution
   @ValidateDBTypes
@@ -219,9 +223,6 @@ class ResourceManagementDB(object):
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
 
-'''
-This will go to the booster
-
 ################################################################################
 ## Web functions
 ################################################################################
@@ -287,4 +288,3 @@ This will go to the booster
 #    return finalDict
 #
 ################################################################################
-'''

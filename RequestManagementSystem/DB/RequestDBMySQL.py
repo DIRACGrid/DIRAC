@@ -276,9 +276,7 @@ class RequestDBMySQL( DB ):
 
     if not requestType:
       return S_ERROR( "Request type not given.")
-    if requestType not in ( 'transfer', 'removal', 'register', 'diset' ):
-      return S_ERROR( "Unknown request type %s" % requestType )
-
+ 
     start = time.time()
     dmRequest = RequestContainer( init = False )
     requestID = 0

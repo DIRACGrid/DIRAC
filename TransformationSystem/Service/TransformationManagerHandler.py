@@ -460,8 +460,13 @@ class TransformationManagerHandlerBase( RequestHandler ):
     else:
       orderAttribute = None
     # Get the columns that match the selection
-    execString = "res = database.get%s(condDict=selectDict,older=toDate, newer=fromDate, timeStamp=timeStamp, orderAttribute=orderAttribute)" % table
-    exec( execString )
+    fcn = None
+    fcnName = "get%s" % table
+    if hasattr( database, fcnName ) and callable( getattr( database, fcnName ) ):
+      fcn = getattr( database, fcnName )
+    if not fcn:
+      return S_ERROR( "Unable to invoke database.%s, it isn't a member function of database" % fcnName )
+    res = fcn( condDict=selectDict, older=toDate, newer=fromDate, timeStamp=timeStamp, orderAttribute=orderAttribute )
     if not res['OK']:
       return self._parseRes( res )
 

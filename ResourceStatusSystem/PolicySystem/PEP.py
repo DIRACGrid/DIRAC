@@ -1,27 +1,27 @@
-################################################################################
 # $HeadURL $
-################################################################################
-"""
+''' PEP
+
   Module used for enforcing policies. Its class is used for:
     1. invoke a PDP and collects results
     2. enforcing results by:
        a. saving result on a DB
        b. raising alarms
        c. other....
-"""
-from DIRAC import S_OK, S_ERROR
+'''
 
-from DIRAC.ResourceStatusSystem  import ValidRes, ValidStatus, ValidStatusTypes, \
-    ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC                                                       import S_ERROR
+from DIRAC.ResourceStatusSystem                                  import ValidRes, \
+    ValidStatus, ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP                 import PDP
+from DIRAC.ResourceStatusSystem.Utilities                        import Utils
 
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient        import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient    import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction   import EmptyAction
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP                   import PDP
-from DIRAC.ResourceStatusSystem.Utilities                          import Utils
+__RCSID__  = '$Id: $'
 
 class PEP:
-  """
+  '''
   PEP (Policy Enforcement Point) initialization
 
   :params:
@@ -40,10 +40,10 @@ class PEP:
           'Granularity': a ValidRes (optional)
         }
       ]
-  """
+  '''
 
-  def __init__( self, pdp = None, clients = {} ):
-    """
+  def __init__( self, pdp = None, clients = None ):
+    '''
     Enforce policies, using a PDP  (Policy Decision Point), based on
 
      self.__granularity (optional)
@@ -61,23 +61,32 @@ class PEP:
      :params:
        :attr:`pdp`       : a custom PDP object (optional)
        :attr:`clients`   : a dictionary containing modules corresponding to clients.
-    """
-    try:             self.rsClient = clients[ 'ResourceStatusClient' ]
-    except KeyError: self.rsClient = ResourceStatusClient()
-    try:             self.rmClient = clients[ 'ResourceManagementClient' ]
-    except KeyError: self.rmClient = ResourceManagementClient()
+    '''
+    
+    if clients is None:
+      clients = {}
+    
+    try:             
+      self.rsClient = clients[ 'ResourceStatusClient' ]
+    except KeyError: 
+      self.rsClient = ResourceStatusClient()
+    try:             
+      self.rmClient = clients[ 'ResourceManagementClient' ]
+    except KeyError: 
+      self.rmClient = ResourceManagementClient()
 
     self.clients = clients
     if not pdp:
       self.pdp = PDP( **clients )
 
-################################################################################
-
   def enforce( self, granularity = None, name = None, statusType = None,
                status = None, formerStatus = None, reason = None, 
                siteType = None, serviceType = None, resourceType = None, 
                tokenOwner = None, useNewRes = False, knownInfo = None  ):
-
+    '''
+      Enforce policies for given set of keyworkds. To be better explained.
+    '''
+  
     ##  real ban flag  #########################################################
 
     realBan = False
@@ -132,14 +141,14 @@ class PEP:
       policyType   = res[ 'PolicyType' ]
 
       if 'Resource_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".ResourceAction")
-        m.ResourceAction(granularity, name, statusType, resDecisions,
+        action = Utils.voimport( '%s.ResourceAction' % actionBaseMod )
+        action.ResourceAction(granularity, name, statusType, resDecisions,
                          rsClient=self.rsClient,
                          rmClient=self.rmClient).run()
 
       if 'Alarm_PolType' in policyType:
-        m = Utils.voimport(actionBaseMod + ".AlarmAction")
-        m.AlarmAction(granularity, name, statusType, resDecisions,
+        action = Utils.voimport( '%s.AlarmAction' % actionBaseMod )
+        action.AlarmAction(granularity, name, statusType, resDecisions,
                        Clients=self.clients,
                        Params={"Granularity"  : granularity,
                                "SiteType"     : siteType,
@@ -147,8 +156,8 @@ class PEP:
                                "ResourceType" : resourceType}).run()
 
       if 'RealBan_PolType' in policyType and realBan:
-        m = Utils.voimport(actionBaseMod + ".RealBanAction")
-        m.RealBanAction(granularity, name, resDecisions).run()
+        action = Utils.voimport( '%s.RealBanAction' % actionBaseMod )
+        action.RealBanAction(granularity, name, resDecisions).run()
 
     return resDecisions
 

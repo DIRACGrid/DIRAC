@@ -220,7 +220,7 @@ class WMSAdministratorHandler(RequestHandler):
     return self.__getGridJobOutput(pilotReference)
 
   ##############################################################################
-  types_getPilotInfo = [ [StringTypes,ListType] ]
+  types_getPilotInfo = [ list(StringTypes)+[ListType] ]
   def export_getPilotInfo(self,pilotReference):
     """ Get the info about a given pilot job reference
     """

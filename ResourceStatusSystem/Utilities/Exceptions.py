@@ -1,15 +1,14 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' Exceptions
 
-""" 
-  collects:
-    - exceptions
-"""
+  RSS Exceptions. Will be obsolete soon.
+
+'''
 
 from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
     ValidServiceType, ValidResourceType
+
+__RCSID__  = '$Id: $'
 
 class RSSDBException( Exception ):
   """

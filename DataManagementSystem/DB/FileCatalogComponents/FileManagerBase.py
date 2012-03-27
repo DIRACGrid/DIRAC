@@ -648,7 +648,7 @@ class FileManagerBase:
     successful = {}
     failed = {}
     for lfn, info in lfns.items():
-      res = self._checkInfo( info, ['PFN', 'SE'] )
+      res = self._checkInfo( info, ['SE'] )
       if not res['OK']:
         failed[lfn] = res['Message']
         lfns.pop( lfn )

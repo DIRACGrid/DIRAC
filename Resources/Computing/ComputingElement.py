@@ -508,6 +508,10 @@ class ComputingElement:
 
     release = gConfig.getValue( '/LocalSite/ReleaseVersion', version )
     self.classAd.insertAttributeString( 'DIRACVersion', release )
+    self.classAd.insertAttributeString( 'ReleaseVersion', release )
+    project = gConfig.getValue( "/LocalSite/ReleaseProject", "" )
+    if project:
+      self.classAd.insertAttributeString( 'ReleaseProject', project )
     if self.classAd.isOK():
       jdl = self.classAd.asJDL()
       return S_OK( jdl )

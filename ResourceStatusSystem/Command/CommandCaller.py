@@ -1,11 +1,15 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' CommandCaller
+
+  Module that loads commands and executes them.
+
+'''
 
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Utilities              import Utils
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
+
+__RCSID__ = '$Id: $'
 
 class CommandCaller:
   """
@@ -62,16 +66,6 @@ class CommandCaller:
     res = clientsInvoker.doCommand()
 
     return res
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
