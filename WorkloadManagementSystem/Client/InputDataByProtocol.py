@@ -143,6 +143,28 @@ class InputDataByProtocol:
       pfnList = lfnDict.values()
       if not pnfList:
         continue
+      result = self.rm.getStorageFileMetadata( pfnList, se )
+      if not result['OK']:
+        self.log.warn( result['Message'] )
+        return result
+      if result['Value']['Failed']:
+        error = 'Could not get Storage Metadata from %s' % se
+        self.log.error( error )
+        return S_ERROR( error )
+      for pfn, metadata in result['Value']['Successful'].items():
+        if metadata['Lost']:
+          error = "PFN has been Lost by the StorageElement"
+          self.log.error( error , pfn )
+          return S_ERROR( error )
+        elif metadata['Unavailable']:
+          error = "PFN is declared Unavailable by the StorageElement"
+          self.log.error( error, pfn )
+          return S_ERROR( error )
+        elif se in tapeSEs and not metadata['Cached']:
+          error = "PFN is no longer in StorageElement Cache"
+          self.log.error( error, pfn )
+          return S_ERROR( error )
+
       result = self.rm.getStorageFileAccessUrl( pfnList, se, protocol = requestedProtocol )
       self.log.debug( result )
       if not result['OK']:
