@@ -782,7 +782,7 @@ class TransferAgent( RequestAgentBase ):
     self.log.info( "scheduleFiles: *** FTS scheduling ***")
     self.log.info( "scheduleFiles: processing subrequest %s" % index )
     ## get source SE
-    sourceSE = subAttrs["SourceSE"]
+    sourceSE = subAttrs["SourceSE"] if subAttrs["SourceSE"] not in ( None, "None", "" ) else None
     ## get target SEs, no matter what's a type we need a list
     targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
     ## get replication strategy
@@ -790,7 +790,6 @@ class TransferAgent( RequestAgentBase ):
     strategy = { False : None, 
                  True: operation }[ operation in self.strategyHandler().getSupportedStrategies() ]
 
-    
     ## get subrequest files
     subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
     if not subRequestFiles["OK"]:
@@ -1349,7 +1348,8 @@ class StrategyHandler( object ):
     siteAncestor = {}              # Maintains the ancestor channel for a site
     primarySources = sourceSEs
 
-    while len( destSEs ) > 0:
+            
+    while destSEs:
       try:
         minTotalTimeToStart = float( "inf" )
         candidateChannels = []
@@ -1363,9 +1363,8 @@ class StrategyHandler( object ):
                 channelName = "%s-%s" % ( sourceSite, destSite )
 
                 if channelName not in channelInfo:
-                  self.log.error( "minimiseTotalWait: bailing out! channel '%s' not defined" % channelName )
-                  raise StrategyHandlerChannelNotDefined( channelName )
-
+                  continue
+                
                 channelID = channelInfo[channelName]["ChannelID"]
                 # If this channel is already used, look for another sourceSE
                 if channelID in tree:
