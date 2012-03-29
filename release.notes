@@ -1,3 +1,10 @@
+[v6r2p7]
+
+*WMS
+BUGFIX: SiteDirector - wrong CS option use: BundleProxy -> HttpProxy
+FIX: SiteDirector - use short lines in compressed/encoded files in the executable
+     python script
+
 [v6r2p6]
 
 *DataManagement
