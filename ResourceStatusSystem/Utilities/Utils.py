@@ -1,9 +1,15 @@
-"""
-  This module collects utility functions
-"""
+# $HeadURL $
+''' Utils
+
+  Module that collects utility functions.
+
+'''
+
+import collections
 
 from DIRAC import gConfig
-import collections
+
+__RCSID__ = '$Id: $'
 
 #############################################################################
 # useful functions
@@ -227,3 +233,6 @@ def xml_append(doc, tag, value_=None, elt_=None, **kw):
     return elt_.appendChild(new_elt)
   else:
     return doc.documentElement.appendChild(new_elt)
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

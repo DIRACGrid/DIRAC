@@ -308,6 +308,7 @@ class TarModuleCreator( object ):
     relData = []
     version = False
     feature = False
+    lastKey = False
     for rawLine in relaseContents:
       line = rawLine.strip()
       if not line:
@@ -316,35 +317,41 @@ class TarModuleCreator( object ):
         version = line[1:-1].strip()
         relData.append( ( version, { 'comment' : [], 'features' : [] } ) )
         feature = False
+        lastKey = False
         continue
       if line[0] == "*":
         feature = line[1:].strip()
         relData[-1][1][ 'features' ].append( [ feature, {} ] )
+        lastKey = False
         continue
       if not feature:
         relData[ -1 ][1][ 'comment' ].append( rawLine )
         continue
       keyDict = relData[-1][1][ 'features' ][-1][1]
+      foundKey = False
       for key in ( 'BUGFIX', 'BUG', 'FIX', "CHANGE", "NEW", "FEATURE" ):
         if line.find( "%s:" % key ) == 0:
           line = line[ len( key ) + 2: ].strip()
         elif line.find( "%s " % key ) == 0:
-           line = line[ len( key ) + 1: ].strip()
+          line = line[ len( key ) + 1: ].strip()
         else:
           continue
+        foundKey = key
+        break
 
-        if key in ( 'BUGFIX', 'BUG', 'FIX' ):
-          if 'BUGFIX' not in keyDict:
-            keyDict[ 'BUGFIX' ] = []
-          keyDict[ 'BUGFIX' ].append( line )
-        elif key == 'CHANGE':
-          if 'CHANGE' not in keyDict:
-            keyDict[ 'CHANGE' ] = []
-          keyDict[ 'CHANGE' ].append( line )
-        elif key in ( 'NEW', 'FEATURE' ):
-          if 'FEATURE' not in keyDict:
-            keyDict[ 'FEATURE' ] = []
-          keyDict[ 'FEATURE' ].append( line )
+      if foundKey in ( 'BUGFIX', 'BUG', 'FIX' ):
+        foundKey = 'BUGFIX'
+      elif foundKey in ( 'NEW', 'FEATURE' ):
+        foundKey = 'FEATURE'
+
+      if foundKey:
+        if foundKey not in keyDict:
+          keyDict[ foundKey ] = []
+        keyDict[ foundKey ].append( line )
+        lastKey = foundKey
+      elif lastKey:
+        keyDict[ lastKey ][-1] += " %s" % line
+
 
     return S_OK( relData )
 

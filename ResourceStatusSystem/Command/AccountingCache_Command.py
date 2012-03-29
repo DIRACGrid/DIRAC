@@ -1,20 +1,19 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' AccountingCacheCommand
+ 
   The AccountingCache_Command class is a command module that collects command 
   classes to store accounting results in the accounting cache.
-"""
+  
+'''
 
 from datetime                                     import datetime, timedelta
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################

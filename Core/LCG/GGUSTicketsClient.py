@@ -57,7 +57,8 @@ class GGUSTicketsClient:
       self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str( self.endDate )
 
     # create the URL to get tickets relative to the site:
-    ggusURL = "https://gus.fzk.de/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&"\
+    # Updated from https://gus.fzk.de to https://ggus.eu 
+    ggusURL = "https://ggus.eu/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&"\
                                                       "show_columns_check[]=TICKET_TYPE&"\
                                                       "show_columns_check[]=AFFECTED_VO&"\
                                                       "show_columns_check[]=AFFECTED_SITE&"\

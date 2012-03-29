@@ -56,14 +56,23 @@ class TestClientTransformationTestCase(unittest.TestCase):
         testValue = "'TestValue'"
       else:
         testValue = '99999'
-      execString = "res = oTrans.set%s(%s)" % (parameterName,testValue)
-      exec(execString)
-      self.assert_(res['OK'])
-      execString = "res = oTrans.get%s()" % (parameterName)
-      exec(execString)
-      self.assert_(res['OK']) 
-      self.assertEqual(res['Value'],eval(testValue))
+      ## set*
 
+      setterName = "set%s" % parameterName
+      self.assertEqual( hasattr( oTrans, setterName ), True )
+      setter = getattr( oTrans, setterName )
+      self.asserEqual( callable(setter), True )
+      res = setter( testValue )
+      self.assertEqual( res["OK"], True )
+      ## get*
+      getterName = "get%s" % parameterName 
+      self.assertEqual( hasattr( oTrans, getterName ), True )
+      getter = getattr( oTrans, setterName )
+      self.asserEqual( callable(getter), True )
+      res = getter() 
+      self.asserEqual( res["OK"], True )
+      self.asserEqual( res["Value"], eval(testValue) )
+      
     # Test that SEs delivered as a space or comma seperated string are resolved...
     stringSEs = 'CERN-USER, CNAF-USER GRIDKA-USER,IN2P3-USER'
     listSEs = stringSEs.replace(',',' ').split()

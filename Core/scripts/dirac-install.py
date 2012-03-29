@@ -851,7 +851,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
       except Exception, e:
         logERROR( "Cannot download %s: %s" % ( md5Name, str( e ) ) )
         return False
-    #Read md5  
+    #Read md5
     fd = open( os.path.join( cliParams.targetPath, md5Name ), "r" )
     md5Expected = fd.read().strip()
     fd.close()
@@ -904,8 +904,8 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
 
 def fixBuildPaths():
   """
-  At compilation time many scripts get the building directory inserted, 
-  this needs to be changed to point to the current installation path: 
+  At compilation time many scripts get the building directory inserted,
+  this needs to be changed to point to the current installation path:
   cliParams.targetPath
 """
 
@@ -1178,7 +1178,6 @@ def installExternals( releaseConfig ):
     logNOTICE( "Fixing externals paths..." )
     fixBuildPaths()
   logNOTICE( "Running externals post install..." )
-  runExternalsPostInstall()
   checkPlatformAliasLink()
   #lcg utils?
   #LCG utils if required
@@ -1190,8 +1189,9 @@ def installExternals( releaseConfig ):
       logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
   return True
 
-def createBashrc():
-
+def createPermanentDirLinks():
+  """ Create links to permanent directories from within the version directory
+  """
   proPath = cliParams.targetPath
   if cliParams.useVersionsDir:
     oldPath = os.path.join( cliParams.basePath, 'old' )
@@ -1219,7 +1219,14 @@ def createBashrc():
     except Exception, x:
       logERROR( str( x ) )
       return False
+    
+  return True
 
+def createBashrc():
+  """ Create DIRAC environment setting script for the bash shell
+  """
+
+  proPath = cliParams.targetPath
   # Now create bashrc at basePath
   try:
     bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
@@ -1261,8 +1268,54 @@ def createBashrc():
       f.write( '\n'.join( lines ) )
       f.close()
   except Exception, x:
-   logERROR( str( x ) )
-   return False
+    logERROR( str( x ) )
+    return False
+
+  return True
+
+def createCshrc():
+  """ Create DIRAC environment setting script for the (t)csh shell
+  """
+  
+  proPath = cliParams.targetPath
+  # Now create cshrc at basePath
+  try:
+    cshrcFile = os.path.join( cliParams.targetPath, 'cshrc' )
+    if cliParams.useVersionsDir:
+      cshrcFile = os.path.join( cliParams.basePath, 'cshrc' )
+    logNOTICE( 'Creating %s' % cshrcFile )
+    if not os.path.exists( cshrcFile ):
+      lines = [ '# DIRAC cshrc file, used by clients to set up the environment',
+                'setenv PYTHONUNBUFFERED yes',
+                'setenv PYTHONOPTIMIZE x' ]
+      if not 'X509_CERT_DIR' in os.environ and not os.path.isdir( "/etc/grid-security/certificates" ):
+        lines.append( "[ -d '%s/etc/grid-security/certificates' ] && setenv X509_CERT_DIR %s/etc/grid-security/certificates" % ( proPath, proPath ) )
+      lines.append( 'setenv X509_VOMS_DIR %s' % os.path.join( proPath, 'etc', 'grid-security', 'vomsdir' ) )
+      lines.extend( ['# Some DIRAC locations',
+                     'setenv DIRAC %s' % proPath,
+                     'setenv DIRACBIN %s' % os.path.join( proPath, cliParams.platform, 'bin' ),
+                     'setenv DIRACSCRIPTS %s' % os.path.join( proPath, 'scripts' ),
+                     'setenv DIRACLIB %s' % os.path.join( proPath, cliParams.platform, 'lib' ),
+                     'setenv TERMINFO %s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ) ] )
+
+      lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
+                    'setenv PYTHONPATH',
+                    'setenv LD_LIBRARY_PATH'] )
+
+      lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || setenv PATH ${DIRACBIN}:$PATH',
+                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH',
+                     'setenv LD_LIBRARY_PATH $DIRACLIB',
+                     'setenv DYLD_LIBRARY_PATH $DIRACLIB',
+                     'setenv PYTHONPATH $DIRAC'] )
+      lines.extend( ['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
+                     'setenv OPENSSL_CONF /tmp'] )
+      lines.append( '' )
+      f = open( cshrcFile, 'w' )
+      f.write( '\n'.join( lines ) )
+      f.close()
+  except Exception, x:
+    logERROR( str( x ) )
+    return False
 
   return True
 
@@ -1321,8 +1374,13 @@ if __name__ == "__main__":
   if not installExternals( releaseConfig ):
     sys.exit( 1 )
   fixMySQLScript()
+  if not createPermanentDirLinks():
+    sys.exit( 1 )
   if not createBashrc():
     sys.exit( 1 )
+  if not createCshrc():
+    sys.exit( 1 )  
+  runExternalsPostInstall()
   writeDefaultConfiguration()
   installExternalRequirements( cliParams.externalsType )
   logNOTICE( "%s properly installed" % cliParams.installation )

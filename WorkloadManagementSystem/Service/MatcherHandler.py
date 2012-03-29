@@ -13,7 +13,7 @@ import time
 from   types import StringType, DictType, StringTypes
 import threading
 
-from DIRAC.ConfigurationSystem.Client.Helpers          import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers          import Registry, Operations
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight         import ClassAd
 from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
@@ -23,6 +23,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC                                             import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
 from DIRAC.Core.Security                               import Properties
+from DIRAC.Core.Utilities.DictCache                    import DictCache
 
 DEBUG = 0
 
@@ -70,11 +71,22 @@ def sendNumTaskQueues():
 
 class MatcherHandler( RequestHandler ):
 
-  def initialize( self ):
+  __opsCache = {}
+  __csDictCache = DictCache()
+  __delayMem = {}
 
-    self.siteJobLimits = self.getCSOption( "SiteJobLimits", False )
-    self.checkPilotVersion = self.getCSOption( "CheckPilotVersion", True )
-    self.setup = gConfig.getValue( '/DIRAC/Setup', '' )
+  def initialize( self ):
+    self.__opsHelper = self.__getOpsHelper()
+
+  def __getOpsHelper( self, setup = False, vo = False ):
+    if not setup:
+      setup = self.srv_getClientSetup()
+    if not vo:
+      vo = Registry.getVOForGroup( self.getRemoteCredentials()[ 'group' ] )
+    cKey = ( vo, setup )
+    if cKey not in MatcherHandler.__opsCache:
+      MatcherHandler.__opsCache[ cKey ] = Operations.Operations( vo = vo, setup = setup )
+    return MatcherHandler.__opsCache[ cKey ]
 
   def __processResourceDescription( self, resourceDescription ):
     # Check and form the resource description dictionary
@@ -100,11 +112,9 @@ class MatcherHandler( RequestHandler ):
       if classAdAgent.lookupAttribute( 'JobID' ):
         resourceDict['JobID'] = classAdAgent.getAttributeInt( 'JobID' )
 
-      if classAdAgent.lookupAttribute( 'DIRACVersion' ):
-        resourceDict['DIRACVersion'] = classAdAgent.getAttributeString( 'DIRACVersion' )
-
-      if classAdAgent.lookupAttribute( 'VirtualOrganization' ):
-        resourceDict['VirtualOrganization'] = classAdAgent.getAttributeString( 'VirtualOrganization' )
+      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization' ):
+        if classAdAgent.lookupAttribute( k ):
+          resourceDict[ k ] = classAdAgent.getAttributeString( k )
 
     else:
       for name in gTaskQueueDB.getSingleValueTQDefFields():
@@ -118,11 +128,9 @@ class MatcherHandler( RequestHandler ):
       if resourceDescription.has_key( 'JobID' ):
         resourceDict['JobID'] = resourceDescription['JobID']
 
-      if resourceDescription.has_key( 'DIRACVersion' ):
-        resourceDict['DIRACVersion'] = resourceDescription['DIRACVersion']
-
-      if resourceDescription.has_key( 'VirtualOrganization' ):
-        resourceDict['VirtualOrganization'] = resourceDescription['VirtualOrganization']
+      for k in ( 'DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization' ):
+        if k in resourceDescription:
+          resourceDict[ k ] = resourceDescription[ k ]
 
     return resourceDict
 
@@ -135,85 +143,100 @@ class MatcherHandler( RequestHandler ):
     resourceDict = self.__processResourceDescription( resourceDescription )
 
     credDict = self.getRemoteCredentials()
-    #Check credentials
+    #Check credentials if not generic pilot
     if Properties.GENERIC_PILOT not in credDict[ 'properties' ]:
-      #Not a generic pilot and requires a DN??? This smells fishy
-      if 'OwnerDN' in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
-        ownerDN = resourceDict[ 'OwnerDN' ]
-        if Properties.JOB_SHARING in credDict[ 'properties' ]:
-          #Job sharing, is the DN in the same group?
-          result = Registry.getGroupsForDN( ownerDN )
-          if not result[ 'OK' ]:
-            return S_ERROR( "Requested owner DN %s does not have any group!" % ownerDN )
-          groups = result[ 'Value' ]
-          if credDict[ 'group' ] not in groups:
-            #DN is not in the same group! bad body.
+      #If it's a private pilot, the DN has to be the same
+      if Properties.PILOT in credDict[ 'properties' ]:
+        gLogger.notice( "Setting the resource DN to the credentials DN" )
+        resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
+      #If it's a job sharing. The group has to be the same and just check that the DN (if any)
+      # belongs to the same group
+      elif Properties.JOB_SHARING in credDict[ 'properties' ]:
+        resourceDict[ 'OwnerGroup' ] = credDict[ 'group' ]
+        gLogger.notice( "Setting the resource group to the credentials group" )
+        if 'OwnerDN'  in resourceDict and resourceDict[ 'OwnerDN' ] != credDict[ 'DN' ]:
+          ownerDN = resourceDict[ 'OwnerDN' ]
+          result = Registry.getGroupsForDN( resourceDict[ 'OwnerDN' ] )
+          if not result[ 'OK' ] or credDict[ 'group' ] not in result[ 'Value' ]:
+            #DN is not in the same group! bad boy.
             gLogger.notice( "You cannot request jobs from DN %s. It does not belong to your group!" % ownerDN )
             resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
-        else:
-          #No generic pilot and not JobSharing? DN has to be the same!
-          gLogger.notice( "You can only match jobs for your DN (%s)" % credDict[ 'DN' ] )
-          resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
-      if Properties.PILOT not in credDict[ 'properties' ]:
-        #No pilot? Group has to be the same!
-        if 'OwnerGroup' in resourceDict and resourceDict[ 'OwnerGroup' ] != credDict[ 'group' ]:
-          gLogger.notice( "You can only match jobs for your group (%s)" % credDict[ 'group' ] )
+      #Nothing special, group and DN have to be the same
+      else:
+        resourceDict[ 'OwnerDN' ] = credDict[ 'DN' ]
         resourceDict[ 'OwnerGroup' ] = credDict[ 'group' ]
 
     # Check the pilot DIRAC version
-    if self.checkPilotVersion:
-      if not 'DIRACVersion' in resourceDict:
-        return S_ERROR( 'Version check requested and not provided by Pilot' )
-
-      # Check if the matching Request provides a VirtualOrganization
-      if 'VirtualOrganization' in resourceDict:
-        voName = resourceDict['VirtualOrganization']
-      # Check if the matching Request provides an OwnerGroup
-      elif 'OwnerGroup' in resourceDict:
-        voName = Registry.getVOForGroup( resourceDict['OwnerGroup'] )
-      # else take the default VirtualOrganization for the installation
+    if self.__opsHelper.getValue( "Pilot/CheckVersion", True ):
+      if 'ReleaseVersion' not in resourceDict:
+        if not 'DIRACVersion' in resourceDict:
+          return S_ERROR( 'Version check requested and not provided by Pilot' )
+        else:
+          pilotVersion = resourceDict['DIRACVersion']
       else:
-        voName = Registry.getVOForGroup( '' )
+        pilotVersion = resourceDict['ReleaseVersion']
 
-      self.pilotVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( voName, self.setup ), '' )
-      if self.pilotVersion and resourceDict['DIRACVersion'] != self.pilotVersion:
-        return S_ERROR( 'Pilot version does not match the production version %s:%s' % \
-                       ( resourceDict['DIRACVersion'], self.pilotVersion ) )
+      validVersions = self.__opsHelper.getValue( "Pilot/Version", [] )
+      if validVersions and pilotVersion not in validVersions:
+        return S_ERROR( 'Pilot version does not match the production version %s not in ( %s )' % \
+                       ( pilotVersion, ",".join( validVersions ) ) )
+      #Check project if requested
+      validProject = self.__opsHelper.getValue( "Pilot/Project", "" )
+      if validProject:
+        if 'ReleaseProject' not in resourceDict:
+          return S_ERROR( "Version check requested but expected project %s not received" % validProject )
+        if resourceDict[ 'ReleaseProject' ] != validProject:
+          return S_ERROR( "Version check requested but expected project %s != received %s" % ( validProject,
+                                                                                               resourceDict[ 'ReleaseProject' ] ) )
 
-    # Get common site mask and check the agent site
-    result = gJobDB.getSiteMask( siteState = 'Active' )
-    if result['OK']:
-      maskList = result['Value']
-    else:
-      return S_ERROR( 'Internal error: can not get site mask' )
-
+    #Check the site mask
     if not 'Site' in resourceDict:
       return S_ERROR( 'Missing Site Name in Resource JDL' )
 
+    # Get common site mask and check the agent site
+    result = gJobDB.getSiteMask( siteState = 'Active' )
+    if not result['OK']:
+      return S_ERROR( 'Internal error: can not get site mask' )
+    maskList = result['Value']
+
     siteName = resourceDict['Site']
-    if resourceDict['Site'] not in maskList:
-      if 'GridCE' in resourceDict:
-        del resourceDict['Site']
-      else:
+    if siteName not in maskList:
+      if 'GridCE' not in resourceDict:
         return S_ERROR( 'Site not in mask and GridCE not specified' )
+      #Even if the site is banned, if it defines a CE, it must be able to check it
+      del resourceDict['Site']
 
     resourceDict['Setup'] = self.serviceInfoDict['clientSetup']
 
-    if DEBUG:
-      print "Resource description:"
-      for key, value in resourceDict.items():
-        print key.rjust( 20 ), value
+    gLogger.verbose( "Resource description:" )
+    for key in resourceDict:
+     gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
 
-    # Check if Job Limits are imposed onto the site
-    extraConditions = {}
-    if self.siteJobLimits:
-      result = self.getExtraConditions( siteName )
+    # Check if Limits are imposed onto the site
+    negativeCond = {}
+    if self.__opsHelper.getValue( "JobScheduling/CheckJobLimits", True ):
+      result = self.__getRunningCondition( siteName )
       if result['OK']:
-        extraConditions = result['Value']
-    if extraConditions:
-      gLogger.info( 'Job Limits for site %s are: %s' % ( siteName, str( extraConditions ) ) )
+        negativeCond = result['Value']
+      gLogger.verbose( 'Negative conditions for site %s after checking limits are: %s' % ( siteName, str( negativeCond ) ) )
 
-    result = gTaskQueueDB.matchAndGetJob( resourceDict, extraConditions = extraConditions )
+    if self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
+      result = self.__getDelayCondition( siteName )
+      if result['OK']:
+        delayCond = result['Value']
+        gLogger.verbose( 'Negative conditions for site %s after delay checking are: %s' % ( siteName, str( delayCond ) ) )
+        #Merge both negative dicts
+        for attr in delayCond:
+          if attr not in negativeCond:
+            negativeCond[ attr ] = []
+          for value in delayCond[ attr ]:
+            if value not in negativeCond[ attr ]:
+              negativeCond[ attr ].append( value )
+
+    if negativeCond:
+      gLogger.info( 'Negative conditions for site %s are: %s' % ( siteName, str( negativeCond ) ) )
+
+    result = gTaskQueueDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
 
     if DEBUG:
       print result
@@ -233,6 +256,9 @@ class MatcherHandler( RequestHandler ):
     if not resAtt['Value']['Status'] == 'Waiting':
       gLogger.error( 'Job %s matched by the TQ is not in Waiting state' % str( jobID ) )
       result = gTaskQueueDB.deleteJob( jobID )
+      if not result[ 'OK' ]:
+        return result
+      return S_ERROR( "Job %s is not in Waiting state" % str( jobID ) )
 
     result = gJobDB.setJobStatus( jobID, status = 'Matched', minor = 'Assigned' )
     result = gJobLoggingDB.addLoggingRecord( jobID,
@@ -263,57 +289,121 @@ class MatcherHandler( RequestHandler ):
     if not resAtt['Value']:
       return S_ERROR( 'No attributes returned for job' )
 
+    if self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
+      self.__updateDelayCounters( siteName, jobID )
+
     resultDict['DN'] = resAtt['Value']['OwnerDN']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
     return S_OK( resultDict )
 
-  def getExtraConditions( self, site ):
+  def __extractCSDictOfDicts( self, section ):
+    stuffDict = MatcherHandler.__csDictCache.get( section )
+    if stuffDict:
+      return S_OK( stuffDict )
+
+    result = self.__opsHelper.getSections( section )
+    if not result['OK']:
+      return result
+    attribs = result['Value']
+    stuffDict = {}
+    for attName in attribs:
+      result = self.__opsHelper.getOptionsDict( "%s/%s" % ( section, attName ) )
+      if not result[ 'OK' ]:
+        return result
+      attLimits = result[ 'Value' ]
+      try:
+        attLimits = dict( [ ( k, int( attLimits[k] ) ) for k in attLimits ] )
+      except Exception, excp:
+        errMsg = "%s/%s has to contain numbers: %s" % ( section, attName, str( excp ) )
+        gLogger.error( errMsg )
+        return S_ERROR( errMsg )
+      stuffDict[ attName ] = attLimits
+
+    MatcherHandler.__csDictCache.add( section, 300, stuffDict )
+    return S_OK( stuffDict )
+
+  def __getRunningCondition( self, siteName ):
     """ Get extra conditions allowing site throttling
     """
-    # Find Site job limits
-    grid = site.split( '.' )[0]
-    siteSection = '/Resources/Sites/%s/%s' % ( grid, site )
-    result = gConfig.getSections( siteSection )
+    siteSection = "JobScheduling/RunningLimit/%s" % siteName
+    result = self.__extractCSDictOfDicts( siteSection )
     if not result['OK']:
       return result
-    if not 'JobLimits' in result['Value']:
-      return S_OK( {} )
-    result = gConfig.getSections( '%s/JobLimits' % siteSection )
-    if not result['OK']:
-      return result
-    sections = result['Value']
-    limitDict = {}
-    resultDict = {}
-    if sections:
-      for section in sections:
-        result = gConfig.getOptionsDict( '%s/JobLimits/%s' % ( siteSection, section ) )
-        if not result['OK']:
-          return result
-        optionDict = result['Value']
-        if optionDict:
-          limitDict[section] = []
-          for key, value in optionDict.items():
-            limitDict[section].append( ( key, int( value ) ) )
-    if not limitDict:
+    limitsDict = result[ 'Value' ]
+    #limitsDict is something like { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
+    if not limitsDict:
       return S_OK( {} )
     # Check if the site exceeding the given limits
-    fields = limitDict.keys()
-    for field in fields:
-      result = gJobDB.getCounters( 'Jobs', [ field ], { 'Site' : site, 'Status' : [ 'Running', 'Matched' ] } )
+    negCond = {}
+    for attName in limitsDict:
+      if attName not in gJobDB.jobAttributeNames:
+        gLogger.error( "Attribute %s does not exist. Check the job limits" % attName )
+        continue
+      result = gJobDB.getCounters( 'Jobs', [ attName ], { 'Site' : siteName, 'Status' : [ 'Running', 'Matched' ] } )
       if not result[ 'OK' ]:
         return result
       data = result[ 'Value' ]
-      data = dict( [ ( k[0][ field ], k[1] )  for k in data ] )
-      for value, limit in limitDict[ field ]:
-        running = data.get( value, 0 )
+      data = dict( [ ( k[0][ attName ], k[1] )  for k in data ] )
+      for attValue in limitsDict[ attName ]:
+        limit = limitsDict[ attName ][ attValue ]
+        running = data.get( attValue, 0 )
         if running >= limit:
-          gLogger.verbose( 'Job Limit imposed at %s on %s/%s/%d,'
-                           ' %d jobs already deployed' % ( site, field, value, limit, running ) )
-          if field not in resultDict:
-            resultDict[ field ] = []
-          resultDict[ field ].append( value )
-    return S_OK( resultDict )
+          gLogger.verbose( 'Job Limit imposed at %s on %s/%s=%d,'
+                           ' %d jobs already deployed' % ( siteName, attName, attValue, limit, running ) )
+          if attName not in negCond:
+            negCond[ attName ] = []
+          negCond[ attName ].append( attValue )
+    #negCond is something like : {'JobType': ['Merge']}
+    return S_OK( negCond )
 
+  def __updateDelayCounters( self, siteName, jid ):
+    #Get the info from the CS
+    siteSection = "JobScheduling/MatchingDelay/%s" % siteName
+    result = self.__extractCSDictOfDicts( siteSection )
+    if not result['OK']:
+      return result
+    delayDict = result[ 'Value' ]
+    #limitsDict is something like { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
+    if not delayDict:
+      return S_OK()
+    attNames = []
+    for attName in delayDict:
+      if attName not in gJobDB.jobAttributeNames:
+        gLogger.error( "Attribute %s does not exist in the JobDB. Please fix it!" % attName )
+      else:
+        attNames.append( attName )
+    result = gJobDB.getJobAttributes( jid, attNames )
+    if not result[ 'OK' ]:
+      gLogger.error( "While retrieving attributes coming from %s: %s" % ( siteSection, result[ 'Message' ] ) )
+      return result
+    atts = result[ 'Value' ]
+    #Create the DictCache if not there
+    if siteName not in MatcherHandler.__delayMem:
+      MatcherHandler.__delayMem[ siteName ] = DictCache()
+    #Update the counters
+    delayCounter = MatcherHandler.__delayMem[ siteName ]
+    for attName in atts:
+      attValue = atts[ attName ]
+      if attValue in delayDict[ attName ]:
+        delayTime = delayDict[ attName ][ attValue ]
+        gLogger.notice( "Adding delay for %s/%s=%s of %s secs" % ( siteName, attName,
+                                                                   attValue, delayTime ) )
+        delayCounter.add( ( attName, attValue ), delayTime )
+    return S_OK()
+
+
+  def __getDelayCondition( self, siteName ):
+    """ Get extra conditions allowing matching delay
+    """
+    if siteName not in MatcherHandler.__delayMem:
+      return S_OK( {} )
+    lastRun = MatcherHandler.__delayMem[ siteName ].getKeys()
+    negCond = {}
+    for attName, attValue in lastRun:
+      if attName not in negCond:
+        negCond[ attName ] = []
+      negCond[ attName ].append( attValue )
+    return S_OK( negCond )
 
 ##############################################################################
   types_requestJob = [ [StringType, DictType] ]

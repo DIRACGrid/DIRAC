@@ -1,14 +1,18 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' PDP
+
+  PolicyDecissionPoint
+
+'''
 
 import datetime
 
-from DIRAC.ResourceStatusSystem.PolicySystem                import Status
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter        import InfoGetter
-from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller   import PolicyCaller
-from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
+from DIRAC.ResourceStatusSystem.PolicySystem              import Status
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
+from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
+from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
+
+__RCSID__  = '$Id: $'
 
 class PDP:
   """
@@ -18,10 +22,26 @@ class PDP:
   """
 
   def __init__( self, **clients ):
+    '''
+      Constructor. Defines members that will be used later on.
+    '''
+    
+    cc                  = CommandCaller()
+    self.clients        = clients
+    self.pCaller        = PolicyCaller( cc, **clients )
+    self.iGetter        = InfoGetter()
 
-    cc             = CommandCaller()
-    self.clients   = clients
-    self.pc        = PolicyCaller( cc, **clients )
+    self.__granularity  = None
+    self.__name         = None
+    self.__statusType   = None
+    self.__status       = None
+    self.__formerStatus = None
+    self.__reason       = None
+    self.__siteType     = None
+    self.__serviceType  = None
+    self.__resourceType = None
+    self.__useNewRes    = None
+        
 
   def setup( self, granularity = None, name = None, statusType = None,
              status = None, formerStatus = None, reason = None, siteType = None,
@@ -51,14 +71,11 @@ class PDP:
     self.__resourceType = resourceType
     self.__useNewRes    = useNewRes
 
-    self.args      = None
-    self.policy    = None
-    self.knownInfo = None
-    self.ig        = None
+
 
 ################################################################################
 
-  def takeDecision(self, policyIn=None, argsIn=None, knownInfo=None):
+  def takeDecision( self, policyIn = None, argsIn = None, knownInfo = None ):
     """ PDP MAIN FUNCTION
 
         decides policies that have to be applied, based on
@@ -87,96 +104,97 @@ class PDP:
             'EndDate: datetime.datetime (in a string)}
     """
 
-    self.args      = argsIn
-    self.policy    = policyIn
-    self.knownInfo = knownInfo
+    polToEval = self.iGetter.getInfoToApply( ( 'policy', 'policyType' ),
+                                        granularity  = self.__granularity,
+                                        statusType   = self.__statusType,
+                                        status       = self.__status,
+                                        formerStatus = self.__formerStatus,
+                                        siteType     = self.__siteType,
+                                        serviceType  = self.__serviceType,
+                                        resourceType = self.__resourceType,
+                                        useNewRes    = self.__useNewRes )
 
-    self.ig = InfoGetter()
+    policyType = polToEval[ 'PolicyType' ] # type: generator
 
-    EVAL = self.ig.getInfoToApply(('policy', 'policyType'),
-                                  granularity  = self.__granularity,
-                                  statusType   = self.__statusType,
-                                  status       = self.__status,
-                                  formerStatus = self.__formerStatus,
-                                  siteType     = self.__siteType,
-                                  serviceType  = self.__serviceType,
-                                  resourceType = self.__resourceType,
-                                  useNewRes    = self.__useNewRes)
-
-    policyType = EVAL['PolicyType'] # type: generator
-
-    if self.policy:
+    if policyIn:
       # Only the policy provided will be evaluated
       # FIXME: Check that the policies are valid.
-      singlePolicyResults = self.policy.evaluate()
+      singlePolicyResults = policyIn.evaluate()
 
     else:
-      singlePolicyResults = self._invocation(self.__granularity,
-                                              self.__name, self.__status, self.policy,
-                                              self.args, EVAL['Policies'])
+      singlePolicyResults = self._invocation( self.__granularity,
+                                              self.__name, self.__status, policyIn,
+                                              argsIn, polToEval['Policies'] )
 
-    policyCombinedResults = self._policyCombination(singlePolicyResults)
+    policyCombinedResults = self._policyCombination( singlePolicyResults )
 
     if policyCombinedResults == {}:
-      policyCombinedResults["Action"]     = False
-      policyCombinedResults["Reason"]     = 'No policy results'
-      policyCombinedResults["PolicyType"] = policyType
+      policyCombinedResults[ 'Action' ]     = False
+      policyCombinedResults[ 'Reason' ]     = 'No policy results'
+      policyCombinedResults[ 'PolicyType' ] = policyType
 
-    if policyCombinedResults.has_key("Status"):
-      newstatus = policyCombinedResults['Status']
+    if policyCombinedResults.has_key( 'Status' ):
+      newstatus = policyCombinedResults[ 'Status' ]
 
       if newstatus != self.__status: # Policies satisfy
-        newPolicyType = self.ig.getNewPolicyType(self.__granularity, newstatus)
-        policyType = set(policyType) & set(newPolicyType)
-        policyCombinedResults["Action"] = True
+        newPolicyType = self.iGetter.getNewPolicyType( self.__granularity, newstatus )
+        policyType    = set( policyType ) & set( newPolicyType )
+        
+        policyCombinedResults[ 'Action' ] = True
 
       else:                          # Policies does not satisfy
-        policyCombinedResults["Action"] = False
+        policyCombinedResults[ 'Action' ] = False
 
-      policyCombinedResults["PolicyType"] = policyType
+      policyCombinedResults[ 'PolicyType' ] = policyType
 
     return { 'SinglePolicyResults'  : singlePolicyResults,
              'PolicyCombinedResult' : policyCombinedResults }
 
 ################################################################################
 
-  def _invocation(self, granularity, name, status, policy, args, policies):
-    """ One by one, use the PolicyCaller to invoke the policies, and putting
-        their results in `policyResults`. When the status is `Unknown`, invokes
-        `self.__useOldPolicyRes`. Always returns a list, possibly empty.
-    """
+  def _invocation( self, granularity, name, status, policy, args, policies ):
+    '''
+      One by one, use the PolicyCaller to invoke the policies, and putting
+      their results in `policyResults`. When the status is `Unknown`, invokes
+      `self.__useOldPolicyRes`. Always returns a list, possibly empty.
+    '''
 
     policyResults = []
 
-    for p in policies:
-      pName     = p['Name']
-      pModule   = p['Module']
-      extraArgs = p['args']
-      commandIn = p['commandIn']
-      res = self.pc.policyInvocation(granularity = granularity, name = name,
-                                      status = status, policy = policy, args = args, pName = pName,
-                                      pModule = pModule, extraArgs = extraArgs, commandIn = commandIn )
+    for pol in policies:
+      
+      pName     = pol[ 'Name' ]
+      pModule   = pol[ 'Module' ]
+      extraArgs = pol[ 'args' ]
+      commandIn = pol[ 'commandIn' ]
+      
+      res = self.pCaller.policyInvocation( granularity = granularity, name = name,
+                                           status = status, policy = policy, 
+                                           args = args, pName = pName,
+                                           pModule = pModule, extraArgs = extraArgs, 
+                                           commandIn = commandIn )
 
       # If res is empty, return immediately
-      if not res: return policyResults
+      if not res: 
+        return policyResults
 
-      if not res.has_key('Status'):
-        print("\n\n Policy result " + str(res) + " does not return 'Status'\n\n")
+      if not res.has_key( 'Status' ):
+        print('\n\n Policy result ' + str(res) + ' does not return "Status"\n\n')
         raise TypeError
 
       # Else
-      if res['Status'] == 'Unknown':
-        res = self.__useOldPolicyRes(name = name, policyName = pName)
+      if res[ 'Status' ] == 'Unknown':
+        res = self.__useOldPolicyRes( name = name, policyName = pName )
 
-      if res['Status'] not in ( 'Error', 'Unknown' ):
-        policyResults.append(res)
+      if res[ 'Status' ] not in ( 'Error', 'Unknown' ):
+        policyResults.append( res )
 
     return policyResults
 
 ################################################################################
 
-  def _policyCombination(self, pol_results):
-    """
+  def _policyCombination( self, pol_results ):
+    '''
     INPUT: list type
     OUTPUT: dict type
     * Compute a new status, and store it in variable newStatus, of type integer.
@@ -184,79 +202,90 @@ class PDP:
     * Concatenate the Reason fields
     * Take the first EndDate field that exists (FIXME: Do something more clever)
     * Finally, return the result
-    """
-    if pol_results == []: return {}
+    '''
+    if pol_results == []: 
+      return {}
 
-    pol_results.sort(key=Status.value_of_policy)
+    pol_results.sort( key=Status.value_of_policy )
     newStatus = -1 # First, set an always invalid status
 
     try:
       # We are in a special status, maybe forbidden transitions
-      _prio, access_list, gofun = Status.statesInfo[self.__status]
+      _prio, access_list, gofun = Status.statesInfo[ self.__status ]
       if access_list != set():
         # Restrictions on transitions, checking if one is suitable:
-        for p in pol_results:
-          if Status.value_of_policy(p) in access_list:
-            newStatus = Status.value_of_policy(p)
+        for polRes in pol_results:
+          if Status.value_of_policy( polRes ) in access_list:
+            newStatus = Status.value_of_policy( polRes )
             break
 
         # No status from policies suitable, applying stategy and
         # returning result.
         if newStatus == -1:
-          newStatus = gofun(access_list)
-          return { 'Status': Status.status_of_value(newStatus),
+          newStatus = gofun( access_list )
+          return { 'Status': Status.status_of_value( newStatus ),
                    'Reason': 'Status forced by PDP' }
 
       else:
         # Special Status, but no restriction on transitions
-        newStatus = Status.value_of_policy(pol_results[0])
+        newStatus = Status.value_of_policy( pol_results[ 0 ] )
 
     except KeyError:
       # We are in a "normal" status: All transitions are possible.
-      newStatus = Status.value_of_policy(pol_results[0])
+      newStatus = Status.value_of_policy( pol_results[ 0 ] )
 
     # At this point, a new status has been chosen. newStatus is an
     # integer.
 
-    worstResults = [p for p in pol_results
-                     if Status.value_of_policy(p) == newStatus]
+    worstResults = [ p for p in pol_results
+                     if Status.value_of_policy( p ) == newStatus ]
 
     # Concatenate reasons
-    def getReason(p):
+    def getReason( pol ):
       try:
-        res = p['Reason']
+        res = pol[ 'Reason' ]
       except KeyError:
         res = ''
       return res
 
-    worstResultsReasons = [getReason(p) for p in worstResults]
+    worstResultsReasons = [ getReason( p ) for p in worstResults ]
 
-    def catRes(x, y):
-      if x and y : return x + ' |###| ' + y
-      elif x or y:
-        if x: return x
-        else: return y
-      else       : return ''
+    def catRes( xVal, yVal ):
+      '''
+        Concatenate xVal and yVal.
+      '''
+      if xVal and yVal : 
+        return xVal + ' |###| ' + yVal
+      elif xVal or yVal:
+        if xVal: 
+          return xVal
+        else: 
+          return yVal
+      else: 
+        return ''
 
-    concatenatedRes = reduce(catRes, worstResultsReasons, '')
+    concatenatedRes = reduce( catRes, worstResultsReasons, '' )
 
     # Handle EndDate
-    endDatePolicies = [p for p in worstResults if p.has_key('EndDate')]
+    endDatePolicies = [ p for p in worstResults if p.has_key( 'EndDate' ) ]
 
     # Building and returning result
     res = {}
-    res['Status'] = Status.status_of_value(newStatus)
-    if concatenatedRes != '': res['Reason']  = concatenatedRes
-    if endDatePolicies != []: res['EndDate'] = endDatePolicies[0]['EndDate']
+    res[ 'Status' ] = Status.status_of_value( newStatus )
+    if concatenatedRes != '': 
+      res[ 'Reason' ]  = concatenatedRes
+    if endDatePolicies != []: 
+      res[ 'EndDate' ] = endDatePolicies[ 0 ][ 'EndDate' ]
     return res
 
 ################################################################################
 
-  def __useOldPolicyRes(self, name, policyName):
-    """ Use the RSS Service to get an old policy result.
-        If such result is older than 2 hours, it returns {'Status':'Unknown'}
-    """
-    res = self.clients['ResourceManagementClient'].getPolicyResult( name = name, policyName = policyName )
+  def __useOldPolicyRes( self, name, policyName ):
+    '''
+     Use the RSS Service to get an old policy result.
+     If such result is older than 2 hours, it returns {'Status':'Unknown'}
+    '''
+    res = self.clients[ 'ResourceManagementClient' ].getPolicyResult( name = name, policyName = policyName )
     
     if not res[ 'OK' ]:
       return { 'Status' : 'Unknown' }
@@ -264,22 +293,22 @@ class PDP:
     res = res[ 'Value' ]
 
     if res == []:
-      return {'Status':'Unknown'}
+      return { 'Status' : 'Unknown' }
 
     res = res[ 0 ]
 
-    oldStatus     = res[5]
-    oldReason     = res[6]
-    lastCheckTime = res[8]
+    oldStatus     = res[ 5 ]
+    oldReason     = res[ 6 ]
+    lastCheckTime = res[ 8 ]
 
     if ( lastCheckTime + datetime.timedelta(hours = 2) ) < datetime.datetime.utcnow():
       return { 'Status' : 'Unknown' }
 
     result = {}
 
-    result[ 'Status' ] = oldStatus
-    result[ 'Reason' ] = oldReason
-    result[ 'OLD' ] = True
+    result[ 'Status' ]     = oldStatus
+    result[ 'Reason' ]     = oldReason
+    result[ 'OLD' ]        = True
     result[ 'PolicyName' ] = policyName
 
     return result

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/DB/StagerDB.py,v 1.3 2009/11/03 16:06:29 acsmith Exp $
+# $Header$
 ########################################################################
 
 """ StorageManagementDB is a front end to the Stager Database.

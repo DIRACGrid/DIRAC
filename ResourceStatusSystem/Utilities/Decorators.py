@@ -1,11 +1,15 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' Decorators
+
+  Syntactic sugar used in the RSS, only in the DB. Eventually will dissapear.
+
+'''
 
 import types
 
 from DIRAC import S_ERROR
+
+__RCSID__  = '$Id: $'
 
 class BaseDec( object ):
 

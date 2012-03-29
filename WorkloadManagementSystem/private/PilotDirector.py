@@ -26,19 +26,18 @@ import DIRAC
 # Some reasonable Defaults
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
-DIRAC_VERSION = 'Production'
-DIRAC_VERSION = 'HEAD'
+DIRAC_VERSION = 'Integration'
+DIRAC_PROJECT = ''
 DIRAC_INSTALLATION = ''
 
 MAX_JOBS_IN_FILLMODE = 2
 
 ERROR_CLEAR_TIME = 60 * 60  # 1 hour
 ERROR_TICKET_TIME = 60 * 60  # 1 hour (added to the above)
-FROM_MAIL = "lhcb-dirac@cern.ch"
+FROM_MAIL = "diracproject@gmail.com"
 
-PILOT_DN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
 PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
-PILOT_GROUP = 'lhcb_pilot'
+PILOT_GROUP = 'dirac_pilot'
 
 VIRTUAL_ORGANIZATION = 'dirac'
 
@@ -55,7 +54,7 @@ from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
-
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations   import Operations
 
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
@@ -99,7 +98,8 @@ class PilotDirector:
     self.pilot = DIRAC_PILOT
     self.extraPilotOptions = []
     self.installVersion = DIRAC_VERSION
-    self.installInstallation = DIRAC_INSTALLATION
+    self.installProject = DIRAC_PROJECT
+    self.installation = DIRAC_INSTALLATION
 
     self.virtualOrganization = VIRTUAL_ORGANIZATION
     self.install = DIRAC_INSTALL
@@ -134,11 +134,12 @@ class PilotDirector:
 
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
     section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
-    self.installVersion = gConfig.getValue( cfgPath( section, 'PilotVersion' ),
+    self.installVersion = gConfig.getValue( cfgPath( section, 'Pilot', 'Version' ),
                                          self.installVersion )
-    self.installInstallation = gConfig.getValue( cfgPath( section, 'PilotInstallation' ),
-                                         self.installInstallation )
-
+    self.installProject = gConfig.getValue( cfgPath( section, 'Pilot', 'Project' ),
+                                         self.installProject )
+    self.installation = gConfig.getValue( cfgPath( section, 'Pilot', 'Installation' ),
+                                         self.installation )
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
     self.log.info( '' )
@@ -146,8 +147,10 @@ class PilotDirector:
     self.log.info( ' Install script: ', self.install )
     self.log.info( ' Pilot script:   ', self.pilot )
     self.log.info( ' Install Ver:    ', self.installVersion )
-    if self.installInstallation:
-      self.log.info( ' Installation:        ', self.installInstallation )
+    if self.installProject:
+      self.log.info( ' Project:        ', self.installProject )
+    if self.installation:
+      self.log.info( ' Installation:   ', self.installation )
     if self.extraPilotOptions:
       self.log.info( ' Extra Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
@@ -172,10 +175,13 @@ class PilotDirector:
       reload from CS
     """
     self.pilot = gConfig.getValue( mySection + '/PilotScript'          , self.pilot )
+    #TODO: Remove this DIRACVersion after 06/2012
     self.installVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.installVersion )
+    self.installVersion = gConfig.getValue( mySection + '/Version'         , self.installVersion )
     self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
-    self.installInstallation = gConfig.getValue( mySection + '/Installation'        , self.installInstallation )
+    self.installProject = gConfig.getValue( mySection + '/Project'        , self.installProject )
+    self.installation = gConfig.getValue( mySection + '/Installation'        , self.installation )
     self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
     self.targetGrids = gConfig.getValue( mySection + '/TargetGrids'    , self.targetGrids )
 
@@ -271,8 +277,8 @@ class PilotDirector:
 
   def _getPilotOptions( self, taskQueueDict, pilotsToSubmit ):
 
-    # Need to limit the maximum number of pilots to submit at once 
-    # For generic pilots this is limited by the number of use of the tokens and the 
+    # Need to limit the maximum number of pilots to submit at once
+    # For generic pilots this is limited by the number of use of the tokens and the
     # maximum number of jobs in Filling mode, but for private Jobs we need an extra limitation:
     pilotsToSubmit = min( pilotsToSubmit, int( 50 / self.maxJobsInFillMode ) )
     pilotOptions = []
@@ -325,11 +331,18 @@ class PilotDirector:
     extensionsList = getCSExtensions()
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
-    # Requested version of DIRAC
-    pilotOptions.append( '-r %s' % self.installVersion )
+    #Get DIRAC version and project
+    opsHelper = Operations( group = taskQueueDict['OwnerGroup'], setup = taskQueueDict['Setup'] )
+    # Requested version of DIRAC (it can be a list, so we take the fist one)
+    version = opsHelper.getValue( "Pilot/Version" , [ self.installVersion ] )[0]
+    pilotOptions.append( '-r %s' % version )
     # Requested Project to install
-    if self.installInstallation:
-      pilotOptions.append( '-V %s' % self.installInstallation )
+    installProject = opsHelper.getValue( "Pilot/Project" , self.installProject )
+    if installProject:
+      pilotOptions.append( '-l %s' % installProject )
+    installation = opsHelper.getValue( "Pilot/Installation", self.installation )
+    if installation:
+      pilotOptions.append( "-V %s" % installation )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
 
@@ -389,6 +402,7 @@ class PilotDirector:
     """
      To be overwritten if a given Pilot does not require a full proxy
     """
+    self.log.info( "Downloading %s@%s proxy" % ( ownerDN, ownerGroup ) )
     return gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft )
 
   def exceptionCallBack( self, threadedJob, exceptionInfo ):
