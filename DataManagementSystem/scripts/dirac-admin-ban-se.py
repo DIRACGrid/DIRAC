@@ -39,11 +39,11 @@ for switch in Script.getUnprocessedSwitches():
     site = switch[1]
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
-from DIRAC.Interfaces.API.DiracAdmin                 import DiracAdmin
-from DIRAC                                           import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Client               import ResourceStatus
-from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
-from DIRAC.Core.Utilities.List                       import intListToString
+from DIRAC.Interfaces.API.DiracAdmin                  import DiracAdmin
+from DIRAC                                            import gConfig, gLogger
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
+from DIRAC.Core.Utilities.List                        import intListToString
 #csAPI = CSAPI()
 
 diracAdmin = DiracAdmin()
@@ -87,7 +87,9 @@ readBanned = []
 writeBanned = []
 checkBanned = []
 
-res = ResourceStatus.getStorageElementStatus( ses )
+resourceStatus = ResourceStatus()
+
+res = resourceStatus.getStorageElementStatus( ses )
 if not res['OK']:
   gLogger.error( "Storage Element %s does not exist" % ses )
   DIRAC.exit( -1 )
@@ -106,7 +108,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
-    resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Banned', reason, userName )
+    resR = resourceStatus.setStorageElementStatus( se, 'Read', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
     if not resR['OK']:
       gLogger.error( 'Failed to update %s read access to Banned' % se )
@@ -122,7 +124,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
-    resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Banned', reason, userName )
+    resW = resourceStatus.setStorageElementStatus( se, 'Write', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Banned" % se )
@@ -138,7 +140,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
-    resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Banned', reason, userName )
+    resC = resourceStatus.setStorageElementStatus( se, 'Check', 'Banned', reason, userName )
     #res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Banned" % se )
