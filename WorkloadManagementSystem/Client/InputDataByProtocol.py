@@ -146,24 +146,48 @@ class InputDataByProtocol:
       result = self.rm.getStorageFileMetadata( pfnList, se )
       if not result['OK']:
         self.log.warn( result['Message'] )
-        return result
+        # If we can not get MetaData, most likely there is a problem with the SE
+        # declare the replicas failed and continue
+        failedReplicas.extend( lfnDict.keys() )
+        continue
       if result['Value']['Failed']:
         error = 'Could not get Storage Metadata from %s' % se
         self.log.error( error )
-        return S_ERROR( error )
+        # If MetaData can not be retrieved for some PFNs 
+        # declared them failed and go on
+        for lfn in lfnDict:
+          pfn = lfnDict[lfn]
+          if pfn in result['Value']['Failed']:
+            failedReplicas.append( lfn )
+            pfnList.remove( pfn )
       for pfn, metadata in result['Value']['Successful'].items():
         if metadata['Lost']:
           error = "PFN has been Lost by the StorageElement"
           self.log.error( error , pfn )
-          return S_ERROR( error )
+          # If PFN has been lost 
+          # declared it failed and go on
+          for lfn in lfnDict:
+            if pfn == lfnDict[lfn]:
+              failedReplicas.append( lfn )
+              pfnList.remove( pfn )
         elif metadata['Unavailable']:
           error = "PFN is declared Unavailable by the StorageElement"
           self.log.error( error, pfn )
-          return S_ERROR( error )
+          # If PFN is not available
+          # declared it failed and go on
+          for lfn in lfnDict:
+            if pfn == lfnDict[lfn]:
+              failedReplicas.append( lfn )
+              pfnList.remove( pfn )
         elif se in tapeSEs and not metadata['Cached']:
           error = "PFN is no longer in StorageElement Cache"
           self.log.error( error, pfn )
-          return S_ERROR( error )
+          # If PFN is not in the disk Cache
+          # declared it failed and go on
+          for lfn in lfnDict:
+            if pfn == lfnDict[lfn]:
+              failedReplicas.append( lfn )
+              pfnList.remove( pfn )
 
       result = self.rm.getStorageFileAccessUrl( pfnList, se, protocol = requestedProtocol )
       self.log.debug( result )
