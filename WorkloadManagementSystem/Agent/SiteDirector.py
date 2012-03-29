@@ -287,7 +287,7 @@ class SiteDirector( AgentModule ):
         if ceType == 'CREAM':
           jobExecDir = '.'
         jobExecDir = self.queueDict[queue].get( 'JobExecDir', jobExecDir )
-        httpProxy = self.queueDict[queue].get( 'BundleProxy', '' )
+        httpProxy = self.queueDict[queue].get( 'HttpProxy', '' )
 
         result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
         if not result['OK']:
@@ -446,10 +446,10 @@ class SiteDirector( AgentModule ):
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
       if proxy:
-        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
+        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) )
         proxyFlag = 'True'
-      compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) ).replace( '\n', '' )
-      compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) ).replace( '\n', '' )
+      compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
+      compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) )
     except:
       self.log.exception( 'Exception during file compression of proxy, dirac-pilot or dirac-install' )
       return S_ERROR( 'Exception during file compression of proxy, dirac-pilot or dirac-install' )
@@ -466,11 +466,11 @@ try:
   pilotWorkingDirectory = os.path.realpath( pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
   if %(proxyFlag)s:
-    open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
+    open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedProxy)s\"\"\" ) ) )
     os.chmod("proxy",0600)
     os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
-  open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedPilot)s" ) ) )
-  open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedInstall)s" ) ) )
+  open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedPilot)s\"\"\" ) ) )
+  open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedInstall)s\"\"\" ) ) )
   os.chmod("%(pilotScript)s",0700)
   os.chmod("%(installScript)s",0700)
   if "LD_LIBRARY_PATH" not in os.environ:
