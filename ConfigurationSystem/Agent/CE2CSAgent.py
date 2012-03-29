@@ -281,7 +281,7 @@ class CE2CSAgent( AgentModule ):
                 if mail == 'Unknown':
                   self.csAPI.setOption( cfgPath( siteSection, 'Mail' ), newmail )
                 else:
-                  self.csAPI.modifyValue( cfgPath( siteSection, 'Coordinates' ), newmail )
+                  self.csAPI.modifyValue( cfgPath( siteSection, 'Mail' ), newmail )
                 changed = True
 
         celist = List.fromChar( opt.get( 'CE', '' ) )

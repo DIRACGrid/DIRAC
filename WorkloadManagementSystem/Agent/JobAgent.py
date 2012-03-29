@@ -500,7 +500,7 @@ class JobAgent( AgentModule ):
     jobExeFile = '%s/job/Wrapper/Job%s' % ( workingDir, jobID )
     jobFileContents = \
 """#!/bin/sh
-%s %s -o LogLevel=%s
+%s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
 """ % ( dPython, jobWrapperFile, logLevel )
     jobFile = open( jobExeFile, 'w' )
     jobFile.write( jobFileContents )
@@ -544,7 +544,7 @@ class JobAgent( AgentModule ):
       classAdJob = ClassAd( jdl )
       paramsDict = classAdJob.contents
       for param, value in paramsDict.items():
-        if re.search( '{', value ):
+        if value.strip().startswith('{'):
           self.log.debug( 'Found list type parameter %s' % ( param ) )
           rawValues = value.replace( '{', '' ).replace( '}', '' ).replace( '"', '' ).split()
           valueList = []
@@ -555,8 +555,8 @@ class JobAgent( AgentModule ):
               valueList.append( val )
           parameters[param] = valueList
         else:
-          self.log.debug( 'Found standard parameter %s' % ( param ) )
-          parameters[param] = value.replace( '"', '' )
+          parameters[param] = value.replace( '"', '' ).replace( '{','"{' ).replace( '}','}"' )
+          self.log.debug( 'Found standard parameter %s: %s' % ( param, parameters[param] ) )
       return S_OK( parameters )
     except Exception, x:
       self.log.exception( lException = x )

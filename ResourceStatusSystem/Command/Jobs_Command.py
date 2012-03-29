@@ -1,19 +1,17 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' Jobs_Command
+ 
   The Jobs_Command class is a command class to know about 
   present jobs efficiency
-"""
+  
+'''
 
-from DIRAC                                           import gLogger
-
+from DIRAC                                           import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command      import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
@@ -41,12 +39,15 @@ class JobsStats_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )
       
     try:
-      res = self.APIs[ 'JobsClient' ].getJobsStats(self.args[0], self.args[1], self.args[2])
-    except:
-      gLogger.exception("Exception when calling JobsClient for %s %s" %(self.args[0], self.args[1]))
-      return {'Result':'Unknown'}
-    
-    return {'Result':res}
+
+      res = self.APIs[ 'JobsClient' ].getJobsStats( self.args[0], self.args[1], self.args[2] )
+      
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : S_OK( res ) }   
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
@@ -76,12 +77,15 @@ class JobsEff_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
     try:
-      res = self.APIs[ 'JobsClient' ].getJobsEff(self.args[0], self.args[1], self.args[2])
-    except:
-      gLogger.exception("Exception when calling JobsClient")
-      return {'Result':'Unknown'}
-    
-    return {'Result':res}
+      
+      res = self.APIs[ 'JobsClient' ].getJobsEff( self.args[0], self.args[1], self.args[2] )
+       
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : S_OK( res ) }   
 
 ################################################################################
 ################################################################################
@@ -104,13 +108,16 @@ class SystemCharge_Command(Command):
     self.APIs = initAPIs( self.__APIs__, self.APIs ) 
      
     try:
+      
       res = self.APIs[ 'JobsClient' ].getSystemCharge()
-    except:
-      gLogger.exception("Exception when calling JobsClient")
-      return {'Result':'Unknown'}
-    
-    return {'Result':res}
+       
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
 
+    return { 'Result' : S_OK( res ) }   
+       
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
@@ -137,29 +144,32 @@ class JobsEffSimple_Command(Command):
     
     super (JobsEffSimple_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
-    
-    if self.args[0] == 'Service':
-      try:
-        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName(self.args[0], self.args[1], 'Site')['Value'][0]
-      except:
-        gLogger.error("JobsEffSimple_Command: Can't get a general name for %s %s" %(self.args[0], self.args[1]))
-        return {'Result':'Unknown'}      
-      granularity = 'Site'
-    elif self.args[0] == 'Site':
-      name = self.args[1]
-      granularity = self.args[0]
-    else:
-      raise InvalidRes, where(self, self.doCommand)
-         
+
     try:
-      res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( name )#, timeout = self.timeout)
-      if res == None:
-        return {'Result':'Idle'}
-    except:
-      gLogger.exception("Exception when calling JobsClient for %s %s" %(granularity, name))
-      return {'Result':'Unknown'}
     
-    return {'Result':res[name]}
+      if self.args[0] == 'Service':
+        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )    
+        name        = name[ 'Value' ][ 0 ]
+        granularity = 'Site'
+      elif self.args[0] == 'Site':
+        name        = self.args[1]
+        granularity = self.args[0]
+      else:
+        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
+         
+      res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( name )
+     
+      if res == None:
+        res = S_OK( 'Idle' )
+      else:
+        res = S_OK( res[ name ] ) 
+    
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
@@ -188,21 +198,18 @@ class JobsEffSimpleCached_Command(Command):
     super(JobsEffSimpleCached_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
       
-    if self.args[0] == 'Service':
-      try:
-        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )['Value'][0]
-      except:
-        gLogger.error("JobsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
-        return {'Result':'Unknown'}      
-      granularity = 'Site'
-    elif self.args[0] == 'Site':
-      name = self.args[1]
-      granularity = self.args[0]
-    else:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    try:
+    try:  
       
+      if self.args[0] == 'Service':
+        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )
+        name        = name[ 'Value' ][ 0 ]
+        granularity = 'Site'
+      elif self.args[0] == 'Site':
+        name        = self.args[1]
+        granularity = self.args[0]
+      else:
+        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
+     
       clientDict = { 
                      'name'        : name,
                      'commandName' : 'JobsEffSimpleEveryOne',
@@ -211,16 +218,21 @@ class JobsEffSimpleCached_Command(Command):
                      'meta'        : { 'columns'     : 'Result' }
                    }
       
-      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
-      if res == None:
-        return {'Result':'Idle'}
-      if res == []:
-        return {'Result':'Idle'}
-    except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
-      return {'Result':'Unknown'}
-    
-    return {'Result':res[0]}
+      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )
+      
+      if res[ 'OK' ]:
+        res = res[ 'Value' ]
+        if res == None or res == []:
+          res = S_OK( 'Idle' )
+        else:
+          res = S_OK( res[ 0 ] )
+        
+    except Exception, e:
+      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+      gLogger.exception( _msg )
+      return { 'Result' : S_ERROR( _msg ) }
+
+    return { 'Result' : res }
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     

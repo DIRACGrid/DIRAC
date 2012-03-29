@@ -601,11 +601,15 @@ class TransformationDB( DB ):
       elif ( currentStatus == status ):
         successful[lfn] = 'Status not changed'
         req = ''
-      elif ( status.lower() == 'unused' ) and ( errorCount >= MAX_ERROR_COUNT ) and ( not force ):
-        failed[lfn] = 'Max number of resets reached'
-        req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % ( transID, fileID )
       elif ( status.lower() == 'unused' ):
-        req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1 WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
+        if errorCount >= MAX_ERROR_COUNT:
+          if force:
+            req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=0 WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
+          else:  
+            failed[lfn] = 'Max number of resets reached'
+            req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % ( transID, fileID )
+        else:
+          req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1 WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
       else:
         req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
       if not req:

@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/StageMonitor.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
+# $Header$
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath, siteName

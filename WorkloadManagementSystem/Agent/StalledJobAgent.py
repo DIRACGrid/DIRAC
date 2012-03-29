@@ -170,7 +170,7 @@ class StalledJobAgent( AgentModule ):
     """ Get the job pilot status
     """
     result = self.jobDB.getJobParameter( jobID, 'Pilot_Reference' )
-    if result['OK']:
+    if result['OK'] and result['Value']:
       pilotReference = result['Value']
       wmsAdminClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
       result = wmsAdminClient.getPilotInfo( pilotReference )

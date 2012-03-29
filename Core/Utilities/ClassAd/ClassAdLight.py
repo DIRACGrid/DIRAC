@@ -127,6 +127,17 @@ class ClassAd:
     tmp = map ( lambda x : '"' + x + '"', attributelist )
     tmpstr = ','.join( tmp )
     self.contents[name] = '{' + tmpstr + '}'
+    
+  def insertAttributeVectorStringList( self, name, attributelist ):
+    """Insert a named list of string lists 
+    """
+
+    listOfLists = []
+    for stringList in attributelist:
+      #tmp = map ( lambda x : '"' + x + '"', stringList )
+      tmpstr = ','.join( stringList )
+      listOfLists.append('{' + tmpstr + '}')
+    self.contents[name] = '{' + ','.join(listOfLists) + '}'    
 
   def lookupAttribute( self, name ):
     """Check the presence of the given attribute
@@ -159,13 +170,45 @@ class ClassAd:
     return attribute.startswith( '{' )
 
   def getListFromExpression( self, name ):
-    """ Get a list of values from a given expression
+    """ Get a list of strings from a given expression
     """
 
-    tempString = self.get_expression( name )
-    tempString = tempString.replace( "{", "" ).replace( "}", "" ).replace( "\"", "" ).replace( " ", "" )
+    tempString = self.get_expression( name ).strip()
+    listMode = False
+    if tempString.startswith('{'):
+      tempString = tempString[1:-1]
+      listMode = True
+      
+    tempString = tempString.replace( " ", "" ).replace( '\n','' )  
+    if tempString.find('{') < 0:
+      if not listMode:
+        tempString = tempString.replace( "\"", "" )
+        return tempString.split( ',' ) 
+    
+    resultList = []    
+    while tempString:      
+      if tempString.find( '{' ) == 0 :
+        end = tempString.find( '}' )
+        resultList.append(tempString[:end+1])
+        tempString = tempString[end+1:]
+        if tempString.startswith(','):
+          tempString = tempString[1:]
+      elif tempString.find( '"' ) == 0 :
+        end = tempString[1:].find( '"' )
+        resultList.append( tempString[1:end+1] )
+        tempString = tempString[end+2:]    
+        if tempString.startswith(','):
+          tempString = tempString[1:]          
+      else:
+        end = tempString.find( ',' )
+        if end < 0:
+          resultList.append( tempString.replace( "\"", "" ).replace( " ", "" ) )
+          break
+        else:  
+          resultList.append( tempString[:end-1].replace( "\"", "" ).replace( " ", "" ) )
+          tempString = tempString[end+1:]
 
-    return tempString.split( ',' )
+    return resultList
 
   def getDictionaryFromSubJDL( self, name ):
     """ Get a dictionary of the JDL attributes from a subsection

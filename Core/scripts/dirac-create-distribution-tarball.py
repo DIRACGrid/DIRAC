@@ -308,44 +308,50 @@ class TarModuleCreator( object ):
     relData = []
     version = False
     feature = False
+    lastKey = False
     for rawLine in relaseContents:
       line = rawLine.strip()
       if not line:
         continue
-      if version == False:
-        if line[0] == "[" and line[-1] == "]":
-          version = line[1:-1].strip()
-          relData.append( ( version, { 'comment' : [], 'features' : [] } ) )
-          feature = False
+      if line[0] == "[" and line[-1] == "]":
+        version = line[1:-1].strip()
+        relData.append( ( version, { 'comment' : [], 'features' : [] } ) )
+        feature = False
+        lastKey = False
         continue
       if line[0] == "*":
         feature = line[1:].strip()
         relData[-1][1][ 'features' ].append( [ feature, {} ] )
+        lastKey = False
         continue
       if not feature:
         relData[ -1 ][1][ 'comment' ].append( rawLine )
         continue
       keyDict = relData[-1][1][ 'features' ][-1][1]
+      foundKey = False
       for key in ( 'BUGFIX', 'BUG', 'FIX', "CHANGE", "NEW", "FEATURE" ):
         if line.find( "%s:" % key ) == 0:
           line = line[ len( key ) + 2: ].strip()
         elif line.find( "%s " % key ) == 0:
-           line = line[ len( key ) + 1: ].strip()
+          line = line[ len( key ) + 1: ].strip()
         else:
           continue
+        foundKey = key
+        break
 
-        if key in ( 'BUGFIX', 'BUG', 'FIX' ):
-          if 'BUGFIX' not in keyDict:
-            keyDict[ 'BUGFIX' ] = []
-          keyDict[ 'BUGFIX' ].append( line )
-        elif key == 'CHANGE':
-          if 'CHANGE' not in keyDict:
-            keyDict[ 'CHANGE' ] = []
-          keyDict[ 'CHANGE' ].append( line )
-        elif key in ( 'NEW', 'FEATURE' ):
-          if 'FEATURE' not in keyDict:
-            keyDict[ 'FEATURE' ] = []
-          keyDict[ 'FEATURE' ].append( line )
+      if foundKey in ( 'BUGFIX', 'BUG', 'FIX' ):
+        foundKey = 'BUGFIX'
+      elif foundKey in ( 'NEW', 'FEATURE' ):
+        foundKey = 'FEATURE'
+
+      if foundKey:
+        if foundKey not in keyDict:
+          keyDict[ foundKey ] = []
+        keyDict[ foundKey ].append( line )
+        lastKey = foundKey
+      elif lastKey:
+        keyDict[ lastKey ][-1] += " %s" % line
+
 
     return S_OK( relData )
 
@@ -415,8 +421,12 @@ class TarModuleCreator( object ):
       gLogger.notice( "Compiled %s file!" % rstFileName )
     return S_OK()
 
-
   def __compileReleaseNotes( self, rstFile ):
+    notesName = rstFile
+    for ext in ( '.rst', '.txt' ):
+      if rstFile[ -len( ext ): ] == ext:
+        notesName = rstFile[ :-len( ext ) ]
+        break
     relNotesRST = os.path.join( self.params.destination, self.params.name, rstFile )
     if not os.path.isfile( relNotesRST ):
       if self.params.relNotes:
@@ -427,11 +437,12 @@ class TarModuleCreator( object ):
     except ImportError:
       return S_ERROR( "Docutils is not installed. Please install and rerun" )
     #Find basename
-    baseNotesPath = relNotesRST
+    baseRSTFile = rstFile
     for ext in ( '.rst', '.txt' ):
-      if relNotesRST[ -len( ext ): ] == ext:
-        baseNotesPath = relNotesRST[ :-len( ext ) ]
+      if baseRSTFile[ -len( ext ): ] == ext:
+        baseRSTFile = baseRSTFile[ :-len( ext ) ]
         break
+    baseNotesPath = os.path.join( self.params.destination, self.params.name, baseRSTFile )
     #To HTML
     try:
       fd = open( relNotesRST )
@@ -446,7 +457,7 @@ class TarModuleCreator( object ):
     baseList = [ baseNotesPath ]
     if self.params.outRelNotes:
       gLogger.notice( "Leaving a copy of the release notes outside the tarballs" )
-      baseList.append( "%s/releasenotes.%s.%s" % ( self.params.destination, self.params.name, self.params.version ) )
+      baseList.append( "%s/%s.%s.%s" % ( self.params.destination, baseRSTFile, self.params.name, self.params.version ) )
     for baseFileName in baseList:
       htmlFileName = baseFileName + ".html"
       try:
@@ -461,7 +472,7 @@ class TarModuleCreator( object ):
       if os.system( pdfCmd ):
         gLogger.warn( "Could not generate PDF version of %s" % baseNotesPath )
     #Unlink if not necessary
-    if not cliParams.relNotes:
+    if False and not cliParams.relNotes:
       try:
         os.unlink( relNotesRST )
       except:

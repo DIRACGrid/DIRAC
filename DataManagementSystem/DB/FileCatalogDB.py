@@ -23,10 +23,16 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             i
 #############################################################################
 class FileCatalogDB(DB):
 
-  def __init__( self, maxQueueSize=10 ):
+  def __init__( self, databaseLocation='DataManagement/FileCatalogDB', maxQueueSize=10 ):
     """ Standard Constructor
     """
-    DB.__init__(self,'FileCatalogDB','DataManagement/FileCatalogDB',maxQueueSize)
+    
+    # The database location can be specified in System/Database form or in just the Database name
+    # in the DataManagement system 
+    db = databaseLocation
+    if db.find('/') == -1:
+      db = 'DataManagement/' + db
+    DB.__init__(self,'FileCatalogDB',db,maxQueueSize)
 
   def setConfig(self,databaseConfig):
 
@@ -534,7 +540,8 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
+    queryTime = res['Value'].get('QueryTime',-1.)
+    return S_OK( {'Successful':successful,'Failed':failed,'QueryTime':queryTime} )
     
   #######################################################################
   #
@@ -544,7 +551,7 @@ class FileCatalogDB(DB):
   def setMetadata(self, path, metadataDict, credDict):
     """ Add metadata to the given path
     """
-    res = self._checkPathPermissions('Read', path, credDict)   
+    res = self._checkPathPermissions('Write', path, credDict)   
     if not res['OK']:
       return res
     if not res['Value']['Successful']:
@@ -562,14 +569,37 @@ class FileCatalogDB(DB):
       return self.dmeta.setMetadata(path,metadataDict,credDict)
     else:
       # This is a file      
-      return self.fmeta.setMetadata(path,metadataDict,credDict)                                     
+      return self.fmeta.setMetadata(path,metadataDict,credDict)      
+    
+  def removeMetadata(self, path, metadata, credDict):
+    """ Add metadata to the given path
+    """
+    res = self._checkPathPermissions('Write', path, credDict)   
+    if not res['OK']:
+      return res
+    if not res['Value']['Successful']:
+      return S_ERROR('Permission denied')
+    if not res['Value']['Successful'][path]:
+      return S_ERROR('Permission denied') 
+      
+    result = self.dtree.isDirectory({path:True})
+    if not result['OK']:
+      return result
+    if not result['Value']['Successful']:
+      return S_ERROR('Failed to determine the path type')
+    if result['Value']['Successful'][path]:
+      # This is a directory
+      return self.dmeta.removeMetadata(path,metadata,credDict)
+    else:
+      # This is a file      
+      return self.fmeta.removeMetadata(path,metadata,credDict)                                  
     
   #######################################################################
   #
   #  Catalog admin methods
   #
 
-  def getCatalogContents(self,credDict):
+  def getCatalogCounters(self,credDict):
     counterDict = {}
     res = self._checkAdminPermission(credDict)
     if not res['OK']:
@@ -585,6 +615,10 @@ class FileCatalogDB(DB):
       return res
     counterDict.update(res['Value'])
     res = self.fileManager.getReplicaCounters() 
+    if not res['OK']:
+      return res
+    counterDict.update(res['Value'])
+    res = self.dtree.getDirectoryCounters() 
     if not res['OK']:
       return res
     counterDict.update(res['Value'])
@@ -618,3 +652,4 @@ class FileCatalogDB(DB):
       else:  
         successful[lfn] = lfns[lfn]
     return S_OK( {'Successful':successful,'Failed':failed} )
+  

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/scripts/dirac-admin-allow-catalog.py $
+# $HeadURL$
 ########################################################################
-__RCSID__ = "$Id: dirac-admin-allow-catalog.py 18161 2009-11-11 12:07:09Z acsmith $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                   import Script
 
@@ -42,7 +42,7 @@ for site in sites:
     gLogger.error( "The provided site (%s) does not have an associated catalog." % site )
     continue
 
-  res = csAPI.setOption( "%s/%s/Status" % ( storageCFGBase, site ), "Active" )
+  res = csAPI.setOption( "%s/%s/Status" % ( catalogCFGBase, site ), "Active" )
   if not res['OK']:
     gLogger.error( "Failed to update %s catalog status to Active" % site )
   else:

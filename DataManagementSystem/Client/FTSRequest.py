@@ -17,8 +17,6 @@ class FTSRequest:
 
   def __init__( self ):
 
-    self.gridEnv = '/afs/cern.ch/project/gd/LCG-share/3.2.8-0/etc/profile.d/grid-env'
-
     self.finalStates = ['Canceled', 'Failed', 'Hold', 'Finished', 'FinishedDirty']
     self.failedStates = ['Canceled', 'Failed', 'Hold', 'FinishedDirty']
     self.successfulStates = ['Finished', 'Done']
@@ -33,6 +31,7 @@ class FTSRequest:
     self.fileDict = {}
     self.catalogReplicas = {}
     self.catalogMetadata = {}
+    self.failedRegistrations = {}
 
     self.oCatalog = None
 
@@ -515,7 +514,7 @@ class FTSRequest:
     if self.sourceToken:
       comm.append( '-S' )
       comm.append( self.sourceToken )
-    res = executeGridCommand( '', comm, self.gridEnv )
+    res = executeGridCommand( '', comm )
     os.remove( self.surlFile )
     if not res['OK']:
       return res
@@ -528,7 +527,7 @@ class FTSRequest:
     self.ftsGUID = guid
     #if self.priority != 3:
     #  comm = ['glite-transfer-setpriority','-s', self.ftsServer,self.ftsGUID,str(self.priority)]
-    #  executeGridCommand('',comm,self.gridEnv)
+    #  executeGridCommand('',comm)
     return res
 
   def __resolveFTSServer( self ):
@@ -656,7 +655,7 @@ class FTSRequest:
     comm = ['glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID]
     if full:
       comm.append( '-l' )
-    res = executeGridCommand( '', comm, self.gridEnv )
+    res = executeGridCommand( '', comm )
     if not res['OK']:
       return res
     returnCode, output, errStr = res['Value']
@@ -694,67 +693,6 @@ class FTSRequest:
       self.__setFileParameter( lfn, 'Duration', int( duration ) )
     return S_OK()
 
-  def __getSummary( self ):
-    res = self.__isSummaryValid()
-    if not res['OK']:
-      return res
-    comm = ['glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID]
-    res = executeGridCommand( '', comm, self.gridEnv )
-    if not res['OK']:
-      return res
-    returnCode, output, errStr = res['Value']
-    # Returns a non zero status if error
-    if not returnCode == 0:
-      return S_ERROR( errStr )
-    # Parse the output to get a summary dictionary
-    lines = output.splitlines()
-    summaryDict = {}
-    for line in lines:
-      line = line.split( ':\t' )
-      key = line[0].replace( '\t', '' )
-      value = line[1].replace( '\t', '' )
-      summaryDict[key] = value
-    self.requestStatus = summaryDict['Status']
-    self.submitTime = summaryDict['Submit time']
-    self.statusSummary = {}
-    for status in self.fileStates:
-      if summaryDict[status] != '0':
-        self.statusSummary[status] = int( summaryDict[status] )
-    return S_OK()
-
-  def __getFullOutput( self ):
-    comm = ['glite-transfer-status', '-s', self.ftsServer, '-l', self.ftsGUID]
-    res = executeGridCommand( '', comm, self.gridEnv )
-    if not res['OK']:
-      return res
-    returnCode, output, errStr = res['Value']
-    # Returns a non zero status if error
-    if not returnCode == 0:
-      return S_ERROR( errStr )
-    statusExp = re.compile( "^(\S+)" )
-    self.requestStatus = re.search( statusExp, output ).group( 1 )
-    output = output.replace( "%s\n" % self.requestStatus, "", 1 )
-    toRemove = ["'", "<", ">"]
-    for char in toRemove:
-      output = output.replace( char, '' )
-    regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
-    fileInfo = re.findall( regExp, output )
-    for source, target, status, retries, reason, duration in fileInfo:
-      lfn = ''
-      for candidate in sortList( self.fileDict.keys() ):
-        if re.search( candidate, source ):
-          lfn = candidate
-      if not lfn:
-        continue
-      self.__setFileParameter( lfn, 'Source', source )
-      self.__setFileParameter( lfn, 'Target', target )
-      self.__setFileParameter( lfn, 'Status', status )
-      if reason == '(null)':
-        reason = ''
-      self.__setFileParameter( lfn, 'Reason', reason.replace( "\n", " " ) )
-      self.__setFileParameter( lfn, 'Duration', int( duration ) )
-    return S_OK()
-
   ####################################################################
   #
   #  Methods for finalization
@@ -763,66 +701,76 @@ class FTSRequest:
   def finalize( self ):
     transEndTime = dateTime()
     regStartTime = time.time()
-    res = self.__registerSuccessful()
+    res = self.getTransferStatistics()
+    transDict = res['Value']
+
+    res = self.__registerSuccessful( transDict['transLFNs'] )
+
     regSuc, regTotal = res['Value']
     regTime = time.time() - regStartTime
     if self.sourceSE and self.targetSE:
-      self.__sendAccounting( regSuc, regTotal, regTime, transEndTime )
+      self.__sendAccounting( regSuc, regTotal, regTime, transEndTime, transDict )
     self.__removeFailedTargets()
     self.__determineMissingSource()
     return S_OK()
 
-  def __registerSuccessful( self ):
-    toRegister = {}
+  def getTransferStatistics( self ):
+    """
+     Get information of Transfers, it can be used by Accounting
+    """
+    transDict = { 'transTotal': len( self.fileDict ),
+                  'transLFNs': [],
+                  'transOK': 0,
+                  'transSize': 0 }
+
     for lfn in self.fileDict.keys():
-      if self.fileDict[lfn].get( 'Status' ) == 'Finished':
+      if self.fileDict[lfn].get( 'Status' ) in self.successfulStates:
         if self.fileDict[lfn].get( 'Duration', 0 ):
-          res = self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), 'SRM2', withPort = False )
-          if not res['OK']:
-            self.__setFileParameter( lfn, 'Reason', res['Message'] )
-            self.__setFileParameter( lfn, 'Status', 'Failed' )
-          else:
-            toRegister[lfn] = {'PFN':res['Value'], 'SE':self.targetSE}
+          transDict['transLFNs'].append( lfn )
+          transDict['transOK'] += 1
+          if lfn in self.catalogMetadata:
+            transDict['transSize'] += self.catalogMetadata[lfn].get( 'Size', 0 )
+
+    return S_OK( transDict )
+
+  def getFailedRegistrations( self ):
+    return S_OK( self.failedRegistrations )
+
+  def __registerSuccessful( self, transLFNs ):
+    self.failedRegistrations = {}
+    toRegister = {}
+    for lfn in transLFNs:
+      res = self.oTargetSE.getPfnForProtocol( self.fileDict[lfn].get( 'Target' ), 'SRM2', withPort = False )
+      if not res['OK']:
+        self.__setFileParameter( lfn, 'Reason', res['Message'] )
+        self.__setFileParameter( lfn, 'Status', 'Failed' )
+      else:
+        toRegister[lfn] = {'PFN':res['Value'], 'SE':self.targetSE}
     if not toRegister:
       return S_OK( ( 0, 0 ) )
     res = self.__getCatalogObject()
     if not res['OK']:
       for lfn in toRegister.keys():
-        self.__setFileParameter( lfn, 'Reason', res['Message'] )
-        self.__setFileParameter( lfn, 'Status', 'Failed' )
+        self.failedRegistrations = toRegister
+        gLogger.error( 'Failed to get Catalog Object', res['Message'] )
+        return S_OK( ( 0, len( toRegister ) ) )
     res = self.oCatalog.addCatalogReplica( toRegister )
     if not res['OK']:
-      for lfn in toRegister.keys():
-        self.__setFileParameter( lfn, 'Reason', res['Message'] )
-        self.__setFileParameter( lfn, 'Status', 'Failed' )
+      self.failedRegistrations = toRegister
+      gLogger.error( 'Failed to get Catalog Object', res['Message'] )
+      return S_OK( ( 0, len( toRegister ) ) )
     for lfn, error in res['Value']['Failed'].items():
-      self.__setFileParameter( lfn, 'Reason', error )
-      self.__setFileParameter( lfn, 'Status', 'Failed' )
+      self.failedRegistrations[lfn] = toRegister[lfn]
+      gLogger.error( 'Registration of Replica failed', '%s : %s' % ( lfn, str( error ) ) )
     return S_OK( ( len( res['Value']['Successful'] ), len( toRegister ) ) )
 
-  def __sendAccounting( self, regSuc, regTotal, regTime, transEndTime ):
-    transSuc = 0
-    transSize = 0
-    missingSize = []
-    for lfn in self.fileDict.keys():
-      if self.fileDict[lfn].get( 'Status' ) == 'Finished':
-        transSuc += 1
-        if not self.catalogMetadata.has_key( lfn ):
-          missingSize.append( lfn )
-    if missingSize:
-      self.__updateMetadataCache( missingSize )
-    for lfn in self.fileDict.keys():
-      if self.fileDict[lfn].get( 'Status' ) == 'Finished':
-        transSize += self.catalogMetadata[lfn]['Size']
-    transTotal = 0
-    for state in ( self.statusSummary.keys() ):
-      transTotal += self.statusSummary[state]
+  def __sendAccounting( self, regSuc, regTotal, regTime, transEndTime, transDict ):
+
     submitTime = fromString( self.submitTime )
-    endTime = fromString( transEndTime )
     oAccounting = DataOperation()
-    #oAccounting.setEndTime(endTime)
     oAccounting.setEndTime( transEndTime )
     oAccounting.setStartTime( submitTime )
+
     accountingDict = {}
     accountingDict['OperationType'] = 'replicateAndRegister'
     accountingDict['User'] = 'acsmith'
@@ -830,9 +778,9 @@ class FTSRequest:
     accountingDict['RegistrationTime'] = regTime
     accountingDict['RegistrationOK'] = regSuc
     accountingDict['RegistrationTotal'] = regTotal
-    accountingDict['TransferOK'] = transSuc
-    accountingDict['TransferTotal'] = transTotal
-    accountingDict['TransferSize'] = transSize
+    accountingDict['TransferOK'] = transDict['transOK']
+    accountingDict['TransferTotal'] = transDict['transTotal']
+    accountingDict['TransferSize'] = transDict['transSize']
     accountingDict['FinalStatus'] = self.requestStatus
     accountingDict['Source'] = self.sourceSE
     accountingDict['Destination'] = self.targetSE

@@ -43,7 +43,7 @@ from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
 
 def getRequest():
   """
- helper fcn to build requestContainer
+  helper fcn to build requestContainer
   """
 
   requestContainer = RequestContainer( init = False )
@@ -136,9 +136,6 @@ class FixSURLEqTURLPluginTests(unittest.TestCase):
     ## excute plugin
     ret = self.fixSURLEqTURLPlugin.execute()
     self.assertEqual( ret, {'OK': True, 'Value': ()} )
-
-
-  
 
   def test_RequestPresent( self ):
     """

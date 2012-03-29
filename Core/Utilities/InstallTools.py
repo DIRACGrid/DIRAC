@@ -707,8 +707,8 @@ def getSoftwareComponents( extensions ):
   """  Get the list of all the components ( services and agents ) for which the software
        is installed on the system
   """
-
-  services = {}
+  # The Gateway does not need a handler 
+  services = { 'Framework' : ['Gateway'] }
   agents = {}
 
   for extension in ['DIRAC'] + [ x + 'DIRAC' for x in extensions]:
@@ -976,6 +976,13 @@ def runsvctrlComponent( system, component, mode ):
     return S_ERROR( 'Unknown runsvctrl mode "%s"' % mode )
 
   startCompDirs = glob.glob( os.path.join( startDir, '%s_%s' % ( system, component ) ) )
+  # Make sure that the Configuration server restarts first and the SystemAdmin restarts last
+  tmpList = list(startCompDirs)
+  for comp in tmpList:
+    if "Framework_SystemAdministrator" in comp:
+      startCompDirs.append(startCompDirs.pop(startCompDirs.index(comp)))
+    if "Configuration_Server" in comp:
+      startCompDirs.insert(0,startCompDirs.pop(startCompDirs.index(comp)))
   startCompList = [ [k] for k in startCompDirs]
   for startComp in startCompList:
     result = execCommand( 0, ['runsvctrl', mode] + startComp )

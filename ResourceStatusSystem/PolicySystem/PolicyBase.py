@@ -1,27 +1,28 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' PolicyBase
+  
+  The Policy class is a simple base class for all the policies.
+  
+'''
 
-"""
-  The Policy class is a simple base class for all the policies
-"""
-
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions        import InvalidRes, RSSException
-from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
+from DIRAC                                                  import gLogger 
 from DIRAC.ResourceStatusSystem                             import ValidRes
-
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker      import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
 
-class PolicyBase(object):
-  """
+__RCSID__  = '$Id: $'
+
+class PolicyBase( object ):
+  '''
   Base class for all the policies. Do not instantiate directly.
   To use, you should call at least `setArgs` and, alternatively,
   `setCommand` or `setCommandName` on the real policy instance.
-  """
+  '''
 
-  def __init__(self):
+  def __init__( self ):
+    '''
+    Constructor
+    '''
     self.args        = None
     self.command     = None
     self.commandName = None
@@ -29,10 +30,8 @@ class PolicyBase(object):
     self.infoName    = None
     self.result      = {}
 
-################################################################################
-
-  def setArgs(self, argsIn):
-    """
+  def setArgs( self, argsIn ):
+    '''
     Set `self.args`.
 
     :params:
@@ -41,69 +40,59 @@ class PolicyBase(object):
         - `args[0]` should be a ValidRes
 
         - `args[1]` should be the name of the ValidRes
-    """
+    '''
     self.args = argsIn
 
     if self.args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.setArgs)
+      gLogger.error( 'PolicyBase.setArgs got wrong ValidRes' )
 
-################################################################################
-
-  def setCommand(self, commandIn = None):
-    """
+  def setCommand( self, commandIn = None ):
+    '''
     Set `self.command`.
 
     :params:
       :attr:`commandIn`: a command object
-    """
+    '''
     self.command = commandIn
 
-################################################################################
-
-  def setCommandName(self, commandNameIn = None):
-    """
+  def setCommandName( self, commandNameIn = None ):
+    '''
     Set `self.commandName`, necessary when a command object is not provided with setCommand.
 
     :params:
       :attr:`commandNameIn`: a tuple containing the command module and class (as strings)
-    """
+    '''
     self.commandName = commandNameIn
 
-################################################################################
-
-  def setKnownInfo(self, knownInfoIn = None):
-    """
+  def setKnownInfo( self, knownInfoIn = None ):
+    '''
     Set `self.knownInfo`. No command will be then invoked.
 
     :params:
 
       :attr:`knownInfoIn`: a dictionary
-    """
+    '''
     self.knownInfo = knownInfoIn
 
-################################################################################
-
-  def setInfoName(self, infoNameIn = None):
-    """
+  def setInfoName( self, infoNameIn = None ):
+    '''
     Set `self.infoName`.
 
     :params:
 
       :attr:`infoNameIn`: a string
-    """
+    '''
     self.infoName = infoNameIn
 
-################################################################################
-
   # method to be extended by sub(real) policies
-  def evaluate(self):
-    """
+  def evaluate( self ):
+    '''
     Before use, call at least `setArgs` and, alternatively,
     `setCommand` or `setCommandName`.
 
     Invoking `super(PolicyCLASS, self).evaluate` will invoke
     the command (if necessary) as it is provided and returns the results.
-    """
+    '''
 
     if self.knownInfo:
       result = self.knownInfo
@@ -122,24 +111,15 @@ class PolicyBase(object):
 
 
     if not self.infoName:
-      result = result['Result']
+      result = result[ 'Result' ]
     else:
       if self.infoName in result.keys():
-        result = result[self.infoName]
+        result = result[ self.infoName ]
       else:
-        raise RSSException, "missing 'infoName' in result"
+        gLogger.error( 'missing "infoName" in result' )
+        return None
 
     return result
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

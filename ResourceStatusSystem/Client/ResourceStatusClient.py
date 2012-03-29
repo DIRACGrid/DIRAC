@@ -1,25 +1,24 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceStatusClient
 
-from DIRAC import S_OK, S_ERROR
+  Client to interact with the ResourceStatusDB.
 
-from DIRAC.Core.DISET.RPCClient                      import RPCClient
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
-       
+'''
+
+from datetime import datetime, timedelta
+
+from DIRAC                                           import S_OK, S_ERROR, gLogger
+from DIRAC.Core.DISET.RPCClient                      import RPCClient        
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName       
-       
-from DIRAC.ResourceStatusSystem.Utilities.Decorators import ClientFastDec     
 from DIRAC.ResourceStatusSystem                      import ValidRes, ValidStatus, \
   ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType       
-
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
 from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node       
-       
-from datetime import datetime, timedelta       
+
+__RCSID__ = '$Id: $'
        
 class ResourceStatusClient:
-  """
+  '''
   The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus` 
   API. All functions you need are on this client.
   
@@ -45,30 +44,59 @@ class ResourceStatusClient:
   All functions calling methods exposed on the database or on the booster are 
   making use of some syntactic sugar, in this case a decorator that simplifies
   the client considerably.    
-  """
+  '''
 
   def __init__( self , serviceIn = None ):
     '''
       The client tries to connect to :class:ResourceStatusDB by default. If it 
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
- 
-    if serviceIn == None:
+    if not serviceIn:
       try:
         self.gate = ResourceStatusDB()
-      except Exception:
+      except SystemExit:
         self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
+      except ImportError:
+        # Pilots will connect here, as MySQLdb is not installed for them
+        self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
     else:
       self.gate = serviceIn
+
+  def __query( self, queryType, tableName, kwargs ):
+    '''
+      This method is a rather important one. It will format the input for the DB
+      queries, instead of doing it on a decorator. Two dictionaries must be passed
+      to the DB. First one contains 'columnName' : value pairs, being the key
+      lower camel case. The second one must have, at lease, a key named 'table'
+      with the right table name. 
+    '''
+    # Functions we can call, just a light safety measure.
+    _gateFunctions = [ 'insert', 'update', 'get', 'delete' ] 
+    if not queryType in _gateFunctions:
+      return S_ERROR( '"%s" is not a proper gate call' % queryType )
+    
+    gateFunction = getattr( self.gate, queryType )
+    
+    # If meta is None, we set it to {}
+    meta   = ( True and kwargs.pop( 'meta' ) ) or {}
+    params = kwargs
+    del params[ 'self' ]     
+        
+    # This is an special case with the Element tables.
+    if tableName.startswith( 'Element' ):
+      element   = params.pop( 'element' )
+      tableName = tableName.replace( 'Element', element )
+      params[ '%sName' % element ] = params.pop( 'elementName' )
+          
+    meta[ 'table' ] = tableName
+    
+    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
+    return gateFunction( params, meta )    
+
+################################################################################
+# SITE FUNCTIONS
       
-  '''
-  ##############################################################################
-  # SITE FUNCTIONS
-  ##############################################################################
-  '''      
-  
-  @ClientFastDec
-  def insertSite( self, siteName, siteType, gridSiteName, meta = {} ):
+  def insertSite( self, siteName, siteType, gridSiteName, meta = None ):
     '''
     Inserts on Site a new row with the arguments given.
     
@@ -85,10 +113,11 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''   
-    return locals()
-  @ClientFastDec
-  def updateSite( self, siteName, siteType, gridSiteName, meta = {} ):
+    '''
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'Site', locals() )
+  def updateSite( self, siteName, siteType, gridSiteName, meta = None ):
     '''
     Updates Site with the parameters given. By default, `siteName` will be the \
     parameter used to select the row. 
@@ -106,11 +135,12 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''   
-    return locals()
-  @ClientFastDec
+    '''
+    # Unused argument   
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'Site', locals() )
   def getSite( self, siteName = None, siteType = None, gridSiteName = None, 
-               meta = {} ):
+               meta = None ):
     '''
     Gets from Site all rows that match the parameters given.
     
@@ -128,10 +158,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'Site', locals() )
   def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
-                  meta = {} ):
+                  meta = None ):
     '''
     Deletes from Site all rows that match the parameters given.
     
@@ -149,13 +180,14 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals()      
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'Site', locals() )
   def getSitePresent( self, siteName = None, siteType = None, 
                       gridSiteName = None, gridTier = None, statusType = None, 
                       status = None, dateEffective = None, reason = None, 
                       lastCheckTime = None, tokenOwner = None, 
-                      tokenExpiration = None, formerStatus = None, meta = {} ):
+                      tokenExpiration = None, formerStatus = None, meta = None ):
     '''
     Gets from the view composed by Site, SiteStatus and SiteHistory all rows 
     that match the parameters given ( not necessarily returns the same number 
@@ -191,16 +223,15 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''   
-    return locals()
+    '''
+    # Unused argument   
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'SitePresent', locals() )
 
-  '''
-  ##############################################################################
-  # SERVICE FUNCTIONS
-  ##############################################################################
-  '''
-  @ClientFastDec
-  def insertService( self, serviceName, serviceType, siteName, meta = {} ):
+################################################################################
+# SERVICE FUNCTIONS
+
+  def insertService( self, serviceName, serviceType, siteName, meta = None ):
     '''
     Inserts on Service a new row with the arguments given.
     
@@ -218,9 +249,10 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals()
-  @ClientFastDec
-  def updateService( self, serviceName, serviceType, siteName, meta = {} ):
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'Service', locals() )
+  def updateService( self, serviceName, serviceType, siteName, meta = None ):
     '''
     Updates Service with the parameters given. By default, `serviceName` will \
     be the parameter used to select the row.
@@ -239,10 +271,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'Service', locals() )
   def getService( self, serviceName = None, serviceType = None, siteName = None, 
-                  meta = {} ):
+                  meta = None ):
     '''
     Gets from Service all rows that match the parameters given.
     
@@ -260,10 +293,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'Service', locals() )
   def deleteService( self, serviceName = None, serviceType = None, 
-                     siteName = None, meta = {} ):
+                     siteName = None, meta = None ):
     '''
     Deletes from Service all rows that match the parameters given.
     
@@ -281,14 +315,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec  
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'Service', locals() )
   def getServicePresent( self, serviceName = None, siteName = None, 
                          siteType = None, serviceType = None, statusType = None, 
                          status = None, dateEffective = None, reason = None, 
                          lastCheckTime = None, tokenOwner = None, 
                          tokenExpiration = None, formerStatus = None, 
-                         meta = {} ):
+                         meta = None ):
     '''
     Gets from the view composed by Service, ServiceStatus and ServiceHistory all 
     rows that match the parameters given ( not necessarily returns the same 
@@ -326,16 +361,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'ServicePresent', locals() )
 
-  '''
-  ##############################################################################
-  # RESOURCE FUNCTIONS
-  ##############################################################################
-  '''
-  @ClientFastDec
+################################################################################
+# RESOURCE FUNCTIONS
+
   def insertResource( self, resourceName, resourceType, serviceType, siteName,
-                      gridSiteName, meta = {} ):
+                      gridSiteName, meta = None ):
     '''
     Inserts on Resource a new row with the arguments given.
     
@@ -357,10 +391,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'Resource', locals() )
   def updateResource( self, resourceName, resourceType, serviceType, siteName,
-                      gridSiteName, meta = {} ):
+                      gridSiteName, meta = None ):
     '''
     Updates Resource with the parameters given. By default, `resourceName` will 
     be the parameter used to select the row.
@@ -383,11 +418,12 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'Resource', locals() )
   def getResource( self, resourceName = None, resourceType = None, 
                    serviceType = None, siteName = None, gridSiteName = None, 
-                   meta = {} ):
+                   meta = None ):
     '''
     Gets from Resource all rows that match the parameters given.
     
@@ -409,11 +445,12 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'Resource', locals() )
   def deleteResource( self, resourceName = None, resourceType = None, 
                       serviceType = None, siteName = None, gridSiteName = None, 
-                      meta = {} ):
+                      meta = None ):
     '''
     Deletes from Resource all rows that match the parameters given.
     
@@ -435,8 +472,9 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec      
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'Resource', locals() )
   def getResourcePresent( self, resourceName = None, siteName = None, 
                           serviceType = None, gridSiteName = None, 
                           siteType = None, resourceType = None, 
@@ -444,7 +482,7 @@ class ResourceStatusClient:
                           dateEffective = None, reason = None, 
                           lastCheckTime = None, tokenOwner = None, 
                           tokenExpiration = None, formerStatus = None, 
-                          meta = {} ):
+                          meta = None ):
     '''
     Gets from the view composed by Resource, ResourceStatus and ResourceHistory 
     all rows that match the parameters given ( not necessarily returns the same 
@@ -487,16 +525,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'ResourcePresent', locals() )
 
-  '''
-  ##############################################################################
-  # STORAGE ELEMENT FUNCTIONS
-  ##############################################################################
-  '''
-  @ClientFastDec
+################################################################################
+# STORAGE ELEMENT FUNCTIONS
+
   def insertStorageElement( self, storageElementName, resourceName, 
-                            gridSiteName, meta = {} ):
+                            gridSiteName, meta = None ):
     '''
     Inserts on StorageElement a new row with the arguments given.
     
@@ -512,11 +549,12 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
-    return locals()
-  @ClientFastDec
+    '''  
+    # Unused argument
+    # pylint: disable-msg=W0613  
+    return self.__query( 'insert', 'StorageElement', locals() )
   def updateStorageElement( self, storageElementName, resourceName, 
-                            gridSiteName, meta = {} ):
+                            gridSiteName, meta = None ):
     '''
     Updates StorageElement with the parameters given. By default, 
     `storageElementName` will be the parameter used to select the row.
@@ -534,10 +572,11 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec       
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'StorageElement', locals() )
   def getStorageElement( self, storageElementName = None, resourceName = None, 
-                         gridSiteName = None, meta = {} ):
+                         gridSiteName = None, meta = None ):
     '''
     Gets from StorageElement all rows that match the parameters given.
     
@@ -553,12 +592,13 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
-    return locals()
-  @ClientFastDec       
+    '''   
+    # Unused argument
+    # pylint: disable-msg=W0613 
+    return self.__query( 'get', 'StorageElement', locals() )
   def deleteStorageElement( self, storageElementName = None, 
                             resourceName = None, gridSiteName = None, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Deletes from StorageElement all rows that match the parameters given.
     
@@ -575,15 +615,16 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()    
-  @ClientFastDec      
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'StorageElement', locals() )    
   def getStorageElementPresent( self, storageElementName = None, 
                                 resourceName = None, gridSiteName = None, 
                                 siteType = None, statusType = None, 
                                 status = None, dateEffective = None, 
                                 reason = None, lastCheckTime = None, 
                                 tokenOwner = None, tokenExpiration = None, 
-                                formerStatus = None, meta = {} ):
+                                formerStatus = None, meta = None ):
     '''
     Gets from the view composed by StorageElement, StorageElementStatus and 
     StorageElementHistory all rows that match the parameters given ( not 
@@ -620,16 +661,15 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
-    return locals()
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'StorageElementPresent', locals() )
 
-  '''
-  ##############################################################################
-  # GRID SITE FUNCTIONS
-  ##############################################################################
-  '''
-  @ClientFastDec
-  def insertGridSite( self, gridSiteName, gridTier, meta = {} ):
+################################################################################
+# GRID SITE FUNCTIONS
+
+  def insertGridSite( self, gridSiteName, gridTier, meta = None ):
     '''
     Inserts on GridSite a new row with the arguments given.
     
@@ -643,10 +683,11 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
-    return locals()
-  @ClientFastDec
-  def updateGridSite( self, gridSiteName, gridTier, meta = {} ):
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'GridSite', locals() )
+  def updateGridSite( self, gridSiteName, gridTier, meta = None ):
     '''
     Updates GridSite with the parameters given. By default, 
     `gridSiteName` will be the parameter used to select the row.
@@ -662,9 +703,10 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec    
-  def getGridSite( self, gridSiteName = None, gridTier = None, meta = {} ):
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'GridSite', locals() )   
+  def getGridSite( self, gridSiteName = None, gridTier = None, meta = None ):
     '''
     Gets from GridSite all rows that match the parameters given.
 
@@ -679,9 +721,10 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec    
-  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = {} ): 
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'GridSite', locals() )
+  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = None ): 
     '''
     Deletes from GridSite all rows that match the parameters given.
     
@@ -695,19 +738,18 @@ class ResourceStatusClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''           
-    return locals()
+    '''     
+    # Unused argument
+    # pylint: disable-msg=W0613      
+    return self.__query( 'delete', 'GridSite', locals() )
 
-  '''
-  ##############################################################################
-  # ELEMENT STATUS FUNCTIONS
-  ##############################################################################
-  '''
-  @ClientFastDec
+################################################################################
+# ELEMENT STATUS FUNCTIONS
+
   def insertElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
-                           meta = {} ): 
+                           meta = None ): 
     '''
     Inserts on <element>Status a new row with the arguments given.
     
@@ -742,12 +784,13 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'ElementStatus', locals() )
   def updateElementStatus( self, element, elementName, statusType, status, 
                            reason, dateCreated, dateEffective, dateEnd, 
                            lastCheckTime, tokenOwner, tokenExpiration, 
-                           meta = {} ):
+                           meta = None ):
     '''
     Updates <element>Status with the parameters given. By default, 
     `elementName` and 'statusType' will be the parameters used to select the row.
@@ -783,13 +826,14 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'ElementStatus', locals() )
   def getElementStatus( self, element, elementName = None, statusType = None, 
                         status = None, reason = None, dateCreated = None, 
                         dateEffective = None, dateEnd = None, 
                         lastCheckTime = None, tokenOwner = None, 
-                        tokenExpiration = None, meta = {} ):
+                        tokenExpiration = None, meta = None ):
     '''
     Gets from <element>Status all rows that match the parameters given.
     
@@ -824,13 +868,14 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'ElementStatus', locals() )
   def deleteElementStatus( self, element, elementName = None, statusType = None, 
                            status = None, reason = None, dateCreated = None, 
                            dateEffective = None, dateEnd = None, 
                            lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, meta = {} ):
+                           tokenExpiration = None, meta = None ):
     '''
     Deletes from <element>Status all rows that match the parameters given.
     
@@ -865,18 +910,17 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'ElementStatus', locals() )
 
-  '''
-  ##############################################################################
-  # ELEMENT SCHEDULED STATUS FUNCTIONS
-  ##############################################################################
-  '''
-  @ClientFastDec
+################################################################################
+# ELEMENT SCHEDULED STATUS FUNCTIONS
+
   def insertElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
-                                    tokenExpiration, meta = {} ): 
+                                    tokenExpiration, meta = None ): 
     '''
     Inserts on <element>ScheduledStatus a new row with the arguments given.
     
@@ -911,12 +955,13 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'ElementScheduledStatus', locals() )
   def updateElementScheduledStatus( self, element, elementName, statusType, 
                                     status, reason, dateCreated, dateEffective, 
                                     dateEnd, lastCheckTime, tokenOwner, 
-                                    tokenExpiration, meta = {} ):
+                                    tokenExpiration, meta = None ):
     '''
     Updates <element>ScheduledStatus with the parameters given. By default, 
     `elementName`, 'statusType' and `dateEffective` will be the parameters used 
@@ -953,14 +998,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'ElementScheduledStatus', locals() )
   def getElementScheduledStatus( self, element, elementName = None, 
                                  statusType = None, status = None, 
                                  reason = None, dateCreated = None, 
                                  dateEffective = None, dateEnd = None, 
                                  lastCheckTime = None, tokenOwner = None, 
-                                 tokenExpiration = None, meta = {} ):
+                                 tokenExpiration = None, meta = None ):
     '''
     Gets from <element>ScheduledStatus all rows that match the parameters given.
     
@@ -995,14 +1041,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'ElementScheduledStatus', locals() )
   def deleteElementScheduledStatus( self, element, elementName = None, 
                                     statusType = None, status = None, 
                                     reason = None, dateCreated = None,
                                     dateEffective = None, dateEnd = None, 
                                     lastCheckTime = None, tokenOwner = None, 
-                                    tokenExpiration = None, meta = {} ):
+                                    tokenExpiration = None, meta = None ):
     '''
     Deletes from <element>ScheduledStatus all rows that match the parameters 
     given.
@@ -1038,18 +1085,17 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-      
-  '''
-  ##############################################################################
-  # ELEMENT HISTORY FUNCTIONS
-  ##############################################################################
-  '''
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'ElementScheduledStatus', locals() )
+
+################################################################################
+# ELEMENT HISTORY FUNCTIONS
+
   def insertElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
-                            meta = {} ): 
+                            meta = None ): 
     '''
     Inserts on <element>History a new row with the arguments given.
     
@@ -1084,12 +1130,13 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'ElementHistory', locals() )
   def updateElementHistory( self, element, elementName, statusType, status, 
                             reason, dateCreated, dateEffective, dateEnd, 
                             lastCheckTime, tokenOwner, tokenExpiration, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Updates <element>History with the parameters given. By default, 
     `elementName`, 'statusType', `reason` and `dateEnd` will be the parameters 
@@ -1126,13 +1173,14 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'ElementHistory', locals() )
   def getElementHistory( self, element, elementName = None, statusType = None, 
                          status = None, reason = None, dateCreated = None, 
                          dateEffective = None, dateEnd = None, 
                          lastCheckTime = None, tokenOwner = None, 
-                         tokenExpiration = None, meta = {} ):
+                         tokenExpiration = None, meta = None ):
     '''
     Gets from <element>History all rows that match the parameters given.
     
@@ -1167,14 +1215,15 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
-    return locals()
-  @ClientFastDec
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'ElementHistory', locals() )
   def deleteElementHistory( self, element, elementName = None, 
                             statusType = None, status = None, reason = None, 
                             dateCreated = None, dateEffective = None, 
                             dateEnd = None, lastCheckTime = None, 
                             tokenOwner = None, tokenExpiration = None, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Deletes from <element>History all rows that match the parameters given.
 
@@ -1209,13 +1258,12 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''   
-    return locals() 
-
-  '''
-  ##############################################################################
-  # CS VALID ELEMENTS
-  ##############################################################################
-  '''
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'ElementHistory', locals() ) 
+  
+################################################################################
+# CS VALID ELEMENTS
   
   def getValidElements( self ):
     '''
@@ -1273,11 +1321,8 @@ class ResourceStatusClient:
     '''    
     return S_OK( ValidResourceType )
 
-  '''
-  ##############################################################################
-  # EXTENDED FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# EXTENDED FUNCTIONS
 
   def addOrModifySite( self, siteName, siteType, gridSiteName ):
     '''
@@ -1295,6 +1340,8 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Site', locals() )
 
   def addOrModifyService( self, serviceName, serviceType, siteName ):
@@ -1313,6 +1360,8 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Service', locals() )
 
   def addOrModifyResource( self, resourceName, resourceType, serviceType, 
@@ -1335,7 +1384,9 @@ class ResourceStatusClient:
         name of the grid site the resource belongs ( if any )  
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'Resource', locals() )
 
   def addOrModifyStorageElement( self, storageElementName, resourceName, 
@@ -1353,7 +1404,9 @@ class ResourceStatusClient:
         name of the grid site the storage element belongs
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'StorageElement', locals() )
 
   def addOrModifyGridSite( self, gridSiteName, gridTier ):
@@ -1419,6 +1472,8 @@ class ResourceStatusClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__modifyElementStatus( locals() )
 
   def removeElement( self, element, elementName ):
@@ -1434,7 +1489,9 @@ class ResourceStatusClient:
         name of the individual of class element  
     
     :return: S_OK() || S_ERROR()
-    '''       
+    '''
+    # Unused argument       
+    # pylint: disable-msg=W0613
     return self.__removeElement( element, elementName )
 
   def getServiceStats( self, siteName, statusType = None ):
@@ -1459,7 +1516,7 @@ class ResourceStatusClient:
                             'count' : True, 
                             'group' : 'Status' } }
     presentDict.update( kwargs )
-    sqlQuery = self._getElement( 'ServicePresent', **presentDict )
+    sqlQuery = self._getElement( 'ServicePresent', presentDict )
     return self.__getStats( sqlQuery )
 
   def getResourceStats( self, element, name, statusType = None ):
@@ -1503,7 +1560,7 @@ class ResourceStatusClient:
       else:
         kwargs = { 'meta' : {'columns' : [ 'GridSiteName' ] }, 'siteName' : siteName }
         gridSiteName = [ gs[0] for gs in \
-                         self._getElement( 'Site', **kwargs )[ 'Value' ] ]
+                         self._getElement( 'Site', kwargs )[ 'Value' ] ]
         
         rDict[ 'gridSiteName' ] = gridSiteName
         
@@ -1512,13 +1569,13 @@ class ResourceStatusClient:
       return S_ERROR( message )
 
     resourceNames = [ re[0] for re in \
-                          self._getElement( 'Resource', **rDict )[ 'Value' ] ]
+                          self._getElement( 'Resource', rDict )[ 'Value' ] ]
     
     kwargs   = { 'meta' : { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' } }
     presentDict[ 'resourceName' ] = resourceNames
     presentDict.update( kwargs )
     
-    sqlQuery = self._getElement( 'ResourcePresent', **presentDict )
+    sqlQuery = self._getElement( 'ResourcePresent', presentDict )
     return self.__getStats( sqlQuery )
  
   def getStorageElementStats( self, element, name, statusType = None ):
@@ -1550,7 +1607,7 @@ class ResourceStatusClient:
 
       kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'siteName' : name  }
       gridSiteNames = [ gs[0] for gs in \
-                             self._getElement( 'Site', **kwargs )[ 'Value' ] ]
+                             self._getElement( 'Site', kwargs )[ 'Value' ] ]
       rDict[ 'gridSiteName' ] = gridSiteNames
 
     elif element == 'Resource':
@@ -1562,13 +1619,13 @@ class ResourceStatusClient:
       return S_ERROR( message )
 
     storageElementNames = [ se[0] for se in \
-                    self._getElement( 'StorageElement', **rDict )[ 'Value' ] ]
+                    self._getElement( 'StorageElement', rDict )[ 'Value' ] ]
 
     kwargs   = { 'meta' : { 'columns' : [ 'Status'], 'count' : True, 'group' : 'Status' } }
     presentDict[ 'storageElementName' ] = storageElementNames
     presentDict.update( kwargs )
     
-    sqlQuery = self._getElement( 'StorageElementPresent', **presentDict )
+    sqlQuery = self._getElement( 'StorageElementPresent', presentDict )
     return self.__getStats( sqlQuery )  
   
   def getGeneralName( self, from_element, name, to_element ):
@@ -1595,38 +1652,38 @@ class ResourceStatusClient:
 
     if from_element == 'Service':
       kwargs = { 'meta' : { 'columns' : [ 'SiteName' ] }, 'serviceName' : name }
-      resQuery = self._getElement( 'Service', **kwargs ) 
+      resQuery = self._getElement( 'Service', kwargs ) 
 
     elif from_element == 'Resource':
       kwargs = { 'meta' : { 'columns' : [ 'ServiceType' ] }, 'resourceName' : name }
-      resQuery = self._getElement( 'Resource', **kwargs )    
+      resQuery = self._getElement( 'Resource', kwargs )    
       serviceType = resQuery[ 'Value' ][ 0 ][ 0 ]
 
       if serviceType == 'Computing':
         kwargs = { 'meta' : { 'columns' : [ 'SiteName' ] }, 'resourceName' : name }
-        resQuery = self._getElement( 'Resource', **kwargs )  
+        resQuery = self._getElement( 'Resource', kwargs )  
       else:
         kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'resourceName' : name }    
-        gridSiteNames = self._getElement( 'Resource', **kwargs )
+        gridSiteNames = self._getElement( 'Resource', kwargs )
         kwargs = { 
                    'meta' : { 'columns'      : [ 'SiteName' ] }, 
                    'gridSiteName' : list( gridSiteNames[ 'Value' ] ) 
                  }  
-        resQuery = self._getElement( 'Site', **kwargs )
+        resQuery = self._getElement( 'Site', kwargs )
         
     elif from_element == 'StorageElement':
 
       if to_element == 'Resource':
         kwargs = { 'meta' : { 'columns' : [ 'ResourceName' ] }, 'storageElementName' : name }   
-        resQuery = self._getElement( 'StorageElement', **kwargs )
+        resQuery = self._getElement( 'StorageElement', kwargs )
       else:
         kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'storageElementName' : name }  
-        gridSiteNames = self._getElement( 'StorageElement', **kwargs )
+        gridSiteNames = self._getElement( 'StorageElement', kwargs )
         kwargs = { 
                    'meta' : { 'columns'      : [ 'SiteName' ] }, 
                    'gridSiteName' : list( gridSiteNames[ 'Value' ] ) 
                  }
-        resQuery = self._getElement( 'Site', **kwargs )
+        resQuery = self._getElement( 'Site', kwargs )
 
         if to_element == 'Service':
           serviceType = 'Storage'
@@ -1665,7 +1722,7 @@ class ResourceStatusClient:
     kwargs = { 'meta' : { 'columns' : [ 'GridSiteName' ] } }
     
     kwargs.update( rDict )
-    return self._getElement( granularity, **kwargs )
+    return self._getElement( granularity, kwargs )
 
   def getTokens( self, granularity, name = None, tokenExpiration = None, 
                  statusType = None, **kwargs ):
@@ -1699,10 +1756,10 @@ class ResourceStatusClient:
     kw = { 'meta' : {}}
     kw[ 'meta' ][ 'columns' ] = kwargs.pop( 'columns', None )
     if tokenExpiration is not None:
-      kw[ 'meta' ][ 'minor' ]   = { 'tokenExpiration' : tokenExpiration }
+      kw[ 'meta' ][ 'minor' ]   = { 'TokenExpiration' : tokenExpiration }
     kw.update( rDict )
      
-    return self._getElement( 'ElementStatus', **kw ) 
+    return self._getElement( 'ElementStatus', kw ) 
 
   def setToken( self, granularity, name, statusType, reason, tokenOwner, 
                 tokenExpiration ):
@@ -1809,8 +1866,8 @@ class ResourceStatusClient:
 
       elementName = '%sName' % (g[0].lower() + g[1:])
 
-      rDict  = { elementName : name, 'elementTable' : g }
-      resQuery = self._getElement( **rDict )
+      rDict  = { elementName : name }
+      resQuery = self._getElement( g, rDict )
            
       if not resQuery[ 'Value' ]:
         continue
@@ -1835,7 +1892,6 @@ class ResourceStatusClient:
     
     :return: S_OK() || S_ERROR()    
     '''
-#    self.rsVal.validateElement( granularity )
 
     toCheck = {}
 
@@ -1863,7 +1919,7 @@ class ResourceStatusClient:
                 
       kwargs[ 'meta' ][ 'or' ].append( orDict )          
 
-    return self._getElement( '%sPresent' % granularity, **kwargs )
+    return self._getElement( '%sPresent' % granularity, kwargs )
 
   def getTopology( self ):
     '''
@@ -1941,6 +1997,26 @@ class ResourceStatusClient:
       
     return S_OK( tree )  
 
+  def getSESitesList( self ):
+       
+    kwargs = { 'statusType' : 'Read', 'meta' : { 'columns' : 'GridSiteName' } }
+    elements = self._getElement( 'StorageElementPresent', kwargs )
+
+    from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
+    res = set( [] )
+    if not elements[ 'OK' ]:
+      return S_OK( [] )
+    
+    elements = elements[ 'Value' ]
+    for gSite in elements:
+      
+      dSite = getDIRACSiteName( gSite[ 0 ] ).setdefault( 'Value', [] )
+      for ds in dSite:
+        res.add( ds )
+    
+    res = list( res )
+    return S_OK( res )        
+
   def getMonitoredStatus( self, granularity, name ):
     '''
     Gets from <granularity>Present the present status of name.
@@ -1957,7 +2033,7 @@ class ResourceStatusClient:
     elementName = '%sName' % ( granularity[0].lower() + granularity[1:] ) 
     kwargs = { elementName : name, 'meta' : { 'columns' : [ 'Status' ] }}
     
-    return self._getElement( '%sPresent' % granularity, **kwargs )
+    return self._getElement( '%sPresent' % granularity, kwargs )
 
   def getMonitoredsStatusWeb( self, granularity, selectDict, startItem, 
                               maxItems ):
@@ -2029,7 +2105,7 @@ class ResourceStatusClient:
     for k in rDict.keys():
       if selectDict.has_key( k ):
         rDict[ k ] = selectDict[ k ]
-        if not isinstance( rDict, list ):
+        if not isinstance( rDict[ k ], list ):
           rDict[ k ] = [ rDict[ k ] ]
 
     if selectDict.has_key( 'Expanded%sHistory' % granularity ):
@@ -2039,7 +2115,7 @@ class ResourceStatusClient:
       #hgetter    = getattr( self.rsClient, 'get%ssHhistory' )
       kwargs     = { '%sName' % granularity : elements, 'columns' : paramsList, 'element' : granularity }  
       #elementsH  = hgetter( **kwargs )
-      elementsH = self._getElement( 'ElementHistory', **kwargs )
+      elementsH = self._getElement( 'ElementHistory', kwargs )
       #elementsH  = self.getMonitoredsHistory( granularity, paramsList = paramsList,
       #                                        name = elements )
 
@@ -2060,21 +2136,13 @@ class ResourceStatusClient:
       kwargs = { 'meta' : { 'columns' : paramsList }}  
       if granularity == 'Site':
         
-        kwargs[ 'siteName' ] = rDict['SiteName']
-        kwargs[ 'status' ]   = rDict['Status']
-        kwargs[ 'siteType' ] = rDict['SiteType']
+        kwargs[ 'siteName' ]   = rDict[ 'SiteName' ]
+        kwargs[ 'statusType' ] = rDict[ 'StatusType' ]
+        kwargs[ 'status' ]     = rDict[ 'Status' ]
+        kwargs[ 'siteType' ]   = rDict[ 'SiteType' ]
         
-        sitesList = self._getElement( 'SitePresent', **kwargs )  
-        #sitesList = self.rsClient.getSitePresent( siteName = rDict['SiteName'], 
-        #                                  status   = rDict['Status'],
-        #                                  siteType   = rDict['SiteType'],
-        #                                  **kwargs )  
-        #sitesList = self.getMonitoredsList(granularity,
-        #                                   paramsList = paramsList,
-        #                                   siteName   = rDict['SiteName'], #sites_select,
-        #                                   status     = rDict['Status'],   #status_select,
-        #                                   siteType   = rDict['SiteType'])#, #siteType_select,
-        #                                   #countries  = rDict['Countries'])#countries_select)
+        sitesList = self._getElement( 'SitePresent', kwargs )  
+
         for site in sitesList[ 'Value' ]:
           record   = []
           gridType = ( site[ 0 ] ).split( '.' ).pop(0)
@@ -2093,28 +2161,15 @@ class ResourceStatusClient:
 
       elif granularity == 'Service':
         
-        kwargs[ 'serviceName' ] = rDict['ServiceName']
-        kwargs[ 'siteName' ]    = rDict['SiteName']
-        kwargs[ 'status' ]      = rDict['Status']
-        kwargs[ 'siteType' ]    = rDict['SiteType']
-        kwargs[ 'serviceType' ] = rDict['ServiceType']
+        kwargs[ 'serviceName' ] = rDict[ 'ServiceName' ]
+        kwargs[ 'siteName' ]    = rDict[ 'SiteName' ]
+        kwargs[ 'statusType' ]  = rDict[ 'StatusType' ]
+        kwargs[ 'status' ]      = rDict[ 'Status' ]
+        kwargs[ 'siteType' ]    = rDict[ 'SiteType' ]
+        kwargs[ 'serviceType' ] = rDict[ 'ServiceType' ]
         
-        servicesList = self._getElement( 'ServicePresent', **kwargs )
-        #servicesList = self.rsClient.getServicesPresent( serviceName = rDict['ServiceName'],
-        #                                        siteName    = rDict['SiteName'],
-        #                                        status      = rDict['Status'],
-        #                                        siteType    = rDict['SiteType'],
-        #                                        serviceType = rDict['ServiceType'],
-        #                                        **kwargs )         
-        
-        #servicesList = self.getMonitoredsList( granularity,
-        #                                       paramsList  = paramsList,
-        #                                       serviceName = rDict['ServiceName'], #services_select,
-        #                                       siteName    = rDict['SiteName'], #sites_select,
-        #                                       status      = rDict['Status'], #status_select,
-        #                                       siteType    = rDict['SiteType'], #siteType_select,
-        #                                       serviceType = rDict['ServiceType'])#, #serviceType_select,
-        #                                     #  countries   = rDict['Countries']) #countries_select )
+        servicesList = self._getElement( 'ServicePresent', kwargs )
+
         for service in servicesList[ 'Value' ]:
           record  = []
           country = ( service[ 0 ] ).split( '.' ).pop()
@@ -2134,7 +2189,7 @@ class ResourceStatusClient:
         if rDict[ 'SiteName' ] == None:
           kw = { 'meta' : { 'columns' : [ 'SiteName' ] } }
           #sites_select = self.rsClient.getSitePresent( **kw )
-          sites_select = self._getElement( 'SitePresent', **kw )
+          sites_select = self._getElement( 'SitePresent', kw )
           #sites_select = self.getMonitoredsList( 'Site',
           #                                       paramsList = [ 'SiteName' ] )
           rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ] 
@@ -2142,35 +2197,21 @@ class ResourceStatusClient:
         kw = { 'meta' : { 'columns' : [ 'GridSiteName' ] }, 'siteName' : rDict[ 'SiteName'] }
         
         #gridSites_select = self.rsClient.getSitePresent( siteName = rDict[ 'SiteName'], **kw )
-        gridSites_select = self._getElement( 'SitePresent', **kw )
+        gridSites_select = self._getElement( 'SitePresent', kw )
         #gridSites_select = self.getMonitoredsList( 'Site',
         #                                           paramsList = [ 'GridSiteName' ],
         #                                           siteName = rDict[ 'SiteName' ] )
         
         gridSites_select = [ x[ 0 ] for x in gridSites_select[ 'Value' ] ]
 
-        kwargs[ 'resourceName' ] = rDict['ResourceName']
-        kwargs[ 'status' ]       = rDict['Status']
-        kwargs[ 'siteType' ]     = rDict['SiteType']
-        kwargs[ 'resourceType' ] = rDict['ResourceType']
+        kwargs[ 'resourceName' ] = rDict[ 'ResourceName' ]
+        kwargs[ 'statusType' ]   = rDict[ 'StatusType' ]
+        kwargs[ 'status' ]       = rDict[ 'Status' ]
+        kwargs[ 'siteType' ]     = rDict[ 'SiteType' ]
+        kwargs[ 'resourceType' ] = rDict[ 'ResourceType' ]
         kwargs[ 'gridSiteName' ] = gridSites_select
 
-        resourcesList = self._getElement( 'ResourcePresent', **kwargs )
-        #resourcesList = self.rsClient.getResourcePresent( resourceName = rDict['ResourceName'],
-        #                                          status       = rDict['Status'],
-        #                                          siteType     = rDict['SiteType'],
-        #                                          resourceType = rDict['ResourceType'],
-        #                                          gridSiteName = gridSites_select,
-        #                                          **kwargs )
-
-        #resourcesList = self.getMonitoredsList( granularity,
-        #                                        paramsList   = paramsList,
-        #                                        resourceName = rDict['ResourceName'],#resources_select,
-        #                                        status       = rDict['Status'],#status_select,
-        #                                        siteType     = rDict['SiteType'],#siteType_select,
-        #                                        resourceType = rDict['ResourceType'],#resourceType_select,
-        #                                        #countries    = rDict['Countries'],#countries_select,
-        #                                        gridSiteName = gridSites_select )
+        resourcesList = self._getElement( 'ResourcePresent', kwargs )
 
         for resource in resourcesList[ 'Value' ]:
           DIRACsite = resource[ 2 ]
@@ -2179,7 +2220,6 @@ class ResourceStatusClient:
             GridSiteName = resource[ 3 ]  #self.getGridSiteName(granularity, resource[0])
             DIRACsites = getDIRACSiteName( GridSiteName )
             if not DIRACsites[ 'OK' ]:
-              #raise RSSException, 'Error executing getDIRACSiteName'
               return S_ERROR( 'Error executing getDIRACSiteName' )
             DIRACsites = DIRACsites[ 'Value' ]
             DIRACsite_comp = ''
@@ -2223,10 +2263,10 @@ class ResourceStatusClient:
 
 
       elif granularity == 'StorageElement':
-        if rDict[ 'SiteName' ] == []:#sites_select == []:
+        if rDict[ 'SiteName' ] == [] or rDict[ 'SiteName' ] is None:#sites_select == []:
           kw = { 'meta' : { 'columns' : [ 'SiteName' ] } }
           #sites_select = self.rsClient.getSitePresent( **kw )
-          sites_select = self._getElement( 'SitePresent', **kw )
+          sites_select = self._getElement( 'SitePresent', kw )
           #sites_select = self.getMonitoredsList( 'Site',
           #                                      paramsList = [ 'SiteName' ] )
           rDict[ 'SiteName' ] = [ x[ 0 ] for x in sites_select[ 'Value' ] ]
@@ -2236,34 +2276,22 @@ class ResourceStatusClient:
                'siteName' : rDict[ 'SiteName' ] 
               }
         #gridSites_select = self.rsClient.getSitePresent( siteName = rDict[ 'SiteName' ], **kw )
-        gridSites_select = self._getElement( 'SitePresent', **kw )
+        gridSites_select = self._getElement( 'SitePresent', kw )
         #gridSites_select = self.getMonitoredsList( 'Site',
         #                                           paramsList = [ 'GridSiteName' ],
         #                                           siteName = rDict[ 'SiteName' ] )
         gridSites_select = [ x[ 0 ] for x in gridSites_select[ 'Value' ] ]
 
         kwargs[ 'storageElementName' ] = rDict[ 'StorageElementName' ]
+        kwargs[ 'statusType' ]         = rDict[ 'StatusType' ]
         kwargs[ 'status' ]             = rDict[ 'Status' ]
         kwargs[ 'gridSiteName']        = gridSites_select 
 
-        storageElementsList = self._getElement( 'StorageElementPresent', 
-                                                 **kwargs )
-        #storageElementsList = self.rsClient.getStorageElementPresent( storageElementName = rDict[ 'StorageElementName' ],
-        #                                                      status             = rDict[ 'Status' ],
-        #                                                      gridSiteName       = gridSites_select,
-        #                                                      **kwargs
-        #                                                      )
-        #storageElementsList = self.getMonitoredsList( granularity,
-        #                                              paramsList         = paramsList,
-        #                                              storageElementName = rDict[ 'StorageElementName' ],#storageElements_select,
-        #                                              status             = rDict[ 'Status' ],#status_select,
-        #                                         #     countries          = rDict[ 'Countries' ],#countries_select,
-        #                                              gridSiteName       = gridSites_select )
+        storageElementsList = self._getElement( 'StorageElementPresent', kwargs )
 
         for storageElement in storageElementsList[ 'Value' ]:
           DIRACsites = getDIRACSiteName( storageElement[ 2 ] )
           if not DIRACsites[ 'OK' ]:
-            #raise RSSException, 'Error executing getDIRACSiteName'
             return S_ERROR( 'Error executing getDIRACSiteName' )
           DIRACsites = DIRACsites[ 'Value' ]
           DIRACsite_comp = ''
@@ -2301,33 +2329,31 @@ class ResourceStatusClient:
   
 ################################################################################
 
-  '''
-  ##############################################################################
-  # addOrModify PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# addOrModify PRIVATE FUNCTIONS
 
-  #def __addOrModifyElement( self, element, *args ):
+
   def __addOrModifyElement( self, element, kwargs ):
 
     del kwargs[ 'self' ]
        
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
-    sqlQuery = self._getElement( element, **kwargs )
-    
-    #kwargs = { 'onlyUniqueKeys' : True }    
-    #sqlQuery = self._getElement( element, *args, **kwargs )  
-     
+    sqlQuery = self._getElement( element, kwargs )
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery
+         
     del kwargs[ 'meta' ] 
        
     if sqlQuery[ 'Value' ]:      
-      return self._updateElement( element, **kwargs )
+      return self._updateElement( element, kwargs )
     else: 
-      sqlQuery = self._insertElement( element, **kwargs )
+      sqlQuery = self._insertElement( element, kwargs )
       if sqlQuery[ 'OK' ]:       
-        return self.__setElementInitStatus( element, **kwargs )
-      else:
-        return sqlQuery  
+        res = self.__setElementInitStatus( element, **kwargs )
+        if not res[ 'OK' ]:
+          return res
+        
+      return sqlQuery  
 
   def __setElementInitStatus( self, element, **kwargs ):
     
@@ -2354,8 +2380,6 @@ class ResourceStatusClient:
         rDict[ 'statusType' ]  = statusType
         rDict[ 'status']       = defaultStatus
         rDict[ 'reason' ]      = defaultReason
-
-        #rList = [ kwargs[ elementName ], statusType, defaultStatus, defaultReason ] 
         
         sqlQuery = self.__addOrModifyElementStatus( element, rDict  )        
                 
@@ -2366,40 +2390,28 @@ class ResourceStatusClient:
 
   def __addOrModifyElementStatus( self, element, rDict ):
 
-    # VALIDATION ?
-   
-    #rList += self.__setStatusDefaults()
     rDict.update( self.__setStatusDefaults())
-
-    #elementName = '%sName' % ( element[0].lower() + element[1:] )
     kwargs = { 
                'element'        : element,
                'elementName'    : rDict[ 'elementName' ], 
                'statusType'     : rDict[ 'statusType' ], 
                'meta'           : { 'onlyUniqueKeys' : True } 
              }
-    #sqlQuery = self._getElement( '%sStatus' % element, **kwargs )
 
-    sqlQuery = self._getElement( 'ElementStatus', **kwargs )
-
+    sqlQuery = self._getElement( 'ElementStatus', kwargs )
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery
 
     rDict[ 'element' ] = element
 
     if not sqlQuery[ 'Value' ]:
-      return self._insertElement( 'ElementStatus', **rDict )
-      #return self._insertElement( 'ElementStatus', element, *tuple( rList ) )
-
+      return self._insertElement( 'ElementStatus', rDict )
     
-    updateSQLQuery = self._updateElement( 'ElementStatus', **rDict )
-    #updateSQLQuery = self._updateElement( 'ElementStatus', element, *tuple( rList ) )
+    updateSQLQuery = self._updateElement( 'ElementStatus', rDict )
     if not updateSQLQuery[ 'OK' ]:
       return updateSQLQuery 
 
     sqlQ      = list( sqlQuery[ 'Value' ][ 0 ] )[1:]
-    # EHistory.DateEnd = EStatus.DateEffective
-    # This is vital for the views !!!!
-    #sqlQ[ 6 ] = rList[ 5 ]   
-    sqlQ[ 6 ] = rDict[ 'dateEffective' ]
         
     sqlDict = {}
     sqlDict[ 'elementName' ]     = sqlQ[ 0 ]
@@ -2415,10 +2427,9 @@ class ResourceStatusClient:
            
     sqlDict[ 'element' ] = element       
            
-    return self._insertElement( 'ElementHistory', **sqlDict )    
-    #return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )
+    return self._insertElement( 'ElementHistory', sqlDict )    
 
-  def __setStatusDefaults( self ):#, rDict ):
+  def __setStatusDefaults( self ):
      
     now    = datetime.utcnow().replace( microsecond = 0 )
     never  = datetime( 9999, 12, 31, 23, 59, 59 ).replace( microsecond = 0 )
@@ -2432,30 +2443,16 @@ class ResourceStatusClient:
     iDict[ 'tokenExpiration'] = never
 
     return iDict
-    
-    #dateCreated, dateEffective, dateEnd, lastCheckTime, tokenOwner, tokenExpiration
-    #iList = [ now, now, never, now, 'RS_SVC', never ] 
-    #return iList
 
-  '''
-  ##############################################################################
-  # Modify PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# Modify PRIVATE FUNCTIONS
   
   def __modifyElementStatus( self,kwargs ):
       
     del kwargs[ 'self' ]  
-    #del kwargs[ 'element' ]
     
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
-    #sqlQuery = self._getElement( element, **kwargs )
-      
-    #args = list(args)
-
-    #elementName = '%sName' % ( element[0].lower() + element[1:] )
-    #kwargs = { 'elementName' : args[ 0 ], 'statusType' : args[ 1 ] }
-    sqlQuery = self._getElement( 'ElementStatus', **kwargs )
+    sqlQuery         = self._getElement( 'ElementStatus', kwargs )
 
     del kwargs[ 'meta' ]
 
@@ -2474,9 +2471,13 @@ class ResourceStatusClient:
     if kwargs[ 'lastCheckTime' ] is None:
       kwargs[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )
     
-    #updateSQLQuery = self._updateElement( 'ElementStatus', element, 
-    #                                       *tuple( args ) )
-    updateSQLQuery = self._updateElement( 'ElementStatus', **kwargs ) 
+    #We give the token owner one day
+    tOwner = kwargs[ 'tokenOwner' ] is not None and kwargs[ 'tokenOwner' ] != 'RS_SVC' 
+    if tOwner and kwargs[ 'tokenExpiration' ] is None:
+      _tomorrow = datetime.utcnow().replace( microsecond = 0 ) + timedelta( days = 1 )
+      kwargs[ 'tokenExpiration' ] = _tomorrow
+    
+    updateSQLQuery = self._updateElement( 'ElementStatus', kwargs ) 
     
     if not updateSQLQuery[ 'OK' ]:
       return updateSQLQuery 
@@ -2496,19 +2497,15 @@ class ResourceStatusClient:
     sqlDict[ 'tokenExpiration' ] = sqlQ[ 9 ]  
     
     sqlDict[ 'element' ] = kwargs[ 'element' ]
+       
+    res = self._insertElement( 'ElementHistory', sqlDict )
+    if not res[ 'OK' ]:
+      return res
     
-    # EHistory.DateEnd = EStatus.DateEffective
-    # This is vital for the views !!!!
-    #sqlQ[ 6 ] = args[ 5 ]   
-
-    #return self._insertElement( 'ElementHistory', element , *tuple( sqlQ ) )  
-    return self._insertElement( 'ElementHistory', **sqlDict )
+    return updateSQLQuery  
   
-  '''
-  ##############################################################################
-  # remove PRIVATE FUNCTIONS
-  ##############################################################################
-  '''
+################################################################################
+# remove PRIVATE FUNCTIONS
   
   def __removeElement( self, element, elementName ):
   
@@ -2517,21 +2514,18 @@ class ResourceStatusClient:
       
       rDict = { 'elementName' : elementName, 'element' : element }
       
-      sqlQuery = self._deleteElement( 'Element%s' % table, **rDict )
+      sqlQuery = self._deleteElement( 'Element%s' % table, rDict )
       if not sqlQuery[ 'OK' ]:
         return sqlQuery
     
     _elementName = '%sName' % ( element[0].lower() + element[1:])
     rDict = { _elementName : elementName }
-    sqlQuery = self._deleteElement( element, **rDict )
+    sqlQuery = self._deleteElement( element, rDict )
 
     return sqlQuery   
   
-  '''
-  ##############################################################################
-  # stats PRIVATE FUNCTIONS
-  ##############################################################################
-  '''          
+################################################################################
+# stats PRIVATE FUNCTIONS      
      
   def __getStats( self, sqlQuery ):
     
@@ -2548,122 +2542,40 @@ class ResourceStatusClient:
     count['Total'] = sum( count.values() )
     return S_OK( count ) 
 
-
 ################################################################################
+# Getter functions
 
-  '''
-  ##############################################################################
-  # Getter functions
-  ##############################################################################
-  '''
-
-  #def _insertElement( self, element, *args, **kwargs ):
-  def _insertElement( self, elementTable, **kwargs ):
-    
+  def _insertElement( self, elementTable, paramsDict ):
+    '''
+      Method that executes the insert method of the given element.
+    '''    
     fname = 'insert%s' % elementTable
-    f = getattr( self, fname )
-  # return f( *args, **kwargs )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
 
-  #def _updateElement( self, element, *args, **kwargs ):
-  def _updateElement( self, elementTable, **kwargs ):
-    
+  def _updateElement( self, elementTable, paramsDict ):
+    '''
+      Method that executes the update method of the given element.
+    '''        
     fname = 'update%s' % elementTable
-    f = getattr( self, fname )
-    return f( **kwargs )
-  # return f( *args, **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
 
-  #def _getElement( self, element, *args, **kwargs ):
-  def _getElement( self, elementTable, **kwargs ):
-    
+  def _getElement( self, elementTable, paramsDict ):
+    '''
+      Method that executes the get method of the given element.
+    '''
     fname = 'get%s' % elementTable
-    f = getattr( self, fname )
-    return f( **kwargs )
-  # return f( *args, **kwargs )
-
-  #def _deleteElement( self, element, *args, **kwargs ):
-  def _deleteElement( self, elementTable, **kwargs ): 
-    
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )
+  
+  def _deleteElement( self, elementTable, paramsDict ): 
+    '''
+      Method that executes the delete method of the given element.
+    '''        
     fname = 'delete%s' % elementTable
-    f = getattr( self, fname )
-    return f( **kwargs )
-  # return f( *args, **kwargs )      
-      
-#  def insert( self, *args, **kwargs ):
-#    '''
-#    This method calls the insert function in :class:`ResourceStatusDB`, either
-#    directly or remotely through the RPC Server :class:`ResourceStatusHandler`. 
-#    It does not add neither processing nor validation. If you need to know more 
-#    about this method, you must keep reading on the database documentation.     
-#
-#    :Parameters:
-#      **\*args** - `[,tuple]`
-#        arguments for the mysql query ( must match table columns ! ).
-#    
-#      **\*\*kwargs** - `[,dict]`
-#        metadata for the mysql query. It must contain, at least, `table` key
-#        with the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    return self.gate.insert( args, kwargs )
-#
-#  def update( self, *args, **kwargs ):
-#    '''
-#    This method calls the update function in :class:`ResourceStatusDB`, either
-#    directly or remotely through the RPC Server :class:`ResourceStatusHandler`. 
-#    It does not add neither processing nor validation. If you need to know more 
-#    about this method, you must keep reading on the database documentation.
-#      
-#    :Parameters:
-#      **\*args** - `[,tuple]`
-#        arguments for the mysql query ( must match table columns ! ).
-#    
-#      **\*\*kwargs** - `[,dict]`
-#        metadata for the mysql query. It must contain, at least, `table` key
-#        with the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    return self.gate.update( args, kwargs )
-#
-#  def get( self, *args, **kwargs ):
-#    '''
-#    This method calls the get function in :class:`ResourceStatusDB`, either
-#    directly or remotely through the RPC Server :class:`ResourceStatusHandler`. 
-#    It does not add neither processing nor validation. If you need to know more 
-#    about this method, you must keep reading on the database documentation.
-#      
-#    :Parameters:
-#      **\*args** - `[,tuple]`
-#        arguments for the mysql query ( must match table columns ! ).
-#    
-#      **\*\*kwargs** - `[,dict]`
-#        metadata for the mysql query. It must contain, at least, `table` key
-#        with the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    return self.gate.get( args, kwargs )
-#
-#  def delete( self, *args, **kwargs ):
-#    '''
-#    This method calls the delete function in :class:`ResourceStatusDB`, either
-#    directly or remotely through the RPC Server :class:`ResourceStatusHandler`. 
-#    It does not add neither processing nor validation. If you need to know more 
-#    about this method, you must keep reading on the database documentation.
-#      
-#    :Parameters:
-#      **\*args** - `[,tuple]`
-#        arguments for the mysql query ( must match table columns ! ).
-#    
-#      **\*\*kwargs** - `[,dict]`
-#        metadata for the mysql query. It must contain, at least, `table` key
-#        with the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    return self.gate.delete( args, kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **paramsDict )     
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

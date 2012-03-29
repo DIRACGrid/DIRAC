@@ -11,15 +11,6 @@ __RCSID__  = "$Id$"
 import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSException
-
-class RSSDBException(RSSException):
-  pass
-
-################################################################################
-
-class NotAllowedDate(RSSException):
-  pass
 
 ################################################################################
 

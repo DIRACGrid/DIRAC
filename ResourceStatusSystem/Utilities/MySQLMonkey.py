@@ -1,14 +1,18 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' MySQLMonkey
 
-from DIRAC import S_OK#, S_ERROR
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
+  Module that generates SQL statemens in the fly out of two dictionaries.
+
+'''
+
+import re
 
 from datetime import datetime
 
-import re
+from DIRAC                                           import S_OK
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
+
+__RCSID__  = '$Id: $'
 
 ################################################################################
 # MySQL Monkey
@@ -362,8 +366,13 @@ class MySQLStatements( object ):
   def __parseEvil( self, parsedArgs, parsedKwargs ):
 
     #First parameters, then meta
-
     if self.mSchema is None:
+  
+      for k,v in parsedArgs.items():
+        if not isinstance( v, list ):
+          v = [ v ]
+        parsedArgs[ k ] = self._checkVARCHAR( v )
+
       return parsedArgs, parsedKwargs
 
     #parsedMeta
@@ -379,24 +388,29 @@ class MySQLStatements( object ):
         raise RSSDBException( res[ 'Message' ] )
       return res[ 'Value' ]
 
-    def parseDict( d, dataType ):
+    def parseDict2( mm, table, d ):
 
       if d is None:
         return d
+      res = []
 
-      #k = self.dbWrapper.db._escapeValues( d.keys() )[ 'Value' ]
-      k = self._checkMultipleALPHA( d.keys() )
-      if dataType == 'DATETIME':
-        v = self._checkDATETIME( d.values() )
-      if dataType == 'STRING':
-        #v = self.dbWrapper.db._escapeValues( d.values() )[ 'Value' ]
-        v = self._checkMultipleALPHA( d.values() )
-
-      return dict(zip(k,v))
+      for k,v in d.items():
+      
+        k = self._checkALPHA( k )
+        # get type for check
+        dataType = getattr( table, k ).dataType.upper()
+        if not isinstance( v, list ):
+          v = [ v ]
+        v = getattr( self, '_check%s' % dataType )( v )
+        res.append( ( k,v ) ) 
+        
+      return dict( res )
 
     # table alreadyChecked
+    table = getattr( self.mSchema, parsedKwargs[ 'table' ] )
+    
     # sort
-    if parsedKwargs.has_key( 'sort') and parsedKwargs['sort'] is not None:
+    if parsedKwargs.has_key( 'sort' ) and parsedKwargs['sort'] is not None:
       parsedKwargs[ 'sort'  ] = self._checkMultipleALPHA( parsedKwargs[ 'sort'  ] )#parseMultiple( 'sort' )
     # order
     if parsedKwargs.has_key( 'order') and parsedKwargs[ 'order' ] is not None:
@@ -436,26 +450,18 @@ class MySQLStatements( object ):
 
     # minor ( datetime )
     if parsedKwargs.has_key( 'minor' ) and parsedKwargs[ 'minor' ] is not None:
-      parsedKwargs[ 'minor' ] = parseDict( parsedKwargs[ 'minor' ], 'DATETIME' )
+      parsedKwargs[ 'minor' ] = parseDict2( self, table, parsedKwargs[ 'minor' ] )
 
     # not ( string )
     if parsedKwargs.has_key( 'not' ) and parsedKwargs[ 'not' ] is not None:
-      parsedKwargs[ 'not' ] = parseDict( parsedKwargs[ 'not' ], 'STRING' )
-
-#    if not isinstance( parsedKwargs[ 'sort' ], list ):
-#      parsedKwargs[ 'sort' ] = [ parsedKwargs[ 'sort' ] ]
-#    res = self.dbWrapper.db._escapeValues( parsedKwargs[ 'sort' ] )
-#    if not res[ 'OK' ]:
-#      raise RSSDBException( res[ 'Message' ] )
-#    parsedKwargs[ 'sort' ] = res[ 'Value' ]
-
-    table = getattr( self.mSchema, parsedKwargs[ 'table' ] )
+      parsedKwargs[ 'not' ] = parseDict2( self, table, parsedKwargs[ 'not' ] )
 
     # parsedArgs
     for k,v in parsedArgs.items():
 
       self._checkALPHA( k )
       if v is None:
+        del parsedArgs[ k ]
         continue
 
       dataType = getattr( table, k ).dataType.upper()
@@ -463,8 +469,7 @@ class MySQLStatements( object ):
         v = [ v ]
 
       v = getattr( self, '_check%s' % dataType )( v )
-
-    #print parsedArgs, parsedKwargs
+      parsedArgs[ k ] = v
 
     return parsedArgs, parsedKwargs
 
@@ -493,12 +498,14 @@ class MySQLStatements( object ):
     for s in suspicious:
       if not isinstance( s, datetime ):
         raise RSSDBException( 'Non datetime value "%s"' % s )
-    return suspicious
+      
+    return [ '"%s"' % s.replace( microsecond = 0 ) for s in suspicious ]
 
   def _checkFLOAT(self, suspicious):
     for i in list(suspicious):
       if type(i) not in (int, float):
         raise RSSDBException( 'Non numeric value "%s"' % suspicious )
+    
     return suspicious
 
   _checkNUMERIC  = _checkFLOAT
@@ -552,7 +559,7 @@ class MySQLStatements( object ):
     req = 'INSERT INTO %s (' % table
     req += ','.join( '%s' % key for key in rDict.keys())
     req += ') VALUES ('
-    req += ','.join( '"%s"' % value for value in rDict.values())
+    req += ','.join( '%s' % value[ 0 ] for value in rDict.values())
     req += ')'
 
     return req
@@ -599,7 +606,8 @@ class MySQLStatements( object ):
     whereElements = self.__getWhereElements( rDict, **kwargs )
 
     req = 'UPDATE %s SET ' % table
-    req += ','.join( '%s="%s"' % (key,value) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] and value is not None ) )
+    #req += ','.join( '%s="%s"' % (key,value) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] and value is not None ) )
+    req += ','.join( '%s=%s' % (key,value[0]) for (key,value) in rDict.items() if ( key not in kwargs['uniqueKeys'] and value is not None ) )
     # This was a bug, but is quite handy.
     # Prevents users from updating the whole table in one go if on the client
     # they execute updateX() without arguments for the uniqueKeys values
@@ -637,7 +645,7 @@ class MySQLStatements( object ):
     count   = kwargs[ 'count' ]
 
     if columnsList is None:
-      columnsList = [ "*" ]
+      columnsList = [ '*' ]
 
     # Either True, or a string value
     if count == True:
@@ -670,27 +678,44 @@ class MySQLStatements( object ):
 
       elif isinstance( v, list ):
         if len(v) > 1:
-          items.append( '%s IN %s' % ( k, tuple( [ str(vv) for vv in v if vv is not None ] ) ) )
+          inStr = ','.join( [ str(vv) for vv in v if vv is not None ] )
+          items.append( '%s IN ( %s )' % ( k, inStr ) )
         elif len(v):
           if v[ 0 ] is not None:
-            items.append( '%s="%s"' % ( k, v[0] ) )
+            items.append( '%s=%s' % ( k, v[0] ) )
+            #items.append( '%s="%s"' % ( k, v[0] ) )
         else:
           items.append( '%s=""' % k )
           #raise NameError( rDict )
       else:
-        items.append( '%s="%s"' % ( k, v ) )
+        #items.append( '%s="%s"' % ( k, v ) )
+        items.append( '%s=%s' % ( k, v ) )
 
     if kwargs.has_key( 'minor' ) and kwargs[ 'minor' ] is not None:
 
       for k,v in kwargs[ 'minor' ].items():
-        if v is not None:
-          items.append( '%s < "%s"' % ( k, v ) )
+        if v is None:
+          continue
+        
+        if len( v ) != 1:
+          continue
+          #items.append( '%s < "%s"' % ( k, v ) )
+        items.append( '%s < %s' % ( k, v[ 0 ] ) )
 
     if kwargs.has_key( 'not' ) and kwargs[ 'not' ] is not None:
 
       for k,v in kwargs[ 'not' ].items():
-        if v is not None:
-          items.append( '%s != "%s"' % ( k, v ) )
+        if v is None:
+          continue  
+        
+        if len(v) > 1:   
+          inStr = ','.join( [ str(vv) for vv in v if vv is not None ] )  
+          items.append( '%s NOT IN ( %s )' % ( k, inStr ) )
+        elif len(v):
+          if v[ 0 ] is not None:
+            items.append( '%s != %s' % ( k, v[0] ) )
+        else:
+          items.append( '%s != %s' % ( k, v ) )
 
     if kwargs.has_key( 'or' ) and kwargs[ 'or' ] is not None:
 

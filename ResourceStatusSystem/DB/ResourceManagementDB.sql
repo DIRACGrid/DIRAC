@@ -9,8 +9,8 @@ CREATE DATABASE ResourceManagementDB;
 --
 -- Create user DIRAC
 USE mysql;
-GRANT ALL PRIVILEGES ON ResourceManagementDB.* TO 'Dirac'@'%'         IDENTIFIED BY 'must_be_set';
-GRANT ALL PRIVILEGES ON ResourceManagementDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ResourceManagementDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ResourceManagementDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 
 USE ResourceManagementDB;
 

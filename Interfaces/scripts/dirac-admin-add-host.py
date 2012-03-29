@@ -70,7 +70,7 @@ for prop in args:
     Script.gLogger.info( "Setting property %s to %s" % ( pName, pValue ) )
     hostProps[ pName ] = pValue
 
-if not diracAdmin.csModifyHost( hostName, hostProps, createIfNonExistant = True )['Value']:
+if not diracAdmin.csModifyHost( hostName, hostProps, createIfNonExistant = True )['OK']:
   errorList.append( ( "add host", "Cannot register host %s" % hostName ) )
   exitCode = 255
 else:
