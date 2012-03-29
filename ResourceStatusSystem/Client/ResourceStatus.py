@@ -221,7 +221,7 @@ class ResourceStatus( object ):
     
     return res
 
-  def __getMode():
+  def __getMode( self ):
     '''
       Get's flag defined ( or not ) on the RSSConfiguration. If defined as 1, 
       we use RSS, if not, we use CS.
