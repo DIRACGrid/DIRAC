@@ -1498,35 +1498,3 @@ class StrategyHandler( object ):
           sites.append( siteName[1] )
     return sites
 
-
-
-class FTSGraph( object ):
-
-  __graph = dict()
-  __nodes = list()
-
-  class SE( object ):
-    """ node """ 
-    
-    self.__nodes = dict() 
-
-    def __init__( self, name, files, size ):
-      self.name = name
-      self.files = files
-      self.size = size
-
-
-    def connect( self, toNode, edge ):
-      if toNode not in self.__edges:
-        self.__nodes[ toNode ] = edge 
-    
-
-  class Channel( object ):
-    """ edge """
-    def __init__( self, timeToStart ):
-      self.timeToStart = timeToStart 
-    
-  def connect( self, fromNode, toNode, channel ):
-    
-
-      
