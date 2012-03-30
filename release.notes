@@ -1,3 +1,8 @@
+[v6r2p8]
+
+*DMS:
+CHANGE: TransferAgent - fallback to task execution if replication tree is not found
+
 [v6r2p7]
 
 *WMS
