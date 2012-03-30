@@ -45,19 +45,19 @@ records = result[ 'Value' ][ 'Records' ]
 dataDict = {}
 now = Time.dateTime()
 for record in records:
-  expirationDate = record[ 2 ]
-  dt = expirationDate - now
+  expirationDate = record[ 3 ] 
+  dt = expirationDate - now 
   secsLeft = dt.days * 86400 + dt.seconds
   if secsLeft > params.proxyLifeTime:
-    userDN = record[ 0 ]
-    userGroup = record[ 1 ]
-    persistent = record[ 3 ]
-    retVal = CS.getUsernameForDN( userDN )
-    if retVal[ 'OK' ]:
-      userName = retVal[ 'Value' ]
-      if not userName in dataDict:
-        dataDict[ userName ] = []
-      dataDict[ userName ].append( ( userDN, userGroup, expirationDate, persistent ) )
+    userName = record[ 0 ] 
+    userDN = record[ 1 ] 
+    userGroup = record[ 2 ] 
+    persistent = record[ 4 ] 
+    if not userName in dataDict:
+      dataDict[ userName ] = []
+    dataDict[ userName ].append( ( userDN, userGroup, expirationDate, persistent ) ) 
+
+
 
 for userName in dataDict:
   print "* %s" % userName
