@@ -656,7 +656,7 @@ class TransferAgent( RequestAgentBase ):
 
 
   ###################################################################################
-  # FST scheduling 
+  # FTS scheduling 
   ###################################################################################
   def schedule( self, requestDict ):
     """ scheduling files for FTS
@@ -858,7 +858,7 @@ class TransferAgent( RequestAgentBase ):
       tree = tree["Value"]
       if not tree:
         self.log.error("scheduleFiles: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
-        continue
+        return S_ERROR("scheduleFiles: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
       else:
         self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
  
@@ -1348,7 +1348,8 @@ class StrategyHandler( object ):
     siteAncestor = {}              # Maintains the ancestor channel for a site
     primarySources = sourceSEs
 
-            
+    
+
     while destSEs:
       try:
         minTotalTimeToStart = float( "inf" )
@@ -1496,3 +1497,36 @@ class StrategyHandler( object ):
         if not siteName[1] in sites:
           sites.append( siteName[1] )
     return sites
+
+
+
+class FTSGraph( object ):
+
+  __graph = dict()
+  __nodes = list()
+
+  class SE( object ):
+    """ node """ 
+    
+    self.__nodes = dict() 
+
+    def __init__( self, name, files, size ):
+      self.name = name
+      self.files = files
+      self.size = size
+
+
+    def connect( self, toNode, edge ):
+      if toNode not in self.__edges:
+        self.__nodes[ toNode ] = edge 
+    
+
+  class Channel( object ):
+    """ edge """
+    def __init__( self, timeToStart ):
+      self.timeToStart = timeToStart 
+    
+  def connect( self, fromNode, toNode, channel ):
+    
+
+      
