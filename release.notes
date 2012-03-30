@@ -1,3 +1,31 @@
+[v6r2p7]
+
+*WMS
+BUGFIX: SiteDirector - wrong CS option use: BundleProxy -> HttpProxy
+FIX: SiteDirector - use short lines in compressed/encoded files in the executable
+     python script
+
+[v6r2p6]
+
+*DataManagement
+FIX: Bad logic in StrategyHandler:MinimiseTotalWait
+
+*Core
+CHANGE: updated GGUS web portal URL
+
+*RSS
+BUGFIX: meta key cannot be reused, it is popped from dictionary
+
+*Framework
+FIX: The Gateway service does not have a handler
+NEW: ConfingTemplate entry for Gateway
+FIX: distribution notes allow for word wrap
+
+*WorkloadManagement
+FIX: avoid unnecessary call if no LFN is left in one of the SEs
+FIX: When Uploading job outputs, try first Local SEs, if any
+
+
 [v6r2p5]
 
 *RSS
