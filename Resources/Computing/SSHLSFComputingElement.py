@@ -6,6 +6,8 @@
 
 """ LSF Computing Element with remote job submission via ssh/scp and using site
     shared area for the job proxy placement
+    
+    To get the proxy right, don't forget to add in the CS that for this kind of CE, the BundleProxy must be True (default False)
 """
 
 __RCSID__ = "$Id$"
@@ -46,12 +48,13 @@ class SSH:
 
     if expectFlag:
       ssh_newkey = 'Are you sure you want to continue connecting'
-      child = pexpect.spawn( command, timeout = timeout )
+      try:
+        child = pexpect.spawn( command, timeout = timeout )
 
-      i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
-      if i == 0: # Timeout        
-          return S_OK( ( -1, child.before, 'SSH login failed' ) )
-      elif i == 1: # SSH does not have the public key. Just accept it.
+        i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
+        if i == 0: # Timeout        
+            return S_OK( ( -1, child.before, 'SSH login failed' ) )
+        elif i == 1: # SSH does not have the public key. Just accept it.
           child.sendline ( 'yes' )
           child.expect ( 'password: ' )
           i = child.expect( [pexpect.TIMEOUT, 'password: '] )
@@ -61,16 +64,19 @@ class SSH:
             child.sendline( password )
             child.expect( pexpect.EOF )
             return S_OK( ( 0, child.before, '' ) )
-      elif i == 2:
-        # Passwordless login, get the output
-        return S_OK( ( 0, child.before, '' ) )
+        elif i == 2:
+          # Passwordless login, get the output
+          return S_OK( ( 0, child.before, '' ) )
 
-      if self.password:
-        child.sendline( self.password )
-        child.expect( pexpect.EOF )
-        return S_OK( ( 0, child.before, '' ) )
-      else:
-        return S_ERROR( ( -1, child.before, '' ) )
+        if self.password:
+          child.sendline( self.password )
+          child.expect( pexpect.EOF )
+          return S_OK( ( 0, child.before, '' ) )
+        else:
+          return S_ERROR( ( -1, child.before, '' ) )
+      except Exception,x:
+        res = (-1 ,'Encountered exception %s: %s'%(Exception,str(x)))
+        return S_ERROR(res) 
     else:
       # Try passwordless login
       result = shellCall( timeout, command )
@@ -217,9 +223,9 @@ shutil.rmtree( workingDirectory )
     # Copy the executable
     os.chmod( submitFile, stat.S_IRUSR | stat.S_IXUSR )
     sFile = os.path.basename( submitFile )
-    result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
+    result = ssh.scpCall( 100, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
     # submit submitFile to the batch system
-    cmd = "i=0; while [ $i -lt %(numberOfJobs)d ]; do bsub -o %(output)s -e %(error)s -q %(queue)s -J DIRACPilot %(submitOptions)s %(executable)s; let i=i+1; done; rm -f %(executable)s" % \
+    cmd = "i=0; while [ $i -lt %(numberOfJobs)d ]; do bsub -o %(output)s -e %(error)s -q %(queue)s -J DIRACPilot %(submitOptions)s %(executable)s; let i=i+1; done;" % \
       {'numberOfJobs': numberOfJobs, \
        'output': self.batchOutput, \
        'error': self.batchError, \
@@ -229,7 +235,7 @@ shutil.rmtree( workingDirectory )
 
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
 
-    result = ssh.sshCall( 10, cmd )
+    result = ssh.sshCall( 100, cmd )
 
     if not result['OK'] or result['Value'][0] != 0:
       self.log.warn( '===========> SSHLSF CE result NOT OK' )
@@ -238,7 +244,11 @@ shutil.rmtree( workingDirectory )
     else:
       self.log.debug( 'LSF CE result OK' )
 
-    batchIDList = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
+    batchIDList = []
+    lines = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
+    for line in lines:
+      batchIDList.append(line.split("<")[1].split(">")[0])
+      
 
     self.submittedJobs += 1
 
@@ -254,7 +264,7 @@ shutil.rmtree( workingDirectory )
 
     ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
     cmd = ["bjobs", "-q" , self.execQueue , "-a" ]
-    ret = ssh.sshCall( 10, cmd )
+    ret = ssh.sshCall( 100, cmd )
 
     if not ret['OK']:
       self.log.error( 'Timeout', ret['Message'] )
@@ -304,7 +314,7 @@ shutil.rmtree( workingDirectory )
           jobDict[jobNumber] = job
       
       cmd = [ 'bjobs', ' '.join( jobList ) ]
-      result = ssh.sshCall( 10, cmd )
+      result = ssh.sshCall( 100, cmd )
       if not result['OK']:
         return result
   
@@ -340,12 +350,12 @@ shutil.rmtree( workingDirectory )
       tempDir = localDir
 
     ssh = SSH( self.sshUser, self.sshHost, self.sshPassword )
-    result = ssh.scpCall( 20, '%s/%s.out' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchOutput, jobNumber ), upload = False )
+    result = ssh.scpCall( 200, '%s/%s.out' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchOutput, jobNumber ), upload = False )
     if not result['OK']:
       return result
     if not os.path.exists( '%s/%s.out' % ( tempDir, jobID ) ):
       os.system( 'touch %s/%s.out' % ( tempDir, jobID ) )
-    result = ssh.scpCall( 20, '%s/%s.err' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchError, jobNumber ), upload = False )
+    result = ssh.scpCall( 200, '%s/%s.err' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchError, jobNumber ), upload = False )
     if not result['OK']:
       return result
     if not os.path.exists( '%s/%s.err' % ( tempDir, jobID ) ):
@@ -353,7 +363,7 @@ shutil.rmtree( workingDirectory )
 
     # The result is OK, we can remove the output
     if self.removeOutput:
-      result = ssh.sshCall( 10, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
+      result = ssh.sshCall( 100, 'rm -f %s/*%s* %s/*%s*' % ( self.batchOutput, jobNumber, self.batchError, jobNumber ) )
 
     if localDir:
       return S_OK( ( '%s/%s.out' % ( tempDir, jobID ), '%s/%s.err' % ( tempDir, jobID ) ) )
