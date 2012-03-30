@@ -6,10 +6,11 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                   import Script
 
-read = True
+read  = True
 write = True
 check = True
-site = ''
+site  = ''
+mute  = False
 
 Script.setUsageMessage( """
 Ban one or more Storage Elements for usage
@@ -18,10 +19,11 @@ Usage:
    %s SE1 [SE2 ...]
 """ % Script.scriptName )
 
-Script.registerSwitch( "r" , "BanRead" , "      Ban only reading from the storage element" )
+Script.registerSwitch( "r" , "BanRead" , "     Ban only reading from the storage element" )
 Script.registerSwitch( "w" , "BanWrite", "     Ban writing to the storage element" )
-Script.registerSwitch( "k" , "BanCheck", "    Ban check access to the storage element" )
-Script.registerSwitch( "S:", "Site="   , "      Ban all SEs associate to site (note that if writing is allowed, check is always allowed)" )
+Script.registerSwitch( "k" , "BanCheck", "     Ban check access to the storage element" )
+Script.registerSwitch( "m" , "Mute"    , "     Do not send email" )
+Script.registerSwitch( "S:", "Site="   , "     Ban all SEs associate to site (note that if writing is allowed, check is always allowed)" )
 Script.parseCommandLine( ignoreErrors = True )
 
 ses = Script.getPositionalArgs()
@@ -35,6 +37,8 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "k" or switch[0].lower() == "bancheck":
     read = False
     write = False
+  if switch[0].lower() == "m" or switch[0].lower() == "mute":
+    mute = True    
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
@@ -153,8 +157,18 @@ if not ( writeBanned or readBanned or checkBanned ):
   gLogger.notice( "No storage elements were banned" )
   DIRAC.exit( -1 )
 
-subject = '%s storage elements banned for use' % len( ses )
-address = gConfig.getValue( '/Operations/EMail/Production', 'lhcb-grid@cern.ch' )
+if mute:
+  gLogger.notice( 'Email is muted by script switch' )
+  DIRAC.exit( 0 )
+
+subject     = '%s storage elements banned for use' % len( writeBanned + readBanned + checkBanned )
+addressPath = '/Operations/EMail/Production'
+address     = gConfig.getValue( addressPath )
+
+if not address:
+  gLogger.notice( 'Cannot get address at %' % addressPath )
+  DIRAC.exit( 0 )
+  
 body = ''
 if read:
   body = "%s\n\nThe following storage elements were banned for reading:" % body

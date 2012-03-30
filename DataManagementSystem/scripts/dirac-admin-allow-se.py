@@ -6,10 +6,11 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-read = True
+read  = True
 write = True
 check = True
-site = ''
+site  = ''
+mute  = False
 
 Script.setUsageMessage( """
 Enable using one or more Storage Elements
@@ -18,10 +19,12 @@ Usage:
    %s SE1 [SE2 ...]
 """ % Script.scriptName )
 
-Script.registerSwitch( "r" , "AllowRead" , "      Allow only reading from the storage element" )
+Script.registerSwitch( "r" , "AllowRead" , "     Allow only reading from the storage element" )
 Script.registerSwitch( "w" , "AllowWrite", "     Allow only writing to the storage element" )
 Script.registerSwitch( "k" , "AllowCheck", "     Allow only check access to the storage element" )
-Script.registerSwitch( "S:", "Site="     , "        Allow all SEs associated to site" )
+Script.registerSwitch( "m" , "Mute"      , "     Do not send email" )
+Script.registerSwitch( "S:", "Site="     , "     Allow all SEs associated to site" )
+
 Script.parseCommandLine( ignoreErrors = True )
 
 ses = Script.getPositionalArgs()
@@ -35,6 +38,8 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "k" or switch[0].lower() == "allowcheck":
     read = False
     write = False
+  if switch[0].lower() == "m" or switch[0].lower() == "mute":
+    mute = True
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
@@ -154,8 +159,18 @@ if not ( writeAllowed or readAllowed or checkAllowed ):
   gLogger.info( "No storage elements were allowed" )
   DIRAC.exit( -1 )
 
-subject = '%s storage elements allowed for use' % len( ses )
-address = gConfig.getValue( '/Operations/EMail/Production', 'lhcb-grid@cern.ch' )
+if mute:
+  gLogger.notice( 'Email is muted by script switch' )
+  DIRAC.exit( 0 )
+
+subject     = '%s storage elements allowed for use' % len( writeAllowed + readAllowed + checkAllowed )
+addressPath = '/Operations/EMail/Production'
+address     = gConfig.getValue( addressPath )
+
+if not address:
+  gLogger.notice( 'Cannot get address at %' % addressPath )
+  DIRAC.exit( 0 )
+
 body = ''
 if read:
   body = "%s\n\nThe following storage elements were allowed for reading:" % body
