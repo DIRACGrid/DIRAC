@@ -239,7 +239,6 @@ shutil.rmtree( workingDirectory )
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
 
     result = ssh.sshCall( 100, cmd )
-
     if not result['OK'] or result['Value'][0] != 0:
       self.log.warn( '===========> SSHLSF CE result NOT OK' )
       self.log.debug( result )
@@ -251,7 +250,6 @@ shutil.rmtree( workingDirectory )
     lines = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
     for line in lines:
       batchIDList.append(line.split("<")[1].split(">")[0])
-
     self.submittedJobs += 1
 
     return S_OK( batchIDList )
