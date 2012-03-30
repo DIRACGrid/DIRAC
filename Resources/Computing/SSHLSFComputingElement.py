@@ -239,6 +239,7 @@ shutil.rmtree( workingDirectory )
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
 
     result = ssh.sshCall( 100, cmd )
+
     if not result['OK'] or result['Value'][0] != 0:
       self.log.warn( '===========> SSHLSF CE result NOT OK' )
       self.log.debug( result )
