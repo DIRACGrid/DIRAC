@@ -853,7 +853,7 @@ class TransferAgent( RequestAgentBase ):
 
       if not tree["OK"]:
         self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] )
-        continue
+        raise StrategyHandlerChannelNotDefined( "FTS" )
       tree = tree["Value"]
       if not tree:
         self.log.error("scheduleFiles: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
@@ -964,6 +964,9 @@ class TransferAgent( RequestAgentBase ):
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
+        if re.search( "no such file or directory", str(failure).lower()):
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
       replicas = replicas["Value"]["Successful"]
 
     ## are there any replicas?
