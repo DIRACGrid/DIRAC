@@ -141,7 +141,7 @@ class InputDataByProtocol:
     requestedProtocol = self.configuration.get( 'Protocol', '' )
     for seName, lfnDict in seFilesDict.items():
       pfnList = lfnDict.values()
-      if not pnfList:
+      if not pfnList:
         continue
       result = self.rm.getStorageFileMetadata( pfnList, seName )
       if not result['OK']:
