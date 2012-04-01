@@ -30,7 +30,7 @@ class InputDataByProtocol:
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
-    self.rm = ReplicaManager()
+    self.replicaManager = ReplicaManager()
 
   #############################################################################
   def execute( self, dataToResolve = None ):
@@ -143,7 +143,7 @@ class InputDataByProtocol:
       pfnList = lfnDict.values()
       if not pfnList:
         continue
-      result = self.rm.getStorageFileMetadata( pfnList, seName )
+      result = self.replicaManager.getStorageFileMetadata( pfnList, seName )
       if not result['OK']:
         self.log.warn( result['Message'] )
         # If we can not get MetaData, most likely there is a problem with the SE
@@ -189,7 +189,9 @@ class InputDataByProtocol:
               failedReplicas.append( lfn )
               pfnList.remove( pfn )
 
-      result = self.rm.getStorageFileAccessUrl( pfnList, seName, protocol = requestedProtocol )
+      self.log.info( 'Preliminary checks OK, getting TURLS:\n', '\n'.join( pfnList ) )
+
+      result = self.replicaManager.getStorageFileAccessUrl( pfnList, seName, protocol = requestedProtocol )
       self.log.debug( result )
       if not result['OK']:
         self.log.warn( result['Message'] )
