@@ -66,6 +66,14 @@ class DirectoryMetadata:
 
     req = "DROP TABLE FC_Meta_%s" % pname
     result = self.db._update( req )
+    error = ''
+    if not result['OK']:
+      error = result["Message"]
+    req = "DELETE FROM FC_MetaFields WHERE MetaName='%s'" % pname
+    result = self.db._update( req )
+    if not result['OK']:
+      if error:
+        result["Message"] = error + "; " + result["Message"] 
     return result
 
   def getMetadataFields( self, credDict ):
