@@ -61,7 +61,7 @@ class CliParams:
     self.userDN = ""
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
-    self.gridVersion = '2010-11-20'
+    self.gridVersion = '2012-02-20'
     self.pilotReference = ''
     self.releaseVersion = ''
     self.releaseProject = ''
@@ -125,13 +125,13 @@ installScriptName = 'dirac-install.py'
 
 rootPath = os.getcwd()
 
-if os.environ.has_key('OSG_WN_TMP'):
-  os.chdir(os.environ['OSG_WN_TMP'])
+if os.environ.has_key( 'OSG_WN_TMP' ):
+  os.chdir( os.environ['OSG_WN_TMP'] )
   for path in ( pilotRootPath, rootPath ):
     installScript = os.path.join( path, installScriptName )
     if os.path.isfile( installScript ):
       try:
-        shutil.copy(installScript, os.path.join(os.environ['OSG_WN_TMP'],installScriptName))
+        shutil.copy( installScript, os.path.join( os.environ['OSG_WN_TMP'], installScriptName ) )
       except Exception, x:
         print sys.executable
         print sys.version
@@ -328,7 +328,7 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   if os.environ['GLITE_WMS_JOBID'] != 'N/A':
     cliParams.flavour = 'gLite'
     pilotRef = os.environ['GLITE_WMS_JOBID']
-    
+
 if os.environ.has_key( 'JOB_ID' ):
     cliParams.flavour = 'SSHGE'
     pilotRef = os.environ['JOB_ID']
