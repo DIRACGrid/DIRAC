@@ -1436,6 +1436,8 @@ class JobDB( DB ):
 
     priority = classAdJob.getAttributeInt( 'Priority' )
     systemConfig = classAdJob.getAttributeString( 'SystemConfig' )
+    if not systemConfig:
+      systemConfig = classAdJob.getAttributeString( 'Platform' )
     cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
 
     classAdReq.insertAttributeInt( 'UserPriority', priority )
@@ -1448,7 +1450,7 @@ class JobDB( DB ):
       result = gConfig.getOptionsDict( '/Resources/Computing/OSCompatibility' )
       if result['OK'] and result['Value']:
         platforms = result['Value']
-        lhcbPlatforms = []
+        lhcbPlatforms = [systemConfig]
         for platform in platforms:
           if systemConfig in [ x.strip() for x in platforms[platform].split( ',' ) ]:
             lhcbPlatforms.append( platform )
