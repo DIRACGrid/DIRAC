@@ -4,6 +4,18 @@
 NEW: DownloadInputData,InputDataByProtocol - check Files on Tape SEs are on Disk cache 
      before Download or getturl calls from Wrapper
 CHANGE: Matcher - add Stalled to "Running" Jobs when JobLimits are applied   
+CHANGE: JobDB - allow to specify required platform as Platform JDL parameter,
+        the specified platform is taken into account even without /Resources/Computing/OSCompatibility section
+
+*DMS
+CHANGE: dirac-admin-allow(ban)-se - removed lhcb-grid email account by default, 
+        and added switch to avoid sending email
+FIX: TaskAgents - fix for non-existing files
+FIX: change verbosity in failoverReplication 
+FIX: FileCatalog - remove properly metadata indices 
+
+*Core
+FIX: dirac-pilot - default lcg bindings version set to 2012-02-20
 
 [v6r2p8]
 
