@@ -154,7 +154,7 @@ class DownloadInputData:
       pfn = downloadReplicas[lfn]['PFN']
       seName = downloadReplicas[lfn]['SE']
       guid = downloadReplicas[lfn]['GUID']
-      result = self.rm.getStorageFileMetadata( [pfn], seName )
+      result = self.replicaManager.getStorageFileMetadata( [pfn], seName )
       if not result['OK']:
         self.log.error( result['Message'] )
         failedReplicas.append( lfn )
@@ -181,12 +181,18 @@ class DownloadInputData:
         failedReplicas.append( lfn )
         continue
 
+      self.log.info( 'Preliminary checks OK, download from LocalSE:', pfn )
       result = self.__getPFN( pfn, seName, guid )
       if not result['OK']:
-        self.log.warn( 'Download of file from localSE failed with message:\n%s' % ( result ) )
-        result = self.__getLFN( lfn, pfn, seName, guid )
-        if not result['OK']:
-          self.log.warn( 'Download of file from any SE failed with message:\n%s' % ( result ) )
+        self.log.warn( 'Download from localSE failed with message:\n%s' % ( result ) )
+        # if the replica was NOT on a Tape SE attempt a download from elsewhere
+        if seName not in tapeSEs:
+          self.log.info( 'Trying to download from any SE:', pfn )
+          result = self.__getLFN( lfn, pfn, seName, guid )
+          if not result['OK']:
+            self.log.warn( 'Download from any SE failed with message:\n%s' % ( result ) )
+            failedReplicas.append( lfn )
+        else:
           failedReplicas.append( lfn )
       else:
         localSECount += 1
