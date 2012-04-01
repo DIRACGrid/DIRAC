@@ -577,6 +577,8 @@ class RequestContainer:
 
   def isSubRequestDone( self, ind, type ):
     """ Check if the request contains more operations to be performed
+
+    TODO: file and type are keywords!!!!
     """
     if not self.subRequests.has_key( type ):
       return S_ERROR( "No requests of type specified found." )
@@ -591,8 +593,8 @@ class RequestContainer:
         if not file.has_key( 'Status' ):
           gLogger.error( "!!! The file has no status information !!!" )
           gLogger.error( "Ind:%s Type:%s" % ( ind, type ), self.toXML()['Value'] )
-        elif file['Status'] != 'Done':
-          gLogger.verbose( 'Found file in a non-Done state' )
+        elif file['Status'] not in ('Done', 'Failed'):
+          gLogger.verbose( 'Found file in a non-Done or non-Failed state' )
           return S_OK( 0 )
       datasets = self.getSubRequestDatasets( ind, type )['Value']
       for dataset in datasets:

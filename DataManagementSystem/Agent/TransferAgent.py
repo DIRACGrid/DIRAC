@@ -150,9 +150,9 @@ class TransferAgent( RequestAgentBase ):
   * time interval for throughput (FTS scheduling) in seconds
     ThroughputTimescale = 3600
   * for StrategyHandler
-     - acceptable time to start shift
+     - hop time 
       HopSigma = 0.0
-     - ???
+     - files/time or througput/time
       SchedulingType = File
      - list of active strategies
       ActiveStrategies = MinimiseTotalWait 
@@ -778,7 +778,6 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
-
     self.log.info( "scheduleFiles: *** FTS scheduling ***")
     self.log.info( "scheduleFiles: processing subrequest %s" % index )
     ## get source SE
@@ -854,7 +853,7 @@ class TransferAgent( RequestAgentBase ):
 
       if not tree["OK"]:
         self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] )
-        continue
+        raise StrategyHandlerChannelNotDefined( "FTS" )
       tree = tree["Value"]
       if not tree:
         self.log.error("scheduleFiles: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
@@ -965,6 +964,9 @@ class TransferAgent( RequestAgentBase ):
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
+        if re.search( "no such file or directory", str(failure).lower()):
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
       replicas = replicas["Value"]["Successful"]
 
     ## are there any replicas?
@@ -997,12 +999,11 @@ class TransferAgent( RequestAgentBase ):
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
     self.log.info( "registerFiles: found %s files" % len( subRequestFiles ) ) 
-
     for subRequestFile in subRequestFiles:
       status = subRequestFile["Status"]
       lfn = subRequestFile["LFN"]
       fileID = subRequestFile["FileID"]
-      self.log.info("registerFiles: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
+      self.log.debug("registerFiles: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
       if status in ( "Waiting", "Scheduled" ):
         ## get failed to register [ ( PFN, SE, ChannelID ), ... ] 
         toRegister = self.transferDB().getRegisterFailover( fileID )
@@ -1015,7 +1016,7 @@ class TransferAgent( RequestAgentBase ):
         ## loop and try to register
         toRegister = toRegister["Value"]
         for pfn, se, channelID in toRegister:
-          self.log.debug("registerFiles: failover registration of %s to %s" % ( lfn, se ) )
+          self.log.info("registerFiles: failover registration of %s to %s" % ( lfn, se ) )
           ## register replica now
           registerReplica = self.replicaManager().registerReplica( ( lfn, pfn, se ) )
           if ( ( not registerReplica["OK"] ) 
