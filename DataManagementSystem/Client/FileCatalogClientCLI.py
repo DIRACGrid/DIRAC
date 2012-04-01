@@ -1124,19 +1124,20 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_meta(self,args):
     """ Metadata related operations
     
-        usage:
-          meta index [-d|-f] <metaname> <metatype>  - add new metadata index. Possible types are:
-                                                      'int', 'float', 'string', 'date';
-                                                      -d  directory metadata
-                                                      -f  file metadata
+        |sage:
+          meta index [-d|-f|-r] <metaname> [<metatype>]  - add new metadata index. Possible types are:
+                                                           'int', 'float', 'string', 'date';
+                                                         -d  directory metadata
+                                                         -f  file metadata
+                                                         -r  remove the specified metadata index
           meta set <path> <metaname> <metavalue> - set metadata value for directory or file
           meta remove <path> <metaname>  - remove metadata value for directory or file
           meta get [-e] [<path>] - get metadata for the given directory or file
           meta tags <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
                                                         the metadata selection
           meta show - show all defined metadata indice
-
-    """     
+    
+    """    
     argss = args.split()
     option = argss[0]
     del argss[0]
@@ -1340,23 +1341,33 @@ File Catalog Client $Revision: 1.17 $Date:
   def registerMeta(self,argss):
     """ Add metadata field. 
     """
- 
+
     if len(argss) < 2:
       print "Unsufficient number of arguments"
       return
-    
+
     fdType = '-d'
+    removeFlag = False
     if argss[0].lower() in ['-d','-f']:
       fdType = argss[0]
-      del argss[0] 
-      
-    if len(argss) < 2:
+      del argss[0]
+    if argss[0].lower() == '-r':
+      removeFlag = True
+      del argss[0]
+
+    if len(argss) < 2 and not removeFlag:
       print "Unsufficient number of arguments"
-      return  
-    
-    mname = argss[0] 
+      return
+
+    mname = argss[0]
+    if removeFlag:
+      result = self.fc.deleteMetadataField(mname)
+      if not result['OK']:
+        print "Error:", result['Message']
+      return
+
     mtype = argss[1]
-    
+
     if mtype.lower()[:3] == 'int':
       rtype = 'INT'
     elif mtype.lower()[:7] == 'varchar':
@@ -1364,20 +1375,20 @@ File Catalog Client $Revision: 1.17 $Date:
     elif mtype.lower() == 'string':
       rtype = 'VARCHAR(128)'
     elif mtype.lower() == 'float':
-      rtype = 'FLOAT'  
+      rtype = 'FLOAT'
     elif mtype.lower() == 'date':
       rtype = 'DATETIME'
     elif mtype.lower() == 'metaset':
-      rtype = 'MetaSet'  
+      rtype = 'MetaSet'
     else:
       print "Error: illegal metadata type %s" % mtype
-      return  
-        
+      return
+
     result =  self.fc.addMetadataField(mname,rtype,fdType)
     if not result['OK']:
       print ("Error: %s" % result['Message'])
     else:
-      print "Added metadata field %s of type %s" % (mname,mtype)        
+      print "Added metadata field %s of type %s" % (mname,mtype)   
  
   def registerMetaset(self,argss):
     """ Add metadata set
