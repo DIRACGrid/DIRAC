@@ -851,15 +851,11 @@ class TransferAgent( RequestAgentBase ):
                                                               waitingFileSize, 
                                                               strategy )
 
-      if not tree["OK"]:
-        self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] )
+      if not tree["OK"] or not tree["Value"]:
+        self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] if "Message" in tree else "replication tree is empty")
         raise StrategyHandlerChannelNotDefined( "FTS" )
       tree = tree["Value"]
-      if not tree:
-        self.log.error("scheduleFiles: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
-        return S_ERROR("scheduleFiles: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
-      else:
-        self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
+      self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
  
       ## sorting keys by hopAncestor
       sortedKeys = self.ancestorSortKeys( tree, "hopAncestor" )
