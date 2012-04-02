@@ -449,10 +449,10 @@ class FileManagerBase:
           failed[inputIDDict[id]] = "Failed to find %s" % relation    
         else:
           if result['Value']['Successful']:
-            resDict = {}                
+            resDict = {}
             for aID in result['Value']['Successful']:        
               resDict[ result['Value']['Successful'][aID] ] = relDict[id][aID]         
-          successful[inputIDDict[id]] = resDict
+            successful[inputIDDict[id]] = resDict
           for aID in result['Value']['Failed']:
             failed[inputIDDict[id]] = "Failed to get the ancestor LFN"             
       else:

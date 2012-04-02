@@ -13,6 +13,9 @@ CHANGE: dirac-admin-allow(ban)-se - removed lhcb-grid email account by default,
 FIX: TaskAgents - fix for non-existing files
 FIX: change verbosity in failoverReplication 
 FIX: FileCatalog - remove properly metadata indices 
+BUGFIX: FileManagerBase - bugfix in the descendants evaluation logic  
+FIX: TransferAgent and TransferTask - update Files.Status to Failed when ReplicaManager.replicateAndRegister 
+     will fail completely; when no replica is available at all.
 
 *Core
 FIX: dirac-pilot - default lcg bindings version set to 2012-02-20
