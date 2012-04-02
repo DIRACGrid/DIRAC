@@ -253,7 +253,7 @@ class RequestAgentBase( AgentModule ):
       return res
     elif not res["Value"]:
       msg = "Request of type '%s' not found in RequestClient." % requestType
-      gLogger.info( msg )
+      gLogger.debug( msg )
       return S_OK()
     ## store values
     requestDict["requestName"] = res["Value"]["RequestName"]
