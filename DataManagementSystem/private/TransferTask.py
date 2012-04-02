@@ -290,8 +290,8 @@ class TransferTask( RequestTask ):
         self.info("replicateAndRegister: file has been %s successfully processed at all targetSEs" % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
       else:
-        self.error("replicateAndRegister: replication of %s failed" % lfn )
-        requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+        self.error("replicateAndRegister: replication of %s failed: %s" % ( lfn, failed[lfn] ) )
+        #requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
    
     if requestObj.isSubRequestDone( index, "transfer" )["Value"]:
       self.info("replicateAndRegister: all files processed, will set subrequest status to 'Done'")
