@@ -65,6 +65,8 @@ class LcgFileCatalogClient( FileCatalogueBase ):
       os.environ['LFC_CONRETRYINT'] = '5'
     if not 'LFC_CONNTIMEOUT' in os.environ:
       os.environ['LFC_CONNTIMEOUT'] = '5'
+    if not 'LFC_CONRETRY' in os.environ:
+      os.environ['LFC_CONRETRY'] = '5'
 
     self.prefix = '/grid'
     self.session = False
@@ -1110,10 +1112,10 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     """ Executes the requested functionality with the supplied path
     """
     fcn = None
-    if hasattr( self, method ) and callable( getattr(self, method) ):
+    if hasattr( self, method ) and callable( getattr( self, method ) ):
       fcn = getattr( self, method )
     if not fcn:
-      return S_ERROR("Unable to invoke %s, it isn't a member function of LcgFileCatalogClient" % method )
+      return S_ERROR( "Unable to invoke %s, it isn't a member function of LcgFileCatalogClient" % method )
     res = fcn( path )
     if type( path ) == types.DictType:
       path = path.keys()[0]
