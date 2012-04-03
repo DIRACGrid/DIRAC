@@ -1,3 +1,61 @@
+[v6r2p9]
+
+*Core
+FIX: dirac-configure - make use of getSEsForSite() method to determine LocalSEs
+
+*WMS
+NEW: DownloadInputData,InputDataByProtocol - check Files on Tape SEs are on Disk cache 
+     before Download or getturl calls from Wrapper
+CHANGE: Matcher - add Stalled to "Running" Jobs when JobLimits are applied   
+CHANGE: JobDB - allow to specify required platform as Platform JDL parameter,
+        the specified platform is taken into account even without /Resources/Computing/OSCompatibility section
+
+*DMS
+CHANGE: dirac-admin-allow(ban)-se - removed lhcb-grid email account by default, 
+        and added switch to avoid sending email
+FIX: TaskAgents - fix for non-existing files
+FIX: change verbosity in failoverReplication 
+FIX: FileCatalog - remove properly metadata indices 
+BUGFIX: FileManagerBase - bugfix in the descendants evaluation logic  
+FIX: TransferAgent and TransferTask - update Files.Status to Failed when ReplicaManager.replicateAndRegister 
+     will fail completely; when no replica is available at all.
+
+*Core
+FIX: dirac-pilot - default lcg bindings version set to 2012-02-20
+
+[v6r2p8]
+
+*DMS:
+CHANGE: TransferAgent - fallback to task execution if replication tree is not found
+
+[v6r2p7]
+
+*WMS
+BUGFIX: SiteDirector - wrong CS option use: BundleProxy -> HttpProxy
+FIX: SiteDirector - use short lines in compressed/encoded files in the executable
+     python script
+
+[v6r2p6]
+
+*DataManagement
+FIX: Bad logic in StrategyHandler:MinimiseTotalWait
+
+*Core
+CHANGE: updated GGUS web portal URL
+
+*RSS
+BUGFIX: meta key cannot be reused, it is popped from dictionary
+
+*Framework
+FIX: The Gateway service does not have a handler
+NEW: ConfingTemplate entry for Gateway
+FIX: distribution notes allow for word wrap
+
+*WorkloadManagement
+FIX: avoid unnecessary call if no LFN is left in one of the SEs
+FIX: When Uploading job outputs, try first Local SEs, if any
+
+
 [v6r2p5]
 
 *RSS

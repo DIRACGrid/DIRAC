@@ -150,9 +150,9 @@ class TransferAgent( RequestAgentBase ):
   * time interval for throughput (FTS scheduling) in seconds
     ThroughputTimescale = 3600
   * for StrategyHandler
-     - acceptable time to start shift
+     - hop time 
       HopSigma = 0.0
-     - ???
+     - files/time or througput/time
       SchedulingType = File
      - list of active strategies
       ActiveStrategies = MinimiseTotalWait 
@@ -656,7 +656,7 @@ class TransferAgent( RequestAgentBase ):
 
 
   ###################################################################################
-  # FST scheduling 
+  # FTS scheduling 
   ###################################################################################
   def schedule( self, requestDict ):
     """ scheduling files for FTS
@@ -778,11 +778,10 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
-
     self.log.info( "scheduleFiles: *** FTS scheduling ***")
     self.log.info( "scheduleFiles: processing subrequest %s" % index )
     ## get source SE
-    sourceSE = subAttrs["SourceSE"]
+    sourceSE = subAttrs["SourceSE"] if subAttrs["SourceSE"] not in ( None, "None", "" ) else None
     ## get target SEs, no matter what's a type we need a list
     targetSEs = [ targetSE.strip() for targetSE in subAttrs["TargetSE"].split(",") if targetSE.strip() ]
     ## get replication strategy
@@ -790,7 +789,6 @@ class TransferAgent( RequestAgentBase ):
     strategy = { False : None, 
                  True: operation }[ operation in self.strategyHandler().getSupportedStrategies() ]
 
-    
     ## get subrequest files
     subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
     if not subRequestFiles["OK"]:
@@ -853,15 +851,11 @@ class TransferAgent( RequestAgentBase ):
                                                               waitingFileSize, 
                                                               strategy )
 
-      if not tree["OK"]:
-        self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] )
-        continue
+      if not tree["OK"] or not tree["Value"]:
+        self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] if "Message" in tree else "replication tree is empty")
+        raise StrategyHandlerChannelNotDefined( "FTS" )
       tree = tree["Value"]
-      if not tree:
-        self.log.error("scheduleFiles: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
-        continue
-      else:
-        self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
+      self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
  
       ## sorting keys by hopAncestor
       sortedKeys = self.ancestorSortKeys( tree, "hopAncestor" )
@@ -966,6 +960,9 @@ class TransferAgent( RequestAgentBase ):
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
+        if re.search( "no such file or directory", str(failure).lower()):
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
       replicas = replicas["Value"]["Successful"]
 
     ## are there any replicas?
@@ -998,12 +995,11 @@ class TransferAgent( RequestAgentBase ):
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
     self.log.info( "registerFiles: found %s files" % len( subRequestFiles ) ) 
-
     for subRequestFile in subRequestFiles:
       status = subRequestFile["Status"]
       lfn = subRequestFile["LFN"]
       fileID = subRequestFile["FileID"]
-      self.log.info("registerFiles: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
+      self.log.debug("registerFiles: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
       if status in ( "Waiting", "Scheduled" ):
         ## get failed to register [ ( PFN, SE, ChannelID ), ... ] 
         toRegister = self.transferDB().getRegisterFailover( fileID )
@@ -1016,7 +1012,7 @@ class TransferAgent( RequestAgentBase ):
         ## loop and try to register
         toRegister = toRegister["Value"]
         for pfn, se, channelID in toRegister:
-          self.log.debug("registerFiles: failover registration of %s to %s" % ( lfn, se ) )
+          self.log.info("registerFiles: failover registration of %s to %s" % ( lfn, se ) )
           ## register replica now
           registerReplica = self.replicaManager().registerReplica( ( lfn, pfn, se ) )
           if ( ( not registerReplica["OK"] ) 
@@ -1349,7 +1345,9 @@ class StrategyHandler( object ):
     siteAncestor = {}              # Maintains the ancestor channel for a site
     primarySources = sourceSEs
 
-    while len( destSEs ) > 0:
+    
+
+    while destSEs:
       try:
         minTotalTimeToStart = float( "inf" )
         candidateChannels = []
@@ -1363,9 +1361,8 @@ class StrategyHandler( object ):
                 channelName = "%s-%s" % ( sourceSite, destSite )
 
                 if channelName not in channelInfo:
-                  self.log.error( "minimiseTotalWait: bailing out! channel '%s' not defined" % channelName )
-                  raise StrategyHandlerChannelNotDefined( channelName )
-
+                  continue
+                
                 channelID = channelInfo[channelName]["ChannelID"]
                 # If this channel is already used, look for another sourceSE
                 if channelID in tree:
@@ -1497,3 +1494,4 @@ class StrategyHandler( object ):
         if not siteName[1] in sites:
           sites.append( siteName[1] )
     return sites
+

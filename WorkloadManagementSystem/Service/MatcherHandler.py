@@ -339,7 +339,7 @@ class MatcherHandler( RequestHandler ):
       if attName not in gJobDB.jobAttributeNames:
         gLogger.error( "Attribute %s does not exist. Check the job limits" % attName )
         continue
-      result = gJobDB.getCounters( 'Jobs', [ attName ], { 'Site' : siteName, 'Status' : [ 'Running', 'Matched' ] } )
+      result = gJobDB.getCounters( 'Jobs', [ attName ], { 'Site' : siteName, 'Status' : [ 'Running', 'Matched', 'Stalled' ] } )
       if not result[ 'OK' ]:
         return result
       data = result[ 'Value' ]

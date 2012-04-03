@@ -169,6 +169,7 @@ class DTCached_Command(Command):
         dt_ID_startingSoon     = res[0]
         clientDict[ 'value' ]  = 'StartDate'
         clientDict[ 'opt_ID' ] = dt_ID_startingSoon 
+        clientDict[ 'meta' ]   = { 'columns' : 'Result' }  
         
         startSTR_startingSoon = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
         if startSTR_startingSoon:
@@ -176,6 +177,7 @@ class DTCached_Command(Command):
                  
         clientDict[ 'value' ]  = 'EndDate'
         clientDict[ 'opt_ID' ] = dt_ID_startingSoon
+        clientDict[ 'meta' ]   = { 'columns' : 'Result' }
         endSTR_startingSoon = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]            
         if endSTR_startingSoon:
           endSTR_startingSoon = endSTR_startingSoon[0][0]
@@ -196,12 +198,14 @@ class DTCached_Command(Command):
             #looking for an ongoing one
             clientDict[ 'value' ]  = 'StartDate'
             clientDict[ 'opt_ID' ] = dt_ID 
+            clientDict[ 'meta' ]   = { 'columns' : 'Result' }
             startSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
             if startSTR:
               startSTR = startSTR[0][0]
          
             clientDict[ 'value' ]  = 'EndDate'
             clientDict[ 'opt_ID' ] = dt_ID 
+            clientDict[ 'meta' ]   = { 'columns' : 'Result' }
             endSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
             if endSTR:
               endSTR = endSTR[0][0]
@@ -227,12 +231,14 @@ class DTCached_Command(Command):
       DT_dict_result = {}
       clientDict[ 'value' ]  = 'StartDate'
       clientDict[ 'opt_ID' ] = DT_ID 
+      clientDict[ 'meta' ]   = { 'columns' : 'Result' }
       startSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if startSTR:
         startSTR = startSTR[0][0]
     
       clientDict[ 'value' ]  = 'EndDate'
       clientDict[ 'opt_ID' ] = DT_ID 
+      clientDict[ 'meta' ]   = { 'columns' : 'Result' }
       endSTR = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if endSTR:
         endSTR = endSTR[0][0]
@@ -245,6 +251,7 @@ class DTCached_Command(Command):
       
       clientDict[ 'value' ]  = 'Severity'
       clientDict[ 'opt_ID' ] = DT_ID 
+      clientDict[ 'meta' ]   = { 'columns' : 'Result' }
     
       DT_dict_result['DT'] = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )[ 'Value' ]
       if DT_dict_result['DT']:
