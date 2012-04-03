@@ -71,7 +71,7 @@ class CatalogBase:
     elif type( lfn ) == DictType:
       singleLfn = lfn.keys()[0] 
     ## call only for single lfn
-    res = self._callFileCatalogFcn( singleLfn, method, argsDict, catalogs = catalogs )
+    res = self._callFileCatalogFcn( lfn, method, argsDict, catalogs = catalogs )
     if not res["OK"]:
       return res
     elif singleLfn in res["Value"]["Failed"]:
