@@ -96,7 +96,7 @@ class RegistrationTask( RequestTask ):
         
         if not res["OK"] or lfn in res["Value"]["Failed"]:
           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationAgent" )
-          reason = res["Message"] if not res["OK"] else "registration in ReplicaManager failed"
+          reason = res["Message"] if not res["OK"] else res["Value"]["Failed"][lfn] # "registration in ReplicaManager failed"
           errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
           failed[lfn][targetSE] = reason
           self.warn( "registerFile: %s" % errorStr )

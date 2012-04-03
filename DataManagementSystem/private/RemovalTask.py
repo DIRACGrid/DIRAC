@@ -157,7 +157,7 @@ class RemovalTask( RequestTask ):
           self.error("removeFile: unable to change status to 'Done' for %s" % lfn )
       else:
         filesFailed += 1
-        self.error("removeFile: unable to remove file %s : %s" % ( lfn, error ) )
+        self.warn("removeFile: unable to remove file %s : %s" % ( lfn, error ) )
         subRequestError.append( "%s:%s" % (lfn, error) )
         fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", error[:255] )
         if not fileError["OK"]:
@@ -258,7 +258,7 @@ class RemovalTask( RequestTask ):
         continue
 
       for targetSE, error in failed:
-        self.error("replicaRemoval: failed to remove %s from %s: %s" % ( lfn, targetSE, error ) )
+        self.warn("replicaRemoval: failed to remove %s from %s: %s" % ( lfn, targetSE, error ) )
 
       fileError = ";".join( ["%s:%s" % error for error in failed ] )[:255]
       subRequestError.append( fileError )
@@ -278,7 +278,6 @@ class RemovalTask( RequestTask ):
       subRequestError = ";".join( subRequestError )[:255] 
       subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
 
-
     ## return requestObj at least
     return S_OK( requestObj )
 
@@ -296,6 +295,7 @@ class RemovalTask( RequestTask ):
       self.info("reTransfer: subrequest %s is empty, setting its status to 'Done'" % index )
       requestObj.setSubRequestStatus( index, "removal", "Done" )
       return S_OK( requestObj )
+    subRequestError = []
 
     targetSEs = list( set( [ targetSE.strip() for targetSE in subRequestAttrs["TargetSE"].split(",") 
                              if targetSE.strip() ] ) )
@@ -317,9 +317,11 @@ class RemovalTask( RequestTask ):
             reason = reTransfer["Value"]["Failed"][pfn]
             self.error( "reTransfer: failed to set retransfer request for %s at %s: %s" % ( pfn, targetSE, reason ) )
             failed[lfn][targetSE] = reason
+            subRequestError.append("%s:%s:%s" % ( lfn, targetSE, reason ) )
         else:
           self.error( "reTransfer: completely failed to retransfer: %s" % reTransfer["Message"] )
           failed[lfn][targetSE] = reTransfer["Message"]
+          subRequestError.append("%s:%s:%s" % (lfn, targetSE, reTransfer["Message"] ) )
       if not failed[lfn]:
         self.info("reTransfer: file %s sucessfully processed at all targetSEs" % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
@@ -328,7 +330,8 @@ class RemovalTask( RequestTask ):
     if requestObj.isSubRequestDone( index, "removal" )["Value"]:
       self.info("reTransfer: all files processed, setting subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "removal", "Done" )
-
+    else:
+      subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", ";".join( subRequestError )[:255] )
     return S_OK( requestObj )
   
   def physicalRemoval( self, index, requestObj, subRequestAttrs, subRequestFiles ):
