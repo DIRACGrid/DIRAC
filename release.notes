@@ -1,5 +1,8 @@
 [v6r2p9]
 
+*Core
+FIX: dirac-configure - make use of getSEsForSite() method to determine LocalSEs
+
 *WMS
 NEW: DownloadInputData,InputDataByProtocol - check Files on Tape SEs are on Disk cache 
      before Download or getturl calls from Wrapper
