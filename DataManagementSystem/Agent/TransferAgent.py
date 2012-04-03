@@ -643,7 +643,8 @@ class TransferAgent( RequestAgentBase ):
                                                          kwargs = requestDict,
                                                          taskID = taskID,
                                                          blocking = True,
-                                                         usePoolCallbacks = True )
+                                                         usePoolCallbacks = True,
+                                                         timeOut = 900 )
         if not enqueue["OK"]:
           self.log.error( enqueue["Message"] )
         else:

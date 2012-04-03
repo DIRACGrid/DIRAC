@@ -146,7 +146,7 @@ class RemovalTask( RequestTask ):
     ## counters 
     filesRemoved = 0
     filesFailed = 0
-
+    subRequestError = []
     ## update File statuses and errors
     for lfn, error in removalStatus.items():
       if not error:
@@ -158,6 +158,7 @@ class RemovalTask( RequestTask ):
       else:
         filesFailed += 1
         self.error("removeFile: unable to remove file %s : %s" % ( lfn, error ) )
+        subRequestError.append( "%s:%s" % (lfn, error) )
         fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", error[:255] )
         if not fileError["OK"]:
           self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
@@ -171,7 +172,7 @@ class RemovalTask( RequestTask ):
       requestObj.setSubRequestStatus( index, "removal", "Done" )
     elif filesFailed:
       self.info("removeFile: all files processed, %s files failed to remove" % filesFailed )
-
+      subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError[:255] )
     return S_OK( requestObj )
 
   def replicaRemoval( self, index, requestObj, subRequestAttrs, subRequestFiles ):
@@ -239,6 +240,7 @@ class RemovalTask( RequestTask ):
 
     replicasRemoved = 0
     replicasFailed = 0
+    subRequestError = []
     ## loop over statuses and errors
     for lfn, pTargetSEs in removalStatus.items():
 
@@ -259,6 +261,7 @@ class RemovalTask( RequestTask ):
         self.error("replicaRemoval: failed to remove %s from %s: %s" % ( lfn, targetSE, error ) )
 
       fileError = ";".join( ["%s:%s" % error for error in failed ] )[:255]
+      subRequestError.append( fileError )
       fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", fileError )
       if not fileError["OK"]:
         self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
@@ -272,6 +275,9 @@ class RemovalTask( RequestTask ):
       requestObj.setSubRequestStatus( index, "removal", "Done" )
     elif replicasFailed:
       self.info("replicaRemoval: all files processed, failed to remove %s replicas" % replicasFailed )
+      subRequestError = ";".join( subRequestError )[:255] 
+      subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
+
 
     ## return requestObj at least
     return S_OK( requestObj )
@@ -368,7 +374,7 @@ class RemovalTask( RequestTask ):
           failed[pfn][targetSE] = "Completely"
     failedPFNs = failed.keys()
     pfnsOK = [ pfn for pfn in pfns if pfn not in failedPFNs ]
-    self.addMark( 'PhysicalRemovalDone', len( pfnsOK ) )
+    self.addMark( "PhysicalRemovalDone", len( pfnsOK ) )
     for pfn in pfnsOK:
       self.info("physicalRemoval: succesfully removed %s from %s" % ( pfn, str(targetSEs) ) )
       res = requestObj.setSubRequestFileAttributeValue( index, "removal", pfnToLfn[pfn], "Status", "Done" )
@@ -376,7 +382,7 @@ class RemovalTask( RequestTask ):
         self.error("physicalRemoval: error setting status to 'Done' for %s" % pfnToLfn[pfn])
 
     if failed:
-      self.addMark( 'PhysicalRemovalFail', len( failedPFNs ) )
+      self.addMark( "PhysicalRemovalFail", len( failedPFNs ) )
       for pfn in failed:
         for targetSE in failed[pfn]:
           if type( failed[pfn][targetSE] ) in StringTypes:
@@ -388,7 +394,7 @@ class RemovalTask( RequestTask ):
 
     if errors:
       for targetSE in errors:
-        self.error("physicalRemoval: completely failed to remove files at %s" % targetSE )
+        self.warn("physicalRemoval: completely failed to remove files at %s" % targetSE )
 
     ## subrequest empty or all Files done?
     if requestObj.isSubRequestDone( index, "removal" )["Value"]:
