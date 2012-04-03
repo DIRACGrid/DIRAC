@@ -102,13 +102,6 @@ class ResourceStatus( object ):
                     'meta'        : meta 
                   }
   
-#    statuses = self.rssClient.getValidStatusTypes()
-#  
-#    if statuses[ 'OK' ]:
-#      statuses = statuses[ 'Value' ][ 'StorageElement' ][ 'StatusType' ]
-#    else:
-#      statuses = []  
-  
     #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
     res = self.rssClient.getElementStatus( 'StorageElement', **kwargs )
     if res[ 'OK' ] and res['Value']:
@@ -133,8 +126,6 @@ class ResourceStatus( object ):
     '''
     Gets from the CS the StorageElements status
     '''
-  
-    csAPI = CSAPI()
   
     cs_path     = "/Resources/StorageElements"
   
