@@ -1,3 +1,25 @@
+[v6r3]
+
+*Core
+NEW: Added protections due to the process pool usage in the locking logic
+
+*Resources
+FIX: LcgFileCatalogClient - reduce the number of retries: LFC_CONRETRY = 5 to 
+     avoid combined catalog to be stuck on a faulty LFC server
+     
+*RSS
+BUGFIX: ResourceStatus - reworked helper to keep DB connections     
+
+*DMS
+BUGFIX: ReplicaManager::CatalogBase::_callFileCatalogFcnSingleFile() - wrong argument
+
+*RequestManagement
+FIX: TaskAgents - set timeOut for task to 10 min (15 min)
+NEW: TaskAgents - fill in Error fields in case of failing operations
+
+*Interfaces
+BUGFIX: dirac-wms-select-jobs - wrong use of the Dirac API
+
 [v6r2p9]
 
 *Core
