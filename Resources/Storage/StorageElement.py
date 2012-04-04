@@ -22,13 +22,13 @@ import re, types
 
 class StorageElement:
 
-  def __init__( self, name, protocols = None, overwride = False ):
+  def __init__( self, name, protocols = None, overwride = False, resourceStatus = None ):
     self.overwride = overwride
     self.valid = True
     if protocols == None:
-      res = StorageFactory().getStorages( name, protocolList = [] )
+      res = StorageFactory( resourceStatus = resourceStatus ).getStorages( name, protocolList = [] )
     else:
-      res = StorageFactory().getStorages( name, protocolList = protocols )
+      res = StorageFactory( resourceStatus = resourceStatus ).getStorages( name, protocolList = protocols )
     if not res['OK']:
       self.valid = False
       self.name = name
