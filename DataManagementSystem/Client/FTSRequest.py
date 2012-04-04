@@ -699,6 +699,7 @@ class FTSRequest:
   #
 
   def finalize( self ):
+    self.__updateMetadataCache()
     transEndTime = dateTime()
     regStartTime = time.time()
     res = self.getTransferStatistics()
