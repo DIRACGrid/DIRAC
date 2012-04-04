@@ -241,8 +241,6 @@ class TransferAgent( RequestAgentBase ):
       self.log.error("TransferAgent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
       raise TransferAgentError("TransferAgent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
 
-    self.resourceStatus = ResourceStatus()
-
     self.log.info("%s has been constructed" % agentName )
 
   ###################################################################################
@@ -1089,6 +1087,8 @@ class StrategyHandler( object ):
                                 re.compile("DynamicThroughput") : self.__dynamicThroughput,
                                 re.compile("Simple") : self.__simple, 
                                 re.compile("Swarm") : self.__swarm }
+
+    self.resourceStatus = ResourceStatus()
 
     self.log.debug( "strategyDispatcher entries:" )
     for key, value in self.strategyDispatcher.items():
