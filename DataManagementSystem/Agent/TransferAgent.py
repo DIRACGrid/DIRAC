@@ -41,7 +41,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 ## from Resources
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 ## from RSS
-from DIRAC.ResourceStatusSystem.Client import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 ## agent name
 AGENT_NAME = "DataManagement/TransferAgent"
@@ -240,6 +240,8 @@ class TransferAgent( RequestAgentBase ):
     if True not in self.__executionMode.values():
       self.log.error("TransferAgent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
       raise TransferAgentError("TransferAgent misconfiguration, neither FTS nor Tasks execution mode is enabled.")
+
+    self.resourceStatus = ResourceStatus()
 
     self.log.info("%s has been constructed" % agentName )
 
@@ -1473,7 +1475,7 @@ class StrategyHandler( object ):
     :param list seList: stogare element list
     :param str access: storage element accesss, could be 'Read' (default) or 'Write' 
     """
-    res = ResourceStatus.getStorageElementStatus( seList, statusType = access, default = 'Unknown' )
+    res = self.resourceStatus.getStorageElementStatus( seList, statusType = access, default = 'Unknown' )
     if not res["OK"]:
       return []
     return [ k for k, v in res["Value"].items() if access in v and v[access] in ( "Active", "Bad" ) ]
