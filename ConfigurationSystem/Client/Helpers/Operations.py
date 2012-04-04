@@ -1,4 +1,4 @@
-import threading
+import threading, thread
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import CFG, LockRing
@@ -71,7 +71,10 @@ class Operations( object ):
 
       return Operations.__cache[ cacheKey ]
     finally:
-      Operations.__cacheLock.release()
+      try:
+        Operations.__cacheLock.release()
+      except thread.error:
+        pass
 
   def setVO( self, vo ):
     """ False to auto detect VO

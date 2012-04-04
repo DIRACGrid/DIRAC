@@ -41,7 +41,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 ## from Resources
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 ## from RSS
-from DIRAC.ResourceStatusSystem.Client import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 ## agent name
 AGENT_NAME = "DataManagement/TransferAgent"
@@ -643,7 +643,8 @@ class TransferAgent( RequestAgentBase ):
                                                          kwargs = requestDict,
                                                          taskID = taskID,
                                                          blocking = True,
-                                                         usePoolCallbacks = True )
+                                                         usePoolCallbacks = True,
+                                                         timeOut = 900 )
         if not enqueue["OK"]:
           self.log.error( enqueue["Message"] )
         else:
@@ -1087,6 +1088,8 @@ class StrategyHandler( object ):
                                 re.compile("Simple") : self.__simple, 
                                 re.compile("Swarm") : self.__swarm }
 
+    self.resourceStatus = ResourceStatus()
+
     self.log.debug( "strategyDispatcher entries:" )
     for key, value in self.strategyDispatcher.items():
       self.log.debug( "%s : %s" % ( key.pattern, value.__name__ ) )
@@ -1473,7 +1476,7 @@ class StrategyHandler( object ):
     :param list seList: stogare element list
     :param str access: storage element accesss, could be 'Read' (default) or 'Write' 
     """
-    res = ResourceStatus.getStorageElementStatus( seList, statusType = access, default = 'Unknown' )
+    res = self.resourceStatus.getStorageElementStatus( seList, statusType = access, default = 'Unknown' )
     if not res["OK"]:
       return []
     return [ k for k, v in res["Value"].items() if access in v and v[access] in ( "Active", "Bad" ) ]
