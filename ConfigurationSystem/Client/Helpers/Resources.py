@@ -41,10 +41,7 @@ def getStorageElementOptions( seName ):
   """ Get the CS StorageElementOptions
   """
   storageConfigPath = '/Resources/StorageElements/%s' % seName
-  result = gConfig.getOptionsDict( storageConfigPath )
-  
-  print result
-  
+  result = gConfig.getOptionsDict( storageConfigPath )  
   if not result['OK']:
     return result
   options = result['Value']
