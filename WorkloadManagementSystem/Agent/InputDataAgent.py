@@ -17,6 +17,9 @@ from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.List                             import uniqueElements
 from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
+
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+
 import time
 
 class InputDataAgent( OptimizerModule ):
@@ -39,6 +42,9 @@ class InputDataAgent( OptimizerModule ):
     # /Operations/Shifter/ProductionManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
+
+    # Reuse the ResourceStatus connection
+    self.resourceStatus = ResourceStatus() 
 
     try:
       self.replicaManager = ReplicaManager()
@@ -279,7 +285,7 @@ class InputDataAgent( OptimizerModule ):
           if not sites['OK']:
             continue
           try:
-            storageElement = StorageElement( se )
+            storageElement = StorageElement( se, resourceStatus = self.resourceStatus )
             seDict[se] = { 'Sites': sites['Value'], 'Status': storageElement.getStatus()['Value'] }
           except Exception:
             self.log.exception( 'Failed to instantiate StorageElement( %s )' % se )
