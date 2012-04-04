@@ -1,3 +1,11 @@
+[v6r3p2]
+
+*DMS
+FIX: FTSRequest - updating metadata for accouting when finalizing FTS requests
+
+*Core
+FIX: DIRAC/__init__.py - default version is set to v6r3
+
 [v6r3p1]
 
 *WMS
