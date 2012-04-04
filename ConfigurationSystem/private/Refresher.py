@@ -2,6 +2,7 @@
 __RCSID__ = "$Id$"
 
 import threading
+import thread
 import time
 import random
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -71,7 +72,10 @@ class Refresher( threading.Thread ):
         return
       self.__lastUpdateTime = time.time()
     finally:
-      self.__triggeredRefreshLock.release()
+      try:
+        self.__triggeredRefreshLock.release()
+      except thread.error:
+        pass
     #Launch the refresh
     thd = threading.Thread( target = self.__refreshInThread )
     thd.setDaemon( 1 )

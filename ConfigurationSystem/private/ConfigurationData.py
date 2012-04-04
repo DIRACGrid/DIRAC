@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 import os.path
 import zlib
 import zipfile
-import threading
+import threading, thread
 import time
 import DIRAC
 from DIRAC.Core.Utilities import List, Time
@@ -406,8 +406,10 @@ class ConfigurationData:
     self.threadingEvent.wait()
     self.threadingLock.acquire()
     self.runningThreadsNumber += 1
-    self.threadingLock.release()
-
+    try:
+      self.threadingLock.release()
+    except thread.error:
+      pass
 
   def dangerZoneEnd( self, returnValue = None ):
     """
@@ -416,5 +418,8 @@ class ConfigurationData:
     """
     self.threadingLock.acquire()
     self.runningThreadsNumber -= 1
-    self.threadingLock.release()
+    try:
+      self.threadingLock.release()
+    except thread.error:
+      pass
     return returnValue
