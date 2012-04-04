@@ -21,7 +21,7 @@ gAccountingDB = False
 
 def initializeReportGeneratorHandler( serviceInfo ):
   global gAccountingDB
-  gAccountingDB = AccountingDB()
+  gAccountingDB = AccountingDB( readOnly = True )
   #Get data location
   reportSection = PathFinder.getServiceSection( "Accounting/ReportGenerator" )
   dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
