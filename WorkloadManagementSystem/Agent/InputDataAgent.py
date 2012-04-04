@@ -11,7 +11,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
-#from DIRAC.Resources.Storage.StorageElement                import StorageElement
+from DIRAC.Resources.Storage.StorageElement                import StorageElement
 
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.List                             import uniqueElements
