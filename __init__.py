@@ -75,7 +75,7 @@ import sys, os, platform
 # Define Version
 
 majorVersion = 6
-minorVersion = 2
+minorVersion = 3
 patchLevel = 0
 preVersion = 0
 
