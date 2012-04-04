@@ -13,9 +13,9 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDIRACSetup
 from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
 
 #############################################################################
 def getSiteSEMapping( gridName = '' ):
@@ -49,14 +49,12 @@ def getSiteSEMapping( gridName = '' ):
         gLogger.debug( 'No SEs defined for site %s' % candidate )
 
   # Add Sites from the SiteLocalSEMapping in the CS
-  vo = getVO()
-  setup = getDIRACSetup()
-  cfgLocalSEPath = cfgPath( 'Operations', vo, setup, 'SiteLocalSEMapping' )
-  result = gConfig.getOptionsDict( cfgLocalSEPath )
+  cfgLocalSEPath = cfgPath( 'SiteLocalSEMapping' )
+  result = Operations().getOptionsDict( cfgLocalSEPath )
   if result['OK']:
     mapping = result['Value']
     for site in mapping:
-      ses = gConfig.getValue( cfgPath( cfgLocalSEPath, site ), [] )
+      ses = Operations().getValue( cfgPath( cfgLocalSEPath, site ), [] )
       if not ses:
         continue
       if gridName and site not in sites:

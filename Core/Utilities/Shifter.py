@@ -1,9 +1,14 @@
+########################################################################
 # $HeadURL$
+########################################################################
+""" Handling the donwload of the shifter Proxy
+"""
 __RCSID__ = "$Id$"
 
 import os
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security import CS
 
 def getShifterProxy( shifterType, fileName = False ):
@@ -14,17 +19,17 @@ def getShifterProxy( shifterType, fileName = False ):
   if fileName:
     try:
       os.makedirs( os.path.dirname( fileName ) )
-    except:
+    except OSError:
       pass
-  shifterSection = "/Operations/Shifter/%s" % shifterType
-  userName = gConfig.getValue( '%s/User' % shifterSection, '' )
+  shifterSection = "Shifter/%s" % shifterType
+  userName = Operations().getValue( '%s/User' % shifterSection, '' )
   if not userName:
     return S_ERROR( "No shifter defined in %s/User" % shifterSection )
   result = CS.getDNForUsername( userName )
   if not result[ 'OK' ]:
     return result
   userDN = result[ 'Value' ][0]
-  userGroup = gConfig.getValue( '%s/Group' % shifterSection, CS.getDefaultUserGroup() )
+  userGroup = Operations().getValue( '%s/Group' % shifterSection, CS.getDefaultUserGroup() )
   vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
   if vomsAttr:
     gLogger.info( "Getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
