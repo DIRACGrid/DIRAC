@@ -233,8 +233,12 @@ class TransferAgent( RequestAgentBase ):
         self.log.warn("Can't create TransferDB instance, disabling FTS execution mode.")
         self.__executionMode["FTS"] = False
       else:
+        ## throughptu time scale for monitoring in StrategyHandler
         self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
-        self.log.debug( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
+        self.log.info( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
+        ## OwnerGroups not allowed to execute FTS transfers
+        self.__ftsDisabledOwnerGroups = self.am_getOption( "FTSDisabledOwnerGroups", [ "lhcb_user" ] )
+        self.log.info("FTSDisabledOwnerGroups = %s" %  self.__ftsDisabledOwnerGroups )
 
     ## is there any mode enabled?
     if True not in self.__executionMode.values():
@@ -499,12 +503,14 @@ class TransferAgent( RequestAgentBase ):
   # agent execution 
   ###################################################################################
   def execute( self ):
-    """ agnet execution in one cycle 
+    """ agent execution in one cycle 
 
     :param self: self reference
     """
     requestCounter = self.requestsPerCycle()
     failback = False
+
+    startegyHandlerSetupError = False
     if self.__executionMode["FTS"]:
       self.log.info( "execute: will setup StrategyHandler for FTS scheduling...")
       self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
@@ -514,11 +520,11 @@ class TransferAgent( RequestAgentBase ):
       if not setupStrategyHandler["OK"]:
         self.log.error( setupStrategyHandler["Message"] )
         self.log.error( "execute: disabling FTS scheduling in this cycle...")
-        failback = True 
+        strategyHandlerSetupError = True 
 
     ## loop over requests
     while requestCounter:
-
+      failback = startegyHandlerSetupError if startegyHandlerSetupError else False
       requestDict = self.getRequest( "transfer" )
       if not requestDict["OK"]:
         self.log.error("execute: error when getteing 'transfer' request: %s" % requestDict["Message"] )
@@ -586,11 +592,18 @@ class TransferAgent( RequestAgentBase ):
     requestDict["requestObj"] = requestObj
 
     ## check request owner
-    ownerDN = requestObj.getAttribute( "OwnerDN" ) 
-    if ownerDN["OK"] and ownerDN["Value"]:
-      self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
-                                                                                ownerDN["Value"] ) )
+    ownerGroup = requestObj.getAttribute( "OwnerGroup" )
+    if ownerGroup["OK"] and ownerGroup["Value"] in self.__ftsDisabledOwnerGroups:
+      self.log.info("excuteFTS: request %s OwnerGroup=%s is not allowed to execute FTS transfer" % ( requestDict["requestName"], 
+                                                                                                     ownerGroup["Value"] ) )
       return S_OK( False )
+
+    ## check request owner
+    #ownerDN = requestObj.getAttribute( "OwnerDN" ) 
+    #if ownerDN["OK"] and ownerDN["Value"]:
+    #  self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
+    #                                                                            ownerDN["Value"] ) )
+    #  return S_OK( False )
 
     ## check operation
     res = requestObj.getNumSubRequests( "transfer" )
