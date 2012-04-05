@@ -30,7 +30,7 @@ class Operations( object ):
         self.__vo = False
     #Set the setup
     self.__setup = False
-    if self.__vo:
+    if self.__uSetup:
       self.__setup = self.__uSetup
     else:
       self.__setup = CSGlobals.getSetup()
