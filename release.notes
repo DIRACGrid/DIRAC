@@ -3,6 +3,9 @@
 *Configuration
 BUGFIX: Operations helper - typo
 
+*DMS:
+FIX: TransferAgent - change the way of redirecting request to task
+
 [v6r3p2]
 
 *DMS
