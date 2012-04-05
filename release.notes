@@ -1,3 +1,8 @@
+[v6r3p4]
+
+*DMS:
+BUGFIX: TransferAgent - wrong value for failback in TA:execute
+
 [v6r3p3]
 
 *Configuration
