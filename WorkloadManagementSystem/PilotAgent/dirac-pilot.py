@@ -613,8 +613,6 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
   else:
     logERROR( "There was an error calling dirac-wms-get-queue-normalization" )
 
-  # Instead of using the Average reported by the Site, determine a Normalization
-  os.system( "dirac-wms-cpu-normalization -U" )
 
   retCode, queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % CE )
   if not retCode:
@@ -626,6 +624,9 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
       logERROR( 'Failed to get Normalized length of the Queue' )
   else:
     logERROR( "There was an error calling dirac-wms-get-normalized-queue-length" )
+
+# Instead of using the Average reported by the Site, determine a Normalization
+os.system( "dirac-wms-cpu-normalization -U" )
 
 #
 # further local configuration
