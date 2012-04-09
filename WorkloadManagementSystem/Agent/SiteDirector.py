@@ -415,6 +415,8 @@ class SiteDirector( AgentModule ):
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
+    # CEName
+    pilotOptions.append( '-N %s' % self.queueDict[queue]['CEName'] )
     # SiteName
     pilotOptions.append( '-n %s' % queueDict['Site'] )
     if 'ClientPlatform' in queueDict:
