@@ -235,30 +235,30 @@ class RequestDBMySQL( DB ):
       files[lfn] = status
     return S_OK( files )
 
-  def yieldRequests( self, requestType="", limit = 1 ):
+  def yieldRequests( self, requestType = "", limit = 1 ):
     """ quick and dirty request generator
 
     :param self: self reference
     :param str requestType: request type
     :param int limit: number of requests to be served
     """
-    servedRequests  = []
+    servedRequests = []
     while True:
-      if len(servedRequests) > limit:
+      if len( servedRequests ) > limit:
         raise StopIteration()
       requestDict = self.getRequest( requestType )
       ## error getting request or not requests of that type at all at all
-      if not requestDict["OK"] or not requestDict["Value"]: 
+      if not requestDict["OK"] or not requestDict["Value"]:
         yield requestDict
         raise StopIteration()
       ## not served yet?  
       if requestDict["Value"]["RequestName"] not in servedRequests:
         servedRequests.append( requestDict["Value"]["RequestName"] )
         yield requestDict
-        
+
 
   def yieldSubRequests( self, requestID ):
-    
+
 
     pass
 
@@ -275,12 +275,20 @@ class RequestDBMySQL( DB ):
     # alternatively we should check if requestType is known (in 'transfer', 'removal', 'register' and 'diset') 
 
     if not requestType:
-      return S_ERROR( "Request type not given.")
- 
+      return S_ERROR( "Request type not given." )
+
     start = time.time()
     dmRequest = RequestContainer( init = False )
     requestID = 0
-    req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY LastUpdate ASC LIMIT 50;" % requestType
+
+    # First get the first pending SubRequest of the given type corresponding to Requests that do not a 
+    # another pending SubRequest with smaller Execution order 
+    # if there are pending SubRequests of different Type with the same ExecutionOrder,
+    # only the Type with earlier Update time will be considered
+    req = "SELECT RequestID,SubRequestID,ExecutionOrder FROM " \
+            "( SELECT * from SubRequests WHERE Status IN ( 'Waiting', 'Assigned' ) " \
+            "GROUP BY RequestID ORDER BY ExecutionOrder, LastUpdate ASC ) " \
+            "AS T WHERE RequestType = '%s' ORDER BY LastUpdate ASC limit 10;" % requestType
     res = self._query( req )
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
@@ -288,46 +296,40 @@ class RequestDBMySQL( DB ):
     if not res['Value']:
       return S_OK()
 
-    reqIDList = [ x[0] for x in res['Value'] ]
+    # We get up to 10 candidates to add some randomness 
+    reqIDList = list( res['Value'] )
     random.shuffle( reqIDList )
-    count = 0
-    for reqID in reqIDList:
-      count += 1
-      if requestType:
-        req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
-        from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % ( reqID, requestType, 'Waiting' )
-      else:
-        # RG: What if requestType is not given?
-        # we should never get there, and it misses the "AND Status='Waiting'"
-        req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
-        from SubRequests WHERE RequestID=%s" % reqID
+
+    for requestID, subRequestID, executionOrder in reqIDList:
+      # select all pending SubRequest from the same Request and ExecutionOrder
+      req = "SELECT SubRequestID, Operation, Arguments, ExecutionOrder, SourceSE, TargetSE, Catalogue, " \
+            "CreationTime, SubmissionTime, LastUpdate FROM SubRequests WHERE RequestID=%s AND RequestType='%s' " \
+            "AND Status='%s' AND ExecutionOrder='%s'" % ( requestID, requestType, 'Waiting', executionOrder )
       res = self._query( req )
       if not res['OK']:
-        err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % reqID
+        err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % requestID
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
 
+      subRequests = res['Value']
+
       subIDList = []
-      for tuple in res['Value']:
+      for tuple in subRequests:
         subID = tuple[0]
-        # RG: We should set the condition "AND Status='Waiting'"
-        # if the subrequest has got assigned it will failed
-        req = "UPDATE SubRequests SET Status='Assigned' WHERE RequestID=%s AND SubRequestID=%s;" % ( reqID, subID )
-        resAssigned = self._update( req )
-        if not resAssigned['OK']:
+        req = "UPDATE SubRequests SET Status='Assigned' WHERE RequestID=%s AND SubRequestID=%s;" % ( requestID, subID )
+        res = self._update( req )
+        if not res['OK']:
           if subIDList:
-            self.__releaseSubRequests( reqID, subIDList )
-          return S_ERROR( 'Failed to assign subrequests: %s' % resAssigned['Message'] )
-        if resAssigned['Value'] == 0:
+            self.__releaseSubRequests( requestID, subIDList )
+          return S_ERROR( 'Failed to assign subrequests: %s' % res['Message'] )
+        if res['Value'] == 0:
           # Somebody has assigned this request
-          gLogger.warn( 'Already assigned subrequest %d of request %d' % ( subID, reqID ) )
+          gLogger.verbose( 'Already assigned subrequest %d of request %d' % ( subID, requestID ) )
         else:
           subIDList.append( subID )
 
-        # RG: We need to check that all subRequest with smaller ExecutionOrder are "Done"
-
       if subIDList:
         # We managed to get some requests, can continue now
-        requestID = reqID
+        requestID = requestID
         break
 
     # Haven't succeeded to get any request        
@@ -338,10 +340,9 @@ class RequestDBMySQL( DB ):
     # RG: We have this list in subIDList, can different queries get part of the subrequets of the same type?
     subRequestIDs = []
 
-    for subRequestID, operation, arguments, executionOrder, sourceSE, targetSE, catalogue, creationTime, submissionTime, lastUpdate in res['Value']:
+    for subRequestID, operation, arguments, executionOrder, sourceSE, targetSE, catalogue, creationTime, submissionTime, lastUpdate in subRequests:
       if not subRequestID in subIDList: continue
       subRequestIDs.append( subRequestID )
-      # RG: res['Value'] is the range of the loop and it gets redefined here !!!!!!
       res = dmRequest.initiateSubRequest( requestType )
       ind = res['Value']
       subRequestDict = {
