@@ -32,7 +32,7 @@ InstallTools.getMySQLPasswords()
 for db in args:
   result = InstallTools.installDatabase( db )
   if not result['OK']:
-    print "ERROR: failed to correctly install %s" % db,result['Message'] 
-  else:  
+    print "ERROR: failed to correctly install %s" % db, result['Message']
+  else:
     extension, system = result['Value']
-    InstallTools.addDatabaseOptionsToCS( gConfig, system, db, True )
+    InstallTools.addDatabaseOptionsToCS( gConfig, system, db, overwrite = True )
