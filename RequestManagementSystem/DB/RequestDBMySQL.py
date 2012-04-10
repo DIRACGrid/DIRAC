@@ -279,7 +279,8 @@ class RequestDBMySQL( DB ):
 
     start = time.time()
     dmRequest = RequestContainer( init = False )
-    requestID = 0
+    myRequestID = 0
+    subIDList = []
 
     # First get the first pending SubRequest of the given type corresponding to Requests that do not a 
     # another pending SubRequest with smaller Execution order 
@@ -329,11 +330,11 @@ class RequestDBMySQL( DB ):
 
       if subIDList:
         # We managed to get some requests, can continue now
-        requestID = requestID
+        myRequestID = requestID
         break
 
     # Haven't succeeded to get any request        
-    if not requestID:
+    if not myRequestID:
       return S_OK()
 
     dmRequest.setRequestID( requestID )
