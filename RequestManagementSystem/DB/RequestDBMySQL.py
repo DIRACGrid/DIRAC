@@ -266,84 +266,85 @@ class RequestDBMySQL( DB ):
     pass
 
 
-  def getRequest( self, requestType = "" ):
-    """ Get a request of a given type
+  def getRequest( self, requestType ):
+    """ Get a request of a given type eligible for execution
     """
     # RG: What if requestType is not given?
     # the first query will return nothing.
     # KC: maybe returning S_ERROR would be enough?
     # alternatively we should check if requestType is known (in 'transfer', 'removal', 'register' and 'diset') 
 
-    if not requestType:
+    if not requestType or type( requestType ) not in types.StringTypes:
       return S_ERROR( "Request type not given." )
+
+    myRequestType = self._escapeString( requestType )
+    if not myRequestType:
+      return myRequestType
+
+    myRequestType = myRequestType['Value']
 
     start = time.time()
     dmRequest = RequestContainer( init = False )
-    myRequestID = 0
+    requestID = 0
     subIDList = []
 
-    # First get the first pending SubRequest of the given type corresponding to Requests that do not a 
-    # another pending SubRequest with smaller Execution order 
-    # if there are pending SubRequests of different Type with the same ExecutionOrder,
-    # only the Type with earlier Update time will be considered
-    req = "SELECT RequestID,SubRequestID,ExecutionOrder FROM " \
-            "( SELECT * from SubRequests WHERE Status IN ( 'Waiting', 'Assigned' ) " \
-            "GROUP BY RequestID ORDER BY ExecutionOrder, LastUpdate ASC ) " \
-            "AS T WHERE RequestType = '%s' ORDER BY LastUpdate ASC limit 10;" % requestType
-    res = self._query( req )
-    if not res['OK']:
-      err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
-      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
-    if not res['Value']:
+    fields = ['RequestID', 'SubRequestID', 'Operation', 'Arguments',
+              'ExecutionOrder', 'SourceSE', 'TargetSE', 'Catalogue',
+              'CreationTime', 'SubmissionTime', 'LastUpdate']
+    # get the pending SubRequest sorted by ExecutionOrder and LastUpdate
+    req = "SELECT * from SubRequests WHERE Status IN ( 'Waiting', 'Assigned' ) ORDER BY ExecutionOrder, LastUpdate"
+    # now get sorted list of RequestID (according to the above)
+    req = "SELECT * from ( %s ) as T1 GROUP BY RequestID" % req
+    # and get the 10 oldest ones of Type requestType
+    req = "SELECT RequestID, ExecutionOrder FROM ( %s ) as T2 WHERE RequestType = %s ORDER BY LastUpdate limit 10" % ( req, myRequestType )
+    # and now get all waiting SubRequest for the selected RequestID and ExecutionOrder 
+    req = "SELECT A.%s FROM SubRequests AS A, ( %s ) AS B WHERE " % ( ', A.'.join( fields ), req )
+    req = "%s A.RequestID = B.RequestID AND A.ExecutionOrder = B.ExecutionOrder AND A.Status = 'Waiting' AND A.RequestType = %s;" % ( req, myRequestType )
+
+    result = self._query( req )
+    if not result['OK']:
+      err = 'RequestDB._getRequest: Failed to retrieve Requests'
+      return S_ERROR( '%s\n%s' % ( err, result['Message'] ) )
+    if not result['Value']:
       return S_OK()
 
-    # We get up to 10 candidates to add some randomness 
-    reqIDList = list( res['Value'] )
+    # We get up to 10 Request candidates, to add some randomness 
+    reqDict = {}
+    for row in result['Value']:
+      reqDict.setdefault( row[0], [] )
+      reqDict[row[0]].append( row[1:] )
+
+    reqIDList = reqDict.keys()
     random.shuffle( reqIDList )
 
-    for requestID, subRequestID, executionOrder in reqIDList:
-      # select all pending SubRequest from the same Request and ExecutionOrder
-      req = "SELECT SubRequestID, Operation, Arguments, ExecutionOrder, SourceSE, TargetSE, Catalogue, " \
-            "CreationTime, SubmissionTime, LastUpdate FROM SubRequests WHERE RequestID=%s AND RequestType='%s' " \
-            "AND Status='%s' AND ExecutionOrder='%s'" % ( requestID, requestType, 'Waiting', executionOrder )
-      res = self._query( req )
-      if not res['OK']:
-        err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % requestID
-        return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
-
-      subRequests = res['Value']
-
-      subIDList = []
-      for tuple in subRequests:
-        subID = tuple[0]
-        req = "UPDATE SubRequests SET Status='Assigned' WHERE RequestID=%s AND SubRequestID=%s;" % ( requestID, subID )
-        res = self._update( req )
-        if not res['OK']:
+    for reqID in reqIDList:
+      sidList = [ x[0] for x in reqDict[reqID] ]
+      for subID in sidList:
+        req = "UPDATE SubRequests SET Status='Assigned' WHERE RequestID=%s AND SubRequestID=%s;" % ( reqID, subID )
+        resAssigned = self._update( req )
+        if not resAssigned['OK']:
           if subIDList:
-            self.__releaseSubRequests( requestID, subIDList )
-          return S_ERROR( 'Failed to assign subrequests: %s' % res['Message'] )
-        if res['Value'] == 0:
+            self.__releaseSubRequests( reqID, subIDList )
+          return S_ERROR( 'Failed to assign subrequests: %s' % resAssigned['Message'] )
+        if resAssigned['Value'] == 0:
           # Somebody has assigned this request
-          gLogger.verbose( 'Already assigned subrequest %d of request %d' % ( subID, requestID ) )
+          gLogger.warn( 'Already assigned subrequest %d of request %d' % ( subID, reqID ) )
         else:
           subIDList.append( subID )
-
       if subIDList:
         # We managed to get some requests, can continue now
-        myRequestID = requestID
-        break
+        requestID = reqID
 
+        break
     # Haven't succeeded to get any request        
-    if not myRequestID:
+    if not requestID:
       return S_OK()
 
     dmRequest.setRequestID( requestID )
-    # RG: We have this list in subIDList, can different queries get part of the subrequets of the same type?
-    subRequestIDs = []
 
-    for subRequestID, operation, arguments, executionOrder, sourceSE, targetSE, catalogue, creationTime, submissionTime, lastUpdate in subRequests:
+    fields = ['FileID', 'LFN', 'Size', 'PFN', 'GUID', 'Md5', 'Addler', 'Attempt', 'Status' ]
+    for subRequestID, operation, arguments, executionOrder, sourceSE, targetSE, catalogue, creationTime, submissionTime, lastUpdate in reqDict[requestID]:
       if not subRequestID in subIDList: continue
-      subRequestIDs.append( subRequestID )
       res = dmRequest.initiateSubRequest( requestType )
       ind = res['Value']
       subRequestDict = {
@@ -362,15 +363,14 @@ class RequestDBMySQL( DB ):
       res = dmRequest.setSubRequestAttributes( ind, requestType, subRequestDict )
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to set subRequest attributes for RequestID %s' % requestID
-        self.__releaseSubRequests( requestID, subRequestIDs )
+        self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
 
-      req = "SELECT FileID,LFN,Size,PFN,GUID,Md5,Addler,Attempt,Status \
-      from Files WHERE SubRequestID = %s ORDER BY FileID;" % subRequestID
+      req = "SELECT %s FROM Files WHERE SubRequestID = %s ORDER BY FileID;" % ( ', '.join( fields ), subRequestID )
       res = self._query( req )
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to get File attributes for RequestID %s.%s' % ( requestID, subRequestID )
-        self.__releaseSubRequests( requestID, subRequestIDs )
+        self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
       files = []
       for fileID, lfn, size, pfn, guid, md5, addler, attempt, status in res['Value']:
@@ -379,14 +379,14 @@ class RequestDBMySQL( DB ):
       res = dmRequest.setSubRequestFiles( ind, requestType, files )
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to set files into Request for RequestID %s.%s' % ( requestID, subRequestID )
-        self.__releaseSubRequests( requestID, subRequestIDs )
+        self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
 
       req = "SELECT Dataset,Status FROM Datasets WHERE SubRequestID = %s;" % subRequestID
       res = self._query( req )
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to get Datasets for RequestID %s.%s' % ( requestID, subRequestID )
-        self.__releaseSubRequests( requestID, subRequestIDs )
+        self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
       datasets = []
       for dataset, status in res['Value']:
@@ -394,14 +394,18 @@ class RequestDBMySQL( DB ):
       res = dmRequest.setSubRequestDatasets( ind, requestType, datasets )
       if not res['OK']:
         err = 'RequestDB._getRequest: Failed to set datasets into Request for RequestID %s.%s' % ( requestID, subRequestID )
-        self.__releaseSubRequests( requestID, subRequestIDs )
+        self.__releaseSubRequests( requestID, subIDList )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
 
-    req = "SELECT RequestName,JobID,OwnerDN,OwnerGroup,DIRACSetup,SourceComponent,CreationTime,SubmissionTime,LastUpdate from Requests WHERE RequestID = %s;" % requestID
+    fields = ['RequestName', 'JobID', 'OwnerDN', 'OwnerGroup',
+              'DIRACSetup', 'SourceComponent', 'CreationTime',
+              'SubmissionTime', 'LastUpdate']
+
+    req = "SELECT %s from Requests WHERE RequestID = %s;" % ( ', '.join( fields ), requestID )
     res = self._query( req )
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
-      self.__releaseSubRequests( requestID, subRequestIDs )
+      self.__releaseSubRequests( requestID, subIDList )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     requestName, jobID, ownerDN, ownerGroup, diracSetup, sourceComponent, creationTime, submissionTime, lastUpdate = res['Value'][0]
     dmRequest.setRequestName( requestName )
@@ -415,7 +419,7 @@ class RequestDBMySQL( DB ):
     res = dmRequest.toXML()
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to create XML for RequestID %s' % ( requestID )
-      self.__releaseSubRequests( requestID, subRequestIDs )
+      self.__releaseSubRequests( requestID, subIDList )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     requestString = res['Value']
     #still have to manage the status of the dataset properly
