@@ -66,5 +66,5 @@ def getGatewayURLs( serviceName = "" ):
   if not gatewayList:
     return False
   if serviceName:
-    gatewayList = [ "%s/%s" % ( gw, serviceName ) for gw in List.fromChar( gatewayList, "," ) ]
+    gatewayList = [ "%s/%s" % ( "/".join( gw.split( "/" )[:3] ), serviceName ) for gw in List.fromChar( gatewayList, "," ) ]
   return List.randomize( gatewayList )
