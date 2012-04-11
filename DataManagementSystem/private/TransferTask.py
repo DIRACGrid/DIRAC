@@ -282,7 +282,7 @@ class TransferTask( RequestTask ):
           self.addMark( "Replication failed", 1 )
           self.error( "replicateAndRegister: ReplicaManager error: %s" % res["Message"] )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "ReplicaMgrFailure" )
-          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+          #requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
           failed[lfn][targetSE] = res["Message"]
           subRequestError = res["Message"]
 
