@@ -124,7 +124,7 @@ class RegistrationTask( RequestTask ):
         for targetSE, reason in failed[lfn].items():
           error = "%s:%s:%s" % ( lfn, targetSE, reason )
           self.warn( "registerFile: %s@%s - %s" % ( lfn, targetSE, reason ) )
-          errors.append( reason )
+          errors.append( error )
       requestObj.setSubRequestAttributeValue( index, "register", "Error", ";".join( errors )[:255] )
     ## return requestObj
     return S_OK( requestObj )
