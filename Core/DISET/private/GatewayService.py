@@ -306,13 +306,13 @@ class TransferRelay( TransferClient ):
       self.errMsg( "Could not send header", result[ 'Message' ] )
       return result
     self.infoMsg( "Starting to receive data from service" )
-    srvTransport = result[ 'Value' ]
+    trid, srvTransport = result[ 'Value' ]
     srvFileHelper = FileHelper( srvTransport )
     srvFileHelper.setDirection( "receive" )
     sIO = cStringIO.StringIO()
     result = srvFileHelper.networkToDataSink( sIO, self.__transferBytesLimit )
     if not result[ 'OK' ]:
-      self.errMsg( "Could receive data from server", result[ 'Message' ] )
+      self.errMsg( "Could not receive data from server", result[ 'Message' ] )
       srvTransport.close()
       sIO.close()
       return result
