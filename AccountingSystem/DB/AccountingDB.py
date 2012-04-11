@@ -16,10 +16,11 @@ gSynchro = ThreadSafe.Synchronizer()
 
 class AccountingDB( DB ):
 
-  def __init__( self, name = 'Accounting/AccountingDB', maxQueueSize = 10 ):
+  def __init__( self, name = 'Accounting/AccountingDB', maxQueueSize = 10, readOnly = False ):
     DB.__init__( self, 'AccountingDB', name, maxQueueSize )
     self.maxBucketTime = 604800 #1 w
     self.autoCompact = False
+    self.__readOnly = readOnly
     self.__doingCompaction = False
     self.__doingPendingLockTime = 0
     self.__deadLockRetries = 2
@@ -132,10 +133,12 @@ class AccountingDB( DB ):
                                     definitionAccountingFields, bucketsLength )
         if not retVal[ 'OK' ]:
           self.log.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
-        #Set the timespan
-        self.dbCatalog[ typeName ][ 'dataTimespan' ] = typeClass().getDataTimespan()
-        self.dbCatalog[ typeName ][ 'definition' ] = { 'keys' : definitionKeyFields,
-                                                       'values' : definitionAccountingFields }
+        #If it has been properly registered, update info
+        elif retVal[ 'Value' ]:
+          #Set the timespan
+          self.dbCatalog[ typeName ][ 'dataTimespan' ] = typeClass().getDataTimespan()
+          self.dbCatalog[ typeName ][ 'definition' ] = { 'keys' : definitionKeyFields,
+                                                         'values' : definitionAccountingFields }
 
     return S_OK()
 
@@ -364,6 +367,18 @@ class AccountingDB( DB ):
                                     'Indexes' : { 'idIndex' : [ 'id' ] },
                                     'PrimaryKey' : 'id'
                                   }
+    if self.__readOnly:
+      if tables:
+        self.log.notice( "ReadOnly mode: Skipping create of tables for %s. Removing from memory catalog" % name )
+        self.log.verbose( "Skipping creation of tables %s" % ", ".join( [ tn for tn in tables ] ) )
+        try:
+          self.dbCatalog.pop( name )
+        except KeyError:
+          pass
+      else:
+        self.log.notice( "ReadOnly mode: %s is OK" % name )
+      return S_OK( False )
+
     if tables:
       retVal = self._createTables( tables )
       if not retVal[ 'OK' ]:
@@ -377,7 +392,7 @@ class AccountingDB( DB ):
                     [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ), bucketsEncoding ] )
       self.__addToCatalog( name, keyFieldsList, valueFieldsList, bucketsLength )
     self.log.info( "Registered type %s" % name )
-    return S_OK()
+    return S_OK( True )
 
   def getRegisteredTypes( self ):
     """
@@ -438,6 +453,8 @@ class AccountingDB( DB ):
     """
     Deletes a type
     """
+    if self.__readOnly:
+      return S_ERROR( "ReadOnly mode enabled. No modification allowed" )
     if typeName not in self.dbCatalog:
       return S_ERROR( "Type %s does not exist" % typeName )
     self.log.info( "Deleting type", typeName )
@@ -565,6 +582,8 @@ class AccountingDB( DB ):
     return S_OK( retVal[ 'lastRowId' ] )
 
   def insertRecordBundleThroughQueue( self, recordsToQueue ) :
+    if self.__readOnly:
+      return S_ERROR( "ReadOnly mode enabled. No modification allowed" )
     recordsToProcess = []
     now = Time.toEpoch()
     for record in recordsToQueue:
@@ -581,6 +600,8 @@ class AccountingDB( DB ):
     """
     Insert a record in the intable to be really insterted afterwards
     """
+    if self.__readOnly:
+      return S_ERROR( "ReadOnly mode enabled. No modification allowed" )
     self.log.info( "Adding record to queue", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
@@ -612,6 +633,8 @@ class AccountingDB( DB ):
     """
     Add an entry to the type contents
     """
+    if self.__readOnly:
+      return S_ERROR( "ReadOnly mode enabled. No modification allowed" )
     gMonitor.addMark( "registeradded", 1 )
     gMonitor.addMark( "registeradded:%s" % typeName, 1 )
     self.log.info( "Adding record", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
@@ -657,6 +680,8 @@ class AccountingDB( DB ):
     """
     Add an entry to the type contents
     """
+    if self.__readOnly:
+      return S_ERROR( "ReadOnly mode enabled. No modification allowed" )
     self.log.info( "Deleting record record", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
@@ -831,7 +856,7 @@ class AccountingDB( DB ):
       sqlFields.append( "`%s`.`%s`" % ( tableName, valueField ) )
     sqlFields.append( "`%s`.`entriesInBucket`" % ( tableName ) )
     cmd = "SELECT %s FROM `%s`" % ( ", ".join( sqlFields ), _getTableName( "bucket", typeName ) )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
+    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                               tableName,
                                                                               startTime,
                                                                               tableName,
@@ -856,7 +881,7 @@ class AccountingDB( DB ):
                                                                                     bucketValues[-1],
                                                                                     proportion ) )
     cmd += ", ".join( sqlValList )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
+    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                             tableName,
                                                                             startTime,
                                                                             tableName,
@@ -881,7 +906,7 @@ class AccountingDB( DB ):
                                                                                     bucketValues[-1],
                                                                                     proportion ) )
     cmd += ", ".join( sqlValList )
-    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % ( 
+    cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
                                                                             tableName,
                                                                             startTime,
                                                                             tableName,
@@ -1074,6 +1099,8 @@ class AccountingDB( DB ):
     """
     Compact buckets for all defined types
     """
+    if self.__readOnly:
+      return S_ERROR( "ReadOnly mode enabled. No modification allowed" )
     gSynchro.lock()
     try:
       if self.__doingCompaction:
@@ -1318,6 +1345,8 @@ class AccountingDB( DB ):
         self.log.info( "[COMPACT] Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
 
   def regenerateBuckets( self, typeName ):
+    if self.__readOnly:
+      return S_ERROR( "ReadOnly mode enabled. No modification allowed" )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
       return retVal
