@@ -1,3 +1,20 @@
+[v6r3p5]
+
+*Core:
+BUGFIX: ProcessPool - bug making TaskAgents hang after max cycles
+BUGFIX: Graphs - proper handling plots with data containing empty string labels
+FIX: GateWay - transfers were using an old API
+FIX: GateWay - properly calculate the gateway URL
+BUGFIX: Utilities/Pfn.py - bug in pfnunparse() when concatenating Path and FileName
+
+*Accounting
+NEW: ReportGenerator - make AccountingDB readonly
+FIX: DataCache - set daemon the datacache thread
+BUGFIX: BasePlotter - proper handling of the Petabyte scale data
+
+*DMS:
+BUGFIX: TransferAgent, RegistrationTask - typos 
+
 [v6r3p4]
 
 *DMS:
