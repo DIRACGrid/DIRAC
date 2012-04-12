@@ -79,7 +79,7 @@ class RSSCache( object ):
     '''
     self.__rssCacheLock.release()
   
-  def getResourceStatus( self, resourceKey ):
+  def get( self, resourceKey ):
     '''
       Gets the resource(s) status(es). Every resource can have multiple statuses, 
       so in order to speed up things, we store them on the cache as follows:

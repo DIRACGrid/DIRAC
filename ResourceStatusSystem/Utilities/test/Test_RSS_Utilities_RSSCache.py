@@ -3,6 +3,7 @@
 
 '''
 
+import thread
 import time
 import unittest
 
@@ -98,6 +99,49 @@ class RSSCache_Success( RSSCache_TestCase ):
     time.sleep( 2 )
     self.assertEqual( cache.isCacheAlive(), False )
     self.assertEqual( cache._RSSCache__refreshStop, False )    
+
+  def test_reStartRefreshThread( self ):
+    ''' test that we can restart the refreshing thread
+    '''     
+    cache = self.cache( 1 )
+    cache.startRefreshThread()
+    self.assertEqual( cache.isCacheAlive(), True )
+    cache.stopRefreshThread()
+    time.sleep( 2 )
+    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache._RSSCache__refreshStop, False )
+    cache.startRefreshThread()
+    self.assertEqual( cache.isCacheAlive(), True )
+    cache.stopRefreshThread()
+    time.sleep( 2 )
+    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache._RSSCache__refreshStop, False )
+    
+  def test_getCacheKeys( self ):  
+    ''' test that we can get the cache keys
+    '''
+    cache = self.cache( 1 )
+    keys = cache.getCacheKeys()
+    self.assertEqual( keys, [] )
+    cache._RSSCache__rssCache = { 'A' : 1, 'B' : 2 }
+    keys = cache.getCacheKeys()
+    self.assertEqual( keys, [ 'A', 'B' ] )
+    
+  def test_resetCache( self ):
+    ''' test that we can reset the cache
+    '''  
+    cache = self.cache( 1 )
+    cache._RSSCache__rssCache = { 'A' : 1, 'B' : 2 }
+    cache.resetCache()
+    keys = cache.getCacheKeys()
+    self.assertEqual( keys, [] )
+  
+  def test_acquireReleaseLock( self ):
+    
+    cache = self.cache( 1 )
+    self.assertRaises( thread.error, l.releaseLock )
+    cache.acquireLock()
+    cache.releaseLock()
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      
