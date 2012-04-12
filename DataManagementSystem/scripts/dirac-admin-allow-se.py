@@ -44,11 +44,11 @@ for switch in Script.getUnprocessedSwitches():
     site = switch[1]
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
-from DIRAC.Interfaces.API.DiracAdmin                 import DiracAdmin
-from DIRAC                                           import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Client               import ResourceStatus
-from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
-from DIRAC.Core.Utilities.List                       import intListToString
+from DIRAC.Interfaces.API.DiracAdmin                  import DiracAdmin
+from DIRAC                                            import gConfig, gLogger
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
+from DIRAC.Core.Utilities.List                        import intListToString
 
 #csAPI = CSAPI()
 
@@ -92,7 +92,9 @@ readAllowed = []
 writeAllowed = []
 checkAllowed = []
 
-res = ResourceStatus.getStorageElementStatus( ses )
+resourceStatus = ResourceStatus()
+
+res = resourceStatus.getStorageElementStatus( ses )
 if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % ses )
   DIRAC.exit( -1 )
@@ -115,7 +117,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( '%s is not supposed to change Read status to Active' % se )
       continue
 
-    resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
+    resR = resourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
     if not resR['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
@@ -130,7 +132,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
-    resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
+    resW = resourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
@@ -145,7 +147,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
-    resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
+    resC = resourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Active" % se )
     else:

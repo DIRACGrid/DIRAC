@@ -709,7 +709,8 @@ class ProcessPool:
         time.sleep( 0.1 )
         self.__cleanDeadProcesses()
     finally:
-      self.__draining = False
+      pass
+      #self.__draining = False
     # terminate them as it should be done
     for wp in self.__workingProcessList:
       if wp.is_alive():

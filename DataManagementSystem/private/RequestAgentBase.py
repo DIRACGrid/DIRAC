@@ -331,7 +331,8 @@ class RequestAgentBase( AgentModule ):
                                                            kwargs = requestDict,
                                                            taskID = requestDict["requestName"],
                                                            blocking = True,
-                                                           usePoolCallbacks = True )
+                                                           usePoolCallbacks = True,
+                                                           timeOut = 600 )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:

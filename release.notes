@@ -1,3 +1,74 @@
+[v6r3p5]
+
+*Core:
+BUGFIX: ProcessPool - bug making TaskAgents hang after max cycles
+BUGFIX: Graphs - proper handling plots with data containing empty string labels
+FIX: GateWay - transfers were using an old API
+FIX: GateWay - properly calculate the gateway URL
+BUGFIX: Utilities/Pfn.py - bug in pfnunparse() when concatenating Path and FileName
+
+*Accounting
+NEW: ReportGenerator - make AccountingDB readonly
+FIX: DataCache - set daemon the datacache thread
+BUGFIX: BasePlotter - proper handling of the Petabyte scale data
+
+*DMS:
+BUGFIX: TransferAgent, RegistrationTask - typos 
+
+[v6r3p4]
+
+*DMS:
+BUGFIX: TransferAgent - wrong value for failback in TA:execute
+
+[v6r3p3]
+
+*Configuration
+BUGFIX: Operations helper - typo
+
+*DMS:
+FIX: TransferAgent - change the way of redirecting request to task
+
+[v6r3p2]
+
+*DMS
+FIX: FTSRequest - updating metadata for accouting when finalizing FTS requests
+
+*Core
+FIX: DIRAC/__init__.py - default version is set to v6r3
+
+[v6r3p1]
+
+*WMS
+CHANGE: Use ResourcesStatus and Resources helpers in the InputDataAgent logic
+
+*Configuration
+NEW: added getStorageElementOptions in Resources helper
+
+*DMS
+FIX: resourceStatus object created in TransferAgent instead of StrategyHandler
+
+[v6r3]
+
+*Core
+NEW: Added protections due to the process pool usage in the locking logic
+
+*Resources
+FIX: LcgFileCatalogClient - reduce the number of retries: LFC_CONRETRY = 5 to 
+     avoid combined catalog to be stuck on a faulty LFC server
+     
+*RSS
+BUGFIX: ResourceStatus - reworked helper to keep DB connections     
+
+*DMS
+BUGFIX: ReplicaManager::CatalogBase::_callFileCatalogFcnSingleFile() - wrong argument
+
+*RequestManagement
+FIX: TaskAgents - set timeOut for task to 10 min (15 min)
+NEW: TaskAgents - fill in Error fields in case of failing operations
+
+*Interfaces
+BUGFIX: dirac-wms-select-jobs - wrong use of the Dirac API
+
 [v6r2p9]
 
 *Core

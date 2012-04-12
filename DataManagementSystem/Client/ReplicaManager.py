@@ -28,7 +28,7 @@ import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.ResourceStatusSystem.Client import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Utilities.File import makeGuid, getSize
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
 from DIRAC.Core.Utilities.List import sortList, randomize
@@ -71,7 +71,7 @@ class CatalogBase:
     elif type( lfn ) == DictType:
       singleLfn = lfn.keys()[0] 
     ## call only for single lfn
-    res = self._callFileCatalogFcn( singleLfn, method, argsDict, catalogs = catalogs )
+    res = self._callFileCatalogFcn( lfn, method, argsDict, catalogs = catalogs )
     if not res["OK"]:
       return res
     elif singleLfn in res["Value"]["Failed"]:
@@ -1037,6 +1037,7 @@ class ReplicaManager( CatalogToStorage ):
     self.accountingClient = None
     self.registrationProtocol = ['SRM2', 'DIP']
     self.thirdPartyProtocols = ['SRM2', 'DIP']
+    self.resourceStatus = ResourceStatus()
 
   def setAccountingClient( self, client ):
     """ Set Accounting Client instance
@@ -2382,7 +2383,7 @@ class ReplicaManager( CatalogToStorage ):
 #    storageCFGBase = "/Resources/StorageElements"
 #    res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
     
-    res = ResourceStatus.getStorageElementStatus( se, default = None )
+    res = self.resourceStatus.getStorageElementStatus( se, default = None )
     
     if not res[ 'OK' ]:
       return S_ERROR( 'SE not known' )

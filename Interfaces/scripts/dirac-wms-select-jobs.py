@@ -67,13 +67,13 @@ conditions = { 'Status':status,
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 dirac = Dirac()
-result = dirac.selectJobs( Status = status,
-                           MinorStatus = minorStatus,
-                           ApplicationStatus = appStatus,
-                           Site = site,
-                           Owner = owner,
-                           JobGroup = jobGroup,
-                           Date = date )
+result = dirac.selectJobs( status = status,
+                           minorStatus = minorStatus,
+                           applicationStatus = appStatus,
+                           site = site,
+                           owner = owner,
+                           jobGroup = jobGroup,
+                           date = date )
 if not result['OK']:
   print 'ERROR %s' % result['Message']
   exitCode = 2
