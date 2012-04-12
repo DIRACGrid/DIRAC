@@ -16,7 +16,7 @@ class RSSCache( object ):
     Cache with purgeThread integrated
   '''
   
-  def __init__( self, lifeTime, updateFunc ):
+  def __init__( self, lifeTime, updateFunc = None ):
     '''
     Constructor
     '''
@@ -44,6 +44,12 @@ class RSSCache( object ):
       Stop refresh thread.
     '''
     self.__refreshStop = True  
+    
+  def isCacheAlive( self ):
+    '''
+      Returns status of the cache refreshing thread 
+    '''  
+    return self.__refreshThread.isAlive()
     
   def setLifeTime( self, lifeTime ):
     '''
@@ -106,7 +112,10 @@ class RSSCache( object ):
       Clears the cache and gets its latest version, not Thread safe !
       Acquire a lock before using it ! ( and release it afterwards ! )
     '''
-       
+    
+    if self.__updateFunc is None:
+      gLogger.warn( 'RSSCache has no updateFunction' )
+      return False     
     newCache = self.__updateFunc()
     if not newCache[ 'OK' ]:
       gLogger.warn( 'RSSCache %s' % newCache[ 'Message' ] )
@@ -145,7 +154,7 @@ class RSSCache( object ):
             
       time.sleep( self.__lifeTime )  
             
-    self.__refreshStop = True
+    self.__refreshStop = False
            
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

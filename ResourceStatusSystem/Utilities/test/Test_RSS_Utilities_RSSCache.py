@@ -7,7 +7,7 @@ import unittest
 
 __RCSID__ = '$Id: $'
 
-class Dummy():
+class Dummy( object ):
     
   def dummyFunc( self, *args, **kwargs ):
     pass
@@ -15,6 +15,23 @@ class Dummy():
   def __getattr__( self, name ):
     return dummyFunc 
 
+class DummyCache( object ):
+
+  def __init__( self ):
+    self.cache = dict()
+    
+  def getKeys( self ):
+    return self.cache.keys()
+  
+  def get( self, key ):
+    return self.cache.get( key )  
+
+  def add( self, key, lifeTime, value = None ):
+    self.cache[ key ] = value
+    
+  def purgeAll( self ):
+    self.cache = {}  
+    
 ################################################################################
 
 class RSSCache_TestCase( unittest.TestCase ):
@@ -26,11 +43,11 @@ class RSSCache_TestCase( unittest.TestCase ):
 
     # We need the proper software, and then we overwrite it.
     import DIRAC.ResourceStatusSystem.Utilities.RSSCache as moduleTested   
-    moduleTested.DictCache = dict
+    moduleTested.DictCache = DummyCache()
     moduleTested.gLogger   = Dummy()
       
     self.cache = moduleTested.RSSCache
-    
+
   def tearDown( self ):
     '''
     TearDown
@@ -44,8 +61,33 @@ class RSSCache_Success( RSSCache_TestCase ):
   def test_instantiate( self ):
     ''' tests that we can instantiate one object of the tested class
     '''  
-    cache = self.cache( 1, 1 )
-    self.assertEqual( 'RSSCache', cache.__class__.__name__ )       
+    cache = self.cache( 1 )
+    self.assertEqual( 'RSSCache', cache.__class__.__name__ )    
+    cache = self.cache( 1, updateFunc = 1 )
+    self.assertEqual( 'RSSCache', cache.__class__.__name__ )
+    
+  def test_stopRefreshThread( self ):
+    ''' test that we can stop the refreshing thread
+    '''     
+    cache = self.cache( 1 )
+    cache.stopRefreshThread()
+    self.assertEqual( cache._RSSCache__refreshStop, False )
+
+  def test__isCacheAlive( self ):
+    ''' test that we can get CacheStatus when it does not run
+    '''  
+    cache = self.cache( 1 )
+    res   = cache.isCacheAlive()
+    self.assertEqual( res, False )
+
+  def test_setLifeTime( self ):
+    ''' test that we update lifeTime
+    '''     
+    cache = self.cache( 1 )
+    cache.setLifeTime( 2 )
+    self.assertEqual( cache._RSSCache__lifeTime, 2 )    
+  
+    
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      
