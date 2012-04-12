@@ -6,11 +6,13 @@
 '''
 
 import datetime
+import threading
 
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton                    import DIRACSingleton 
 from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Utilities.RSSCache          import RSSCache 
 
 __RCSID__  = '$Id: $'
 
@@ -27,8 +29,10 @@ class ResourceStatus( object ):
     '''
     Constructor, initializes the rssClient.
     '''
-    self.rssClient = None
-    
+    self.rssClient = None   
+    self.seCache   = RSSCache( 300, self.__updateSECache ) 
+    self.seCache.startRefreshThread()           
+            
   def getStorageElementStatus( self, elementName, statusType = None, default = None ):
     '''
     Helper with dual access, tries to get information from the RSS for the given
@@ -91,6 +95,27 @@ class ResourceStatus( object ):
       gLogger.exception( e )
       return S_ERROR( _msg % ( elementName, status, statusType ) ) 
 
+################################################################################
+
+  @staticmethod
+  def __updateSECache( self ):
+    '''
+      Method used to update the StorageElementCache.
+    '''  
+    
+    if not self.__getMode():
+      # We are using the CS, we do not care about the cache.
+      return { 'OK' : False, 'Message' : 'RSS flag is inactive' }
+    
+    meta = { 'columns' : [ 'StorageElementName','StatusType','Status' ] }
+  
+    #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
+    rawCache = self.rssClient.getElementStatus( 'StorageElement', meta = meta )
+    if not rawCache[ 'OK' ]:
+      return rawCache
+    
+    return getCacheDictFromList( rawCache[ 'Value' ] )     
+  
 ################################################################################
   
   def __getRSSStorageElementStatus( self, elementName, statusType, default ):
@@ -231,6 +256,8 @@ class ResourceStatus( object ):
     self.rssClient = None
     return False
 
+################################################################################
+
 gResourceStatus = ResourceStatus()
 
 ################################################################################
@@ -248,6 +275,19 @@ def getDictFromList( l ):
       res[ site ] = {}
     res[ site ][ sType ] = status
   return res  
+
+def getCacheDictFromList( rawList ):
+  '''
+  Auxiliar method that given a list returns a dictionary looking like:
+  { 
+    <resourceName>#<statusType> : status,
+    <resourceName>#<statusType1> : status1
+    ...
+  }
+  '''
+    
+  res = [ ( '%s#%s' % ( name, sType ), status ) for name, sType, status in rawList ]
+  return S_OK( dict( res ) )  
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
