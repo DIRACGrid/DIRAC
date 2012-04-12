@@ -43,7 +43,7 @@ class RSSCache_TestCase( unittest.TestCase ):
 
     # We need the proper software, and then we overwrite it.
     import DIRAC.ResourceStatusSystem.Utilities.RSSCache as moduleTested   
-    moduleTested.DictCache = DummyCache()
+    moduleTested.DictCache = DummyCache
     moduleTested.gLogger   = Dummy()
       
     self.cache = moduleTested.RSSCache
