@@ -115,7 +115,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     status, minorStatus = result[ 'Value' ]
     #If not in proper state then end chain
     if status not in cls.__optimizationStates:
-      cls.log.error( "Dispatching job %s out of optimization" % jid )
+      cls.log.info( "Dispatching job %s out of optimization" % jid )
       return S_OK()
     #If received send to JobPath
     if status == "Received":

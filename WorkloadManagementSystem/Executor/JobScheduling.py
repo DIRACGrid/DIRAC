@@ -468,11 +468,12 @@ class JobScheduling( OptimizerExecutor ):
       if not result[ 'OK' ]:
         self.jobLog.error( "Cannot get tier for site %s" % ( siteName ) )
         continue
-      tierFound = result[ 'Value' ]
-      if tierLevel == -1 or tierLevel > tierFound:
-        tierLevel = tierFound
+      siteTier = result[ 'Value' ]
+      if tierLevel == -1 or tierLevel > siteTier:
+        tierLevel = siteTier
         tierSite = []
-      tierSite.append( siteName )
+      if tierLevel == siteTier:
+        tierSite.append( siteName )
 
     if len( tierSite ) == 1:
       siteName = "Group.%s" % ".".join( tierSite[0].split( "." )[1:] )
