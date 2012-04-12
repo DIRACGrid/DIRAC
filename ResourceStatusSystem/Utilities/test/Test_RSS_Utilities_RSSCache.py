@@ -10,12 +10,12 @@ import unittest
 __RCSID__ = '$Id: $'
 
 class Dummy( object ):
-    
+      
   def dummyFunc( self, *args, **kwargs ):
     pass
     
   def __getattr__( self, name ):
-    return dummyFunc 
+    return self.dummyFunc 
 
 class DummyCache( object ):
 
