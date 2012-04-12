@@ -64,109 +64,109 @@ class RSSCache_TestCase( unittest.TestCase ):
     
 class RSSCache_Success( RSSCache_TestCase ):
   
-  def test_instantiate( self ):
-    ''' tests that we can instantiate one object of the tested class
-    '''  
-    cache = self.cache( 1 )
-    self.assertEqual( 'RSSCache', cache.__class__.__name__ )    
-    cache = self.cache( 1, updateFunc = 1 )
-    self.assertEqual( 'RSSCache', cache.__class__.__name__ )
-    
-  def test_stopRefreshThread( self ):
-    ''' test that we can stop the refreshing thread
-    '''     
-    cache = self.cache( 1 )
-    cache.stopRefreshThread()
-    self.assertEqual( cache._RSSCache__refreshStop, True )
-
-  def test__isCacheAlive( self ):
-    ''' test that we can get CacheStatus when it does not run
-    '''  
-    cache = self.cache( 1 )
-    res   = cache.isCacheAlive()
-    self.assertEqual( res, False )
-
-  def test_setLifeTime( self ):
-    ''' test that we update lifeTime
-    '''     
-    cache = self.cache( 1 )
-    cache.setLifeTime( 2 )
-    self.assertEqual( cache._RSSCache__lifeTime, 2 )    
-  
-  def test_startStopRefreshThread( self ):
-    ''' test that we can start and stop the refreshing thread
-    '''     
-    cache = self.cache( 1 )
-    cache.startRefreshThread()
-    self.assertEqual( cache.isCacheAlive(), True )
-    cache.stopRefreshThread()
-    time.sleep( 2 )
-    self.assertEqual( cache.isCacheAlive(), False )
-    self.assertEqual( cache._RSSCache__refreshStop, False )    
-
-  def test_reStartRefreshThread( self ):
-    ''' test that we can restart the refreshing thread
-    '''     
-    cache = self.cache( 1 )
-    cache.startRefreshThread()
-    self.assertEqual( cache.isCacheAlive(), True )
-    cache.stopRefreshThread()
-    time.sleep( 2 )
-    self.assertEqual( cache.isCacheAlive(), False )
-    self.assertEqual( cache._RSSCache__refreshStop, False )
-    self.assertRaises( RuntimeError, cache.startRefreshThread )
-    
-  def test_getCacheKeys( self ):  
-    ''' test that we can get the cache keys
-    '''
-    cache = self.cache( 1 )
-    keys = cache.getCacheKeys()
-    self.assertEqual( keys, [] )
-    cache._RSSCache__rssCache = DummyCache( { 'A' : 1, 'B' : 2 } )
-    keys = cache.getCacheKeys()
-    self.assertEqual( keys, [ 'A', 'B' ] )
-    
-  def test_resetCache( self ):
-    ''' test that we can reset the cache
-    '''  
-    cache = self.cache( 1 )
-    cache._RSSCache__rssCache = DummyCache( { 'A' : 1, 'B' : 2 } )
-    cache.resetCache()
-    keys = cache.getCacheKeys()
-    self.assertEqual( keys, [] )
-  
-  def test_acquireReleaseLock( self ):
-    ''' test that we can instantiate a lock
-    '''
-    cache = self.cache( 1 )
-    self.assertRaises( thread.error, cache.releaseLock )
-    cache.acquireLock()
-    cache.releaseLock()
-    
-  def test_refreshCache( self ):
-    ''' test that we can refresh the cache
-    '''  
-    cache = self.cache( 1 )
-    res = cache.refreshCache()
-    self.assertEqual( res, False )
-    
-    global forcedResult
-    cache = self.cache( 1, dummyFunction )
-    forcedResult = { 'OK' : False, 'Message' : 'forcedMessage' }
-    res = cache.refreshCache()
-    self.assertEqual( res, False )
-    
-    forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
-    res = cache.refreshCache()
-    self.assertEqual( res, True )
-    keys = cache.getCacheKeys()
-    self.assertEqual( keys, [ 'A', 'B' ] )
-    
-    forcedResult = { 'OK' : True, 'Value' : { 'A' : 2, 'C' : 3 } }
-    res = cache.refreshCache()
-    self.assertEqual( res, True )
-    keys = cache.getCacheKeys()
-    self.assertEqual( keys, [ 'A', 'C' ] )
+#  def test_instantiate( self ):
+#    ''' tests that we can instantiate one object of the tested class
+#    '''  
+#    cache = self.cache( 1 )
+#    self.assertEqual( 'RSSCache', cache.__class__.__name__ )    
+#    cache = self.cache( 1, updateFunc = 1 )
+#    self.assertEqual( 'RSSCache', cache.__class__.__name__ )
+#    
+#  def test_stopRefreshThread( self ):
+#    ''' test that we can stop the refreshing thread
+#    '''     
+#    cache = self.cache( 1 )
+#    cache.stopRefreshThread()
+#    self.assertEqual( cache._RSSCache__refreshStop, True )
+#
+#  def test__isCacheAlive( self ):
+#    ''' test that we can get CacheStatus when it does not run
+#    '''  
+#    cache = self.cache( 1 )
+#    res   = cache.isCacheAlive()
+#    self.assertEqual( res, False )
+#
+#  def test_setLifeTime( self ):
+#    ''' test that we update lifeTime
+#    '''     
+#    cache = self.cache( 1 )
+#    cache.setLifeTime( 2 )
+#    self.assertEqual( cache._RSSCache__lifeTime, 2 )    
+#  
+#  def test_startStopRefreshThread( self ):
+#    ''' test that we can start and stop the refreshing thread
+#    '''     
+#    cache = self.cache( 1 )
+#    cache.startRefreshThread()
+#    self.assertEqual( cache.isCacheAlive(), True )
+#    cache.stopRefreshThread()
+#    time.sleep( 2 )
+#    self.assertEqual( cache.isCacheAlive(), False )
+#    self.assertEqual( cache._RSSCache__refreshStop, False )    
+#
+#  def test_reStartRefreshThread( self ):
+#    ''' test that we can restart the refreshing thread
+#    '''     
+#    cache = self.cache( 1 )
+#    cache.startRefreshThread()
+#    self.assertEqual( cache.isCacheAlive(), True )
+#    cache.stopRefreshThread()
+#    time.sleep( 2 )
+#    self.assertEqual( cache.isCacheAlive(), False )
+#    self.assertEqual( cache._RSSCache__refreshStop, False )
+#    self.assertRaises( RuntimeError, cache.startRefreshThread )
+#    
+#  def test_getCacheKeys( self ):  
+#    ''' test that we can get the cache keys
+#    '''
+#    cache = self.cache( 1 )
+#    keys = cache.getCacheKeys()
+#    self.assertEqual( keys, [] )
+#    cache._RSSCache__rssCache = DummyCache( { 'A' : 1, 'B' : 2 } )
+#    keys = cache.getCacheKeys()
+#    self.assertEqual( keys, [ 'A', 'B' ] )
+#    
+#  def test_resetCache( self ):
+#    ''' test that we can reset the cache
+#    '''  
+#    cache = self.cache( 1 )
+#    cache._RSSCache__rssCache = DummyCache( { 'A' : 1, 'B' : 2 } )
+#    cache.resetCache()
+#    keys = cache.getCacheKeys()
+#    self.assertEqual( keys, [] )
+#  
+#  def test_acquireReleaseLock( self ):
+#    ''' test that we can instantiate a lock
+#    '''
+#    cache = self.cache( 1 )
+#    self.assertRaises( thread.error, cache.releaseLock )
+#    cache.acquireLock()
+#    cache.releaseLock()
+#    
+#  def test_refreshCache( self ):
+#    ''' test that we can refresh the cache
+#    '''  
+#    cache = self.cache( 1 )
+#    res = cache.refreshCache()
+#    self.assertEqual( res, False )
+#    
+#    global forcedResult
+#    cache = self.cache( 1, dummyFunction )
+#    forcedResult = { 'OK' : False, 'Message' : 'forcedMessage' }
+#    res = cache.refreshCache()
+#    self.assertEqual( res, False )
+#    
+#    forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
+#    res = cache.refreshCache()
+#    self.assertEqual( res, True )
+#    keys = cache.getCacheKeys()
+#    self.assertEqual( keys, [ 'A', 'B' ] )
+#    
+#    forcedResult = { 'OK' : True, 'Value' : { 'A' : 2, 'C' : 3 } }
+#    res = cache.refreshCache()
+#    self.assertEqual( res, True )
+#    keys = cache.getCacheKeys()
+#    self.assertEqual( keys, [ 'A', 'C' ] )
     
   def test_refreshThreadRefreshCache( self ):
     ''' test that the refreshThread can refresh the cache.
