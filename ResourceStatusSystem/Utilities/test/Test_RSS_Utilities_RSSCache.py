@@ -37,5 +37,15 @@ class RSSCache_TestCase( unittest.TestCase ):
     '''
     del self.cache
     
+################################################################################    
+    
+class RSSCache_Success( RSSCache_TestCase ):
+  
+  def test_instantiate( self ):
+    ''' tests that we can instantiate one object of the tested class
+    '''  
+    cache = self.cache( 1, 1 )
+    self.assertEqual( 'RSSCache', cache.__class__.__name__ )       
+    
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      
