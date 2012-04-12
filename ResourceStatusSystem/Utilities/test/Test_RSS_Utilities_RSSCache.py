@@ -9,13 +9,17 @@ import unittest
 
 __RCSID__ = '$Id: $'
 
+forcedResult = None
+def dummyFunction():
+  return forcedResult
+
 class Dummy( object ):
       
-  def dummyFunc( self, *args, **kwargs ):
+  def dummyMethod( self, *args, **kwargs ):
     pass
     
   def __getattr__( self, name ):
-    return self.dummyFunc 
+    return self.dummyMethod 
 
 class DummyCache( object ):
 
@@ -132,11 +136,35 @@ class RSSCache_Success( RSSCache_TestCase ):
     self.assertEqual( keys, [] )
   
   def test_acquireReleaseLock( self ):
-    
+    ''' test that we can instantiate a lock
+    '''
     cache = self.cache( 1 )
     self.assertRaises( thread.error, cache.releaseLock )
     cache.acquireLock()
     cache.releaseLock()
+    
+  def test_refreshCache( self ):
+    ''' test that we can refresh the cache
+    '''  
+    cache = self.cache( 1 )
+    res = cache.refreshCache()
+    self.assertEqual( res, False )
+    global forcedResult
+    forcedResult = { 'OK' : False, 'Message' : 'forcedMessage' }
+    res = cache.refreshCache()
+    self.assertEqual( res, False )
+    global forcedResult
+    forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
+    res = cache.refreshCache()
+    self.assertEqual( res, True )
+    keys = cache.getCacheKeys()
+    self.assertEqual( keys, [ 'A', 'B' ] )
+    global forcedResult
+    forcedResult = { 'OK' : True, 'Value' : { 'A' : 2, 'C' : 3 } }
+    res = cache.refreshCache()
+    self.assertEqual( res, True )
+    keys = cache.getCacheKeys()
+    self.assertEqual( keys, [ 'A', 'C' ] )
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      
