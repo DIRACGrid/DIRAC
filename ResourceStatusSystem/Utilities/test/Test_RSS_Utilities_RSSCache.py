@@ -19,8 +19,8 @@ class Dummy( object ):
 
 class DummyCache( object ):
 
-  def __init__( self ):
-    self.cache = dict()
+  def __init__( self, cache = None ):
+    self.cache = ( cache and 1 ) or dict()
     
   def getKeys( self ):
     return self.cache.keys()
@@ -110,12 +110,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     time.sleep( 2 )
     self.assertEqual( cache.isCacheAlive(), False )
     self.assertEqual( cache._RSSCache__refreshStop, False )
-    cache.startRefreshThread()
-    self.assertEqual( cache.isCacheAlive(), True )
-    cache.stopRefreshThread()
-    time.sleep( 2 )
-    self.assertEqual( cache.isCacheAlive(), False )
-    self.assertEqual( cache._RSSCache__refreshStop, False )
+    self.assertRaises( RuntimeError, cache.startRefreshThread )
     
   def test_getCacheKeys( self ):  
     ''' test that we can get the cache keys
@@ -123,7 +118,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     cache = self.cache( 1 )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [] )
-    cache._RSSCache__rssCache = { 'A' : 1, 'B' : 2 }
+    cache._RSSCache__rssCache = DummyCache( { 'A' : 1, 'B' : 2 } )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'B' ] )
     
@@ -131,7 +126,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     ''' test that we can reset the cache
     '''  
     cache = self.cache( 1 )
-    cache._RSSCache__rssCache = { 'A' : 1, 'B' : 2 }
+    cache._RSSCache__rssCache = DummyCache( { 'A' : 1, 'B' : 2 } )
     cache.resetCache()
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [] )
