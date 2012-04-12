@@ -48,17 +48,11 @@ class ResourceStatusClient:
 
   def __init__( self , serviceIn = None ):
     '''
-      The client tries to connect to :class:ResourceStatusDB by default. If it 
-      fails, then tries to connect to the Service :class:ResourceStatusHandler.
+      The client tries to connect to :class:ResourceStatusHandler by default. A 
+      database connection can be provided through serviceIn too.
     '''
     if not serviceIn:
-      try:
-        self.gate = ResourceStatusDB()
-      except SystemExit:
-        self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
-      except ImportError:
-        # Pilots will connect here, as MySQLdb is not installed for them
-        self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
+      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
     else:
       self.gate = serviceIn
 
