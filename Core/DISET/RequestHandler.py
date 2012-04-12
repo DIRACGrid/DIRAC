@@ -145,7 +145,7 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      raise ConnectionError( "Error while receiving file description %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+      raise self.ConnectionError( "Error while receiving file description %s %s" % ( self.srv_getFormattedRemoteCredentials(),
                                                                                 retVal[ 'Message' ] ) )
     fileInfo = retVal[ 'Value' ]
     sDirection = "%s%s" % ( sDirection[0].lower(), sDirection[1:] )
@@ -220,7 +220,7 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      raise ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+      raise self.ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
                                                                          retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     self.__logRemoteQuery( "RPC/%s" % method, args )
@@ -266,9 +266,8 @@ class RequestHandler( object ):
       oTypesList = getattr( self, sListName )
     except:
       gLogger.error( "There's no types info for method export_%s" % method )
-      return S_ERROR( "Handler error for server %s while processing method %s" % (
-                                                                                  self.serviceInfoDict[ 'serviceName' ],
-                                                                                  method ) )
+      return S_ERROR( "Handler error for server %s while processing method %s" % ( self.serviceInfoDict[ 'serviceName' ],
+                                                                                   method ) )
     try:
       mismatch = False
       for iIndex in range( min( len( oTypesList ), len( args ) ) ):
@@ -313,7 +312,7 @@ class RequestHandler( object ):
     """
     retVal = self.__trPool.receive( self.__trid )
     if not retVal[ 'OK' ]:
-      raise ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
+      raise self.ConnectionError( "Error while receiving arguments %s %s" % ( self.srv_getFormattedRemoteCredentials(),
                                                                          retVal[ 'Message' ] ) )
     args = retVal[ 'Value' ]
     return self._rh_executeConnectionCallback( methodName, args )

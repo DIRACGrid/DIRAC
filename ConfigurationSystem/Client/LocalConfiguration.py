@@ -141,7 +141,7 @@ class LocalConfiguration:
       for optionPath in self.mandatoryEntryList:
         optionPath = self.__getAbsolutePath( optionPath )
         if not gConfigurationData.extractOptionFromCFG( optionPath ):
-          gLogger.fatal( "Missing mandatory option in the configuration", optionPath )
+          gLogger.fatal( "Missing mandatory local configuration option", optionPath )
           isMandatoryMissing = True
       if isMandatoryMissing:
         return S_ERROR()

@@ -1,12 +1,17 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceManagementClient
 
+  Client to interact with the ResourceManagementDB.
+
+'''
+
+from datetime import datetime
+
+from DIRAC                                              import gLogger, S_ERROR 
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
-from datetime import datetime
+__RCSID__ = '$Id: $'
 
 class ResourceManagementClient:
   """
@@ -47,6 +52,9 @@ class ResourceManagementClient:
       try:
         self.gate = ResourceManagementDB()
       except SystemExit:
+        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )
+      except ImportError:
+        # Pilots will connect here, as MySQLdb is not installed for them        
         self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
     else:
       self.gate = serviceIn    
@@ -66,54 +74,20 @@ class ResourceManagementClient:
     
     gateFunction = getattr( self.gate, queryType )
     
-    meta   = kwargs.pop( 'meta' )
+    # If meta is None, we set it to {}
+    meta   = ( True and kwargs.pop( 'meta' ) ) or {}
     params = kwargs
     del params[ 'self' ]     
         
     meta[ 'table' ] = tableName
     
-    gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
+    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
     return gateFunction( params, meta )
 
-#  def __query( self, kwargs ):
-#    '''
-#      This method is a rather important one. It will format the input for the DB
-#      queries, instead of doing it on a decorator. Two dictionaries must be passed
-#      to the DB. First one contains 'columnName' : value pairs, being the key
-#      lower camel case. The second one must have, at lease, a key named 'table'
-#      with the right table name. 
-#    '''
-#    
-#    # Functions we can call, just a light safety measure.
-#    __INTERNAL_FUNCTIONS__ = [ 'insert', 'update', 'get', 'delete' ]
-#    gateFunction           = None
-#    
-#    # I'm simply lazy, do not want to pass function name as argument. I get it here
-#    fname  = sys._getframe( 1 ).f_code.co_name
-#    meta   = kwargs.pop( 'meta' )
-#    params = kwargs
-#    del params[ 'self' ]
-#        
-#    for _ifName in __INTERNAL_FUNCTIONS__:
-#      
-#      if fname.startswith( _ifName ):
-#        
-#        _table = fname.replace( _ifName, '' )
-#          
-#        meta[ 'table' ] = _table
-#        
-#        gateFunction = getattr( self.gate, _ifName )
-#        continue  
-#    
-#    # Be careful, __eq__ method cannot be executed if we use server !  
-#    if gateFunction is not None:  
-#      
-#      gLogger.info( 'Calling %s, with \n params %s \n meta %s' % ( _ifName, params, meta ) )  
-#      return gateFunction( params, meta )     
-#    
-#    return S_ERROR( 'Cannot find right call for %s' % fname )
+################################################################################
+# ENVIRONMENT CACHE FUNCTIONS
 
-  def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
+  def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = None ):
     '''
     Inserts on EnvironmentCache a new row with the arguments given.
     
@@ -130,8 +104,10 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'EnvironmentCache', locals() )
-  def updateEnvironmentCache( self, hashEnv, siteName, environment, meta = {} ):
+  def updateEnvironmentCache( self, hashEnv, siteName, environment, meta = None ):
     '''
     Updates EnvironmentCache with the parameters given. By default, `hashEnv`
     will be the parameter used to select the row. 
@@ -149,9 +125,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'EnvironmentCache', locals() )
   def getEnvironmentCache( self, hashEnv = None, siteName = None, 
-                           environment = None, meta = {} ):
+                           environment = None, meta = None ):
     '''
     Gets from EnvironmentCache all rows that match the parameters given.
     
@@ -168,9 +146,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'EnvironmentCache', locals() )
   def deleteEnvironmentCache( self, hashEnv = None, siteName = None, 
-                              environment = None, meta = {} ):
+                              environment = None, meta = None ):
     '''
     Deletes from EnvironmentCache all rows that match the parameters given.
     
@@ -187,10 +167,16 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'EnvironmentCache', locals() )
+  
+################################################################################
+# POLICY RESULT FUNCTIONS
+
   def insertPolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime,
-                          meta = {} ):
+                          meta = None ):
     '''
     Inserts on PolicyResult a new row with the arguments given.
     
@@ -219,10 +205,12 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'PolicyResult', locals() ) 
   def updatePolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime, 
-                          meta = {} ):
+                          meta = None ):
     '''
     Updates PolicyResult with the parameters given. By default, `name`, 
     `policyName` and `statusType` will be the parameters used to select the row.
@@ -252,10 +240,12 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'PolicyResult', locals() )
   def getPolicyResult( self, granularity = None, name = None, policyName = None, 
                        statusType = None, status = None, reason = None, 
-                       dateEffective = None, lastCheckTime = None, meta = {} ):
+                       dateEffective = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
     
@@ -284,11 +274,13 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'PolicyResult', locals() )
   def deletePolicyResult( self, granularity = None, name = None, 
                           policyName = None, statusType = None, status = None, 
                           reason = None, dateEffective = None, 
-                          lastCheckTime = None, meta = {} ):
+                          lastCheckTime = None, meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -317,9 +309,15 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'PolicyResult', locals() )
+  
+################################################################################
+# CLIENT CACHE FUNCTIONS
+
   def insertClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, meta = {} ):
+                         dateEffective, lastCheckTime, meta = None ):
     '''
     Inserts on ClientCache a new row with the arguments given.
     
@@ -343,10 +341,12 @@ class ResourceManagementClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'ClientCache', locals() )
   def updateClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, meta = {} ):
+                         dateEffective, lastCheckTime, meta = None ):
     '''
     Updates ClientCache with the parameters given. By default, `name`, 
     `commandName` and `value` will be the parameters used to select the row.
@@ -371,11 +371,13 @@ class ResourceManagementClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'ClientCache', locals() )
   def getClientCache( self, name = None, commandName = None, opt_ID = None, 
                       value = None, result = None, dateEffective = None, 
-                      lastCheckTime = None, meta = {} ):
+                      lastCheckTime = None, meta = None ):
     '''
     Gets from ClientCache all rows that match the parameters given.
     
@@ -400,10 +402,12 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'ClientCache', locals() )
   def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
                          value = None, result = None, dateEffective = None, 
-                         lastCheckTime = None, meta = {} ):
+                         lastCheckTime = None, meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -428,9 +432,15 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ClientCache', locals() )
+  
+################################################################################
+# ACCOUNTING CACHE FUNCTIONS
+
   def insertAccountingCache( self, name, plotType, plotName, result, 
-                             dateEffective, lastCheckTime, meta = {} ):
+                             dateEffective, lastCheckTime, meta = None ):
     '''
     Inserts on AccountingCache a new row with the arguments given.
     
@@ -453,9 +463,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'AccountingCache', locals() )
   def updateAccountingCache( self, name, plotType, plotName, result, 
-                             dateEffective, lastCheckTime, meta = {} ):
+                             dateEffective, lastCheckTime, meta = None ):
     '''
     Updates AccountingCache with the parameters given. By default, `name`, 
     `plotType` and `plotName` will be the parameters used to select the row.
@@ -479,10 +491,12 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'AccountingCache', locals() )
   def getAccountingCache( self, name = None, plotType = None, plotName = None, 
                           result = None, dateEffective = None, 
-                          lastCheckTime = None, meta = {} ):
+                          lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
     
@@ -505,11 +519,13 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'AccountingCache', locals() )
   def deleteAccountingCache( self, name = None, plotType = None, 
                              plotName = None, result = None, 
                              dateEffective = None, lastCheckTime = None, 
-                             meta = {} ):
+                             meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -532,8 +548,14 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'AccountingCache', locals() )
-  def insertUserRegistryCache( self, login, name, email, meta = {} ):
+  
+################################################################################
+# USER REGISTRY CACHE FUNCTIONS
+
+  def insertUserRegistryCache( self, login, name, email, meta = None ):
     '''
     Inserts on UserRegistryCache a new row with the arguments given.
     
@@ -549,9 +571,11 @@ class ResourceManagementClient:
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''    
+    '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
     return self.__query( 'insert', 'UserRegistryCache', locals() )
-  def updateUserRegistryCache( self, login, name, email, meta = {} ):
+  def updateUserRegistryCache( self, login, name, email, meta = None ):
     '''
     Updates UserRegistryCache with the parameters given. By default, `login` 
     will be the parameter used to select the row.
@@ -569,9 +593,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'update', 'UserRegistryCache', locals() )
   def getUserRegistryCache( self, login = None, name = None, email = None, 
-                            meta = {} ):
+                            meta = None ):
     '''
     Gets from UserRegistryCache all rows that match the parameters given.
     
@@ -588,9 +614,11 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'get', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
-                               meta = {} ):                                            
+                               meta = None ):                                            
     '''
     Deletes from UserRegistryCache all rows that match the parameters given.
     
@@ -607,13 +635,12 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__query( 'delete', 'UserRegistryCache', locals() )
 
-  '''
-  ##############################################################################
-  # EXTENDED BASE API METHODS
-  ##############################################################################
-  '''
+################################################################################
+# EXTENDED BASE API METHODS
 
   def addOrModifyEnvironmentCache( self, hashEnv, siteName, environment ):
     '''
@@ -633,8 +660,9 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'EnvironmentCache', locals() )
-
   def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime ):
     '''
@@ -666,8 +694,9 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'PolicyResult', locals() )
-
   def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
                               dateEffective, lastCheckTime ):
     '''
@@ -695,8 +724,9 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'ClientCache', locals() )
-
   def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
                                   dateEffective, lastCheckTime ):
     '''
@@ -722,8 +752,9 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'AccountingCache', locals() )
-
   def addOrModifyUserRegistryCache( self, login, name, email ):
     '''
     Using `login` to query the database, decides whether to insert or update 
@@ -742,51 +773,60 @@ class ResourceManagementClient:
 
     :return: S_OK() || S_ERROR()
     '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'UserRegistryCache', locals() ) 
 
 ################################################################################
-
-  '''
-  ##############################################################################
-  # Getter functions
-  ##############################################################################
-  '''
+# Getter functions
 
   def _insertElement( self, element, kwargs ):
-    
+    '''
+      Method that executes the insert method of the given element.
+    '''
     fname = 'insert%s' % element
-    f = getattr( self, fname )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **kwargs )
 
   def _updateElement( self, element, kwargs ): 
-    
+    '''
+      Method that executes the update method of the given element.
+    '''    
     fname = 'update%s' % element
-    f = getattr( self, fname )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **kwargs )
 
   def _getElement( self, element, kwargs ):
-    
+    '''
+      Method that executes the get method of the given element.
+    '''
     fname = 'get%s' % element
-    f = getattr( self, fname )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **kwargs )
 
-  def _deleteElement( self, element, kwargs ):    
+  def _deleteElement( self, element, kwargs ):
+    '''
+      Method that executes the delete method of the given element.
+    '''    
     fname = 'delete%s' % element
-    f = getattr( self, fname )
-    return f( **kwargs )
+    fElem = getattr( self, fname )
+    return fElem( **kwargs )
 
-  '''
-  ##############################################################################
-  # addOrModify PRIVATE FUNCTIONS
-  ##############################################################################
-  ''' 
+################################################################################
+# addOrModify PRIVATE FUNCTIONS
+
   def __addOrModifyElement( self, element, kwargs ):
-       
+    '''
+      Method that executes update if the item is not new, otherwise inserts it
+      on the element table.
+    '''
     del kwargs[ 'self' ]
        
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
     
     sqlQuery = self._getElement( element, kwargs )   
+    if not sqlQuery[ 'OK' ]:
+      return sqlQuery
         
     del kwargs[ 'meta' ]
     

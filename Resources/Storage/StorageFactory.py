@@ -14,10 +14,10 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                    import gLogger, gConfig, S_OK, S_ERROR, rootPath
-from DIRAC.Core.Utilities.List                import sortList
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
-from DIRAC.ResourceStatusSystem.Client        import ResourceStatus
+from DIRAC                                            import gLogger, gConfig, S_OK, S_ERROR, rootPath
+from DIRAC.Core.Utilities.List                        import sortList
+from DIRAC.ConfigurationSystem.Client.Helpers         import getInstalledExtensions
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 import os
 
 class StorageFactory:
@@ -30,6 +30,8 @@ class StorageFactory:
     res = gConfig.getOption( "%s/UseProxy" % self.rootConfigPath )
     if res['OK'] and ( res['Value'] == 'True' ):
       self.proxy = True
+    self.resourceStatus = ResourceStatus()
+
 
   ###########################################################################################
   #
@@ -221,11 +223,11 @@ class StorageFactory:
       optionConfigPath = '%s/%s' % ( storageConfigPath, option )
       optionsDict[option] = gConfig.getValue( optionConfigPath, '' )
 
-    #res = ResourceStatus.getStorageElementStatus( storageName )
-    #if not res[ 'OK' ]:
-    #  errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
-    #  gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
-    #  return S_ERROR( errStr )
+    res = self.resourceStatus.getStorageElementStatus( storageName )
+    if not res[ 'OK' ]:
+      errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
+      gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
+      return S_ERROR( errStr )
 
     # For safety, we did not add the ${statusType}Access keys
     # this requires modifications in the StorageElement class

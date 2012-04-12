@@ -25,7 +25,6 @@ __RCSID__ = "$Id $"
 
 ## py imports 
 import time
-
 ## DIRAC imports 
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -96,9 +95,12 @@ class RequestAgentBase( AgentModule ):
     self.log.info( "Will use DataManager proxy by default." )
 
     ## common monitor activity 
-    self.monitor.registerActivity( "Iteration", "Agent Loops", self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Execute", "Request Processed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Done", "Request Completed", self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Iteration", "Agent Loops", 
+                                   self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Execute", "Request Processed", 
+                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    self.monitor.registerActivity( "Done", "Request Completed", 
+                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
       
     ## create request dict
     self.__requestHolder = dict()
@@ -133,7 +135,7 @@ class RequestAgentBase( AgentModule ):
 
     :param self: self reference
     """
-    for requestName, requestTuple  in self.__requestHolder:
+    for requestName, requestTuple  in self.__requestHolder.items():
       requestString, requestServer = requestTuple
       reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
       if not reset["OK"]:
@@ -186,45 +188,46 @@ class RequestAgentBase( AgentModule ):
                                         poolCallback = self.resultCallback,
                                         poolExceptionCallback = self.exceptionCallback )
       self.__processPool.daemonize()
+      self.log.info( "ProcessPool: daemonized and ready")
     return self.__processPool
 
-  def resultCallback( self, task ):
+  def hasProcessPool( self ):
+    """ check if ProcessPool exist to speed up finalization """
+    return bool( self.__processPool )
+
+  def resultCallback( self, taskID, taskResult ):
     """ definition of request callback function
     
     :param self: self reference
     """
-    self.log.info("resultCallback from task %s" % task.getTaskID() )
-    results = task.taskResult()
+    self.log.info("resultCallback from task %s" % taskID )
 
     ## delete this one from request holder
-    self.deleteRequest( task.getTaskID() )
+    self.deleteRequest( taskID )
 
-    if not results["OK"]:
-      self.log.error( results["Message"] )
+    if not taskResult["OK"]:
+      self.log.error( taskResult["Message"] )
       return
-    results = results["Value"]
-
-    if "monitor" in results:
-      monitor = results["monitor"]
-      for mark, value in monitor.items():
-        try:
-          gMonitor.addMark( mark, value )
-        except Exception, error:
-          log.exception( str(error) )
+    taskResult = taskResult["Value"]
+    ## add monitoring info
+    monitor = taskResult["monitor"] if "monitor" in taskResult else {}
+    for mark, value in monitor.items():
+      try:
+        gMonitor.addMark( mark, value )
+      except Exception, error:
+        self.log.exception( str(error) )
     
-
-  def exceptionCallback( self, task ):
+  def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callbak function
     
     :param self: self reference
     """
-    self.log.error( "exceptionCallback from task %s" % task.getTaskID() )
-    exception = task.taskException()
-    self.log.error( exception )
+    self.log.error( "exceptionCallback from task %s" % taskID )
+    self.log.error( taskException )
 
   @classmethod
   def getRequest( cls, requestType ):
-    """ retrive Request of type requestType from RequestDB
+    """ retrive Request of type requestType from RequestClient
 
     :param cls: class reference
     :param str requestType: type of request
@@ -243,14 +246,14 @@ class RequestAgentBase( AgentModule ):
                     "sourceServer" : None,
                     "executionOrder" : None,
                     "jobID" : None }
-    ## get request out of DB
+    ## get request out of RequestClient
     res = cls.requestClient().getRequest( requestType )
     if not res["OK"]:
       gLogger.error( res["Message"] )
       return res
     elif not res["Value"]:
-      msg = "Request of type '%s' not found in RequestDB." % requestType
-      gLogger.info( msg )
+      msg = "Request of type '%s' not found in RequestClient." % requestType
+      gLogger.debug( msg )
       return S_OK()
     ## store values
     requestDict["requestName"] = res["Value"]["RequestName"]
@@ -328,7 +331,8 @@ class RequestAgentBase( AgentModule ):
                                                            kwargs = requestDict,
                                                            taskID = requestDict["requestName"],
                                                            blocking = True,
-                                                           usePoolCallbacks = True )
+                                                           usePoolCallbacks = True,
+                                                           timeOut = 600 )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
@@ -347,7 +351,9 @@ class RequestAgentBase( AgentModule ):
     :param self: self reference
     """
     ## finalize all processing
-    self.processPool().processAllResults()
+    if self.hasProcessPool():
+      self.processPool().processAllResults()
+      self.processPool().finalize()
     ## reset failover requests for further processing 
     self.resetRequests()
     ## good bye, all done!

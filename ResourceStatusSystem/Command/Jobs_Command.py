@@ -1,19 +1,17 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' Jobs_Command
+ 
   The Jobs_Command class is a command class to know about 
   present jobs efficiency
-"""
+  
+'''
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command      import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
@@ -157,7 +155,7 @@ class JobsEffSimple_Command(Command):
         name        = self.args[1]
         granularity = self.args[0]
       else:
-        raise InvalidRes( '%s is not a valid granularity' % self.args[ 0 ] )
+        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
          
       res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( name )
      
@@ -210,7 +208,7 @@ class JobsEffSimpleCached_Command(Command):
         name        = self.args[1]
         granularity = self.args[0]
       else:
-        raise InvalidRes( '%s is not a valid granularity' % self.args[ 0 ] )
+        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
      
       clientDict = { 
                      'name'        : name,

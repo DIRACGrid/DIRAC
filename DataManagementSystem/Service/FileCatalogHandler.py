@@ -303,10 +303,10 @@ class FileCatalogHandler(RequestHandler):
   def export_addMetadataField(self, fieldName, fieldType, metaType='-d' ):
     """ Add a new metadata field of the given type
     """
-    if metatype.lower() == "-d":
+    if metaType.lower() == "-d":
       return fcDB.dmeta.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
-    elif metatype.lower() == "-f":
-      return fcDB.fmeta.addUserMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
+    elif metaType.lower() == "-f":
+      return fcDB.fmeta.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
     else:
       return S_ERROR('Unknown metadata type %s' % metaType)
 
@@ -314,7 +314,16 @@ class FileCatalogHandler(RequestHandler):
   def export_deleteMetadataField(self, fieldName ):
     """ Delete the metadata field 
     """
-    return fcDB.dmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )
+    result = fcDB.dmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )
+    error = ''
+    if not result['OK']:
+      error = result['Message']
+    result = fcDB.fmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )  
+    if not result['OK']:
+      if error:
+        result["Message"] = error + "; " + result["Message"] 
+        
+    return result    
   
   types_getMetadataFields = [ ]
   def export_getMetadataFields(self):
@@ -335,6 +344,12 @@ class FileCatalogHandler(RequestHandler):
     """ Set metadata parameter for the given path
     """
     return fcDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
+  
+  types_removeMetadata = [ StringTypes, ListType ]
+  def export_removeMetadata(self, path, metadata ):
+    """ Remove the specified metadata for the given path
+    """
+    return fcDB.removeMetadata( path, metadata, self.getRemoteCredentials() )
   
   types_getDirectoryMetadata = [ StringTypes ]
   def export_getDirectoryMetadata(self,path):

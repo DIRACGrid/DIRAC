@@ -1,19 +1,17 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' Pilots_Command
+ 
   The Pilots_Command class is a command class to know about
-  present pilots efficiency
-"""
+  present pilots efficiency.
+  
+'''
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command      import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import InvalidRes
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
@@ -106,7 +104,7 @@ class PilotsEffSimple_Command( Command ):
         name        = self.args[1]
         granularity = self.args[0]
       else:
-        raise InvalidRes( '%s is not a valid granularity' % self.args[ 0 ] )
+        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
 
       res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff( granularity, name )
       if res is None:
@@ -160,7 +158,7 @@ class PilotsEffSimpleCached_Command( Command ):
         name        = self.args[1]
         granularity = self.args[0]
       else:
-        raise InvalidRes( '%s is not a valid granularity' % self.args[ 0 ] )
+        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
 
       clientDict = { 
                      'name'        : name,

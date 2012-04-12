@@ -9,20 +9,21 @@ __RCSID__ = "$Id$"
 import datetime
 import time as nativetime
 from DIRAC.Core.Utilities import List, Time
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 
 class SharesCorrector:
   
-  def __init__( self, csBasePath = "" ):
-    if not csBasePath:
-      csBasePath = "/Operations/Scheduling/%s/" % gConfig.getValue( "/DIRAC/Setup" )
-    self.__baseCSPath = "%s/ShareCorrections" % csBasePath 
+  def __init__( self, opsHelper ):
+    if not opsHelper:
+      opsHelper = Operations()
+    self.__opsHelper = Operations()
     self.__log = gLogger.getSubLogger( "SharesCorrector" )
     self.__shareCorrectors = {}
     self.__correctorsOrder = []
     
   def __getCSValue( self, path, defaultValue = '' ):
-    return gConfig.getValue( "%s/%s" % ( self.__baseCSPath, path ), defaultValue )
+    return self.__opsHelper.getValue( "Matching/%s" % path, defaultValue )
     
   def __getCorrectorClass( self, correctorName ):
     fullCN = "%sCorrector" % correctorName

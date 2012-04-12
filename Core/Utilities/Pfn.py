@@ -79,7 +79,7 @@ def pfnunparse( pfnDict ):
     return S_ERROR("pfnunparse: 'FileName' value is missing in pfnDict")
   ## c
   ## /a/b/c
-  filePath = os.path.normpath( os.path.join( pfnDict["Path"], pfnDict["FileName"] ) ) 
+  filePath = os.path.normpath( '/' + pfnDict["Path"] + '/' + pfnDict["FileName"] ).replace( '//','/' )
     
   ## host
   uri = pfnDict["Host"]

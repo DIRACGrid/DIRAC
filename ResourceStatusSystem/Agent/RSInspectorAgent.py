@@ -1,12 +1,13 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__  = "$Id:  $"
-AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
+''' RSInspectorAgent
+
+  This agent inspect Resources, and evaluates policies that apply.
+
+'''
 
 import Queue, time
 
-from DIRAC                                                  import gLogger, S_OK, S_ERROR
+from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
@@ -14,7 +15,10 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
-from DIRAC.ResourceStatusSystem.Utilities import CS
+from DIRAC.ResourceStatusSystem.Utilities                   import CS
+
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
 
 class RSInspectorAgent( AgentModule ):
   """
@@ -28,13 +32,19 @@ class RSInspectorAgent( AgentModule ):
     end of the file.
   """
 
+  # Too many public methods
+  # pylint: disable-msg=R0904
+
   def initialize( self ):
+
+    # Attribute defined outside __init__ 
+    # pylint: disable-msg=W0201
 
     try:
       self.rsClient             = ResourceStatusClient()
-      self.ResourcesFreqs       = CS.getTypedDictRootedAt("CheckingFreqs/ResourcesFreqs")
-      self.ResourcesToBeChecked = Queue.Queue()
-      self.ResourceNamesInCheck = []
+      self.resourcesFreqs       = CS.getTypedDictRootedAt( 'CheckingFreqs/ResourcesFreqs' )
+      self.resourcesToBeChecked = Queue.Queue()
+      self.resourceNamesInCheck = []
 
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
       self.threadPool         = ThreadPool( self.maxNumberOfThreads,
@@ -50,11 +60,8 @@ class RSInspectorAgent( AgentModule ):
 
     except Exception:
       errorStr = "RSInspectorAgent initialization"
-      gLogger.exception( errorStr )
+      self.log.exception( errorStr )
       return S_ERROR( errorStr )
-
-################################################################################
-################################################################################
 
   def execute( self ):
 
@@ -66,51 +73,53 @@ class RSInspectorAgent( AgentModule ):
                                     'TokenOwner' ]
       kwargs[ 'tokenOwner' ]    = 'RS_SVC'
 
-      resQuery = self.rsClient.getStuffToCheck( 'Resource', self.ResourcesFreqs, **kwargs )
+      resQuery = self.rsClient.getStuffToCheck( 'Resource', self.resourcesFreqs, **kwargs )
+      if not resQuery[ 'OK' ]:
+        self.log.error( resQuery[ 'Message' ] )
+        return resQuery
 
-      gLogger.info( 'Found %d candidates to be checked.' % len( resQuery[ 'Value' ] ) )
+      resQuery = resQuery[ 'Value' ]  
+      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
 
-      for resourceTuple in resQuery[ 'Value' ]:
+      for resourceTuple in resQuery:
 
-        #THIS IS IMPORTANT !!
-        #Ignore all elements with token != RS_SVC
-        #if resourceTuple[ 6 ] != 'RS_SVC':
-        #  continue
-
-        if ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) in self.ResourceNamesInCheck:
-          gLogger.info( '%s(%s) discarded, already on the queue' % ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
+        if ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) in self.resourceNamesInCheck:
+          self.log.info( '%s(%s) discarded, already on the queue' % ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
           continue
 
         resourceL = [ 'Resource' ] + resourceTuple
 
-        self.ResourceNamesInCheck.insert( 0, ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
-        self.ResourcesToBeChecked.put( resourceL )
+        self.resourceNamesInCheck.insert( 0, ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
+        self.resourcesToBeChecked.put( resourceL )
 
       return S_OK()
 
     except Exception, x:
       errorStr = where( self, self.execute )
-      gLogger.exception( errorStr,lException=x )
+      self.log.exception( errorStr, lException = x )
       return S_ERROR( errorStr )
 
-################################################################################
-################################################################################
-
   def finalize( self ):
-    if self.ResourceNamesInCheck:
+    '''
+      Method executed at the end of the last cycle. It waits until the queue
+      is empty.
+    '''   
+    if self.resourceNamesInCheck:
       _msg = "Wait for queue to get empty before terminating the agent (%d tasks)"
-      _msg = _msg % len( self.ResourceNamesInCheck )
-      gLogger.info( _msg )
-      while self.ResourceNamesInCheck:
+      _msg = _msg % len( self.resourceNamesInCheck )
+      self.log.info( _msg )
+      while self.resourceNamesInCheck:
         time.sleep( 2 )
-      gLogger.info( "Queue is empty, terminating the agent..." )
+      self.log.info( "Queue is empty, terminating the agent..." )
     return S_OK()
 
 ################################################################################
-################################################################################
 
   def _executeCheck( self, _arg ):
-
+    '''
+      Method executed by the threads in the pool. Picks one element from the
+      common queue, and enforces policies on that element.
+    '''
     # Init the APIs beforehand, and reuse them.
     __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
     clients = knownAPIs.initAPIs( __APIs__, {} )
@@ -119,7 +128,7 @@ class RSInspectorAgent( AgentModule ):
 
     while True:
 
-      toBeChecked  = self.ResourcesToBeChecked.get()
+      toBeChecked  = self.resourcesToBeChecked.get()
 
       pepDict = { 'granularity'  : toBeChecked[ 0 ],
                   'name'         : toBeChecked[ 1 ],
@@ -132,24 +141,24 @@ class RSInspectorAgent( AgentModule ):
 
       try:
 
-        gLogger.info( "Checking Resource %s, with type/status: %s/%s" % \
+        self.log.info( "Checking Resource %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
 
         pepRes =  pep.enforce( **pepDict )
         if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
           pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
           if pepStatus != pepDict[ 'status' ]:
-            gLogger.info( 'Updated Site %s (%s) from %s to %s' %
+            self.log.info( 'Updated Site %s (%s) from %s to %s' %
                           ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
 
         # remove from InCheck list
-        self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
+        self.resourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
 
       except Exception:
-        gLogger.exception( "RSInspector._executeCheck Checking Resource %s, with type/status: %s/%s" % \
+        self.log.exception( "RSInspector._executeCheck Checking Resource %s, with type/status: %s/%s" % \
                       ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
         try:
-          self.ResourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
+          self.resourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
         except IndexError:
           pass
 

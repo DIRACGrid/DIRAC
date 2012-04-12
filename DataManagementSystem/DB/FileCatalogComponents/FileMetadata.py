@@ -1,12 +1,12 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
 
 """ DIRAC FileCatalog plugin class to manage file metadata. This contains only
     non-indexed metadata for the moment.
 """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import time, os, types
 from DIRAC import S_OK, S_ERROR
@@ -67,6 +67,14 @@ class FileMetadata:
 
     req = "DROP TABLE FC_FileMeta_%s" % pname
     result = self.db._update( req )
+    error = ''
+    if not result['OK']:
+      error = result["Message"]
+    req = "DELETE FROM FC_FileMetaFields WHERE MetaName='%s'" % pname
+    result = self.db._update( req )
+    if not result['OK']:
+      if error:
+        result["Message"] = error + "; " + result["Message"] 
     return result
 
   def getFileMetadataFields( self, credDict ):
@@ -121,6 +129,44 @@ class FileMetadata:
             return result
 
     return S_OK()     
+  
+  def removeMetadata( self, path, metadata, credDict ):
+    """ Remove the specified metadata for the given file
+    """
+    result = self.getFileMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    metaFields = result['Value']
+    
+    result = self.db.fileManager._findFiles( [path] )
+    if not result['OK']:
+      return result
+    if result['Value']['Successful']:
+      fileID = result['Value']['Successful'][path]['FileID']
+    else:
+      return S_ERROR('File %s not found' % path)  
+    
+    failedMeta = {}
+    for meta in metadata:
+      if meta in metaFields:
+        # Indexed meta case
+        req = "DELETE FROM FC_FileMeta_%s WHERE FileID=%d" % (meta,fileID)
+        result = self.db._update(req)
+        if not result['OK']:
+          failedMeta[meta] = result['Value']
+      else:
+        # Meta parameter case
+        req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s' AND FileID=%d" % (meta,FileID)
+        result = self.db._update(req)
+        if not result['OK']:
+          failedMeta[meta] = result['Value']    
+          
+    if failedMeta:
+      metaExample = failedMeta.keys()[0]
+      result = S_ERROR('Failed to remove %d metadata, e.g. %s' % (len(failedMeta),failedMeta[metaExample]) )
+      result['FailedMetadata'] = failedMeta
+    else:
+      return S_OK()     
   
   def __getFileID( self, path ):
     
@@ -321,12 +367,9 @@ class FileMetadata:
 
 
   def __findFilesByMetadata( self,metaDict,dirList,credDict ):
-
-    result = self.getFileMetadataFields( credDict )
-    if not result['OK']:
-      return result
-
-    fileMetaInfo = result['Value']
+    """ Find a list of file IDs meeting the metaDict requirements and belonging
+        to directories in dirList 
+    """
 
     fileList = []
     first = True    
@@ -354,6 +397,9 @@ class FileMetadata:
 
     start = time.time()
 
+    if not path:
+      path = '/'
+
     result = self.db.dmeta.findDirIDsByMetadata( metaDict, path, credDict )
     if not result['OK']:
       return result
@@ -370,6 +416,9 @@ class FileMetadata:
       if key in result['Value']:
         fileMetaDict[key] = value
 
+    fileList = []
+    lfnList = []
+
     if dirFlag == "None":
       return S_OK([])
     elif dirFlag == "All":
@@ -383,16 +432,19 @@ class FileMetadata:
         return S_OK(lfnList)  
       else:
         return S_OK([])
-     
-    fileList = []
-    lfnList = []
+
     if fileMetaDict:
       result = self.__findFilesByMetadata( fileMetaDict,dirList,credDict )
       if not result['OK']:
         return result
       fileList = result['Value']
-      if fileList:
-        result = self.db.fileManager._getFileLFNs(fileList)
-        lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
+    else:
+      result = self.db.dtree.getFileLFNsInDirectoryByDirectory( dirList, credDict )
+      return result
 
-    return S_OK( lfnList )
+    if fileList:
+      result = self.db.fileManager._getFileLFNs(fileList)
+      lfnList = [ x[1] for x in result['Value']['Successful'].items() ]
+
+    return S_OK( lfnList ) 
+

@@ -259,15 +259,13 @@ class Job:
         if not fileName.lower().count( "lfn:" ):
           return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( files )
-      fileList = ";".join( resolvedFiles )
-      self.parametric['InputSandbox'] = fileList
+      self.parametric['InputSandbox'] = resolvedFiles
       #self.sandboxFiles=resolvedFiles
     elif type( files ) == type( " " ):
       if not files.lower().count( "lfn:" ):
         return self._reportError( 'All files should be LFNs', **kwargs )
       resolvedFiles = self._resolveInputSandbox( [files] )
-      fileList = ";".join( resolvedFiles )
-      self.parametric['InputSandbox'] = fileList
+      self.parametric['InputSandbox'] = resolvedFiles
       #self.sandboxFiles = [files]
     else:
       return self._reportError( 'Expected file string or list of files for input sandbox contents', **kwargs )
@@ -350,10 +348,12 @@ class Job:
     """
     if type( lfns ) == list and len( lfns ):
       for i in xrange( len( lfns ) ):
-        lfns[i] = lfns[i].replace( 'LFN:', '' )
-      inputData = map( lambda x: 'LFN:' + x, lfns )
-      inputDataStr = ';'.join( inputData )
-      self.parametric['InputData'] = inputDataStr
+        if type( lfns[i] ) == list and len( lfns[i] ):
+          for k in xrange( len( lfns[i] ) ):
+            lfns[i][k] = 'LFN:' + lfns[i][k].replace( 'LFN:', '' )
+        else:  
+          lfns[i] = 'LFN:' + lfns[i].replace( 'LFN:', '' )
+      self.parametric['InputData'] = lfns
     elif type( lfns ) == type( ' ' ):  #single LFN
       self.parametric['InputData'] = lfns
     else:
@@ -904,11 +904,11 @@ class Job:
     self._addParameter( self.workflow, 'InputData', 'JDL', '', 'Default null input data value' )
     self._addParameter( self.workflow, 'LogLevel', 'JDL', self.logLevel, 'Job Logging Level' )
     #Those 2 below are need for on-site resolution
-    self._addParameter( self.workflow, 'ParametricInputData', 'JDL', '',
+    self._addParameter( self.workflow, 'ParametricInputData', 'string', '',
                         'Default null parametric input data value' )
-    self._addParameter( self.workflow, 'ParametricInputSandbox', 'JDL', '',
+    self._addParameter( self.workflow, 'ParametricInputSandbox', 'string', '',
                         'Default null parametric input sandbox value' )
-    self._addParameter( self.workflow, 'ParametricParameters', 'JDL', '', 
+    self._addParameter( self.workflow, 'ParametricParameters', 'string', '', 
                         'Default null parametric input parameters value' )
 
   #############################################################################
@@ -1114,36 +1114,37 @@ class Job:
         paramsDict['InputData']['value'] = extraFiles
         paramsDict['InputData']['type'] = 'JDL'
 
-    ###Here handle the Parametric values
+    # Handle here the Parametric values
     if self.parametric:
-      if self.parametric.has_key( 'InputData' ):
-        if paramsDict.has_key( 'InputData' ):
-          if paramsDict['InputData']['value']:
-            currentFiles = paramsDict['InputData']['value'] + ";%s"
-            paramsDict['InputData']['value'] = currentFiles
-          else:
-            paramsDict['InputData'] = {}
-            paramsDict['InputData']['value'] = "%s"
-            paramsDict['InputData']['type'] = 'JDL'
-        self.parametric['files'] = self.parametric['InputData']
-        arguments.append( ' -p ParametricInputData=%s' )
-      elif self.parametric.has_key( 'InputSandbox' ):
-        if paramsDict.has_key( 'InputSandbox' ):
-          currentFiles = paramsDict['InputSandbox']['value'] + ";%s"
-          paramsDict['InputSandbox']['value'] = currentFiles
-        else:
-          paramsDict['InputSandbox'] = {}
-          paramsDict['InputSandbox']['value'] = '%s'
-          paramsDict['InputSandbox']['type'] = 'JDL'
-        self.parametric['files']=  self.parametric['InputSandbox']
-        arguments.append(' -p ParametricInputSandbox=%s')
+      for pType in ['InputData','InputSandbox']:
+        if self.parametric.has_key( pType ):
+          if paramsDict.has_key( pType ) and paramsDict[pType]['value']:
+            pData = self.parametric[pType]
+            # List of lists case
+            currentFiles = paramsDict[pType]['value'].split(';')
+            tmpList = []
+            if type(pData[0]) == list:  
+              for pElement in pData:
+                tmpList.append(currentFiles+pElement)
+            else:
+              for pElement in pData:
+                tmpList.append(currentFiles+[pElement])    
+            self.parametric[pType] = tmpList
+          
+          paramsDict[pType] = {}
+          paramsDict[pType]['value'] = "%s"
+          paramsDict[pType]['type'] = 'JDL'
+          self.parametric['files'] = self.parametric[pType]
+          arguments.append( ' -p Parametric'+pType+'=%s' )
+          break
+        
       if self.parametric.has_key('files'):   
         paramsDict['Parameters']={}
-        paramsDict['Parameters']['value']=";".join(self.parametric['files'])
+        paramsDict['Parameters']['value'] = self.parametric['files']
         paramsDict['Parameters']['type'] = 'JDL'
       if self.parametric.has_key('GenericParameters'):
         paramsDict['Parameters']={}
-        paramsDict['Parameters']['value']=";".join(self.parametric['GenericParameters'])
+        paramsDict['Parameters']['value'] = self.parametric['GenericParameters']
         paramsDict['Parameters']['type'] = 'JDL'
         arguments.append(' -p ParametricParameters=%s')
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
@@ -1159,9 +1160,16 @@ class Job:
         requirements = True
 
       if re.search( '^JDL', ptype ):
-        if not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
+        if type( value ) == list:
+          if type( value[0] ) == list:
+            classadJob.insertAttributeVectorStringList( name, value )
+          else:
+            classadJob.insertAttributeVectorString( name, value )  
+        elif value == "%s":
+          classadJob.insertAttributeInt( name, value )    
+        elif not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
           classadJob.insertAttributeString( name, value )
-        else:
+        else:  
           classadJob.insertAttributeVectorString( name, value.split( ';' ) )
 
     if not requirements:

@@ -1,25 +1,27 @@
-################################################################################
 # $HeadURL:  $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' Publisher
+
+  Module not used. Will be back to life whenever the portal is ready.
+
+'''
 
 import copy
 import threading
 
+from DIRAC                                              import gLogger
+from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.Core.Utilities.ThreadPool                    import ThreadPool
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping        import getGOCSiteName
 
-from DIRAC.ResourceStatusSystem.Utilities.CS            import getStorageElementStatus
-
 from DIRAC.ResourceStatusSystem                         import ValidRes
-from DIRAC.ResourceStatusSystem.Utilities               import Utils
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions    import RSSException, InvalidRes
-
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 from DIRAC.ResourceStatusSystem.Command.CommandCaller   import CommandCaller
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
+from DIRAC.ResourceStatusSystem.Utilities               import Utils
+from DIRAC.ResourceStatusSystem.Utilities.CS            import getStorageElementStatus
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter    import InfoGetter
-from DIRAC.Core.DISET.RPCClient                         import RPCClient
+
+__RCSID__ = '$Id: $'
 
 class Publisher:
   """
@@ -78,7 +80,7 @@ class Publisher:
     """
 
     if granularity not in ValidRes:
-      raise InvalidRes, Utils.where(self, self.getInfo)
+      return {}
 
     self.infoForPanel_res = {}
 
@@ -228,7 +230,8 @@ class Publisher:
         if DIRACStatus['OK']:
           DIRACStatus = DIRACStatus['Value'][name].pop()[0]
         else:
-          raise RSSException, Utils.where(self, self._getStatus)
+          gLogger.error( DIRACStatus[ 'Message' ] )
+          return None
 
       elif panel == 'SE_Panel':
         ra = getStorageElementStatus(name, 'ReadAccess')['Value']
@@ -292,7 +295,8 @@ class Publisher:
       serviceType = name.split('@')[0]
       gridSiteName = getGOCSiteName(name.split('@')[1])
       if not gridSiteName['OK']:
-        raise RSSException, gridSiteName['Message']
+        gLogger.error( gridSiteName['Message'] )
+        return None
       gridSiteName = gridSiteName['Value']
     elif what == 'ResOfStorService':
       gran = 'Resources'
@@ -301,7 +305,8 @@ class Publisher:
       serviceType = name.split('@')[0]
       gridSiteName = getGOCSiteName(name.split('@')[1])
       if not gridSiteName['OK']:
-        raise RSSException, gridSiteName['Message']
+        gLogger.error( gridSiteName['Message'] )
+        return None
       gridSiteName = gridSiteName['Value']
     elif what == 'ResOfStorEl':
       gran = 'StorageElements'
@@ -318,7 +323,8 @@ class Publisher:
         DIRACsiteName = name
       gridSiteName = getGOCSiteName(DIRACsiteName)
       if not gridSiteName['OK']:
-        raise RSSException, gridSiteName['Message']
+        gLogger.error( gridSiteName['Message'] )
+        return None
       gridSiteName = gridSiteName['Value']
     elif what == 'Site_Panel':
       gran = 'Site'

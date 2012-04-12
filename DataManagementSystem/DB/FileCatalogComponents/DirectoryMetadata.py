@@ -13,13 +13,13 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import queryT
 
 class DirectoryMetadata:
 
-  def __init__(self,database = None):
-          
+  def __init__( self, database = None ):
+
     self.db = database
-    
+
   def setDatabase( self, database ):
     self.db = database
-        
+
 ##############################################################################
 #
 #  Manage Metadata fields
@@ -66,6 +66,14 @@ class DirectoryMetadata:
 
     req = "DROP TABLE FC_Meta_%s" % pname
     result = self.db._update( req )
+    error = ''
+    if not result['OK']:
+      error = result["Message"]
+    req = "DELETE FROM FC_MetaFields WHERE MetaName='%s'" % pname
+    result = self.db._update( req )
+    if not result['OK']:
+      if error:
+        result["Message"] = error + "; " + result["Message"] 
     return result
 
   def getMetadataFields( self, credDict ):
@@ -147,9 +155,6 @@ class DirectoryMetadata:
 # Set and get directory metadata
 #
 #############################################################################################  
-  ###########################################################
-  # S. Poss:
-  # Instead of passing individual tags, pass dictionary
 
   def setMetadata( self, dpath, metadict, credDict ):
     """ Set the value of a given metadata field for the the given directory path
@@ -173,8 +178,9 @@ class DirectoryMetadata:
     for metaName, metaValue in metadict.items():
       if not metaName in metaFields:
         result = self.setMetaParameter( dpath, metaName, metaValue, credDict )
-        result['Warning'] = "Added metadata is not searchable"
-        return result
+        if not result['OK']:
+          return result
+        continue
       # Check that the metadata is not defined for the parent directories
       if metaName in dirmeta['Value']:
         return S_ERROR( 'Metadata conflict detected for %s for directory %s' % ( metaName, dpath ) )
@@ -189,7 +195,44 @@ class DirectoryMetadata:
           return result
 
     return S_OK()
+  
+  def removeMetadata( self, dpath, metadata, credDict ):
+    """ Remove the specified metadata for the given directory
+    """
+    result = self.getMetadataFields( credDict )
+    if not result['OK']:
+      return result
+    metaFields = result['Value']
 
+    result = self.db.dtree.findDir( dpath )
+    if not result['OK']:
+      return result
+    dirID = result['Value']
+    if not dirID:
+      return S_ERROR( '%s: directory not found' % dpath )
+
+    failedMeta = {}
+    for meta in metadata:
+      if meta in metaFields:
+        # Indexed meta case
+        req = "DELETE FROM FC_Meta_%s WHERE DirID=%d" % (meta,dirID)
+        result = self.db._update(req)
+        if not result['OK']:
+          failedMeta[meta] = result['Value']
+      else:
+        # Meta parameter case
+        req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s' AND DirID=%d" % (meta,dirID)
+        result = self.db._update(req)
+        if not result['OK']:
+          failedMeta[meta] = result['Value']    
+          
+    if failedMeta:
+      metaExample = failedMeta.keys()[0]
+      result = S_ERROR('Failed to remove %d metadata, e.g. %s' % (len(failedMeta),failedMeta[metaExample]) )
+      result['FailedMetadata'] = failedMeta
+    else:
+      return S_OK()        
+    
   def setMetaParameter( self, dpath, metaName, metaValue, credDict ):
     """ Set an meta parameter - metadata which is not used in the the data
         search operations
@@ -237,7 +280,7 @@ class DirectoryMetadata:
     metaDict = {}
     for dID, key, value in result['Value']:
       if metaDict.has_key( key ):
-        if type( metaDict[key] ) == ListType:
+        if type( metaDict[key] ) == types.ListType:
           metaDict[key].append( value )
         else:
           metaDict[key] = [metaDict[key]].append( value )
@@ -346,7 +389,7 @@ class DirectoryMetadata:
 #
 ############################################################################################  
 
-  def __createMetaSelection( self,meta,value,table='' ):
+  def __createMetaSelection( self, meta, value, table = '' ):
 
     if type( value ) == types.DictType:
       selectList = []
@@ -363,7 +406,7 @@ class DirectoryMetadata:
         elif operation == 'in' or operation == "=":
           if type( operand ) == types.ListType:
             vString = ','.join( [ "'" + str( x ) + "'" for x in operand] )
-            selectList.append( "%sValue IN (%s)" % ( table, vString) )
+            selectList.append( "%sValue IN (%s)" % ( table, vString ) )
           else:
             selectList.append( "%sValue='%s'" % ( table, operand ) )
         elif operation == 'nin' or operation == "!=":
@@ -382,9 +425,9 @@ class DirectoryMetadata:
       else:
         selectString = "%sValue='%s' " % ( table, value )
 
-    return S_OK(selectString)
+    return S_OK( selectString )
 
-  def __findSubdirByMeta( self, meta, value, pathSelection='', subdirFlag = True ):
+  def __findSubdirByMeta( self, meta, value, pathSelection = '', subdirFlag = True ):
     """ Find directories for the given meta datum. If the the meta datum type is a list,
         combine values in OR. In case the meta datum is 'Any', finds all the subdirectories
         for which the meta datum is defined at all.
@@ -395,9 +438,9 @@ class DirectoryMetadata:
       return result
     selectString = result['Value']
 
-    req = " SELECT M.DirID FROM FC_Meta_%s AS M" %  meta
+    req = " SELECT M.DirID FROM FC_Meta_%s AS M" % meta
     if pathSelection:
-      req += " JOIN ( %s ) AS P WHERE M.DirID=P.DirID"
+      req += " JOIN ( %s ) AS P WHERE M.DirID=P.DirID" % pathSelection
     if selectString:
       if pathSelection:
         req += " AND %s" % selectString
@@ -427,7 +470,7 @@ class DirectoryMetadata:
 
     return S_OK( dirList )
 
-  def __findSubdirMissingMeta( self, meta, pathSelection ): 
+  def __findSubdirMissingMeta( self, meta, pathSelection ):
     """ Find directories not having the given meta datum defined
     """
     result = self.__findSubdirByMeta( meta, 'Any', pathSelection )
@@ -476,8 +519,8 @@ class DirectoryMetadata:
 
     result = S_OK( resultDict )
     result['ExtraMetadata'] = extraDict
-    return result 
- 
+    return result
+
   @queryTime
   def findDirIDsByMetadata( self, queryDict, path, credDict ):
     """ Find Directories satisfying the given metadata and being subdirectories of 
@@ -487,19 +530,19 @@ class DirectoryMetadata:
     pathDirList = []
     pathDirID = 0
     if path != '/':
-      result = self.db.dtree.findDir(path)
+      result = self.db.dtree.findDir( path )
       if not result['OK']:
         return result
-      pathDirID = int(result['Value'])
+      pathDirID = int( result['Value'] )
 
     result = self.__expandMetaDictionary( queryDict, credDict )
     if not result['OK']:
       return result
     metaDict = result['Value']
-    if metaDict: 
+    if metaDict:
       pathSelection = ''
       if pathDirID:
-        result = self.db.dtree.getSubdirectoriesByID(pathDirID,includeParent=True,requestString=True)
+        result = self.db.dtree.getSubdirectoriesByID( pathDirID, includeParent = True, requestString = True )
         if not result['OK']:
           return result
         pathSelection = result['Value']
@@ -524,23 +567,23 @@ class DirectoryMetadata:
           dirList = newList
     else:
       if pathDirID:
-        result = self.db.dtree.getSubdirectoriesByID(pathDirID,includeParent=True)
+        result = self.db.dtree.getSubdirectoriesByID( pathDirID, includeParent = True )
         if not result['OK']:
           return result
         pathDirList = result['Value'].keys()
-    
+
     finalList = []
     dirSelect = False
     if metaDict:
       dirSelect = True
       finalList = dirList
       if pathDirList:
-        finalList = [ d for d in dirList if d in pathDirList ]  
+        finalList = [ d for d in dirList if d in pathDirList ]
     else:
       if pathDirList:
-        dirSelect = True 
+        dirSelect = True
         finalList = pathDirList
-    result = S_OK(finalList)
+    result = S_OK( finalList )
 
     if finalList:
       result['Selection'] = 'Done'
@@ -561,7 +604,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
 
-    dirIDList = result['Value'] 
+    dirIDList = result['Value']
 
     dirNameDict = {}
     if dirIDList:
@@ -574,7 +617,7 @@ class DirectoryMetadata:
     elif result['Selection'] == 'All':
       dirNameDict = { 0:"All" }
 
-    return S_OK(dirNameDict)
+    return S_OK( dirNameDict )
 
   def findFilesByMetadata( self, metaDict, path, credDict ):
     """ Find Files satisfying the given metadata
@@ -590,7 +633,7 @@ class DirectoryMetadata:
     result = self.db.dtree.getFilesInDirectory( dirList, credDict )
     if not result['OK']:
       return result
-    for fileID,dirID,fname in result['Value']:
+    for fileID, dirID, fname in result['Value']:
       fileList.append( dirDict[dirID] + '/' + os.path.basename( fname ) )
 
     return S_OK( fileList )
@@ -706,28 +749,28 @@ class DirectoryMetadata:
   def removeMetadataForDirectory( self, dirList, credDict ):
     """ Remove all the metadata for the given directory list
     """
-    
+
     failed = {}
     successful = {}
     dirs = dirList
-    if type(dirList) != types.ListType:
+    if type( dirList ) != types.ListType:
       dirs = [dirList]
-      
-    dirListString = ','.join( [ str(dir) for dir in dirList ] )
-    
+
+    dirListString = ','.join( [ str( dir ) for dir in dirList ] )
+
     # Get the list of metadata fields to inspect
     result = self.getMetadataFields( credDict )
     if not result['OK']:
       return result
     metaFields = result['Value']
-    
+
     for meta in metaFields:
-      req = "DELETE FROM FC_Meta_%s WHERE DirID in ( %s )" % (meta,dirListString)
-      result = self.db._query(req)
+      req = "DELETE FROM FC_Meta_%s WHERE DirID in ( %s )" % ( meta, dirListString )
+      result = self.db._query( req )
       if not result['OK']:
         failed[meta] = result['Message']
       else:
-        successful[meta] = 'OK'  
-      
-    return S_OK({'Successful':successful,'Failed':failed})  
-      
+        successful[meta] = 'OK'
+
+    return S_OK( {'Successful':successful, 'Failed':failed} )
+

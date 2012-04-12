@@ -319,7 +319,6 @@ class GOCDBStatus_CommandSuccess( ClientsCommandsTestCase ):
 class GOCDBStatus_CommandFailure( ClientsCommandsTestCase ):
 
   def test_badArgs( self ):
-    self.mock_client.getStatus.side_effect = RSSException
     self.GOCDBS_C.setArgs( ( 'Site', 'LCG.CERN.ch' ) )
     self.GOCDBS_C.setClient( self.mock_client )
     res = self.GOCDBS_C.doCommand()
@@ -681,7 +680,6 @@ class SAMResults_CommandSuccess( ClientsCommandsTestCase ):
 class SAMResults_CommandFailure( ClientsCommandsTestCase ):
 
   def test_clientFail( self ):
-    self.mock_client.getStatus.side_effect = RSSException()
     for args in ( ( 'Site', 'LCG.CERN.ch' ), ( 'Site', 'LCG.CERN.ch', 'CERN-PROD' ),
                  ( 'Resource', 'grid0.fe.infn.it' ), ( 'Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it' ),
                  ( 'Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb'] ),

@@ -1,4 +1,4 @@
-import threading
+import threading, thread
 import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import CFG, LockRing
@@ -12,29 +12,28 @@ class Operations( object ):
   __cacheLock = LockRing.LockRing().getLock( "CSOperations.cache" )
 
   def __init__( self, vo = False, group = False, setup = False ):
-    self.__threadData = threading.local()
-    self.__threadData.uVO = vo
-    self.__threadData.uGroup = group
-    self.__threadData.uSetup = setup
-    self.__threadData.vo = False
-    self.__threadData.setup = False
+    self.__uVO = vo
+    self.__uGroup = group
+    self.__uSetup = setup
+    self.__vo = False
+    self.__setup = False
     self.__discoverSettings()
 
   def __discoverSettings( self ):
     #Set the VO
-    self.__threadData.vo = False
-    if self.__threadData.uVO:
-      self.__threadData.vo = self.__threadData.uVO
+    self.__vo = False
+    if self.__uVO:
+      self.__vo = self.__uVO
     else:
-      self.__threadData.vo = Registry.getVOForGroup( self.__threadData.uGroup )
-      if not self.__threadData.vo:
-        raise RuntimeError( "Don't know how to discover VO. Please check your VO and groups configuration" )
+      self.__vo = Registry.getVOForGroup( self.__uGroup )
+      if not self.__vo:
+        self.__vo = False
     #Set the setup
-    self.__threadData.setup = False
-    if self.__threadData.uSetup:
-      self.__threadData.setup = self.__threadData.uSetup
+    self.__setup = False
+    if self.__uSetup:
+      self.__setup = self.__uSetup
     else:
-      self.__threadData.setup = CSGlobals.getSetup()
+      self.__setup = CSGlobals.getSetup()
 
   def __getCache( self ):
     Operations.__cacheLock.acquire()
@@ -44,16 +43,20 @@ class Operations( object ):
         Operations.__cache = {}
         Operations.__cacheVersion = currentVersion
 
-      cacheKey = ( self.__threadData.vo, self.__threadData.setup )
+      cacheKey = ( self.__vo, self.__setup )
       if cacheKey in Operations.__cache:
         return Operations.__cache[ cacheKey ]
 
       mergedCFG = CFG.CFG()
 
       #Only for the /Operations transition
-      for path in ( "/Operations", "/Operations/%s" % self.__threadData.vo,
-                    "/Operations/%s/%s" % ( self.__threadData.vo, self.__threadData.setup ),
-                    "/Operations/%s" % ( self.__threadData.setup ) ):
+      paths = [ "/Operations" ]
+      paths.append( "/Operations/%s" % self.__setup )
+      if self.__vo:
+        paths.append( "/Operations/%s" % self.__vo )
+        paths.append( "/Operations/%s/%s" % ( self.__vo, self.__setup ) )
+
+      for path in paths:
         pathCFG = gConfigurationData.mergedCFG[ path ]
         if pathCFG:
           mergedCFG = mergedCFG.mergeWith( pathCFG )
@@ -68,37 +71,40 @@ class Operations( object ):
 
       return Operations.__cache[ cacheKey ]
     finally:
-      Operations.__cacheLock.release()
+      try:
+        Operations.__cacheLock.release()
+      except thread.error:
+        pass
 
   def setVO( self, vo ):
     """ False to auto detect VO
     """
-    self.__threadData.uVO = vo
+    self.__uVO = vo
     self.__discoverSettings()
 
   def setGroup( self, group ):
     """ False to auto detect VO
     """
-    self.__threadData.uGroup = group
+    self.__uGroup = group
     self.__discoverSettings()
 
   def setSetup( self, setup ):
     """ False to auto detect
     """
-    self.__threadData.uSetup = setup
+    self.__uSetup = setup
     self.__discoverSettings()
 
 
   def __getVOPath( self ):
-    if CSGlobals.getVO():
+    if CSGlobals.getVO() or not self.__vo:
       return "/Operations"
-    return "/Operations/%s" % self.__threadData.vo
+    return "/Operations/%s" % self.__vo
 
   def __getDefaultPath( self ):
     return "%s/Defaults/" % self.__getVOPath()
 
   def __getSetupPath( self ):
-    return "%s/%s" % ( self.__getVOPath(), self.__threadData.setup )
+    return "%s/%s" % ( self.__getVOPath(), self.__setup )
 
 
   def getValue( self, optionPath, defaultValue = None ):

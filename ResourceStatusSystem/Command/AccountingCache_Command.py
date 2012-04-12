@@ -1,20 +1,19 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' AccountingCacheCommand
+ 
   The AccountingCache_Command class is a command module that collects command 
   classes to store accounting results in the accounting cache.
-"""
+  
+'''
 
 from datetime                                     import datetime, timedelta
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
@@ -229,14 +228,12 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 #    if SEs is None:
 #      SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( columns = 'StorageElementName' )
 #      if not SEs[ 'OK' ]:
-#        raise RSSException, where( self, self.doCommand ) + " " + SEs[ 'Message' ] 
 #      else:
 #        SEs = SEs[ 'Value' ]
 #    
 #    if sources is None:
 #      sources = self.APIs[ 'ResourceStatusClient' ].getSitesList()
 #      if not sources[ 'OK' ]:
-#        raise RSSException, where( self, self.doCommand ) + " " + sources[ 'Message' ] 
 #      else:
 #        sources = sources[ 'Value' ]
 #    
@@ -251,7 +248,6 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 #                                            'Source': sources + SEs, 'Destination': sources + SEs }, 
 #                                          'Destination')
 #      if not qualityAll[ 'OK' ]:
-#        raise RSSException, where( self, self.doCommand ) + " " + qualityAll[ 'Message' ] 
 #      else:
 #        qualityAll = qualityAll[ 'Value' ]
 #
@@ -268,7 +264,6 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 #      return {}
 #    
 #    if not storSitesWeb[ 'OK' ]:
-#      raise RSSException, where( self, self.doCommand ) + " " + storSitesWeb[ 'Message' ] 
 #    else:
 #      storSitesWeb = storSitesWeb[ 'Value' ][ 'Records' ]
 #    

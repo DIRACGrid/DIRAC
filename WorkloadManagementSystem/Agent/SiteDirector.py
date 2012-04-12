@@ -8,7 +8,7 @@
 """
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO, Registry
+from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO, Registry, Operations
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
@@ -46,18 +46,18 @@ class SiteDirector( AgentModule ):
     self.am_setOption( "PollingTime", 60.0 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
     self.queueDict = {}
-    
+
     return S_OK()
-  
+
   def beginExecution( self ):
 
-    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() ) 
+    self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
     self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
     self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
-    self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400*3 )
+    self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -73,7 +73,7 @@ class SiteDirector( AgentModule ):
       else:
         siteNames = [siteName]
     self.siteNames = siteNames
- 
+
     if self.updateStatus:
       self.log.always( 'Pilot status update requested' )
     if self.getOutput:
@@ -198,7 +198,7 @@ class SiteDirector( AgentModule ):
     """
 
     if not self.queueDict:
-      self.log.warn('No site defined, exiting the cycle')
+      self.log.warn( 'No site defined, exiting the cycle' )
       return S_OK()
 
     result = self.submitJobs()
@@ -283,7 +283,13 @@ class SiteDirector( AgentModule ):
         self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
 
         bundleProxy = self.queueDict[queue].get( 'BundleProxy', False )
-        result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy )
+        jobExecDir = ''
+        if ceType == 'CREAM':
+          jobExecDir = '.'
+        jobExecDir = self.queueDict[queue].get( 'JobExecDir', jobExecDir )
+        httpProxy = self.queueDict[queue].get( 'HttpProxy', '' )
+
+        result = self.__getExecutable( queue, pilotsToSubmit, bundleProxy, httpProxy, jobExecDir )
         if not result['OK']:
           return result
 
@@ -338,7 +344,7 @@ class SiteDirector( AgentModule ):
     return S_OK()
 
 #####################################################################################
-  def __getExecutable( self, queue, pilotsToSubmit, bundleProxy = True ):
+  def __getExecutable( self, queue, pilotsToSubmit, bundleProxy = True, httpProxy = '', jobExecDir = '' ):
     """ Prepare the full executable for queue
     """
 
@@ -348,38 +354,44 @@ class SiteDirector( AgentModule ):
     pilotOptions = self.__getPilotOptions( queue, pilotsToSubmit )
     if pilotOptions is None:
       return S_ERROR( 'Errors in compiling pilot options' )
-    executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy )
+    executable = self.__writePilotScript( self.workingDirectory, pilotOptions, proxy, httpProxy, jobExecDir )
     result = S_OK( executable )
     return result
 
-#####################################################################################    
+#####################################################################################
   def __getPilotOptions( self, queue, pilotsToSubmit ):
     """ Prepare pilot options
     """
 
     queueDict = self.queueDict[queue]['ParametersDict']
+    pilotOptions = []
 
-    vo = Registry.getVOForGroup(self.genericPilotGroup)
-    
-    if not vo:
-      self.log.error( 'Virtual Organization is not defined in the configuration' )
-      return None
-    pilotOptions = [ "-V '%s'" % vo ]
     setup = gConfig.getValue( "/DIRAC/Setup", "unknown" )
     if setup == 'unknown':
       self.log.error( 'Setup is not defined in the configuration' )
       return None
     pilotOptions.append( '-S %s' % setup )
-    diracVersion = gConfig.getValue( "/Operations/%s/%s/Versions/PilotVersion" % ( vo, setup ), "unknown" )
-    if diracVersion == 'unknown':
-      self.log.error( 'PilotVersion is not defined in the configuration' )
-      return None
-    pilotOptions.append( '-r %s' % diracVersion )
-    projectName = gConfig.getValue( "/Operations/%s/%s/Versions/PilotInstallation" % ( vo, setup ), "" )
-    if projectName == '':
-      self.log.info( 'DIRAC installation will be installed by pilots' )
-    else:
+    opsHelper = Operations.Operations( group = self.genericPilotGroup, setup = setup )
+
+    #Installation defined?
+    installationName = opsHelper.getValue( "Pilot/Installation", "" )
+    if installationName:
+      pilotOptions.append( '-V %s' % installationName )
+
+    #Project defined?
+    projectName = opsHelper.getValue( "Pilot/Project", "" )
+    if projectName:
       pilotOptions.append( '-l %s' % projectName )
+    else:
+      self.log.info( 'DIRAC project will be installed by pilots' )
+
+    #Request a release
+    diracVersion = opsHelper.getValue( "Pilot/Version", [] )
+    if not diracVersion:
+      self.log.error( 'Pilot/Version is not defined in the configuration' )
+      return None
+    #diracVersion is a list of accepted releases. Just take the first one
+    pilotOptions.append( '-r %s' % diracVersion[0] )
 
     ownerDN = self.genericPilotDN
     ownerGroup = self.genericPilotGroup
@@ -425,8 +437,8 @@ class SiteDirector( AgentModule ):
 
     return pilotOptions
 
-#####################################################################################    
-  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '' ):
+#####################################################################################
+  def __writePilotScript( self, workingDirectory, pilotOptions, proxy = '', httpProxy = '', pilotExecDir = '' ):
     """ Bundle together and write out the pilot executable script, admixt the proxy if given
     """
 
@@ -434,10 +446,10 @@ class SiteDirector( AgentModule ):
       compressedAndEncodedProxy = ''
       proxyFlag = 'False'
       if proxy:
-        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
+        compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) )
         proxyFlag = 'True'
-      compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) ).replace( '\n', '' )
-      compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) ).replace( '\n', '' )
+      compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
+      compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) )
     except:
       self.log.exception( 'Exception during file compression of proxy, dirac-pilot or dirac-install' )
       return S_ERROR( 'Exception during file compression of proxy, dirac-pilot or dirac-install' )
@@ -447,14 +459,18 @@ class SiteDirector( AgentModule ):
 #
 import os, tempfile, sys, shutil, base64, bz2
 try:
-  pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
+  pilotExecDir = '%(pilotExecDir)s'
+  if not pilotExecDir:
+    pilotExecDir = None
+  pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix = 'DIRAC_', dir = pilotExecDir )
+  pilotWorkingDirectory = os.path.realpath( pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
   if %(proxyFlag)s:
-    open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
+    open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedProxy)s\"\"\" ) ) )
     os.chmod("proxy",0600)
     os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
-  open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedPilot)s" ) ) )
-  open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedInstall)s" ) ) )
+  open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedPilot)s\"\"\" ) ) )
+  open( '%(installScript)s', "w" ).write(bz2.decompress( base64.decodestring( \"\"\"%(compressedAndEncodedInstall)s\"\"\" ) ) )
   os.chmod("%(pilotScript)s",0700)
   os.chmod("%(installScript)s",0700)
   if "LD_LIBRARY_PATH" not in os.environ:
@@ -479,11 +495,12 @@ os.system( cmd )
 shutil.rmtree( pilotWorkingDirectory )
 
 EOF
-""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
-        'compressedAndEncodedPilot': compressedAndEncodedPilot, \
-        'compressedAndEncodedInstall': compressedAndEncodedInstall, \
-        'httpProxy': httpProxy, \
-        'pilotScript': os.path.basename( self.pilot ), \
+""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy,
+        'compressedAndEncodedPilot': compressedAndEncodedPilot,
+        'compressedAndEncodedInstall': compressedAndEncodedInstall,
+        'httpProxy': httpProxy,
+        'pilotExecDir': pilotExecDir,
+        'pilotScript': os.path.basename( self.pilot ),
         'installScript': os.path.basename( self.install ),
         'pilotOptions': ' '.join( pilotOptions ),
         'proxyFlag': proxyFlag }
@@ -551,7 +568,7 @@ EOF
         if newStatus:
           self.log.info( 'Updating status to %s for pilot %s' % ( newStatus, pRef ) )
           result = pilotAgentsDB.setPilotStatus( pRef, newStatus, '', 'Updated by SiteDirector' )
-        # Retrieve the pilot output now 
+        # Retrieve the pilot output now
         if newStatus in FINAL_PILOT_STATUS:
           if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
             self.log.info( 'Retrieving output for pilot %s' % pRef )

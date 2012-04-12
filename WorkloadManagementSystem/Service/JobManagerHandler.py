@@ -153,8 +153,18 @@ class JobManagerHandler( RequestHandler ):
         return S_ERROR( 'The number of parametric jobs exceeded the limit of %d' % self.maxParametricJobs )
 
       jobDescList = []
-      for n, p in enumerate( parameterList ):
-        jobDescList.append( jobDesc.replace( '%s', str( p ) ).replace( '%n', str( n ) ) )
+      for n,p in enumerate(parameterList):
+        newJobDesc = jobDesc.replace('%s',str(p)).replace('%n',str(n))
+        newClassAd = ClassAd(newJobDesc)
+        for attr in ['Parameters','ParameterStep','ParameterFactor']:
+          newClassAd.deleteAttribute(attr)
+        if type( p ) == type ( ' ' ) and p.startswith('{'):
+          newClassAd.insertAttributeInt( 'Parameter',str(p) )
+        else:
+          newClassAd.insertAttributeString( 'Parameter',str(p) )
+        newClassAd.insertAttributeInt('ParameterNumber',n)
+        newJDL = newClassAd.asJDL()
+        jobDescList.append( newJDL )
     else:
       jobDescList = [ jobDesc ]
 
