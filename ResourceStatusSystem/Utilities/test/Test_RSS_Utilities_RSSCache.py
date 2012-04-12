@@ -168,5 +168,21 @@ class RSSCache_Success( RSSCache_TestCase ):
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'C' ] )
     
+  def test_refreshThreadRefreshCache( self ):
+    ''' test that the refreshThread can refresh the cache.
+    '''
+    
+    global forcedResult
+    cache = self.cache( 1, dummyFunction )
+    forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
+    cache.startRefreshThread()
+    self.assertEqual( cache.isCacheAlive(), True )
+    time.sleep( 2 )
+    cache.stopRefreshThread()
+    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache._RSSCache__refreshStop, False )
+    keys = cache.getCacheKeys()
+    self.assertEqual( keys, [ 'A', 'B' ] )        
+    
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      
