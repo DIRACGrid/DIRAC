@@ -20,7 +20,7 @@ class Dummy( object ):
 class DummyCache( object ):
 
   def __init__( self, cache = None ):
-    self.cache = ( cache and 1 ) or dict()
+    self.cache = ( 1 and cache ) or dict()
     
   def getKeys( self ):
     return self.cache.keys()
