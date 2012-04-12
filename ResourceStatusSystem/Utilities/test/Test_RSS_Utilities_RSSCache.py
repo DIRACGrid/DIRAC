@@ -139,7 +139,7 @@ class RSSCache_Success( RSSCache_TestCase ):
   def test_acquireReleaseLock( self ):
     
     cache = self.cache( 1 )
-    self.assertRaises( thread.error, l.releaseLock )
+    self.assertRaises( thread.error, cache.releaseLock )
     cache.acquireLock()
     cache.releaseLock()
     
