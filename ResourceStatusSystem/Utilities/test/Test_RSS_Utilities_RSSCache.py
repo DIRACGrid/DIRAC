@@ -177,8 +177,8 @@ class RSSCache_Success( RSSCache_TestCase ):
     forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
     cache.startRefreshThread()
     self.assertEqual( cache.isCacheAlive(), True )
-    time.sleep( 2 )
     cache.stopRefreshThread()
+    time.sleep( 2 )
     self.assertEqual( cache.isCacheAlive(), False )
     self.assertEqual( cache._RSSCache__refreshStop, False )
     keys = cache.getCacheKeys()
