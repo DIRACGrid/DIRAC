@@ -3,6 +3,7 @@
 
 '''
 
+import time
 import unittest
 
 __RCSID__ = '$Id: $'
@@ -71,7 +72,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     '''     
     cache = self.cache( 1 )
     cache.stopRefreshThread()
-    self.assertEqual( cache._RSSCache__refreshStop, False )
+    self.assertEqual( cache._RSSCache__refreshStop, True )
 
   def test__isCacheAlive( self ):
     ''' test that we can get CacheStatus when it does not run
@@ -87,6 +88,17 @@ class RSSCache_Success( RSSCache_TestCase ):
     cache.setLifeTime( 2 )
     self.assertEqual( cache._RSSCache__lifeTime, 2 )    
   
+  def test_startStopRefreshThread( self ):
+    ''' test that we can start and stop the refreshing thread
+    '''     
+    cache = self.cache( 1 )
+    cache.startRefreshThread()
+    self.assertEqual( cache.isCacheAlive(), True )
+    cache.stopRefreshThread()
+    time.sleep( 2 )
+    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache._RSSCache__refreshStop, False )
+
     
     
 ################################################################################
