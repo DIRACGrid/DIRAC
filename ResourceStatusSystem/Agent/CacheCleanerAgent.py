@@ -1,17 +1,21 @@
-################################################################################
 # $HeadURL$
-################################################################################
-__RCSID__  = "$Id$"
-AGENT_NAME = 'ResourceStatus/CleanerAgent'
+''' CacheCleanerAgent
 
-from datetime                                             import datetime,timedelta
+  This agent cleans the history tables, and the cache ones if entries older
+  than a certan period.
 
-from DIRAC                                                import S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                          import AgentModule
+'''
 
-from DIRAC.ResourceStatusSystem                           import ValidRes  
+from datetime import datetime, timedelta
+
+from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                                import AgentModule
+from DIRAC.ResourceStatusSystem                                 import ValidRes  
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+
+__RCSID__  = '$Id: $'
+AGENT_NAME = 'ResourceStatus/CleanerAgent'
 
 class CacheCleanerAgent( AgentModule ):
   '''
@@ -30,13 +34,19 @@ class CacheCleanerAgent( AgentModule ):
   If you want to know more about the CacheCleanerAgent, scroll down to the end of the 
   file.   
   '''
+  
+  # Too many public methods
+  # pylint: disable-msg=R0904
 
   def initialize( self ):
     
+    # Attribute defined outside __init__  
+    # pylint: disable-msg=W0201
+    
     try:
       
-      self.rsClient         = ResourceStatusClient()
-      self.rmClient         = ResourceManagementClient()  
+      self.rsClient      = ResourceStatusClient()
+      self.rmClient      = ResourceManagementClient()  
       self.historyTables = [ '%sHistory' % x for x in ValidRes ]
 
       return S_OK()
@@ -57,12 +67,12 @@ class CacheCleanerAgent( AgentModule ):
       now          = datetime.utcnow().replace( microsecond = 0, second = 0 )
       sixMonthsAgo = now - timedelta( days = 180 )
       
-      for g in ValidRes:
+      for granularity in ValidRes:
         #deleter = getattr( self.rsClient, 'delete%sHistory' % g )
         
         kwargs = { 'meta' : { 'minor' : { 'DateEnd' : sixMonthsAgo } } }
-        self.log.info( 'Deleting %sHistory older than %s' % ( g, sixMonthsAgo ) )
-        res = self.rsClient.deleteElementHistory( g, **kwargs )
+        self.log.info( 'Deleting %sHistory older than %s' % ( granularity, sixMonthsAgo ) )
+        res = self.rsClient.deleteElementHistory( granularity, **kwargs )
         if not res[ 'OK' ]:
           self.log.error( res[ 'Message' ] )            
 

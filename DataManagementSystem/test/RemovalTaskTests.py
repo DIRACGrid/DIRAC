@@ -43,7 +43,7 @@ DataLoggingClient = Mock(spec=DataLoggingClient)
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 ReplicaManager = Mock(spec=ReplicaManager)
-from DIRAC.DataManagementSystem.Agent.RemovalTask import RemovalTask
+from DIRAC.DataManagementSystem.private.RemovalTask import RemovalTask
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager 
 gProxyManager = Mock( spec=gProxyManager.__class__ )
@@ -233,6 +233,9 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.dataLoggingClient().addFileRecord = Mock()
     removalTask.dataLoggingClient().addFileRecord.return_value = { "OK" : True, "Value" : "" }
 
+    removalTask.getProxyForLFN = Mock( return_value = { "OK" : True, "Value" : None} )
+    
+
     removalTask.requestClient = Mock( return_value = Mock(spec=RequestClient) ) 
 
     removalTask.requestClient().updateRequest = Mock()
@@ -244,12 +247,12 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
     removalTask.replicaManager().removeReplica = Mock()
     removalTask.replicaManager().removeReplica.return_value =  { "OK" : True,
-                                                                 "Value" : 
-                                                                 { "Failed" : {},
+                                                                 "Value" : { "Failed" : {},
                                                                    "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
     
     self.assertEqual( removalTask.__call__(),
-                      {'OK': True, 'Value': {'monitor': {'Done': 1, 'Execute': 1, 'ReplicaRemovalAtt': 1, 'ReplicaRemovalDone': 1}}} )
+                      {'OK': True, 'Value': {'monitor': {'Done': 1, 'Execute': 1, 'ReplicaRemovalAtt': 1, 'ReplicaRemovalFail': 0, 'ReplicaRemovalDone': 1}}} )
+   
     del removalTask
 
   def test_02_removeFile( self ):
@@ -261,6 +264,7 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.dataLoggingClient().addFileRecord = Mock()
     removalTask.dataLoggingClient().addFileRecord.return_value = { "OK" : True, "Value" : "" }
 
+    removalTask.getProxyForLFN = Mock( return_value = { "OK" : True, "Value" : None} )
     removalTask.requestClient = Mock( return_value = Mock(spec=RequestClient) ) 
 
     removalTask.requestClient().updateRequest = Mock()
@@ -270,13 +274,14 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
     removalTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
-    removalTask.replicaManager().removeFile = Mock()
-    removalTask.replicaManager().removeFile.return_value =  { "OK" : True,
-                                                              "Value" : 
-                                                              { "Failed" : {},
-                                                                "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
+    removalTask.replicaManager().removeFile = Mock( return_value =   { "OK" : True,
+                                                                       "Value" : 
+                                                                       { "Failed" : {},
+                                                                         "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } } )
     self.assertEqual( removalTask.__call__(), 
                       {'OK': True, 'Value': {'monitor': {'RemoveFileFail': 0, 'Execute': 1, 'Done': 1, 'RemoveFileDone': 1, 'RemoveFileAtt': 1}}} )
+
+
     del removalTask
 
 
@@ -287,6 +292,8 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.dataLoggingClient().addFileRecord = Mock()
     removalTask.dataLoggingClient().addFileRecord.return_value = { "OK" : True, "Value" : "" }
 
+    removalTask.getProxyForLFN = Mock( return_value = { "OK" : True, "Value" : None} )
+
     removalTask.requestClient = Mock( return_value = Mock(spec=RequestClient) ) 
 
     removalTask.requestClient().updateRequest = Mock()
@@ -296,11 +303,11 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
     removalTask.replicaManager = Mock( return_value = Mock( spec=ReplicaManager) )
-    removalTask.replicaManager().removeStorageFiles = Mock()
-    removalTask.replicaManager().removeStorageFiles.return_value = { "OK" : True,
-                                                                     "Value" : 
-                                                                     { "Failed" : {},
-                                                                       "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
+    removalTask.replicaManager().removeStorageFile = Mock()
+    removalTask.replicaManager().removeStorageFile.return_value = { "OK" : True,
+                                                                    "Value" : 
+                                                                    { "Failed" : {},
+                                                                      "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } }
     self.assertEqual( removalTask.__call__(),
                       {'OK': True, 'Value': {'monitor': {'Done': 1, 'Execute': 1, 'PhysicalRemovalAtt': 1, 'PhysicalRemovalDone': 1}}} )
     del removalTask

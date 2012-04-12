@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/scripts/dirac-admin-ban-catalog.py $
+# $HeadURL$
 ########################################################################
-__RCSID__ = "$Id: dirac-admin-ban-catalog.py 18161 2009-11-11 12:07:09Z acsmith $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                   import Script
 

@@ -1,14 +1,18 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__  = "$Id$"
+''' MySQLMonkey
 
-from DIRAC import S_OK#, S_ERROR
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
+  Module that generates SQL statemens in the fly out of two dictionaries.
+
+'''
+
+import re
 
 from datetime import datetime
 
-import re
+from DIRAC                                           import S_OK
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import RSSDBException
+
+__RCSID__  = '$Id: $'
 
 ################################################################################
 # MySQL Monkey
@@ -457,6 +461,7 @@ class MySQLStatements( object ):
 
       self._checkALPHA( k )
       if v is None:
+        del parsedArgs[ k ]
         continue
 
       dataType = getattr( table, k ).dataType.upper()
@@ -501,7 +506,7 @@ class MySQLStatements( object ):
       if type(i) not in (int, float):
         raise RSSDBException( 'Non numeric value "%s"' % suspicious )
     
-    return [ '"%s"' % s.replace( microsecond = 0 ) for s in suspicious ]
+    return suspicious
 
   _checkNUMERIC  = _checkFLOAT
   _checkDECIMAL  = _checkFLOAT

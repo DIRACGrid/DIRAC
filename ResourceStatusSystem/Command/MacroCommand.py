@@ -1,26 +1,26 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' MacroCommand 
+  
   The MacroCommand class is a macro class for all the macro commands
   for interacting with multiple commands
-"""
+  
+'''
 
 from DIRAC                                      import gLogger
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
-class MacroCommand(Command):
+__RCSID__ = '$Id: $'
+
+class MacroCommand( Command ):
   
-  def __init__(self):
+  def __init__( self ):
     self.commands = None
     self.args     = None
     self.clients  = None
 
 ################################################################################
     
-  def setCommands(self, commandsListIn = None):
+  def setCommands( self, commandsListIn = None ):
     """
     Method to be called as first at every MacroCommand instantiation.
     
@@ -35,7 +35,7 @@ class MacroCommand(Command):
   
 ################################################################################
     
-  def setArgs(self, argsListIn = None):
+  def setArgs( self, argsListIn = None ):
     """
     Set the arguments of the commands.
     
@@ -61,7 +61,7 @@ class MacroCommand(Command):
   
 ################################################################################
   
-  def setClient(self, clientListIn = None):
+  def setClient( self, clientListIn = None ):
     """
     Set `self.clients`. If not set, a standard client will be instantiated. 
     Then, set the clients used by the commands. 
@@ -87,7 +87,7 @@ class MacroCommand(Command):
 
 ################################################################################
   
-  def doCommand(self):
+  def doCommand( self ):
     """ 
     Calls command.doCommand for every command in the list of self.commands
     """

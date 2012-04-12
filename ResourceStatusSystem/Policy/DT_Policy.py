@@ -1,18 +1,18 @@
-########################################################################
 # $HeadURL:
-########################################################################
+''' DT_Policy
 
-""" The DT_Policy class is a policy class satisfied when a site is in downtime,
-    or when a downtime is revoked
-"""
-
-__RCSID__ = "$Id: "
+  The DT_Policy class is a policy class satisfied when a site is in downtime,
+  or when a downtime is revoked.
+  
+'''
 
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-class DT_Policy(PolicyBase):
+__RCSID__ = '$Id: $'
 
-  def evaluate(self):
+class DT_Policy( PolicyBase ):
+
+  def evaluate( self ):
     """
     Evaluate policy on possible ongoing or scheduled downtimes.
 
@@ -55,3 +55,6 @@ class DT_Policy(PolicyBase):
     return result
 
   evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__
+
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

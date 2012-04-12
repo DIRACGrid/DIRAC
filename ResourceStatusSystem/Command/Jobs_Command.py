@@ -1,18 +1,17 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
-
-""" 
+''' Jobs_Command
+ 
   The Jobs_Command class is a command class to know about 
   present jobs efficiency
-"""
+  
+'''
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-
 from DIRAC.ResourceStatusSystem.Command.Command      import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################

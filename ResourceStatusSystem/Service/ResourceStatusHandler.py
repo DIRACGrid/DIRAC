@@ -1,17 +1,23 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ResourceStatusHandler
+
+  Module that allows users to access the ResourceStatusDB remotely.  
+
+'''
 
 from DIRAC                                             import gConfig, S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.Utilities              import Utils
-db = False
+
+__RCSID__ = '$Id: $'
+db        = False
 
 def initializeResourceStatusHandler( _serviceInfo ):
-
+  '''
+    Handler initialization, where we set the ResourceStatusDB as global db, and
+    we instantiate the synchronizer.
+  '''
   global db
   db = ResourceStatusDB()
 
@@ -27,9 +33,10 @@ def initializeResourceStatusHandler( _serviceInfo ):
 #  publisher = Publisher( VOExtension, dbIn = db, commandCallerIn = cc,
 #                         infoGetterIn = ig, WMSAdminIn = WMSAdmin )
 
-  SyncModule = Utils.voimport("DIRAC.ResourceStatusSystem.Utilities.Synchronizer")
-  sync_O = SyncModule.Synchronizer()
-  gConfig.addListenerToNewVersionEvent( sync_O.sync )
+  syncModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Utilities.Synchronizer' )
+  syncObject = syncModule.Synchronizer()
+  gConfig.addListenerToNewVersionEvent( syncObject.sync )
+  
   return S_OK()
 
 ################################################################################
@@ -206,7 +213,8 @@ class ResourceStatusHandler( RequestHandler ):
 ##    """ get periods of time when name was in status (for a total of hours hours)
 ##    """
 ##
-##    gLogger.info( "ResourceStatusHandler.getPeriods: Attempting to get %s periods when it was in %s" % ( name, status ) )
+##    gLogger.info( "ResourceStatusHandler.getPeriods: Attempting to get %s periods \
+##                      when it was in %s" % ( name, status ) )
 ##
 ##    try:
 ##      resQuery = rsDB.getPeriods( granularity, name, status, int( hours ) )
@@ -382,7 +390,8 @@ class ResourceStatusHandler( RequestHandler ):
 ##    """ Enforce all the policies. If `useNewRes` is False, use cached results only (where available).
 ##    """
 ##    try:
-##      gLogger.info("ResourceStatusHandler.enforcePolicies: Attempting to enforce policies for %s %s" % (granularity, name))
+##      gLogger.info("ResourceStatusHandler.enforcePolicies: Attempting to \
+##                     enforce policies for %s %s" % (granularity, name))
 ##      try:
 ##        reason = serviceType = resourceType = None
 ##
@@ -512,7 +521,8 @@ class ResourceStatusHandler( RequestHandler ):
 ##      else:
 ##        rsDB.setToken( granularity, name, 'RS_SVC', datetime( 9999, 12, 31, 23, 59, 59 ) )
 ##
-##      gLogger.info( "ResourceStatusHandler.reAssignToken: re-assigned token %s: %s: %s" % ( granularity, name, requester ) )
+##      gLogger.info( "ResourceStatusHandler.reAssignToken: re-assigned token %s: %s: \
+##               %s" % ( granularity, name, requester ) )
 ##      return S_OK()
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )
@@ -546,7 +556,8 @@ class ResourceStatusHandler( RequestHandler ):
 ##      except OverflowError:
 ##        pass
 ##      rsDB.setToken( granularity, name, tokenOwner, tokenNewExpiration )
-##      gLogger.info( "ResourceStatusHandler.extendToken: extended token %s: %s for %i hours" % ( granularity, name, hrs ) )
+##      gLogger.info( "ResourceStatusHandler.extendToken: extended token %s: \
+##                   %s for %i hours" % ( granularity, name, hrs ) )
 ##      return S_OK()
 ##    except Exception, x:
 ##      errorStr = whoRaised( x )

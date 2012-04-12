@@ -1,21 +1,20 @@
-################################################################################
 # $HeadURL $
-################################################################################
-__RCSID__ = "$Id:  $"
+''' ClientsCache_Command 
 
-""" 
-  The ClientsCache_Command class is a command module to know about collective clients results 
-  (to be cached)
-"""
+  The ClientsCache_Command class is a command module to know about collective 
+  clients results (to be cached).
+  
+'''
 
 import datetime
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName, getDIRACSiteName
-
 from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
+
+__RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################

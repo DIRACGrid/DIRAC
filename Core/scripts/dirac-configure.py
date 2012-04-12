@@ -62,6 +62,7 @@ import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, getVO, cfgPath
+from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 
 import sys, os
 
@@ -365,7 +366,11 @@ if ceName or siteName:
         Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
 
       if not localSE and siteName in sites:
-        localSE = DIRAC.gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, siteName ), 'None' )
+        localSE = getSEsForSite( siteName )
+        if localSE['OK'] and localSE['Value']:
+          localSE = ','.join( localSE['Value'] )
+        else:
+          localSE = 'None'
         DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
         Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
         break
@@ -400,6 +405,7 @@ if not useServerCert:
 else:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
 
 if includeAllServers:
   DIRAC.gConfig.setOptionValue( '/DIRAC/Configuration/Servers', ','.join( DIRAC.gConfig.getServersList() ) )

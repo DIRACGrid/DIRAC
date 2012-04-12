@@ -25,7 +25,6 @@ __RCSID__ = "$Id $"
 
 ## py imports 
 import time
-
 ## DIRAC imports 
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -228,7 +227,7 @@ class RequestAgentBase( AgentModule ):
 
   @classmethod
   def getRequest( cls, requestType ):
-    """ retrive Request of type requestType from RequestDB
+    """ retrive Request of type requestType from RequestClient
 
     :param cls: class reference
     :param str requestType: type of request
@@ -247,14 +246,14 @@ class RequestAgentBase( AgentModule ):
                     "sourceServer" : None,
                     "executionOrder" : None,
                     "jobID" : None }
-    ## get request out of DB
+    ## get request out of RequestClient
     res = cls.requestClient().getRequest( requestType )
     if not res["OK"]:
       gLogger.error( res["Message"] )
       return res
     elif not res["Value"]:
-      msg = "Request of type '%s' not found in RequestDB." % requestType
-      gLogger.info( msg )
+      msg = "Request of type '%s' not found in RequestClient." % requestType
+      gLogger.debug( msg )
       return S_OK()
     ## store values
     requestDict["requestName"] = res["Value"]["RequestName"]
@@ -332,7 +331,8 @@ class RequestAgentBase( AgentModule ):
                                                            kwargs = requestDict,
                                                            taskID = requestDict["requestName"],
                                                            blocking = True,
-                                                           usePoolCallbacks = True )
+                                                           usePoolCallbacks = True,
+                                                           timeOut = 600 )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:

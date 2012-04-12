@@ -551,7 +551,7 @@ class FileCatalogDB(DB):
   def setMetadata(self, path, metadataDict, credDict):
     """ Add metadata to the given path
     """
-    res = self._checkPathPermissions('Read', path, credDict)   
+    res = self._checkPathPermissions('Write', path, credDict)   
     if not res['OK']:
       return res
     if not res['Value']['Successful']:
@@ -569,7 +569,30 @@ class FileCatalogDB(DB):
       return self.dmeta.setMetadata(path,metadataDict,credDict)
     else:
       # This is a file      
-      return self.fmeta.setMetadata(path,metadataDict,credDict)                                     
+      return self.fmeta.setMetadata(path,metadataDict,credDict)      
+    
+  def removeMetadata(self, path, metadata, credDict):
+    """ Add metadata to the given path
+    """
+    res = self._checkPathPermissions('Write', path, credDict)   
+    if not res['OK']:
+      return res
+    if not res['Value']['Successful']:
+      return S_ERROR('Permission denied')
+    if not res['Value']['Successful'][path]:
+      return S_ERROR('Permission denied') 
+      
+    result = self.dtree.isDirectory({path:True})
+    if not result['OK']:
+      return result
+    if not result['Value']['Successful']:
+      return S_ERROR('Failed to determine the path type')
+    if result['Value']['Successful'][path]:
+      # This is a directory
+      return self.dmeta.removeMetadata(path,metadata,credDict)
+    else:
+      # This is a file      
+      return self.fmeta.removeMetadata(path,metadata,credDict)                                  
     
   #######################################################################
   #

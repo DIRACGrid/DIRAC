@@ -87,6 +87,9 @@ class StorageElement:
       Dump to the logger a summary of the StorageElement items
     """
     gLogger.info( "StorageElement.dump: Preparing dump for StorageElement %s." % self.name )
+    if not self.valid:
+      gLogger.error( "StorageElement.dump: Failed to create StorageElement plugins.", self.errorReason )
+      return
     i = 1
     outStr = "\n\n============ Options ============\n"
     for key in sortList( self.options.keys() ):
@@ -116,7 +119,8 @@ class StorageElement:
       - Read: True (is allowed), False (it is not allowed)
       - Write: True (is allowed), False (it is not allowed)
       - Remove: True (is allowed), False (it is not allowed)
-      - Check: True (is allowed), False (it is not allowed). NB: Check always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
+      - Check: True (is allowed), False (it is not allowed). 
+      NB: Check always allowed IF Read is allowed (regardless of what set in the Check option of the configuration)
       - DiskSE: True if TXDY with Y > 0 (defaults to True)
       - TapeSE: True if TXDY with X > 0 (defaults to False)
       - TotalCapacityTB: float (-1 if not defined)
@@ -551,6 +555,8 @@ class StorageElement:
         'pfn' is the physical file name (as registered in the LFC)
         'method' is the functionality to be executed
     """
+    ## default args  = no args  
+    argsDict = argsDict if argsDict else {}
     if type( pfn ) in types.StringTypes:
       pfns = {pfn:False}
     elif type( pfn ) == types.ListType:
@@ -607,26 +613,18 @@ class StorageElement:
           gLogger.verbose( "StorageElement.__executeFunction No pfns generated for protocol %s." % protocolName )
         else:
           gLogger.verbose( "StorageElement.__executeFunction: Attempting to perform '%s' for %s physical files." % ( method, len( pfnDict.keys() ) ) )
+          fcn = None
+          if hasattr( storage, method ) and callable( getattr( storage, method ) ):
+            fcn = getattr( storage, method )
+          if not fcn:
+            return S_ERROR("StorageElement.__executeFunction: unable to invoke %s, it isn't a member function of storage")
+          
           pfnsToUse = {}
           for pfn in pfnDict.keys():
             pfnsToUse[pfn] = pfns[pfnDict[pfn]]
-          if argsDict:
-            execString = "res = storage.%s(pfnsToUse" % method
-            for argument, value in argsDict.items():
-              if type( value ) == types.StringType:
-                execString = "%s, %s='%s'" % ( execString, argument, value )
-              else:
-                execString = "%s, %s=%s" % ( execString, argument, value )
-            execString = "%s)" % execString
-          else:
-            execString = "res = storage.%s(pfnsToUse)" % method
-          try:
-            exec( execString )
-          except AttributeError, errMessage:
-            exceptStr = "StorageElement.__executeFunction: Exception while performing %s." % method
-            gLogger.exception( exceptStr, str( errMessage ) )
-            res = S_ERROR( exceptStr )
-
+            
+          res = fcn( pfnsToUse, **argsDict )
+          
           if not res['OK']:
             errStr = "StorageElement.__executeFunction: Completely failed to perform %s." % method
             gLogger.error( errStr, '%s for protocol %s: %s' % ( self.name, protocolName, res['Message'] ) )
