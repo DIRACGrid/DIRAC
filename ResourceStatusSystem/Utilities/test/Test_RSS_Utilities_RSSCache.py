@@ -149,16 +149,19 @@ class RSSCache_Success( RSSCache_TestCase ):
     cache = self.cache( 1 )
     res = cache.refreshCache()
     self.assertEqual( res, False )
+    
     global forcedResult
     forcedResult = { 'OK' : False, 'Message' : 'forcedMessage' }
     res = cache.refreshCache()
     self.assertEqual( res, False )
+    
     global forcedResult
     forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
     res = cache.refreshCache()
     self.assertEqual( res, True )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'B' ] )
+    
     global forcedResult
     forcedResult = { 'OK' : True, 'Value' : { 'A' : 2, 'C' : 3 } }
     res = cache.refreshCache()
