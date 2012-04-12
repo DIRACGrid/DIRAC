@@ -119,6 +119,7 @@ class RSSCache( object ):
     newCache = self.__updateFunc()
     if not newCache[ 'OK' ]:
       gLogger.warn( 'RSSCache %s' % newCache[ 'Message' ] )
+      return False
     else:  
       self.__rssCache.purgeAll()
       self.__updateCache( newCache[ 'Value' ] )
