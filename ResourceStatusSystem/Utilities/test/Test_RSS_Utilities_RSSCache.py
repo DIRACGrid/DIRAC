@@ -97,9 +97,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     cache.stopRefreshThread()
     time.sleep( 2 )
     self.assertEqual( cache.isCacheAlive(), False )
-    self.assertEqual( cache._RSSCache__refreshStop, False )
-
-    
+    self.assertEqual( cache._RSSCache__refreshStop, False )    
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      
