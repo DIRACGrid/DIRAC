@@ -332,24 +332,27 @@ class JobScheduling( OptimizerExecutor ):
     #Eternity of hell to the inventor of the Value of Value of Success of...
     inputData = opData['Value']['Value']['Successful']
     stageLFNs = {}
+    lfnToStage = []
     for lfn in inputData:
       replicas = inputData[ lfn ]
       #Check SEs
-      sesurls = []
+      seStage = []
       for seName in replicas:
         surl = replicas[ seName ]
         if seName in diskSEs:
           #This lfn is in disk. Skip it
-          sesurls = []
+          seStage = []
           break
         if seName not in tapeSEs:
           #This lfn is not in this tape SE. Check next SE
           continue
-        sesurls.append( ( seName, surl ) )
-      for seName, surl in sesurls:
+        seStage.append( seName )
+      for seName in seStage:
         if seName not in stageLFNs:
           stageLFNs[ seName ] = []
-        stageLFNs[ seName ].append( surl )
+        stageLFNs[ seName ].append( lfn )
+        if lfn not in lfnToStage:
+          lfnToStage.append( lfn )
 
     if not stageLFNs:
       return S_ERROR( "Cannot find tape replicas" )
@@ -358,10 +361,10 @@ class JobScheduling( OptimizerExecutor ):
     #If that's the case, try to stage from the SE that has more LFNs to stage to group the request
     #1.- Get the SEs ordered by ascending replicas
     sortedSEs = reversed( sorted( [ ( len( stageLFNs[ seName ] ), seName ) for seName in stageLFNs.keys() ] ) )
-    for lfn in stageLFNs:
+    for lfn in lfnToStage:
       found = False
       #2.- Traverse the SEs
-      for replicas, seName in sortedSEs:
+      for stageCount, seName in sortedSEs:
         if lfn in stageLFNs[ seName ]:
           #3.- If first time found, just mark as found. Next time delete the replica from the request
           if found:
@@ -399,6 +402,7 @@ class JobScheduling( OptimizerExecutor ):
     for siteName in siteCandidates:
       if siteName == stageSite:
         continue
+      self.jobLog.verbose( "Checking %s for shared SEs" % siteName )
       siteData = siteCandidates[ siteName ]
       result = getSEsForSite( siteName )
       if not result[ 'OK' ]:
@@ -418,6 +422,7 @@ class JobScheduling( OptimizerExecutor ):
         status = seStatus[ seName ]
         if status['Read'] and status['DiskSE']:
           diskSEs.append( seName )
+      self.jobLog.verbose( "Disk SEs for %s are %s" % ( siteName, ", ".join( diskSEs ) ) )
 
       #Hell again to the dev of this crappy value of value of successful of ...
       lfnData = opData['Value']['Value']['Successful']
@@ -426,18 +431,22 @@ class JobScheduling( OptimizerExecutor ):
         if seName not in closeSEs:
           continue
         for lfn in stagedLFNs[ seName ]:
+          self.jobLog.verbose( "Checking %s for %s" % ( seName, lfn ) )
           #I'm pretty sure that this cannot happen :P
-          if lfn  not in lfnData:
+          if lfn not in lfnData:
             continue
           #Check if it's already on disk at the site
           onDisk = False
           for siteSE in lfnData[ lfn ]:
             if siteSE in diskSEs:
+              self.jobLog.verbose( "%s on disk for %s" % ( lfn, siteSE ) )
               onDisk = True
           #If not on disk, then update!
           if not onDisk:
+            self.jobLog.verbose( "Setting LFN to disk for %s" % ( seName ) )
             siteData[ 'disk' ] += 1
             siteData[ 'tape' ] -= 1
+
     return S_OK()
 
 
