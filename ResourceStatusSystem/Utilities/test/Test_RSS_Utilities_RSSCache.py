@@ -141,10 +141,10 @@ class RSSCache_Success( RSSCache_TestCase ):
     '''
     cache = self.cache( 1 )
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [] )
+    self.assertEqual( keys, { 'OK' : True, 'Value' : [] } )
     cache._RSSCache__rssCache = DummyCache( { 'A' : 1, 'B' : 2 } )
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [ 'A', 'B' ] )
+    self.assertEqual( keys, { 'OK' : True, 'Value' : [ 'A', 'B' ] } )
     
   def test_resetCache( self ):
     ''' test that we can reset the cache
@@ -153,7 +153,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     cache._RSSCache__rssCache = DummyCache( { 'A' : 1, 'B' : 2 } )
     cache.resetCache()
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [] )
+    self.assertEqual( keys, { 'OK': True, 'Value' : [] } )
   
   def test_acquireReleaseLock( self ):
     ''' test that we can instantiate a lock
@@ -180,13 +180,13 @@ class RSSCache_Success( RSSCache_TestCase ):
     res = cache.refreshCache()
     self.assertEqual( res, { 'OK' : True, 'Value' : 2 } )
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [ 'A', 'B' ] )
+    self.assertEqual( keys, { 'OK' : True, 'Value' : [ 'A', 'B' ] } )
     
     forcedResult = { 'OK' : True, 'Value' : { 'A' : 2, 'C' : 3 } }
     res = cache.refreshCache()
     self.assertEqual( res, { 'OK' : True, 'Value' : 2 } )
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [ 'A', 'C' ] )
+    self.assertEqual( keys, { 'OK' : True, 'Value' : [ 'A', 'C' ] } )
     
   def test_refreshThreadRefreshCache( self ):
     ''' test that the refreshThread can refresh the cache.
@@ -203,7 +203,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     self.assertEqual( cache.isCacheAlive(), False )
     self.assertEqual( cache._RSSCache__refreshStop, False )
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [ 'A', 'B' ] )        
+    self.assertEqual( keys, { 'OK' : True, 'Value' : [ 'A', 'B' ] } )        
     
   def test_refreshThreadRefreshCacheHistory( self ):
     ''' test that the refreshThread can refresh the internal history
@@ -217,15 +217,15 @@ class RSSCache_Success( RSSCache_TestCase ):
     self.assertEqual( cache.isCacheAlive(), True )
     time.sleep( 1 )
     res = cache.getCacheHistory()
-    self.assertEqual( res.values(), { 'OK' : True, 'Value' :[ { 'OK' : True, 'Value' : 2 } ] } )
+    self.assertEqual( res[ 'Value' ].values(), [ { 'OK' : True, 'Value' : 2 } ] )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'B' ] )
     forcedResult = { 'OK' : False, 'Message' : 'Im a grumpy test' }
     time.sleep( 2 )
     res = cache.getCacheHistory()
-    self.assertEqual( res.values().sort(), [ forcedResult, { 'OK' : True, 'Value' : 2 } ].sort() )
+    self.assertEqual( res[ 'Value' ].values().sort(), [ forcedResult, { 'OK' : True, 'Value' : 2 } ].sort() )
     res = cache.getCacheStatus()
-    self.assertEqual( res.values(), { 'OK' : True, 'Value' :[ forcedResult ] } )
+    self.assertEqual( res[ 'Value' ].values(), { 'OK' : True, 'Value' :[ forcedResult ] } )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [] )
     cache.stopRefreshThread()
