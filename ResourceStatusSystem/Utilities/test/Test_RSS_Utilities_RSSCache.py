@@ -225,7 +225,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     res = cache.getCacheHistory()
     self.assertEqual( res[ 'Value' ].values().sort(), [ forcedResult, { 'OK' : True, 'Value' : 2 } ].sort() )
     res = cache.getCacheStatus()
-    self.assertEqual( res[ 'Value' ].values(), { 'OK' : True, 'Value' :[ forcedResult ] } )
+    self.assertEqual( res[ 'Value' ].values(), [ forcedResult ] )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, { 'OK' : True, 'Value' : [] } )
     cache.stopRefreshThread()
