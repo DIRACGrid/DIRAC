@@ -141,10 +141,10 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     self.assertEquals( res, { 'OK' : False, 'Message' : 'Black Friday' } )
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ) ] }
     res = resourceStatus._ResourceStatus__updateSECache()
-    self.assertEquals( res, { 'OK' : False, 'Value' : { 1: { 2 : 3 } } } )
+    self.assertEquals( res, { 'OK' : True, 'Value' : { 1: { 2 : 3 } } } )
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ), (1,3,4) ] }
     res = resourceStatus._ResourceStatus__updateSECache()
-    self.assertEquals( res, { 'OK' : False, 'Value' : { 1: { 2 : 3, 3 : 4 } } } )
+    self.assertEquals( res, { 'OK' : True, 'Value' : { 1: { 2 : 3, 3 : 4 } } } )
     
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
