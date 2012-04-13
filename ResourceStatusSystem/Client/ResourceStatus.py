@@ -117,13 +117,93 @@ class ResourceStatus( object ):
     
     return S_OK( getCacheDictFromList( rawCache[ 'Value' ] ) )     
   
+  def __cacheMatch( self, resourceName, statusType ):
+    '''
+      Method that given a resourceName and a statusType, gives the match with the
+      cache. Both arguments can be None, String of list( String, ). Being string,
+      if not present in the cache, there is no match.
+      
+      Keys in the cache are stored as:
+        <resourceName>#<statusType>
+        <resourceName>#<statusType>
+        <resourceName>#<statusType>
+      so, we first need some processing to see which of all possible combinations
+      of resourceName and statusType are in the cache. ( If any of them is None,
+      it is interpreted as all ).  
+    '''
+    
+    cacheKeys = self.seCache.getCacheKeys()
+    if not cacheKeys[ 'OK' ]:
+      return cacheKeys
+      
+    elementCandidates = []
+    statusTCandidates = []
+    
+    if elementName:
+      if isinstance( elementName, str ):
+        elementCandidates = [ cK for cK in cacheKeys if ck.startswith( '%s#' % elementName ) ]
+        if not elementCandidates:
+          return S_ERROR( '%s not present in the cache' % elementName )
+      else:
+        for eN in elementName:
+          found = False
+          
+          for cK in cacheKeys:
+          
+            if ck.startswith( '%s#' % eN ):
+              elementCandidates.append( cK )
+              found = True
+              break
+            
+          if not found:
+            return S_ERROR( '%s not present in the cache' % eN )  
+    else:
+      elementCandidates = cacheKeys
+    
+    # now we loop over elementCandidates, saves lots of iterations.        
+    if statusType:
+      if isinstance( statusType, str ):
+        statusTCandidates = [ eC for eC in elementCandidates if ck.endswith( '#%s' % statusType ) ]
+        if not statusTCandidates:
+          return S_ERROR( '%s not present in the cache' % statusType )
+      else:
+        for sT in statusType:
+          found = False
+          
+          for eC in elementCandidates:
+                    
+            if eC.endswith( '#%s' % sT ):
+              statusTCandidates.append( eC )
+              found = True
+              break
+          
+          if not found:
+            return S_ERROR( '%s not present in the cache' % sT )  
+            
+    else:
+      statusTCandidates = elementCandidates  
+      
+    return S_OK( statusTCandidates )   
+  
 ################################################################################
   
   def __getRSSStorageElementStatus( self, elementName, statusType, default ):
     '''
-    Gets from RSS the StorageElements status
+    Gets from the cache or the RSS the StorageElements status
     '''
-   
+  
+    #Checks cache first
+    match = self.__cacheMatch( elementName, statusType )
+    
+    if match[ 'OK' ]:
+      cacheMatches = self.seCache.getBulk( match[ 'Value' ] )
+      if cacheMatches[ 'OK' ]:
+        # We undo the key into <resourceName> and <statusType>
+        fromList = [ ( key.split( '#' ),value ) for key,value in cacheMatches[ 'Value' ] ]
+        return S_OK( getDictFromList( fromList ) )
+        
+   #Humm, seems cache did not work               
+    
     meta        = { 'columns' : [ 'StorageElementName','StatusType','Status' ] }
     kwargs      = { 
                     'elementName' : elementName,
@@ -133,8 +213,9 @@ class ResourceStatus( object ):
   
     #This returns S_OK( [['StatusType1','Status1'],['StatusType2','Status2']...]
     res = self.rssClient.getElementStatus( 'StorageElement', **kwargs )
-    if res[ 'OK' ] and res['Value']:
-      return S_OK( getDictFromList( res['Value'] ) )
+      
+    if res[ 'OK' ] and res[ 'Value' ]:
+      return S_OK( getDictFromList( res[ 'Value' ] ) )
   
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
@@ -216,8 +297,15 @@ class ResourceStatus( object ):
               'tokenExpiration' : expiration 
               }
     
+    self.seCache.acquireLock()
+    
     res = self.rssClient.modifyElementStatus( 'StorageElement', elementName, statusType, **kwargs )
-  
+    if res[ 'OK' ]:
+      self.seCache.refreshCacheAndHistory()
+    
+    # Looks dirty, but this way we avoid retaining the lock when using gLogger.   
+    self.seCache.releaseLock()
+    
     if not res[ 'OK' ]:
       _msg = 'Error updating StorageElement (%s,%s,%s)' % ( elementName, statusType, str( kwargs ))
       gLogger.warn( 'RSS: %s' % _msg )
