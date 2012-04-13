@@ -23,7 +23,7 @@ class RSSCache( object ):
     
     self.__lifeTime             = lifeTime
     # lifetime of the history on hours
-    self.__cacheHistoryLifeTime = ( 1 and cacheHistoryLifetime ) or 24 
+    self.__cacheHistoryLifeTime = ( 1 and cacheHistoryLifeTime ) or 24 
     self.__updateFunc           = updateFunc
     
     # RSSCache
