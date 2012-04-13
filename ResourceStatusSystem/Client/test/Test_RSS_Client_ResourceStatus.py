@@ -27,11 +27,16 @@ class DummyReturn( object ):
     return self.dummyMethod
   def dummyMethod( self, *args, **kwargs ):
     return dummyResults[ self.__class__.__name__ ]
+
+class DummyCallable( DummyReturn ):
+  
+  def __call__( self, *args, **kwargs ):
+    pass
   
 class dgConfig( DummyReturn )             : pass
 class dgLogger( DummyReturn )             : pass
-class dS_OK( DummyReturn )                : pass
-class dS_ERROR( DummyReturn )             : pass
+class dS_OK( DummyCallable )              : pass
+class dS_ERROR( DummyCallable )           : pass
 class dCSAPI( DummyReturn )               : pass
 class dResourceStatusClient( DummyReturn ): pass
   
