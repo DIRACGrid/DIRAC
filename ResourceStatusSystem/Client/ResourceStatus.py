@@ -145,7 +145,7 @@ class ResourceStatus( object ):
       if isinstance( resourceName, str ):
         elementCandidates = [ cK for cK in cacheKeys if cK.startswith( '%s#' % resourceName ) ]
         if not elementCandidates:
-          return S_ERROR( '%s not present in the cache' % resourceName )
+          return S_ERROR( 'Resource %s not present in the cache' % resourceName )
       else:
         for eN in resourceName:
           found = False
@@ -158,16 +158,16 @@ class ResourceStatus( object ):
               break
             
           if not found:
-            return S_ERROR( '%s not present in the cache' % eN )  
+            return S_ERROR( 'Resource %s not found in the cache' % eN )  
     else:
       elementCandidates = cacheKeys
     
     # now we loop over elementCandidates, saves lots of iterations.        
     if statusType:
       if isinstance( statusType, str ):
-        statusTCandidates = [ eC for eC in elementCandidates if cK.endswith( '#%s' % statusType ) ]
+        statusTCandidates = [ eC for eC in elementCandidates if eC.endswith( '#%s' % statusType ) ]
         if not statusTCandidates:
-          return S_ERROR( '%s not present in the cache' % statusType )
+          return S_ERROR( 'StatusType %s not present in the cache' % statusType )
       else:
         for sT in statusType:
           found = False
@@ -180,7 +180,7 @@ class ResourceStatus( object ):
               break
           
           if not found:
-            return S_ERROR( '%s not present in the cache' % sT )  
+            return S_ERROR( 'StatusType %s not found in the cache' % sT )  
             
     else:
       statusTCandidates = elementCandidates  
