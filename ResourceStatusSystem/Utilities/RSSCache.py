@@ -144,15 +144,15 @@ class RSSCache( object ):
     '''
     
     if self.__updateFunc is None:
-      return 'RSSCache has no updateFunction'
+      return { 'OK': False, 'Message' : 'RSSCache has no updateFunction' }
     newCache = self.__updateFunc()
     if not newCache[ 'OK' ]:
-      return 'RSSCache %s' % newCache[ 'Message' ]
-    else:  
-      self.__rssCache.purgeAll()
-      self.__updateCache( newCache[ 'Value' ] )
+      return newCache
+    
+    self.__rssCache.purgeAll()
+    itemsAdded = self.__updateCache( newCache[ 'Value' ] )
          
-    return 'Ok'
+    return { 'OK' : True, 'Value' : itemsAdded }
 
 ################################################################################
 # Private methods    
@@ -165,10 +165,13 @@ class RSSCache( object ):
       }
     '''
     
+    itemsCounter = 0
+    
     for cacheKey, cacheValue in newCache.items():
       self.__rssCache.add( cacheKey, self.__lifeTime, value = cacheValue )
+      itemsCounter += 1
          
-    return True
+    return itemsCounter
 
   def __refreshCache( self ):
     '''

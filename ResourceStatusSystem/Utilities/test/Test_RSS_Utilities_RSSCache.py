@@ -168,23 +168,23 @@ class RSSCache_Success( RSSCache_TestCase ):
     '''  
     cache = self.cache( 1 )
     res = cache.refreshCache()
-    self.assertEqual( res, False )
+    self.assertEqual( res, { 'OK' : False, 'Message' : 'RSSCache has no updateFunction' } )
     
     global forcedResult
     cache = self.cache( 1, dummyFunction )
     forcedResult = { 'OK' : False, 'Message' : 'forcedMessage' }
     res = cache.refreshCache()
-    self.assertEqual( res, False )
+    self.assertEqual( res, forcedResult )
     
     forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
     res = cache.refreshCache()
-    self.assertEqual( res, True )
+    self.assertEqual( res, { 'OK' : True, 'Value' : 2 } )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'B' ] )
     
     forcedResult = { 'OK' : True, 'Value' : { 'A' : 2, 'C' : 3 } }
     res = cache.refreshCache()
-    self.assertEqual( res, True )
+    self.assertEqual( res, { 'OK' : True, 'Value' : 2 } )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'C' ] )
     
@@ -217,7 +217,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     self.assertEqual( cache.isCacheAlive(), True )
     time.sleep( 1 )
     res = cache.getCacheHistory()
-    self.assertEqual( res.values(), [ 'Ok' ] )
+    self.assertEqual( res.values(), [ { 'OK' : True, 'Value' : 2 } ] )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'B' ] )
     forcedResult = { 'OK' : False, 'Message' : 'Im a grumpy test' }
