@@ -164,7 +164,7 @@ class RSSCache( object ):
       you must acquire a lock before using it, and release it right after !
     '''  
     
-    refreshResult = self.refreshCache()
+    refreshResult = self.__refreshCache()
       
     now = datetime.datetime.utcnow()
       
