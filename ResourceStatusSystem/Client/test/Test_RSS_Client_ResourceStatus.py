@@ -124,7 +124,8 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
   def test_getDictFromList( self ):
-    
+    ''' tests the logic behind the function getDictFromList
+    '''
     res = self.getDictFromList( [ ( 1,2,3 ), ( 4,5,6 ) ] )
     self.assertEqual( res, { 1: { 2 : 3 }, 4 : { 5 : 6 } } )
     res = self.getDictFromList( [ ( 1,2,3 ), ( 1,5,6 ) ] )
@@ -133,7 +134,8 @@ class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
     self.assertEqual( res, { 1: { 2 : 3, 5 : 7 } } )
   
   def test_getCacheDictFromList( self ):
-    
+    ''' tests the logic behind the function getCacheDictFromList
+    '''
     res = self.getCacheDictFromList( [ (1,2,3), (4,5,6) ] )
     self.assertEqual( res, { '1#2' : 3, '4#5' : 6 } )
     res = self.getCacheDictFromList( [ (1,2,3), (4,5,6), ( 'A', '#', '#' ) ] )
