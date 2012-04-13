@@ -142,6 +142,8 @@ class RSSCache( object ):
       Clears the cache and gets its latest version, not Thread safe !
       Acquire a lock before using it ! ( and release it afterwards ! )
     '''
+
+    self.__rssCache.purgeAll()
     
     if self.__updateFunc is None:
       return { 'OK': False, 'Message' : 'RSSCache has no updateFunction' }
@@ -149,7 +151,6 @@ class RSSCache( object ):
     if not newCache[ 'OK' ]:
       return newCache
     
-    self.__rssCache.purgeAll()
     itemsAdded = self.__updateCache( newCache[ 'Value' ] )
          
     return { 'OK' : True, 'Value' : itemsAdded }
