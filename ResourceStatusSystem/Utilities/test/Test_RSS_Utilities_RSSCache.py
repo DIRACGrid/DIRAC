@@ -99,7 +99,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     ''' test that we update cacheHistoryLifeTime
     '''     
     cache = self.cache( 1 )
-    cache.setcacheHistoryLifeTime( 2 )
+    cache.setCacheHistoryLifeTime( 2 )
     self.assertEqual( cache._RSSCache__cacheHistoryLifeTime, 2 )
     
   def test_getCacheStatus( self ):  

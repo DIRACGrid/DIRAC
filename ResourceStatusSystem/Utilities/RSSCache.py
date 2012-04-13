@@ -94,7 +94,7 @@ class RSSCache( object ):
     '''
     self.__rssCacheLock.acquire()
     if self.__rssCacheStatus:
-      res = dict( self.__rssCacheStatus[ 0 ] )
+      res = dict( [ self.__rssCacheStatus[ 0 ] ] )
     else:
       res = {}  
     self.__rssCacheLock.release()
