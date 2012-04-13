@@ -152,7 +152,7 @@ class ResourceStatus( object ):
           
           for cK in cacheKeys:
           
-            if ck.startswith( '%s#' % eN ):
+            if cK.startswith( '%s#' % eN ):
               elementCandidates.append( cK )
               found = True
               break
