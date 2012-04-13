@@ -134,17 +134,17 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     global dummyResults
     dummyResults[ 'dgConfig' ]     = 'InActive'
     res = resourceStatus._ResourceStatus__updateSECache()
-    self.assertEquals( res, { 'OK' : False, 'Message' : 'RSS flag is inactive' } )
+    self.assertEqual( res, { 'OK' : False, 'Message' : 'RSS flag is inactive' } )
     dummyResults[ 'dgConfig' ]              = 'Active'
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : False, 'Message' : 'Black Friday' }
     res = resourceStatus._ResourceStatus__updateSECache()
-    self.assertEquals( res, { 'OK' : False, 'Message' : 'Black Friday' } )
+    self.assertEqual( res, { 'OK' : False, 'Message' : 'Black Friday' } )
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ) ] }
     res = resourceStatus._ResourceStatus__updateSECache()
-    self.assertEquals( res, { 'OK' : True, 'Value' : { 1: { 2 : 3 } } } )
+    self.assertEqual( res, { 'OK' : True, 'Value' : { '1#2': 3 } } )
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ), (1,3,4) ] }
     res = resourceStatus._ResourceStatus__updateSECache()
-    self.assertEquals( res, { 'OK' : True, 'Value' : { 1: { 2 : 3, 3 : 4 } } } )
+    self.assertEqual( res, { 'OK' : True, 'Value' : { '1#2': 3, '1#3' : 4 } } )
     
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
