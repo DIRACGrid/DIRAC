@@ -18,7 +18,7 @@ class DummyPassive( object ):
   def dummyMethod( self, *args, **kwargs ):
     pass
 
-returnResults = {}
+dummyResults = {}
 class DummyReturn( object ):
   
   def __init__( self, *args, **kwargs ):
@@ -26,7 +26,7 @@ class DummyReturn( object ):
   def __getattr__( self, name ):
     return self.dummyMethod
   def dummyMethod( self, *args, **kwargs ):
-    return returnResults[ self.__name__ ]
+    return dummyResults[ self.__class__.__name__ ]
   
 class dgConfig( DummyReturn )             : pass
 class dgLogger( DummyReturn )             : pass
@@ -109,13 +109,13 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     resourceStatus = self.resourceStatus()
     self.assertEquals( resourceStatus.rssClient, None )
     
-    global returnResults
-    returnResults[ 'dgConfig' ] = 'Active'
+    global dummyResults
+    dummyResults[ 'dgConfig' ] = 'Active'
     res = resourceStatus._ResourceStatus__getMode()
     self.assertEqual( res, True )
     self.assertNotEqual( resourceStatus.rssClient, None )
     
-    returnResults[ 'dgConfig' ] = 'InActive'
+    dummyResults[ 'dgConfig' ] = 'InActive'
     res = resourceStatus._ResourceStatus__getMode()
     self.assertEqual( res, False )
     self.assertEqual( resourceStatus.rssClient, None )
