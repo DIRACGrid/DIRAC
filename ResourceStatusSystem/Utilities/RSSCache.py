@@ -130,7 +130,7 @@ class RSSCache( object ):
       return S_OK( { resourceKey : resourceStatus } )
     return S_ERROR( 'Cannot get %s' % resourceKey )
 
-  def getBulk( self, resouceKeys ):
+  def getBulk( self, resourceKeys ):
     '''
       Gets values for resourceKeys in one ATOMIC operation.
     '''
@@ -138,12 +138,12 @@ class RSSCache( object ):
     result = {}
     self.__rssCacheLock.acquire()
 
-    for rK in resourceKeys:
+    for resourceKey in resourceKeys:
 
       resourceRow = self.__rssCache.get( resourceKey )
       if not resourceRow:
         return S_ERROR( 'Cannot get %s' % resourcekey )
-      result.update( { rK : resourceRow } )
+      result.update( { resourceKey : resourceRow } )
       
     self.__rssCacheLock.release()
     return S_OK( result )
