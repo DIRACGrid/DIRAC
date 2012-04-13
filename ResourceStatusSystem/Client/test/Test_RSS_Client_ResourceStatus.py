@@ -28,10 +28,8 @@ class DummyReturn( object ):
   def dummyMethod( self, *args, **kwargs ):
     return dummyResults[ self.__class__.__name__ ]
 
-class DummyCallable( DummyReturn ):
-  
-  def __call__( self, *args, **kwargs ):
-    pass
+def dummyCallable( whatever ):
+  return whatever
   
 class dgConfig( DummyReturn )             : pass
 class dgLogger( DummyReturn )             : pass
@@ -53,8 +51,8 @@ class ResourceStatusFunctions_TestCase( unittest.TestCase ):
     # We need the proper software, and then we overwrite it.
     import DIRAC.ResourceStatusSystem.Client.ResourceStatus as moduleTested   
     moduleTested.gConfig              = dgConfig()
-    moduleTested.S_OK                 = dS_OK()
-    moduleTested.S_ERROR              = dS_ERROR()
+    moduleTested.S_OK                 = dummyCallable
+    moduleTested.S_ERROR              = dummyCallable
     moduleTested.gLogger              = dgLogger()
     moduleTested.DIRACSingleton       = type
     moduleTested.CSAPI                = dCSAPI
@@ -81,8 +79,8 @@ class ResourceStatus_TestCase( unittest.TestCase ):
     # We need the proper software, and then we overwrite it.
     import DIRAC.ResourceStatusSystem.Client.ResourceStatus as moduleTested   
     moduleTested.gConfig              = dgConfig()
-    moduleTested.S_OK                 = dS_OK()
-    moduleTested.S_ERROR              = dS_ERROR()
+    moduleTested.S_OK                 = dummyCallable
+    moduleTested.S_ERROR              = dummyCallable
     moduleTested.gLogger              = dgLogger()
     moduleTested.DIRACSingleton       = type
     moduleTested.CSAPI                = dCSAPI
