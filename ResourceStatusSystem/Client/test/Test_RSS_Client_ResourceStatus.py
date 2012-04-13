@@ -139,16 +139,7 @@ class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
     res = self.getCacheDictFromList( [ (1,2,3), (4,5,6) ] )
     self.assertEqual( res, { '1#2' : 3, '4#5' : 6 } )
     res = self.getCacheDictFromList( [ (1,2,3), (4,5,6), ( 'A', '#', '#' ) ] )
-    self.assertEqual( res, { '1#2' : 3, '4#5' : 6, 'A##' : '#' } )
-    
-
-class ResourceStatus_Success( ResourceStatus_TestCase ):
-  
-  def test_instantiate( self ):
-    ''' tests that we can instantiate one object of the tested class
-    '''  
-    resourceStatus = self.resourceStatus()
-    self.assertEqual( 'ResourceStatus', resourceStatus.__class__.__name__ )    
+    self.assertEqual( res, { '1#2' : 3, '4#5' : 6, 'A##' : '#' } ) 
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
