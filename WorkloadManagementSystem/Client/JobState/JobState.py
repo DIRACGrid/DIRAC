@@ -41,9 +41,9 @@ class JobState( object ):
         return getattr( rpc, self.__functor.__name__ )( funcSelf.jid, fArgs )
       return self.__functor( *args, **kwargs )
 
-  def __init__( self, jid, forceLocal = False, getRPCFunctor = False ):
+  def __init__( self, jid, forceLocal = False, getRPCFunctor = False, source = "Unknown" ):
     self.__jid = jid
-    self.__source = "Unknown"
+    self.__source = str( source )
     self.__forceLocal = forceLocal
     if getRPCFunctor:
       self.__getRPCFunctor = getRPCFunctor
@@ -175,33 +175,40 @@ class JobState( object ):
       raise TypeError( "%s has wrong type. Has to be one of %s" % ( value, tList ) )
 
   @RemoteMethod
-  def setStatus( self, majorStatus, minorStatus = None, updateTime = None ):
+  def setStatus( self, majorStatus, minorStatus = None, appStatus = None, source = None, updateTime = None ):
     try:
       self.__checkType( majorStatus, types.StringType )
       self.__checkType( minorStatus, ( types.StringType, types.NoneType ) )
+      self.__checkType( appStatus, ( types.StringType, types.NoneType ) )
+      self.__checkType( source, ( types.StringType, types.NoneType ) )
       self.__checkType( updateTime, ( types.NoneType, Time._dateTimeType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
-    result = JobState.__db.job.setJobStatus( self.__jid, majorStatus, minorStatus )
+    result = JobState.__db.job.setJobStatus( self.__jid, majorStatus, minorStatus, appStatus )
     if not result[ 'OK' ]:
       return result
     #HACK: Cause joblogging is crappy
     if not minorStatus:
       minorStatus = 'idem'
-    return JobState.__db.log.addLoggingRecord( self.__jid, majorStatus, minorStatus,
-                                                 date = updateTime, source = self.__source )
+    if not source:
+      source = self.__source
+    return JobState.__db.log.addLoggingRecord( self.__jid, majorStatus, minorStatus, appStatus,
+                                                 date = updateTime, source = source )
 
   @RemoteMethod
-  def setMinorStatus( self, minorStatus, updateTime = None ):
+  def setMinorStatus( self, minorStatus, source = None, updateTime = None ):
     try:
       self.__checkType( minorStatus, types.StringType )
+      self.__checkType( source, ( types.StringType, types.NoneType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     result = JobState.__db.job.setJobStatus( self.__jid, minor = minorStatus )
     if not result[ 'OK' ]:
       return result
+    if not source:
+      source = self.__source
     return JobState.__db.log.addLoggingRecord( self.__jid, minor = minorStatus,
-                                                 date = updateTime, source = self.__source )
+                                                 date = updateTime, source = source )
 
 
   @RemoteMethod
@@ -214,16 +221,19 @@ class JobState( object ):
 
 
   @RemoteMethod
-  def setAppStatus( self, appStatus, updateTime = None ):
+  def setAppStatus( self, appStatus, source = None, updateTime = None ):
     try:
       self.__checkType( appStatus, types.StringType )
+      self.__checkType( source, ( types.StringType, types.NoneType ) )
     except TypeError, excp:
       return S_ERROR( str( excp ) )
     result = JobState.__db.job.setJobStatus( self.__jid, application = appStatus )
     if not result[ 'OK' ]:
       return result
+    if not source:
+      source = self.__source
     return JobState.__db.log.addLoggingRecord( self.__jid, application = appStatus,
-                                                 date = updateTime, source = self.__source )
+                                                 date = updateTime, source = source )
 
   @RemoteMethod
   def getAppStatus( self ):

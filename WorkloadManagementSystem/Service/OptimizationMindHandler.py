@@ -16,14 +16,18 @@ class OptimizationMindHandler( ExecutorMindHandler ):
   auth_msg_OptimizeJob = [ 'all' ]
   def msg_OptimizeJobs( self, msgObj ):
     jids = msgObj.jids
-    for jid in msgObj.jids:
+    for jid in jids:
       try:
         jid = int( jid )
       except ValueError:
         self.log.error( "Job ID %s has to be an integer" % jid )
         continue
-      self.log.info( "Received new job %s" % jid )
-      return self.executeTask( jid, CachedJobState( jid ) )
+      result = self.executeTask( jid, CachedJobState( jid ) )
+      if not result[ 'OK' ]:
+        self.log.error( "Could not add job %s to optimization: %s" % ( jid, result[ 'Value' ] ) )
+      else:
+        self.log.info( "Received new job %s" % jid )
+    return S_OK()
 
   @classmethod
   def __loadJobs( cls, eTypes = None ):

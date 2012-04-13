@@ -194,7 +194,7 @@ class JobScheduling( OptimizerExecutor ):
       self.freezeTask( self.ex_getOption( "HoldTime", 300 ) )
     jid = jobState.jid
     self.jobLog.info( "On hold -> %s" % holdMsg )
-    return jobState.setAppStatus( holdMsg )
+    return jobState.setAppStatus( holdMsg, source = self.ex_optimizerName() )
 
   def __getSitesRequired( self, jobState ):
     """Returns any candidate sites specified by the job or sites that have been
@@ -261,17 +261,8 @@ class JobScheduling( OptimizerExecutor ):
     if not result[ 'OK' ]:
       return result
 
-    result = jobState.setStatus( self.ex_getOption( "WaitingState", "Waiting" ),
-                                 self.ex_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ) )
-    if not result[ 'OK' ]:
-      return result
-
-    result = jobState.insertIntoTQ()
-    if not result[ 'OK' ]:
-      return result
-
     self.jobLog.info( "Done" )
-    return S_OK()
+    return self.setNextOptimizer( jobState )
 
   def __resolveStaging( self, jobState, inputData, idSites ):
     diskSites = []
@@ -389,7 +380,9 @@ class JobScheduling( OptimizerExecutor ):
     self.jobLog.info( "Stage request %s sent" % rid )
     jobState.setParameter( "StageRequest", rid )
     result = jobState.setStatus( self.ex_getOption( 'StagingStatus', 'Staging' ),
-                                 self.ex_getOption( 'StagingMinorStatus', 'Request Sent' ) )
+                                 self.ex_getOption( 'StagingMinorStatus', 'Request Sent' ),
+                                 appStatus = "",
+                                 source = self.ex_optimizerName() )
     if not result[ 'OK' ]:
       return result
     return S_OK( stageLFNs )

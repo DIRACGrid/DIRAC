@@ -107,12 +107,22 @@ class OptimizerExecutor( ExecutorModule ):
     chainLength = len( opChain )
     if chainLength - 1 == opIndex:
       #This is the last optimizer in the chain!
-      jobState.setState( self.am_getOption( 'WaitingStatus', 'Waiting' ),
-                         self.am_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ) )
+      result = jobState.setStatus( self.ex_getOption( 'WaitingStatus', 'Waiting' ),
+                                   minorStatus = self.ex_getOption( 'WaitingMinorStatus', 'Pilot Agent Submission' ),
+                                   appStatus = "",
+                                   source = opName )
+      if not result[ 'OK' ]:
+        return result
+
+      result = jobState.insertIntoTQ()
+      if not result[ 'OK' ]:
+        return result
+
       return S_OK()
+    #Keep optimizing!
     nextOp = opChain[ opIndex + 1 ]
     self.jobLog.info( "Set to Checking/%s" % nextOp )
-    return jobState.setStatus( "Checking", nextOp )
+    return jobState.setStatus( "Checking", nextOp, source = opName )
 
   def storeOptimizerParam( self, name, value ):
     if not self.__jobData.jobState:

@@ -251,14 +251,16 @@ class CachedJobState( object ):
 #
 
   @TracedMethod
-  def setStatus( self, majorStatus, minorStatus = None ):
+  def setStatus( self, majorStatus, minorStatus = None, appStatus = None, source = None ):
     self.__cache[ 'att.Status' ] = majorStatus
     if minorStatus:
       self.__cache[ 'att.MinorStatus' ] = minorStatus
+    if appStatus:
+      self.__cache[ 'att.AppStatus' ] = appStatus
     return S_OK()
 
   @TracedMethod
-  def setMinorStatus( self, minorStatus ):
+  def setMinorStatus( self, minorStatus, source = None ):
     self.__cache[ 'att.MinorStatus' ] = minorStatus
     return S_OK()
 
@@ -266,12 +268,12 @@ class CachedJobState( object ):
     return self.__cacheResult( ( 'att.Status', 'att.MinorStatus' ), self.__jobState.getStatus )
 
   @TracedMethod
-  def setAppStatus( self, appStatus ):
-    self.__cache[ 'att.ApplicationStatus' ] = appStatus
+  def setAppStatus( self, appStatus, source = None ):
+    self.__cache[ 'att.AppStatus' ] = appStatus
     return S_OK()
 
   def getAppStatus( self ):
-    return self.__cacheResult( 'att.ApplicationStatus', self.__jobState.getAppStatus )
+    return self.__cacheResult( 'att.AppStatus', self.__jobState.getAppStatus )
 #
 # Attribs
 #

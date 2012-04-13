@@ -302,8 +302,7 @@ class ExecutorDispatcher:
     self.__states = ExecutorState( self.__log )
     self.__cbHolder = ExecutorDispatcherCallbacks()
     self.__monitor = monitor
-    if self.__monitor:
-      gThreadScheduler.addPeriodicTask( 200, self.__doMonitoringStuff )
+    gThreadScheduler.addPeriodicTask( 60, self.__doPeriodicStuff )
     #If a task is frozen too many times, send error or forget task?
     self.__failedOnTooFrozen = True
     #If a task fails to properly dispatch, freeze or forget task?
@@ -333,7 +332,8 @@ class ExecutorDispatcher:
     self.__cbHolder = callbacksObj
     return S_OK()
 
-  def __doMonitoringStuff( self ):
+  def __doPeriodicStuff( self ):
+    self.__unfreezeTasks()
     if not self.__monitor:
       return
     eTypes = self.__execTypes.keys()
@@ -360,9 +360,9 @@ class ExecutorDispatcher:
             self.__monitor.registerActivity( "executors-%s" % eType, "%s executors connected" % eType,
                                              "Executors", "executors", self.__monitor.OP_MEAN, 300 )
             self.__monitor.registerActivity( "tasks-%s" % eType, "Tasks processed by %s" % eType,
-                                             "Executors", "tasks", self.__monitor.OP_RATE )
+                                             "Executors", "tasks", self.__monitor.OP_RATE, 300 )
             self.__monitor.registerActivity( "taskTime-%s" % eType, "Task processing time for %s" % eType,
-                                             "Executors", "seconds", self.__monitor.OP_MEAN )
+                                             "Executors", "seconds", self.__monitor.OP_MEAN, 300 )
         self.__execTypes[ eType ] += 1
     finally:
       self.__executorsLock.release()
