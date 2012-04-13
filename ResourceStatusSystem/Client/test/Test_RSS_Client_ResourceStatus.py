@@ -101,7 +101,7 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     ''' tests that we can instantiate one object of the tested class
     '''  
     resourceStatus = self.resourceStatus()
-    self.assertEqual( 'ResourceStatus', cache.__class__.__name__ )    
+    self.assertEqual( 'ResourceStatus', resourceStatus.__class__.__name__ )    
     
   def test_getMode( self ):  
     ''' tests the logic behind getMode method
