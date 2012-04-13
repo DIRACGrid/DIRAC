@@ -158,13 +158,31 @@ class RSSCache( object ):
     
     return S_OK()
 
+  def refreshCache( self ):
+    '''
+      Clears the cache and gets its latest version, not Thread safe !
+      Acquire a lock before using it ! ( and release it afterwards ! )
+    '''
+
+    self.__rssCache.purgeAll()
+    
+    if self.__updateFunc is None:
+      return S_ERROR( 'RSSCache has no updateFunction' )
+    newCache = self.__updateFunc()
+    if not newCache[ 'OK' ]:
+      return newCache
+    
+    itemsAdded = self.__updateCache( newCache[ 'Value' ] )
+         
+    return itemsAdded
+
   def refreshCacheAndHistory( self ):
     '''
       Method that refreshes the cache and updates the history. Not thread safe,
       you must acquire a lock before using it, and release it right after !
     '''  
     
-    refreshResult = self.__refreshCache()
+    refreshResult = self.refreshCache()
       
     now = datetime.datetime.utcnow()
       
@@ -194,24 +212,6 @@ class RSSCache( object ):
       itemsCounter += 1
          
     return S_OK( itemsCounter )
-
-  def __refreshCache( self ):
-    '''
-      Clears the cache and gets its latest version, not Thread safe !
-      Acquire a lock before using it ! ( and release it afterwards ! )
-    '''
-
-    self.__rssCache.purgeAll()
-    
-    if self.__updateFunc is None:
-      return S_ERROR( 'RSSCache has no updateFunction' )
-    newCache = self.__updateFunc()
-    if not newCache[ 'OK' ]:
-      return newCache
-    
-    itemsAdded = self.__updateCache( newCache[ 'Value' ] )
-         
-    return itemsAdded
           
   def __refreshCacheThreadRun( self ):
     '''
