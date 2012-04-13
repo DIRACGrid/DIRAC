@@ -202,7 +202,8 @@ class ResourceStatus( object ):
         fromList = [ ( key.split( '#' ),value ) for key,value in cacheMatches[ 'Value' ] ]
         return S_OK( getDictFromList( fromList ) )
         
-   #Humm, seems cache did not work               
+    #Humm, seems cache did not work     
+    gLogger.info( 'Cache miss with %s %s' % ( elementName, statusType ) )          
     
     meta        = { 'columns' : [ 'StorageElementName','StatusType','Status' ] }
     kwargs      = { 
