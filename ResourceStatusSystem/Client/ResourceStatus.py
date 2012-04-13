@@ -30,7 +30,7 @@ class ResourceStatus( object ):
     Constructor, initializes the rssClient.
     '''
     self.rssClient = None   
-    self.seCache   = RSSCache( 300, self.__updateSECache ) 
+    self.seCache   = RSSCache( 300, updateFunc = self.__updateSECache, cacheHistoryLifeTime = 24 ) 
     self.seCache.startRefreshThread()           
             
   def getStorageElementStatus( self, elementName, statusType = None, default = None ):
