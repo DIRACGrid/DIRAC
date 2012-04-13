@@ -155,7 +155,6 @@ class ResourceStatus( object ):
             if cK.startswith( '%s#' % eN ):
               elementCandidates.append( cK )
               found = True
-              #break
             
           if not found:
             return S_ERROR( 'Resource %s not found in the cache' % eN )  
@@ -170,19 +169,10 @@ class ResourceStatus( object ):
           return S_ERROR( 'StatusType %s not present in the cache' % statusType )
       else:
         for eC in elementCandidates:
-        #for sT in statusType:
-          #found = False
-          
-          #for eC in elementCandidates:
           for sT in statusType:  
                     
             if eC.endswith( '#%s' % sT ):
               statusTCandidates.append( eC )
-          #    found = True
-              #break
-          
-          #if not found:
-          #  return S_ERROR( 'StatusType %s not found in the cache' % sT )  
             
     else:
       statusTCandidates = elementCandidates  
@@ -201,7 +191,7 @@ class ResourceStatus( object ):
     
     if match[ 'OK' ]:
       cacheMatches = self.seCache.getBulk( match[ 'Value' ] )
-      if cacheMatches[ 'OK' ]:
+      if cacheMatches[ 'OK' ] and cacheMaches[ 'Value' ]:
         # We undo the key into <resourceName> and <statusType>
         fromList = [ ( key.split( '#' ),value ) for key,value in cacheMatches[ 'Value' ] ]
         return S_OK( getDictFromList( fromList ) )
