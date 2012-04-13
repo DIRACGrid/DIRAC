@@ -116,10 +116,10 @@ class RSSCache_Success( RSSCache_TestCase ):
     ''' test that we can extract information from the cache history 
     '''
     cache = self.cache( 1 )
-    res = cache.getCacheStatus()
+    res = cache.getCacheHistory()
     self.assertEqual( res, {} )
     cache._RSSCache__rssCacheStatus = [ ( 1, 2 ), ( 3, 4 ) ]
-    res = cache.getCacheStatus()
+    res = cache.getCacheHistory()
     self.assertEqual( res, { 1 : 2, 3 : 4 } )
   
   def test_startStopRefreshThread( self ):
