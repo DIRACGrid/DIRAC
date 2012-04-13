@@ -97,7 +97,6 @@ class ResourceStatus( object ):
 
 ################################################################################
 
-  @staticmethod
   def __updateSECache( self ):
     '''
       Method used to update the StorageElementCache.

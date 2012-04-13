@@ -13,14 +13,6 @@ forcedResult = None
 def dummyFunction():
   return forcedResult
 
-class Dummy( object ):
-      
-  def dummyMethod( self, *args, **kwargs ):
-    pass
-    
-  def __getattr__( self, name ):
-    return self.dummyMethod 
-
 class DummyCache( object ):
 
   def __init__( self, cache = None ):
@@ -50,7 +42,6 @@ class RSSCache_TestCase( unittest.TestCase ):
     # We need the proper software, and then we overwrite it.
     import DIRAC.ResourceStatusSystem.Utilities.RSSCache as moduleTested   
     moduleTested.DictCache = DummyCache
-    moduleTested.gLogger   = Dummy()
       
     self.cache = moduleTested.RSSCache
 
