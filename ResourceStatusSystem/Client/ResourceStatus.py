@@ -29,7 +29,9 @@ class ResourceStatus( object ):
     '''
     Constructor, initializes the rssClient.
     '''
-    self.rssClient = None   
+    self.rssClient = None 
+    # RSSCache only affects the calls directed to RSS, if using the CS it is not
+    # used.  
     self.seCache   = RSSCache( 300, updateFunc = self.__updateSECache, cacheHistoryLifeTime = 24 ) 
     self.seCache.startRefreshThread()           
             
@@ -254,10 +256,6 @@ class ResourceStatus( object ):
     
     self.rssClient = None
     return False
-
-################################################################################
-
-gResourceStatus = ResourceStatus()
 
 ################################################################################
 
