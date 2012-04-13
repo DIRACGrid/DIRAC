@@ -16,17 +16,20 @@ class RSSCache( object ):
     Cache with purgeThread integrated
   '''
   
-  def __init__( self, lifeTime, updateFunc = None ):
+  def __init__( self, lifeTime, updateFunc = None, cacheHistoryLifeTime = None ):
     '''
     Constructor
     '''
     
-    self.__lifeTime   = lifeTime
-    self.__updateFunc = updateFunc
+    self.__lifeTime             = lifeTime
+    # lifetime of the history on hours
+    self.__cacheHistoryLifeTime = ( 1 and cacheHistoryLifetime ) or 24 
+    self.__updateFunc           = updateFunc
     
     # RSSCache
-    self.__rssCache     = DictCache()
-    self.__rssCacheLock = threading.Lock()
+    self.__rssCache       = DictCache()
+    self.__rssCacheStatus = [] # ( updateTime, message )
+    self.__rssCacheLock   = threading.Lock()
     
     # Create purgeThread
     self.__refreshStop    = False
@@ -56,6 +59,12 @@ class RSSCache( object ):
       Set cache life time
     '''  
     self.__lifeTime = lifeTime
+
+  def setCacheHistoryLifeTime( self, cacheHistoryLifeTime ):
+    '''
+      Set cache life time
+    '''  
+    self.__cacheHistoryLifeTime = cacheHistoryLifeTime
   
   def getCacheKeys( self ):
     '''
@@ -79,6 +88,27 @@ class RSSCache( object ):
     '''
     self.__rssCacheLock.release()
   
+  def getCacheStatus( self ):
+    '''
+      Return the latest cache status
+    '''
+    self.__rssCacheLock.acquire()
+    if self.__rssCacheStatus:
+      res = dict( self.__rssCacheStatus[ 0 ] )
+    else:
+      res = {}  
+    self.__rssCacheLock.release()
+    return res
+    
+  def getCacheHistory( self ):
+    '''
+      Return the cache updates history
+    '''
+    self.__rssCacheLock.acquire()
+    res = dict( self.__rssCacheStatus )
+    self.__rssCacheLock.release()
+    return res
+    
   def get( self, resourceKey ):
     '''
       Gets the resource(s) status(es). Every resource can have multiple statuses, 
@@ -150,7 +180,7 @@ class RSSCache( object ):
     while not self.__refreshStop:
     
       self.__rssCacheLock.acquire()  
-      self.refreshCache()
+      refreshResult = self.refreshCache()
       self.__rssCacheLock.release()
             
       time.sleep( self.__lifeTime )  

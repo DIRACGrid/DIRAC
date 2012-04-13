@@ -71,6 +71,8 @@ class RSSCache_Success( RSSCache_TestCase ):
     self.assertEqual( 'RSSCache', cache.__class__.__name__ )    
     cache = self.cache( 1, updateFunc = 1 )
     self.assertEqual( 'RSSCache', cache.__class__.__name__ )
+    cache = self.cache( 1, updateFunc = 1, cacheHistoryLifeTime = 1 )
+    self.assertEqual( 'RSSCache', cache.__class__.__name__ )
     
   def test_stopRefreshThread( self ):
     ''' test that we can stop the refreshing thread
@@ -92,6 +94,33 @@ class RSSCache_Success( RSSCache_TestCase ):
     cache = self.cache( 1 )
     cache.setLifeTime( 2 )
     self.assertEqual( cache._RSSCache__lifeTime, 2 )    
+
+  def test_setCacheHistoryLifeTime( self ):
+    ''' test that we update cacheHistoryLifeTime
+    '''     
+    cache = self.cache( 1 )
+    cache.setcacheHistoryLifeTime( 2 )
+    self.assertEqual( cache._RSSCache__cacheHistoryLifeTime, 2 )
+    
+  def test_getCacheStatus( self ):  
+    ''' test that we can extract latest record from the cache history 
+    '''
+    cache = self.cache( 1 )
+    res = cache.getCacheStatus()
+    self.assertEqual( res, {} )
+    cache._RSSCache__rssCacheStatus = [ ( 1, 2 ), ( 3, 4 ) ]
+    res = cache.getCacheStatus()
+    self.assertEqual( res, { 1 : 2 } )
+
+  def test_getCacheHistory( self ):  
+    ''' test that we can extract information from the cache history 
+    '''
+    cache = self.cache( 1 )
+    res = cache.getCacheStatus()
+    self.assertEqual( res, {} )
+    cache._RSSCache__rssCacheStatus = [ ( 1, 2 ), ( 3, 4 ) ]
+    res = cache.getCacheStatus()
+    self.assertEqual( res, { 1 : 2, 3 : 4 } )
   
   def test_startStopRefreshThread( self ):
     ''' test that we can start and stop the refreshing thread
