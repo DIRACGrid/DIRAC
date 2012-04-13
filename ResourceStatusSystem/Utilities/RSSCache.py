@@ -186,7 +186,8 @@ class RSSCache( object ):
       now = datetime.datetime.utcnow()
       
       if self.__rssCacheStatus:
-        dateInserted, _message = self.__rssCacheStatus[ 0 ]
+        # Check oldest record
+        dateInserted, _message = self.__rssCacheStatus[ -1 ]
         
         if dateInserted < now - datetime.timedelta( hours = self.__cacheHistoryLifeTime ):
           self.__rssCacheStatus.pop()
