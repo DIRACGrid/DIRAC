@@ -95,6 +95,32 @@ class ResourceStatus_TestCase( unittest.TestCase ):
 ################################################################################
 # Tests
 
+class ResourceStatus_Success( ResourceStatus_TestCase ):
+  
+  def test_instantiate( self ):
+    ''' tests that we can instantiate one object of the tested class
+    '''  
+    resourceStatus = self.resourceStatus()
+    self.assertEqual( 'ResourceStatus', cache.__class__.__name__ )    
+    
+  def test_getMode( self ):  
+    ''' tests the logic behind getMode method
+    '''
+    resourceStatus = self.resourceStatus()
+    self.assertEquals( resourceStatus.rssClient, None )
+    
+    global returnResults
+    returnResults[ 'dgConfig' ] = 'Active'
+    res = resourceStatus._ResourceStatus__getMode()
+    self.assertEqual( res, True )
+    self.assertNotEqual( resourceStatus.rssClient, None )
+    
+    returnResults[ 'dgConfig' ] = 'InActive'
+    res = resourceStatus._ResourceStatus__getMode()
+    self.assertEqual( res, False )
+    self.assertEqual( resourceStatus.rssClient, None )
+    
+    
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
   def test_getDictFromList( self ):
