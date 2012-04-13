@@ -115,7 +115,7 @@ class ResourceStatus( object ):
     if not rawCache[ 'OK' ]:
       return rawCache
     
-    return getCacheDictFromList( rawCache[ 'Value' ] )     
+    return S_OK( getCacheDictFromList( rawCache[ 'Value' ] ) )     
   
 ################################################################################
   
@@ -259,15 +259,15 @@ class ResourceStatus( object ):
 
 ################################################################################
 
-def getDictFromList( l ):
+def getDictFromList( fromList ):
   '''
   Auxiliar method that given a list returns a dictionary of dictionaries:
   { site1 : { statusType1 : st1, statusType2 : st2 }, ... }
   '''
     
   res = {}
-  for le in l:
-    site, sType, status = le
+  for listElement in fromList:
+    site, sType, status = listElement
     if not res.has_key( site ):
       res[ site ] = {}
     res[ site ][ sType ] = status
@@ -284,7 +284,7 @@ def getCacheDictFromList( rawList ):
   '''
     
   res = [ ( '%s#%s' % ( name, sType ), status ) for name, sType, status in rawList ]
-  return S_OK( dict( res ) )  
+  return dict( res )  
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -38,6 +38,34 @@ class dResourceStatusClient( DummyReturn ): pass
 ################################################################################
 # TestCases
 
+class ResourceStatusFunctions_TestCase( unittest.TestCase ):
+  
+  def setUp( self ):
+    '''
+    Setup
+    '''
+
+    # We need the proper software, and then we overwrite it.
+    import DIRAC.ResourceStatusSystem.Client.ResourceStatus as moduleTested   
+    moduleTested.gConfig              = dgConfig()
+    moduleTested.S_OK                 = dS_OK()
+    moduleTested.S_ERROR              = dS_ERROR()
+    moduleTested.gLogger              = dgLogger()
+    moduleTested.DIRACSingleton       = type
+    moduleTested.CSAPI                = dCSAPI
+    moduleTested.ResourceStatusClient = dResourceStatusClient
+    moduleTested.RSSCache             = DummyPassive   
+      
+    self.getDictFromList      = moduleTested.getDictFromList
+    self.getCacheDictFromList = moduleTested.getCacheDictFromList
+
+  def tearDown( self ):
+    '''
+    TearDown
+    '''
+    del self.getDictFromList     
+    del self.getCacheDictFromList
+
 class ResourceStatus_TestCase( unittest.TestCase ):
   
   def setUp( self ):
@@ -66,6 +94,25 @@ class ResourceStatus_TestCase( unittest.TestCase ):
 
 ################################################################################
 # Tests
+
+class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
+  
+  def test_getDictFromList( self ):
+    
+    res = self.getDictFromList( [ ( 1,2,3 ), ( 4,5,6 ) ] )
+    self.assertEqual( res, { 1: { 2 : 3 }, 4 : { 5 : 6 } } )
+    res = self.getDictFromList( [ ( 1,2,3 ), ( 1,5,6 ) ] )
+    self.assertEqual( res, { 1: { 2 : 3, 5 : 6 } } )
+    res = self.getDictFromList( [ ( 1,2,3 ), ( 1,5,6 ), ( 1,5,7 ) ] )
+    self.assertEqual( res, { 1: { 2 : 3, 5 : 7 } } )
+  
+  def test_getCacheDictFromList( self ):
+    
+    res = self.getCacheDictFromList( [ (1,2,3), (4,5,6) ] )
+    self.assertEqual( res, { '1#2' : 3, '4#5' : 6 } )
+    res = self.getCacheDictFromList( [ (1,2,3), (4,5,6), ( 'A', '#', '#' ) ] )
+    self.assertEqual( res, { '1#2' : 3, '4#5' : 6, 'A##' : '#' } )
+    
 
 class ResourceStatus_Success( ResourceStatus_TestCase ):
   
