@@ -155,7 +155,7 @@ class ResourceStatus( object ):
             if cK.startswith( '%s#' % eN ):
               elementCandidates.append( cK )
               found = True
-              break
+              #break
             
           if not found:
             return S_ERROR( 'Resource %s not found in the cache' % eN )  
@@ -169,18 +169,20 @@ class ResourceStatus( object ):
         if not statusTCandidates:
           return S_ERROR( 'StatusType %s not present in the cache' % statusType )
       else:
-        for sT in statusType:
-          found = False
+        for eC in elementCandidates:
+        #for sT in statusType:
+          #found = False
           
-          for eC in elementCandidates:
+          #for eC in elementCandidates:
+          for sT in statusType:  
                     
             if eC.endswith( '#%s' % sT ):
               statusTCandidates.append( eC )
-              found = True
-              break
+          #    found = True
+              #break
           
-          if not found:
-            return S_ERROR( 'StatusType %s not found in the cache' % sT )  
+          #if not found:
+          #  return S_ERROR( 'StatusType %s not found in the cache' % sT )  
             
     else:
       statusTCandidates = elementCandidates  
