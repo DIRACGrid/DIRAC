@@ -143,9 +143,9 @@ class ResourceStatus( object ):
       if isinstance( resourceName, str ):
         elementCandidates = [ cK for cK in cacheKeys if cK.startswith( '%s#' % resourceName ) ]
         if not elementCandidates:
-          return S_ERROR( '%s not present in the cache' % elementName )
+          return S_ERROR( '%s not present in the cache' % resourceName )
       else:
-        for eN in elementName:
+        for eN in resourceName:
           found = False
           
           for cK in cacheKeys:
