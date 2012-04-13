@@ -96,42 +96,6 @@ class DB( MySQL ):
     self.log.info( "MaxQueue:       " + str( self.maxQueueSize ) )
     self.log.info( "==================================================" )
 
-#########################################################################################
-  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False ):
-    """ Count the number of records on each distinct combination of AttrList, selected
-        with condition defined by condDict and time stamps
-    """
-
-    cond = self.buildCondition( condDict, older, newer, timeStamp )
-    attrNames = ','.join( [ str( x ) for x in attrList ] )
-    # attrNames = ','.join( map( lambda x: str( x ), attrList ) )
-    cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
-    result = self._query( cmd , connection )
-    if not result['OK']:
-      return result
-
-    resultList = []
-    for raw in result['Value']:
-      attrDict = {}
-      for i in range( len( attrList ) ):
-        attrDict[attrList[i]] = raw[i]
-      item = ( attrDict, raw[len( attrList )] )
-      resultList.append( item )
-    return S_OK( resultList )
-
-#############################################################################
-  def getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
-                                  newer = None, timeStamp = None, connection = False ):
-    """ Get distinct values of a table attribute under specified conditions
-    """
-    cond = self.buildCondition( condDict, older = older, newer = newer, timeStamp = timeStamp )
-    cmd = 'SELECT  DISTINCT(%s) FROM %s %s ORDER BY %s' % ( attribute, table, cond, attribute )
-    result = self._query( cmd, connection )
-    if not result['OK']:
-      return result
-    attr_list = [ x[0] for x in result['Value'] ]
-    return S_OK( attr_list )
-
 #############################################################################
   def getCSOption( self, optionName, defaultValue = None ):
     return gConfig.getValue( "/%s/%s" % ( self.cs_path, optionName ), defaultValue )
