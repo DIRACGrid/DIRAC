@@ -139,9 +139,9 @@ class ResourceStatus( object ):
     elementCandidates = []
     statusTCandidates = []
     
-    if elementName:
-      if isinstance( elementName, str ):
-        elementCandidates = [ cK for cK in cacheKeys if ck.startswith( '%s#' % elementName ) ]
+    if resourceName:
+      if isinstance( resourceName, str ):
+        elementCandidates = [ cK for cK in cacheKeys if ck.startswith( '%s#' % resourceName ) ]
         if not elementCandidates:
           return S_ERROR( '%s not present in the cache' % elementName )
       else:
