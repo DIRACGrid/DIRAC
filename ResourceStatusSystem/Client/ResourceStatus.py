@@ -135,6 +135,8 @@ class ResourceStatus( object ):
     cacheKeys = self.seCache.getCacheKeys()
     if not cacheKeys[ 'OK' ]:
       return cacheKeys
+     
+    cacheKeys = cacheKeys[ 'Value' ] 
       
     elementCandidates = []
     statusTCandidates = []
