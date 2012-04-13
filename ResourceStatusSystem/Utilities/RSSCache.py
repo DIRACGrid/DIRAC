@@ -9,6 +9,7 @@ import datetime
 import threading
 import time
 
+from DIRAC                          import S_OK, S_ERROR 
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 class RSSCache( object ):
@@ -74,7 +75,7 @@ class RSSCache( object ):
     keys = self.__rssCache.getKeys()
     self.__rssCacheLock.release()
     
-    return keys
+    return S_OK( keys )
   
   def acquireLock( self ):
     '''
@@ -98,7 +99,7 @@ class RSSCache( object ):
     else:
       res = {}  
     self.__rssCacheLock.release()
-    return res
+    return S_OK( res )
     
   def getCacheHistory( self ):
     '''
@@ -107,7 +108,7 @@ class RSSCache( object ):
     self.__rssCacheLock.acquire()
     res = dict( self.__rssCacheStatus )
     self.__rssCacheLock.release()
-    return res
+    return S_OK( res )
     
   def get( self, resourceKey ):
     '''
@@ -125,7 +126,27 @@ class RSSCache( object ):
     resourceStatus = self.__rssCache.get( resourceKey )
     self.__rssCacheLock.release()
     
-    return { resourceKey : resourceStatus }
+    if resourceStatus:
+      return S_OK( { resourceKey : resourceStatus } )
+    return S_ERROR( 'Cannot get %s' % resourceKey )
+
+  def getBulk( self, resouceKeys ):
+    '''
+      Gets values for resourceKeys in one ATOMIC operation.
+    '''
+
+    result = {}
+    self.__rssCacheLock.acquire()
+
+    for rK in resourceKeys:
+
+      resourceStatus = self.__rssCache.get( resourceKey )
+      if not resourceStatus:
+        return S_ERROR( 'Cannot get %s' % resourceStatus )
+      result.update( { rK : resourceStatus } )
+      
+    self.__rssCacheLock.release()
+    return S_OK( result )
 
   def resetCache( self ):
     '''
@@ -135,7 +156,7 @@ class RSSCache( object ):
     self.__rssCache.purgeAll()
     self.__rssCacheLock.release()
     
-    return True
+    return S_OK()
 
   def refreshCache( self ):
     '''
@@ -146,14 +167,14 @@ class RSSCache( object ):
     self.__rssCache.purgeAll()
     
     if self.__updateFunc is None:
-      return { 'OK': False, 'Message' : 'RSSCache has no updateFunction' }
+      return S_ERROR( 'RSSCache has no updateFunction' )
     newCache = self.__updateFunc()
     if not newCache[ 'OK' ]:
       return newCache
     
     itemsAdded = self.__updateCache( newCache[ 'Value' ] )
          
-    return { 'OK' : True, 'Value' : itemsAdded }
+    return itemsAdded
 
 ################################################################################
 # Private methods    
@@ -172,7 +193,7 @@ class RSSCache( object ):
       self.__rssCache.add( cacheKey, self.__lifeTime, value = cacheValue )
       itemsCounter += 1
          
-    return itemsCounter
+    return S_OK( itemsCounter )
 
   def __refreshCache( self ):
     '''
@@ -189,10 +210,9 @@ class RSSCache( object ):
       if self.__rssCacheStatus:
         # Check oldest record
         dateInserted, _message = self.__rssCacheStatus[ -1 ]
-        
         if dateInserted < now - datetime.timedelta( hours = self.__cacheHistoryLifeTime ):
           self.__rssCacheStatus.pop()
-
+          
       self.__rssCacheStatus.insert( 0, ( now, refreshResult ) )
       
       self.__rssCacheLock.release()

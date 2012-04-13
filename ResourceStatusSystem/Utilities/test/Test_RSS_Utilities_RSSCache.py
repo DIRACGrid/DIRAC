@@ -98,20 +98,20 @@ class RSSCache_Success( RSSCache_TestCase ):
     '''
     cache = self.cache( 1 )
     res = cache.getCacheStatus()
-    self.assertEqual( res, {} )
+    self.assertEqual( res, { 'OK': True, 'Value' : {} } )
     cache._RSSCache__rssCacheStatus = [ ( 1, 2 ), ( 3, 4 ) ]
     res = cache.getCacheStatus()
-    self.assertEqual( res, { 1 : 2 } )
+    self.assertEqual( res, { 'OK': True, 'Value' : { 1 : 2 } } )
 
   def test_getCacheHistory( self ):  
     ''' test that we can extract information from the cache history 
     '''
     cache = self.cache( 1 )
     res = cache.getCacheHistory()
-    self.assertEqual( res, {} )
+    self.assertEqual( res, { 'OK' : True, 'Value' : {} } )
     cache._RSSCache__rssCacheStatus = [ ( 1, 2 ), ( 3, 4 ) ]
     res = cache.getCacheHistory()
-    self.assertEqual( res, { 1 : 2, 3 : 4 } )
+    self.assertEqual( res, { 'OK' : True, 'Value' : { 1 : 2, 3 : 4 } } )
   
   def test_startStopRefreshThread( self ):
     ''' test that we can start and stop the refreshing thread
@@ -212,12 +212,12 @@ class RSSCache_Success( RSSCache_TestCase ):
     cache = self.cache( 2, updateFunc = dummyFunction, cacheHistoryLifeTime = 0 )
     forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
     res = cache.getCacheHistory()
-    self.assertEqual( res, {} )
+    self.assertEqual( res, { 'OK' : True, 'Value' : {} } )
     cache.startRefreshThread()
     self.assertEqual( cache.isCacheAlive(), True )
     time.sleep( 1 )
     res = cache.getCacheHistory()
-    self.assertEqual( res.values(), [ { 'OK' : True, 'Value' : 2 } ] )
+    self.assertEqual( res.values(), { 'OK' : True, 'Value' :[ { 'OK' : True, 'Value' : 2 } ] } )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'B' ] )
     forcedResult = { 'OK' : False, 'Message' : 'Im a grumpy test' }
@@ -225,7 +225,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     res = cache.getCacheHistory()
     self.assertEqual( res.values().sort(), [ forcedResult, { 'OK' : True, 'Value' : 2 } ].sort() )
     res = cache.getCacheStatus()
-    self.assertEqual( res.values(), [ forcedResult ] )
+    self.assertEqual( res.values(), { 'OK' : True, 'Value' :[ forcedResult ] } )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [] )
     cache.stopRefreshThread()
