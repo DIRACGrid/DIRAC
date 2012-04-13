@@ -77,7 +77,7 @@ class RSSCache_Success( RSSCache_TestCase ):
     '''  
     cache = self.cache( 1 )
     res   = cache.isCacheAlive()
-    self.assertEqual( res, False )
+    self.assertEqual( res, { 'OK' : True, 'Value' : False } )
 
   def test_setLifeTime( self ):
     ''' test that we update lifeTime
@@ -118,10 +118,10 @@ class RSSCache_Success( RSSCache_TestCase ):
     '''     
     cache = self.cache( 1 )
     cache.startRefreshThread()
-    self.assertEqual( cache.isCacheAlive(), True )
+    self.assertEqual( cache.isCacheAlive(), { 'OK' : True, 'Value' : True } )
     cache.stopRefreshThread()
     time.sleep( 2 )
-    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache.isCacheAlive(), { 'OK' : True, 'Value' : False } )
     self.assertEqual( cache._RSSCache__refreshStop, False )    
 
   def test_reStartRefreshThread( self ):
@@ -129,10 +129,10 @@ class RSSCache_Success( RSSCache_TestCase ):
     '''     
     cache = self.cache( 1 )
     cache.startRefreshThread()
-    self.assertEqual( cache.isCacheAlive(), True )
+    self.assertEqual( cache.isCacheAlive(), { 'OK' : True, 'Value' : True } )
     cache.stopRefreshThread()
     time.sleep( 2 )
-    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache.isCacheAlive(), { 'OK' : True, 'Value' : False } )
     self.assertEqual( cache._RSSCache__refreshStop, False )
     self.assertRaises( RuntimeError, cache.startRefreshThread )
     
@@ -196,11 +196,11 @@ class RSSCache_Success( RSSCache_TestCase ):
     cache = self.cache( 1, updateFunc = dummyFunction )
     forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
     cache.startRefreshThread()
-    self.assertEqual( cache.isCacheAlive(), True )
+    self.assertEqual( cache.isCacheAlive(), { 'OK' : True, 'Value' : True } )
     time.sleep( 1 )
     cache.stopRefreshThread()
     time.sleep( 2 )
-    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache.isCacheAlive(), { 'OK' : True, 'Value' : False } )
     self.assertEqual( cache._RSSCache__refreshStop, False )
     keys = cache.getCacheKeys()
     self.assertEqual( keys, { 'OK' : True, 'Value' : [ 'A', 'B' ] } )        
@@ -214,12 +214,12 @@ class RSSCache_Success( RSSCache_TestCase ):
     res = cache.getCacheHistory()
     self.assertEqual( res, { 'OK' : True, 'Value' : {} } )
     cache.startRefreshThread()
-    self.assertEqual( cache.isCacheAlive(), True )
+    self.assertEqual( cache.isCacheAlive(), { 'OK' : True, 'Value' :  True } )
     time.sleep( 1 )
     res = cache.getCacheHistory()
     self.assertEqual( res[ 'Value' ].values(), [ { 'OK' : True, 'Value' : 2 } ] )
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [ 'A', 'B' ] )
+    self.assertEqual( keys, { 'OK' : True, 'Value' : [ 'A', 'B' ] } )
     forcedResult = { 'OK' : False, 'Message' : 'Im a grumpy test' }
     time.sleep( 2 )
     res = cache.getCacheHistory()
@@ -227,13 +227,13 @@ class RSSCache_Success( RSSCache_TestCase ):
     res = cache.getCacheStatus()
     self.assertEqual( res[ 'Value' ].values(), { 'OK' : True, 'Value' :[ forcedResult ] } )
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [] )
+    self.assertEqual( keys, { 'OK' : True, 'Value' : [] } )
     cache.stopRefreshThread()
     time.sleep( 2 )
-    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache.isCacheAlive(), { 'OK' : True, 'Value' : False } )
     self.assertEqual( cache._RSSCache__refreshStop, False )
     keys = cache.getCacheKeys()
-    self.assertEqual( keys, [] )
+    self.assertEqual( keys, { 'OK' : True, 'Value' : [] } )
         
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      
