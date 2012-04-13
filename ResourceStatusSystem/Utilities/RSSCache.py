@@ -5,10 +5,10 @@
 
 '''
 
+import datetime
 import threading
 import time
 
-from DIRAC                          import gLogger
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 class RSSCache( object ):
@@ -144,17 +144,15 @@ class RSSCache( object ):
     '''
     
     if self.__updateFunc is None:
-      gLogger.warn( 'RSSCache has no updateFunction' )
-      return False     
+      return 'RSSCache has no updateFunction'
     newCache = self.__updateFunc()
     if not newCache[ 'OK' ]:
-      gLogger.warn( 'RSSCache %s' % newCache[ 'Message' ] )
-      return False
+      return 'RSSCache %s' % newCache[ 'Message' ]
     else:  
       self.__rssCache.purgeAll()
       self.__updateCache( newCache[ 'Value' ] )
          
-    return True
+    return 'Ok'
 
 ################################################################################
 # Private methods    
@@ -181,6 +179,17 @@ class RSSCache( object ):
     
       self.__rssCacheLock.acquire()  
       refreshResult = self.refreshCache()
+      
+      now = datetime.datetime.utcnow()
+      
+      if self.__rssCacheStatus:
+        dateInserted, _message = self.__rssCacheStatus[ 0 ]
+        
+        if dateInserted < now - datetime.timedelta( hours = self.__cacheHistoryLifeTime ):
+          self.__rssCacheStatus.pop()
+
+      self.__rssCacheStatus.insert( 0, ( now, refreshResult ) )
+      
       self.__rssCacheLock.release()
             
       time.sleep( self.__lifeTime )  

@@ -205,5 +205,31 @@ class RSSCache_Success( RSSCache_TestCase ):
     keys = cache.getCacheKeys()
     self.assertEqual( keys, [ 'A', 'B' ] )        
     
+  def test_refreshThreadRefreshCacheHistory( self ):
+    ''' test that the refreshThread can refresh the internal history
+    '''  
+    global forcedResult
+    cache = self.cache( 2, updateFunc = dummyFunction, cacheHistoryLifeTime = 0 )
+    forcedResult = { 'OK' : True, 'Value' : { 'A' : 1, 'B' : 2 } }
+    res = cache.getCacheHistory()
+    self.assertEqual( res, {} )
+    cache.startRefreshThread()
+    self.assertEqual( cache.isCacheAlive(), True )
+    time.sleep( 1 )
+    res = cache.getCacheHistory()
+    self.assertEqual( res.values(), [ 'Ok' ] )
+    keys = cache.getCacheKeys()
+    self.assertEqual( keys, [ 'A', 'B' ] )
+    forcedResult = { 'OK' : False, 'Message' : 'Im a grumpy test' }
+    time.sleep( 2 )
+    res = cache.getCacheHistory()
+    self.assertEqual( res.values(), [ 'Im a grumpy test' ] )
+    cache.stopRefreshThread()
+    time.sleep( 2 )
+    self.assertEqual( cache.isCacheAlive(), False )
+    self.assertEqual( cache._RSSCache__refreshStop, False )
+    keys = cache.getCacheKeys()
+    self.assertEqual( keys, [] )
+        
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF      
