@@ -104,7 +104,7 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     self.assertEqual( 'ResourceStatus', resourceStatus.__class__.__name__ )    
     
   def test_getMode( self ):  
-    ''' tests the logic behind getMode method
+    ''' tests the method getMode
     '''
     resourceStatus = self.resourceStatus()
     self.assertEquals( resourceStatus.rssClient, None )
@@ -120,6 +120,26 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     self.assertEqual( res, False )
     self.assertEqual( resourceStatus.rssClient, None )
     
+  def test_updateSECache( self ):
+    ''' tests the method __updateSECache
+    '''  
+    resourceStatus = self.resourceStatus()
+    resourceStatus.rssClient = dResourceStatusClient()
+
+    global dummyResults
+    dummyResults[ 'dgConfig' ]     = 'InActive'
+    res = resourceStatus._ResourceStatus__updateSECache()
+    self.assertEquals( res, { 'OK' : False, 'Message' : 'RSS flag is inactive' } )
+    dummyResults[ 'dgConfig' ]              = 'Active'
+    dummyResults[ 'dResourceStatusClient' ] = { 'OK' : False, 'Message' : 'Black Friday' }
+    res = resourceStatus._ResourceStatus__updateSECache()
+    self.assertEquals( res, { 'OK' : False, 'Message' : 'Black Friday' } )
+    dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ) ] }
+    res = resourceStatus._ResourceStatus__updateSECache()
+    self.assertEquals( res, { 'OK' : False, 'Value' : { 1: { 2 : 3 } } } )
+    dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ), (1,3,4) ] }
+    res = resourceStatus._ResourceStatus__updateSECache()
+    self.assertEquals( res, { 'OK' : False, 'Value' : { 1: { 2 : 3, 3 : 4 } } } )
     
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
