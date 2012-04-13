@@ -33,8 +33,6 @@ def dummyCallable( whatever ):
   
 class dgConfig( DummyReturn )             : pass
 class dgLogger( DummyReturn )             : pass
-class dS_OK( DummyCallable )              : pass
-class dS_ERROR( DummyCallable )           : pass
 class dCSAPI( DummyReturn )               : pass
 class dResourceStatusClient( DummyReturn ): pass
   
