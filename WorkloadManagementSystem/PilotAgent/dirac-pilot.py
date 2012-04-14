@@ -313,6 +313,10 @@ if os.environ.has_key( 'PBS_JOBID' ):
   pilotRef = os.environ['PBS_JOBID']
   cliParams.queueName = os.environ['PBS_QUEUE']
 
+if os.environ.has_key( 'JOB_ID' ):
+    cliParams.flavour = 'SSHGE'
+    pilotRef = os.environ['JOB_ID']
+
 # This is the CREAM direct submission case  
 if os.environ.has_key( 'CREAM_JOBID' ):
   cliParams.flavour = 'CREAM'
@@ -328,10 +332,6 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   if os.environ['GLITE_WMS_JOBID'] != 'N/A':
     cliParams.flavour = 'gLite'
     pilotRef = os.environ['GLITE_WMS_JOBID']
-
-if os.environ.has_key( 'JOB_ID' ):
-    cliParams.flavour = 'SSHGE'
-    pilotRef = os.environ['JOB_ID']
 
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
