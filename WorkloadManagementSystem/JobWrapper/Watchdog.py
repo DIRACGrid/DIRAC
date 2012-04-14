@@ -51,6 +51,7 @@ class Watchdog:
     self.peekRetry = 5
     self.processMonitor = ProcessMonitor()
     self.checkError = ''
+    self.currentStats = {}
     self.initialized = False
     self.count = 0
 
@@ -156,7 +157,6 @@ class Watchdog:
       if self.littleTimeLeftCount == 0 and self.__timeLeft() == -1:
         self.checkError = 'Job has reached the CPU limit of the queue'
         self.log.error( self.checkError, self.timeLeft )
-        self.checkError = 'Job has reached the CPU limit of the queue'
         self.__killRunningThread()
         self.__getUsageSummary()
         return S_OK()
@@ -422,9 +422,9 @@ class Watchdog:
       self.log.info( "CPU/Wallclock ratio is %.2f%%" % ratio )
       # in case of error cpuTime might be 0, exclude this
       if wallClockTime and ratio < self.minCPUWallClockRatio:
-        if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK'):
-          self.log.info('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
-          return S_OK()        
+        if os.path.exists( 'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' ):
+          self.log.info( 'N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload' )
+          return S_OK()
         self.log.info( "Job is stalled!" )
         return S_ERROR( 'Watchdog identified this job as stalled' )
     except Exception, e:
@@ -696,6 +696,8 @@ class Watchdog:
     summary['WallClockTime(s)'] = wallClock
 
     self.__reportParameters( summary, 'UsageSummary', True )
+    self.currentStats = summary
+
 
   #############################################################################
   def __reportParameters( self, params, title = None, report = False ):

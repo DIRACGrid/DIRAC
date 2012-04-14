@@ -383,9 +383,16 @@ class JobWrapper:
       else:
         outputs = threadResult['Value']
 
+    if EXECUTION_RESULT.has_key( 'CPU' ):
+      self.log.info( 'EXECUTION_RESULT[CPU] in JobWrapper execute', str( EXECUTION_RESULT['CPU'] ) )
+
+
     if watchdog.checkError:
       self.__report( 'Failed', watchdog.checkError, sendFlag = True )
 
+    if watchdog.currentStats:
+      self.log.info( 'Statistics collected by the Watchdog:\n ',
+                        '\n  '.join( ['%s: %s' % items for items in watchdog.currentStats.items() ] ) )
     if outputs:
       status = threadResult['Value'][0]
       #Send final heartbeat of a configurable number of lines here
@@ -459,6 +466,7 @@ class JobWrapper:
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
     #TODO: normalize CPU consumed via scale factor
+    self.log.info( 'EXECUTION_RESULT[CPU] in __getCPU', str( EXECUTION_RESULT['CPU'] ) )
     utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
     self.log.verbose( "Total CPU time consumed = %s" % ( cpuTime ) )
@@ -1078,10 +1086,13 @@ class JobWrapper:
     if not 'CPU' in EXECUTION_RESULT:
       # If the payload has not started execution (error with input data, SW, SB,...)
       # Execution result is not filled use self.initialTiming
+      self.log.info( 'EXECUTION_RESULT[CPU] missing in sendWMSAccounting' )
       finalStat = os.times()
       EXECUTION_RESULT['CPU'] = []
       for i in range( len( finalStat ) ):
         EXECUTION_RESULT['CPU'].append( finalStat[i] - self.initialTiming[i] )
+
+    self.log.info( 'EXECUTION_RESULT[CPU] in sendWMSAccounting', str( EXECUTION_RESULT['CPU'] ) )
 
     utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
@@ -1275,6 +1286,7 @@ class ExecutionThread( threading.Thread ):
     EXECUTION_RESULT['CPU'] = []
     for i in range( len( finalStat ) ):
       EXECUTION_RESULT['CPU'].append( finalStat[i] - initialStat[i] )
+    gLogger.info( 'EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', str( EXECUTION_RESULT['CPU'] ) )
 
   #############################################################################
   def getCurrentPID( self ):
