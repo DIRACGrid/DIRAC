@@ -20,16 +20,15 @@
 
 __RCSID__ = "$Id$"
 
+from DIRAC.Core.Utilities                               import Time
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder        import getSystemInstance
-from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
 from DIRAC                                              import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Security                                import Properties
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 
-import os, thread, time, shutil
+import os, time
 
 class Watchdog:
 
@@ -138,7 +137,7 @@ class Watchdog:
         if exec_cycle_time < self.pollingTime:
           time.sleep( self.pollingTime - exec_cycle_time )
       return S_OK()
-    except Exception, x:
+    except Exception:
       gLogger.exception()
       return S_ERROR( 'Exception' )
 
@@ -247,10 +246,8 @@ class Watchdog:
       if result['OK']:
         outputList = result['Value']
         size = len( outputList )
-        recentStdOut = 'Last %s lines of application output from Watchdog on %s [UTC]:' % ( size, time.asctime( time.gmtime() ) )
-        border = ''
-        for i in xrange( len( recentStdOut ) ):
-          border += '='
+        recentStdOut = 'Last %s lines of application output from Watchdog on %s [UTC]:' % ( size, Time.dateTime() )
+        border = '=' * len( recentStdOut )
         cpuTotal = 'Last reported CPU consumed for job is %s (h:m:s)' % ( hmsCPU )
         if self.timeLeft:
           cpuTotal += ', Batch Queue Time Left %s (s @ HS06)' % self.timeLeft
@@ -283,7 +280,7 @@ class Watchdog:
     cpuTime = '00:00:00'
     try:
       cpuTime = self.processMonitor.getCPUConsumed( self.wrapperPID )
-    except Exception, x:
+    except Exception:
       self.log.warn( 'Could not determine CPU time consumed with exception' )
       self.log.exception()
       return S_OK( cpuTime ) #just return null CPU
@@ -415,7 +412,8 @@ class Watchdog:
 
     wallClockTime = self.parameters['WallClockTime'][-1] - self.parameters['WallClockTime'][-1 - intervals ]
     try:
-      cpuTime = self.__convertCPUTime( self.parameters['CPUConsumed'][-1] )['Value'] - self.__convertCPUTime( self.parameters['CPUConsumed'][-1 - intervals ] )['Value']
+      cpuTime = self.__convertCPUTime( self.parameters['CPUConsumed'][-1] )['Value']
+      cpuTime -= self.__convertCPUTime( self.parameters['CPUConsumed'][-1 - intervals ] )['Value']
 
       ratio = ( cpuTime / wallClockTime ) * 100.
 
@@ -481,7 +479,7 @@ class Watchdog:
       limit = self.jobCPUtime + self.jobCPUtime * ( self.jobCPUMargin / 100 )
       cpuConsumed = float( currentCPU )
       if cpuConsumed > limit:
-        self.log.info( 'Job has consumed more than the specified CPU limit with an additional %s\% margin' % ( self.jobCPUMargin ) )
+        self.log.info( 'Job has consumed more than the specified CPU limit with an additional %s%% margin' % ( self.jobCPUMargin ) )
         return S_ERROR( 'Job has exceeded maximum CPU time limit' )
       else:
         return S_OK( 'Job within CPU limit' )
@@ -685,9 +683,7 @@ class Watchdog:
     if self.parameters.has_key( 'LoadAverage' ):
       laList = self.parameters['LoadAverage']
       if laList:
-        la = 0.0
-        for load in laList: la += load
-        summary['LoadAverage'] = float( la ) / float( len( laList ) )
+        summary['LoadAverage'] = float( sum( laList ) ) / float( len( laList ) )
       else:
         summary['LoadAverage'] = 'Could not be estimated'
 

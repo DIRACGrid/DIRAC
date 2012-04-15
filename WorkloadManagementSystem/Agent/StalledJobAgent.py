@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, 
 from DIRAC                                          import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
-import time, types
+import types
 
 class StalledJobAgent( AgentModule ):
   """
@@ -97,7 +97,8 @@ class StalledJobAgent( AgentModule ):
           self.log.verbose( result['Message'] )
           runningCounter += 1
 
-    self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' % ( len( jobs ), stalledCounter, runningCounter ) )
+    self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' %
+                   ( len( jobs ), stalledCounter, runningCounter ) )
     return S_OK()
 
   #############################################################################
@@ -134,7 +135,7 @@ class StalledJobAgent( AgentModule ):
         result = self.__getLatestUpdateTime( job )
         if not result['OK']:
           return result
-        currentTime = time.mktime( time.gmtime() )
+        currentTime = toEpoch()
         lastUpdate = result['Value']
         elapsedTime = currentTime - lastUpdate
         if elapsedTime > failedTime:
@@ -192,7 +193,7 @@ class StalledJobAgent( AgentModule ):
     if not result['OK']:
       return result
 
-    currentTime = time.mktime( time.gmtime() )
+    currentTime = toEpoch()
     lastUpdate = result['Value']
 
     elapsedTime = currentTime - lastUpdate
