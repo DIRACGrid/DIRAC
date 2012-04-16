@@ -15,8 +15,10 @@ __RCSID__  = '$Id: $'
 
 g_BaseRegistrySection   = '/Registry'
 g_BaseResourcesSection  = '/Resources'
-g_BaseOperationsSection = '/Operations'
-g_BaseConfigSection     = '/Operations/RSSConfiguration'
+g_BaseOperationsSection = ''
+#g_BaseOperationsSection = '/Operations'
+g_BaseConfigSection     = '/RSSConfiguration'
+#g_BaseConfigSection     = '/Operations/RSSConfiguration'
 
 ### CS HELPER FUNCTIONS
 
