@@ -553,6 +553,226 @@ class ResourceManagementClient:
     return self.__query( 'delete', 'AccountingCache', locals() )
   
 ################################################################################
+# VOBOX CACHE FUNCTIONS
+
+  def insertVOBOXCache( self, site, system, serviceUp, machineUp, 
+                             dateEffective, meta = None ):
+    '''
+    Inserts on VOBOXCache a new row with the arguments given.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site hosting the VOBOX  
+      **system** - `string`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `integer`
+        seconds the system has been up
+      **machineUp** - `integer`
+        seconds the machine has been up
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'VOBOXCache', locals() )
+  def updateVOBOXCache( self, site, system, serviceUp, machineUp, 
+                             dateEffective, meta = None ):
+    '''
+    Updates VOBOXCache with the parameters given. By default, `site` and 
+    `system` will be the parameters used to select the row.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site hosting the VOBOX  
+      **system** - `string`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `integer`
+        seconds the system has been up
+      **machineUp** - `integer`
+        seconds the machine has been up
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'VOBOXCache', locals() )
+  def getVOBOXCache( self, site = None, system = None, serviceUp = None, 
+                     machineUp = None, dateEffective = None, meta = None ):
+    '''
+    Gets from VOBOXCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site hosting the VOBOX  
+      **system** - `[, string, list ]`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `[, integer, list]`
+        seconds the system has been up
+      **machineUp** - `[, integer, list]`
+        seconds the machine has been up
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'VOBOXCache', locals() )
+  def deleteVOBOXCache( self, site = None, system = None, serviceUp = None, 
+                        machineUp = None, dateEffective = None, meta = None ):
+    '''
+    Deletes from VOBOXCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site hosting the VOBOX  
+      **system** - `[, string, list ]`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `[, integer, list]`
+        seconds the system has been up
+      **machineUp** - `[, integer, list]`
+        seconds the machine has been up
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'VOBOXCache', locals() )  
+
+################################################################################
+# SpaceTokenOccupancy CACHE FUNCTIONS
+
+  def insertSpaceTokenOccupancyCache( self, site, token, total, guaranteed,
+                                      free, dateEffective, meta = None ):
+    '''
+    Inserts on SpaceTokenOccupancyCache a new row with the arguments given.
+    
+    :Parameters:
+      **site** - `string`
+        name of the space token site  
+      **token** - `string`
+        name of the token
+      **total** - `integer`
+        total terabytes
+      **guaranteed** - `integer`
+        guaranteed terabytes
+      **free** - `integer`
+        free terabytes
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', 'SpaceTokenOccupancyCache', locals() )
+  def updateSpaceTokenOccupancyCache( self, site, token, total, guaranteed,
+                                      free, dateEffective, meta = None ):
+    '''
+    Updates SpaceTokenOccupancyCache with the parameters given. By default, 
+    `site` and `token` will be the parameters used to select the row.
+    
+    :Parameters:
+      **site** - `string`
+        name of the space token site  
+      **token** - `string`
+        name of the token
+      **total** - `integer`
+        total terabytes
+      **guaranteed** - `integer`
+        guaranteed terabytes
+      **free** - `integer`
+        free terabytes
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'SpaceTokenOccupancyCache', locals() )
+  def getSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
+                                   guaranteed = None, free = None, 
+                                   dateEffective = None, meta = None ):
+    '''
+    Gets from SpaceTokenOccupancyCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list]`
+        name of the space token site  
+      **token** - `[, string, list]`
+        name of the token
+      **total** - `[, integer, list]`
+        total terabytes
+      **guaranteed** - `[, integer, list]`
+        guaranteed terabytes
+      **free** - `[, integer, list]`
+        free terabytes
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'get', 'SpaceTokenOccupancyCache', locals() )
+  def deleteSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
+                                      guaranteed = None, free = None, 
+                                      dateEffective = None, meta = None ):
+    '''
+    Deletes from SpaceTokenOccupancyCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list]`
+        name of the space token site  
+      **token** - `[, string, list]`
+        name of the token
+      **total** - `[, integer, list]`
+        total terabytes
+      **guaranteed** - `[, integer, list]`
+        guaranteed terabytes
+      **free** - `[, integer, list]`
+        free terabytes
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'SpaceTokenOccupancyCache', locals() )  
+  
+################################################################################
 # USER REGISTRY CACHE FUNCTIONS
 
   def insertUserRegistryCache( self, login, name, email, meta = None ):
