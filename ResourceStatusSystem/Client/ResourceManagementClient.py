@@ -556,7 +556,7 @@ class ResourceManagementClient:
 # VOBOX CACHE FUNCTIONS
 
   def insertVOBOXCache( self, site, system, serviceUp, machineUp, 
-                             dateEffective, meta = None ):
+                             lastCheckTime, meta = None ):
     '''
     Inserts on VOBOXCache a new row with the arguments given.
     
@@ -569,7 +569,7 @@ class ResourceManagementClient:
         seconds the system has been up
       **machineUp** - `integer`
         seconds the machine has been up
-      **dateEffective** - `datetime`
+      **lastCheckTime** - `datetime`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -581,7 +581,7 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__query( 'insert', 'VOBOXCache', locals() )
   def updateVOBOXCache( self, site, system, serviceUp, machineUp, 
-                             dateEffective, meta = None ):
+                             lastCheckTime, meta = None ):
     '''
     Updates VOBOXCache with the parameters given. By default, `site` and 
     `system` will be the parameters used to select the row.
@@ -595,7 +595,7 @@ class ResourceManagementClient:
         seconds the system has been up
       **machineUp** - `integer`
         seconds the machine has been up
-      **dateEffective** - `datetime`
+      **lastCheckTime** - `datetime`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -607,7 +607,7 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'VOBOXCache', locals() )
   def getVOBOXCache( self, site = None, system = None, serviceUp = None, 
-                     machineUp = None, dateEffective = None, meta = None ):
+                     machineUp = None, lastCheckTime = None, meta = None ):
     '''
     Gets from VOBOXCache all rows that match the parameters given.
     
@@ -620,7 +620,7 @@ class ResourceManagementClient:
         seconds the system has been up
       **machineUp** - `[, integer, list]`
         seconds the machine has been up
-      **dateEffective** - `[, datetime, list]`
+      **lastCheckTime** - `[, datetime, list]`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -632,7 +632,7 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'VOBOXCache', locals() )
   def deleteVOBOXCache( self, site = None, system = None, serviceUp = None, 
-                        machineUp = None, dateEffective = None, meta = None ):
+                        machineUp = None, lastCheckTime = None, meta = None ):
     '''
     Deletes from VOBOXCache all rows that match the parameters given.
     
@@ -645,7 +645,7 @@ class ResourceManagementClient:
         seconds the system has been up
       **machineUp** - `[, integer, list]`
         seconds the machine has been up
-      **dateEffective** - `[, datetime, list]`
+      **lastCheckTime** - `[, datetime, list]`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -661,7 +661,7 @@ class ResourceManagementClient:
 # SpaceTokenOccupancy CACHE FUNCTIONS
 
   def insertSpaceTokenOccupancyCache( self, site, token, total, guaranteed,
-                                      free, dateEffective, meta = None ):
+                                      free, lastCheckTime, meta = None ):
     '''
     Inserts on SpaceTokenOccupancyCache a new row with the arguments given.
     
@@ -676,7 +676,7 @@ class ResourceManagementClient:
         guaranteed terabytes
       **free** - `integer`
         free terabytes
-      **dateEffective** - `datetime`
+      **lastCheckTime** - `datetime`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -688,7 +688,7 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__query( 'insert', 'SpaceTokenOccupancyCache', locals() )
   def updateSpaceTokenOccupancyCache( self, site, token, total, guaranteed,
-                                      free, dateEffective, meta = None ):
+                                      free, lastCheckTime, meta = None ):
     '''
     Updates SpaceTokenOccupancyCache with the parameters given. By default, 
     `site` and `token` will be the parameters used to select the row.
@@ -704,7 +704,7 @@ class ResourceManagementClient:
         guaranteed terabytes
       **free** - `integer`
         free terabytes
-      **dateEffective** - `datetime`
+      **lastCheckTime** - `datetime`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -717,7 +717,7 @@ class ResourceManagementClient:
     return self.__query( 'update', 'SpaceTokenOccupancyCache', locals() )
   def getSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
                                    guaranteed = None, free = None, 
-                                   dateEffective = None, meta = None ):
+                                   lastCheckTime = None, meta = None ):
     '''
     Gets from SpaceTokenOccupancyCache all rows that match the parameters given.
     
@@ -732,7 +732,7 @@ class ResourceManagementClient:
         guaranteed terabytes
       **free** - `[, integer, list]`
         free terabytes
-      **dateEffective** - `[, datetime, list]`
+      **lastCheckTime** - `[, datetime, list]`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -745,7 +745,7 @@ class ResourceManagementClient:
     return self.__query( 'get', 'SpaceTokenOccupancyCache', locals() )
   def deleteSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
                                       guaranteed = None, free = None, 
-                                      dateEffective = None, meta = None ):
+                                      lastCheckTime = None, meta = None ):
     '''
     Deletes from SpaceTokenOccupancyCache all rows that match the parameters given.
     
@@ -760,7 +760,7 @@ class ResourceManagementClient:
         guaranteed terabytes
       **free** - `[, integer, list]`
         free terabytes
-      **dateEffective** - `[, datetime, list]`
+      **lastCheckTime** - `[, datetime, list]`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -976,7 +976,7 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'AccountingCache', locals() )
   def addOrModifyVOBOXCache( self, site, system, serviceUp, machineUp, 
-                             dateEffective ):
+                             lastCheckTime ):
     '''
     Using `site` and `system` to query the database, 
     decides whether to insert or update the table.
@@ -990,7 +990,7 @@ class ResourceManagementClient:
         seconds the system has been up
       **machineUp** - `integer`
         seconds the machine has been up
-      **dateEffective** - `datetime`
+      **lastCheckTime** - `datetime`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
@@ -1003,7 +1003,7 @@ class ResourceManagementClient:
     return self.__addOrModifyElement( 'VOBOXCache', locals() )  
   def addOrModifyElementSpaceTokenOccupancyCache( self, site, token, total, 
                                                   guaranteed, free, 
-                                                  dateEffective, meta = None ):
+                                                  lastCheckTime, meta = None ):
     '''
     Using `site` and `token` to query the database, decides whether to insert or 
     update the table.
@@ -1019,7 +1019,7 @@ class ResourceManagementClient:
         guaranteed terabytes
       **free** - `integer`
         free terabytes
-      **dateEffective** - `datetime`
+      **lastCheckTime** - `datetime`
         time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
