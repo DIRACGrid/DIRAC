@@ -975,6 +975,61 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'AccountingCache', locals() )
+  def addOrModifyVOBOXCache( self, site, system, serviceUp, machineUp, 
+                             dateEffective ):
+    '''
+    Using `site` and `system` to query the database, 
+    decides whether to insert or update the table.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site hosting the VOBOX  
+      **system** - `string`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `integer`
+        seconds the system has been up
+      **machineUp** - `integer`
+        seconds the machine has been up
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__addOrModifyElement( 'VOBOXCache', locals() )  
+  def addOrModifyElementSpaceTokenOccupancyCache( self, site, token, total, 
+                                                  guaranteed, free, 
+                                                  dateEffective, meta = None ):
+    '''
+    Using `site` and `token` to query the database, decides whether to insert or 
+    update the table.
+    
+    :Parameters:
+      **site** - `string`
+        name of the space token site  
+      **token** - `string`
+        name of the token
+      **total** - `integer`
+        total terabytes
+      **guaranteed** - `integer`
+        guaranteed terabytes
+      **free** - `integer`
+        free terabytes
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__addOrModifyElement( 'SpaceTokenOccupancyCache', locals() )  
   def addOrModifyUserRegistryCache( self, login, name, email ):
     '''
     Using `login` to query the database, decides whether to insert or update 
