@@ -188,7 +188,7 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     self.assertEqual( res, 'Resource A not found in the cache' )
            
     # Tests with full cache    
-    dummyResults[ 'dRSSCache' ] = { 'OK' : True, 'Value' : [ '1#2', '4#5' ] }
+    dummyResults[ 'dRSSCache' ] = { 'OK' : True, 'Value' : [ '1#2', '1#3', '4#2' ] }
     res = resourceStatus._ResourceStatus__cacheMatch( None, None )
     self.assertEqual( res, [ '1#2', '1#3', '4#2' ] )    
 
