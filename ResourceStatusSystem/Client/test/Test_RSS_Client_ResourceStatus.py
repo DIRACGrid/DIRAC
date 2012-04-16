@@ -108,13 +108,14 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
   def test_getMode( self ):  
     ''' tests the method getMode
     '''
+    global dummyResults
+    dummyResults                = {}
+    dummyResults[ 'dRSSCache' ] = None
+    
     resourceStatus = self.resourceStatus()
     self.assertEquals( resourceStatus.rssClient, None )
     
-    global dummyResults
-    dummyResults = {}
     dummyResults[ 'dgConfig' ]  = 'Active'
-    dummyResults[ 'dRSSCache' ] = None
     res = resourceStatus._ResourceStatus__getMode()
     self.assertEqual( res, True )
     self.assertNotEqual( resourceStatus.rssClient, None )
@@ -126,14 +127,16 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     
   def test_updateSECache( self ):
     ''' tests the method __updateSECache
-    '''  
+    '''
+    global dummyResults
+    dummyResults                = {}
+    dummyResults[ 'dRSSCache' ] = None
+      
     resourceStatus = self.resourceStatus()
     #resourceStatus.rssClient = dResourceStatusClient()
-
-    global dummyResults
-    dummyResults = {}
+    
     dummyResults[ 'dgConfig' ]  = 'InActive'
-    dummyResults[ 'dRSSCache' ] = None
+    
     res = resourceStatus._ResourceStatus__updateSECache()
     self.assertEqual( res, { 'OK' : False, 'Message' : 'RSS flag is inactive' } )
     dummyResults[ 'dgConfig' ]              = 'Active'
@@ -151,11 +154,12 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
   def test_cacheMatch( self ):
     ''' tests the method __cacheMatch
     '''  
+    global dummyResults
+    dummyResults                = {}
+    dummyResults[ 'dRSSCache' ] = None
     
     resourceStatus = self.resourceStatus()
     
-    global dummyResults
-    dummyResults = {}
     dummyResults[ 'dRSSCache' ] = { 'OK' : False, 'Message' : 'Im evil' }
     res = resourceStatus._ResourceStatus__cacheMatch()
     self.assertEqual( res, { 'OK' : False, 'Message' : 'Im evil' } )
