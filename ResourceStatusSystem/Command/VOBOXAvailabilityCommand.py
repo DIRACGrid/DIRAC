@@ -5,6 +5,8 @@
   
 '''
 
+import urlparse
+
 from DIRAC                                      import S_OK
 from DIRAC.Core.DISET.RPCClient                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
@@ -34,10 +36,17 @@ class VOBOXAvailabilityCommand( Command ):
       serviceUpTime = resPing[ 'Value' ].get( 'service uptime', 0 )
       machineUpTime = resPing[ 'Value' ].get( 'host uptime', 0 )
       
+      parsed          = urlparse.urlparse( serviceURL )
+      system, service = parsed.path.strip("/").split("/")
+      site            = parsed.netloc.split(":")[0]
+      
       res = S_OK( 
                   { 
                     'serviceUpTime' : serviceUpTime,
-                    'machineUpTime' : machineUpTime
+                    'machineUpTime' : machineUpTime,
+                    'site'          : site,
+                    'system'        : system,
+                    'service'       : service
                    }
                  )
     else:
