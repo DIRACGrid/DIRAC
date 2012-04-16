@@ -190,7 +190,44 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     # Tests with full cache    
     dummyResults[ 'dRSSCache' ] = { 'OK' : True, 'Value' : [ '1#2', '4#5' ] }
     res = resourceStatus._ResourceStatus__cacheMatch( None, None )
-    self.assertEqual( res, [ '1#2', '4#5' ] )    
+    self.assertEqual( res, [ '1#2', '1#3', '4#2' ] )    
+
+    res = resourceStatus._ResourceStatus__cacheMatch( 'A', None )
+    self.assertEqual( res, 'Resource A not present in the cache' )
+    
+    res = resourceStatus._ResourceStatus__cacheMatch( '1', None )
+    self.assertEqual( res, [ '1#2', '1#3' ] )
+
+    res = resourceStatus._ResourceStatus__cacheMatch( None, 'A' )
+    self.assertEqual( res, 'StatusType A not present in the cache' )
+    
+    res = resourceStatus._ResourceStatus__cacheMatch( None, '2' )
+    self.assertEqual( res, [ '1#2', '4#2' ] )
+    
+    res = resourceStatus._ResourceStatus__cacheMatch( 'A', 'A' )
+    self.assertEqual( res, 'Resource A not present in the cache' )
+           
+    res = resourceStatus._ResourceStatus__cacheMatch( '1', '2' )
+    self.assertEqual( res, [ '1#2' ] )       
+           
+    res = resourceStatus._ResourceStatus__cacheMatch( [ 'A' ], None )
+    self.assertEqual( res, 'Resource A not found in the cache' )
+    
+    res = resourceStatus._ResourceStatus__cacheMatch( [ '1' ], None )
+    self.assertEqual( res, [ '1#2', '1#3' ] )
+    
+    res = resourceStatus._ResourceStatus__cacheMatch( None, [ 'A' ] )
+    self.assertEqual( res, [] )
+    
+    res = resourceStatus._ResourceStatus__cacheMatch( None, [ '2' ] )
+    self.assertEqual( res, [ '1#2', '4#2' ] )
+    
+    res = resourceStatus._ResourceStatus__cacheMatch( [ 'A' ], [ 'A' ] )
+    self.assertEqual( res, 'Resource A not found in the cache' )
+
+    res = resourceStatus._ResourceStatus__cacheMatch( [ '1' ], [ '2' ] )
+    self.assertEqual( res, [ '1#2' ] )
+
     
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
