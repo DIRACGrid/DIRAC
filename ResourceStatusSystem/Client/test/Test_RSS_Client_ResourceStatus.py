@@ -9,14 +9,14 @@ __RCSID__ = '$Id: $'
 
 # MockStuff 
 
-class DummyPassive( object ):
-  
-  def __init__( self, *args, **kwargs ):
-    pass
-  def __getattr__( self, name ):
-    return self.dummyMethod
-  def dummyMethod( self, *args, **kwargs ):
-    pass
+#class DummyPassive( object ):
+#  
+#  def __init__( self, *args, **kwargs ):
+#    pass
+#  def __getattr__( self, name ):
+#    return self.dummyMethod
+#  def dummyMethod( self, *args, **kwargs ):
+#    pass
 
 dummyResults = {}
 class DummyReturn( object ):
@@ -35,6 +35,7 @@ class dgConfig( DummyReturn )             : pass
 class dgLogger( DummyReturn )             : pass
 class dCSAPI( DummyReturn )               : pass
 class dResourceStatusClient( DummyReturn ): pass
+class dRSSCache( DummyReturn )            : pass
   
 ################################################################################
 # TestCases
@@ -55,7 +56,7 @@ class ResourceStatusFunctions_TestCase( unittest.TestCase ):
     moduleTested.DIRACSingleton       = type
     moduleTested.CSAPI                = dCSAPI
     moduleTested.ResourceStatusClient = dResourceStatusClient
-    moduleTested.RSSCache             = DummyPassive   
+    moduleTested.RSSCache             = dRSSCache   
       
     self.getDictFromList      = moduleTested.getDictFromList
     self.getCacheDictFromList = moduleTested.getCacheDictFromList
@@ -83,7 +84,7 @@ class ResourceStatus_TestCase( unittest.TestCase ):
     moduleTested.DIRACSingleton       = type
     moduleTested.CSAPI                = dCSAPI
     moduleTested.ResourceStatusClient = dResourceStatusClient
-    moduleTested.RSSCache             = DummyPassive   
+    moduleTested.RSSCache             = dRSSCache   
       
     self.resourceStatus = moduleTested.ResourceStatus
 
@@ -111,6 +112,7 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     self.assertEquals( resourceStatus.rssClient, None )
     
     global dummyResults
+    dummyResults = {}
     dummyResults[ 'dgConfig' ] = 'Active'
     res = resourceStatus._ResourceStatus__getMode()
     self.assertEqual( res, True )
@@ -125,9 +127,10 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     ''' tests the method __updateSECache
     '''  
     resourceStatus = self.resourceStatus()
-    resourceStatus.rssClient = dResourceStatusClient()
+    #resourceStatus.rssClient = dResourceStatusClient()
 
     global dummyResults
+    dummyResults = {}
     dummyResults[ 'dgConfig' ]     = 'InActive'
     res = resourceStatus._ResourceStatus__updateSECache()
     self.assertEqual( res, { 'OK' : False, 'Message' : 'RSS flag is inactive' } )
@@ -142,6 +145,19 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ), (1,3,4) ] }
     res = resourceStatus._ResourceStatus__updateSECache()
     self.assertEqual( res, { '1#2': 3, '1#3' : 4 } )
+    
+  def test_cacheMatch( self ):
+    ''' tests the method __cacheMatch
+    '''  
+    
+    resourceStatus = self.resourceStatus()
+    
+    global dummyResults
+    dummyResults = {}
+    dummyResults[ 'dRSSCache' ] = { 'OK' : False, 'Message' : 'Im evil' }
+    res = resourceStatus._ResourceStatus__cacheMatch()
+    self.assertEqual( res, { 'OK' : False, 'Message' : 'Im evil' } )
+        
     
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
