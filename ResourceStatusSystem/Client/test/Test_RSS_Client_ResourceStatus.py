@@ -113,7 +113,8 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     
     global dummyResults
     dummyResults = {}
-    dummyResults[ 'dgConfig' ] = 'Active'
+    dummyResults[ 'dgConfig' ]  = 'Active'
+    dummyResults[ 'dRSSCache' ] = None
     res = resourceStatus._ResourceStatus__getMode()
     self.assertEqual( res, True )
     self.assertNotEqual( resourceStatus.rssClient, None )
@@ -131,7 +132,8 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
 
     global dummyResults
     dummyResults = {}
-    dummyResults[ 'dgConfig' ]     = 'InActive'
+    dummyResults[ 'dgConfig' ]  = 'InActive'
+    dummyResults[ 'dRSSCache' ] = None
     res = resourceStatus._ResourceStatus__updateSECache()
     self.assertEqual( res, { 'OK' : False, 'Message' : 'RSS flag is inactive' } )
     dummyResults[ 'dgConfig' ]              = 'Active'
