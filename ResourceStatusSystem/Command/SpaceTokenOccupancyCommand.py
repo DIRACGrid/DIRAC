@@ -23,8 +23,9 @@ class SpaceTokenOccupancyCommand( Command ):
     '''
     super( SpaceTokenOccupancyCommand, self ).doCommand()
 
-    spaceTokenEndpoint = self.args[ 0 ]
-    spaceToken         = self.args[ 1 ]  
+    site, siteDict     = self.args[ 0 ]
+    spaceToken         = self.args[ 1 ]
+    spaceTokenEndpoint = siteDict[ 'Endpoint' ]   
     
     occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
            

@@ -188,7 +188,7 @@ class CacheFeederAgent( AgentModule ):
         res = self.clientsInvoker.doCommand()[ 'Result' ]
         
         if not res[ 'OK' ]:
-          self.log.warn( str( res[ 'Message' ] ) )
+          self.log.warn( res[ 'Message' ][ 2 ] )
           continue
 
         site, token = co[ 2 ]
