@@ -7,7 +7,7 @@
 
 from datetime import datetime
 
-from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC                                                      import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.CommandCaller           import CommandCaller

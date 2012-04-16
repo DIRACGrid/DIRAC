@@ -90,7 +90,7 @@ CREATE TABLE SpaceTokenOccupancyCache(
   Free INTEGER NOT NULL DEFAULT 0,
   LastCheckTime DATETIME NOT NULL,
   UNIQUE KEY( Site, Token ),
-  PRIMARY KEY(  SpaceTokenOccupancyCache )
+  PRIMARY KEY(  SpaceTokenOccupancyCacheID )
 ) Engine=InnoDB;
 
 DROP TABLE IF EXISTS EnvironmentCache;
