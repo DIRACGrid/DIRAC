@@ -502,7 +502,7 @@ class MySQLStatements( object ):
     return [ '"%s"' % s.replace( microsecond = 0 ) for s in suspicious ]
 
   def _checkFLOAT(self, suspicious):
-    for i in list(suspicious):
+    for i in suspicious:
       if type(i) not in (int, float):
         raise RSSDBException( 'Non numeric value "%s"' % suspicious )
     
