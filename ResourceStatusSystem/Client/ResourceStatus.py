@@ -178,6 +178,29 @@ class ResourceStatus( object ):
       statusTCandidates = elementCandidates  
       
     return S_OK( statusTCandidates )   
+
+  def __getFromCache( self, elementName, statusType ):
+    '''
+    Given an elementName and a statusType, matches the cache, and in case
+    of positive match, formats the output and returns
+    '''
+
+    match = self.__cacheMatch( elementName, statusType )
+    
+    if not match[ 'OK' ]:
+      return match
+    
+    cacheMatches = self.seCache.getBulk( match[ 'Value' ] )
+    if not cacheMatches[ 'OK' ]:
+      return cacheMatches
+
+    cacheMatches = cacheMatches[ 'Value' ]
+    if not cacheMatches:
+      return S_ERROR( 'Empty cache for ( %s, %s )' % ( elementName, statusType ) )   
+    
+    # We undo the key into <resourceName> and <statusType>
+    fromList = [ key.split( '#' ) + [ value ] for key,value in cacheMatches.items() ]
+    return S_OK( getDictFromList( fromList ) )
   
 ################################################################################
   
@@ -187,15 +210,10 @@ class ResourceStatus( object ):
     '''
   
     #Checks cache first
-    match = self.__cacheMatch( elementName, statusType )
-    
-    if match[ 'OK' ]:
-      cacheMatches = self.seCache.getBulk( match[ 'Value' ] )
-      if cacheMatches[ 'OK' ] and cacheMatches[ 'Value' ]:
-        # We undo the key into <resourceName> and <statusType>
-        fromList = [ key.split( '#' ) + [ value ] for key,value in cacheMatches[ 'Value' ].items() ]
-        return S_OK( getDictFromList( fromList ) )
-        
+    cache = self__getFromCache( elementName, statusType )
+    if cache[ 'OK' ]:
+      return cache
+            
     #Humm, seems cache did not work     
     gLogger.info( 'Cache miss with %s %s' % ( elementName, statusType ) )          
     
