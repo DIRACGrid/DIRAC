@@ -193,7 +193,7 @@ class ResourceStatus( object ):
       cacheMatches = self.seCache.getBulk( match[ 'Value' ] )
       if cacheMatches[ 'OK' ] and cacheMatches[ 'Value' ]:
         # We undo the key into <resourceName> and <statusType>
-        fromList = [ ( key.split( '#' ),value ) for key,value in cacheMatches[ 'Value' ].items() ]
+        fromList = [ key.split( '#' ) + [ value ] for key,value in cacheMatches[ 'Value' ].items() ]
         return S_OK( getDictFromList( fromList ) )
         
     #Humm, seems cache did not work     
