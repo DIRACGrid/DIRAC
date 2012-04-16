@@ -170,6 +170,11 @@ class WorkingProcess( multiprocessing.Process ):
     
     :param self: self reference
     """
+    if LockRing:
+      # Reset all locks
+      lr = LockRing()
+      lr._openAll()
+      lr._setAllEvents()
     while True:
       try:
         task = self.__pendingQueue.get( block = True, timeout = 10 )
