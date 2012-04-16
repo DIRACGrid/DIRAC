@@ -138,10 +138,10 @@ class CacheFeederAgent( AgentModule ):
     spaceEndpoints  = CS.getSpaceTokenEndpoints()
     spaceTokens     = CS.getSpaceTokens() 
 
-    for site in spaceEndpoints.items():
+    for site,siteDict in spaceEndpoints.items():
       for spaceToken in spaceTokens:
 
-        elementsToCheck.append( ( site, spaceToken, ) )
+        elementsToCheck.append( ( siteDict[ 'Endpoint' ], spaceToken, ) )
     
     return elementsToCheck
       
