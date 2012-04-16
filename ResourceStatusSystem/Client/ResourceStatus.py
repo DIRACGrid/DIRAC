@@ -210,7 +210,7 @@ class ResourceStatus( object ):
     '''
   
     #Checks cache first
-    cache = self__getFromCache( elementName, statusType )
+    cache = self.__getFromCache( elementName, statusType )
     if cache[ 'OK' ]:
       return cache
             
