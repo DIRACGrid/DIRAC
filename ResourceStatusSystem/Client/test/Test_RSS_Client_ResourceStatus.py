@@ -161,9 +161,18 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     resourceStatus = self.resourceStatus()
     
     dummyResults[ 'dRSSCache' ] = { 'OK' : False, 'Message' : 'Im evil' }
-    res = resourceStatus._ResourceStatus__cacheMatch()
+    res = resourceStatus._ResourceStatus__cacheMatch( 1, 2 )
     self.assertEqual( res, { 'OK' : False, 'Message' : 'Im evil' } )
-        
+    
+    # Tests with empty cache
+    dummyResults[ 'dRSSCache' ] = { 'OK' : True, 'Value' : [] }
+    res = resourceStatus._ResourceStatus__cacheMatch( None, None )
+    self.assertEqual( res, [] )
+           
+    # Tests with full cache    
+    dummyResults[ 'dRSSCache' ] = { 'OK' : True, 'Value' : [ '1#2', '4#5' ] }
+    res = resourceStatus._ResourceStatus__cacheMatch( None, None )
+    self.assertEqual( res, [ '1#2', '4#5' ] )    
     
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
