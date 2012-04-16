@@ -155,7 +155,7 @@ class CacheFeederAgent( AgentModule ):
       for co in self.commandObjectsVOBOXAvailability:
         
         commandName = co[0][1].split( '_' )[0]
-        self.log.info( 'Executed %s' % commandName )
+        self.log.info( 'Executed %s with %s' % ( commandName, str( co[2] ) ) )
 
         co[1].setArgs( co[2] )
         self.clientsInvoker.setCommand( co[1] )
@@ -181,7 +181,7 @@ class CacheFeederAgent( AgentModule ):
       for co in self.commandObjectsSpaceTokenOccupancy:
         
         commandName = co[0][1].split( '_' )[0]
-        self.log.info( 'Executed %s' % commandName )
+        self.log.info( 'Executed %s with %s' % ( commandName, str( co[2] ) ) )
 
         co[1].setArgs( co[2] )
         self.clientsInvoker.setCommand( co[1] )
