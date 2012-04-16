@@ -162,7 +162,7 @@ class CacheFeederAgent( AgentModule ):
         res = self.clientsInvoker.doCommand()[ 'Result' ]
         
         if not res[ 'OK' ]:
-          self.log.warn( res[ 'Message' ] )
+          self.log.warn( str( res[ 'Message' ] ) )
           continue
 
         res = res[ 'Value' ] 
@@ -175,7 +175,7 @@ class CacheFeederAgent( AgentModule ):
         resQuery = self.rmClient.addOrModifyVOBOXCache( site, system, serviceUp, 
                                                         machineUp, now )    
         if not resQuery[ 'OK' ]:
-          self.log.error( resQuery[ 'Message' ] ) 
+          self.log.error( str( resQuery[ 'Message' ] ) ) 
 
       #SpaceTokenOccupancy
       for co in self.commandObjectsSpaceTokenOccupancy:
@@ -188,7 +188,7 @@ class CacheFeederAgent( AgentModule ):
         res = self.clientsInvoker.doCommand()[ 'Result' ]
         
         if not res[ 'OK' ]:
-          self.log.warn( res[ 'Message' ] )
+          self.log.warn( str( res[ 'Message' ] ) )
           continue
 
         site, token = co[ 2 ]
@@ -203,7 +203,7 @@ class CacheFeederAgent( AgentModule ):
                                                                       total, guaranteed,
                                                                       free, now )    
         if not resQuery[ 'OK' ]:
-          self.log.error( resQuery[ 'Message' ] )                     
+          self.log.error( str( resQuery[ 'Message' ] ) )                     
 
       for co in self.commandObjectsListClientsCache:
 
