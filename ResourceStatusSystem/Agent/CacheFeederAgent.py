@@ -67,7 +67,7 @@ class CacheFeederAgent( AgentModule ):
       self.commandObjectsListClientsCache     = []
       self.commandObjectsListAccountingCache  = []
       self.commandObjectsVOBOXAvailability    = [] 
-      self.commandsObjectsSpaceTokenOccupancy = []
+      self.commandObjectsSpaceTokenOccupancy = []
 
 
       cc = CommandCaller()
@@ -103,7 +103,7 @@ class CacheFeederAgent( AgentModule ):
       for cArgs in self.__getSpaceTokenOccupancyCandidates():
         
         cObj  = cc.setCommandObject( commandsSpaceTokenOccupancy )
-        self.commandsObjectsSpaceTokenOccupancy.append( ( commandsSpaceTokenOccupancy, cObj, cArgs ) )
+        self.commandObjectsSpaceTokenOccupancy.append( ( commandsSpaceTokenOccupancy, cObj, cArgs ) )
 
       return S_OK()
 
@@ -151,6 +151,7 @@ class CacheFeederAgent( AgentModule ):
 
       now = datetime.utcnow()
 
+      #VOBOX
       for co in self.commandObjectsVOBOXAvailability:
         
         commandName = co[0][1].split( '_' )[0]
@@ -164,15 +165,45 @@ class CacheFeederAgent( AgentModule ):
           self.log.warn( res[ 'Message' ] )
           continue
 
-        site, system = co[ 2 ]
-        serviceUp = res[ 'Value' ][ 'serviceUpTime' ]
-        machineUp = res[ 'Value' ][ 'machineUpTime' ]
+        res = res[ 'Value' ] 
+
+        serviceUp = res[ 'serviceUpTime' ]
+        machineUp = res[ 'machineUpTime' ]
+        site      = res[ 'site' ]
+        system    = res[ 'system' ]
        
-        resQuery = self.rmClient.addOrModifyVOBOXCache( site, system, 
-                                                        serviceUp, machineUp, now )    
+        resQuery = self.rmClient.addOrModifyVOBOXCache( site, system, serviceUp, 
+                                                        machineUp, now )    
         if not resQuery[ 'OK' ]:
           self.log.error( resQuery[ 'Message' ] ) 
-                    
+
+      #SpaceTokenOccupancy
+      for co in self.commandObjectsSpaceTokenOccupancy:
+        
+        commandName = co[0][1].split( '_' )[0]
+        self.log.info( 'Executed %s' % commandName )
+
+        co[1].setArgs( co[2] )
+        self.clientsInvoker.setCommand( co[1] )
+        res = self.clientsInvoker.doCommand()[ 'Result' ]
+        
+        if not res[ 'OK' ]:
+          self.log.warn( res[ 'Message' ] )
+          continue
+
+        site, token = co[ 2 ]
+
+        res = res[ 'Value' ]
+        
+        total      = res[ 'total' ]
+        guaranteed = res[ 'guaranteed' ]
+        free       = res[ 'free' ]
+               
+        resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( site, token, 
+                                                                      total, guaranteed,
+                                                                      free, now )    
+        if not resQuery[ 'OK' ]:
+          self.log.error( resQuery[ 'Message' ] )                     
 
       for co in self.commandObjectsListClientsCache:
 
