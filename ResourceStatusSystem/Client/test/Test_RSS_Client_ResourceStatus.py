@@ -137,7 +137,8 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     self.assertEqual( res, { 'OK' : False, 'Message' : 'Black Friday' } )
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ) ] }
     res = resourceStatus._ResourceStatus__updateSECache()
-    self.assertEqual( res, { 'OK' : True, 'Value' : { '1#2': 3 } } )
+    # mocking makes this return something funny ( due to S_OK mocked function )
+    self.assertEqual( res, { '1#2': 3 } )
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ), (1,3,4) ] }
     res = resourceStatus._ResourceStatus__updateSECache()
     self.assertEqual( res, { 'OK' : True, 'Value' : { '1#2': 3, '1#3' : 4 } } )
