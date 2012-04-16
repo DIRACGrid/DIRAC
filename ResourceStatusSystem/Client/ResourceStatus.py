@@ -26,6 +26,7 @@ class ResourceStatus( object ):
     Constructor, initializes the rssClient.
     '''
     self.rssClient = None
+    self.__opHelper = Operations()
     
   def getStorageElementStatus( self, elementName, statusType = None, default = None ):
     '''
@@ -43,8 +44,6 @@ class ResourceStatus( object ):
           S_OK( 'Unknown' ) 
     
     '''
-  
-    self.__opHelper = Operations()
   
     try:
    
