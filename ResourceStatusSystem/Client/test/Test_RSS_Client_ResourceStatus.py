@@ -141,7 +141,7 @@ class ResourceStatus_Success( ResourceStatus_TestCase ):
     self.assertEqual( res, { '1#2': 3 } )
     dummyResults[ 'dResourceStatusClient' ] = { 'OK' : True, 'Value' : [ ( 1,2,3 ), (1,3,4) ] }
     res = resourceStatus._ResourceStatus__updateSECache()
-    self.assertEqual( res, { 'OK' : True, 'Value' : { '1#2': 3, '1#3' : 4 } } )
+    self.assertEqual( res, { '1#2': 3, '1#3' : 4 } )
     
 class ResourceStatusFunctions_Success( ResourceStatusFunctions_TestCase ):
   
