@@ -55,7 +55,7 @@ class SSH:
         child = pexpect.spawn( command, timeout = timeout )
 
         i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
-        if i == 0: # Timeout        
+        if i == 0: # Timeout
             return S_OK( ( -1, child.before, 'SSH login failed' ) )
         elif i == 1: # SSH does not have the public key. Just accept it.
           child.sendline ( 'yes' )
@@ -79,7 +79,7 @@ class SSH:
           return S_ERROR( ( -1, child.before, '' ) )
       except Exception,x:
         res = (-1 ,'Encountered exception %s: %s'%(Exception,str(x)))
-        return S_ERROR(res) 
+        return S_ERROR(res)
     else:
       # Try passwordless login
       result = shellCall( timeout, command )
@@ -239,6 +239,10 @@ shutil.rmtree( workingDirectory )
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
 
     result = ssh.sshCall( 100, cmd )
+<<<<<<< HEAD
+=======
+
+>>>>>>> Working version of the LSF CE module. Some cleanup or the submitted scripts needed
     if not result['OK'] or result['Value'][0] != 0:
       self.log.warn( '===========> SSHLSF CE result NOT OK' )
       self.log.debug( result )
@@ -250,6 +254,11 @@ shutil.rmtree( workingDirectory )
     lines = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
     for line in lines:
       batchIDList.append(line.split("<")[1].split(">")[0])
+<<<<<<< HEAD
+=======
+      
+
+>>>>>>> Working version of the LSF CE module. Some cleanup or the submitted scripts needed
     self.submittedJobs += 1
 
     return S_OK( batchIDList )
@@ -356,7 +365,10 @@ shutil.rmtree( workingDirectory )
     if not os.path.exists( '%s/%s.out' % ( tempDir, jobID ) ):
       os.system( 'touch %s/%s.out' % ( tempDir, jobID ) )
     result = ssh.scpCall( 200, '%s/%s.err' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchError, jobNumber ), upload = False )
+<<<<<<< HEAD
 
+=======
+>>>>>>> Working version of the LSF CE module. Some cleanup or the submitted scripts needed
     if not result['OK']:
       return result
     if not os.path.exists( '%s/%s.err' % ( tempDir, jobID ) ):
