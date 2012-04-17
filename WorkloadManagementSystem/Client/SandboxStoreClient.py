@@ -298,7 +298,7 @@ class SandboxStoreClient:
         return S_ERROR( "Invalid Sandbox type %s" % sbT[1] )
     if SandboxStoreClient.__smdb and ownerName and ownerGroup:
       if not eSetup:
-        eSetup = gConfig.getOption( "/DIRAC/Setup", "Production" )
+        eSetup = gConfig.getValue( "/DIRAC/Setup", "Production" )
       return SandboxStoreClient.__smdb.assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
     return self.__getRPCClient().assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
 
