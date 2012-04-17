@@ -5,7 +5,7 @@
 ########################################################################
 
 """ LSF Computing Element with remote job submission via ssh/scp and using site
-    shared area for the job proxy placement    
+    shared area for the job proxy placement
 
     To get the proxy right, don't forget to add in the CS that for this kind of CE, the BundleProxy must be True (default False)
 
@@ -239,10 +239,6 @@ shutil.rmtree( workingDirectory )
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
 
     result = ssh.sshCall( 100, cmd )
-<<<<<<< HEAD
-=======
-
->>>>>>> Working version of the LSF CE module. Some cleanup or the submitted scripts needed
     if not result['OK'] or result['Value'][0] != 0:
       self.log.warn( '===========> SSHLSF CE result NOT OK' )
       self.log.debug( result )
@@ -254,11 +250,6 @@ shutil.rmtree( workingDirectory )
     lines = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
     for line in lines:
       batchIDList.append(line.split("<")[1].split(">")[0])
-<<<<<<< HEAD
-=======
-      
-
->>>>>>> Working version of the LSF CE module. Some cleanup or the submitted scripts needed
     self.submittedJobs += 1
 
     return S_OK( batchIDList )
@@ -365,10 +356,6 @@ shutil.rmtree( workingDirectory )
     if not os.path.exists( '%s/%s.out' % ( tempDir, jobID ) ):
       os.system( 'touch %s/%s.out' % ( tempDir, jobID ) )
     result = ssh.scpCall( 200, '%s/%s.err' % ( tempDir, jobID ), '%s/*%s*' % ( self.batchError, jobNumber ), upload = False )
-<<<<<<< HEAD
-
-=======
->>>>>>> Working version of the LSF CE module. Some cleanup or the submitted scripts needed
     if not result['OK']:
       return result
     if not os.path.exists( '%s/%s.err' % ( tempDir, jobID ) ):
