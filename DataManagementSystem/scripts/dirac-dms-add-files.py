@@ -46,7 +46,7 @@ def getDict(item_list):
     guid = item_list[3]
   lfn_dict['guid'] = guid
   return lfn_dict
-  
+
   
 lfns = []
 if len(args)==1:
@@ -63,7 +63,7 @@ else:
   
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC import gLogger
-import DIRAC 
+import DIRAC
 exitCode = 0
 
 rm = ReplicaManager()
@@ -77,8 +77,8 @@ for lfn in lfns:
     exitCode = 2
     continue
 
-  gLogger.info("\nUploading %s"%lfn['lfn'])  
-  res = rm.putAndRegister(lfn['lfn'],lfn['localfile'],lfn['SE'],lfn['guid'])  
+  gLogger.info("\nUploading %s"%lfn['lfn'])
+  res = rm.putAndRegister(lfn['lfn'],lfn['localfile'],lfn['SE'],lfn['guid'])
   if not res['OK']:
     exitCode = 3
     continue
