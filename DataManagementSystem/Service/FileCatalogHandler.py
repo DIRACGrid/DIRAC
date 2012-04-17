@@ -314,7 +314,16 @@ class FileCatalogHandler(RequestHandler):
   def export_deleteMetadataField(self, fieldName ):
     """ Delete the metadata field 
     """
-    return fcDB.dmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )
+    result = fcDB.dmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )
+    error = ''
+    if not result['OK']:
+      error = result['Message']
+    result = fcDB.fmeta.deleteMetadataField( fieldName, self.getRemoteCredentials() )  
+    if not result['OK']:
+      if error:
+        result["Message"] = error + "; " + result["Message"] 
+        
+    return result    
   
   types_getMetadataFields = [ ]
   def export_getMetadataFields(self):

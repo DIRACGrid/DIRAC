@@ -16,9 +16,9 @@ Usage:
 Script.parseCommandLine()
 
 import DIRAC
-from DIRAC                             import gConfig,gLogger
-from DIRAC.ResourceStatusSystem.Client import ResourceStatus
-from DIRAC.Core.Utilities.List         import sortList
+from DIRAC                                            import gConfig,gLogger
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Core.Utilities.List                        import sortList
 
 storageCFGBase = "/Resources/StorageElements"
 
@@ -30,8 +30,11 @@ if not res[ 'OK' ]:
   
 gLogger.info( "%s %s %s" % ( 'Storage Element'.ljust( 25 ), 'Read Status'.rjust( 15 ), 'Write Status'.rjust( 15 ) ) )
 
-seList = sortList( res[ 'Value' ] ) 
-res    = ResourceStatus.getStorageElementStatus( seList )
+seList = sortList( res[ 'Value' ] )
+
+resourceStatus = ResourceStatus()
+ 
+res    = resourceStatus.getStorageElementStatus( seList )
 if not res[ 'OK' ]:
   gLogger.error( "Failed to get StorageElement status for %s" % str( seList ) )
 

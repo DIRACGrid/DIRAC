@@ -282,6 +282,7 @@ class TransferTask( RequestTask ):
           self.addMark( "Replication failed", 1 )
           self.error( "replicateAndRegister: ReplicaManager error: %s" % res["Message"] )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", "ReplicaMgrFailure" )
+          #requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
           failed[lfn][targetSE] = res["Message"]
           subRequestError = res["Message"]
 
@@ -289,12 +290,10 @@ class TransferTask( RequestTask ):
         self.info("replicateAndRegister: file has been %s successfully processed at all targetSEs" % lfn )
         requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Done" )
       else:
-        errorSeen = True 
-        self.error("replicateAndRegister: replication of %s failed" % lfn )
-        for targetSE, reason in failed[lfn]:
-          self.error("replicateAndRegister: at %s: %s" % ( targetSE, reason ) )
+        self.error("replicateAndRegister: replication of %s failed: %s" % ( lfn, failed[lfn] ) )
+        #requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
    
-    if requestObj.isSubRequestDone( index, "transfer" )["Value"] and not errorSeen:
+    if requestObj.isSubRequestDone( index, "transfer" )["Value"]:
       self.info("replicateAndRegister: all files processed, will set subrequest status to 'Done'")
       requestObj.setSubRequestStatus( index, "transfer", "Done" )
    

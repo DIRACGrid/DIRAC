@@ -41,7 +41,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 ## from Resources
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 ## from RSS
-from DIRAC.ResourceStatusSystem.Client import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 ## agent name
 AGENT_NAME = "DataManagement/TransferAgent"
@@ -150,9 +150,9 @@ class TransferAgent( RequestAgentBase ):
   * time interval for throughput (FTS scheduling) in seconds
     ThroughputTimescale = 3600
   * for StrategyHandler
-     - acceptable time to start shift
+     - hop time 
       HopSigma = 0.0
-     - ???
+     - files/time or througput/time
       SchedulingType = File
      - list of active strategies
       ActiveStrategies = MinimiseTotalWait 
@@ -233,8 +233,12 @@ class TransferAgent( RequestAgentBase ):
         self.log.warn("Can't create TransferDB instance, disabling FTS execution mode.")
         self.__executionMode["FTS"] = False
       else:
+        ## throughptu time scale for monitoring in StrategyHandler
         self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
-        self.log.debug( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
+        self.log.info( "ThroughputTimescale = %s s" % str( self.__throughputTimescale ) )
+        ## OwnerGroups not allowed to execute FTS transfers
+        self.__ftsDisabledOwnerGroups = self.am_getOption( "FTSDisabledOwnerGroups", [ "lhcb_user" ] )
+        self.log.info("FTSDisabledOwnerGroups = %s" %  self.__ftsDisabledOwnerGroups )
 
     ## is there any mode enabled?
     if True not in self.__executionMode.values():
@@ -499,12 +503,14 @@ class TransferAgent( RequestAgentBase ):
   # agent execution 
   ###################################################################################
   def execute( self ):
-    """ agnet execution in one cycle 
+    """ agent execution in one cycle 
 
     :param self: self reference
     """
     requestCounter = self.requestsPerCycle()
     failback = False
+
+    strategyHandlerSetupError = False
     if self.__executionMode["FTS"]:
       self.log.info( "execute: will setup StrategyHandler for FTS scheduling...")
       self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
@@ -514,11 +520,11 @@ class TransferAgent( RequestAgentBase ):
       if not setupStrategyHandler["OK"]:
         self.log.error( setupStrategyHandler["Message"] )
         self.log.error( "execute: disabling FTS scheduling in this cycle...")
-        failback = True 
+        strategyHandlerSetupError = True 
 
     ## loop over requests
     while requestCounter:
-
+      failback = strategyHandlerSetupError if strategyHandlerSetupError else False
       requestDict = self.getRequest( "transfer" )
       if not requestDict["OK"]:
         self.log.error("execute: error when getteing 'transfer' request: %s" % requestDict["Message"] )
@@ -586,11 +592,18 @@ class TransferAgent( RequestAgentBase ):
     requestDict["requestObj"] = requestObj
 
     ## check request owner
-    ownerDN = requestObj.getAttribute( "OwnerDN" ) 
-    if ownerDN["OK"] and ownerDN["Value"]:
-      self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
-                                                                                ownerDN["Value"] ) )
+    ownerGroup = requestObj.getAttribute( "OwnerGroup" )
+    if ownerGroup["OK"] and ownerGroup["Value"] in self.__ftsDisabledOwnerGroups:
+      self.log.info("excuteFTS: request %s OwnerGroup=%s is not allowed to execute FTS transfer" % ( requestDict["requestName"], 
+                                                                                                     ownerGroup["Value"] ) )
       return S_OK( False )
+
+    ## check request owner
+    #ownerDN = requestObj.getAttribute( "OwnerDN" ) 
+    #if ownerDN["OK"] and ownerDN["Value"]:
+    #  self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
+    #                                                                            ownerDN["Value"] ) )
+    #  return S_OK( False )
 
     ## check operation
     res = requestObj.getNumSubRequests( "transfer" )
@@ -643,7 +656,8 @@ class TransferAgent( RequestAgentBase ):
                                                          kwargs = requestDict,
                                                          taskID = taskID,
                                                          blocking = True,
-                                                         usePoolCallbacks = True )
+                                                         usePoolCallbacks = True,
+                                                         timeOut = 900 )
         if not enqueue["OK"]:
           self.log.error( enqueue["Message"] )
         else:
@@ -656,7 +670,7 @@ class TransferAgent( RequestAgentBase ):
 
 
   ###################################################################################
-  # FST scheduling 
+  # FTS scheduling 
   ###################################################################################
   def schedule( self, requestDict ):
     """ scheduling files for FTS
@@ -778,7 +792,6 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
-
     self.log.info( "scheduleFiles: *** FTS scheduling ***")
     self.log.info( "scheduleFiles: processing subrequest %s" % index )
     ## get source SE
@@ -852,15 +865,11 @@ class TransferAgent( RequestAgentBase ):
                                                               waitingFileSize, 
                                                               strategy )
 
-      if not tree["OK"]:
-        self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] )
-        continue
+      if not tree["OK"] or not tree["Value"]:
+        self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] if "Message" in tree else "replication tree is empty")
+        raise StrategyHandlerChannelNotDefined( "FTS" )
       tree = tree["Value"]
-      if not tree:
-        self.log.error("scheduleFiles: unable to schedule %s file, replication tree is empty" % waitingFileLFN )
-        continue
-      else:
-        self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
+      self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
  
       ## sorting keys by hopAncestor
       sortedKeys = self.ancestorSortKeys( tree, "hopAncestor" )
@@ -965,6 +974,9 @@ class TransferAgent( RequestAgentBase ):
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
+        if re.search( "no such file or directory", str(failure).lower()):
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
       replicas = replicas["Value"]["Successful"]
 
     ## are there any replicas?
@@ -997,12 +1009,11 @@ class TransferAgent( RequestAgentBase ):
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
     self.log.info( "registerFiles: found %s files" % len( subRequestFiles ) ) 
-
     for subRequestFile in subRequestFiles:
       status = subRequestFile["Status"]
       lfn = subRequestFile["LFN"]
       fileID = subRequestFile["FileID"]
-      self.log.info("registerFiles: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
+      self.log.debug("registerFiles: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
       if status in ( "Waiting", "Scheduled" ):
         ## get failed to register [ ( PFN, SE, ChannelID ), ... ] 
         toRegister = self.transferDB().getRegisterFailover( fileID )
@@ -1015,7 +1026,7 @@ class TransferAgent( RequestAgentBase ):
         ## loop and try to register
         toRegister = toRegister["Value"]
         for pfn, se, channelID in toRegister:
-          self.log.debug("registerFiles: failover registration of %s to %s" % ( lfn, se ) )
+          self.log.info("registerFiles: failover registration of %s to %s" % ( lfn, se ) )
           ## register replica now
           registerReplica = self.replicaManager().registerReplica( ( lfn, pfn, se ) )
           if ( ( not registerReplica["OK"] ) 
@@ -1089,6 +1100,8 @@ class StrategyHandler( object ):
                                 re.compile("DynamicThroughput") : self.__dynamicThroughput,
                                 re.compile("Simple") : self.__simple, 
                                 re.compile("Swarm") : self.__swarm }
+
+    self.resourceStatus = ResourceStatus()
 
     self.log.debug( "strategyDispatcher entries:" )
     for key, value in self.strategyDispatcher.items():
@@ -1348,7 +1361,8 @@ class StrategyHandler( object ):
     siteAncestor = {}              # Maintains the ancestor channel for a site
     primarySources = sourceSEs
 
-            
+    
+
     while destSEs:
       try:
         minTotalTimeToStart = float( "inf" )
@@ -1475,7 +1489,7 @@ class StrategyHandler( object ):
     :param list seList: stogare element list
     :param str access: storage element accesss, could be 'Read' (default) or 'Write' 
     """
-    res = ResourceStatus.getStorageElementStatus( seList, statusType = access, default = 'Unknown' )
+    res = self.resourceStatus.getStorageElementStatus( seList, statusType = access, default = 'Unknown' )
     if not res["OK"]:
       return []
     return [ k for k, v in res["Value"].items() if access in v and v[access] in ( "Active", "Bad" ) ]
@@ -1496,3 +1510,4 @@ class StrategyHandler( object ):
         if not siteName[1] in sites:
           sites.append( siteName[1] )
     return sites
+

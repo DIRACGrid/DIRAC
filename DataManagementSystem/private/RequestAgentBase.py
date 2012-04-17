@@ -253,7 +253,7 @@ class RequestAgentBase( AgentModule ):
       return res
     elif not res["Value"]:
       msg = "Request of type '%s' not found in RequestClient." % requestType
-      gLogger.info( msg )
+      gLogger.debug( msg )
       return S_OK()
     ## store values
     requestDict["requestName"] = res["Value"]["RequestName"]
@@ -331,7 +331,8 @@ class RequestAgentBase( AgentModule ):
                                                            kwargs = requestDict,
                                                            taskID = requestDict["requestName"],
                                                            blocking = True,
-                                                           usePoolCallbacks = True )
+                                                           usePoolCallbacks = True,
+                                                           timeOut = 600 )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:

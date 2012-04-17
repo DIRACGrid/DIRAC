@@ -6,10 +6,11 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-read = True
+read  = True
 write = True
 check = True
-site = ''
+site  = ''
+mute  = False
 
 Script.setUsageMessage( """
 Enable using one or more Storage Elements
@@ -18,10 +19,12 @@ Usage:
    %s SE1 [SE2 ...]
 """ % Script.scriptName )
 
-Script.registerSwitch( "r" , "AllowRead" , "      Allow only reading from the storage element" )
+Script.registerSwitch( "r" , "AllowRead" , "     Allow only reading from the storage element" )
 Script.registerSwitch( "w" , "AllowWrite", "     Allow only writing to the storage element" )
 Script.registerSwitch( "k" , "AllowCheck", "     Allow only check access to the storage element" )
-Script.registerSwitch( "S:", "Site="     , "        Allow all SEs associated to site" )
+Script.registerSwitch( "m" , "Mute"      , "     Do not send email" )
+Script.registerSwitch( "S:", "Site="     , "     Allow all SEs associated to site" )
+
 Script.parseCommandLine( ignoreErrors = True )
 
 ses = Script.getPositionalArgs()
@@ -35,15 +38,17 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "k" or switch[0].lower() == "allowcheck":
     read = False
     write = False
+  if switch[0].lower() == "m" or switch[0].lower() == "mute":
+    mute = True
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
-from DIRAC.Interfaces.API.DiracAdmin                 import DiracAdmin
-from DIRAC                                           import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Client               import ResourceStatus
-from DIRAC.Core.Security.ProxyInfo                   import getProxyInfo
-from DIRAC.Core.Utilities.List                       import intListToString
+from DIRAC.Interfaces.API.DiracAdmin                  import DiracAdmin
+from DIRAC                                            import gConfig, gLogger
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
+from DIRAC.Core.Utilities.List                        import intListToString
 
 #csAPI = CSAPI()
 
@@ -87,7 +92,9 @@ readAllowed = []
 writeAllowed = []
 checkAllowed = []
 
-res = ResourceStatus.getStorageElementStatus( ses )
+resourceStatus = ResourceStatus()
+
+res = resourceStatus.getStorageElementStatus( ses )
 if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % ses )
   DIRAC.exit( -1 )
@@ -110,7 +117,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( '%s is not supposed to change Read status to Active' % se )
       continue
 
-    resR = ResourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
+    resR = resourceStatus.setStorageElementStatus( se, 'Read', 'Active', reason, userName )
     if not resR['OK']:
       gLogger.error( "Failed to update %s read access to Active" % se )
     else:
@@ -125,7 +132,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
-    resW = ResourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
+    resW = resourceStatus.setStorageElementStatus( se, 'Write', 'Active', reason, userName )
     if not resW['OK']:
       gLogger.error( "Failed to update %s write access to Active" % se )
     else:
@@ -140,7 +147,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
-    resC = ResourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
+    resC = resourceStatus.setStorageElementStatus( se, 'Check', 'Active', reason, userName )
     if not resC['OK']:
       gLogger.error( "Failed to update %s check access to Active" % se )
     else:
@@ -154,8 +161,18 @@ if not ( writeAllowed or readAllowed or checkAllowed ):
   gLogger.info( "No storage elements were allowed" )
   DIRAC.exit( -1 )
 
-subject = '%s storage elements allowed for use' % len( ses )
-address = gConfig.getValue( '/Operations/EMail/Production', 'lhcb-grid@cern.ch' )
+if mute:
+  gLogger.notice( 'Email is muted by script switch' )
+  DIRAC.exit( 0 )
+
+subject     = '%s storage elements allowed for use' % len( writeAllowed + readAllowed + checkAllowed )
+addressPath = '/Operations/EMail/Production'
+address     = gConfig.getValue( addressPath )
+
+if not address:
+  gLogger.notice( 'Cannot get address at %' % addressPath )
+  DIRAC.exit( 0 )
+
 body = ''
 if read:
   body = "%s\n\nThe following storage elements were allowed for reading:" % body

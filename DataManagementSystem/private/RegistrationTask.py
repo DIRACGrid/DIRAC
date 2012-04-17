@@ -96,10 +96,10 @@ class RegistrationTask( RequestTask ):
         
         if not res["OK"] or lfn in res["Value"]["Failed"]:
           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegistrationAgent" )
-          reason = res["Message"] if not res["OK"] else "registration in ReplicaManager failed"
+          reason = res["Message"] if not res["OK"] else res["Value"]["Failed"][lfn] # "registration in ReplicaManager failed"
           errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
           failed[lfn][targetSE] = reason
-          self.error( "registerFile: %s" % errorStr )
+          self.warn( "registerFile: %s" % errorStr )
           failedFiles += 1
         else:
           self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegistrationAgent" )
@@ -108,7 +108,10 @@ class RegistrationTask( RequestTask ):
       if not failed[lfn]:
         requestObj.setSubRequestFileAttributeValue( index, "register", lfn, "Status", "Done")
         self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )        
-     
+      else:
+        fileError = ";".join( [ "%s:%s" % (targetSE, reason) for targetSE, reason in failed[lfn].items() ] )
+        requestObj.setSubRequestFileAttributeValue( index, "register", lfn, "Error", fileError[:255] )
+
     ##################################################################
     ## all files were registered or no files at all in this subrequest
     if requestObj.isSubRequestDone( index, "register" )["Value"]:
@@ -116,6 +119,13 @@ class RegistrationTask( RequestTask ):
       requestObj.setSubRequestStatus( index, "register", "Done" )
     elif failedFiles:
       self.info("registerFile: all files processed, %s files failed to register" % failedFiles )
+      errors = []
+      for lfn in failed:
+        for targetSE, reason in failed[lfn].items():
+          error = "%s:%s:%s" % ( lfn, targetSE, reason )
+          self.warn( "registerFile: %s@%s - %s" % ( lfn, targetSE, reason ) )
+          errors.append( error )
+      requestObj.setSubRequestAttributeValue( index, "register", "Error", ";".join( errors )[:255] )
     ## return requestObj
     return S_OK( requestObj )
           
