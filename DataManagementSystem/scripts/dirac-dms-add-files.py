@@ -46,7 +46,6 @@ def getDict(item_list):
     guid = item_list[3]
   lfn_dict['guid'] = guid
   return lfn_dict
-
   
 lfns = []
 if len(args)==1:
