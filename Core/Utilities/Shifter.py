@@ -6,10 +6,11 @@
 __RCSID__ = "$Id$"
 
 import os
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC                                               import S_OK, S_ERROR, gLogger
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers            import cfgPath
+from DIRAC.Core.Security                                 import CS
 
 def getShifterProxy( shifterType, fileName = False ):
   """
@@ -22,14 +23,15 @@ def getShifterProxy( shifterType, fileName = False ):
     except OSError:
       pass
   shifterSection = "Shifter/%s" % shifterType
-  userName = Operations().getValue( '%s/User' % shifterSection, '' )
+  opsHelper = Operations()
+  userName = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'User' ), '' )
   if not userName:
-    return S_ERROR( "No shifter defined in %s/User" % shifterSection )
+    return S_ERROR( "No shifter User defined for %s" % shifterType )
   result = CS.getDNForUsername( userName )
   if not result[ 'OK' ]:
     return result
   userDN = result[ 'Value' ][0]
-  userGroup = Operations().getValue( '%s/Group' % shifterSection, CS.getDefaultUserGroup() )
+  userGroup = opsHelper.getValue( cfgPath( 'Shifter', shifterType, 'Group' ), CS.getDefaultUserGroup() )
   vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
   if vomsAttr:
     gLogger.info( "Getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
