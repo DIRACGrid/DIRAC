@@ -1,3 +1,15 @@
+[v6r3p6]
+
+*Core
+FIX: dirac-install-db - proper key argument (follow change in InstallTools)
+FIX: ProcessPool - release all locks every time WorkignProcess.run is executed
+
+*WMS
+NEW: SiteDirector - add pilot option with CE name to allow matching of SAM jobs.
+BUGFIX: dirac-pilot - SGE batch ID was overwriting the CREAM ID
+FIX: PilotDirector - protect the CS master if there are at least 3 slaves
+NEW: Watchdog - set LocalJobID in the GE case
+
 [v6r3p5]
 
 *Core:
