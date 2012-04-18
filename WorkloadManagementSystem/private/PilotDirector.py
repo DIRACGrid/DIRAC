@@ -132,14 +132,12 @@ class PilotDirector:
     self.configureFromSection( csSection )
     self.reloadConfiguration( csSection, submitPool )
 
-    setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
-    self.installVersion = gConfig.getValue( cfgPath( section, 'Pilot', 'Version' ),
-                                         self.installVersion )
-    self.installProject = gConfig.getValue( cfgPath( section, 'Pilot', 'Project' ),
-                                         self.installProject )
-    self.installation = gConfig.getValue( cfgPath( section, 'Pilot', 'Installation' ),
-                                         self.installation )
+    # Get the defaults for the Setup where the Director is running
+    opsHelper = Operations()
+    self.installVersion = opsHelper.getOption( cfgPath( 'Pilot', 'Version' ), [ self.installVersion ] )[0]
+    self.installProject = opsHelper.getOption( cfgPath( 'Pilot', 'Project' ), self.installProject )
+    self.installation = opsHelper.getOption( cfgPath( 'Pilot', 'Installation' ), self.installation )
+
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
     self.log.info( '' )
@@ -331,16 +329,16 @@ class PilotDirector:
     extensionsList = getCSExtensions()
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
-    #Get DIRAC version and project
+    #Get DIRAC version and project, There might be global Setup defaults and per VO/Setup defaults (from configure)
     opsHelper = Operations( group = taskQueueDict['OwnerGroup'], setup = taskQueueDict['Setup'] )
     # Requested version of DIRAC (it can be a list, so we take the fist one)
-    version = opsHelper.getValue( "Pilot/Version" , [ self.installVersion ] )[0]
+    version = opsHelper.getValue( cfgPath( 'Pilot', 'Version' ) , [ self.installVersion ] )[0]
     pilotOptions.append( '-r %s' % version )
     # Requested Project to install
-    installProject = opsHelper.getValue( "Pilot/Project" , self.installProject )
+    installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ) , self.installProject )
     if installProject:
       pilotOptions.append( '-l %s' % installProject )
-    installation = opsHelper.getValue( "Pilot/Installation", self.installation )
+    installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
     if installation:
       pilotOptions.append( "-V %s" % installation )
     # Requested CPU time
