@@ -510,7 +510,7 @@ class TransferAgent( RequestAgentBase ):
     requestCounter = self.requestsPerCycle()
     failback = False
 
-    startegyHandlerSetupError = False
+    strategyHandlerSetupError = False
     if self.__executionMode["FTS"]:
       self.log.info( "execute: will setup StrategyHandler for FTS scheduling...")
       self.__throughputTimescale = self.am_getOption( 'ThroughputTimescale', self.__throughputTimescale )
@@ -524,7 +524,7 @@ class TransferAgent( RequestAgentBase ):
 
     ## loop over requests
     while requestCounter:
-      failback = startegyHandlerSetupError if startegyHandlerSetupError else False
+      failback = strategyHandlerSetupError if strategyHandlerSetupError else False
       requestDict = self.getRequest( "transfer" )
       if not requestDict["OK"]:
         self.log.error("execute: error when getteing 'transfer' request: %s" % requestDict["Message"] )

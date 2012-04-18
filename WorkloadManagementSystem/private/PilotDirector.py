@@ -51,6 +51,7 @@ ERROR_TOKEN = 'Invalid proxy token request'
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
+from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
@@ -323,7 +324,12 @@ class PilotDirector:
     # Setup.
     pilotOptions.append( '-S %s' % taskQueueDict['Setup'] )
     # CS Servers
-    csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
+    csServers = gConfig.getServersList()
+    if len( csServers ) > 3:
+      # Remove the master
+      master = gConfigurationData.getMasterServer()
+      if master in csServers:
+        csServers.remove( master )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
     # DIRAC Extensions
     extensionsList = getCSExtensions()

@@ -171,6 +171,11 @@ class WorkingProcess( multiprocessing.Process ):
     :param self: self reference
     """
     while True:
+      if LockRing:
+        # Reset all locks
+        lr = LockRing()
+        lr._openAll()
+        lr._setAllEvents()
       try:
         task = self.__pendingQueue.get( block = True, timeout = 10 )
       except Queue.Empty:
@@ -709,7 +714,8 @@ class ProcessPool:
         time.sleep( 0.1 )
         self.__cleanDeadProcesses()
     finally:
-      self.__draining = False
+      pass
+      #self.__draining = False
     # terminate them as it should be done
     for wp in self.__workingProcessList:
       if wp.is_alive():

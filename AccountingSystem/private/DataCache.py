@@ -17,6 +17,7 @@ class DataCache:
     self.cachedGraphs = {}
     self.alive = True
     self.purgeThread = threading.Thread( target = self.purgeExpired )
+    self.purgeThread.setDaemon( 1 )
     self.purgeThread.start()
     self.__dataCache = DictCache()
     self.__graphCache = DictCache( deleteFunction = self._deleteGraph )
