@@ -615,6 +615,8 @@ class Watchdog:
       result['LocalJobID'] = os.environ['PBS_JOBID']
     if os.environ.has_key( 'QSUB_REQNAME' ):
       result['LocalJobID'] = os.environ['QSUB_REQNAME']
+    if os.environ.has_key( 'JOB_ID' ):
+      result['LocalJobID'] = os.environ['JOB_ID']  
 
     self.__reportParameters( result, 'NodeInformation', True )
     self.__reportParameters( self.initialValues, 'InitialValues' )
