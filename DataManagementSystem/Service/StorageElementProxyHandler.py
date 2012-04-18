@@ -1,21 +1,41 @@
+################################################################################
+# $HeadURL
+#
+
 """
 This is a service which represents a DISET proxy to the Storage Element component.
 
 This is used to get and put files from a remote storage.
 """
-from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
-from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Resources.Storage.StorageElement             import StorageElement
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient    import gProxyManager
-from DIRAC.Core.Utilities.Subprocess                    import pythonCall
-from DIRAC.Core.Utilities.Os                            import getDiskSpace, getDirectorySize
-from types                                              import *
+
+__RCS__ = "$Id$"
+
+from DIRAC.Core.DISET.RequestHandler                             import RequestHandler
+from DIRAC                                                       import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Resources.Storage.StorageElement                      import StorageElement
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient             import gProxyManager
+from DIRAC.Core.Utilities.Subprocess                             import pythonCall
+from DIRAC.Core.Utilities.Os                                     import getDiskSpace, getDirectorySize
+from DIRAC.Core.Utilities.DictCache                              import DictCache    
+from DIRAC.DataManagementSystem.private.HttpStorageAccessHandler import HttpStorageAccessHandler
+from types import *
 import os,shutil
+import SocketServer
+import threading
+import socket
+import random
 
 base_path = ''
+httpFlag = False
+httpPort = 9180
+
+def purgeCacheDirectory(path):
+  shutil.rmtree( path )
+  
+gRegister = DictCache(purgeCacheDirectory)
 
 def initializeStorageElementProxyHandler(serviceInfo):
-  global base_path
+  global base_path, httpFlag, httpPort
   cfgPath = serviceInfo['serviceSectionPath']
 
   base_path = gConfig.getValue( "%s/BasePath" % cfgPath, base_path )
@@ -28,7 +48,38 @@ def initializeStorageElementProxyHandler(serviceInfo):
     gLogger.info('%s did not exist. Creating....' % base_path)
     os.makedirs(base_path)
 
+  httpFlag = gConfig.getValue( "%s/HttpAccess" % cfgPath, False )
+  if httpFlag:
+    httpPath = '%s/httpCache' % base_path
+    httpPort = gConfig.getValue( "%s/HttpPort" % cfgPath, 9180 )
+    gLogger.info('Creating HTTP server thread, port:%d, path:%s' % (httpPort,httpPath) )
+    httpThread = HttpThread( httpPort,httpPath )
+
   return S_OK()
+
+class ThreadedSocketServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+  pass
+
+class HttpThread( threading.Thread ):
+  
+  def __init__( self,port,path ):
+    
+    self.port = port
+    self.path = path
+    threading.Thread.__init__( self )
+    self.setDaemon( 1 )
+    self.start()
+  
+  def run( self ):
+
+    global gRegister, base_path
+
+    os.chdir( self.path )
+    handler = HttpStorageAccessHandler
+    handler.register = gRegister
+    handler.basePath = self.path
+    httpd = ThreadedSocketServer(("", self.port), handler)
+    httpd.serve_forever()
 
 class StorageElementProxyHandler(RequestHandler):
 
@@ -111,7 +162,7 @@ class StorageElementProxyHandler(RequestHandler):
       return res['Value']
     else:
       return res
-
+    
   def __prepareFile(self,se,pfn):
     res = self.__prepareSecurityDetails()
     if not res['OK']:
@@ -139,6 +190,47 @@ class StorageElementProxyHandler(RequestHandler):
       return res
     return S_OK()
 
+  types_prepareFileForHTTP = [ list(StringTypes)+[ListType] ]
+  def export_prepareFileForHTTP(self, lfn):
+    """ This method simply gets the file to the local storage area using LFN
+    """
+
+    # Do clean-up, should be a separate regular thread
+    gRegister.purgeExpired()
+
+    key = str( random.getrandbits( 128 ) )
+    result = pythonCall( 0,self.__prepareFileForHTTP,lfn,key )
+    if result['OK']:
+      result = result['Value']
+      if result['OK']:
+        if httpFlag:
+          host = socket.getfqdn()
+          url = 'http://%s:%d/%s' % ( host, httpPort, key )
+          gRegister.add( key,1800,result['CachePath'] )
+          result['HttpKey'] = key
+          result['HttpURL'] = url
+        return result
+      else:
+        return result
+    else:
+      return result
+    
+  def __prepareFileForHTTP(self,lfn,key):
+    res = self.__prepareSecurityDetails()
+    if not res['OK']:
+      return res
+  
+    # Clear the local cache
+    getFileDir = "%s/httpCache/%s" % (base_path,key)
+    os.makedirs(getFileDir)
+   
+    # Get the file to the cache 
+    from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+    rm = ReplicaManager()
+    result = rm.getFile( lfn, destinationDir=getFileDir )
+    result['CachePath'] = getFileDir
+    return result  
+    
   ############################################################
   #
   # This is the method to setup the proxy and configure the environment with the client credential
@@ -148,9 +240,10 @@ class StorageElementProxyHandler(RequestHandler):
     """ Obtains the connection details for the client
     """
     try:
-      clientDN = self._clientTransport.peerCredentials['DN']
-      clientUsername = self._clientTransport.peerCredentials['username']
-      clientGroup = self._clientTransport.peerCredentials['group']
+      credDict = self.getRemoteCredentials()
+      clientDN = credDict['DN']
+      clientUsername = credDict['username']
+      clientGroup = credDict['group']
       gLogger.debug( "Getting proxy for %s@%s (%s)" % (clientUsername,clientGroup,clientDN) )
       res = gProxyManager.downloadVOMSProxy(clientDN, clientGroup)
       if not res['OK']:
@@ -230,3 +323,4 @@ class StorageElementProxyHandler(RequestHandler):
     dsize = (getDiskSpace(dpath)-1)*1024*1024
     maxStorageSizeBytes = 1024*1024*1024
     return ( min(dsize,maxStorageSizeBytes) > size )
+
