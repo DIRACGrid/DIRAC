@@ -61,7 +61,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, getVO, cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 
 import sys, os
