@@ -50,11 +50,12 @@ def getSiteSEMapping( gridName = '' ):
 
   # Add Sites from the SiteLocalSEMapping in the CS
   cfgLocalSEPath = cfgPath( 'SiteLocalSEMapping' )
-  result = Operations().getOptionsDict( cfgLocalSEPath )
+  opsHelper = Operations()
+  result = opsHelper.getOptionsDict( cfgLocalSEPath )
   if result['OK']:
     mapping = result['Value']
     for site in mapping:
-      ses = Operations().getValue( cfgPath( cfgLocalSEPath, site ), [] )
+      ses = opsHelper.getValue( cfgPath( cfgLocalSEPath, site ), [] )
       if not ses:
         continue
       if gridName and site not in sites:
