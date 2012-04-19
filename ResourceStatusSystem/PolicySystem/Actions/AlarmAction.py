@@ -26,7 +26,7 @@ class AlarmAction( ActionBase ):
     except KeyError: self.rmClient = ResourceManagementClient()
 
   def _getUsersToNotify(self):
-    groups = CS.getTypedDictRootedAt("AssigneeGroups/" + CS.getSetup()).values()
+    groups = CS.getTypedDictRootedAtOperations("AssigneeGroups/" + CS.getSetup()).values()
     concerned_groups = [g for g in groups if Utils.dictMatch(self.kw["Params"], g)]
     return [{'Users':g['Users'],
              'Notifications':g['Notifications']} for g in concerned_groups]

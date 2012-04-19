@@ -121,7 +121,7 @@ class InfoGetter:
                  'ServiceType'  : serviceType,
                  'ResourceType' : resourceType }
 
-    pConfig = getTypedDictRootedAt("Policies")
+    pConfig = getTypedDictRootedAtOperations("Policies")
     pol_to_eval = (p for p in pConfig if Utils.dictMatch(argsdict, pConfig[p]))
     polToEval_Args = []
 
@@ -174,7 +174,7 @@ class InfoGetter:
                 'ServiceType'  : serviceType,
                 'ResourceType' : resourceType }
 
-    pTconfig = getTypedDictRootedAt("PolicyTypes")
+    pTconfig = getTypedDictRootedAtOperations("PolicyTypes")
     return (pt for pt in pTconfig if Utils.dictMatch(argsdict, pTconfig[pt]))
 
   def getNewPolicyType(self, granularity, newStatus):
@@ -198,7 +198,7 @@ class InfoGetter:
                 'ResourceType' : resourceType}
 
 
-    all_policies = getTypedDictRootedAt("Policies")
+    all_policies = getTypedDictRootedAtOperations("Policies")
     selected_policies = []
     for p in all_policies:
       if Utils.dictMatch(argsdict, all_policies[p]):
