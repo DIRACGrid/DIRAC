@@ -30,26 +30,26 @@ def _checkDir( path ):
 
 class AgentModule:
   """ Base class for all agent modules
-  
-      This class is used by the AgentReactor Class to steer the execution of 
+
+      This class is used by the AgentReactor Class to steer the execution of
       DIRAC Agents.
-      
+
       For this purpose the following methods are used:
       - am_initialize()      just after instantiated
       - am_getPollingTime()  to set the execution frequency
       - am_getMaxCycles()    to determine the number of cycles
       - am_go()              for the actual execution of one cycle
-      
-      Before each iteration, the following methods are used to determine 
+
+      Before each iteration, the following methods are used to determine
       if the new cycle is to be started.
       - am_getModuleParam( 'alive' )
       - am_checkStopAgentFile()
       - am_removeStopAgentFile()
 
       To start new execution cycle the following methods are used
-      - am_getCyclesDone() 
-      - am_setOption( 'MaxCycles', maxCycles ) 
-      
+      - am_getCyclesDone()
+      - am_setOption( 'MaxCycles', maxCycles )
+
       At the same time it provides all Agents with common interface.
       All Agent class must inherit from this base class and must implement
       at least the following method:
@@ -61,20 +61,20 @@ class AgentModule:
 
       - beginExecution()     before each execution cycle
       - endExecution()       at the end of each execution cycle
-        
+
       The agent can be stopped either by a signal or by creating a 'stop_agent' file
       in the controlDirectory defined in the agent configuration
-  
+
   """
 
-  def __init__( self, agentName, baseAgentName = False, properties = {} ):
+  def __init__( self, agentName, loadName, baseAgentName = False, properties = {} ):
     """
       Common __init__ method for all Agents.
       All Agent modules must define:
       __doc__
       __RCSID__
       They are used to populate __codeProperties
-      
+
       The following Options are used from the Configuration:
       - /LocalSite/InstancePath
       - /DIRAC/Setup
@@ -84,9 +84,9 @@ class AgentModule:
       - MaxCycles              default = 500
       - ControlDirectory       control/SystemName/AgentName
       - WorkDirectory          work/SystemName/AgentName
-      - shifterProxy           '' 
+      - shifterProxy           ''
       - shifterProxyLocation   WorkDirectory/SystemName/AgentName/.shifterCred
-      
+
       It defines the following default Options that can be set via Configuration (above):
       - MonitoringEnabled     True
       - Enabled               True if Status == Active
@@ -98,7 +98,7 @@ class AgentModule:
       - shifterProxyLocation  work/SystemName/AgentName/.shifterCred
 
       different defaults can be set in the initialize() method of the Agent using am_setOption()
-      
+
       In order to get a shifter proxy in the environment during the execute()
       the configuration Option 'shifterProxy' must be set, a default may be given
       in the initialize() method.
@@ -117,7 +117,9 @@ class AgentModule:
     self.__getCodeInfo()
 
     self.__moduleProperties = { 'fullName' : agentName,
+                                'loadName' : loadName,
                                 'section' : PathFinder.getAgentSection( agentName ),
+                                'loadSection' : PathFinder.getAgentSection( loadName ),
                                 'standalone' : standaloneModule,
                                 'cyclesDone' : 0,
                                 'totalElapsedTime' : 0,
@@ -248,7 +250,11 @@ class AgentModule:
         defaultValue = self.__configDefaults[ optionName ]
     if optionName and optionName[0] == "/":
       return gConfig.getValue( optionName, defaultValue )
-    return gConfig.getValue( "%s/%s" % ( self.__moduleProperties[ 'section' ], optionName ), defaultValue )
+    for section in ( self.__moduleProperties[ 'section' ], self.__moduleProperties[ 'loadSection' ] ):
+      result = gConfig.getOption( "%s/%s" % ( section, optionName ), defaultValue )
+      if result[ 'OK' ]:
+        return result[ 'Value' ]
+    return defaultValue
 
   def am_setOption( self, optionName, value ):
     self.__configDefaults[ optionName ] = value
