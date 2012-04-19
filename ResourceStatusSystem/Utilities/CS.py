@@ -17,7 +17,7 @@ g_BaseRegistrySection   = '/Registry'
 g_BaseResourcesSection  = '/Resources'
 g_BaseOperationsSection = ''
 #g_BaseOperationsSection = '/Operations'
-g_BaseConfigSection     = '/RSSConfiguration'
+g_BaseConfigSection     = 'RSSConfiguration'
 #g_BaseConfigSection     = '/Operations/RSSConfiguration'
 
 ### CS HELPER FUNCTIONS

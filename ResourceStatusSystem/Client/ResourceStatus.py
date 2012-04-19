@@ -134,7 +134,7 @@ class ResourceStatus( object ):
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
 
-    statuses = self.__opHelper.getOptionsDict( '/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
+    statuses = self.__opHelper.getOptionsDict( 'RSSConfiguration/GeneralConfig/Resources/StorageElement' )
     #statuses = gConfig.getOptionsDict( '/Operations/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
     
     if statuses[ 'OK' ]:
@@ -221,7 +221,7 @@ class ResourceStatus( object ):
       we use RSS, if not, we use CS.
     '''
   
-    res = self.__opHelper.getValue( '/RSSConfiguration/Status', 'InActive' )
+    res = self.__opHelper.getValue( 'RSSConfiguration/Status', 'InActive' )
     #res = gConfig.getValue( 'Operations/RSSConfiguration/Status', 'InActive' )
     if res == 'Active':
     
