@@ -180,8 +180,8 @@ class WorkingProcess( multiprocessing.Process ):
       self.__working.value = 1
       try:
         task.process()
-      if task.hasCallback() or task.usePoolCallbacks():
-        self.__resultsQueue.put( task, block = True )
+        if task.hasCallback() or task.usePoolCallbacks():
+          self.__resultsQueue.put( task, block = True )
       finally:
         self.__working.value = 0
 
