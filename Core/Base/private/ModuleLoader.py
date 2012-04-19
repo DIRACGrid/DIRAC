@@ -8,7 +8,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 
 class ModuleLoader( object ):
 
-  def __init__( self, importLocation, sectionFinder, superClass, csSuffix = False ):
+  def __init__( self, importLocation, sectionFinder, superClass, csSuffix = False, moduleSuffix = "" ):
     self.__modules = {}
     self.__loadedModules = {}
     self.__superClass = superClass
@@ -20,6 +20,8 @@ class ModuleLoader( object ):
     if not csSuffix:
       csSuffix = "%ss" % importLocation
     self.__csSuffix = csSuffix
+    #Module suffix to load (for service handlers)
+    self.__moduleSuffix = moduleSuffix
 
   def getModules( self ):
     return dict( self.__modules )
@@ -32,6 +34,7 @@ class ModuleLoader( object ):
       gLogger.verbose( "Checking %s" % modName )
       #if it's a executor modName name just load it and be done with it
       if modName.find( "/" ) > -1:
+        gLogger.verbose( "Module %s seems to be a valid name. Try to load it!" % modName )
         result = self.loadModule( modName, hideExceptions = hideExceptions )
         if not result[ 'OK' ]:
           return result
@@ -85,6 +88,8 @@ class ModuleLoader( object ):
       Load module name.
       name must take the form [DIRAC System Name]/[DIRAC module]
     """
+    while modName and modName[0] == "/":
+      modName = modName[1:]
     if modName in self.__modules:
      return S_OK()
     modList = modName.split( "/" )
@@ -114,14 +119,33 @@ class ModuleLoader( object ):
     #If already loaded, skip
     loadList = loadName.split( "/" )
     if len( loadList ) != 2:
-      return S_ERROR( "Can't load %s: Invalid executor name" % ( loadName ) )
+      return S_ERROR( "Can't load %s: Invalid module name" % ( loadName ) )
     system, module = loadList
+    #Check if handler is defined
+    loadCSSection = self.__sectionFinder( loadName )
+    handlerPath = gConfig.getValue( "%s/HandlerPath" % loadCSSection, "" )
+    if handlerPath:
+      gLogger.verbose( "Found handler for %s: %s" % ( loadName, handlerPath ) )
+      handlerPath = handlerPath.replace( "/", "." )
+      if handlerPath.find( ".py", len( handlerPath ) -3 ) > -1:
+        handlerPath = handlerPath[ :-3 ]
+      module = List.fromChar( handlerPath, "." )[-1]
+      if self.__moduleSuffix and module.find( self.__moduleSuffix, len( module ) - len ( self.__moduleSuffix ) ) > -1:
+          module = module[ : -len( self.__moduleSuffix ) ]
+      loadName = "%s/%s" % ( system, module )
+      gLogger.verbose( "New loadName is %s" % loadName )
+    #Load
     if loadName not in self.__loadedModules:
-      if parentModule:
+      #Handler defined?
+      if handlerPath:
+        result = self.__recurseImport( handlerPath )
+        if not result[ 'OK' ]:
+          return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Value' ] ) )
+        gLogger.verbose( "Loaded %s" % handlerPath )
+      elif parentModule:
         #If we've got a parent module, load from there.
         result = self.__recurseImport( module, parentModule, hideExceptions = hideExceptions )
       else:
-        #HERE: :P
         #Check to see if the module exists in any of the root modules
         rootModulesToLook = getInstalledExtensions()
         for rootModule in rootModulesToLook:
@@ -141,7 +165,10 @@ class ModuleLoader( object ):
       modObj = result[ 'Value' ]
       try:
         #Try to get the class from the module
-        modClass = getattr( modObj, module )
+        if self.__moduleSuffix:
+          modClass = getattr( modObj, "%s%s" % ( module, self.__moduleSuffix ) )
+        else:
+          modClass = getattr( modObj, module )
       except AttributeError:
         location = ""
         if '__file__' in dir( modObj ):
@@ -153,12 +180,13 @@ class ModuleLoader( object ):
       #Check if it's subclass
       if not issubclass( modClass, self.__superClass ):
         return S_ERROR( "%s has to inherit from %s" % ( loadName, self.__superClass.__name__ ) )
-      self.__loadedModules[ loadName ] = { 'classObj' : modClass, 'moduleObj' : modObj }
+      self.__loadedModules[ loadName ] = { 'classObj' : modClass, 'moduleObj' : modObj, 'handlerPath' : handlerPath }
       #End of loading of 'loadName' module
 
     #A-OK :)
     self.__modules[ modName ] = self.__loadedModules[ loadName ].copy()
     #keep the name of the real code module
+    self.__modules[ modName ][ 'modName' ] = modName
     self.__modules[ modName ][ 'loadName' ] = loadName
     gLogger.notice( "Loaded module %s" % modName )
 

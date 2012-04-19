@@ -34,8 +34,8 @@ if not resultDict[ 'OK' ]:
 
 
 
-serverToLaunch = ServiceReactor( positionalArgs )
-result = serverToLaunch.initialize()
+serverToLaunch = ServiceReactor()
+result = serverToLaunch.initialize( positionalArgs )
 if not result[ 'OK' ]:
   gLogger.error( result[ 'Message' ] )
   sys.exit( 1 )

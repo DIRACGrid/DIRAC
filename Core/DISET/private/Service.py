@@ -26,15 +26,15 @@ class Service:
                         'Connection' : 'Message' }
   SVC_SECLOG_CLIENT = SecurityLogClient()
 
-  def __init__( self, serviceName, activityMonitor = False ):
-    self._name = serviceName
+  def __init__( self, serviceData ):
+    self._svcData = serviceData
+    print serviceData
+    sys.exit(0)
+    self._name = serviceData
     self._startTime = Time.dateTime()
     self._cfg = ServiceConfiguration( serviceName )
     self._validNames = [ self._name ]
-    if activityMonitor:
-      self._monitor = activityMonitor
-    else:
-      self._monitor = MonitoringClient()
+    self._monitor = MonitoringClient()
     self.__monitorLastStatsUpdate = time.time()
     self._stats = { 'queries' : 0, 'connections' : 0 }
     self._authMgr = AuthManager( "%s/Authorization" % self._cfg.getServicePath() )
