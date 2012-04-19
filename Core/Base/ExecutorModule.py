@@ -11,11 +11,11 @@ class ExecutorModule( object ):
 
 
   @classmethod
-  def _ex_initialize( cls, exeName, codeName ):
+  def _ex_initialize( cls, exeName, loadName ):
     cls.__properties = { 'fullName' : exeName,
-                         'codeName' : codeName,
+                         'loadName' : loadName,
                          'section' : PathFinder.getExecutorSection( exeName ),
-                         'moduleSection' : PathFinder.getExecutorSection( codeName ),
+                         'loadSection' : PathFinder.getExecutorSection( loadName ),
                          'messagesProcessed' : 0,
                          'reconnects' : 0,
                          'setup' : gConfig.getValue( "/DIRAC/Setup", "Unknown" ) }
@@ -41,10 +41,10 @@ class ExecutorModule( object ):
     try:
       result = cls.initialize()
     except Exception, excp:
-      gLogger.exception( "Exception while initializing %s" % codeName )
+      gLogger.exception( "Exception while initializing %s" % loadName )
       return S_ERROR( "Exception while initializing: %s" % str( excp ) )
     if not isReturnStructure( result ):
-      return S_ERROR( "Executor %s does not resturn an S_OK/S_ERROR after initialization" % codeName )
+      return S_ERROR( "Executor %s does not resturn an S_OK/S_ERROR after initialization" % loadName )
     return result
 
 
@@ -69,7 +69,11 @@ class ExecutorModule( object ):
         defaultValue = cls.__defaults[ optName ]
     if optName and optName[0] == "/":
       return gConfig.getValue( optName, defaultValue )
-    return gConfig.getValue( "%s/%s" % ( cls.__properties[ 'section' ], optName ), defaultValue )
+    for section in ( cls.__properties[ 'section' ], cls.__properties[ 'loadSection' ] ):
+      result = gConfig.getOption( "%s/%s" % ( section, optName ), defaultValue )
+      if result[ 'OK' ]:
+        return result[ 'Value' ]
+    return defaultValue
 
   @classmethod
   def ex_setProperty( cls, optName, value ):
