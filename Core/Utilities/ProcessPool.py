@@ -145,11 +145,6 @@ class WorkingProcess( multiprocessing.Process ):
     """
     multiprocessing.Process.__init__( self )
     self.daemon = True
-    if LockRing:
-      #Reset all locks
-      lr = LockRing()
-      lr._openAll()
-      lr._setAllEvents()
     self.__working = multiprocessing.Value( 'i', 0 )
     self.__pendingQueue = pendingQueue
     self.__resultsQueue = resultsQueue
@@ -170,12 +165,12 @@ class WorkingProcess( multiprocessing.Process ):
     
     :param self: self reference
     """
-    while True:
-      if LockRing:
+    if LockRing:
         # Reset all locks
         lr = LockRing()
         lr._openAll()
         lr._setAllEvents()
+    while True:
       try:
         task = self.__pendingQueue.get( block = True, timeout = 10 )
       except Queue.Empty:
@@ -185,10 +180,10 @@ class WorkingProcess( multiprocessing.Process ):
       self.__working.value = 1
       try:
         task.process()
-      finally:
-        self.__working.value = 0
       if task.hasCallback() or task.usePoolCallbacks():
         self.__resultsQueue.put( task, block = True )
+      finally:
+        self.__working.value = 0
 
 class BulletTask:
   """ dum-dum bullet """
@@ -592,15 +587,20 @@ class ProcessPool:
     """
     if not isinstance( task, ProcessTask ):
       raise TypeError( "Tasks added to the process pool must be ProcessTask instances" )
+    if usePoolCallbacks and ( self.__poolCallback or self.__poolExceptionCallback ):
+      task.enablePoolCallbacks()
+    
+    self.__prListLock.acquire()
     try:
-      if usePoolCallbacks and ( self.__poolCallback or self.__poolExceptionCallback ):
-        task.enablePoolCallbacks()
-      self.__pendingQueue.put( task, block = blocking )
+        self.__pendingQueue.put( task, block = blocking )
     except Queue.Full:
       return S_ERROR( "Queue is full" )
+    finally:
+      self.__prListLock.release()
+
     self.__spawnNeededWorkingProcesses()
     # Throttle a bit to allow task state propagation
-    time.sleep( 0.01 )
+    time.sleep( 0.1 )
     return S_OK()
 
   def createAndQueueTask( self,
