@@ -245,6 +245,7 @@ class ProcessTask:
     self.__taskID = taskID 
     self.__resultCallback = callback
     self.__exceptionCallback = exceptionCallback
+    self.__timeOut = 0
     ## set time out
     self.setTimeOut( timeOut )
     self.__done = False
@@ -356,7 +357,6 @@ class ProcessTask:
     """
     if self.__done and not self.__exceptionRaised and self.__resultCallback:
       self.__resultCallback( self, self.__taskResult )
-
 
   def process( self ):
     """ execute task
@@ -511,21 +511,25 @@ class ProcessPool:
 
     :param self: self reference
     """
-    self.__workingProcessList.append( WorkingProcess( self.__pendingQueue, self.__resultsQueue ) )
+    self.__prListLock.acquire()
+    try:
+      self.__workingProcessList.append( WorkingProcess( self.__pendingQueue, self.__resultsQueue ) )
+    finally:
+      self.__prListLock.release()
 
   def __killWorkingProcess( self ):
     """ suspend execution of WorkingProcesses exceeding queue limits
     :param self: self reference
     """
-    try:
-      self.__pendingQueue.put( self.__bullet, block = True )
-    except Queue.Full:
-      return S_ERROR( "Queue is full" )
     self.__prListLock.acquire()
     try:
       self.__bulletCounter += 1
+      self.__pendingQueue.put( self.__bullet, block = True )
+    except Queue.Full:
+      self.__bulletCounter -= 1
     finally:
       self.__prListLock.release()
+
     self.__cleanDeadProcesses()
 
   def __cleanDeadProcesses( self ):
@@ -594,6 +598,7 @@ class ProcessPool:
     try:
         self.__pendingQueue.put( task, block = blocking )
     except Queue.Full:
+      self.__prListLock.release()
       return S_ERROR( "Queue is full" )
     finally:
       self.__prListLock.release()
@@ -697,9 +702,9 @@ class ProcessPool:
     :param self: self reference
     :param timeout: seconds to wait before killing 
     """
-    #Process all tasks
+    # Process all tasks
     self.processAllResults()
-    #Drain via bullets processes
+    # Drain via bullets processes
     self.__draining = True
     try:
       bullets = len( self.__workingProcessList ) - self.__bulletCounter
