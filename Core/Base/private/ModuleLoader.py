@@ -8,7 +8,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 
 class ModuleLoader( object ):
 
-  def __init__( self, importLocation, sectionFinder, superClass, csSuffix = False, moduleSuffix = "" ):
+  def __init__( self, importLocation, sectionFinder, superClass, csSuffix = False, moduleSuffix = False ):
     self.__modules = {}
     self.__loadedModules = {}
     self.__superClass = superClass
@@ -20,11 +20,14 @@ class ModuleLoader( object ):
     if not csSuffix:
       csSuffix = "%ss" % importLocation
     self.__csSuffix = csSuffix
-    #Module suffix to load (for service handlers)
-    self.__moduleSuffix = moduleSuffix
+    #Module suffix (for Handlers)
+    self.__modSuffix = moduleSuffix
 
   def getModules( self ):
-    return dict( self.__modules )
+    data = dict( self.__modules )
+    for k in data:
+      data[ k ][ 'standalone' ] = len( data ) > 1
+    return data
 
   def loadModules( self, modulesList, hideExceptions = False ):
     """
@@ -121,35 +124,37 @@ class ModuleLoader( object ):
     if len( loadList ) != 2:
       return S_ERROR( "Can't load %s: Invalid module name" % ( loadName ) )
     system, module = loadList
-    #Check if handler is defined
-    loadCSSection = self.__sectionFinder( loadName )
-    handlerPath = gConfig.getValue( "%s/HandlerPath" % loadCSSection, "" )
-    if handlerPath:
-      gLogger.verbose( "Found handler for %s: %s" % ( loadName, handlerPath ) )
-      handlerPath = handlerPath.replace( "/", "." )
-      if handlerPath.find( ".py", len( handlerPath ) -3 ) > -1:
-        handlerPath = handlerPath[ :-3 ]
-      module = List.fromChar( handlerPath, "." )[-1]
-      if self.__moduleSuffix and module.find( self.__moduleSuffix, len( module ) - len ( self.__moduleSuffix ) ) > -1:
-          module = module[ : -len( self.__moduleSuffix ) ]
-      loadName = "%s/%s" % ( system, module )
-      gLogger.verbose( "New loadName is %s" % loadName )
     #Load
+    className = module
+    if self.__modSuffix:
+      className = "%s%s" % ( className, self.__modSuffix )
     if loadName not in self.__loadedModules:
-      #Handler defined?
+      #Check if handler is defined
+      loadCSSection = self.__sectionFinder( loadName )
+      handlerPath = gConfig.getValue( "%s/HandlerPath" % loadCSSection, "" )
       if handlerPath:
+        gLogger.verbose( "Found handler for %s: %s" % ( loadName, handlerPath ) )
+        handlerPath = handlerPath.replace( "/", "." )
+        if handlerPath.find( ".py", len( handlerPath ) -3 ) > -1:
+          handlerPath = handlerPath[ :-3 ]
+        className = List.fromChar( handlerPath, "." )[-1]
         result = self.__recurseImport( handlerPath )
         if not result[ 'OK' ]:
           return S_ERROR( "Cannot load user defined handler %s: %s" % ( handlerPath, result[ 'Value' ] ) )
         gLogger.verbose( "Loaded %s" % handlerPath )
       elif parentModule:
         #If we've got a parent module, load from there.
-        result = self.__recurseImport( module, parentModule, hideExceptions = hideExceptions )
+        modImport = module
+        if self.__modSuffix:
+          modImport = "%s%s" % ( modImport, self.__modSuffix )
+        result = self.__recurseImport( modImport, parentModule, hideExceptions = hideExceptions )
       else:
         #Check to see if the module exists in any of the root modules
         rootModulesToLook = getInstalledExtensions()
         for rootModule in rootModulesToLook:
           importString = '%s.%sSystem.%s.%s' % ( rootModule, system, self.__importLocation, module )
+          if self.__modSuffix:
+            importString = "%s%s" % ( importString, self.__modSuffix )
           gLogger.verbose( "Trying to load %s" % importString )
           result = self.__recurseImport( importString, hideExceptions = hideExceptions )
           #Error while loading
@@ -165,10 +170,7 @@ class ModuleLoader( object ):
       modObj = result[ 'Value' ]
       try:
         #Try to get the class from the module
-        if self.__moduleSuffix:
-          modClass = getattr( modObj, "%s%s" % ( module, self.__moduleSuffix ) )
-        else:
-          modClass = getattr( modObj, module )
+        modClass = getattr( modObj, className )
       except AttributeError:
         location = ""
         if '__file__' in dir( modObj ):
@@ -180,7 +182,7 @@ class ModuleLoader( object ):
       #Check if it's subclass
       if not issubclass( modClass, self.__superClass ):
         return S_ERROR( "%s has to inherit from %s" % ( loadName, self.__superClass.__name__ ) )
-      self.__loadedModules[ loadName ] = { 'classObj' : modClass, 'moduleObj' : modObj, 'handlerPath' : handlerPath }
+      self.__loadedModules[ loadName ] = { 'classObj' : modClass, 'moduleObj' : modObj }
       #End of loading of 'loadName' module
 
     #A-OK :)

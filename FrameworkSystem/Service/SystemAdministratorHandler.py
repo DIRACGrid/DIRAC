@@ -13,20 +13,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.Core.Utilities import InstallTools, CFG
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 
-cmDB = None
-
-def initializeSystemAdministratorHandler( serviceInfo ):
-
-  global cmDB
-  #try:
-  #  cmDB = ComponentMonitoringDB()
-  #except Exception,x:
-  #  gLogger.warn('Failed to create an instance of ComponentMonitoringDB ')
-  return S_OK()
-
 
 class SystemAdministratorHandler( RequestHandler ):
-
 
   types_getInfo = [ ]
   def export_getInfo( self ):

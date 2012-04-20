@@ -93,7 +93,7 @@ class JobState( object ):
     return JobState.__db.job
 
   def _getStoreClient( self ):
-    return self.__getRPCFunctor( "WorkloadManagement/JobStore" )
+    return self.__getRPCFunctor( "WorkloadManagement/JobStateSync" )
 
   def getManifest( self, rawData = False ):
     if self.localAccess:

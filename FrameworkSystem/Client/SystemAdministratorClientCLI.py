@@ -54,7 +54,7 @@ def printTable( fields, records ):
     count += 1
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
-  """ 
+  """
   """
 
   def __errMsg( self, errMsg ):
@@ -91,9 +91,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
   def do_set( self, args ):
     """
         Set options
-    
+
         usage:
-        
+
           set host <hostname>     - Set the hostname to work with
           set project <project>   - Set the project to install/upgrade in the host
     """
@@ -131,11 +131,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
 
   def do_show( self, args ):
-    """ 
+    """
         Show list of components with various related information
-        
+
         usage:
-    
+
           show software      - show components for which software is available
           show installed     - show components installed in the host with runit system
           show setup         - show components set up for automatic running in the host
@@ -146,7 +146,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           show log  <system> <service|agent> [nlines]
                              - show last <nlines> lines in the component log file
           show info          - show version of software and setup
-          show errors [*|<system> <service|agent>] 
+          show errors [*|<system> <service|agent>]
                              - show error count for the given component or all the components
                                in the last hour and day
     """
@@ -334,11 +334,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "No logs found"
 
   def do_install( self, args ):
-    """ 
-        Install various DIRAC components 
-    
+    """
+        Install various DIRAC components
+
         usage:
-        
+
           install mysql
           install db <database>
           install service <system> <service>
@@ -439,10 +439,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Unknown option:", option
 
   def do_start( self, args ):
-    """ Start services or agents or database server    
-      
+    """ Start services or agents or database server
+
         usage:
-        
+
           start <system|*> <service|agent|*>
           start mysql
     """
@@ -477,10 +477,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Not yet implemented"
 
   def do_restart( self, args ):
-    """ Restart services or agents or database server    
-      
+    """ Restart services or agents or database server
+
         usage:
-        
+
           restart <system|*> <service|agent|*>
           restart mysql
     """
@@ -515,10 +515,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Not yet implemented"
 
   def do_stop( self, args ):
-    """ Stop services or agents or database server    
-      
+    """ Stop services or agents or database server
+
         usage:
-        
+
           stop <system|*> <service|agent|*>
           stop mysql
     """
@@ -545,10 +545,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def do_update( self, args ):
     """ Update the software on the target host to a given version
-    
+
         usage:
-          
-          update <version> 
+
+          update <version>
     """
     argss = args.split()
     version = argss[0]
@@ -564,11 +564,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Think of updating /Operation/<vo>/<setup>/Versions section in the CS"
 
   def do_add( self, args ):
-    """ 
+    """
         Add new entity to the Configuration Service
-    
+
         usage:
-        
+
           add system <system> <instance>
     """
     argss = args.split()
@@ -599,9 +599,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def do_exec( self, args ):
     """ Execute a shell command on the remote host and get back the output
-    
+
         usage:
-        
+
           exec <cmd> [<arguments>]
     """
     client = SystemAdministratorClient( self.host, self.port )
@@ -619,9 +619,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def do_execfile( self, args ):
     """ Execute a series of administrator CLI commands from a given file
-    
+
         usage:
-        
+
           execfile <filename>
     """
     argss = args.split()

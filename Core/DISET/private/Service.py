@@ -3,7 +3,7 @@ import os
 import time
 import DIRAC
 import threading
-from DIRAC import gConfig, gMonitor, gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.Core.Utilities import List, Time, MemStat
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
@@ -17,6 +17,7 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security import CS
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
+from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class Service:
 
@@ -28,16 +29,19 @@ class Service:
 
   def __init__( self, serviceData ):
     self._svcData = serviceData
-    print serviceData
-    sys.exit(0)
-    self._name = serviceData
+    self._name = serviceData[ 'loadName' ]
     self._startTime = Time.dateTime()
-    self._cfg = ServiceConfiguration( serviceName )
-    self._validNames = [ self._name ]
-    self._monitor = MonitoringClient()
+    self._validNames = [ serviceData[ 'modName' ]  ]
+    if serviceData[ 'loadName' ] not in self._validNames:
+      self._validNames.append( serviceData[ 'loadName' ] )
+    self._cfg = ServiceConfiguration( list( self._validNames ) )
+    if serviceData[ 'standalone' ]:
+      self._monitor = gMonitor
+    else:
+      self._monitor = MonitoringClient()
     self.__monitorLastStatsUpdate = time.time()
     self._stats = { 'queries' : 0, 'connections' : 0 }
-    self._authMgr = AuthManager( "%s/Authorization" % self._cfg.getServicePath() )
+    self._authMgr = AuthManager( "%s/Authorization" % PathFinder.getServiceSection( serviceData[ 'loadName' ] ) )
     self._transportPool = getGlobalTransportPool()
     self.__cloneId = 0
 
@@ -57,13 +61,8 @@ class Service:
     if not self._url:
       return S_ERROR( "Could not build service URL for %s" % self._name )
     gLogger.verbose( "Service URL is %s" % self._url )
-    #Discover Handler
-    self._handlerLocation = self._discoverHandlerLocation()
-    if not self._handlerLocation:
-      return S_ERROR( "Could not find handler location for %s" % self._name )
-    gLogger.verbose( "Handler found at %s" % self._handlerLocation )
     #Load handler
-    result = self._loadHandler()
+    result = self._loadHandlerInit()
     if not result[ 'OK' ]:
       return result
     self._handler = result[ 'Value' ]
@@ -77,10 +76,11 @@ class Service:
     self._msgBroker = MessageBroker( "%sMSB" % self._name, threadPool = self._threadPool )
     #Create static dict
     self._serviceInfoDict = { 'serviceName' : self._name,
-                               'URL' : self._cfg.getURL(),
-                               'systemSectionPath' : self._cfg.getSystemPath(),
-                               'serviceSectionPath' : self._cfg.getServicePath(),
-                               'messageSender' : MessageSender( self._name, self._msgBroker )
+                              'serviceSectionPath' : PathFinder.getServiceSection( self._name ),
+                              'URL' : self._cfg.getURL(),
+                              'messageSender' : MessageSender( self._name, self._msgBroker ),
+                              'validNames' : self._validNames,
+                              'csPaths' : [ PathFinder.getServiceSection( svcName ) for svcName in self._validNames ]
                              }
     #Call static initialization function
     try:
@@ -148,36 +148,24 @@ class Service:
       initFuncs.append( handlerClass.initializeHandler )
     return initFuncs
 
-  def _loadHandler( self ):
-    handlerLocation = self._handlerLocation.replace( ".py", "" )
-    lServicePath = List.fromChar( handlerLocation, "/" )
-    handlerName = lServicePath[-1]
-    try:
-      handlerModule = __import__( ".".join( lServicePath ),
-                                   globals(),
-                                   locals(), handlerName )
-      handlerClass = getattr( handlerModule, handlerName )
-    except Exception, e:
-      gLogger.exception()
-      return S_ERROR( "Can't import handler: %s" % str( e ) )
-    if not issubclass( handlerClass, RequestHandler ):
-      return S_ERROR( "Handler class is not a request handler" )
+  def _loadHandlerInit( self ):
+    handlerClass = self._svcData[ 'classObj' ]
+    handlerName = handlerClass.__name__
     handlerInitMethods = self.__searchInitFunctions( handlerClass )
     try:
-      handlerInitMethods.append( getattr( handlerModule, "initialize%s" % handlerName ) )
-    except:
-      gLogger.debug( "Not found global initialization function for service" )
+      handlerInitMethods.append( getattr( self._svcData[ 'moduleObj' ], "initialize%s" % handlerName) )
+    except AttributeError:
+      gLogger.verbose( "Not found global initialization function for service" )
 
     if handlerInitMethods:
       gLogger.info( "Found %s initialization methods" % len( handlerInitMethods ) )
 
     handlerInfo = {}
     handlerInfo[ "name" ] = handlerName
-    handlerInfo[ "module" ] = handlerModule
+    handlerInfo[ "module" ] = self._svcData[ 'moduleObj' ]
     handlerInfo[ "class" ] = handlerClass
     handlerInfo[ "init" ] = handlerInitMethods
 
-    gLogger.info( "Loaded %s" % self._handlerLocation )
     return S_OK( handlerInfo )
 
   def _loadActions( self ):
@@ -280,7 +268,7 @@ class Service:
 
   def handleConnection( self, clientTransport ):
     self._stats[ 'connections' ] += 1
-    gMonitor.setComponentExtraParam( 'queries', self._stats[ 'connections' ] )
+    self._monitor.setComponentExtraParam( 'queries', self._stats[ 'connections' ] )
     self._threadPool.generateJobAndQueueIt( self._processInThread,
                                              args = ( clientTransport, ) )
 

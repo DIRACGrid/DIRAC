@@ -9,7 +9,7 @@ try:
 except:
   multiprocessing = False
 
-from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.private.GatewayService import GatewayService
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -30,10 +30,8 @@ class ServiceReactor:
                                   PathFinder.getServiceSection,
                                   RequestHandler,
                                   moduleSuffix = "Handler" )
-
     self.__listeningConnections = {}
     self.__stats = ReactorStats()
-
 
   def initialize( self, servicesList ):
     try:

@@ -6,7 +6,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 
-class JobStoreHandler( RequestHandler ):
+class JobStateSyncHandler( RequestHandler ):
 
   __jobStateMethods = []
 

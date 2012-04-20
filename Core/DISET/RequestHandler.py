@@ -94,8 +94,7 @@ class RequestHandler( object ):
 
     @return : Value for serviceSection/optionName in the CS being defaultValue the default
     """
-    return gConfig.getValue( "%s/%s" % ( cls.__srvInfoDict[ 'serviceSectionPath' ], optionName ),
-                             defaultValue )
+    return cls.srv_getCSOption( optionName, defaultValue )
 
   def _rh_executeAction( self, proposalTuple ):
     """
@@ -119,7 +118,7 @@ class RequestHandler( object ):
         retVal = self.__doConnection( actionTuple[1] )
       else:
         return S_ERROR( "Unknown action %s" % actionType )
-    except ConnectionError, excp:
+    except self.ConnectionError, excp:
       gLogger.error( str( excp ) )
       return S_ERROR( excp )
     if  not isReturnStructure( retVal ):
@@ -403,7 +402,7 @@ class RequestHandler( object ):
     @type args: tuple
     @param args: Arguments of the method called
     """
-    if gConfig.getValue( "%s/MaskRequestParams" % self.serviceInfoDict[ 'serviceSectionPath' ], "y" ).lower() in ( "y", "yes", "true" ):
+    if self.srv_getCSOption( "MaskRequestParams", True ):
       argsString = "<masked>"
     else:
       argsString = "\n\t%s\n" % ",\n\t".join( [ str( arg )[:50] for arg in args ] )
@@ -504,8 +503,14 @@ class RequestHandler( object ):
 
     @return : Value for serviceSection/optionName in the CS being defaultValue the default
     """
-    return gConfig.getValue( "%s/%s" % ( cls.__srvInfoDict[ 'serviceSectionPath' ], optionName ),
-                             defaultValue )
+    if optionName[0] == "/":
+      return gConfig.getValue( optionName, defaultValue )
+    for csPath in cls.__srvInfoDict[ 'csPaths' ]:
+      result = gConfig.getOption( "%s/%s" % ( csPath, optionName, ), defaultValue )
+      if result[ 'OK' ]:
+        return result[ 'Value' ]
+    return defaultValue
+
 
   def srv_getTransportID( self ):
     return self.__trid
@@ -528,14 +533,6 @@ class RequestHandler( object ):
   @classmethod
   def srv_getServiceName( cls ):
     return cls.__srvInfoDict[ 'serviceName' ]
-
-  @classmethod
-  def srv_getCSSystemPath( cls ):
-    return cls.__srvInfoDict[ 'systemSectionPath' ]
-
-  @classmethod
-  def srv_getCSServicePath( cls ):
-    return cls.__srvInfoDict[ 'serviceSectionPath' ]
 
   @classmethod
   def srv_getMonitor( cls ):

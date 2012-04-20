@@ -9,7 +9,6 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 
 class ExecutorModule( object ):
 
-
   @classmethod
   def _ex_initialize( cls, exeName, loadName ):
     cls.__properties = { 'fullName' : exeName,
