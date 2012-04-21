@@ -1,14 +1,37 @@
+[v6r4-pre1]
+
+*General
+FIX: remove direct access to the /Operations CS section, use Helper instead 
+
+*Core
+FIX: dirac-install-db.py: addDatabaseOptionsToCS has added a new keyed argument
+NEW: SGETimeLeft.py: Support for SGE backend
+
+
+*DMS
+FIX: TransferDB.py - speed up the Throughput determination
+
+*RequestManagement
+FIX: RequestDBMySQL.py: to take into account ExecutionOrder in getRequest
+FIX: StorageElement.py: change log message level
+
+[v6r3p7]
+
+*Transformation
+FIX: TransformationCleaningAgent - protection from deleting requests with jobID 0 
+
 [v6r3p6]
 
 *Core
 FIX: dirac-install-db - proper key argument (follow change in InstallTools)
-FIX: ProcessPool - release all locks every time WorkignProcess.run is executed
+FIX: ProcessPool - release all locks every time WorkignProcess.run is executed, more fixes to come
+FIX: dirac-configure - for Multi-Community installations, all vomsdir/vomses files are now created
 
 *WMS
 NEW: SiteDirector - add pilot option with CE name to allow matching of SAM jobs.
 BUGFIX: dirac-pilot - SGE batch ID was overwriting the CREAM ID
 FIX: PilotDirector - protect the CS master if there are at least 3 slaves
-NEW: Watchdog - set LocalJobID in the GE case
+NEW: Watchdog - set LocalJobID in the SGE case
 
 [v6r3p5]
 
