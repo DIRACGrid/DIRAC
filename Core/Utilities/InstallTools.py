@@ -464,7 +464,8 @@ def addOptionToDiracCfg( option, value ):
   return S_ERROR( 'Could not merge %s=%s with local configuration' % ( option, value ) )
 
 def addDefaultOptionsToCS( gConfig, componentType, systemName,
-                           component, extensions, mySetup = setup, overwrite = False ):
+                           component, extensions, mySetup = setup, 
+                           specialOptions={}, overwrite = False ):
   """ Add the section with the component options to the CS
   """
   system = systemName.replace( 'System', '' )
@@ -494,7 +495,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
 
   # Add the component options now
   # print "AT >>>", componentType, system, component, compInstance, extensions
-  result = getComponentCfg( componentType, system, component, compInstance, extensions )
+  result = getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions )
   # print result
   if not result['OK']:
     return result
@@ -551,7 +552,7 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
   gLogger.error( error )
   return S_ERROR( error )
 
-def getComponentCfg( componentType, system, component, compInstance, extensions ):
+def getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions={} ):
   """
   Get the CFG object of the component configuration
   """
@@ -594,6 +595,9 @@ def getComponentCfg( componentType, system, component, compInstance, extensions 
   sectionPath = cfgPath( 'Systems', system, compInstance, sectionName )
   cfg = __getCfg( sectionPath )
   cfg.createNewSection( cfgPath( sectionPath, component ), '', compCfg )
+
+  for option,value in specialOptions.items():
+    cfg.setOption( cfgPath( sectionPath, component, option ), value )
 
   # Add the service URL
   if componentType == "service":
