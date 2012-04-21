@@ -54,7 +54,7 @@ class TransformationCleaningAgent( AgentModule ):
     """
     self.enableFlag = self.am_getOption( 'EnableFlag', 'True' )
     if not self.enableFlag == 'True':
-      self.log.info( 'TransformationCleaningAgent is disabled by configuration option %s/EnableFlag' % ( self.section ) )
+      self.log.info( 'TransformationCleaningAgent is disabled by configuration option EnableFlag' )
       return S_OK( 'Disabled via CS flag' )
 
     # Obtain the transformations in Cleaning status and remove any mention of the jobs/files
