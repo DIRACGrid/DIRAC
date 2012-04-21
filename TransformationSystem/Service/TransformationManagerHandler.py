@@ -2,9 +2,10 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
-from DIRAC.TransformationSystem.DB.TransformationDB     import TransformationDB
+from DIRAC                                               import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
+from DIRAC.TransformationSystem.DB.TransformationDB      import TransformationDB
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from types import *
 
@@ -47,8 +48,8 @@ class TransformationManagerHandlerBase( RequestHandler ):
                                     addFiles = True ):
 #    authorDN = self._clientTransport.peerCredentials['DN']
 #    authorGroup = self._clientTransport.peerCredentials['group']
-    credDict    = self.getRemoteCredentials()
-    authorDN    = credDict[ 'DN' ]
+    credDict = self.getRemoteCredentials()
+    authorDN = credDict[ 'DN' ]
     authorGroup = credDict[ 'group' ]
     res = database.addTransformation( transName, description, longDescription, authorDN, authorGroup, type, plugin, agentType, fileMask,
                                     transformationGroup = transformationGroup,
@@ -466,7 +467,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
       fcn = getattr( database, fcnName )
     if not fcn:
       return S_ERROR( "Unable to invoke database.%s, it isn't a member function of database" % fcnName )
-    res = fcn( condDict=selectDict, older=toDate, newer=fromDate, timeStamp=timeStamp, orderAttribute=orderAttribute )
+    res = fcn( condDict = selectDict, older = toDate, newer = fromDate, timeStamp = timeStamp, orderAttribute = orderAttribute )
     if not res['OK']:
       return self._parseRes( res )
 
@@ -586,7 +587,7 @@ class TransformationManagerHandlerBase( RequestHandler ):
       # Get the statistics for the number of files for the transformation
       fileDict = {}
       transType = transDict['Type']
-      extendableTranfs = gConfig.getValue( "/Operations/Production/%s/ExtendableTransfTypes" % database.__class__.__name__, 'mcsimulation' )
+      extendableTranfs = Operations().getValue( "Production/%s/ExtendableTransfTypes" % database.__class__.__name__, 'mcsimulation' )
       if transType.lower() in extendableTranfs:
         fileDict['PercentProcessed'] = '-'
       else:

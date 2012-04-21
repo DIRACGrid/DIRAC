@@ -1,16 +1,17 @@
-#!/usr/bin/env python
 ########################################################################
 # $HeadURL$
 ########################################################################
+""" Enable using one or more Storage Elements
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-read  = True
+read = True
 write = True
 check = True
-site  = ''
-mute  = False
+site = ''
+mute = False
 
 Script.setUsageMessage( """
 Enable using one or more Storage Elements
@@ -44,20 +45,19 @@ for switch in Script.getUnprocessedSwitches():
     site = switch[1]
 
 #from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
-from DIRAC.Interfaces.API.DiracAdmin                  import DiracAdmin
-from DIRAC                                            import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
-from DIRAC.Core.Utilities.List                        import intListToString
+from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC                                               import gConfig, gLogger
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
+from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 
 #csAPI = CSAPI()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
-address = gConfig.getValue( '/Operations/EMail/Production', '' )
 setup = gConfig.getValue( '/DIRAC/Setup', '' )
-if not address or not setup:
+if not setup:
   print 'ERROR: Could not contact Configuration Service'
   exitCode = 2
   DIRAC.exit( exitCode )
@@ -67,16 +67,10 @@ if not res[ 'OK' ]:
   gLogger.error( 'Failed to get proxy information', res[ 'Message' ] )
   DIRAC.exit( 2 )
 
-userName = diracAdmin._getCurrentUser()
-if not userName['OK']:
-  print 'ERROR: Could not obtain current username from proxy'
-  exitCode = 2
-  DIRAC.exit( exitCode )
-userName = userName['Value']
-
-if not type( ses ) == type( [] ):
-  Script.showHelp()
-  DIRAC.exit( -1 )
+userName = res['Value'].get( 'username' )
+if not userName:
+  gLogger.error( 'Failed to get username for proxy' )
+  DIRAC.exit( 2 )
 
 if site:
   res = gConfig.getOptionsDict( '/Resources/Sites/LCG/%s' % site )
@@ -109,7 +103,8 @@ for se, seOptions in res[ 'Value' ].items():
   if read and seOptions.has_key( 'Read' ):
 
     if not seOptions[ 'Read' ] in [ "InActive", "Banned", "Probing" ]:
-      gLogger.notice( 'Read option for %s is %s, instead of %s' % ( se, seOptions[ 'Read' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Read option for %s is %s, instead of %s' %
+                      ( se, seOptions[ 'Read' ], [ "InActive", "Banned", "Probing" ] ) )
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
@@ -128,7 +123,8 @@ for se, seOptions in res[ 'Value' ].items():
   if write and seOptions.has_key( 'Write' ):
 
     if not seOptions[ 'Write' ] in [ "InActive", "Banned", "Probing" ]:
-      gLogger.notice( 'Write option for %s is %s, instead of %s' % ( se, seOptions[ 'Write' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Write option for %s is %s, instead of %s' %
+                      ( se, seOptions[ 'Write' ], [ "InActive", "Banned", "Probing" ] ) )
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
@@ -143,7 +139,8 @@ for se, seOptions in res[ 'Value' ].items():
   if check and seOptions.has_key( 'Check' ):
 
     if not seOptions[ 'Check' ] in [ "InActive", "Banned", "Probing" ]:
-      gLogger.notice( 'Check option for %s is %s, instead of %s' % ( se, seOptions[ 'Check' ], [ "InActive", "Banned", "Probing" ] ) )
+      gLogger.notice( 'Check option for %s is %s, instead of %s' %
+                      ( se, seOptions[ 'Check' ], [ "InActive", "Banned", "Probing" ] ) )
       gLogger.notice( 'Try specifying the command switchs' )
       continue
 
@@ -165,13 +162,10 @@ if mute:
   gLogger.notice( 'Email is muted by script switch' )
   DIRAC.exit( 0 )
 
-subject     = '%s storage elements allowed for use' % len( writeAllowed + readAllowed + checkAllowed )
-addressPath = '/Operations/EMail/Production'
-address     = gConfig.getValue( addressPath )
+subject = '%s storage elements allowed for use' % len( writeAllowed + readAllowed + checkAllowed )
+addressPath = 'EMail/Production'
+address = Operations().getValue( addressPath, '' )
 
-if not address:
-  gLogger.notice( 'Cannot get address at %' % addressPath )
-  DIRAC.exit( 0 )
 
 body = ''
 if read:
@@ -187,13 +181,17 @@ if check:
   for se in checkAllowed:
     body = "%s\n%s" % ( body, se )
 
+if not address:
+  gLogger.notice( "'%s' not defined in Operations, can not send Mail\n" % addressPath, body )
+  DIRAC.exit( 0 )
+
 res = diracAdmin.sendMail( address, subject, body )
 gLogger.notice( 'Notifying %s' % address )
 if res[ 'OK' ]:
   gLogger.notice( res[ 'Value' ] )
 else:
   gLogger.notice( res[ 'Message' ] )
-  
+
 DIRAC.exit( 0 )
 
 ################################################################################

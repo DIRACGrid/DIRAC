@@ -19,6 +19,7 @@ from DIRAC.Core.Security.ProxyInfo                                     import ge
 from DIRAC.Core.Utilities.List                                         import stringListToString, intListToString, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                                import getSEsForSite, getSitesForSE
 from DIRAC.Core.Utilities.Shifter                                      import setupShifterProxyInEnv
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations               import Operations
 from DIRAC.Core.Utilities.Subprocess                                   import pythonCall
 
 from types import *
@@ -317,8 +318,9 @@ class TransformationDB( DB ):
     resultList = []
     # Define the general filter first
     self.database_name = self.__class__.__name__
+    # FIXME: The Setup is in the middle of the path.
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    value = gConfig.getValue( '/Operations/InputDataFilter/%s/%sFilter' % ( setup, self.database_name ), '' )
+    value = Operations().getValue( 'InputDataFilter/%s/%sFilter' % ( setup, self.database_name ), '' )
     if value:
       refilter = re.compile( value )
       resultList.append( ( 0, refilter ) )
@@ -531,7 +533,7 @@ class TransformationDB( DB ):
     """ Get file status summary in all the transformations """
     connection = self.__getConnection( connection )
     condDict = {'LFN':lfns}
-    res = self.getTransformationFiles( self, condDict = condDict, connection = connection )
+    res = self.getTransformationFiles( condDict = condDict, connection = connection )
     if not res['OK']:
       return res
     resDict = {}
@@ -605,7 +607,7 @@ class TransformationDB( DB ):
         if errorCount >= MAX_ERROR_COUNT:
           if force:
             req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=0 WHERE TransformationID=%d AND FileID=%d;" % ( status, transID, fileID )
-          else:  
+          else:
             failed[lfn] = 'Max number of resets reached'
             req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % ( transID, fileID )
         else:
@@ -982,15 +984,15 @@ class TransformationDB( DB ):
           parameterValue = str( parameterValue )
         if type( parameterValue ) == DictType:
           parameterType = 'Dict'
-          parameterValue = str( parameterValue )    
-      res = self._insert('TransformationInputDataQuery',['TransformationID','ParameterName','ParameterValue','ParameterType'],
-                         [transID, parameterName, parameterValue, parameterType], conn = connection)
+          parameterValue = str( parameterValue )
+      res = self._insert( 'TransformationInputDataQuery', ['TransformationID', 'ParameterName', 'ParameterValue', 'ParameterType'],
+                         [transID, parameterName, parameterValue, parameterType], conn = connection )
       if not res['OK']:
         message = 'Failed to add input data query'
         self.deleteTransformationInputDataQuery( transID, connection = connection )
         break
       else:
-        message = 'Added input data query'      
+        message = 'Added input data query'
     self.__updateTransformationLogging( transID, message, author, connection = connection )
     return res
 
@@ -1029,7 +1031,7 @@ class TransformationDB( DB ):
       elif parameterType == 'Integer':
         parameterValue = int( parameterValue )
       elif parameterType == 'Dict':
-        parameterValue = eval( parameterValue )    
+        parameterValue = eval( parameterValue )
       queryDict[parameterName] = parameterValue
     if not queryDict:
       return S_ERROR( "No InputDataQuery found for transformation" )
@@ -1332,7 +1334,7 @@ class TransformationDB( DB ):
       return res
     transType = res['Value']['Type']
     transID = res['Value']['TransformationID']
-    extendableProds = gConfig.getValue( '/Operations/Production/%s/ExtendableTransfTypes' % self.__class__.__name__, ['simulation', 'mcsimulation'] )
+    extendableProds = Operations().getValue( 'Production/%s/ExtendableTransfTypes' % self.__class__.__name__, ['simulation', 'mcsimulation'] )
     if transType.lower() not in extendableProds:
       return S_ERROR( 'Can not extend non-SIMULATION type production' )
     taskIDs = []
