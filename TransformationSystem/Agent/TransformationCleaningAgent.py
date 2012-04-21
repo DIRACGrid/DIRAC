@@ -369,7 +369,8 @@ class TransformationCleaningAgent( AgentModule ):
   def __removeWMSTasks( self, transJobIDs ):
     
     # Prevent 0 job IDs
-    jobIDs = [ j for j in transJobIDs if j != 0 ]
+    jobIDs = [ int(j) for j in transJobIDs ]
+    jobIDs = [ j for j in jobIDs if j != 0 ]
     allRemove = True
     for jobList in breakListIntoChunks( jobIDs, 500 ):
 
@@ -410,6 +411,9 @@ class TransformationCleaningAgent( AgentModule ):
       return S_OK()
     failed = 0
     for jobID, requestName in failoverRequests.items():
+      # Put this check just in case, tasks must have associated jobs
+      if jobID == 0 or jobID == '0':
+        continue
       res = self.requestClient.deleteRequest( requestName )
       if not res['OK']:
         gLogger.error( "Failed to remove request from RequestDB", res['Message'] )
