@@ -25,25 +25,31 @@ def getDNForUsername( username ):
     return S_OK( dnList )
   return S_ERROR( "No DN found for user %s" % username )
 
-def getGroupsForUser( username ):
-  retVal = gConfig.getSections( "%s/Groups" % gBaseSecuritySection )
-  if not retVal[ 'OK' ]:
-    return retVal
-  groupsList = retVal[ 'Value' ]
-  userGroups = []
-  for group in groupsList:
-    if username in gConfig.getValue( "%s/Groups/%s/Users" % ( gBaseSecuritySection, group ), [] ):
-      userGroups.append( group )
-  if not userGroups:
-    return S_ERROR( "No groups found for user %s" % username )
-  userGroups.sort()
-  return S_OK( userGroups )
-
 def getGroupsForDN( dn ):
   retVal = getUsernameForDN( dn )
   if not retVal[ 'OK' ]:
     return retVal
   return getGroupsForUser( retVal[ 'Value' ] )
+
+def __getGroupsWithProperty( property,value ):
+  retVal = gConfig.getSections( "%s/Groups" % gBaseSecuritySection )
+  if not retVal[ 'OK' ]:
+    return retVal
+  groupsList = retVal[ 'Value' ]
+  groups = []
+  for group in groupsList:
+    if value in gConfig.getValue( "%s/Groups/%s/%s" % ( gBaseSecuritySection, group, property ), [] ):
+      groups.append( group )
+  if not groups:
+    return S_ERROR( "No groups found for %s=%s" % ( property,value ) )
+  groups.sort()
+  return S_OK( groups )     
+
+def getGroupsForUser( username ):
+  return __getGroupsWithProperty( 'Users',username )
+
+def getGroupsForVO( vo ):
+  return __getGroupsWithProperty( 'VO',vo )
 
 def getHostnameForDN( dn ):
   retVal = gConfig.getSections( "%s/Hosts" % gBaseSecuritySection )
