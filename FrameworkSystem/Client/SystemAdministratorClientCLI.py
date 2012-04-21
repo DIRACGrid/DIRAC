@@ -407,13 +407,25 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       print "Database %s from %s/%s installed successfully" % ( database, extension, system )
-    elif option == "service" or option == "agent":
+    elif option in ["service","agent","executor"] :
       if len( argss ) < 2:
         print self.do_install.__doc__
         return
 
       system = argss[0]
-      component = argss[1]
+      del argss[0]
+      component = argss[0]
+      del argss[0]
+      
+      module = ''
+      specialOptions = {}
+      for i in range(len(argss)):
+        if argss[i] == "-m":
+          module = argss[i+1]
+        if argss[i] == "-p":
+          option,value = argss[i+1].split('=')
+          specialOptions[option] = value  
+      
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
       # result = client.addDefaultOptionsToCS( option, system, component )
@@ -423,7 +435,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       hostSetup = result['Value']['Setup']
-      result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, getCSExtensions(), hostSetup )
+      result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+                                                   getCSExtensions(), hostSetup, specialOptions )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return

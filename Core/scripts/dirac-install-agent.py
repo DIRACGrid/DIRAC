@@ -23,7 +23,22 @@ def setOverwrite( opVal ):
   overwrite = True
   return S_OK()
 
+module = ''
+def setModule( optVal ):
+  global module
+  module = optVal
+  return S_OK()
+
+specialOptions = {}
+def setSpecialOption( optVal ):
+  global specialOptions
+  option,value = optVal.split('=')
+  specialOptions[option] = value
+  return S_OK()
+
 Script.registerSwitch( "w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite )
+Script.registerSwitch( "m", "module", "Python module name for the agent code", setModule )
+Script.registerSwitch( "p", "parameter", "Special agent option ", setSpecialOption )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... System Agent|System/Agent' % Script.scriptName,
