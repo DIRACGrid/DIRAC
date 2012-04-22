@@ -71,7 +71,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults, CSGlobals
 from DIRAC.Core.Security.Properties import *
 
 # On command line tools this can be set to True to abort after the first error.
@@ -494,9 +494,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
     return S_OK( 'Component options already exist' )
 
   # Add the component options now
-  # print "AT >>>", componentType, system, component, compInstance, extensions
   result = getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions )
-  # print result
   if not result['OK']:
     return result
   compCfg = result['Value']
@@ -559,8 +557,10 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   sectionName = 'Services'
   if componentType == 'agent':
     sectionName = 'Agents'
-
   extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
+  componentModule = component
+  if "Module" in specialOptions:
+    componentModule = specialOptions['Module']
 
   compCfg = None
   for ext in extensionsDIRAC + ['DIRAC']:
@@ -572,11 +572,11 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
       loadCfg.loadFromFile( cfgTemplatePath )
 
       try:
-        compCfg = loadCfg[sectionName][component]
+        compCfg = loadCfg[sectionName][componentModule]
         # section found
         break
       except Exception:
-        error = 'Can not find %s in template' % cfgPath( sectionName, component )
+        error = 'Can not find %s in template' % cfgPath( sectionName, componentModule )
         gLogger.error( error )
         if exitOnError:
           DIRAC.exit( -1 )
@@ -889,6 +889,18 @@ def getStartupComponentStatus( componentTupleList ):
 
   return S_OK( componentDict )
 
+def getComponentModule( gConfig,system,component,compType ):
+  """ Get the component software module
+  """
+  setup = CSGlobals.getSetup()
+  instance = gConfig.getValue( cfgPath( 'DIRAC', 'Setups', setup, system ),'' )
+  if not instance:
+    return S_OK(component)
+  module = gConfig.getValue( cfgPath( 'Systems',system,instance,compType,component,'Module' ),'' )
+  if not module:
+    module = component
+  return S_OK(module)  
+
 def getOverallStatus( extensions ):
   """  Get the list of all the components ( services and agents ) 
        set up for running with runsvdir in startup directory 
@@ -939,6 +951,36 @@ def getOverallStatus( extensions ):
           try:
             if component in installedDict[compType][system]:
               resultDict[compType][system][component]['Installed'] = True
+          except Exception:
+            pass
+          try:
+            compDir = system + '_' + component
+            if runitDict.has_key( compDir ):
+              resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
+              resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
+              resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
+          except Exception, x:
+            #print str(x)
+            pass
+
+    # Installed components can be not the same as in the software list
+    if installedDict.has_key( 'Services' ):
+      for system in installedDict[compType]:
+        for component in installedDict[compType][system]:
+          if compType in resultDict:
+            if system in resultDict[compType]:
+              if component in resultDict[compType][system]:
+                continue 
+          resultDict[compType][system][component] = {}
+          resultDict[compType][system][component]['Setup'] = False
+          resultDict[compType][system][component]['Installed'] = True
+          resultDict[compType][system][component]['RunitStatus'] = 'Unknown'
+          resultDict[compType][system][component]['Timeup'] = 0
+          resultDict[compType][system][component]['PID'] = 0
+          # TODO: why do we need a try here?
+          try:
+            if component in setupDict[compType][system]:
+              resultDict[compType][system][component]['Setup'] = True
           except Exception:
             pass
           try:
@@ -1324,11 +1366,14 @@ exec svlogd .
   os.chmod( logRunFile, gDefaultPerms )
 
 
-def installComponent( componentType, system, component, extensions ):
+def installComponent( componentType, system, component, extensions, componentModule='' ):
   """ Install runit directory for the specified component
   """
   # Check that the software for the component is installed
-  if not checkComponentSoftware( componentType, system, component, extensions )['OK']:
+  cModule = componentModule
+  if not cModule:
+    cModule = component
+  if not checkComponentSoftware( componentType, system, cModule, extensions )['OK']:
     error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
     if exitOnError:
       gLogger.error( error )
@@ -1364,14 +1409,12 @@ exec 2>&1
 #
 [ "%(componentType)s" = "agent" ] && renice 20 -p $$
 #
-exec python %(DIRAC)s/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s -o LogLevel=%(logLevel)s < /dev/null
+exec dirac-%(componentType)s %(system)s/%(component)s %(componentCfg)s < /dev/null
 """ % {'bashrc': os.path.join( instancePath, 'bashrc' ),
-       'DIRAC': linkedRootPath,
        'componentType': componentType,
        'system' : system,
        'component': component,
-       'componentCfg': componentCfg,
-       'logLevel': logLevel } )
+       'componentCfg': componentCfg } )
     fd.close()
 
     os.chmod( runFile, gDefaultPerms )
@@ -1389,11 +1432,11 @@ exec python %(DIRAC)s/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%
 
   return S_OK( runitCompDir )
 
-def setupComponent( componentType, system, component, extensions ):
+def setupComponent( componentType, system, component, extensions, componentModule='' ):
   """
   Install and create link in startup
   """
-  result = installComponent( componentType, system, component, extensions )
+  result = installComponent( componentType, system, component, extensions, componentModule )
   if not result['OK']:
     return result
 
