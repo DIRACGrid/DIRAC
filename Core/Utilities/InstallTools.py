@@ -721,6 +721,7 @@ def getSoftwareComponents( extensions ):
   # The Gateway does not need a handler 
   services = { 'Framework' : ['Gateway'] }
   agents = {}
+  executors = {}
 
   for extension in ['DIRAC'] + [ x + 'DIRAC' for x in extensions]:
     if not os.path.exists( os.path.join( rootPath, extension ) ):
@@ -760,6 +761,7 @@ def getSoftwareComponents( extensions ):
   resultDict = {}
   resultDict['Services'] = services
   resultDict['Agents'] = agents
+  resultDict['Executors'] = executors
   return S_OK( resultDict )
 
 def getInstalledComponents():
@@ -770,6 +772,7 @@ def getInstalledComponents():
 
   services = {}
   agents = {}
+  executors = {}
   systemList = os.listdir( runitDir )
   for system in systemList:
     systemDir = os.path.join( runitDir, system )
@@ -788,12 +791,17 @@ def getInstalledComponents():
           if not agents.has_key( system ):
             agents[system] = []
           agents[system].append( component )
+        elif body.find( 'dirac-executor' ) != -1:
+          if not executors.has_key( system ):
+            executors[system] = []
+          executors[system].append( component )  
       except IOError:
         pass
 
   resultDict = {}
   resultDict['Services'] = services
   resultDict['Agents'] = agents
+  resultDict['Executors'] = executors
   return S_OK( resultDict )
 
 def getSetupComponents():
@@ -803,6 +811,7 @@ def getSetupComponents():
 
   services = {}
   agents = {}
+  executors = {}
   if not os.path.isdir( startDir ):
     return S_ERROR( 'Startup Directory does not exit: %s' % startDir )
   componentList = os.listdir( startDir )
@@ -822,12 +831,18 @@ def getSetupComponents():
         if not agents.has_key( system ):
           agents[system] = []
         agents[system].append( agent )
+      elif body.find( 'dirac-executor' ) != -1:
+        system, executor = component.split( '_' )
+        if not executorss.has_key( system ):
+          executors[system] = []
+        executors[system].append( agent )  
     except IOError:
       pass
 
   resultDict = {}
   resultDict['Services'] = services
   resultDict['Agents'] = agents
+  resultDict['Executors'] = executors
   return S_OK( resultDict )
 
 def getStartupComponentStatus( componentTupleList ):
@@ -934,8 +949,8 @@ def getOverallStatus( extensions ):
   runitDict = result['Value']
 
   # Collect the info now
-  resultDict = {'Services':{}, 'Agents':{}}
-  for compType in ['Services', 'Agents']:
+  resultDict = {'Services':{}, 'Agents':{}, 'Executors':{} }
+  for compType in ['Services', 'Agents', 'Executors' ]:
     if softDict.has_key( 'Services' ):
       for system in softDict[compType]:
         resultDict[compType][system] = {}
