@@ -195,27 +195,29 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
+        fields = ["System",'Name','Module','Type','Setup','Installed','Runit','Uptime','PID']
+        records = []
         rDict = result['Value']
-        print
-        print "   System", ' ' * 20, 'Name', ' ' * 15, 'Type', ' ' * 13, 'Setup    Installed   Runit    Uptime    PID'
-        print '-' * 116
         for compType in rDict:
           for system in rDict[compType]:
             for component in rDict[compType][system]:
+              record = []
               if rDict[compType][system][component]['Installed']:
-                print  system.ljust( 28 ), component.ljust( 28 ), compType.lower()[:-1].ljust( 7 ),
+                module = str( rDict[compType][system][component]['Module'] )
+                record += [ system,component,module,compType.lower()[:-1]]
                 if rDict[compType][system][component]['Setup']:
-                  print 'SetUp'.rjust( 12 ),
+                  record += ['Setup']
                 else:
-                  print 'NotSetup'.rjust( 12 ),
+                  record += ['NotSetup']
                 if rDict[compType][system][component]['Installed']:
-                  print 'Installed'.rjust( 12 ),
+                  record += ['Installed']
                 else:
-                  print 'NotInstalled'.rjust( 12 ),
-                print str( rDict[compType][system][component]['RunitStatus'] ).ljust( 7 ),
-                print str( rDict[compType][system][component]['Timeup'] ).rjust( 7 ),
-                print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
-                print
+                  record += ['NotInstalled']
+                record += [str( rDict[compType][system][component]['RunitStatus'] )]
+                record += [str( rDict[compType][system][component]['Timeup'] )]
+                record += [str( rDict[compType][system][component]['PID'] )]
+                records.append(record)  
+        printTable(fields,records)        
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient( self.host, self.port )
       if not InstallTools.mysqlPassword:
@@ -417,14 +419,15 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       component = argss[0]
       del argss[0]
       
-      module = ''
       specialOptions = {}
+      module = ''
       for i in range(len(argss)):
         if argss[i] == "-m":
+          specialOptions['Module'] = argss[i+1]
           module = argss[i+1]
         if argss[i] == "-p":
-          option,value = argss[i+1].split('=')
-          specialOptions[option] = value  
+          opt,value = argss[i+1].split('=')
+          specialOptions[opt] = value  
       
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
@@ -441,7 +444,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       # Then we can install and start the component
-      result = client.setupComponent( option, system, component )
+      result = client.setupComponent( option, system, component, module )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
