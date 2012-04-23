@@ -50,6 +50,7 @@ from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.FrameworkSystem.Client.LoggerClient           import LoggerClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
+from DIRAC.Core.Utilities                                import Time
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME = 'DiracAPI'
@@ -2191,8 +2192,7 @@ class Dirac:
         return self.__errorReport( str( x ), 'Expected yyyy-mm-dd string for date' )
 
     if not date:
-      now = time.gmtime()
-      date = '%s-%s-%s' % ( now[0], str( now[1] ).zfill( 2 ), str( now[2] ).zfill( 2 ) )
+      date = '%s' % Time.date()
       self.log.verbose( 'Setting date to %s' % ( date ) )
 
     self.log.verbose( 'Will select jobs with last update %s and following conditions' % date )
