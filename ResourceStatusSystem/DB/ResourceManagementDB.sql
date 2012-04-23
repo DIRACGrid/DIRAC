@@ -64,6 +64,35 @@ CREATE TABLE AccountingCache(
   PRIMARY KEY(AccountingCacheID)
 ) Engine=InnoDB;
 
+DROP TABLE IF EXISTS VOBOXCache;
+CREATE TABLE VOBOXCache(
+  VOBOXCacheID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Site VARCHAR( 64 ) NOT NULL,
+  INDEX ( Site ),
+  System VARCHAR( 64 ) NOT NULL,
+  INDEX ( System ),
+  ServiceUp INTEGER NOT NULL DEFAULT 0,
+  MachineUp INTEGER NOT NULL DEFAULT 0,
+  LastCheckTime DATETIME NOT NULL,
+  UNIQUE KEY( Site, System ),
+  PRIMARY KEY( VOBOXCacheID )
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS SpaceTokenOccupancyCache;
+CREATE TABLE SpaceTokenOccupancyCache(
+  SpaceTokenOccupancyCacheID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Site VARCHAR( 64 ) NOT NULL,
+  INDEX ( Site ),
+  Token VARCHAR( 64 ) NOT NULL,
+  INDEX ( Token ),
+  Total INTEGER NOT NULL DEFAULT 0,
+  Guaranteed INTEGER NOT NULL DEFAULT 0,
+  Free INTEGER NOT NULL DEFAULT 0,
+  LastCheckTime DATETIME NOT NULL,
+  UNIQUE KEY( Site, Token ),
+  PRIMARY KEY(  SpaceTokenOccupancyCacheID )
+) Engine=InnoDB;
+
 DROP TABLE IF EXISTS EnvironmentCache;
 CREATE TABLE EnvironmentCache(
   HashEnv VARCHAR(128) NOT NULL,
