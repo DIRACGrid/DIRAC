@@ -6,7 +6,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 class ThreadSafeSSLObject:
-  cLock = LockRing().getLock( "DISET.TSSSLObj" )
+  cLock = LockRing().getLock()
   def __init__( self, object ):
     self.cObject = object
   def __getattr__( self, name ):

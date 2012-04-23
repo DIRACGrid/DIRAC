@@ -16,7 +16,7 @@ class SocketInfo:
 
   __cachedCAsCRLs = False
   __cachedCAsCRLsLastLoaded = 0
-  __cachedCAsCRLsLoadLock = LockRing().getLock( "DISET.SocketInfo.CAs" )
+  __cachedCAsCRLsLoadLock = LockRing().getLock()
 
 
   def __init__( self, infoDict, sslContext = False ):
@@ -162,7 +162,7 @@ class SocketInfo:
             if fileName.find( ".0" ) == len( fileName ) - 2:
               gLogger.exception( "LOADING %s" % filePath )
           if 'IgnoreCRLs' not in self.infoDict or not self.infoDict[ 'IgnoreCRLs' ]:
-            #Try to load CRL 
+            #Try to load CRL
             try:
               crl = GSI.crypto.load_crl( GSI.crypto.FILETYPE_PEM, pemData )
               if crl.has_expired():

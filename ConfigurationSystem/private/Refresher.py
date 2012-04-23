@@ -39,7 +39,7 @@ class Refresher( threading.Thread ):
     self.__callbacks = { 'newVersion' : [] }
     gEventDispatcher.registerEvent( "CSNewVersion" )
     random.seed()
-    self.__triggeredRefreshLock = LockRing.LockRing().getLock( "Refresher.triggerUpdate" )
+    self.__triggeredRefreshLock = LockRing.LockRing().getLock()
 
   def disable( self ):
     self.__refreshEnabled = False
