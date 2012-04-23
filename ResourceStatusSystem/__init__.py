@@ -10,7 +10,7 @@ __RCSID__  = "$Id$"
 from DIRAC.ResourceStatusSystem.Utilities import CS
 
 try:
-  gencfg = CS.getTypedDictRootedAt( "GeneralConfig" )
+  gencfg = CS.getTypedDictRootedAtOperations( "GeneralConfig" )
 except CS.CSError:
   gencfg = {}
 
