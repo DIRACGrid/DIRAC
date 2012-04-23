@@ -17,9 +17,9 @@ class ConfigurationData:
 
   def __init__( self, loadDefaultCFG = True ):
     lr = LockRing()
-    self.threadingEvent = lr.getEvent( "configdata.dangerZone" )
+    self.threadingEvent = lr.getEvent()
     self.threadingEvent.set()
-    self.threadingLock = lr.getLock( "configdata.update" )
+    self.threadingLock = lr.getLock()
     self.runningThreadsNumber = 0
     self.compressedConfigurationData = ""
     self.configurationPath = "/DIRAC/Configuration"
