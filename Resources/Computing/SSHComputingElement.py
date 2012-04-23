@@ -47,16 +47,15 @@ class SSH:
       ssh_newkey = 'Are you sure you want to continue connecting'
       child = pexpect.spawn( command, timeout = timeout )
 
-      i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: '] )
+      i = child.expect( [pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, 'password: ', 'Password: '] )
       if i == 0: # Timeout        
           return S_OK( ( -1, child.before, 'SSH login failed' ) )
       elif i == 1: # SSH does not have the public key. Just accept it.
           child.sendline ( 'yes' )
-          child.expect ( 'password: ' )
-          i = child.expect( [pexpect.TIMEOUT, 'password: '] )
+          i = child.expect( [pexpect.TIMEOUT, 'password: ', 'Password: '] )
           if i == 0: # Timeout
             return S_OK( ( -1, child.before + child.after, 'SSH login failed' ) )
-          elif i == 1:
+          elif i in [1,2]:
             child.sendline( password )
             child.expect( pexpect.EOF )
             return S_OK( ( 0, child.before, '' ) )
@@ -220,7 +219,7 @@ shutil.rmtree( workingDirectory )
     result = ssh.scpCall( 10, submitFile, '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) ) )
     # submit submitFile to the batch system
     executablePath = '%s/%s' % ( self.executableArea, os.path.basename( submitFile ) )
-    cmd = "chdir %(execArea)s; chmod +x %(executable)s; %(executable)s 1>&2 > %(executable)s.out &" % \
+    cmd = "chmod +x %(executable)s; %(executable)s 1>&2 > %(executable)s.out &" % \
       {'numberOfJobs': numberOfJobs, 'executable': executablePath, 'execArea': self.executableArea}
 
     self.log.verbose( 'CE submission command: %s' % ( cmd ) )
@@ -232,7 +231,7 @@ shutil.rmtree( workingDirectory )
       self.log.debug( result )
       return S_ERROR( result['Value'] )
     else:
-      self.log.debug( 'Torque CE result OK' )
+      self.log.debug( 'SSH CE result OK' )
 
     batchIDList = result['Value'][1].strip().replace( '\r', '' ).split( '\n' )
 
