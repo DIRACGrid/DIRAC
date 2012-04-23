@@ -42,7 +42,7 @@ class SSInspectorAgent( AgentModule ):
 
     try:
       self.rsClient         = ResourceStatusClient()
-      self.sitesFreqs       = CS.getTypedDictRootedAt( 'CheckingFreqs/SitesFreqs' )
+      self.sitesFreqs       = CS.getTypedDictRootedAtOperations( 'CheckingFreqs/SitesFreqs' )
       self.sitesToBeChecked = Queue.Queue()
       self.siteNamesInCheck = []
 

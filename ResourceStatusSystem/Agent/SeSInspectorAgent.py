@@ -42,7 +42,7 @@ class SeSInspectorAgent( AgentModule ):
 
     try:
       self.rsClient      = ResourceStatusClient()
-      self.servicesFreqs = CS.getTypedDictRootedAt( 'CheckingFreqs/ServicesFreqs' )
+      self.servicesFreqs = CS.getTypedDictRootedAtOperations( 'CheckingFreqs/ServicesFreqs' )
       self.queue         = Queue.Queue()
 
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )

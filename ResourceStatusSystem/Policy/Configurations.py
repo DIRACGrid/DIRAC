@@ -12,7 +12,7 @@ __RCSID__ = '$Id: $'
 #pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
 
 def getPolicyParameters():
-  return CS.getTypedDictRootedAt( 'PolicyParameters' )
+  return CS.getTypedDictRootedAtOperations( 'PolicyParameters' )
 
 Policies = {
             
