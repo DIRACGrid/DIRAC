@@ -6,7 +6,7 @@ COMPONENT_NAME = 'TaskManager'
 
 from DIRAC                                                      import gConfig, S_OK, S_ERROR, gLogger
 
-from DIRAC.Core.Utilities.List                                  import sortList
+from DIRAC.Core.Utilities.List                                  import sortList, fromChar
 from DIRAC.Interfaces.API.Job                                   import Job
 
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
@@ -17,6 +17,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestCl
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
+from DIRAC.Core.Utilities.SiteSEMapping                         import getSitesForSE
 
 import re, time, types, os
 
@@ -257,6 +258,7 @@ class WorkflowTasks( TaskBase ):
       oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
       oJob._setParamValue( 'JOB_ID', str( taskNumber ).zfill( 8 ) )
       inputData = None
+      sites = []
       for paramName, paramValue in paramsDict.items():
         self.log.verbose( 'TransID: %s, TaskID: %s, ParamName: %s, ParamValue: %s' % ( transID, taskNumber,
                                                                                        paramName, paramValue ) )
@@ -268,9 +270,49 @@ class WorkflowTasks( TaskBase ):
           if paramValue:
             self.log.verbose( 'Setting allocated site to: %s' % ( paramValue ) )
             oJob.setDestination( paramValue )
+            sites = fromChar( paramValue )
         elif paramValue:
           self.log.verbose( 'Setting %s to %s' % ( paramName, paramValue ) )
           oJob._addJDLParameter( paramName, paramValue )
+
+      if 'TargetSE' in paramsDict:
+        seSites = None
+        seList = fromChar( paramsDict['TargetSE'] )
+        for se in seList:
+          res = getSitesForSE( se )
+          if res['OK']:
+            thisSESites = res['OK']['Value']
+            if seSites == None:
+              # If this is the first SE, initialize the vector
+              seSites = thisSESites
+            else:
+              # If it is not the first SE, keep only those that are common
+              for nSE in list( seSites ):
+                if nSE not in thisSESites:
+                  seSites.remove( nSE )
+          else:
+            self.log.warn( 'Could not get Sites associated to SE', res['Message'] )
+            seSites = []
+        # Now we need to make the AND with the sites, if defined
+        if seSites == None:
+          seSites = []
+        if sites:
+          # Need to get the AND
+          for nSE in list( seSites ):
+            if nSE not in sites:
+              seSites.remove( nSE )
+          if not seSites:
+            taskDict[taskNumber]['TaskObject'] = ''
+            continue
+
+        if not seSites:
+          self.log.warn( 'Could not get a list a Sites for provided TargetSE', ', '.join( seList ) )
+          taskDict[taskNumber]['TaskObject'] = ''
+          continue
+
+        sitesString = ', '.join( seSites )
+        self.log.verbose( 'Setting Site according to TargetSE', sitesString )
+        oJob.setDestination( sitesString )
 
       hospitalTrans = [int( x ) for x in Operations().getValue( "Hospital/Transformations", [] )]
       if int( transID ) in hospitalTrans:
