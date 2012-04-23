@@ -302,7 +302,7 @@ class ReleaseConfig:
     if urlcfg in self.__cfgCache:
       return S_OK( self.__cfgCache[ urlcfg ] )
     try:
-      cfgFile = urllib2.urlopen( urlcfg )
+      cfgFile = urllib2.urlopen( urlcfg, timeout = 60 )
     except:
       return S_ERROR( "Could not open %s" % urlcfg )
     try:
@@ -315,7 +315,7 @@ class ReleaseConfig:
       self.__cfgCache[ urlcfg ] = cfg
       return S_OK( cfg )
     try:
-      md5File = urllib2.urlopen( urlcfg[:-4] + ".md5" )
+      md5File = urllib2.urlopen( urlcfg[:-4] + ".md5", timeout = 60 )
       md5Hex = md5File.read().strip()
       md5File.close()
       if md5Hex != md5.md5( cfgData ).hexdigest():
@@ -770,7 +770,7 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
   if timeout:
     signal.signal( signal.SIGALRM, alarmTimeoutHandler )
     # set timeout alarm
-    signal.alarm( timeout )
+    signal.alarm( timeout + 5 )
   try:
     # if "http_proxy" in os.environ and os.environ['http_proxy']:
     #   proxyIP = os.environ['http_proxy']
@@ -778,7 +778,7 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     #   opener = urllib2.build_opener( proxy )
     #   #opener = urllib2.build_opener()
     #  urllib2.install_opener( opener )
-    remoteFD = urllib2.urlopen( url )
+    remoteFD = urllib2.urlopen( url, timeout = timeout )
     expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
     localFD = open( fileName, "wb" )
     receivedBytes = 0L
@@ -805,6 +805,8 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     if x.code == 404:
       logERROR( "%s does not exist" % url )
       return False
+  except urllib2.URLError:
+    logError( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
   except Exception, x:
     if x == 'Timeout':
       logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
@@ -1219,7 +1221,7 @@ def createPermanentDirLinks():
     except Exception, x:
       logERROR( str( x ) )
       return False
-    
+
   return True
 
 def createBashrc():
@@ -1276,7 +1278,7 @@ def createBashrc():
 def createCshrc():
   """ Create DIRAC environment setting script for the (t)csh shell
   """
-  
+
   proPath = cliParams.targetPath
   # Now create cshrc at basePath
   try:
@@ -1379,7 +1381,7 @@ if __name__ == "__main__":
   if not createBashrc():
     sys.exit( 1 )
   if not createCshrc():
-    sys.exit( 1 )  
+    sys.exit( 1 )
   runExternalsPostInstall()
   writeDefaultConfiguration()
   installExternalRequirements( cliParams.externalsType )

@@ -16,6 +16,7 @@ from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, 
 from DIRAC                                          import S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers       import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder    import getSystemInstance
 import types
@@ -30,6 +31,8 @@ class StalledJobAgent( AgentModule ):
       - finalize() - the graceful exit of the method, this one is usually used
                  for the agent restart
   """
+  jobDB = None
+  logDB = None
 
   jobDB = None
   logDB = None
@@ -272,6 +275,19 @@ class StalledJobAgent( AgentModule ):
 
     return result
 
+  def __getProcessingType( self, jobID ):
+    """ Get the Processing Type from the JDL, until it is promoted to a real Attribute
+    """
+    processingType = 'unknown'
+    result = self.jobDB.getJobJDL( jobID, original = True )
+    if not result['OK']:
+      return processingType
+    classAdJob = ClassAd( result['Value'] )
+    if classAdJob.lookupAttribute( 'ProcessingType' ):
+      processingType = classAdJob.getAttributeString( 'ProcessingType' )
+    return processingType
+
+
   #############################################################################
   def __sendAccounting( self, jobID ):
     """ Send WMS accounting data for the given job
@@ -297,6 +313,8 @@ class StalledJobAgent( AgentModule ):
     else:
       cpuNormalization = cpuNormalization['Value']
 
+    processingType = self.__getProcessingType( jobID )
+
     accountingReport.setStartTime( startTime )
     accountingReport.setEndTime( endTime )
     # execTime = toEpoch( endTime ) - toEpoch( startTime )
@@ -307,7 +325,7 @@ class StalledJobAgent( AgentModule ):
                'JobGroup' : jobDict['JobGroup'],
                'JobType' : jobDict['JobType'],
                'JobClass' : jobDict['JobSplitType'],
-               'ProcessingType' : 'unknown',
+               'ProcessingType' : processingType,
                'FinalMajorStatus' : 'Failed',
                'FinalMinorStatus' : 'Stalled',
                'CPUTime' : lastCPUTime,
