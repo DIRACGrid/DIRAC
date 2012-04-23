@@ -42,7 +42,7 @@ class StElInspectorAgent( AgentModule ):
 
     try:
       self.rsClient                    = ResourceStatusClient()
-      self.storageElementsFreqs        = CS.getTypedDictRootedAt( 'CheckingFreqs/StorageElementsFreqs' )
+      self.storageElementsFreqs        = CS.getTypedDictRootedAtOperations( 'CheckingFreqs/StorageElementsFreqs' )
       self.storageElementsToBeChecked  = Queue.Queue()
       self.storageElementsNamesInCheck = []
 

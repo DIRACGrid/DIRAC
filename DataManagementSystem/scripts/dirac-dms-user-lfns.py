@@ -75,15 +75,13 @@ if not res['OK']:
   DIRAC.exit( 2 )
 proxyInfo = res['Value']
 username = proxyInfo['username']
-
 vo = ''
 if 'group' in proxyInfo:
   vo = getVOForGroup( proxyInfo['group'] )
-if not vo:
-  gLogger.error( 'Could not determine VO' )
-  Script.showHelp()
-
 if not baseDir:
+  if not vo:
+    gLogger.error( 'Could not determine VO' )
+    Script.showHelp()
   baseDir = '/%s/user/%s/%s' % ( vo, username[0], username )
 
 gLogger.info( 'Will search for files in %s' % baseDir )

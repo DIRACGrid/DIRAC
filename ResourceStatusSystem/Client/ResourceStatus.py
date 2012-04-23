@@ -9,6 +9,7 @@ import datetime
 
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.CSAPI                 import CSAPI
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 __RCSID__  = '$Id: $'
@@ -25,6 +26,7 @@ class ResourceStatus( object ):
     Constructor, initializes the rssClient.
     '''
     self.rssClient = None
+    self.__opHelper = Operations()
     
   def getStorageElementStatus( self, elementName, statusType = None, default = None ):
     '''
@@ -132,7 +134,8 @@ class ResourceStatus( object ):
     if not isinstance( elementName, list ):
       elementName = [ elementName ]
 
-    statuses = gConfig.getOptionsDict( '/Operations/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
+    statuses = self.__opHelper.getOptionsDict( 'RSSConfiguration/GeneralConfig/Resources/StorageElement' )
+    #statuses = gConfig.getOptionsDict( '/Operations/RSSConfiguration/GeneralConfig/Resources/StorageElement' )
     
     if statuses[ 'OK' ]:
       statuses = statuses[ 'Value' ][ 'StatusType' ]
@@ -218,7 +221,8 @@ class ResourceStatus( object ):
       we use RSS, if not, we use CS.
     '''
   
-    res = gConfig.getValue( 'Operations/RSSConfiguration/Status', 'InActive' )
+    res = self.__opHelper.getValue( 'RSSConfiguration/Status', 'InActive' )
+    #res = gConfig.getValue( 'Operations/RSSConfiguration/Status', 'InActive' )
     if res == 'Active':
     
       if self.rssClient is None:
