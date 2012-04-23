@@ -45,17 +45,11 @@ class ResourceManagementClient:
   
   def __init__( self , serviceIn = None ):
     '''
-    The client tries to connect to :class:ResourceManagementDB by default. If it 
-    fails, then tries to connect to the Service :class:ResourceManagementHandler.
+    The client tries to connect to :class:ResourceManagementHandler by default.
+    A database connection can be provided through serviceIn too.
     '''
-    if not serviceIn:
-      try:
-        self.gate = ResourceManagementDB()
-      except SystemExit:
-        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )
-      except ImportError:
-        # Pilots will connect here, as MySQLdb is not installed for them        
-        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
+    if not serviceIn:  
+      self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
     else:
       self.gate = serviceIn    
 
