@@ -7,6 +7,7 @@
 
     These are the coded methods:
 
+
     __init__( host, user, passwd, name, [maxConnsInQueue=10] )
 
     Initializes the Queue and tries to connect to the DB server,
@@ -27,7 +28,7 @@
 
     _connect()
 
-    Attemps connection to DB and sets the _connected flag to True upon success.
+    Attempts connection to DB and sets the _connected flag to True upon success.
     Returns S_OK or S_ERROR.
 
 
@@ -50,21 +51,11 @@
     is used and is not  in the Queue
     Returns S_OK with number of updated registers in Value or S_ERROR upon failure.
 
+
     _createTables( tableDict )
 
     Create a new Table in the DB
 
-
-    _getFields(outFields, tableName, inFields = [], inValues = [] )
-
-    Select "outFields" from "tableName" with conditions lInFields = lInValues
-    More than 1 record can match the condition return S_OK( tuple(Field,Value) )
-    String type values in inValues are properly escaped.
-
-    _insert( tableName, inFields = [], inValues = [] )
-
-    Insert a new row in "tableName" using the given Fields and Values
-    String type values in inValues are properly escaped.
 
     _getConnection()
 
@@ -72,6 +63,91 @@
     Returns S_OK with connection in Value or S_ERROR
     the calling method is responsible for closing this connection once it is no
     longer needed.
+
+
+
+
+    Some high level methods have been added to avoid the need to write SQL 
+    statement in most common cases. They should be used instead of low level
+    _insert, _update methods when ever possible.
+
+    buildCondition( self, condDict = None, older = None, newer = None,
+                      timeStamp = None, orderAttribute = None, limit = False ):
+
+      Build SQL condition statement from provided condDict and other extra check on
+      a specified time stamp.
+      The conditions dictionary specifies for each attribute one or a List of possible
+      values
+      For compatibility with current usage it uses Exceptions to exit in case of 
+      invalid arguments
+
+
+    insertFields( self, tableName, inFields = None, inValues = None, conn = None ):
+
+      Insert a new row in "tableName" assigning the values "inValues" to the
+      fields "inFields".
+      String type values will be appropriately escaped.
+
+
+    updateFields( self, tableName, updateFields = None, updateValues = None,
+                  condDict = None,
+                  limit = False, conn = None,
+                  older = None, newer = None,
+                  timeStamp = None, orderAttribute = None ):
+
+      Update "updateFields" from "tableName" with "updateValues".
+      conditions lInFields = lInValues
+      N records can match the condition
+      return S_OK( tuple(Field,Value) )
+      if outFields == None all fields in "tableName" are returned
+      if inFields and inValues are None, no condition is imposed
+      if limit is not False, the given limit is set
+      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+
+
+    deleteEntries( self, tableName,
+                   condDict = None,
+                   limit = False, conn = None,
+                   older = None, newer = None,
+                   timeStamp = None, orderAttribute = None ):
+
+      Delete rows from "tableName" with
+      conditions lInFields = lInValues
+      N records can match the condition
+      if inFields and inValues are None, no condition is imposed
+      if limit is not False, the given limit is set
+      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+
+
+    getFields( self, tableName, outFields = None,
+               condDict = None,
+               limit = False, conn = None,
+               older = None, newer = None,
+               timeStamp = None, orderAttribute = None ):
+
+      Select "outFields" from "tableName" with
+      conditions lInFields = lInValues
+      N records can match the condition
+      return S_OK( tuple(Field,Value) )
+      if outFields == None all fields in "tableName" are returned
+      if limit is not False, the given limit is set
+      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+
+      for compatibility with other methods condDict keyed argument is added
+
+
+    getCounters( self, table, attrList, condDict = None, older = None, 
+                 newer = None, timeStamp = None, connection = False ):
+
+      Count the number of records on each distinct combination of AttrList, selected
+      with condition defined by condDict and time stamps
+
+
+    getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
+                                newer = None, timeStamp = None, connection = False ):
+
+      Get distinct values of a table attribute under specified conditions
+
 
 """
 
@@ -92,10 +168,12 @@ import time
 import threading
 from types import StringTypes, DictType
 
-maxConnectRetry = 10
+MAXCONNECTRETRY = 10
 
 def _checkQueueSize( maxQueueSize ):
-
+  """
+    Helper to check maxQueueSize
+  """
   if maxQueueSize <= 0:
     raise Exception( 'MySQL.__init__: maxQueueSize must positive' )
   try:
@@ -104,14 +182,39 @@ def _checkQueueSize( maxQueueSize ):
     raise Exception( 'MySQL.__init__: wrong type for maxQueueSize' )
 
 def _checkFields( inFields, inValues ):
+  """
+    Helper to check match between inFields and inValues lengths
+  """
 
   if inFields == None and inValues == None:
     return S_OK()
 
-  if len( inFields ) != len( inValues ):
-    return S_ERROR( 'Missmatch between inFields and inValues.' )
+  try:
+    assert len( inFields ) == len( inValues )
+  except:
+    return S_ERROR( 'Mismatch between inFields and inValues.' )
+
   return S_OK()
 
+def _quotedList( fieldList = None ):
+  """
+    Quote a list of MySQL Field Names with "`"
+    Return a comma separated list of quoted Field Names
+    
+    To be use for Table and Field Names
+  """
+  if fieldList == None:
+    return None
+  quotedFields = []
+  try:
+    for field in fieldList:
+      quotedFields.append( '`%s`' % field.replace( '`', '' ) )
+  except Exception:
+    return None
+  if not quotedFields:
+    return None
+
+  return ', '.join( quotedFields )
 
 
 
@@ -121,7 +224,7 @@ class MySQL:
   """
   __initialized = False
 
-  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3):
+  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3 ):
     """
     set MySQL connection parameters and try to connect
     """
@@ -174,7 +277,7 @@ class MySQL:
 
   def _except( self, methodName, x, err ):
     """
-    print MySQL error or exeption
+    print MySQL error or exception
     return S_ERROR with Exception
     """
 
@@ -192,11 +295,15 @@ class MySQL:
   def __escapeString( self, myString, connection ):
     """
     To be used for escaping any MySQL string before passing it to the DB
-    this should prevent passing non-MySQL acepted characters to the DB
+    this should prevent passing non-MySQL accepted characters to the DB
     It also includes quotation marks " around the given string
     """
 
+    specialValues = { 'UTC_TIMESTAMP()': 'UTC_TIMESTAMP()'}
+
     try:
+      if myString in specialValues:
+        return S_OK( specialValues[myString] )
       escape_string = connection.escape_string( str( myString ) )
       self.logger.debug( '__scape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
@@ -205,6 +312,10 @@ class MySQL:
       return self._except( '__escape_string', x, 'Could not escape string' )
 
   def __checkTable( self, tableName, force = False ):
+
+    table = _quotedList( [tableName] )
+    if not table:
+      return S_ERROR( 'Invalid tableName argument' )
 
     cmd = 'SHOW TABLES'
     retDict = self._query( cmd )
@@ -215,7 +326,7 @@ class MySQL:
         # the requested exist and table creation is not force, return with error
         return S_ERROR( 'The requested table already exist' )
       else:
-        cmd = 'DROP TABLE `%s`' % tableName
+        cmd = 'DROP TABLE %s' % table
         retDict = self._update( cmd )
         if not retDict['OK']:
           return retDict
@@ -224,6 +335,9 @@ class MySQL:
 
 
   def _escapeString( self, myString, conn = None ):
+    """
+      Wrapper around the internal method __escapeString
+    """
     self.logger.debug( '_scapeString:', '"%s"' % myString )
 
     retDict = self.__getConnection( conn )
@@ -278,11 +392,11 @@ class MySQL:
       return S_OK()
 
     self.logger.debug( '_connect: Attempting to access DB',
-                        '[%s@%s] by user %s/%s.' %
-                        ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
+                       '[%s@%s] by user %s/%s.' %
+                       ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
     try:
       self.__newConnection()
-      self.logger.debug( '_connect: Connected.' )
+      self.logger.verbose( '_connect: Connected.' )
       self._connected = True
       return S_OK()
     except Exception, x:
@@ -296,7 +410,7 @@ class MySQL:
     it returns an empty tuple if no matching rows are found
     return S_ERROR upon error
     """
-    self.logger.debug( '_query:', cmd )
+    self.logger.verbose( '_query:', cmd )
 
     if conn:
       connection = conn
@@ -314,15 +428,15 @@ class MySQL:
         res = ()
 
       # Log the result limiting it to just 10 records
-      if len( res ) < 10:
-        self.logger.debug( '_query:', res )
+      if len( res ) <= 10:
+        self.logger.verbose( '_query: returns', res )
       else:
-        self.logger.debug( '_query: Total %d records returned' % len( res ) )
-        self.logger.debug( '_query: %s ...' % str( res[:10] ) )
+        self.logger.verbose( '_query: Total %d records returned' % len( res ) )
+        self.logger.verbose( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
     except Exception , x:
-      self.logger.debug( '_query:', cmd )
+      self.logger.warn( '_query:', cmd )
       retDict = self._except( '_query', x, 'Execution failed.' )
 
     try:
@@ -338,7 +452,7 @@ class MySQL:
         return S_OK with number of updated registers upon success
         return S_ERROR upon error
     """
-    self.logger.debug( '_update:', cmd )
+    self.logger.verbose( '_update:', cmd )
 
     retDict = self.__getConnection( conn = conn )
     if not retDict['OK']:
@@ -349,12 +463,12 @@ class MySQL:
       cursor = connection.cursor()
       res = cursor.execute( cmd )
       connection.commit()
-      self.logger.debug( '_update: %s.' % res )
+      self.logger.verbose( '_update:', res )
       retDict = S_OK( res )
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
     except Exception, x:
-      self.logger.debug( '_update: "%s".' % cmd )
+      self.logger.warn( '_update:', cmd )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:
@@ -518,94 +632,47 @@ class MySQL:
 
     return S_OK()
 
-  def _insert( self, tableName, inFields = None, inValues = None, conn = None ):
-    """
-    Insert a new row in "tableName" assigning the values "inValues" to the
-    fields "inFields".
-    String type values will be appropriately escaped.
-    """
-    quotedInFields = []
-    if inFields != None:
-      for field in inFields:
-        quotedInFields.append( '`%s`' % field )
-    inFieldString = ', '.join( quotedInFields )
-
-    self.logger.debug( '_insert:', 'inserting ( %s ) into table `%s`'
-                          % ( inFieldString, tableName ) )
-
-    retDict = _checkFields( inFields, inValues )
-    if not retDict['OK']:
-      return retDict
-
-    retDict = self._escapeValues( inValues )
-    if not retDict['OK']:
-      return retDict
-
-    inValueString = ', '.join( retDict['Value'] )
-
-    return self._update( 'INSERT INTO `%s` ( %s ) VALUES ( %s )' %
-                         ( tableName, inFieldString, inValueString ), conn )
-
-
   def _getFields( self, tableName, outFields = None,
                   inFields = None, inValues = None,
-                  limit = 0, conn = None ):
+                  limit = False, conn = None,
+                  older = None, newer = None,
+                  timeStamp = None, orderAttribute = None ):
     """
-    Select "outFields" from "tableName" with
-    conditions lInFields = lInValues
-    N records can match the condition
-    return S_OK( tuple(Field,Value) )
-    if outFields == None all fields in "tableName" are returned
-    if inFields and inValues are None, no condition is imposed
-    if limit is not 0, the given limit is set
-    Strings inValues are properly escaped using the _escape_string method.
+      Wrapper to the new method for backward compatibility
     """
-    self.logger.debug( '_getFields:', 'selecting fields %s from table `%s`.' %
-                          ( str( outFields ), tableName ) )
-
-    quotedOutFields = []
-    if outFields != None:
-      for field in outFields:
-        quotedOutFields.append( '`%s`' % field )
-
-    outFieldString = ', '.join( quotedOutFields )
-    if not outFieldString:
-      outFieldString = '*'
-
+    self.logger.warn( '_getFields:', 'deprecation warning, use getFields methods instead of _getFields.' )
     retDict = _checkFields( inFields, inValues )
     if not retDict['OK']:
-      self.logger.debug( '_getFields: %s' % retDict['Message'] )
+      self.logger.warn( '_getFields:', retDict['Message'] )
       return retDict
 
-    retDict = self._escapeValues( inValues )
-    if not retDict['OK']:
-      return retDict
-    escapeInValues = retDict['Value']
+    condDict = {}
+    if inFields != None:
+      try:
+        condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
+      except Exception, x:
+        return S_ERROR( x )
 
-    condition = ''
+    return self.getFields( tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute )
 
-    for i in range( len( inFields ) ):
-      field = inFields[i]
-      value = escapeInValues[i]
-      if condition:
-        condition += ' AND'
-      condition += ' `%s`=%s' % ( field, value )
-
-    if condition:
-      condition = 'WHERE %s ' % condition
-
-    if limit:
-      condition += 'LIMIT %s' % limit
-
-    return self._query( 'SELECT %s FROM `%s` %s' %
-                        ( outFieldString, tableName, condition ), conn )
+  def _insert( self, tableName, inFields = None, inValues = None, conn = None ):
+    """
+      Wrapper to the new method for backward compatibility
+    """
+    self.logger.warn( '_insert:', 'deprecation warning, use insertFields methods instead of _insert.' )
+    return self.insertFields( tableName, inFields, inValues, conn )
 
 
   def _to_value( self, param ):
+    """
+      Convert to string
+    """
     return str( param[0] )
 
 
   def _to_string( self, param ):
+    """
+    """
     return param[0].tostring()
 
 
@@ -658,7 +725,7 @@ class MySQL:
     Return a new connection to the DB,
     if conn is provided then just return it.
     then try the Queue, if it is empty add a newConnection to the Queue and retry
-    it will retry maxConnectRetry to open a new connection and will return
+    it will retry MAXCONNECTRETRY to open a new connection and will return
     an error if it fails.
     """
     self.logger.debug( '__getConnection:' )
@@ -683,8 +750,8 @@ class MySQL:
       self.__connectionSemaphore.release()
       self.logger.debug( '__getConnection: Empty Queue' )
       try:
-        if trial == min( 10, maxConnectRetry ):
-          return S_ERROR( 'Could not get a connection after %s retries.' % maxConnectRetry )
+        if trial == min( 10, MAXCONNECTRETRY ):
+          return S_ERROR( 'Could not get a connection after %s retries.' % MAXCONNECTRETRY )
         try:
           self.__newConnection()
           return self.__getConnection()
@@ -698,4 +765,499 @@ class MySQL:
     except Exception, x:
       return self._except( '__getConnection:', x, 'Failed to get connection from Queue' )
 
+########################################################################################
+#
+#  Utility functions
+#
+########################################################################################
+  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False ):
+    """ 
+      Count the number of records on each distinct combination of AttrList, selected
+      with condition defined by condDict and time stamps
+    """
+    table = _quotedList( [table] )
+    if not table:
+      error = 'Invalid table argument'
+      self.logger.debug( 'getCounters:', error )
+      return S_ERROR( error )
 
+    attrNames = _quotedList( attrList )
+    if attrNames == None:
+      error = 'Invalid updateFields argument'
+      self.logger.debug( 'getCounters:', error )
+      return S_ERROR( error )
+
+    try:
+      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp )
+    except Exception, x:
+      return S_ERROR( x )
+
+    cmd = 'SELECT %s, COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
+    res = self._query( cmd , connection )
+    if not res['OK']:
+      return res
+
+    resultList = []
+    for raw in res['Value']:
+      attrDict = {}
+      for i in range( len( attrList ) ):
+        attrDict[attrList[i]] = raw[i]
+      item = ( attrDict, raw[len( attrList )] )
+      resultList.append( item )
+    return S_OK( resultList )
+
+#########################################################################################
+  def getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
+                                  newer = None, timeStamp = None, connection = False ):
+    """
+      Get distinct values of a table attribute under specified conditions
+    """
+    table = _quotedList( [table] )
+    if not table:
+      error = 'Invalid table argument'
+      self.logger.debug( 'getDistinctAttributeValues:', error )
+      return S_ERROR( error )
+
+    attributeName = _quotedList( [attribute] )
+    if not attributeName:
+      error = 'Invalid attribute argument'
+      self.logger.debug( 'getDistinctAttributeValues:', error )
+      return S_ERROR( error )
+
+    try:
+      cond = self.buildCondition( condDict = condDict, older = older, newer = newer, timeStamp = timeStamp )
+    except Exception, x:
+      return S_ERROR( x )
+
+    cmd = 'SELECT  DISTINCT( %s ) FROM %s %s ORDER BY %s' % ( attributeName, table, cond, attributeName )
+    res = self._query( cmd, connection )
+    if not res['OK']:
+      return res
+    attr_list = [ x[0] for x in res['Value'] ]
+    return S_OK( attr_list )
+
+#############################################################################
+  def buildCondition( self, condDict = None, older = None, newer = None,
+                      timeStamp = None, orderAttribute = None, limit = False ):
+    """ Build SQL condition statement from provided condDict and other extra check on
+        a specified time stamp.
+        The conditions dictionary specifies for each attribute one or a List of possible
+        values
+        For compatibility with current usage it uses Exceptions to exit in case of 
+        invalid arguments
+    """
+    condition = ''
+    conjunction = "WHERE"
+
+    if condDict != None:
+      for attrName, attrValue in condDict.items():
+        attrName = _quotedList( [attrName] )
+        if not attrName:
+          error = 'Invalid condDict argument'
+          self.logger.warn( 'buildCondition:', error )
+          raise Exception( error )
+        if type( attrValue ) == types.ListType:
+          retDict = self._escapeValues( attrValue )
+          if not retDict['OK']:
+            self.logger.warn( 'buildCondition:', retDict['Message'] )
+            raise Exception( retDict['Message'] )
+          else:
+            escapeInValues = retDict['Value']
+            multiValue = ', '.join( escapeInValues )
+            condition = ' %s %s %s IN ( %s )' % ( condition,
+                                                    conjunction,
+                                                    attrName,
+                                                    multiValue )
+            conjunction = "AND"
+
+        else:
+          retDict = self._escapeValues( [ attrValue ] )
+          if not retDict['OK']:
+            self.logger.warn( 'buildCondition:', retDict['Message'] )
+            raise Exception( retDict['Message'] )
+          else:
+            escapeInValue = retDict['Value'][0]
+            condition = ' %s %s %s = %s' % ( condition,
+                                               conjunction,
+                                               attrName,
+                                               escapeInValue )
+            conjunction = "AND"
+
+    if timeStamp:
+      timeStamp = _quotedList( [timeStamp] )
+      if not timeStamp:
+        error = 'Invalid timeStamp argument'
+        self.logger.warn( 'buildCondition:', error )
+        raise Exception( error )
+      if newer:
+        retDict = self._escapeValues( [ newer ] )
+        if not retDict['OK']:
+          self.logger.warn( 'buildCondition:', retDict['Message'] )
+          raise Exception( retDict['Message'] )
+        else:
+          escapeInValue = retDict['Value'][0]
+          condition = ' %s %s %s >= %s' % ( condition,
+                                              conjunction,
+                                              timeStamp,
+                                              escapeInValue )
+          conjunction = "AND"
+      if older:
+        retDict = self._escapeValues( [ older ] )
+        if not retDict['OK']:
+          self.logger.warn( 'buildCondition:', retDict['Message'] )
+          raise Exception( retDict['Message'] )
+        else:
+          escapeInValue = retDict['Value'][0]
+          condition = ' %s %s %s < %s' % ( condition,
+                                             conjunction,
+                                             timeStamp,
+                                             escapeInValue )
+
+    orderList = []
+    orderAttrList = orderAttribute
+    if type( orderAttrList ) != types.ListType:
+      orderAttrList = [ orderAttribute ]
+    for orderAttr in orderAttrList:
+      if orderAttr == None:
+        continue
+      if type( orderAttr ) not in types.StringTypes:
+        error = 'Invalid orderAttribute argument'
+        self.logger.warn( 'buildCondition:', error )
+        raise Exception( error )
+
+      orderField = _quotedList( orderAttr.split( ':' )[:1] )
+      if not orderField:
+        error = 'Invalid orderAttribute argument'
+        self.logger.warn( 'buildCondition:', error )
+        raise Exception( error )
+
+      if len( orderAttr.split( ':' ) ) == 2:
+        orderType = orderAttr.split( ':' )[1].upper()
+        if orderType in [ 'ASC', 'DESC']:
+          orderList.append( '%s %s' % ( orderField, orderType ) )
+        else:
+          error = 'Invalid orderAttribute argument'
+          self.logger.warn( 'buildCondition:', error )
+          raise Exception( error )
+      else:
+        orderList.append( orderAttr )
+    if orderList:
+      condition = "%s ORDER BY %s" % ( condition, ', '.join( orderList ) )
+
+    if limit:
+      condition = "%s LIMIT %d" % ( condition, limit )
+
+    return condition
+
+#############################################################################
+  def getFields( self, tableName, outFields = None,
+                 condDict = None,
+                 limit = False, conn = None,
+                 older = None, newer = None,
+                 timeStamp = None, orderAttribute = None ):
+    """
+      Select "outFields" from "tableName" with condDict
+      N records can match the condition
+      return S_OK( tuple(Field,Value) )
+      if outFields == None all fields in "tableName" are returned
+      if inFields and inValues are None, no condition is imposed
+      if limit is not False, the given limit is set
+      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+    """
+    table = _quotedList( [tableName] )
+    if not table:
+      error = 'Invalid tableName argument'
+      self.logger.warn( 'getFields:', error )
+      return S_ERROR( error )
+
+    quotedOutFields = '*'
+    if outFields:
+      quotedOutFields = _quotedList( outFields )
+      if quotedOutFields == None:
+        error = 'Invalid outFields arguments'
+        self.logger.warn( 'getFields:', error )
+        return S_ERROR( error )
+
+    self.logger.verbose( 'getFields:', 'selecting fields %s from table %s.' %
+                          ( quotedOutFields, table ) )
+
+    if condDict == None:
+      condDict = {}
+
+    try:
+      condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
+                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
+    except Exception, x:
+      return S_ERROR( x )
+
+    return self._query( 'SELECT %s FROM %s %s' %
+                        ( quotedOutFields, table, condition ), conn )
+
+#############################################################################
+  def deleteEntries( self, tableName,
+                     condDict = None,
+                     limit = False, conn = None,
+                     older = None, newer = None,
+                     timeStamp = None, orderAttribute = None ):
+    """
+      Delete rows from "tableName" with
+      conditions lInFields = lInValues
+      N records can match the condition
+      if inFields and inValues are None, no condition is imposed
+      if limit is not False, the given limit is set
+      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+    """
+    table = _quotedList( [tableName] )
+    if not table:
+      error = 'Invalid tableName argument'
+      self.logger.warn( 'deleteEntries:', error )
+      return S_ERROR( error )
+
+    self.logger.verbose( 'deleteEntries:', 'deleting rows from table %s.' % table )
+
+    try:
+      condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
+                                       timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
+    except Exception, x:
+      return S_ERROR( x )
+
+    return self._update( 'DELETE FROM %s %s' % ( table, condition ), conn )
+
+#############################################################################
+  def updateFields( self, tableName, updateFields = None, updateValues = None,
+                    condDict = None,
+                    limit = False, conn = None,
+                    older = None, newer = None,
+                    timeStamp = None, orderAttribute = None ):
+    """
+      Update "updateFields" from "tableName" with "updateValues".
+      conditions lInFields = lInValues
+      N records can match the condition
+      return S_OK( tuple(Field,Value) )
+      if outFields == None all fields in "tableName" are returned
+      if inFields and inValues are None, no condition is imposed
+      if limit is not False, the given limit is set
+      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+    """
+    if not updateFields:
+      return S_OK( 0 )
+
+    table = _quotedList( [tableName] )
+    if not table:
+      error = 'Invalid tableName argument'
+      self.logger.warn( 'updateFields:', error )
+      return S_ERROR( error )
+
+    retDict = _checkFields( updateFields, updateValues )
+    if not retDict['OK']:
+      error = 'Mismatch between updateFields and updateValues.'
+      self.logger.warn( 'updateFields:', error )
+      return S_ERROR( error )
+
+    updateValues = self._escapeValues( updateValues )
+    if not updateValues['OK']:
+      self.logger.warn( 'updateFields:', updateValues['Message'] )
+      return updateValues
+    updateValues = updateValues['Value']
+
+    self.logger.verbose( 'updateFields:', 'updating fields %s from table %s.' %
+                          ( ', '.join( updateFields ), table ) )
+
+    try:
+      condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
+                        timeStamp = timeStamp, orderAttribute = orderAttribute, limit = limit )
+    except Exception, x:
+      return S_ERROR( x )
+
+    updateString = ','.join( ['%s = %s' % ( _quotedList( [updateFields[k]] ),
+                                            updateValues[k] ) for k in range( len( updateFields ) ) ] )
+
+    return self._update( 'UPDATE %s SET %s %s' %
+                         ( table, updateString, condition ), conn )
+
+#############################################################################
+  def insertFields( self, tableName, inFields = None, inValues = None, conn = None ):
+    """
+      Insert a new row in "tableName" assigning the values "inValues" to the
+      fields "inFields".
+      String type values will be appropriately escaped.
+    """
+    table = _quotedList( [tableName] )
+    if not table:
+      error = 'Invalid tableName argument'
+      self.logger.warn( 'insertFields:', error )
+      return S_ERROR( error )
+
+    retDict = _checkFields( inFields, inValues )
+    if not retDict['OK']:
+      self.logger.warn( 'insertFields:', retDict['Message'] )
+      return retDict
+
+    inFieldString = _quotedList( inFields )
+    if inFieldString == None:
+      error = 'Invalid inFields arguments'
+      self.logger.warn( 'insertFields:', error )
+      return S_ERROR( error )
+    inFieldString = '(  %s )' % inFieldString
+
+    retDict = self._escapeValues( inValues )
+    if not retDict['OK']:
+      self.logger.warn( 'insertFields:', retDict['Message'] )
+      return retDict
+    inValueString = ', '.join( retDict['Value'] )
+
+    self.logger.verbose( 'insertFields:', 'inserting %s into table %s'
+                          % ( inFieldString, table ) )
+
+    return self._update( 'INSERT INTO %s %s VALUES ( %s )' %
+                         ( table, inFieldString, inValueString ), conn )
+
+#####################################################################################
+#
+#   This is a test code for this class, it requires access to a MySQL DB
+#
+if __name__ == '__main__':
+
+  from DIRAC.Core.Base.Script import parseCommandLine
+  parseCommandLine()
+  gLogger.setLevel( 'VERBOSE' )
+
+  gLogger.info( 'Testing MySQL class...' )
+
+  HOST = 'localhost'
+  USER = 'Dirac'
+  PWD = 'Dirac'
+  DB = 'AccountingDB'
+
+  TESTDB = MySQL( HOST, USER, PWD, DB )
+  assert TESTDB._connect()['OK']
+
+  TESTDICT = { 'TestTable' : { 'Fields': { 'ID'      : "INTEGER UNIQUE NOT NULL AUTO_INCREMENT",
+                                           'Name'    : "VARCHAR(256) NOT NULL DEFAULT 'Yo'",
+                                           'Surname' : "VARCHAR(256) NOT NULL DEFAULT 'Tu'",
+                                           'Count'   : "INTEGER NOT NULL DEFAULT 0",
+                                           'Time'    : "DATETIME",
+                                         },
+                                'PrimaryKey': 'ID'
+                             }
+              }
+
+  NAME = 'TestTable'
+  FIELDS = [ 'Name', 'Surname' ]
+  NEWVALUES = [ 'Name2', 'Surn2' ]
+  SOMEFIELDS = [ 'Name', 'Surname', 'Count' ]
+  ALLFIELDS = [ 'ID', 'Name', 'Surname', 'Count', 'Time' ]
+  ALLVALUES = [ 1, 'Name1', 'Surn1', 1, 'UTC_TIMESTAMP()' ]
+  COND0 = {}
+  COND10 = {'Count': range( 10 )}
+
+  try:
+    RESULT = TESTDB._createTables( TESTDICT, force = True )
+    assert RESULT['OK']
+    print 'Table Created'
+
+    RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == []
+
+    RESULT = TESTDB.getDistinctAttributeValues( NAME, FIELDS[0], COND0 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == []
+
+    RESULT = TESTDB.getFields( NAME, FIELDS )
+    assert RESULT['OK']
+    assert RESULT['Value'] == ()
+
+    print 'Inserting'
+
+    for J in range( 100 ):
+      RESULT = TESTDB.insertFields( NAME, SOMEFIELDS, ['Name1', 'Surn1', J] )
+      assert RESULT['OK']
+      assert RESULT['Value'] == 1
+      assert RESULT['lastRowId'] == J + 1
+
+    print 'Querying'
+
+    RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == [( {'Surname': 'Surn1', 'Name': 'Name1'}, 100L )]
+
+    RESULT = TESTDB.getDistinctAttributeValues( NAME, FIELDS[0], COND0 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == ['Name1']
+
+    RESULT = TESTDB.getFields( NAME, FIELDS )
+    assert RESULT['OK']
+    assert len( RESULT['Value'] ) == 100
+
+    RESULT = TESTDB.getFields( NAME, SOMEFIELDS, COND10 )
+    assert RESULT['OK']
+    assert len( RESULT['Value'] ) == 10
+
+    RESULT = TESTDB.getFields( NAME, limit = 1 )
+    assert RESULT['OK']
+    assert len( RESULT['Value'] ) == 1
+
+    RESULT = TESTDB.getFields( NAME, ['Count'], orderAttribute = 'Count:DESC', limit = 1 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == ( ( 99, ), )
+
+    RESULT = TESTDB.getFields( NAME, ['Count'], orderAttribute = 'Count:ASC', limit = 1 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == ( ( 0, ), )
+
+    RESULT = TESTDB.getCounters( NAME, FIELDS, COND10 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == [( {'Surname': 'Surn1', 'Name': 'Name1'}, 10L )]
+
+    RESULT = TESTDB._getFields( NAME, FIELDS, COND10.keys(), COND10.values() )
+    assert RESULT['OK']
+    assert len( RESULT['Value'] ) == 10
+
+    RESULT = TESTDB.updateFields( NAME, FIELDS, NEWVALUES, COND10 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == 10
+
+    RESULT = TESTDB.updateFields( NAME, FIELDS, NEWVALUES, COND10 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == 0
+
+    print 'Removing'
+
+    RESULT = TESTDB.deleteEntries( NAME, COND10 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == 10
+
+    RESULT = TESTDB.deleteEntries( NAME )
+    assert RESULT['OK']
+    assert RESULT['Value'] == 90
+
+    RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
+    assert RESULT['OK']
+    assert RESULT['Value'] == []
+
+    RESULT = TESTDB.insertFields( NAME, inFields = ALLFIELDS, inValues = ALLVALUES )
+    assert RESULT['OK']
+    assert RESULT['Value'] == 1
+
+    time.sleep( 2 )
+    RESULT = TESTDB.getFields( NAME, older = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
+    assert RESULT['OK']
+    assert len( RESULT['Value'] ) == 1
+
+    RESULT = TESTDB.getFields( NAME, newer = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
+    assert RESULT['OK']
+    assert len( RESULT['Value'] ) == 0
+
+    RESULT = TESTDB.deleteEntries( NAME )
+    assert RESULT['OK']
+    assert RESULT['Value'] == 1
+
+    print 'OK'
+
+  except AssertionError:
+    print 'ERROR ',
+    if not RESULT['OK']:
+      print RESULT['Message']
+    else:
+      print RESULT
