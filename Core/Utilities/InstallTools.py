@@ -558,10 +558,13 @@ def getComponentCfg( componentType, system, component, compInstance, extensions 
   sectionName = 'Services'
   if componentType == 'agent':
     sectionName = 'Agents'
+  if componentType == 'executor':
+    sectionName = 'Executors'
 
   extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
 
-  compCfg = None
+  compCfg = CFG()
+
   for ext in extensionsDIRAC + ['DIRAC']:
     cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
     if os.path.exists( cfgTemplatePath ):
@@ -569,24 +572,18 @@ def getComponentCfg( componentType, system, component, compInstance, extensions 
       # Look up the component in this template
       loadCfg = CFG()
       loadCfg.loadFromFile( cfgTemplatePath )
+      compCfg = loadCfg.mergeWith( compCfg )
 
-      try:
-        compCfg = loadCfg[sectionName][component]
-        # section found
-        break
-      except Exception:
-        error = 'Can not find %s in template' % cfgPath( sectionName, component )
-        gLogger.error( error )
-        if exitOnError:
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
 
-  if not compCfg:
-    error = 'Configuration template not found'
+  compPath = cfgPath( sectionName, component )
+  if not compCfg.isSection( compPath ):
+    error = 'Can not find %s in template' % compPath
     gLogger.error( error )
     if exitOnError:
       DIRAC.exit( -1 )
     return S_ERROR( error )
+
+  compCfg = compCfg[sectionName][component]
 
   # Delete Dependencies section if any
   compCfg.deleteKey( 'Dependencies' )
@@ -977,12 +974,12 @@ def runsvctrlComponent( system, component, mode ):
 
   startCompDirs = glob.glob( os.path.join( startDir, '%s_%s' % ( system, component ) ) )
   # Make sure that the Configuration server restarts first and the SystemAdmin restarts last
-  tmpList = list(startCompDirs)
+  tmpList = list( startCompDirs )
   for comp in tmpList:
     if "Framework_SystemAdministrator" in comp:
-      startCompDirs.append(startCompDirs.pop(startCompDirs.index(comp)))
+      startCompDirs.append( startCompDirs.pop( startCompDirs.index( comp ) ) )
     if "Configuration_Server" in comp:
-      startCompDirs.insert(0,startCompDirs.pop(startCompDirs.index(comp)))
+      startCompDirs.insert( 0, startCompDirs.pop( startCompDirs.index( comp ) ) )
   startCompList = [ [k] for k in startCompDirs]
   for startComp in startCompList:
     result = execCommand( 0, ['runsvctrl', mode] + startComp )
