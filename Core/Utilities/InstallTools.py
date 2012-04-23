@@ -566,7 +566,6 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
     componentModule = specialOptions['Module']
 
   compCfg = CFG()
-
   for ext in extensionsDIRAC + ['DIRAC']:
     cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
     if os.path.exists( cfgTemplatePath ):
