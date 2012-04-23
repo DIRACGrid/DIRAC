@@ -82,7 +82,7 @@ class CacheCleanerAgent( AgentModule ):
       kwargs = { 'meta' : {
                    'value'  : 'EndDate',
                    'columns': 'Opt_ID',
-                   'minor'  : { 'Result' : aDayAgo }
+                   'minor'  : { 'Result' : str( aDayAgo ) }
                   } 
                 }
       opt_IDs = self.rmClient.getClientCache( **kwargs )              
