@@ -9,7 +9,7 @@ class Operations( object ):
 
   __cache = {}
   __cacheVersion = 0
-  __cacheLock = LockRing.LockRing().getLock( "CSOperations.cache" )
+  __cacheLock = LockRing.LockRing().getLock()
 
   def __init__( self, vo = False, group = False, setup = False ):
     self.__uVO = vo

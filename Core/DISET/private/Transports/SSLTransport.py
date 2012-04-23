@@ -18,7 +18,7 @@ GSI.SSL.set_thread_safe()
 
 class SSLTransport( BaseTransport ):
 
-  __readWriteLock = LockRing().getLock( "DISET.SSLTrans.RW" )
+  __readWriteLock = LockRing().getLock()
 
   def __init__( self, *args, **kwargs ):
     self.__writesDone = 0
