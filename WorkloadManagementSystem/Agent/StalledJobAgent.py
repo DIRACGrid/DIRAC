@@ -16,6 +16,7 @@ from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, 
 from DIRAC                                          import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 import types
 
 class StalledJobAgent( AgentModule ):
@@ -28,6 +29,9 @@ class StalledJobAgent( AgentModule ):
       - finalize() - the graceful exit of the method, this one is usually used
                  for the agent restart
   """
+  jobDB = None
+  logDB = None
+  enable = True
 
   #############################################################################
   def initialize( self ):
@@ -36,7 +40,7 @@ class StalledJobAgent( AgentModule ):
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
     self.am_setOption( 'PollingTime', 60 * 60 )
-    self.enable = self.am_getOption( 'Enable', True )
+    self.enable = self.am_getOption( 'Enable', self.enable )
     if not self.enable:
       self.log.info( 'Stalled Job Agent running in disabled mode' )
     return S_OK()
@@ -265,6 +269,19 @@ class StalledJobAgent( AgentModule ):
 
     return result
 
+  def __getProcessingType( self, jobID ):
+    """ Get the Processing Type from the JDL, until it is promoted to a real Attribute
+    """
+    processingType = 'unknown'
+    result = self.jobDB.getJobJDL( jobID, original = True )
+    if not result['OK']:
+      return processingType
+    classAdJob = ClassAd( result['Value'] )
+    if classAdJob.lookupAttribute( 'ProcessingType' ):
+      processingType = classAdJob.getAttributeString( 'ProcessingType' )
+    return processingType
+
+
   #############################################################################
   def sendAccounting( self, jobID ):
     """Send WMS accounting data for the given job
@@ -339,6 +356,8 @@ class StalledJobAgent( AgentModule ):
         if heartBeatTime > lastHeartBeatTime:
           lastHeartBeatTime = heartBeatTime
 
+    processingType = self.__getProcessingType( jobID )
+
     accountingReport.setStartTime( startTime )
     accountingReport.setEndTime()
     # execTime = toEpoch( endTime ) - toEpoch( startTime )
@@ -349,7 +368,7 @@ class StalledJobAgent( AgentModule ):
                'JobGroup' : jobDict['JobGroup'],
                'JobType' : jobDict['JobType'],
                'JobClass' : jobDict['JobSplitType'],
-               'ProcessingType' : 'unknown',
+               'ProcessingType' : processingType,
                'FinalMajorStatus' : 'Failed',
                'FinalMinorStatus' : 'Stalled',
                'CPUTime' : lastCPUTime,
