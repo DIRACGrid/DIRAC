@@ -7,12 +7,13 @@
 
 from datetime import datetime
 
-from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC                                                      import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.CommandCaller           import CommandCaller
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker          import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Command.knownAPIs               import initAPIs
+from DIRAC.ResourceStatusSystem.Utilities                       import CS
 
 __RCSID__  = '$Id: $'
 AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
@@ -60,8 +61,14 @@ class CacheFeederAgent( AgentModule ):
         ( 'AccountingCache_Command', 'RunningJobsBySiteSplitted_Command',         ( 8760, ), 'Daily'  ),
         ]
 
-      self.commandObjectsListClientsCache    = []
-      self.commandObjectsListAccountingCache = []
+      commandsVOBOXAvailability   = ( 'VOBOXAvailabilityCommand', 'VOBOXAvailabilityCommand', )
+      commandsSpaceTokenOccupancy = ( 'SpaceTokenOccupancyCommand', 'SpaceTokenOccupancyCommand', )
+
+      self.commandObjectsListClientsCache     = []
+      self.commandObjectsListAccountingCache  = []
+      self.commandObjectsVOBOXAvailability    = [] 
+      self.commandObjectsSpaceTokenOccupancy = []
+
 
       cc = CommandCaller()
 
@@ -88,6 +95,16 @@ class CacheFeederAgent( AgentModule ):
 
         self.commandObjectsListAccountingCache.append( ( command, cObj, cArgs ) )
 
+      for cArgs in self.__getVOBOXAvailabilityCandidates():
+        
+        cObj  = cc.setCommandObject( commandsVOBOXAvailability )
+        self.commandObjectsVOBOXAvailability.append( ( commandsVOBOXAvailability, cObj, cArgs ) )
+
+      for cArgs in self.__getSpaceTokenOccupancyCandidates():
+        
+        cObj  = cc.setCommandObject( commandsSpaceTokenOccupancy )
+        self.commandObjectsSpaceTokenOccupancy.append( ( commandsSpaceTokenOccupancy, cObj, cArgs ) )
+
       return S_OK()
 
     except Exception:
@@ -97,9 +114,96 @@ class CacheFeederAgent( AgentModule ):
 
 ################################################################################
 
+  def __getVOBOXAvailabilityCandidates( self ):
+    '''
+    Gets the candidates to execute the command
+    '''
+    
+    # This is horrible, future me, change this.
+    request_management_urls = gConfig.getValue( '/Systems/RequestManagement/Development/URLs/allURLS', [] )
+    configuration_urls      = gConfig.getServersList()
+    framework_urls          = gConfig.getValue( '/DIRAC/Framework/SystemAdministrator', [] )
+    
+    elementsToCheck = request_management_urls + configuration_urls + framework_urls 
+  
+    # This may look stupid, but the Command is expecting a tuple
+    return [ ( el, ) for el in elementsToCheck ] 
+  
+  def __getSpaceTokenOccupancyCandidates( self ):
+    '''
+    Gets the candidates to execute the command
+    '''
+    
+    elementsToCheck = []      
+    spaceEndpoints  = CS.getSpaceTokenEndpoints()
+    spaceTokens     = CS.getSpaceTokens() 
+
+    for site,siteDict in spaceEndpoints.items():
+      for spaceToken in spaceTokens:
+
+        elementsToCheck.append( ( siteDict[ 'Endpoint' ], spaceToken, ) )
+    
+    return elementsToCheck
+      
   def execute( self ):
 
     try:
+
+      now = datetime.utcnow()
+
+      #VOBOX
+      for co in self.commandObjectsVOBOXAvailability:
+        
+        commandName = co[0][1].split( '_' )[0]
+        self.log.info( 'Executed %s with %s' % ( commandName, str( co[2] ) ) )
+
+        co[1].setArgs( co[2] )
+        self.clientsInvoker.setCommand( co[1] )
+        res = self.clientsInvoker.doCommand()[ 'Result' ]
+        
+        if not res[ 'OK' ]:
+          self.log.warn( str( res[ 'Message' ] ) )
+          continue
+
+        res = res[ 'Value' ] 
+
+        serviceUp = res[ 'serviceUpTime' ]
+        machineUp = res[ 'machineUpTime' ]
+        site      = res[ 'site' ]
+        system    = res[ 'system' ]
+       
+        resQuery = self.rmClient.addOrModifyVOBOXCache( site, system, serviceUp, 
+                                                        machineUp, now )    
+        if not resQuery[ 'OK' ]:
+          self.log.error( str( resQuery[ 'Message' ] ) ) 
+
+      #SpaceTokenOccupancy
+      for co in self.commandObjectsSpaceTokenOccupancy:
+        
+        commandName = co[0][1].split( '_' )[0]
+        self.log.info( 'Executed %s with %s' % ( commandName, str( co[2] ) ) )
+
+        co[1].setArgs( co[2] )
+        self.clientsInvoker.setCommand( co[1] )
+        res = self.clientsInvoker.doCommand()[ 'Result' ]
+        
+        if not res[ 'OK' ]:
+          self.log.warn( res[ 'Message' ] )
+          continue
+
+        site, token = co[ 2 ]
+
+        res = res[ 'Value' ]
+        
+        total      = res[ 'total' ]
+        guaranteed = res[ 'guaranteed' ]
+        free       = res[ 'free' ]
+               
+        resQuery = self.rmClient.addOrModifySpaceTokenOccupancyCache( site, token, 
+                                                                      total, guaranteed,
+                                                                      free, now )    
+        if not resQuery[ 'OK' ]:
+          self.log.error( str( resQuery[ 'Message' ] ) )                     
 
       for co in self.commandObjectsListClientsCache:
 
