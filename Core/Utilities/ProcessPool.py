@@ -1,7 +1,7 @@
 #################################################################
 # $HeadURL$
 #################################################################
-""" :mod: ProcessPool 
+""" :mod: ProcessPool
     =================
     .. module: ProcessPool
     :synopsis: ProcessPool and related classes
@@ -21,10 +21,10 @@ where parameters are::
 
 :param int minSize: at least <minSize> workers will be alive all the time
 :param int maxSize: no more than <maxSize> workers will be alive all the time
-:param int maxQueuedRequests: size for request waiting in a queue to be executed  
+:param int maxQueuedRequests: size for request waiting in a queue to be executed
 
 In case another request is added to the full queue, the execution will
-lock until another request is taken out. The ProcessPool will automatically increase and 
+lock until another request is taken out. The ProcessPool will automatically increase and
 decrease the pool of workers as needed, of course not exceeding above limits.
 
 To add a task to the queue one should execute::
@@ -52,22 +52,22 @@ where parameters are::
   :param callback: callback function definition
   :param exceptionCallback: exception callback function definition
 
-The callback, exceptionCallbaks and the parameters are all optional. Once task has been added to the pool, 
-it will be executed as soon as possible. Worker subprocesses automatically return the return value of the task. 
+The callback, exceptionCallbaks and the parameters are all optional. Once task has been added to the pool,
+it will be executed as soon as possible. Worker subprocesses automatically return the return value of the task.
 To obtain those results one has to execute::
 
   pool.processRequests()
 
 This method will process the existing return values of the task, even if the task does not return
-anything. This method has to be called to clean the result queues. To wait until all the requests are finished 
+anything. This method has to be called to clean the result queues. To wait until all the requests are finished
 and process their result call::
 
  pool.processAllRequests()
 
 This function will block until all requests are finished and their result values have been processed.
 
-It is also possible to set the ProcessPool in daemon mode, in which all results are automatically 
-processed as soon they are available, just after finalisation of task execution. To enable this mode one 
+It is also possible to set the ProcessPool in daemon mode, in which all results are automatically
+processed as soon they are available, just after finalisation of task execution. To enable this mode one
 has to call::
 
   pool.daemonize()
@@ -75,27 +75,27 @@ has to call::
 Callback functions
 ------------------
 
-There are two types of callbacks that can be executed for each tasks: exception callback function and 
-results callback function. The the firts one is executed when unhandled excpetion has been raised during 
-task processing, and hence no task results are available, otherwise the execution of second callback type 
-is performed. 
- 
+There are two types of callbacks that can be executed for each tasks: exception callback function and
+results callback function. The the firts one is executed when unhandled excpetion has been raised during
+task processing, and hence no task results are available, otherwise the execution of second callback type
+is performed.
+
 The callbacks could be attached in a two places::
 
-- directly in ProcessTask, in that case those have to be shelvable/picklable, so they should be defined as 
-  global functions with the signature :callback( task, taskResult ): where :task: is a :ProcessTask: 
-  reference and :taskResult: is whatever task callable it returning for restuls callback and 
-  :exceptionCallback( task, exc_info): where exc_info is a 
+- directly in ProcessTask, in that case those have to be shelvable/picklable, so they should be defined as
+  global functions with the signature :callback( task, taskResult ): where :task: is a :ProcessTask:
+  reference and :taskResult: is whatever task callable it returning for restuls callback and
+  :exceptionCallback( task, exc_info): where exc_info is a
   :S_ERROR{ "Exception": { "Value" : exceptionName, "Exc_info" : exceptionInfo }:
 
 - in ProcessPool, in that case there is no limitation on the function type, except the signature, which
-  should follow :callback( task ): or :exceptionCallback( task ):, as those callbacks definitions 
+  should follow :callback( task ): or :exceptionCallback( task ):, as those callbacks definitions
   are not put into the queues
 
-The first types of callbacks could be used in case various callable objects are put into the ProcessPool, 
-so you probably want to handle them differently dependin on their results, while the second types are for 
+The first types of callbacks could be used in case various callable objects are put into the ProcessPool,
+so you probably want to handle them differently dependin on their results, while the second types are for
 executing same type of callables in subprocesses and  hence you are expecting the same type of results
-everywhere. 
+everywhere.
 """
 
 __RCSID__ = "$Id$"
@@ -133,7 +133,7 @@ class WorkingProcess( multiprocessing.Process ):
   """
   .. class:: WorkingProcess
 
-  WorkingProcess is a class that represents activity that is run in a separate process. 
+  WorkingProcess is a class that represents activity that is run in a separate process.
   """
 
   def __init__( self, pendingQueue, resultsQueue ):
@@ -160,9 +160,9 @@ class WorkingProcess( multiprocessing.Process ):
   def run( self ):
     """ task execution
 
-    reads and executes ProcessTask :task: out of pending queue and then pushes it 
+    reads and executes ProcessTask :task: out of pending queue and then pushes it
     to the results queue for callback execution
-    
+
     :param self: self reference
     """
     if LockRing:
@@ -193,7 +193,7 @@ class BulletTask:
 
 class ProcessTask:
   """ .. class:: ProcessTask
-  
+
   Defines task to be executed in WorkingProcess together with its callbacks.
   """
   ## taskID
@@ -206,18 +206,18 @@ class ProcessTask:
                 taskID = None,
                 callback = None,
                 exceptionCallback = None,
-                usePoolCallbacks = False,  
+                usePoolCallbacks = False,
                 timeOut = 0 ):
     """ c'tor
 
-    :warning: taskFunction has to be callable: it could be a function, lambda OR a class with 
-    __call__ operator defined. But be carefull with interpretation of args and kwargs, as they 
+    :warning: taskFunction has to be callable: it could be a function, lambda OR a class with
+    __call__ operator defined. But be carefull with interpretation of args and kwargs, as they
     are passed to different places in above cases:
 
     1. for functions or lambdas args and kwargs are just treated as function parameters
-    
-    2. for callable classess (say MyTask) args and kwargs are passed to class contructor 
-       (MyTask.__init__) and MyTask.__call__ should be a method without parameters, i.e. 
+
+    2. for callable classess (say MyTask) args and kwargs are passed to class contructor
+       (MyTask.__init__) and MyTask.__call__ should be a method without parameters, i.e.
        MyTask definition should be::
 
       class MyTask:
@@ -226,23 +226,23 @@ class ProcessTask:
         def __call__( self ):
           ...
 
-    :warning: depending on :timeOut: value, taskFunction execution can be forcefully terminated 
-    using SIGALRM after :timeOut: seconds spent, :timeOut: equal to zero means there is no any 
-    time out at all, except those during :ProcessPool: finalization 
-    
+    :warning: depending on :timeOut: value, taskFunction execution can be forcefully terminated
+    using SIGALRM after :timeOut: seconds spent, :timeOut: equal to zero means there is no any
+    time out at all, except those during :ProcessPool: finalization
+
     :param self: self reference
     :param mixed taskFunction: definition of callable object to be executed in this task
     :param tuple args: non-keyword arguments
     :param dict kwargs: keyword arguments
-    :param int taskID: task id, if not set, 
-    :param int timeOut: estimated time to execute taskFunction in seconds (default = 0, no timeOut at all) 
-    :param mixed callback: result callback function 
+    :param int taskID: task id, if not set,
+    :param int timeOut: estimated time to execute taskFunction in seconds (default = 0, no timeOut at all)
+    :param mixed callback: result callback function
     :param mixed exceptionCallback: callback function to be fired upon exception in taskFunction
     """
     self.__taskFunction = taskFunction
     self.__taskArgs = args or []
     self.__taskKwArgs = kwargs or {}
-    self.__taskID = taskID 
+    self.__taskID = taskID
     self.__resultCallback = callback
     self.__exceptionCallback = exceptionCallback
     self.__timeOut = 0
@@ -252,7 +252,7 @@ class ProcessTask:
     self.__exceptionRaised = False
     self.__taskException = None
     self.__taskResult = None
-    self.__usePoolCallbacks = usePoolCallbacks 
+    self.__usePoolCallbacks = usePoolCallbacks
 
   def taskResults( self ):
     """ get task results
@@ -300,22 +300,22 @@ class ProcessTask:
       self.__timeOut = int( timeOut )
       return { "OK" : True, "Value" : self.__timeOut }
     except (TypeError, ValueError), error:
-      return { "OK" : False, "Message" : str(error) }  
+      return { "OK" : False, "Message" : str(error) }
 
   def getTimeOut( self ):
     """ get timeOut value
-    
+
     :param self: self reference
     """
-    return self.__timeOut 
+    return self.__timeOut
 
   def hasTimeOutSet( self ):
-    """ check if timeout is set 
+    """ check if timeout is set
 
     :param self: self reference
     """
     return bool( self.__timeOut != 0 )
- 
+
   def isBullet( self ):
     """ No, I'm not. """
     return False
@@ -328,13 +328,13 @@ class ProcessTask:
     return self.__taskID
 
   def hasCallback( self ):
-    """ callback existence checking 
+    """ callback existence checking
 
     :param self: self reference
-    :return: True if callbak or exceptionCallback has been defined, False otherwise 
+    :return: True if callbak or exceptionCallback has been defined, False otherwise
     """
     return self.__resultCallback or self.__exceptionCallback or self.__usePoolCallbacks
- 
+
   def exceptionRaised( self ):
     """ flag to determine exception in process
 
@@ -343,8 +343,8 @@ class ProcessTask:
     return self.__exceptionRaised
 
   def doExceptionCallback( self ):
-    """ execute exceptionCallback 
-    
+    """ execute exceptionCallback
+
     :param self: self reference
     """
     if self.__done and self.__exceptionRaised and self.__exceptionCallback:
@@ -360,26 +360,26 @@ class ProcessTask:
 
   def process( self ):
     """ execute task
-    
+
     :param self: self reference
     """
     class TimeOutError( Exception ):
       """ dummy exception raised after :timeOut: seconds """
       pass
-    ## reference to SIGALRM handler 
-    saveHandler = None 
+    ## reference to SIGALRM handler
+    saveHandler = None
 
-    if self.hasTimeOutSet():      
+    if self.hasTimeOutSet():
       def timeOutHandler( singnum, frame ):
-        raise TimeOutError()   
-      saveHandler = signal.signal(signal.SIGALRM, timeOutHandler) 
-      signal.alarm(self.__timeOut) 
+        raise TimeOutError()
+      saveHandler = signal.signal(signal.SIGALRM, timeOutHandler)
+      signal.alarm(self.__timeOut)
     self.__done = True
     try:
       ## it's a function?
       if type( self.__taskFunction ) is FunctionType:
         self.__taskResult = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
-      ## or a class? 
+      ## or a class?
       elif type( self.__taskFunction ) in ( TypeType, ClassType ):
         ## create new instance
         taskObj = self.__taskFunction( *self.__taskArgs, **self.__taskKwArgs )
@@ -401,25 +401,26 @@ class ProcessTask:
         self.__taskException = retDict
     finally:
       if self.hasTimeOutSet() and saveHandler:
-        signal.signal(signal.SIGALRM, saveHandler) 
-    ## reset alarm signal 
+        signal.signal(signal.SIGALRM, saveHandler)
+    ## reset alarm signal
     signal.alarm(0)
 
 class ProcessPool:
   """
   .. class:: ProcessPool
-  
+
   """
-  
-  def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10, 
-                strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
+
+  def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
+                strictLimits = True, poolCallback=None, poolExceptionCallback=None,
+                killPeriod = 60 ):
     """ c'tor
 
     :param self: self reference
     :param int minSize: minimal number of simultaniously executed tasks
-    :param int maxSize: maximal number of simultaniously executed tasks 
+    :param int maxSize: maximal number of simultaniously executed tasks
     :param int maxQueueRequests: size of pending tasks queue
-    :param bool strictLimits: flag to kill/terminate idle workers above the limits 
+    :param bool strictLimits: flag to kill/terminate idle workers above the limits
     :param callable poolCallbak: results callback
     :param callable poolExceptionCallback: exception callback
     """
@@ -440,7 +441,10 @@ class ProcessPool:
     self.__bulletCounter = 0
     self.__daemonProcess = False
     self.__spawnNeededWorkingProcesses()
-    
+    self.__killPeriod = killPeriod
+    self.__killIdle = []
+    self.__killPeriodStart = time.time()
+
   def setPoolCallback( self, callback ):
     """ set ProcessPool callback function
 
@@ -450,7 +454,7 @@ class ProcessPool:
     self.__poolCallback = callback
 
   def setPoolExceptionCallback( self, exceptionCallback ):
-    """ set ProcessPool exception callback function 
+    """ set ProcessPool exception callback function
 
     :param self: self refernce
     :param callable exceptionCallback: exsception callback function
@@ -466,14 +470,14 @@ class ProcessPool:
 
   def getMinSize( self ):
     """ minSize getter
-    
+
     :param self: self reference
     """
     return self.__minSize
 
   def getNumWorkingProcesses( self ):
-    """ count processes currently being executed  
-    
+    """ count processes currently being executed
+
     :param self: self reference
     """
     counter = 0
@@ -486,7 +490,7 @@ class ProcessPool:
 
   def getNumIdleProcesses( self ):
     """ count processes being idle
-    
+
     :param self: self reference
     """
     counter = 0
@@ -505,7 +509,7 @@ class ProcessPool:
     return max( 0, self.__maxSize - self.getNumWorkingProcesses() )
 
   def __spawnWorkingProcess( self ):
-    """ create new process 
+    """ create new process
 
     :param self: self reference
     """
@@ -514,7 +518,7 @@ class ProcessPool:
       worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue )
       while worker.pid == None:
         time.sleep(0.1)
-      self.__workersDict[ worker.pid ] = worker   
+      self.__workersDict[ worker.pid ] = worker
     finally:
       self.__prListLock.release()
 
@@ -569,11 +573,17 @@ class ProcessPool:
     :param self: self reference
     """
     self.__cleanDeadProcesses()
-    toKill = max( len( self.__workersDict ) - self.__maxSize, 0 )
-    while toKill:
-      self.__killWorkingProcess()
-      toKill = toKill - 1
-    toKill = max( self.getNumIdleProcesses() - self.__minSize, 0 )
+    now = time.time()
+    if now - self.__killPeriodStart < self.__killPeriod:
+      self.__killIdle.append( self.getNumIdleProcesses() )
+      return
+    self.__killPeriodStart = now
+    #Kill exceeding processes over the max + average idle processes
+    toKill = max( len( self.__workingProcessList ) - self.__maxSize, 0 )
+    for iP in self.__killIdle:
+      toKill += iP
+    toKill = toKill / len( self.__killIdle )
+    self.__killIdle = []
     while toKill:
       self.__killWorkingProcess()
       toKill = toKill - 1
@@ -590,7 +600,7 @@ class ProcessPool:
       raise TypeError( "Tasks added to the process pool must be ProcessTask instances" )
     if usePoolCallbacks and ( self.__poolCallback or self.__poolExceptionCallback ):
       task.enablePoolCallbacks()
-    
+
     self.__prListLock.acquire()
     try:
       self.__pendingQueue.put( task, block = blocking )
@@ -618,8 +628,8 @@ class ProcessPool:
     """ create new processTask and enqueue it in pending task queue
 
     :param self: self reference
-    :param mixed taskFunction: callable object definition (FunctionType, LambdaType, callable class) 
-    :param tuple args: non-keyword arguments passed to taskFunction c'tor 
+    :param mixed taskFunction: callable object definition (FunctionType, LambdaType, callable class)
+    :param tuple args: non-keyword arguments passed to taskFunction c'tor
     :param dict kwargs: keyword arguments passed to taskFunction c'tor
     :param int taskID: task Id
     :param mixed callback: callback handler, callable object executed after task's execution
@@ -632,8 +642,8 @@ class ProcessPool:
     return self.queueTask( task, blocking )
 
   def hasPendingTasks( self ):
-    """ check if taks are present in pending queue 
-    
+    """ check if taks are present in pending queue
+
     :param self: self reference
 
     :warning: results may be misleading if elements put into the queue are big
@@ -675,7 +685,7 @@ class ProcessPool:
       ## execute pool callbacks
       if task.usePoolCallbacks():
         if self.__poolExceptionCallback and task.exceptionRaised():
-          self.__poolExceptionCallback( task.getTaskID(), task.taskException() ) 
+          self.__poolExceptionCallback( task.getTaskID(), task.taskException() )
         if self.__poolCallback and task.taskResults():
           self.__poolCallback( task.getTaskID(), task.taskResults() )
 
@@ -685,7 +695,7 @@ class ProcessPool:
 
   def processAllResults( self ):
     """ process all enqueued tasks at once
-    
+
     :param self: self reference
     """
     while not self.__pendingQueue.empty() or self.getNumWorkingProcesses():
@@ -697,7 +707,7 @@ class ProcessPool:
     """ drain pool, shutdown processing in more or less clean way
 
     :param self: self reference
-    :param timeout: seconds to wait before killing 
+    :param timeout: seconds to wait before killing
     """
     # Process all tasks
     self.processAllResults()
@@ -707,7 +717,7 @@ class ProcessPool:
       bullets = len( self.__workersDict ) - self.__bulletCounter
       while bullets:
         self.__killWorkingProcess()
-        bullets = bullets - 1 
+        bullets = bullets - 1
       start = time.time()
       self.__cleanDeadProcesses()
       while len( self.__workersDict ) > 0:
@@ -734,14 +744,14 @@ class ProcessPool:
       pid = self.__workersDict.keys().pop(0)
       worker = self.__workersDict[pid]
       if worker.is_alive():
-        os.kill( worker.pid(), signal.SIGKILL )     
+        os.kill( worker.pid(), signal.SIGKILL )
       del self.__workersDict[pid]
-  
+
 
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
-        
+
     :param self: self reference
     """
     if self.__daemonProcess:
@@ -752,10 +762,16 @@ class ProcessPool:
 
   def __backgroundProcess( self ):
     """ daemon thread target
-    
+
     :param self: self reference
     """
     while True:
       self.processResults()
       time.sleep( 1 )
+
+  def __del__( self ):
+    """
+    Finalize
+    """
+    self.finalize()
 
