@@ -440,6 +440,20 @@ class ProcessPool:
     self.__bulletCounter = 0
     self.__daemonProcess = False
     self.__spawnNeededWorkingProcesses()
+
+  def stopProcessing( self ):
+    """ case fire
+
+    :param self: self reference
+    """
+    self.finalize()
+
+  def startProcessing( self ):
+    """ restrat processing again 
+
+    :param self: self reference 
+    """
+    self.__draining = False 
     
   def setPoolCallback( self, callback ):
     """ set ProcessPool callback function
