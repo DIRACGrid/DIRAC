@@ -135,6 +135,7 @@ class RequestAgentBase( AgentModule ):
 
     :param self: self reference
     """
+    self.info("resetRequest: will put %s back requests" % len(self.__requestHolder) )
     for requestName, requestTuple  in self.__requestHolder.items():
       requestString, requestServer = requestTuple
       reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
@@ -321,6 +322,8 @@ class RequestAgentBase( AgentModule ):
       requestDict = requestDict["Value"]
       requestDict["configPath"] = self.__configPath
       taskID = requestDict["requestName"]
+      self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(), 
+                                                                    self.processPool().getNumWorkingProcesses() ) )
       while True:
         if not self.processPool().getFreeSlots():
           self.log.info("No free slots available in processPool, will wait a second to proceed...")
@@ -342,17 +345,17 @@ class RequestAgentBase( AgentModule ):
             ## task created, a little time kick to proceed
             time.sleep( 0.1 )
             break
+      
 
     return S_OK()
 
   def finalize( self ):
-    """ clean ending of one cycle execution
+    """ clean ending of maxcycle execution
 
     :param self: self reference
     """
     ## finalize all processing
     if self.hasProcessPool():
-      self.processPool().processAllResults()
       self.processPool().finalize()
     ## reset failover requests for further processing 
     self.resetRequests()

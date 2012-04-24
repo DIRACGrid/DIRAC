@@ -278,7 +278,7 @@ class StorageElement:
     availableProtocols = res['Value']
     if not protocol in availableProtocols:
       errStr = "StorageElement.getStorageParameters: Requested protocol not available for SE."
-      gLogger.error( errStr, '%s for %s' % ( protocol, self.name ) )
+      gLogger.warn( errStr, '%s for %s' % ( protocol, self.name ) )
       return S_ERROR( errStr )
     for storage in self.storages:
       res = storage.getParameters()
@@ -617,14 +617,14 @@ class StorageElement:
           if hasattr( storage, method ) and callable( getattr( storage, method ) ):
             fcn = getattr( storage, method )
           if not fcn:
-            return S_ERROR("StorageElement.__executeFunction: unable to invoke %s, it isn't a member function of storage")
-          
+            return S_ERROR( "StorageElement.__executeFunction: unable to invoke %s, it isn't a member function of storage" )
+
           pfnsToUse = {}
           for pfn in pfnDict.keys():
             pfnsToUse[pfn] = pfns[pfnDict[pfn]]
-            
+
           res = fcn( pfnsToUse, **argsDict )
-          
+
           if not res['OK']:
             errStr = "StorageElement.__executeFunction: Completely failed to perform %s." % method
             gLogger.error( errStr, '%s for protocol %s: %s' % ( self.name, protocolName, res['Message'] ) )

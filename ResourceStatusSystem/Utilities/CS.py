@@ -7,16 +7,17 @@
 
 import itertools
 
-from DIRAC                                import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities                 import List
-from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC                                               import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities                                import List
+from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
 __RCSID__  = '$Id: $'
 
 g_BaseRegistrySection   = '/Registry'
 g_BaseResourcesSection  = '/Resources'
-g_BaseOperationsSection = '/Operations'
-g_BaseConfigSection     = '/Operations/RSSConfiguration'
+g_BaseConfigSection     = 'RSSConfiguration'
+#g_BaseConfigSection     = '/Operations/RSSConfiguration'
 
 ### CS HELPER FUNCTIONS
 
@@ -31,6 +32,35 @@ def getValue( val, default ):
     return [ Utils.typedobj_of_string(e) for e in res ]
   else:
     return Utils.typedobj_of_string( res )
+
+def getTypedDictRootedAtOperations( relpath = "", root = g_BaseConfigSection ):
+  '''Gives the configuration rooted at path in a Python dict. The
+  result is a Python dictionnary that reflects the structure of the
+  config file.'''
+  def getTypedDictRootedAt( path ):
+    retval = {}
+
+    opts = Operations().getOptionsDict( path )
+    secs = Operations().getSections( path )
+
+    if not opts[ 'OK' ]:
+      raise CSError, opts[ 'Message' ]
+    if not secs[ 'OK' ]:
+      raise CSError, secs[ 'Message' ]
+
+    opts = opts[ 'Value' ]
+    secs = secs[ 'Value' ]
+
+    for k in opts:
+      if opts[ k ].find( "," ) > -1:
+        retval[ k ] = [ Utils.typedobj_of_string(e) for e in List.fromChar(opts[k]) ]
+      else:
+        retval[ k ] = Utils.typedobj_of_string( opts[ k ] )
+    for i in secs:
+      retval[ i ] = getTypedDictRootedAt( path + "/" + i )
+    return retval
+
+  return getTypedDictRootedAt( root + "/" + relpath )
 
 def getTypedDictRootedAt( relpath = "", root = g_BaseConfigSection ):
   '''Gives the configuration rooted at path in a Python dict. The
@@ -67,7 +97,7 @@ def getTypedDictRootedAt( relpath = "", root = g_BaseConfigSection ):
 
 def getOperationMails( op ):
   ''' Get emails from Operations section'''
-  return gConfig.getValue( "%s/EMail/%s" % (g_BaseOperationsSection, op) ,"" )
+  return Operations().getValue( "EMail/%s" % op ,"" )
 
 # Setup functions ####################
 

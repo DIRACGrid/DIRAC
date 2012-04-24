@@ -64,7 +64,7 @@ class FileCatalogFactory:
           errStr = "Failed to instantiate catalog plug in"
           gLogger.error( errStr, moduleName )
           return S_ERROR( errStr )
-        self.log.info('Loaded module %sClient from %s' % ( catalogType, moduleRootPath ) )
+        self.log.debug('Loaded module %sClient from %s' % ( catalogType, moduleRootPath ) )
         return S_OK( catalog )
       except Exception, x:
         errStr = "Failed to instantiate %s()" % ( moduleName )

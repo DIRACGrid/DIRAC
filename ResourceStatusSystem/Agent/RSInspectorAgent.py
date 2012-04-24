@@ -42,7 +42,7 @@ class RSInspectorAgent( AgentModule ):
 
     try:
       self.rsClient             = ResourceStatusClient()
-      self.resourcesFreqs       = CS.getTypedDictRootedAt( 'CheckingFreqs/ResourcesFreqs' )
+      self.resourcesFreqs       = CS.getTypedDictRootedAtOperations( 'CheckingFreqs/ResourcesFreqs' )
       self.resourcesToBeChecked = Queue.Queue()
       self.resourceNamesInCheck = []
 

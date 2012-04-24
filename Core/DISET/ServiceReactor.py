@@ -25,6 +25,7 @@ class ServiceReactor:
       services = [ services ]
     self.__services = {}
     self.__alive = True
+    self.__maxFD = 0
     self.__listeningConnections = {}
     self.__stats = ReactorStats()
     for serviceName in services:
@@ -132,6 +133,7 @@ class ServiceReactor:
               clientTransport = retVal[ 'Value' ]
       except socket.error:
         return
+      self.__maxFD = max( self.__maxFD, clientTransport.oSocket.fileno() )
       #Is it banned?
       clientIP = clientTransport.getRemoteAddress()[0]
       if clientIP in Registry.getBannedIPs():
