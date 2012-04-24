@@ -10,9 +10,9 @@ from datetime import datetime, timedelta
 
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
-from DIRAC.ResourceStatusSystem                                 import ValidRes  
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration   
 
 __RCSID__  = '$Id: $'
 AGENT_NAME = 'ResourceStatus/CleanerAgent'
@@ -47,7 +47,10 @@ class CacheCleanerAgent( AgentModule ):
       
       self.rsClient      = ResourceStatusClient()
       self.rmClient      = ResourceManagementClient()  
-      self.historyTables = [ '%sHistory' % x for x in ValidRes ]
+      
+      validElements      = RssConfiguration.getValidElements() 
+      
+      self.historyTables = [ '%sHistory' % x for x in validElements ]
 
       return S_OK()
       
@@ -67,7 +70,9 @@ class CacheCleanerAgent( AgentModule ):
       now          = datetime.utcnow().replace( microsecond = 0, second = 0 )
       sixMonthsAgo = now - timedelta( days = 180 )
       
-      for granularity in ValidRes:
+      validElements = RssConfiguration.getValidElements()
+      
+      for granularity in validElements:
         #deleter = getattr( self.rsClient, 'delete%sHistory' % g )
         
         kwargs = { 'meta' : { 'minor' : { 'DateEnd' : sixMonthsAgo } } }

@@ -250,10 +250,10 @@ class ResourceStatusDB( object ):
 ##    Set LastCheckTime to 0 to monitored(s)
 ##
 ##    :params:
-##      :attr:`monitoreds`: string, or a list of strings where each is a ValidRes:
+##      :attr:`monitoreds`: string, or a list of strings where each is a ValidElement:
 ##      which granularity has to be set to be checked
 ##
-##      :attr:`granularity`: string, a ValidRes: from who this set comes
+##      :attr:`granularity`: string, a ValidElement: from who this set comes
 ##
 ##      :attr:`name`: string, name of Site or Resource
 ##    """

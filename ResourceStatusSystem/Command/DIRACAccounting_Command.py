@@ -26,9 +26,9 @@ class DIRACAccounting_Command( Command ):
     """ 
     Returns jobs accounting info for sites in the last 24h
     `args`: 
-       - args[0]: string - should be a ValidRes
+       - args[0]: string - should be a ValidElement
        
-       - args[1]: string - should be the name of the ValidRes
+       - args[1]: string - should be the name of the ValidElement
        
        - args[2]: string - should be 'Job' or 'Pilot' or 'DataOperation'
          or 'WMSHistory' (??) or 'SRM' (??)
@@ -101,9 +101,9 @@ class TransferQuality_Command( Command ):
     Return getQuality from DIRAC's accounting ReportsClient
     
     `args`: a tuple
-      - args[0]: string: should be a ValidRes
+      - args[0]: string: should be a ValidElement
 
-      - args[1]: string should be the name of the ValidRes
+      - args[1]: string should be the name of the ValidElement
 
       - args[2]: optional dateTime object: a "from" date
     
@@ -170,9 +170,9 @@ class TransferQuality_Command( Command ):
 #    Returns transfer quality as it is cached
 #
 #    :attr:`args`: 
-#       - args[0]: string: should be a ValidRes
+#       - args[0]: string: should be a ValidElement
 #  
-#       - args[1]: string should be the name of the ValidRes
+#       - args[1]: string should be the name of the ValidElement
 #
 #    :returns:
 #      {'Result': None | a float between 0.0 and 100.0}
@@ -207,9 +207,9 @@ class CachedPlot_Command( Command ):
     Returns transfer quality plot as it is cached in the accounting cache.
 
     :attr:`args`: 
-       - args[0]: string - should be a ValidRes
+       - args[0]: string - should be a ValidElement
   
-       - args[1]: string - should be the name of the ValidRes
+       - args[1]: string - should be the name of the ValidElement
 
        - args[2]: string - should be the plot type
 
@@ -271,9 +271,9 @@ class TransferQualityFromCachedPlot_Command(Command):
     Returns transfer quality from the plot cached in the accounting cache.
 
     :attr:`args`: 
-       - args[0]: string: should be a ValidRes
+       - args[0]: string: should be a ValidElement
   
-       - args[1]: string should be the name of the ValidRes
+       - args[1]: string should be the name of the ValidElement
 
     :returns:
       {'Result': None | a float between 0.0 and 100.0}

@@ -62,8 +62,9 @@ if not params.has_key( 'a' ):
   DIRAC.exit( 2 )     
 
 from DIRAC.Core.Security.ProxyInfo                          import getProxyInfo
-from DIRAC.ResourceStatusSystem                             import ValidRes, ValidStatus
+from DIRAC.ResourceStatusSystem                             import ValidStatus
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
 
 res = getProxyInfo()
 if not res['OK']:
@@ -71,7 +72,8 @@ if not res['OK']:
   DIRAC.exit( 2 )
 userName = res['Value']['username']
 
-if not params[ 'g' ] in ValidRes:
+validElements = RssConfiguration.getValidElements()
+if not params[ 'g' ] in validElements:
   gLogger.error( '"%s" is not a valid granularity' % params[ 'g' ] )
   DIRAC.exit( 2 )
 

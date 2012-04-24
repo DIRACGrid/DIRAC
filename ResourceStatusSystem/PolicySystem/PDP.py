@@ -50,7 +50,7 @@ class PDP:
     PDP (Policy Decision Point) initialization
 
     :params:
-      :attr:`granularity`: string - a ValidRes
+      :attr:`granularity`: string - a ValidElement
       :attr:`name`: string - name (e.g. of a site)
       :attr:`status`: string - status
       :attr:`formerStatus`: string - former status
