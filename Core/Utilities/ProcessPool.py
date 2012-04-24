@@ -773,3 +773,9 @@ class ProcessPool:
       self.processResults()
       time.sleep( 1 )
 
+  def __del__( self ):
+    """ clear ending, terminating all workers, empty queues etc.
+
+    :param self: self reference
+    """
+    self.finalize()
