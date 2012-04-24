@@ -560,6 +560,8 @@ EOF
 
       #print "AT >>> pilotRefs", pilotRefs
 
+      
+      
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
@@ -568,7 +570,15 @@ EOF
 
       #print "AT >>> pilotDict", pilotDict
 
-      result = ce.getJobStatus( pilotRefs )
+      stampedPilotRefs = []
+      for pRef in pilotDict:
+        if pilotDict[pRef]['PilotStamp']:
+          stampedPilotRefs.append(pRef+":::"+pilotDict[pRef]['PilotStamp'])
+        else:
+          stampedPilotRefs = list( pilotRefs )  
+          break
+      
+      result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots status from CE: %s' % result['Message'] )
         continue

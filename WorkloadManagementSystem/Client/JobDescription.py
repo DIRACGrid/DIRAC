@@ -60,6 +60,7 @@ class JobDescription:
     """
     Check a numerical var
     """
+    initialVal = 0
     if varName not in self.__description:
       varValue = gConfig.getValue( "/JobDescription/Default%s" % varName , defaultVal )
     else:
