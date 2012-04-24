@@ -15,7 +15,7 @@ __RCSID__ = '$Id: $'
 # useful functions
 #############################################################################
 
-def getTypedList( val, stringValue ):
+def getTypedList( stringValue ):
   '''
   Returns a typed list from a csv
   '''
