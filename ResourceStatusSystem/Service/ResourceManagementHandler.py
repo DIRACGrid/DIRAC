@@ -401,7 +401,7 @@ class ResourceManagementHandler( RequestHandler ):
 #
 ##     :Parameters:
 ##       `granularity`
-##         string - a ValidRes
+##         string - a ValidElement
 #
 ##       `name`
 ##         string - name of the res

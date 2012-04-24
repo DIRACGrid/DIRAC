@@ -6,9 +6,10 @@
 '''
 
 from DIRAC                                                  import gLogger 
-from DIRAC.ResourceStatusSystem                             import ValidRes
 from DIRAC.ResourceStatusSystem.Command.ClientsInvoker      import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
+from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
+
 
 __RCSID__  = '$Id: $'
 
@@ -37,14 +38,16 @@ class PolicyBase( object ):
     :params:
 
       :attr:`argsIn`: a tuple: (Module Command doesn't handle lists for now.)
-        - `args[0]` should be a ValidRes
+        - `args[0]` should be a ValidElement
 
-        - `args[1]` should be the name of the ValidRes
+        - `args[1]` should be the name of the ValidElement
     '''
     self.args = argsIn
 
-    if self.args[0] not in ValidRes:
-      gLogger.error( 'PolicyBase.setArgs got wrong ValidRes' )
+    validElements = RssConfiguration.getValidElements()
+
+    if self.args[0] not in validElements:
+      gLogger.error( 'PolicyBase.setArgs got wrong ValidElement' )
 
   def setCommand( self, commandIn = None ):
     '''
