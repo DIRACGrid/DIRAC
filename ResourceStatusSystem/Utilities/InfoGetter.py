@@ -7,7 +7,7 @@
 
 import copy
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAt
+from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAtOperations
 from DIRAC.ResourceStatusSystem.Utilities    import RssConfiguration, Utils
 
 __RCSID__ = '$Id: $'
