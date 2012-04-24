@@ -493,7 +493,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   if not addOptions:
     return S_OK( 'Component options already exist' )
 
-  # Add the component options now
+  # Add the component options now  
   result = getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions )
   if not result['OK']:
     return result
@@ -560,11 +560,11 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   if componentType == 'executor':
     sectionName = 'Executors'
 
-  extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
   componentModule = component
   if "Module" in specialOptions:
     componentModule = specialOptions['Module']
-
+ 
+  extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
   compCfg = CFG()
   for ext in extensionsDIRAC + ['DIRAC']:
     cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
@@ -574,18 +574,9 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
       loadCfg = CFG()
       loadCfg.loadFromFile( cfgTemplatePath )
       compCfg = loadCfg.mergeWith( compCfg )
-      try:
-        compCfg = loadCfg[sectionName][componentModule]
-        # section found
-        break
-      except Exception:
-        error = 'Can not find %s in template' % cfgPath( sectionName, componentModule )
-        gLogger.error( error )
-        if exitOnError:
-          DIRAC.exit( -1 )
-        return S_ERROR( error )
 
-  compPath = cfgPath( sectionName, component )
+
+  compPath = cfgPath( sectionName, componentModule )
   if not compCfg.isSection( compPath ):
     error = 'Can not find %s in template' % compPath
     gLogger.error( error )
@@ -593,7 +584,7 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
       DIRAC.exit( -1 )
     return S_ERROR( error )
 
-  compCfg = compCfg[sectionName][component]
+  compCfg = compCfg[sectionName][componentModule]
 
   # Delete Dependencies section if any
   compCfg.deleteKey( 'Dependencies' )
