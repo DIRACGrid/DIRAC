@@ -7,7 +7,8 @@
 
 import collections
 
-from DIRAC import gConfig
+from DIRAC                import gConfig
+from DIRAC.Core.Utilities import List
 
 __RCSID__ = '$Id: $'
 
