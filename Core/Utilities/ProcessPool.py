@@ -445,6 +445,20 @@ class ProcessPool:
     self.__killIdle = []
     self.__killPeriodStart = time.time()
 
+  def stopProcessing( self ):
+    """ case fire
+
+    :param self: self reference
+    """
+    self.finalize()
+
+  def startProcessing( self ):
+    """ restrat processing again 
+
+    :param self: self reference 
+    """
+    self.__draining = False 
+    
   def setPoolCallback( self, callback ):
     """ set ProcessPool callback function
 
