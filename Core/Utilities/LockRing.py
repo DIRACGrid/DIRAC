@@ -69,7 +69,7 @@ class LockRing( object ):
     for lockName in self.__locks.keys():
       try:
         self.__locks[ lockName ].release()
-      except ( thread.error, KeyError ):
+      except ( RuntimeError, thread.error, KeyError ):
         pass
 
   def _setAllEvents( self ):
