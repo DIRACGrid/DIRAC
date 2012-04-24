@@ -6,6 +6,7 @@
 '''
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
 def getValidElements():
   '''
@@ -15,7 +16,9 @@ def getValidElements():
   DEFAULTS = [ 'Site', 'Service', 'Resource', 'StorageElement' ]
   
   result = Operations().getValue( 'RSSConfiguration/GeneralConfig/Granularity' )
-  return ( 1 and result ) or DEFAULTS
+  if result is not None:
+    return Utils.getTypedList( result )
+  return DEFAULTS
 
 def getValidStatus():
   '''
@@ -25,7 +28,10 @@ def getValidStatus():
   DEFAULTS = [ 'Active', 'Bad', 'Probing', 'Banned' ]
   
   result = Operations().getValue( 'RSSConfiguration/GeneralConfig/Status' )
-  return ( 1 and result ) or DEFAULTS
+  if result is not None:
+    return Utils.getTypedList( result )
+  return DEFAULTS
+
 
 def getValidStatusTypes():
   '''
@@ -54,7 +60,7 @@ def getValidStatusTypes():
       else:
         result[ section ] = { 'StatusType' : None }  
     else:
-      result[ section ] = { 'StatusType' : res }
+      result[ section ] = { 'StatusType' : Utils.getTypedList( res ) }
       
   return result     
   
@@ -66,7 +72,10 @@ def getValidPolicyResult():
   DEFAULTS = [ 'Error', 'Unknown', 'Banned', 'Probing', 'Bad', 'Active' ]
   
   result = Operations().getValue( 'RSSConfiguration/GeneralConfig/PolicyResult' )
-  return ( 1 and result ) or DEFAULTS
+  if result is not None:
+    return Utils.getTypedList( result )
+  return DEFAULTS
+
 
 def getValidSiteTypes():
   '''
@@ -76,7 +85,10 @@ def getValidSiteTypes():
   DEFAULTS = [ 'T1', 'T2', 'T3', 'T4' ]
   
   result = Operations().getValue( 'RSSConfiguration/GeneralConfig/SiteType' )
-  return ( 1 and result ) or DEFAULTS
+  if result is not None:
+    return Utils.getTypedList( result )
+  return DEFAULTS
+
 
 def getValidServiceTypes():
   '''
@@ -86,7 +98,10 @@ def getValidServiceTypes():
   DEFAULTS = [ 'Computing', 'Storage', 'VO-BOX', 'VOMS', 'CondDB' ]
   
   result = Operations().getValue( 'RSSConfiguration/GeneralConfig/ServiceType' )
-  return ( 1 and result ) or DEFAULTS
+  if result is not None:
+    return Utils.getTypedList( result )
+  return DEFAULTS
+
 
 def getValidResourceTypes():
   '''
@@ -96,7 +111,9 @@ def getValidResourceTypes():
   DEFAULTS = [ 'CE', 'CREAMCE', 'SE', 'LFC_C', 'LFC_L', 'FTS', 'VOMS' ]
   
   result = Operations().getValue( 'RSSConfiguration/GeneralConfig/ResourceType' )
-  return ( 1 and result ) or DEFAULTS
+  if result is not None:
+    return Utils.getTypedList( result )
+  return DEFAULTS
 
 def getValidPolicyTypes():
   '''
@@ -106,8 +123,10 @@ def getValidPolicyTypes():
   DEFAULTS = [ 'Resource_PolType', 'Alarm_PolType', 'Collective_PolType', 'RealBan_PolType' ]
   
   result = Operations().getValue( 'RSSConfiguration/GeneralConfig/PolicyTypes' )
-  return ( 1 and result ) or DEFAULTS
-  
+  if result is not None:
+    return Utils.getTypedList( result )
+  return DEFAULTS
+
 ################################################################################
 
 views_panels = {
