@@ -7,8 +7,8 @@
 
 import copy
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAt
-from DIRAC.ResourceStatusSystem.Utilities    import Utils
+from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAtOperations
+from DIRAC.ResourceStatusSystem.Utilities    import RssConfiguration, Utils
 from DIRAC.ResourceStatusSystem              import views_panels
 
 __RCSID__ = '$Id: $'
