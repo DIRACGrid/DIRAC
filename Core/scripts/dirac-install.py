@@ -5,7 +5,7 @@ Compile the externals
 """
 __RCSID__ = "$Id$"
 
-import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat, types, shutil, tempFile
+import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat, types, shutil
 
 try:
   import zipfile
@@ -787,7 +787,6 @@ def urlretrieveTimeout( url, fileName='', timeout = 0 ):
       localFD = open( fileName, "wb" )
     receivedBytes = 0L
     data = remoteFD.read( 16384 )
-    urlData = data
     count = 1
     progressBar = False
     while data:
