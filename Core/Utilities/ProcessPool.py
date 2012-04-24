@@ -751,7 +751,6 @@ class ProcessPool:
         os.kill( worker.pid(), signal.SIGKILL )     
       del self.__workersDict[pid]
   
-
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
@@ -773,9 +772,3 @@ class ProcessPool:
       self.processResults()
       time.sleep( 1 )
 
-  def __del__( self ):
-    """ clear ending, terminating all workers, empty queues etc.
-
-    :param self: self reference
-    """
-    self.finalize()
