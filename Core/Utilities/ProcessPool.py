@@ -765,7 +765,7 @@ class ProcessPool:
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
-
+        
     :param self: self reference
     """
     if self.__daemonProcess:
@@ -776,7 +776,7 @@ class ProcessPool:
 
   def __backgroundProcess( self ):
     """ daemon thread target
-
+    
     :param self: self reference
     """
     while True:
