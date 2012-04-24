@@ -20,7 +20,7 @@ def getTypedList( stringValue ):
   '''
   Returns a typed list from a csv
   '''
-  return [ Utils.typedobj_of_string(e) for e in List.fromChar( stringValue ) ]
+  return [ typedobj_of_string(e) for e in List.fromChar( stringValue ) ]
 
 def where(c, f):
   return "Class " + str(c.__class__.__name__) + ", in Function " + (f.__name__)
