@@ -55,7 +55,7 @@ def getValidStatusTypes():
   for section in sections[ 'Value' ]:
     res = opHelper.getValue( 'RSSConfiguration/GeneralConfig/Resources/%s/StatusType' % section )
     if res is None:
-      if DEFAULS.has_key( section ):
+      if DEFAULTS.has_key( section ):
         result[ section ] = { 'StatusType' : DEFAULTS[ section ] }
       else:
         result[ section ] = { 'StatusType' : None }  
