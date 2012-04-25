@@ -704,15 +704,16 @@ class SRM2Storage( StorageBase ):
     gLogger.info( "SRM2Storage.__putFile: Using %d streams" % nbstreams )
     gLogger.info( "SRM2Storage.__putFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
     
-    ## create pipe 
+    ## create pipe if file size is bigger than 32MB
     pipeName = "%s-%s" % ( tempfile.mktemp(), os.path.basename( src_file ) )
     useFIFO = False
     try:
-      os.mkfifo( pipeName )
-      ret = shellCall( cmdSeq = "dd if=%s of=%s bs=%s" % ( src_file, pipeName, "32M" ), timeout = 10 )
-      if ret["OK"]:
-        useFIFO = True
-        gLogger.debug("SRM2Storage.__putFile: Pipe %s created" % pipeName )
+      if sourceSize > 33554432: 
+        os.mkfifo( pipeName )
+        ret = shellCall( cmdSeq = "dd if=%s of=%s bs=%s &" % ( src_file, pipeName, "32M" ), timeout = 10 )
+        if ret["OK"]:
+          useFIFO = True
+          gLogger.debug("SRM2Storage.__putFile: Pipe %s created" % pipeName )
     except OSError, error:
       gLogger.error( "SRM2Storage.__putFile: Unable to create pipe: %s" % str(error) )
 
