@@ -11,7 +11,6 @@ import os
 import re
 import time
 import tempfile
-import command
 from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
 from types import ListType, StringTypes, StringType, DictType, IntType
 ## from DIRAC
@@ -710,8 +709,10 @@ class SRM2Storage( StorageBase ):
     useFIFO = False
     try:
       os.mkfifo( pipeName )
-      ret = shellCall( "dd if=%s of=%s bs=%s" % ( src_file, pipeName, "32M" ) )
-      useFIFO = True
+      ret = shellCall( cmdSeq = "dd if=%s of=%s bs=%s" % ( src_file, pipeName, "32M" ), timeout = 10 )
+      if ret["OK"]:
+        useFIFO = True
+        gLogger.debug("SRM2Storage.__putFile: Pipe %s created" % pipeName )
     except OSError, error:
       gLogger.error( "SRM2Storage.__putFile: Unable to create pipe: %s" % str(error) )
 
