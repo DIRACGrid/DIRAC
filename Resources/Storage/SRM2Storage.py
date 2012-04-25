@@ -705,7 +705,7 @@ class SRM2Storage( StorageBase ):
     gLogger.info( "SRM2Storage.__putFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
     
     ## create pipe 
-    pipeName = "%s/%s" % ( tempfile.mktemp(), os.path.basename( src_file ) )
+    pipeName = "%s-%s" % ( tempfile.mktemp(), os.path.basename( src_file ) )
     useFIFO = False
     try:
       os.mkfifo( pipeName )
