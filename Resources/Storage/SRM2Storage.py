@@ -706,24 +706,21 @@ class SRM2Storage( StorageBase ):
     
     ## create pipe if file size is bigger than 32MB
     pipeName = "%s-%s" % ( tempfile.mktemp(), os.path.basename( src_file ) )
-    useFIFO = False
     try:
       if sourceSize > 33554432: 
         os.mkfifo( pipeName )
         ret = shellCall( cmdSeq = "dd if=%s of=%s bs=%s &" % ( src_file, pipeName, "32M" ), timeout = 10 )
         if ret["OK"]:
-          useFIFO = True
           gLogger.debug("SRM2Storage.__putFile: Pipe %s created" % pipeName )
+          src_url = "file:%s" % pipeName
     except OSError, error:
       gLogger.error( "SRM2Storage.__putFile: Unable to create pipe: %s" % str(error) )
-
-    if useFIFO: 
-      src_url = "file:%s" % pipeName
 
     res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url,
                       srctype, dsttype, nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
 
-    if useFIFO:
+    ## remove pipe
+    if os.path.exists( pipeName ):
       os.unlink( pipeName )
 
     if not res['OK']:
