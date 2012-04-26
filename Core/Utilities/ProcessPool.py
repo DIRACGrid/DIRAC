@@ -145,10 +145,34 @@ class WorkingProcess( multiprocessing.Process ):
     """
     multiprocessing.Process.__init__( self )
     self.daemon = True
+    ## flag to see if task is being treated
     self.__working = multiprocessing.Value( 'i', 0 )
+    ## task counter
+    self.__taskCounter = multiprocessing.Value( 'i', 0 )
+    ## task queue
     self.__pendingQueue = pendingQueue
+    ## results queue
     self.__resultsQueue = resultsQueue
+    ## placeholder for watchdog thread
+    self.__watchdogThread = None
+    ## start yourself at least
     self.start()
+
+  def __watchdog( self ):
+    """ watchdog thread target
+
+    terminating/killing WorkingProcess when parent process is dead
+
+    :param self: self reference
+    """
+    while True:
+      ## parent is dead when commit suicide
+      if os.getppid() == 1:
+        os.kill( self.pid, signal.SIGTERM )
+        ## wait for a while and if still alive use REAL silencer
+        time.sleep(30)
+        os.kill( self.pid, signal.SIGKILL )
+      time.sleep(30)
 
   def isWorking( self ):
     """ check if process is running
@@ -156,6 +180,13 @@ class WorkingProcess( multiprocessing.Process ):
     :param self: self reference
     """
     return self.__working.value == 1
+
+  def taskProcessed( self ):
+    """ for better monitoring tell how many tasks have been processed so far
+
+    :param self: self reference
+    """
+    return self.__taskCounter
 
   def run( self ):
     """ task execution
@@ -165,24 +196,42 @@ class WorkingProcess( multiprocessing.Process ):
 
     :param self: self reference
     """
+    ## start watchdog thread
+    self.__watchdogThread = threading.Thread( target = self.__watchdog )
+    self.__watchdogThread.daemon = True
+    self.__watchdogThread.start()
+    ## http://cdn.memegenerator.net/instances/400x/19450565.jpg
     if LockRing:
       # Reset all locks
       lr = LockRing()
       lr._openAll()
       lr._setAllEvents()
+    ## main loop
+    taskCounter = 0
     while True:
+      ## commit suicide together with your parent 
+      if os.getppid() == 1:
+        break
+      ## get task from queue
       try:
         task = self.__pendingQueue.get( block = True, timeout = 10 )
       except Queue.Empty:
         continue
+      ## conventional murder
       if task.isBullet():
         break
+      ## toggle __working flag
       self.__working.value = 1
+      ## execute task, put back callbacks
       try:
         task.process()
         if task.hasCallback() or task.usePoolCallbacks():
-          self.__resultsQueue.put( task, block = True )
+          self.__resultsQueue.put( task, block = True, timeout = 60 )
       finally:
+        taskCounter += 1
+        ## increase task counter
+        self.__taskCounter = taskCounter 
+        ## toggle __working flag
         self.__working.value = 0
 
 class BulletTask:
