@@ -170,11 +170,7 @@ class WorkingProcess( multiprocessing.Process ):
       lr = LockRing()
       lr._openAll()
       lr._setAllEvents()
-      
     while True:
-      ## commit suicide when parent has died
-      if os.getppid() == 1:
-        return
       try:
         task = self.__pendingQueue.get( block = True, timeout = 10 )
       except Queue.Empty:
@@ -185,7 +181,7 @@ class WorkingProcess( multiprocessing.Process ):
       try:
         task.process()
         if task.hasCallback() or task.usePoolCallbacks():
-          self.__resultsQueue.put( task, block = True, timeout = 60 )
+          self.__resultsQueue.put( task, block = True )
       finally:
         self.__working.value = 0
 
