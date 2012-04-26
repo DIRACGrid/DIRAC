@@ -641,7 +641,7 @@ class ProcessPool:
       self.__killIdle.append( self.getNumIdleProcesses() )
       return
     self.__killPeriodStart = now
-    #Kill exceeding processes over the max + average idle processes
+    # Kill exceeding processes over the max + average idle processes
     toKill = max( len( self.__workersDict ) - self.__maxSize, 0 )
     for iP in self.__killIdle:
       toKill += iP
