@@ -156,6 +156,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                  import gLogger
 from DIRAC                                  import S_OK, S_ERROR
+from DIRAC                                  import Time
 
 import MySQLdb
 # This is for proper initialization of embeded server, it should only be called once
@@ -376,7 +377,11 @@ class MySQL:
           return retDict
         inEscapeValues.append( retDict['Value'] )
       else:
-        inEscapeValues.append( str( value ) )
+        retDict = self.__escapeString( str( value ), connection )
+        if not retDict['OK']:
+          self.__putConnection( connection )
+          return retDict
+        inEscapeValues.append( retDict['Value'] )
     self.__putConnection( connection )
     return S_OK( inEscapeValues )
 
