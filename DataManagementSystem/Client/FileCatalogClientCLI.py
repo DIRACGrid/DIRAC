@@ -443,7 +443,7 @@ File Catalog Client $Revision: 1.17 $Date:
       localCache=argss[3]
     try:
       dirac = Dirac()
-      result = dirac.replicate(lfn,se,sourceSE,printOutput=True)      
+      result = dirac.replicateFile(lfn,se,sourceSE,printOutput=True)      
       if not result['OK']:
         print 'Error: %s' %(result['Message'])
       elif not result['Value']:
