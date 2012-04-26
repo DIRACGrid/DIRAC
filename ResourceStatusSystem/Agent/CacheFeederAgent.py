@@ -139,6 +139,12 @@ class CacheFeederAgent( AgentModule ):
     spaceTokens     = CS.getSpaceTokens() 
 
     for site,siteDict in spaceEndpoints.items():
+      
+      if not isinstance( siteDict, dict ):
+        continue
+      if not siteDict.has_key( 'Endpoint' ):
+        continue
+      
       for spaceToken in spaceTokens:
 
         elementsToCheck.append( ( siteDict[ 'Endpoint' ], spaceToken, ) )
