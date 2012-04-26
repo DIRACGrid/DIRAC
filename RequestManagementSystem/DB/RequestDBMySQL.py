@@ -295,8 +295,8 @@ class RequestDBMySQL( DB ):
     req = "SELECT * from SubRequests WHERE Status IN ( 'Waiting', 'Assigned' ) ORDER BY ExecutionOrder, LastUpdate"
     # now get sorted list of RequestID (according to the above)
     req = "SELECT * from ( %s ) as T1 GROUP BY RequestID" % req
-    # and get the 10 oldest ones of Type requestType
-    req = "SELECT RequestID, ExecutionOrder FROM ( %s ) as T2 WHERE RequestType = %s ORDER BY LastUpdate limit 10" % ( req, myRequestType )
+    # and get the 100 oldest ones of Type requestType
+    req = "SELECT RequestID, ExecutionOrder FROM ( %s ) as T2 WHERE RequestType = %s ORDER BY LastUpdate limit 100" % ( req, myRequestType )
     # and now get all waiting SubRequest for the selected RequestID and ExecutionOrder 
     req = "SELECT A.%s FROM SubRequests AS A, ( %s ) AS B WHERE " % ( ', A.'.join( fields ), req )
     req = "%s A.RequestID = B.RequestID AND A.ExecutionOrder = B.ExecutionOrder AND A.Status = 'Waiting' AND A.RequestType = %s;" % ( req, myRequestType )
