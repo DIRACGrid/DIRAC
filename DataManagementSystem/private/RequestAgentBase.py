@@ -135,7 +135,7 @@ class RequestAgentBase( AgentModule ):
 
     :param self: self reference
     """
-    self.log.info("resetRequest: will put %s back requests" % len(self.__requestHolder) )
+    self.info("resetRequest: will put %s back requests" % len(self.__requestHolder) )
     for requestName, requestTuple  in self.__requestHolder.items():
       requestString, requestServer = requestTuple
       reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
