@@ -1,19 +1,7 @@
-################################################################################
-# $HeadURL$
-################################################################################
-
 """ This is the SRM2 StorageClass """
 
 __RCSID__ = "$Id$"
 
-## imports
-import os
-import re
-import time
-import tempfile
-from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
-from types import ListType, StringTypes, StringType, DictType, IntType
-## from DIRAC
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
 from DIRAC.Core.Security.ProxyInfo                      import getProxyInfo
@@ -22,16 +10,13 @@ from DIRAC.Core.Utilities.Subprocess                    import pythonCall
 from DIRAC.Core.Utilities.Pfn                           import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.List                          import breakListIntoChunks
 from DIRAC.Core.Utilities.File                          import getSize
-from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC.AccountingSystem.Client.Types.DataOperation  import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient      import gDataStoreClient
 
-################################################################################
-class SRM2Storage( StorageBase ):
-  """
-  .. class:: SRM2Storage
+from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
+import types, re, os, time
 
-  """
+class SRM2Storage( StorageBase ):
 
   def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
     self.isok = True
@@ -326,9 +311,9 @@ class SRM2Storage( StorageBase ):
       if not protocols['OK']:
         return protocols
       listProtocols = protocols['Value']
-    elif type( protocols ) == StringType:
+    elif type( protocols ) == types.StringType:
       listProtocols = [protocols]
-    elif type( protocols ) == ListType:
+    elif type( protocols ) == types.ListType:
       listProtocols = protocols
     else:
       return S_ERROR( "SRM2Storage.getTransportURL: Must supply desired protocols to this plug-in." )
@@ -703,26 +688,8 @@ class SRM2Storage( StorageBase ):
       nbstreams = 1
     gLogger.info( "SRM2Storage.__putFile: Using %d streams" % nbstreams )
     gLogger.info( "SRM2Storage.__putFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
-    
-    ## create pipe if file size is bigger than 32MB
-    pipeName = "%s-%s" % ( tempfile.mktemp(), os.path.basename( src_file ) )
-    try:
-      if sourceSize > 33554432: 
-        os.mkfifo( pipeName )
-        ret = shellCall( cmdSeq = "dd if=%s of=%s bs=%s &" % ( src_file, pipeName, "32M" ), timeout = 10 )
-        if ret["OK"]:
-          gLogger.debug("SRM2Storage.__putFile: Pipe %s created" % pipeName )
-          src_url = "file:%s" % pipeName
-    except OSError, error:
-      gLogger.error( "SRM2Storage.__putFile: Unable to create pipe: %s" % str(error) )
-
     res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url,
                       srctype, dsttype, nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
-
-    ## remove pipe
-    if os.path.exists( pipeName ):
-      os.unlink( pipeName )
-
     if not res['OK']:
       # Remove the failed replica, just in case
       result = self.__executeOperation( dest_url, 'removeFile' )
@@ -770,16 +737,16 @@ class SRM2Storage( StorageBase ):
                                                dsttype, self.nobdii, self.voName, nbstreams, self.conf_file,
                                                self.insecure, self.verbose, timeout, src_spacetokendesc,
                                                dest_spacetokendesc )
-      if type( errCode ) != IntType:
+      if type( errCode ) not in [types.IntType]:
         gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer",
                        "%s %s" % ( errCode, type( errCode ) ) )
-        if type( errCode ) != ListType:
+        if type( errCode ) in [types.ListType]:
           msg = []
           for err in errCode:
             msg.append( '%s of type %s' % ( err, type( err ) ) )
           gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was List:\n" , "\n".join( msg ) )
         return S_ERROR( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer" )
-      if type( errStr ) not in StringTypes:
+      if type( errStr ) not in types.StringTypes:
         gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string",
                        "%s %s" % ( errCode, type( errStr ) ) )
         return S_ERROR( "SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string" )
@@ -1350,13 +1317,13 @@ class SRM2Storage( StorageBase ):
     return resDict
 
   def checkArgumentFormat( self, path ):
-    if type( path ) in StringTypes:
+    if type( path ) in types.StringTypes:
       urls = {path:False}
-    elif type( path ) == ListType:
+    elif type( path ) == types.ListType:
       urls = {}
       for url in path:
         urls[url] = False
-    elif type( path ) == DictType:
+    elif type( path ) == types.DictType:
       urls = path
     else:
       return S_ERROR( "SRM2Storage.checkArgumentFormat: Supplied path is not of the correct format." )
