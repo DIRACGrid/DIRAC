@@ -49,6 +49,11 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
 *Resources
 NEW: SSHLSFComputingElement added 
 
+[v6r3p8]
+
+*Web
+CHANGE: return back to the release web2012041601
+
 [v6r3p7]
 
 *Transformation
