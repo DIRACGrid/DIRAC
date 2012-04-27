@@ -1049,38 +1049,46 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'PolicyResult', locals() )
-  def addOrModifyPolicyResultLog( self, granularity, name, policyName, statusType,
-                                  status, reason, lastCheckTime ):
-    '''
-    Using `name`, `policyName` and `statusType` and `lastCheckTime` to query the 
-    database, decides whether to insert or update the table.
 
-    :Parameters:
-      **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
-        | `Service` | `Resource` | `StorageElement`  
-      **name** - `string`
-        name of the element
-      **policyName** - `string`
-        name of the policy
-      **statusType** - `string`
-        it has to be a valid status type for the given granularity
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`    
-      **reason** - `string`
-        decision that triggered the assigned status
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the policy result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'PolicyResultLog', locals() )  
+# THIS METHOD DOES NOT WORK AS EXPECTED 
+# __addOrModifyElement overwrittes the field lastCheckTime.
+# Anyway, this table is a pure insert / get / delete table. No updates foreseen.
+ 
+#  def addOrModifyPolicyResultLog( self, granularity, name, policyName, statusType,
+#                                  status, reason, lastCheckTime ):
+#    '''
+#    Using `name`, `policyName` and `statusType` and `lastCheckTime` to query the 
+#    database, decides whether to insert or update the table.
+#    
+#    BE CAREFUL: lastCheckTime is on the UNIQUE_TOGETHER tuple. On the other hand,
+#    lastCheckTime is overwritten 
+#
+#    :Parameters:
+#      **granularity** - `string`
+#        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+#        | `Service` | `Resource` | `StorageElement`  
+#      **name** - `string`
+#        name of the element
+#      **policyName** - `string`
+#        name of the policy
+#      **statusType** - `string`
+#        it has to be a valid status type for the given granularity
+#      **status** - `string`
+#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+#        `Probing` | `Banned`    
+#      **reason** - `string`
+#        decision that triggered the assigned status
+#      **lastCheckTime** - `datetime`
+#        time-stamp setting last time the policy result was checked
+#      **meta** - `[, dict]`
+#        meta-data for the MySQL query. It will be filled automatically with the\
+#       `table` key and the proper table name.
+#
+#    :return: S_OK() || S_ERROR()
+#    '''
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'PolicyResultLog', locals() )  
   def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
                               dateEffective, lastCheckTime ):
     '''
