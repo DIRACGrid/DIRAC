@@ -350,7 +350,9 @@ class ResourceManagementClient:
   def updatePolicyResultLog( self, granularity, name, policyName, statusType,
                              status, reason, lastCheckTime, meta = None ):
     '''
-    Updates PolicyResultLog with the parameters given. 
+    Updates PolicyResultLog with the parameters given. By default, `name`, 
+    `policyName`, 'statusType` and `lastCheckTime` will be the parameters used to 
+    select the row.
     
     :Parameters:
       **granularity** - `string`
@@ -1047,6 +1049,38 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'PolicyResult', locals() )
+  def addOrModifyPolicyResultLog( self, granularity, name, policyName, statusType,
+                               status, reason, lastCheckTime ):
+    '''
+    Using `name`, `policyName` and `statusType` and `lastCheckTime` to query the 
+    database, decides whether to insert or update the table.
+
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`  
+      **name** - `string`
+        name of the element
+      **policyName** - `string`
+        name of the policy
+      **statusType** - `string`
+        it has to be a valid status type for the given granularity
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`    
+      **reason** - `string`
+        decision that triggered the assigned status
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the policy result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__addOrModifyElement( 'PolicyResultLog', locals() )  
   def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
                               dateEffective, lastCheckTime ):
     '''

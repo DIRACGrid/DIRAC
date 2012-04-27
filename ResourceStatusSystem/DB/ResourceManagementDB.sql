@@ -42,9 +42,12 @@ CREATE TABLE PolicyResultLog(
   PolicyName VARCHAR(64) NOT NULL,
   INDEX (PolicyName),
   StatusType VARCHAR(16) NOT NULL DEFAULT '',
+  INDEX (StatusType),
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
   LastCheckTime DATETIME NOT NULL,
+  INDEX (LastCheckTime),
+  UNIQUE KEY (Name,PolicyName,StatusType,LastCheckTime),
   PRIMARY KEY(PolicyResultLogID)
 ) Engine=InnoDB;
 
