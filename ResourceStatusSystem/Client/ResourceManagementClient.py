@@ -412,9 +412,9 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'get', 'PolicyResultLog', locals() )
-  def deletePolicyResult( self, granularity = None, name = None, 
-                          policyName = None, statusType = None, status = None, 
-                          reason = None, lastCheckTime = None, meta = None ):
+  def deletePolicyResultLog( self, granularity = None, name = None, 
+                             policyName = None, statusType = None, status = None, 
+                             reason = None, lastCheckTime = None, meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -443,7 +443,7 @@ class ResourceManagementClient:
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'PolicyResult', locals() )
+    return self.__query( 'delete', 'PolicyResultLog', locals() )
     
 ################################################################################
 # CLIENT CACHE FUNCTIONS
