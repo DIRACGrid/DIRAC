@@ -494,20 +494,6 @@ class ProcessPool:
     self.__killIdle = []
     self.__killPeriodStart = time.time()
 
-  def stopProcessing( self ):
-    """ case fire
-
-    :param self: self reference
-    """
-    self.finalize()
-
-  def startProcessing( self ):
-    """ restrat processing again 
-
-    :param self: self reference 
-    """
-    self.__draining = False 
-    
   def setPoolCallback( self, callback ):
     """ set ProcessPool callback function
 
@@ -814,7 +800,7 @@ class ProcessPool:
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
-        
+
     :param self: self reference
     """
     if self.__daemonProcess:
@@ -825,7 +811,7 @@ class ProcessPool:
 
   def __backgroundProcess( self ):
     """ daemon thread target
-    
+
     :param self: self reference
     """
     while True:

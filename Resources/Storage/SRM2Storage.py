@@ -32,6 +32,7 @@ class SRM2Storage( StorageBase ):
     self.wspath = wspath
     self.spaceToken = spaceToken
     self.cwd = self.path
+
     StorageBase.__init__( self, self.name, self.path )
 
     self.timeout = 100
