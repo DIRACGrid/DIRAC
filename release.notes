@@ -33,6 +33,7 @@ FIX: StalledJobAgent - StalledTimeHours and FailedTimeHours are read each cycle,
      Watchdog heartBeat period (should be renamed); add NormCPUTime to Accounting record
 NEW: SiteDirector - support for the operation per VO in multi-VO installations
 FIX: StalledJobAgent - get ProcessingType from JDL if defined
+BUGFIX: dirac-wms-job-peek - missing printout in the command
 
 *RSS
 BUGFIX: Result in ClientCache table is a varchar, but the method was getting a datetime
