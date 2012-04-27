@@ -320,7 +320,7 @@ class TransformationDB( DB ):
     self.database_name = self.__class__.__name__
     # FIXME: The Setup is in the middle of the path.
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    value = Operations().getValue( 'InputDataFilter/%s/%sFilter' % ( setup, self.database_name ), '' )
+    value = Operations().getValue( 'InputDataFilter/%sFilter' % self.database_name, '' )
     if value:
       refilter = re.compile( value )
       resultList.append( ( 0, refilter ) )
