@@ -1173,9 +1173,9 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'VOBOXCache', locals() )  
-  def addOrModifyElementSpaceTokenOccupancyCache( self, site, token, total, 
-                                                  guaranteed, free, 
-                                                  lastCheckTime, meta = None ):
+  def addOrModifySpaceTokenOccupancyCache( self, site, token, total, 
+                                           guaranteed, free, 
+                                           lastCheckTime, meta = None ):
     '''
     Using `site` and `token` to query the database, decides whether to insert or 
     update the table.
