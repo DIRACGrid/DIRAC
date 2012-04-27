@@ -1050,7 +1050,7 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'PolicyResult', locals() )
   def addOrModifyPolicyResultLog( self, granularity, name, policyName, statusType,
-                               status, reason, lastCheckTime ):
+                                  status, reason, lastCheckTime ):
     '''
     Using `name`, `policyName` and `statusType` and `lastCheckTime` to query the 
     database, decides whether to insert or update the table.
