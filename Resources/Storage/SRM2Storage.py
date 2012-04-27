@@ -53,8 +53,9 @@ class SRM2Storage( StorageBase ):
     self.timeout = 100
     self.long_timeout = 1200
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
-    self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
+    self.fileTimeout  = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
+    self.uploadBlockSizeMB = gConfig.getValue( '/Resources/StorageElements/UploadBlockSizeMB', 32 )
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
@@ -710,7 +711,7 @@ class SRM2Storage( StorageBase ):
     try:
       if sourceSize > 33554432: 
         os.mkfifo( pipeName )
-        ret = shellCall( cmdSeq = "dd if=%s of=%s bs=%s &" % ( src_file, pipeName, "32M" ), timeout = 10 )
+        ret = shellCall( cmdSeq = "dd if=%s of=%s bs=%sM &" % ( src_file, pipeName, self.uploadBlockSizeMB ), timeout = 10 )
         if ret["OK"]:
           gLogger.debug("SRM2Storage.__putFile: Pipe %s created" % pipeName )
           src_url = "file:%s" % pipeName
