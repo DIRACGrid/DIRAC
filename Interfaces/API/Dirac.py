@@ -2607,7 +2607,7 @@ class Dirac:
     return result
 
   #############################################################################
-  def peek( self, jobID ):
+  def peek( self, jobID, printout = False ):
     """The peek function will attempt to return standard output from the WMS for
        a given job if this is available.  The standard output is periodically
        updated from the compute resource via the application Watchdog. Available
@@ -2637,8 +2637,10 @@ class Dirac:
 
     stdout = 'Not available yet.'
     if result['Value'].has_key( 'StandardOutput' ):
-      self.log.info( result['Value']['StandardOutput'] )
+      self.log.verbose( result['Value']['StandardOutput'] )
       stdout = result['Value']['StandardOutput']
+      if printout:
+        print stdout 
     else:
       self.log.info( 'No standard output available to print.' )
 
