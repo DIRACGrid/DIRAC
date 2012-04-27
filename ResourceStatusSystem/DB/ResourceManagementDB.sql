@@ -33,6 +33,21 @@ CREATE TABLE PolicyResult(
   PRIMARY KEY(PolicyResultID)
 ) Engine=InnoDB;
 
+DROP TABLE IF EXISTS PolicyResultLog;
+CREATE TABLE PolicyResultLog(
+  PolicyResultLogID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Granularity VARCHAR(32) NOT NULL,
+  Name VARCHAR(64) NOT NULL,
+  INDEX (Name),
+  PolicyName VARCHAR(64) NOT NULL,
+  INDEX (PolicyName),
+  StatusType VARCHAR(16) NOT NULL DEFAULT '',
+  Status VARCHAR(8) NOT NULL,
+  Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
+  LastCheckTime DATETIME NOT NULL,
+  PRIMARY KEY(PolicyResultLogID)
+) Engine=InnoDB;
+
 DROP TABLE IF EXISTS ClientCache;
 CREATE TABLE ClientCache(
   ClientCacheID INT UNSIGNED NOT NULL AUTO_INCREMENT,
