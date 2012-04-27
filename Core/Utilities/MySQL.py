@@ -1123,6 +1123,7 @@ class MySQL:
 #
 if __name__ == '__main__':
 
+  from DIRAC.Core.Utilities import Time
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   gLogger.setLevel( 'VERBOSE' )
@@ -1251,6 +1252,14 @@ if __name__ == '__main__':
     assert len( RESULT['Value'] ) == 1
 
     RESULT = TESTDB.getFields( NAME, newer = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
+    assert RESULT['OK']
+    assert len( RESULT['Value'] ) == 0
+
+    RESULT = TESTDB.getFields( NAME, older = Time.toString(), timeStamp = 'Time' )
+    assert RESULT['OK']
+    assert len( RESULT['Value'] ) == 1
+
+    RESULT = TESTDB.getFields( NAME, newer = Time.dateTime(), timeStamp = 'Time' )
     assert RESULT['OK']
     assert len( RESULT['Value'] ) == 0
 
