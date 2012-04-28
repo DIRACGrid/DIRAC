@@ -82,27 +82,27 @@
       invalid arguments
 
 
-    insertFields( self, tableName, inFields = None, inValues = None, conn = None ):
+    insertFields( self, tableName, inFields = None, inValues = None, conn = None, inDict = None ):
 
       Insert a new row in "tableName" assigning the values "inValues" to the
       fields "inFields".
+      Alternatively inDict can be used
       String type values will be appropriately escaped.
 
 
     updateFields( self, tableName, updateFields = None, updateValues = None,
                   condDict = None,
                   limit = False, conn = None,
+                  updateDict = None,
                   older = None, newer = None,
                   timeStamp = None, orderAttribute = None ):
 
       Update "updateFields" from "tableName" with "updateValues".
-      conditions lInFields = lInValues
+      updateDict alternative way to provide the updateFields and updateValues
       N records can match the condition
-      return S_OK( tuple(Field,Value) )
-      if outFields == None all fields in "tableName" are returned
-      if inFields and inValues are None, no condition is imposed
+      return S_OK( number of updated rows )
       if limit is not False, the given limit is set
-      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+      String type values will be appropriately escaped.
 
 
     deleteEntries( self, tableName,
@@ -112,11 +112,9 @@
                    timeStamp = None, orderAttribute = None ):
 
       Delete rows from "tableName" with
-      conditions lInFields = lInValues
       N records can match the condition
-      if inFields and inValues are None, no condition is imposed
       if limit is not False, the given limit is set
-      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+      String type values will be appropriately escaped, they can be single values or lists of values.
 
 
     getFields( self, tableName, outFields = None,
@@ -125,13 +123,11 @@
                older = None, newer = None,
                timeStamp = None, orderAttribute = None ):
 
-      Select "outFields" from "tableName" with
-      conditions lInFields = lInValues
+      Select "outFields" from "tableName" with condDict
       N records can match the condition
       return S_OK( tuple(Field,Value) )
-      if outFields == None all fields in "tableName" are returned
       if limit is not False, the given limit is set
-      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+      String type values will be appropriately escaped, they can be single values or lists of values.
 
       for compatibility with other methods condDict keyed argument is added
 
@@ -1006,11 +1002,9 @@ class MySQL:
                      timeStamp = None, orderAttribute = None ):
     """
       Delete rows from "tableName" with
-      conditions lInFields = lInValues
       N records can match the condition
-      if inFields and inValues are None, no condition is imposed
       if limit is not False, the given limit is set
-      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+      String type values will be appropriately escaped, they can be single values or lists of values.
     """
     table = _quotedList( [tableName] )
     if not table:
@@ -1032,19 +1026,19 @@ class MySQL:
   def updateFields( self, tableName, updateFields = None, updateValues = None,
                     condDict = None,
                     limit = False, conn = None,
+                    updateDict = None,
                     older = None, newer = None,
                     timeStamp = None, orderAttribute = None ):
     """
       Update "updateFields" from "tableName" with "updateValues".
-      conditions lInFields = lInValues
+      updateDict alternative way to provide the updateFields and updateValues
       N records can match the condition
-      return S_OK( tuple(Field,Value) )
-      if outFields == None all fields in "tableName" are returned
-      if inFields and inValues are None, no condition is imposed
+      return S_OK( number of updated rows )
       if limit is not False, the given limit is set
-      inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+      String type values will be appropriately escaped.
+
     """
-    if not updateFields:
+    if not updateFields and not updateDict:
       return S_OK( 0 )
 
     table = _quotedList( [tableName] )
@@ -1058,6 +1052,23 @@ class MySQL:
       error = 'Mismatch between updateFields and updateValues.'
       self.logger.warn( 'updateFields:', error )
       return S_ERROR( error )
+
+    if updateFields == None:
+      updateFields = []
+      updateValues = []
+
+    if updateDict:
+      if type( updateDict ) != types.DictType:
+        error = 'updateDict must be a of Type DictType'
+        self.logger.warn( 'updateFields:', error )
+        return S_ERROR( error )
+      try:
+        updateFields += updateDict.keys()
+        updateValues += [updateDict[k] for k in updateDict.keys()]
+      except TypeError:
+        error = 'updateFields and updateValues must be a list'
+        self.logger.warn( 'updateFields:', error )
+        return S_ERROR( error )
 
     updateValues = self._escapeValues( updateValues )
     if not updateValues['OK']:
@@ -1081,7 +1092,7 @@ class MySQL:
                          ( table, updateString, condition ), conn )
 
 #############################################################################
-  def insertFields( self, tableName, inFields = None, inValues = None, conn = None ):
+  def insertFields( self, tableName, inFields = None, inValues = None, conn = None, inDict = None ):
     """
       Insert a new row in "tableName" assigning the values "inValues" to the
       fields "inFields".
@@ -1098,11 +1109,30 @@ class MySQL:
       self.logger.warn( 'insertFields:', retDict['Message'] )
       return retDict
 
+    if inFields == None:
+      inFields = []
+      inValues = []
+
+    if inDict:
+      if type( inDict ) != types.DictType:
+        error = 'inDict must be a of Type DictType'
+        self.logger.warn( 'insertFields:', error )
+        return S_ERROR( error )
+      try:
+        inFields += inDict.keys()
+        inValues += [inDict[k] for k in inDict.keys()]
+      except TypeError:
+        error = 'inFields and inValues must be a list'
+        self.logger.warn( 'insertFields:', error )
+        return S_ERROR( error )
+
     inFieldString = _quotedList( inFields )
     if inFieldString == None:
       error = 'Invalid inFields arguments'
       self.logger.warn( 'insertFields:', error )
       return S_ERROR( error )
+
+
     inFieldString = '(  %s )' % inFieldString
 
     retDict = self._escapeValues( inValues )
@@ -1110,11 +1140,12 @@ class MySQL:
       self.logger.warn( 'insertFields:', retDict['Message'] )
       return retDict
     inValueString = ', '.join( retDict['Value'] )
+    inValueString = '(  %s )' % inValueString
 
     self.logger.verbose( 'insertFields:', 'inserting %s into table %s'
                           % ( inFieldString, table ) )
 
-    return self._update( 'INSERT INTO %s %s VALUES ( %s )' %
+    return self._update( 'INSERT INTO %s %s VALUES %s' %
                          ( table, inFieldString, inValueString ), conn )
 
 #####################################################################################
@@ -1123,14 +1154,20 @@ class MySQL:
 #
 if __name__ == '__main__':
 
+  import os
+  import sys
   from DIRAC.Core.Utilities import Time
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   gLogger.setLevel( 'VERBOSE' )
 
+  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
+    gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
+    sys.exit( 0 )
+
   gLogger.info( 'Testing MySQL class...' )
 
-  HOST = 'localhost'
+  HOST = '127.0.0.1'
   USER = 'Dirac'
   PWD = 'Dirac'
   DB = 'AccountingDB'
@@ -1154,6 +1191,7 @@ if __name__ == '__main__':
   SOMEFIELDS = [ 'Name', 'Surname', 'Count' ]
   ALLFIELDS = [ 'ID', 'Name', 'Surname', 'Count', 'Time' ]
   ALLVALUES = [ 1, 'Name1', 'Surn1', 1, 'UTC_TIMESTAMP()' ]
+  ALLDICT = dict( Name = 'Name1', Surname = 'Surn1', Count = 1, Time = 'UTC_TIMESTAMP()' )
   COND0 = {}
   COND10 = {'Count': range( 10 )}
 
@@ -1246,18 +1284,23 @@ if __name__ == '__main__':
     assert RESULT['OK']
     assert RESULT['Value'] == 1
 
+    time.sleep( 1 )
+
+    RESULT = TESTDB.insertFields( NAME, inDict = ALLDICT )
+    assert RESULT['OK']
+    assert RESULT['Value'] == 1
+
     time.sleep( 2 )
     RESULT = TESTDB.getFields( NAME, older = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
     assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 1
+    assert len( RESULT['Value'] ) == 2
 
     RESULT = TESTDB.getFields( NAME, newer = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
-    assert RESULT['OK']
     assert len( RESULT['Value'] ) == 0
 
     RESULT = TESTDB.getFields( NAME, older = Time.toString(), timeStamp = 'Time' )
     assert RESULT['OK']
-    assert len( RESULT['Value'] ) == 1
+    assert len( RESULT['Value'] ) == 2
 
     RESULT = TESTDB.getFields( NAME, newer = Time.dateTime(), timeStamp = 'Time' )
     assert RESULT['OK']
@@ -1265,7 +1308,7 @@ if __name__ == '__main__':
 
     RESULT = TESTDB.deleteEntries( NAME )
     assert RESULT['OK']
-    assert RESULT['Value'] == 1
+    assert RESULT['Value'] == 2
 
     print 'OK'
 
