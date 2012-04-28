@@ -24,36 +24,19 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 
 ## global instance of the DataLoggingDB
 logDB = False
-## global data path 
-dataPath = False
 
 def initializeDataLoggingHandler( serviceInfo ):
   """ handler initialisation """
-  global dataPath
   global logDB
   logDB = DataLoggingDB()
 
-  monitoringSection = PathFinder.getServiceSection( "DataManagement/DataLogging" )
-  #Get data location
-  retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection, "dataLoggingPlots" )
-  if not retDict["OK"]:
-    return retDict
-  dataPath = retDict["Value"].strip()
-  if not os.path.isabs( dataPath ):
-    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( "/LocalSite/InstancePath", rootPath ), dataPath ) )
-  gLogger.info( "Data will be written into %s" % dataPath )
-  try:
-    os.makedirs( dataPath )
-  except:
-    pass
-  try:
-    testFile = "%s/mon.jarl.test" % dataPath
-    fd = file( testFile, "w" )
-    fd.close()
-    os.unlink( testFile )
-  except IOError:
-    gLogger.fatal( "Can't write to %s" % dataPath )
-    return S_ERROR( "Data location is not writable" )
+  res = logDB._connect()
+  if not res['OK']:
+    return res
+  res = logDB._checkTable()
+  if not res['OK'] and not res['Message'] == 'The requested table already exist':
+    return res
+
   return S_OK()
 
 class DataLoggingHandler( RequestHandler ):

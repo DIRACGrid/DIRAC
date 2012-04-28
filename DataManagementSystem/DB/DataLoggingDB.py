@@ -11,10 +11,12 @@
 __RCSID__ = "$Id$"
 
 ## imports
-import re, os, sys, time, datetime
+import os
+import sys
 from types import StringTypes
 ## from DIRAC
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR, Time
+from DIRAC.Core.Utilities import Time
+from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Base.DB import DB
 
 ## DIRAC epoc timestamp
@@ -83,7 +85,7 @@ CREATE TABLE DataLoggingInfo(
       result['lastRowId'] = res['lastRowId']
     return result
 
-  def addFileRecord( self, lfns, status, minor = "Unknown", date = "", source = "Unknown" ):
+  def addFileRecord( self, lfns, status, minor = "Unknown", date = None, source = "Unknown" ):
     """ Add a new entry to the DataLoggingDB table. 
 
     :warning: Optionally the time stamp of the status can be provided in a form of a string 
@@ -98,20 +100,21 @@ CREATE TABLE DataLoggingInfo(
     :param str source: source setting the new status
     """
     self.gLogger.info( "Entering records for %s lfns: %s/%s from source %s" % ( len( lfns ), status, minor, source ) )
+    _date = date
     if not date:
-      date = Time.dateTime()
+      _date = Time.dateTime()
     if type( date ) in StringTypes:
-      date = Time.fromString( date )
+      _date = Time.fromString( date )
 
     try:
-      time_order = Time.toEpoch( date )
+      time_order = Time.toEpoch( _date )
     except AttributeError:
       gLogger.error( 'Wrong date argument given using current time stamp' )
       date = Time.dateTime()
-      time_order = Time.toEpoch( date )
+      time_order = Time.toEpoch( _date )
 
     # Reduce to a smalle number and add more precision
-    time_order = time_order - MAGIC_EPOC_NUMBER + date.microsecond / 1000000.
+    time_order = time_order - MAGIC_EPOC_NUMBER + _date.microsecond / 1000000.
 
 
     inDict = { 'Status': status,
@@ -232,8 +235,6 @@ def test():
 
 
 if __name__ == '__main__':
-  import sys
-  import os
   from DIRAC.Core.Base import Script
   Script.parseCommandLine()
   gLogger.setLevel( 'VERBOSE' )
