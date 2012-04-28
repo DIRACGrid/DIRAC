@@ -268,10 +268,10 @@ def test():
 
     gLogger.info( '\n Removing Table\n' )
     result = diDB._update( 'DROP TABLE `%s`' % diDB.tableName )
+    assert result['OK']
+
 
     gLogger.info( '\n OK\n' )
-
-    assert result['OK']
 
 
   except AssertionError:
