@@ -7,7 +7,7 @@
 """  The Site Director is a simple agent performing pilot job submission to particular sites.
 """
 
-from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
@@ -18,6 +18,7 @@ from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as Pilot
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 from DIRAC.Core.Security                                   import CS
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
+from DIRAC.Core.Utilities.Time                             import dateTime, second               
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
 
@@ -69,12 +70,21 @@ class SiteDirector( AgentModule ):
         
     self.operations = Operations.Operations( vo=self.vo )
     self.genericPilotDN = self.operations.getValue( '/Pilot/GenericPilotDN', 'Unknown' )
+    self.genericPilotUserName = self.genericPilotDN
+    if not self.genericPilotUserName == 'Unknown':
+      result = Registry.getUsernameForDN( self.genericPilotDN )
+      if not result['OK']:
+        return S_ERROR('Invalid generic pilot DN: %s ' % self.genericPilotDN )
+      self.genericPilotUserName = result['Value']
     self.genericPilotGroup = self.operations.getValue( '/Pilot/GenericPilotGroup', 'Unknown' )
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
     self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
+    
+    self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
+    self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 7200 )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -238,7 +248,9 @@ class SiteDirector( AgentModule ):
       return S_ERROR( 'Can not get the site mask' )
     siteMaskList = result['Value']
 
-    for queue in self.queueDict:
+    queues = self.queueDict.keys()
+    random.shuffle(queues)
+    for queue in queues:
       ce = self.queueDict[queue]['CE']
       ceName = self.queueDict[queue]['CEName']
       ceType = self.queueDict[queue]['CEType']
@@ -256,20 +268,24 @@ class SiteDirector( AgentModule ):
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
+
+      self.log.verbose( "Getting generic pilot proxy for %s/%s" % ( self.genericPilotDN, self.genericPilotGroup ) )
       result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, cpuTime )
       if not result['OK']:
         return result
       self.proxy = result['Value']
       ce.setProxy( self.proxy, cpuTime - 60 )
 
+      # Get the number of available slots on the target site/queue
       result = ce.available()
       if not result['OK']:
         self.log.warn( 'Failed to check the availability of queue %s: %s' % ( queue, result['Message'] ) )
         continue
+      ceInfoDict = result['CEInfoDict']
+      self.log.verbose( "CE queue report: Waiting Jobs=%d, Running Jobs=%d, Submitted Jobs=%d, MaxTotalJobs=%d" % \
+                         (ceInfoDict['WaitingJobs'],ceInfoDict['RunningJobs'],ceInfoDict['SubmittedJobs'],ceInfoDict['MaxTotalJobs']) )
 
       totalSlots = result['Value']
-
-      self.log.verbose( result['Message'] )
 
       ceDict = ce.getParameterDict()
       ceDict[ 'GridCE' ] = ceName
@@ -282,8 +298,8 @@ class SiteDirector( AgentModule ):
       if self.group:
         ceDict['OwnerGroup'] = self.group
 
+      # Get the number of eligible jobs for the target site/queue
       result = taskQueueDB.getMatchingTaskQueues( ceDict )
-
       if not result['OK']:
         self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
         return result
@@ -293,11 +309,36 @@ class SiteDirector( AgentModule ):
         continue
 
       totalTQJobs = 0
+      tqIDList = taskQueueDict.keys()
       for tq in taskQueueDict:
         totalTQJobs += taskQueueDict[tq]['Jobs']
-
+        
       pilotsToSubmit = min( totalSlots, totalTQJobs )
-      self.log.verbose( 'Available slots=%d, TQ jobs=%d, Pilots to submit=%d' % ( totalSlots, totalTQJobs, pilotsToSubmit ) )
+      
+      # Get the number of already waiting pilots for this queue
+      totalWaitingPilots = 0
+      if self.pilotWaitingFlag:
+        lastUpdateTime = dateTime() - self.pilotWaitingTime*second
+        
+        result = pilotAgentsDB.getCounters( 'PilotAgents' ,
+                                          ['Status'], 
+                                          {'DestinationSite':ceName,
+                                           'Queue':queueName,
+                                           'GridType':ceType,
+                                           'GridSite':siteName,
+                                           'TaskQueueID':tqIDList },
+                                           newer = lastUpdateTime,
+                                           timeStamp = 'LastUpdateTime' )
+        if not result['OK']:
+          self.log.error( 'Could not retrieve Pilot Agent counters', result['Message'] )
+          return result
+        for row in result['Value']:
+          if row[0]['Status'] in WAITING_PILOT_STATUS:
+            totalWaitingPilots += row[1]      
+                                               
+      pilotsToSubmit = min( totalSlots, totalTQJobs-totalWaitingPilots )
+      self.log.verbose( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
+                              ( totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
 
       if pilotsToSubmit > 0:
         self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
