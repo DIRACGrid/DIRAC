@@ -302,22 +302,24 @@ class ReleaseConfig:
     if urlcfg in self.__cfgCache:
       return S_OK( self.__cfgCache[ urlcfg ] )
     try:
-      cfgFile = urllib2.urlopen( urlcfg, timeout = 60 )
+      cfgData = urlretrieveTimeout( urlcfg, timeout = 60 )
+      if not cfgData:
+        return S_ERROR( "Could not get data from %s" % urlcfg )
     except:
       return S_ERROR( "Could not open %s" % urlcfg )
     try:
-      cfgData = cfgFile.read()
+      #cfgData = cfgFile.read()
       cfg = ReleaseConfig.CFG( cfgData )
     except Exception, excp:
       return S_ERROR( "Could not parse %s: %s" % ( urlcfg, excp ) )
-    cfgFile.close()
+    #cfgFile.close()
     if not checkHash:
       self.__cfgCache[ urlcfg ] = cfg
       return S_OK( cfg )
     try:
-      md5File = urllib2.urlopen( urlcfg[:-4] + ".md5", timeout = 60 )
-      md5Hex = md5File.read().strip()
-      md5File.close()
+      md5Data = urlretrieveTimeout( urlcfg[:-4] + ".md5", timeout = 60 )
+      md5Hex = md5Data.strip()
+      #md5File.close()
       if md5Hex != md5.md5( cfgData ).hexdigest():
         return S_ERROR( "Hash check failed on %s" % urlcfg )
     except Exception, excp:
@@ -759,7 +761,7 @@ def logNOTICE( msg ):
 def alarmTimeoutHandler( *args ):
   raise Exception( 'Timeout' )
 
-def urlretrieveTimeout( url, fileName, timeout = 0 ):
+def urlretrieveTimeout( url, fileName='', timeout = 0 ):
   """
    Retrieve remote url to local file, with timeout wrapper
   """
@@ -767,6 +769,7 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
   #       This is OK for dirac-install, since there are no threads.
   logDEBUG( 'Retrieving remote file "%s"' % url )
 
+  urlData = ''
   if timeout:
     signal.signal( signal.SIGALRM, alarmTimeoutHandler )
     # set timeout alarm
@@ -778,16 +781,20 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     #   opener = urllib2.build_opener( proxy )
     #   #opener = urllib2.build_opener()
     #  urllib2.install_opener( opener )
-    remoteFD = urllib2.urlopen( url, timeout = timeout )
+    remoteFD = urllib2.urlopen( url )
     expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    localFD = open( fileName, "wb" )
+    if fileName:
+      localFD = open( fileName, "wb" )
     receivedBytes = 0L
     data = remoteFD.read( 16384 )
     count = 1
     progressBar = False
     while data:
       receivedBytes += len( data )
-      localFD.write( data )
+      if fileName:
+        localFD.write( data )
+      else:  
+        urlData += data
       data = remoteFD.read( 16384 )
       if count % 100 == 0:
         print ".",
@@ -796,7 +803,8 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
       count += 1
     if progressBar:
       print
-    localFD.close()
+    if fileName:  
+      localFD.close()
     remoteFD.close()
     if receivedBytes != expectedBytes:
       logERROR( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
@@ -816,7 +824,11 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
 
   if timeout:
     signal.alarm( 0 )
-  return True
+    
+  if fileName:
+    return True  
+  else:  
+    return urlData
 
 def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache = False ):
   tarName = "%s-%s.tar.gz" % ( pkgName, pkgVer )

@@ -1,4 +1,4 @@
-[v6r4-pre1]
+[v6r4-pre3]
 
 *General
 FIX: remove direct access to the /Operations CS section, use Helper instead 
@@ -6,14 +6,59 @@ FIX: remove direct access to the /Operations CS section, use Helper instead
 *Core
 FIX: dirac-install-db.py: addDatabaseOptionsToCS has added a new keyed argument
 NEW: SGETimeLeft.py: Support for SGE backend
-
+FIX: If several extensions are installed, merge ConfigTemplate.cfg
+NEW: Service framework - added monitoring of file descriptors open
+NEW: Service framework - Reduced handshake timeout to prevent stuck threads
+NEW: MySQL class with new high level methods - buildCondition,insertFields,updateFields
+     deleteEntries, getFields, getCounters, getDistinctAttributeValues
+FIX: ProcessPool - fixes in the locking mechanism with LockRing, stopping workers when the
+     parent process is finished     
+FIX: Added more locks to the LockRing
+NEW: The installation tools are updated to install components by name with the components module specified as an option
 
 *DMS
 FIX: TransferDB.py - speed up the Throughput determination
+NEW: dirac-dms-add-files: script similar to dirac-dms-remove-files, 
+     allows for 1 file specification on the command line, using the usual dirac-dms-add-file options, 
+     but also can take a text file in input to upload a bunch of files. Exit code is 0 only if all 
+     was fine and is different for every error found. 
+NEW: StorageElementProxy- support for data downloading with http protocol from arbitrary storage, 
+     needed for the web data download
+BUGFIX: FileCatalogCLI - replicate operation does a proper replica registration ( closes #5 )     
+
+*WMS
+NEW: CPU normalization script to run a quick test in the pilot, used by the JobWrapper
+     to report the CPU consumption to the accounting
+FIX: StalledJobAgent - StalledTimeHours and FailedTimeHours are read each cycle, refer to the 
+     Watchdog heartBeat period (should be renamed); add NormCPUTime to Accounting record
+NEW: SiteDirector - support for the operation per VO in multi-VO installations
+FIX: StalledJobAgent - get ProcessingType from JDL if defined
+BUGFIX: dirac-wms-job-peek - missing printout in the command
+
+*RSS
+BUGFIX: Result in ClientCache table is a varchar, but the method was getting a datetime
+NEW: CacheFeederAgent - VOBOX and SpaceTokenOccupancy commands added (ported from LHCbDIRAC)
+CHANGE: RSS components get operational parameters from the Operations handler
 
 *RequestManagement
 FIX: RequestDBMySQL.py: to take into account ExecutionOrder in getRequest
 FIX: StorageElement.py: change log message level
+
+*StorageManagement
+NEW: SRM2Storage - using pipes for files bigger than 32MB to read data from the disk
+
+*Transformation
+NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of sites associated 
+     to each SE in TargetSE and those given in Site, if any. This is needed until scheduling to SEs 
+     is supported on the WMS
+ 
+*Resources
+NEW: SSHLSFComputingElement added 
+
+[v6r3p8]
+
+*Web
+CHANGE: return back to the release web2012041601
 
 [v6r3p7]
 

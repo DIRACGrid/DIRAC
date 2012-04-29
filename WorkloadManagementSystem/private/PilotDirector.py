@@ -135,9 +135,9 @@ class PilotDirector:
 
     # Get the defaults for the Setup where the Director is running
     opsHelper = Operations()
-    self.installVersion = opsHelper.getOption( cfgPath( 'Pilot', 'Version' ), [ self.installVersion ] )[0]
-    self.installProject = opsHelper.getOption( cfgPath( 'Pilot', 'Project' ), self.installProject )
-    self.installation = opsHelper.getOption( cfgPath( 'Pilot', 'Installation' ), self.installation )
+    self.installVersion = opsHelper.getValue( cfgPath( 'Pilot', 'Version' ), [ self.installVersion ] )[0]
+    self.installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ), self.installProject )
+    self.installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
 
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )

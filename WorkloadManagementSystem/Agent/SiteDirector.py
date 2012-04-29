@@ -8,7 +8,7 @@
 """
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO, Registry, Operations
+from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
@@ -52,12 +52,28 @@ class SiteDirector( AgentModule ):
   def beginExecution( self ):
 
     self.gridEnv = self.am_getOption( "GridEnv", getGridEnv() )
-    self.genericPilotDN = self.am_getOption( 'GenericPilotDN', 'Unknown' )
-    self.genericPilotGroup = self.am_getOption( 'GenericPilotGroup', 'Unknown' )
+    self.vo = self.am_getOption( "Community", '' )
+
+    # Choose the group for which pilots will be submitted. This is a hack until
+    # we will be able to match pilots to VOs.
+    self.group = ''
+    if self.vo:
+      result = Registry.getGroupsForVO( self.vo )
+      if not result['OK']:
+        return result
+      for group in result['Value']:
+        if 'NormalUser' in Registry.getPropertiesForGroup( group ):
+          self.group = group
+          break
+        
+    self.operations = Operations.Operations( vo=self.vo )
+    self.genericPilotDN = self.operations.getValue( '/Pilot/GenericPilotDN', 'Unknown' )
+    self.genericPilotGroup = self.operations.getValue( '/Pilot/GenericPilotGroup', 'Unknown' )
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
+    self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
 
     # Flags
     self.updateStatus = self.am_getOption( 'UpdatePilotStatus', True )
@@ -65,14 +81,36 @@ class SiteDirector( AgentModule ):
     self.sendAccounting = self.am_getOption( 'SendPilotAccounting', True )
 
     # Get the site description dictionary
-    siteNames = self.am_getOption( 'Site', [] )
-    if not siteNames:
-      siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
-      if siteName == 'Unknown':
-        return S_OK( 'No site specified for the SiteDirector' )
-      else:
-        siteNames = [siteName]
-    self.siteNames = siteNames
+    siteNames = None
+    if not self.am_getOption( 'Site', 'Any' ).lower() == "any":
+      siteNames = self.am_getOption( 'Site', [] )
+    ceTypes = None
+    if not self.am_getOption( 'CETypes', 'Any' ).lower() == "any":
+      ceTypes = self.am_getOption( 'CETypes', [] )
+    ces = None
+    if not self.am_getOption( 'CEs', 'Any' ).lower() == "any":
+      ces = self.am_getOption( 'CEs', [] )
+      
+    result = Resources.getQueues( community=self.vo, 
+                                  siteList=siteNames, 
+                                  ceList=ces, 
+                                  ceTypeList=ceTypes, 
+                                  mode='Direct')  
+    if not result['OK']:
+      return result
+    
+    resourceDict = result['Value']
+    result = self.getQueues(resourceDict)
+    if not result['OK']:
+      return result
+
+    #if not siteNames:
+    #  siteName = gConfig.getValue( '/DIRAC/Site', 'Unknown' )
+    #  if siteName == 'Unknown':
+    #    return S_OK( 'No site specified for the SiteDirector' )
+    #  else:
+    #    siteNames = [siteName]
+    #self.siteNames = siteNames
 
     if self.updateStatus:
       self.log.always( 'Pilot status update requested' )
@@ -81,21 +119,14 @@ class SiteDirector( AgentModule ):
     if self.sendAccounting:
       self.log.always( 'Pilot accounting sending requested' )
 
-    self.log.always( 'Site:', self.siteNames )
-    ceTypes = self.am_getOption( 'CETypes', [] )
-    if ceTypes:
-      self.log.always( 'CETypes:', ceTypes )
-    ces = self.am_getOption( 'CEs', [] )
-    if ceTypes:
-      self.log.always( 'CEs:', ces )
+    self.log.always( 'Sites:', siteNames )
+    self.log.always( 'CETypes:', ceTypes )
+    self.log.always( 'CEs:', ces )
     self.log.always( 'GenericPilotDN:', self.genericPilotDN )
     self.log.always( 'GenericPilotGroup:', self.genericPilotGroup )
 
     self.localhost = socket.getfqdn()
     self.proxy = ''
-    result = self.getQueues()
-    if not result['OK']:
-      return result
 
     if self.queueDict:
       self.log.always( "Agent will serve queues:" )
@@ -106,55 +137,23 @@ class SiteDirector( AgentModule ):
 
     return S_OK()
 
-  def getQueues( self ):
+  def getQueues( self, resourceDict ):
     """ Get the list of relevant CEs and their descriptions
     """
 
     self.queueDict = {}
     ceFactory = ComputingElementFactory()
-    ceTypes = self.am_getOption( 'CETypes', [] )
-    ceConfList = self.am_getOption( 'CEs', [] )
 
-    for siteName in self.siteNames:
-      # Look up CE definitions in the site CS description
-      ceList = []
-      gridType = siteName.split( '.' )[0]
-      result = gConfig.getSections( '/Resources/Sites/%s/%s/CEs' % ( gridType, siteName ) )
-      if not result['OK']:
-        return S_ERROR( 'Failed to look up the CS for the site %s CEs' % siteName )
-      if not result['Value']:
-        return S_ERROR( 'No CEs found for site %s' % siteName )
-      ceTotalList = result['Value']
-      for ce in ceTotalList:
-        if ( ceConfList and ce in ceConfList ) or not ceConfList:
-          ceType = gConfig.getValue( '/Resources/Sites/%s/%s/CEs/%s/CEType' % ( gridType, siteName, ce ), 'Unknown' )
-          result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( gridType, siteName, ce ) )
-          if not result['OK']:
-            return S_ERROR( 'Failed to look up the CS for ce %s' % ce )
-          ceDict = result['Value']
-          if "SubmissionMode" in ceDict and ceDict['SubmissionMode'].lower() == "direct":
-            if ceType in ceTypes:
-              ceList.append( ( ce, ceType, ceDict ) )
-
-      for ce, ceType, ceDict in ceList:
-        section = '/Resources/Sites/%s/%s/CEs/%s/Queues' % ( gridType, siteName, ce )
-        result = gConfig.getSections( section )
-        if not result['OK']:
-          return S_ERROR( 'Failed to look up the CS for queues' )
-        if not result['Value']:
-          return S_ERROR( 'No Queues found for site %s, ce %s' % ( siteName, ce ) )
-
-        queues = result['Value']
-        for queue in queues:
-          result = gConfig.getOptionsDict( '%s/%s' % ( section, queue ) )
-          if not result['OK']:
-            return S_ERROR( 'Failed to look up the CS for ce,queue %s,%s' % ( ce, queue ) )
-
+    for site in resourceDict:
+      for ce in resourceDict[site]:
+        ceDict = resourceDict[site][ce]
+        qDict = ceDict.pop('Queues')
+        for queue in qDict:
           queueName = '%s_%s' % ( ce, queue )
           self.queueDict[queueName] = {}
-          self.queueDict[queueName]['ParametersDict'] = result['Value']
+          self.queueDict[queueName]['ParametersDict'] = qDict[queue]
           self.queueDict[queueName]['ParametersDict']['Queue'] = queue
-          self.queueDict[queueName]['ParametersDict']['Site'] = siteName
+          self.queueDict[queueName]['ParametersDict']['Site'] = site
           self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
           self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue( '/DIRAC/Setup', 'unknown' )
           # Evaluate the CPU limit of the queue according to the Glue convention
@@ -172,17 +171,17 @@ class SiteDirector( AgentModule ):
           if not os.path.exists( qwDir ):
             os.makedirs( qwDir )
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
-          queueDict = dict( ceDict )
-          queueDict.update( self.queueDict[queueName]['ParametersDict'] )
+          ceQueueDict = dict( ceDict )
+          ceQueueDict.update( self.queueDict[queueName]['ParametersDict'] )
           result = ceFactory.getCE( ceName = ce,
-                                   ceType = ceType,
-                                   ceParametersDict = queueDict )
+                                    ceType = ceDict['CEType'],
+                                    ceParametersDict = ceQueueDict )
           if not result['OK']:
             return result
           self.queueDict[queueName]['CE'] = result['Value']
           self.queueDict[queueName]['CEName'] = ce
-          self.queueDict[queueName]['CEType'] = ceType
-          self.queueDict[queueName]['Site'] = siteName
+          self.queueDict[queueName]['CEType'] = ceDict['CEType']
+          self.queueDict[queueName]['Site'] = site
           self.queueDict[queueName]['QueueName'] = queue
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
@@ -217,6 +216,21 @@ class SiteDirector( AgentModule ):
     """ Go through defined computing elements and submit jobs if necessary
     """
 
+    # Check that there is some work at all
+    setup = CSGlobals.getSetup()
+    tqDict = { 'Setup':setup,
+               'CPUTime': 9999999  }
+    if self.vo:
+      tqDict['Community'] = self.vo
+    if self.group:
+      tqDict['OwnerGroup'] = self.group
+    result = taskQueueDB.matchAndGetTaskQueue( tqDict )
+    if not result[ 'OK' ]:
+      return result
+    if not result['Value']:
+      self.log.verbose('No Waiting jobs suitable for the director')
+      return S_OK()
+
     # Check if the site is allowed in the mask
     result = jobDB.getSiteMask()
     if not result['OK']:
@@ -234,7 +248,8 @@ class SiteDirector( AgentModule ):
       if 'CPUTime' in self.queueDict[queue]['ParametersDict'] :
         queueCPUTime = int( self.queueDict[queue]['ParametersDict']['CPUTime'] )
       else:
-        return S_ERROR( 'CPU time limit is not specified for queue %s' % queue )
+        self.log.warn( 'CPU time limit is not specified for queue %s, skipping...' % queue )
+        continue
       if queueCPUTime > self.maxQueueLength:
         queueCPUTime = self.maxQueueLength
 
@@ -261,6 +276,10 @@ class SiteDirector( AgentModule ):
         self.log.info( 'Site not in the mask %s' % siteName )
         self.log.info( 'Removing "Site" from matching Dict' )
         del ceDict[ 'Site' ]
+      if self.vo:
+        ceDict['Community'] = self.vo
+      if self.group:
+        ceDict['OwnerGroup'] = self.group
 
       result = taskQueueDB.getMatchingTaskQueues( ceDict )
 
@@ -405,12 +424,13 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-M %s' % 5 )
 
     # Debug
-    pilotOptions.append( '-d' )
+    if self.pilotLogLevel.lower() == 'debug':
+      pilotOptions.append( '-d' )
     # CS Servers
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
     # DIRAC Extensions
-    extensionsList = getCSExtensions()
+    extensionsList = CSGlobals.getCSExtensions()
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
     # Requested CPU time
@@ -434,6 +454,9 @@ class SiteDirector( AgentModule ):
         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
       if 'CPUNormalizationFactor' in queueDict:
         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
+
+    if self.group:
+      pilotOptions.append( '-G %s' % self.group )
 
     self.log.verbose( "pilotOptions: ", ' '.join( pilotOptions ) )
 
@@ -537,6 +560,8 @@ EOF
 
       #print "AT >>> pilotRefs", pilotRefs
 
+      
+      
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots info: %s' % result['Message'] )
@@ -545,7 +570,15 @@ EOF
 
       #print "AT >>> pilotDict", pilotDict
 
-      result = ce.getJobStatus( pilotRefs )
+      stampedPilotRefs = []
+      for pRef in pilotDict:
+        if pilotDict[pRef]['PilotStamp']:
+          stampedPilotRefs.append(pRef+":::"+pilotDict[pRef]['PilotStamp'])
+        else:
+          stampedPilotRefs = list( pilotRefs )  
+          break
+      
+      result = ce.getJobStatus( stampedPilotRefs )
       if not result['OK']:
         self.log.error( 'Failed to get pilots status from CE: %s' % result['Message'] )
         continue
