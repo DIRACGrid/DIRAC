@@ -26,6 +26,7 @@ __RCSID__ = "$Id$"
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready']
+WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 ERROR_TOKEN = 'Invalid proxy token request'
 
@@ -559,8 +560,6 @@ EOF
         continue
 
       #print "AT >>> pilotRefs", pilotRefs
-
-      
       
       result = pilotAgentsDB.getPilotInfo( pilotRefs )
       if not result['OK']:
@@ -745,3 +744,4 @@ EOF
       return result
 
     return S_OK()
+  
