@@ -104,7 +104,7 @@ def getCPUNormalization( reference = 'HS06', iterations = 1 ):
     return S_ERROR( x )
 
   # This number of iterations corresponds to 250 HS06 seconds
-  n = int( 1000 * 1000 * 15.0 )
+  n = int( 1000 * 1000 * 12.5 )
   calib = 250.0 / UNITS[reference]
 
   m = 0L
