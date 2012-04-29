@@ -299,6 +299,7 @@ class ComputingElement:
     """
     # FIXME: need to take into account the possible requirements from the pilots,
     #        so far the cputime
+    ciInfoDict = {}
     result = self.getDynamicInfo()
     if not result['OK']:
       self.log.warn( 'Could not obtain CE dynamic information' )
@@ -308,6 +309,7 @@ class ComputingElement:
       runningJobs = result['RunningJobs']
       waitingJobs = result['WaitingJobs']
       submittedJobs = result['SubmittedJobs']
+      ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.__getParameters( 'MaxTotalJobs' )['Value'] )
     waitingToRunningRatio = float( self.__getParameters( 'WaitingToRunningRatio' )['Value'] )
@@ -349,6 +351,7 @@ class ComputingElement:
     # if totalCPU:
     #  message +=', TotalCPU=%s' %(totalCPU)
     result['Message'] = message
+    result['CEInfoDict'] = ceInfoDict
     return result
 
   #############################################################################
