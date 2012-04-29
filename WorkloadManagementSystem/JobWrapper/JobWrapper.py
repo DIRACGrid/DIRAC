@@ -388,7 +388,16 @@ class JobWrapper:
 
 
     if watchdog.checkError:
+      # In this case, the Watchdog has killed the Payload and the ExecutionThread can not get the CPU statistics
+      # os.times only reports for waited children
+      # Take the CPU from the last value recorded by the Watchdog
       self.__report( 'Failed', watchdog.checkError, sendFlag = True )
+      if EXECUTION_RESULT.has_key( 'CPU' ):
+        if 'LastUpdateCPU(s)' in watchdog.currentStats:
+          EXECUTION_RESULT['CPU'][0] = 0
+          EXECUTION_RESULT['CPU'][0] = 0
+          EXECUTION_RESULT['CPU'][0] = 0
+          EXECUTION_RESULT['CPU'][0] = watchdog.currentStats['LastUpdateCPU(s)']
 
     if watchdog.currentStats:
       self.log.info( 'Statistics collected by the Watchdog:\n ',
@@ -1287,6 +1296,7 @@ class ExecutionThread( threading.Thread ):
     for i in range( len( finalStat ) ):
       EXECUTION_RESULT['CPU'].append( finalStat[i] - initialStat[i] )
     gLogger.info( 'EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', str( EXECUTION_RESULT['CPU'] ) )
+    gLogger.info( 'EXECUTION_RESULT[Thread] after Execution of spObject.systemCall', str( EXECUTION_RESULT['Thread'] ) )
 
   #############################################################################
   def getCurrentPID( self ):

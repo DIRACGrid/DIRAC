@@ -157,7 +157,6 @@ class Watchdog:
         self.checkError = 'Job has reached the CPU limit of the queue'
         self.log.error( self.checkError, self.timeLeft )
         self.__killRunningThread()
-        self.__getUsageSummary()
         return S_OK()
       else:
         self.littleTimeLeftCount -= 1
@@ -237,7 +236,6 @@ class Watchdog:
           self.log.info( '=================END=================' )
 
       self.__killRunningThread()
-      self.__getUsageSummary()
       return S_OK()
 
     recentStdOut = 'None'
@@ -314,7 +312,6 @@ class Watchdog:
         self.log.info( 'Received Kill signal, stopping job via control signal' )
         self.checkError = 'Received Kill signal'
         self.__killRunningThread()
-        self.__getUsageSummary()
       else:
         self.log.info( 'The following control signal was sent but not understood by the watchdog:' )
         self.log.info( signalDict )
@@ -614,7 +611,7 @@ class Watchdog:
     if os.environ.has_key( 'QSUB_REQNAME' ):
       result['LocalJobID'] = os.environ['QSUB_REQNAME']
     if os.environ.has_key( 'JOB_ID' ):
-      result['LocalJobID'] = os.environ['JOB_ID']  
+      result['LocalJobID'] = os.environ['JOB_ID']
 
     self.__reportParameters( result, 'NodeInformation', True )
     self.__reportParameters( self.initialValues, 'InitialValues' )
