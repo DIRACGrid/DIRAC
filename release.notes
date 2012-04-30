@@ -1,4 +1,4 @@
-[v6r4-pre4]
+[v6r4]
 
 *General
 FIX: remove direct access to the /Operations CS section, use Helper instead 
