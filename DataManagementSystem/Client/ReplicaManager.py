@@ -106,6 +106,7 @@ class CatalogBase:
       lfns = dict.fromkeys( lfn, False  )
     elif type( lfn ) == DictType:
       lfns = lfn.copy()
+
     ## lfns supplied?
     if not lfns:
       errMsg = "ReplicaManager._callFileCatalogFcn: No lfns supplied."
@@ -234,6 +235,9 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
+    ## make sure lfns are sorted from the longest to the shortest  
+    if type(lfn) == ListType:
+      lfn = sorted( lfn, reverse = True )
     return self._fcFuncWrapper(singleFile)( lfn, "removeFile", catalogs=catalogs )
 
 class CatalogReplica( CatalogBase ):
@@ -1071,7 +1075,7 @@ class ReplicaManager( CatalogToStorage ):
     """ Clean the logical directory from the catalog and storage
     """
     if type( lfnDir ) in StringTypes:
-      lfnDir = [lfnDir]
+      lfnDir = [ lfnDir ]
     retDict = { "Successful" : {}, "Failed" : {} }
     for folder in lfnDir:
       res = self.__cleanDirectory( folder )
@@ -1974,14 +1978,15 @@ class ReplicaManager( CatalogToStorage ):
 
   def __removeFile( self, lfnDict ):
     storageElementDict = {}
-    for lfn, repDict in lfnDict.items():
+    ## sorted and reversed
+    for lfn, repDict in sorted( lfnDict.items(), reverse = True ):
       for se, pfn in repDict.items():
         if se not in storageElementDict:
           storageElementDict[se] = []
         storageElementDict[se].append( ( lfn, pfn ) )
     failed = {}
     successful = {}
-    for storageElementName, fileTuple in storageElementDict.items():
+    for storageElementName, fileTuple in sorted( storageElementDict.items() ):
       res = self.__removeReplica( storageElementName, fileTuple )
       if not res['OK']:
         errStr = res['Message']
@@ -2006,7 +2011,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         failed.update( res['Value']['Failed'] )
         successful = res['Value']['Successful']
-    resDict = {'Successful':successful, 'Failed':failed}
+    resDict = { 'Successful':successful, 'Failed':failed }
     return S_OK( resDict )
 
   def removeReplica( self, storageElementName, lfn ):
