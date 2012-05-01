@@ -1,4 +1,4 @@
-[v6r4-pre3]
+[v6r4]
 
 *General
 FIX: remove direct access to the /Operations CS section, use Helper instead 
@@ -25,6 +25,7 @@ NEW: dirac-dms-add-files: script similar to dirac-dms-remove-files,
 NEW: StorageElementProxy- support for data downloading with http protocol from arbitrary storage, 
      needed for the web data download
 BUGFIX: FileCatalogCLI - replicate operation does a proper replica registration ( closes #5 )     
+FIX: ReplicaManager - __cleanDirectory now working and thus dirac-dms-clean-directory
 
 *WMS
 NEW: CPU normalization script to run a quick test in the pilot, used by the JobWrapper
@@ -34,6 +35,8 @@ FIX: StalledJobAgent - StalledTimeHours and FailedTimeHours are read each cycle,
 NEW: SiteDirector - support for the operation per VO in multi-VO installations
 FIX: StalledJobAgent - get ProcessingType from JDL if defined
 BUGFIX: dirac-wms-job-peek - missing printout in the command
+NEW: SiteDirector - take into account the number of already waiting pilots when evaluating the number of pilots to submit
+FIX: properly report CPU usage when the Watchdog kill the payload.
 
 *RSS
 BUGFIX: Result in ClientCache table is a varchar, but the method was getting a datetime
@@ -43,9 +46,6 @@ CHANGE: RSS components get operational parameters from the Operations handler
 *RequestManagement
 FIX: RequestDBMySQL.py: to take into account ExecutionOrder in getRequest
 FIX: StorageElement.py: change log message level
-
-*StorageManagement
-NEW: SRM2Storage - using pipes for files bigger than 32MB to read data from the disk
 
 *Transformation
 NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of sites associated 
