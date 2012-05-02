@@ -110,7 +110,7 @@ def getSetup():
 def getVOMSEndpoints():
   ''' Get VOMS endpoints '''
   
-  endponits = gConfig.getSections( '%s/VOMS/Servers/lhcb/' % g_BaseRegistrySection )
+  endpoints = gConfig.getSections( '%s/VOMS/Servers/lhcb/' % g_BaseRegistrySection )
   if endpoints[ 'OK' ]:
     return endpoints[ 'Value' ]
   return [] 
