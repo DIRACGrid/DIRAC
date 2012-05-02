@@ -179,19 +179,16 @@ class WorkingProcess( multiprocessing.Process ):
 
     :param self: self reference
     """
-    while True:
-      
-      if self.task:
-        print "executing task?", self.task
+    while True:      
       ## send SIGALRM 
-      if self.task and self.__endProcessing:
+      if self.__timeOut and self.__endProcessing:
         task = hash(self.task)
         now = datetime.datetime.now()
         if self.__endProcessing < now:
           ## send SIGALRM for non-blocked tasks to put back timeout results
           os.kill( self.pid, signal.SIGALRM )
           print "%s SIGALRM sent" % self.pid
-          ## wait 30 seconds, during this time task could be completed 
+          ## wait 10 seconds, during this time task could be completed 
           time.sleep(10)
           ## check again and kill
           if hash(self.task) == task and self.__endProcessing and self.__endProcessing < datetime.datetime.now():
@@ -234,6 +231,7 @@ class WorkingProcess( multiprocessing.Process ):
     self.__watchdogThread.daemon = True
     self.__watchdogThread.start()
 
+
     ## http://cdn.memegenerator.net/instances/400x/19450565.jpg
     if LockRing:
       # Reset all locks
@@ -262,13 +260,13 @@ class WorkingProcess( multiprocessing.Process ):
       self.__timeOut = self.task.getTimeOut() 
       self.__startProcessing = datetime.datetime.now()
       self.__endProcessing = self.__startProcessing + datetime.timedelta( seconds = self.__timeOut )
-
       ## execute task
       try:
         self.task.process()
-        if self.task.hasCallback() or self.task.usePoolCallbacks():
-          self.__resultsQueue.put( self.task, block = True, timeout = 30 )
       finally:
+        
+        if self.task.hasCallback() or self.task.usePoolCallbacks():
+          self.__resultsQueue.put( self.task )
         ## increase task counter
         taskCounter += 1
         self.__taskCounter = taskCounter 

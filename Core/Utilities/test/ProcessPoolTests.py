@@ -265,7 +265,10 @@ class TaskTimeOutTests( unittest.TestCase ):
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
-    self.processPool = ProcessPool( poolCallback = self.poolCallback, 
+    self.processPool = ProcessPool( 1,
+                                    4, 
+                                    4,
+                                    poolCallback = self.poolCallback, 
                                     poolExceptionCallback = self.poolExceptionCallback )
     self.processPool.daemonize()
     
