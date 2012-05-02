@@ -270,7 +270,7 @@ class Synchronizer( object ):
     if not CEinCS[ 'OK' ]:
       gLogger.error( CEinCS[ 'Message' ] )
       return CEinCS
-    CEinCS = CEinCS[ 'Message' ]
+    CEinCS = CEinCS[ 'Value' ]
 
     # All CEs in CS now
     CEInCS = Utils.set_sanitize([CE for celist in CEinCS.values() for CE in celist])
