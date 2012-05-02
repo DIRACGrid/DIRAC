@@ -985,10 +985,42 @@ class TransferDB( DB ):
     channels = channels['Value']
     
     ## create empty channelDict
-    channelDict = dict.fromkeys( channels.keys(), { "Throughput" : 0,
-                                                    "Fileput" : 0,
-                                                    "SuccessfulFiles" : 0,
-                                                    "FailedFiles" : 0 } )
+    channelDict = dict.fromkeys( channels.keys(), None ) 
+    ## fill with zeros 
+    for channelID in channelDict:
+      channelDict[channelID] = {}
+      channelDict[channelID]["Throughput"] =  0
+      channelDict[channelID]["Fileput"] = 0 
+      channelDict[channelID]["SuccessfulFiles"] = 0
+      channelDict[channelID]["FailedFiles"] = 0 
+
+    channelTimeDict = dict.fromkeys( channels.keys(), 0 )
+
+    req = "SELECT ChannelID, Status, Count(*), SUM(FileSize), SUM(TimeDiff) FROM " \
+          "( SELECT ChannelID, Status,TIME_TO_SEC( TIMEDIFF( TerminalTime, SubmissionTime ) ) " \
+          "AS TimeDiff ,FileSize FROM FileToFTS WHERE Status in ('Completed', 'Failed') " \
+          "AND SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) ) " \
+          "AS T GROUP BY ChannelID, Status;" % interval
+
+    res = self._query( req )
+    if not res['OK']:
+      err = 'TransferDB._getFTSObservedThroughput: Failed to transfer Statistics.'
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
+
+    for channelID, status, files, data, totalTime in res['Value']:
+      channelTimeDict[channelID] += float( totalTime )
+      if status == 'Completed':
+        channelDict[channelID]['Throughput'] = float( data )
+        channelDict[channelID]['SuccessfulFiles'] = int( files )
+      else:
+        channelDict[channelID]['FailedFiles'] = int( files )
+
+    for channelID in channelDict.keys():
+      if channelTimeDict[channelID]:
+        channelDict[channelID]['Throughput'] = channelDict[channelID]['Throughput'] / channelTimeDict[channelID]
+        channelDict[channelID]['Fileput'] = channelDict[channelID]['SuccessfulFiles'] / channelTimeDict[channelID]
+
+    return S_OK( channelDict )
 
     #############################################
     # First get the total time spend transferring files on the channels
