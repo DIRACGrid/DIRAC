@@ -337,15 +337,19 @@ class TaskTimeOutTests( unittest.TestCase ):
         raiseException = False
         if not timeWait:
           raiseException = True
-        result = self.processPool.createAndQueueTask( LockedCallableClass,
+        klass = CallableClass
+        if timeWait > 3:
+          klass = LockedCallableClass
+
+        result = self.processPool.createAndQueueTask( klass,
                                                       taskID = i,
                                                       args = ( timeWait, raiseException ), 
-                                                      timeOut = 2,
+                                                      timeOut = 1,
                                                       usePoolCallbacks = True,
                                                       blocking = True )    
         if result["OK"]:
           i += 1
-          self.log.always("LockedCallableClass enqueued to task %s" % i )
+          self.log.always("%s enqueued to task %s" % ( klass, i ) )
         else:
           continue
       if i == 10:

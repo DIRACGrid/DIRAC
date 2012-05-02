@@ -180,15 +180,23 @@ class WorkingProcess( multiprocessing.Process ):
     :param self: self reference
     """
     while True:
+      
+      if self.task:
+        print "executing task?", self.task
       ## send SIGALRM 
-      if self.task and self.__endProcessing: 
+      if self.task and self.__endProcessing:
+        task = hash(self.task)
         now = datetime.datetime.now()
         if self.__endProcessing < now:
           ## send SIGALRM for non-blocked tasks to put back timeout results
           os.kill( self.pid, signal.SIGALRM )
-          ## wait 30 seconds, during this time task coulfd be  
-          time.sleep(30)
-          os.kill( self.pid, signal.SIGKILL )
+          print "%s SIGALRM sent" % self.pid
+          ## wait 30 seconds, during this time task could be completed 
+          time.sleep(10)
+          ## check again and kill
+          if hash(self.task) == task and self.__endProcessing and self.__endProcessing < datetime.datetime.now():
+            print "%s SIGKILL sent" % self.pid 
+            os.kill( self.pid, signal.SIGKILL )
         
       ## parent is dead when commit suicide
       if os.getppid() == 1:
@@ -196,6 +204,7 @@ class WorkingProcess( multiprocessing.Process ):
         ## wait for a while and if still alive use REAL silencer
         time.sleep(30)
         os.kill( self.pid, signal.SIGKILL )
+
       time.sleep(3)
 
   def isWorking( self ):
@@ -225,10 +234,6 @@ class WorkingProcess( multiprocessing.Process ):
     self.__watchdogThread.daemon = True
     self.__watchdogThread.start()
 
-    def timeOutHandler( singnum, frame ):
-      """ dummy SIGALRM handler """
-      raise ProcessTaskTimeOutError()
-
     ## http://cdn.memegenerator.net/instances/400x/19450565.jpg
     if LockRing:
       # Reset all locks
@@ -245,32 +250,25 @@ class WorkingProcess( multiprocessing.Process ):
       try:
         self.task = self.__pendingQueue.get( block = True, timeout = 10 )
       except Queue.Empty:
+        self.task = None
         continue
       ## conventional murder
       if self.task.isBullet():
         break
       ## toggle __working flag
       self.__working.value = 1
-      ## reference to SIGALRM handler
-      saveHandler = None
+
       ## save time out value
       self.__timeOut = self.task.getTimeOut() 
       self.__startProcessing = datetime.datetime.now()
       self.__endProcessing = self.__startProcessing + datetime.timedelta( seconds = self.__timeOut )
 
-      if self.__timeOut:
-        saveHandler = signal.signal( signal.SIGALRM, timeOutHandler )
-
       ## execute task
       try:
         self.task.process()
         if self.task.hasCallback() or self.task.usePoolCallbacks():
-          self.__resultsQueue.put( self.task, block = True, timeout = 60 )
+          self.__resultsQueue.put( self.task, block = True, timeout = 30 )
       finally:
-        ## reset SIGALRM handler
-        if self.__timeOut and saveHandler:
-          signal.signal(signal.SIGALRM, saveHandler)
-        signal.alarm(0)
         ## increase task counter
         taskCounter += 1
         self.__taskCounter = taskCounter 
@@ -459,6 +457,16 @@ class ProcessTask:
 
     :param self: self reference
     """ 
+    def timeOutHandler( singnum, frame ):
+      """ dummy SIGALRM handler """
+      raise ProcessTaskTimeOutError()
+    
+    ## SIGALRM orig handler 
+    saveHandler = None
+    if self.__timeOut:
+      print "setting SIGALRM handler for task ", self.getTaskID()
+      saveHandler = signal.signal( signal.SIGALRM, timeOutHandler )
+      
     self.__done = True
     try:
       ## it's a function?
@@ -484,6 +492,12 @@ class ProcessTask:
         retDict['Value'] = str( x )
         retDict['Exc_info'] = sys.exc_info()[1]
         self.__taskException = retDict
+    finally:
+      if self.__timeOut and saveHandler:
+        signal.signal( signal.SIGALRM, saveHandler )
+      signal.alarm(0)
+   
+        
 
 class ProcessPool:
   """
