@@ -35,18 +35,17 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 ## SUT
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+import threading
 
 def ResultCallback( task, taskResult ):
   """ dummy result callback """
   print "results callback for task %s" % task.getTaskID()
   print "result is %s" % taskResult
 
-
 def ExceptionCallback( task, exec_info ):
   """ dummy exception callback """
   print "exception callback for task %s" % task.getTaskID()
   print "exception is %s" % exec_info
-
 
 def CallableFunc( timeWait, raiseException = False ):
   """ global function to be executed in task """
@@ -72,7 +71,36 @@ class CallableClass( object ):
     if self.raiseException:
       raise Exception("testException")
     return self.timeWait
-  
+
+## global locked lock 
+gLock = threading.Lock()
+# make sure it is locked
+gLock.acquire()
+
+## dummy callable locked class
+class LockedCallableClass( object ):
+  """ callable and locked class """
+  def __init__( self, timeWait, raiseException=False ):
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine()
+    from DIRAC.FrameworkSystem.Client.Logger import gLogger
+    self.log = gLogger.getSubLogger( self.__class__.__name__ )
+
+    self.log.always("Am I locked? %s" % gLock.locked() )
+    gLock.acquire()
+    self.log.always("you can't see that line, object is stuck by gLock" )
+    self.timeWait = timeWait 
+    self.raiseException = raiseException
+    gLock.release()
+
+  def __call__( self ):
+    import time
+    self.log.always("will sleep for %s" % self.timeWait )
+    time.sleep( self.timeWait )
+    if self.raiseException:
+      raise Exception("testException")
+    return self.timeWait
+
 ########################################################################
 class TaskCallbacksTests(unittest.TestCase):
   """
@@ -274,7 +302,6 @@ class TaskTimeOutTests( unittest.TestCase ):
     self.processPool.processAllResults() 
     self.processPool.finalize()
 
-
   def testCallableFunc( self ):
     """ CallableFunc and task timeout test """
     i = 0
@@ -301,13 +328,41 @@ class TaskTimeOutTests( unittest.TestCase ):
     self.processPool.finalize()
 
 
+  def testLockedClass( self ):
+    """ LockedCallableClass and task time out test """
+    i = 0
+    while True:
+      if self.processPool.getFreeSlots() > 0:
+        timeWait = random.randint(0, 5)
+        raiseException = False
+        if not timeWait:
+          raiseException = True
+        result = self.processPool.createAndQueueTask( LockedCallableClass,
+                                                      taskID = i,
+                                                      args = ( timeWait, raiseException ), 
+                                                      timeOut = 2,
+                                                      usePoolCallbacks = True,
+                                                      blocking = True )    
+        if result["OK"]:
+          i += 1
+          self.log.always("LockedCallableClass enqueued to task %s" % i )
+        else:
+          continue
+      if i == 10:
+        break
+    self.processPool.processAllResults() 
+    self.processPool.finalize()
+    ## unlock
+    gLock.release()
+
+
 ## SUT suite execution
 if __name__ == "__main__":
 
   testLoader = unittest.TestLoader()
-  suitePPCT = testLoader.loadTestsFromTestCase( ProcessPoolCallbacksTests )  
-  suiteTCT = testLoader.loadTestsFromTestCase( TaskCallbacksTests )
+  #suitePPCT = testLoader.loadTestsFromTestCase( ProcessPoolCallbacksTests )  
+  #suiteTCT = testLoader.loadTestsFromTestCase( TaskCallbacksTests )
   suiteTTOT = testLoader.loadTestsFromTestCase( TaskTimeOutTests )
-  suite = unittest.TestSuite( [ suitePPCT, suiteTCT, suiteTTOT ] )
-  unittest.TextTestRunner(verbosity=3).run(suite)
+  #suite = unittest.TestSuite( [ suitePPCT, suiteTCT, suiteTTOT ] )
+  unittest.TextTestRunner(verbosity=3).run(suiteTTOT)
 

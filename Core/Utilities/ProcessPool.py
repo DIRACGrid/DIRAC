@@ -108,6 +108,7 @@ import os
 import signal
 import Queue
 from types import FunctionType, TypeType, ClassType
+import datetime
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -128,6 +129,11 @@ except ImportError:
   def S_ERROR( mess ):
     """ dummy S_ERROR """
     return { 'OK' : False, 'Message' : mess }
+
+
+class ProcessTaskTimeOutError( Exception ):
+  """ dummy exception rainsed in SIGALRM handler """
+  pass
 
 class WorkingProcess( multiprocessing.Process ):
   """
@@ -155,6 +161,14 @@ class WorkingProcess( multiprocessing.Process ):
     self.__resultsQueue = resultsQueue
     ## placeholder for watchdog thread
     self.__watchdogThread = None
+    ## timeout read from task 
+    self.__timeOut = 0
+    ## timestamp when task is about to be executed
+    self.__startProcessing = None
+    ## startProcessing + timeOut
+    self.__endProcessing = None
+    ## task
+    self.task = None
     ## start yourself at least
     self.start()
 
@@ -166,13 +180,23 @@ class WorkingProcess( multiprocessing.Process ):
     :param self: self reference
     """
     while True:
+      ## send SIGALRM 
+      if self.task and self.__endProcessing: 
+        now = datetime.datetime.now()
+        if self.__endProcessing < now:
+          ## send SIGALRM for non-blocked tasks to put back timeout results
+          os.kill( self.pid, signal.SIGALRM )
+          ## wait 30 seconds, during this time task coulfd be  
+          time.sleep(30)
+          os.kill( self.pid, signal.SIGKILL )
+        
       ## parent is dead when commit suicide
       if os.getppid() == 1:
         os.kill( self.pid, signal.SIGTERM )
         ## wait for a while and if still alive use REAL silencer
         time.sleep(30)
         os.kill( self.pid, signal.SIGKILL )
-      time.sleep(30)
+      time.sleep(3)
 
   def isWorking( self ):
     """ check if process is running
@@ -200,6 +224,11 @@ class WorkingProcess( multiprocessing.Process ):
     self.__watchdogThread = threading.Thread( target = self.__watchdog )
     self.__watchdogThread.daemon = True
     self.__watchdogThread.start()
+
+    def timeOutHandler( singnum, frame ):
+      """ dummy SIGALRM handler """
+      raise ProcessTaskTimeOutError()
+
     ## http://cdn.memegenerator.net/instances/400x/19450565.jpg
     if LockRing:
       # Reset all locks
@@ -214,26 +243,44 @@ class WorkingProcess( multiprocessing.Process ):
         break
       ## get task from queue
       try:
-        task = self.__pendingQueue.get( block = True, timeout = 10 )
+        self.task = self.__pendingQueue.get( block = True, timeout = 10 )
       except Queue.Empty:
         continue
       ## conventional murder
-      if task.isBullet():
+      if self.task.isBullet():
         break
       ## toggle __working flag
       self.__working.value = 1
-      ## execute task, put back callbacks
+      ## reference to SIGALRM handler
+      saveHandler = None
+      ## save time out value
+      self.__timeOut = self.task.getTimeOut() 
+      self.__startProcessing = datetime.datetime.now()
+      self.__endProcessing = self.__startProcessing + datetime.timedelta( seconds = self.__timeOut )
+
+      if self.__timeOut:
+        saveHandler = signal.signal( signal.SIGALRM, timeOutHandler )
+
+      ## execute task
       try:
-        task.process()
-        if task.hasCallback() or task.usePoolCallbacks():
-          self.__resultsQueue.put( task, block = True, timeout = 60 )
+        self.task.process()
+        if self.task.hasCallback() or self.task.usePoolCallbacks():
+          self.__resultsQueue.put( self.task, block = True, timeout = 60 )
       finally:
-        taskCounter += 1
+        ## reset SIGALRM handler
+        if self.__timeOut and saveHandler:
+          signal.signal(signal.SIGALRM, saveHandler)
+        signal.alarm(0)
         ## increase task counter
+        taskCounter += 1
         self.__taskCounter = taskCounter 
         ## toggle __working flag
+        self.task = None
+        self.__timeOut = 0
+        self.__startProcessing = None
+        self.__endProcessing = None
         self.__working.value = 0
-
+        
 class BulletTask:
   """ dum-dum bullet """
   def isBullet( self ):
@@ -411,18 +458,7 @@ class ProcessTask:
     """ execute task
 
     :param self: self reference
-    """
-    class TimeOutError( Exception ):
-      """ dummy exception raised after :timeOut: seconds """
-      pass
-    ## reference to SIGALRM handler
-    saveHandler = None
-
-    if self.hasTimeOutSet():
-      def timeOutHandler( singnum, frame ):
-        raise TimeOutError()
-      saveHandler = signal.signal(signal.SIGALRM, timeOutHandler)
-      signal.alarm(self.__timeOut)
+    """ 
     self.__done = True
     try:
       ## it's a function?
@@ -437,8 +473,8 @@ class ProcessTask:
           raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
-    except TimeOutError, error:
-      self.__taskResult = { "OK" : False, "Message" : "timed out after %s seconds" % self.__timeOut }
+    except ProcessTaskTimeOutError:
+      self.__taskResult = { "OK" : False, "Message" : "Timed out after %s seconds" % self.__timeOut }
     except Exception, x:
       self.__exceptionRaised = True
       if gLogger:
@@ -448,11 +484,6 @@ class ProcessTask:
         retDict['Value'] = str( x )
         retDict['Exc_info'] = sys.exc_info()[1]
         self.__taskException = retDict
-    finally:
-      if self.hasTimeOutSet() and saveHandler:
-        signal.signal(signal.SIGALRM, saveHandler)
-    ## reset alarm signal
-    signal.alarm(0)
 
 class ProcessPool:
   """
