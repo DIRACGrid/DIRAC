@@ -156,18 +156,35 @@ class Synchronizer( object ):
         else:
           gt = getGOCTier( DIRACSitesOfGridSites )
 
-        Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
-        Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
+        #Utils.protect2(self.rsClient.addOrModifyGridSite, gridSiteName, gt)
+        res = self.rsClient.addOrModifyGridSite( gridSiteName, gt )
+        if not res[ 'OK' ]:
+          gLogger.error( res[ 'Message' ] )
+          return res
+        
+        #Utils.protect2(self.rsClient.addOrModifySite, site, tier, gridSiteName )
+        res = self.rsClient.addOrModifySite( site, tier, gridSiteName )
+        if not res[ 'OK' ]:
+          gLogger.error( res[ 'Message' ] )
+          return res
 
       elif siteType == "DIRAC":
-        Utils.protect2(self.rsClient.addOrModifySite, site, tier, "NULL" )
+        #Utils.protect2(self.rsClient.addOrModifySite, site, tier, "NULL" )
+        res = self.rsClient.addOrModifySite( site, tier, "NULL" )
+        if not res[ 'OK' ]:
+          gLogger.error( res[ 'Message' ] )
+          return res
 
 ################################################################################
 # _syncResources HELPER functions
 
   def __updateService(self, site, type_):
     service = type_ + '@' + site
-    Utils.protect2(self.rsClient.addOrModifyService, service, type_, site )
+    #Utils.protect2(self.rsClient.addOrModifyService, service, type_, site )
+    res = self.rsClient.addOrModifyService( service, type_, site )
+    if not res[ 'OK' ]:
+      gLogger.error( res[ 'Message' ] )
+      return res
 
   def __getServiceEndpointInfo(self, node):
     #res = Utils.unpack( self.GOCDBClient.getServiceEndpointInfo( 'hostname', node ) )
@@ -225,7 +242,11 @@ class Synchronizer( object ):
           continue
 
         assert(type(siteInGOCDB) == str)
-        Utils.protect2(self.rsClient.addOrModifyResource, node, resourceType, serviceType, site, siteInGOCDB )
+        #Utils.protect2(self.rsClient.addOrModifyResource, node, resourceType, serviceType, site, siteInGOCDB )
+        res = self.rsClient.addOrModifyResource( node, resourceType, serviceType, site, siteInGOCDB )
+        if not res[ 'OK' ]:
+          gLogger.error( res[ 'Message' ] )
+          return res
         resourcesInDB.add( node )
 
 ################################################################################
@@ -316,7 +337,11 @@ class Synchronizer( object ):
 
     # Remove storageElements that are in DB but not in CS
     for se in DBSEs - CSSEs:
-      Utils.protect2(self.rsClient.removeElement, 'StorageElement', se )
+      #Utils.protect2(self.rsClient.removeElement, 'StorageElement', se )
+      res = self.rsClient.removeElement( 'StorageElement', se )
+      if not res[ 'OK' ]:
+        gLogger.error( res[ 'Message' ] )
+        return res
 
     # Add new storage elements
     gLogger.info("Updating %d StorageElements in DB (%d on CS vs %d on DB)" % (len(CSSEs - DBSEs), len(CSSEs), len(DBSEs)))
@@ -336,7 +361,11 @@ class Synchronizer( object ):
         gLogger.warn("%s is not in GOCDB!!!" % srm)
         continue
       siteInGOCDB = siteInGOCDB[ 0 ][ 'SITENAME' ]
-      Utils.protect2(self.rsClient.addOrModifyStorageElement, SE, srm, siteInGOCDB )
+      #Utils.protect2(self.rsClient.addOrModifyStorageElement, SE, srm, siteInGOCDB )
+      res = self.rsClient.addOrModifyStorageElement( SE, srm, siteInGOCDB )
+      if not res[ 'OK' ]:
+        gLogger.error( res[ 'Message' ] )
+        return res
 
 ################################################################################
 
@@ -362,7 +391,11 @@ class Synchronizer( object ):
         if resource[ 'Value' ] == []:
           
           gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
-          Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+          #Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+          res = self.rsClient.removeElement( "Service", service_name )
+          if not res[ 'OK' ]:
+            gLogger.error( res[ 'Message' ] )
+            return res
       elif service_type == "Storage":
         res = self.rsClient.getSite( siteName = site_name, meta = { 'columns' : 'GridSiteName'} )
         if res[ 'OK' ]:
@@ -373,7 +406,11 @@ class Synchronizer( object ):
         if res:
           if self.rsClient.getResource( gridSiteName = res[0], serviceType = service_type ) == []:
             gLogger.info("Deleting Service %s since it has no corresponding resources." % service_name)
-            Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+            #Utils.protect2(self.rsClient.removeElement, "Service", service_name)
+            res = self.rsClient.removeElement( "Service", service_name )
+            if not res[ 'OK' ]:
+              gLogger.error( res[ 'Message' ] )
+              return res
 
   def _syncRegistryUsers(self):
     users = CS.getTypedDictRootedAt("Users", root= "/Registry")
@@ -411,7 +448,11 @@ class Synchronizer( object ):
         return res
 
     for u in usersToDel:
-      Utils.protect2(self.rmClient.deleteUserRegistryCache, u)
+      #Utils.protect2(self.rmClient.deleteUserRegistryCache, u)
+      res = self.rmClient.deleteUserRegistryCache( u )
+      if not res[ 'OK' ]:
+        gLogger.error( res[ 'Message' ] )
+        return res
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
