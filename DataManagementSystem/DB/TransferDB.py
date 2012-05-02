@@ -985,10 +985,15 @@ class TransferDB( DB ):
     channels = channels['Value']
 
     ## create empty channelDict
-    channelDict = dict.fromkeys( channels.keys(), { "Throughput" : 0,
-                                                    "Fileput" : 0,
-                                                    "SuccessfulFiles" : 0,
-                                                    "FailedFiles" : 0 } )
+    channelDict = dict.fromkeys( channels.keys(), None ) 
+    ## fill with zeros 
+    for channelID in channelDict:
+      channelDict[channelID] = {}
+      channelDict[channelID]["Throughput"] =  0
+      channelDict[channelID]["Fileput"] = 0 
+      channelDict[channelID]["SuccessfulFiles"] = 0
+      channelDict[channelID]["FailedFiles"] = 0 
+
     channelTimeDict = dict.fromkeys( channels.keys(), 0 )
 
     req = "SELECT ChannelID, Status, Count(*), SUM(FileSize), SUM(TimeDiff) FROM " \
