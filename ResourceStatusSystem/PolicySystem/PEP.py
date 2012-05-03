@@ -10,13 +10,11 @@
 '''
 
 from DIRAC                                                       import S_ERROR
-from DIRAC.ResourceStatusSystem                                  import ValidRes, \
-    ValidStatus, ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                 import PDP
-from DIRAC.ResourceStatusSystem.Utilities                        import Utils
+from DIRAC.ResourceStatusSystem.Utilities                        import RssConfiguration, Utils
 
 __RCSID__  = '$Id: $'
 
@@ -25,7 +23,7 @@ class PEP:
   PEP (Policy Enforcement Point) initialization
 
   :params:
-    :attr:`granularity`       : string - a ValidRes (optional)
+    :attr:`granularity`       : string - a ValidElement (optional)
     :attr:`name`              : string - optional name (e.g. of a site)
     :attr:`status`            : string - optional status
     :attr:`formerStatus`      : string - optional former status
@@ -37,7 +35,7 @@ class PEP:
       [
         {
           'PolicyType': a PolicyType
-          'Granularity': a ValidRes (optional)
+          'Granularity': a ValidElement (optional)
         }
       ]
   '''
@@ -96,26 +94,33 @@ class PEP:
 
     ## sanitize input ##########################################################
     ## IS IT REALLY NEEDED ??
-        
-    if granularity is not None and granularity not in ValidRes:
+    
+    validElements = RssConfiguration.getValidElements()    
+    if granularity is not None and granularity not in validElements:
       return S_ERROR( 'Granularity "%s" not valid' % granularity )
 
-    if statusType is not None and statusType not in ValidStatusTypes[ granularity ]['StatusType']:
+    validStatusTypes = RssConfiguration.getValidStatusTypes()
+    if statusType is not None and statusType not in validStatusTypes[ granularity ]['StatusType']:
       return S_ERROR( 'StatusType "%s" not valid' % statusType )
     
-    if status is not None and status not in ValidStatus:
+    validStatus = RssConfiguration.getValidStatus()
+    if status is not None and status not in validStatus:
       return S_ERROR( 'Status "%s" not valid' % status )
 
-    if formerStatus is not None and formerStatus not in ValidStatus:
+    validStatus = RssConfiguration.getValidStatus()
+    if formerStatus is not None and formerStatus not in validStatus:
       return S_ERROR( 'FormerStatus "%s" not valid' % formerStatus )
 
-    if siteType is not None and siteType not in ValidSiteType:
+    validSiteTypes = RssConfiguration.getValidSiteTypes()
+    if siteType is not None and siteType not in validSiteTypes:
       return S_ERROR( 'SiteType "%s" not valid' % siteType )
 
-    if serviceType is not None and serviceType not in ValidServiceType:
+    validServiceTypes = RssConfiguration.getValidServiceTypes()
+    if serviceType is not None and serviceType not in validServiceTypes:
       return S_ERROR( 'ServiceType "%s" not valid' % serviceType )
 
-    if resourceType is not None and resourceType not in ValidResourceType:
+    validResourceTypes = RssConfiguration.getValidResourceTypes() 
+    if resourceType is not None and resourceType not in validResourceTypes:
       return S_ERROR( 'ResourceType "%s" not valid' % resourceType )
     
     ## policy setup ############################################################  

@@ -182,7 +182,7 @@ class ResourceManagementClient:
     
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
         name of the element
@@ -217,7 +217,7 @@ class ResourceManagementClient:
     
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
         name of the element
@@ -251,7 +251,7 @@ class ResourceManagementClient:
     
     :Parameters:
       **granularity** - `[, string, list]`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `[, string, list]`
         name of the element
@@ -286,7 +286,7 @@ class ResourceManagementClient:
     
     :Parameters:
       **granularity** - `[, string, list]`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `[, string, list]`
         name of the element
@@ -891,7 +891,7 @@ class ResourceManagementClient:
 
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
         name of the element
@@ -1001,7 +1001,7 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'VOBOXCache', locals() )  
-  def addOrModifyElementSpaceTokenOccupancyCache( self, site, token, total, 
+  def addOrModifySpaceTokenOccupancyCache( self, site, token, total, 
                                                   guaranteed, free, 
                                                   lastCheckTime, meta = None ):
     '''

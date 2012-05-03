@@ -83,7 +83,7 @@ class ResourceStatusDB( object ):
 
     if 'DBin' in kwargs.keys():
       dbIn = kwargs[ 'DBin' ]
-      if isinstance( DBin, list ):
+      if isinstance( dbIn, list ):
         from DIRAC.Core.Utilities.MySQL import MySQL
         self.db = MySQL( 'localhost', dbIn[ 0 ], dbIn[ 1 ], 'ResourceStatusDB' )
       else:
@@ -250,10 +250,10 @@ class ResourceStatusDB( object ):
 ##    Set LastCheckTime to 0 to monitored(s)
 ##
 ##    :params:
-##      :attr:`monitoreds`: string, or a list of strings where each is a ValidRes:
+##      :attr:`monitoreds`: string, or a list of strings where each is a ValidElement:
 ##      which granularity has to be set to be checked
 ##
-##      :attr:`granularity`: string, a ValidRes: from who this set comes
+##      :attr:`granularity`: string, a ValidElement: from who this set comes
 ##
 ##      :attr:`name`: string, name of Site or Resource
 ##    """
