@@ -1,3 +1,14 @@
+[v6r4p2]
+
+*StorageManagement
+BUGFIX: StorageElement - staging is a Read operation and should be allowed as such
+
+*WMS
+BUGFIX: InProcessComputingElement, JobAgent - proper return status code from the job wrapper
+
+*Core
+FIX: Platform - manage properly the case of exception in the ldconfig execution
+
 [v6r4p1]
 
 *DMS
