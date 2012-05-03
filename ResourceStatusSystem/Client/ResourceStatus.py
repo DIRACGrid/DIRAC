@@ -146,7 +146,8 @@ class ResourceStatus( object ):
     for element in elementName:
     
       if statusType is not None:
-        res = gConfig.getOption( "%s/%s/%sAccess" % ( cs_path, element, statusType ) )
+        # Added Allowed by default
+        res = gConfig.getOption( "%s/%s/%sAccess" % ( cs_path, element, statusType ), 'Allowed' )
         if res[ 'OK' ] and res[ 'Value' ]:
           r[ element ] = { statusType : res[ 'Value' ] }
         
@@ -158,7 +159,12 @@ class ResourceStatus( object ):
             k = k.replace( 'Access', '' )
             if k in statuses:
               r2[ k ] = v
-              
+          
+          # If there is no status defined in the CS, we add by default Read and 
+          # Write as Allowed.
+          if r2 == {}:
+            r2 = { 'Read' : 'Allowed', 'Write' : 'Allowed' }
+                
           r[ element ] = r2             
     
     if r:
