@@ -14,9 +14,17 @@ import time, os
 integrityDB = False
 
 def initializeDataIntegrityHandler( serviceInfo ):
-
+  """ Check that we can connect to the DB and that the tables are properly created or updated
+  """
   global integrityDB
   integrityDB = DataIntegrityDB()
+  res = integrityDB._connect()
+  if not res['OK']:
+    return res
+  res = integrityDB._checkTable()
+  if not res['OK'] and not res['Message'] == 'The requested table already exist':
+    return res
+
   return S_OK()
 
 class DataIntegrityHandler( RequestHandler ):
