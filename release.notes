@@ -3,6 +3,9 @@
 *DMS
 FIX: TransferDB.getChannelObservedThroughput - the channelDict was created in a wrong way
 
+*RSS
+FIX: ResourceStatus was not returning Allowed by default
+
 [v6r4]
 
 *General
