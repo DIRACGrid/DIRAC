@@ -63,6 +63,17 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
 *Resources
 NEW: SSHLSFComputingElement added 
 
+[v6r3p10]
+
+*StorageManagement
+BUGFIX: StorageElement - staging is a Read operation and should be allowed as such
+
+*WMS
+BUGFIX: InProcessComputingElement, JobAgent - proper return status code from the job wrapper
+
+*Core
+FIX: Platform - manage properly the case of exception in the ldconfig execution
+
 [v6r3p9]
 
 *DMS
