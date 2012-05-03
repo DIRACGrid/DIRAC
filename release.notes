@@ -1,3 +1,8 @@
+[v6r4p1]
+
+*DMS
+FIX: TransferDB.getChannelObservedThroughput - the channelDict was created in a wrong way
+
 [v6r4]
 
 *General
@@ -54,6 +59,11 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
  
 *Resources
 NEW: SSHLSFComputingElement added 
+
+[v6r3p9]
+
+*DMS
+FIX: TransferDB.getChannelObservedThroughput - the channelDict was created in a wrong way
 
 [v6r3p8]
 
