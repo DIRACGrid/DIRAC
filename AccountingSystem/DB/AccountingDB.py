@@ -1348,14 +1348,19 @@ class AccountingDB( DB ):
     for table, field in ( ( _getTableName( "type", typeName ), 'endTime' ),
                           ( _getTableName( "bucket", typeName ), 'startTime + bucketLength' ) ):
       self.log.info( "[COMPACT] Deleting old records for table %s" % table )
-      sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d" % ( table, field, dataTimespan )
-      result = self._update( sqlCmd )
-      if not result[ 'OK' ]:
-        self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
-                                                                                          dataTimespan,
-                                                                                          result[ 'Message' ] ) )
-      else:
+      deleteLimit = 10000
+      deleted = deleteLimit
+      while deleted => deleteLimit:
+        sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d LIMIT %d" % ( table, field, dataTimespan, deleteLimit )
+        result = self._update( sqlCmd )
+        if not result[ 'OK' ]:
+          self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
+                                                                                            dataTimespan,
+                                                                                            result[ 'Message' ] ) )
+          break
         self.log.info( "[COMPACT] Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
+        deleted = result[ 'Value' ]
+        time.sleep( 1 )
 
   def regenerateBuckets( self, typeName ):
     if self.__readOnly:
