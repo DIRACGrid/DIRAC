@@ -181,10 +181,10 @@ ParameterStart = 0;
 
     if not ret['OK']:
       self.log.error( 'Failed to execute Job Status', ret['Message'] )
-      return False
+      return []
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing Job Status:', str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] ) )
-      return False
+      return []
     self.log.info( 'Job Status Execution Time: %.2f' % ( time.time() - start ) )
 
     stdout = ret['Value'][1]

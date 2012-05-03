@@ -2008,20 +2008,26 @@ class JobDB( DB ):
 
     # Sort out different counters
     resultDict = {}
-    for attDict, count in result['Value']:
-      siteFullName = attDict['Site']
-      status = attDict['Status']
-      if not resultDict.has_key( siteFullName ):
-        resultDict[siteFullName] = {}
-        for state in JOB_STATES:
-          resultDict[siteFullName][state] = 0
-      if status not in JOB_FINAL_STATES:
-        resultDict[siteFullName][status] = count
-    for attDict, count in resultDay['Value']:
-      siteFullName = attDict['Site']
-      status = attDict['Status']
-      if status in JOB_FINAL_STATES:
-        resultDict[siteFullName][status] = count
+    if result['OK']:
+      for attDict, count in result['Value']:
+        siteFullName = attDict['Site']
+        status = attDict['Status']
+        if not resultDict.has_key( siteFullName ):
+          resultDict[siteFullName] = {}
+          for state in JOB_STATES:
+            resultDict[siteFullName][state] = 0
+        if status not in JOB_FINAL_STATES:
+          resultDict[siteFullName][status] = count
+    if resultDay['OK']:
+      for attDict, count in resultDay['Value']:
+        siteFullName = attDict['Site']
+        if not resultDict.has_key( siteFullName ):
+          resultDict[siteFullName] = {}
+          for state in JOB_STATES:
+            resultDict[siteFullName][state] = 0
+        status = attDict['Status']
+        if status in JOB_FINAL_STATES:
+          resultDict[siteFullName][status] = count
 
     # Collect records now
     records = []

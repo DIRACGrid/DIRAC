@@ -50,6 +50,7 @@ from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.FrameworkSystem.Client.LoggerClient           import LoggerClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
+from DIRAC.Core.Utilities                                import Time
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 
 COMPONENT_NAME = 'DiracAPI'
@@ -2191,8 +2192,7 @@ class Dirac:
         return self.__errorReport( str( x ), 'Expected yyyy-mm-dd string for date' )
 
     if not date:
-      now = time.gmtime()
-      date = '%s-%s-%s' % ( now[0], str( now[1] ).zfill( 2 ), str( now[2] ).zfill( 2 ) )
+      date = '%s' % Time.date()
       self.log.verbose( 'Setting date to %s' % ( date ) )
 
     self.log.verbose( 'Will select jobs with last update %s and following conditions' % date )
@@ -2607,7 +2607,7 @@ class Dirac:
     return result
 
   #############################################################################
-  def peek( self, jobID ):
+  def peek( self, jobID, printout = False ):
     """The peek function will attempt to return standard output from the WMS for
        a given job if this is available.  The standard output is periodically
        updated from the compute resource via the application Watchdog. Available
@@ -2637,8 +2637,10 @@ class Dirac:
 
     stdout = 'Not available yet.'
     if result['Value'].has_key( 'StandardOutput' ):
-      self.log.info( result['Value']['StandardOutput'] )
+      self.log.verbose( result['Value']['StandardOutput'] )
       stdout = result['Value']['StandardOutput']
+      if printout:
+        print stdout 
     else:
       self.log.info( 'No standard output available to print.' )
 

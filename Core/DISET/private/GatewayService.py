@@ -387,7 +387,7 @@ class TransferRelay( TransferClient ):
 class MessageForwarder:
 
   def __init__( self, msgBroker ):
-    self.__inOutLock = LockRing().getLock( "DISET.MsgFwd.IO" )
+    self.__inOutLock = LockRing().getLock()
     self.__msgBroker = msgBroker
     self.__byClient = {}
     self.__srvToCliTrid = {}

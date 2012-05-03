@@ -48,6 +48,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry        import getVOForGro
 from DIRAC.Core.Utilities.Subprocess                          import shellCall
 from DIRAC.Core.Utilities.List                                import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping                       import getSiteForCE, getSiteCEMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations      import Operations
 from DIRAC                                                    import gLogger
 
 COMPONENT_NAME = '/Interfaces/API/Job'
@@ -351,7 +352,7 @@ class Job:
         if type( lfns[i] ) == list and len( lfns[i] ):
           for k in xrange( len( lfns[i] ) ):
             lfns[i][k] = 'LFN:' + lfns[i][k].replace( 'LFN:', '' )
-        else:  
+        else:
           lfns[i] = 'LFN:' + lfns[i].replace( 'LFN:', '' )
       self.parametric['InputData'] = lfns
     elif type( lfns ) == type( ' ' ):  #single LFN
@@ -363,7 +364,7 @@ class Job:
     return S_OK()
 
   #############################################################################  
-  def setGenericParametricInput(self, inputlist):
+  def setGenericParametricInput( self, inputlist ):
     """ Helper function
     
        Define a generic parametric job with this function. Should not be used when 
@@ -378,7 +379,7 @@ class Job:
       return self._reportError( 'Expected list for parameters', **kwargs )
     self.parametric['GenericParameters'] = inputlist
     return S_OK()
-  
+
   #############################################################################
   def setInputDataPolicy( self, policy, dataScheduling = True ):
     """Helper function.
@@ -396,7 +397,7 @@ class Job:
 
     """
     kwargs = {'policy':policy, 'dataScheduling':dataScheduling}
-    csSection = '/Operations/InputDataPolicy'
+    csSection = 'InputDataPolicy'
     possible = ['Download', 'Protocol']
     finalPolicy = ''
     for value in possible:
@@ -407,9 +408,9 @@ class Job:
       return self._reportError( 'Expected one of %s for input data policy' % ( ', '.join( possible ) ),
                                 __name__, **kwargs )
 
-    jobPolicy = gConfig.getValue( '%s/%s' % ( csSection, finalPolicy ), '' )
+    jobPolicy = Operations().getValue( '%s/%s' % ( csSection, finalPolicy ), '' )
     if not jobPolicy:
-      return self._reportError( 'Could not get value for CS option %s/%s' % ( csSection, finalPolicy ),
+      return self._reportError( 'Could not get value for Operations option %s/%s' % ( csSection, finalPolicy ),
                                 __name__, **kwargs )
 
     description = 'User specified input data policy'
@@ -908,7 +909,7 @@ class Job:
                         'Default null parametric input data value' )
     self._addParameter( self.workflow, 'ParametricInputSandbox', 'string', '',
                         'Default null parametric input sandbox value' )
-    self._addParameter( self.workflow, 'ParametricParameters', 'string', '', 
+    self._addParameter( self.workflow, 'ParametricParameters', 'string', '',
                         'Default null parametric input parameters value' )
 
   #############################################################################
@@ -1116,37 +1117,37 @@ class Job:
 
     # Handle here the Parametric values
     if self.parametric:
-      for pType in ['InputData','InputSandbox']:
+      for pType in ['InputData', 'InputSandbox']:
         if self.parametric.has_key( pType ):
           if paramsDict.has_key( pType ) and paramsDict[pType]['value']:
             pData = self.parametric[pType]
             # List of lists case
-            currentFiles = paramsDict[pType]['value'].split(';')
+            currentFiles = paramsDict[pType]['value'].split( ';' )
             tmpList = []
-            if type(pData[0]) == list:  
+            if type( pData[0] ) == list:
               for pElement in pData:
-                tmpList.append(currentFiles+pElement)
+                tmpList.append( currentFiles + pElement )
             else:
               for pElement in pData:
-                tmpList.append(currentFiles+[pElement])    
+                tmpList.append( currentFiles + [pElement] )
             self.parametric[pType] = tmpList
-          
+
           paramsDict[pType] = {}
           paramsDict[pType]['value'] = "%s"
           paramsDict[pType]['type'] = 'JDL'
           self.parametric['files'] = self.parametric[pType]
-          arguments.append( ' -p Parametric'+pType+'=%s' )
+          arguments.append( ' -p Parametric' + pType + '=%s' )
           break
-        
-      if self.parametric.has_key('files'):   
-        paramsDict['Parameters']={}
+
+      if self.parametric.has_key( 'files' ):
+        paramsDict['Parameters'] = {}
         paramsDict['Parameters']['value'] = self.parametric['files']
         paramsDict['Parameters']['type'] = 'JDL'
-      if self.parametric.has_key('GenericParameters'):
-        paramsDict['Parameters']={}
+      if self.parametric.has_key( 'GenericParameters' ):
+        paramsDict['Parameters'] = {}
         paramsDict['Parameters']['value'] = self.parametric['GenericParameters']
         paramsDict['Parameters']['type'] = 'JDL'
-        arguments.append(' -p ParametricParameters=%s')
+        arguments.append( ' -p ParametricParameters=%s' )
     ##This needs to be put here so that the InputData and/or InputSandbox parameters for parametric jobs are processed
     classadJob.insertAttributeString( 'Arguments', ' '.join( arguments ) )
 
@@ -1164,12 +1165,12 @@ class Job:
           if type( value[0] ) == list:
             classadJob.insertAttributeVectorStringList( name, value )
           else:
-            classadJob.insertAttributeVectorString( name, value )  
+            classadJob.insertAttributeVectorString( name, value )
         elif value == "%s":
-          classadJob.insertAttributeInt( name, value )    
+          classadJob.insertAttributeInt( name, value )
         elif not re.search( ';', value ) or name == 'GridRequirements': #not a nice fix...
           classadJob.insertAttributeString( name, value )
-        else:  
+        else:
           classadJob.insertAttributeVectorString( name, value.split( ';' ) )
 
     if not requirements:

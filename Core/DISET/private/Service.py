@@ -44,6 +44,7 @@ class Service:
     self._authMgr = AuthManager( "%s/Authorization" % PathFinder.getServiceSection( serviceData[ 'loadName' ] ) )
     self._transportPool = getGlobalTransportPool()
     self.__cloneId = 0
+    self.__maxFD = 0
 
   def setCloneProcessId( self, cloneId ):
     self.__cloneId = cloneId
@@ -238,6 +239,7 @@ class Service:
     self._monitor.registerActivity( 'PendingQueries', "Pending queries", 'Framework', 'queries', MonitoringClient.OP_MEAN )
     self._monitor.registerActivity( 'ActiveQueries', "Active queries", 'Framework', 'threads', MonitoringClient.OP_MEAN )
     self._monitor.registerActivity( 'RunningThreads', "Running threads", 'Framework', 'threads', MonitoringClient.OP_MEAN )
+    self._monitor.registerActivity( 'MaxFD', "Max File Descriptors", 'Framework', 'fd', MonitoringClient.OP_MEAN )
 
     self._monitor.setComponentExtraParam( 'DIRACVersion', DIRAC.version )
     self._monitor.setComponentExtraParam( 'platform', DIRAC.platform )
@@ -259,6 +261,8 @@ class Service:
     self._monitor.addMark( 'PendingQueries', self._threadPool.pendingJobs() )
     self._monitor.addMark( 'ActiveQueries', self._threadPool.numWorkingThreads() )
     self._monitor.addMark( 'RunningThreads', threading.activeCount() )
+    self._monitor.addMark( 'MaxFD', self.__maxFD )
+    self.__maxFD = 0
 
 
   def getConfig( self ):
@@ -274,6 +278,7 @@ class Service:
 
   #Threaded process function
   def _processInThread( self, clientTransport ):
+    self.__maxFD = max( self.__maxFD, clientTransport.oSocket.fileno() )
     self._lockManager.lockGlobal()
     try:
       monReport = self.__startReportToMonitoring()

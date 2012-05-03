@@ -51,6 +51,7 @@ ERROR_TOKEN = 'Invalid proxy token request'
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
+from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
 from DIRAC.ConfigurationSystem.Client.Helpers.Path         import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry     import getVOForGroup, getPropertiesForGroup
@@ -132,14 +133,12 @@ class PilotDirector:
     self.configureFromSection( csSection )
     self.reloadConfiguration( csSection, submitPool )
 
-    setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    section = cfgPath( 'Operations', self.virtualOrganization, setup, 'Versions' )
-    self.installVersion = gConfig.getValue( cfgPath( section, 'Pilot', 'Version' ),
-                                         self.installVersion )
-    self.installProject = gConfig.getValue( cfgPath( section, 'Pilot', 'Project' ),
-                                         self.installProject )
-    self.installation = gConfig.getValue( cfgPath( section, 'Pilot', 'Installation' ),
-                                         self.installation )
+    # Get the defaults for the Setup where the Director is running
+    opsHelper = Operations()
+    self.installVersion = opsHelper.getValue( cfgPath( 'Pilot', 'Version' ), [ self.installVersion ] )[0]
+    self.installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ), self.installProject )
+    self.installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
+
     self.log.info( '===============================================' )
     self.log.info( 'Configuration:' )
     self.log.info( '' )
@@ -325,22 +324,27 @@ class PilotDirector:
     # Setup.
     pilotOptions.append( '-S %s' % taskQueueDict['Setup'] )
     # CS Servers
-    csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
+    csServers = gConfig.getServersList()
+    if len( csServers ) > 3:
+      # Remove the master
+      master = gConfigurationData.getMasterServer()
+      if master in csServers:
+        csServers.remove( master )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
     # DIRAC Extensions
     extensionsList = getCSExtensions()
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
-    #Get DIRAC version and project
+    #Get DIRAC version and project, There might be global Setup defaults and per VO/Setup defaults (from configure)
     opsHelper = Operations( group = taskQueueDict['OwnerGroup'], setup = taskQueueDict['Setup'] )
     # Requested version of DIRAC (it can be a list, so we take the fist one)
-    version = opsHelper.getValue( "Pilot/Version" , [ self.installVersion ] )[0]
+    version = opsHelper.getValue( cfgPath( 'Pilot', 'Version' ) , [ self.installVersion ] )[0]
     pilotOptions.append( '-r %s' % version )
     # Requested Project to install
-    installProject = opsHelper.getValue( "Pilot/Project" , self.installProject )
+    installProject = opsHelper.getValue( cfgPath( 'Pilot', 'Project' ) , self.installProject )
     if installProject:
       pilotOptions.append( '-l %s' % installProject )
-    installation = opsHelper.getValue( "Pilot/Installation", self.installation )
+    installation = opsHelper.getValue( cfgPath( 'Pilot', 'Installation' ), self.installation )
     if installation:
       pilotOptions.append( "-V %s" % installation )
     # Requested CPU time

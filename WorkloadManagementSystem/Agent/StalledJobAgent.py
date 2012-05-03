@@ -13,10 +13,13 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule                    import AgentModule
 from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, dateTime
-from DIRAC                                          import S_OK, S_ERROR
+from DIRAC                                          import S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
-import time, types
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
+from DIRAC.ConfigurationSystem.Client.Helpers       import cfgPath
+from DIRAC.ConfigurationSystem.Client.PathFinder    import getSystemInstance
+import types
 
 class StalledJobAgent( AgentModule ):
   """
@@ -28,6 +31,11 @@ class StalledJobAgent( AgentModule ):
       - finalize() - the graceful exit of the method, this one is usually used
                  for the agent restart
   """
+  jobDB = None
+  logDB = None
+
+  jobDB = None
+  logDB = None
 
   #############################################################################
   def initialize( self ):
@@ -36,8 +44,7 @@ class StalledJobAgent( AgentModule ):
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
     self.am_setOption( 'PollingTime', 60 * 60 )
-    self.enable = self.am_getOption( 'Enable', True )
-    if not self.enable:
+    if not self.am_getOption( 'Enable', True ):
       self.log.info( 'Stalled Job Agent running in disabled mode' )
     return S_OK()
 
@@ -46,17 +53,23 @@ class StalledJobAgent( AgentModule ):
     """ The main agent execution method
     """
     self.log.verbose( 'Waking up Stalled Job Agent' )
+
+    wms_instance = getSystemInstance( 'WorkloadManagement' )
+    if not wms_instance:
+      return S_ERROR( 'Can not get the WorkloadManagement system instance' )
+    wrapperSection = cfgPath( 'Systems', 'WorkloadManagement', wms_instance, 'JobWrapper' )
+
     stalledTime = self.am_getOption( 'StalledTimeHours', 2 )
     failedTime = self.am_getOption( 'FailedTimeHours', 6 )
-    self.log.verbose( 'StalledTime = %s hours' % ( stalledTime ) )
-    self.log.verbose( 'FailedTime = %s hours' % ( failedTime ) )
-    try:
-      stalledTime = int( stalledTime ) * 60 * 60
-      failedTime = int( failedTime ) * 60 * 60
-    except Exception, x:
-      self.log.warn( 'Problem while converting stalled time (hours) to seconds' )
-      self.log.warn( str( x ) )
-      return S_OK( 'Problem while converting configuration times' )
+    self.log.verbose( 'StalledTime = %s cycles' % ( stalledTime ) )
+    self.log.verbose( 'FailedTime = %s cycles' % ( failedTime ) )
+
+    watchdogCycle = gConfig.getValue( cfgPath( wrapperSection , 'CheckingTime' ), 30 * 60 )
+    watchdogCycle = max( watchdogCycle, gConfig.getValue( cfgPath( wrapperSection , 'MinCheckingTime' ), 20 * 60 ) )
+
+    # Add half cycle to avoid race conditions
+    stalledTime = watchdogCycle * ( stalledTime + 0.5 )
+    failedTime = watchdogCycle * ( failedTime + 0.5 )
 
     result = self.__markStalledJobs( stalledTime )
     if not result['OK']:
@@ -97,7 +110,8 @@ class StalledJobAgent( AgentModule ):
           self.log.verbose( result['Message'] )
           runningCounter += 1
 
-    self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' % ( len( jobs ), stalledCounter, runningCounter ) )
+    self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' %
+                   ( len( jobs ), stalledCounter, runningCounter ) )
     return S_OK()
 
   #############################################################################
@@ -128,19 +142,19 @@ class StalledJobAgent( AgentModule ):
             result = self.__updateJobStatus( job, 'Failed',
                                              "Job stalled: pilot not running" )
             failedCounter += 1
-            result = self.sendAccounting( job )
+            result = self.__sendAccounting( job )
             continue
 
         result = self.__getLatestUpdateTime( job )
         if not result['OK']:
           return result
-        currentTime = time.mktime( time.gmtime() )
+        currentTime = toEpoch()
         lastUpdate = result['Value']
         elapsedTime = currentTime - lastUpdate
         if elapsedTime > failedTime:
           self.__updateJobStatus( job, 'Failed', 'Stalling for more than %d sec' % failedTime )
           failedCounter += 1
-          result = self.sendAccounting( job )
+          result = self.__sendAccounting( job )
 
     recoverCounter = 0
 
@@ -153,7 +167,7 @@ class StalledJobAgent( AgentModule ):
         jobs = result['Value']
         self.log.info( '%s Stalled jobs will be Accounted' % ( len( jobs ) ) )
         for job in jobs:
-          result = self.sendAccounting( job )
+          result = self.__sendAccounting( job )
           if not result['OK']:
             break
           recoverCounter += 1
@@ -192,7 +206,7 @@ class StalledJobAgent( AgentModule ):
     if not result['OK']:
       return result
 
-    currentTime = time.mktime( time.gmtime() )
+    currentTime = toEpoch()
     lastUpdate = result['Value']
 
     elapsedTime = currentTime - lastUpdate
@@ -205,7 +219,7 @@ class StalledJobAgent( AgentModule ):
 
   #############################################################################
   def __getLatestUpdateTime( self, job ):
-    """Returns the most recent of HeartBeatTime and LastUpdateTime
+    """ Returns the most recent of HeartBeatTime and LastUpdateTime
     """
     result = self.jobDB.getJobAttributes( job, ['HeartBeatTime', 'LastUpdateTime'] )
     if not result['OK'] or not result['Value']:
@@ -234,11 +248,12 @@ class StalledJobAgent( AgentModule ):
 
   #############################################################################
   def __updateJobStatus( self, job, status, minorstatus = None ):
-    """This method updates the job status in the JobDB, this should only be
-       used to fail jobs due to the optimizer chain.
+    """ This method updates the job status in the JobDB, this should only be
+        used to fail jobs due to the optimizer chain.
     """
     self.log.verbose( "self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % ( job, status ) )
-    if self.enable:
+
+    if self.am_getOption( 'Enable', True ):
       result = self.jobDB.setJobAttribute( job, 'Status', status, update = True )
     else:
       result = S_OK( 'DisabledMode' )
@@ -246,27 +261,36 @@ class StalledJobAgent( AgentModule ):
     if result['OK']:
       if minorstatus:
         self.log.verbose( "self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % ( job, minorstatus ) )
-        if self.enable:
-          result = self.jobDB.setJobAttribute( job, 'MinorStatus', minorstatus, update = True )
-        else:
-          result = S_OK( 'DisabledMode' )
+        result = self.jobDB.setJobAttribute( job, 'MinorStatus', minorstatus, update = True )
 
     if not minorstatus: #Retain last minor status for stalled jobs
       result = self.jobDB.getJobAttributes( job, ['MinorStatus'] )
       if result['OK']:
         minorstatus = result['Value']['MinorStatus']
 
-    if self.enable:
-      logStatus = status
-      result = self.logDB.addLoggingRecord( job, status = logStatus, minor = minorstatus, source = 'StalledJobAgent' )
-      if not result['OK']:
-        self.log.warn( result )
+    logStatus = status
+    result = self.logDB.addLoggingRecord( job, status = logStatus, minor = minorstatus, source = 'StalledJobAgent' )
+    if not result['OK']:
+      self.log.warn( result )
 
     return result
 
+  def __getProcessingType( self, jobID ):
+    """ Get the Processing Type from the JDL, until it is promoted to a real Attribute
+    """
+    processingType = 'unknown'
+    result = self.jobDB.getJobJDL( jobID, original = True )
+    if not result['OK']:
+      return processingType
+    classAdJob = ClassAd( result['Value'] )
+    if classAdJob.lookupAttribute( 'ProcessingType' ):
+      processingType = classAdJob.getAttributeString( 'ProcessingType' )
+    return processingType
+
+
   #############################################################################
-  def sendAccounting( self, jobID ):
-    """Send WMS accounting data for the given job
+  def __sendAccounting( self, jobID ):
+    """ Send WMS accounting data for the given job
     """
 
     accountingReport = Job()
@@ -276,70 +300,23 @@ class StalledJobAgent( AgentModule ):
       return result
     jobDict = result['Value']
 
-    result = self.logDB.getJobLoggingInfo( jobID )
-    if not result['OK']:
-      logList = []
+    startTime, endTime = self.__checkLoggingInfo( jobID, jobDict )
+
+    lastCPUTime, lastWallTime, lastHeartBeatTime = self.__checkHeartBeat( jobID, jobDict )
+
+    if fromString( lastHeartBeatTime ) > endTime:
+      endTime = fromString( lastHeartBeatTime )
+
+    cpuNormalization = self.jobDB.getJobParameter( jobID, 'CPUNormalizationFactor' )
+    if not cpuNormalization['OK'] or not cpuNormalization['Value']:
+      cpuNormalization = 0.0
     else:
-      logList = result['Value']
+      cpuNormalization = cpuNormalization['Value']
 
-    startTime = jobDict['StartExecTime']
-    endTime = ''
-
-    if not startTime or startTime == 'None':
-      for status, minor, app, stime, source in logList:
-        if status == 'Running':
-          startTime = stime
-          break
-      for status, minor, app, stime, source in logList:
-        if status == 'Stalled':
-          endTime = stime
-      if not startTime or startTime == 'None':
-        startTime = jobDict['SubmissionTime']
-
-    if type( startTime ) in types.StringTypes:
-      startTime = fromString( startTime )
-
-
-    result = self.logDB.getJobLoggingInfo( jobID )
-    if not result['OK']:
-      endTime = dateTime()
-    else:
-      for status, minor, app, stime, source in result['Value']:
-        if status == 'Stalled':
-          endTime = stime
-          break
-    if not endTime:
-      endTime = dateTime()
-
-    if type( endTime ) in types.StringTypes:
-      endTime = fromString( endTime )
-
-    result = self.jobDB.getHeartBeatData( jobID )
-
-    lastCPUTime = 0
-    lastWallTime = 0
-    lastHeartBeatTime = jobDict['StartExecTime']
-    if result['OK']:
-      for name, value, heartBeatTime in result['Value']:
-        if 'CPUConsumed' == name:
-          try:
-            value = int( float( value ) )
-            if value > lastCPUTime:
-              lastCPUTime = value
-          except:
-            pass
-        if 'WallClockTime' == name:
-          try:
-            value = int( float( value ) )
-            if value > lastWallTime:
-              lastWallTime = value
-          except:
-            pass
-        if heartBeatTime > lastHeartBeatTime:
-          lastHeartBeatTime = heartBeatTime
+    processingType = self.__getProcessingType( jobID )
 
     accountingReport.setStartTime( startTime )
-    accountingReport.setEndTime()
+    accountingReport.setEndTime( endTime )
     # execTime = toEpoch( endTime ) - toEpoch( startTime )
     #Fill the accounting data
     acData = { 'Site' : jobDict['Site'],
@@ -348,11 +325,11 @@ class StalledJobAgent( AgentModule ):
                'JobGroup' : jobDict['JobGroup'],
                'JobType' : jobDict['JobType'],
                'JobClass' : jobDict['JobSplitType'],
-               'ProcessingType' : 'unknown',
+               'ProcessingType' : processingType,
                'FinalMajorStatus' : 'Failed',
                'FinalMinorStatus' : 'Stalled',
                'CPUTime' : lastCPUTime,
-               'NormCPUTime' : 0.0,
+               'NormCPUTime' : lastCPUTime * cpuNormalization,
                'ExecTime' : lastWallTime,
                'InputDataSize' : 0.0,
                'OutputDataSize' : 0.0,
@@ -374,4 +351,63 @@ class StalledJobAgent( AgentModule ):
       self.log.warn( 'Failed to send accounting report for job %d' % int( jobID ) )
       self.log.error( result['Message'] )
     return result
+
+  def __checkHeartBeat( self, jobID, jobDict ):
+    """ Get info from HeartBeat 
+    """
+    result = self.jobDB.getHeartBeatData( jobID )
+
+    lastCPUTime = 0
+    lastWallTime = 0
+    lastHeartBeatTime = jobDict['StartExecTime']
+    if result['OK']:
+      for name, value, heartBeatTime in result['Value']:
+        if 'CPUConsumed' == name:
+          try:
+            value = int( float( value ) )
+            if value > lastCPUTime:
+              lastCPUTime = value
+          except ValueError:
+            pass
+        if 'WallClockTime' == name:
+          try:
+            value = int( float( value ) )
+            if value > lastWallTime:
+              lastWallTime = value
+          except ValueError:
+            pass
+        if heartBeatTime > lastHeartBeatTime:
+          lastHeartBeatTime = heartBeatTime
+
+    return lastCPUTime, lastWallTime, lastHeartBeatTime
+
+  def __checkLoggingInfo( self, jobID, jobDict ):
+    """ Get info from JobLogging
+    """
+    logList = []
+    result = self.logDB.getJobLoggingInfo( jobID )
+    if result['OK']:
+      logList = result['Value']
+
+    startTime = jobDict['StartExecTime']
+    if not startTime or startTime == 'None':
+      # status, minor, app, stime, source
+      for items in logList:
+        if items[0] == 'Running':
+          startTime = items[3]
+          break
+      if not startTime or startTime == 'None':
+        startTime = jobDict['SubmissionTime']
+
+    if type( startTime ) in types.StringTypes:
+      startTime = fromString( startTime )
+
+    endTime = dateTime()
+    # status, minor, app, stime, source
+    for items in logList:
+      if items[0] == 'Stalled':
+        endTime = fromString( items[3] )
+
+    return startTime, endTime
+
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

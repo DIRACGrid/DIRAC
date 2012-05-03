@@ -18,7 +18,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice             import PoolXMLSlice
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                                          import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations            import Operations
+
 import DIRAC
 
 import types
@@ -26,6 +28,8 @@ import types
 COMPONENT_NAME = 'InputDataResolution'
 
 class InputDataResolution:
+  """ The class
+  """
 
   #############################################################################
   def __init__( self, argumentsDict ):
@@ -111,9 +115,9 @@ class InputDataResolution:
       self.log.info( 'Job has a specific policy setting: %s' % ( ', '.join( policy ) ) )
     else:
       self.log.verbose( 'Attempting to resolve input data policy for site %s' % site )
-      inputDataPolicy = gConfig.getOptionsDict( '/Operations/InputDataPolicy' )
+      inputDataPolicy = Operations().getOptionsDict( 'InputDataPolicy' )
       if not inputDataPolicy['OK']:
-        return S_ERROR( 'Could not resolve InputDataPolicy from /Operations/InputDataPolicy' )
+        return S_ERROR( 'Could not resolve InputDataPolicy from Operations InputDataPolicy' )
 
       options = inputDataPolicy['Value']
       if options.has_key( site ):
@@ -159,7 +163,7 @@ class InputDataResolution:
   def __runModule( self, modulePath, remainingReplicas ):
     """This method provides a way to run the modules specified by the VO that
        govern the input data access policy for the current site. Using the 
-       section /Operations/InputDataPolicy different modules can be defined for 
+       InputDataPolicy section from Operations different modules can be defined for 
        particular sites or for InputDataPolicy defined in the JDL of the jobs.
     """
     self.log.info( 'Attempting to run %s' % ( modulePath ) )

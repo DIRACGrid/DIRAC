@@ -49,7 +49,19 @@ class SystemAdministratorHandler( RequestHandler ):
     """  Get the complete status information for the components in the
          given list
     """
-    return InstallTools.getOverallStatus( getCSExtensions() )
+    result = InstallTools.getOverallStatus( getCSExtensions() )
+    if not result['OK']:
+      return result
+    statusDict = result['Value']
+    for compType in statusDict:
+      for system in statusDict[compType]:
+        for component in statusDict[compType][system]:
+          result = InstallTools.getComponentModule( gConfig,system,component,compType )
+          if not result['OK']:
+            statusDict[compType][system][component]['Module'] = "Unknown"
+          else:
+            statusDict[compType][system][component]['Module'] = result['Value']
+    return S_OK(statusDict)   
 
   types_getStartupComponentStatus = [ ListType ]
   def export_getStartupComponentStatus( self, componentTupleList ):
@@ -59,17 +71,17 @@ class SystemAdministratorHandler( RequestHandler ):
     return InstallTools.getStartupComponentStatus( componentTupleList )
 
   types_installComponent = [ StringTypes, StringTypes, StringTypes ]
-  def export_installComponent( self, componentType, system, component ):
+  def export_installComponent( self, componentType, system, component, componentModule='' ):
     """ Install runit directory for the specified component
     """
-    return InstallTools.installComponent( componentType, system, component, getCSExtensions() )
+    return InstallTools.installComponent( componentType, system, component, getCSExtensions(), componentModule )
 
   types_setupComponent = [ StringTypes, StringTypes, StringTypes ]
-  def export_setupComponent( self, componentType, system, component ):
+  def export_setupComponent( self, componentType, system, component, componentModule='' ):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
     """
-    return InstallTools.setupComponent( componentType, system, component, getCSExtensions() )
+    return InstallTools.setupComponent( componentType, system, component, getCSExtensions(), componentModule )
 
   types_addDefaultOptionsToComponentCfg = [ StringTypes, StringTypes ]
   def export_addDefaultOptionsToComponentCfg( self, componentType, system, component ):

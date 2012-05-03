@@ -1,28 +1,36 @@
+"""
+"""
+__RCSID__ = "$Id$"
+
 COMPONENT_NAME = 'TaskManager'
 
-from DIRAC                                                      import gConfig, S_OK, S_ERROR
+from DIRAC                                                      import gConfig, S_OK, S_ERROR, gLogger
 
-from DIRAC.Core.Utilities.List                                  import sortList
+from DIRAC.Core.Utilities.List                                  import sortList, fromChar
 from DIRAC.Interfaces.API.Job                                   import Job
 
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
-
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations        import Operations
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
+from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
+from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
+from DIRAC.Core.Security.ProxyInfo                              import getProxyInfo
+from DIRAC.Core.Utilities.SiteSEMapping                         import getSitesForSE
 
-import string, re, time, types, os
+import re, time, types, os
 
 class TaskBase( object ):
 
   def __init__( self, transClient = None, logger = None ):
 
     if not transClient:
-      from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
       self.transClient = TransformationClient()
     else:
       self.transClient = transClient
 
     if not logger:
-      from DIRAC import gLogger
       self.log = gLogger.getSubLogger( 'TaskBase' )
     else:
       self.log = logger
@@ -42,9 +50,11 @@ class TaskBase( object ):
     for taskID in sortList( taskDict.keys() ):
       transID = taskDict[taskID]['TransformationID']
       if taskDict[taskID]['Success']:
-        res = self.transClient.setTaskStatusAndWmsID( transID, taskID, 'Submitted', str( taskDict[taskID]['ExternalID'] ) )
+        res = self.transClient.setTaskStatusAndWmsID( transID, taskID, 'Submitted',
+                                                      str( taskDict[taskID]['ExternalID'] ) )
         if not res['OK']:
-          self.log.warn( "updateDBAfterSubmission: Failed to update task status after submission" , "%s %s" % ( taskDict[taskID]['ExternalID'], res['Message'] ) )
+          self.log.warn( "updateDBAfterSubmission: Failed to update task status after submission" ,
+                         "%s %s" % ( taskDict[taskID]['ExternalID'], res['Message'] ) )
         updated += 1
     self.log.info( "updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % ( updated, time.time() - startTime ) )
     return S_OK()
@@ -63,13 +73,11 @@ class RequestTasks( TaskBase ):
   def __init__( self, transClient = None, logger = None, requestClient = None ):
 
     if not logger:
-      from DIRAC import gLogger
       logger = gLogger.getSubLogger( 'RequestTasks' )
 
     super( RequestTasks, self ).__init__( transClient, logger )
 
     if not requestClient:
-      from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
       self.requestClient = RequestClient()
     else:
       self.requestClient = requestClient
@@ -200,32 +208,29 @@ class WorkflowTasks( TaskBase ):
                 outputDataModule = None ):
 
     if not logger:
-      from DIRAC import gLogger
       logger = gLogger.getSubLogger( 'WorkflowTasks' )
 
     super( WorkflowTasks, self ).__init__( transClient, logger )
 
     if not submissionClient:
-      from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
       self.submissionClient = WMSClient()
     else:
       self.submissionClient = submissionClient
 
     if not jobMonitoringClient:
-      from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
       self.jobMonitoringClient = JobMonitoringClient()
     else:
       self.jobMonitoringClient = jobMonitoringClient
 
     if not outputDataModule:
       #FIXME: LHCb specific
-      self.outputDataModule = gConfig.getValue( "/DIRAC/VOPolicy/OutputDataModule", "LHCbDIRAC.Core.Utilities.OutputDataPolicy" )
+      self.outputDataModule = gConfig.getValue( "/DIRAC/VOPolicy/OutputDataModule",
+                                                "LHCbDIRAC.Core.Utilities.OutputDataPolicy" )
     else:
       self.outputDataModule = outputDataModule
 
   def prepareTransformationTasks( self, transBody, taskDict, owner = '', ownerGroup = '', job = None ):
     if ( not owner ) or ( not ownerGroup ):
-      from DIRAC.Core.Security.ProxyInfo import getProxyInfo
       res = getProxyInfo( False, False )
       if not res['OK']:
         return res
@@ -253,8 +258,10 @@ class WorkflowTasks( TaskBase ):
       oJob._setParamValue( 'PRODUCTION_ID', str( transID ).zfill( 8 ) )
       oJob._setParamValue( 'JOB_ID', str( taskNumber ).zfill( 8 ) )
       inputData = None
+      sites = []
       for paramName, paramValue in paramsDict.items():
-        self.log.verbose( 'TransID: %s, TaskID: %s, ParamName: %s, ParamValue: %s' % ( transID, taskNumber, paramName, paramValue ) )
+        self.log.verbose( 'TransID: %s, TaskID: %s, ParamName: %s, ParamValue: %s' % ( transID, taskNumber,
+                                                                                       paramName, paramValue ) )
         if paramName == 'InputData':
           if paramValue:
             self.log.verbose( 'Setting input data to %s' % paramValue )
@@ -263,27 +270,68 @@ class WorkflowTasks( TaskBase ):
           if paramValue:
             self.log.verbose( 'Setting allocated site to: %s' % ( paramValue ) )
             oJob.setDestination( paramValue )
+            sites = fromChar( paramValue )
         elif paramValue:
           self.log.verbose( 'Setting %s to %s' % ( paramName, paramValue ) )
           oJob._addJDLParameter( paramName, paramValue )
 
-      hospitalTrans = [int( x ) for x in gConfig.getValue( "/Operations/Hospital/Transformations", [] )]
+      if 'TargetSE' in paramsDict:
+        seSites = None
+        seList = fromChar( paramsDict['TargetSE'] )
+        for se in seList:
+          res = getSitesForSE( se )
+          if res['OK']:
+            thisSESites = res['OK']['Value']
+            if seSites == None:
+              # If this is the first SE, initialize the vector
+              seSites = thisSESites
+            else:
+              # If it is not the first SE, keep only those that are common
+              for nSE in list( seSites ):
+                if nSE not in thisSESites:
+                  seSites.remove( nSE )
+          else:
+            self.log.warn( 'Could not get Sites associated to SE', res['Message'] )
+            seSites = []
+        # Now we need to make the AND with the sites, if defined
+        if seSites == None:
+          seSites = []
+        if sites:
+          # Need to get the AND
+          for nSE in list( seSites ):
+            if nSE not in sites:
+              seSites.remove( nSE )
+          if not seSites:
+            taskDict[taskNumber]['TaskObject'] = ''
+            continue
+
+        if not seSites:
+          self.log.warn( 'Could not get a list a Sites for provided TargetSE', ', '.join( seList ) )
+          taskDict[taskNumber]['TaskObject'] = ''
+          continue
+
+        sitesString = ', '.join( seSites )
+        self.log.verbose( 'Setting Site according to TargetSE', sitesString )
+        oJob.setDestination( sitesString )
+
+      hospitalTrans = [int( x ) for x in Operations().getValue( "Hospital/Transformations", [] )]
       if int( transID ) in hospitalTrans:
-        hospitalSite = gConfig.getValue( "/Operations/Hospital/HospitalSite", 'DIRAC.JobDebugger.ch' )
-        hospitalCEs = gConfig.getValue( "/Operations/Hospital/HospitalCEs", [] )
+        hospitalSite = Operations().getValue( "Hospital/HospitalSite", 'DIRAC.JobDebugger.ch' )
+        hospitalCEs = Operations().getValue( "Hospital/HospitalCEs", [] )
         oJob.setType( 'Hospital' )
         oJob.setDestination( hospitalSite )
         oJob.setInputDataPolicy( 'download', dataScheduling = False )
         if hospitalCEs:
           oJob._addJDLParameter( 'GridRequiredCEs', hospitalCEs )
       taskDict[taskNumber]['TaskObject'] = ''
-      res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID, 'TaskID':taskNumber, 'InputData':inputData},
+      res = self.getOutputData( {'Job':oJob._toXML(), 'TransformationID':transID,
+                                 'TaskID':taskNumber, 'InputData':inputData},
                                 moduleLocation = self.outputDataModule )
       if not res ['OK']:
         self.log.error( "Failed to generate output data", res['Message'] )
         continue
       for name, output in res['Value'].items():
-        oJob._addJDLParameter( name, string.join( output, ';' ) )
+        oJob._addJDLParameter( name, ';'.join( output ) )
       taskDict[taskNumber]['TaskObject'] = Job( oJob._toXML() )
     return S_OK( taskDict )
 
@@ -314,7 +362,8 @@ class WorkflowTasks( TaskBase ):
         self.log.error( "Failed to submit task to WMS", res['Message'] )
         taskDict[taskID]['Success'] = False
         failed += 1
-    self.log.info( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted, time.time() - startTime ) )
+    self.log.info( 'submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % ( submitted,
+                                                                                              time.time() - startTime ) )
     if failed:
       self.log.info( 'submitTransformationTasks: Failed to submit %d tasks to WMS.' % ( failed ) )
     return S_OK( taskDict )
@@ -390,7 +439,9 @@ class WorkflowTasks( TaskBase ):
         newStatus = statusDict[wmsID]['Status']
       if oldStatus != newStatus:
         if newStatus == "Removed":
-          self.log.verbose( 'Production/Job %d/%d removed from WMS while it is in %s status' % ( transID, taskID, oldStatus ) )
+          self.log.verbose( 'Production/Job %d/%d removed from WMS while it is in %s status' % ( transID,
+                                                                                                 taskID,
+                                                                                                 oldStatus ) )
           newStatus = "Failed"
         self.log.verbose( 'Setting job status for Production/Job %d/%d to %s' % ( transID, taskID, newStatus ) )
         if not updateDict.has_key( newStatus ):
@@ -399,7 +450,6 @@ class WorkflowTasks( TaskBase ):
     return S_OK( updateDict )
 
   def getSubmittedFileStatus( self, fileDicts ):
-    taskDicts = []
     taskFiles = {}
     for fileDict in fileDicts:
       transID = fileDict['TransformationID']

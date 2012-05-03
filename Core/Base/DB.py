@@ -44,9 +44,9 @@ class DB( MySQL ):
       # No individual port number found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/Port' )
       if result['OK']:
-        self.dbPort = int(result['Value'])
+        self.dbPort = int( result['Value'] )
     else:
-      self.dbPort = int(result['Value'])
+      self.dbPort = int( result['Value'] )
 
     self.dbUser = ''
     result = gConfig.getOption( self.cs_path + '/User' )
@@ -88,100 +88,11 @@ class DB( MySQL ):
     #self.log.info("SystemInstance: "+self.system)
     self.log.info( "User:           " + self.dbUser )
     self.log.info( "Host:           " + self.dbHost )
-    self.log.info( "Port:           " + str(self.dbPort) )
+    self.log.info( "Port:           " + str( self.dbPort ) )
     #self.log.info("Password:       "+self.dbPass)
     self.log.info( "DBName:         " + self.dbName )
-    self.log.info( "MaxQueue:       " + str(self.maxQueueSize) )
+    self.log.info( "MaxQueue:       " + str( self.maxQueueSize ) )
     self.log.info( "==================================================" )
-
-########################################################################################
-#
-#  Utility functions
-#
-########################################################################################
-  def buildCondition( self, condDict = None, older = None, newer = None,
-                      timeStamp = None, orderAttribute = None, limit = False ):
-    """ Build SQL condition statement from provided condDict and other extra check on
-        a specified time stamp.
-        The conditions dictionary specifies for each attribute one or a List of possible
-        values
-    """
-    condition = ''
-    conjunction = "WHERE"
-
-    if condDict != None:
-      for attrName, attrValue in condDict.items():
-        if type( attrValue ) == types.ListType:
-          multiValue = ','.join( ['"' + str( x ).strip() + '"' for x in attrValue] )
-          condition = ' %s %s %s in (%s)' % ( condition,
-                                              conjunction,
-                                              str( attrName ),
-                                              multiValue )
-        else:
-          condition = ' %s %s %s=\'%s\'' % ( condition,
-                                             conjunction,
-                                             str( attrName ),
-                                             str( attrValue ) )
-        conjunction = "AND"
-
-    if timeStamp:
-      if older:
-        condition = ' %s %s %s < \'%s\'' % ( condition,
-                                             conjunction,
-                                             timeStamp,
-                                             str( older ) )
-        conjunction = "AND"
-
-      if newer:
-        condition = ' %s %s %s >= \'%s\'' % ( condition,
-                                               conjunction,
-                                               timeStamp,
-                                               str( newer ) )
-
-    if type( orderAttribute ) in types.StringTypes:
-      orderFields = orderAttribute.split( ':' )
-      condition = "%s ORDER BY %s" % ( condition, ' '.join( orderFields ) )
-
-    if limit:
-      condition = "%s LIMIT %d" % ( condition, limit )
-
-    return condition
-
-#########################################################################################
-  def getCounters( self, table, attrList, condDict, older = None, newer = None, timeStamp = None, connection = False ):
-    """ Count the number of records on each distinct combination of AttrList, selected
-        with condition defined by condDict and time stamps
-    """
-
-    cond = self.buildCondition( condDict, older, newer, timeStamp )
-    attrNames = ','.join( [ str( x ) for x in attrList ] )
-    # attrNames = ','.join( map( lambda x: str( x ), attrList ) )
-    cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % ( attrNames, table, cond, attrNames, attrNames )
-    result = self._query( cmd , connection )
-    if not result['OK']:
-      return result
-
-    resultList = []
-    for raw in result['Value']:
-      attrDict = {}
-      for i in range( len( attrList ) ):
-        attrDict[attrList[i]] = raw[i]
-      item = ( attrDict, raw[len( attrList )] )
-      resultList.append( item )
-    return S_OK( resultList )
-
-#############################################################################
-  def getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
-                                  newer = None, timeStamp = None, connection = False ):
-    """ Get distinct values of a table attribute under specified conditions
-    """
-    cond = self.buildCondition( condDict, older = older, newer = newer, timeStamp = timeStamp )
-    cmd = 'SELECT  DISTINCT(%s) FROM %s %s ORDER BY %s' % ( attribute, table, cond, attribute )
-    result = self._query( cmd, connection )
-    if not result['OK']:
-      return result
-    attr_list = [ x[0] for x in result['Value'] ]
-    return S_OK( attr_list )
 
 #############################################################################
   def getCSOption( self, optionName, defaultValue = None ):
