@@ -7,6 +7,7 @@
 
 import datetime
 
+from DIRAC                                                import gLogger 
 from DIRAC.ResourceStatusSystem.PolicySystem              import Status
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
@@ -188,7 +189,9 @@ class PDP:
 
       if res[ 'Status' ] not in ( 'Error', 'Unknown' ):
         policyResults.append( res )
-
+      else:
+        gLogger.warn( res )      
+      
     return policyResults
 
 ################################################################################
