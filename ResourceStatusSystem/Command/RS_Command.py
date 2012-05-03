@@ -6,8 +6,7 @@
 from DIRAC                                            import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command       import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities             import Utils
-from DIRAC.ResourceStatusSystem                       import ValidRes
+from DIRAC.ResourceStatusSystem.Utilities             import RssConfiguration, Utils
 
 __RCSID__ = '$Id: $'
 
@@ -22,9 +21,9 @@ class RSPeriods_Command( Command ):
     """
     Return getPeriods from ResourceStatus Client
 
-    - args[0] should be a ValidRes
+    - args[0] should be a ValidElement
 
-    - args[1] should be the name of the ValidRes
+    - args[1] should be the name of the ValidElement
 
     - args[2] should be the present status
 
@@ -64,7 +63,7 @@ class ServiceStats_Command( Command ):
 
     :params:
       :attr:`args`: a tuple
-        - args[1]: a ValidRes
+        - args[1]: a ValidElement
 
         - args[0]: should be the name of the Site
 
@@ -105,7 +104,7 @@ class ResourceStats_Command( Command ):
 
     :params:
       :attr:`args`: a tuple
-        - `args[0]` string, a ValidRes. Should be in ('Site', 'Service')
+        - `args[0]` string, a ValidElement. Should be in ('Site', 'Service')
 
         - `args[1]` should be the name of the Site or Service
 
@@ -196,9 +195,9 @@ class MonitoredStatus_Command( Command ):
 
     :params:
       :attr:`args`: a tuple
-        - `args[0]`: string          - should be a ValidRes
-        - `args[1]`: string          - should be the name of the ValidRes
-        - `args[2]`: optional string - a ValidRes (get status of THIS ValidRes
+        - `args[0]`: string          - should be a ValidElement
+        - `args[1]`: string          - should be the name of the ValidElement
+        - `args[2]`: optional string - a ValidElement (get status of THIS ValidElement
           for name in args[1], will call getGeneralName)
 
     :returns:
@@ -210,8 +209,10 @@ class MonitoredStatus_Command( Command ):
 
     try:
 
+      validElements = RssConfiguration.getValidElements()
+
       if len( self.args ) == 3:
-        if ValidRes.index( self.args[2] ) >= ValidRes.index( self.args[0] ):
+        if validElements.index( self.args[2] ) >= validElements.index( self.args[0] ):
           return { 'Result' : S_ERROR( 'Error in MonitoredStatus_Command' ) }
         toBeFound = self.APIs[ 'ResourceStatusClient' ].getGeneralName( 
                       self.args[0], self.args[1], self.args[2] )[ 'Value' ]

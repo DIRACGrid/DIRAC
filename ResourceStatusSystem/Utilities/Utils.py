@@ -7,13 +7,20 @@
 
 import collections
 
-from DIRAC import gConfig
+from DIRAC                import gConfig
+from DIRAC.Core.Utilities import List
 
 __RCSID__ = '$Id: $'
 
 #############################################################################
 # useful functions
 #############################################################################
+
+def getTypedList( stringValue ):
+  '''
+  Returns a typed list from a csv
+  '''
+  return [ typedobj_of_string(e) for e in List.fromChar( stringValue ) ]
 
 def where(c, f):
   return "Class " + str(c.__class__.__name__) + ", in Function " + (f.__name__)
