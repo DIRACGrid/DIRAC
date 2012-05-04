@@ -67,7 +67,7 @@ result = InstallTools.addDefaultOptionsToCS( gConfig, 'executor', system, servic
 if not result['OK']:
   print "ERROR:", result['Message']
 else:
-  result = InstallTools.installComponent( 'service', system, service, getCSExtensions(), module )
+  result = InstallTools.installComponent( 'executor', system, service, getCSExtensions(), module )
   if not result['OK']:
     print "ERROR:", result['Message']
   else:
