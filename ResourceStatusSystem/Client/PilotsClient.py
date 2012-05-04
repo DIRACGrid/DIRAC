@@ -23,9 +23,9 @@ class PilotsClient( object ):
     
     :Parameters:
       **granularity** - `string`
-        should be a ValidRes (Site or Resource)
+        should be a ValidElement (Site or Resource)
       **name** - `string || list` 
-        name(s) of the ValidRes 
+        name(s) of the ValidElement 
       **siteName** - `[,string]`
         optional site name, in case granularity is `Resource` 
       **RPCWMSAdmin** - `[,RPCClient]`

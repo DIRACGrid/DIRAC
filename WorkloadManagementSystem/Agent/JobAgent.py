@@ -411,6 +411,11 @@ class JobAgent( AgentModule ):
       self.__setJobParam( jobID, 'ErrorMessage', '%s CE Submission Error' % ( self.ceName ) )
       if 'ReschedulePayload' in submission:
         rescheduleFailedJob( jobID, submission['Message'], self.__report )
+      else:
+        if 'Value' in submission:
+          self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % submission['Value'] )
+        # make sure the Job is declared Failed
+        self.__report( jobID, 'Failed', submission['Message'] )
       return S_ERROR( '%s CE Submission Error: %s' % ( self.ceName, submission['Message'] ) )
 
     return ret
@@ -541,7 +546,7 @@ class JobAgent( AgentModule ):
       classAdJob = ClassAd( jdl )
       paramsDict = classAdJob.contents
       for param, value in paramsDict.items():
-        if value.strip().startswith('{'):
+        if value.strip().startswith( '{' ):
           self.log.debug( 'Found list type parameter %s' % ( param ) )
           rawValues = value.replace( '{', '' ).replace( '}', '' ).replace( '"', '' ).split()
           valueList = []
@@ -552,7 +557,7 @@ class JobAgent( AgentModule ):
               valueList.append( val )
           parameters[param] = valueList
         else:
-          parameters[param] = value.replace( '"', '' ).replace( '{','"{' ).replace( '}','}"' )
+          parameters[param] = value.replace( '"', '' ).replace( '{', '"{' ).replace( '}', '}"' )
           self.log.debug( 'Found standard parameter %s: %s' % ( param, parameters[param] ) )
       return S_OK( parameters )
     except Exception, x:

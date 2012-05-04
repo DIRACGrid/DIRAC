@@ -28,9 +28,9 @@ class Command( object ):
     :params:
 
       :attr:`args`: a tuple
-        - `args[0]` should be a ValidRes
+        - `args[0]` should be a ValidElement
 
-        - `args[1]` should be the name of the ValidRes
+        - `args[1]` should be the name of the ValidElement
     """
     if type(argsIn) != tuple:
       raise TypeError("`Args` of commands should be in a tuple.")

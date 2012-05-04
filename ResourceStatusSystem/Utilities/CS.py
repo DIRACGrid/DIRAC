@@ -109,7 +109,12 @@ def getSetup():
 
 def getVOMSEndpoints():
   ''' Get VOMS endpoints '''
-  return Utils.unpack( gConfig.getSections( "%s/VOMS/Servers/lhcb/" % g_BaseRegistrySection ) )
+  
+  endpoints = gConfig.getSections( '%s/VOMS/Servers/lhcb/' % g_BaseRegistrySection )
+  if endpoints[ 'OK' ]:
+    return endpoints[ 'Value' ]
+  return [] 
+  #return Utils.unpack( gConfig.getSections( "%s/VOMS/Servers/lhcb/" % g_BaseRegistrySection ) )
 
 # Sites functions ###################
 
@@ -117,10 +122,20 @@ def getSites( grids = ( 'LCG', 'DIRAC' ) ):
   ''' Get sites from CS '''
   if isinstance( grids, basestring ):
     grids = ( grids, )
-  sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
-                                      % ( g_BaseResourcesSection, grid ), True))
-           for grid in grids]
-  return Utils.list_flatten(sites)
+    
+  sites = []  
+    
+  for grid in grids:
+    
+    gridSites = gConfig.getSections( '%s/Sites/%s' % ( g_BaseResourcesSection, grid ), True )
+    if gridSites[ 'OK' ]:
+      sites.extend( gridSites[ 'Value' ] )      
+ 
+  return sites 
+#  sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
+#                                      % ( g_BaseResourcesSection, grid ), True))
+#           for grid in grids]
+#  return Utils.list_flatten( sites )
 
 def getSiteTiers( sites ):
   ''' Get tiers from CS '''
@@ -142,8 +157,13 @@ def getT1s( grids = 'LCG' ):
 
 def getLFCSites():
   ''' Get LFC sites '''
-  return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
-                             % g_BaseResourcesSection, True))
+  
+  lfcSites = gConfig.getSections( '%s/FileCatalogs/LcgFileCatalogCombined' % g_BaseResourcesSection, True )
+  if lfcSites[ 'OK' ]:
+    return lfcSites[ 'Value' ]
+  return []
+#  return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
+#                             % g_BaseResourcesSection, True))
 
 def getLFCNode( sites = None, readable = ( 'ReadOnly', 'ReadWrite' ) ):
   ''' Get LFC node '''
@@ -166,7 +186,12 @@ def getLFCNode( sites = None, readable = ( 'ReadOnly', 'ReadWrite' ) ):
 
 def getSEs():
   ''' Get StorageElements '''
-  return Utils.unpack(gConfig.getSections("/Resources/StorageElements"))
+  
+  ses = gConfig.getSections( '/Resources/StorageElements' )
+  if ses[ 'OK' ]:
+    return ses[ 'Value' ]
+  return []
+#  return Utils.unpack(gConfig.getSections("/Resources/StorageElements"))
 
 def getSEHost( SE ):
   ''' Get StorageElement host '''
@@ -209,7 +234,12 @@ def getCEType( site, ce, grid = 'LCG' ):
 
 def getCondDBs():
   ''' Get CondDB'''
-  return Utils.unpack(gConfig.getSections("%s/CondDB" % g_BaseResourcesSection))
+  
+  condDBs = gConfig.getSections( '%s/CondDB' % g_BaseResourcesSection )
+  if condDBs[ 'OK' ]:
+    return condDBs[ 'Value' ]
+  return condDBs
+#  return Utils.unpack(gConfig.getSections("%s/CondDB" % g_BaseResourcesSection))
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
