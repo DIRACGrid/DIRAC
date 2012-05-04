@@ -108,6 +108,8 @@ import os
 import signal
 import Queue
 from types import FunctionType, TypeType, ClassType
+import datetime
+import uuid
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -128,6 +130,11 @@ except ImportError:
   def S_ERROR( mess ):
     """ dummy S_ERROR """
     return { 'OK' : False, 'Message' : mess }
+
+
+class ProcessTaskTimeOutError( Exception ):
+  """ dummy exception rainsed in SIGALRM handler """
+  pass
 
 class WorkingProcess( multiprocessing.Process ):
   """
@@ -190,6 +197,7 @@ class WorkingProcess( multiprocessing.Process ):
         os.kill( self.pid, signal.SIGTERM )
         ## wait for half a minute and if worker is still alive use REAL silencer
         time.sleep(30)
+        self.rwLock.acquire()
         ## now you're dead
         os.kill( self.pid, signal.SIGKILL )
       ## wake me up in 5 seconds
@@ -243,6 +251,7 @@ class WorkingProcess( multiprocessing.Process ):
     idleLoopCount = 0
 
     ## main loop
+    taskCounter = 0
     while True:
 
       ## draining, stopEvent is set, exiting 
@@ -254,6 +263,7 @@ class WorkingProcess( multiprocessing.Process ):
 
       ## read from queue
       try:
+        self.taskHash = uuid.uuid4()
         task = self.__pendingQueue.get( block = True, timeout = 10 )   
       except Queue.Empty:
         ## idle loop?
@@ -426,6 +436,10 @@ class ProcessTask( object ):
     """
     return bool( self.__timeOut != 0 )
 
+  def isBullet( self ):
+    """ No, I'm not. """
+    return False
+
   def getTaskID( self ):
     """ taskID getter
 
@@ -473,6 +487,15 @@ class ProcessTask( object ):
 
     :param self: self reference
     """ 
+    def timeOutHandler( singnum, frame ):
+      """ dummy SIGALRM handler """
+      raise ProcessTaskTimeOutError()
+    
+    ## SIGALRM orig handler 
+    saveHandler = None
+    if self.__timeOut:
+      saveHandler = signal.signal( signal.SIGALRM, timeOutHandler )
+      
     self.__done = True
     try:
       ## it's a function?
@@ -487,6 +510,8 @@ class ProcessTask( object ):
           raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
+    except ProcessTaskTimeOutError:
+      self.__taskResult = { "OK" : False, "Message" : "Timed out after %s seconds" % self.__timeOut }
     except Exception, x:
       self.__exceptionRaised = True
       if gLogger:
@@ -545,6 +570,7 @@ class ProcessPool( object ):
   
   
   """
+
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
                 strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
     """ c'tor
@@ -590,6 +616,9 @@ class ProcessPool( object ):
     
     ## create initial workers
     self.__spawnNeededWorkingProcesses()
+    self.__killPeriod = killPeriod
+    self.__killIdle = []
+    self.__killPeriodStart = time.time()
 
   def stopProcessing( self, timeout=10 ):
     """ case fire
@@ -686,6 +715,21 @@ class ProcessPool( object ):
     finally:
       self.__prListLock.release()
 
+  def __killWorkingProcess( self ):
+    """ suspend execution of WorkingProcesses exceeding queue limits
+    :param self: self reference
+    """
+    self.__prListLock.acquire()
+    try:
+      self.__bulletCounter += 1
+      self.__pendingQueue.put( self.__bullet, block = True )
+    except Queue.Full:
+      self.__bulletCounter -= 1
+    finally:
+      self.__prListLock.release()
+
+    self.__cleanDeadProcesses()
+
   def __cleanDeadProcesses( self ):
     """ delete references of dead workingProcesses from ProcessPool.__workingProcessList """
     ## check wounded processes
@@ -693,6 +737,7 @@ class ProcessPool( object ):
     try:
       for pid, worker in self.__workersDict.items():
         if not worker.is_alive():
+          self.__bulletCounter -= 1
           del self.__workersDict[pid]
     finally:
       self.__prListLock.release()
@@ -719,6 +764,27 @@ class ProcessPool( object ):
         return
       self.__spawnWorkingProcess()
       time.sleep( 0.1 )
+
+  def __killExceedingWorkingProcesses( self ):
+    """ suspend executuion of working processes exceeding the limits
+
+    :param self: self reference
+    """
+    self.__cleanDeadProcesses()
+    now = time.time()
+    if now - self.__killPeriodStart < self.__killPeriod:
+      self.__killIdle.append( self.getNumIdleProcesses() )
+      return
+    self.__killPeriodStart = now
+    # Kill exceeding processes over the max + average idle processes
+    toKill = max( len( self.__workersDict ) - self.__maxSize, 0 )
+    for iP in self.__killIdle:
+      toKill += iP
+    toKill = toKill / len( self.__killIdle )
+    self.__killIdle = []
+    while toKill:
+      self.__killWorkingProcess()
+      toKill = toKill - 1
 
   def queueTask( self, task, blocking = True, usePoolCallbacks= False ):
     """ enqueue new task into pending queue
@@ -810,6 +876,7 @@ class ProcessPool( object ):
         self.__spawnNeededWorkingProcesses()
       time.sleep( 0.1 )
       if self.__resultsQueue.empty():
+        self.__killExceedingWorkingProcesses()
         break
       ## get task
       task = self.__resultsQueue.get()
@@ -822,6 +889,8 @@ class ProcessPool( object ):
           self.__poolExceptionCallback( task.getTaskID(), task.taskException() )
         if self.__poolCallback and task.taskResults():
           self.__poolCallback( task.getTaskID(), task.taskResults() )
+
+      self.__killExceedingWorkingProcesses()
       processed += 1
     return processed
 
@@ -868,6 +937,7 @@ class ProcessPool( object ):
     self.__cleanDeadProcesses()
     ## third clean up - kill'em all!!!
     self.__filicide()
+    self.__bulletCounter = 0
 
   def __filicide( self ):
     """ Kill all workers, kill'em all!
@@ -881,6 +951,7 @@ class ProcessPool( object ):
         os.kill( pid, signal.SIGKILL )
       del self.__workersDict[pid]
   
+
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
