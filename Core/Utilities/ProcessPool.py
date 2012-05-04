@@ -193,8 +193,11 @@ class WorkingProcess( multiprocessing.Process ):
           os.kill( self.pid, signal.SIGALRM )
 
         time.sleep(5)
-        ## diff task? locked?
-        if self.taskHash != taskHash or self.rwLock.locked(): 
+        ## no task? diff task?
+        if self.taskHash != taskHash: 
+          continue
+        
+        if self.rwLock.locked():
           continue
         
         self.rwLock.acquire()
@@ -256,6 +259,9 @@ class WorkingProcess( multiprocessing.Process ):
       ## commit suicide together with your parent 
       if os.getppid() == 1:
         break 
+        #self.taskHash = None
+        #self.__deadline = None
+        #break
 
       ## get task from queue
       self.rwLock.acquire()
@@ -270,15 +276,21 @@ class WorkingProcess( multiprocessing.Process ):
       ## conventional murder
       if task.isBullet():
         break
+        #self.taskHash = None
+        #self.__deadline = None
+        #break
 
       ## toggle __working flag
       self.__working.value = 1
     
       ## execute task
+
+      #self.rwLock.acquire()
       timeOut = task.getTimeOut()
       if timeOut:        
         self.__deadline = datetime.datetime.now() + datetime.timedelta( seconds = timeOut )
-     
+      #self.rwLock.release()
+
       try:
         task.process()
         self.rwLock.acquire()
