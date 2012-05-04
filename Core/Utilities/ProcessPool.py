@@ -278,6 +278,9 @@ class WorkingProcess( multiprocessing.Process ):
       ## conventional murder
       if task.isBullet():
         break
+        #self.taskHash = None
+        #self.__deadline = None
+        #break
 
       ## toggle __working flag
       self.__working.value = 1
