@@ -135,7 +135,20 @@ class PEP:
 
     resDecisions = self.pdp.takeDecision( knownInfo = knownInfo )
 
-    res          = resDecisions[ 'PolicyCombinedResult' ]
+    ## record all results before doing anything else    
+    for resP in resDecisions[ 'SinglePolicyResults' ]:
+      
+      if not resP.has_key( 'OLD' ):       
+        self.clients[ "rmClient" ].insertPolicyResultLog( granularity, name,
+                                                          resP[ 'PolicyName' ], 
+                                                          statusType,
+                                                          resP[ 'Status' ], 
+                                                          resP[ 'Reason' ], now )
+        
+      else:
+        gLogger.warn( 'OLD: %s' % resP )
+        
+    res          = resDecisions[ 'PolicyCombinedResult' ] 
     actionBaseMod = "DIRAC.ResourceStatusSystem.PolicySystem.Actions"
 
     # Security mechanism in case there is no PolicyType returned
