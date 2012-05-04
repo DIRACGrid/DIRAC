@@ -1,3 +1,32 @@
+[v6r5-pre1]
+
+NEW: Executor framework
+
+*Core
+NEW: MySQL.py - added Test case for Time.dateTime time stamps
+NEW: MySQL.py - insertFields and updateFields can get values via Lists or Dicts
+NEW: DataIntegrityDB - use the new methods from MySQL and add test cases
+NEW: DataIntegrityHandler - check connection to DB and create tables (or update their schema)
+NEW: DataLoggingDB - use the new methods from MySQL and add test cases
+NEW: DataLoggingHandler - check connection to DB and create tables (or update their schema)
+FIX: ProcessPool - killing stuck workers after timeout
+CHANGE: DB will throw a RuntimeException instead of a sys.exit in case it can't contact the DB
+CHANGE: Several improvements on DISET
+CHANGE: Fixed all DOS endings to UNIX
+CHANGE: Agents, Services and Executors know how to react to CSSection/Module and react accordingly
+
+*RSS
+CHANGE: removed code execution from __init__
+CHANGE: removed unused methods
+NEW: Log all policy results 
+
+*WMS
+CHANGE: WMS Optimizers are now executors
+CHANGE: SandboxStoreClient can directly access the DB if available
+CHANGE: Moved JobDescription and improved into JobManifest
+FIX: typo in JobLoggingDB
+NEW: JobState/CachedJobState allow access to the Job via DB/JobStateSync Service automatically
+
 [v6r4p2]
 
 *StorageManagement
