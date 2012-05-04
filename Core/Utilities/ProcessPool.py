@@ -262,6 +262,12 @@ class WorkingProcess( multiprocessing.Process ):
         if idleLoopCount == 10:
           return 
         continue
+      finally:
+        self.rwLock.release()
+
+      ## conventional murder
+      if task.isBullet():
+        break
 
       ## toggle __working flag
       self.__working.value = 1
