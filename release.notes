@@ -1,4 +1,4 @@
-[v6r5-pre1]
+[v6r5-pre2]
 
 NEW: Executor framework
 
@@ -14,6 +14,7 @@ CHANGE: DB will throw a RuntimeException instead of a sys.exit in case it can't 
 CHANGE: Several improvements on DISET
 CHANGE: Fixed all DOS endings to UNIX
 CHANGE: Agents, Services and Executors know how to react to CSSection/Module and react accordingly
+NEW: install tools are updated to deal with executors
 
 *RSS
 CHANGE: removed code execution from __init__
@@ -26,6 +27,15 @@ CHANGE: SandboxStoreClient can directly access the DB if available
 CHANGE: Moved JobDescription and improved into JobManifest
 FIX: typo in JobLoggingDB
 NEW: JobState/CachedJobState allow access to the Job via DB/JobStateSync Service automatically
+
+*Accounting
+NEW: AccountingDB - added retrieving RAW records for internal stuff
+FIX: AccountingDB - fixed some logic for readonly cases
+
+[v6r4p3]
+
+*Core
+FIX: ProcessPool with watchdog and timeouts - applied in v6r3 first
 
 [v6r4p2]
 
@@ -102,6 +112,11 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
  
 *Resources
 NEW: SSHLSFComputingElement added 
+
+[v6r3p11]
+
+*Core
+FIX: ProcessPool with watchdog and timeouts
 
 [v6r3p10]
 
