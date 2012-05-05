@@ -108,6 +108,8 @@ import os
 import signal
 import Queue
 from types import FunctionType, TypeType, ClassType
+import datetime
+import uuid
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -128,6 +130,11 @@ except ImportError:
   def S_ERROR( mess ):
     """ dummy S_ERROR """
     return { 'OK' : False, 'Message' : mess }
+
+
+class ProcessTaskTimeOutError( Exception ):
+  """ dummy exception rainsed in SIGALRM handler """
+  pass
 
 class WorkingProcess( multiprocessing.Process ):
   """
@@ -155,7 +162,15 @@ class WorkingProcess( multiprocessing.Process ):
     self.__resultsQueue = resultsQueue
     ## placeholder for watchdog thread
     self.__watchdogThread = None
-    ## start yourself at least
+    ## timeout read from task 
+    self.__timeOut = 0
+    ## startProcessing + timeOut
+    self.__deadline = None
+    ## task
+    self.taskHash = None
+    ## read write lock
+    self.rwLock = threading.Lock()
+    ## start yourself at least    
     self.start()
 
   def __watchdog( self ):
@@ -165,14 +180,44 @@ class WorkingProcess( multiprocessing.Process ):
 
     :param self: self reference
     """
+    
     while True:
-      ## parent is dead when commit suicide
+
+      ## task deadline watchdog
+      if self.taskHash and self.__deadline:
+        # save task hash
+        taskHash = self.taskHash
+        ## check deadline
+        if self.__deadline and self.__deadline < datetime.datetime.now():
+          ## send SIGALRM for non-blocked tasks to put back timeout results
+          os.kill( self.pid, signal.SIGALRM )
+
+        time.sleep(5)
+        ## no task? diff task?
+        if self.taskHash != taskHash: 
+          continue
+        
+        if self.rwLock.locked():
+          continue
+        
+        self.rwLock.acquire()
+        ## task? same task? deadline? expired? 
+        if self.taskHash and self.taskHash == taskHash and self.__deadline and self.__deadline < datetime.datetime.now():    
+          ## this time SIGKILL, you're being warned 
+          os.kill( self.pid, signal.SIGKILL )
+        self.rwLock.release()
+
+      ## parent is dead,  commit suicide
       if os.getppid() == 1:
         os.kill( self.pid, signal.SIGTERM )
         ## wait for a while and if still alive use REAL silencer
         time.sleep(30)
+        self.rwLock.acquire()
+        ## now you're dead
         os.kill( self.pid, signal.SIGKILL )
-      time.sleep(30)
+        self.rwLock.release()
+
+      time.sleep(5)
 
   def isWorking( self ):
     """ check if process is running
@@ -209,31 +254,59 @@ class WorkingProcess( multiprocessing.Process ):
     ## main loop
     taskCounter = 0
     while True:
+
       ## commit suicide together with your parent 
       if os.getppid() == 1:
-        break
+        break 
+        #self.taskHash = None
+        #self.__deadline = None
+        #break
+
       ## get task from queue
+      self.rwLock.acquire()
       try:
-        task = self.__pendingQueue.get( block = True, timeout = 10 )
+        self.taskHash = uuid.uuid4()
+        task = self.__pendingQueue.get( block = True, timeout = 10 )   
       except Queue.Empty:
         continue
+      finally:
+        self.rwLock.release()
+
       ## conventional murder
       if task.isBullet():
         break
+        #self.taskHash = None
+        #self.__deadline = None
+        #break
+
       ## toggle __working flag
       self.__working.value = 1
-      ## execute task, put back callbacks
+    
+      ## execute task
+
+      #self.rwLock.acquire()
+      timeOut = task.getTimeOut()
+      if timeOut:        
+        self.__deadline = datetime.datetime.now() + datetime.timedelta( seconds = timeOut )
+      #self.rwLock.release()
+
       try:
         task.process()
+        self.rwLock.acquire()
+        self.taskHash = None
+        self.__deadline = None
         if task.hasCallback() or task.usePoolCallbacks():
-          self.__resultsQueue.put( task, block = True, timeout = 60 )
+          self.__resultsQueue.put( task )
+        self.rwLock.release()
+      except (ProcessTaskTimeOutError, TypeError):
+        pass
       finally:
-        taskCounter += 1
         ## increase task counter
+        taskCounter += 1
         self.__taskCounter = taskCounter 
         ## toggle __working flag
         self.__working.value = 0
-
+       
 class BulletTask:
   """ dum-dum bullet """
   def isBullet( self ):
@@ -411,18 +484,16 @@ class ProcessTask:
     """ execute task
 
     :param self: self reference
-    """
-    class TimeOutError( Exception ):
-      """ dummy exception raised after :timeOut: seconds """
-      pass
-    ## reference to SIGALRM handler
+    """ 
+    def timeOutHandler( singnum, frame ):
+      """ dummy SIGALRM handler """
+      raise ProcessTaskTimeOutError()
+    
+    ## SIGALRM orig handler 
     saveHandler = None
-
-    if self.hasTimeOutSet():
-      def timeOutHandler( singnum, frame ):
-        raise TimeOutError()
-      saveHandler = signal.signal(signal.SIGALRM, timeOutHandler)
-      signal.alarm(self.__timeOut)
+    if self.__timeOut:
+      saveHandler = signal.signal( signal.SIGALRM, timeOutHandler )
+      
     self.__done = True
     try:
       ## it's a function?
@@ -437,8 +508,8 @@ class ProcessTask:
           raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
-    except TimeOutError, error:
-      self.__taskResult = { "OK" : False, "Message" : "timed out after %s seconds" % self.__timeOut }
+    except ProcessTaskTimeOutError:
+      self.__taskResult = { "OK" : False, "Message" : "Timed out after %s seconds" % self.__timeOut }
     except Exception, x:
       self.__exceptionRaised = True
       if gLogger:
@@ -449,10 +520,9 @@ class ProcessTask:
         retDict['Exc_info'] = sys.exc_info()[1]
         self.__taskException = retDict
     finally:
-      if self.hasTimeOutSet() and saveHandler:
-        signal.signal(signal.SIGALRM, saveHandler)
-    ## reset alarm signal
-    signal.alarm(0)
+      if self.__timeOut and saveHandler:
+        signal.signal( signal.SIGALRM, saveHandler )
+    signal.alarm(0)    
 
 class ProcessPool:
   """
@@ -741,8 +811,10 @@ class ProcessPool:
       if self.__resultsQueue.empty():
         self.__killExceedingWorkingProcesses()
         break
-      task = self.__resultsQueue.get()
-
+      try:
+        task = self.__resultsQueue.get()
+      except TypeError:
+        continue
       task.doExceptionCallback()
       task.doCallback()
       ## execute pool callbacks
@@ -776,21 +848,21 @@ class ProcessPool:
     self.processAllResults()
     # Drain via bullets processes
     self.__draining = True
+    self.__cleanDeadProcesses()
     try:
-      bullets = len( self.__workersDict ) - self.__bulletCounter
-      while bullets:
+      bullets = len( self.__workersDict ) #- self.__bulletCounter
+      while bullets > 0:
         self.__killWorkingProcess()
         bullets = bullets - 1
       start = time.time()
       self.__cleanDeadProcesses()
-      while len( self.__workersDict ) > 0:
+      while self.__workersDict:
         if timeout <= 0 or time.time() - start >= timeout:
           break
         time.sleep( 0.1 )
         self.__cleanDeadProcesses()
     finally:
       pass
-      #self.__draining = False
     # terminate them as it should be done
     for worker in self.__workersDict.values():
       if worker.is_alive():
@@ -799,6 +871,7 @@ class ProcessPool:
     self.__cleanDeadProcesses()
     # Kill 'em all!!
     self.__filicide()
+    self.__bulletCounter = 0
 
   def __filicide( self ):
     """ Kill all children (processes :P) Kill'em all! ...and justice for all!
@@ -810,11 +883,10 @@ class ProcessPool:
         os.kill( worker.pid(), signal.SIGKILL )
       del self.__workersDict[pid]
 
-
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
-        
+
     :param self: self reference
     """
     if self.__daemonProcess:
@@ -825,7 +897,7 @@ class ProcessPool:
 
   def __backgroundProcess( self ):
     """ daemon thread target
-    
+
     :param self: self reference
     """
     while True:
