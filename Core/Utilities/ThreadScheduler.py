@@ -53,6 +53,18 @@ class ThreadScheduler:
     self.__createExecutorIfNeeded()
     return S_OK( taskId )
 
+  def setTaskPeriod( self, taskId, period ):
+    try:
+      period = long( period )
+    except ValueError:
+      return S_ERROR( "Period must be a number" )
+    period = max( period, self.__minPeriod )
+    try:
+      self.__taskDict[ taskId ][ 'period' ] = period
+    except KeyError:
+      return S_ERROR( "Unknown task %s" % taskId )
+    return S_OK()
+
   @gSchedulerLock
   def removeTask( self, taskId ):
     if taskId not in self.__taskDict:

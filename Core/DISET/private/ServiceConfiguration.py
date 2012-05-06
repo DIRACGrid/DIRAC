@@ -3,21 +3,27 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities import Network, List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getSystemSection
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.private.Protocols import gDefaultProtocol
 
 class ServiceConfiguration:
 
-  def __init__( self, serviceName ):
-    self.serviceName = serviceName
+  def __init__( self, nameList ):
+    self.serviceName = nameList[0]
     self.serviceURL = False
-    self.serviceSectionPath = getServiceSection( serviceName )
-    self.systemSectionPath = getSystemSection( serviceName )
+    self.nameList = nameList
+    self.pathList = []
+    for svcName in nameList:
+      self.pathList.append( PathFinder.getServiceSection( svcName ) )
 
   def getOption( self, optionName ):
-    if optionName[0] != "/":
-      optionName = "%s/%s" % ( self.serviceSectionPath, optionName )
-    return gConfigurationData.extractOptionFromCFG( optionName )
+    if optionName[0] == "/":
+      return gConfigurationData.extractOptionFromCFG( optionName )
+    for path in self.pathList:
+      value = gConfigurationData.extractOptionFromCFG( "%s/%s" % ( path, optionName ) )
+      if value:
+        return value
+    return None
 
   def getAddress( self ):
     return ( "", self.getPort() )
@@ -85,12 +91,6 @@ class ServiceConfiguration:
     if optionValue:
       return optionValue
     return gDefaultProtocol
-
-  def getServicePath( self ):
-    return self.serviceSectionPath
-
-  def getSystemPath( self ):
-    return self.systemSectionPath
 
   def getHostname( self ):
     hostname = self.getOption( "/DIRAC/Hostname" )

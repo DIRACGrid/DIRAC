@@ -30,8 +30,8 @@ class StorageFactory:
     res = gConfig.getOption( "%s/UseProxy" % self.rootConfigPath )
     if res['OK'] and ( res['Value'] == 'True' ):
       self.proxy = True
-    self.resourceStatus = ResourceStatus()  
-      
+    self.resourceStatus = ResourceStatus()
+
 
   ###########################################################################################
   #
@@ -217,26 +217,26 @@ class StorageFactory:
     options = res['Value']
     optionsDict = {}
     for option in options:
-      
+
       if option in [ 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess']:
-        continue 
+        continue
       optionConfigPath = '%s/%s' % ( storageConfigPath, option )
       optionsDict[option] = gConfig.getValue( optionConfigPath, '' )
-    
+
     res = self.resourceStatus.getStorageElementStatus( storageName )
     if not res[ 'OK' ]:
       errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
       gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
       return S_ERROR( errStr )
-      
+
     # For safety, we did not add the ${statusType}Access keys
     # this requires modifications in the StorageElement class
-    
+
     # We add the dictionary with the statusTypes and values
     # { 'statusType1' : 'status1', 'statusType2' : 'status2' ... }
-    optionsDict.update( res[ 'Value' ][ storageName ] )       
-      
-    return S_OK( optionsDict )        
+    #optionsDict.update( res[ 'Value' ][ storageName ] )
+
+    return S_OK( optionsDict )
 
   def _getConfigStorageProtocols( self, storageName ):
     """ Protocol specific information is present as sections in the Storage configuration

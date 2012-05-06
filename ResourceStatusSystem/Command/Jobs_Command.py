@@ -25,9 +25,9 @@ class JobsStats_Command(Command):
     Return getJobStats from Jobs Client  
     
    :attr:`args`: 
-     - args[0]: string: should be a ValidRes
+     - args[0]: string: should be a ValidElement
 
-     - args[1]: string: should be the name of the ValidRes
+     - args[1]: string: should be the name of the ValidElement
 
   returns:
     {
@@ -63,9 +63,9 @@ class JobsEff_Command(Command):
     Return getJobsEff from Jobs Client  
     
    :attr:`args`: 
-       - args[0]: string: should be a ValidRes
+       - args[0]: string: should be a ValidElement
   
-       - args[1]: string: should be the name of the ValidRes
+       - args[1]: string: should be the name of the ValidElement
 
     returns:
       {
@@ -132,9 +132,9 @@ class JobsEffSimple_Command(Command):
     Returns simple jobs efficiency
 
     :attr:`args`: 
-       - args[0]: string: should be a ValidRes
+       - args[0]: string: should be a ValidElement
   
-       - args[1]: string should be the name of the ValidRes
+       - args[1]: string should be the name of the ValidElement
 
     returns:
       {
@@ -185,9 +185,9 @@ class JobsEffSimpleCached_Command(Command):
     Returns simple jobs efficiency
 
     :attr:`args`: 
-       - args[0]: string: should be a ValidRes
+       - args[0]: string: should be a ValidElement
   
-       - args[1]: string should be the name of the ValidRes
+       - args[1]: string should be the name of the ValidElement
 
     returns:
       {
