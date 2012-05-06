@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
     getMessagesByDate()
     getMessagesByFixedText()
     getMessages()
-"""    
+"""
 
 import re, os, sys, string
 import time
@@ -27,31 +27,31 @@ if DEBUG:
   debugFile = open( "SystemLoggingDB.debug.log", "w" )
 
 ###########################################################
-class SystemLoggingDB(DB):
+class SystemLoggingDB( DB ):
 
-  def __init__( self, maxQueueSize=10 ):
+  def __init__( self, maxQueueSize = 10 ):
     """ Standard Constructor
     """
     DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB',
-                 maxQueueSize)
+                 maxQueueSize )
 
-  def _query( self, cmd, conn=False ):
+  def _query( self, cmd, conn = False ):
     start = time.time()
     ret = DB._query( self, cmd, conn )
     if DEBUG:
-      print >> debugFile, time.time() - start, cmd.replace('\n','')
+      print >> debugFile, time.time() - start, cmd.replace( '\n', '' )
       debugFile.flush()
     return ret
 
-  def _update( self, cmd, conn=False ):
+  def _update( self, cmd, conn = False ):
     start = time.time()
     ret = DB._update( self, cmd, conn )
     if DEBUG:
-      print >> debugFile, time.time() - start, cmd.replace('\n','')
+      print >> debugFile, time.time() - start, cmd.replace( '\n', '' )
       debugFile.flush()
     return ret
 
-  def __buildCondition(self, condDict, older=None, newer=None ):
+  def __buildCondition( self, condDict, older = None, newer = None ):
     """ build SQL condition statement from provided condDict
         and other extra conditions
     """
@@ -64,27 +64,27 @@ class SystemLoggingDB(DB):
         conjonction = ''
         if type( attrValue ) in StringTypes:
           attrValue = [ attrValue ]
-        elif  type( attrValue) is NoneType:
+        elif  type( attrValue ) is NoneType:
           continue
         elif not type( attrValue ) is ListType:
           errorString = 'The values of conditions should be strings or lists'
           errorDesc = 'The type provided was: %s' % type ( attrValue )
           gLogger.warn( errorString, errorDesc )
           return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
-        
+
         for attrVal in attrValue:
           preCondition = "%s%s %s='%s'" % ( preCondition, conjonction,
                                             str( attrName ), str( attrVal ) )
           conjonction = " OR"
 
         if condition:
-          condition += " AND" 
+          condition += " AND"
         condition += ' (%s )' % preCondition
 
       conjonction = " AND"
-      
+
     if older:
-      condition = "%s%s MessageTime<'%s'" % ( condition,  conjonction,
+      condition = "%s%s MessageTime<'%s'" % ( condition, conjonction,
                                               str( older ) )
       conjonction = " AND"
 
@@ -96,10 +96,10 @@ class SystemLoggingDB(DB):
       gLogger.debug( '__buildcondition:',
                      'condition string = "%s"' % condition )
       condition = " WHERE%s" % condition
-      
-    return S_OK(condition)
 
-  def _buildConditionTest(self, condDict, olderDate = None, newerDate = None ):
+    return S_OK( condition )
+
+  def _buildConditionTest( self, condDict, olderDate = None, newerDate = None ):
     """ a wrapper to the private function __buildCondition so test programs
         can access it
     """
@@ -120,14 +120,14 @@ class SystemLoggingDB(DB):
       sortDictionary[ key ] = 1
     return sortDictionary.keys()
 
-      
+
   def __buildTableList( self, showFieldList ):
     """ build the SQL list of tables needed for the query
         from the list of variables provided
     """
     import re
     idPattern = re.compile( r'ID' )
-       
+
     tableDict = { 'MessageTime':'MessageRepository',
                   'VariableText':'MessageRepository',
                   'LogLevel':'MessageRepository',
@@ -143,69 +143,69 @@ class SystemLoggingDB(DB):
     conjunction = ' NATURAL JOIN '
 
     gLogger.debug( '__buildTableList:', 'showFieldList = %s' % showFieldList )
-    if len(showFieldList):
+    if len( showFieldList ):
       for field in showFieldList:
         if not idPattern.search( field ) and ( field in tableDictKeys ):
           tableList.append( tableDict[field] )
 
       #if re.search( 'MessageTime', ','.join( showFieldList) ):
       #  tableList.append('MessageRepository')
-      tableList = self.__uniq(tableList)
-      
+      tableList = self.__uniq( tableList )
+
       tableString = ''
       try:
-        tableList.pop( tableList.index( 'MessageRepository') )
+        tableList.pop( tableList.index( 'MessageRepository' ) )
         tableString = 'MessageRepository'
       except:
         pass
-      
-      if tableList.count('Sites') and tableList.count('MessageRepository') and not \
-        tableList.count('ClientIPs'): 
-        tableList.append('ClientIPs')     
-      if tableList.count('MessageRepository') and tableList.count('SubSystems') \
-        and not tableList.count('FixedTextMessages') and not tableList.count('Systems'):
-        tableList.append('FixedTextMessages')       
-        tableList.append('Systems')
-      if tableList.count('MessageRepository') and tableList.count('Systems') \
-        and not tableList.count('FixedTextMessages'):
-        tableList.append('FixedTextMessages')                  
-      if tableList.count('FixedTextMessages') and tableList.count('SubSystems') \
-        and not tableList.count('Systems'):
-        tableList.append('Systems')      
-      if tableList.count('MessageRepository') or ( tableList.count('FixedTextMessages') \
-        + tableList.count('ClientIPs') + tableList.count('UserDNs') > 1 ) :
+
+      if tableList.count( 'Sites' ) and tableList.count( 'MessageRepository' ) and not \
+        tableList.count( 'ClientIPs' ):
+        tableList.append( 'ClientIPs' )
+      if tableList.count( 'MessageRepository' ) and tableList.count( 'SubSystems' ) \
+        and not tableList.count( 'FixedTextMessages' ) and not tableList.count( 'Systems' ):
+        tableList.append( 'FixedTextMessages' )
+        tableList.append( 'Systems' )
+      if tableList.count( 'MessageRepository' ) and tableList.count( 'Systems' ) \
+        and not tableList.count( 'FixedTextMessages' ):
+        tableList.append( 'FixedTextMessages' )
+      if tableList.count( 'FixedTextMessages' ) and tableList.count( 'SubSystems' ) \
+        and not tableList.count( 'Systems' ):
+        tableList.append( 'Systems' )
+      if tableList.count( 'MessageRepository' ) or ( tableList.count( 'FixedTextMessages' ) \
+        + tableList.count( 'ClientIPs' ) + tableList.count( 'UserDNs' ) > 1 ) :
         tableString = 'MessageRepository'
-      
-      if tableString and len(tableList):
-        tableString = '%s%s' % ( tableString, conjunction ) 
-      tableString = '%s%s' % ( tableString, 
+
+      if tableString and len( tableList ):
+        tableString = '%s%s' % ( tableString, conjunction )
+      tableString = '%s%s' % ( tableString,
                                  conjunction.join( tableList ) )
 
     else:
       tableString = conjunction.join( self.__uniq( tableDict.values() ) )
 
     gLogger.debug( '__buildTableList:', 'tableString = "%s"' % tableString )
-    
+
     return tableString
-  
-  def _queryDB( self, showFieldList=None, condDict=None, older=None,
-                 newer=None, count=False, groupColumn=None, orderFields=None ):
+
+  def _queryDB( self, showFieldList = None, condDict = None, older = None,
+                 newer = None, count = False, groupColumn = None, orderFields = None ):
     """ This function composes the SQL query from the conditions provided and
         the desired columns and queries the SystemLoggingDB.
         If no list is provided the default is to use all the meaningful
         variables of the DB
     """
-    grouping=''
-    ordering=''
+    grouping = ''
+    ordering = ''
     result = self.__buildCondition( condDict, older, newer )
     if not result['OK']: return result
     condition = result['Value']
 
     if not showFieldList:
       showFieldList = ['MessageTime', 'LogLevel', 'FixedTextString',
-                     'VariableText', 'SystemName', 
+                     'VariableText', 'SystemName',
                      'SubSystemName', 'OwnerDN', 'OwnerGroup',
-                     'ClientIPNumberString','SiteName']
+                     'ClientIPNumberString', 'SiteName']
     elif type( showFieldList ) in StringTypes:
       showFieldList = [ showFieldList ]
     elif not type( showFieldList ) is ListType:
@@ -213,13 +213,13 @@ class SystemLoggingDB(DB):
       errorDesc = 'The type provided was: %s' % type ( showFieldList )
       gLogger.warn( errorString, errorDesc )
       return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
-       
+
     tableList = self.__buildTableList( showFieldList )
 
     if groupColumn:
-      grouping='GROUP BY %s' % groupColumn
+      grouping = 'GROUP BY %s' % groupColumn
 
-    if count: 
+    if count:
       if groupColumn:
         showFieldList.append( 'count(*) as recordCount' )
       else:
@@ -229,24 +229,24 @@ class SystemLoggingDB(DB):
     if orderFields:
       for field in orderFields:
         if type( field ) == ListType:
-          sortingFields.append( ' '.join(field) )
+          sortingFields.append( ' '.join( field ) )
         else:
-          sortingFields.append( field ) 
-      ordering='ORDER BY %s' %  ', '.join( sortingFields )
-    
-    cmd = 'SELECT %s FROM %s %s %s %s' % ( ','.join(showFieldList ),
+          sortingFields.append( field )
+      ordering = 'ORDER BY %s' % ', '.join( sortingFields )
+
+    cmd = 'SELECT %s FROM %s %s %s %s' % ( ','.join( showFieldList ),
                                     tableList, condition, grouping, ordering )
-    
-    gLogger.debug( "Query------->",cmd )
-    
-    return self._query(cmd)
+
+    gLogger.debug( "Query------->", cmd )
+
+    return self._query( cmd )
 
   def __DBCommit( self, tableName, outFields, inFields, inValues ):
     """  This is an auxiliary function to insert values on a
          satellite Table if they do not exist and returns
          the unique KEY associated to the given set of values
     """
-    
+
     #tableDict = { 'MessageRepository':'MessageTime',
     #              'MessageRepository':'VariableText',
     #              'MessageRepository':'LogLevel',
@@ -259,27 +259,27 @@ class SystemLoggingDB(DB):
     #              'ClientIPs':'ClientIPNumberString',
     #              'ClientIPs':'ClientFQDN', 
     #              'Sites':'SiteName'}
-    
+
     cmd = "SHOW COLUMNS FROM " + tableName + " WHERE Field in ( '" \
-          +  "', '".join( inFields ) + "' )"
+          + "', '".join( inFields ) + "' )"
     result = self._query( cmd )
-    gLogger.verbose(result)
+    gLogger.verbose( result )
     if ( not result['OK'] ) or result['Value'] == ():
-      gLogger.debug(result['Message'])
+      gLogger.debug( result['Message'] )
       return S_ERROR( 'Could not get description of the %s table' % tableName )
     for description in result['Value']:
       if re.search( 'varchar', description[1] ):
         indexInteger = inFields.index( description[0] )
         valueLength = len( inValues[ indexInteger ] )
-        fieldLength = int( re.search( r'varchar\((\d*)\)', 
+        fieldLength = int( re.search( r'varchar\((\d*)\)',
                            description[1] ).groups()[0] )
         if fieldLength < valueLength:
           inValues[ indexInteger ] = inValues[ indexInteger ][ :fieldLength ]
 
     result = self._getFields( tableName, outFields, inFields, inValues )
     if not result['OK']:
-      return S_ERROR('Unable to query the database')
-    elif result['Value']==():
+      return S_ERROR( 'Unable to query the database' )
+    elif result['Value'] == ():
       result = self._insert( tableName, inFields, inValues )
       if not result['OK']:
         return S_ERROR( 'Could not insert the data into %s table' % tableName )
@@ -287,23 +287,23 @@ class SystemLoggingDB(DB):
       result = self._getFields( tableName, outFields, inFields, inValues )
       if not result['OK']:
         return S_ERROR( 'Unable to query the database' )
-      if result['Value']==():
+      if result['Value'] == ():
         # The inserted value is larger than the field size and can not be matched back
-        for i in range(len(inFields)):
+        for i in range( len( inFields ) ):
           gLogger.error( 'Could not insert the data into %s table' % tableName, '%s = %s' % ( inFields[i], inValues[i] ) )
         return S_ERROR( 'Could not insert the data into %s table' % tableName )
-      
+
     return S_OK( int( result['Value'][0][0] ) )
-      
-  def _insertMessageIntoSystemLoggingDB( self, message, site, nodeFQDN, 
+
+  def _insertMessageIntoSystemLoggingDB( self, message, site, nodeFQDN,
                                          userDN, userGroup, remoteAddress ):
     """ This function inserts the Log message into the DB
     """
     messageDate = Time.toString( message.getTime() )
-    messageDate = messageDate[:messageDate.find('.')]
+    messageDate = messageDate[:messageDate.find( '.' )]
     messageName = message.getName()
     messageSubSystemName = message.getSubSystemName()
-    
+
     fieldsList = [ 'MessageTime', 'VariableText' ]
     messageList = [ messageDate, message.getVariableMessage() ]
 
@@ -325,14 +325,14 @@ class SystemLoggingDB(DB):
     if not result['OK']:
       return result
     siteIDKey = result['Value']
-    
+
     inFields = [ 'ClientIPNumberString' , 'ClientFQDN', 'SiteID' ]
     inValues = [ remoteAddress, nodeFQDN, siteIDKey ]
     outFields = [ 'ClientIPNumberID' ]
     result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues )
     if not result['OK']:
       return result
-    messageList.append(result['Value'])
+    messageList.append( result['Value'] )
     fieldsList.extend( outFields )
 
 
@@ -349,23 +349,23 @@ class SystemLoggingDB(DB):
     if not result['OK']:
       return result
     subSystemsKey = result['Value']
-    
+
     if not messageName:
       messageName = 'Unknown'
     inFields = [ 'SystemName', 'SubSystemID' ]
     inValues = [ messageName, subSystemsKey ]
     outFields = [ 'SystemID'  ]
-    result = self.__DBCommit( 'Systems', outFields, inFields, inValues)
+    result = self.__DBCommit( 'Systems', outFields, inFields, inValues )
     if not result['OK']:
       return result
-    SystemIDKey = result['Value']  
+    SystemIDKey = result['Value']
 
-    
+
     inFields = [ 'FixedTextString' , 'SystemID' ]
     inValues = [ message.getFixedMessage(), SystemIDKey ]
     outFields = [ 'FixedTextID' ]
     result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
-                              inValues)
+                              inValues )
     if not result['OK']:
       return result
     messageList.append( result['Value'] )
@@ -373,26 +373,26 @@ class SystemLoggingDB(DB):
 
     return self._insert( 'MessageRepository', fieldsList, messageList )
 
-  def _insertDataIntoAgentTable(self, agentName, data):
+  def _insertDataIntoAgentTable( self, agentName, data ):
     """Insert the persistent data needed by the agents running on top of
        the SystemLoggingDB.
     """
     result = self._escapeString( data )
     if not result['OK']:
       return result
-    escapedData=result['Value']  
+    escapedData = result['Value']
 
     outFields = ['AgentID']
     inFields = [ 'AgentName' ]
     inValues = [ agentName ]
-    
-    result = self._getFields('AgentPersistentData', outFields, inFields, inValues)
+
+    result = self._getFields( 'AgentPersistentData', outFields, inFields, inValues )
     if not result ['OK']:
       return result
     elif result['Value'] == ():
       inFields = [ 'AgentName', 'AgentData' ]
       inValues = [ agentName, escapedData]
-      result=self._insert( 'AgentPersistentData', inFields, inValues )
+      result = self._insert( 'AgentPersistentData', inFields, inValues )
       if not result['OK']:
         return result
     cmd = "UPDATE LOW_PRIORITY AgentPersistentData SET AgentData='%s' WHERE AgentID='%s'" % \
@@ -404,4 +404,4 @@ class SystemLoggingDB(DB):
     inFields = [ 'AgentName' ]
     inValues = [ agentName ]
 
-    return self._getFields('AgentPersistentData', outFields, inFields, inValues)
+    return self._getFields( 'AgentPersistentData', outFields, inFields, inValues )
