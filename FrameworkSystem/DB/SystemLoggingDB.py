@@ -18,108 +18,181 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
 from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day, fromString, toString
+from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day, fromString, toString, List
 from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 
 DEBUG = 1
 
-if DEBUG:
-  debugFile = open( "SystemLoggingDB.debug.log", "w" )
 
 ###########################################################
 class SystemLoggingDB( DB ):
+  """ .. class:: SystemLoggingDB 
+
+  Python interface to SystemLoggingDB.
+
+CREATE  TABLE IF NOT EXISTS `UserDNs` (
+  `UserDNID` INT NOT NULL AUTO_INCREMENT ,
+  `OwnerDN` VARCHAR(255) NOT NULL DEFAULT 'unknown' ,
+  `OwnerGroup` VARCHAR(128) NOT NULL DEFAULT 'nogroup' ,
+  PRIMARY KEY (`UserDNID`) ) ENGINE=InnoDB;
+
+CREATE  TABLE IF NOT EXISTS `Sites` (
+  `SiteID` INT NOT NULL AUTO_INCREMENT ,
+  `SiteName` VARCHAR(64) NOT NULL DEFAULT 'Unknown' ,
+  PRIMARY KEY (`SiteID`) ) ENGINE=InnoDB;
+
+CREATE  TABLE IF NOT EXISTS `ClientIPs` (
+  `ClientIPNumberID` INT NOT NULL AUTO_INCREMENT ,
+  `ClientIPNumberString` VARCHAR(15) NOT NULL DEFAULT '0.0.0.0' ,
+  `ClientFQDN` VARCHAR(128) NOT NULL DEFAULT 'unknown' ,
+  `SiteID` INT NOT NULL ,
+  PRIMARY KEY (`ClientIPNumberID`, `SiteID`) ,
+  INDEX `SiteID` (`SiteID` ASC) ,
+    FOREIGN KEY (`SiteID` ) REFERENCES Sites(SiteID) ON UPDATE CASCADE ON DELETE CASCADE ) ENGINE=InnoDB;
+
+CREATE  TABLE IF NOT EXISTS `SubSystems` (
+  `SubSystemID` INT NOT NULL AUTO_INCREMENT ,
+  `SubSystemName` VARCHAR(128) NOT NULL DEFAULT 'Unknown' ,
+  `SystemID` INT NOT NULL AUTO_INCREMENT ,
+  PRIMARY KEY (`SubSystemID`) ) ENGINE=InnoDB;
+    FOREIGN KEY (`SystemID`) REFERENCES Systems(SystemID) ON UPDATE CASCADE ON DELETE CASCADE) 
+
+CREATE  TABLE IF NOT EXISTS `Systems` (
+  `SystemID` INT NOT NULL AUTO_INCREMENT ,
+  `SystemName` VARCHAR(128) NOT NULL DEFAULT 'Unknown' ,
+  PRIMARY KEY (`SystemID` ) , )
+    ENGINE=InnoDB;
+
+CREATE  TABLE IF NOT EXISTS `FixedTextMessages` (
+  `FixedTextID` INT NOT NULL AUTO_INCREMENT ,
+  `FixedTextString` VARCHAR(255) NOT NULL DEFAULT 'Unknown' ,
+  `ReviewedMessage` TINYINT(1) NOT NULL DEFAULT FALSE ,
+  `SystemID` INT NOT NULL ,
+  PRIMARY KEY (`FixedTextID`, `SystemID`) ,
+  INDEX `SystemID` (`SystemID` ASC) ,
+    FOREIGN KEY (`SystemID` ) REFERENCES Systems(`SystemID`) ON UPDATE CASCADE ON DELETE CASCADE) ENGINE=InnoDB;
+
+CREATE  TABLE IF NOT EXISTS `MessageRepository` (
+  `MessageID` INT NOT NULL AUTO_INCREMENT ,
+  `MessageTime` DATETIME NOT NULL ,
+  `VariableText` VARCHAR(255) NOT NULL ,
+  `UserDNID` INT NOT NULL ,
+  `ClientIPNumberID` INT NOT NULL ,
+  `LogLevel` VARCHAR(6) NOT NULL ,
+  `FixedTextID` INT NOT NULL ,
+  PRIMARY KEY (`MessageID`) ,
+  INDEX `TimeStampsIDX` (`MessageTime` ASC) ,
+  INDEX `FixTextIDX` (`FixedTextID` ASC) ,
+  INDEX `UserIDX` (`UserDNID` ASC) ,
+  INDEX `IPsIDX` (`ClientIPNumberID` ASC) ,
+    FOREIGN KEY (`UserDNID` ) REFERENCES UserDNs(`UserDNID` ) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`ClientIPNumberID` ) REFERENCES ClientIPs(`ClientIPNumberID` ) ON UPDATE CASCADE ON DELETE CASCADE, 
+    FOREIGN KEY (`FixedTextID` ) REFERENCES FixedTextMessages (`FixedTextID` ) ON UPDATE CASCADE ON DELETE CASCADE )
+    ENGINE=InnoDB;
+
+CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
+  `AgentID` INT NOT NULL AUTO_INCREMENT ,
+  `AgentName` VARCHAR(64) NOT NULL DEFAULT 'unkwown' ,
+  `AgentData` VARCHAR(512) NULL DEFAULT NULL ,
+  PRIMARY KEY (`AgentID`) ) ENGINE=InnoDB;
+
+"""
+  tableNames = [ 'AgentPersistentData',
+                 'MessageRepository',
+                   'FixedTextMessages',
+                     'SubSystems', 'Systems',
+                   'ClientIPs', 'Sites',
+                   'UserDNs' ]
+  tableDict = { 'UserDNs': {
+                            'Fields': { 'UserDNID': 'INT NOT NULL AUTO_INCREMENT',
+                                        'OwnerDN': "VARCHAR(255) NOT NULL DEFAULT 'unknown'",
+                                        'OwnerGroup': "VARCHAR(128) NOT NULL DEFAULT 'nogroup'" },
+                            'PrimaryKey': 'UserDNID',
+                            'Engine': 'InnoDB',
+                            },
+                'Sites' : { 'Fields': { 'SiteID': 'INT NOT NULL AUTO_INCREMENT',
+                                        'SiteName': "VARCHAR(64) NOT NULL DEFAULT 'Unknown'" },
+                            'PrimaryKey': 'SiteID',
+                            'Engine': 'InnoDB',
+                            },
+                'ClientIPs':{ 'Fields': { 'ClientIPNumberID': 'INT NOT NULL AUTO_INCREMENT',
+                                          'ClientIPNumberString': "VARCHAR(15) NOT NULL DEFAULT '0.0.0.0'",
+                                          'ClientFQDN': "VARCHAR(128) NOT NULL DEFAULT 'unknown'",
+                                          'SiteID': 'INT NOT NULL' },
+                              'PrimaryKey': [ 'ClientIPNumberID', 'SiteID' ],
+                              'ForeignKeys': {'SiteID': 'Sites.SiteID' },
+                              'Engine': 'InnoDB',
+                              },
+                'Systems': {
+                             'Fields': { 'SystemID': 'INT NOT NULL AUTO_INCREMENT',
+                                         'SystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'" },
+                             'PrimaryKey': 'SystemID',
+                             'Engine': 'InnoDB',
+                             },
+                'SubSystems': {
+                                'Fields': { 'SubSystemID': 'INT NOT NULL AUTO_INCREMENT',
+                                            'SubSystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'",
+                                            'SystemID': 'INT NOT NULL', },
+                                'PrimaryKey': ['SubSystemID', 'SystemID'],
+                                'ForeignKeys': {'SystemID': 'Systems.SystemID' },
+                                'Engine': 'InnoDB',
+                                },
+                'FixedTextMessages': {
+                                      'Fields': { 'FixedTextID': 'INT NOT NULL AUTO_INCREMENT',
+                                                  'FixedTextString': "VARCHAR( 255 ) NOT NULL DEFAULT 'Unknown'",
+                                                  'ReviewedMessage': 'TINYINT( 1 ) NOT NULL DEFAULT FALSE',
+                                                  'SubSystemID': 'INT NOT NULL', },
+                                      'PrimaryKey': 'FixedTextID',
+                                      'Indexes': {'SubSystemID': ['SubSystemID']},
+                                      'ForeignKeys': {'SubSystemID': 'SubSystems.SubSystemID' },
+                                      'Engine': 'InnoDB',
+                                      },
+                'MessageRepository': {
+                                       'Fields': { 'MessageID': 'INT NOT NULL AUTO_INCREMENT',
+                                                   'MessageTime': 'DATETIME NOT NULL',
+                                                   'VariableText': 'VARCHAR(255) NOT NULL',
+                                                   'UserDNID': 'INT NOT NULL',
+                                                   'ClientIPNumberID': 'INT NOT NULL',
+                                                   'LogLevel': 'INT NOT NULL',
+                                                   'FixedTextID': 'INT NOT NULL', },
+                                       'PrimaryKey': 'MessageID',
+                                       'Indexes': { 'TimeStampsIDX': ['MessageTime'],
+                                                    'FixTextIDX': ['FixedTextID'],
+                                                    'UserIDX': ['UserDNID'],
+                                                    'IPsIDX': ['ClientIPNumberID'], },
+                                       'ForeignKeys': { 'UserDNID': 'UserDNs.UserDNID',
+                                                        'ClientIPNumberID': 'ClientIPs.ClientIPNumberID',
+                                                        'FixedTextID': 'FixedTextMessages.FixedTextID', },
+                                       'Engine': 'InnoDB',
+                                },
+                'AgentPersistentData': {
+                                        'Fields': { 'AgentID': 'INT NOT NULL AUTO_INCREMENT',
+                                                    'AgentName': "VARCHAR( 64 ) NOT NULL DEFAULT 'unkwown'",
+                                                    'AgentData': 'VARCHAR( 512 ) NULL DEFAULT NULL' },
+                                        'PrimaryKey': 'AgentID',
+                                        'Engine': 'InnoDB',
+                                        },
+               }
+
 
   def __init__( self, maxQueueSize = 10 ):
     """ Standard Constructor
     """
     DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB',
-                 maxQueueSize )
+                 maxQueueSize, debug = DEBUG )
 
-  def _query( self, cmd, conn = False ):
-    start = time.time()
-    ret = DB._query( self, cmd, conn )
-    if DEBUG:
-      print >> debugFile, time.time() - start, cmd.replace( '\n', '' )
-      debugFile.flush()
-    return ret
-
-  def _update( self, cmd, conn = False ):
-    start = time.time()
-    ret = DB._update( self, cmd, conn )
-    if DEBUG:
-      print >> debugFile, time.time() - start, cmd.replace( '\n', '' )
-      debugFile.flush()
-    return ret
-
-  def __buildCondition( self, condDict, older = None, newer = None ):
-    """ build SQL condition statement from provided condDict
-        and other extra conditions
+  def _checkTable( self ):
+    """ Make sure the tables are created
     """
-    condition = ''
-    conjonction = ''
+    return self._createTables( self.tableDict, force = False )
 
-    if condDict:
-      for attrName, attrValue in condDict.items():
-        preCondition = ''
-        conjonction = ''
-        if type( attrValue ) in StringTypes:
-          attrValue = [ attrValue ]
-        elif  type( attrValue ) is NoneType:
-          continue
-        elif not type( attrValue ) is ListType:
-          errorString = 'The values of conditions should be strings or lists'
-          errorDesc = 'The type provided was: %s' % type ( attrValue )
-          gLogger.warn( errorString, errorDesc )
-          return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
-
-        for attrVal in attrValue:
-          preCondition = "%s%s %s='%s'" % ( preCondition, conjonction,
-                                            str( attrName ), str( attrVal ) )
-          conjonction = " OR"
-
-        if condition:
-          condition += " AND"
-        condition += ' (%s )' % preCondition
-
-      conjonction = " AND"
-
-    if older:
-      condition = "%s%s MessageTime<'%s'" % ( condition, conjonction,
-                                              str( older ) )
-      conjonction = " AND"
-
-    if newer:
-      condition = "%s%s MessageTime>'%s'" % ( condition, conjonction,
-                                              str( newer ) )
-
-    if condition:
-      gLogger.debug( '__buildcondition:',
-                     'condition string = "%s"' % condition )
-      condition = " WHERE%s" % condition
-
-    return S_OK( condition )
 
   def _buildConditionTest( self, condDict, olderDate = None, newerDate = None ):
     """ a wrapper to the private function __buildCondition so test programs
         can access it
     """
-    return self.__buildCondition( condDict, older = olderDate,
-                                  newer = newerDate )
-
-  def __uniq( self, array ):
-    """http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52560
-    """
-
-    arrayLength = len( array )
-    if arrayLength == 0:
-      return []
-
-    sortDictionary = {}
-
-    for key in array:
-      sortDictionary[ key ] = 1
-    return sortDictionary.keys()
-
+    return self.buildCondition( condDict, older = olderDate,
+                                  newer = newerDate, timeStamp = 'MessageTime' )
 
   def __buildTableList( self, showFieldList ):
     """ build the SQL list of tables needed for the query
@@ -150,7 +223,7 @@ class SystemLoggingDB( DB ):
 
       #if re.search( 'MessageTime', ','.join( showFieldList) ):
       #  tableList.append('MessageRepository')
-      tableList = self.__uniq( tableList )
+      tableList = List.uniqueElements( tableList )
 
       tableString = ''
       try:
@@ -182,7 +255,7 @@ class SystemLoggingDB( DB ):
                                  conjunction.join( tableList ) )
 
     else:
-      tableString = conjunction.join( self.__uniq( tableDict.values() ) )
+      tableString = conjunction.join( List.uniqueElements( tableDict.values() ) )
 
     gLogger.debug( '__buildTableList:', 'tableString = "%s"' % tableString )
 
@@ -197,9 +270,10 @@ class SystemLoggingDB( DB ):
     """
     grouping = ''
     ordering = ''
-    result = self.__buildCondition( condDict, older, newer )
-    if not result['OK']: return result
-    condition = result['Value']
+    try:
+      condition = self.buildCondition( condDict = condDict, older = older, newer = newer , timeStamp = 'MessageTime' )
+    except Exception, x:
+      return S_ERROR ( str( x ) )
 
     if not showFieldList:
       showFieldList = ['MessageTime', 'LogLevel', 'FixedTextString',
@@ -236,8 +310,6 @@ class SystemLoggingDB( DB ):
 
     cmd = 'SELECT %s FROM %s %s %s %s' % ( ','.join( showFieldList ),
                                     tableList, condition, grouping, ordering )
-
-    gLogger.debug( "Query------->", cmd )
 
     return self._query( cmd )
 
@@ -278,6 +350,7 @@ class SystemLoggingDB( DB ):
 
     result = self._getFields( tableName, outFields, inFields, inValues )
     if not result['OK']:
+      print result['Message']
       return S_ERROR( 'Unable to query the database' )
     elif result['Value'] == ():
       result = self._insert( tableName, inFields, inValues )
@@ -340,28 +413,28 @@ class SystemLoggingDB( DB ):
     fieldsList.append( 'LogLevel' )
 
 
-    if not messageSubSystemName:
-      messageSubSystemName = 'Unknown'
-    inFields = [ 'SubSystemName' ]
-    inValues = [ messageSubSystemName ]
-    outFields = [ 'SubSystemID' ]
-    result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues )
-    if not result['OK']:
-      return result
-    subSystemsKey = result['Value']
-
     if not messageName:
       messageName = 'Unknown'
-    inFields = [ 'SystemName', 'SubSystemID' ]
-    inValues = [ messageName, subSystemsKey ]
+    inFields = [ 'SystemName' ]
+    inValues = [ messageName ]
     outFields = [ 'SystemID'  ]
     result = self.__DBCommit( 'Systems', outFields, inFields, inValues )
     if not result['OK']:
       return result
     SystemIDKey = result['Value']
 
+    if not messageSubSystemName:
+      messageSubSystemName = 'Unknown'
+    inFields = [ 'SubSystemName', 'SystemID' ]
+    inValues = [ messageSubSystemName, SystemIDKey  ]
+    outFields = [ 'SubSystemID' ]
+    result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues )
+    if not result['OK']:
+      return result
+    subSystemsKey = result['Value']
 
-    inFields = [ 'FixedTextString' , 'SystemID' ]
+
+    inFields = [ 'FixedTextString' , 'SubSystemID' ]
     inValues = [ message.getFixedMessage(), SystemIDKey ]
     outFields = [ 'FixedTextID' ]
     result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
@@ -405,3 +478,128 @@ class SystemLoggingDB( DB ):
     inValues = [ agentName ]
 
     return self._getFields( 'AgentPersistentData', outFields, inFields, inValues )
+
+def testSystemLoggingDB():
+  """ Some test cases
+  """
+
+  # building up some fake CS values
+  gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
+  gConfig.setOptionValue( '/DIRAC/Setups/Test/Framework', 'Test' )
+
+  host = '127.0.0.1'
+  user = 'Dirac'
+  pwd = 'Dirac'
+  db = 'AccountingDB'
+
+  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/SystemLoggingDB/Host', host )
+  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/SystemLoggingDB/DBName', db )
+  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/SystemLoggingDB/User', user )
+  gConfig.setOptionValue( '/Systems/Framework/Test/Databases/SystemLoggingDB/Password', pwd )
+
+  from DIRAC.FrameworkSystem.private.logging.Message import tupleToMessage
+
+  systemName = 'TestSystem'
+  subSystemName = 'TestSubSystem'
+  level = 10
+  time = Time.toString()
+  msgTest = 'Hello'
+  variableText = time
+  frameInfo = ""
+  message = tupleToMessage( ( systemName, level, time, msgTest, variableText, frameInfo, subSystemName ) )
+  site = 'somewehere'
+  nodeFQDN = '127.0.0.1'
+  userDN = 'Yo'
+  userGroup = 'Us'
+  remoteAddress = 'elsewhere'
+
+  records = 10
+
+  db = SystemLoggingDB()
+  assert db._connect()['OK']
+
+  try:
+    if False:
+      for tableName in db.tableNames:
+        result = db._update( 'DROP TABLE `%s`' % tableName )
+        assert result['OK']
+
+    gLogger.info( '\n Creating Table\n' )
+    # Make sure it is there and it has been created for this test
+    result = db._checkTable()
+    assert result['OK']
+
+    result = db._checkTable()
+    assert not result['OK']
+    assert result['Message'] == 'The requested table already exist'
+
+    gLogger.info( '\n Inserting some records\n' )
+    for k in range( records ):
+      result = db._insertMessageIntoSystemLoggingDB( message, site, nodeFQDN,
+                                           userDN, userGroup, remoteAddress )
+      assert result['OK']
+      assert result['lastRowId'] == k + 1
+      assert result['Value'] == 1
+
+
+    result = db._queryDB( showFieldList = [ 'SiteName' ] )
+    assert result['OK']
+    assert result['Value'][0][0] == site
+
+    result = db._queryDB( showFieldList = [ 'SystemName' ] )
+    assert result['OK']
+    assert result['Value'][0][0] == systemName
+
+    result = db._queryDB( showFieldList = [ 'SubSystemName' ] )
+    assert result['OK']
+    assert result['Value'][0][0] == subSystemName
+
+    result = db._queryDB( showFieldList = [ 'OwnerGroup' ] )
+    assert result['OK']
+    assert result['Value'][0][0] == userGroup
+
+    result = db._queryDB( showFieldList = [ 'FixedTextString' ] )
+    assert result['OK']
+    assert result['Value'][0][0] == msgTest
+
+    result = db._queryDB( showFieldList = [ 'VariableText', 'SiteName' ], count = True, groupColumn = 'VariableText' )
+    assert result['OK']
+    assert result['Value'][0][1] == site
+    assert result['Value'][0][2] == records
+
+
+    print result
+
+
+
+
+    gLogger.info( '\n Removing Table\n' )
+    for tableName in db.tableNames:
+      result = db._update( 'DROP TABLE `%s`' % tableName )
+      assert result['OK']
+
+    gLogger.info( '\n OK\n' )
+
+
+  except AssertionError:
+    print 'ERROR ',
+    if not result['OK']:
+      print result['Message']
+    else:
+      print result
+
+
+    sys.exit( 1 )
+
+
+if __name__ == '__main__':
+  from DIRAC.Core.Base import Script
+  Script.parseCommandLine()
+  gLogger.setLevel( 'VERBOSE' )
+
+  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
+    gLogger.info( 'Unset pyhthon optimization "PYTHONOPTIMIZE"' )
+    sys.exit( 0 )
+
+  testSystemLoggingDB()
+
