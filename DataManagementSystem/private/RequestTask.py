@@ -391,7 +391,9 @@ class RequestTask( object ):
       ## delete owner proxy
       if self.__dataManagerProxy:
         os.environ["X509_USER_PROXY"] = self.__dataManagerProxy
-      if not ret["OK"]:
+        if ownerProxyFile and os.path.exists( ownerProxyFile ):
+          os.unlink( ownerProxyFile )
+    if not ret["OK"]:
         self.error( "handleRequest: error during request processing: %s" % ret["Message"] )
         self.error( "handleRequest: will put original request back" )
         update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
@@ -492,9 +494,8 @@ class RequestTask( object ):
       if not finalize["OK"]:
         self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
         return finalize
-
-    ## for gMonitor    
-    self.addMark( "Done", 1 )
+      ## for gMonitor    
+      self.addMark( "Done", 1 )
 
     ## should  return S_OK with monitor dict
     return S_OK( { "monitor" : self.monitor() } )
