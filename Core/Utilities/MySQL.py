@@ -158,6 +158,7 @@ import MySQLdb
 # This is for proper initialization of embeded server, it should only be called once
 MySQLdb.server_init( ['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'] )
 gInstancesCount = 0
+gDebugFile = None
 
 import Queue
 import types
@@ -221,21 +222,22 @@ class MySQL:
   """
   __initialized = False
 
-  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3 ):
+  def __init__( self, hostName, userName, passwd, dbName, port = 3306, maxQueueSize = 3, debug = False ):
     """
     set MySQL connection parameters and try to connect
     """
-    global gInstancesCount
+    global gInstancesCount, gDebugFile
     gInstancesCount += 1
 
     self._connected = False
 
-    if 'logger' not in dir( self ):
-      self.logger = gLogger.getSubLogger( 'MySQL' )
+    if 'log' not in dir( self ):
+      self.log = gLogger.getSubLogger( 'MySQL' )
+    self.logger = self.log
 
     # let the derived class decide what to do with if is not 1
     self._threadsafe = MySQLdb.thread_safe()
-    self.logger.debug( 'thread_safe = %s' % self._threadsafe )
+    self.log.debug( 'thread_safe = %s' % self._threadsafe )
 
     _checkQueueSize( maxQueueSize )
 
@@ -252,6 +254,12 @@ class MySQL:
     self.__initialized = True
     self._connect()
 
+    if debug:
+      try:
+        debugFile = open( "%s.debug.log" % self.__dbName, "w" )
+      except IOError:
+        pass
+
 
   def __del__( self ):
     global gInstancesCount
@@ -262,7 +270,7 @@ class MySQL:
           connection = self.__connectionQueue.get_nowait()
           connection.close()
         except Queue.Empty:
-          self.logger.debug( 'No more connection in Queue' )
+          self.log.debug( 'No more connection in Queue' )
           break
       if gInstancesCount == 1:
         # only when the last instance of a MySQL object is deleted, the server
@@ -281,11 +289,11 @@ class MySQL:
     try:
       raise x
     except MySQLdb.Error, e:
-      self.logger.debug( '%s: %s' % ( methodName, err ),
+      self.log.debug( '%s: %s' % ( methodName, err ),
                      '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
     except Exception, e:
-      self.logger.debug( '%s: %s' % ( methodName, err ), str( e ) )
+      self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
       return S_ERROR( '%s: (%s)' % ( err, str( e ) ) )
 
 
@@ -302,10 +310,10 @@ class MySQL:
       if myString in specialValues:
         return S_OK( specialValues[myString] )
       escape_string = connection.escape_string( str( myString ) )
-      self.logger.debug( '__scape_string: returns', '"%s"' % escape_string )
+      self.log.debug( '__scape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
     except Exception, x:
-      self.logger.debug( '__escape_string: Could not escape string', '"%s"' % myString )
+      self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
       return self._except( '__escape_string', x, 'Could not escape string' )
 
   def __checkTable( self, tableName, force = False ):
@@ -335,7 +343,7 @@ class MySQL:
     """
       Wrapper around the internal method __escapeString
     """
-    self.logger.debug( '_scapeString:', '"%s"' % myString )
+    self.log.debug( '_scapeString:', '"%s"' % myString )
 
     retDict = self.__getConnection( conn )
     if not retDict['OK']:
@@ -353,7 +361,7 @@ class MySQL:
     """
     Escapes all strings in the list of values provided
     """
-    self.logger.debug( '_escapeValues:', inValues )
+    self.log.debug( '_escapeValues:', inValues )
 
     retDict = self.__getConnection()
     if not retDict['OK']:
@@ -388,16 +396,21 @@ class MySQL:
     set connected flag to True and return S_OK
     return S_ERROR upon failure
     """
-    self.logger.debug( '_connect:', self._connected )
+    if not self.__initialized:
+      error = 'DB not properly initialized'
+      gLogger.error( error )
+      return S_ERROR( error )
+
+    self.log.debug( '_connect:', self._connected )
     if self._connected:
       return S_OK()
 
-    self.logger.debug( '_connect: Attempting to access DB',
+    self.log.debug( '_connect: Attempting to access DB',
                        '[%s@%s] by user %s/%s.' %
                        ( self.__dbName, self.__hostName, self.__userName, self.__passwd ) )
     try:
       self.__newConnection()
-      self.logger.verbose( '_connect: Connected.' )
+      self.log.verbose( '_connect: Connected.' )
       self._connected = True
       return S_OK()
     except Exception, x:
@@ -411,7 +424,10 @@ class MySQL:
     it returns an empty tuple if no matching rows are found
     return S_ERROR upon error
     """
-    self.logger.verbose( '_query:', cmd )
+    self.log.verbose( '_query:', cmd )
+
+    if gDebugFile:
+      start = time.time()
 
     if conn:
       connection = conn
@@ -430,20 +446,24 @@ class MySQL:
 
       # Log the result limiting it to just 10 records
       if len( res ) <= 10:
-        self.logger.verbose( '_query: returns', res )
+        self.log.verbose( '_query: returns', res )
       else:
-        self.logger.verbose( '_query: Total %d records returned' % len( res ) )
-        self.logger.verbose( '_query: %s ...' % str( res[:10] ) )
+        self.log.verbose( '_query: Total %d records returned' % len( res ) )
+        self.log.verbose( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
     except Exception , x:
-      self.logger.warn( '_query:', cmd )
+      self.log.warn( '_query:', cmd )
       retDict = self._except( '_query', x, 'Execution failed.' )
 
     try:
       cursor.close()
     except Exception:
       pass
+
+    if gDebugFile:
+      print >> gDebugFile, time.time() - start, cmd.replace( '\n', '' )
+      gDebugFile.flush()
 
     return retDict
 
@@ -453,7 +473,10 @@ class MySQL:
         return S_OK with number of updated registers upon success
         return S_ERROR upon error
     """
-    self.logger.verbose( '_update:', cmd )
+    self.log.verbose( '_update:', cmd )
+
+    if gDebugFile:
+      start = time.time()
 
     retDict = self.__getConnection( conn = conn )
     if not retDict['OK']:
@@ -464,12 +487,12 @@ class MySQL:
       cursor = connection.cursor()
       res = cursor.execute( cmd )
       connection.commit()
-      self.logger.verbose( '_update:', res )
+      self.log.verbose( '_update:', res )
       retDict = S_OK( res )
       if cursor.lastrowid:
         retDict[ 'lastRowId' ] = cursor.lastrowid
     except Exception, x:
-      self.logger.warn( '_update:', cmd )
+      self.log.warn( '_update:', cmd )
       retDict = self._except( '_update', x, 'Execution failed.' )
 
     try:
@@ -478,6 +501,10 @@ class MySQL:
       pass
     if not conn:
       self.__putConnection( connection )
+
+    if gDebugFile:
+      print >> gDebugFile, time.time() - start, cmd.replace( '\n', '' )
+      gDebugFile.flush()
 
     return retDict
 
@@ -569,7 +596,7 @@ class MySQL:
                               % ( key, forKey, forTable ) )
 
         if toBeExtracted:
-          self.logger.info( 'Table %s ready to be created' % table )
+          self.log.info( 'Table %s ready to be created' % table )
           extracted = True
           tableList.remove( table )
           tableCreationList[i].append( table )
@@ -629,7 +656,7 @@ class MySQL:
         retDict = self._update( cmd )
         if not retDict['OK']:
           return retDict
-        self.logger.info( 'Table %s created' % table )
+        self.log.info( 'Table %s created' % table )
 
     return S_OK()
 
@@ -641,10 +668,10 @@ class MySQL:
     """
       Wrapper to the new method for backward compatibility
     """
-    self.logger.warn( '_getFields:', 'deprecation warning, use getFields methods instead of _getFields.' )
+    self.log.warn( '_getFields:', 'deprecation warning, use getFields methods instead of _getFields.' )
     retDict = _checkFields( inFields, inValues )
     if not retDict['OK']:
-      self.logger.warn( '_getFields:', retDict['Message'] )
+      self.log.warn( '_getFields:', retDict['Message'] )
       return retDict
 
     condDict = {}
@@ -660,7 +687,7 @@ class MySQL:
     """
       Wrapper to the new method for backward compatibility
     """
-    self.logger.warn( '_insert:', 'deprecation warning, use insertFields methods instead of _insert.' )
+    self.log.warn( '_insert:', 'deprecation warning, use insertFields methods instead of _insert.' )
     return self.insertFields( tableName, inFields, inValues, conn )
 
 
@@ -681,7 +708,7 @@ class MySQL:
     """
     Create a New connection and put it in the Queue
     """
-    self.logger.debug( '__newConnection:' )
+    self.log.debug( '__newConnection:' )
 
     connection = MySQLdb.connect( host = self.__hostName,
                                   port = self.__port,
@@ -695,14 +722,14 @@ class MySQL:
     """
     Put a connection in the Queue, if the queue is full, the connection is closed
     """
-    self.logger.debug( '__putConnection:' )
+    self.log.debug( '__putConnection:' )
 
     # Release the semaphore first, in case something fails
     self.__connectionSemaphore.release()
     try:
       self.__connectionQueue.put_nowait( connection )
     except Queue.Full, x:
-      self.logger.debug( '__putConnection: Full Queue' )
+      self.log.debug( '__putConnection: Full Queue' )
       try:
         connection.close()
       except:
@@ -715,7 +742,12 @@ class MySQL:
     Return a new connection to the DB
     It uses the private method __getConnection
     """
-    self.logger.debug( '_getConnection:' )
+    if not self.__initialized:
+      error = 'DB not properly initialized'
+      gLogger.error( error )
+      return S_ERROR( error )
+
+    self.log.debug( '_getConnection:' )
 
     retDict = self.__getConnection( trial = 0 )
     self.__connectionSemaphore.release()
@@ -729,7 +761,7 @@ class MySQL:
     it will retry MAXCONNECTRETRY to open a new connection and will return
     an error if it fails.
     """
-    self.logger.debug( '__getConnection:' )
+    self.log.debug( '__getConnection:' )
 
     if conn:
       return S_OK( conn )
@@ -737,7 +769,7 @@ class MySQL:
     try:
       self.__connectionSemaphore.acquire()
       connection = self.__connectionQueue.get_nowait()
-      self.logger.debug( '__getConnection: Got a connection from Queue' )
+      self.log.debug( '__getConnection: Got a connection from Queue' )
       if connection:
         try:
           # This will try to reconect if the connection has timeout
@@ -749,7 +781,7 @@ class MySQL:
         return S_OK( connection )
     except Queue.Empty, x:
       self.__connectionSemaphore.release()
-      self.logger.debug( '__getConnection: Empty Queue' )
+      self.log.debug( '__getConnection: Empty Queue' )
       try:
         if trial == min( 10, MAXCONNECTRETRY ):
           return S_ERROR( 'Could not get a connection after %s retries.' % MAXCONNECTRETRY )
@@ -757,7 +789,7 @@ class MySQL:
           self.__newConnection()
           return self.__getConnection()
         except Exception, x:
-          self.logger.debug( '__getConnection: Fails to get connection from Queue', x )
+          self.log.debug( '__getConnection: Fails to get connection from Queue', x )
           time.sleep( trial * 5.0 )
           newtrial = trial + 1
           return self.__getConnection( trial = newtrial )
@@ -779,13 +811,13 @@ class MySQL:
     table = _quotedList( [table] )
     if not table:
       error = 'Invalid table argument'
-      self.logger.debug( 'getCounters:', error )
+      self.log.debug( 'getCounters:', error )
       return S_ERROR( error )
 
     attrNames = _quotedList( attrList )
     if attrNames == None:
       error = 'Invalid updateFields argument'
-      self.logger.debug( 'getCounters:', error )
+      self.log.debug( 'getCounters:', error )
       return S_ERROR( error )
 
     try:
@@ -816,13 +848,13 @@ class MySQL:
     table = _quotedList( [table] )
     if not table:
       error = 'Invalid table argument'
-      self.logger.debug( 'getDistinctAttributeValues:', error )
+      self.log.debug( 'getDistinctAttributeValues:', error )
       return S_ERROR( error )
 
     attributeName = _quotedList( [attribute] )
     if not attributeName:
       error = 'Invalid attribute argument'
-      self.logger.debug( 'getDistinctAttributeValues:', error )
+      self.log.debug( 'getDistinctAttributeValues:', error )
       return S_ERROR( error )
 
     try:
@@ -855,12 +887,12 @@ class MySQL:
         attrName = _quotedList( [attrName] )
         if not attrName:
           error = 'Invalid condDict argument'
-          self.logger.warn( 'buildCondition:', error )
+          self.log.warn( 'buildCondition:', error )
           raise Exception( error )
         if type( attrValue ) == types.ListType:
           retDict = self._escapeValues( attrValue )
           if not retDict['OK']:
-            self.logger.warn( 'buildCondition:', retDict['Message'] )
+            self.log.warn( 'buildCondition:', retDict['Message'] )
             raise Exception( retDict['Message'] )
           else:
             escapeInValues = retDict['Value']
@@ -874,7 +906,7 @@ class MySQL:
         else:
           retDict = self._escapeValues( [ attrValue ] )
           if not retDict['OK']:
-            self.logger.warn( 'buildCondition:', retDict['Message'] )
+            self.log.warn( 'buildCondition:', retDict['Message'] )
             raise Exception( retDict['Message'] )
           else:
             escapeInValue = retDict['Value'][0]
@@ -888,12 +920,12 @@ class MySQL:
       timeStamp = _quotedList( [timeStamp] )
       if not timeStamp:
         error = 'Invalid timeStamp argument'
-        self.logger.warn( 'buildCondition:', error )
+        self.log.warn( 'buildCondition:', error )
         raise Exception( error )
       if newer:
         retDict = self._escapeValues( [ newer ] )
         if not retDict['OK']:
-          self.logger.warn( 'buildCondition:', retDict['Message'] )
+          self.log.warn( 'buildCondition:', retDict['Message'] )
           raise Exception( retDict['Message'] )
         else:
           escapeInValue = retDict['Value'][0]
@@ -905,7 +937,7 @@ class MySQL:
       if older:
         retDict = self._escapeValues( [ older ] )
         if not retDict['OK']:
-          self.logger.warn( 'buildCondition:', retDict['Message'] )
+          self.log.warn( 'buildCondition:', retDict['Message'] )
           raise Exception( retDict['Message'] )
         else:
           escapeInValue = retDict['Value'][0]
@@ -923,13 +955,13 @@ class MySQL:
         continue
       if type( orderAttr ) not in types.StringTypes:
         error = 'Invalid orderAttribute argument'
-        self.logger.warn( 'buildCondition:', error )
+        self.log.warn( 'buildCondition:', error )
         raise Exception( error )
 
       orderField = _quotedList( orderAttr.split( ':' )[:1] )
       if not orderField:
         error = 'Invalid orderAttribute argument'
-        self.logger.warn( 'buildCondition:', error )
+        self.log.warn( 'buildCondition:', error )
         raise Exception( error )
 
       if len( orderAttr.split( ':' ) ) == 2:
@@ -938,7 +970,7 @@ class MySQL:
           orderList.append( '%s %s' % ( orderField, orderType ) )
         else:
           error = 'Invalid orderAttribute argument'
-          self.logger.warn( 'buildCondition:', error )
+          self.log.warn( 'buildCondition:', error )
           raise Exception( error )
       else:
         orderList.append( orderAttr )
@@ -968,7 +1000,7 @@ class MySQL:
     table = _quotedList( [tableName] )
     if not table:
       error = 'Invalid tableName argument'
-      self.logger.warn( 'getFields:', error )
+      self.log.warn( 'getFields:', error )
       return S_ERROR( error )
 
     quotedOutFields = '*'
@@ -976,10 +1008,10 @@ class MySQL:
       quotedOutFields = _quotedList( outFields )
       if quotedOutFields == None:
         error = 'Invalid outFields arguments'
-        self.logger.warn( 'getFields:', error )
+        self.log.warn( 'getFields:', error )
         return S_ERROR( error )
 
-    self.logger.verbose( 'getFields:', 'selecting fields %s from table %s.' %
+    self.log.verbose( 'getFields:', 'selecting fields %s from table %s.' %
                           ( quotedOutFields, table ) )
 
     if condDict == None:
@@ -1009,10 +1041,10 @@ class MySQL:
     table = _quotedList( [tableName] )
     if not table:
       error = 'Invalid tableName argument'
-      self.logger.warn( 'deleteEntries:', error )
+      self.log.warn( 'deleteEntries:', error )
       return S_ERROR( error )
 
-    self.logger.verbose( 'deleteEntries:', 'deleting rows from table %s.' % table )
+    self.log.verbose( 'deleteEntries:', 'deleting rows from table %s.' % table )
 
     try:
       condition = self.buildCondition( condDict = condDict, older = older, newer = newer,
@@ -1044,13 +1076,13 @@ class MySQL:
     table = _quotedList( [tableName] )
     if not table:
       error = 'Invalid tableName argument'
-      self.logger.warn( 'updateFields:', error )
+      self.log.warn( 'updateFields:', error )
       return S_ERROR( error )
 
     retDict = _checkFields( updateFields, updateValues )
     if not retDict['OK']:
       error = 'Mismatch between updateFields and updateValues.'
-      self.logger.warn( 'updateFields:', error )
+      self.log.warn( 'updateFields:', error )
       return S_ERROR( error )
 
     if updateFields == None:
@@ -1060,23 +1092,23 @@ class MySQL:
     if updateDict:
       if type( updateDict ) != types.DictType:
         error = 'updateDict must be a of Type DictType'
-        self.logger.warn( 'updateFields:', error )
+        self.log.warn( 'updateFields:', error )
         return S_ERROR( error )
       try:
         updateFields += updateDict.keys()
         updateValues += [updateDict[k] for k in updateDict.keys()]
       except TypeError:
         error = 'updateFields and updateValues must be a list'
-        self.logger.warn( 'updateFields:', error )
+        self.log.warn( 'updateFields:', error )
         return S_ERROR( error )
 
     updateValues = self._escapeValues( updateValues )
     if not updateValues['OK']:
-      self.logger.warn( 'updateFields:', updateValues['Message'] )
+      self.log.warn( 'updateFields:', updateValues['Message'] )
       return updateValues
     updateValues = updateValues['Value']
 
-    self.logger.verbose( 'updateFields:', 'updating fields %s from table %s.' %
+    self.log.verbose( 'updateFields:', 'updating fields %s from table %s.' %
                           ( ', '.join( updateFields ), table ) )
 
     try:
@@ -1101,12 +1133,12 @@ class MySQL:
     table = _quotedList( [tableName] )
     if not table:
       error = 'Invalid tableName argument'
-      self.logger.warn( 'insertFields:', error )
+      self.log.warn( 'insertFields:', error )
       return S_ERROR( error )
 
     retDict = _checkFields( inFields, inValues )
     if not retDict['OK']:
-      self.logger.warn( 'insertFields:', retDict['Message'] )
+      self.log.warn( 'insertFields:', retDict['Message'] )
       return retDict
 
     if inFields == None:
@@ -1116,20 +1148,20 @@ class MySQL:
     if inDict:
       if type( inDict ) != types.DictType:
         error = 'inDict must be a of Type DictType'
-        self.logger.warn( 'insertFields:', error )
+        self.log.warn( 'insertFields:', error )
         return S_ERROR( error )
       try:
         inFields += inDict.keys()
         inValues += [inDict[k] for k in inDict.keys()]
       except TypeError:
         error = 'inFields and inValues must be a list'
-        self.logger.warn( 'insertFields:', error )
+        self.log.warn( 'insertFields:', error )
         return S_ERROR( error )
 
     inFieldString = _quotedList( inFields )
     if inFieldString == None:
       error = 'Invalid inFields arguments'
-      self.logger.warn( 'insertFields:', error )
+      self.log.warn( 'insertFields:', error )
       return S_ERROR( error )
 
 
@@ -1137,12 +1169,12 @@ class MySQL:
 
     retDict = self._escapeValues( inValues )
     if not retDict['OK']:
-      self.logger.warn( 'insertFields:', retDict['Message'] )
+      self.log.warn( 'insertFields:', retDict['Message'] )
       return retDict
     inValueString = ', '.join( retDict['Value'] )
     inValueString = '(  %s )' % inValueString
 
-    self.logger.verbose( 'insertFields:', 'inserting %s into table %s'
+    self.log.verbose( 'insertFields:', 'inserting %s into table %s'
                           % ( inFieldString, table ) )
 
     return self._update( 'INSERT INTO %s %s VALUES %s' %
