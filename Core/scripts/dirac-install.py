@@ -53,7 +53,7 @@ class Params:
     self.lcgVer = ''
     self.useVersionsDir = False
     self.installSource = ""
-    self.timeout = 60
+    self.timeout = 300
 
 cliParams = Params()
 
