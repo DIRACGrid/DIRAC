@@ -214,8 +214,6 @@ def test():
     assert result['Value'] == [status]
 
 
-    print result
-
     gLogger.info( '\n Removing Table\n' )
     result = db._update( 'DROP TABLE `%s`' % db.tableName )
     assert result['OK']
