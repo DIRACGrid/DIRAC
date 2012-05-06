@@ -1,34 +1,23 @@
 """ File catalog client for LCG File Catalog proxy service """
 
 from DIRAC                                      import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient                 import RPCClient
-from DIRAC.ConfigurationSystem.Client           import PathFinder
+from DIRAC.Core.Base.Client                     import Client
 
-class LcgFileCatalogProxyClient:
+class LcgFileCatalogProxyClient( Client ):
   """ File catalog client for LCG File Catalog proxy service
   """
 
-  def __init__( self, url = False, useCertificates = False ):
+  def __init__( self, url = False ):
     """ Constructor of the LCGFileCatalogProxy client class
     """
+    Client.__init__( self )
     self.name = 'LFCProxy'
     self.valid = False
-    try:
-      if url:
-        self.url = url
-      else:
-        url = PathFinder.getServiceURL( 'DataManagement/LcgFileCatalogProxy' )
-        if not url:
-          return
-        self.url = url
-      self.server = RPCClient( self.url, timeout = 120, useCertificates = useCertificates )
-      if not self.server:
-        return
-      else:
-        self.valid = True
-    except Exception, x:
-      gLogger.exception( 'Exception while creating connection to LcgFileCatalog proxy server', '', x )
-      return
+    self.setServer( 'DataManagement/LcgFileCatalogProxy' )
+    if url:
+      self.setServer( url )
+    self.setTimeout( 120 )
+    self.valid = self.ping()['OK']
 
   def isOK( self ):
     return self.valid
@@ -39,13 +28,10 @@ class LcgFileCatalogProxyClient:
     return self.name
 
   def __getattr__( self, name ):
-    self.call = name
+    self.method = name
     return self.execute
 
   def execute( self, *parms, **kws ):
     """ Magic method dispatcher """
-    try:
-      result = self.server.callProxyMethod( self.call, parms, kws )
-    except Exception, x:
-      return S_ERROR( 'Exception while calling the server ' + str( x ) )
-    return result
+    self.call = callProxyMethod
+    return self.executeRPC( self.method, parms, kws )
