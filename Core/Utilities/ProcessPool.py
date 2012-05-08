@@ -108,8 +108,6 @@ import os
 import signal
 import Queue
 from types import FunctionType, TypeType, ClassType
-import datetime
-import uuid
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -151,6 +149,7 @@ class WorkingProcess( multiprocessing.Process ):
     :param multiprocess.Queue resultsQueue: queue storing callbacks and exceptionCallbacks
     """
     multiprocessing.Process.__init__( self )
+    ## daemonize
     self.daemon = True
     ## flag to see if task is being treated
     self.__working = multiprocessing.Value( 'i', 0 )
@@ -162,14 +161,12 @@ class WorkingProcess( multiprocessing.Process ):
     self.__resultsQueue = resultsQueue
     ## placeholder for watchdog thread
     self.__watchdogThread = None
-    ## timeout read from task 
-    self.__timeOut = 0
-    ## startProcessing + timeOut
-    self.__deadline = None
-    ## task
-    self.taskHash = None
+    ## placeholder for timer thread
+    self.__timerThread = None
     ## read write lock
     self.rwLock = threading.Lock()
+    ## put event
+    self.putEvent = threading.Event()
     ## start yourself at least    
     self.start()
 
@@ -182,38 +179,16 @@ class WorkingProcess( multiprocessing.Process ):
     """
     
     while True:
-
-      ## task deadline watchdog
-      if self.taskHash and self.__deadline:
-        # save task hash
-        taskHash = self.taskHash
-        ## check deadline
-        if self.__deadline and self.__deadline < datetime.datetime.now():
-          ## send SIGALRM for non-blocked tasks to put back timeout results
-          os.kill( self.pid, signal.SIGALRM )
-
-        time.sleep(5)
-        ## no task? diff task?
-        if self.taskHash != taskHash: 
-          continue
-        
-        if self.rwLock.locked():
-          continue
-        
-        self.rwLock.acquire()
-        ## task? same task? deadline? expired? 
-        if self.taskHash and self.taskHash == taskHash and self.__deadline and self.__deadline < datetime.datetime.now():    
-          ## this time SIGKILL, you're being warned 
-          os.kill( self.pid, signal.SIGKILL )
-        self.rwLock.release()
-
+           
       ## parent is dead,  commit suicide
       if os.getppid() == 1:
+        print "pid=%s SIGTERM suicide" % self.pid
         os.kill( self.pid, signal.SIGTERM )
         ## wait for a while and if still alive use REAL silencer
         time.sleep(30)
         self.rwLock.acquire()
         ## now you're dead
+        print "pid=%s SIGKILL suicide" % self.pid
         os.kill( self.pid, signal.SIGKILL )
         self.rwLock.release()
 
@@ -233,6 +208,18 @@ class WorkingProcess( multiprocessing.Process ):
     """
     return self.__taskCounter
 
+  def __timer( self ):
+    print "pid=%s timed out" % self.pid
+    if self.task.hasCallback() or self.task.hasPoolCallback():
+      if self.task.taskResults():
+        self.__resultsQueue.put( self.task )
+        self.putEvent.set()
+        return
+      self.task.setResult( S_ERROR( "Timed out" ) )
+      self.__resultsQueue.put( self.task )
+      self.putEvent.set()
+    os.kill( self.pid, signal.SIGKILL )
+    
   def run( self ):
     """ task execution
 
@@ -252,63 +239,56 @@ class WorkingProcess( multiprocessing.Process ):
       lr = LockRing()
       lr._openAll()
       lr._setAllEvents()
-    ## main loop
+
     taskCounter = 0
+    ## main loop
     while True:
 
-      ## commit suicide together with your parent 
-      if os.getppid() == 1:
-        break 
-        #self.taskHash = None
-        #self.__deadline = None
-        #break
+      if self.__timerThread:
+        self.__timerThread.cancel()
 
-      ## get task from queue
-      self.rwLock.acquire()
+      ## read from queue
       try:
-        self.taskHash = uuid.uuid4()
         task = self.__pendingQueue.get( block = True, timeout = 10 )   
       except Queue.Empty:
         continue
-      finally:
-        self.rwLock.release()
 
       ## conventional murder
       if task.isBullet():
+        print "pid=%s got bullet" % ( self.pid )
         break
-        #self.taskHash = None
-        #self.__deadline = None
-        #break
 
       ## toggle __working flag
       self.__working.value = 1
-    
-      ## execute task
 
-      #self.rwLock.acquire()
-      timeOut = task.getTimeOut()
-      if timeOut:        
-        self.__deadline = datetime.datetime.now() + datetime.timedelta( seconds = timeOut )
-      #self.rwLock.release()
+      ## save task
+      self.task = task
 
+      print "pid=%s got task %s" % ( self.pid, task.getTaskID() )
+      
+      ## start timer
+      if self.task.getTimeOut():
+        self.__timerThread = threading.Timer( task.getTimeOut()+1, self.__timer )
+        self.__timerThread.start()
+
+      ## process task
       try:
         task.process()
-        self.rwLock.acquire()
-        self.taskHash = None
-        self.__deadline = None
-        if task.hasCallback() or task.usePoolCallbacks():
+        ## cancel timer, results are ready
+        if self.__timerThread:
+          self.__timerThread.cancel()  
+        ## put back results
+        if not self.putEvent.is_set() and self.task.hasCallback() or self.task.usePoolCallbacks():
           self.__resultsQueue.put( task )
-        self.rwLock.release()
-      except (ProcessTaskTimeOutError, TypeError):
-        pass
+          self.putEvent.set()
       finally:
         ## increase task counter
         taskCounter += 1
         self.__taskCounter = taskCounter 
         ## toggle __working flag
         self.__working.value = 0
+        self.putEvent.clear()
        
-
 class BulletTask:
   """ dum-dum bullet """
   def isBullet( self ):
@@ -482,20 +462,14 @@ class ProcessTask:
     if self.__done and not self.__exceptionRaised and self.__resultCallback:
       self.__resultCallback( self, self.__taskResult )
 
+  def setResult( self, result ):
+    self.__taskResult = result
+
   def process( self ):
     """ execute task
 
     :param self: self reference
     """ 
-    def timeOutHandler( singnum, frame ):
-      """ dummy SIGALRM handler """
-      raise ProcessTaskTimeOutError()
-    
-    ## SIGALRM orig handler 
-    saveHandler = None
-    if self.__timeOut:
-      saveHandler = signal.signal( signal.SIGALRM, timeOutHandler )
-      
     self.__done = True
     try:
       ## it's a function?
@@ -510,8 +484,6 @@ class ProcessTask:
           raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
-    except ProcessTaskTimeOutError:
-      self.__taskResult = { "OK" : False, "Message" : "Timed out after %s seconds" % self.__timeOut }
     except Exception, x:
       self.__exceptionRaised = True
       if gLogger:
@@ -521,11 +493,7 @@ class ProcessTask:
         retDict['Value'] = str( x )
         retDict['Exc_info'] = sys.exc_info()[1]
         self.__taskException = retDict
-    finally:
-      if self.__timeOut and saveHandler:
-        signal.signal( signal.SIGALRM, saveHandler )
-    signal.alarm(0)    
-
+        
 class ProcessPool:
   """
   .. class:: ProcessPool
@@ -653,6 +621,7 @@ class ProcessPool:
       worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue )
       while worker.pid == None:
         time.sleep(0.1)
+      print "pid=%s new worker" % worker.pid
       self.__workersDict[ worker.pid ] = worker
     finally:
       self.__prListLock.release()
@@ -680,6 +649,7 @@ class ProcessPool:
       for pid, worker in self.__workersDict.items():
         if not worker.is_alive():
           self.__bulletCounter -= 1
+          print "pid=%s is dead" % pid
           del self.__workersDict[pid]
     finally:
       self.__prListLock.release()
@@ -813,10 +783,9 @@ class ProcessPool:
       if self.__resultsQueue.empty():
         self.__killExceedingWorkingProcesses()
         break
-      try:
-        task = self.__resultsQueue.get()
-      except TypeError:
-        continue
+      ## get task
+      task = self.__resultsQueue.get()
+      ## execute task callbacks
       task.doExceptionCallback()
       task.doCallback()
       ## execute pool callbacks
@@ -825,7 +794,6 @@ class ProcessPool:
           self.__poolExceptionCallback( task.getTaskID(), task.taskException() )
         if self.__poolCallback and task.taskResults():
           self.__poolCallback( task.getTaskID(), task.taskResults() )
-
       self.__killExceedingWorkingProcesses()
       processed += 1
     return processed
@@ -850,9 +818,9 @@ class ProcessPool:
     self.processAllResults()
     # Drain via bullets processes
     self.__draining = True
-    self.__cleanDeadProcesses()
+    print "AAAAAAAAAAAAA draining"
     try:
-      bullets = len( self.__workersDict ) #- self.__bulletCounter
+      bullets = len( self.__workersDict ) 
       while bullets > 0:
         self.__killWorkingProcess()
         bullets = bullets - 1
@@ -864,8 +832,10 @@ class ProcessPool:
         time.sleep( 0.1 )
         self.__cleanDeadProcesses()
     finally:
-      pass
+      self.__cleanDeadProcesses()
     # terminate them as it should be done
+    print "sending SIGTERM"
+    self.__cleanDeadProcesses()
     for worker in self.__workersDict.values():
       if worker.is_alive():
         worker.terminate()
@@ -874,10 +844,12 @@ class ProcessPool:
     # Kill 'em all!!
     self.__filicide()
     self.__bulletCounter = 0
+    print "FINALIZATION DONE"
 
   def __filicide( self ):
     """ Kill all children (processes :P) Kill'em all! ...and justice for all!
     """
+    print "AAAAAAAAAAAAAA FILICDE"
     while self.__workersDict:
       pid = self.__workersDict.keys().pop(0)
       worker = self.__workersDict[pid]
