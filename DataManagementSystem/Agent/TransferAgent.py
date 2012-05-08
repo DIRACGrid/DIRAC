@@ -975,7 +975,6 @@ class TransferAgent( RequestAgentBase ):
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
         if re.search( "no such file or directory", str(failure).lower()):
-          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
       replicas = replicas["Value"]["Successful"]
 
