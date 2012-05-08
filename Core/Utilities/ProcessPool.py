@@ -819,11 +819,10 @@ class ProcessPool:
     # Drain via bullets processes
     self.__draining = True
     print "AAAAAAAAAAAAA draining"
-    try:
-      bullets = len( self.__workersDict ) 
-      while bullets > 0:
-        self.__killWorkingProcess()
-        bullets = bullets - 1
+    bullets = len( self.__workersDict ) 
+    while bullets > 0:
+      self.__killWorkingProcess()
+      bullets = bullets - 1
       start = time.time()
       self.__cleanDeadProcesses()
       while self.__workersDict:
@@ -831,11 +830,9 @@ class ProcessPool:
           break
         time.sleep( 0.1 )
         self.__cleanDeadProcesses()
-    finally:
-      self.__cleanDeadProcesses()
     # terminate them as it should be done
     print "sending SIGTERM"
-    self.__cleanDeadProcesses()
+    #self.__cleanDeadProcesses()
     for worker in self.__workersDict.values():
       if worker.is_alive():
         worker.terminate()
