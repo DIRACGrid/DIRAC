@@ -97,8 +97,9 @@ def getPlatformString():
       if reM:
         libs.append( reM.groups()[0] )
     if sp:
-      sp.terminate()
-      sp.wait()
+      if 'terminate' in dir( sp ):
+        sp.terminate()
+        sp.wait()
 
     if not libs:
       # get version of higher libc installed
