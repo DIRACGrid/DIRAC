@@ -63,8 +63,6 @@ class RequestAgentBase( AgentModule ):
   __exceptionCallback = None
   ## config path in CS
   __configPath = None
-  ## read request holder 
-  __requestHolder = dict()
 
   def __init__( self, agentName, baseAgentName=False, properties=dict() ):
     """ c'tor
@@ -105,19 +103,20 @@ class RequestAgentBase( AgentModule ):
     ## create request dict
     self.__requestHolder = dict()
 
-  @classmethod
-  def deleteRequest( cls, requestName ):
+  def requestHolder( self ):
+    return self.__requestHolder
+
+  def deleteRequest( self, requestName ):
     """ delete request from requestHolder
 
     :param self: self reference
     """
-    if requestName in cls.__requestHolder:
-      del cls.__requestHolder[requestName]
+    if requestName in self.__requestHolder:
+      del self.__requestHolder[requestName]
       return S_OK()
     return S_ERROR("%s not found in requestHolder" % requestName )
 
-  @classmethod
-  def saveRequest( cls, requestName, requestString, requestServer ):
+  def saveRequest( self, requestName, requestString, requestServer ):
     """ put request into requestHolder
 
     :param cls: class reference
@@ -125,8 +124,8 @@ class RequestAgentBase( AgentModule ):
     :param str requestString: XML-serialised request
     :param str requestServer: server URL
     """
-    if requestName not in cls.__requestHolder:
-      cls.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
+    if requestName not in self.__requestHolder:
+      self.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
       return S_OK()
     return S_ERROR("saveRequest: request %s cannot be saved, it's already in requestHolder")
 
@@ -226,8 +225,8 @@ class RequestAgentBase( AgentModule ):
     self.log.error( "exceptionCallback from task %s" % taskID )
     self.log.error( taskException )
 
-  @classmethod
-  def getRequest( cls, requestType ):
+
+  def getRequest( self, requestType ):
     """ retrive Request of type requestType from RequestClient
 
     :param cls: class reference
@@ -248,13 +247,13 @@ class RequestAgentBase( AgentModule ):
                     "executionOrder" : None,
                     "jobID" : None }
     ## get request out of RequestClient
-    res = cls.requestClient().getRequest( requestType )
+    res = self.requestClient().getRequest( requestType )
     if not res["OK"]:
-      gLogger.error( res["Message"] )
+      self.log.error( res["Message"] )
       return res
     elif not res["Value"]:
       msg = "Request of type '%s' not found in RequestClient." % requestType
-      gLogger.debug( msg )
+      self.log.debug( msg )
       return S_OK()
     ## store values
     requestDict["requestName"] = res["Value"]["RequestName"]
@@ -264,21 +263,21 @@ class RequestAgentBase( AgentModule ):
     try:
       requestDict["jobID"] = int( res["Value"]["JobID"] )
     except (ValueError, TypeError), exc:
-      gLogger.warn( "Cannot read JobID for request %s, setting it to 0: %s" % ( requestDict["requestName"],
-                                                                                str(exc) ) )
+      self.log.warn( "Cannot read JobID for request %s, setting it to 0: %s" % ( requestDict["requestName"],
+                                                                                 str(exc) ) )
       requestDict["jobID"] = 0
     ## get the execution order
-    res = cls.requestClient().getCurrentExecutionOrder( requestDict["requestName"],
-                                                        requestDict["sourceServer"] )
+    res = self.requestClient().getCurrentExecutionOrder( requestDict["requestName"],
+                                                         requestDict["sourceServer"] )
     if not res["OK"]:
       msg = "Can not get the execution order for request %s." % requestDict["requestName"]
-      gLogger.error( msg, res["Message"] )
+      self.log.error( msg, res["Message"] )
       return res
     requestDict["executionOrder"] = res["Value"]
     ## save this request
-    cls.saveRequest( requestDict["requestName"], 
-                     requestDict["requestString"], 
-                     requestDict["sourceServer"] )
+    self.saveRequest( requestDict["requestName"], 
+                      requestDict["requestString"], 
+                      requestDict["sourceServer"] )
     ## return requestDict at least
     return S_OK( requestDict )
 
