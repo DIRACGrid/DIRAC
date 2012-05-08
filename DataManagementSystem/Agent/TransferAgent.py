@@ -650,7 +650,7 @@ class TransferAgent( RequestAgentBase ):
                                                          taskID = taskID,
                                                          blocking = True,
                                                          usePoolCallbacks = True,
-                                                         timeOut = 900 )
+                                                         timeOut = 600 )
         if not enqueue["OK"]:
           self.log.error( enqueue["Message"] )
         else:
