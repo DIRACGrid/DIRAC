@@ -32,6 +32,11 @@ NEW: JobState/CachedJobState allow access to the Job via DB/JobStateSync Service
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
 
+[v6r4p4]
+
+*Core
+FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
+
 [v6r4p3]
 
 *Core
@@ -112,6 +117,11 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
  
 *Resources
 NEW: SSHLSFComputingElement added 
+
+[v6r3p12]
+
+*Core
+FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
 
 [v6r3p11]
 
