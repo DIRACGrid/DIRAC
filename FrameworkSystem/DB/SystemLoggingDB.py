@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
     getMessages()
 """
 
-import re, os, sys, string
+import re, os, sys, string, types
 import time
 import threading
 from types import ListType, StringTypes, NoneType
@@ -108,11 +108,13 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                         'OwnerDN': "VARCHAR(255) NOT NULL DEFAULT 'unknown'",
                                         'OwnerGroup': "VARCHAR(128) NOT NULL DEFAULT 'nogroup'" },
                             'PrimaryKey': 'UserDNID',
+                            'UniqueIndexes': { 'Owner': ['OwnerDN', 'OwnerGroup'] },
                             'Engine': 'InnoDB',
                             },
                 'Sites' : { 'Fields': { 'SiteID': 'INT NOT NULL AUTO_INCREMENT',
                                         'SiteName': "VARCHAR(64) NOT NULL DEFAULT 'Unknown'" },
                             'PrimaryKey': 'SiteID',
+                            'UniqueIndexes': { 'Site': ['SiteName'] },
                             'Engine': 'InnoDB',
                             },
                 'ClientIPs':{ 'Fields': { 'ClientIPNumberID': 'INT NOT NULL AUTO_INCREMENT',
@@ -121,12 +123,14 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                           'SiteID': 'INT NOT NULL' },
                               'PrimaryKey': [ 'ClientIPNumberID', 'SiteID' ],
                               'ForeignKeys': {'SiteID': 'Sites.SiteID' },
+                              'UniqueIndexes': { 'Client': ['ClientIPNumberString', 'ClientFQDN', 'SiteID' ] },
                               'Engine': 'InnoDB',
                               },
                 'Systems': {
                              'Fields': { 'SystemID': 'INT NOT NULL AUTO_INCREMENT',
                                          'SystemName': "VARCHAR(128) NOT NULL DEFAULT 'Unknown'" },
                              'PrimaryKey': 'SystemID',
+                             'UniqueIndexes': { 'System': ['SystemName' ] },
                              'Engine': 'InnoDB',
                              },
                 'SubSystems': {
@@ -135,6 +139,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                             'SystemID': 'INT NOT NULL', },
                                 'PrimaryKey': ['SubSystemID', 'SystemID'],
                                 'ForeignKeys': {'SystemID': 'Systems.SystemID' },
+                                'UniqueIndexes': { 'SubSystem': ['SubSystemName', 'SystemID' ] },
                                 'Engine': 'InnoDB',
                                 },
                 'FixedTextMessages': {
@@ -143,7 +148,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
                                                   'ReviewedMessage': 'TINYINT( 1 ) NOT NULL DEFAULT FALSE',
                                                   'SubSystemID': 'INT NOT NULL', },
                                       'PrimaryKey': 'FixedTextID',
-                                      'Indexes': {'SubSystemID': ['SubSystemID']},
+                                      'UniqueIndexes': {'FixedText': ['FixedTextString', 'SubSystemID'] },
                                       'ForeignKeys': {'SubSystemID': 'SubSystems.SubSystemID' },
                                       'Engine': 'InnoDB',
                                       },
@@ -332,41 +337,45 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     #              'ClientIPs':'ClientFQDN', 
     #              'Sites':'SiteName'}
 
-    cmd = "SHOW COLUMNS FROM " + tableName + " WHERE Field in ( '" \
-          + "', '".join( inFields ) + "' )"
-    result = self._query( cmd )
-    gLogger.verbose( result )
-    if ( not result['OK'] ) or result['Value'] == ():
-      gLogger.debug( result['Message'] )
-      return S_ERROR( 'Could not get description of the %s table' % tableName )
-    for description in result['Value']:
-      if re.search( 'varchar', description[1] ):
-        indexInteger = inFields.index( description[0] )
-        valueLength = len( inValues[ indexInteger ] )
-        fieldLength = int( re.search( r'varchar\((\d*)\)',
-                           description[1] ).groups()[0] )
-        if fieldLength < valueLength:
-          inValues[ indexInteger ] = inValues[ indexInteger ][ :fieldLength ]
-
-    result = self._getFields( tableName, outFields, inFields, inValues )
+    result = self.insertFields( tableName, inFields, inValues )
+    rowID = 0
+    if not result['OK'] and 'Duplicate entry' not in result['Message']:
+      gLogger.error( '__DBCommit failed to insert data into DB', result['Message'] )
+      return S_ERROR( 'Could not insert the data into %s table' % tableName )
+    elif not result['OK']:
+      gLogger.verbose( '__DBCommit duplicated record' )
+    elif result['Value'] == 0:
+      gLogger.error( '__DBCommit failed to insert data into DB' )
+    else:
+      rowID = result['lastRowId']
+      gLogger.verbose( '__DBCommit new entry added', rowID )
+    # check the inserted values
+    condDict = {}
+    condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
+    result = self.getFields( tableName, outFields + inFields, condDict = condDict )
     if not result['OK']:
-      print result['Message']
-      return S_ERROR( 'Unable to query the database' )
-    elif result['Value'] == ():
-      result = self._insert( tableName, inFields, inValues )
-      if not result['OK']:
-        return S_ERROR( 'Could not insert the data into %s table' % tableName )
+      gLogger.error( '__DBCommit failed to query DB', result['Message'] )
+      return S_ERROR()
+    if len( result['Value'] ) == 0:
+      error = 'Inserted Value does not match %s: "%s" != "%s"' % ( inField[i], inValue[i], insertedValues[i] )
+      if rowID:
+        self.deleteEntries( tableName, condDict )
+      return S_ERROR( error )
 
-      result = self._getFields( tableName, outFields, inFields, inValues )
-      if not result['OK']:
-        return S_ERROR( 'Unable to query the database' )
-      if result['Value'] == ():
-        # The inserted value is larger than the field size and can not be matched back
-        for i in range( len( inFields ) ):
-          gLogger.error( 'Could not insert the data into %s table' % tableName, '%s = %s' % ( inFields[i], inValues[i] ) )
-        return S_ERROR( 'Could not insert the data into %s table' % tableName )
+    outValues = result['Value'][0][:len( outFields )]
+    insertedValues = result['Value'][0][len( outFields ):]
+    error = ''
+    for i in range( len( inValues ) ):
+      if inValues[i] != insertedValues[i]:
+        error = 'Inserted Value does not match %s: "%s" != "%s"' % ( inField[i], inValue[i], insertedValues[i] )
+        break
 
-    return S_OK( int( result['Value'][0][0] ) )
+    if error:
+      gLogger.error( error )
+      return S_ERROR( 'Failed while check of inserted Values' )
+
+    return S_OK( int( outValues[0] ) )
+
 
   def _insertMessageIntoSystemLoggingDB( self, message, site, nodeFQDN,
                                          userDN, userGroup, remoteAddress ):
