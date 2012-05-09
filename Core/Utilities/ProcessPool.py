@@ -194,11 +194,13 @@ class WorkingProcess( multiprocessing.Process ):
     while True:      
       ## parent is dead,  commit suicide
       if os.getppid() == 1:
+        print "pid=%s SIGTERM suicide" % self.pid
         os.kill( self.pid, signal.SIGTERM )
         ## wait for half a minute and if worker is still alive use REAL silencer
         time.sleep(30)
         self.rwLock.acquire()
         ## now you're dead
+        print "pid=%s SIGKILL suicide" % self.pid
         os.kill( self.pid, signal.SIGKILL )
       ## wake me up in 5 seconds
       time.sleep(5)
@@ -277,6 +279,7 @@ class WorkingProcess( multiprocessing.Process ):
 
       ## conventional murder
       if task.isBullet():
+        print "pid=%s got bullet" % ( self.pid )
         break
         #self.taskHash = None
         #self.__deadline = None
@@ -284,6 +287,7 @@ class WorkingProcess( multiprocessing.Process ):
 
       ## toggle __working flag
       self.__working.value = 1
+
       ## save task
       self.task = task
       ## reset idle loop counter
@@ -714,6 +718,7 @@ class ProcessPool( object ):
       worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue, self.__stopEvent )
       while worker.pid == None:
         time.sleep(0.1)
+      print "pid=%s new worker" % worker.pid
       self.__workersDict[ worker.pid ] = worker
     finally:
       self.__prListLock.release()
@@ -741,6 +746,7 @@ class ProcessPool( object ):
       for pid, worker in self.__workersDict.items():
         if not worker.is_alive():
           self.__bulletCounter -= 1
+          print "pid=%s is dead" % pid
           del self.__workersDict[pid]
     finally:
       self.__prListLock.release()
@@ -941,12 +947,14 @@ class ProcessPool( object ):
     ## third clean up - kill'em all!!!
     self.__filicide()
     self.__bulletCounter = 0
+    print "FINALIZATION DONE"
 
   def __filicide( self ):
     """ Kill all workers, kill'em all!
     
     :param self: self reference
     """
+    print "AAAAAAAAAAAAAA FILICDE"
     while self.__workersDict:
       pid = self.__workersDict.keys().pop(0)
       worker = self.__workersDict[pid]
