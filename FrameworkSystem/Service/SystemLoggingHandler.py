@@ -29,21 +29,21 @@ class SystemLoggingHandler( RequestHandler ):
          the log Database
     """
     Credentials = self.getRemoteCredentials()
-    if Credentials.has_key('DN'):
+    if Credentials.has_key( 'DN' ):
       userDN = Credentials['DN']
     else:
       userDN = 'unknown'
-    if Credentials.has_key('group'):
+    if Credentials.has_key( 'group' ):
       userGroup = Credentials['group']
     else:
       userGroup = 'unknown'
-      
+
     remoteAddress = self.getRemoteAddress()[0]
     return LogDB._insertMessageIntoSystemLoggingDB( messageObject, site,
                                                     nodeFQDN, userDN,
                                                     userGroup, remoteAddress )
 
-        
+
   types_addMessages = []
 
   #A normal exported function (begins with export_)
@@ -60,12 +60,12 @@ class SystemLoggingHandler( RequestHandler ):
       try:
         result = self.__addMessage( messageObject, site, nodeFQDN )
         if not result['OK']:
-          gLogger.error('The Log Message could not be inserted into the DB',
-                        'because: "%s"' % result['Message'])
+          gLogger.error( 'The Log Message could not be inserted into the DB',
+                        'because: "%s"' % result['Message'] )
       except Exception, v:
         errorString = 'Message was not added because of exception: '
-        exceptionString = str(v)
-        gLogger.exception( errorString ,exceptionString )
+        exceptionString = str( v )
+        gLogger.exception( errorString , exceptionString )
         return S_ERROR( "%s %s" % ( errorString, exceptionString ) )
     return S_OK()
 
