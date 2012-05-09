@@ -664,11 +664,15 @@ class ProcessPool:
     if self.__draining:
       return
     while len( self.__workersDict ) < self.__minSize:
+      if self.__draining: 
+        return
       self.__spawnWorkingProcess()
 
     while self.hasPendingTasks() and \
           self.getNumIdleProcesses() == 0 and \
           len( self.__workersDict ) < self.__maxSize:
+      if self.__draining:
+        return
       self.__spawnWorkingProcess()
       time.sleep( 0.1 )
 
