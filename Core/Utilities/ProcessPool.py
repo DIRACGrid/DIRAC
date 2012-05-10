@@ -263,6 +263,9 @@ class WorkingProcess( multiprocessing.Process ):
       ## clear task
       self.task = None
 
+      if self.__timerThread:
+        self.__timerThread.cancel()
+
       ## read from queue
       try:
         self.taskHash = uuid.uuid4()
