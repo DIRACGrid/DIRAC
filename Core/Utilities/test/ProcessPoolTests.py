@@ -24,9 +24,11 @@ __RCSID__ = "$Id $"
 # @brief Definition of ProcessPoolTests class.
 
 ## imports 
+import os
 import unittest
 import random
-import time, os
+import time
+import threading
 
 ## from DIRAC
 from DIRAC.Core.Base import Script
@@ -118,7 +120,7 @@ class TaskCallbacksTests(unittest.TestCase):
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
-    self.processPool = ProcessPool() 
+    self.processPool = ProcessPool( 4, 8, 8 ) 
     self.processPool.daemonize()
 
   def testCallableClass( self ):
@@ -143,7 +145,6 @@ class TaskCallbacksTests(unittest.TestCase):
           continue
       if i == 10:
         break
-    self.processPool.processAllResults() 
     self.processPool.finalize()
 
   def testCallableFunc( self ):
@@ -168,9 +169,8 @@ class TaskCallbacksTests(unittest.TestCase):
           continue
       if i == 10:
         break
-    self.processPool.processAllResults() 
     self.processPool.finalize()
-
+    
 
 ########################################################################
 class ProcessPoolCallbacksTests( unittest.TestCase ):
@@ -189,18 +189,17 @@ class ProcessPoolCallbacksTests( unittest.TestCase ):
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
     gLogger.showHeaders( True )
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
-    self.processPool = ProcessPool( poolCallback = self.poolCallback, 
+    self.processPool = ProcessPool( 4, 8, 8,
+                                    poolCallback = self.poolCallback, 
                                     poolExceptionCallback = self.poolExceptionCallback )
     self.processPool.daemonize()
 
   def poolCallback( self, taskID, taskResult ):
-    self.log.always( "result callback executed for task %s" % taskID )
-    self.log.always( "result is %s" % taskResult  ) 
-  
+    self.log.always( "callback for %s result is %s" % ( taskID, taskResult ) ) 
+
   def poolExceptionCallback( self, taskID, taskException ):
-    self.log.always( "exception callback executed for task %s" % taskID )
-    self.log.always( "exception is %s" % taskException )
-  
+    self.log.always( "callback for %s exception is %s" % ( taskID, taskException ) )
+
   def testCallableClass( self ):
     """ CallableClass and pool callbacks test """
     i = 0
@@ -222,7 +221,6 @@ class ProcessPoolCallbacksTests( unittest.TestCase ):
           continue
       if i == 10:
         break
-    self.processPool.processAllResults() 
     self.processPool.finalize()
 
 
@@ -247,7 +245,6 @@ class ProcessPoolCallbacksTests( unittest.TestCase ):
           continue
       if i == 10:
         break
-    self.processPool.processAllResults() 
     self.processPool.finalize()
 
 
@@ -271,19 +268,18 @@ class TaskTimeOutTests( unittest.TestCase ):
     self.log = gLogger.getSubLogger( self.__class__.__name__ )
     self.processPool = ProcessPool( 2,
                                     4, 
-                                    4,
+                                    8,
                                     poolCallback = self.poolCallback, 
                                     poolExceptionCallback = self.poolExceptionCallback )
     self.processPool.daemonize()
     
   def poolCallback( self, taskID, taskResult ):
-    self.log.always( "result callback executed for task %s" % taskID )
-    self.log.always( "result is %s" % taskResult  ) 
-  
-  def poolExceptionCallback( self, taskID, taskException ):
-    self.log.always( "exception callback executed for task %s" % taskID )
-    self.log.always( "exception is %s" % taskException )
-  
+    self.log.always( "callback result for %s is %s" % ( taskID, taskResult )  ) 
+
+  def poolExceptionCallback( self, taskID, taskException ): 
+    self.log.always( "callback exception for %s is %s" % ( taskID, taskException ) )
+
+
   def testCallableClass( self ):
     """ CallableClass and task time out test """
     i = 0
@@ -293,7 +289,6 @@ class TaskTimeOutTests( unittest.TestCase ):
         raiseException = False
         if not timeWait:
           raiseException = True 
-
         result = self.processPool.createAndQueueTask( CallableClass,
                                                       taskID = i,
                                                       args = ( i, timeWait, raiseException ), 
@@ -305,12 +300,11 @@ class TaskTimeOutTests( unittest.TestCase ):
           i += 1
         else:
           continue
-      if i == 10:
+      if i == 16:
         break
-    self.processPool.processAllResults() 
     self.processPool.finalize()
 
-  def testCallableFunc( self ):
+def testCallableFunc( self ):
     """ CallableFunc and task timeout test """
     i = 0
     while True:
@@ -330,19 +324,17 @@ class TaskTimeOutTests( unittest.TestCase ):
           i += 1
         else:
           continue
-      if i == 100:
+      if i == 16:
         break
-    self.processPool.processAllResults() 
     self.processPool.finalize()
-
 
   def testLockedClass( self ):
     """ LockedCallableClass and task time out test """
 
-    for loop in range(10):
+    for loop in range(2):
       self.log.always( "loop %s" % loop )
       i = 0
-      while i < 4:
+      while i < 16:
         if self.processPool.getFreeSlots() > 0:
           timeWait = random.randint(0, 5) * 5
           raiseException = False
@@ -363,11 +355,11 @@ class TaskTimeOutTests( unittest.TestCase ):
           else:
             continue
       self.log.always("being idle for a while")
-      for i in range(10000000):
-        pass
+      for i in range(100000):
+        for j in range(1000):
+          pass
 
     self.log.always("finalizing...")
-    self.processPool.processAllResults() 
     self.processPool.finalize()
 
 

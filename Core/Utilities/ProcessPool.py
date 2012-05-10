@@ -177,21 +177,16 @@ class WorkingProcess( multiprocessing.Process ):
 
     :param self: self reference
     """
-    
     while True:
-           
       ## parent is dead,  commit suicide
       if os.getppid() == 1:
-        print "pid=%s SIGTERM suicide" % self.pid
         os.kill( self.pid, signal.SIGTERM )
         ## wait for a while and if still alive use REAL silencer
         time.sleep(30)
         self.rwLock.acquire()
         ## now you're dead
-        print "pid=%s SIGKILL suicide" % self.pid
         os.kill( self.pid, signal.SIGKILL )
         self.rwLock.release()
-
       time.sleep(5)
 
   def isWorking( self ):
@@ -209,7 +204,6 @@ class WorkingProcess( multiprocessing.Process ):
     return self.__taskCounter
 
   def __timer( self ):
-    print "pid=%s timed out" % self.pid
     if self.task.hasCallback() or self.task.hasPoolCallback():
       if self.task.taskResults():
         self.__resultsQueue.put( self.task )
@@ -244,6 +238,8 @@ class WorkingProcess( multiprocessing.Process ):
     ## main loop
     while True:
 
+      self.task = None
+
       if self.__timerThread:
         self.__timerThread.cancel()
 
@@ -255,7 +251,6 @@ class WorkingProcess( multiprocessing.Process ):
 
       ## conventional murder
       if task.isBullet():
-        print "pid=%s got bullet" % ( self.pid )
         break
 
       ## toggle __working flag
@@ -264,11 +259,9 @@ class WorkingProcess( multiprocessing.Process ):
       ## save task
       self.task = task
 
-      print "pid=%s got task %s" % ( self.pid, task.getTaskID() )
-      
-      ## start timer
+      ## start timer thread
       if self.task.getTimeOut():
-        self.__timerThread = threading.Timer( task.getTimeOut()+1, self.__timer )
+        self.__timerThread = threading.Timer( task.getTimeOut()+5, self.__timer )
         self.__timerThread.start()
 
       ## process task
@@ -527,7 +520,6 @@ class ProcessPool:
 
     self.__draining = False
     self.__bullet = BulletTask()
-    self.__bulletCounter = 0
     self.__daemonProcess = False
     self.__spawnNeededWorkingProcesses()
     self.__killPeriod = killPeriod
@@ -547,6 +539,7 @@ class ProcessPool:
     :param self: self reference 
     """
     self.__draining = False 
+    self.daemonize()
     
   def setPoolCallback( self, callback ):
     """ set ProcessPool callback function
@@ -621,7 +614,6 @@ class ProcessPool:
       worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue )
       while worker.pid == None:
         time.sleep(0.1)
-      print "pid=%s new worker" % worker.pid
       self.__workersDict[ worker.pid ] = worker
     finally:
       self.__prListLock.release()
@@ -632,10 +624,9 @@ class ProcessPool:
     """
     self.__prListLock.acquire()
     try:
-      self.__bulletCounter += 1
       self.__pendingQueue.put( self.__bullet, block = True )
     except Queue.Full:
-      self.__bulletCounter -= 1
+      pass
     finally:
       self.__prListLock.release()
 
@@ -648,8 +639,6 @@ class ProcessPool:
     try:
       for pid, worker in self.__workersDict.items():
         if not worker.is_alive():
-          self.__bulletCounter -= 1
-          print "pid=%s is dead" % pid
           del self.__workersDict[pid]
     finally:
       self.__prListLock.release()
@@ -663,6 +652,7 @@ class ProcessPool:
     # If we are draining do not spawn processes
     if self.__draining:
       return
+
     while len( self.__workersDict ) < self.__minSize:
       if self.__draining: 
         return
@@ -802,14 +792,17 @@ class ProcessPool:
       processed += 1
     return processed
 
-  def processAllResults( self ):
+  def processAllResults( self, timeout=10 ):
     """ process all enqueued tasks at once
 
     :param self: self reference
     """
-    while not self.__pendingQueue.empty() or self.getNumWorkingProcesses():
-      self.processResults()
+    start = time.time()
+    while self.getNumWorkingProcesses() or not self.__pendingQueue.empty():
+      self.processResults()      
       time.sleep( 1 )
+      if time.time() - start > timeout:
+        break
     self.processResults()
 
   def finalize( self, timeout = 10 ):
@@ -818,47 +811,45 @@ class ProcessPool:
     :param self: self reference
     :param timeout: seconds to wait before killing
     """
-    # Process all tasks
-    self.processAllResults()
     # Drain via bullets processes
     self.__draining = True
-    print "AAAAAAAAAAAAA draining"
-    bullets = len( self.__workersDict ) 
+    # Process all tasks
+    self.processAllResults( timeout )  
+    self.__cleanDeadProcesses()
+    ## send bullets
+    bullets = len([ worker for worker in self.__workersDict.values() 
+                    if worker.is_alive() and not worker.isWorking() ] ) 
     while bullets > 0:
       self.__killWorkingProcess()
       bullets = bullets - 1
-      start = time.time()
-      self.__cleanDeadProcesses()
-      while self.__workersDict:
-        if timeout <= 0 or time.time() - start >= timeout:
-          break
-        time.sleep( 0.1 )
-        self.__cleanDeadProcesses()
-    # terminate them as it should be done
-    print "sending SIGTERM"
-    #self.__cleanDeadProcesses()
+    self.__cleanDeadProcesses()
+    start = time.time()
+    while self.__workersDict:
+      if timeout <= 0 or time.time() - start >= timeout:
+        break
+      time.sleep( 0.1 )
+    self.__cleanDeadProcesses()
+        
+    ## join and terminate
     for worker in self.__workersDict.values():
       if worker.is_alive():
         worker.terminate()
-        worker.join()
+        worker.join(5)
     self.__cleanDeadProcesses()
-    # Kill 'em all!!
+    # Kill'em all!!
     self.__filicide()
     self.__bulletCounter = 0
-    print "FINALIZATION DONE"
 
   def __filicide( self ):
     """ Kill all children (processes :P) Kill'em all! ...and justice for all!
     """
-    print "AAAAAAAAAAAAAA FILICDE"
     while self.__workersDict:
       pid = self.__workersDict.keys().pop(0)
       worker = self.__workersDict[pid]
       if worker.is_alive():
-        os.kill( worker.pid(), signal.SIGKILL )
+        os.kill( pid, signal.SIGKILL )
       del self.__workersDict[pid]
   
-
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
@@ -877,6 +868,8 @@ class ProcessPool:
     :param self: self reference
     """
     while True:
+      if self.__draining:
+        return
       self.processResults()
       time.sleep( 1 )
 
