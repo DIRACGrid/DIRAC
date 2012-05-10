@@ -792,6 +792,8 @@ class ProcessPool( object ):
     toKill = max( len( self.__workersDict ) - self.__maxSize, 0 )
     for iP in self.__killIdle:
       toKill += iP
+    if not self.__killIdle: 
+      return
     toKill = toKill / len( self.__killIdle )
     self.__killIdle = []
     while toKill:
