@@ -235,7 +235,10 @@ class SRM2Storage( StorageBase ):
     destFile = '%s/%s' % ( path, 'dirac_directory.%s' % time.time() )
     res = self.__putFile( srcFile, destFile, 0 )
     if os.path.exists( srcFile ):
-      os.remove( srcFile )
+      try:
+        os.remove( srcFile )
+      except OSError, error:
+        gLogger.error( "SRM2Storage.__makeDir: %s" % error )
     self.__executeOperation( destFile, 'removeFile' )
     return res
 
