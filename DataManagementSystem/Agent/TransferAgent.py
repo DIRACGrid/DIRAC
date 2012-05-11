@@ -325,7 +325,7 @@ class TransferAgent( RequestAgentBase ):
 
     return S_OK()
 
-  def ancestorSortKeys( self, aDict, aKey="hopAncestor" ):
+  def ancestorSortKeys( self, aDict, aKey="Ancestor" ):
     """ sorting keys of replicationTree by its hopAncestor value 
     
     replicationTree is a dict ( channelID : { ... }, (...) }
@@ -368,8 +368,8 @@ class TransferAgent( RequestAgentBase ):
     hopAncestor = repDict["Ancestor"]
 
     if ancestorSwap and str(hopAncestor) in ancestorSwap:
-      self.log.debug("getTransferURLs: swapping hopAncestor %s with %s" % ( hopAncestor, 
-                                                                            ancestorSwap[str(hopAncestor)] ) )
+      self.log.debug("getTransferURLs: swapping Ancestor %s with %s" % ( hopAncestor, 
+                                                                         ancestorSwap[str(hopAncestor)] ) )
       hopAncestor = ancestorSwap[ str(hopAncestor) ]
     
     ## get targetSURL
@@ -872,9 +872,9 @@ class TransferAgent( RequestAgentBase ):
       self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
  
       ## sorting keys by hopAncestor
-      sortedKeys = self.ancestorSortKeys( tree, "hopAncestor" )
+      sortedKeys = self.ancestorSortKeys( tree, "Ancestor" )
       if not sortedKeys["OK"]:
-        self.log.warn( "scheduleFiles: unable to sort replication tree by hopAncestor: %s"% sortedKeys["Message"] )
+        self.log.warn( "scheduleFiles: unable to sort replication tree by Ancestor: %s"% sortedKeys["Message"] )
         sortedKeys = tree.keys()
       else:
         sortedKeys = sortedKeys["Value"]
