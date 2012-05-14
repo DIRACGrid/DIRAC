@@ -247,6 +247,12 @@ class TransferAgent( RequestAgentBase ):
 
     self.log.info("%s has been constructed" % agentName )
 
+  def finalize( self ):
+    if self.hasProcessPool():
+      self.processPool().finalize()
+    self.resetRequests()
+    return S_OK()
+
   ###################################################################################
   # facades for various DIRAC tools
   ###################################################################################
