@@ -815,10 +815,13 @@ class ProcessPool:
     """
     # Drain via bullets processes
     self.__draining = True
-    # Process all tasks
-    self.processAllResults( timeout )  
+    ## join deamon process
+    self.__daemonProcess.join(timeout)
+    ## process all tasks
+    self.processAllResults( timeout )
+    ## first clean up - join idle workers
     self.__cleanDeadProcesses()
-    ## send bullets
+    ## second clean up - send bullets, clean up wounded workers
     bullets = len([ worker for worker in self.__workersDict.values() 
                     if worker.is_alive() and not worker.isWorking() ] ) 
     while bullets > 0:
@@ -832,18 +835,22 @@ class ProcessPool:
       time.sleep( 0.1 )
     self.__cleanDeadProcesses()
         
-    ## join and terminate
+    ## third clean up - join and terminate workers
     for worker in self.__workersDict.values():
       if worker.is_alive():
         worker.terminate()
         worker.join(5)
     self.__cleanDeadProcesses()
-    # Kill'em all!!
+    ## fourth clean up - kill'em all!!!
     self.__filicide()
+    ## rest counter
     self.__bulletCounter = 0
 
   def __filicide( self ):
-    """ Kill all children (processes :P) Kill'em all! ...and justice for all!
+    """ Kill all children (processes :P) 
+    Kill'em all! ...and justice for all!
+    
+    :param self: self reference
     """
     while self.__workersDict:
       pid = self.__workersDict.keys().pop(0)
@@ -876,8 +883,9 @@ class ProcessPool:
       time.sleep( 1 )
 
   def __del__( self ):
-    """
-    Finalize
+    """ del slot
+
+    :param self: self reference
     """
     self.finalize()
 
