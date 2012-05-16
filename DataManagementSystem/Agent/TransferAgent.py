@@ -1402,8 +1402,6 @@ class StrategyHandler( object ):
     siteAncestor = {}              # Maintains the ancestor channel for a site
     primarySources = sourceSEs
 
-    
-
     while destSEs:
       try:
         minTotalTimeToStart = float( "inf" )
