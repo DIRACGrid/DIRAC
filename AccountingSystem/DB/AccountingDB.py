@@ -1350,7 +1350,7 @@ class AccountingDB( DB ):
       self.log.info( "[COMPACT] Deleting old records for table %s" % table )
       deleteLimit = 10000
       deleted = deleteLimit
-      while deleted => deleteLimit:
+      while deleted >= deleteLimit:
         sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d LIMIT %d" % ( table, field, dataTimespan, deleteLimit )
         result = self._update( sqlCmd )
         if not result[ 'OK' ]:
