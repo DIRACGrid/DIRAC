@@ -13,7 +13,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
 
   MSG_DEFINITIONS = { 'OptimizeJobs' : { 'jids' : ( types.ListType, types.TupleType ) } }
 
-  auth_msg_OptimizeJob = [ 'all' ]
+  auth_msg_OptimizeJobs = [ 'all' ]
   def msg_OptimizeJobs( self, msgObj ):
     jids = msgObj.jids
     for jid in jids:
@@ -22,6 +22,8 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       except ValueError:
         self.log.error( "Job ID %s has to be an integer" % jid )
         continue
+      #Forget and add task to ensure state is reset
+      self.forgetTask( jid )
       result = self.executeTask( jid, CachedJobState( jid ) )
       if not result[ 'OK' ]:
         self.log.error( "Could not add job %s to optimization: %s" % ( jid, result[ 'Value' ] ) )
@@ -67,6 +69,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
       for jid in jidList:
         jid = long( jid )
         if jid not in knownJids:
+          #Same as before. Check that the state is ok.
           cls.executeTask( jid, CachedJobState( jid ) )
           added += 1
       log.info( "Added %s/%s jobs for %s state" % ( added, len( jidList ), opState ) )
