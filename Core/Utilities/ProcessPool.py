@@ -112,12 +112,12 @@ from types import FunctionType, TypeType, ClassType
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
 except ImportError:
-  gLogger = False
+  gLogger = None
 
 try:
   from DIRAC.Core.Utilities.LockRing import LockRing
 except ImportError:
-  LockRing = False
+  LockRing = None
 
 try:
   from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -129,24 +129,31 @@ except ImportError:
     """ dummy S_ERROR """
     return { 'OK' : False, 'Message' : mess }
 
-
-class ProcessTaskTimeOutError( Exception ):
-  """ dummy exception rainsed in SIGALRM handler """
-  pass
-
 class WorkingProcess( multiprocessing.Process ):
   """
   .. class:: WorkingProcess
 
   WorkingProcess is a class that represents activity that is run in a separate process.
+
+  It is running main thread (process) in daemon mode, reading tasks from :pendingQueue:, executing 
+  them and pushing back tasks with results to the :resultsQueue:. If task has got a timeout value 
+  defined a separate threading.Timer thread is started killing execution (and destroying worker) 
+  after :ProcessTask.__timeOut: seconds.
+
+  Main execution could also terminate in a few different ways:
+  * on every failed read attempt (from empty  :pendingQueue:), the  idle loop counter is increased,
+  worker is terminated when counter is reaching a value of 10;
+  * when stopEvent is set (so ProcessPool is in draining mode),
+  * when parent process PID is set to 1 (init process, parent process with ProcessPool is dead).
   """
 
-  def __init__( self, pendingQueue, resultsQueue ):
+  def __init__( self, pendingQueue, resultsQueue, stopEvent ):
     """ c'tor
 
     :param self: self refernce
-    :param multiprocess.Queue pendingQueue: queue storing ProcessTask before exection
-    :param multiprocess.Queue resultsQueue: queue storing callbacks and exceptionCallbacks
+    :param multiprocessing.Queue pendingQueue: queue storing ProcessTask before exection
+    :param multiprocessing.Queue resultsQueue: queue storing callbacks and exceptionCallbacks
+    :param multiprocessing.Event stopEvent: event to stop processing
     """
     multiprocessing.Process.__init__( self )
     ## daemonize
@@ -159,14 +166,16 @@ class WorkingProcess( multiprocessing.Process ):
     self.__pendingQueue = pendingQueue
     ## results queue
     self.__resultsQueue = resultsQueue
+    ## stop event
+    self.__stopEvent = stopEvent
     ## placeholder for watchdog thread
     self.__watchdogThread = None
     ## placeholder for timer thread
     self.__timerThread = None
-    ## read write lock
-    self.rwLock = threading.Lock()
     ## put event
     self.putEvent = threading.Event()
+    ## placeholder for current task
+    self.task = None
     ## start yourself at least    
     self.start()
 
@@ -177,16 +186,15 @@ class WorkingProcess( multiprocessing.Process ):
 
     :param self: self reference
     """
-    while True:
+    while True:      
       ## parent is dead,  commit suicide
       if os.getppid() == 1:
         os.kill( self.pid, signal.SIGTERM )
-        ## wait for a while and if still alive use REAL silencer
+        ## wait for half a minute and if worker is still alive use REAL silencer
         time.sleep(30)
-        self.rwLock.acquire()
         ## now you're dead
         os.kill( self.pid, signal.SIGKILL )
-        self.rwLock.release()
+      ## wake me up in 5 seconds
       time.sleep(5)
 
   def isWorking( self ):
@@ -204,6 +212,10 @@ class WorkingProcess( multiprocessing.Process ):
     return self.__taskCounter
 
   def __timer( self ):
+    """ target for self.__timerThread
+
+    :param self: self reference
+    """
     if self.task.hasCallback() or self.task.hasPoolCallback():
       if self.task.taskResults():
         self.__resultsQueue.put( self.task )
@@ -234,12 +246,21 @@ class WorkingProcess( multiprocessing.Process ):
       lr._openAll()
       lr._setAllEvents()
 
+    ## zero processed task counter
     taskCounter = 0
+    ## zero idle loop counter
+    idleLoopCount = 0
+
     ## main loop
     while True:
 
-      self.task = None
+      ## draining, stopEvent is set, exiting 
+      if self.__stopEvent.is_set():
+        return
 
+      ## clear task
+      self.task = None
+      ## cancel timer thread
       if self.__timerThread:
         self.__timerThread.cancel()
 
@@ -247,31 +268,33 @@ class WorkingProcess( multiprocessing.Process ):
       try:
         task = self.__pendingQueue.get( block = True, timeout = 10 )   
       except Queue.Empty:
+        ## idle loop?
+        idleLoopCount += 1
+        ## 10th idle loop - exit, nothing to do 
+        if idleLoopCount == 10:
+          return
         continue
-
-      ## conventional murder
-      if task.isBullet():
-        break
 
       ## toggle __working flag
       self.__working.value = 1
-
       ## save task
       self.task = task
+      ## reset idle loop counter
+      idleLoopCount = 0
 
-      ## start timer thread
+      ## start timer thread when task timeout is set
       if self.task.getTimeOut():
         self.__timerThread = threading.Timer( task.getTimeOut()+5, self.__timer )
         self.__timerThread.start()
 
-      ## process task
+      ## process task at least
       try:
         task.process()
         ## cancel timer, results are ready
         if self.__timerThread:
           self.__timerThread.cancel()  
         ## put back results
-        if not self.putEvent.is_set() and self.task.hasCallback() or self.task.usePoolCallbacks():
+        if not self.putEvent.isSet() and self.task.hasCallback() or self.task.usePoolCallbacks():
           self.__resultsQueue.put( task )
           self.putEvent.set()
       finally:
@@ -280,15 +303,11 @@ class WorkingProcess( multiprocessing.Process ):
         self.__taskCounter = taskCounter 
         ## toggle __working flag
         self.__working.value = 0
+        ## reset put event
         self.putEvent.clear()
-       
-class BulletTask:
-  """ dum-dum bullet """
-  def isBullet( self ):
-    """ Fire in the hole! Take coover! """
-    return True
 
-class ProcessTask:
+       
+class ProcessTask( object ):
   """ .. class:: ProcessTask
 
   Defines task to be executed in WorkingProcess together with its callbacks.
@@ -413,10 +432,6 @@ class ProcessTask:
     """
     return bool( self.__timeOut != 0 )
 
-  def isBullet( self ):
-    """ No, I'm not. """
-    return False
-
   def getTaskID( self ):
     """ taskID getter
 
@@ -456,6 +471,7 @@ class ProcessTask:
       self.__resultCallback( self, self.__taskResult )
 
   def setResult( self, result ):
+    """ set taskResult to result """
     self.__taskResult = result
 
   def process( self ):
@@ -487,44 +503,56 @@ class ProcessTask:
         retDict['Exc_info'] = sys.exc_info()[1]
         self.__taskException = retDict
         
-class ProcessPool:
+class ProcessPool( object ):
   """
   .. class:: ProcessPool
 
   """
-
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
-                strictLimits = True, poolCallback=None, poolExceptionCallback=None,
-                killPeriod = 60 ):
+                strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
     """ c'tor
 
     :param self: self reference
     :param int minSize: minimal number of simultaniously executed tasks
     :param int maxSize: maximal number of simultaniously executed tasks
     :param int maxQueueRequests: size of pending tasks queue
-    :param bool strictLimits: flag to kill/terminate idle workers above the limits
+    :param bool strictLimits: flag to workers overcommitment
     :param callable poolCallbak: results callback
     :param callable poolExceptionCallback: exception callback
     """
+    ## min workers
     self.__minSize = max( 1, minSize )
+    ## max workers 
     self.__maxSize = max( self.__minSize, maxSize )
+    ## queue size
     self.__maxQueuedRequests = maxQueuedRequests
+    ## flag to worker overcommit 
     self.__strictLimits = strictLimits
+
+    ## pool results callback
     self.__poolCallback = poolCallback
+    ## pool exception callback
     self.__poolExceptionCallback = poolExceptionCallback
+
+    ## pending queue
     self.__pendingQueue = multiprocessing.Queue( self.__maxQueuedRequests )
+    ## results queue
     self.__resultsQueue = multiprocessing.Queue( 0 )
+    ## stop event
+    self.__stopEvent = multiprocessing.Event()
+    ## lock 
     self.__prListLock = threading.Lock()
-
+    
+    ## workers dict
     self.__workersDict = {}
-
+    
+    ## flag to trigger workers draining
     self.__draining = False
-    self.__bullet = BulletTask()
+    ## placeholder for deamon results processing
     self.__daemonProcess = False
+    
+    ## create initial workers
     self.__spawnNeededWorkingProcesses()
-    self.__killPeriod = killPeriod
-    self.__killIdle = []
-    self.__killPeriodStart = time.time()
 
   def stopProcessing( self ):
     """ case fire
@@ -539,6 +567,7 @@ class ProcessPool:
     :param self: self reference 
     """
     self.__draining = False 
+    self.__stopEvent.clear()
     self.daemonize()
     
   def setPoolCallback( self, callback ):
@@ -547,7 +576,8 @@ class ProcessPool:
     :param self: self reference
     :param callable callback: callback function
     """
-    self.__poolCallback = callback
+    if callable( callback ):
+      self.__poolCallback = callback
 
   def setPoolExceptionCallback( self, exceptionCallback ):
     """ set ProcessPool exception callback function
@@ -555,7 +585,8 @@ class ProcessPool:
     :param self: self refernce
     :param callable exceptionCallback: exsception callback function
     """
-    self.__poolExceptionCallback = exceptionCallback
+    if callable( exceptionCallback ):
+      self.__poolExceptionCallback = exceptionCallback
 
   def getMaxSize( self ):
     """ maxSize getter
@@ -611,26 +642,12 @@ class ProcessPool:
     """
     self.__prListLock.acquire()
     try:
-      worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue )
+      worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue, self.__stopEvent )
       while worker.pid == None:
         time.sleep(0.1)
       self.__workersDict[ worker.pid ] = worker
     finally:
       self.__prListLock.release()
-
-  def __killWorkingProcess( self ):
-    """ suspend execution of WorkingProcesses exceeding queue limits
-    :param self: self reference
-    """
-    self.__prListLock.acquire()
-    try:
-      self.__pendingQueue.put( self.__bullet, block = True )
-    except Queue.Full:
-      pass
-    finally:
-      self.__prListLock.release()
-
-    self.__cleanDeadProcesses()
 
   def __cleanDeadProcesses( self ):
     """ delete references of dead workingProcesses from ProcessPool.__workingProcessList """
@@ -649,45 +666,22 @@ class ProcessPool:
     :param self: self reference
     """
     self.__cleanDeadProcesses()
-    # If we are draining do not spawn processes
-    if self.__draining:
+    ## if we're draining do not spawn new workers 
+    if self.__draining or self.__stopEvent.is_set():
       return
 
     while len( self.__workersDict ) < self.__minSize:
-      if self.__draining: 
+      if self.__draining or self.__stopEvent.is_set():  
         return
       self.__spawnWorkingProcess()
 
     while self.hasPendingTasks() and \
           self.getNumIdleProcesses() == 0 and \
           len( self.__workersDict ) < self.__maxSize:
-      if self.__draining:
+      if self.__draining or self.__stopEvent.is_set():
         return
       self.__spawnWorkingProcess()
       time.sleep( 0.1 )
-
-  def __killExceedingWorkingProcesses( self ):
-    """ suspend executuion of working processes exceeding the limits
-
-    :param self: self reference
-    """
-    self.__cleanDeadProcesses()
-    now = time.time()
-    if now - self.__killPeriodStart < self.__killPeriod:
-      self.__killIdle.append( self.getNumIdleProcesses() )
-      return
-    self.__killPeriodStart = now
-    # Kill exceeding processes over the max + average idle processes
-    toKill = max( len( self.__workersDict ) - self.__maxSize, 0 )
-    for iP in self.__killIdle:
-      toKill += iP
-    if not self.__killIdle: 
-      return
-    toKill = toKill / len( self.__killIdle )
-    self.__killIdle = []
-    while toKill:
-      self.__killWorkingProcess()
-      toKill = toKill - 1
 
   def queueTask( self, task, blocking = True, usePoolCallbacks= False ):
     """ enqueue new task into pending queue
@@ -712,7 +706,7 @@ class ProcessPool:
       self.__prListLock.release()
 
     self.__spawnNeededWorkingProcesses()
-    # Throttle a bit to allow task state propagation
+    ## throttle a bit to allow task state propagation
     time.sleep( 0.1 )
     return S_OK()
 
@@ -774,10 +768,11 @@ class ProcessPool:
     """
     processed = 0
     while True:
-      self.__spawnNeededWorkingProcesses()
+      self.__cleanDeadProcesses()
+      if not self.__pendingQueue.empty():
+        self.__spawnNeededWorkingProcesses()
       time.sleep( 0.1 )
       if self.__resultsQueue.empty():
-        self.__killExceedingWorkingProcesses()
         break
       ## get task
       task = self.__resultsQueue.get()
@@ -790,7 +785,6 @@ class ProcessPool:
           self.__poolExceptionCallback( task.getTaskID(), task.taskException() )
         if self.__poolCallback and task.taskResults():
           self.__poolCallback( task.getTaskID(), task.taskResults() )
-      self.__killExceedingWorkingProcesses()
       processed += 1
     return processed
 
@@ -807,48 +801,38 @@ class ProcessPool:
         break
     self.processResults()
 
-  def finalize( self, timeout = 10 ):
+  def finalize( self, timeout = 60 ):
     """ drain pool, shutdown processing in more or less clean way
 
     :param self: self reference
     :param timeout: seconds to wait before killing
     """
-    # Drain via bullets processes
+    ## start drainig 
     self.__draining = True
     ## join deamon process
-    self.__daemonProcess.join(timeout)
+    self.__daemonProcess.join( timeout )
     ## process all tasks
     self.processAllResults( timeout )
-    ## first clean up - join idle workers
-    self.__cleanDeadProcesses()
-    ## second clean up - send bullets, clean up wounded workers
-    bullets = len([ worker for worker in self.__workersDict.values() 
-                    if worker.is_alive() and not worker.isWorking() ] ) 
-    while bullets > 0:
-      self.__killWorkingProcess()
-      bullets = bullets - 1
-    self.__cleanDeadProcesses()
+    ## set stop event, all idle workers should be terminated
+    self.__stopEvent.set()
+    ## join idle workers
     start = time.time()
     while self.__workersDict:
       if timeout <= 0 or time.time() - start >= timeout:
         break
       time.sleep( 0.1 )
     self.__cleanDeadProcesses()
-        
-    ## third clean up - join and terminate workers
+    ## second clean up - join and terminate workers
     for worker in self.__workersDict.values():
       if worker.is_alive():
         worker.terminate()
         worker.join(5)
     self.__cleanDeadProcesses()
-    ## fourth clean up - kill'em all!!!
+    ## third clean up - kill'em all!!!
     self.__filicide()
-    ## rest counter
-    self.__bulletCounter = 0
 
   def __filicide( self ):
-    """ Kill all children (processes :P) 
-    Kill'em all! ...and justice for all!
+    """ Kill all workers, kill'em all!
     
     :param self: self reference
     """
@@ -887,5 +871,5 @@ class ProcessPool:
 
     :param self: self reference
     """
-    self.finalize()
+    self.finalize( timeout = 10 )
 
