@@ -294,7 +294,7 @@ class WorkingProcess( multiprocessing.Process ):
         if self.__timerThread:
           self.__timerThread.cancel()  
         ## put back results
-        if not self.putEvent.isSet() and self.task.hasCallback() or self.task.usePoolCallbacks():
+        if not self.putEvent.is_set() and self.task.hasCallback() or self.task.usePoolCallbacks():
           self.__resultsQueue.put( task )
           self.putEvent.set()
       finally:
