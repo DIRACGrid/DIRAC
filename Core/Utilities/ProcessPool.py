@@ -108,8 +108,6 @@ import os
 import signal
 import Queue
 from types import FunctionType, TypeType, ClassType
-import datetime
-import uuid
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -130,11 +128,6 @@ except ImportError:
   def S_ERROR( mess ):
     """ dummy S_ERROR """
     return { 'OK' : False, 'Message' : mess }
-
-
-class ProcessTaskTimeOutError( Exception ):
-  """ dummy exception rainsed in SIGALRM handler """
-  pass
 
 class WorkingProcess( multiprocessing.Process ):
   """
@@ -194,13 +187,10 @@ class WorkingProcess( multiprocessing.Process ):
     while True:      
       ## parent is dead,  commit suicide
       if os.getppid() == 1:
-        print "pid=%s SIGTERM suicide" % self.pid
         os.kill( self.pid, signal.SIGTERM )
         ## wait for half a minute and if worker is still alive use REAL silencer
         time.sleep(30)
-        self.rwLock.acquire()
         ## now you're dead
-        print "pid=%s SIGKILL suicide" % self.pid
         os.kill( self.pid, signal.SIGKILL )
       ## wake me up in 5 seconds
       time.sleep(5)
@@ -262,13 +252,12 @@ class WorkingProcess( multiprocessing.Process ):
 
       ## clear task
       self.task = None
-
+      ## cancel timer thread
       if self.__timerThread:
         self.__timerThread.cancel()
 
       ## read from queue
       try:
-        self.taskHash = uuid.uuid4()
         task = self.__pendingQueue.get( block = True, timeout = 10 )   
       except Queue.Empty:
         ## idle loop?
@@ -277,16 +266,6 @@ class WorkingProcess( multiprocessing.Process ):
         if idleLoopCount == 10:
           return 
         continue
-      finally:
-        self.rwLock.release()
-
-      ## conventional murder
-      if task.isBullet():
-        print "pid=%s got bullet" % ( self.pid )
-        break
-        #self.taskHash = None
-        #self.__deadline = None
-        #break
 
       ## toggle __working flag
       self.__working.value = 1
@@ -306,21 +285,26 @@ class WorkingProcess( multiprocessing.Process ):
       else:
         self.__processThread.join()
 
-      ## processThread is still alive? stop it!
-      if self.__processThread.is_alive():
-        self.__processThread._Thread__stop()
-      
-      ## check results and callbacks presence, put task to results queue
-      if self.task.hasCallback() or self.task.hasPoolCallback():
-        if not self.task.taskResults() and not self.task.taskException():
-          self.task.setResult( S_ERROR("Timed out") )
-        self.__resultsQueue.put( task )
-      ## increase task counter
-      taskCounter += 1
-      self.__taskCounter = taskCounter 
-      ## toggle __working flag
-      self.__working.value = 0
-   
+      ## process task at least
+      try:
+        task.process()
+        ## cancel timer, results are ready
+        if self.__timerThread:
+          self.__timerThread.cancel()  
+        ## put back results
+        if not self.putEvent.is_set() and self.task.hasCallback() or self.task.usePoolCallbacks():
+          self.__resultsQueue.put( task )
+          self.putEvent.set()
+      finally:
+        ## increase task counter
+        taskCounter += 1
+        self.__taskCounter = taskCounter 
+        ## toggle __working flag
+        self.__working.value = 0
+        ## reset put event
+        self.putEvent.clear()
+
+       
 class ProcessTask( object ):
   """ .. class:: ProcessTask
 
@@ -580,7 +564,6 @@ class ProcessPool( object ):
   
   
   """
-
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
                 strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
     """ c'tor
@@ -626,9 +609,6 @@ class ProcessPool( object ):
     
     ## create initial workers
     self.__spawnNeededWorkingProcesses()
-    self.__killPeriod = killPeriod
-    self.__killIdle = []
-    self.__killPeriodStart = time.time()
 
   def stopProcessing( self, timeout=10 ):
     """ case fire
@@ -721,25 +701,9 @@ class ProcessPool( object ):
       worker = WorkingProcess( self.__pendingQueue, self.__resultsQueue, self.__stopEvent )
       while worker.pid == None:
         time.sleep(0.1)
-      print "pid=%s new worker" % worker.pid
       self.__workersDict[ worker.pid ] = worker
     finally:
       self.__prListLock.release()
-
-  def __killWorkingProcess( self ):
-    """ suspend execution of WorkingProcesses exceeding queue limits
-    :param self: self reference
-    """
-    self.__prListLock.acquire()
-    try:
-      self.__bulletCounter += 1
-      self.__pendingQueue.put( self.__bullet, block = True )
-    except Queue.Full:
-      self.__bulletCounter -= 1
-    finally:
-      self.__prListLock.release()
-
-    self.__cleanDeadProcesses()
 
   def __cleanDeadProcesses( self ):
     """ delete references of dead workingProcesses from ProcessPool.__workingProcessList """
@@ -748,8 +712,6 @@ class ProcessPool( object ):
     try:
       for pid, worker in self.__workersDict.items():
         if not worker.is_alive():
-          self.__bulletCounter -= 1
-          print "pid=%s is dead" % pid
           del self.__workersDict[pid]
     finally:
       self.__prListLock.release()
@@ -776,29 +738,6 @@ class ProcessPool( object ):
         return
       self.__spawnWorkingProcess()
       time.sleep( 0.1 )
-
-  def __killExceedingWorkingProcesses( self ):
-    """ suspend executuion of working processes exceeding the limits
-
-    :param self: self reference
-    """
-    self.__cleanDeadProcesses()
-    now = time.time()
-    if now - self.__killPeriodStart < self.__killPeriod:
-      self.__killIdle.append( self.getNumIdleProcesses() )
-      return
-    self.__killPeriodStart = now
-    # Kill exceeding processes over the max + average idle processes
-    toKill = max( len( self.__workersDict ) - self.__maxSize, 0 )
-    for iP in self.__killIdle:
-      toKill += iP
-    if not self.__killIdle: 
-      return
-    toKill = toKill / len( self.__killIdle )
-    self.__killIdle = []
-    while toKill:
-      self.__killWorkingProcess()
-      toKill = toKill - 1
 
   def queueTask( self, task, blocking = True, usePoolCallbacks= False ):
     """ enqueue new task into pending queue
@@ -890,7 +829,6 @@ class ProcessPool( object ):
         self.__spawnNeededWorkingProcesses()
       time.sleep( 0.1 )
       if self.__resultsQueue.empty():
-        self.__killExceedingWorkingProcesses()
         break
       ## get task
       task = self.__resultsQueue.get()
@@ -903,8 +841,6 @@ class ProcessPool( object ):
           self.__poolExceptionCallback( task.getTaskID(), task.taskException() )
         if self.__poolCallback and task.taskResults():
           self.__poolCallback( task.getTaskID(), task.taskResults() )
-
-      self.__killExceedingWorkingProcesses()
       processed += 1
     return processed
 
@@ -951,15 +887,12 @@ class ProcessPool( object ):
     self.__cleanDeadProcesses()
     ## third clean up - kill'em all!!!
     self.__filicide()
-    self.__bulletCounter = 0
-    print "FINALIZATION DONE"
 
   def __filicide( self ):
     """ Kill all workers, kill'em all!
     
     :param self: self reference
     """
-    print "AAAAAAAAAAAAAA FILICDE"
     while self.__workersDict:
       pid = self.__workersDict.keys().pop(0)
       worker = self.__workersDict[pid]
@@ -967,7 +900,6 @@ class ProcessPool( object ):
         os.kill( pid, signal.SIGKILL )
       del self.__workersDict[pid]
   
-
   def daemonize( self ):
     """ Make ProcessPool a finite being for opening and closing doors between chambers.
         Also just run it in a separate background thread to the death of PID 0.
