@@ -243,7 +243,6 @@ class WorkingProcess( multiprocessing.Process ):
     idleLoopCount = 0
 
     ## main loop
-    taskCounter = 0
     while True:
 
       ## draining, stopEvent is set, exiting 
@@ -264,7 +263,7 @@ class WorkingProcess( multiprocessing.Process ):
         idleLoopCount += 1
         ## 10th idle loop - exit, nothing to do 
         if idleLoopCount == 10:
-          return 
+          return
         continue
 
       ## toggle __working flag
@@ -285,25 +284,20 @@ class WorkingProcess( multiprocessing.Process ):
       else:
         self.__processThread.join()
 
-      ## process task at least
-      try:
-        task.process()
-        ## cancel timer, results are ready
-        if self.__timerThread:
-          self.__timerThread.cancel()  
-        ## put back results
-        if not self.putEvent.is_set() and self.task.hasCallback() or self.task.usePoolCallbacks():
-          self.__resultsQueue.put( task )
-          self.putEvent.set()
-      finally:
-        ## increase task counter
-        taskCounter += 1
-        self.__taskCounter = taskCounter 
-        ## toggle __working flag
-        self.__working.value = 0
-        ## reset put event
-        self.putEvent.clear()
-
+      ## still alive? stop it!
+      if self.__processThread.is_alive():
+        self.__processThread._Thread__stop()
+      
+      if self.task.hasCallback() or self.task.hasPoolCallback():
+        if not self.task.taskResults() and not self.task.taskException():
+          self.task.setResult( S_ERROR("Timed out") )
+        self.__resultsQueue.put( task )
+      ## increase task counter
+      taskCounter += 1
+      self.__taskCounter = taskCounter 
+      ## toggle __working flag
+      self.__working.value = 0
+   
        
 class ProcessTask( object ):
   """ .. class:: ProcessTask
@@ -430,10 +424,6 @@ class ProcessTask( object ):
     """
     return bool( self.__timeOut != 0 )
 
-  def isBullet( self ):
-    """ No, I'm not. """
-    return False
-
   def getTaskID( self ):
     """ taskID getter
 
@@ -481,15 +471,6 @@ class ProcessTask( object ):
 
     :param self: self reference
     """ 
-    def timeOutHandler( singnum, frame ):
-      """ dummy SIGALRM handler """
-      raise ProcessTaskTimeOutError()
-    
-    ## SIGALRM orig handler 
-    saveHandler = None
-    if self.__timeOut:
-      saveHandler = signal.signal( signal.SIGALRM, timeOutHandler )
-      
     self.__done = True
     try:
       ## it's a function?
@@ -504,8 +485,6 @@ class ProcessTask( object ):
           raise TypeError( "__call__ operator not defined not in %s class" % taskObj.__class__.__name__ )
         ### call it at least
         self.__taskResult = taskObj()
-    except ProcessTaskTimeOutError:
-      self.__taskResult = { "OK" : False, "Message" : "Timed out after %s seconds" % self.__timeOut }
     except Exception, x:
       self.__exceptionRaised = True
       if gLogger:
