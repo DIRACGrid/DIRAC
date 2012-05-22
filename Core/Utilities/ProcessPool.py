@@ -170,10 +170,8 @@ class WorkingProcess( multiprocessing.Process ):
     self.__stopEvent = stopEvent
     ## placeholder for watchdog thread
     self.__watchdogThread = None
-    ## placeholder for timer thread
-    self.__timerThread = None
-    ## put event
-    self.putEvent = threading.Event()
+    ## placeholder for process thread
+    self.__processThread = None
     ## placeholder for current task
     self.task = None
     ## start yourself at least    
@@ -198,34 +196,27 @@ class WorkingProcess( multiprocessing.Process ):
       time.sleep(5)
 
   def isWorking( self ):
-    """ check if process is running
+    """ check if process is being executed
 
     :param self: self reference
     """
     return self.__working.value == 1
 
   def taskProcessed( self ):
-    """ for better monitoring tell how many tasks have been processed so far
+    """ tell how many tasks have been processed so far
 
     :param self: self reference
     """
     return self.__taskCounter
-
-  def __timer( self ):
-    """ target for self.__timerThread
+    
+  def __processTask( self ):
+    """ processThread target
 
     :param self: self reference
     """
-    if self.task.hasCallback() or self.task.hasPoolCallback():
-      if self.task.taskResults():
-        self.__resultsQueue.put( self.task )
-        self.putEvent.set()
-        return
-      self.task.setResult( S_ERROR( "Timed out" ) )
-      self.__resultsQueue.put( self.task )
-      self.putEvent.set()
-    os.kill( self.pid, signal.SIGKILL )
-    
+    if self.task:
+      self.task.process()
+
   def run( self ):
     """ task execution
 
@@ -260,9 +251,6 @@ class WorkingProcess( multiprocessing.Process ):
 
       ## clear task
       self.task = None
-      ## cancel timer thread
-      if self.__timerThread:
-        self.__timerThread.cancel()
 
       ## read from queue
       try:
@@ -272,7 +260,7 @@ class WorkingProcess( multiprocessing.Process ):
         idleLoopCount += 1
         ## 10th idle loop - exit, nothing to do 
         if idleLoopCount == 10:
-          return
+          return 
         continue
 
       ## toggle __working flag
@@ -282,30 +270,29 @@ class WorkingProcess( multiprocessing.Process ):
       ## reset idle loop counter
       idleLoopCount = 0
 
-      ## start timer thread when task timeout is set
+      ## proces thread
+      self.__processThread = threading.Thread( target = self.__processTask )
+      self.__processThread.start()
+
       if self.task.getTimeOut():
-        self.__timerThread = threading.Timer( task.getTimeOut()+5, self.__timer )
-        self.__timerThread.start()
+        self.__processThread.join( self.task.getTimeOut()+10 )
+      else:
+        self.__processThread.join()
 
-      ## process task at least
-      try:
-        task.process()
-        ## cancel timer, results are ready
-        if self.__timerThread:
-          self.__timerThread.cancel()  
-        ## put back results
-        if not self.putEvent.is_set() and self.task.hasCallback() or self.task.usePoolCallbacks():
-          self.__resultsQueue.put( task )
-          self.putEvent.set()
-      finally:
-        ## increase task counter
-        taskCounter += 1
-        self.__taskCounter = taskCounter 
-        ## toggle __working flag
-        self.__working.value = 0
-        ## reset put event
-        self.putEvent.clear()
-
+      ## still alive? stop it!
+      if self.__processThread.is_alive():
+        self.__processThread._Thread__stop()
+      
+      if self.task.hasCallback() or self.task.hasPoolCallback():
+        if not self.task.taskResults() and not self.task.taskException():
+          self.task.setResult( S_ERROR("Timed out") )
+        self.__resultsQueue.put( task )
+      ## increase task counter
+      taskCounter += 1
+      self.__taskCounter = taskCounter 
+      ## toggle __working flag
+      self.__working.value = 0
+   
        
 class ProcessTask( object ):
   """ .. class:: ProcessTask
