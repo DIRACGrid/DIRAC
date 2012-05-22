@@ -142,7 +142,7 @@ class TaskCallbacksTests(unittest.TestCase):
           continue
       if i == 10:
         break
-    self.processPool.finalize()
+    self.processPool.finalize( 2 )
 
   def testCallableFunc( self ):
     """ CallableFunc and task callbacks test """
@@ -166,7 +166,7 @@ class TaskCallbacksTests(unittest.TestCase):
           continue
       if i == 10:
         break
-    self.processPool.finalize()
+    self.processPool.finalize( 2 )
     
 
 ########################################################################
@@ -218,7 +218,7 @@ class ProcessPoolCallbacksTests( unittest.TestCase ):
           continue
       if i == 10:
         break
-    self.processPool.finalize()
+    self.processPool.finalize( 2 )
 
 
   def testCallableFunc( self ):
@@ -242,7 +242,7 @@ class ProcessPoolCallbacksTests( unittest.TestCase ):
           continue
       if i == 10:
         break
-    self.processPool.finalize()
+    self.processPool.finalize( 2 )
 
 
 ########################################################################
@@ -299,7 +299,7 @@ class TaskTimeOutTests( unittest.TestCase ):
           continue
       if i == 16:
         break
-    self.processPool.finalize()
+    self.processPool.finalize( 2 )
     
   def testCallableFunc( self ):
     """ CallableFunc and task timeout test """
@@ -323,7 +323,7 @@ class TaskTimeOutTests( unittest.TestCase ):
           continue
       if i == 16:
         break
-    self.processPool.finalize()
+    self.processPool.finalize( 2 )
 
   def testLockedClass( self ):
     """ LockedCallableClass and task time out test """
@@ -357,7 +357,7 @@ class TaskTimeOutTests( unittest.TestCase ):
           pass
 
     self.log.always("finalizing...")
-    self.processPool.finalize()
+    self.processPool.finalize( 10 )
     ## unlock
     gLock.release()
 
