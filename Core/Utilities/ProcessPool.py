@@ -284,10 +284,11 @@ class WorkingProcess( multiprocessing.Process ):
       else:
         self.__processThread.join()
 
-      ## still alive? stop it!
+      ## processThread is still alive? stop it!
       if self.__processThread.is_alive():
         self.__processThread._Thread__stop()
       
+      ## check results and callbacks presence, put task to results queue
       if self.task.hasCallback() or self.task.hasPoolCallback():
         if not self.task.taskResults() and not self.task.taskException():
           self.task.setResult( S_ERROR("Timed out") )
@@ -298,7 +299,6 @@ class WorkingProcess( multiprocessing.Process ):
       ## toggle __working flag
       self.__working.value = 0
    
-       
 class ProcessTask( object ):
   """ .. class:: ProcessTask
 
