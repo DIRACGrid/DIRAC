@@ -270,19 +270,21 @@ class WorkingProcess( multiprocessing.Process ):
       ## reset idle loop counter
       idleLoopCount = 0
 
-      ## proces thread
+      ## process task in a separate thread
       self.__processThread = threading.Thread( target = self.__processTask )
       self.__processThread.start()
 
+      ## join processThread with or without timeout
       if self.task.getTimeOut():
         self.__processThread.join( self.task.getTimeOut()+10 )
       else:
         self.__processThread.join()
 
-      ## still alive? stop it!
+      ## processThread is still alive? stop it!
       if self.__processThread.is_alive():
         self.__processThread._Thread__stop()
       
+      ## check results and callbacks presence, put task to results queue
       if self.task.hasCallback() or self.task.hasPoolCallback():
         if not self.task.taskResults() and not self.task.taskException():
           self.task.setResult( S_ERROR("Timed out") )
@@ -293,7 +295,6 @@ class WorkingProcess( multiprocessing.Process ):
       ## toggle __working flag
       self.__working.value = 0
    
-       
 class ProcessTask( object ):
   """ .. class:: ProcessTask
 
@@ -401,9 +402,9 @@ class ProcessTask( object ):
     """
     try:
       self.__timeOut = int( timeOut )
-      return { "OK" : True, "Value" : self.__timeOut }
+      return S_OK( self.__timeOut )
     except (TypeError, ValueError), error:
-      return { "OK" : False, "Message" : str(error) }
+      return S_ERROR( str(error) )
 
   def getTimeOut( self ):
     """ get timeOut value
@@ -494,6 +495,49 @@ class ProcessPool( object ):
   """
   .. class:: ProcessPool
 
+  This class is managing multiprocessing execution of tasks (:ProcessTask: instances) in a separate 
+  sub-processes (:WorkingProcess:).
+  
+  Pool depth
+  ----------
+
+  The :ProcessPool: is keeping required number of active workers all the time: slave workers are only created 
+  when pendingQueue is being filled with tasks, not exceeding defined min and max limits. When pendingQueue is 
+  empty, active workers will be cleaned up by themselves, as each worker has got built in 
+  self-destroy mechnism after 10 idle loops. 
+
+  Processing and communication
+  ----------------------------
+
+  The communication between :ProcessPool: instace and slaves is performed using two :multiprocessing.Queues: 
+  * pendingQueue, used to push tasks to the workers,
+  * resultsQueue for revert direction;
+  and one :multiprocessing.Event: instance (stopEvent), which is working as a fuse to destroy idle workers 
+  in a clean manner. 
+
+  Processing of task begins with pushing it into :pendingQueue: using :ProcessPool.queueTask: or 
+  :ProcessPool.createAndQueueTask:. Every time new task is queued, :ProcessPool: is checking existance of 
+  active and idle workers and spawning new ones when required. The task is then read and processed on worker 
+  side. If results are ready and callback functions are defined, task is put back to the resultsQueue and it is 
+  ready to be picked up by ProcessPool again. To perform this last step one has to call :ProcessPool.processResults:,
+  or alternatively ask for daemon mode processing, when this function is called again and again in 
+  separate background thread.
+
+  Finalisation
+  ------------
+
+  Finsalisation fo task processing is done in several steps:
+  * if pool is working in daemon mode, background result processing thread is joined and stopped
+  * :pendingQueue: is emptied by :ProcessPool.processAllResults: function, all enqueued tasks are executed
+  * :stopEvent: is set, so all idle workers are exiting immediately
+  * non-hanging workers are joined and terminated politelty
+  * the rest of workers, if any, are forcefully retained by signals: first by SIGTERM, and if is doesn't work 
+    by SIGKILL
+
+  :warn: Be carefull and choose wisely :timeout: argument to :ProcessPool.finalize:. Too short time period can
+  cause that all workers will be killed.  
+  
+  
   """
   def __init__( self, minSize = 2, maxSize = 0, maxQueuedRequests = 10,
                 strictLimits = True, poolCallback=None, poolExceptionCallback=None ):
@@ -541,12 +585,12 @@ class ProcessPool( object ):
     ## create initial workers
     self.__spawnNeededWorkingProcesses()
 
-  def stopProcessing( self ):
+  def stopProcessing( self, timeout=10 ):
     """ case fire
 
     :param self: self reference
     """
-    self.finalize()
+    self.finalize( timeout )
 
   def startProcessing( self ):
     """ restrat processing again 
@@ -797,7 +841,8 @@ class ProcessPool( object ):
     ## start drainig 
     self.__draining = True
     ## join deamon process
-    self.__daemonProcess.join( timeout )
+    if self.__daemonProcess:
+      self.__daemonProcess.join( timeout )
     ## process all tasks
     self.processAllResults( timeout )
     ## set stop event, all idle workers should be terminated
