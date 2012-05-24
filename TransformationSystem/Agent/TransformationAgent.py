@@ -1,5 +1,7 @@
+"""  TransformationAgent processes transformations found in the transformation database. 
+"""
+
 __RCSID__ = "$Id$"
-"""  TransformationAgent processes transformations found in the transformation database. """
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
@@ -12,7 +14,8 @@ AGENT_NAME = 'Transformation/TransformationAgent'
 class TransformationAgent( AgentModule ):
 
   def initialize( self ):
-    self.pluginLocation = self.am_getOption( 'PluginLocation', 'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
+    self.pluginLocation = self.am_getOption( 'PluginLocation',
+                                             'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
     self.transformationTypes = self.am_getOption( 'transformationTypes', ['Active', 'Completing', 'Flush'] )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
@@ -25,6 +28,8 @@ class TransformationAgent( AgentModule ):
     return S_OK()
 
   def execute( self ):
+    """ get and process the transformations to be processed
+    """
     # Get the transformations to process
     res = self.getTransformations()
     if not res['OK']:
