@@ -14,6 +14,8 @@ AGENT_NAME = 'Transformation/TransformationAgent'
 class TransformationAgent( AgentModule ):
 
   def initialize( self ):
+    """ standard init
+    """
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
@@ -154,17 +156,18 @@ class TransformationAgent( AgentModule ):
   def __generatePluginObject( self, plugin ):
     """ This simply instantiates the TransformationPlugin class with the relevant plugin name
     """
-    #FIXME: horrible!
     try:
       plugModule = __import__( self.pluginLocation, globals(), locals(), ['TransformationPlugin'] )
-    except Exception, x:
-      gLogger.exception( "__generatePluginObject: Failed to import 'TransformationPlugin' %s: %s" % ( plugin, x ) )
+    except ImportError, e:
+      gLogger.exception( "__generatePluginObject: Failed to import 'TransformationPlugin' %s: %s" % ( plugin, e ) )
       return S_ERROR()
     try:
-      evalString = "plugModule.TransformationPlugin('%s')" % plugin
-      return S_OK( eval( evalString ) )
-    except Exception, x:
-      gLogger.exception( "__generatePluginObject: Failed to create %s(): %s." % ( plugin, x ) )
+      plugin_o = getattr( plugModule, 'TransformationPlugin' )( '%s' % plugin,
+                                                                transClient = self.transDB,
+                                                                replicaManager = self.rm )
+      return S_OK( plugin_o )
+    except AttributeError, e:
+      gLogger.exception( "__generatePluginObject: Failed to create %s(): %s." % ( plugin, e ) )
       return S_ERROR()
 
   def __getDataReplicas( self, transID, lfns, active = True ):
