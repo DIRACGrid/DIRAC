@@ -250,9 +250,13 @@ class TransferAgent( RequestAgentBase ):
     self.log.info("%s has been constructed" % agentName )
 
   def finalize( self ):
+    """ agent finalisation
+
+    :param self: self reference
+    """
     if self.hasProcessPool():
       self.processPool().finalize()
-    self.resetRequests()
+    self.resetAllRequests()
     return S_OK()
 
   ###################################################################################
@@ -477,7 +481,8 @@ class TransferAgent( RequestAgentBase ):
     if not subRequestFiles["OK"]:
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
-    self.log.info( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, len( subRequestFiles ) ) )
+    self.log.info( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, 
+                                                                          len( subRequestFiles ) ) )
     
     for subRequestFile in subRequestFiles:
       fileStatus = subRequestFile["Status"]
@@ -578,7 +583,8 @@ class TransferAgent( RequestAgentBase ):
                                                   requestDict["requestString"], 
                                                   requestDict["sourceServer"] )
         if not res["OK"]:
-          self.log.error( "execute: failed to update request %s: %s" % ( requestDict["requestName"], res["Message"] ) )
+          self.log.error( "execute: failed to update request %s: %s" % ( requestDict["requestName"], 
+                                                                         res["Message"] ) )
         ## delete it from requestHolder
         self.deleteRequest( requestDict["requestName"] )
         ## decrease request counter 
