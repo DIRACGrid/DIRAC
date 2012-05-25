@@ -104,6 +104,10 @@ class RequestAgentBase( AgentModule ):
     self.__requestHolder = dict()
 
   def requestHolder( self ):
+    """ get request holder dict
+    
+    :param self: self reference
+    """
     return self.__requestHolder
 
   def deleteRequest( self, requestName ):
@@ -129,18 +133,34 @@ class RequestAgentBase( AgentModule ):
       return S_OK()
     return S_ERROR("saveRequest: request %s cannot be saved, it's already in requestHolder")
 
-  def resetRequests( self ):
-    """ put back requests without callback called into requestClient 
+  def resetRequest( self, requestName ):
+    """ put back :requestName: to RequestClient
+
+    :param self: self reference
+    :param str requestName: request's name
+    """
+    if requestName in self.__requestHolder:
+      requestString, requestServer = self.__requestHolder["requestName"]
+      reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
+      if not reset["OK"]:
+        self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+      self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
+    else:
+      self.log.error("resetRequest: unable to reset request %s: request not found in requestHolder" % requestName )
+
+  def resetAllRequests( self ):
+    """ put back all requests without callback called into requestClient 
 
     :param self: self reference
     """
+    self.log.info("resetAllRequests: will put %s back requests" % len(self.__requestHolder) )
     for requestName, requestTuple  in self.__requestHolder.items():
       requestString, requestServer = requestTuple
       reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
       if not reset["OK"]:
-        self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        self.log.error("resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
-      self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
+      self.log.debug("resetAllRequests: request %s has been put back with its initial state" % requestName )
 
   def configPath( self ):
     """ config path getter
@@ -156,15 +176,14 @@ class RequestAgentBase( AgentModule ):
     """
     return self.__requestsPerCycle
 
-  @classmethod
-  def requestClient( cls ):
+  def requestClient( self ):
     """ RequestClient getter
 
     :param self: self reference
     """
-    if not cls.__requestClient:
-      cls.__requestClient = RequestClient()
-    return cls.__requestClient
+    if not self.__requestClient:
+      self.__requestClient = RequestClient()
+    return self.__requestClient
 
   def processPool( self ):
     """ 'Live long and prosper, my dear ProcessPool'
@@ -176,7 +195,7 @@ class RequestAgentBase( AgentModule ):
     if not self.__processPool:
       minProcess = max( 1, self.__minProcess ) 
       maxProcess = max( self.__minProcess, self.__maxProcess )
-      queueSize = max( self.__requestsPerCycle, self.__queueSize )
+      queueSize = abs(self.__queueSize) 
       self.log.info( "ProcessPool: minProcess = %d maxProcess = %d queueSize = %d" % ( minProcess, 
                                                                                        maxProcess, 
                                                                                        queueSize ) )
@@ -199,14 +218,16 @@ class RequestAgentBase( AgentModule ):
     
     :param self: self reference
     """
-    self.log.info("resultCallback from task %s" % taskID )
-
-    ## delete this one from request holder
-    self.deleteRequest( taskID )
+    self.log.info("%s result callback" %  taskID ) 
 
     if not taskResult["OK"]:
-      self.log.error( taskResult["Message"] )
+      self.log.error( "%s result callback: %s" % ( taskID, taskResult["Message"] ) )
+      if taskResult["Message"] == "Timed out":
+        self.resetRequest( taskID )
+      self.deleteRequest( taskID )
       return
+    
+    self.deleteRequest( taskID )
     taskResult = taskResult["Value"]
     ## add monitoring info
     monitor = taskResult["monitor"] if "monitor" in taskResult else {}
@@ -221,7 +242,7 @@ class RequestAgentBase( AgentModule ):
     
     :param self: self reference
     """
-    self.log.error( "exceptionCallback from task %s" % taskID )
+    self.log.error( "%s exception callback" % taskID )
     self.log.error( taskException )
 
 
@@ -320,6 +341,8 @@ class RequestAgentBase( AgentModule ):
       requestDict = requestDict["Value"]
       requestDict["configPath"] = self.__configPath
       taskID = requestDict["requestName"]
+      self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(), 
+                                                                    self.processPool().getNumWorkingProcesses() ) )
       while True:
         if not self.processPool().getFreeSlots():
           self.log.info("No free slots available in processPool, will wait a second to proceed...")
@@ -341,20 +364,20 @@ class RequestAgentBase( AgentModule ):
             ## task created, a little time kick to proceed
             time.sleep( 0.1 )
             break
+      
 
     return S_OK()
 
   def finalize( self ):
-    """ clean ending of one cycle execution
+    """ clean ending of maxcycle execution
 
     :param self: self reference
     """
     ## finalize all processing
     if self.hasProcessPool():
-      self.processPool().processAllResults()
       self.processPool().finalize()
     ## reset failover requests for further processing 
-    self.resetRequests()
+    self.resetAllRequests()
     ## good bye, all done!
     return S_OK()
   
