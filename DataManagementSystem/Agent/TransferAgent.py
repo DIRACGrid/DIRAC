@@ -30,10 +30,12 @@ import random
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-## from DMS
+## base class
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
+## replica manager
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+## startegy handler
+from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, StrategyHandlerChannelNotDefined
 ## task to be executed
 from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
@@ -701,7 +703,7 @@ class TransferAgent( RequestAgentBase ):
     requestDict = { "requestString" : str,
                     "requestName" : str,
                     "sourceServer" : str,
-                    "executionOrder" : list,
+                    "executionOrder" : int,
                     "jobID" : int,
                     "requestObj" : RequestContainer }
 
@@ -717,13 +719,21 @@ class TransferAgent( RequestAgentBase ):
       self.log.error( "schedule: Failed to get number of 'transfer' subrequests", res["Message"] )
       return S_ERROR( "schedule: Failed to get number of 'transfer' subrequests" )
     numberRequests = res["Value"]
-    self.log.info( "schedule: '%s' found with %s 'transfer' subrequest(s)" % ( requestName, 
-                                                                               numberRequests ) )
+    self.log.info( "schedule: request '%s'has got %s 'transfer' subrequest(s)" % ( requestName, 
+                                                                                   numberRequests ) )
     for iSubRequest in range( numberRequests ):
-      self.log.info( "schedule: treating subrequest %s from '%s'." % ( iSubRequest, 
+      self.log.info( "schedule: treating subrequest %s from '%s'" % ( iSubRequest, 
                                                                        requestName ) )
       subAttrs = requestObj.getSubRequestAttributes( iSubRequest, "transfer" )["Value"]
+      
       subRequestStatus = subAttrs["Status"]
+
+      #executionOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
+      #if executionOrder > requestDict["executionOrder"]:
+      #  self.info.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder " % ( iSubRequest, 
+      #                                                                                                       executionOrder, 
+      #                                                                                                       requestDict["executionOrder"] ) )
+      #  continue 
 
       if subRequestStatus != "Waiting" :
         ## sub-request is already in terminal state
@@ -814,8 +824,7 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
-    self.log.info( "scheduleFiles: *** FTS scheduling ***")
-    self.log.info( "scheduleFiles: processing subrequest %s" % index )
+    self.log.info( "scheduleFiles: FTS scheduling, processing subrequest %s" % index )
     ## get source SE
     sourceSE = subAttrs["SourceSE"] if subAttrs["SourceSE"] not in ( None, "None", "" ) else None
     ## get target SEs, no matter what's a type we need a list
@@ -830,7 +839,7 @@ class TransferAgent( RequestAgentBase ):
     if not subRequestFiles["OK"]:
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
-    self.log.info( "scheduleFiles: found %s files" % len( subRequestFiles ) ) 
+    self.log.debug( "scheduleFiles: found %s files" % len( subRequestFiles ) ) 
     ## collect not done LFNS
     notDoneLFNs = []
     for subRequestFile in subRequestFiles:
@@ -839,7 +848,7 @@ class TransferAgent( RequestAgentBase ):
         notDoneLFNs.append( subRequestFile["LFN"] )
 
     ## get subrequest files  
-    self.log.info( "scheduleFiles: obtaining 'Waiting' files for %d subrequest" % index )
+    self.log.debug( "scheduleFiles: obtaining 'Waiting' files for %d subrequest" % index )
     files = self.collectFiles( requestObj, index, status = "Waiting" )
     if not files["OK"]:
       self.log.debug("scheduleFiles: failed to get 'Waiting' files from subrequest", files["Message"] )
@@ -848,7 +857,7 @@ class TransferAgent( RequestAgentBase ):
     waitingFiles, replicas, metadata = files["Value"]
 
     if not waitingFiles:
-      self.log.info("scheduleFiles: not 'Waiting' files found in this subrequest" )
+      self.log.debug("scheduleFiles: not 'Waiting' files found in this subrequest" )
       return S_OK( requestObj )
 
     if not replicas or not metadata:
@@ -997,7 +1006,7 @@ class TransferAgent( RequestAgentBase ):
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
-        if re.search( "no such file or directory", str(failure).lower()):
+        if re.search( "no such file or directory", str(failure).lower() ):
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
       replicas = replicas["Value"]["Successful"]
 
@@ -1024,8 +1033,7 @@ class TransferAgent( RequestAgentBase ):
     :param RequestContainer requestObj: request being processed
     :param dict subAttrs: subrequest's attributes
     """
-    self.log.info( "registerFiles: *** failover registration *** ")
-    self.log.info( "registerFiles: obtaining all files in %d subrequest" % index )
+    self.log.info( "registerFiles: failover registration, processing %s subrequest" % index )
     subRequestFiles = requestObj.getSubRequestFiles( index, "transfer" )
     if not subRequestFiles["OK"]:
       return subRequestFiles
@@ -1202,7 +1210,7 @@ class StrategyHandler( object ):
             self.sigma = float(strategy.split("_")[1])
             self.log.debug("determineReplicationTree: new sigma %s" % self.sigma )
           except ValueError:
-            self.log.warn("determineRepliactionTree: can't set new sigma value from '%s'" % strategy )
+            self.log.warn("determineReplicationTree: can't set new sigma value from '%s'" % strategy )
         if reStrategy.pattern in [ "MinimiseTotalWait", "DynamicThroughput" ]:
           replicasToUse = replicas.keys() if sourceSE == None else [ sourceSE ]
           tree = self.strategyDispatcher[ reStrategy ].__call__( replicasToUse, targetSEs  )
