@@ -19,6 +19,7 @@ import types, re, os, time
 class SRM2Storage( StorageBase ):
 
   def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
+
     self.isok = True
     self.gfal = False
     self.lcg_util = False
@@ -32,6 +33,7 @@ class SRM2Storage( StorageBase ):
     self.wspath = wspath
     self.spaceToken = spaceToken
     self.cwd = self.path
+
     StorageBase.__init__( self, self.name, self.path )
 
     self.timeout = 100
@@ -39,6 +41,22 @@ class SRM2Storage( StorageBase ):
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
+
+    ## by default this is ADLER32
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )
+
+    # enum gfal_cksm_type
+    #	GFAL_CKSM_NONE = 0,
+    #	GFAL_CKSM_CRC32,
+    #	GFAL_CKSM_ADLER32,
+    #	GFAL_CKSM_MD5,
+    #	GFAL_CKSM_SHA1    
+    checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4  }
+    if self.checksumType in checksumTypes: 
+      self.checksumType = cheksumTypes[checksumType]
+    else:
+      ## NONE 
+      self.ckecksumType = 0
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
@@ -52,8 +70,10 @@ class SRM2Storage( StorageBase ):
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
 
-    self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10 # 10 MB
-    self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 ) # 0.5 MB/s
+
+
+    self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10 # 10 MB ???
+    self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 ) # 0.5 MB/s ???
 
   def __importExternals( self ):
     if ( self.lcg_util ) and ( self.gfal ):
@@ -201,6 +221,7 @@ class SRM2Storage( StorageBase ):
   ######################################################################
   #
   # This has to be updated once the new gfal_makedir() becomes available
+  # TODO: isn't it there? when somebody made above comment?  
   #
 
   def createDirectory( self, path ):
@@ -732,11 +753,24 @@ class SRM2Storage( StorageBase ):
 
   def __lcg_cp_wrapper( self, src_url, dest_url, srctype, dsttype, nbstreams,
                         timeout, src_spacetokendesc, dest_spacetokendesc ):
+
     try:
-      errCode, errStr = self.lcg_util.lcg_cp3( src_url, dest_url, self.defaulttype, srctype,
-                                               dsttype, self.nobdii, self.voName, nbstreams, self.conf_file,
-                                               self.insecure, self.verbose, timeout, src_spacetokendesc,
-                                               dest_spacetokendesc )
+      errCode, errStr = self.lcg_util.lcg_cp4( src_url, 
+                                               dest_url, 
+                                               self.defaulttype, 
+                                               srctype,
+                                               dsttype, 
+                                               self.nobdii, 
+                                               self.voName, 
+                                               nbstreams, 
+                                               self.conf_file,
+                                               self.insecure, 
+                                               self.verbose, 
+                                               timeout, 
+                                               src_spacetokendesc,
+                                               dest_spacetokendesc,
+                                               self.checksumType )
+
       if type( errCode ) not in [types.IntType]:
         gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer",
                        "%s %s" % ( errCode, type( errCode ) ) )
