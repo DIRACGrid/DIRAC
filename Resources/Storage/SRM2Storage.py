@@ -44,6 +44,7 @@ class SRM2Storage( StorageBase ):
 
     ## set checksum type, by default this is ADLER32
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )
+
     # enum gfal_cksm_type
     #	GFAL_CKSM_NONE = 0,
     #	GFAL_CKSM_CRC32,
