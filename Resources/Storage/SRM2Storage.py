@@ -42,20 +42,20 @@ class SRM2Storage( StorageBase ):
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
-    ## by default this is ADLER32
+    ## set checksum type, by default this is ADLER32
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )
-
     # enum gfal_cksm_type
     #	GFAL_CKSM_NONE = 0,
     #	GFAL_CKSM_CRC32,
     #	GFAL_CKSM_ADLER32,
     #	GFAL_CKSM_MD5,
     #	GFAL_CKSM_SHA1    
-    checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4  }
-    if self.checksumType in checksumTypes: 
-      self.checksumType = cheksumTypes[checksumType]
+    # GFAL_CKSM_NULL = 0
+    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4  }
+    if self.checksumType in self.checksumTypes: 
+      self.checksumType = self.checksumTypes[self.checksumType]
     else:
-      ## NONE 
+      ## GFAL_CKSM_NONE
       self.ckecksumType = 0
 
     # setting some variables for use with lcg_utils
@@ -69,8 +69,6 @@ class SRM2Storage( StorageBase ):
     self.conf_file = 'ignored'
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
-
-
 
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10 # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 ) # 0.5 MB/s ???
@@ -235,7 +233,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     failed = {}
     gLogger.debug( "SRM2Storage.createDirectory: Attempting to create %s directories." % len( urls ) )
-    for url in urls.keys():
+    for url in urls:
       strippedUrl = url.rstrip( '/' )
       res = self.__makeDirs( strippedUrl )
       if res['OK']:
@@ -645,7 +643,9 @@ class SRM2Storage( StorageBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def putFile( self, path, sourceSize = 0 ):
+  def putFile( self, path, sourceSize = 0, checksumDict=None ):
+    if not checksumDict:
+      checksumDict = dict()
     res = self.checkArgumentFormat( path )
     if not res['OK']:
       return res
@@ -658,7 +658,7 @@ class SRM2Storage( StorageBase ):
       if not res['OK']:
         failed[dest_url] = res['Message']
       else:
-        res = self.__putFile( src_file, dest_url, sourceSize )
+        res = self.__putFile( src_file, dest_url, sourceSize, checksumDict )
         if res['OK']:
           successful[dest_url] = res['Value']
         else:
@@ -666,7 +666,9 @@ class SRM2Storage( StorageBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def __putFile( self, src_file, dest_url, sourceSize ):
+  def __putFile( self, src_file, dest_url, sourceSize, checksumDict=None ):
+    if not checksumDict:
+      checksumDict = dict()
     # Pre-transfer check
     res = self.__executeOperation( dest_url, 'exists' )
     if not res['OK']:
@@ -731,12 +733,28 @@ class SRM2Storage( StorageBase ):
     errCode, errStr = res['Value']
     if errCode == 0:
       gLogger.info( 'SRM2Storage.__putFile: Successfully put file to storage.' )
-      res = self.__executeOperation( dest_url, 'getFileSize' )
+      res = self.__executeOperation( dest_url, 'getFileMetadata' )
       if res['OK']:
-        destinationSize = res['Value']
-        if sourceSize == destinationSize :
-          gLogger.debug( "SRM2Storage.__putFile: Post transfer check successful." )
-          return S_OK( destinationSize )
+
+        metadata = res['Value']
+
+        if sourceSize == metadata["Size"] :
+          gLogger.debug( "SRM2Storage.__putFile: Source and dest file size are the same." )
+          destChksType = metadata["ChecksumType"]
+          destChks = metadata["ChecksumType"]
+          if destChksType in checksumDict:
+            if destChks == checksumDict[destChksType]:
+              gLogger.debug( "SRM2Storage.__putFile: Both %s checksums are the same (%s)." % ( destChksType, destChks ) )
+              return S_OK()
+            else:
+              error = "SRM2Storage.__putFile: Source (%s) and dest (%s) %s checksums are the different." % ( checksumDict[destChksType],
+                                                                                                             destChks,
+                                                                                                             destChksType ) 
+              gLogger.error( error, src_url )
+          else:
+            gLogger.warn("SRM2Storage.__putFile: unable to compare checksums, %s is not defined in checksumDict." % destChksType )
+            return S_OK()
+
       errorMessage = "SRM2Storage.__putFile: Source and destination file sizes do not match."
       gLogger.error( errorMessage, src_url )
     else:
@@ -1374,11 +1392,25 @@ class SRM2Storage( StorageBase ):
     return statDict
 
   def __parse_file_metadata( self, urlDict ):
+    """ parse and save bits and pieces of metadata info
+
+    :param self: self reference
+    :param urlDict: gfal call results
+    """
+
     statDict = self.__parse_stat( urlDict['stat'] )
     if statDict['File']:
-      statDict['Checksum'] = ''
-      if urlDict.has_key( 'checksum' ) and ( urlDict['checksum'] != '0x' ):
-        statDict['Checksum'] = urlDict['checksum']
+
+      statDict.setdefault("Checksum", "")
+      statDict.setdefault("ChecksumType", "")
+
+      if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
+        ## revert checksumTypes dict to have a proper mapping
+        gfal2pyDict = dict( (v, k) for k, v in self.checksumTypes.iteritems() )
+        if "checksumtype" in urlDict and urlDict["checksumtype"] in gfal2pyDict: 
+          statDict["Checksum"] = urlDict["checksum"]
+          statDict["ChecksumType"] = gfal2pyDict[ urlDict["checksumtype"] ]
+
       if urlDict.has_key( 'locality' ):
         urlLocality = urlDict['locality']
         if re.search( 'ONLINE', urlLocality ):
@@ -1395,6 +1427,7 @@ class SRM2Storage( StorageBase ):
         statDict['Unavailable'] = 0
         if re.search( 'UNAVAILABLE', urlLocality ):
           statDict['Unavailable'] = 1
+
     return statDict
 
   def __getProtocols( self ):
