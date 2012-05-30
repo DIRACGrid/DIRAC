@@ -42,8 +42,8 @@ class SRM2Storage( StorageBase ):
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
-    ## set checksum type, by default this is GFAL_CKSM_NONE
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", None )
+    ## set checksum type, by default this is ADLER32
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )
     # enum gfal_cksm_type
     #	GFAL_CKSM_NONE = 0,
     #	GFAL_CKSM_CRC32,
@@ -52,9 +52,8 @@ class SRM2Storage( StorageBase ):
     #	GFAL_CKSM_SHA1    
     # GFAL_CKSM_NULL = 0
     self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4  }
-    if self.checksumType.upper() in self.checksumTypes: 
-      gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
-      self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
+    if self.checksumType in self.checksumTypes: 
+      self.checksumType = self.checksumTypes[self.checksumType]
     else:
       gLogger.warn("SRM2Storage: unknown checksum type %s, disabling checksum check")
       gLogger.warn("SRM2Storage: will only comparing src and dest file sizes")
@@ -72,6 +71,8 @@ class SRM2Storage( StorageBase ):
     self.conf_file = 'ignored'
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+
+
 
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10 # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 ) # 0.5 MB/s ???
@@ -1389,6 +1390,8 @@ class SRM2Storage( StorageBase ):
     if statDict['File']:
 
       statDict.setdefault("Checksum", "")
+      statDict.setdefault("ChecksumType", "")
+
       if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
         statDict["Checksum"] = urlDict["checksum"]
         
