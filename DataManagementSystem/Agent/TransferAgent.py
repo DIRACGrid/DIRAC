@@ -30,10 +30,12 @@ import random
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-## from DMS
+## base class
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
+## replica manager
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+## startegy handler
+from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler, StrategyHandlerChannelNotDefined
 ## task to be executed
 from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 ## from RMS
@@ -156,9 +158,11 @@ class TransferAgent( RequestAgentBase ):
       SchedulingType = File
      - list of active strategies
       ActiveStrategies = MinimiseTotalWait 
-     - acceptable failure rate
-      AcceptableFailureRate = 75  
-  
+     - acceptable failure rate to ban/unban FST channel 
+      AcceptableFailureRate = 75
+     - acceptable number of dictinct files failed in FTS to ban/unban FTS channel 
+     AcceptableFailedFiles = 5
+
   """
   ## placeholder for ReplicaManager instance
   __replicaManager = None
@@ -247,6 +251,16 @@ class TransferAgent( RequestAgentBase ):
 
     self.log.info("%s has been constructed" % agentName )
 
+  def finalize( self ):
+    """ agent finalisation
+
+    :param self: self reference
+    """
+    if self.hasProcessPool():
+      self.processPool().finalize()
+    self.resetAllRequests()
+    return S_OK()
+
   ###################################################################################
   # facades for various DIRAC tools
   ###################################################################################
@@ -315,17 +329,25 @@ class TransferAgent( RequestAgentBase ):
       return S_ERROR( errStr )
     bandwidths = res["Value"] or False
 
+    res = self.transferDB().getCountFileToFTS(  self.__throughputTimescale, "Failed" )
+    if not res["OK"]:
+      errStr = "setupStrategyHandler: Failed to get Failed files counters from TransferDB."
+      self.log.error( errStr, res['Message'] )
+      return S_ERROR( errStr )
+    failedFiles = res["Value"] or False
+
     ## neither channels nor bandwidths 
     if not ( channels and bandwidths ):
       return S_ERROR( "setupStrategyHandler: No active channels found for replication" )
     
     self.strategyHandler().setBandwiths( bandwidths )
     self.strategyHandler().setChannels( channels )
+    self.strategyHandler().setFailedFiles( failedFiles )
     self.strategyHandler().reset()
 
     return S_OK()
 
-  def ancestorSortKeys( self, aDict, aKey="hopAncestor" ):
+  def ancestorSortKeys( self, aDict, aKey="Ancestor" ):
     """ sorting keys of replicationTree by its hopAncestor value 
     
     replicationTree is a dict ( channelID : { ... }, (...) }
@@ -368,8 +390,8 @@ class TransferAgent( RequestAgentBase ):
     hopAncestor = repDict["Ancestor"]
 
     if ancestorSwap and str(hopAncestor) in ancestorSwap:
-      self.log.debug("getTransferURLs: swapping hopAncestor %s with %s" % ( hopAncestor, 
-                                                                            ancestorSwap[str(hopAncestor)] ) )
+      self.log.debug("getTransferURLs: swapping Ancestor %s with %s" % ( hopAncestor, 
+                                                                         ancestorSwap[str(hopAncestor)] ) )
       hopAncestor = ancestorSwap[ str(hopAncestor) ]
     
     ## get targetSURL
@@ -461,7 +483,8 @@ class TransferAgent( RequestAgentBase ):
     if not subRequestFiles["OK"]:
       return subRequestFiles
     subRequestFiles = subRequestFiles["Value"]
-    self.log.info( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, len( subRequestFiles ) ) )
+    self.log.info( "collectFiles: subrequest %s found with %d files." % ( iSubRequest, 
+                                                                          len( subRequestFiles ) ) )
     
     for subRequestFile in subRequestFiles:
       fileStatus = subRequestFile["Status"]
@@ -562,7 +585,8 @@ class TransferAgent( RequestAgentBase ):
                                                   requestDict["requestString"], 
                                                   requestDict["sourceServer"] )
         if not res["OK"]:
-          self.log.error( "execute: failed to update request %s: %s" % ( requestDict["requestName"], res["Message"] ) )
+          self.log.error( "execute: failed to update request %s: %s" % ( requestDict["requestName"], 
+                                                                         res["Message"] ) )
         ## delete it from requestHolder
         self.deleteRequest( requestDict["requestName"] )
         ## decrease request counter 
@@ -594,8 +618,8 @@ class TransferAgent( RequestAgentBase ):
     ## check request owner
     ownerGroup = requestObj.getAttribute( "OwnerGroup" )
     if ownerGroup["OK"] and ownerGroup["Value"] in self.__ftsDisabledOwnerGroups:
-      self.log.info("excuteFTS: request %s OwnerGroup=%s is not allowed to execute FTS transfer" % ( requestDict["requestName"], 
-                                                                                                     ownerGroup["Value"] ) )
+      self.log.info("excuteFTS: request %s OwnerGroup=%s is banned from FTS" % ( requestDict["requestName"], 
+                                                                                 ownerGroup["Value"] ) )
       return S_OK( False )
 
     ## check operation
@@ -650,7 +674,7 @@ class TransferAgent( RequestAgentBase ):
                                                          taskID = taskID,
                                                          blocking = True,
                                                          usePoolCallbacks = True,
-                                                         timeOut = 900 )
+                                                         timeOut = 600 )
         if not enqueue["OK"]:
           self.log.error( enqueue["Message"] )
         else:
@@ -850,7 +874,7 @@ class TransferAgent( RequestAgentBase ):
       ## set target SEs for this file
       waitingFileTargets = [ targetSE for targetSE in targetSEs if targetSE not in waitingFileReplicas ]
       if not waitingFileTargets:
-        self.log.info( "scheduleFiles: %s is present at all targets, setting its status to 'Done'" % waitingFileLFN )
+        self.log.info( "scheduleFiles: %s is replicated, setting its status to 'Done'" % waitingFileLFN )
         requestObj.setSubRequestFileAttributeValue( index, "transfer", waitingFileLFN, "Status", "Done" )
         continue
         
@@ -866,15 +890,16 @@ class TransferAgent( RequestAgentBase ):
                                                               strategy )
 
       if not tree["OK"] or not tree["Value"]:
-        self.log.error( "scheduleFiles: failed to determine replication tree", tree["Message"] if "Message" in tree else "replication tree is empty")
+        self.log.error( "scheduleFiles: failed to determine replication tree: ", 
+                        tree["Message"] if "Message" in tree else "tree is empty")
         raise StrategyHandlerChannelNotDefined( "FTS" )
       tree = tree["Value"]
       self.log.debug( "scheduleFiles: replicationTree: %s" % tree )
  
       ## sorting keys by hopAncestor
-      sortedKeys = self.ancestorSortKeys( tree, "hopAncestor" )
+      sortedKeys = self.ancestorSortKeys( tree, "Ancestor" )
       if not sortedKeys["OK"]:
-        self.log.warn( "scheduleFiles: unable to sort replication tree by hopAncestor: %s"% sortedKeys["Message"] )
+        self.log.warn( "scheduleFiles: unable to sort replication tree by Ancestor: %s"% sortedKeys["Message"] )
         sortedKeys = tree.keys()
       else:
         sortedKeys = sortedKeys["Value"]
@@ -974,8 +999,7 @@ class TransferAgent( RequestAgentBase ):
         return replicas
       for lfn, failure in replicas["Value"]["Failed"].items():
         self.log.warn( "checkReadyReplicas: unable to get replicas for %s: %s" % ( lfn, str(failure) ) )
-        if re.search( "no such file or directory", str(failure).lower()):
-          requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Status", "Failed" )
+        if re.search( "no such file or directory", str(failure).lower() ):
           requestObj.setSubRequestFileAttributeValue( index, "transfer", lfn, "Error", str(failure) )
       replicas = replicas["Value"]["Successful"]
 
@@ -1062,7 +1086,7 @@ class StrategyHandler( object ):
   source files, their replicas and target storage elements.
   """
 
-  def __init__( self, configSection, bandwidths=None, channels=None ):
+  def __init__( self, configSection, bandwidths=None, channels=None, failedFiles=None ):
     """c'tor
 
     :param self: self reference
@@ -1089,9 +1113,12 @@ class StrategyHandler( object ):
     self.log.debug( "Number of active strategies = %s" % self.numberOfStrategies )
     self.acceptableFailureRate = gConfig.getValue( self.configSection + '/AcceptableFailureRate', 75 )
     self.log.debug( "AcceptableFailureRate = %s" % self.acceptableFailureRate )
-            
+    self.acceptableFailedFiles = gConfig.getValue( self.configSection + "/AcceptableFailedFiles", 5 )
+    self.log.debug( "AcceptableFailedFiles = %s" % self.acceptableFailedFiles )
+
     self.bandwidths = bandwidths
     self.channels = channels
+    self.failedFiles = failedFiles
     self.chosenStrategy = 0
 
     # dispatcher
@@ -1114,6 +1141,14 @@ class StrategyHandler( object ):
     :param self: self reference
     """
     self.chosenStrategy = 0
+
+  def setFailedFiles( self, failedFiles ):
+    """ set the failed FTS files counters
+
+    :param self: self reference
+    :param failedFiles: observed distinct failed files
+    """
+    self.failedFiles = failedFiles
 
   def setBandwiths( self, bandwidths ):
     """ set the bandwidths 
@@ -1360,8 +1395,6 @@ class StrategyHandler( object ):
     siteAncestor = {}              # Maintains the ancestor channel for a site
     primarySources = sourceSEs
 
-    
-
     while destSEs:
       try:
         minTotalTimeToStart = float( "inf" )
@@ -1450,13 +1483,17 @@ class StrategyHandler( object ):
         channelFileSuccess = bandwidth["SuccessfulFiles"]
         channelFileFailed = bandwidth["FailedFiles"]
         attempted = channelFileSuccess + channelFileFailed
+        
 
         successRate = 100.0
         if attempted != 0:
           successRate = 100.0 * ( channelFileSuccess / float( attempted ) )
-        
-        ## success rate too low?, make channel unattractive
-        if successRate < self.acceptableFailureRate:
+    
+        ## get distinct failed files counter
+        distinctFailedFiles = self.failedFiles.get( channelID, 0 )      
+    
+        ## success rate too low and more than acceptable distinct files are affected?, make channel unattractive
+        if ( successRate < self.acceptableFailureRate ) and ( distinctFailedFiles > self.acceptableFailedFiles ):
           timeToStart = float( "inf" ) 
         else:
 
@@ -1468,7 +1505,7 @@ class StrategyHandler( object ):
           if self.schedulingType == "File":
             transferSpeed = bandwidth["Fileput"] 
             waitingTransfers = channelDict["Files"]
-            
+
           if transferSpeed > 0:
             timeToStart = waitingTransfers / float( transferSpeed )
             

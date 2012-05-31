@@ -118,6 +118,19 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
 *Resources
 NEW: SSHLSFComputingElement added 
 
+[v6r3p13]
+
+*Core
+FIX: Added proper ProcessPool checks and finalisation
+
+*DataManagement
+FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
+FIX: remove @classmethods here and there to unblock requestHolder
+CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
+FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
+NEW: TA: add finalize
+CHANGE: TransferAgent: add AcceptableFailedFiles to StrategyHandler to ban FTS channel from scheduling
+
 [v6r3p12]
 
 *Core

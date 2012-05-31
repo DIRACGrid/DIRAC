@@ -63,8 +63,6 @@ class RequestAgentBase( AgentModule ):
   __exceptionCallback = None
   ## config path in CS
   __configPath = None
-  ## read request holder 
-  __requestHolder = dict()
 
   def __init__( self, agentName, baseAgentName=False, properties=dict() ):
     """ c'tor
@@ -105,19 +103,24 @@ class RequestAgentBase( AgentModule ):
     ## create request dict
     self.__requestHolder = dict()
 
-  @classmethod
-  def deleteRequest( cls, requestName ):
+  def requestHolder( self ):
+    """ get request holder dict
+    
+    :param self: self reference
+    """
+    return self.__requestHolder
+
+  def deleteRequest( self, requestName ):
     """ delete request from requestHolder
 
     :param self: self reference
     """
-    if requestName in cls.__requestHolder:
-      del cls.__requestHolder[requestName]
+    if requestName in self.__requestHolder:
+      del self.__requestHolder[requestName]
       return S_OK()
     return S_ERROR("%s not found in requestHolder" % requestName )
 
-  @classmethod
-  def saveRequest( cls, requestName, requestString, requestServer ):
+  def saveRequest( self, requestName, requestString, requestServer ):
     """ put request into requestHolder
 
     :param cls: class reference
@@ -125,24 +128,39 @@ class RequestAgentBase( AgentModule ):
     :param str requestString: XML-serialised request
     :param str requestServer: server URL
     """
-    if requestName not in cls.__requestHolder:
-      cls.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
+    if requestName not in self.__requestHolder:
+      self.__requestHolder.setdefault( requestName, ( requestString, requestServer ) )
       return S_OK()
     return S_ERROR("saveRequest: request %s cannot be saved, it's already in requestHolder")
 
-  def resetRequests( self ):
-    """ put back requests without callback called into requestClient 
+  def resetRequest( self, requestName ):
+    """ put back :requestName: to RequestClient
+
+    :param self: self reference
+    :param str requestName: request's name
+    """
+    if requestName in self.__requestHolder:
+      requestString, requestServer = self.__requestHolder["requestName"]
+      reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
+      if not reset["OK"]:
+        self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+      self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
+    else:
+      self.log.error("resetRequest: unable to reset request %s: request not found in requestHolder" % requestName )
+
+  def resetAllRequests( self ):
+    """ put back all requests without callback called into requestClient 
 
     :param self: self reference
     """
-    self.log.info("resetRequest: will put %s back requests" % len(self.__requestHolder) )
+    self.log.info("resetAllRequests: will put %s back requests" % len(self.__requestHolder) )
     for requestName, requestTuple  in self.__requestHolder.items():
       requestString, requestServer = requestTuple
       reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
       if not reset["OK"]:
-        self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        self.log.error("resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
-      self.log.debug("resetRequest: request %s has been put back with its initial state" % requestName )
+      self.log.debug("resetAllRequests: request %s has been put back with its initial state" % requestName )
 
   def configPath( self ):
     """ config path getter
@@ -158,15 +176,14 @@ class RequestAgentBase( AgentModule ):
     """
     return self.__requestsPerCycle
 
-  @classmethod
-  def requestClient( cls ):
+  def requestClient( self ):
     """ RequestClient getter
 
     :param self: self reference
     """
-    if not cls.__requestClient:
-      cls.__requestClient = RequestClient()
-    return cls.__requestClient
+    if not self.__requestClient:
+      self.__requestClient = RequestClient()
+    return self.__requestClient
 
   def processPool( self ):
     """ 'Live long and prosper, my dear ProcessPool'
@@ -178,7 +195,7 @@ class RequestAgentBase( AgentModule ):
     if not self.__processPool:
       minProcess = max( 1, self.__minProcess ) 
       maxProcess = max( self.__minProcess, self.__maxProcess )
-      queueSize = max( self.__requestsPerCycle, self.__queueSize )
+      queueSize = abs(self.__queueSize) 
       self.log.info( "ProcessPool: minProcess = %d maxProcess = %d queueSize = %d" % ( minProcess, 
                                                                                        maxProcess, 
                                                                                        queueSize ) )
@@ -201,14 +218,16 @@ class RequestAgentBase( AgentModule ):
     
     :param self: self reference
     """
-    self.log.info("resultCallback from task %s" % taskID )
-
-    ## delete this one from request holder
-    self.deleteRequest( taskID )
+    self.log.info("%s result callback" %  taskID ) 
 
     if not taskResult["OK"]:
-      self.log.error( taskResult["Message"] )
+      self.log.error( "%s result callback: %s" % ( taskID, taskResult["Message"] ) )
+      if taskResult["Message"] == "Timed out":
+        self.resetRequest( taskID )
+      self.deleteRequest( taskID )
       return
+    
+    self.deleteRequest( taskID )
     taskResult = taskResult["Value"]
     ## add monitoring info
     monitor = taskResult["monitor"] if "monitor" in taskResult else {}
@@ -223,11 +242,11 @@ class RequestAgentBase( AgentModule ):
     
     :param self: self reference
     """
-    self.log.error( "exceptionCallback from task %s" % taskID )
+    self.log.error( "%s exception callback" % taskID )
     self.log.error( taskException )
 
-  @classmethod
-  def getRequest( cls, requestType ):
+
+  def getRequest( self, requestType ):
     """ retrive Request of type requestType from RequestClient
 
     :param cls: class reference
@@ -248,13 +267,13 @@ class RequestAgentBase( AgentModule ):
                     "executionOrder" : None,
                     "jobID" : None }
     ## get request out of RequestClient
-    res = cls.requestClient().getRequest( requestType )
+    res = self.requestClient().getRequest( requestType )
     if not res["OK"]:
-      gLogger.error( res["Message"] )
+      self.log.error( res["Message"] )
       return res
     elif not res["Value"]:
       msg = "Request of type '%s' not found in RequestClient." % requestType
-      gLogger.debug( msg )
+      self.log.debug( msg )
       return S_OK()
     ## store values
     requestDict["requestName"] = res["Value"]["RequestName"]
@@ -264,21 +283,21 @@ class RequestAgentBase( AgentModule ):
     try:
       requestDict["jobID"] = int( res["Value"]["JobID"] )
     except (ValueError, TypeError), exc:
-      gLogger.warn( "Cannot read JobID for request %s, setting it to 0: %s" % ( requestDict["requestName"],
-                                                                                str(exc) ) )
+      self.log.warn( "Cannot read JobID for request %s, setting it to 0: %s" % ( requestDict["requestName"],
+                                                                                 str(exc) ) )
       requestDict["jobID"] = 0
     ## get the execution order
-    res = cls.requestClient().getCurrentExecutionOrder( requestDict["requestName"],
-                                                        requestDict["sourceServer"] )
+    res = self.requestClient().getCurrentExecutionOrder( requestDict["requestName"],
+                                                         requestDict["sourceServer"] )
     if not res["OK"]:
       msg = "Can not get the execution order for request %s." % requestDict["requestName"]
-      gLogger.error( msg, res["Message"] )
+      self.log.error( msg, res["Message"] )
       return res
     requestDict["executionOrder"] = res["Value"]
     ## save this request
-    cls.saveRequest( requestDict["requestName"], 
-                     requestDict["requestString"], 
-                     requestDict["sourceServer"] )
+    self.saveRequest( requestDict["requestName"], 
+                      requestDict["requestString"], 
+                      requestDict["sourceServer"] )
     ## return requestDict at least
     return S_OK( requestDict )
 
@@ -335,7 +354,7 @@ class RequestAgentBase( AgentModule ):
                                                            taskID = requestDict["requestName"],
                                                            blocking = True,
                                                            usePoolCallbacks = True,
-                                                           timeOut = 600 )
+                                                           timeOut = 180 )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
@@ -358,7 +377,7 @@ class RequestAgentBase( AgentModule ):
     if self.hasProcessPool():
       self.processPool().finalize()
     ## reset failover requests for further processing 
-    self.resetRequests()
+    self.resetAllRequests()
     ## good bye, all done!
     return S_OK()
   
