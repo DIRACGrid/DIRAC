@@ -19,7 +19,7 @@ class TransformationAgent( AgentModule ):
     self.pluginLocation = self.am_getOption( 'PluginLocation',
                                              'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
-    self.transformationTypes = self.am_getOption( 'transformationTypes', ['Active', 'Completing', 'Flush'] )
+    self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
 
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
@@ -32,7 +32,6 @@ class TransformationAgent( AgentModule ):
   def execute( self ):
     """ get and process the transformations to be processed
     """
-    # Get the transformations to process
     res = self.getTransformations()
     if not res['OK']:
       gLogger.info( "execute: Failed to obtain transformations: %s" % res['Message'] )
@@ -50,11 +49,12 @@ class TransformationAgent( AgentModule ):
     return S_OK()
 
   def getTransformations( self ):
-    # Obtain the transformations to be executed
+    """ Obtain the transformations to be executed 
+    """
     transName = self.am_getOption( 'Transformation', 'All' )
     if transName == 'All':
       gLogger.info( "getTransformations: Initializing general purpose agent." )
-      res = self.transDB.getTransformations( {'Status':self.transformationTypes}, extraParams = True )
+      res = self.transDB.getTransformations( {'Status':self.transformationStatus}, extraParams = True )
       if not res['OK']:
         gLogger.error( "getTransformations: Failed to get transformations: %s" % res['Message'] )
         return res
@@ -171,7 +171,8 @@ class TransformationAgent( AgentModule ):
       return S_ERROR()
 
   def __getDataReplicas( self, transID, lfns, active = True ):
-    """ Get the replicas for the LFNs and check their statuses """
+    """ Get the replicas for the LFNs and check their statuses 
+    """
     startTime = time.time()
     if active:
       res = self.rm.getActiveReplicas( lfns )
