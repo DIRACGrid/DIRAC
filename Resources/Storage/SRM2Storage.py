@@ -19,6 +19,7 @@ import types, re, os, time
 class SRM2Storage( StorageBase ):
 
   def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
+
     self.isok = True
     self.gfal = False
     self.lcg_util = False
@@ -32,6 +33,7 @@ class SRM2Storage( StorageBase ):
     self.wspath = wspath
     self.spaceToken = spaceToken
     self.cwd = self.path
+
     StorageBase.__init__( self, self.name, self.path )
 
     self.timeout = 100
@@ -39,6 +41,25 @@ class SRM2Storage( StorageBase ):
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
+
+    ## set checksum type, by default this is GFAL_CKSM_NONE
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", None )
+    # enum gfal_cksm_type
+    #	GFAL_CKSM_NONE = 0,
+    #	GFAL_CKSM_CRC32,
+    #	GFAL_CKSM_ADLER32,
+    #	GFAL_CKSM_MD5,
+    #	GFAL_CKSM_SHA1    
+    # GFAL_CKSM_NULL = 0
+    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4  }
+    if self.checksumType.upper() in self.checksumTypes: 
+      gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
+      self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
+    else:
+      gLogger.warn("SRM2Storage: unknown checksum type %s, disabling checksum check")
+      gLogger.warn("SRM2Storage: will only comparing src and dest file sizes")
+      ## GFAL_CKSM_NONE
+      self.ckecksumType = 0
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
@@ -52,8 +73,8 @@ class SRM2Storage( StorageBase ):
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
 
-    self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10 # 10 MB
-    self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 ) # 0.5 MB/s
+    self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10 # 10 MB ???
+    self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 ) # 0.5 MB/s ???
 
   def __importExternals( self ):
     if ( self.lcg_util ) and ( self.gfal ):
@@ -201,6 +222,7 @@ class SRM2Storage( StorageBase ):
   ######################################################################
   #
   # This has to be updated once the new gfal_makedir() becomes available
+  # TODO: isn't it there? when somebody made above comment?  
   #
 
   def createDirectory( self, path ):
@@ -214,7 +236,7 @@ class SRM2Storage( StorageBase ):
     successful = {}
     failed = {}
     gLogger.debug( "SRM2Storage.createDirectory: Attempting to create %s directories." % len( urls ) )
-    for url in urls.keys():
+    for url in urls:
       strippedUrl = url.rstrip( '/' )
       res = self.__makeDirs( strippedUrl )
       if res['OK']:
@@ -710,6 +732,10 @@ class SRM2Storage( StorageBase ):
     errCode, errStr = res['Value']
     if errCode == 0:
       gLogger.info( 'SRM2Storage.__putFile: Successfully put file to storage.' )
+      ## checksum check? return!
+      if self.checksumType: 
+        return S_OK( sourceSize )
+      ## else compare sizes
       res = self.__executeOperation( dest_url, 'getFileSize' )
       if res['OK']:
         destinationSize = res['Value']
@@ -732,11 +758,24 @@ class SRM2Storage( StorageBase ):
 
   def __lcg_cp_wrapper( self, src_url, dest_url, srctype, dsttype, nbstreams,
                         timeout, src_spacetokendesc, dest_spacetokendesc ):
+
     try:
-      errCode, errStr = self.lcg_util.lcg_cp3( src_url, dest_url, self.defaulttype, srctype,
-                                               dsttype, self.nobdii, self.voName, nbstreams, self.conf_file,
-                                               self.insecure, self.verbose, timeout, src_spacetokendesc,
-                                               dest_spacetokendesc )
+      errCode, errStr = self.lcg_util.lcg_cp4( src_url, 
+                                               dest_url, 
+                                               self.defaulttype, 
+                                               srctype,
+                                               dsttype, 
+                                               self.nobdii, 
+                                               self.voName, 
+                                               nbstreams, 
+                                               self.conf_file,
+                                               self.insecure, 
+                                               self.verbose, 
+                                               timeout, 
+                                               src_spacetokendesc,
+                                               dest_spacetokendesc,
+                                               self.checksumType )
+
       if type( errCode ) not in [types.IntType]:
         gLogger.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer",
                        "%s %s" % ( errCode, type( errCode ) ) )
@@ -1340,11 +1379,19 @@ class SRM2Storage( StorageBase ):
     return statDict
 
   def __parse_file_metadata( self, urlDict ):
+    """ parse and save bits and pieces of metadata info
+
+    :param self: self reference
+    :param urlDict: gfal call results
+    """
+
     statDict = self.__parse_stat( urlDict['stat'] )
     if statDict['File']:
-      statDict['Checksum'] = ''
-      if urlDict.has_key( 'checksum' ) and ( urlDict['checksum'] != '0x' ):
-        statDict['Checksum'] = urlDict['checksum']
+
+      statDict.setdefault("Checksum", "")
+      if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
+        statDict["Checksum"] = urlDict["checksum"]
+        
       if urlDict.has_key( 'locality' ):
         urlLocality = urlDict['locality']
         if re.search( 'ONLINE', urlLocality ):
@@ -1361,6 +1408,7 @@ class SRM2Storage( StorageBase ):
         statDict['Unavailable'] = 0
         if re.search( 'UNAVAILABLE', urlLocality ):
           statDict['Unavailable'] = 1
+
     return statDict
 
   def __getProtocols( self ):
