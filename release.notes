@@ -15,6 +15,50 @@ FIX: TransferDB.py - speed up the Throughput determination
 FIX: RequestDBMySQL.py: to take into account ExecutionOrder in getRequest
 FIX: StorageElement.py: change log message level
 
+[v6r3p13]
+
+*Core
+FIX: Added proper ProcessPool checks and finalisation
+
+*DataManagement
+FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
+FIX: remove @classmethods here and there to unblock requestHolder
+CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
+FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
+NEW: TA: add finalize
+CHANGE: TransferAgent: add AcceptableFailedFiles to StrategyHandler to ban FTS channel from scheduling
+
+[v6r3p12]
+
+*Core
+FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
+
+[v6r3p11]
+
+*Core
+FIX: ProcessPool with watchdog and timeouts
+
+[v6r3p10]
+
+*StorageManagement
+BUGFIX: StorageElement - staging is a Read operation and should be allowed as such
+
+*WMS
+BUGFIX: InProcessComputingElement, JobAgent - proper return status code from the job wrapper
+
+*Core
+FIX: Platform - manage properly the case of exception in the ldconfig execution
+
+[v6r3p9]
+
+*DMS
+FIX: TransferDB.getChannelObservedThroughput - the channelDict was created in a wrong way
+
+[v6r3p8]
+
+*Web
+CHANGE: return back to the release web2012041601
+
 [v6r3p7]
 
 *Transformation
