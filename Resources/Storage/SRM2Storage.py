@@ -42,8 +42,8 @@ class SRM2Storage( StorageBase ):
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
-    ## set checksum type, by default this is ADLER32
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )
+    ## set checksum type, by default this is GFAL_CKSM_NONE
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", None )
     # enum gfal_cksm_type
     #	GFAL_CKSM_NONE = 0,
     #	GFAL_CKSM_CRC32,
@@ -52,9 +52,12 @@ class SRM2Storage( StorageBase ):
     #	GFAL_CKSM_SHA1    
     # GFAL_CKSM_NULL = 0
     self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4  }
-    if self.checksumType in self.checksumTypes: 
-      self.checksumType = self.checksumTypes[self.checksumType]
+    if self.checksumType.upper() in self.checksumTypes: 
+      gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
+      self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
     else:
+      gLogger.warn("SRM2Storage: unknown checksum type %s, disabling checksum check")
+      gLogger.warn("SRM2Storage: will only comparing src and dest file sizes")
       ## GFAL_CKSM_NONE
       self.ckecksumType = 0
 
@@ -643,9 +646,7 @@ class SRM2Storage( StorageBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def putFile( self, path, sourceSize = 0, checksumDict=None ):
-    if not checksumDict:
-      checksumDict = dict()
+  def putFile( self, path, sourceSize = 0 ):
     res = self.checkArgumentFormat( path )
     if not res['OK']:
       return res
@@ -658,7 +659,7 @@ class SRM2Storage( StorageBase ):
       if not res['OK']:
         failed[dest_url] = res['Message']
       else:
-        res = self.__putFile( src_file, dest_url, sourceSize, checksumDict )
+        res = self.__putFile( src_file, dest_url, sourceSize )
         if res['OK']:
           successful[dest_url] = res['Value']
         else:
@@ -666,9 +667,7 @@ class SRM2Storage( StorageBase ):
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
 
-  def __putFile( self, src_file, dest_url, sourceSize, checksumDict=None ):
-    if not checksumDict:
-      checksumDict = dict()
+  def __putFile( self, src_file, dest_url, sourceSize ):
     # Pre-transfer check
     res = self.__executeOperation( dest_url, 'exists' )
     if not res['OK']:
@@ -733,28 +732,16 @@ class SRM2Storage( StorageBase ):
     errCode, errStr = res['Value']
     if errCode == 0:
       gLogger.info( 'SRM2Storage.__putFile: Successfully put file to storage.' )
-      res = self.__executeOperation( dest_url, 'getFileMetadata' )
+      ## checksum check? return!
+      if self.checksumType: 
+        return S_OK( sourceSize )
+      ## else compare sizes
+      res = self.__executeOperation( dest_url, 'getFileSize' )
       if res['OK']:
-
-        metadata = res['Value']
-
-        if sourceSize == metadata["Size"] :
-          gLogger.debug( "SRM2Storage.__putFile: Source and dest file size are the same." )
-          destChksType = metadata["ChecksumType"]
-          destChks = metadata["ChecksumType"]
-          if destChksType in checksumDict:
-            if destChks == checksumDict[destChksType]:
-              gLogger.debug( "SRM2Storage.__putFile: Both %s checksums are the same (%s)." % ( destChksType, destChks ) )
-              return S_OK()
-            else:
-              error = "SRM2Storage.__putFile: Source (%s) and dest (%s) %s checksums are the different." % ( checksumDict[destChksType],
-                                                                                                             destChks,
-                                                                                                             destChksType ) 
-              gLogger.error( error, src_url )
-          else:
-            gLogger.warn("SRM2Storage.__putFile: unable to compare checksums, %s is not defined in checksumDict." % destChksType )
-            return S_OK()
-
+        destinationSize = res['Value']
+        if sourceSize == destinationSize :
+          gLogger.debug( "SRM2Storage.__putFile: Post transfer check successful." )
+          return S_OK( destinationSize )
       errorMessage = "SRM2Storage.__putFile: Source and destination file sizes do not match."
       gLogger.error( errorMessage, src_url )
     else:
@@ -1402,15 +1389,9 @@ class SRM2Storage( StorageBase ):
     if statDict['File']:
 
       statDict.setdefault("Checksum", "")
-      statDict.setdefault("ChecksumType", "")
-
       if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
-        ## revert checksumTypes dict to have a proper mapping
-        gfal2pyDict = dict( (v, k) for k, v in self.checksumTypes.iteritems() )
-        if "checksumtype" in urlDict and urlDict["checksumtype"] in gfal2pyDict: 
-          statDict["Checksum"] = urlDict["checksum"]
-          statDict["ChecksumType"] = gfal2pyDict[ urlDict["checksumtype"] ]
-
+        statDict["Checksum"] = urlDict["checksum"]
+        
       if urlDict.has_key( 'locality' ):
         urlLocality = urlDict['locality']
         if re.search( 'ONLINE', urlLocality ):
