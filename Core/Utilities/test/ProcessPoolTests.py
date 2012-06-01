@@ -37,6 +37,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 ## SUT
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+import threading
 
 def ResultCallback( task, taskResult ):
   """ dummy result callback """
