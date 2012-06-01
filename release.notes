@@ -118,6 +118,27 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
 *Resources
 NEW: SSHLSFComputingElement added 
 
+[v6r3p14]
+
+* Core
+
+BUGFIX: ProcessPool.py: clean processing and finalisation
+BUGFIX: Pfn.py: don't check for 'FileName' in pfnDict
+
+* DMS
+
+NEW: dirac-dms-show-fts-status.py: script showing last hour history for FTS channels
+NEW: TransferDBMonitoringHandler.py: new function exporting FST channel queues
+BUGFIX: TransferAgent.py,RemovalAgent.py,RegistrationAgent.py - unlinking of temp proxy files, corection of values sent to gMonitor
+BUGFIX: StrategyHandler - new config option 'AcceptableFailedFiles' to unblock scheduling for channels if problematic transfers occured for few files
+NEW: TransferAgent,RemovalAgent,RegistrationAgent - new confing options for setting timeouts for tasks and ProcessPool finalisation
+BUGFIX: ReplicaManager.py - reverse sort of LFNs when deleting files and directories to avoid blocks
+NEW: moved StrategyHandler class def to separate file under DMS/private
+
+* TMS
+
+FIX: TransformationCleaningAgent.py: some refactoring, new way of disabling/enabline execution by 'EnableFlag' config option
+
 [v6r3p13]
 
 *Core
