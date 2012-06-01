@@ -174,13 +174,15 @@ class RequestTask( object ):
     ## set requestType
     self.setRequestType( gConfig.getValue( os.path.join( configPath, "RequestType" ), "" ) )
     ## get log level
-    self.__log.setLevel( gConfig.getValue( os.path.join( configPath, self.__class__.__name__,  "LogLevel" ), "DEBUG" ) )
+    self.__log.setLevel( gConfig.getValue( os.path.join( configPath, self.__class__.__name__,  "LogLevel" ), "INFO" ) )
     ## clear monitoring
     self.__monitor = {}
     ## save DataManager proxy
     if "X509_USER_PROXY" in os.environ:
       self.info("saving path to current proxy file")
       self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
+    else:
+      self.error("'X509_USER_PROXY' environment variable not set")
 
   def dataManagerProxy( self ):
     """ get dataManagerProxy file 
@@ -394,11 +396,11 @@ class RequestTask( object ):
         if ownerProxyFile and os.path.exists( ownerProxyFile ):
           os.unlink( ownerProxyFile )
     if not ret["OK"]:
-        self.error( "handleRequest: error during request processing: %s" % ret["Message"] )
-        self.error( "handleRequest: will put original request back" )
-        update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
-        if not update["OK"]:
-          self.error( "handleRequest: error when putting back request: %s" % update["Message"] )
+      self.error( "handleRequest: error during request processing: %s" % ret["Message"] )
+      self.error( "handleRequest: will put original request back" )
+      update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
+      if not update["OK"]:
+        self.error( "handleRequest: error when putting back request: %s" % update["Message"] )
           
     ## return at least
     return ret
