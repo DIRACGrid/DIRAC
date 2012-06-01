@@ -37,6 +37,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 ## SUT
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+import threading
 
 def ResultCallback( task, taskResult ):
   """ dummy result callback """
@@ -69,6 +70,7 @@ class CallableClass( object ):
     self.taskID = taskID
     self.timeWait = timeWait
     self.raiseException = raiseException
+    
   def __call__( self ):
     import time, os
     self.log.always( "pid=%s task=%s will sleep for %s s" % ( os.getpid(), self.taskID, self.timeWait ) )
