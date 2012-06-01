@@ -210,7 +210,7 @@ class TransferAgent( RequestAgentBase ):
     :param self: self reference
     """
     if self.hasProcessPool():
-      self.processPool().finalize()
+      self.processPool().finalize( timeout = self.poolTimeout() )
     self.resetAllRequests()
     return S_OK()
 
@@ -634,7 +634,7 @@ class TransferAgent( RequestAgentBase ):
                                                          taskID = taskID,
                                                          blocking = True,
                                                          usePoolCallbacks = True,
-                                                         timeOut = 600 )
+                                                         timeOut = self.taskTimeout() )
         if not enqueue["OK"]:
           self.log.error( enqueue["Message"] )
         else:

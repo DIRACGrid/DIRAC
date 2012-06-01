@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 ## py imports 
 import time
 ## DIRAC imports 
-from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
+from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
@@ -51,6 +51,10 @@ class RequestAgentBase( AgentModule ):
   __maxProcess = 4
   ## ProcessPool queue size 
   __queueSize = 10
+  ## ProcessTask default timeout in seconds
+  __taskTimeout = 300
+  ## ProcessPool finalisation timeout 
+  __poolTimeout = 300
   ## placeholder for RequestClient instance
   __requestClient = None
   ## request type
@@ -77,7 +81,8 @@ class RequestAgentBase( AgentModule ):
     ## save config path
     self.__configPath = PathFinder.getAgentSection( agentName )
     self.log.info( "Will use %s config path" % self.__configPath )
-  
+
+    ## ProcessPool related stuff
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", 10 )
     self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
     self.__minProcess = self.am_getOption( "MinProcess", 1 )
@@ -86,9 +91,14 @@ class RequestAgentBase( AgentModule ):
     self.log.info("ProcessPool max process = %d" % self.__maxProcess )
     self.__queueSize = self.am_getOption( "ProcessPoolQueueSize", 10 )
     self.log.info("ProcessPool queue size = %d" % self.__queueSize )
+    self.__poolTimeout = self.am_getOption( "ProcessPoolTimeout", 300 )
+    self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout )
+    self.__poolTimeout = self.am_getOption( "ProcessTaskTimeout", 300 )
+    self.log.info("ProcessTask timeout = %d seconds" % self.__taskTimeout )
+    ## request type
     self.__requestType = self.am_getOption( "RequestType", None )
     self.log.info( "Will process '%s' request type." % str( self.__requestType ) )
-
+    ## shifter proxy
     self.am_setOption( "shifterProxy", "DataManager" )
     self.log.info( "Will use DataManager proxy by default." )
 
@@ -102,6 +112,36 @@ class RequestAgentBase( AgentModule ):
       
     ## create request dict
     self.__requestHolder = dict()
+
+  def poolTimeout( self ):
+    """ poolTimeout getter
+
+    :param self: self reference
+    """
+    return self.__poolTimeout
+
+  def setPoolTimeout( self, timeout=300 ):
+    """ poolTimeoit setter
+
+    :param self: self reference
+    :param int timeout: PP finalisation timeout in seconds 
+    """
+    self.__poolTimeout = timeout
+    
+  def taskTimeout( self ):
+    """ taskTimeout getter
+
+    :param self: self reference
+    """
+    return self.__taskTimeout
+
+  def setTaskTimeout( self, timeout=300 ):
+    """ taskTimeout setter
+
+    :param self: self reference
+    :param int timeout: task timeout in seconds
+    """
+    self.__taskTimeout = timeout
 
   def requestHolder( self ):
     """ get request holder dict
@@ -210,7 +250,10 @@ class RequestAgentBase( AgentModule ):
     return self.__processPool
 
   def hasProcessPool( self ):
-    """ check if ProcessPool exist to speed up finalization """
+    """ check if ProcessPool exist to speed up finalization 
+
+    :param self: self reference
+    """
     return bool( self.__processPool )
 
   def resultCallback( self, taskID, taskResult ):
@@ -244,7 +287,6 @@ class RequestAgentBase( AgentModule ):
     """
     self.log.error( "%s exception callback" % taskID )
     self.log.error( taskException )
-
 
   def getRequest( self, requestType ):
     """ retrive Request of type requestType from RequestClient
@@ -345,8 +387,8 @@ class RequestAgentBase( AgentModule ):
                                                                     self.processPool().getNumWorkingProcesses() ) )
       while True:
         if not self.processPool().getFreeSlots():
-          self.log.info("No free slots available in processPool, will wait a second to proceed...")
-          time.sleep( 1 )
+          self.log.info("No free slots available in processPool, will wait 2 seconds to proceed...")
+          time.sleep(2)
         else:
           self.log.always("spawning task %s for request %s" % ( taskID, requestDict["requestName"] ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
@@ -354,7 +396,7 @@ class RequestAgentBase( AgentModule ):
                                                            taskID = requestDict["requestName"],
                                                            blocking = True,
                                                            usePoolCallbacks = True,
-                                                           timeOut = 180 )
+                                                           timeOut = self.__taskTimeout )
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
@@ -365,7 +407,6 @@ class RequestAgentBase( AgentModule ):
             time.sleep( 0.1 )
             break
       
-
     return S_OK()
 
   def finalize( self ):
@@ -375,7 +416,7 @@ class RequestAgentBase( AgentModule ):
     """
     ## finalize all processing
     if self.hasProcessPool():
-      self.processPool().finalize()
+      self.processPool().finalize( timeout = self.__poolTimeout )
     ## reset failover requests for further processing 
     self.resetAllRequests()
     ## good bye, all done!
