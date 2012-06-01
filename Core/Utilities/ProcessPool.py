@@ -251,9 +251,6 @@ class WorkingProcess( multiprocessing.Process ):
 
       ## clear task
       self.task = None
-      ## cancel timer thread
-      if self.__timerThread:
-        self.__timerThread.cancel()
 
       ## read from queue
       try:
@@ -263,12 +260,11 @@ class WorkingProcess( multiprocessing.Process ):
         idleLoopCount += 1
         ## 10th idle loop - exit, nothing to do 
         if idleLoopCount == 10:
-          return
+          return 
         continue
 
       ## toggle __working flag
       self.__working.value = 1
-
       ## save task
       self.task = task
       ## reset idle loop counter
