@@ -2,11 +2,10 @@
 # $HeadURL$
 #############################################################################
 
-""" 
-..mod: FTSRequest
-=================
+""" ..mod: FTSRequest
+    =================
 
-Helper class to perform FTS job submission and monitoring.
+    Helper class to perform FTS job submission and monitoring.
 """
 
 ## imports
@@ -27,12 +26,12 @@ from DIRAC.Core.Utilities.Time import dateTime, fromString
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+#from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
 ## RCSID
 __RCSID__ = "$Id$"
 
-class FTSRequest:
+class FTSRequest(object):
   """
   .. class:: FTSRequest
   
@@ -44,14 +43,17 @@ class FTSRequest:
 
     :param self: self reference
     """
-
-    self.finalStates = [ 'Canceled', 'Failed', 'Hold', 
-                         'Finished', 'FinishedDirty' ]
-    self.failedStates = [ 'Canceled', 'Failed', 
-                          'Hold', 'FinishedDirty' ]
-    self.successfulStates = [ 'Finished', 'Done' ]
-    self.fileStates = [ 'Done', 'Active', 'Pending', 'Ready', 'Canceled', 'Failed', 
-                        'Finishing', 'Finished', 'Submitted', 'Hold', 'Waiting' ]
+    ## final states tuple
+    self.finalStates = ( 'Canceled', 'Failed', 'Hold', 
+                         'Finished', 'FinishedDirty' )
+    ## failed states tuple
+    self.failedStates = ( 'Canceled', 'Failed', 
+                          'Hold', 'FinishedDirty' )
+    ## successful states tuple
+    self.successfulStates = ( 'Finished', 'Done' )
+    ## all file states tuple
+    self.fileStates = ( 'Done', 'Active', 'Pending', 'Ready', 'Canceled', 'Failed', 
+                        'Finishing', 'Finished', 'Submitted', 'Hold', 'Waiting' )
 
     self.newlyCompletedFiles = []
     self.newlyFailedFiles = []
@@ -83,6 +85,14 @@ class FTSRequest:
     self.targetToken = ''
 
     self.dumpStr = ''
+
+    ## placeholder for surl file
+    self.surlFile = None
+    
+    ## placehoders for SE for source and target
+    self.oTargetSE = None
+    self.oSourceSE = None
+
 
   ####################################################################
   #
@@ -550,10 +560,12 @@ class FTSRequest:
     return S_OK()
 
   def __resolveSource( self ):
-    toResolve = []
-    for lfn in self.fileDict.keys():
-      if ( not self.fileDict[lfn].has_key( 'Source' ) ) and ( self.fileDict[lfn].get( 'Status' ) != 'Failed' ):
-        toResolve.append( lfn )
+    """ resolve source SE eligible for submission
+
+    :param self: self reference
+    """
+    toResolve = [ lfn for lfn in self.fileDict 
+                  if ( "Source" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
     if not toResolve:
       return S_OK()
     res = self.__updateMetadataCache( toResolve )
@@ -563,10 +575,10 @@ class FTSRequest:
     if not res['OK']:
       return res
     for lfn in toResolve:
-      if self.fileDict[lfn].get( 'Status' ) == 'Failed':
+      if self.fileDict[lfn].get( "Status", "" ) == "Failed":
         continue
       replicas = self.catalogReplicas.get( lfn, {} )
-      if not replicas.has_key( self.sourceSE ):
+      if self.sourceSE not in replicas:
         self.__setFileParameter( lfn, 'Reason', "No replica at SourceSE" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
@@ -582,8 +594,8 @@ class FTSRequest:
         continue
 
     toResolve = {}
-    for lfn in self.fileDict.keys():
-      if self.fileDict[lfn].has_key( 'Source' ):
+    for lfn in self.fileDict:
+      if "Source" in self.fileDict[lfn]:
         toResolve[self.fileDict[lfn]['Source']] = lfn
     if not toResolve:
       return S_ERROR( "No eligible Source files" )
@@ -618,10 +630,12 @@ class FTSRequest:
     return S_OK()
 
   def __resolveTarget( self ):
-    toResolve = []
-    for lfn in self.fileDict.keys():
-      if not self.fileDict[lfn].has_key( 'Target' ) and ( self.fileDict[lfn].get( 'Status' ) != 'Failed' ):
-        toResolve.append( lfn )
+    """ find target SE eligible for submission 
+
+    :param self: self reference
+    """
+    toResolve = [ lfn for lfn in self.fileDict 
+                  if ( "Target" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
     if not toResolve:
       return S_OK()
     res = self.__updateReplicaCache( toResolve )
@@ -655,8 +669,8 @@ class FTSRequest:
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
     toResolve = {}
-    for lfn in self.fileDict.keys():
-      if self.fileDict[lfn].has_key( 'Target' ):
+    for lfn in self.fileDict:
+      if "Target" in self.fileDict[lfn]:
         toResolve[self.fileDict[lfn]['Target']] = lfn
     if not toResolve:
       return S_ERROR( "No eligible Target files" )
@@ -685,6 +699,11 @@ class FTSRequest:
     return S_OK()
 
   def __filesToSubmit( self ):
+    """
+    
+    TODO: exit after first eligible file? that wrong!
+
+    """
     for lfn in self.fileDict:
       lfnStatus = self.fileDict[lfn].get( 'Status' )
       source = self.fileDict[lfn].get( 'Source' )
@@ -694,6 +713,14 @@ class FTSRequest:
     return S_ERROR()
 
   def __createSURLPairFile( self ):
+    """ create tmp file for glite-transfer-submit command
+
+    This file consists one line for each fiel to be transferred:
+
+    sourceSURL targetSURL [CHECKSUMTPE:CHECKSUM]
+
+    :param self: self reference
+    """
     fd, fileName = tempfile.mkstemp()
     surlFile = os.fdopen( fd, 'w' )
     for lfn in self.fileDict:
@@ -708,7 +735,11 @@ class FTSRequest:
     return S_OK()
 
   def __submitFTSTransfer( self ):
-    comm = ['glite-transfer-submit', '-s', self.ftsServer, '-f', self.surlFile, '-o']
+    """ create and execute glite-transfer-submit CLI command 
+
+    :param self: self reference
+    """
+    comm = [ 'glite-transfer-submit', '-s', self.ftsServer, '-f', self.surlFile, '-o' ]
     if self.targetToken:
       comm.append( '-t' )
       comm.append( self.targetToken )
@@ -732,6 +763,13 @@ class FTSRequest:
     return res
 
   def __resolveFTSServer( self ):
+    """
+    resolve FTS server to use, it should be the closest one from target SE
+
+    TODO: exception? here? really?
+
+    :param self: self reference
+    """
     if not self.sourceSE:
       return S_ERROR( "Source SE not set" )
     if not self.targetSE:
