@@ -32,6 +32,33 @@ NEW: JobState/CachedJobState allow access to the Job via DB/JobStateSync Service
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
 
+[v6r4p5]
+
+*Configuration
+NEW: Added function to generate Operations CS paths
+
+*Core
+FIX: Added proper ProcessPool checks and finalisation
+
+*DataManagement
+FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
+FIX: remove @classmethods here and there to unblock requestHolder
+CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
+FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
+NEW: TA: add finalize
+CHANGE: TransferAgent: add AcceptableFailedFiles to StrategyHandler to ban FTS channel from scheduling
+FIX: if there is no failed files, put an empty dict
+
+
+*RSS
+FIX: RSS is setting Allowed but the StorageElement checks for Active
+
+*Workflows
+FIX: Part of WorfklowTask rewritten to fix some issues and allow 'ANY' as site
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
 [v6r4p4]
 
 *Core
@@ -117,6 +144,16 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
  
 *Resources
 NEW: SSHLSFComputingElement added 
+
+[v6r3p15]
+
+
+*DataManagement
+FIX: if there is no failed files, put an empty dict
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
 
 [v6r3p14]
 
