@@ -117,6 +117,13 @@ class TransferDBMonitoringHandler( RequestHandler ):
     """
     return transferDB.getChannelObservedThroughput( interval )
 
+  types_getChannelQueues = []
+  def export_getChannelQueues( self ):
+    """ Get the channel queues
+    """
+    return transferDB.getChannelQueues() 
+
+
 ##############################################################################
   types_getReqPageSummary = [ DictType, StringType, IntType, IntType ]
   def export_getReqPageSummary( self, attrDict, orderAttribute, pageNumber, numberPerPage ):

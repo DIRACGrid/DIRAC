@@ -42,7 +42,7 @@ class CatalogBase:
  
   This class stores the two wrapper functions for interacting with the FileCatalog.
   """
-  def _callFileCatalogFcnSingleFile( self, lfn, method, argsDict = None, catalogs = None ):
+  def _callFileCatalogFcnSingleFile( self, lfn, method, argsDict=None, catalogs=None ):
     """ A wrapper around :CatalogBase._callFileCatalogFcn: for a single file. It parses 
     the output of :CatalogBase_callFileCatalogFcn: for the first file provided as input. 
     If this file is found in::
@@ -63,13 +63,13 @@ class CatalogBase:
     argsDict = argsDict if argsDict else dict()
     catalogs = catalogs if catalogs else list()
     ## checjk type
-    if not lfn or type( lfn ) not in StringTypes + ( ListType, DictType ):
-      return S_ERROR( "wrong type (%s) for argument 'lfn'" % type( lfn ) )
+    if not lfn or type(lfn) not in StringTypes + ( ListType, DictType ):
+      return S_ERROR( "wrong type (%s) for argument 'lfn'" % type(lfn) )
     singleLfn = lfn
     if type( lfn ) == ListType:
-      singleLfn = lfn[0]
+      singleLfn = lfn[0] 
     elif type( lfn ) == DictType:
-      singleLfn = lfn.keys()[0]
+      singleLfn = lfn.keys()[0] 
     ## call only for single lfn
     res = self._callFileCatalogFcn( lfn, method, argsDict, catalogs = catalogs )
     if not res["OK"]:
@@ -111,6 +111,7 @@ class CatalogBase:
       lfns = dict.fromkeys( lfn, False )
     elif type( lfn ) == DictType:
       lfns = lfn.copy()
+
     ## lfns supplied?
     if not lfns:
       errMsg = "ReplicaManager._callFileCatalogFcn: No lfns supplied."
@@ -239,7 +240,10 @@ class CatalogFile( CatalogBase ):
     :param list catalogs: catalogs' names
     """
     catalogs = catalogs if catalogs else list()
-    return self._fcFuncWrapper( singleFile )( lfn, "removeFile", catalogs = catalogs )
+    ## make sure lfns are sorted from the longest to the shortest  
+    if type(lfn) == ListType:
+      lfn = sorted( lfn, reverse = True )
+    return self._fcFuncWrapper(singleFile)( lfn, "removeFile", catalogs=catalogs )
 
 class CatalogReplica( CatalogBase ):
   """
@@ -1076,7 +1080,7 @@ class ReplicaManager( CatalogToStorage ):
     """ Clean the logical directory from the catalog and storage
     """
     if type( lfnDir ) in StringTypes:
-      lfnDir = [lfnDir]
+      lfnDir = [ lfnDir ]
     retDict = { "Successful" : {}, "Failed" : {} }
     for folder in lfnDir:
       res = self.__cleanDirectory( folder )
@@ -1139,7 +1143,7 @@ class ReplicaManager( CatalogToStorage ):
     if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
     storageDirectory = res['Value']['Successful'].values()[0]
-    res = self.getStorageFileExists( storageDirectory, storageElement, singleFile = True )
+    res = self.getStorageFileExists( storageDirectory, storageElement, singleFile=True )
     if not res['OK']:
       gLogger.error( "Failed to obtain existance of directory", res['Message'] )
       return res
@@ -1147,12 +1151,12 @@ class ReplicaManager( CatalogToStorage ):
     if not exists:
       gLogger.info( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
-    res = self.removeStorageDirectory( storageDirectory, storageElement, recursive = True, singleDirectory = True )
+    res = self.removeStorageDirectory( storageDirectory, storageElement, recursive=True, singleDirectory=True )
     if not res['OK']:
       gLogger.error( "Failed to remove storage directory", res['Message'] )
       return res
-    gLogger.info( "Successfully removed %d files from %s at %s" % ( res['Value']['FilesRemoved'],
-                                                                    directory,
+    gLogger.info( "Successfully removed %d files from %s at %s" % ( res['Value']['FilesRemoved'], 
+                                                                    directory, 
                                                                     storageElement ) )
     return S_OK()
 
@@ -1169,7 +1173,7 @@ class ReplicaManager( CatalogToStorage ):
     allFiles = {}
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = self.getCatalogListDirectory( currentDir, singleFile = True )
+      res = self.getCatalogListDirectory( currentDir, singleFile=True )
       activeDirs.remove( currentDir )
       if not res['OK'] and res['Message'].endswith( 'The supplied path does not exist' ):
         gLogger.info( "The supplied directory %s does not exist" % currentDir )
@@ -1200,7 +1204,7 @@ class ReplicaManager( CatalogToStorage ):
       allReplicas[lfn] = metadata['Replicas']
     return S_OK( allReplicas )
 
-  def getFilesFromDirectory( self, directory, days = 0, wildcard = '*' ):
+  def getFilesFromDirectory( self, directory, days=0, wildcard='*' ):
     if type( directory ) in StringTypes:
       directories = [directory]
     else:
@@ -1295,9 +1299,9 @@ class ReplicaManager( CatalogToStorage ):
       return res
     for storageElementName in res['Value']:
       physicalFile = replicas[storageElementName]
-      res = self.getStorageFile( physicalFile,
-                                 storageElementName,
-                                 localPath = os.path.realpath( destinationDir ),
+      res = self.getStorageFile( physicalFile, 
+                                 storageElementName, 
+                                 localPath = os.path.realpath( destinationDir ), 
                                  singleFile = True )
       if not res['OK']:
         gLogger.error( "Failed to get %s from %s" % ( lfn, storageElementName ), res['Message'] )
@@ -1307,10 +1311,10 @@ class ReplicaManager( CatalogToStorage ):
         localFile = os.path.realpath( "%s/%s" % ( destinationDir, os.path.basename( lfn ) ) )
         localAdler = fileAdler( localFile )
         if ( metadata['Size'] != res['Value'] ):
-          gLogger.error( "Size of downloaded file (%d) does not match catalog (%d)" % ( res['Value'],
+          gLogger.error( "Size of downloaded file (%d) does not match catalog (%d)" % ( res['Value'], 
                                                                                         metadata['Size'] ) )
         elif ( metadata['Checksum'] ) and ( not compareAdler( metadata['Checksum'], localAdler ) ):
-          gLogger.error( "Checksum of downloaded file (%s) does not match catalog (%s)" % ( localAdler,
+          gLogger.error( "Checksum of downloaded file (%s) does not match catalog (%s)" % ( localAdler, 
                                                                                             metadata['Checksum'] ) )
         else:
           return S_OK( localFile )
@@ -1321,7 +1325,7 @@ class ReplicaManager( CatalogToStorage ):
     siteName = DIRAC.siteName()
     localSEs = getSEsForSite( siteName )['Value']
     countrySEs = []
-    countryCode = siteName.split( '.' )[-1]
+    countryCode = siteName.split('.')[-1]
     res = getSEsForCountry( countryCode )
     if res['OK']:
       countrySEs = res['Value']
@@ -1969,14 +1973,15 @@ class ReplicaManager( CatalogToStorage ):
 
   def __removeFile( self, lfnDict ):
     storageElementDict = {}
-    for lfn, repDict in lfnDict.items():
+    ## sorted and reversed
+    for lfn, repDict in sorted( lfnDict.items(), reverse = True ):
       for se, pfn in repDict.items():
         if se not in storageElementDict:
           storageElementDict[se] = []
         storageElementDict[se].append( ( lfn, pfn ) )
     failed = {}
     successful = {}
-    for storageElementName, fileTuple in storageElementDict.items():
+    for storageElementName, fileTuple in sorted( storageElementDict.items() ):
       res = self.__removeReplica( storageElementName, fileTuple )
       if not res['OK']:
         errStr = res['Message']
@@ -2001,7 +2006,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         failed.update( res['Value']['Failed'] )
         successful = res['Value']['Successful']
-    resDict = {'Successful':successful, 'Failed':failed}
+    resDict = { 'Successful':successful, 'Failed':failed }
     return S_OK( resDict )
 
   def removeReplica( self, storageElementName, lfn ):
@@ -2431,3 +2436,4 @@ class ReplicaManager( CatalogToStorage ):
 
   def getFileSize( self, lfn ):
     return self.getCatalogFileSize( lfn )
+
