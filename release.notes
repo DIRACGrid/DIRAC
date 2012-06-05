@@ -66,7 +66,6 @@ CHANGE: RSS components get operational parameters from the Operations handler
 FIX: RequestDBMySQL.py: to take into account ExecutionOrder in getRequest
 FIX: StorageElement.py: change log message level
 
-<<<<<<< HEAD
 *Transformation
 NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of sites associated 
      to each SE in TargetSE and those given in Site, if any. This is needed until scheduling to SEs 
@@ -74,7 +73,7 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
  
 *Resources
 NEW: SSHLSFComputingElement added 
-=======
+
 [v6r3p13]
 
 *Core
@@ -97,7 +96,6 @@ FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
 
 *Core
 FIX: ProcessPool with watchdog and timeouts
->>>>>>> upstream/rel-v6r3
 
 [v6r3p10]
 
