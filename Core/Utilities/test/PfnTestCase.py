@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse, pfnparse_old, pfnunparse_old
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 import random, string, timeit
 
 
@@ -55,8 +55,7 @@ class PfnTests( unittest.TestCase ):
 
     :param self: self reference
     """
-    for pfn, result in self.pfns.items():
-      self.assertEqual( pfnparse_old( pfn ), result )
+ 
     for pfn, result in self.pfns.items():
       self.assertEqual( pfnparse( pfn ), result )
 
@@ -67,17 +66,12 @@ class PfnTests( unittest.TestCase ):
     """
     for pfn, result in self.pfns.items():
       if result["OK"]:
-        self.assertEqual( pfnunparse_old( result["Value"] ), { "OK" : True, "Value" : pfn } )
         self.assertEqual( pfnunparse( result["Value"] ), { "OK" : True, "Value" : pfn } )
     self.assertEqual( pfnunparse( None ), 
                       {'Message': "pfnunparse: wrong type fot pfnDict argument, expected a dict, got <type 'NoneType'>", 'OK': False} )  
     self.assertEqual( pfnunparse( "Path" ), 
                       {'Message': "pfnunparse: wrong type fot pfnDict argument, expected a dict, got <type 'str'>", 'OK': False} )  
-    self.assertEqual( pfnunparse( { "FileName" : "" } ),
-                      {'Message': "pfnunparse: 'FileName' value is missing in pfnDict", 'OK': False} )
-    self.assertEqual( pfnunparse( { "FileName" : "", "Path" : "/a/b" } ),
-                      {'Message': "pfnunparse: 'FileName' value is missing in pfnDict", 'OK': False} )
-
+   
 
 ## test execution
 if __name__ == "__main__":
