@@ -147,7 +147,10 @@ class StrategyHandler( object ):
     :param self: self reference
     :param failedFiles: observed distinct failed files
     """
-    self.failedFiles = failedFiles
+    if not failedFiles:
+      self.failedFiels = {}
+    else:
+      self.failedFiles = failedFiles
 
   def setBandwiths( self, bandwidths ):
     """ set the bandwidths 
