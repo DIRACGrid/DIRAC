@@ -1,26 +1,59 @@
+#############################################################################
 # $HeadURL$
-__RCSID__ = "$Id$"
-from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Grid                          import executeGridCommand
-from DIRAC.Core.Utilities.File                          import checkGuid
-from DIRAC.Core.Utilities.Adler                         import compareAdler
-from DIRAC.Core.Utilities.List                          import sortList
-from DIRAC.Core.Utilities.SiteSEMapping                 import getSitesForSE
-from DIRAC.Core.Utilities.Time                          import dateTime, fromString
-from DIRAC.Resources.Storage.StorageElement             import StorageElement
-from DIRAC.DataManagementSystem.Client.ReplicaManager   import CatalogInterface
-from DIRAC.AccountingSystem.Client.Types.DataOperation  import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient      import gDataStoreClient
-import re, os, time, sys, tempfile, types
+#############################################################################
 
-class FTSRequest:
+""" ..mod: FTSRequest
+    =================
+
+    Helper class to perform FTS job submission and monitoring.
+"""
+
+## imports
+import os
+import sys
+import re
+import time
+import tempfile
+from types import IntType, LongType
+## from DIRAC
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC.Core.Utilities.File import checkGuid
+from DIRAC.Core.Utilities.Adler import compareAdler
+from DIRAC.Core.Utilities.List import sortList
+from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+from DIRAC.Core.Utilities.Time import dateTime, fromString
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogInterface
+from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+#from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+
+## RCSID
+__RCSID__ = "$Id$"
+
+class FTSRequest(object):
+  """
+  .. class:: FTSRequest
+  
+  Helper class for FTS job submission and monitoring.
+  """
 
   def __init__( self ):
+    """c'tor
 
-    self.finalStates = ['Canceled', 'Failed', 'Hold', 'Finished', 'FinishedDirty']
-    self.failedStates = ['Canceled', 'Failed', 'Hold', 'FinishedDirty']
-    self.successfulStates = ['Finished', 'Done']
-    self.fileStates = ['Done', 'Active', 'Pending', 'Ready', 'Canceled', 'Failed', 'Finishing', 'Finished', 'Submitted', 'Hold', 'Waiting']
+    :param self: self reference
+    """
+    ## final states tuple
+    self.finalStates = ( 'Canceled', 'Failed', 'Hold', 
+                         'Finished', 'FinishedDirty' )
+    ## failed states tuple
+    self.failedStates = ( 'Canceled', 'Failed', 
+                          'Hold', 'FinishedDirty' )
+    ## successful states tuple
+    self.successfulStates = ( 'Finished', 'Done' )
+    ## all file states tuple
+    self.fileStates = ( 'Done', 'Active', 'Pending', 'Ready', 'Canceled', 'Failed', 
+                        'Finishing', 'Finished', 'Submitted', 'Hold', 'Waiting' )
 
     self.newlyCompletedFiles = []
     self.newlyFailedFiles = []
@@ -53,12 +86,25 @@ class FTSRequest:
 
     self.dumpStr = ''
 
+    ## placeholder for surl file
+    self.surlFile = None
+    
+    ## placehoders for SE for source and target
+    self.oTargetSE = None
+    self.oSourceSE = None
+
+
   ####################################################################
   #
   #  Methods for setting/getting/checking the SEs
   #
 
   def setSourceSE( self, se ):
+    """ set SE for source 
+
+    :param self: self reference
+    :param str se: source SE name
+    """
     if se == self.targetSE:
       return S_ERROR( "SourceSE is TargetSE" )
     self.sourceSE = se
@@ -66,20 +112,37 @@ class FTSRequest:
     return self.__checkSourceSE()
 
   def getSourceSE( self ):
+    """ source SE getter
+
+    :param self: self reference
+    """
     if not self.sourceSE:
       return S_ERROR( "Source SE not defined" )
     return S_OK( self.sourceSE )
 
   def setSourceToken( self, token ):
+    """ set source space token
+
+    :param self: self reference
+    :param str token: source space token
+    """
     self.sourceToken = token
     return S_OK()
 
   def getSourceToken( self ):
+    """ source space token getter
+
+    :param self: self reference
+    """
     if not self.sourceToken:
       return S_ERROR( "Source token not defined" )
     return S_OK( self.sourceToken )
 
   def __checkSourceSE( self ):
+    """ check source SE availability
+
+    :param self: self reference
+    """
     if not self.sourceSE:
       return S_ERROR( "SourceSE not set" )
     res = self.oSourceSE.isValid( 'Read' )
@@ -94,6 +157,11 @@ class FTSRequest:
     return S_OK()
 
   def setTargetSE( self, se ):
+    """ set target SE
+    
+    :param self: self reference
+    :param str se: target SE name
+    """
     if se == self.sourceSE:
       return S_ERROR( "TargetSE is SourceSE" )
     self.targetSE = se
@@ -101,20 +169,37 @@ class FTSRequest:
     return self.__checkTargetSE()
 
   def getTargetSE( self ):
+    """ target SE getter
+
+    :param self: self reference
+    """
     if not self.targetSE:
       return S_ERROR( "Target SE not defined" )
     return S_OK( self.targetSE )
 
   def setTargetToken( self, token ):
+    """ target space token setter
+    
+    :param self: self reference
+    :param str token: target space token
+    """
     self.targetToken = token
     return S_OK()
 
   def getTargetToken( self ):
+    """ target space token getter
+
+    :param self: self reference
+    """
     if not self.targetToken:
       return S_ERROR( "Target token not defined" )
     return S_OK( self.targetToken )
 
   def __checkTargetSE( self ):
+    """ check target SE availability 
+
+    :param self: self reference
+    """
     if not self.targetSE:
       return S_ERROR( "TargetSE not set" )
     res = self.oTargetSE.isValid( 'Write' )
@@ -128,7 +213,13 @@ class FTSRequest:
     self.targetValid = True
     return S_OK()
 
-  def __getSESpaceToken( self, oSE ):
+  @staticmethod
+  def __getSESpaceToken( oSE ):
+    """ get space token from StorageElement instance
+
+    :param self: self reference
+    :param StorageElement oSE: StorageElement instance
+    """
     res = oSE.getStorageParameters( "SRM2" )
     if not res['OK']:
       return res
@@ -140,27 +231,50 @@ class FTSRequest:
   #
 
   def setFTSGUID( self, guid ):
+    """ FTS job GUID setter 
+    
+    :param self: self reference
+    :param str guid: string containg GUID
+    """
     if not checkGuid( guid ):
       return S_ERROR( "Incorrect GUID format" )
     self.ftsGUID = guid
     return S_OK()
 
   def getFTSGUID( self ):
+    """ FTS job GUID getter
+
+    :param self: self refenece
+    """
     if not self.ftsGUID:
       return S_ERROR( "FTSGUID not set" )
     return S_OK( self.ftsGUID )
 
   def setFTSServer( self, server ):
+    """ FTS server setter
+
+    :param self: self reference
+    :param str server: FTS server URL
+    """
     self.ftsServer = server
     return S_OK()
 
   def getFTSServer( self ):
+    """ FTS server getter
+
+    :param self: self reference
+    """
     if not self.ftsServer:
       return S_ERROR( "FTSServer not set" )
     return S_OK( self.ftsServer )
 
   def setPriority( self, priority ):
-    if not type( priority ) in [types.IntType, types.LongType]:
+    """ set priority for FTS job
+    
+    :param self: self reference
+    :param int priority: a new priority
+    """
+    if not type( priority ) in ( IntType, LongType ):
       return S_ERROR( "Priority must be integer" )
     if priority < 0:
       priority = 0
@@ -170,9 +284,17 @@ class FTSRequest:
     return S_OK( self.priority )
 
   def getPriority( self ):
+    """ FTS job priority getter
+
+    :param self: self reference
+    """
     return S_OK( self.priority )
 
   def getPercentageComplete( self ):
+    """ get completness percentage
+
+    :param self: self reference
+    """
     completedFiles = 0
     totalFiles = 0
     for state in ( self.statusSummary.keys() ):
@@ -183,11 +305,19 @@ class FTSRequest:
     return S_OK( self.percentageComplete )
 
   def isRequestTerminal( self ):
+    """ check if FTS job has terminated
+
+    :param self: self reference
+    """
     if self.requestStatus in self.finalStates:
       self.isTerminal = True
     return S_OK( self.isTerminal )
 
   def getStatus( self ):
+    """ get FTS job status
+
+    :param self: self reference
+    """
     return S_OK( self.requestStatus )
 
   ####################################################################
@@ -196,11 +326,22 @@ class FTSRequest:
   #
 
   def setLFN( self, lfn ):
-    if not self.fileDict.has_key( lfn ):
+    """ add LFN :lfn: to :fileDict:
+
+    :param self: self reference
+    :param str lfn: LFN to add to
+    """
+    if lfn not in self.fileDict:
       self.fileDict[lfn] = {}
     return S_OK()
 
   def setSourceSURL( self, lfn, surl ):
+    """ source SURL setter
+
+    :param self: self reference
+    :param str lfn: LFN 
+    :param str surl: source SURL
+    """
     target = self.fileDict[lfn].get( 'Target' )
     if target == surl:
       return S_ERROR( "Source and target the same" )
@@ -208,9 +349,20 @@ class FTSRequest:
     return S_OK()
 
   def getSourceSURL( self, lfn ):
+    """ get source SURL for LFN :lfn:
+
+    :param self: self reference
+    :param str lfn: LFN
+    """
     return self.__getFileParameter( lfn, 'Source' )
 
   def setTargetSURL( self, lfn, surl ):
+    """ set target SURL for LFN :lfn:
+
+    :param self: self reference
+    :param str lfn: LFN
+    :param str surl: target SURL
+    """
     source = self.fileDict[lfn].get( 'Source' )
     if source == surl:
       return S_ERROR( "Source and target the same" )
@@ -218,42 +370,75 @@ class FTSRequest:
     return S_OK()
 
   def getTargetSURL( self, lfn ):
+    """ target SURL getter
+
+    :param self: self reference
+    :param str lfn: LFN
+    """
     return self.__getFileParameter( lfn, 'Target' )
 
   def getFailReason( self, lfn ):
+    """ get fail reason for file :lfn:
+
+    :param self: self reference
+    :param str lfn: LFN
+    """
     return self.__getFileParameter( lfn, 'Reason' )
 
   def getRetries( self, lfn ):
+    """ get number of attepmts made to transfer file :lfn: 
+
+    :param self: self reference
+    :param str lfn: LFN
+    """
     return self.__getFileParameter( lfn, 'Retries' )
 
   def getTransferTime( self, lfn ):
+    """ get duration of transfer for file :lfn:
+
+    :param self: self reference
+    :param str lfn: LFN
+    """
     return self.__getFileParameter( lfn, 'Duration' )
 
   def getFailed( self ):
-    failed = []
-    for lfn in self.fileDict.keys():
-      status = self.fileDict[lfn].get( 'Status', '' )
-      if status in self.failedStates:
-        failed.append( lfn )
-    return S_OK( failed )
+    """ get list of wrongly transferred LFNs
 
+    :param self: self reference
+    """
+    return S_OK( [ lfn for lfn in self.fileDict 
+                   if self.fileDict[lfn].get( 'Status', '' ) in self.failedStates ] )
+    
   def getDone( self ):
-    done = []
-    for lfn in self.fileDict.keys():
-      status = self.fileDict[lfn].get( 'Status', '' )
-      if status in self.successfulStates:
-        done.append( lfn )
-    return S_OK( done )
+    """ get list of succesfully transferred LFNs 
+
+    :param self: self reference
+    """
+    return S_OK( [ lfn for lfn in self.fileDict 
+                   if self.fileDict[lfn].get( 'Status', '' ) in self.successfulStates ] )
 
   def __setFileParameter( self, lfn, paramName, paramValue ):
+    """ set :paramName: to :paramValue: for :lfn: file
+    
+    :param self: self reference
+    :param str lfn: LFN
+    :param str paramName: parameter name
+    :param mixed paramValue: a new parameter value
+    """
     self.setLFN( lfn )
     self.fileDict[lfn][paramName] = paramValue
     return S_OK()
 
   def __getFileParameter( self, lfn, paramName ):
-    if not self.fileDict.has_key( lfn ):
+    """ get value of :paramName: for file :lfn:
+
+    :param self: self reference
+    :param str lfn: LFN
+    :param str paramName: parameter name
+    """
+    if lfn not in self.fileDict:
       return S_ERROR( "Supplied file not set" )
-    if not self.fileDict[lfn].has_key( paramName ):
+    if paramName not in self.fileDict[lfn]:
       return S_ERROR( "%s not set for file" % paramName )
     return S_OK( self.fileDict[lfn][paramName] )
 
@@ -263,6 +448,12 @@ class FTSRequest:
   #
 
   def submit( self, monitor = False, printOutput = True ):
+    """ submit FTS job 
+
+    :param self: self reference
+    :param bool monitor: flag to monitor progress of FTS job
+    :param bool printOutput: flag to print output of execution to stdout
+    """
     res = self.__isSubmissionValid()
     if not res['OK']:
       return res
@@ -279,6 +470,10 @@ class FTSRequest:
     return S_OK( resDict )
 
   def __isSubmissionValid( self ):
+    """ check validity of job before submission
+
+    :param self: self reference
+    """
     if not self.fileDict:
       return S_ERROR( "No files set" )
     if not self.sourceValid:
@@ -297,6 +492,10 @@ class FTSRequest:
     return S_OK()
 
   def __getCatalogObject( self ):
+    """ CatalogInterface instance facade
+
+    :param self: self reference
+    """
     try:
       if not self.oCatalog:
         self.oCatalog = CatalogInterface()
@@ -304,12 +503,18 @@ class FTSRequest:
     except:
       return S_ERROR()
 
-  def __updateReplicaCache( self, lfns = [], overwrite = False ):
+  def __updateReplicaCache( self, lfns = None, overwrite = False ):
+    """ update replica cache for list of :lfns:
+
+    :param self: self reference
+    :param mixed lfns: list of LFNs
+    :param bool overwrite: flag to trigger cache clearing and updating
+    """
     if not lfns:
       lfns = self.fileDict.keys()
     toUpdate = []
     for lfn in lfns:
-      if ( not lfn in self.catalogReplicas.keys() ) or overwrite:
+      if lfn not in self.catalogReplicas or overwrite:
         toUpdate.append( lfn )
     if not toUpdate:
       return S_OK()
@@ -318,7 +523,7 @@ class FTSRequest:
       return res
     res = self.oCatalog.getCatalogReplicas( toUpdate )
     if not res['OK']:
-      return S_ERROR( "Failed to update replica cache", res['Message'] )
+      return S_ERROR( "Failed to update replica cache: %s" % res['Message'] )
     for lfn, error in res['Value']['Failed'].items():
       self.__setFileParameter( lfn, 'Reason', error )
       self.__setFileParameter( lfn, 'Status', 'Failed' )
@@ -326,12 +531,18 @@ class FTSRequest:
       self.catalogReplicas[lfn] = replicas
     return S_OK()
 
-  def __updateMetadataCache( self, lfns = [], overwrite = False ):
+  def __updateMetadataCache( self, lfns = None, overwrite = False ):
+    """ update metadata cache for list of LFNs
+
+    :param self: self reference
+    :param list lnfs: list of LFNs
+    :param bool overwrite: flag to trigger cache clearing and updating
+    """
     if not lfns:
       lfns = self.fileDict.keys()
     toUpdate = []
     for lfn in lfns:
-      if ( not lfn in self.catalogMetadata.keys() ) or overwrite:
+      if lfn not in self.catalogMetadata or overwrite:
         toUpdate.append( lfn )
     if not toUpdate:
       return S_OK()
@@ -340,7 +551,7 @@ class FTSRequest:
       return res
     res = self.oCatalog.getCatalogFileMetadata( toUpdate )
     if not res['OK']:
-      return S_ERROR( "Failed to get source catalog metadata", res['Message'] )
+      return S_ERROR( "Failed to get source catalog metadata: %s" % res['Message'] )
     for lfn, error in res['Value']['Failed'].items():
       self.__setFileParameter( lfn, 'Reason', error )
       self.__setFileParameter( lfn, 'Status', 'Failed' )
@@ -349,10 +560,12 @@ class FTSRequest:
     return S_OK()
 
   def __resolveSource( self ):
-    toResolve = []
-    for lfn in self.fileDict.keys():
-      if ( not self.fileDict[lfn].has_key( 'Source' ) ) and ( self.fileDict[lfn].get( 'Status' ) != 'Failed' ):
-        toResolve.append( lfn )
+    """ resolve source SE eligible for submission
+
+    :param self: self reference
+    """
+    toResolve = [ lfn for lfn in self.fileDict 
+                  if ( "Source" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
     if not toResolve:
       return S_OK()
     res = self.__updateMetadataCache( toResolve )
@@ -362,10 +575,10 @@ class FTSRequest:
     if not res['OK']:
       return res
     for lfn in toResolve:
-      if self.fileDict[lfn].get( 'Status' ) == 'Failed':
+      if self.fileDict[lfn].get( "Status", "" ) == "Failed":
         continue
       replicas = self.catalogReplicas.get( lfn, {} )
-      if not replicas.has_key( self.sourceSE ):
+      if self.sourceSE not in replicas:
         self.__setFileParameter( lfn, 'Reason', "No replica at SourceSE" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
@@ -381,8 +594,8 @@ class FTSRequest:
         continue
 
     toResolve = {}
-    for lfn in self.fileDict.keys():
-      if self.fileDict[lfn].has_key( 'Source' ):
+    for lfn in self.fileDict:
+      if "Source" in self.fileDict[lfn]:
         toResolve[self.fileDict[lfn]['Source']] = lfn
     if not toResolve:
       return S_ERROR( "No eligible Source files" )
@@ -417,10 +630,12 @@ class FTSRequest:
     return S_OK()
 
   def __resolveTarget( self ):
-    toResolve = []
-    for lfn in self.fileDict.keys():
-      if not self.fileDict[lfn].has_key( 'Target' ) and ( self.fileDict[lfn].get( 'Status' ) != 'Failed' ):
-        toResolve.append( lfn )
+    """ find target SE eligible for submission 
+
+    :param self: self reference
+    """
+    toResolve = [ lfn for lfn in self.fileDict 
+                  if ( "Target" not in self.fileDict[lfn] ) and ( self.fileDict[lfn].get( "Status", "" ) != "Failed" ) ]
     if not toResolve:
       return S_OK()
     res = self.__updateReplicaCache( toResolve )
@@ -454,8 +669,8 @@ class FTSRequest:
         self.__setFileParameter( lfn, 'Status', 'Failed' )
         continue
     toResolve = {}
-    for lfn in self.fileDict.keys():
-      if self.fileDict[lfn].has_key( 'Target' ):
+    for lfn in self.fileDict:
+      if "Target" in self.fileDict[lfn]:
         toResolve[self.fileDict[lfn]['Target']] = lfn
     if not toResolve:
       return S_ERROR( "No eligible Target files" )
@@ -484,7 +699,12 @@ class FTSRequest:
     return S_OK()
 
   def __filesToSubmit( self ):
-    for lfn in self.fileDict.keys():
+    """
+    
+    TODO: exit after first eligible file? that wrong!
+
+    """
+    for lfn in self.fileDict:
       lfnStatus = self.fileDict[lfn].get( 'Status' )
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
@@ -493,9 +713,17 @@ class FTSRequest:
     return S_ERROR()
 
   def __createSURLPairFile( self ):
+    """ create tmp file for glite-transfer-submit command
+
+    This file consists one line for each fiel to be transferred:
+
+    sourceSURL targetSURL [CHECKSUMTPE:CHECKSUM]
+
+    :param self: self reference
+    """
     fd, fileName = tempfile.mkstemp()
     surlFile = os.fdopen( fd, 'w' )
-    for lfn in self.fileDict.keys():
+    for lfn in self.fileDict:
       lfnStatus = self.fileDict[lfn].get( 'Status' )
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
@@ -507,7 +735,11 @@ class FTSRequest:
     return S_OK()
 
   def __submitFTSTransfer( self ):
-    comm = ['glite-transfer-submit', '-s', self.ftsServer, '-f', self.surlFile, '-o']
+    """ create and execute glite-transfer-submit CLI command 
+
+    :param self: self reference
+    """
+    comm = [ 'glite-transfer-submit', '-s', self.ftsServer, '-f', self.surlFile, '-o' ]
     if self.targetToken:
       comm.append( '-t' )
       comm.append( self.targetToken )
@@ -531,6 +763,13 @@ class FTSRequest:
     return res
 
   def __resolveFTSServer( self ):
+    """
+    resolve FTS server to use, it should be the closest one from target SE
+
+    TODO: exception? here? really?
+
+    :param self: self reference
+    """
     if not self.sourceSE:
       return S_ERROR( "Source SE not set" )
     if not self.targetSE:
@@ -614,7 +853,9 @@ class FTSRequest:
     self.getPercentageComplete()
     width = 100
     bits = int( ( width * self.percentageComplete ) / 100 )
-    outStr = "|%s>%s| %.1f%s %s %s" % ( "="*bits, " "*( width - bits ), self.percentageComplete, "%", self.requestStatus, " "*10 )
+    outStr = "|%s>%s| %.1f%s %s %s" % ( "="*bits, " "*( width - bits ), 
+                                        self.percentageComplete, "%", 
+                                        self.requestStatus, " "*10 )
     sys.stdout.write( "%s\r" % ( outStr ) )
     sys.stdout.flush()
 
