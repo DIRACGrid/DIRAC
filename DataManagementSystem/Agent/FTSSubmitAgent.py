@@ -35,10 +35,12 @@ class FTSSubmitAgent( AgentModule ):
   transferDB = None
   ## placeholder for max job per channel 
   maxJobsPerChannel = 2
-  ## placeholder fot checksum test option flag 
-  checksumTest = False
-  ## checksum type
-  checksumType = "ADLER32"
+  ## placeholder for checksum test option flag 
+  cksmTest = False
+  ## placeholder for checksum type 
+  cksmType = ""
+  ## default checksum type
+  __defaultCksmType = "ADLER32"
 
   def initialize( self ):
     """ agent's initalisation
@@ -50,15 +52,16 @@ class FTSSubmitAgent( AgentModule ):
     ## read config options
     self.maxJobsPerChannel = self.am_getOption( 'MaxJobsPerChannel', 2 )
 
-    ## get checksum test
-    self.checksumTest = self.am_getOption( "ChecksumTest", False )
-    if self.checksumTest:
-      self.checksumType = self.am_getOption( "ChecksumType", "ADLER32" )
-      self.checksumType = str( self.checksumType ).upper()
-      if self.checksumType not in ( "ADLER32", "MD5", "SHA1" ):
-        self.log.error("unknown checksum type: %s, disabling checksum test" % self.checksumType )
-        self.checksumTest = False
-    
+    ## checksum test
+    self.cksmTest = bool( self.am_getOption( "ChecksumTest", False ) )
+    ## ckecksum type
+    if self.cksmTest:
+      self.cksmType = str( self.am_getOption( "ChecksumType", "" ) ).upper()
+
+      if self.cksmType and self.cksmType not in ( "ADLER32", "MD5", "SHA1" ):
+        self.log.warn("unknown checksum type: %s, will set it to None" % self.cksmType )
+        self.cksmType = None
+                      
     # This sets the Default Proxy to used as that defined under 
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
@@ -128,6 +131,11 @@ class FTSSubmitAgent( AgentModule ):
     self.log.info( "FTSSubmitAgent.submitTransfer: Attempting to obtain files for %s to %s channel." % ( sourceSE, 
                                                                                                          targetSE ) )
     files = filesDict['Files']
+
+    ## enable/disable cksm test
+    oFTSRequest.setCksmTest( self.cksmTest )
+    if self.cksmType:
+      oFTSRequest.setCksmType( self.cksmType )
 
     #########################################################################
     #  Populate the FTS Request with the files.
