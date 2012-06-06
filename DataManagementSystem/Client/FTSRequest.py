@@ -38,6 +38,12 @@ class FTSRequest(object):
   Helper class for FTS job submission and monitoring.
   """
 
+  ## default checksum type 
+  __defaultCksmType = "ADLER32"
+  ## flag to disablr/enable checksum test, default: disabled
+  __cksmTest = False
+
+
   def __init__( self ):
     """c'tor
 
@@ -58,42 +64,70 @@ class FTSRequest(object):
     self.newlyCompletedFiles = []
     self.newlyFailedFiles = []
 
+
     self.statusSummary = {}
+    
+    ## request status
     self.requestStatus = 'Unknown'
 
+    ## dict for FTS job files 
     self.fileDict = {}
+    ## dict for replicas information
     self.catalogReplicas = {}
+    ## dict for metadata information
     self.catalogMetadata = {}
+    ## dict for files that failed to register 
     self.failedRegistrations = {}
 
+    ## placehoder for CatalogInterface reference
     self.oCatalog = None
 
+    ## submit timestamp 
     self.submitTime = ''
 
+    ## placeholder FTS job GUID
     self.ftsGUID = ''
+    ## placeholder for FTS server URL
     self.ftsServer = ''
+    ## not used
     self.priority = 3
+ 
+    ## flag marking FTS job completness
     self.isTerminal = False
+    ## completness percentage 
     self.percentageComplete = 0.0
 
+    ## source SE name
     self.sourceSE = ''
+    ## flag marking source SE validity
     self.sourceValid = False
+    ## source space token
     self.sourceToken = ''
-
+    
+    ## target SE name 
     self.targetSE = ''
+    ## flag marking target SE validity
     self.targetValid = False
+    ## target space token
     self.targetToken = ''
 
+    ## whatever
     self.dumpStr = ''
 
     ## placeholder for surl file
     self.surlFile = None
     
-    ## placehoders for SE for source and target
+    ## placeholder for target StorageElement
     self.oTargetSE = None
+    ## placeholder for source StorageElement
     self.oSourceSE = None
 
-
+    ## checksum type, set it to default
+    self.__cksmType = self.__defaultCksmType
+    ## disable checksum test by default
+    self.__cksmTest = False 
+ 
+  
   ####################################################################
   #
   #  Methods for setting/getting/checking the SEs
@@ -320,6 +354,44 @@ class FTSRequest(object):
     """
     return S_OK( self.requestStatus )
 
+
+  def setCksmType( self, cksm = None ):
+    """ set checksum type to use
+
+    :param self: self reference
+    :param mixed cksm: checksum type, should be one of 'Adler32', 'md5', 'sha1', None 
+    """
+    if str(cksm).upper() not in ( "ADLER32", "MD5", "SHA1", "NONE" ):
+      return S_ERROR( "Not supported checksum type: %s" % str( cksm ) )
+    if not cksm:
+      self.__cksmType = None
+      return S_OK( False )
+    self.__cksmType = str(cksm).upper()
+    return S_OK( True )
+
+  def getCksmType( self ):
+    """ get checksum type
+
+    :param self: self reference
+    """
+    return S_OK( self.__cksmType )
+    
+  def setCksmTest( self, cksmTest=False ):
+    """ set cksm test
+
+    :param self: self reference
+    :param bool cksmTest: flag to enable/disable checksum test
+    """
+    self.__cksmTest = bool( cksmTest )
+    return S_OK( self.__cksmTest )
+
+  def getCksmTest( self ):
+    """ get cksm test flag
+
+    :param self: self reference
+    """
+    return S_OK( self.__cksmTest )
+
   ####################################################################
   #
   #  Methods for setting/getting/checking files and their metadata
@@ -512,10 +584,7 @@ class FTSRequest(object):
     """
     if not lfns:
       lfns = self.fileDict.keys()
-    toUpdate = []
-    for lfn in lfns:
-      if lfn not in self.catalogReplicas or overwrite:
-        toUpdate.append( lfn )
+    toUpdate = [ lfn for lfn in lfns if ( lfn not in self.catalogReplicas ) or overwrite ]
     if not toUpdate:
       return S_OK()
     res = self.__getCatalogObject()
@@ -540,10 +609,7 @@ class FTSRequest(object):
     """
     if not lfns:
       lfns = self.fileDict.keys()
-    toUpdate = []
-    for lfn in lfns:
-      if lfn not in self.catalogMetadata or overwrite:
-        toUpdate.append( lfn )
+    toUpdate = [ lfn for lfn in lfns if ( lfn not in self.catalogMetadata ) or overwrite ]
     if not toUpdate:
       return S_OK()
     res = self.__getCatalogObject()
@@ -713,11 +779,11 @@ class FTSRequest(object):
     return S_ERROR()
 
   def __createSURLPairFile( self ):
-    """ create tmp file for glite-transfer-submit command
+    """ create LFNs file for glite-transfer-submit command
 
     This file consists one line for each fiel to be transferred:
 
-    sourceSURL targetSURL [CHECKSUMTPE:CHECKSUM]
+    sourceSURL targetSURL [CHECKSUMTYPE:CHECKSUM]
 
     :param self: self reference
     """
@@ -728,8 +794,12 @@ class FTSRequest(object):
       source = self.fileDict[lfn].get( 'Source' )
       target = self.fileDict[lfn].get( 'Target' )
       if ( lfnStatus != 'Failed' ) and ( lfnStatus != 'Done' ) and source and target:
-        surlString = '%s %s\n' % ( source, target )
-        surlFile.write( surlString )
+        cksmStr = ""
+        ## add chsmType:cksm only if cksmType is specified, else let FTS decide by itself
+        if self.__cksmTest and self.__cksmType:
+          if lfn in self.catalogMetadata and "Checksum" in self.catalogMetadata:
+            cksmStr = " %s:%s" % ( self.__cksmType, self.catalogMetadata[lfn]["Checksum"] )
+        surlFile.write( "%s %s%s\n" % ( source, target, cksmStr ) )
     surlFile.close()
     self.surlFile = fileName
     return S_OK()
@@ -746,6 +816,8 @@ class FTSRequest(object):
     if self.sourceToken:
       comm.append( '-S' )
       comm.append( self.sourceToken )
+    if self.__cksmTest:
+      comm.append( "--compare-checksums" )
     res = executeGridCommand( '', comm )
     os.remove( self.surlFile )
     if not res['OK']:
@@ -793,12 +865,12 @@ class FTSRequest(object):
       configPath = '/Resources/FTSEndpoints/%s' % ep
       endpointURL = gConfig.getValue( configPath )
       if not endpointURL:
-        errStr = "FTSRequest.__resolveFTSEndpoint: Failed to find FTS endpoint, check CS entry for '%s'." % ep
+        errStr = "FTSRequest.__resolveFTSServer: Failed to find FTS endpoint, check CS entry for '%s'." % ep
         return S_ERROR( errStr )
       self.ftsServer = endpointURL
       return S_OK( endpointURL )
     except Exception, x:
-      return S_ERROR( 'FTSRequest.__resolveFTSEndpoint: Failed to obtain endpoint details from CS' )
+      return S_ERROR( 'FTSRequest.__resolveFTSServer: Failed to obtain endpoint details from CS' )
 
   ####################################################################
   #
@@ -806,6 +878,12 @@ class FTSRequest(object):
   #
 
   def summary( self, untilTerminal = False, printOutput = False ):
+    """ summary of FTS job
+
+    :param self: self reference
+    :param bool untilTerminal: flag to monitor FTS job to its final state
+    :param bool printOutput: flag to print out monitoring information to the stdout
+    """
     while not self.isTerminal:
       res = self.__parseOutput()
       if not res['OK']:
@@ -823,6 +901,12 @@ class FTSRequest(object):
     return S_OK()
 
   def monitor( self, untilTerminal = False, printOutput = False ):
+    """ monitor FTS job
+
+    :param self: self reference
+    :param bool untilTerminal: flag to monitor FTS job to its final state
+    :param bool printOutput: flag to print out monitoring information to the stdout
+    """
     res = self.__isMonitorValid()
     if not res['OK']:
       return res
@@ -840,6 +924,12 @@ class FTSRequest(object):
     return res
 
   def dumpSummary( self, printOutput = False ):
+    """ get FTS job summary as str
+ 
+    :param self: self reference
+    :param bool printOutput: print summary to stdout
+    """
+
     outStr = ''
     for status in sortList( self.statusSummary.keys() ):
       if self.statusSummary[status]:
@@ -850,6 +940,10 @@ class FTSRequest(object):
     return S_OK( outStr )
 
   def __print( self ):
+    """ print progress bar of FTS job completeness to stdout
+
+    :param self: self reference
+    """
     self.getPercentageComplete()
     width = 100
     bits = int( ( width * self.percentageComplete ) / 100 )
@@ -860,6 +954,10 @@ class FTSRequest(object):
     sys.stdout.flush()
 
   def dump( self ):
+    """ print FTS job parameters and files to stdout
+
+    :param self: self reference
+    """
     print "%s : %s" % ( "Status".ljust( 10 ), self.requestStatus.ljust( 10 ) )
     print "%s : %s" % ( "Source".ljust( 10 ), self.sourceSE.ljust( 10 ) )
     print "%s : %s" % ( "Target".ljust( 10 ), self.targetSE.ljust( 10 ) )
@@ -872,6 +970,10 @@ class FTSRequest(object):
     return S_OK()
 
   def __isSummaryValid( self ):
+    """ check validity of FTS job summary report
+
+    :param self: self reference
+    """
     if not self.ftsServer:
       return S_ERROR( "FTSServer not set" )
     if not self.ftsGUID:
@@ -879,6 +981,10 @@ class FTSRequest(object):
     return S_OK()
 
   def __isMonitorValid( self ):
+    """ check validity of FTM monitoring 
+
+    :param self: self reference
+    """
     res = self.__isSummaryValid()
     if not res['OK']:
       return res
@@ -887,13 +993,18 @@ class FTSRequest(object):
     return S_OK()
 
   def __parseOutput( self, full = False ):
+    """ execute glite-transfer-status command and parse its output
+
+    :param self: self reference
+    :param bool full: glite-transfer-status verbosity level, when set, collect information of files as well
+    """
     if full:
       res = self.__isMonitorValid()
     else:
       res = self.__isSummaryValid()
     if not res['OK']:
       return res
-    comm = ['glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID]
+    comm = [ 'glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID ]
     if full:
       comm.append( '-l' )
     res = executeGridCommand( '', comm )
@@ -940,6 +1051,10 @@ class FTSRequest(object):
   #
 
   def finalize( self ):
+    """ finalize FTS job
+
+    :param self: self reference
+    """
     self.__updateMetadataCache()
     transEndTime = dateTime()
     regStartTime = time.time()
@@ -957,8 +1072,9 @@ class FTSRequest(object):
     return S_OK()
 
   def getTransferStatistics( self ):
-    """
-     Get information of Transfers, it can be used by Accounting
+    """ collect information of Transfers that can be used by Accounting
+
+    :param self: self reference
     """
     transDict = { 'transTotal': len( self.fileDict ),
                   'transLFNs': [],
@@ -976,9 +1092,19 @@ class FTSRequest(object):
     return S_OK( transDict )
 
   def getFailedRegistrations( self ):
+    """ get failed registrations dict
+
+    :param self: self reference
+    """
     return S_OK( self.failedRegistrations )
 
   def __registerSuccessful( self, transLFNs ):
+    """ register successfully transferred files to the catalogs, 
+    fill failedRegistrations dict for files that failed to register
+
+    :param self: self reference
+    :param list transLFNs: LFNs in FTS job
+    """
     self.failedRegistrations = {}
     toRegister = {}
     for lfn in transLFNs:
@@ -987,12 +1113,12 @@ class FTSRequest(object):
         self.__setFileParameter( lfn, 'Reason', res['Message'] )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
       else:
-        toRegister[lfn] = {'PFN':res['Value'], 'SE':self.targetSE}
+        toRegister[lfn] = { 'PFN' : res['Value'], 'SE' : self.targetSE }
     if not toRegister:
       return S_OK( ( 0, 0 ) )
     res = self.__getCatalogObject()
     if not res['OK']:
-      for lfn in toRegister.keys():
+      for lfn in toRegister:
         self.failedRegistrations = toRegister
         gLogger.error( 'Failed to get Catalog Object', res['Message'] )
         return S_OK( ( 0, len( toRegister ) ) )
@@ -1007,6 +1133,15 @@ class FTSRequest(object):
     return S_OK( ( len( res['Value']['Successful'] ), len( toRegister ) ) )
 
   def __sendAccounting( self, regSuc, regTotal, regTime, transEndTime, transDict ):
+    """ send accounting record
+
+    :param self: self reference
+    :param regSuc: number of files successfully registered
+    :param regTotal: number of files attepted to register 
+    :param regTime: time stamp at the end of registration 
+    :param transEndTime: time stamp at the end of FTS job
+    :param dict transDict: dict holding couters for files being transerred, their sizes and successfull transfers 
+    """
 
     submitTime = fromString( self.submitTime )
     oAccounting = DataOperation()
@@ -1026,8 +1161,8 @@ class FTSRequest(object):
     accountingDict['FinalStatus'] = self.requestStatus
     accountingDict['Source'] = self.sourceSE
     accountingDict['Destination'] = self.targetSE
-    c = transEndTime - submitTime
-    transferTime = c.days * 86400 + c.seconds
+    dt = transEndTime - submitTime
+    transferTime = dt.days * 86400 + dt.seconds
     accountingDict['TransferTime'] = transferTime
     oAccounting.setValuesFromDict( accountingDict )
     gLogger.verbose( "Attempting to commit accounting message..." )
@@ -1036,6 +1171,10 @@ class FTSRequest(object):
     return S_OK()
 
   def __removeFailedTargets( self ):
+    """ remove failed files at target SE 
+
+    :param self: self reference
+    """
     corruptTargetErrors = ['file exists',
                            'FILE_EXISTS',
                            'Device or resource busy',
@@ -1053,6 +1192,11 @@ class FTSRequest(object):
       self.oTargetSE.removeFile( corruptedTarget )
 
   def __determineMissingSource( self ):
+    """ check source files availability at source SE
+
+    :param self: self reference
+    """
+
     missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
                            'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
                            'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
