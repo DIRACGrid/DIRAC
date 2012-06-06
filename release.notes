@@ -1,3 +1,40 @@
+[v6r4p5]
+
+*Configuration
+NEW: Added function to generate Operations CS paths
+
+*Core
+FIX: Added proper ProcessPool checks and finalisation
+
+*DataManagement
+FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
+FIX: remove @classmethods here and there to unblock requestHolder
+CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
+FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
+NEW: TA: add finalize
+CHANGE: TransferAgent: add AcceptableFailedFiles to StrategyHandler to ban FTS channel from scheduling
+FIX: if there is no failed files, put an empty dict
+
+
+*RSS
+FIX: RSS is setting Allowed but the StorageElement checks for Active
+
+*Workflows
+FIX: Part of WorfklowTask rewritten to fix some issues and allow 'ANY' as site
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r4p4]
+
+*Core
+FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
+
+[v6r4p3]
+
+*Core
+FIX: ProcessPool with watchdog and timeouts - applied in v6r3 first
+
 [v6r4p2]
 
 *StorageManagement
@@ -73,6 +110,37 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
  
 *Resources
 NEW: SSHLSFComputingElement added 
+
+[v6r3p15]
+
+
+*DataManagement
+FIX: if there is no failed files, put an empty dict
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+
+[v6r3p14]
+
+* Core
+
+BUGFIX: ProcessPool.py: clean processing and finalisation
+BUGFIX: Pfn.py: don't check for 'FileName' in pfnDict
+
+* DMS
+
+NEW: dirac-dms-show-fts-status.py: script showing last hour history for FTS channels
+NEW: TransferDBMonitoringHandler.py: new function exporting FST channel queues
+BUGFIX: TransferAgent.py,RemovalAgent.py,RegistrationAgent.py - unlinking of temp proxy files, corection of values sent to gMonitor
+BUGFIX: StrategyHandler - new config option 'AcceptableFailedFiles' to unblock scheduling for channels if problematic transfers occured for few files
+NEW: TransferAgent,RemovalAgent,RegistrationAgent - new confing options for setting timeouts for tasks and ProcessPool finalisation
+BUGFIX: ReplicaManager.py - reverse sort of LFNs when deleting files and directories to avoid blocks
+NEW: moved StrategyHandler class def to separate file under DMS/private
+
+* TMS
+
+FIX: TransformationCleaningAgent.py: some refactoring, new way of disabling/enabline execution by 'EnableFlag' config option
 
 [v6r3p13]
 
