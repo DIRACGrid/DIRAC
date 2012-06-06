@@ -238,7 +238,18 @@ class RequestContainer:
                      'CreationTime': str( datetime.datetime.utcnow() ),
                      'ExecutionOrder':0}
     for attr, value in requestDict['Attributes'].items():
-      attributeDict[attr] = value
+      if attr == 'ExecutionOrder' and value == 'last':
+        execOrdersSoFar = []
+        for subReqTypes in self.subRequests:
+          for subReq in self.subRequests[subReqTypes]:
+            execOrdersSoFar.append( subReq['Attributes']['ExecutionOrder'] )
+        try:
+          last = max( execOrdersSoFar )
+        except ValueError:
+          last = 0
+        attributeDict[attr] = last + 1
+      else:
+        attributeDict[attr] = value
     for attr in self.subAttributeNames:
       if not attr in attributeDict.keys():
         attributeDict[attr] = ''
@@ -250,7 +261,7 @@ class RequestContainer:
 
     if requestDict.has_key( 'Files' ):
       files = []
-      for rFile in requestDict['Files']:
+      for rFile in requestDict['Files'].values():
         fileDict = {'Status':'Waiting', 'FileID':makeGuid(), 'Attempt':1}
         for attr, value in rFile.items():
           fileDict[attr] = value
