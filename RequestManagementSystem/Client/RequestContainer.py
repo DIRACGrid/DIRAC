@@ -228,8 +228,23 @@ class RequestContainer:
       self.addSubRequest( subRequest, rType )
     return S_OK()
 
+  def _getLastOrder( self ):
+    """ just returns the last ExecutionOrder for sub requests
+    """
+    execOrdersSoFar = []
+    for subReqTypes in self.subRequests:
+      for subReq in self.subRequests[subReqTypes]:
+        execOrdersSoFar.append( subReq['Attributes']['ExecutionOrder'] )
+    try:
+      last = max( execOrdersSoFar )
+    except ValueError:
+      last = 0
+    return last
+
+
   def addSubRequest( self, requestDict, rType ):
     """  Add a new sub-requests of specified type
+        The 'Attributes':ExecutionOrder can be set to 'last' to always be the last to be executed.
     """
     # Initialise the sub-request
     index = self.initiateSubRequest( rType )['Value']
@@ -238,18 +253,9 @@ class RequestContainer:
                      'CreationTime': str( datetime.datetime.utcnow() ),
                      'ExecutionOrder':0}
     for attr, value in requestDict['Attributes'].items():
-      if attr == 'ExecutionOrder' and value == 'last':
-        execOrdersSoFar = []
-        for subReqTypes in self.subRequests:
-          for subReq in self.subRequests[subReqTypes]:
-            execOrdersSoFar.append( subReq['Attributes']['ExecutionOrder'] )
-        try:
-          last = max( execOrdersSoFar )
-        except ValueError:
-          last = 0
-        attributeDict[attr] = last + 1
-      else:
-        attributeDict[attr] = value
+      if attr == 'ExecutionOrder' and value.lower() == 'last':
+        value = self._getLastOrder() + 1
+      attributeDict[attr] = value
     for attr in self.subAttributeNames:
       if not attr in attributeDict.keys():
         attributeDict[attr] = ''
