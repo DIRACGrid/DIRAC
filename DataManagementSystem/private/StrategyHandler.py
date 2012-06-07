@@ -115,9 +115,9 @@ class StrategyHandler( object ):
     self.acceptableFailedFiles = gConfig.getValue( self.configSection + "/AcceptableFailedFiles", 5 )
     self.log.debug( "AcceptableFailedFiles = %s" % self.acceptableFailedFiles )
 
-    self.bandwidths = bandwidths
-    self.channels = channels
-    self.failedFiles = failedFiles
+    self.bandwidths = bandwidths if bandwidths else {}
+    self.channels = channels in channels else {}
+    self.failedFiles = failedFiles if failedFiles else {}
     self.chosenStrategy = 0
 
     # dispatcher
@@ -147,10 +147,7 @@ class StrategyHandler( object ):
     :param self: self reference
     :param failedFiles: observed distinct failed files
     """
-    if not failedFiles:
-      self.failedFiels = {}
-    else:
-      self.failedFiles = failedFiles
+    self.failedFiles = failedFiles if failedFiles else {}
 
   def setBandwiths( self, bandwidths ):
     """ set the bandwidths 
@@ -158,7 +155,8 @@ class StrategyHandler( object ):
     :param self: self reference
     :param bandwithds: observed througput of active FTS channels
     """
-    self.bandwidths = bandwidths
+  
+    self.bandwidths = bandwidths if bandwidths else {}
 
   def setChannels( self, channels ):
     """ set the channels
@@ -166,7 +164,7 @@ class StrategyHandler( object ):
     :param self: self reference
     :param channels: active channels queues
     """
-    self.channels = channels 
+    self.channels = channels if channels else {}
 
   def getSupportedStrategies( self ):
     """ Get supported strategies.
