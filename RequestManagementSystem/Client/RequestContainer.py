@@ -228,13 +228,19 @@ class RequestContainer:
       self.addSubRequest( subRequest, rType )
     return S_OK()
 
-  def _getLastOrder( self ):
-    """ just returns the last ExecutionOrder for sub requests
+  def _getLastOrder( self, fileIn = None ):
+    """ just returns the last ExecutionOrder of ALL the sub requests, or for file (if present)
     """
     execOrdersSoFar = []
+
     for subReqTypes in self.subRequests:
-      for subReq in self.subRequests[subReqTypes]:
-        execOrdersSoFar.append( subReq['Attributes']['ExecutionOrder'] )
+      for operationDict in self.subRequests[subReqTypes]:
+        if fileIn is None:  #gets the last in total
+          execOrdersSoFar.append( operationDict['Attributes']['ExecutionOrder'] )
+        else:
+          if fileIn == operationDict['Files']:
+            execOrdersSoFar.append( operationDict['Attributes']['ExecutionOrder'] )
+
     try:
       last = max( execOrdersSoFar )
     except ValueError:
@@ -253,7 +259,7 @@ class RequestContainer:
                      'CreationTime': str( datetime.datetime.utcnow() ),
                      'ExecutionOrder':0}
     for attr, value in requestDict['Attributes'].items():
-      if attr == 'ExecutionOrder' and value.lower() == 'last':
+      if attr == 'ExecutionOrder' and str( value ).lower() == 'last':
         value = self._getLastOrder() + 1
       attributeDict[attr] = value
     for attr in self.subAttributeNames:

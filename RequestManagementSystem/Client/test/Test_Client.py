@@ -1,4 +1,4 @@
-import unittest, types, time
+import unittest, types, time, os
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 class reqContainerTestCase( unittest.TestCase ):
@@ -6,6 +6,12 @@ class reqContainerTestCase( unittest.TestCase ):
   """
   def setUp( self ):
     self.reqContainer = RequestContainer()
+
+  def tearDown( self ):
+    try:
+      os.remove( 'testRequest.xml' )
+    except OSError:
+      pass
 
 class GetSetTestCase( reqContainerTestCase ):
 
@@ -45,16 +51,18 @@ class AddOperationsTestCase( reqContainerTestCase ):
 
   def test_addSubRequest( self ):
     rc_o = RequestContainer()
-    rc_o.addSubRequest( {'Attributes': {'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743'}},
-                        'someType' )
+    op1_Index = rc_o.addSubRequest( {'Attributes': {'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743', 'Operation': 'op1'}},
+                                    'someType' )
+    op1_Index = op1_Index['Value']
     subRequestExpected = {'someType': [{'Files': [], 'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
                                                                     'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
-                                                                    'Catalogue': '', 'Error': '', 'Operation': ''},
+                                                                    'Catalogue': '', 'Error': '', 'Operation': 'op1'},
                                         'Datasets': []}]}
     self.assertEqual( rc_o.subRequests, subRequestExpected )
 
-    rc_o.addSubRequest( {'Attributes': {'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743'}},
-                        'someType' )
+    op2_index = rc_o.addSubRequest( {'Attributes': {'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743', 'Operation': 'op2'}},
+                                    'someType' )
+    op2_index = op2_index['Value']
     subRequestExpected = {
                           'someType':
                                       [
@@ -62,14 +70,14 @@ class AddOperationsTestCase( reqContainerTestCase ):
                                         'Files': [],
                                         'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
                                                        'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
-                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op1'},
                                         'Datasets': []
                                         },
                                        {
                                         'Files': [],
                                         'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
                                                        'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
-                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op2'},
                                         'Datasets': []
                                         }
                                       ]
@@ -85,14 +93,14 @@ class AddOperationsTestCase( reqContainerTestCase ):
                                         'Files': [],
                                         'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
                                                        'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
-                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op1'},
                                         'Datasets': []
                                         },
                                        {
                                         'Files': [],
                                         'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
                                                        'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
-                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op2'},
                                         'Datasets': []
                                         },
                                        {
@@ -116,14 +124,14 @@ class AddOperationsTestCase( reqContainerTestCase ):
                                         'Files': [],
                                         'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
                                                        'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
-                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op1'},
                                         'Datasets': []
                                         },
                                        {
                                         'Files': [],
                                         'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
                                                        'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
-                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op2'},
                                         'Datasets': []
                                         },
                                        {
@@ -147,12 +155,104 @@ class AddOperationsTestCase( reqContainerTestCase ):
                           }
     self.assertEqual( rc_o.subRequests, subRequestExpected )
 
+    fileDict = {'LFN':'foo', 'Status':'Waiting'}
+    rc_o.setSubRequestFiles( op1_Index, 'someType', [fileDict] )
+
+    subRequestExpected = {
+                          'someType':
+                                      [
+                                       {
+                                        'Files': [{'LFN':'foo', 'Status':'Waiting'}],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op1'},
+                                        'Datasets': []
+                                        },
+                                       {
+                                        'Files': [],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op2'},
+                                        'Datasets': []
+                                        },
+                                       {
+                                        'Files': [],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 1,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                        'Datasets': []
+                                        }
+                                      ],
+                          'someOtherType':
+                                      [
+                                       {
+                                        'Files': [],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 2,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                        'Datasets': []
+                                        },
+                                       ]
+                          }
+    self.assertEqual( rc_o.subRequests, subRequestExpected )
+
+    fileLastOp = rc_o._getLastOrder( 'foo' )
+    print fileLastOp
+    rc_o.addSubRequest( {'Attributes': {'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743', 'ExecutionOrder': fileLastOp + 1}},
+                        'someOtherType' )
+
+    subRequestExpected = {
+                          'someType':
+                                      [
+                                       {
+                                        'Files': [{'LFN':'foo', 'Status':'Waiting'}],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op1'},
+                                        'Datasets': []
+                                        },
+                                       {
+                                        'Files': [],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 0,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': 'op2'},
+                                        'Datasets': []
+                                        },
+                                       {
+                                        'Files': [],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 1,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                        'Datasets': []
+                                        }
+                                      ],
+                          'someOtherType':
+                                      [
+                                       {
+                                        'Files': [],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 2,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                        'Datasets': []
+                                        },
+                                       {
+                                        'Files': [],
+                                        'Attributes': {'Status': 'Waiting', 'LastUpdate': '', 'TargetSE': '', 'ExecutionOrder': 1,
+                                                       'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743',
+                                                       'Catalogue': '', 'Error': '', 'Operation': ''},
+                                        'Datasets': []
+                                        },
+                                       ]
+                          }
+    self.assertEqual( rc_o.subRequests, subRequestExpected )
+
 
   def test_addTransfer( self ):
 
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{"File1":{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}},
+    reqDic = {'Files':{"File1":{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231,
+                                'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}},
               'Datasets':{'Dataset1':'DC06Stripping'},
               'Attributes':{'TargetSE':'CERN-tape', 'Operation':'MoveAndRegister', 'SourceSE':'RAL-tape'}}
     # Add this to transfer type list
