@@ -21,8 +21,8 @@ class SRM2Storage( StorageBase ):
   def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
 
     self.isok = True
-    self.gfal = False
-    self.lcg_util = False
+    self.gfal = None
+    self.lcg_util = None
 
     self.protocolName = 'SRM2'
     self.name = storageName
@@ -51,7 +51,8 @@ class SRM2Storage( StorageBase ):
     #	GFAL_CKSM_MD5,
     #	GFAL_CKSM_SHA1    
     # GFAL_CKSM_NULL = 0
-    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4  }
+    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4 }
+
     if self.checksumType.upper() in self.checksumTypes: 
       gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
       self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
@@ -85,9 +86,9 @@ class SRM2Storage( StorageBase ):
       gLogger.debug( infoStr )
       infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
       gLogger.debug( infoStr )
-    except Exception, x:
+    except ImportError, error:
       errStr = "SRM2Storage.__init__: Failed to import lcg_util"
-      gLogger.exception( errStr, '', x )
+      gLogger.exception( errStr, '', error )
       return S_ERROR( errStr )
     try:
       import gfalthr as gfal
@@ -95,8 +96,8 @@ class SRM2Storage( StorageBase ):
       gLogger.debug( infoStr )
       infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
       gLogger.debug( infoStr )
-    except Exception, x:
-      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % ( x )
+    except ImportError, error:
+      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % ( error )
       gLogger.warn( errStr )
       try:
         import gfal
@@ -104,9 +105,9 @@ class SRM2Storage( StorageBase ):
         gLogger.debug( infoStr )
         infoStr = "The version of gfal is %s" % gfal.gfal_version()
         gLogger.debug( infoStr )
-      except Exception, x:
+      except ImportError, error:
         errStr = "SRM2Storage.__init__: Failed to import gfal"
-        gLogger.exception( errStr, '', x )
+        gLogger.exception( errStr, '', error )
         return S_ERROR( errStr )
     self.lcg_util = lcg_util
     self.gfal = gfal
