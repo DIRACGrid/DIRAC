@@ -51,17 +51,21 @@ class FTSSubmitAgent( AgentModule ):
     self.transferDB = TransferDB()
     ## read config options
     self.maxJobsPerChannel = self.am_getOption( 'MaxJobsPerChannel', 2 )
+    self.log.info("max jobs/channel = %s" % self.maxJobsPerChannel )
 
     ## checksum test
     self.cksmTest = bool( self.am_getOption( "ChecksumTest", False ) )
+    self.log.info("checksum test %s" % { True : "enabled", False : "disabled" }[self.cksmTest]  )
+  
     ## ckecksum type
     if self.cksmTest:
       self.cksmType = str( self.am_getOption( "ChecksumType", "" ) ).upper()
-
       if self.cksmType and self.cksmType not in ( "ADLER32", "MD5", "SHA1" ):
         self.log.warn("unknown checksum type: %s, will set it to None" % self.cksmType )
         self.cksmType = None
                       
+      self.log.info("will use checksum type %s for checksum test" % self.cksmType )
+    
     # This sets the Default Proxy to used as that defined under 
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.

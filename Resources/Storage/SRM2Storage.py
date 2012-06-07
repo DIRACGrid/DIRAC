@@ -21,8 +21,8 @@ class SRM2Storage( StorageBase ):
   def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
 
     self.isok = True
-    self.gfal = False
-    self.lcg_util = False
+    self.gfal = None
+    self.lcg_util = None
 
     self.protocolName = 'SRM2'
     self.name = storageName
@@ -42,9 +42,8 @@ class SRM2Storage( StorageBase ):
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
-    ## set checksum type, by default this is ADLER32
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", "ADLER32" )
-
+    ## set checksum type, by default this is GFAL_CKSM_NONE
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", None )
     # enum gfal_cksm_type
     #	GFAL_CKSM_NONE = 0,
     #	GFAL_CKSM_CRC32,
@@ -52,9 +51,11 @@ class SRM2Storage( StorageBase ):
     #	GFAL_CKSM_MD5,
     #	GFAL_CKSM_SHA1    
     # GFAL_CKSM_NULL = 0
-    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4  }
-    if self.checksumType in self.checksumTypes: 
-      self.checksumType = self.checksumTypes[self.checksumType]
+    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4 }
+
+    if self.checksumType.upper() in self.checksumTypes: 
+      gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
+      self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
     else:
       gLogger.warn("SRM2Storage: unknown checksum type %s, disabling checksum check")
       gLogger.warn("SRM2Storage: will only comparing src and dest file sizes")
@@ -87,9 +88,9 @@ class SRM2Storage( StorageBase ):
       gLogger.debug( infoStr )
       infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
       gLogger.debug( infoStr )
-    except Exception, x:
+    except ImportError, error:
       errStr = "SRM2Storage.__init__: Failed to import lcg_util"
-      gLogger.exception( errStr, '', x )
+      gLogger.exception( errStr, '', error )
       return S_ERROR( errStr )
     try:
       import gfalthr as gfal
@@ -97,8 +98,8 @@ class SRM2Storage( StorageBase ):
       gLogger.debug( infoStr )
       infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
       gLogger.debug( infoStr )
-    except Exception, x:
-      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % ( x )
+    except ImportError, error:
+      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % ( error )
       gLogger.warn( errStr )
       try:
         import gfal
@@ -106,9 +107,9 @@ class SRM2Storage( StorageBase ):
         gLogger.debug( infoStr )
         infoStr = "The version of gfal is %s" % gfal.gfal_version()
         gLogger.debug( infoStr )
-      except Exception, x:
+      except ImportError, error:
         errStr = "SRM2Storage.__init__: Failed to import gfal"
-        gLogger.exception( errStr, '', x )
+        gLogger.exception( errStr, '', error )
         return S_ERROR( errStr )
     self.lcg_util = lcg_util
     self.gfal = gfal
@@ -1391,8 +1392,6 @@ class SRM2Storage( StorageBase ):
     if statDict['File']:
 
       statDict.setdefault("Checksum", "")
-      statDict.setdefault("ChecksumType", "")
-
       if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
         statDict["Checksum"] = urlDict["checksum"]
         
