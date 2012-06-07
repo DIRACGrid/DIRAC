@@ -133,8 +133,9 @@ class FailoverTransfer:
     """ Sets a registration request.
     """
     self.log.info( 'Setting replication request for %s to %s' % ( lfn, se ) )
+    lastOperationOnFile = self.request._getLastOrder( lfn )
     result = self.request.addSubRequest( {'Attributes':{'Operation':'replicateAndRegister',
-                                                       'TargetSE':se, 'ExecutionOrder':0}},
+                                                       'TargetSE':se, 'ExecutionOrder':lastOperationOnFile + 1}},
                                          'transfer' )
     if not result['OK']:
       return result
@@ -153,7 +154,8 @@ class FailoverTransfer:
     if not type( catalog ) == types.ListType:
       catalog = [catalog]
 
-    i_catalog = 0
+    lastOperationOnFile = self.request._getLastOrder( lfn )
+    i_catalog = lastOperationOnFile + 1
     for cat in catalog:
       result = self.request.addSubRequest( {'Attributes':{'Operation':'registerFile', 'ExecutionOrder':i_catalog,
                                                          'TargetSE':se, 'Catalogue':cat}}, 'register' )
@@ -173,8 +175,9 @@ class FailoverTransfer:
   def __setReplicaRemovalRequest( self, lfn, se ):
     """ Sets a removal request for a replica.
     """
+    lastOperationOnFile = self.request._getLastOrder( lfn )
     result = self.request.addSubRequest( {'Attributes':{'Operation':'replicaRemoval',
-                                                       'TargetSE':se, 'ExecutionOrder':1}},
+                                                       'TargetSE':se, 'ExecutionOrder':lastOperationOnFile + 1}},
                                          'removal' )
     index = result['Value']
     fileDict = {'LFN':lfn, 'Status':'Waiting'}
@@ -186,8 +189,9 @@ class FailoverTransfer:
   def __setFileRemovalRequest( self, lfn, se = '', pfn = '' ):
     """ Sets a removal request for a file including all replicas.
     """
+    lastOperationOnFile = self.request._getLastOrder( lfn )
     result = self.request.addSubRequest( {'Attributes':{'Operation':'removeFile',
-                                                       'TargetSE':se, 'ExecutionOrder':1}},
+                                                       'TargetSE':se, 'ExecutionOrder':lastOperationOnFile + 1}},
                                          'removal' )
     index = result['Value']
     fileDict = {'LFN':lfn, 'PFN':pfn, 'Status':'Waiting'}
