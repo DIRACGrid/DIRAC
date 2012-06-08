@@ -1,23 +1,21 @@
 #!/bin/env python
-
-"""
-This is doc
-
-"""
+""" Showing last hour history of FTS transfers. """
+import sys
 import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base import Script 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client import PathFinder 
-import sys, re
+
+__RCSID__ = "$Id$"
+
 colors = { "yellow" : "\033[93m%s\033[0m", 
            "red" : "\033[91m%s\033[0m" } 
 
-gSource = None
-gDest = None
 gProblematic = False
 
-def showChannels( channels = [] ):
+def showChannels():
+  """ print info about the last hour performance of FTS system  """
 
   global gProblematic
  
@@ -35,8 +33,6 @@ def showChannels( channels = [] ):
   if not accFailedFiles["OK"]:
     gLogger.error( accFailedFiles["Message"] )
   accFailedFiles = int( accFailedFiles["Value"] )  
-  
-  
   
   scInfo = "timescale = %s s\nacceptable failure rate = %s %%\nacceptable distinct failed files = %s" % ( timeScale, 
                                                                                                           accFailureRate,
@@ -104,7 +100,7 @@ def showChannels( channels = [] ):
         
         if fRate > 0 and colorize:
           color = "yellow"
-          status = "Unwell"
+          status = "Poor"
 
         if fRate > accFailureRate and fFiles > accFailedFiles:
           status = "Closed"
@@ -128,6 +124,7 @@ def showChannels( channels = [] ):
     gLogger.always("Noting to display...")
 
 def setProblematic( problematic ):
+  """ callback for showing only problematic channels """
   global gProblematic
   gProblematic = True
   return S_OK()
