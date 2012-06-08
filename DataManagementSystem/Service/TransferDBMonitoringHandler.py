@@ -123,6 +123,11 @@ class TransferDBMonitoringHandler( RequestHandler ):
     """
     return transferDB.getChannelQueues() 
 
+  types_getCountFileToFTS = [ IntType, StringType ]
+  def export_getCountFileToFTS( self, interval, status ):
+    """ Get the count of distinct failed files in FileToFTS per channel 
+    """
+    return transferDB.getCountFileToFTS( interval, status ) 
 
 ##############################################################################
   types_getReqPageSummary = [ DictType, StringType, IntType, IntType ]
