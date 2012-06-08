@@ -623,9 +623,8 @@ class ExecutorDispatcher:
       self.__log.error( errMsg )
       return S_ERROR( errMsg )
     if not self.__states.removeTask( taskId, eId ):
-      errMsg = "Executor %s says it's processed task but it was not sent to it" % eId
-      self.__log.error( errMsg )
-      return S_ERROR( errMsg )
+      self.__log.info( "Executor %s says it's processed task %s but it didn't have it" % ( eId, taskId ) )
+      return S_OK()
     if eTask.eType not in self.__idMap[ eId ]:
       errMsg = "Executor type invalid for %s. Redoing task %s" % ( eId, taskId )
       self.__log.error( errMsg )
@@ -642,10 +641,17 @@ class ExecutorDispatcher:
     if not result[ 'OK' ]:
       return result
     eType = result[ 'Value' ]
+    #Executor didn't have the task.
+    if not eType:
+      #Fill the executor
+      self.__sendTaskToExecutor( eId )
+      return S_OK()
     if not taskObj:
       taskObj = self.__tasks[ taskId ].taskObj
     result = self.__taskFreezeCallback( taskId, taskObj, eType )
     if not result[ 'OK' ]:
+      #Fill the executor
+      self.__sendTaskToExecutor( eId )
       return result
     try:
       self.__tasks[ taskId ].taskObj = taskObj
@@ -663,11 +669,18 @@ class ExecutorDispatcher:
     if not result[ 'OK' ]:
       return result
     eType = result[ 'Value' ]
+    #Executor didn't have the task.
+    if not eType:
+      #Fill the executor
+      self.__sendTaskToExecutor( eId )
+      return S_OK()
     #Call the done callback
     if not taskObj:
       taskObj = self.__tasks[ taskId ].taskObj
     result = self.__taskProcessedCallback( taskId, taskObj, eType )
     if not result[ 'OK' ]:
+      #Fill the executor
+      self.__sendTaskToExecutor( eId )
       return result
     #Up until here it's an executor error. From now on it can be a task error
     try:
@@ -688,9 +701,9 @@ class ExecutorDispatcher:
       self.__log.error( errMsg )
       return S_ERROR( errMsg )
     if not self.__states.removeTask( taskId, eId ):
-      errMsg = "Executor %s says it's processed task but it was not sent to it" % eId
-      self.__log.error( errMsg )
-      return S_ERROR( errMsg )
+      self.__log.info( "Executor %s says it's processed task %s but it didn't have it" % ( eId, taskId ) )
+      self.__sendTaskToExecutor( eId )
+      return S_OK()
     self.__log.verbose( "Executor %s did NOT process task %s, retrying" % ( eId, taskId ) )
     try:
       self.__tasks[ taskId ].retries += 1
