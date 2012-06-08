@@ -2,7 +2,7 @@
 """ Showing last hour history of FTS transfers. """
 import sys
 import DIRAC
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK
 from DIRAC.Core.Base import Script 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client import PathFinder 
@@ -34,9 +34,9 @@ def showChannels():
     gLogger.error( accFailedFiles["Message"] )
   accFailedFiles = int( accFailedFiles["Value"] )  
   
-  scInfo = "timescale = %s s\nacceptable failure rate = %s %%\nacceptable distinct failed files = %s" % ( timeScale, 
-                                                                                                          accFailureRate,
-                                                                                                          accFailedFiles ) 
+  scInfo = "timescale = %s s\nacc failure rate = %s %%\nacc distinct failed files = %s" % ( timeScale, 
+                                                                                            accFailureRate,
+                                                                                            accFailedFiles ) 
   ## db monitor
   transferDB = RPCClient( "DataManagement/TransferDBMonitoring" )
   ## get channels
@@ -71,14 +71,10 @@ def showChannels():
   for chId, channel in channels.items():
 
     name = channel["ChannelName"]
-    if gSource and not name.startswith( gSource ):
-      continue
-    if gDest and not name.endswith( gDest ):
-      continue
-
     color = None 
     status = channel["Status"]
-    if status == "Active": status = "OK"
+    if status == "Active": 
+      status = "OK"
 
     waitingFiles = channel["Files"]
     waitingSize = channel["Size"]
@@ -113,7 +109,8 @@ def showChannels():
       line = colors[color] % lineTemplate 
     else:
       line = lineTemplate
-    printOut.append( line % ( chId, name, status, waitingFiles, successFiles, failedFiles, filePut, throughPut, fRate, fFiles ) )
+    printOut.append( line % ( chId, name, status, waitingFiles, successFiles, 
+                              failedFiles, filePut, throughPut, fRate, fFiles ) )
 
       
   if printOut:
@@ -123,7 +120,7 @@ def showChannels():
   else:
     gLogger.always("Noting to display...")
 
-def setProblematic( problematic ):
+def setProblematic( problematic=False ):
   """ callback for showing only problematic channels """
   global gProblematic
   gProblematic = True
