@@ -41,7 +41,7 @@ class SandboxStoreClient:
           SandboxStoreClient.__smdb = False
         else:
           result[ 'Value' ].close()
-      except ( ImportError, RuntimeError ):
+      except ( ImportError, RuntimeError, AttributeError ):
         SandboxStoreClient.__smdb = False
 
   def __getRPCClient( self ):
