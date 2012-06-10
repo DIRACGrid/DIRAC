@@ -1,4 +1,4 @@
-[v6r5-pre2]
+[v6r5-pre3]
 
 NEW: Executor framework
 
@@ -15,11 +15,16 @@ CHANGE: Several improvements on DISET
 CHANGE: Fixed all DOS endings to UNIX
 CHANGE: Agents, Services and Executors know how to react to CSSection/Module and react accordingly
 NEW: install tools are updated to deal with executors
+FIX: dirac-install - add -T/--Timeout option to define timeout for distribution downloads
+BUGFIX: avoid PathFinder.getServiceURL and use Client class ( DataLoggingClient,LfcFileCayalogProxyClient ) 
 
 *RSS
 CHANGE: removed code execution from __init__
 CHANGE: removed unused methods
 NEW: Log all policy results 
+
+*Resources
+NEW: updated SSHComputingElement which allows multiple job submission
 
 *WMS
 CHANGE: WMS Optimizers are now executors
@@ -27,6 +32,16 @@ CHANGE: SandboxStoreClient can directly access the DB if available
 CHANGE: Moved JobDescription and improved into JobManifest
 FIX: typo in JobLoggingDB
 NEW: JobState/CachedJobState allow access to the Job via DB/JobStateSync Service automatically
+BUGFIX: DownloadInputData - when not enough disk space, message was using "buffer" while it should be using "data"
+FIX: the sandboxmetadataDB explosion when using the sandboxclient without direct access to the DB
+NEW: Added support for reset/reschedule in the OptimizationMind
+CHANGE: Whenever a DB is not properly initialized it will raise a catchable RuntimeError exception 
+        instead of silently returning
+FIX: InputDataResolution - just quick mod for easier extensibility, plus removed some LHCb specific stuff
+
+*Transformation
+FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
+     plus few minor corrections (e.g. logger messages)
 
 *Accounting
 NEW: AccountingDB - added retrieving RAW records for internal stuff
@@ -58,6 +73,14 @@ FIX: Part of WorfklowTask rewritten to fix some issues and allow 'ANY' as site
 
 *Transformation
 FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r4p5]
+
+*Core
+FIX: proper generation of the release notes
+
+*DMS
+FIX: more protection in StrategyHandler 
 
 [v6r4p4]
 
@@ -144,6 +167,14 @@ NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of s
  
 *Resources
 NEW: SSHLSFComputingElement added 
+
+[v6r3p16]
+
+*Core
+FIX: proper generation of the release notes
+
+*DMS
+FIX: more protection in StrategyHandler 
 
 [v6r3p15]
 
