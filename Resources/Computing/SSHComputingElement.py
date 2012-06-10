@@ -1,6 +1,6 @@
 ########################################################################
 # $HeadURL$
-# File :   SSHTorqueComputingElement.py
+# File :   SSHComputingElement.py
 # Author : Dumitru Laurentiu
 ########################################################################
 

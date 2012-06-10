@@ -8,8 +8,6 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "96beb41 (2012-02-14 18:32:40 +0100) Adri Casajs <adria@ecm.ub.es>"
-
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight        import *
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
 from DIRAC.Core.Security                              import File
