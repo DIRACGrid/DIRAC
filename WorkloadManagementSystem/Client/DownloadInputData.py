@@ -243,7 +243,7 @@ class DownloadInputData:
       return S_OK( msg )
     else:
       msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' \
-             % ( ( buffer + totalSize ), availableBytes )
+             % ( ( data + totalSize ), availableBytes )
       self.log.warn( msg )
       return S_ERROR( msg )
 
