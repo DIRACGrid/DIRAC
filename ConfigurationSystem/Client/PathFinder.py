@@ -10,7 +10,7 @@ def getDIRACSetup():
 def divideFullName( entityName ):
   fields = [ field.strip() for field in entityName.split( "/" ) ]
   if len( fields ) < 2:
-    raise Exception( "Service (%s) name must be with the form system/service" % entityName )
+    raise RuntimeError( "Service (%s) name must be with the form system/service" % entityName )
   return tuple( fields )
 
 def getSystemInstance( systemName, setup = False ):
@@ -21,7 +21,7 @@ def getSystemInstance( systemName, setup = False ):
   if instance:
     return instance
   else:
-    raise Exception( "Option %s is not defined" % optionPath )
+    raise RuntimeError( "Option %s is not defined" % optionPath )
 
 def getSystemSection( serviceName, serviceTuple = False, instance = False, setup = False ):
   if not serviceTuple:

@@ -16,10 +16,11 @@ from DIRAC.Core.Security import Properties, CS
 class SandboxMetadataDB(DB):
 
   def __init__( self, maxQueueSize = 10 ):
-    DB.__init__( self, 'SandboxMetadataDB', 'WorkloadManagement/SandboxMetadataDB', maxQueueSize )
+    if not DB.__init__( self, 'SandboxMetadataDB', 'WorkloadManagement/SandboxMetadataDB', maxQueueSize ):
+      raise RuntimeError( "Can't initialize the SandboxStoreDB" )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
-      raise Exception( "Can't create tables: %s" % result[ 'Message' ])
+      raise RuntimeError( "Can't create tables: %s" % result[ 'Message' ] )
     self.__assignedSBGraceDays = 0
     self.__unassignedSBGraceDays = 15
 
