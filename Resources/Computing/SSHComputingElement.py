@@ -6,6 +6,7 @@
 
 """ SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
     directly through ssh
+    It's still under development & debugging,
 """ 
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
