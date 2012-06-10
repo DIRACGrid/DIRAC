@@ -352,13 +352,15 @@ class TarModuleCreator( object ):
       elif lastKey:
         keyDict[ lastKey ][-1] += " %s" % line
 
-
     return S_OK( relData )
 
-  def __generateRSTFile( self, releaseData, rstFileName, versionFilter = False ):
+  def __generateRSTFile( self, releaseData, rstFileName, pkgVersion, singleVersion ):
     rstData = []
+    parsedPkgVersion = Distribution.parseVersionString( pkgVersion )
     for version, verData in releaseData:
-      if versionFilter and version != versionFilter:
+      if singleVersion and version != pkgVersion:
+        continue
+      if Distribution.parseVersionString( version ) > parsedPkgVersion:
         continue
       versionLine = "Version %s" % version
       rstData.append( "" )
@@ -407,10 +409,10 @@ class TarModuleCreator( object ):
           gLogger.warn( result[ 'Message' ] )
       return S_OK()
     gLogger.info( "Loaded release.notes" )
-    for rstFileName, versionFilter in ( ( "releasenotes.rst", self.params.version ),
+    for rstFileName, singleVersion in ( ( "releasenotes.rst", True ),
                                         ( "releasehistory.rst", False ) ):
-      result = self.__generateRSTFile( releaseData, rstFileName,
-                                       versionFilter )
+      result = self.__generateRSTFile( releaseData, rstFileName, self.params.version,
+                                       singleVersion )
       if not result[ 'OK' ]:
         gLogger.error( "Could not generate %s: %s" % ( rstFileName, result[ 'Message' ] ) )
         continue
@@ -526,7 +528,6 @@ if __name__ == "__main__":
   Script.registerSwitch( "p:", "path=", "VCS path (if needed)", cliParams.setVCSPath )
   Script.registerSwitch( "K:", "releasenotes=", "Path to the release notes", cliParams.setReleaseNotes )
   Script.registerSwitch( "A", "notesoutside", "Leave a copy of the compiled release notes outside the tarball", cliParams.setOutReleaseNotes )
-
 
   Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                       '\nUsage:',
