@@ -38,6 +38,9 @@ NEW: Added support for reset/reschedule in the OptimizationMind
 CHANGE: Whenever a DB is not properly initialized it will raise a catchable RuntimeError exception 
         instead of silently returning
 FIX: InputDataResolution - just quick mod for easier extensibility, plus removed some LHCb specific stuff
+NEW: allow jobids in a file in dirac-wms-job-get-output
+NEW: JobManager - zfill in %n parameter substitution to allow alphabetical sorting
+FIX: SandboxStoreClient - catch exception when SandboxMetadataDB can not be instantiated
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
