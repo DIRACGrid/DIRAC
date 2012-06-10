@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "96beb41 (2012-02-14 18:32:40 +0100) Adri Casajs <adria@ecm.ub.es>"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight        import *
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
@@ -299,7 +299,6 @@ class ComputingElement:
     """
     # FIXME: need to take into account the possible requirements from the pilots,
     #        so far the cputime
-    ciInfoDict = {}
     result = self.getDynamicInfo()
     if not result['OK']:
       self.log.warn( 'Could not obtain CE dynamic information' )
@@ -309,10 +308,8 @@ class ComputingElement:
       runningJobs = result['RunningJobs']
       waitingJobs = result['WaitingJobs']
       submittedJobs = result['SubmittedJobs']
-      ceInfoDict = dict(result)
 
     maxTotalJobs = int( self.__getParameters( 'MaxTotalJobs' )['Value'] )
-    ceInfoDict['MaxTotalJobs'] = maxTotalJobs
     waitingToRunningRatio = float( self.__getParameters( 'WaitingToRunningRatio' )['Value'] )
     # if there are no Running job we can submit to get at most 'MaxWaitingJobs'
     # if there are Running jobs we can increase this to get a ratio W / R 'WaitingToRunningRatio'
@@ -340,6 +337,10 @@ class ComputingElement:
         additionalJobs = maxWaitingJobs - waitingJobs
         if totalJobs + additionalJobs >= maxTotalJobs:
           additionalJobs = maxTotalJobs - totalJobs
+      #For SSH CE case	
+      if int(self.__getParameters( 'MaxWaitingJobs')['Value']) == 0:
+        additionalJobs = maxTotalJobs - runningJobs
+        
 
       result['Value'] = additionalJobs
 
@@ -352,7 +353,6 @@ class ComputingElement:
     # if totalCPU:
     #  message +=', TotalCPU=%s' %(totalCPU)
     result['Message'] = message
-    result['CEInfoDict'] = ceInfoDict
     return result
 
   #############################################################################
