@@ -67,6 +67,8 @@ class RequestAgentBase( AgentModule ):
   __exceptionCallback = None
   ## config path in CS
   __configPath = None
+  ## read request holder 
+  __requestHolder = dict()
 
   def __init__( self, agentName, baseAgentName=False, properties=dict() ):
     """ c'tor

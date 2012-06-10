@@ -47,6 +47,14 @@ FIX: TransformationAgent - a small improvement: now can pick the prods status to
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
 
+[v6r4p6]
+
+*Core
+FIX: proper generation of the release notes
+
+*DMS
+FIX: more protection in StrategyHandler 
+
 [v6r4p5]
 
 *Configuration
@@ -73,14 +81,6 @@ FIX: Part of WorfklowTask rewritten to fix some issues and allow 'ANY' as site
 
 *Transformation
 FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
-
-[v6r4p5]
-
-*Core
-FIX: proper generation of the release notes
-
-*DMS
-FIX: more protection in StrategyHandler 
 
 [v6r4p4]
 
@@ -112,9 +112,6 @@ FIX: TransferDB.getChannelObservedThroughput - the channelDict was created in a 
 FIX: ResourceStatus was not returning Allowed by default
 
 [v6r4]
-
-*General
-FIX: remove direct access to the /Operations CS section, use Helper instead 
 
 *Core
 FIX: dirac-install-db.py: addDatabaseOptionsToCS has added a new keyed argument
@@ -156,9 +153,32 @@ BUGFIX: Result in ClientCache table is a varchar, but the method was getting a d
 NEW: CacheFeederAgent - VOBOX and SpaceTokenOccupancy commands added (ported from LHCbDIRAC)
 CHANGE: RSS components get operational parameters from the Operations handler
 
-*RequestManagement
-FIX: RequestDBMySQL.py: to take into account ExecutionOrder in getRequest
-FIX: StorageElement.py: change log message level
+*DataManagement
+FIX: if there is no failed files, put an empty dict
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r3p14]
+
+* Core
+
+BUGFIX: ProcessPool.py: clean processing and finalisation
+BUGFIX: Pfn.py: don't check for 'FileName' in pfnDict
+
+* DMS
+
+NEW: dirac-dms-show-fts-status.py: script showing last hour history for FTS channels
+NEW: TransferDBMonitoringHandler.py: new function exporting FST channel queues
+BUGFIX: TransferAgent.py,RemovalAgent.py,RegistrationAgent.py - unlinking of temp proxy files, corection of values sent to gMonitor
+BUGFIX: StrategyHandler - new config option 'AcceptableFailedFiles' to unblock scheduling for channels if problematic transfers occured for few files
+NEW: TransferAgent,RemovalAgent,RegistrationAgent - new confing options for setting timeouts for tasks and ProcessPool finalisation
+BUGFIX: ReplicaManager.py - reverse sort of LFNs when deleting files and directories to avoid blocks
+NEW: moved StrategyHandler class def to separate file under DMS/private
+
+* TMS
+
+FIX: TransformationCleaningAgent.py: some refactoring, new way of disabling/enabline execution by 'EnableFlag' config option
 
 *Transformation
 NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of sites associated 
@@ -177,7 +197,6 @@ FIX: proper generation of the release notes
 FIX: more protection in StrategyHandler 
 
 [v6r3p15]
-
 
 *DataManagement
 FIX: if there is no failed files, put an empty dict
@@ -255,7 +274,7 @@ CHANGE: return back to the release web2012041601
 
 *Transformation
 FIX: TransformationCleaningAgent - protection from deleting requests with jobID 0 
-
+Ä
 [v6r3p6]
 
 *Core

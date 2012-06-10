@@ -25,6 +25,7 @@ __RCSID__ = "$Id$"
 ## imports
 import time
 import re
+import random
 ## from DIRAC (globals and Core)
 from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -41,6 +42,8 @@ from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 ## from Resources
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+## from RSS
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 ## agent name
 AGENT_NAME = "DataManagement/TransferAgent"
@@ -111,11 +114,9 @@ class TransferAgent( RequestAgentBase ):
       SchedulingType = File
      - list of active strategies
       ActiveStrategies = MinimiseTotalWait 
-     - acceptable failure rate to ban/unban FST channel 
-      AcceptableFailureRate = 75
-     - acceptable number of dictinct files failed in FTS to ban/unban FTS channel 
-     AcceptableFailedFiles = 5
-
+     - acceptable failure rate
+      AcceptableFailureRate = 75  
+  
   """
   ## placeholder for ReplicaManager instance
   __replicaManager = None
@@ -575,6 +576,13 @@ class TransferAgent( RequestAgentBase ):
                                                                                  ownerGroup["Value"] ) )
       return S_OK( False )
 
+    ## check request owner
+    #ownerDN = requestObj.getAttribute( "OwnerDN" ) 
+    #if ownerDN["OK"] and ownerDN["Value"]:
+    #  self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
+    #                                                                            ownerDN["Value"] ) )
+    #  return S_OK( False )
+
     ## check operation
     res = requestObj.getNumSubRequests( "transfer" )
     if not res["OK"]:
@@ -1027,4 +1035,3 @@ class TransferAgent( RequestAgentBase ):
               return register
 
     return S_OK( requestObj )
-
