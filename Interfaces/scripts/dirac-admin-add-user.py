@@ -81,7 +81,7 @@ for prop in args:
     Script.gLogger.info( "Setting property %s to %s" % ( pName, pValue ) )
     userProps[ pName ] = pValue
 
-if not diracAdmin.csModifyUser( userName, userProps, createIfNonExistant = True )['Value']:
+if not diracAdmin.csModifyUser( userName, userProps, createIfNonExistant = True )['OK']:
   errorList.append( ( "add user", "Cannot register user %s" % userName ) )
   exitCode = 255
 else:

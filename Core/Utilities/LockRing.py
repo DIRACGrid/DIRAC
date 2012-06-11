@@ -17,10 +17,10 @@ class LockRing( object ):
     self.__events = {}
 
   def __genName( self, container ):
-    name = md5( str( time.time() + random.random() ) ).hexdump()
+    name = md5( str( time.time() + random.random() ) ).hexdigest()
     retries = 10
     while name in container and retries:
-      name = md5( str( time.time() + random.random() ) ).hexdump()
+      name = md5( str( time.time() + random.random() ) ).hexdigest()
       retries -= 1
     return name
 
@@ -60,24 +60,24 @@ class LockRing( object ):
     return S_OK()
 
   def _openAll( self ):
-    """ 
-    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
+    """
+    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
     DO NOT USE EXCEPT IN JUST SPAWNED NEW CHILD PROCESSES!!!!!!!!
     NEVER IN THE PARENT PROCESS!!!!!!
-    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
+    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
     """
     for lockName in self.__locks.keys():
       try:
         self.__locks[ lockName ].release()
-      except ( thread.error, KeyError ):
+      except ( RuntimeError, thread.error, KeyError ):
         pass
 
   def _setAllEvents( self ):
-    """ 
-    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
+    """
+    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
     DO NOT USE EXCEPT IN JUST SPAWNED NEW CHILD PROCESSES!!!!!!!!
     NEVER IN THE PARENT PROCESS!!!!!!
-    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
+    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
     """
     for evName in self.__events.keys():
       try:

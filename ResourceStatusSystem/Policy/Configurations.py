@@ -12,7 +12,7 @@ __RCSID__ = '$Id: $'
 #pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
 
 def getPolicyParameters():
-  return CS.getTypedDictRootedAt( 'PolicyParameters' )
+  return CS.getTypedDictRootedAtOperations( 'PolicyParameters' )
 
 Policies = {
             
@@ -30,7 +30,7 @@ Policies = {
       'module'          : 'DT_Policy',
       'commandInNewRes' : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
       'commandIn'       : ( 'GOCDBStatus_Command', 'DTCached_Command' ),
-      'args'            : ( pp["DTinHours"], ),
+      'args'            : ( 12, ),#Hacked to avoid executing code( pp["DTinHours"], ),
       'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
                                          'args': None}},],
       'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),

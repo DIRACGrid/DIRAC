@@ -24,7 +24,7 @@ import random
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import intListToString
-from DIRAC.Resources.Storage.StorageElement import StorageElement 
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ## it's a magic! 
 MAGIC_EPOC_NUMBER = 1270000000
@@ -39,7 +39,7 @@ class TransferDB( DB ):
   This db is holding all information used by FTS systems.
   """
 
-  def __init__( self, systemInstance ="Default", maxQueueSize=10 ):
+  def __init__( self, systemInstance = "Default", maxQueueSize = 10 ):
     """c'tor
     
     :param self: self reference
@@ -55,7 +55,7 @@ class TransferDB( DB ):
     and what for are allthis calculations? :/
     """
     _date = datetime.datetime.utcnow()
-    epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
+    epoc = time.mktime( _date.timetuple() ) - MAGIC_EPOC_NUMBER
     time_order = round( epoc, 3 )
     return time.time() - MAGIC_EPOC_NUMBER
 
@@ -79,9 +79,9 @@ class TransferDB( DB ):
                                                                                         destSE )
         gLogger.debug( msg )
         return res
-    req = "INSERT INTO Channels (SourceSite, DestinationSite, Status, ChannelName) VALUES ('%s','%s','%s','%s-%s');" 
+    req = "INSERT INTO Channels (SourceSite, DestinationSite, Status, ChannelName) VALUES ('%s','%s','%s','%s-%s');"
     req = req % ( sourceSE, destSE, 'Active', sourceSE, destSE )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       self.getIdLock.release()
       err = 'TransferDB._createChannel: Failed to create channel from %s to %s.' % ( sourceSE, destSE )
@@ -101,7 +101,7 @@ class TransferDB( DB ):
     res = self._query( req )
     if not res["OK"]:
       err = 'TransferDB._checkChannelExists: Failed to retrieve ChannelID for %s to %s.' % ( sourceSE, destSE )
-      return S_ERROR('%s\n%s' % ( err, res['Message'] ) )
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     resultDict = { "Exists" : False }
     if res["Value"]:
       resultDict["Exists"] = True
@@ -131,10 +131,10 @@ class TransferDB( DB ):
     :param attrName: one of Channels table column name
     """
     req = "SELECT %s FROM Channels WHERE ChannelID = %s;" % ( attrName, channelID )
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._getChannelAttribute: Failed to get %s for Channel %s.' % ( attrName, channelID )
-      return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if not res['Value']:
       err = 'TransferDB._getChannelAttribute: No Channel %s defined.' % channelID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -148,10 +148,10 @@ class TransferDB( DB ):
     :param mixed attrValue: new value to be set
     """
     req = "UPDATE Channels SET %s = '%s' WHERE ChannelID = %s;" % ( attrName, attrValue, channelID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
-      err = 'TransferDB._setChannelAttribute: Failed to update %s to %s for Channel %s.' % ( attrName, 
-                                                                                             attrValue, 
+      err = 'TransferDB._setChannelAttribute: Failed to update %s to %s for Channel %s.' % ( attrName,
+                                                                                             attrValue,
                                                                                              channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
@@ -162,7 +162,7 @@ class TransferDB( DB ):
     :param self: self reference
     """
     req = "SELECT ChannelID,SourceSite,DestinationSite,Status,ChannelName from Channels;"
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._getChannels: Failed to retrieve channels information.'
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -170,7 +170,7 @@ class TransferDB( DB ):
     keyTuple = ( "Source", "Destination", "Status", "ChannelName" )
     for record in res['Value']:
       channelID = record[0]
-      channelTuple = record[1:] 
+      channelTuple = record[1:]
       channels[channelID] = dict( zip( keyTuple, channelTuple ) )
       #channels[channelID]['Source'] = sourceSite
       #channels[channelID]['Destination'] = destSite
@@ -186,7 +186,7 @@ class TransferDB( DB ):
     :param str status: required Channels.Status
     """
     req = "SELECT ChannelID,SourceSite,DestinationSite FROM Channels WHERE Status = '%s';" % status
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._getChannelsInState: Failed to get Channels for Status = %s.' % status
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -206,7 +206,7 @@ class TransferDB( DB ):
     :param int channelID: Channels.ChannelID
     """
     req = "UPDATE Channels SET Files = Files-1 WHERE ChannelID = %s;" % channelID
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = 'TransferDB.decreaseChannelFiles: Failed to update Files for Channel %s.' % channelID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -219,7 +219,7 @@ class TransferDB( DB ):
     :param int channelID: Channels.ChannelID
     """
     req = "UPDATE Channels SET Files = Files+1 WHERE ChannelID = %s;" % channelID
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = 'TransferDB.increaseChannelFiles: Failed to update Files for Channel %s.' % channelID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -234,7 +234,7 @@ class TransferDB( DB ):
     :param self: self reference
     :param int maxJobsPerChannel: max number of simultaneous FTS transfers for channel
     """
-    res = self.getChannelQueues( status='Waiting' )
+    res = self.getChannelQueues( status = 'Waiting' )
     if not res['OK']:
       return res
     if not res['Value']:
@@ -249,12 +249,12 @@ class TransferDB( DB ):
       return S_OK()
 
     strChannelIDs = intListToString( candidateChannels.keys() )
-    req = "SELECT ChannelID,%s-SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" 
+    req = "SELECT ChannelID,%s-SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;"
     req = req % ( maxJobsPerChannel, strChannelIDs )
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._selectChannelsForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
-      return S_ERROR(err)
+      return S_ERROR( err )
 
     channelJobs = {}
     for channelID, jobs in res['Value']:
@@ -265,7 +265,7 @@ class TransferDB( DB ):
 
     req = "SELECT ChannelID,SourceSite,DestinationSite,FTSServer,Files FROM Channels WHERE ChannelID IN (%s);"
     req = req % strChannelIDs
-    res = self._query(req)
+    res = self._query( req )
 
     channels = []
     keyTuple = ( "ChannelID", "Source", "Destination", "FTSServer", "NumFiles" )
@@ -273,7 +273,7 @@ class TransferDB( DB ):
       resDict = dict( zip( keyTuple, recordTuple ) )
       for i in range( channelJobs[channelID] ):
         channels.append( resDict )
-    return S_OK(channels)
+    return S_OK( channels )
 
   def selectChannelForSubmission( self, maxJobsPerChannel ):
     """ select one channel for submission
@@ -281,7 +281,7 @@ class TransferDB( DB ):
     :param self: self reference
     :param int maxJobsPerChannel: max nb of simultanious FTS requests 
     """
-    res = self.getChannelQueues( status='Waiting' )
+    res = self.getChannelQueues( status = 'Waiting' )
     if not res['OK']:
       return res
     if not res['Value']:
@@ -295,12 +295,12 @@ class TransferDB( DB ):
     if not candidateChannels:
       return S_OK()
 
-    strChannelIDs = intListToString(candidateChannels.keys())
+    strChannelIDs = intListToString( candidateChannels.keys() )
     req = "SELECT ChannelID,%s-SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;"
     req = req % ( maxJobsPerChannel, strChannelIDs )
     #req = "SELECT ChannelID,SUM(Status='Submitted') FROM FTSReq WHERE ChannelID IN (%s) GROUP BY ChannelID;" 
     #req = req % strChannelIDs
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._selectChannelForSubmission: Failed to count FTSJobs on Channels %s.' % strChannelIDs
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -320,14 +320,14 @@ class TransferDB( DB ):
         if numberOfJobs < minJobs:
           minJobs = numberOfJobs
           maxFiles = files
-          possibleChannels.append(channelID)
+          possibleChannels.append( channelID )
         elif numberOfJobs == minJobs:
           if files > maxFiles:
             maxFiles = files
             possibleChannels = []
-            possibleChannels.append(channelID)
+            possibleChannels.append( channelID )
           elif candidateChannels[channelID] == maxFiles:
-            possibleChannels.append(channelID)
+            possibleChannels.append( channelID )
     if not possibleChannels:
       return S_OK()
 
@@ -337,15 +337,15 @@ class TransferDB( DB ):
     resDict['ChannelID'] = selectedChannel
     return S_OK( resDict )
 
-  def addFileToChannel( self, 
-                        channelID, 
-                        fileID, 
-                        sourceSE, 
-                        sourceSURL, 
-                        targetSE, 
-                        targetSURL, 
-                        fileSize, 
-                        fileStatus='Waiting' ):
+  def addFileToChannel( self,
+                        channelID,
+                        fileID,
+                        sourceSE,
+                        sourceSURL,
+                        targetSE,
+                        targetSURL,
+                        fileSize,
+                        fileStatus = 'Waiting' ):
     """ insert new Channel record 
 
     :param self: self reference
@@ -361,25 +361,25 @@ class TransferDB( DB ):
     res = self.checkFileChannelExists( channelID, fileID )
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed check existance of File %s on Channel %s.' % ( fileID, channelID )
-      return S_ERROR('%s\n%s' % ( err, res['Message'] ) )
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if res['Value']:
       err = 'TransferDB._addFileToChannel: File %s already exists on Channel %s.' % ( fileID, channelID )
-      return S_ERROR(err)
+      return S_ERROR( err )
     time_order = self.__getFineTime()
-    values = "%s,%s,'%s','%s','%s','%s',UTC_TIMESTAMP(),%s,UTC_TIMESTAMP(),%s,%s,'%s'" % ( channelID, fileID, 
-                                                                                           sourceSE, sourceSURL, 
-                                                                                           targetSE, targetSURL, 
-                                                                                           time_order, time_order, 
+    values = "%s,%s,'%s','%s','%s','%s',UTC_TIMESTAMP(),%s,UTC_TIMESTAMP(),%s,%s,'%s'" % ( channelID, fileID,
+                                                                                           sourceSE, sourceSURL,
+                                                                                           targetSE, targetSURL,
+                                                                                           time_order, time_order,
                                                                                            fileSize, fileStatus )
-    columns = ",".join( [ "ChannelID" , "FileID", 
+    columns = ",".join( [ "ChannelID" , "FileID",
                           "SourceSE", "SourceSURL",
-                          "TargetSE", "TargetSURL", 
-                          "SchedulingTime" ," SchedulingTimeOrder",
+                          "TargetSE", "TargetSURL",
+                          "SchedulingTime" , " SchedulingTimeOrder",
                           "LastUpdate", "LastUpdateTimeOrder",
                           "FileSize", "Status" ] )
 
-    req = "INSERT INTO Channel (%s) VALUES (%s);" % ( columns, values ) 
-    res = self._update(req)
+    req = "INSERT INTO Channel (%s) VALUES (%s);" % ( columns, values )
+    res = self._update( req )
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed to insert File %s to Channel %s.' % ( fileID, channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -394,9 +394,9 @@ class TransferDB( DB ):
     """
 
     req = "SELECT FileID FROM Channel WHERE ChannelID = %s and FileID = %s;" % ( channelID, fileID )
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
-      err = 'TransferDB._checkFileChannelExists: Failed to check existance of File %s on Channel %s.' % ( fileID, 
+      err = 'TransferDB._checkFileChannelExists: Failed to check existance of File %s on Channel %s.' % ( fileID,
                                                                                                           channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if res['Value']:
@@ -410,13 +410,13 @@ class TransferDB( DB ):
     :param int channelID: Channel.ChannelID
     :param list fileIDs: list of Channel.FileID
     """
-    strFileIDs = intListToString(fileIDs)
+    strFileIDs = intListToString( fileIDs )
     time_order = self.__getFineTime()
-    req =  "UPDATE Channel SET Status='Executing', LastUpdate=UTC_TIMESTAMP(), " \
-        "LastUpdateTimeOrder=%s WHERE FileID IN (%s) AND ChannelID = %s;" % ( time_order, 
-                                                                              strFileIDs, 
+    req = "UPDATE Channel SET Status='Executing', LastUpdate=UTC_TIMESTAMP(), " \
+        "LastUpdateTimeOrder=%s WHERE FileID IN (%s) AND ChannelID = %s;" % ( time_order,
+                                                                              strFileIDs,
                                                                               channelID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = 'TransferDB._setChannelFilesExecuting: Failed to set file executing.'
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -435,13 +435,13 @@ class TransferDB( DB ):
     if not fileIDs:
       return S_OK()
     strFileIDs = intListToString( fileIDs )
-    req  = "UPDATE Channel SET Status = "
-    req += "CASE WHEN Status = 'Waiting%s' THEN 'Waiting' WHEN Status = 'Done%s' THEN 'Done' END " % ( channelID, 
+    req = "UPDATE Channel SET Status = "
+    req += "CASE WHEN Status = 'Waiting%s' THEN 'Waiting' WHEN Status = 'Done%s' THEN 'Done' END " % ( channelID,
                                                                                                        channelID )
-    req += "WHERE FileID IN (%s) AND ( Status = 'Waiting%s' OR Status = 'Done%s');" % ( strFileIDs, 
-                                                                                        channelID, 
+    req += "WHERE FileID IN (%s) AND ( Status = 'Waiting%s' OR Status = 'Done%s');" % ( strFileIDs,
+                                                                                        channelID,
                                                                                         channelID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = "TransferDB.updateAncestorChannelStatus: Failed to update status"
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -470,7 +470,7 @@ class TransferDB( DB ):
     """
 
     req = "DELETE FROM Channel WHERE ChannelID = %s and FileID = %s;" % ( channelID, fileID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = 'TransferDB._removeFileFromChannel: Failed to remove File %s from Channel %s.' % ( fileID, channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -484,9 +484,9 @@ class TransferDB( DB ):
     :param list fileIDs: list of Files.FileID
     """
     time_order = self.__getFineTime()
-    strFileIDs = intListToString(fileIDs)
+    strFileIDs = intListToString( fileIDs )
     req = "SELECT FileID,Status,COUNT(*) FROM Channel WHERE FileID IN (%s) GROUP BY FileID,Status;" % strFileIDs
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       return res
     fileDict = {}
@@ -497,17 +497,17 @@ class TransferDB( DB ):
         fileDict[fileID] += count
     toUpdate = [ fileID for fileID, notDone in fileDict.items() if notDone == 1 ]
     if toUpdate:
-      req = "UPDATE Files SET Status = 'Done' WHERE FileID IN (%s);" % intListToString(toUpdate)
-      res = self._update(req)
+      req = "UPDATE Files SET Status = 'Done' WHERE FileID IN (%s);" % intListToString( toUpdate )
+      res = self._update( req )
       if not res['OK']:
         return res
     req = "UPDATE Channel SET Status = 'Done',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder=%s" \
-        ",CompletionTime=UTC_TIMESTAMP() WHERE FileID IN (%s) AND ChannelID = %s;" % ( time_order, 
-                                                                                       strFileIDs, 
+        ",CompletionTime=UTC_TIMESTAMP() WHERE FileID IN (%s) AND ChannelID = %s;" % ( time_order,
+                                                                                       strFileIDs,
                                                                                        channelID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
-      err = 'TransferDB._updateCompletedChannelStatus: Failed to update %s files from Channel %s.' % ( len(fileIDs), 
+      err = 'TransferDB._updateCompletedChannelStatus: Failed to update %s files from Channel %s.' % ( len( fileIDs ),
                                                                                                        channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
@@ -521,12 +521,12 @@ class TransferDB( DB ):
     """
     time_order = self.__getFineTime()
     req = "UPDATE Channel SET Status = 'Waiting',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder=%s," \
-        "Retries=Retries+1 WHERE FileID IN (%s) AND ChannelID = %s;" % ( time_order, 
-                                                                         intListToString(fileIDs), 
+        "Retries=Retries+1 WHERE FileID IN (%s) AND ChannelID = %s;" % ( time_order,
+                                                                         intListToString( fileIDs ),
                                                                          channelID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
-      err = 'TransferDB._resetFileChannelStatus: Failed to reset %s files from Channel %s.' % ( len(fileIDs), 
+      err = 'TransferDB._resetFileChannelStatus: Failed to reset %s files from Channel %s.' % ( len( fileIDs ),
                                                                                                 channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
@@ -540,17 +540,17 @@ class TransferDB( DB ):
     :param atr attribute: column name
     """
     req = "SELECT %s from Channel WHERE ChannelID = %s and FileID = %s;" % ( attribute, channelID, fileID )
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
-      err = "TransferDB._getFileChannelAttribute: Failed to get %s for File %s on Channel %s." % ( attribute, 
-                                                                                                   fileID, 
+      err = "TransferDB._getFileChannelAttribute: Failed to get %s for File %s on Channel %s." % ( attribute,
+                                                                                                   fileID,
                                                                                                    channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if not res['Value']:
       err = "TransferDB._getFileChannelAttribute: File %s doesn't exist on Channel %s." % ( fileID, channelID )
-      return S_ERROR(err)
+      return S_ERROR( err )
     attrValue = res['Value'][0][0]
-    return S_OK(attrValue)
+    return S_OK( attrValue )
 
   def setFileChannelStatus( self, channelID, fileID, status ):
     """ set Channel.Status to :status:, if :status: is 'Failed', it will also set
@@ -564,7 +564,7 @@ class TransferDB( DB ):
     """
     if status == 'Failed':
       req = "UPDATE Files SET Status = 'Failed' WHERE FileID = %d" % fileID
-      res = self._update(req)
+      res = self._update( req )
       if not res['OK']:
         return res
     res = self.setFileChannelAttribute( channelID, fileID, 'Status', status )
@@ -579,19 +579,19 @@ class TransferDB( DB ):
     :param str attribute: Channel table column name
     :param mixed attrValue: new value for :attribute:
     """
-    if type(fileID) == ListType:
+    if type( fileID ) == ListType:
       fileIDs = fileID
     else:
       fileIDs = [fileID]
     time_order = self.__getFineTime()
     req = "UPDATE Channel SET %s = '%s',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder=%s " \
-        "WHERE ChannelID=%s and FileID IN (%s);"  % ( attribute, attrValue, time_order,
-                                                      channelID, intListToString(fileIDs) )
-    res = self._update(req)
+        "WHERE ChannelID=%s and FileID IN (%s);" % ( attribute, attrValue, time_order,
+                                                      channelID, intListToString( fileIDs ) )
+    res = self._update( req )
     if not res['OK']:
-      err = 'TransferDB._setFileChannelAttribute: Failed to set %s to %s for %s files on Channel %s.' % ( attribute, 
-                                                                                                          attrValue, 
-                                                                                                          len(fileIDs), 
+      err = 'TransferDB._setFileChannelAttribute: Failed to set %s to %s for %s files on Channel %s.' % ( attribute,
+                                                                                                          attrValue,
+                                                                                                          len( fileIDs ),
                                                                                                           channelID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
@@ -603,7 +603,7 @@ class TransferDB( DB ):
     # ORDER BY Retries, LastUpdateTimeOrder LIMIT 1;" % (channelID)
     req = "SELECT c.SourceSE,c.TargetSE FROM Channel as c,Files as f WHERE c.ChannelID=%s AND " \
         "c.Status='Waiting' AND c.FileID=f.FileID ORDER BY c.Retries,c.LastUpdateTimeOrder LIMIT 1;" % channelID
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -614,7 +614,7 @@ class TransferDB( DB ):
         "WHERE c.ChannelID=%s AND c.FileID=f.FileID AND c.Status ='Waiting' AND c.SourceSE='%s' " \
         "AND c.TargetSE='%s' ORDER BY c.Retries,c.LastUpdateTimeOrder LIMIT %s;" % \
         ( channelID, sourceSE, targetSE, numberOfFiles )
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -622,12 +622,12 @@ class TransferDB( DB ):
       return S_OK()
 
     keysTuple = ( "FileID", "SourceSURL", "TargetSURL", "Size", "LFN" )
-    resDict = { "SourceSE" : sourceSE, 
+    resDict = { "SourceSE" : sourceSE,
                 "TargetSE" : targetSE,
                 "Files" : [ dict( zip( keysTuple, recordTuple ) ) for recordTuple in res["Value"] ] }
-    return S_OK(resDict)
+    return S_OK( resDict )
 
-  def getChannelQueues( self, status=None ):
+  def getChannelQueues( self, status = None ):
     """ get Channel queues given Channel.Status :status:
 
     if :status: is None, this will pick up all 'Waiting%'-like Channel records 
@@ -643,22 +643,22 @@ class TransferDB( DB ):
     channels = res['Value']
     channelIDs = channels.keys()
     if status:
-      req = "SELECT ChannelID,COUNT(*),SUM(FileSize) FROM Channel WHERE Status = '%s' GROUP BY ChannelID;" % (status)
+      req = "SELECT ChannelID,COUNT(*),SUM(FileSize) FROM Channel WHERE Status = '%s' GROUP BY ChannelID;" % ( status )
     else:
-      req = "SELECT ChannelID,COUNT(*),SUM(FileSize) FROM Channel WHERE Status LIKE 'Waiting%' GROUP BY ChannelID;" 
-    res = self._query(req)
+      req = "SELECT ChannelID,COUNT(*),SUM(FileSize) FROM Channel WHERE Status LIKE 'Waiting%' GROUP BY ChannelID;"
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getChannelQueues: Failed to get Channel contents for Channels."
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     #channelDict = {}
     for channelID, fileCount, sizeCount in res['Value']:
-      channels[channelID]['Files'] = int(fileCount)
-      channels[channelID]['Size'] = int(sizeCount)
+      channels[channelID]['Files'] = int( fileCount )
+      channels[channelID]['Size'] = int( sizeCount )
     for channelID in channelIDs:
       if "Files" not in channels[channelID]:
         channels[channelID]['Files'] = 0
         channels[channelID]['Size'] = 0
-    return S_OK(channels)
+    return S_OK( channels )
 
   #################################################################################
   # These are the methods for managing the FTSReq table
@@ -676,22 +676,22 @@ class TransferDB( DB ):
     self.getIdLock.acquire()
     req = "INSERT INTO FTSReq (FTSGUID,FTSServer,ChannelID,SubmitTime,LastMonitor) " \
         "VALUES ('%s','%s',%s,UTC_TIMESTAMP(),UTC_TIMESTAMP());" % ( ftsGUID, ftsServer, channelID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       self.getIdLock.release()
       err = "TransferDB._insertFTSReq: Failed to insert FTS GUID into FTSReq table."
-      return S_ERROR('%s\n%s' % ( err, res['Message'] ) )
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     req = "SELECT MAX(FTSReqID) FROM FTSReq;"
-    res = self._query(req)
+    res = self._query( req )
     self.getIdLock.release()
     if not res['OK']:
       err = "TransferDB._insertFTSReq: Failed to get FTSReqID from FTSReq table."
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if not res['Value']:
       err = "TransferDB._insertFTSReq: Request details don't appear in FTSReq table."
-      return S_ERROR(err)
+      return S_ERROR( err )
     ftsReqID = res['Value'][0][0]
-    return S_OK(ftsReqID)
+    return S_OK( ftsReqID )
 
   def setFTSReqStatus( self, ftsReqID, status ):
     """ update FTSReq.Status to :status: given FTSReq.FTSReqID
@@ -702,7 +702,7 @@ class TransferDB( DB ):
     """
     self.getIdLock.acquire()
     req = "UPDATE FTSReq SET Status = '%s' WHERE FTSReqID = %s;" % ( status, ftsReqID )
-    res = self._update(req)
+    res = self._update( req )
     self.getIdLock.release()
     if not res['OK']:
       err = "TransferDB._setFTSReqStatus: Failed to set status to %s for FTSReq %s." % ( status, ftsReqID )
@@ -716,15 +716,15 @@ class TransferDB( DB ):
     :param int ftsReqID: FTSReq.FTSReqID
     """
     self.getIdLock.acquire()
-    req = "DELETE FROM FTSReq WHERE FTSReqID = %s;" % (ftsReqID)
-    res = self._update(req)
+    req = "DELETE FROM FTSReq WHERE FTSReqID = %s;" % ( ftsReqID )
+    res = self._update( req )
     self.getIdLock.release()
     if not res['OK']:
-      err = "TransferDB._deleteFTSReq: Failed to delete FTSReq %s." % ftsReqID 
+      err = "TransferDB._deleteFTSReq: Failed to delete FTSReq %s." % ftsReqID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
-  def getFTSReq(self):
+  def getFTSReq( self ):
     """ select 'Submitted' FTSReq 
 
     :param self: self reference
@@ -735,7 +735,7 @@ class TransferDB( DB ):
 
     req = "SELECT FTSReqID,FTSGUID,FTSServer,ChannelID,SubmitTime,SourceSE,TargetSE,NumberOfFiles,TotalSize" \
         " FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor;"
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB._getFTSReq: Failed to get entry from FTSReq table."
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -743,12 +743,12 @@ class TransferDB( DB ):
       # It is not an error that there are not requests
       return S_OK()
 
-    keysTuple = ( "FTSReqID", "FTSGuid", "FTSServer", "ChannelID", 
-                  "SubmitTime", "SourceSE", "TargetSE", "NumberOfFiles", "TotalSize" ) 
+    keysTuple = ( "FTSReqID", "FTSGuid", "FTSServer", "ChannelID",
+                  "SubmitTime", "SourceSE", "TargetSE", "NumberOfFiles", "TotalSize" )
     ftsReqs = [ dict( zip( keysTuple, recordTuple ) ) for recordTuple in res["Value"] ]
-    return S_OK(ftsReqs)
+    return S_OK( ftsReqs )
 
-  def setFTSReqAttribute(self, ftsReqID, attribute, attrValue):
+  def setFTSReqAttribute( self, ftsReqID, attribute, attrValue ):
     """ set :attribute: column in FTSReq table to :attValue: given :ftsReqID:
 
     :param self: slf reference
@@ -758,11 +758,11 @@ class TransferDB( DB ):
     """
     self.getIdLock.acquire()
     req = "UPDATE FTSReq SET %s = '%s' WHERE FTSReqID = %s;" % ( attribute, attrValue, ftsReqID )
-    res = self._update(req)
+    res = self._update( req )
     self.getIdLock.release()
     if not res['OK']:
-      err = "TransferDB._setFTSReqAttribute: Failed to set %s to %s for FTSReq %s." % (attribute, attrValue, ftsReqID)
-      return S_ERROR('%s\n%s' % ( err, res['Message'] ) )
+      err = "TransferDB._setFTSReqAttribute: Failed to set %s to %s for FTSReq %s." % ( attribute, attrValue, ftsReqID )
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
   def setFTSReqLastMonitor( self, ftsReqID ):
@@ -772,7 +772,7 @@ class TransferDB( DB ):
     :param int ftsReqID: FTSReq.FTSReqID
     """
     req = "UPDATE FTSReq SET LastMonitor = UTC_TIMESTAMP() WHERE FTSReqID = %s;" % ftsReqID
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = "TransferDB._setFTSReqLastMonitor: Failed to update monitoring time for FTSReq %s." % ftsReqID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -781,7 +781,7 @@ class TransferDB( DB ):
   #################################################################################
   # These are the methods for managing the FileToFTS table
 
-  def getFTSReqLFNs(self, ftsReqID, channelID=None, sourceSE=None ):
+  def getFTSReqLFNs( self, ftsReqID, channelID = None, sourceSE = None ):
     """ collect LFNs for files in FTSReq
 
     :warning: if Files records are missing, a new artificial ones would be inserted 
@@ -795,15 +795,15 @@ class TransferDB( DB ):
     """
     req = "SELECT ftf.FileID,f.LFN from FileToFTS as ftf LEFT JOIN Files as f " \
         "ON (ftf.FileID=f.FileID) WHERE ftf.FTSReqID = %s;" % ftsReqID
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getFTSReqLFNs: Failed to get LFNs for FTSReq %s." % ftsReqID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if not res['Value']:
       err = "TransferDB.getFTSReqLFNs: No LFNs found for FTSReq %s." % ftsReqID
-      return S_ERROR(err)
+      return S_ERROR( err )
     ## list of missing fileIDs
-    missingFiles = [] 
+    missingFiles = []
     files = {}
     for fileID, lfn in res['Value']:
       if lfn:
@@ -817,16 +817,16 @@ class TransferDB( DB ):
     if missingFiles:
       ## no channelID or sourceSE --> return S_ERROR
       if not channelID and not sourceSE:
-        return S_ERROR("TransferDB.getFTSReqLFNs: missing records in Files table: %s" % missingFiles )
+        return S_ERROR( "TransferDB.getFTSReqLFNs: missing records in Files table: %s" % missingFiles )
       ## create storage element 
       sourceSE = StorageElement( sourceSE )
       ## get FileID, SourceSURL pairs for missing FileIDs and channelID used in this FTSReq  
       strMissing = intListToString( missingFiles )
-      query = "SELECT FileID,SourceSURL FROM Channel WHERE ChannelID=%s and FileID in (%s);" % ( channelID, 
+      query = "SELECT FileID,SourceSURL FROM Channel WHERE ChannelID=%s and FileID in (%s);" % ( channelID,
                                                                                                  strMissing )
       query = self._query( query )
       if not query["OK"]:
-        gLogger.error("TransferDB.getFSTReqLFNs: unable to select PFNs for missing Files: %s" % query["Message"] )
+        gLogger.error( "TransferDB.getFSTReqLFNs: unable to select PFNs for missing Files: %s" % query["Message"] )
         return query
       ## guess LFN from StorageElement, prepare query for inserting records, save lfn in files dict 
       insertTemplate = "INSERT INTO Files (SubRequestID, FileID, LFN, Status) VALUES (0, %s, %s, 'Scheduled');"
@@ -834,18 +834,18 @@ class TransferDB( DB ):
       for fileID, pfn in query["Value"]:
         lfn = sourceSE.getPfnPath( pfn )
         if not lfn["OK"]:
-          gLogger.error("TransferDB.getFTSReqLFNs: %s" % lfn["Message"] )
+          gLogger.error( "TransferDB.getFTSReqLFNs: %s" % lfn["Message"] )
           return lfn
-        lfn = lfn["Value"]        
+        lfn = lfn["Value"]
         files[lfn] = fileID
         insertQuery.append( insertTemplate % ( fileID, lfn ) )
       ## insert missing 'fake' records
       if insertQuery:
         ins = self._update( "\n".join( insertQuery ) )
         if not ins["OK"]:
-          gLogger.error("TransferDB.getFTSReqLFNs: unable to insert fake Files for missing LFNs: %s" % ins["Message"])
+          gLogger.error( "TransferDB.getFTSReqLFNs: unable to insert fake Files for missing LFNs: %s" % ins["Message"] )
           return ins
-    
+
     ## return files dict
     return S_OK( files )
 
@@ -859,8 +859,8 @@ class TransferDB( DB ):
     """
     for fileID, fileSize in fileAttributes:
       req = "INSERT INTO FileToFTS (FTSReqID,FileID,ChannelID,SubmissionTime,FileSize)" \
-          " VALUES (%s,%s,%s,UTC_TIMESTAMP(),%s);" % ( ftsReqID, fileID, channelID, fileSize)
-      res = self._update(req)
+          " VALUES (%s,%s,%s,UTC_TIMESTAMP(),%s);" % ( ftsReqID, fileID, channelID, fileSize )
+      res = self._update( req )
       if not res['OK']:
         err = "TransferDB._setFTSReqFiles: Failed to set File %s for FTSReq %s." % ( fileID, ftsReqID )
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -873,15 +873,15 @@ class TransferDB( DB ):
     :param int ftsReqID: FTSReq.FTSReqID
     """
     req = "SELECT FileID FROM FileToFTS WHERE FTSReqID = %s;" % ftsReqID
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB._getFTSReqFileIDs: Failed to get FileIDs for FTSReq %s." % ftsReqID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     if not res['Value']:
       err = "TransferDB._getFTSReqLFNs: No FileIDs found for FTSReq %s." % ftsReqID
-      return S_ERROR(err)
+      return S_ERROR( err )
     fileIDs = [ fileID[0] for fileID in res["Value"] ]
-    return S_OK(fileIDs)
+    return S_OK( fileIDs )
 
   def getSizeOfCompletedFiles( self, ftsReqID, completedFileIDs ):
     """ select size of transferred files in FTSRequest given :ftsReqID: and list of :completedFilesIDs: 
@@ -891,12 +891,12 @@ class TransferDB( DB ):
     :param list completedFileIDs: list of Files.FileID
     """
     strCompleted = intListToString( completedFileIDs )
-    req = "SELECT SUM(FileSize) FROM FileToFTS where FTSReqID = %s AND FileID IN (%s);" % ( ftsReqID, strCompleted ) 
-    res = self._query(req)
+    req = "SELECT SUM(FileSize) FROM FileToFTS where FTSReqID = %s AND FileID IN (%s);" % ( ftsReqID, strCompleted )
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB._getSizeOfCompletedFiles: Failed to get successful transfer size for FTSReq %s." % ftsReqID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
-    return S_OK(res['Value'][0][0])
+    return S_OK( res['Value'][0][0] )
 
   def removeFilesFromFTSReq( self, ftsReqID ):
     """ delete all FileToFST records for given :ftsReqID:
@@ -905,7 +905,7 @@ class TransferDB( DB ):
     :param int ftsReqID: FTSReq.FTSReqID
     """
     req = "DELETE FROM FileToFTS WHERE FTSReqID = %s;" % ftsReqID
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = "TransferDB._removeFilesFromFTSReq: Failed to remove files for FTSReq %s." % ftsReqID
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
@@ -923,12 +923,12 @@ class TransferDB( DB ):
       req = "UPDATE FileToFTS SET Status ='%s',Duration=%s,Reason='%s',Retries=%s,TerminalTime=UTC_TIMESTAMP() " \
           "WHERE FileID=%s AND FTSReqID=%s AND ChannelID=%s;" % \
           ( status, transferTime, reason, retries, fileID, ftsReqID, channelID )
-      res = self._update(req)
+      res = self._update( req )
       if not res['OK']:
-        err = "TransferDB._setFileToFTSFileAttributes: Failed to set file attributes for FTSReq %s." % ftsReqID 
+        err = "TransferDB._setFileToFTSFileAttributes: Failed to set file attributes for FTSReq %s." % ftsReqID
         return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
-    return res    
-       
+    return res
+
   def setFileToFTSFileAttribute( self, ftsReqID, fileID, attribute, attrValue ):
     """ update FileToFTS.:attribute: to :attrValue: for given :ftsReqID: and :fileID:
 
@@ -938,15 +938,15 @@ class TransferDB( DB ):
     :param str attribute: FileToFTS column name
     :param mixed attrValue: new value
     """
-    req = "UPDATE FileToFTS SET %s = '%s' WHERE FTSReqID = %s AND FileID = %s;" % ( attribute, 
-                                                                                    attrValue, 
-                                                                                    ftsReqID, 
+    req = "UPDATE FileToFTS SET %s = '%s' WHERE FTSReqID = %s AND FileID = %s;" % ( attribute,
+                                                                                    attrValue,
+                                                                                    ftsReqID,
                                                                                     fileID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
-      err = "TransferDB._setFileToFTSFileAttribute: Failed to set %s to %s for File %s and FTSReq %s;" % ( attribute, 
-                                                                                                           attrValue, 
-                                                                                                           fileID, 
+      err = "TransferDB._setFileToFTSFileAttribute: Failed to set %s to %s for File %s and FTSReq %s;" % ( attribute,
+                                                                                                           attrValue,
+                                                                                                           fileID,
                                                                                                            ftsReqID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
@@ -959,12 +959,37 @@ class TransferDB( DB ):
     :param int fileID: Files.FileID
     """
     req = "UPDATE FileToFTS SET TerminalTime=UTC_TIMESTAMP() WHERE FTSReqID=%s AND FileID=%s;" % ( ftsReqID, fileID )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = "TransferDB._setFileToFTSTerminalTime: Failed to set terminal time for File %s and FTSReq %s;" % \
           ( fileID, ftsReqID )
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
+
+  def getCountFileToFTS( self, interval=3600, status="Failed" ):
+    """ get count of distinct FileIDs per Channel for Failed FileToFTS
+
+    :param self: self reference
+    :param str status: FileToFTS.Status
+    :param int interval: time period in seconds
+
+    :return: S_OK( { FileToFTS.ChannelID : int } )
+    """
+    channels = self.getChannels()
+    if not channels["OK"]:
+      return channels
+    channels = channels["Value"]
+    ## this we're going to return
+    channelDict = dict.fromkeys( channels.keys(), 0 )
+    ## query
+    query = "SELECT ChannelID, COUNT(DISTINCT FileID) FROM FileToFTS WHERE Status='%s' AND " \
+        "SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % ( status, interval )
+    ## query query to query :)
+    query = self._query( query )
+    if not query["OK"]:
+      return S_ERROR("TransferDB.getCountFailedFTSFiles: " % query["Message"] )
+    ## return dict updated by dict created from query tuple :)
+    return S_OK( channelDict.update( dict(query["Value"]) ) )
 
   def getChannelObservedThroughput( self, interval ):
     """ create and return a dict holding summary info about FTS channels 
@@ -983,12 +1008,44 @@ class TransferDB( DB ):
     if not channels["OK"]:
       return channels
     channels = channels['Value']
-    
+
     ## create empty channelDict
-    channelDict = dict.fromkeys( channels.keys(), { "Throughput" : 0,
-                                                    "Fileput" : 0,
-                                                    "SuccessfulFiles" : 0,
-                                                    "FailedFiles" : 0 } )
+    channelDict = dict.fromkeys( channels.keys(), None ) 
+    ## fill with zeros 
+    for channelID in channelDict:
+      channelDict[channelID] = {}
+      channelDict[channelID]["Throughput"] =  0
+      channelDict[channelID]["Fileput"] = 0 
+      channelDict[channelID]["SuccessfulFiles"] = 0
+      channelDict[channelID]["FailedFiles"] = 0 
+
+    channelTimeDict = dict.fromkeys( channels.keys(), 0 )
+
+    req = "SELECT ChannelID, Status, Count(*), SUM(FileSize), SUM(TimeDiff) FROM " \
+          "( SELECT ChannelID, Status,TIME_TO_SEC( TIMEDIFF( TerminalTime, SubmissionTime ) ) " \
+          "AS TimeDiff ,FileSize FROM FileToFTS WHERE Status in ('Completed', 'Failed') " \
+          "AND SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) ) " \
+          "AS T GROUP BY ChannelID, Status;" % interval
+
+    res = self._query( req )
+    if not res['OK']:
+      err = 'TransferDB.getChannelObservedThroughput: Failed to transfer Statistics.'
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
+
+    for channelID, status, files, data, totalTime in res['Value']:
+      channelTimeDict[channelID] += float( totalTime )
+      if status == 'Completed':
+        channelDict[channelID]['Throughput'] = float( data )
+        channelDict[channelID]['SuccessfulFiles'] = int( files )
+      else:
+        channelDict[channelID]['FailedFiles'] = int( files )
+
+    for channelID in channelDict.keys():
+      if channelTimeDict[channelID]:
+        channelDict[channelID]['Throughput'] = channelDict[channelID]['Throughput'] / channelTimeDict[channelID]
+        channelDict[channelID]['Fileput'] = channelDict[channelID]['SuccessfulFiles'] / channelTimeDict[channelID]
+
+    return S_OK( channelDict )
 
     #############################################
     # First get the total time spend transferring files on the channels
@@ -1002,7 +1059,7 @@ class TransferDB( DB ):
 
     channelTimeDict = dict.fromkeys( channels.keys(), None )
     for channelID, totalTime in res['Value']:
-      channelTimeDict[channelID] = float(totalTime)
+      channelTimeDict[channelID] = float( totalTime )
 
     #############################################
     # Now get the total size of the data transferred and the number of files that were successful
@@ -1012,28 +1069,28 @@ class TransferDB( DB ):
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain total transferred data and files.'
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
-    
+
     for channelID, data, files in res['Value']:
       if channelID in channelTimeDict and channelTimeDict[channelID]:
-        channelDict[channelID] = { 'Throughput': float(data)/channelTimeDict[channelID],
-                                   'Fileput': float(files)/channelTimeDict[channelID] }
+        channelDict[channelID] = { 'Throughput': float( data ) / channelTimeDict[channelID],
+                                   'Fileput': float( files ) / channelTimeDict[channelID] }
 
     #############################################
     # Now get the success rate on the channels
     req = "SELECT ChannelID,SUM(Status='Completed'),SUM(Status='Failed') from FileToFTS WHERE " \
         "SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % ( interval )
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = 'TransferDB._getFTSObservedThroughput: Failed to obtain success rate.'
-      return S_ERROR('%s\n%s' % ( err, res['Message'] ) )
-  
+      return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
+
     for channelID, successful, failed in res['Value']:
-      channelDict[channelID]['SuccessfulFiles'] = int(successful)
-      channelDict[channelID]['FailedFiles'] = int(failed)
-    
+      channelDict[channelID]['SuccessfulFiles'] = int( successful )
+      channelDict[channelID]['FailedFiles'] = int( failed )
+
     return S_OK( channelDict )
 
-  def getTransferDurations( self, channelID, startTime=None, endTime=None ):
+  def getTransferDurations( self, channelID, startTime = None, endTime = None ):
     """ This obtains the duration of the successful transfers on the supplied channel
     """
     req = "SELECT Duration FROM FileToFTS WHERE ChannelID = %s and Duration > 0" % channelID
@@ -1041,14 +1098,14 @@ class TransferDB( DB ):
       req = "%s AND SubmissionTime > '%s'" % req
     if endTime:
       req = "%s AND SubmissionTime < '%s'" % req
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getTransferDurations: Failed to obtain durations from FileToFTS"
-      return S_ERROR(err)
+      return S_ERROR( err )
     durations = []
     for value in res['Value']:
-      durations.append(int(value[0]))
-    return S_OK(durations)
+      durations.append( int( value[0] ) )
+    return S_OK( durations )
 
   #################################################################################
   # These are the methods for managing the FTSReqLogging table
@@ -1060,12 +1117,12 @@ class TransferDB( DB ):
     :param int ftsReqID: FTSReq.FTSReqID
     :param str event: new event
     """
-    req = "INSERT INTO FTSReqLogging (FTSReqID,Event,EventDateTime) VALUES (%s,'%s',UTC_TIMESTAMP());" % ( ftsReqID, 
+    req = "INSERT INTO FTSReqLogging (FTSReqID,Event,EventDateTime) VALUES (%s,'%s',UTC_TIMESTAMP());" % ( ftsReqID,
                                                                                                            event )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = "TransferDB._addLoggingEvent: Failed to add logging event to FTSReq %s" % ftsReqID
-      return S_ERROR(err)
+      return S_ERROR( err )
     return res
 
   #################################################################################
@@ -1083,10 +1140,10 @@ class TransferDB( DB ):
       strategy = repDict['Strategy']
       req = "INSERT INTO ReplicationTree (FileID, ChannelID, AncestorChannel, Strategy, CreationTime) " \
           " VALUES (%s,%s,'%s','%s',UTC_TIMESTAMP());" % ( fileID, channelID, ancestor, strategy )
-      res = self._update(req)
+      res = self._update( req )
       if not res['OK']:
         err = "TransferDB._addReplicationTree: Failed to add ReplicationTree for file %s" % fileID
-        return S_ERROR(err)
+        return S_ERROR( err )
     return S_OK()
 
   #################################################################################
@@ -1104,10 +1161,10 @@ class TransferDB( DB ):
     """
     req = "INSERT INTO FileToCat (FileID,ChannelID,LFN,PFN,SE,SubmitTime) " \
         "VALUES (%s,%s,'%s','%s','%s',UTC_TIMESTAMP());" % ( fileID, channelID, lfn, targetSURL, destSE )
-    res = self._update(req)
+    res = self._update( req )
     if not res['OK']:
       err = "TransferDB._addFileRegistration: Failed to add registration entry for file %s" % fileID
-      return S_ERROR(err)
+      return S_ERROR( err )
     return S_OK()
 
   def getCompletedReplications( self ):
@@ -1117,10 +1174,10 @@ class TransferDB( DB ):
     """
     req = "SELECT sR.Operation,sR.SourceSE,fc.LFN FROM SubRequests AS sR, Files AS f, FileToCat AS fc " \
         "WHERE fc.Status = 'Waiting' AND fc.FileID=f.FileID AND sR.SubRequestID=f.SubRequestID;"
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB._getCompletedReplications: Failed to get completed replications."
-      return S_ERROR(err)
+      return S_ERROR( err )
     ## lazy people are using list c'tor
     return S_OK( list( res["Value"] ) )
 
@@ -1132,10 +1189,10 @@ class TransferDB( DB ):
     :param self: self reference
     """
     req = "SELECT FileID, ChannelID, LFN, PFN, SE FROM FileToCat WHERE Status='Waiting';"
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB._getWaitingRegistrations: Failed to get registrations."
-      return S_ERROR(err)
+      return S_ERROR( err )
     ## less typing, use list constructor 
     return S_OK( list( res["Value"] ) )
 
@@ -1147,11 +1204,11 @@ class TransferDB( DB ):
     :param list fileIDs: list of Files.FileID
     """
     req = "UPDATE FileToCat SET Status='Waiting' WHERE ChannelID=%s AND " \
-        "Status='Executing' AND FileID IN (%s);" % ( channelID, intListToString(fileIDs) )
-    res = self._update(req)
+        "Status='Executing' AND FileID IN (%s);" % ( channelID, intListToString( fileIDs ) )
+    res = self._update( req )
     if not res['OK']:
-      err = "TransferDB._setRegistrationWaiting: Failed to update %s files status." % len(fileIDs)
-      return S_ERROR(err)
+      err = "TransferDB._setRegistrationWaiting: Failed to update %s files status." % len( fileIDs )
+      return S_ERROR( err )
     return S_OK()
 
   def setRegistrationDone( self, channelID, fileID ):
@@ -1162,14 +1219,14 @@ class TransferDB( DB ):
     :param int channelID: Channel.ChanneID
     :param list fileID: Files.FileID or list of Files.FileID
     """
-    if type(fileID) == int:
+    if type( fileID ) == int:
       fileID = [ fileID ]
     req = "UPDATE FileToCat SET Status='Done',CompleteTime=UTC_TIMESTAMP() " \
-        "WHERE FileID IN (%s) AND ChannelID=%s AND Status='Waiting';" % ( intListToString(fileID), channelID )
-    res = self._update(req)
+        "WHERE FileID IN (%s) AND ChannelID=%s AND Status='Waiting';" % ( intListToString( fileID ), channelID )
+    res = self._update( req )
     if not res['OK']:
       err = "TransferDB._setRegistrationDone: Failed to update %s status." % fileID
-      return S_ERROR(err)
+      return S_ERROR( err )
     return S_OK()
 
   def getRegisterFailover( self, fileID ):
@@ -1188,7 +1245,7 @@ class TransferDB( DB ):
     res = [ rec[:3] for rec in res["Value"] if None not in rec[:3] ]
     ## return list of tuples [ ( PFN, SE, ChannelID ), ... ]
     return  S_OK( res )
-    
+
   #################################################################################
   # These are the methods used by the monitoring server
 
@@ -1202,30 +1259,30 @@ class TransferDB( DB ):
     """
     req = "SELECT Files.LFN,FileToFTS.Status,Duration,Reason,Retries,FileSize FROM FileToFTS,Files " \
         "WHERE FTSReqID =%s and Files.FileID=FileToFTS.FileID;" % ftsReqID
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getFTSJobDetail: Failed to get detailed info for FTSReq %s: %s." % ( ftsReqID, res['Message'] )
-      return S_ERROR(err)
+      return S_ERROR( err )
     ## lazy people are using list c'tor
     return S_OK( list( res["Value"] ) )
 
-  def getSites(self):
+  def getSites( self ):
     """ select distinct SourceSites and DestinationSites from Channels table
 
     :param self: self reference
     """
     req = "SELECT DISTINCT SourceSite FROM Channels;"
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getSites: Failed to get channel SourceSite: %s" % res['Message']
-      return S_ERROR(err)
+      return S_ERROR( err )
     sourceSites = [ record[0] for record in res["Value"] ]
 
     req = "SELECT DISTINCT DestinationSite FROM Channels;"
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getSites: Failed to get channel DestinationSite: %s" % res['Message']
-      return S_ERROR(err)
+      return S_ERROR( err )
     destSites = [ record[0] for record in res["Value"] ]
 
     return S_OK( { 'SourceSites' : sourceSites, 'DestinationSites' : destSites } )
@@ -1237,17 +1294,17 @@ class TransferDB( DB ):
     """
     req = "SELECT FTSReqID,FTSGUID,FTSServer,SubmitTime,LastMonitor,PercentageComplete," \
         "Status,NumberOfFiles,TotalSize FROM FTSReq;"
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       err = "TransferDB.getFTSJobs: Failed to get detailed FTS jobs: %s" % res['Message']
-      return S_ERROR(err)
+      return S_ERROR( err )
     ftsReqs = []
     for ftsReqID, ftsGUID, ftsServer, submitTime, lastMonitor, complete, status, files, size in res['Value']:
-      ftsReqs.append( ( ftsReqID, ftsGUID, ftsServer, str(submitTime), 
-                        str(lastMonitor), complete, status, files, size ) )
+      ftsReqs.append( ( ftsReqID, ftsGUID, ftsServer, str( submitTime ),
+                        str( lastMonitor ), complete, status, files, size ) )
     return S_OK( ftsReqs )
 
-  def getAttributesForReqList( self, reqIDList, attrList=None ):
+  def getAttributesForReqList( self, reqIDList, attrList = None ):
     """ Get attributes for the requests in the req ID list.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
         ValueDict[FTSReqID][attribute_name] = attribute_value
@@ -1258,27 +1315,27 @@ class TransferDB( DB ):
     for attr in attrList:
       if not attr in attr_tmp_list:
         attrNames = '%sFTSReq.%s,' % ( attrNames, attr )
-        attr_tmp_list.append(attr)
-    attrNames = attrNames.strip(',')
-    reqList = ",".join( [ str(reqID) for reqID in reqIDList ] )
+        attr_tmp_list.append( attr )
+    attrNames = attrNames.strip( ',' )
+    reqList = ",".join( [ str( reqID ) for reqID in reqIDList ] )
 
     req = 'SELECT FTSReq.FTSReqID,Channels.SourceSite,Channels.DestinationSite,%s FROM FTSReq,Channels ' \
         'WHERE FTSReqID in (%s) AND Channels.ChannelID=FTSReq.ChannelID' % ( attrNames, reqList )
-    res = self._query(req)
+    res = self._query( req )
     if not res['OK']:
       return res
     retDict = {}
     for attrValues in res['Value']:
       reqDict = {}
-      for i in range(len(attr_tmp_list)):
+      for i in range( len( attr_tmp_list ) ):
         try:
           reqDict[attr_tmp_list[i]] = attrValues[i].tostring()
         except:
-          reqDict[attr_tmp_list[i]] = str(attrValues[i])
-      retDict[int(reqDict['FTSReqID'])] = reqDict
+          reqDict[attr_tmp_list[i]] = str( attrValues[i] )
+      retDict[int( reqDict['FTSReqID'] )] = reqDict
     return S_OK( retDict )
 
-  def selectFTSReqs( self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+  def selectFTSReqs( self, condDict, older = None, newer = None, orderAttribute = None, limit = None ):
     """ Select fts requests matching the following conditions:
         - condDict dictionary of required Key = Value pairs;
         - with the last update date older and/or newer than given dates;
@@ -1286,31 +1343,31 @@ class TransferDB( DB ):
         The result is ordered by FTSReqID if requested, the result is limited to a given
         number of jobs if requested.
     """
-    condition = self.__OLDbuildCondition(condDict, older, newer)
+    condition = self.__OLDbuildCondition( condDict, older, newer )
 
     if orderAttribute:
       orderType = None
       orderField = orderAttribute
-      if orderAttribute.find(':') != -1:
-        orderType = orderAttribute.split(':')[1].upper()
-        orderField = orderAttribute.split(':')[0]
+      if orderAttribute.find( ':' ) != -1:
+        orderType = orderAttribute.split( ':' )[1].upper()
+        orderField = orderAttribute.split( ':' )[0]
       condition = condition + ' ORDER BY ' + orderField
       if orderType:
         condition = condition + ' ' + orderType
 
     if limit:
-      condition = condition + ' LIMIT ' + str(limit)
+      condition = condition + ' LIMIT ' + str( limit )
 
     cmd = 'SELECT FTSReqID from FTSReq, Channels ' + condition
     res = self._query( cmd )
     if not res['OK']:
       return res
 
-    if not len(res['Value']):
-      return S_OK([])
+    if not len( res['Value'] ):
+      return S_OK( [] )
     return S_OK( map( self._to_value, res['Value'] ) )
 
-  def __OLDbuildCondition(self, condDict, older=None, newer=None ):
+  def __OLDbuildCondition( self, condDict, older = None, newer = None ):
     """ build SQL condition statement from provided condDict
         and other extra conditions
 
@@ -1324,13 +1381,13 @@ class TransferDB( DB ):
         if attrName in [ 'SourceSites', 'DestinationSites' ]:
           condition = ' %s %s Channels.%s=\'%s\'' % ( condition,
                                                       conjunction,
-                                                      str(attrName.rstrip('s')),
-                                                      str(attrValue) )
+                                                      str( attrName.rstrip( 's' ) ),
+                                                      str( attrValue ) )
         else:
           condition = ' %s %s FTSReq.%s=\'%s\'' % ( condition,
                                                     conjunction,
-                                                    str(attrName),
-                                                    str(attrValue)  )
+                                                    str( attrName ),
+                                                    str( attrValue ) )
         conjunction = "AND"
       condition += " AND FTSReq.ChannelID = Channels.ChannelID "
     else:
@@ -1339,13 +1396,13 @@ class TransferDB( DB ):
     if older:
       condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
                                                        conjunction,
-                                                       str(older) )
+                                                       str( older ) )
       conjunction = "AND"
 
     if newer:
       condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
                                                         conjunction,
-                                                        str(newer) )
+                                                        str( newer ) )
 
     return condition
 
@@ -1355,7 +1412,7 @@ class TransferDB( DB ):
   # These are the methods for monitoring the Reuqests, SubRequests and Files table
   #
 
-  def selectRequests( self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+  def selectRequests( self, condDict, older = None, newer = None, orderAttribute = None, limit = None ):
     """ Select requests matching the following conditions:
         - condDict dictionary of required Key = Value pairs;
         - with the last update date older and/or newer than given dates;
@@ -1365,7 +1422,7 @@ class TransferDB( DB ):
     """
     return self.__selectFromTable( 'Requests', 'RequestID', condDict, older, newer, orderAttribute, limit )
 
-  def selectSubRequests( self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+  def selectSubRequests( self, condDict, older = None, newer = None, orderAttribute = None, limit = None ):
     """ Select sub-requests matching the following conditions:
         - condDict dictionary of required Key = Value pairs;
         - with the last update date older and/or newer than given dates;
@@ -1375,7 +1432,7 @@ class TransferDB( DB ):
     """
     return self.__selectFromTable( 'SubRequests', 'SubRequestID', condDict, older, newer, orderAttribute, limit )
 
-  def selectFiles( self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+  def selectFiles( self, condDict, older = None, newer = None, orderAttribute = None, limit = None ):
     """ Select files matching the following conditions:
         - condDict dictionary of required Key = Value pairs;
         - with the last update date older and/or newer than given dates;
@@ -1385,7 +1442,7 @@ class TransferDB( DB ):
     """
     return self.__selectFromTable( 'Files', 'FileID', condDict, older, newer, orderAttribute, limit )
 
-  def selectDatasets( self, condDict, older=None, newer=None, orderAttribute=None, limit=None ):
+  def selectDatasets( self, condDict, older = None, newer = None, orderAttribute = None, limit = None ):
     """ Select datasets matching the following conditions:
         - condDict dictionary of required Key = Value pairs;
         - with the last update date older and/or newer than given dates;
@@ -1395,7 +1452,7 @@ class TransferDB( DB ):
     """
     return self.__selectFromTable( 'Datasets', 'DatasetID', condDict, older, newer, orderAttribute, limit )
 
-  def getAttributesForRequestList( self, reqIDList, attrList=None ):
+  def getAttributesForRequestList( self, reqIDList, attrList = None ):
     """ Get attributes for the requests in the the reqIDList.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
         ValueDict[reqID][attribute_name] = attribute_value
@@ -1403,7 +1460,7 @@ class TransferDB( DB ):
     attrList = [] if not attrList else attrList
     return self.__getAttributesForList( 'Requests', 'RequestID', reqIDList, attrList )
 
-  def getAttributesForSubRequestList( self, subReqIDList, attrList=None ):
+  def getAttributesForSubRequestList( self, subReqIDList, attrList = None ):
     """ Get attributes for the subrequests in the the reqIDList.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
         ValueDict[subReqID][attribute_name] = attribute_value
@@ -1411,7 +1468,7 @@ class TransferDB( DB ):
     attrList = [] if not attrList else attrList
     return self.__getAttributesForList( 'SubRequests', 'SubRequestID', subReqIDList, attrList )
 
-  def getAttributesForFilesList( self, fileIDList, attrList=None ):
+  def getAttributesForFilesList( self, fileIDList, attrList = None ):
     """ Get attributes for the files in the the fileIDlist.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
         ValueDict[fileID][attribute_name] = attribute_value
@@ -1419,7 +1476,7 @@ class TransferDB( DB ):
     attrList = [] if not attrList else attrList
     return self.__getAttributesForList( 'Files', 'FileID', fileIDList, attrList )
 
-  def getAttributesForDatasetList( self, datasetIDList, attrList=None ):
+  def getAttributesForDatasetList( self, datasetIDList, attrList = None ):
     """ Get attributes for the datasets in the the datasetIDlist.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
         ValueDict[datasetID][attribute_name] = attribute_value
@@ -1436,9 +1493,9 @@ class TransferDB( DB ):
     :param list idList: list of :table:.:tableID:
     :param list attrList: list of column names from :table:
     """
-    attrNames = ",".join( [ str(attr) for attr in attrList ] )
+    attrNames = ",".join( [ str( attr ) for attr in attrList ] )
     attr_tmp_list = attrList
-    intIDList = ",".join( [ str(ID) for ID in idList ] )
+    intIDList = ",".join( [ str( ID ) for ID in idList ] )
     cmd = "SELECT %s,%s FROM %s WHERE %s IN (%s);" % ( tableID, attrNames, table, tableID, intIDList )
     res = self._query( cmd )
     if not res['OK']:
@@ -1450,45 +1507,45 @@ class TransferDB( DB ):
         reqDict = {}
         reqDict[tableID] = rowID
         attrValues = retValues[1:]
-        for i in range(len(attr_tmp_list)):
+        for i in range( len( attr_tmp_list ) ):
           try:
             reqDict[attr_tmp_list[i]] = attrValues[i].tostring()
           except Exception, error:
-            reqDict[attr_tmp_list[i]] = str(attrValues[i])
-        retDict[int(rowID)] = reqDict
+            reqDict[attr_tmp_list[i]] = str( attrValues[i] )
+        retDict[int( rowID )] = reqDict
       return S_OK( retDict )
     except Exception, error:
-      return S_ERROR( 'TransferDB.__getAttributesForList: Failed\n%s'  % str(error) )
+      return S_ERROR( 'TransferDB.__getAttributesForList: Failed\n%s' % str( error ) )
 
   def __selectFromTable( self, table, tableID, condDict, older, newer, orderAttribute, limit ):
     """ select something from table something
 
     :TODO: should be moved to base class
     """
-    condition = self.__buildCondition( condDict, older, newer)
+    condition = self.__buildCondition( condDict, older, newer )
 
     if orderAttribute:
       orderType = None
       orderField = orderAttribute
-      if orderAttribute.find(':') != -1:
-        orderType = orderAttribute.split(':')[1].upper()
-        orderField = orderAttribute.split(':')[0]
+      if orderAttribute.find( ':' ) != -1:
+        orderType = orderAttribute.split( ':' )[1].upper()
+        orderField = orderAttribute.split( ':' )[0]
       condition = condition + ' ORDER BY ' + orderField
       if orderType:
         condition = condition + ' ' + orderType
 
     if limit:
-      condition = condition + ' LIMIT ' + str(limit)
+      condition = condition + ' LIMIT ' + str( limit )
 
     cmd = 'SELECT %s from %s %s' % ( tableID, table, condition )
-    res = self._query(cmd)
+    res = self._query( cmd )
     if not res['OK']:
       return res
-    if not len(res['Value']):
-      return S_OK([])
+    if not len( res['Value'] ):
+      return S_OK( [] )
     return S_OK( map( self._to_value, res['Value'] ) )
 
-  def __buildCondition(self, condDict, older=None, newer=None ):
+  def __buildCondition( self, condDict, older = None, newer = None ):
     """ build SQL condition statement from provided condDict
         and other extra conditions
 
@@ -1500,54 +1557,54 @@ class TransferDB( DB ):
       for attrName, attrValue in condDict.items():
         condition = ' %s %s %s=\'%s\'' % ( condition,
                                            conjunction,
-                                           str(attrName),
-                                           str(attrValue)  )
+                                           str( attrName ),
+                                           str( attrValue ) )
         conjunction = "AND"
     if older:
       condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
                                                  conjunction,
-                                                 str(older) )
+                                                 str( older ) )
       conjunction = "AND"
 
     if newer:
       condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
                                                  conjunction,
-                                                 str(newer) )
+                                                 str( newer ) )
     return condition
 
 
-  def getDistinctRequestAttributes( self, attribute, condDict=None, older=None, newer=None):
+  def getDistinctRequestAttributes( self, attribute, condDict = None, older = None, newer = None ):
     """ Get distinct values of the Requests table attribute under specified conditions
-    """    
+    """
     condDict = {} if not condDict else condDict
     return self.__getDistinctTableAttributes( 'Requests', attribute, condDict, older, newer )
 
-  def getDistinctSubRequestAttributes( self, attribute, condDict=None, older=None, newer=None):
+  def getDistinctSubRequestAttributes( self, attribute, condDict = None, older = None, newer = None ):
     """ Get distinct values of SubRequests the table attribute under specified conditions
     """
     condDict = {} if not condDict else condDict
     return self.__getDistinctTableAttributes( 'SubRequests', attribute, condDict, older, newer )
 
-  def getDistinctFilesAttributes( self, attribute, condDict=None, older=None, newer=None):
+  def getDistinctFilesAttributes( self, attribute, condDict = None, older = None, newer = None ):
     """ Get distinct values of the Files  table attribute under specified conditions
     """
     condDict = {} if not condDict else condDict
     return self.__getDistinctTableAttributes( 'Files', attribute, condDict, older, newer )
 
-  def getDistinctChannelsAttributes( self, attribute, condDict=None):
+  def getDistinctChannelsAttributes( self, attribute, condDict = None ):
     """ Get distinct values of the Channels table attribute under specified conditions
     """
     condDict = {} if not condDict else condDict
     return self.__getDistinctTableAttributes( 'Channels', attribute, condDict )
 
-  def __getDistinctTableAttributes(self, table, attribute, condDict=None, older=None, newer=None ):
+  def __getDistinctTableAttributes( self, table, attribute, condDict = None, older = None, newer = None ):
     """ Get distinct values of the table attribute under specified conditions
     """
     condDict = {} if not condDict else condDict
     cmd = 'SELECT  DISTINCT(%s) FROM %s ORDER BY %s' % ( attribute, table, attribute )
-    cond = self.__buildCondition( condDict, older=older, newer=newer )
+    cond = self.__buildCondition( condDict, older = older, newer = newer )
     result = self._query( cmd + cond )
     if not result['OK']:
       return result
     attr_list = [ x[0] for x in result['Value'] ]
-    return S_OK(attr_list)
+    return S_OK( attr_list )

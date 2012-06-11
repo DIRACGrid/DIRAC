@@ -53,6 +53,7 @@ class Params:
     self.lcgVer = ''
     self.useVersionsDir = False
     self.installSource = ""
+    self.timeout = 300
 
 cliParams = Params()
 
@@ -302,22 +303,24 @@ class ReleaseConfig:
     if urlcfg in self.__cfgCache:
       return S_OK( self.__cfgCache[ urlcfg ] )
     try:
-      cfgFile = urllib2.urlopen( urlcfg )
+      cfgData = urlretrieveTimeout( urlcfg, timeout = cliParams.timeout )
+      if not cfgData:
+        return S_ERROR( "Could not get data from %s" % urlcfg )
     except:
       return S_ERROR( "Could not open %s" % urlcfg )
     try:
-      cfgData = cfgFile.read()
+      #cfgData = cfgFile.read()
       cfg = ReleaseConfig.CFG( cfgData )
     except Exception, excp:
       return S_ERROR( "Could not parse %s: %s" % ( urlcfg, excp ) )
-    cfgFile.close()
+    #cfgFile.close()
     if not checkHash:
       self.__cfgCache[ urlcfg ] = cfg
       return S_OK( cfg )
     try:
-      md5File = urllib2.urlopen( urlcfg[:-4] + ".md5" )
-      md5Hex = md5File.read().strip()
-      md5File.close()
+      md5Data = urlretrieveTimeout( urlcfg[:-4] + ".md5", timeout = 60 )
+      md5Hex = md5Data.strip()
+      #md5File.close()
       if md5Hex != md5.md5( cfgData ).hexdigest():
         return S_ERROR( "Hash check failed on %s" % urlcfg )
     except Exception, excp:
@@ -759,7 +762,7 @@ def logNOTICE( msg ):
 def alarmTimeoutHandler( *args ):
   raise Exception( 'Timeout' )
 
-def urlretrieveTimeout( url, fileName, timeout = 0 ):
+def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
   """
    Retrieve remote url to local file, with timeout wrapper
   """
@@ -767,10 +770,11 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
   #       This is OK for dirac-install, since there are no threads.
   logDEBUG( 'Retrieving remote file "%s"' % url )
 
+  urlData = ''
   if timeout:
     signal.signal( signal.SIGALRM, alarmTimeoutHandler )
     # set timeout alarm
-    signal.alarm( timeout )
+    signal.alarm( timeout + 5 )
   try:
     # if "http_proxy" in os.environ and os.environ['http_proxy']:
     #   proxyIP = os.environ['http_proxy']
@@ -780,14 +784,18 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     #  urllib2.install_opener( opener )
     remoteFD = urllib2.urlopen( url )
     expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    localFD = open( fileName, "wb" )
+    if fileName:
+      localFD = open( fileName, "wb" )
     receivedBytes = 0L
     data = remoteFD.read( 16384 )
     count = 1
     progressBar = False
     while data:
       receivedBytes += len( data )
-      localFD.write( data )
+      if fileName:
+        localFD.write( data )
+      else:
+        urlData += data
       data = remoteFD.read( 16384 )
       if count % 100 == 0:
         print ".",
@@ -796,7 +804,8 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
       count += 1
     if progressBar:
       print
-    localFD.close()
+    if fileName:
+      localFD.close()
     remoteFD.close()
     if receivedBytes != expectedBytes:
       logERROR( "File should be %s bytes but received %s" % ( expectedBytes, receivedBytes ) )
@@ -805,6 +814,8 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
     if x.code == 404:
       logERROR( "%s does not exist" % url )
       return False
+  except urllib2.URLError:
+    logError( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
   except Exception, x:
     if x == 'Timeout':
       logERROR( 'Timeout after %s seconds on transfer request for "%s"' % ( str( timeout ), url ) )
@@ -814,7 +825,11 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
 
   if timeout:
     signal.alarm( 0 )
-  return True
+
+  if fileName:
+    return True
+  else:
+    return urlData
 
 def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache = False ):
   tarName = "%s-%s.tar.gz" % ( pkgName, pkgVer )
@@ -828,7 +843,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
   else:
     logNOTICE( "Retrieving %s" % tarFileURL )
     try:
-      if not urlretrieveTimeout( tarFileURL, tarPath, 300 ):
+      if not urlretrieveTimeout( tarFileURL, tarPath, cliParams.timeout ):
         logERROR( "Cannot download %s" % tarName )
         return False
     except Exception, e:
@@ -845,7 +860,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
     else:
       logNOTICE( "Retrieving %s" % md5FileURL )
       try:
-        if not urlretrieveTimeout( md5FileURL, md5Path, 300 ):
+        if not urlretrieveTimeout( md5FileURL, md5Path, 60 ):
           logERROR( "Cannot download %s" % tarName )
           return False
       except Exception, e:
@@ -995,6 +1010,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'V:', 'installation=', 'Installation from which to extract parameter values' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
             ( 'h', 'help', 'Show this help' ),
+            ( 'T:', 'Timeout=', 'Timeout for downloads (default = %s)', cliParams.timeout )
           )
 
 def usage():
@@ -1012,7 +1028,8 @@ def usage():
                    ( 'UseVersionsDir', cliParams.useVersionsDir ),
                    ( 'BuildExternals', cliParams.buildExternals ),
                    ( 'NoAutoBuild', cliParams.noAutoBuild ),
-                   ( 'Debug', cliParams.debug ) ]:
+                   ( 'Debug', cliParams.debug ),
+                   ( 'Timeout', cliParams.timeout ) ]:
     print " %s = %s" % options
 
   sys.exit( 1 )
@@ -1052,7 +1069,7 @@ def loadConfiguration():
   for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug' ,
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules', 'extensions' ):
+                  'project', 'release', 'extraModules', 'extensions', 'timeout' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
@@ -1105,6 +1122,13 @@ def loadConfiguration():
       cliParams.noAutoBuild = True
     elif o in ( '-X', '--externalsOnly' ):
       cliParams.externalsOnly = True
+    elif o in ( '-T', '--Timeout' ):
+      try:
+        cliParams.timeout = max( cliParams.timeout, float( v ) )
+        cliParams.timeout = min( cliParams.timeout, 3600 )
+      except ValueError:
+        pass
+
 
   if not cliParams.release:
     logERROR( "Missing release to install" )
@@ -1219,7 +1243,7 @@ def createPermanentDirLinks():
     except Exception, x:
       logERROR( str( x ) )
       return False
-    
+
   return True
 
 def createBashrc():
@@ -1276,7 +1300,7 @@ def createBashrc():
 def createCshrc():
   """ Create DIRAC environment setting script for the (t)csh shell
   """
-  
+
   proPath = cliParams.targetPath
   # Now create cshrc at basePath
   try:
@@ -1379,7 +1403,7 @@ if __name__ == "__main__":
   if not createBashrc():
     sys.exit( 1 )
   if not createCshrc():
-    sys.exit( 1 )  
+    sys.exit( 1 )
   runExternalsPostInstall()
   writeDefaultConfiguration()
   installExternalRequirements( cliParams.externalsType )

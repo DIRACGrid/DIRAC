@@ -54,7 +54,7 @@ def printTable( fields, records ):
     count += 1
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
-  """ 
+  """
   """
 
   def __errMsg( self, errMsg ):
@@ -91,9 +91,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
   def do_set( self, args ):
     """
         Set options
-    
+
         usage:
-        
+
           set host <hostname>     - Set the hostname to work with
           set project <project>   - Set the project to install/upgrade in the host
     """
@@ -131,11 +131,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
 
   def do_show( self, args ):
-    """ 
+    """
         Show list of components with various related information
-        
+
         usage:
-    
+
           show software      - show components for which software is available
           show installed     - show components installed in the host with runit system
           show setup         - show components set up for automatic running in the host
@@ -146,7 +146,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           show log  <system> <service|agent> [nlines]
                              - show last <nlines> lines in the component log file
           show info          - show version of software and setup
-          show errors [*|<system> <service|agent>] 
+          show errors [*|<system> <service|agent>]
                              - show error count for the given component or all the components
                                in the last hour and day
     """
@@ -195,27 +195,29 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         self.__errMsg( result['Message'] )
       else:
+        fields = ["System",'Name','Module','Type','Setup','Installed','Runit','Uptime','PID']
+        records = []
         rDict = result['Value']
-        print
-        print "   System", ' ' * 20, 'Name', ' ' * 15, 'Type', ' ' * 13, 'Setup    Installed   Runit    Uptime    PID'
-        print '-' * 116
         for compType in rDict:
           for system in rDict[compType]:
             for component in rDict[compType][system]:
+              record = []
               if rDict[compType][system][component]['Installed']:
-                print  system.ljust( 28 ), component.ljust( 28 ), compType.lower()[:-1].ljust( 7 ),
+                module = str( rDict[compType][system][component]['Module'] )
+                record += [ system,component,module,compType.lower()[:-1]]
                 if rDict[compType][system][component]['Setup']:
-                  print 'SetUp'.rjust( 12 ),
+                  record += ['Setup']
                 else:
-                  print 'NotSetup'.rjust( 12 ),
+                  record += ['NotSetup']
                 if rDict[compType][system][component]['Installed']:
-                  print 'Installed'.rjust( 12 ),
+                  record += ['Installed']
                 else:
-                  print 'NotInstalled'.rjust( 12 ),
-                print str( rDict[compType][system][component]['RunitStatus'] ).ljust( 7 ),
-                print str( rDict[compType][system][component]['Timeup'] ).rjust( 7 ),
-                print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
-                print
+                  record += ['NotInstalled']
+                record += [str( rDict[compType][system][component]['RunitStatus'] )]
+                record += [str( rDict[compType][system][component]['Timeup'] )]
+                record += [str( rDict[compType][system][component]['PID'] )]
+                records.append(record)  
+        printTable(fields,records)        
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient( self.host, self.port )
       if not InstallTools.mysqlPassword:
@@ -334,11 +336,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "No logs found"
 
   def do_install( self, args ):
-    """ 
-        Install various DIRAC components 
-    
+    """
+        Install various DIRAC components
+
         usage:
-        
+
           install mysql
           install db <database>
           install service <system> <service>
@@ -407,13 +409,26 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       print "Database %s from %s/%s installed successfully" % ( database, extension, system )
-    elif option == "service" or option == "agent":
+    elif option in ["service","agent","executor"] :
       if len( argss ) < 2:
         print self.do_install.__doc__
         return
 
       system = argss[0]
-      component = argss[1]
+      del argss[0]
+      component = argss[0]
+      del argss[0]
+      
+      specialOptions = {}
+      module = ''
+      for i in range(len(argss)):
+        if argss[i] == "-m":
+          specialOptions['Module'] = argss[i+1]
+          module = argss[i+1]
+        if argss[i] == "-p":
+          opt,value = argss[i+1].split('=')
+          specialOptions[opt] = value  
+      
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
       # result = client.addDefaultOptionsToCS( option, system, component )
@@ -423,12 +438,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         self.__errMsg( result['Message'] )
         return
       hostSetup = result['Value']['Setup']
-      result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, getCSExtensions(), hostSetup )
+      result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, 
+                                                   getCSExtensions(), hostSetup, specialOptions )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
       # Then we can install and start the component
-      result = client.setupComponent( option, system, component )
+      result = client.setupComponent( option, system, component, module )
       if not result['OK']:
         self.__errMsg( result['Message'] )
         return
@@ -439,10 +455,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Unknown option:", option
 
   def do_start( self, args ):
-    """ Start services or agents or database server    
-      
+    """ Start services or agents or database server
+
         usage:
-        
+
           start <system|*> <service|agent|*>
           start mysql
     """
@@ -477,10 +493,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Not yet implemented"
 
   def do_restart( self, args ):
-    """ Restart services or agents or database server    
-      
+    """ Restart services or agents or database server
+
         usage:
-        
+
           restart <system|*> <service|agent|*>
           restart mysql
     """
@@ -515,10 +531,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Not yet implemented"
 
   def do_stop( self, args ):
-    """ Stop services or agents or database server    
-      
+    """ Stop services or agents or database server
+
         usage:
-        
+
           stop <system|*> <service|agent|*>
           stop mysql
     """
@@ -545,10 +561,10 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def do_update( self, args ):
     """ Update the software on the target host to a given version
-    
+
         usage:
-          
-          update <version> 
+
+          update <version>
     """
     argss = args.split()
     version = argss[0]
@@ -564,11 +580,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Think of updating /Operation/<vo>/<setup>/Versions section in the CS"
 
   def do_add( self, args ):
-    """ 
+    """
         Add new entity to the Configuration Service
-    
+
         usage:
-        
+
           add system <system> <instance>
     """
     argss = args.split()
@@ -599,9 +615,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def do_exec( self, args ):
     """ Execute a shell command on the remote host and get back the output
-    
+
         usage:
-        
+
           exec <cmd> [<arguments>]
     """
     client = SystemAdministratorClient( self.host, self.port )
@@ -619,9 +635,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def do_execfile( self, args ):
     """ Execute a series of administrator CLI commands from a given file
-    
+
         usage:
-        
+
           execfile <filename>
     """
     argss = args.split()

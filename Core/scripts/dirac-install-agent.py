@@ -23,7 +23,23 @@ def setOverwrite( opVal ):
   overwrite = True
   return S_OK()
 
+module = ''
+specialOptions = {}
+def setModule( optVal ):
+  global specialOptions,module
+  specialOptions['Module'] = optVal
+  module = value
+  return S_OK()
+
+def setSpecialOption( optVal ):
+  global specialOptions
+  option,value = optVal.split('=')
+  specialOptions[option] = value
+  return S_OK()
+
 Script.registerSwitch( "w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite )
+Script.registerSwitch( "m:", "module=", "Python module name for the agent code", setModule )
+Script.registerSwitch( "p:", "parameter=", "Special agent option ", setSpecialOption )
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... System Agent|System/Agent' % Script.scriptName,
@@ -43,11 +59,13 @@ system = args[0]
 agent = args[1]
 
 result = InstallTools.addDefaultOptionsToCS( gConfig, 'agent', system, agent,
-                                             getCSExtensions(), overwrite = overwrite )
+                                             getCSExtensions(), 
+                                             specialOptions=specialOptions, 
+                                             overwrite = overwrite )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:
-  result = InstallTools.installComponent( 'agent', system, agent, getCSExtensions() )
+  result = InstallTools.installComponent( 'agent', system, agent, getCSExtensions(), module )
   if not result['OK']:
     print "ERROR:", result['Message']
   else:

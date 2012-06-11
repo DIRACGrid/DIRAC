@@ -9,7 +9,7 @@ class Operations( object ):
 
   __cache = {}
   __cacheVersion = 0
-  __cacheLock = LockRing.LockRing().getLock( "CSOperations.cache" )
+  __cacheLock = LockRing.LockRing().getLock()
 
   def __init__( self, vo = False, group = False, setup = False ):
     self.__uVO = vo
@@ -21,8 +21,10 @@ class Operations( object ):
 
   def __discoverSettings( self ):
     #Set the VO
-    self.__vo = False
-    if self.__uVO:
+    globalVO = CSGlobals.getVO()
+    if globalVO:
+      self.__vo = globalVO
+    elif self.__uVO:
       self.__vo = self.__uVO
     else:
       self.__vo = Registry.getVOForGroup( self.__uGroup )
@@ -49,20 +51,7 @@ class Operations( object ):
 
       mergedCFG = CFG.CFG()
 
-      #Only for the /Operations transition
-      paths = [ "/Operations" ]
-      paths.append( "/Operations/%s" % self.__setup )
-      if self.__vo:
-        paths.append( "/Operations/%s" % self.__vo )
-        paths.append( "/Operations/%s/%s" % ( self.__vo, self.__setup ) )
-
-      for path in paths:
-        pathCFG = gConfigurationData.mergedCFG[ path ]
-        if pathCFG:
-          mergedCFG = mergedCFG.mergeWith( pathCFG )
-      #End of migration
-
-      for path in ( self.__getDefaultPath(), self.__getSetupPath() ):
+      for path in self.__getSearchPaths():
         pathCFG = gConfigurationData.mergedCFG[ path ]
         if pathCFG:
           mergedCFG = mergedCFG.mergeWith( pathCFG )
@@ -94,18 +83,16 @@ class Operations( object ):
     self.__uSetup = setup
     self.__discoverSettings()
 
-
-  def __getVOPath( self ):
-    if CSGlobals.getVO() or not self.__vo:
-      return "/Operations"
-    return "/Operations/%s" % self.__vo
-
-  def __getDefaultPath( self ):
-    return "%s/Defaults/" % self.__getVOPath()
-
-  def __getSetupPath( self ):
-    return "%s/%s" % ( self.__getVOPath(), self.__setup )
-
+  def __getSearchPaths( self ):
+    paths = [ "/Operations/Default", "/Operations/%s" % self.__setup ]
+    if not self.__vo:
+      globalVO = CSGlobals.getVO()
+      if not globalVO:
+        return paths
+      self.__vo = CSGlobals.getVO()
+    paths.append( "/Operations/%s/Default" % self.__vo )
+    paths.append( "/Operations/%s/%s" % ( self.__vo, self.__setup ) )
+    return paths
 
   def getValue( self, optionPath, defaultValue = None ):
     return self.__getCache().getOption( optionPath, defaultValue )
@@ -143,3 +130,28 @@ class Operations( object ):
     for opName in sectionCFG.listOptions():
       data[ opName ] = sectionCFG[ opName ]
     return S_OK( data )
+
+  def generatePath( self, option, vo = False, setup = False ):
+    """
+    Generate the CS path for an option
+    if vo is not defined, the helper's vo will be used for multi VO installations
+    if setup evaluates False (except None) -> The helpers setup will  be used
+    if setup is defined -> whatever is defined will be used as setup
+    if setup is None -> Defaults will be used
+    """
+    path = "/Operations"
+    if not CSGlobals.getVO():
+      if not vo:
+        vo = self.__vo
+      if vo:
+        path += "/%s" % vo
+    if not setup and setup != None:
+      if not setup:
+        setup = self.__setup
+    if setup:
+      path += "/%s" % setup
+    else:
+      path += "/Default" 
+    return "%s/%s" % ( path, option )
+      
+

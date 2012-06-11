@@ -8,8 +8,6 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id$"
-
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight        import *
 from DIRAC.ConfigurationSystem.Client.Config          import gConfig
 from DIRAC.Core.Security                              import File
@@ -337,6 +335,10 @@ class ComputingElement:
         additionalJobs = maxWaitingJobs - waitingJobs
         if totalJobs + additionalJobs >= maxTotalJobs:
           additionalJobs = maxTotalJobs - totalJobs
+      #For SSH CE case	
+      if int(self.__getParameters( 'MaxWaitingJobs')['Value']) == 0:
+        additionalJobs = maxTotalJobs - runningJobs
+        
 
       result['Value'] = additionalJobs
 

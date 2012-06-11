@@ -33,6 +33,24 @@ CREATE TABLE PolicyResult(
   PRIMARY KEY(PolicyResultID)
 ) Engine=InnoDB;
 
+DROP TABLE IF EXISTS PolicyResultLog;
+CREATE TABLE PolicyResultLog(
+  PolicyResultLogID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Granularity VARCHAR(32) NOT NULL,
+  Name VARCHAR(64) NOT NULL,
+  INDEX (Name),
+  PolicyName VARCHAR(64) NOT NULL,
+  INDEX (PolicyName),
+  StatusType VARCHAR(16) NOT NULL DEFAULT '',
+  INDEX (StatusType),
+  Status VARCHAR(8) NOT NULL,
+  Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
+  LastCheckTime DATETIME NOT NULL,
+  INDEX (LastCheckTime),
+  UNIQUE KEY (Name,PolicyName,StatusType,LastCheckTime),
+  PRIMARY KEY(PolicyResultLogID)
+) Engine=InnoDB;
+
 DROP TABLE IF EXISTS ClientCache;
 CREATE TABLE ClientCache(
   ClientCacheID INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -62,6 +80,35 @@ CREATE TABLE AccountingCache(
   LastCheckTime DATETIME NOT NULL,
   UNIQUE KEY( Name, PlotType, PlotName ),
   PRIMARY KEY(AccountingCacheID)
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS VOBOXCache;
+CREATE TABLE VOBOXCache(
+  VOBOXCacheID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Site VARCHAR( 64 ) NOT NULL,
+  INDEX ( Site ),
+  System VARCHAR( 64 ) NOT NULL,
+  INDEX ( System ),
+  ServiceUp INTEGER NOT NULL DEFAULT 0,
+  MachineUp INTEGER NOT NULL DEFAULT 0,
+  LastCheckTime DATETIME NOT NULL,
+  UNIQUE KEY( Site, System ),
+  PRIMARY KEY( VOBOXCacheID )
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS SpaceTokenOccupancyCache;
+CREATE TABLE SpaceTokenOccupancyCache(
+  SpaceTokenOccupancyCacheID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Site VARCHAR( 64 ) NOT NULL,
+  INDEX ( Site ),
+  Token VARCHAR( 64 ) NOT NULL,
+  INDEX ( Token ),
+  Total INTEGER NOT NULL DEFAULT 0,
+  Guaranteed INTEGER NOT NULL DEFAULT 0,
+  Free INTEGER NOT NULL DEFAULT 0,
+  LastCheckTime DATETIME NOT NULL,
+  UNIQUE KEY( Site, Token ),
+  PRIMARY KEY(  SpaceTokenOccupancyCacheID )
 ) Engine=InnoDB;
 
 DROP TABLE IF EXISTS EnvironmentCache;

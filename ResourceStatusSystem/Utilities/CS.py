@@ -7,16 +7,17 @@
 
 import itertools
 
-from DIRAC                                import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities                 import List
-from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC                                               import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities                                import List
+from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
 __RCSID__  = '$Id: $'
 
 g_BaseRegistrySection   = '/Registry'
 g_BaseResourcesSection  = '/Resources'
-g_BaseOperationsSection = '/Operations'
-g_BaseConfigSection     = '/Operations/RSSConfiguration'
+g_BaseConfigSection     = 'RSSConfiguration'
+#g_BaseConfigSection     = '/Operations/RSSConfiguration'
 
 ### CS HELPER FUNCTIONS
 
@@ -31,6 +32,35 @@ def getValue( val, default ):
     return [ Utils.typedobj_of_string(e) for e in res ]
   else:
     return Utils.typedobj_of_string( res )
+
+def getTypedDictRootedAtOperations( relpath = "", root = g_BaseConfigSection ):
+  '''Gives the configuration rooted at path in a Python dict. The
+  result is a Python dictionnary that reflects the structure of the
+  config file.'''
+  def getTypedDictRootedAt( path ):
+    retval = {}
+
+    opts = Operations().getOptionsDict( path )
+    secs = Operations().getSections( path )
+
+    if not opts[ 'OK' ]:
+      raise CSError, opts[ 'Message' ]
+    if not secs[ 'OK' ]:
+      raise CSError, secs[ 'Message' ]
+
+    opts = opts[ 'Value' ]
+    secs = secs[ 'Value' ]
+
+    for k in opts:
+      if opts[ k ].find( "," ) > -1:
+        retval[ k ] = [ Utils.typedobj_of_string(e) for e in List.fromChar(opts[k]) ]
+      else:
+        retval[ k ] = Utils.typedobj_of_string( opts[ k ] )
+    for i in secs:
+      retval[ i ] = getTypedDictRootedAt( path + "/" + i )
+    return retval
+
+  return getTypedDictRootedAt( root + "/" + relpath )
 
 def getTypedDictRootedAt( relpath = "", root = g_BaseConfigSection ):
   '''Gives the configuration rooted at path in a Python dict. The
@@ -67,7 +97,7 @@ def getTypedDictRootedAt( relpath = "", root = g_BaseConfigSection ):
 
 def getOperationMails( op ):
   ''' Get emails from Operations section'''
-  return gConfig.getValue( "%s/EMail/%s" % (g_BaseOperationsSection, op) ,"" )
+  return Operations().getValue( "EMail/%s" % op ,"" )
 
 # Setup functions ####################
 
@@ -79,7 +109,12 @@ def getSetup():
 
 def getVOMSEndpoints():
   ''' Get VOMS endpoints '''
-  return Utils.unpack( gConfig.getSections( "%s/VOMS/Servers/lhcb/" % g_BaseRegistrySection ) )
+  
+  endpoints = gConfig.getSections( '%s/VOMS/Servers/lhcb/' % g_BaseRegistrySection )
+  if endpoints[ 'OK' ]:
+    return endpoints[ 'Value' ]
+  return [] 
+  #return Utils.unpack( gConfig.getSections( "%s/VOMS/Servers/lhcb/" % g_BaseRegistrySection ) )
 
 # Sites functions ###################
 
@@ -87,10 +122,20 @@ def getSites( grids = ( 'LCG', 'DIRAC' ) ):
   ''' Get sites from CS '''
   if isinstance( grids, basestring ):
     grids = ( grids, )
-  sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
-                                      % ( g_BaseResourcesSection, grid ), True))
-           for grid in grids]
-  return Utils.list_flatten(sites)
+    
+  sites = []  
+    
+  for grid in grids:
+    
+    gridSites = gConfig.getSections( '%s/Sites/%s' % ( g_BaseResourcesSection, grid ), True )
+    if gridSites[ 'OK' ]:
+      sites.extend( gridSites[ 'Value' ] )      
+ 
+  return sites 
+#  sites = [Utils.unpack(gConfig.getSections('%s/Sites/%s'
+#                                      % ( g_BaseResourcesSection, grid ), True))
+#           for grid in grids]
+#  return Utils.list_flatten( sites )
 
 def getSiteTiers( sites ):
   ''' Get tiers from CS '''
@@ -112,8 +157,13 @@ def getT1s( grids = 'LCG' ):
 
 def getLFCSites():
   ''' Get LFC sites '''
-  return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
-                             % g_BaseResourcesSection, True))
+  
+  lfcSites = gConfig.getSections( '%s/FileCatalogs/LcgFileCatalogCombined' % g_BaseResourcesSection, True )
+  if lfcSites[ 'OK' ]:
+    return lfcSites[ 'Value' ]
+  return []
+#  return Utils.unpack(gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined'
+#                             % g_BaseResourcesSection, True))
 
 def getLFCNode( sites = None, readable = ( 'ReadOnly', 'ReadWrite' ) ):
   ''' Get LFC node '''
@@ -136,7 +186,12 @@ def getLFCNode( sites = None, readable = ( 'ReadOnly', 'ReadWrite' ) ):
 
 def getSEs():
   ''' Get StorageElements '''
-  return Utils.unpack(gConfig.getSections("/Resources/StorageElements"))
+  
+  ses = gConfig.getSections( '/Resources/StorageElements' )
+  if ses[ 'OK' ]:
+    return ses[ 'Value' ]
+  return []
+#  return Utils.unpack(gConfig.getSections("/Resources/StorageElements"))
 
 def getSEHost( SE ):
   ''' Get StorageElement host '''
@@ -179,7 +234,12 @@ def getCEType( site, ce, grid = 'LCG' ):
 
 def getCondDBs():
   ''' Get CondDB'''
-  return Utils.unpack(gConfig.getSections("%s/CondDB" % g_BaseResourcesSection))
+  
+  condDBs = gConfig.getSections( '%s/CondDB' % g_BaseResourcesSection )
+  if condDBs[ 'OK' ]:
+    return condDBs[ 'Value' ]
+  return condDBs
+#  return Utils.unpack(gConfig.getSections("%s/CondDB" % g_BaseResourcesSection))
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
