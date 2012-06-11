@@ -93,9 +93,9 @@ class RequestAgentBase( AgentModule ):
     self.log.info("ProcessPool max process = %d" % self.__maxProcess )
     self.__queueSize = self.am_getOption( "ProcessPoolQueueSize", 10 )
     self.log.info("ProcessPool queue size = %d" % self.__queueSize )
-    self.__poolTimeout = self.am_getOption( "ProcessPoolTimeout", 300 )
-    self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout )
-    self.__poolTimeout = self.am_getOption( "ProcessTaskTimeout", 300 )
+    self.__poolTimeout = int( self.am_getOption( "ProcessPoolTimeout", 300 ) )
+    self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout ) 
+    self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", 300 ) )
     self.log.info("ProcessTask timeout = %d seconds" % self.__taskTimeout )
     ## request type
     self.__requestType = self.am_getOption( "RequestType", None )
@@ -128,7 +128,7 @@ class RequestAgentBase( AgentModule ):
     :param self: self reference
     :param int timeout: PP finalisation timeout in seconds 
     """
-    self.__poolTimeout = timeout
+    self.__poolTimeout = int(timeout)
     
   def taskTimeout( self ):
     """ taskTimeout getter
@@ -143,7 +143,7 @@ class RequestAgentBase( AgentModule ):
     :param self: self reference
     :param int timeout: task timeout in seconds
     """
-    self.__taskTimeout = timeout
+    self.__taskTimeout = int(timeout)
 
   def requestHolder( self ):
     """ get request holder dict
@@ -182,7 +182,7 @@ class RequestAgentBase( AgentModule ):
     :param str requestName: request's name
     """
     if requestName in self.__requestHolder:
-      requestString, requestServer = self.__requestHolder["requestName"]
+      requestString, requestServer = self.__requestHolder[requestName]
       reset = self.requestClient().updateRequest( requestName, requestString, requestServer )
       if not reset["OK"]:
         self.log.error("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
