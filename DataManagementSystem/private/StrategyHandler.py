@@ -116,7 +116,7 @@ class StrategyHandler( object ):
     self.log.debug( "AcceptableFailedFiles = %s" % self.acceptableFailedFiles )
 
     self.bandwidths = bandwidths if bandwidths else {}
-    self.channels = channels in channels else {}
+    self.channels = channels if channels else {}
     self.failedFiles = failedFiles if failedFiles else {}
     self.chosenStrategy = 0
 
