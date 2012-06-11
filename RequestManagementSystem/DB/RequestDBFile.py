@@ -124,9 +124,9 @@ class RequestDBFile:
       self.getIdLock.acquire()
       if os.path.exists( reqDir ):
         candidateRequests = [ os.path.basename( requestFile ) for requestFile in
-                         sorted( filter( os.path.isfile,
-                                         [ os.path.join( reqDir, requestName ) for requestName in os.listdir( reqDir ) ] ),
-                                 key = os.path.getctime ) ]
+                              sorted( filter( os.path.isfile,
+                                              [ os.path.join( reqDir, requestName ) for requestName in os.listdir( reqDir ) ] ),
+                                      key = os.path.getctime ) ]
       if not len( candidateRequests ) > 0:
         self.getIdLock.release()
         gLogger.info( "RequestDBFile._getRequest: No request of type %s found." % requestType )
@@ -209,6 +209,28 @@ class RequestDBFile:
       errStr = "RequestDBFile._setRequestStatus: Exception while setting request status."
       gLogger.exception( errStr, requestName, lException = x )
       return S_ERROR( errStr )
+
+  def getRequestStatus( self, requestName ):
+    """ check status for request :requestName:
+    
+    :param self: self reference
+    :param str requestName: 
+    """
+    res = self.getDBSummary()
+    if not res["OK"]:
+      return res
+    res = res["Value"]
+    for requestType in res:
+      for status in res[requestType]:
+        path = os.path.join( self.root, requestType, status, requestName )
+        if os.path.exists( path ):
+          requestStatus = status
+          if requestStatus = "ToDo": requestStatus = "Waiting"
+          res = self.__getRequestString( path )
+          
+           
+
+    return S_OK( { "RequestStatus" : requestStatus, "SubRequestStatus" : subRequestStatus }  )
 
   def serveRequest( self, requestType ):
     """ Get a request from the DB and serve it (delete locally)
