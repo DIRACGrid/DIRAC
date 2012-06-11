@@ -125,6 +125,8 @@ class StorageElementHandler( RequestHandler ):
     resultDict['TimeStamps'] = ( statTuple[ST_ATIME], statTuple[ST_MTIME], statTuple[ST_CTIME] )
     resultDict['Cached'] = 1
     resultDict['Migrated'] = 0
+    resultDict['Lost'] = 0
+    resultDict['Unavailable'] = 0
     resultDict['Mode'] = S_IMODE( mode )
     return S_OK( resultDict )
 
