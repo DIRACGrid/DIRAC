@@ -301,7 +301,8 @@ class TransferAgent( RequestAgentBase ):
 
     return S_OK()
 
-  def ancestorSortKeys( self, aDict, aKey="Ancestor" ):
+  @staticmethod
+  def ancestorSortKeys( aDict, aKey="Ancestor" ):
     """ sorting keys of replicationTree by its hopAncestor value 
     
     replicationTree is a dict ( channelID : { ... }, (...) }
@@ -758,15 +759,23 @@ class TransferAgent( RequestAgentBase ):
     res = self.requestClient().updateRequest( requestName, requestString, requestDict["sourceServer"] )
     if not res["OK"]:
       self.log.error( "schedule: failed to update request", "%s %s" % ( requestName, res["Message"] ) )
+      return res
 
-    ## finalisation
-    requestDone = requestObj.isRequestDone()
-    requestDone = requestDone["Value"] if "Value" in requestDone else False
-    ## fianlize request, it's status is Done
-    if requestDict["jobID"] and requestDone:
-      res = self.requestClient().finalizeRequest( requestName,  requestDict["jobID"], requestDict["sourceServer"] )
-      if not res["OK"]:
-        self.log.error( "schedule: unable to finalize request %s: %s " % ( requestName, res["Message"] ) )
+    ## finalisation only if jobID is set
+    if requestDict["jobID"]:
+      requestStatus = self.requestClient().getRequestStatus( requestName, requestDict["sourceServer"] )
+      if not requestStatus["OK"]:
+        self.log.error( "schedule: failed to get request status", "%s %s" % ( requestName, requestStatus["Message"] ) )
+        return requestStatus
+      requestStatus = requestStatus["Value"]
+      self.log.debug( "schedule: requestStatus is %s" % requestStatus )
+      ## ...and request status == 'Done' (or subrequests statuses not in Waiting or Assigned 
+      if requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ) and requestStatus["RequestStatus"] == "Done":
+        self.log.info( "schedule: will finalize request: %s" % requestName )
+        finalize = self.requestClient().finalizeRequest( requestName, requestDict["jobID"], requestDict["sourceServer"] )
+        if not finalize["OK"]:
+          self.log.error("schedule: error in request finalization: %s" % finalize["Message"] )
+          return finalize
 
     return S_OK()
 
