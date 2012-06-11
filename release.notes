@@ -40,7 +40,7 @@ CHANGE: Whenever a DB is not properly initialized it will raise a catchable Runt
 FIX: InputDataResolution - just quick mod for easier extensibility, plus removed some LHCb specific stuff
 NEW: allow jobids in a file in dirac-wms-job-get-output
 NEW: JobManager - zfill in %n parameter substitution to allow alphabetical sorting
-FIX: SandboxStoreClient - catch exception when SandboxMetadataDB can not be instantiated
+
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
@@ -49,6 +49,14 @@ FIX: TransformationAgent - a small improvement: now can pick the prods status to
 *Accounting
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
+
+[v6r4p7]
+
+*WMS
+FIX: SandboxStoreClient - catch exception when SandboxMetadataDB can not be instantiated
+
+*DMS
+BUGFIX: StorageElement - added Lost and Unavailable metadata to the output of getFileMetadata()
 
 [v6r4p6]
 
