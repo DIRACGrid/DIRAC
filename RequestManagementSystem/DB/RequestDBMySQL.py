@@ -557,7 +557,11 @@ class RequestDBMySQL( DB ):
       return S_OK()
 
   def deleteRequest( self, requestName ):
+    """ delete request of name :requestName: from db
 
+    :param self: self reference
+    :param str requestName: request name
+    """
     return self._deleteRequest( requestName )
 
   def _deleteRequest( self, requestName ):
