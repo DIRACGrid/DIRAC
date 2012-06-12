@@ -15,12 +15,16 @@ import random
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.ConfigurationSystem.Client import PathFinder
+
 ## RCSID
 __RCSID__ = "$Id"
 
 class RequestDBFile( object ):
   """
   .. class:: RequestDBFile
+
+  The fs based request backend interface.
+
   """
   def __init__( self, systemInstance = "Default" ):
     """ c'tor
@@ -133,9 +137,9 @@ class RequestDBFile( object ):
         os.remove( subRequest )
       self.log.info( "deleteRequest: Successfully deleted %s." % requestName )
       return S_OK()
-    except Exception, x:
+    except Exception, error:
       errStr = "deleteRequest: Exception while deleting request."
-      self.log.exception( errStr, requestName, lException = x )
+      self.log.exception( errStr, requestName, lException = error )
       return S_ERROR( errStr )
 
   def getRequest( self, requestType ):
@@ -238,9 +242,9 @@ class RequestDBFile( object ):
         return S_ERROR( errStr )
       self.log.info( "setRequestStatus: Successfully set status of %s to %s." % ( requestName, requestStatus ) )
       return S_OK()
-    except Exception, x:
+    except Exception, error:
       errStr = "setRequestStatus: Exception while setting request status."
-      self.log.exception( errStr, requestName, lException = x )
+      self.log.exception( errStr, requestName, lException = error )
       return S_ERROR( errStr )
 
   def getRequestStatus( self, requestName ):
@@ -335,13 +339,14 @@ class RequestDBFile( object ):
         return S_ERROR( errStr )
       self.log.info( "serveRequest: Successfully served %s." % requestName )
       return S_OK( requestDict )
-    except Exception, x:
+    except Exception, error:
       errStr = "serveRequest: Exception while serving request."
-      self.log.exception( errStr, requestType, x )
+      self.log.exception( errStr, requestType, error )
       return S_ERROR( errStr )
 
   def updateRequest( self, requestName, requestString ):
-    """ update the contents of a pre-existing request
+    """ update the contents of a pre-existing request, set the request's status
+
 
     :param self: self reference
     :param str requestName: request name
@@ -381,11 +386,12 @@ class RequestDBFile( object ):
       self.log.exception( errStr, requestName, lException = error )
       return S_ERROR( errStr )
 
-  def getCurrentExecutionOrder( self, requestID ):
+  @staticmethod
+  def getCurrentExecutionOrder( requestID ):
     """ Get the current subrequest execution order for the given request,
         fake method to satisfy the standard interface
         
-        What??? 
+        What??? O'rly? 
 
     """
     return S_OK( 0 )
@@ -421,9 +427,9 @@ class RequestDBFile( object ):
                 subRequests.append( requestPath )
       self.log.info( "__locateRequest: Successfully located %s." % requestName )
       return S_OK( subRequests )
-    except Exception, x:
+    except Exception, error:
       errStr = "__locateRequest: Exception while locating request."
-      self.log.exception( errStr, requestName, lException = x )
+      self.log.exception( errStr, requestName, lException = error )
       return S_ERROR( errStr )
 
   def __getRequestString( self, requestName ):
@@ -452,9 +458,9 @@ class RequestDBFile( object ):
       result = S_OK( requestString )
       result['Request'] = oRequest
       return result
-    except Exception, x:
+    except Exception, error:
       errStr = "__getRequestString: Exception while obtaining request string."
-      self.log.exception( errStr, requestName, lException = x )
+      self.log.exception( errStr, requestName, lException = error )
       return S_ERROR( errStr )
 
   def _getRequestAttribute( self, attribute, requestName ):
@@ -473,7 +479,7 @@ class RequestDBFile( object ):
     request = result['Request']
     try:
       return request.getAttribute( attribute )
-    except KeyError, x:
+    except KeyError:
       return S_OK( None )
 
   def __readSubRequestString( self, subRequestPath ):
@@ -488,9 +494,9 @@ class RequestDBFile( object ):
       requestString = subRequestFile.read()
       self.log.info( "__readSubRequestString: Successfully read contents of %s." % subRequestPath )
       return S_OK( str( requestString ) )
-    except Exception, x:
+    except Exception, error:
       errStr = "__readSubRequestString: Exception while reading sub-request."
-      self.log.exception( errStr, subRequestPath, lException = x )
+      self.log.exception( errStr, subRequestPath, lException = error )
       return S_ERROR( errStr )
 
   def __selectRequestCursor( self, requestList, lastRequest, lastRequestIndex ):
@@ -515,8 +521,7 @@ class RequestDBFile( object ):
       nextRequestName = requestList[newIndex]
       self.log.info( "__selectRequestCursor: Selected %s as next request." % nextRequestName )
       return S_OK( ( nextRequestName, newIndex ) )
-    except Exception, x:
+    except Exception, error:
       errStr = "__selectRequestCursor: Exception while selecting next valid request."
-      self.log.exception( errStr, lException = x )
+      self.log.exception( errStr, lException = error )
       return S_ERROR( errStr )
-
