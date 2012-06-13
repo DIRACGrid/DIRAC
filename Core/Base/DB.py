@@ -89,7 +89,6 @@ class DB( MySQL ):
     self.log.info( "DBName:         " + self.dbName )
     self.log.info( "MaxQueue:       " + str( self.maxQueueSize ) )
     self.log.info( "==================================================" )
-    return True
 
 #############################################################################
   def getCSOption( self, optionName, defaultValue = None ):
