@@ -26,9 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 from mock import *
-
 global MySQL, DB, RequestDBMySQL
-
 from DIRAC.Core.Utilities.MySQL import MySQL
 MySQL = Mock(spec=MySQL)
 from DIRAC.Core.Base.DB import DB
@@ -119,6 +117,12 @@ class RegisterTaskTests(unittest.TestCase):
     self.registerTask.requestClient().updateRequest = Mock()
     self.registerTask.requestClient().updateRequest.return_value = { "OK" : True, "Value" : None }
 
+    self.registerTask.requestClient().getRequestStatus = Mock()
+    self.registerTask.requestClient().getRequestStatus.return_value = { "OK" : True, 
+                                                                        "Value" : { "RequestStatus" : "Done", 
+                                                                                    "SubRequestStatus" : "Done" }}
+
+
     self.registerTask.requestClient().finalizeRequest = Mock()
     self.registerTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
@@ -131,7 +135,8 @@ class RegisterTaskTests(unittest.TestCase):
 
   def test_01_call( self ):
     """ call test """
-    self.assertEqual( self.registerTask.__call__(), {'OK': True, 'Value': {'monitor': {'Execute': 1, 'Done': 1}}} )
+    self.assertEqual( self.registerTask.__call__(), { 'OK': True, 
+                                                      'Value': { 'monitor': { 'Execute': 1, 'Done': 1} } } )
 
 
 ## suite execution
