@@ -102,7 +102,7 @@ class RequestDBFile( object ):
           if desiredStatus:
             status = desiredStatus
           elif not request.isRequestTypeEmpty( requestType )['Value']:
-            status = 'ToDo'
+            status = 'Waiting'
           else:
             status = 'Done'
           subRequestDir = os.path.join( self.root, requestType, status )
@@ -152,7 +152,7 @@ class RequestDBFile( object ):
     try:
       # Determine the request name to be obtained
       candidateRequests = []
-      reqDir = os.path.join( self.root, requestType, "ToDo" )
+      reqDir = os.path.join( self.root, requestType, "Waiting" )
       self.getIdLock.acquire()
       if os.path.exists( reqDir ):
         candidateRequests = [ os.path.basename( requestFile ) for requestFile in
@@ -198,10 +198,11 @@ class RequestDBFile( object ):
       self.lastRequest[requestType] = ( selectedRequestName, selectedRequestIndex )
       self.getIdLock.release()
       self.log.info( "getRequest: Successfully obtained %s request." % selectedRequestName )
-      jobID = 0
+      oRequest = RequestContainer( request = selectedRequestString )
+      jobID = oRequest.getJobID()
+      jobID = jobID["Value"] if jobID["OK"] and jobID["Value"] else 0
       try:
-        oRequest = RequestContainer( request = selectedRequestString )
-        jobID = int( oRequest.getJobID()['Value'] )
+        jobID = int( jobID )
       except (TypeError, ValueError), error:
         self.log.exception( 'Could not get JobID from Request: %s' % str(error) )
       resDict = { 'RequestString' : selectedRequestString, 'RequestName' : selectedRequestName, 'JobID' : jobID }
@@ -254,32 +255,13 @@ class RequestDBFile( object ):
     :param str requestName: 
     """
     res = self.__locateRequest( requestName, assigned=True )
-    if not res['OK']:
+    if not res["OK"]:
       return res
     subRequestPaths = res['Value']
-
-    oRequest = RequestContainer( init = False )
-    for subRequestPath in subRequestPaths:
-      res = self.__readSubRequestString( subRequestPath )
-      if not res["OK"]:
-        return res
-      subRequestString = res['Value']
-      tempRequest = RequestContainer( subRequestString )
-      oRequest.setRequestAttributes( tempRequest.getRequestAttributes()['Value'] )
-      oRequest.update( tempRequest )
-      
-    requestStatus = oRequest.getAttribute( "Status" )
-    if not requestStatus["OK"]:
-      return requestStatus
-    requestStatus = requestStatus["Value"]
-
-    statuses = []
-    for subRequestType, subRequestIndex in oRequest.subRequests.items():
-      if ( "Attributes" in oRequest.subRequests[subRequestType][subRequestIndex] ) and \
-            ( "Status" in oRequest.subRequests[subRequestType][subRequestIndex]["Attributes"] ):
-        statuses.append( oRequest.subRequests[subRequestType][subRequestIndex]["Attributes"]["Status"] )
-    result = list( set( statuses ) )
-      
+    if not subRequestPaths:
+      return S_ERROR( "getRequestStatus: request '%s' not found" % requestName )
+    ## figure out subrequests status
+    result = list( set( [ path.rstrip( requestName ).split("/")[-2] for path in subRequestPaths ] ) )      
     subRequestStatus = "Unknown"
     if "Empty" in result:
       subRequestStatus = "Empty"
@@ -291,7 +273,12 @@ class RequestDBFile( object ):
       subRequestStatus = "Failed"
     elif "Done" in result:
       subRequestStatus = "Done"
-               
+    ## ...and same for request status
+    if subRequestStatus in ( "Waiting", "Assigned", "Unknown" ):
+      requestStatus = "Waiting"
+    elif subRequestStatus in ( "Empty", "Failed", "Done" ):
+      requestStatus = "Done"
+
     return S_OK( { "RequestStatus" : requestStatus, "SubRequestStatus" : subRequestStatus }  )
 
   def serveRequest( self, requestType ):
@@ -311,8 +298,8 @@ class RequestDBFile( object ):
           return S_ERROR( errStr )
         candidates = []
         for requestType, requestsCount in res["Value"].items():
-          if "ToDo" in requestsCount:
-            count = requestsCount["ToDo"]
+          if "Waiting" in requestsCount:
+            count = requestsCount["Waiting"]
             if count:
               candidates.append( requestType )
         if not candidates:
@@ -367,14 +354,16 @@ class RequestDBFile( object ):
         self.log.error( errStr, res['Message'] )
         return S_ERROR( errStr )
       self.log.info( "updateRequest: Successfully updated %s." % requestName )
+
       requestStatus = self.getRequestStatus( requestName )
       if not requestStatus["OK"]:
         self.log.error( "updateRequest: unable to get request status %s: %s" % ( requestName, 
                                                                                  requestStatus["Message"] ) )
         return requestStatus
+
       requestStatus = requestStatus["Value"]
       subRequestStatus = requestStatus["SubRequestStatus"]
-      if subRequestStatus in ( "Empty", "Done" ):
+      if subRequestStatus in ( "Empty", "Done", "Failed" ):
         setRequestStatus = self.setRequestStatus( requestName, "Done" )
         if not setRequestStatus["OK"]:
           self.log.error( "updateRequest: unable to set status to 'Done' for %s: %s" % ( requestName, 
