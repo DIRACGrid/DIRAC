@@ -241,6 +241,10 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().updateRequest = Mock()
     removalTask.requestClient().updateRequest.return_value = { "OK" : True, "Value" : None }
 
+    removalTask.requestClient().getRequestStatus = Mock()
+    removalTask.requestClient().getRequestStatus.return_value = { "OK" : True, 
+                                                                  "Value" : { "RequestStatus" : "Done", 
+                                                                              "SubRequestStatus" : "Done" }}
     removalTask.requestClient().finalizeRequest = Mock()
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
@@ -270,6 +274,11 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().updateRequest = Mock()
     removalTask.requestClient().updateRequest.return_value = { "OK" : True, "Value" : None }
 
+    removalTask.requestClient().getRequestStatus = Mock()
+    removalTask.requestClient().getRequestStatus.return_value = { "OK" : True, 
+                                                                  "Value" : { "RequestStatus" : "Done", 
+                                                                              "SubRequestStatus" : "Done" }}
+
     removalTask.requestClient().finalizeRequest = Mock()
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
@@ -279,8 +288,14 @@ class RemovalTaskTests( unittest.TestCase ):
                                                                        { "Failed" : {},
                                                                          "Successful" : { "/lhcb/user/c/cibak/11889/11889410/test.zzz" : True } } } )
     self.assertEqual( removalTask.__call__(), 
-                      {'OK': True, 'Value': {'monitor': {'RemoveFileFail': 0, 'Execute': 1, 'Done': 1, 'RemoveFileDone': 1, 'RemoveFileAtt': 1}}} )
-
+                      {'OK': True, 
+                       'Value': { 'monitor': 
+                                  { 'RemoveFileFail': 0, 
+                                    'Execute': 1, 
+                                    'Done': 1, 
+                                    'RemoveFileDone': 1, 
+                                    'RemoveFileAtt': 1}}} )
+    
 
     del removalTask
 
@@ -299,6 +314,10 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().updateRequest = Mock()
     removalTask.requestClient().updateRequest.return_value = { "OK" : True, "Value" : None }
 
+    removalTask.requestClient().getRequestStatus = Mock()
+    removalTask.requestClient().getRequestStatus.return_value = { "OK" : True, 
+                                                                  "Value" : { "RequestStatus" : "Done", 
+                                                                              "SubRequestStatus" : "Done" }}
     removalTask.requestClient().finalizeRequest = Mock()
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
@@ -325,6 +344,10 @@ class RemovalTaskTests( unittest.TestCase ):
     removalTask.requestClient().updateRequest = Mock()
     removalTask.requestClient().updateRequest.return_value = { "OK" : True, "Value" : None }
 
+    removalTask.requestClient().getRequestStatus = Mock()
+    removalTask.requestClient().getRequestStatus.return_value = { "OK" : True, 
+                                                                  "Value" : { "RequestStatus" : "Done", 
+                                                                              "SubRequestStatus" : "Done" }}
     removalTask.requestClient().finalizeRequest = Mock()
     removalTask.requestClient().finalizeRequest.return_value = { "OK" : True, "Value" : None }
 
