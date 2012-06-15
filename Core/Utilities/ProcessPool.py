@@ -807,15 +807,17 @@ class ProcessPool( object ):
         break
       ## get task
       task = self.__resultsQueue.get()
-      ## execute task callbacks
-      task.doExceptionCallback()
-      task.doCallback()
-      ## execute pool callbacks
-      if task.usePoolCallbacks():
-        if self.__poolExceptionCallback and task.exceptionRaised():
-          self.__poolExceptionCallback( task.getTaskID(), task.taskException() )
-        if self.__poolCallback and task.taskResults():
-          self.__poolCallback( task.getTaskID(), task.taskResults() )
+      ## execute callbacks
+      try:
+        task.doExceptionCallback()
+        task.doCallback()
+        if task.usePoolCallbacks():
+          if self.__poolExceptionCallback and task.exceptionRaised():
+            self.__poolExceptionCallback( task.getTaskID(), task.taskException() )
+          if self.__poolCallback and task.taskResults():
+            self.__poolCallback( task.getTaskID(), task.taskResults() )
+      except Exception, error:
+        pass
       processed += 1
     return processed
 
