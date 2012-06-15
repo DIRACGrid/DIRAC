@@ -43,12 +43,13 @@ class FTSRequest(object):
   ## flag to disablr/enable checksum test, default: disabled
   __cksmTest = False
 
-
   def __init__( self ):
     """c'tor
 
     :param self: self reference
     """
+    self.log = gLogger.getSubLogger( self.__class__.__name__, True )
+
     ## final states tuple
     self.finalStates = ( 'Canceled', 'Failed', 'Hold', 
                          'Finished', 'FinishedDirty' )
@@ -184,7 +185,7 @@ class FTSRequest(object):
       return S_ERROR( "SourceSE not available for reading" )
     res = self.__getSESpaceToken( self.oSourceSE )
     if not res['OK']:
-      gLogger.error( "FTSRequest failed to get SRM Space Token for SourceSE", res['Message'] )
+      self.log.error( "FTSRequest failed to get SRM Space Token for SourceSE", res['Message'] )
       return S_ERROR( "SourceSE does not support FTS transfers" )
     self.sourceToken = res['Value']
     self.sourceValid = True
@@ -241,7 +242,7 @@ class FTSRequest(object):
       return S_ERROR( "TargetSE not available for writing" )
     res = self.__getSESpaceToken( self.oTargetSE )
     if not res['OK']:
-      gLogger.error( "FTSRequest failed to get SRM Space Token for TargetSE", res['Message'] )
+      self.log.error( "FTSRequest failed to get SRM Space Token for TargetSE", res['Message'] )
       return S_ERROR( "SourceSE does not support FTS transfers" )
     self.targetToken = res['Value']
     self.targetValid = True
@@ -712,7 +713,7 @@ class FTSRequest(object):
       if self.fileDict[lfn].get( 'Status' ) == 'Failed':
         continue
       replicas = self.catalogReplicas.get( lfn, {} )
-      if replicas.has_key( self.targetSE ):
+      if self.targetSE in replicas:
         self.__setFileParameter( lfn, 'Reason', "File already at Target" )
         self.__setFileParameter( lfn, 'Status', 'Done' )
         atTarget.append( lfn )
@@ -1120,16 +1121,16 @@ class FTSRequest(object):
     if not res['OK']:
       for lfn in toRegister:
         self.failedRegistrations = toRegister
-        gLogger.error( 'Failed to get Catalog Object', res['Message'] )
+        self.log.error( 'Failed to get Catalog Object', res['Message'] )
         return S_OK( ( 0, len( toRegister ) ) )
     res = self.oCatalog.addCatalogReplica( toRegister )
     if not res['OK']:
       self.failedRegistrations = toRegister
-      gLogger.error( 'Failed to get Catalog Object', res['Message'] )
+      self.log.error( 'Failed to get Catalog Object', res['Message'] )
       return S_OK( ( 0, len( toRegister ) ) )
     for lfn, error in res['Value']['Failed'].items():
       self.failedRegistrations[lfn] = toRegister[lfn]
-      gLogger.error( 'Registration of Replica failed', '%s : %s' % ( lfn, str( error ) ) )
+      self.log.error( 'Registration of Replica failed', '%s : %s' % ( lfn, str( error ) ) )
     return S_OK( ( len( res['Value']['Successful'] ), len( toRegister ) ) )
 
   def __sendAccounting( self, regSuc, regTotal, regTime, transEndTime, transDict ):
@@ -1165,9 +1166,9 @@ class FTSRequest(object):
     transferTime = dt.days * 86400 + dt.seconds
     accountingDict['TransferTime'] = transferTime
     oAccounting.setValuesFromDict( accountingDict )
-    gLogger.verbose( "Attempting to commit accounting message..." )
+    self.log.verbose( "Attempting to commit accounting message..." )
     oAccounting.commit()
-    gLogger.verbose( "...committed." )
+    self.log.verbose( "...committed." )
     return S_OK()
 
   def __removeFailedTargets( self ):
