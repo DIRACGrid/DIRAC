@@ -54,17 +54,18 @@ class FTSSubmitAgent( AgentModule ):
     self.log.info("max jobs/channel = %s" % self.maxJobsPerChannel )
 
     ## checksum test
-    self.cksmTest = bool( self.am_getOption( "ChecksumTest", False ) )
-    self.log.info("checksum test %s" % { True : "enabled", False : "disabled" }[self.cksmTest]  )
-  
+    self.cksmTest = bool( self.am_getOption( "ChecksumTest", False ) )  
     ## ckecksum type
     if self.cksmTest:
-      self.cksmType = str( self.am_getOption( "ChecksumType", "" ) ).upper()
+      self.cksmType = str( self.am_getOption( "ChecksumType", self.__defaultCksmType ) ).upper()
       if self.cksmType and self.cksmType not in ( "ADLER32", "MD5", "SHA1" ):
-        self.log.warn("unknown checksum type: %s, will set it to None" % self.cksmType )
-        self.cksmType = None
-                      
-      self.log.info("will use checksum type %s for checksum test" % self.cksmType )
+        self.log.warn("unknown checksum type: %s, will use default %s" % ( self.cksmType, self.__defaultCksmType ) )
+        self.cksmType = self.__defaultCksmType                      
+     
+        
+    self.log.info( "checksum test is %s" % ( { True : "enabled using %s checksum" % self.cksmType,
+                                               False : "disabled"}[self.cksmTest] ) )
+      
     
     # This sets the Default Proxy to used as that defined under 
     # /Operations/Shifter/DataManager

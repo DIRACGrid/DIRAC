@@ -51,16 +51,17 @@ class SRM2Storage( StorageBase ):
     #	GFAL_CKSM_MD5,
     #	GFAL_CKSM_SHA1    
     # GFAL_CKSM_NULL = 0
-    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, "MD5" : 3, "SHA1" : 4 }
-
-    if self.checksumType.upper() in self.checksumTypes: 
-      gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
-      self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
-    else:
-      gLogger.warn("SRM2Storage: unknown checksum type %s, disabling checksum check")
-      gLogger.warn("SRM2Storage: will only comparing src and dest file sizes")
-      ## GFAL_CKSM_NONE
-      self.ckecksumType = 0
+    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, 
+                           "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
+    if self.checksumType:
+      if str(self.checksumType).upper() in self.checksumTypes: 
+        gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
+        self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
+      else:
+        gLogger.warn("SRM2Storage: unknown checksum type %s, disabling checksum check")
+        gLogger.warn("SRM2Storage: will only comparing src and dest file sizes")
+        ## GFAL_CKSM_NONE
+        self.ckecksumType = 0
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
