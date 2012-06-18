@@ -172,11 +172,6 @@ class TransferDB( DB ):
       channelID = record[0]
       channelTuple = record[1:]
       channels[channelID] = dict( zip( keyTuple, channelTuple ) )
-      #channels[channelID]['Source'] = sourceSite
-      #channels[channelID]['Destination'] = destSite
-      #channels[channelID]['Status'] = status
-      #channels[channelID]['Files'] = files
-      #channels[channelID]['ChannelName'] = channelName
     return S_OK( channels )
 
   def getChannelsForState( self, status ):
@@ -460,7 +455,6 @@ class TransferDB( DB ):
         return res
     return res
 
-
   def removeFileFromChannel( self, channelID, fileID ):
     """ remove single file from Channel given FileID and ChannelID
 
@@ -650,7 +644,6 @@ class TransferDB( DB ):
     if not res['OK']:
       err = "TransferDB.getChannelQueues: Failed to get Channel contents for Channels."
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
-    #channelDict = {}
     for channelID, fileCount, sizeCount in res['Value']:
       channels[channelID]['Files'] = int( fileCount )
       channels[channelID]['Size'] = int( sizeCount )
@@ -659,6 +652,12 @@ class TransferDB( DB ):
         channels[channelID]['Files'] = 0
         channels[channelID]['Size'] = 0
     return S_OK( channels )
+
+
+  def getCompletedChannels( self, limit = 100 ):
+    query = "SELECT DISTINCT FileID FROM Channel where Status = 'Done' AND FileID NOT IN ( SELECT FileID from Files ) LIMIT %s;" % limit
+    return self._query(query) 
+    
 
   #################################################################################
   # These are the methods for managing the FTSReq table
