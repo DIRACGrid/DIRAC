@@ -1,3 +1,19 @@
+[v6r3p17]
+
+*DataManagement
+FIX: Fixes issues #783 and #781. Bugs in ReplicaManager removePhisicalReplica and getFilesFromDirectory
+FIX: Return S_ERROR if missing jobid arguments
+NEW: Checksum can be verified during FTS and SRM2Storage 
+
+[v6r3p16]
+
+*DataManagement
+FIX: better monitoring of FTS channels 
+FIX: Handle properly None value for channels and bandwidths
+
+*Core
+FIX: Properly calculate the release notes if there are newer releases in the release.notes file
+
 [v6r3p15]
 
 
