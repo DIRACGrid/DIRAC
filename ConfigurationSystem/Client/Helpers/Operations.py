@@ -84,13 +84,13 @@ class Operations( object ):
     self.__discoverSettings()
 
   def __getSearchPaths( self ):
-    paths = [ "/Operations/Default", "/Operations/%s" % self.__setup ]
+    paths = [ "/Operations/Defaults", "/Operations/%s" % self.__setup ]
     if not self.__vo:
       globalVO = CSGlobals.getVO()
       if not globalVO:
         return paths
       self.__vo = CSGlobals.getVO()
-    paths.append( "/Operations/%s/Default" % self.__vo )
+    paths.append( "/Operations/%s/Defaults" % self.__vo )
     paths.append( "/Operations/%s/%s" % ( self.__vo, self.__setup ) )
     return paths
 
@@ -151,7 +151,7 @@ class Operations( object ):
     if setup:
       path += "/%s" % setup
     else:
-      path += "/Default" 
+      path += "/Defaults" 
     return "%s/%s" % ( path, option )
       
 
