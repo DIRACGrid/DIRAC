@@ -5,6 +5,7 @@ Bring in fixes from v6r3p17
 *Core:
 FIX: Don't have the __init__ return True for all DBs
 NEW: Added more protection for exceptions thrown in callbacks for the ProcessPool
+FIX: Operations will now look in 'Defaults' instead of 'Default'
 
 *DataManagement:
 FIX: Put more protection in StrategyHandler for neither channels  not throughput read out of TransferDB
