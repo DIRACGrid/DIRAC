@@ -50,21 +50,33 @@ FIX: TransformationAgent - a small improvement: now can pick the prods status to
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
 
+[v6r4p8]
+
+Bring in fixes from v6r3p17
+
+*Core:
+FIX: Don't have the __init__ return True for all DBs
+NEW: Added more protection for exceptions thrown in callbacks for the ProcessPool
+
+*DataManagement:
+FIX: Put more protection in StrategyHandler for neither channels  not throughput read out of TransferDB
+FIX: No JobIDs supplied in getRequestForJobs function for RequestDBMySQL taken into account
+FIX: Fix on getRequestStatus
+CHANGE: RequestClient proper use of getRequestStatus in finalizeRequest
+CHANGE: Refactored RequestDBFile
+
 [v6r4p7]
 
-*WMS
-FIX: SandboxStoreClient - catch exception when SandboxMetadataDB can not be instantiated
+*WorkloadManagement
+FIX: SandboxMetadataDB won't explode DIRAC when there's no access to the DB 
+CHANGE: Whenever a DB fails to initialize it raises a catchable exception instead of just returning silently
 
-*DMS
-BUGFIX: StorageElement - added Lost and Unavailable metadata to the output of getFileMetadata()
+*DataManagement
+CHANGE: Added Lost and Unavailable to the file metadata
 
 [v6r4p6]
 
-*Core
-FIX: proper generation of the release notes
-
-*DMS
-FIX: more protection in StrategyHandler 
+Bring fixes from v6r4p6
 
 [v6r4p5]
 
@@ -170,42 +182,21 @@ FIX: if there is no failed files, put an empty dict
 *Transformation
 FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
 
-[v6r3p14]
+[v6r3p17]
 
-* Core
-
-BUGFIX: ProcessPool.py: clean processing and finalisation
-BUGFIX: Pfn.py: don't check for 'FileName' in pfnDict
-
-* DMS
-
-NEW: dirac-dms-show-fts-status.py: script showing last hour history for FTS channels
-NEW: TransferDBMonitoringHandler.py: new function exporting FST channel queues
-BUGFIX: TransferAgent.py,RemovalAgent.py,RegistrationAgent.py - unlinking of temp proxy files, corection of values sent to gMonitor
-BUGFIX: StrategyHandler - new config option 'AcceptableFailedFiles' to unblock scheduling for channels if problematic transfers occured for few files
-NEW: TransferAgent,RemovalAgent,RegistrationAgent - new confing options for setting timeouts for tasks and ProcessPool finalisation
-BUGFIX: ReplicaManager.py - reverse sort of LFNs when deleting files and directories to avoid blocks
-NEW: moved StrategyHandler class def to separate file under DMS/private
-
-* TMS
-
-FIX: TransformationCleaningAgent.py: some refactoring, new way of disabling/enabline execution by 'EnableFlag' config option
-
-*Transformation
-NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of sites associated 
-     to each SE in TargetSE and those given in Site, if any. This is needed until scheduling to SEs 
-     is supported on the WMS
- 
-*Resources
-NEW: SSHLSFComputingElement added 
+*DataManagement
+FIX: Fixes issues #783 and #781. Bugs in ReplicaManager removePhisicalReplica and getFilesFromDirectory
+FIX: Return S_ERROR if missing jobid arguments
+NEW: Checksum can be verified during FTS and SRM2Storage 
 
 [v6r3p16]
 
-*Core
-FIX: proper generation of the release notes
+*DataManagement
+FIX: better monitoring of FTS channels 
+FIX: Handle properly None value for channels and bandwidths
 
-*DMS
-FIX: more protection in StrategyHandler 
+*Core
+FIX: Properly calculate the release notes if there are newer releases in the release.notes file
 
 [v6r3p15]
 
