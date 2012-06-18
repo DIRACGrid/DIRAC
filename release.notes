@@ -1,3 +1,31 @@
+[v6r4p8]
+
+Bring in fixes from v6r3p17
+
+*Core:
+FIX: Don't have the __init__ return True for all DBs
+NEW: Added more protection for exceptions thrown in callbacks for the ProcessPool
+
+*DataManagement:
+FIX: Put more protection in StrategyHandler for neither channels  not throughput read out of TransferDB
+FIX: No JobIDs supplied in getRequestForJobs function for RequestDBMySQL taken into account
+FIX: Fix on getRequestStatus
+CHANGE: RequestClient proper use of getRequestStatus in finalizeRequest
+CHANGE: Refactored RequestDBFile
+
+[v6r4p7]
+
+*WorkloadManagement
+FIX: SandboxMetadataDB won't explode DIRAC when there's no access to the DB 
+CHANGE: Whenever a DB fails to initialize it raises a catchable exception instead of just returning silently
+
+*DataManagement
+CHANGE: Added Lost and Unavailable to the file metadata
+
+[v6r4p6]
+
+Bring fixes from v6r4p6
+
 [v6r4p5]
 
 *Configuration
