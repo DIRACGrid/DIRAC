@@ -846,6 +846,9 @@ class RequestDBMySQL( DB ):
   def getRequestForJobs( self, jobIDs ):
     """ Get the request names associated to the jobsIDs
     """
+    if not jobIDs:
+      return S_ERROR("RequestDB: unable to select requests, no jobIDs supplied")
+
     req = "SELECT JobID,RequestName from Requests where JobID IN (%s);" % intListToString( jobIDs )
     res = self._query( req )
     if not res:

@@ -18,7 +18,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  targetSE: Valid DIRAC SE'] ) )
 
 Script.parseCommandLine()
-from DIRAC.DataManagementSystem.Client.FTSRequest     import FTSRequest
+from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
 import os
 
 args = Script.getPositionalArgs()
@@ -42,6 +42,7 @@ else:
 oFTSRequest = FTSRequest()
 oFTSRequest.setSourceSE( sourceSE )
 oFTSRequest.setTargetSE( targetSE )
+
 for lfn in lfns:
   oFTSRequest.setLFN( lfn )
 oFTSRequest.submit( monitor = True, printOutput = False )
