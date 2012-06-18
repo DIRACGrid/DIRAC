@@ -124,7 +124,7 @@ FIX: properly report CPU usage when the Watchdog kill the payload.
 BUGFIX: Result in ClientCache table is a varchar, but the method was getting a datetime
 NEW: CacheFeederAgent - VOBOX and SpaceTokenOccupancy commands added (ported from LHCbDIRAC)
 CHANGE: RSS components get operational parameters from the Operations handler
-=======
+
 *DataManagement
 FIX: if there is no failed files, put an empty dict
 
