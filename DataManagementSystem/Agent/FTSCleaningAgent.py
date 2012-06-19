@@ -66,12 +66,11 @@ class FTSCleaningAgent( AgentModule ):
 
     :param self: self reference
     """    
+
+    obsoleteChannels = self.transferDB().selectObsoleteChannels( limit = 10 )
+
+
     older = datetime.datetime.now() - datetime.timedelta( days = self.__gracePeriod )
-    
-    s
-
     ftsRequests = self.transferDB().selectFTSReq( older = older, limit = 50 )
-    
-
     
     return S_OK()
