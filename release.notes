@@ -1,4 +1,4 @@
-[v6r5-pre3]
+[v6r5-pre4]
 
 NEW: Executor framework
 
@@ -16,7 +16,9 @@ CHANGE: Fixed all DOS endings to UNIX
 CHANGE: Agents, Services and Executors know how to react to CSSection/Module and react accordingly
 NEW: install tools are updated to deal with executors
 FIX: dirac-install - add -T/--Timeout option to define timeout for distribution downloads
+NEW: dirac-install - added possibility of defining dirac-install's global defaults by command line switch
 BUGFIX: avoid PathFinder.getServiceURL and use Client class ( DataLoggingClient,LfcFileCatalogProxyClient ) 
+FIX: MySQL - added TIMESTAMPADD and TIMESTAMPDIFF to special values not to be scaped by MySQL
 
 *RSS
 CHANGE: removed code execution from __init__
@@ -45,6 +47,7 @@ NEW: JobManager - zfill in %n parameter substitution to allow alphabetical sorti
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
      plus few minor corrections (e.g. logger messages)
+FIX: TransformationCLI - take into accout possible failures in resetFile command     
 
 *Accounting
 NEW: AccountingDB - added retrieving RAW records for internal stuff
