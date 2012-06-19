@@ -4,13 +4,14 @@
 The Data Management Request contains all the necessary information for
 a data management operation.
 """
-import os, xml.dom.minidom, time, copy, datetime
+import os, xml.dom.minidom, copy, datetime, time
 from types import DictType, ListType, NoneType, StringTypes
 
 from DIRAC.Core.Utilities.File import makeGuid
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR, Time
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import Time
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
 __RCSID__ = "$Id$"
@@ -21,12 +22,12 @@ class RequestContainer:
 
   Bag object holding all information about Request.
   """
-  
+
 
   def __init__( self, request = None, init = True ):
 
     # This is a list of attributes - mandatory parameters
-    self.attributeNames = ['Status', 'RequestName', 'RequestID', 'DIRACSetup', 'OwnerDN', 
+    self.attributeNames = ['Status', 'RequestName', 'RequestID', 'DIRACSetup', 'OwnerDN',
                            'OwnerGroup', 'SourceComponent', 'CreationTime', 'LastUpdate', 'JobID']
 
     # This dictionary contains all the request attributes
@@ -122,22 +123,22 @@ class RequestContainer:
     self.attributes.update( attributeDict )
     return S_OK()
 
-  def setCreationTime( self, time = 'now' ):
+  def setCreationTime( self, rTime = 'now' ):
     """ Set the creation time to the current data and time
     """
-    if time.lower() == "now":
+    if rTime.lower() == "now":
       self.attributes['CreationTime'] = time.strftime( '%Y-%m-%d %H:%M:%S' )
     else:
-      self.attributes['CreationTime'] = time
+      self.attributes['CreationTime'] = rTime
     return S_OK()
 
-  def setLastUpdate( self, time = 'now' ):
+  def setLastUpdate( self, rTime = 'now' ):
     """ Set the last update to the current data and time
     """
-    if time.lower() == "now":
+    if rTime.lower() == "now":
       self.attributes['LastUpdate'] = time.strftime( '%Y-%m-%d %H:%M:%S' )
     else:
-      self.attributes['LastUpdate'] = time
+      self.attributes['LastUpdate'] = rTime
     return S_OK()
 
   def getAttribute( self, aname ):
@@ -163,15 +164,15 @@ class RequestContainer:
     self.attributes[self.item_called] = value
     return S_OK()
 
-  def __get_subattribute( self, ind, type ):
+  def __get_subattribute( self, ind, rType ):
     """ Generic method to get attributes
     """
-    return S_OK( self.subRequests[type][ind]['Attributes'][self.item_called] )
+    return S_OK( self.subRequests[rType][ind]['Attributes'][self.item_called] )
 
-  def __set_subattribute( self, ind, type, value ):
+  def __set_subattribute( self, ind, rType, value ):
     """ Generic method to set attribute value
     """
-    self.subRequests[type][ind]['Attributes'][self.item_called] = value
+    self.subRequests[rType][ind]['Attributes'][self.item_called] = value
     return S_OK()
 
   #####################################################################
@@ -187,7 +188,7 @@ class RequestContainer:
       self.setSubRequests( requestType, subRequests )
     return S_OK()
 
-  def initiateSubRequest( self, type ):
+  def initiateSubRequest( self, rType ):
     """ Add dictionary to list of requests and return the list index
     """
     defaultAttributes = {}
@@ -196,12 +197,12 @@ class RequestContainer:
       if attr == 'ExecutionOrder':
         defaultAttributes[attr] = 0
       if attr == "Status":
-        defaultAttributes[attr] = 'Waiting'  
+        defaultAttributes[attr] = 'Waiting'
     defaultDict = {'Attributes':defaultAttributes, 'Files':[], 'Datasets':[]}
-    if not self.subRequests.has_key( type ):
-      self.subRequests[type] = []
-    self.subRequests[type].append( defaultDict )
-    length = len( self.subRequests[type] )
+    if not self.subRequests.has_key( rType ):
+      self.subRequests[rType] = []
+    self.subRequests[rType].append( defaultDict )
+    length = len( self.subRequests[rType] )
     return S_OK( length - 1 )
 
   def getSubRequestTypes( self ):
@@ -210,33 +211,56 @@ class RequestContainer:
     subRequestTypes = self.subRequests.keys()
     return S_OK( subRequestTypes )
 
-  def getSubRequests( self, type ):
+  def getSubRequests( self, rType ):
     """ Get the the sub-requests of a particular type
     """
-    if self.subRequests.has_key( type ):
-      return S_OK( self.subRequests[type] )
+    if self.subRequests.has_key( rType ):
+      return S_OK( self.subRequests[rType] )
     else:
       return S_OK( [] )
 
-  def setSubRequests( self, type, subRequests ):
+  def setSubRequests( self, rType, subRequests ):
     """ Set the sub-requests of a particular type associated to this request
     """
-    if not self.subRequests.has_key( type ):
-      self.subRequests[type] = []
+    if not self.subRequests.has_key( rType ):
+      self.subRequests[rType] = []
     for subRequest in subRequests:
-      self.addSubRequest( subRequest, type )
+      self.addSubRequest( subRequest, rType )
     return S_OK()
 
-  def addSubRequest( self, requestDict, type ):
+  def _getLastOrder( self, fileIn = None ):
+    """ just returns the last ExecutionOrder of ALL the sub requests, or for file (if present)
+    """
+    execOrdersSoFar = []
+
+    for subReqTypes in self.subRequests:
+      for operationDict in self.subRequests[subReqTypes]:
+        if fileIn is None:  #gets the last in total
+          execOrdersSoFar.append( operationDict['Attributes']['ExecutionOrder'] )
+        else:
+          if fileIn == operationDict['Files']:
+            execOrdersSoFar.append( operationDict['Attributes']['ExecutionOrder'] )
+
+    try:
+      last = max( execOrdersSoFar )
+    except ValueError:
+      last = 0
+    return last
+
+
+  def addSubRequest( self, requestDict, rType ):
     """  Add a new sub-requests of specified type
+        The 'Attributes':ExecutionOrder can be set to 'last' to always be the last to be executed.
     """
     # Initialise the sub-request
-    index = self.initiateSubRequest( type )['Value']
+    index = self.initiateSubRequest( rType )['Value']
     # Stuff the sub-request with the attributes
     attributeDict = {'Status':'Waiting', 'SubRequestID':makeGuid(),
                      'CreationTime': str( datetime.datetime.utcnow() ),
                      'ExecutionOrder':0}
     for attr, value in requestDict['Attributes'].items():
+      if attr == 'ExecutionOrder' and str( value ).lower() == 'last':
+        value = self._getLastOrder() + 1
       attributeDict[attr] = value
     for attr in self.subAttributeNames:
       if not attr in attributeDict.keys():
@@ -244,111 +268,111 @@ class RequestContainer:
         if attr == "ExecutionOrder":
           attributeDict[attr] = 0
         if attr == "Status":
-          attributeDict[attr] = "Waiting"  
-    self.setSubRequestAttributes( index, type, attributeDict )
+          attributeDict[attr] = "Waiting"
+    self.setSubRequestAttributes( index, rType, attributeDict )
 
     if requestDict.has_key( 'Files' ):
       files = []
-      for file in requestDict['Files']:
+      for rFile in requestDict['Files'].values():
         fileDict = {'Status':'Waiting', 'FileID':makeGuid(), 'Attempt':1}
-        for attr, value in file.items():
+        for attr, value in rFile.items():
           fileDict[attr] = value
         files.append( fileDict )
-      self.setSubRequestFiles( index, type, files )
+      self.setSubRequestFiles( index, rType, files )
 
     if requestDict.has_key( 'Datasets' ):
       datasets = []
       for dataset in requestDict['Datasets']:
         datasetDict = {'Status':'Waiting'}
-        for attr, value in file.items():
+        for attr, value in rFile.items():
           fileDict[attr] = value
         datasets.append( datasetDict )
-      self.setSubRequestDatasets( index, type, datasets )
+      self.setSubRequestDatasets( index, rType, datasets )
     return S_OK( index )
 
-  def getSubRequest( self, ind, type ):
+  def getSubRequest( self, ind, rType ):
     """ Get the sub-request as specified by its index
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      return S_OK( self.subRequests[type][ind] )
+      return S_OK( self.subRequests[rType][ind] )
 
-  def removeSubRequest( self, ind, type ):
+  def removeSubRequest( self, ind, rType ):
     """ Remove sub-request as specified by its index
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      return S_OK( self.subRequests[type].pop( ind ) )
+      return S_OK( self.subRequests[rType].pop( ind ) )
 
-  def getNumSubRequests( self, type ):
+  def getNumSubRequests( self, rType ):
     """ Get the number of sub-requests for a given request type
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_OK( 0 )
     else:
-      return S_OK( len( self.subRequests[type] ) )
+      return S_OK( len( self.subRequests[rType] ) )
 
-  def setSubRequestStatus( self, ind, type, status ):
+  def setSubRequestStatus( self, ind, rType, status ):
     """ Set the status of the sub request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      self.subRequests[type][ind]['Attributes']['Status'] = status
+      self.subRequests[rType][ind]['Attributes']['Status'] = status
     return S_OK()
 
-  def getSubRequestAttributes( self, ind, type ):
+  def getSubRequestAttributes( self, ind, rType ):
     """ Get the sub-request attributes
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      attributes = self.subRequests[type][ind]['Attributes']
+      attributes = self.subRequests[rType][ind]['Attributes']
       return S_OK( attributes )
 
-  def setSubRequestAttributes( self, ind, type, attributeDict ):
+  def setSubRequestAttributes( self, ind, rType, attributeDict ):
     """ Set the sub-request attributes
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      self.subRequests[type][ind]['Attributes'].update( attributeDict )
+      self.subRequests[rType][ind]['Attributes'].update( attributeDict )
       return S_OK()
 
-  def setSubRequestAttributeValue( self, ind, type, attribute, value ):
+  def setSubRequestAttributeValue( self, ind, rType, attribute, value ):
     """ Set the attribute value associated to a sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      if not self.subRequests[type][ind].has_key( 'Attributes' ):
-        self.subRequests[type][ind]['Attributes'] = {}
-      self.subRequests[type][ind]['Attributes'][attribute] = value
+      if not self.subRequests[rType][ind].has_key( 'Attributes' ):
+        self.subRequests[rType][ind]['Attributes'] = {}
+      self.subRequests[rType][ind]['Attributes'][attribute] = value
       return S_OK()
 
-  def getSubRequestAttributeValue( self, ind, type, attribute ):
+  def getSubRequestAttributeValue( self, ind, rType, attribute ):
     """ Get the attribute value associated to a sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      requestAttrValue = self.subRequests[type][ind]['Attributes'][attribute]
+      requestAttrValue = self.subRequests[rType][ind]['Attributes'][attribute]
       return S_OK( requestAttrValue )
 
   ###########################################################
@@ -356,90 +380,90 @@ class RequestContainer:
   # File manipulation methods
   #
 
-  def getSubRequestNumFiles( self, ind, type ):
+  def getSubRequestNumFiles( self, ind, rType ):
     """ Get the number of files in the sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
-    elif not self.subRequests[type][ind].has_key( 'Files' ):
+    elif not self.subRequests[rType][ind].has_key( 'Files' ):
       return S_OK( 0 )
     else:
-      numFiles = len( self.subRequests[type][ind]['Files'] )
+      numFiles = len( self.subRequests[rType][ind]['Files'] )
       return S_OK( numFiles )
 
-  def getSubRequestFiles( self, ind, type ):
+  def getSubRequestFiles( self, ind, rType ):
     """ Get the files associated to a sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
-    elif not self.subRequests[type][ind].has_key( 'Files' ):
+    elif not self.subRequests[rType][ind].has_key( 'Files' ):
       return S_OK( [] )
     else:
-      files = self.subRequests[type][ind]['Files']
+      files = self.subRequests[rType][ind]['Files']
       return S_OK( files )
 
-  def setSubRequestFiles( self, ind, type, files ):
+  def setSubRequestFiles( self, ind, rType, files ):
     """ Set the files associated to a sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      if not self.subRequests[type][ind].has_key( 'Files' ):
+      if not self.subRequests[rType][ind].has_key( 'Files' ):
         # Make deep copy
-        self.subRequests[type][ind]['Files'] = copy.deepcopy( files )
+        self.subRequests[rType][ind]['Files'] = copy.deepcopy( files )
       else:
         for fDict in files:
-          self.subRequests[type][ind]['Files'].append( copy.deepcopy( fDict ) )
+          self.subRequests[rType][ind]['Files'].append( copy.deepcopy( fDict ) )
       return S_OK()
 
-  def setSubRequestFileAttributeValue( self, ind, type, lfn, attribute, value ):
+  def setSubRequestFileAttributeValue( self, ind, rType, lfn, attribute, value ):
     """ Set the file status
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      numFiles = self.getSubRequestNumFiles( ind, type )['Value']
-      for file in range ( numFiles ):
-        if self.subRequests[type][ind]['Files'][file]['LFN'] == lfn:
-          self.subRequests[type][ind]['Files'][file][attribute] = value
+      numFiles = self.getSubRequestNumFiles( ind, rType )['Value']
+      for rFile in range ( numFiles ):
+        if self.subRequests[rType][ind]['Files'][rFile]['LFN'] == lfn:
+          self.subRequests[rType][ind]['Files'][rFile][attribute] = value
           return S_OK()
       return S_ERROR( "File not found" )
 
-  def getSubRequestFileAttributeValue( self, ind, type, lfn, attribute ):
+  def getSubRequestFileAttributeValue( self, ind, rType, lfn, attribute ):
     """ Get the file attribute value associated to a LFN and sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      numFiles = self.getSubRequestNumFiles( ind, type )['Value']
-      for file in range ( numFiles ):
-        if self.subRequests[type][ind]['Files'][file]['LFN'] == lfn:
-          value = self.subRequests[type][ind]['Files'][file][attribute]
+      numFiles = self.getSubRequestNumFiles( ind, rType )['Value']
+      for rFile in range ( numFiles ):
+        if self.subRequests[rType][ind]['Files'][rFile]['LFN'] == lfn:
+          value = self.subRequests[rType][ind]['Files'][rFile][attribute]
           return S_OK( value )
       return S_ERROR( "File not found" )
 
-  def getSubRequestFileAttributes( self, ind, type, lfn ):
+  def getSubRequestFileAttributes( self, ind, rType, lfn ):
     """ Get the file attributes associated to a LFN and sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      numFiles = self.getSubRequestNumFiles( ind, type )['Value']
-      for file in range ( numFiles ):
-        if self.subRequests[type][ind]['Files'][file]['LFN'] == lfn:
-          attributes = self.subRequests[type][ind]['Files'][file]['LFN']
+      numFiles = self.getSubRequestNumFiles( ind, rType )['Value']
+      for rFile in range ( numFiles ):
+        if self.subRequests[rType][ind]['Files'][rFile]['LFN'] == lfn:
+          attributes = self.subRequests[rType][ind]['Files'][rFile]['LFN']
           return S_OK( attributes )
       return S_ERROR( "File not found" )
 
@@ -448,72 +472,72 @@ class RequestContainer:
   # Dataset manipulation methods
   #
 
-  def getSubRequestNumDatasets( self, ind, type ):
+  def getSubRequestNumDatasets( self, ind, rType ):
     """ Get the number of files in the sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
-    elif not self.subRequests[type][ind].has_key( 'Datasets' ):
+    elif not self.subRequests[rType][ind].has_key( 'Datasets' ):
       return S_OK( 0 )
     else:
-      numDatasets = len( self.subRequests[type][ind]['Datasets'] )
+      numDatasets = len( self.subRequests[rType][ind]['Datasets'] )
       return S_OK( numDatasets )
 
-  def getSubRequestDatasets( self, ind, type ):
+  def getSubRequestDatasets( self, ind, rType ):
     """ Get the files associated to a sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
-    elif not self.subRequests[type][ind].has_key( 'Datasets' ):
+    elif not self.subRequests[rType][ind].has_key( 'Datasets' ):
       return S_OK( [] )
     else:
-      datasets = self.subRequests[type][ind]['Datasets']
+      datasets = self.subRequests[rType][ind]['Datasets']
       return S_OK( datasets )
 
-  def setSubRequestDatasets( self, ind, type, datasets ):
+  def setSubRequestDatasets( self, ind, rType, datasets ):
     """ Set the datasets associated to a sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      if not self.subRequests[type][ind].has_key( 'Datasets' ):
-        self.subRequests[type][ind]['Datasets'] = []
-      self.subRequests[type][ind]['Datasets'].extend( datasets )
+      if not self.subRequests[rType][ind].has_key( 'Datasets' ):
+        self.subRequests[rType][ind]['Datasets'] = []
+      self.subRequests[rType][ind]['Datasets'].extend( datasets )
       return S_OK()
 
-  def setSubRequestDatasetAttributeValue( self, ind, type, handle, attribute, value ):
+  def setSubRequestDatasetAttributeValue( self, ind, rType, handle, attribute, value ):
     """ Set the attribute of the given dataset
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      numDatasets = self.getSubRequestNumDatasets( ind, type )['Value']
+      numDatasets = self.getSubRequestNumDatasets( ind, rType )['Value']
       for dataset in range ( numDatasets ):
-        if self.subRequests[type][ind]['Datasets'][dataset]['Handle'] == handle:
-          self.subRequests[type][ind]['Files'][dataset][attribute] = value
+        if self.subRequests[rType][ind]['Datasets'][dataset]['Handle'] == handle:
+          self.subRequests[rType][ind]['Files'][dataset][attribute] = value
           return S_OK()
       return S_ERROR( "Dataset not found" )
 
-  def getSubRequestDatasetAttributeValue( self, ind, type, handle, attribute ):
+  def getSubRequestDatasetAttributeValue( self, ind, rType, handle, attribute ):
     """ Get the attribute value associated to a dataset and sub-request
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) < ind:
+    elif len( self.subRequests[rType] ) < ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      numDatasets = self.getSubRequestNumDatasets( ind, type )['Value']
+      numDatasets = self.getSubRequestNumDatasets( ind, rType )['Value']
       for dataset in range( numDatasets ):
-        if self.subRequests[type][ind]['Datasets'][dataset]['Handle'] == handle:
-          value = self.subRequests[type][ind]['Datasets'][dataset][attribute]
+        if self.subRequests[rType][ind]['Datasets'][dataset]['Handle'] == handle:
+          value = self.subRequests[rType][ind]['Datasets'][dataset][attribute]
           return S_OK( value )
       return S_ERROR( "Dataset not found" )
 
@@ -522,27 +546,27 @@ class RequestContainer:
   # Methods for determining whether things are finished
   #
 
-  def isSubRequestEmpty( self, ind, type ):
+  def isSubRequestEmpty( self, ind, rType ):
     """ Check if the request contains more operations to be performed
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) <= ind:
+    elif len( self.subRequests[rType] ) <= ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      status = self.getSubRequestAttributeValue( ind, type, "Status" )['Value']
+      status = self.getSubRequestAttributeValue( ind, rType, "Status" )['Value']
       if status == 'Done':
         return S_OK( 1 )
-      files = self.getSubRequestFiles( ind, type )['Value']
-      for file in files:
-        if not file.has_key( 'Status' ):
-          gLogger.info( 'file=', '%s' % file )
+      files = self.getSubRequestFiles( ind, rType )['Value']
+      for rFile in files:
+        if not rFile.has_key( 'Status' ):
+          gLogger.info( 'file=', '%s' % rFile )
           gLogger.error( "!!! The file has no status information !!!" )
-          gLogger.error( "Ind:%s Type:%s" % ( ind, type ), self.toXML()['Value'] )
-        elif file['Status'] == 'Waiting':
+          gLogger.error( "Ind:%s Type:%s" % ( ind, rType ), self.toXML()['Value'] )
+        elif rFile['Status'] == 'Waiting':
           gLogger.info( 'Found Waiting File' )
           return S_OK( 0 )
-      datasets = self.getSubRequestDatasets( ind, type )['Value']
+      datasets = self.getSubRequestDatasets( ind, rType )['Value']
       for dataset in datasets:
         if dataset['Status'] == 'Waiting':
           return S_OK( 0 )
@@ -552,12 +576,12 @@ class RequestContainer:
     else:
       return S_OK( 0 )
 
-  def isRequestTypeEmpty( self, type ):
+  def isRequestTypeEmpty( self, rType ):
     """ Check whether the requests of given type are complete
     """
-    numSubRequests = self.getNumSubRequests( type )['Value']
+    numSubRequests = self.getNumSubRequests( rType )['Value']
     for subRequestInd in range( numSubRequests ):
-      if not self.isSubRequestEmpty( subRequestInd, type )['Value']:
+      if not self.isSubRequestEmpty( subRequestInd, rType )['Value']:
         return S_OK( False )
     return S_OK( True )
 
@@ -575,28 +599,26 @@ class RequestContainer:
     """
     return self.isRequestEmpty()
 
-  def isSubRequestDone( self, ind, type ):
+  def isSubRequestDone( self, ind, rType ):
     """ Check if the request contains more operations to be performed
-
-    TODO: file and type are keywords!!!!
     """
-    if not self.subRequests.has_key( type ):
+    if not self.subRequests.has_key( rType ):
       return S_ERROR( "No requests of type specified found." )
-    elif len( self.subRequests[type] ) <= ind:
+    elif len( self.subRequests[rType] ) <= ind:
       return S_ERROR( "Subrequest index is out of range." )
     else:
-      status = self.getSubRequestAttributeValue( ind, type, "Status" )['Value']
+      status = self.getSubRequestAttributeValue( ind, rType, "Status" )['Value']
       if status == 'Done':
         return S_OK( 1 )
-      files = self.getSubRequestFiles( ind, type )['Value']
-      for file in files:
-        if not file.has_key( 'Status' ):
+      files = self.getSubRequestFiles( ind, rType )['Value']
+      for rFile in files:
+        if not rFile.has_key( 'Status' ):
           gLogger.error( "!!! The file has no status information !!!" )
-          gLogger.error( "Ind:%s Type:%s" % ( ind, type ), self.toXML()['Value'] )
-        elif file['Status'] not in ('Done', 'Failed'):
+          gLogger.error( "Ind:%s Type:%s" % ( ind, rType ), self.toXML()['Value'] )
+        elif rFile['Status'] not in ( 'Done', 'Failed' ):
           gLogger.verbose( 'Found file in a non-Done or non-Failed state' )
           return S_OK( 0 )
-      datasets = self.getSubRequestDatasets( ind, type )['Value']
+      datasets = self.getSubRequestDatasets( ind, rType )['Value']
       for dataset in datasets:
         if dataset['Status'] != 'Done':
           return S_OK( 0 )
@@ -606,12 +628,12 @@ class RequestContainer:
     else:
       return S_OK( 0 )
 
-  def isRequestTypeDone( self, type ):
+  def isRequestTypeDone( self, rType ):
     """ Check whether the requests of given type are complete
     """
-    numSubRequests = self.getNumSubRequests( type )['Value']
+    numSubRequests = self.getNumSubRequests( rType )['Value']
     for subRequestInd in range( numSubRequests ):
-      if not self.isSubRequestDone( subRequestInd, type )['Value']:
+      if not self.isSubRequestDone( subRequestInd, rType )['Value']:
         return S_OK( False )
     return S_OK( True )
 
@@ -662,12 +684,12 @@ class RequestContainer:
     tag.setAttribute( "element_type", "list" )
     encodedStringTag = xmldoc.createElement( "EncodedString" )
     encodedStringTag.setAttribute( "element_type", "leaf" )
-    encodedStringCDATA = xmldoc.createCDATASection( DEncode.encode( aList ) )    
+    encodedStringCDATA = xmldoc.createCDATASection( DEncode.encode( aList ) )
     ## appending 
-    encodedStringTag.appendChild( encodedStringCDATA ) 
+    encodedStringTag.appendChild( encodedStringCDATA )
     tag.appendChild( encodedStringTag )
     ## returning 
-    return tag    
+    return tag
 
   def __dictToXML( self, xmldoc, tagName, aDict ):
     tag = xmldoc.createElement( tagName )
@@ -679,14 +701,14 @@ class RequestContainer:
         tag.appendChild( self.__listToXML_new( xmldoc, key, value ) )
       else:
         ## creating
-        childTag = xmldoc.createElement( str(key) )
+        childTag = xmldoc.createElement( str( key ) )
         childTag.setAttribute( "element_type", "leaf" )
-        childText = xmldoc.createCDATASection( str(value) )
+        childText = xmldoc.createCDATASection( str( value ) )
         ## appending
         childTag.appendChild( childText )
         tag.appendChild( childTag )
     return tag
-        
+
   def toXML_new( self, desiredType = None ):
     ## create new doc
     xmlDoc = xml.dom.minidom.Document()
@@ -696,7 +718,7 @@ class RequestContainer:
     headerTag = xmlDoc.createElement( "Header" )
     ## <Header> attrs 
     for attrName, attrValue in self.attributes.items():
-      headerTag.setAttribute( str(attrName), str(attrValue) )
+      headerTag.setAttribute( str( attrName ), str( attrValue ) )
     requestTag.appendChild( headerTag )
 
     requestTypes = self.getSubRequestTypes()['Value']
@@ -704,22 +726,22 @@ class RequestContainer:
       if self.getNumSubRequests( desiredType )["Value"]:
         requestTypes = [ desiredType ]
       else:
-        return S_ERROR("toXML: sub-requests of type=%s not found in this request" % desiredType )
+        return S_ERROR( "toXML: sub-requests of type=%s not found in this request" % desiredType )
 
     for requestType in requestTypes:
       for i in range( self.getNumSubRequests( requestType )['Value'] ):
         ## <REQUESTTYPE_SUBREQUEST />
-        requestTag.appendChild ( self.__dictToXML( xmlDoc,   
-                                                   "%s_SUBREQUEST" % requestType.upper(), 
+        requestTag.appendChild ( self.__dictToXML( xmlDoc,
+                                                   "%s_SUBREQUEST" % requestType.upper(),
                                                    self.subRequests[requestType][i] ) )
 
     xmlDoc.appendChild( requestTag )
-    return S_OK( xmlDoc.toprettyxml( " ", encoding="UTF-8" ) )
+    return S_OK( xmlDoc.toprettyxml( " ", encoding = "UTF-8" ) )
 
   def toXML( self, desiredType = '' ):
     """ Output the request to XML
     """
-    
+
     out = '<?xml version="1.0" encoding="UTF-8" ?>\n\n'
     out = '%s<DIRAC_REQUEST>\n\n' % out
 
@@ -746,20 +768,20 @@ class RequestContainer:
     out = '%s</DIRAC_REQUEST>\n' % out
     return S_OK( str( out ) )
 
-  def createSubRequestXML( self, ind, rtype ):
+  def createSubRequestXML( self, ind, rType ):
     """ A simple subrequest representation assuming the subrequest is just
         a dictionary of subrequest attributes
     """
-    name = rtype.upper() + '_SUBREQUEST'
-    out = self.__dictionaryToXML( name, self.subRequests[rtype][ind] )
+    name = rType.upper() + '_SUBREQUEST'
+    out = self.__dictionaryToXML( name, self.subRequests[rType][ind] )
     return S_OK( out )
 
-  def __dictionaryToXML( self, name, dict, indent = 0, attributes = {} ):
+  def __dictionaryToXML( self, name, dictIn, indent = 0, attributes = {} ):
     """ Utility to convert a dictionary to XML
     """
     xml_attributes = ''
     xml_elements = []
-    for attr, value in dict.items():
+    for attr, value in dictIn.items():
       if type( value ) is DictType:
         xml_elements.append( self.__dictionaryToXML( attr, value, indent + 1 ) )
       elif type( value ) is ListType:
@@ -889,22 +911,22 @@ class RequestContainer:
     """
 
     digestStrings = []
-    for stype in self.subRequests.keys():
-      for ind in range( len( self.subRequests[stype] ) ):
+    for sType in self.subRequests.keys():
+      for ind in range( len( self.subRequests[sType] ) ):
         digestList = []
-        digestList.append( stype )
-        digestList.append( self.subRequests[stype][ind]['Attributes']['Operation'] )
-        digestList.append( self.subRequests[stype][ind]['Attributes']['Status'] )
-        digestList.append( str( self.subRequests[stype][ind]['Attributes']['ExecutionOrder'] ) )
-        if self.subRequests[stype][ind]['Attributes'].has_key( 'TargetSE' ):
-          digestList.append( str( self.subRequests[stype][ind]['Attributes']['TargetSE'] ) )
-        if self.subRequests[stype][ind]['Attributes'].has_key( 'Catalogue' ):
-          digestList.append( str( self.subRequests[stype][ind]['Attributes']['Catalogue'] ) )
-        if self.subRequests[stype][ind].has_key( 'Files' ):
-          if self.subRequests[stype][ind]['Files']:
-            fname = os.path.basename( self.subRequests[stype][ind]['Files'][0]['LFN'] )
-            if len( self.subRequests[stype][ind]['Files'] ) > 1:
-              fname += ',...<%d files>' % len( self.subRequests[stype][ind]['Files'] )
+        digestList.append( sType )
+        digestList.append( self.subRequests[sType][ind]['Attributes']['Operation'] )
+        digestList.append( self.subRequests[sType][ind]['Attributes']['Status'] )
+        digestList.append( str( self.subRequests[sType][ind]['Attributes']['ExecutionOrder'] ) )
+        if self.subRequests[sType][ind]['Attributes'].has_key( 'TargetSE' ):
+          digestList.append( str( self.subRequests[sType][ind]['Attributes']['TargetSE'] ) )
+        if self.subRequests[sType][ind]['Attributes'].has_key( 'Catalogue' ):
+          digestList.append( str( self.subRequests[sType][ind]['Attributes']['Catalogue'] ) )
+        if self.subRequests[sType][ind].has_key( 'Files' ):
+          if self.subRequests[sType][ind]['Files']:
+            fname = os.path.basename( self.subRequests[sType][ind]['Files'][0]['LFN'] )
+            if len( self.subRequests[sType][ind]['Files'] ) > 1:
+              fname += ',...<%d files>' % len( self.subRequests[sType][ind]['Files'] )
             digestList.append( fname )
         digestStrings.append( ":".join( digestList ) )
 
