@@ -296,11 +296,12 @@ class MySQL:
     It also includes quotation marks " around the given string
     """
 
-    specialValues = { 'UTC_TIMESTAMP()': 'UTC_TIMESTAMP()'}
+    specialValues = ( 'UTC_TIMESTAMP', 'TIMESTAMPADD', 'TIMESTAMPDIFF' )
 
     try:
-      if myString in specialValues:
-        return S_OK( specialValues[myString] )
+      for sV in specialValues:
+        if myString.find( sV ) == 0:
+          return S_OK( myString )
       escape_string = connection.escape_string( str( myString ) )
       self.logger.debug( '__scape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
