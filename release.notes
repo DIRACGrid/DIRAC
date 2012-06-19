@@ -50,6 +50,11 @@ FIX: TransformationAgent - a small improvement: now can pick the prods status to
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
 
+[v6r4p9]
+
+*DMS
+CHANGE: FailoverTransfer - ensure the correct execution order of the subrequests
+
 [v6r4p8]
 
 Bring in fixes from v6r3p17
