@@ -16,7 +16,7 @@ CHANGE: Fixed all DOS endings to UNIX
 CHANGE: Agents, Services and Executors know how to react to CSSection/Module and react accordingly
 NEW: install tools are updated to deal with executors
 FIX: dirac-install - add -T/--Timeout option to define timeout for distribution downloads
-BUGFIX: avoid PathFinder.getServiceURL and use Client class ( DataLoggingClient,LfcFileCayalogProxyClient ) 
+BUGFIX: avoid PathFinder.getServiceURL and use Client class ( DataLoggingClient,LfcFileCatalogProxyClient ) 
 
 *RSS
 CHANGE: removed code execution from __init__
