@@ -26,9 +26,6 @@ def S_OK( value = "" ):
 def S_ERROR( msg = "" ):
   return { 'OK' : False, 'Message' : msg }
 
-g_GlobalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
-#g_GlobalDefaultsLoc = "file:///home/adria/tmp/insttest/globalDefaults.cfg"
-
 ############
 # Start of CFG
 ############
@@ -53,6 +50,7 @@ class Params:
     self.lcgVer = ''
     self.useVersionsDir = False
     self.installSource = ""
+    self.globalDefaults = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
     self.timeout = 300
 
 cliParams = Params()
@@ -341,8 +339,8 @@ class ReleaseConfig:
     return self.__loadObjectDefaults( "Projects", self.__projectName )
 
   def __loadGlobalDefaults( self ):
-    self.__dbgMsg( "Loading global defaults from: %s" % g_GlobalDefaultsLoc )
-    result = self.__loadCFGFromURL( g_GlobalDefaultsLoc )
+    self.__dbgMsg( "Loading global defaults from: %s" % cliParams.globalDefaults )
+    result = self.__loadCFGFromURL( cliParams.globalDefaults )
     if not result[ 'OK' ]:
       return result
     self.__globalDefaults = result[ 'Value' ]
@@ -1009,6 +1007,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'V:', 'installation=', 'Installation from which to extract parameter values' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
+            ( 'D:', 'defaults', 'Where to retrieve the global defaults from' ),
             ( 'h', 'help', 'Show this help' ),
             ( 'T:', 'Timeout=', 'Timeout for downloads (default = %s)', cliParams.timeout )
           )
@@ -1049,6 +1048,8 @@ def loadConfiguration():
       cliParams.installation = v
     elif o in ( "-d", "--debug" ):
       cliParams.debug = True
+    elif o in ( "-D", "--defaults" ):
+      cliParams.globalDefaults = v
 
   releaseConfig = ReleaseConfig( instName = cliParams.installation )
   if cliParams.debug:
@@ -1067,7 +1068,7 @@ def loadConfiguration():
         logNOTICE( "Loaded %s" % arg )
 
   for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
-                  'buildExternals', 'noAutoBuild', 'debug' ,
+                  'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
                   'lcgVer', 'useVersionsDir', 'targetPath',
                   'project', 'release', 'extraModules', 'extensions', 'timeout' ):
     try:
