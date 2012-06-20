@@ -28,8 +28,7 @@ class DB( MySQL ):
     self.dbHost = ''
     result = gConfig.getOption( self.cs_path + '/Host' )
     if not result['OK']:
-      self.log.fatal( 'Failed to get the configuration parameters: Host' )
-      return
+      raise RuntimeError( 'Failed to get the configuration parameters: Host' )
     self.dbHost = result['Value']
     # Check if the host is the local one and then set it to 'localhost' to use
     # a socket connection
@@ -54,8 +53,7 @@ class DB( MySQL ):
       # No individual user name found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/User' )
       if not result['OK']:
-        self.log.fatal( 'Failed to get the configuration parameters: User' )
-        return
+        raise RuntimeError( 'Failed to get the configuration parameters: User' )
     self.dbUser = result['Value']
     self.dbPass = ''
     result = gConfig.getOption( self.cs_path + '/Password' )
@@ -63,14 +61,12 @@ class DB( MySQL ):
       # No individual password found, try at the common place
       result = gConfig.getOption( '/Systems/Databases/Password' )
       if not result['OK']:
-        self.log.fatal( 'Failed to get the configuration parameters: Password' )
-        return
+        raise RuntimeError( 'Failed to get the configuration parameters: Password' )
     self.dbPass = result['Value']
     self.dbName = ''
     result = gConfig.getOption( self.cs_path + '/DBName' )
     if not result['OK']:
-      self.log.fatal( 'Failed to get the configuration parameters: DBName' )
-      return
+      raise RuntimeError( 'Failed to get the configuration parameters: DBName' )
     self.dbName = result['Value']
     self.maxQueueSize = maxQueueSize
     result = gConfig.getOption( self.cs_path + '/MaxQueueSize' )

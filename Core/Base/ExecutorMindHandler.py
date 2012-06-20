@@ -243,6 +243,10 @@ class ExecutorMindHandler( RequestHandler ):
   def executeTask( cls, taskId, taskObj ):
     return cls.__eDispatch.addTask( taskId, taskObj )
 
+  @classmethod
+  def forgetTask( cls, taskId ):
+    return cls.__eDispatch.removeTask( taskId )
+
   ########
   #  Methods that need to be overwritten
   ########

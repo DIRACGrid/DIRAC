@@ -550,15 +550,24 @@ class RequestDBMySQL( DB ):
       errStr = 'Failed to update request %s.' % requestID
       return S_ERROR( errStr )
     else:
-      if request.isRequestDone()['Value']:
+      requestStatus = self.getRequestStatus( requestID )
+      if not requestStatus["OK"]:
+        return requestStatus
+      requestStatus = requestStatus["Value"]
+      if requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ):
         res = self._setRequestAttribute( requestID, 'Status', 'Done' )
         if not res['OK']:
           errStr = 'Failed to update request status of %s to Done.' % requestID
           return S_ERROR( errStr )
+
       return S_OK()
 
   def deleteRequest( self, requestName ):
+    """ delete request of name :requestName: from db
 
+    :param self: self reference
+    :param str requestName: request name
+    """
     return self._deleteRequest( requestName )
 
   def _deleteRequest( self, requestName ):
@@ -837,6 +846,9 @@ class RequestDBMySQL( DB ):
   def getRequestForJobs( self, jobIDs ):
     """ Get the request names associated to the jobsIDs
     """
+    if not jobIDs:
+      return S_ERROR("RequestDB: unable to select requests, no jobIDs supplied")
+
     req = "SELECT JobID,RequestName from Requests where JobID IN (%s);" % intListToString( jobIDs )
     res = self._query( req )
     if not res:
@@ -907,20 +919,25 @@ class RequestDBMySQL( DB ):
     if not result['OK']:
       return result
 
-    if not result['Value']:
-      subrequestStatus = "Empty"
+    subRequestStatus = "Unknown"
+    if not result["Value"]:
+      subRequestStatus = "Empty"
     else:
-      subrequestStatus = "Done"
-      for row in result['Value']:
-        if row[0] == "Waiting":
-          subrequestStatus = "Waiting"
-        elif row[0] == "Failed" and subrequestStatus != "Waiting":
-          subrequestStatus = "Failed"
+      ## make it unique
+      result = list( set( [ row[0] for row in result["Value"] ] ) )
+      if "Empty" in result:
+        subRequestStatus = "Empty"
+      elif "Waiting" in result:
+        subRequestStatus = "Waiting"
+      elif "Assigned" in result:
+        subRequestStatus = "Assigned"
+      elif "Failed" in result:
+        subRequestStatus = "Failed"
+      elif "Done" in result:
+        subRequestStatus = "Done"
 
-    resDict = {}
-    resDict['RequestStatus'] = requestStatus
-    resDict['SubRequestStatus'] = subrequestStatus
-    return S_OK( resDict )
+    return S_OK( { "RequestStatus" : requestStatus, 
+                   "SubRequestStatus" : subRequestStatus } )
 
   def getCurrentExecutionOrder( self, requestID ):
     """ Get the current subrequest execution order for the given request

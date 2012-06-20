@@ -18,7 +18,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
                                      'Arguments:',
-                                     '  JobID:    DIRAC Job ID' ] ) )
+                                     '  JobID:    DIRAC Job ID or a name of the file with JobID per line' ] ) )
 Script.registerSwitch( "D:", "Dir=", "Store the output in this directory" )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -37,7 +37,16 @@ for sw, v in Script.getUnprocessedSwitches():
   if sw in ( 'D', 'Dir' ):
     outputDir = v
 
-for job in args:
+jobs = []
+for arg in args:
+  if os.path.exists(arg):
+    jFile = open(arg)
+    jobs += jFile.read().split()
+    jFile.close()
+  else:
+    jobs.append(arg)
+
+for job in jobs:
 
   result = dirac.getOutputSandbox( job, outputDir = outputDir )
   if result['OK']:

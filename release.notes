@@ -1,4 +1,4 @@
-[v6r5-pre2]
+[v6r5-pre5]
 
 NEW: Executor framework
 
@@ -15,11 +15,18 @@ CHANGE: Several improvements on DISET
 CHANGE: Fixed all DOS endings to UNIX
 CHANGE: Agents, Services and Executors know how to react to CSSection/Module and react accordingly
 NEW: install tools are updated to deal with executors
+FIX: dirac-install - add -T/--Timeout option to define timeout for distribution downloads
+NEW: dirac-install - added possibility of defining dirac-install's global defaults by command line switch
+BUGFIX: avoid PathFinder.getServiceURL and use Client class ( DataLoggingClient,LfcFileCatalogProxyClient ) 
+FIX: MySQL - added TIMESTAMPADD and TIMESTAMPDIFF to special values not to be scaped by MySQL
 
 *RSS
 CHANGE: removed code execution from __init__
 CHANGE: removed unused methods
 NEW: Log all policy results 
+
+*Resources
+NEW: updated SSHComputingElement which allows multiple job submission
 
 *WMS
 CHANGE: WMS Optimizers are now executors
@@ -27,10 +34,98 @@ CHANGE: SandboxStoreClient can directly access the DB if available
 CHANGE: Moved JobDescription and improved into JobManifest
 FIX: typo in JobLoggingDB
 NEW: JobState/CachedJobState allow access to the Job via DB/JobStateSync Service automatically
+BUGFIX: DownloadInputData - when not enough disk space, message was using "buffer" while it should be using "data"
+FIX: the sandboxmetadataDB explosion when using the sandboxclient without direct access to the DB
+NEW: Added support for reset/reschedule in the OptimizationMind
+CHANGE: Whenever a DB is not properly initialized it will raise a catchable RuntimeError exception 
+        instead of silently returning
+FIX: InputDataResolution - just quick mod for easier extensibility, plus removed some LHCb specific stuff
+NEW: allow jobids in a file in dirac-wms-job-get-output
+NEW: JobManager - zfill in %n parameter substitution to allow alphabetical sorting
+
+
+*Transformation
+FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
+     plus few minor corrections (e.g. logger messages)
+FIX: TransformationCLI - take into accout possible failures in resetFile command     
 
 *Accounting
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
+
+[v6r4p10]
+
+*RequestManagement
+BUGFIX: RequestContainer - in addSubrequest() function
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
+
+[v6r4p9]
+
+*DMS
+CHANGE: FailoverTransfer - ensure the correct execution order of the subrequests
+
+[v6r4p8]
+
+Bring in fixes from v6r3p17
+
+*Core:
+FIX: Don't have the __init__ return True for all DBs
+NEW: Added more protection for exceptions thrown in callbacks for the ProcessPool
+FIX: Operations will now look in 'Defaults' instead of 'Default'
+
+*DataManagement:
+FIX: Put more protection in StrategyHandler for neither channels  not throughput read out of TransferDB
+FIX: No JobIDs supplied in getRequestForJobs function for RequestDBMySQL taken into account
+FIX: Fix on getRequestStatus
+CHANGE: RequestClient proper use of getRequestStatus in finalizeRequest
+CHANGE: Refactored RequestDBFile
+
+[v6r4p7]
+
+*WorkloadManagement
+FIX: SandboxMetadataDB won't explode DIRAC when there's no access to the DB 
+CHANGE: Whenever a DB fails to initialize it raises a catchable exception instead of just returning silently
+
+*DataManagement
+CHANGE: Added Lost and Unavailable to the file metadata
+
+[v6r4p6]
+
+Bring fixes from v6r4p6
+
+[v6r4p5]
+
+*Configuration
+NEW: Added function to generate Operations CS paths
+
+*Core
+FIX: Added proper ProcessPool checks and finalisation
+
+*DataManagement
+FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
+FIX: remove @classmethods here and there to unblock requestHolder
+CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
+FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
+NEW: TA: add finalize
+CHANGE: TransferAgent: add AcceptableFailedFiles to StrategyHandler to ban FTS channel from scheduling
+FIX: if there is no failed files, put an empty dict
+
+
+*RSS
+FIX: RSS is setting Allowed but the StorageElement checks for Active
+
+*Workflows
+FIX: Part of WorfklowTask rewritten to fix some issues and allow 'ANY' as site
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r4p4]
+
+*Core
+FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
 
 [v6r4p3]
 
@@ -57,9 +152,6 @@ FIX: TransferDB.getChannelObservedThroughput - the channelDict was created in a 
 FIX: ResourceStatus was not returning Allowed by default
 
 [v6r4]
-
-*General
-FIX: remove direct access to the /Operations CS section, use Helper instead 
 
 *Core
 FIX: dirac-install-db.py: addDatabaseOptionsToCS has added a new keyed argument
@@ -101,17 +193,80 @@ BUGFIX: Result in ClientCache table is a varchar, but the method was getting a d
 NEW: CacheFeederAgent - VOBOX and SpaceTokenOccupancy commands added (ported from LHCbDIRAC)
 CHANGE: RSS components get operational parameters from the Operations handler
 
-*RequestManagement
-FIX: RequestDBMySQL.py: to take into account ExecutionOrder in getRequest
-FIX: StorageElement.py: change log message level
+*DataManagement
+FIX: if there is no failed files, put an empty dict
 
 *Transformation
-NEW: Handle TargetSE in TaskManager for WorkflowTasks. It will make and AND of sites associated 
-     to each SE in TargetSE and those given in Site, if any. This is needed until scheduling to SEs 
-     is supported on the WMS
- 
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r3p18]
+
 *Resources
-NEW: SSHLSFComputingElement added 
+BUGFIX: SRM2Storage - in checksum type evaluation
+
+[v6r3p17]
+
+*DataManagement
+FIX: Fixes issues #783 and #781. Bugs in ReplicaManager removePhisicalReplica and getFilesFromDirectory
+FIX: Return S_ERROR if missing jobid arguments
+NEW: Checksum can be verified during FTS and SRM2Storage 
+
+[v6r3p16]
+
+*DataManagement
+FIX: better monitoring of FTS channels 
+FIX: Handle properly None value for channels and bandwidths
+
+*Core
+FIX: Properly calculate the release notes if there are newer releases in the release.notes file
+
+[v6r3p15]
+
+*DataManagement
+FIX: if there is no failed files, put an empty dict
+
+*Transformation
+FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+
+[v6r3p14]
+
+* Core
+
+BUGFIX: ProcessPool.py: clean processing and finalisation
+BUGFIX: Pfn.py: don't check for 'FileName' in pfnDict
+
+* DMS
+
+NEW: dirac-dms-show-fts-status.py: script showing last hour history for FTS channels
+NEW: TransferDBMonitoringHandler.py: new function exporting FST channel queues
+BUGFIX: TransferAgent.py,RemovalAgent.py,RegistrationAgent.py - unlinking of temp proxy files, corection of values sent to gMonitor
+BUGFIX: StrategyHandler - new config option 'AcceptableFailedFiles' to unblock scheduling for channels if problematic transfers occured for few files
+NEW: TransferAgent,RemovalAgent,RegistrationAgent - new confing options for setting timeouts for tasks and ProcessPool finalisation
+BUGFIX: ReplicaManager.py - reverse sort of LFNs when deleting files and directories to avoid blocks
+NEW: moved StrategyHandler class def to separate file under DMS/private
+
+* TMS
+
+FIX: TransformationCleaningAgent.py: some refactoring, new way of disabling/enabline execution by 'EnableFlag' config option
+
+[v6r3p13]
+
+*Core
+FIX: Added proper ProcessPool checks and finalisation
+
+*DataManagement
+FIX: don't set Files.Status to Failed for non-existign files, failover transfers won't go
+FIX: remove @classmethods here and there to unblock requestHolder
+CHANGE: RAB, TA: change task timeout: 180 and 600 (was 600 and 900 respectively)
+FIX: sorting replication tree by Ancestor, not hopAncestorgit add DataManagementSystem/Agent/TransferAgent.py
+NEW: TA: add finalize
+CHANGE: TransferAgent: add AcceptableFailedFiles to StrategyHandler to ban FTS channel from scheduling
+
+[v6r3p12]
+
+*Core
+FIX: Platform.py - check if Popen.terminate is available (only from 2.6)
 
 [v6r3p11]
 
@@ -143,7 +298,7 @@ CHANGE: return back to the release web2012041601
 
 *Transformation
 FIX: TransformationCleaningAgent - protection from deleting requests with jobID 0 
-
+Ä
 [v6r3p6]
 
 *Core

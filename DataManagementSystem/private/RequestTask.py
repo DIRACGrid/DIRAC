@@ -174,13 +174,15 @@ class RequestTask( object ):
     ## set requestType
     self.setRequestType( gConfig.getValue( os.path.join( configPath, "RequestType" ), "" ) )
     ## get log level
-    self.__log.setLevel( gConfig.getValue( os.path.join( configPath, self.__class__.__name__,  "LogLevel" ), "DEBUG" ) )
+    self.__log.setLevel( gConfig.getValue( os.path.join( configPath, self.__class__.__name__,  "LogLevel" ), "INFO" ) )
     ## clear monitoring
     self.__monitor = {}
     ## save DataManager proxy
     if "X509_USER_PROXY" in os.environ:
       self.info("saving path to current proxy file")
       self.__dataManagerProxy = os.environ["X509_USER_PROXY"]
+    else:
+      self.error("'X509_USER_PROXY' environment variable not set")
 
   def dataManagerProxy( self ):
     """ get dataManagerProxy file 
@@ -391,12 +393,14 @@ class RequestTask( object ):
       ## delete owner proxy
       if self.__dataManagerProxy:
         os.environ["X509_USER_PROXY"] = self.__dataManagerProxy
-      if not ret["OK"]:
-        self.error( "handleRequest: error during request processing: %s" % ret["Message"] )
-        self.error( "handleRequest: will put original request back" )
-        update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
-        if not update["OK"]:
-          self.error( "handleRequest: error when putting back request: %s" % update["Message"] )
+        if ownerProxyFile and os.path.exists( ownerProxyFile ):
+          os.unlink( ownerProxyFile )
+    if not ret["OK"]:
+      self.error( "handleRequest: error during request processing: %s" % ret["Message"] )
+      self.error( "handleRequest: will put original request back" )
+      update = self.putBackRequest( self.requestName, self.requestString, self.sourceServer )
+      if not update["OK"]:
+        self.error( "handleRequest: error when putting back request: %s" % update["Message"] )
           
     ## return at least
     return ret
@@ -417,8 +421,6 @@ class RequestTask( object ):
       self.error( errMsg, res["Message"] )
       return S_ERROR( res["Message"] )
 
-    ## flag to mark that some modifications has been done in Request
-    canFinalize = True
     ## for gMonitor
     self.addMark( "Execute", 1 )
     ## process sub requests
@@ -438,17 +440,10 @@ class RequestTask( object ):
       if subExecutionOrder <= self.executionOrder:
         operation = subRequestAttrs["Operation"]
         if operation not in self.operationDispatcher():
-          self.error( "handleRequest: '%s' operation not supported, request finalisation is disabled" % operation )
-          canFinalize = False
+          self.error( "handleRequest: '%s' operation not supported" % operation )
         else:
           self.info( "handleRequest: will execute %s '%s' subrequest" % ( str(index), operation ) )
 
-          ################################################
-          #  Determine whether there are any active files
-          #if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
-          #  self.info("handleRequest: subrequest is empty, will set its status to 'Done'")
-          #  self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
-          #  continue
           ## get files
           subRequestFiles = self.requestObj.getSubRequestFiles( index, self.__requestType )["Value"]          
           ## execute operation action
@@ -468,16 +463,9 @@ class RequestTask( object ):
             subRequestDone = self.requestObj.isSubRequestDone( index, self.__requestType )
             if not subRequestDone["OK"]:
               self.error( "handleRequest: unable to determine subrequest status: %s" % subRequestDone["Message"] )
-              self.error( "handleRequest: request finalisation is disabled")
-              canFinalize = False 
             else:
               if not subRequestDone["Value"]:
-                self.warn("handleRequest: subrequest %s is not done yet, finalisation is disabled" % str(index) )
-                canFinalize = False
-
-          #if self.requestObj.isSubRequestEmpty( index, self.__requestType )["Value"]:
-          #  self.info("handleRequest: no more waiting files in subrequest, will set its status to 'Done'")
-          #  self.requestObj.setSubRequestStatus( index, self.__requestType, "Done" )
+                self.warn("handleRequest: subrequest %s is not done yet" % str(index) )
 
     ################################################
     #  Generate the new request string after operation
@@ -486,17 +474,27 @@ class RequestTask( object ):
     if not update["OK"]:
       self.error( "handleRequest: error when updating request: %s" % update["Message"] )
       return update
-    ## finalize request if jobID is present
-    if self.jobID and canFinalize and self.requestObj.isRequestDone()["Value"]:
-      finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
-      if not finalize["OK"]:
-        self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
-        return finalize
 
-    ## for gMonitor    
-    self.addMark( "Done", 1 )
+    ## get request status                
+    if self.jobID:
+      requestStatus = self.requestClient().getRequestStatus( self.requestName, self.sourceServer )
+      if not requestStatus["OK"]:
+        return requestStatus
+      requestStatus = requestStatus["Value"]
+      ## finalize request if jobID is present and request status = 'Done'
+      self.info("handleRequest: request status is %s" % requestStatus )
+      
+      if ( requestStatus["RequestStatus"] == "Done" ) and ( requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ) ):
+        self.debug("handleRequest: request is going to be finalised")
+        finalize = self.requestClient().finalizeRequest( self.requestName, self.jobID, self.sourceServer )
+        if not finalize["OK"]:
+          self.error("handleRequest: error in request finalization: %s" % finalize["Message"] )
+          return finalize
+        self.info("handleRequest: request is finalised")
+      ## for gMonitor
+      self.addMark( "Done", 1 )
 
-    ## should  return S_OK with monitor dict
+    ## should return S_OK with monitor dict
     return S_OK( { "monitor" : self.monitor() } )
  
   def putBackRequest( self, requestName, requestString, sourceServer ):

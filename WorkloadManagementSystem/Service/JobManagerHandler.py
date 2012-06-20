@@ -152,8 +152,9 @@ class JobManagerHandler( RequestHandler ):
         return S_ERROR( 'The number of parametric jobs exceeded the limit of %d' % self.maxParametricJobs )
 
       jobDescList = []
+      nParam = len(parameterList) - 1
       for n,p in enumerate(parameterList):
-        newJobDesc = jobDesc.replace('%s',str(p)).replace('%n',str(n))
+        newJobDesc = jobDesc.replace('%s',str(p)).replace('%n',str(n).zfill(len(str(nParam))))
         newClassAd = ClassAd(newJobDesc)
         for attr in ['Parameters','ParameterStep','ParameterFactor']:
           newClassAd.deleteAttribute(attr)

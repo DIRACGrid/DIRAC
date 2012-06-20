@@ -966,6 +966,31 @@ class TransferDB( DB ):
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
     return res
 
+  def getCountFileToFTS( self, interval=3600, status="Failed" ):
+    """ get count of distinct FileIDs per Channel for Failed FileToFTS
+
+    :param self: self reference
+    :param str status: FileToFTS.Status
+    :param int interval: time period in seconds
+
+    :return: S_OK( { FileToFTS.ChannelID : int } )
+    """
+    channels = self.getChannels()
+    if not channels["OK"]:
+      return channels
+    channels = channels["Value"]
+    ## this we're going to return
+    channelDict = dict.fromkeys( channels.keys(), 0 )
+    ## query
+    query = "SELECT ChannelID, COUNT(DISTINCT FileID) FROM FileToFTS WHERE Status='%s' AND " \
+        "SubmissionTime > (UTC_TIMESTAMP() - INTERVAL %s SECOND) GROUP BY ChannelID;" % ( status, interval )
+    ## query query to query :)
+    query = self._query( query )
+    if not query["OK"]:
+      return S_ERROR("TransferDB.getCountFailedFTSFiles: " % query["Message"] )
+    ## return dict updated by dict created from query tuple :)
+    return S_OK( channelDict.update( dict(query["Value"]) ) )
+
   def getChannelObservedThroughput( self, interval ):
     """ create and return a dict holding summary info about FTS channels 
     and related transfers in last :interval: seconds 
@@ -1004,7 +1029,7 @@ class TransferDB( DB ):
 
     res = self._query( req )
     if not res['OK']:
-      err = 'TransferDB._getFTSObservedThroughput: Failed to transfer Statistics.'
+      err = 'TransferDB.getChannelObservedThroughput: Failed to transfer Statistics.'
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
 
     for channelID, status, files, data, totalTime in res['Value']:

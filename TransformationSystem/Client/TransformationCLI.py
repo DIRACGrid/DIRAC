@@ -1,10 +1,12 @@
+""" Transformation Database Client Command Line Interface. 
+"""
+
 #! /usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-""" Transformation Database Client Command Line Interface. """
+import string, sys, cmd
 
-from DIRAC                                                      import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.API                                        import API
 from DIRAC.Core.Utilities.List                                  import sortList
 from DIRAC.Core.Utilities.Subprocess                            import shellCall
@@ -12,7 +14,6 @@ from DIRAC.Core.Utilities.Subprocess                            import shellCall
 from DIRAC.TransformationSystem.Client.Transformation           import Transformation
 from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 
-import re, time, types, string, signal, sys, os, cmd
 
 def printDict( dictionary ):
   """ Dictionary pretty printing """
@@ -384,7 +385,12 @@ class TransformationCLI( cmd.Cmd, API ):
     if not res['OK']:
       print "Failed to reset file status: %s" % res['Message']
     else:
-      print "Updated file statuses to 'Unused' for %d file(s)" % len( lfns )
+      if res['Value']['Failed']:
+        print "Could not reset some files: "
+        for lfn, reason in res['Value']['Failed'].items():
+          print lfn, reason
+      else:
+        print "Updated file statuses to 'Unused' for %d file(s)" % len( lfns )
 
   ####################################################################
   #
@@ -542,6 +548,5 @@ class TransformationCLI( cmd.Cmd, API ):
       print "updated replica status %s" % lfn
 
 if __name__ == "__main__":
-  import DIRAC
   cli = TransformationCLI()
   cli.cmdloop()
