@@ -14,7 +14,7 @@
 import os
 import re
 import time
-import types
+from types import StringType, StringTypes, DictType, ListType, IntType
 from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
 ## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -34,14 +34,9 @@ __RCSID__ = "$Id$"
 class SRM2Storage( StorageBase ):
   """ .. class:: SRM2Storage
 
-
+  SRM v2 interafce to StorageElement using lcg_util and gfal 
   """
-
-  ## placeholder for lcg_util
-  __lcg_util = None
-  ## placeholder for gfal
-  __gfal = None
-
+  
   def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
     """ c'tor
 
@@ -115,33 +110,41 @@ class SRM2Storage( StorageBase ):
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10 # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 ) # 0.5 MB/s ???
 
-  def lcg_util( self ):
-    """ import and get lcg_util module
+  def __importExternals( self ):
+    """ import lcg_util and gfalthr or gfal
 
     :param self: self reference
     """
-    if not self.__lcg_util:
+    if ( self.lcg_util ) and ( self.gfal ):
+      return S_OK()
+    ## get lcg_util
+    try:
       import lcg_util
-      self.__lcg_util = lcg_util
-      self.log.debug( "using lcg_util version %s from %s" % ( lcg_util.lcg_util_version(), lcg_util.__file__ ) )
-    return self.__lcg_util
-
-  def gfal( self ):
-    """ import and get gfalthr or gfal module
-
-    :param self: self reference
-    """
-    if not self.__gfal:
+      self.log.debug( 'Using lcg_util version %s from %s' % ( lcg_util.lcg_util_version(), 
+                                                              lcg_util.__file__ ) )
+    except ImportError, error:
+      errStr = "__importExternals: Failed to import lcg_util"
+      gLogger.exception( errStr, '', error )
+      return S_ERROR( errStr )
+    ## anf gfalthr
+    try:
+      import gfalthr as gfal
+      self.log.debug( 'Using gfalthr version %s from %s' % ( gfal.gfal_version(), 
+                                                             gfal.__file__ ) )
+    except ImportError, error:
+      self.log.warn( "__importExternals: Failed to import gfalthr: %s." % error  )
+      ## so gfal maybe?
       try:
-        import gfalthr as gfal
-        self.__gfal = gfal
-        self.log.debug( "Using gfalthr version %s from %s" % ( gfal.gfal_version(), gfal.__file__ ) )
-      except ImportError, error:
-        self.log.warn( "Failed to import gfalthr: %s" % str(error) )
         import gfal
-        self.__gfal = gfal
-        self.log.debug( "Using gfal version %s from %s" % ( gfal.gfal_version(), gfal.__file__ ) )                                         
-    return self.__gfal
+        self.log.debug( 'Using gfal version %s from %s' % ( gfal.gfal_version(), 
+                                                            gfal.__file__ ) )
+      except ImportError, error:
+        errStr = "__importExternals: Failed to import gfal"
+        gLogger.exception( errStr, '', error )
+        return S_ERROR( errStr )
+    self.lcg_util = lcg_util
+    self.gfal = gfal
+    return S_OK()
 
 ################################################################################
 #
@@ -176,19 +179,15 @@ class SRM2Storage( StorageBase ):
       fullUrl = '%s://%s:%s%s%s/%s' % ( self.protocol, self.host, self.port, self.wspath, self.cwd, fileName )
       fullUrl = fullUrl.rstrip( '/' )
       return S_OK( fullUrl )
-    except Exception, x:
-      errStr = "Failed to create URL %s" % x
-      return S_ERROR( errStr )
+    except TypeError, error:
+      return S_ERROR( "Failed to create URL %s" % error )
 
   def isPfnForProtocol( self, pfn ):
     res = pfnparse( pfn )
     if not res['OK']:
       return res
     pfnDict = res['Value']
-    if pfnDict['Protocol'] == self.protocol:
-      return S_OK( True )
-    else:
-      return S_OK( False )
+    return S_OK( pfnDict['Protocol'] == self.protocol )
 
   def getProtocolPfn( self, pfnDict, withPort ):
     """ From the pfn dict construct the SURL to be used
@@ -202,8 +201,7 @@ class SRM2Storage( StorageBase ):
     else:
       pfnDict['Port'] = ''
       pfnDict['WSUrl'] = ''
-    res = pfnunparse( pfnDict )
-    return res
+    return pfnunparse( pfnDict )
 
 ################################################################################
 #
@@ -213,12 +211,12 @@ class SRM2Storage( StorageBase ):
 
   def getPFNBase( self, withPort = False ):
     """ This will get the pfn base. This is then appended with the LFN in LHCb convention.
+
+    :param self: self reference
+    :param bool withPort: flag to include port 
     """
-    if withPort:
-      pfnBase = 'srm://%s:%s%s' % ( self.host, self.port, self.path )
-    else:
-      pfnBase = 'srm://%s%s' % ( self.host, self.path )
-    return S_OK( pfnBase )
+    return S_OK( { True : 'srm://%s:%s%s' % ( self.host, self.port, self.path ),
+                   False : 'srm://%s%s' % ( self.host, self.path ) }[withPort] )
 
   def getUrl( self, path, withPort = True ):
     """ This gets the URL for path supplied. With port is optional.
@@ -241,16 +239,14 @@ class SRM2Storage( StorageBase ):
 
     :param self: self reference
     """
-    parameterDict = {}
-    parameterDict['StorageName'] = self.name
-    parameterDict['ProtocolName'] = self.protocolName
-    parameterDict['Protocol'] = self.protocol
-    parameterDict['Host'] = self.host
-    parameterDict['Path'] = self.path
-    parameterDict['Port'] = self.port
-    parameterDict['SpaceToken'] = self.spaceToken
-    parameterDict['WSUrl'] = self.wspath
-    return S_OK( parameterDict )
+    return S_OK( { "StorageName" : self.name, 
+                   "ProtocolName" : self.protocolName,
+                   "Protocol" : self.protocol,
+                   "Host" : self.host,
+                   "Path" : self.path, 
+                   "Port" : self.port,
+                   "SpaceToken" : self.spaceToken,
+                   "WSUrl" : self.wspath } )
 
   #############################################################
   #
@@ -266,26 +262,25 @@ class SRM2Storage( StorageBase ):
   def createDirectory( self, path ):
     """ Make recursively new directory(ies) on the physical storage
     """
-    res = self.checkArgumentFormat( path )
-    if not res['OK']:
-      return res
-    urls = res['Value']
+    urls = self.checkArgumentFormat( path )
+    if not urls['OK']:
+      return urls
+    urls = urls['Value']
 
     successful = {}
     failed = {}
-    self.log.debug( "SRM2Storage.createDirectory: Attempting to create %s directories." % len( urls ) )
+    self.log.debug( "createDirectory: Attempting to create %s directories." % len( urls ) )
     for url in urls:
       strippedUrl = url.rstrip( '/' )
       res = self.__makeDirs( strippedUrl )
       if res['OK']:
-        self.log.debug( "SRM2Storage.createDirectory: Successfully created directory on storage: %s" % url )
+        self.log.debug( "createDirectory: Successfully created directory on storage: %s" % url )
         successful[url] = True
       else:
-        self.log.error( "SRM2Storage.createDirectory: Failed to create directory on storage.",
+        self.log.error( "createDirectory: Failed to create directory on storage.",
                        "%s: %s" % ( url, res['Message'] ) )
         failed[url] = res['Message']
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def __makeDir( self, path ):
     srcFile = '%s/%s' % ( os.getcwd(), 'dirac_directory' )
@@ -353,8 +348,7 @@ class SRM2Storage( StorageBase ):
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( pathSURL, errMessage ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getTransportURL( self, path, protocols = False ):
     """ Obtain the tURLs for the supplied path and protocols
@@ -369,12 +363,12 @@ class SRM2Storage( StorageBase ):
       if not protocols['OK']:
         return protocols
       listProtocols = protocols['Value']
-    elif type( protocols ) == types.StringType:
+    elif type( protocols ) == StringType:
       listProtocols = [protocols]
-    elif type( protocols ) == types.ListType:
+    elif type( protocols ) == ListType:
       listProtocols = protocols
     else:
-      return S_ERROR( "SRM2Storage.getTransportURL: Must supply desired protocols to this plug-in." )
+      return S_ERROR( "getTransportURL: Must supply desired protocols to this plug-in." )
 
     self.log.debug( "getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
     resDict = self.__gfalturlsfromsurls_wrapper( urls, listProtocols )['Value']
@@ -382,7 +376,7 @@ class SRM2Storage( StorageBase ):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key( 'surl' ) and urlDict['surl']:
+      if "surl" in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
           self.log.debug( "getTransportURL: Obtained tURL for file. %s" % pathSURL )
@@ -396,42 +390,44 @@ class SRM2Storage( StorageBase ):
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( pathSURL, errMessage ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
-    resDict = { 'Failed' : failed, 'Successful' : successful }
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
-  def prestageFile( self, path, lifetime = 60 * 60 * 24 ):
+  def prestageFile( self, path, lifetime = 86400 ):
     """ Issue prestage request for file
+
+    :param self: self reference
+    :param str path: PFN path
+    :param int lifetime: prestage lifetime in seconds (default 24h)
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.prestageFile: Attempting to issue stage requests for %s file(s)." % len( urls ) )
+    self.log.debug( "prestageFile: Attempting to issue stage requests for %s file(s)." % len( urls ) )
     resDict = self.__gfalprestage_wrapper( urls, lifetime )['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key( 'surl' ) and urlDict['surl']:
+      if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
-          self.log.debug( "SRM2Storage.prestageFile: Issued stage request for file %s." % pathSURL )
+          self.log.debug( "prestageFile: Issued stage request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 1:
-          self.log.debug( "SRM2Storage.prestageFile: File found to be already staged.", pathSURL )
+          self.log.debug( "prestageFile: File found to be already staged.", pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
-          errMessage = "SRM2Storage.prestageFile: File does not exist."
+          errMessage = "prestageFile: File does not exist."
           self.log.error( errMessage, pathSURL )
           failed[pathSURL] = errMessage
         else:
-          errStr = "SRM2Storage.prestageFile: Failed issue stage request."
+          errStr = "prestageFile: Failed issue stage request."
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( errMessage, pathSURL ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def prestageFileStatus( self, path ):
     """ Monitor prestage request for files
@@ -441,14 +437,14 @@ class SRM2Storage( StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.prestageFileStatus: Attempting to get status "
-                   "of stage requests for %s file(s)." % len( urls ) )
+    self.log.debug( "prestageFileStatus: Attempting to get status "
+                    "of stage requests for %s file(s)." % len( urls ) )
     resDict = self.__gfal_prestagestatus_wrapper( urls )['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key( 'surl' ) and urlDict['surl']:
+      if "surl" in urlDict and urlDict["surl"]:
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 1:
           self.log.debug( "SRM2Storage.prestageFileStatus: File found to be staged %s." % pathSURL )
@@ -465,8 +461,7 @@ class SRM2Storage( StorageBase ):
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( errMessage, pathSURL ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getFileMetadata( self, path ):
     """  Get metadata associated to the file
@@ -476,24 +471,24 @@ class SRM2Storage( StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.getFileMetadata: Obtaining metadata for %s file(s)." % len( urls ) )
+    self.log.debug( "getFileMetadata: Obtaining metadata for %s file(s)." % len( urls ) )
     resDict = self.__gfalls_wrapper( urls, 0 )['Value']
     failed = resDict['Failed']
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key( 'surl' ) and urlDict['surl']:
+      if "surl" in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['File']:
             successful[pathSURL] = statDict
           else:
-            errStr = "SRM2Storage.getFileMetadata: Supplied path is not a file."
+            errStr = "getFileMetadata: Supplied path is not a file."
             self.log.error( errStr, pathSURL )
             failed[pathSURL] = errStr
         elif urlDict['status'] == 2:
-          errMessage = "SRM2Storage.getFileMetadata: File does not exist."
+          errMessage = "getFileMetadata: File does not exist."
           self.log.error( errMessage, pathSURL )
           failed[pathSURL] = errMessage
         else:
@@ -502,11 +497,10 @@ class SRM2Storage( StorageBase ):
           self.log.error( errStr, "%s: %s" % ( pathSURL, errMessage ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
       else:
-        errStr = "SRM2Storage.getFileMetadata: Returned element does not contain surl."
+        errStr = "getFileMetadata: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
         return S_ERROR( errStr )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def isFile( self, path ):
     """Check if the given path exists and it is a file
@@ -516,98 +510,102 @@ class SRM2Storage( StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.isFile: Checking whether %s path(s) are file(s)." % len( urls ) )
+    self.log.debug( "isFile: Checking whether %s path(s) are file(s)." % len( urls ) )
     resDict = self.__gfalls_wrapper( urls, 0 )['Value']
     failed = resDict['Failed']
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key( 'surl' ) and urlDict['surl']:
+      if "surl" in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
           if statDict['File']:
             successful[pathSURL] = True
           else:
-            self.log.debug( "SRM2Storage.isFile: Path is not a file: %s" % pathSURL )
+            self.log.debug( "isFile: Path is not a file: %s" % pathSURL )
             successful[pathSURL] = False
         elif urlDict['status'] == 2:
-          errMessage = "SRM2Storage.isFile: File does not exist."
+          errMessage = "isFile: File does not exist."
           self.log.error( errMessage, pathSURL )
           failed[pathSURL] = errMessage
         else:
-          errStr = "SRM2Storage.isFile: Failed to get file metadata."
+          errStr = "isFile: Failed to get file metadata."
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( pathSURL, errMessage ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
       else:
-        errStr = "SRM2Storage.isFile: Returned element does not contain surl."
+        errStr = "isFile: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
         return S_ERROR( errStr )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
-  def pinFile( self, path, lifetime = 60 * 60 * 24 ):
+  def pinFile( self, path, lifetime = 86400 ):
     """ Pin a file with a given lifetime
+
+    :param self: self reference
+    :param str path: PFN path
+    :param int lifetime: pin lifetime in seconds (default 24h) 
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.pinFile: Attempting to pin %s file(s)." % len( urls ) )
+    self.log.debug( "pinFile: Attempting to pin %s file(s)." % len( urls ) )
     resDict = self.__gfal_pin_wrapper( urls, lifetime )['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key( 'surl' ) and urlDict['surl']:
+      if "surl" in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
-          self.log.debug( "SRM2Storage.pinFile: Issued pin request for file %s." % pathSURL )
+          self.log.debug( "pinFile: Issued pin request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
-          errMessage = "SRM2Storage.pinFile: File does not exist."
+          errMessage = "pinFile: File does not exist."
           self.log.error( errMessage, pathSURL )
           failed[pathSURL] = errMessage
         else:
-          errStr = "SRM2Storage.pinFile: Failed issue pin request."
+          errStr = "pinFile: Failed issue pin request."
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( errMessage, pathSURL ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def releaseFile( self, path ):
-    """ Release a file
+    """ Release a pinned file
+    
+    :param self: self reference
+    :param str path: PFN path
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.releaseFile: Attempting to release %s file(s)." % len( urls ) )
+    self.log.debug( "releaseFile: Attempting to release %s file(s)." % len( urls ) )
     resDict = self.__gfal_release_wrapper( urls )['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key( 'surl' ) and urlDict['surl']:
+      if 'surl' in urlDict and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
-          self.log.debug( "SRM2Storage.releaseFile: Issued release request for file %s." % pathSURL )
+          self.log.debug( "releaseFile: Issued release request for file %s." % pathSURL )
           successful[pathSURL] = urlDict['SRMReqID']
         elif urlDict['status'] == 2:
-          errMessage = "SRM2Storage.releaseFile: File does not exist."
+          errMessage = "releaseFile: File does not exist."
           self.log.error( errMessage, pathSURL )
           failed[pathSURL] = errMessage
         else:
-          errStr = "SRM2Storage.releaseFile: Failed issue release request."
+          errStr = "releaseFile: Failed issue release request."
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( errMessage, pathSURL ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def exists( self, path ):
     """ Check if the given path exists. """
@@ -639,8 +637,7 @@ class SRM2Storage( StorageBase ):
         errStr = "SRM2Storage.exists: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
         return S_ERROR( errStr )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getFileSize( self, path ):
     """Get the physical size of the given file
@@ -679,8 +676,7 @@ class SRM2Storage( StorageBase ):
         errStr = "SRM2Storage.getFileSize: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
         return S_ERROR( errStr )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def putFile( self, path, sourceSize = 0 ):
     res = self.checkArgumentFormat( path )
@@ -700,21 +696,20 @@ class SRM2Storage( StorageBase ):
           successful[dest_url] = res['Value']
         else:
           failed[dest_url] = res['Message']
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def __putFile( self, src_file, dest_url, sourceSize ):
     # Pre-transfer check
     res = self.__executeOperation( dest_url, 'exists' )
     if not res['OK']:
-      self.log.debug( "SRM2Storage.__putFile: Failed to find pre-existance of destination file." )
+      self.log.debug( "__putFile: Failed to find pre-existance of destination file." )
       return res
     if res['Value']:
       res = self.__executeOperation( dest_url, 'removeFile' )
       if not res['OK']:
-        self.log.debug( "SRM2Storage.__putFile: Failed to remove remote file %s." % dest_url )
+        self.log.debug( "__putFile: Failed to remove remote file %s." % dest_url )
       else:
-        self.log.debug( "SRM2Storage.__putFile: Removed remote file %s." % dest_url )
+        self.log.debug( "__putFile: Removed remote file %s." % dest_url )
     dsttype = self.defaulttype
     src_spacetokendesc = ''
     dest_spacetokendesc = self.spaceToken
@@ -722,21 +717,21 @@ class SRM2Storage( StorageBase ):
       src_url = src_file
       srctype = 2
       if not sourceSize:
-        return S_ERROR( "SRM2Storage.__putFile: For file replication the source file size must be provided." )
+        return S_ERROR( "__putFile: For file replication the source file size must be provided." )
     else:
       if not os.path.exists( src_file ):
-        errStr = "SRM2Storage.__putFile: The source local file does not exist."
+        errStr = "__putFile: The source local file does not exist."
         self.log.error( errStr, src_file )
         return S_ERROR( errStr )
       sourceSize = getSize( src_file )
       if sourceSize == -1:
-        errStr = "SRM2Storage.__putFile: Failed to get file size."
+        errStr = "__putFile: Failed to get file size."
         self.log.error( errStr, src_file )
         return S_ERROR( errStr )
       src_url = 'file:%s' % src_file
       srctype = 0
     if sourceSize == 0:
-      errStr = "SRM2Storage.__putFile: Source file is zero size."
+      errStr = "__putFile: Source file is zero size."
       self.log.error( errStr, src_file )
       return S_ERROR( errStr )
     timeout = int( sourceSize / self.MIN_BANDWIDTH + 300 )
@@ -744,30 +739,29 @@ class SRM2Storage( StorageBase ):
       nbstreams = 4
     else:
       nbstreams = 1
-    self.log.info( "SRM2Storage.__putFile: Using %d streams" % nbstreams )
-    self.log.info( "SRM2Storage.__putFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
+    self.log.info( "__putFile: Executing transfer of %s to %s using %s streams" % ( src_url, dest_url, nbstreams ) )
     res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url,
                       srctype, dsttype, nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
     if not res['OK']:
       # Remove the failed replica, just in case
       result = self.__executeOperation( dest_url, 'removeFile' )
       if result['OK']:
-        self.log.debug( "SRM2Storage.__putFile: Removed remote file remnant %s." % dest_url )
+        self.log.debug( "__putFile: Removed remote file remnant %s." % dest_url )
       else:
-        self.log.debug( "SRM2Storage.__putFile: Unable to remove remote file remnant %s." % dest_url )
+        self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
     res = res['Value']
     if not res['OK']:
       # Remove the failed replica, just in case
       result = self.__executeOperation( dest_url, 'removeFile' )
       if result['OK']:
-        self.log.debug( "SRM2Storage.__putFile: Removed remote file remnant %s." % dest_url )
+        self.log.debug( "__putFile: Removed remote file remnant %s." % dest_url )
       else:
-        self.log.debug( "SRM2Storage.__putFile: Unable to remove remote file remnant %s." % dest_url )
+        self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
     errCode, errStr = res['Value']
     if errCode == 0:
-      self.log.info( 'SRM2Storage.__putFile: Successfully put file to storage.' )
+      self.log.info( '__putFile: Successfully put file to storage.' )
       ## checksum check? return!
       if self.checksumType: 
         return S_OK( sourceSize )
@@ -776,20 +770,20 @@ class SRM2Storage( StorageBase ):
       if res['OK']:
         destinationSize = res['Value']
         if sourceSize == destinationSize :
-          self.log.debug( "SRM2Storage.__putFile: Post transfer check successful." )
+          self.log.debug( "__putFile: Post transfer check successful." )
           return S_OK( destinationSize )
-      errorMessage = "SRM2Storage.__putFile: Source and destination file sizes do not match."
+      errorMessage = "__putFile: Source and destination file sizes do not match."
       self.log.error( errorMessage, src_url )
     else:
-      errorMessage = "SRM2Storage.__putFile: Failed to put file to storage."
+      errorMessage = "__putFile: Failed to put file to storage."
       if errCode > 0:
         errStr = "%s %s" % ( errStr, os.strerror( errCode ) )
       self.log.error( errorMessage, errStr )
     res = self.__executeOperation( dest_url, 'removeFile' )
     if res['OK']:
-      self.log.debug( "SRM2Storage.__putFile: Removed remote file remnant %s." % dest_url )
+      self.log.debug( "__putFile: Removed remote file remnant %s." % dest_url )
     else:
-      self.log.debug( "SRM2Storage.__putFile: Unable to remove remote file remnant %s." % dest_url )
+      self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
     return S_ERROR( errorMessage )
 
   def __lcg_cp_wrapper( self, src_url, dest_url, srctype, dsttype, nbstreams,
@@ -812,22 +806,22 @@ class SRM2Storage( StorageBase ):
                                                dest_spacetokendesc,
                                                self.checksumType )
 
-      if type( errCode ) not in [types.IntType]:
-        self.log.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer",
-                       "%s %s" % ( errCode, type( errCode ) ) )
-        if type( errCode ) in [types.ListType]:
+      if type( errCode ) != IntType:
+        self.log.error( "__lcg_cp_wrapper: Returned errCode was not an integer",
+                        "%s %s" % ( errCode, type( errCode ) ) )
+        if type( errCode ) == ListType:
           msg = []
           for err in errCode:
             msg.append( '%s of type %s' % ( err, type( err ) ) )
-          self.log.error( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was List:\n" , "\n".join( msg ) )
-        return S_ERROR( "SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer" )
-      if type( errStr ) not in types.StringTypes:
-        self.log.error( "SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string",
+          self.log.error( "__lcg_cp_wrapper: Returned errCode was List:\n" , "\n".join( msg ) )
+        return S_ERROR( "__lcg_cp_wrapper: Returned errCode was not an integer" )
+      if type( errStr ) not in StringTypes:
+        self.log.error( "__lcg_cp_wrapper: Returned errStr was not a string",
                        "%s %s" % ( errCode, type( errStr ) ) )
-        return S_ERROR( "SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string" )
+        return S_ERROR( "__lcg_cp_wrapper: Returned errStr was not a string" )
       return S_OK( ( errCode, errStr ) )
-    except Exception, x:
-      self.log.exception( "SRM2Storage.__lcg_cp_wrapper", "", x )
+    except Exception, error:
+      self.log.exception( "__lcg_cp_wrapper", "", error )
       return S_ERROR( "Exception while attempting file upload" )
 
   def getFile( self, path, localPath = False ):
@@ -858,7 +852,7 @@ class SRM2Storage( StorageBase ):
     if not os.path.exists( os.path.dirname( dest_file ) ):
       os.makedirs( os.path.dirname( dest_file ) )
     if os.path.exists( dest_file ):
-      self.log.debug( "SRM2Storage.__getFile: Local file already exists %s. Removing..." % dest_file )
+      self.log.debug( "__getFile: Local file already exists %s. Removing..." % dest_file )
       os.remove( dest_file )
     srctype = self.defaulttype
     src_spacetokendesc = self.spaceToken
@@ -871,8 +865,8 @@ class SRM2Storage( StorageBase ):
     remoteSize = res['Value']
     timeout = int( remoteSize / self.MIN_BANDWIDTH * 4 + 300 )
     nbstreams = 1
-    self.log.info( "SRM2Storage.__getFile: Using %d streams" % nbstreams )
-    self.log.info( "SRM2Storage.__getFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
+    self.log.info( "__getFile: Using %d streams" % nbstreams )
+    self.log.info( "__getFile: Executing transfer of %s to %s" % ( src_url, dest_url ) )
     res = pythonCall( ( timeout + 10 ), self.__lcg_cp_wrapper, src_url, dest_url, srctype, dsttype,
                       nbstreams, timeout, src_spacetokendesc, dest_spacetokendesc )
     if not res['OK']:
@@ -882,20 +876,20 @@ class SRM2Storage( StorageBase ):
       return res
     errCode, errStr = res['Value']
     if errCode == 0:
-      self.log.debug( 'SRM2Storage.__getFile: Got a file from storage.' )
+      self.log.debug( '__getFile: Got a file from storage.' )
       localSize = getSize( dest_file )
       if localSize == remoteSize:
-        self.log.debug( "SRM2Storage.__getFile: Post transfer check successful." )
+        self.log.debug( "__getFile: Post transfer check successful." )
         return S_OK( localSize )
-      errorMessage = "SRM2Storage.__getFile: Source and destination file sizes do not match."
+      errorMessage = "__getFile: Source and destination file sizes do not match."
       self.log.error( errorMessage, src_url )
     else:
-      errorMessage = "SRM2Storage.__getFile: Failed to get file from storage."
+      errorMessage = "__getFile: Failed to get file from storage."
       if errCode > 0:
         errStr = "%s %s" % ( errStr, os.strerror( errCode ) )
       self.log.error( errorMessage, errStr )
     if os.path.exists( dest_file ):
-      self.log.debug( "SRM2Storage.getFile: Removing local file %s." % dest_file )
+      self.log.debug( "__getFile: Removing local file %s." % dest_file )
       os.remove( dest_file )
     return S_ERROR( errorMessage )
 
@@ -963,8 +957,7 @@ class SRM2Storage( StorageBase ):
         errStr = "SRM2Storage.isDirectory: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
         return S_ERROR( errStr )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } ) 
 
   def getDirectoryMetadata( self, path ):
     """ Get the metadata for the directory
@@ -974,7 +967,7 @@ class SRM2Storage( StorageBase ):
       return res
     urls = res['Value']
 
-    self.log.debug( "SRM2Storage.getDirectoryMetadata: Attempting to obtain metadata for %s directories." % len( urls ) )
+    self.log.debug( "getDirectoryMetadata: Attempting to obtain metadata for %s directories." % len( urls ) )
     resDict = self.__gfalls_wrapper( urls, 0 )['Value']
     failed = resDict['Failed']
     listOfResults = resDict['AllResults']
@@ -1003,8 +996,7 @@ class SRM2Storage( StorageBase ):
         errStr = "SRM2Storage.getDirectoryMetadata: Returned element does not contain surl."
         self.log.fatal( errStr, self.name )
         return S_ERROR( errStr )
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getDirectorySize( self, path ):
     """ Get the size of the directory on the storage
@@ -1389,14 +1381,15 @@ class SRM2Storage( StorageBase ):
           resDict['AllRemoved'] = False
     return resDict
 
-  def checkArgumentFormat( self, path ):
-    if type( path ) in types.StringTypes:
+  @staticmethod
+  def checkArgumentFormat( path ):
+    if type( path ) in StringTypes:
       urls = {path:False}
-    elif type( path ) == types.ListType:
+    elif type( path ) == ListType:
       urls = {}
       for url in path:
         urls[url] = False
-    elif type( path ) == types.DictType:
+    elif type( path ) == DictType:
       urls = path
     else:
       return S_ERROR( "SRM2Storage.checkArgumentFormat: Supplied path is not of the correct format." )
@@ -1426,7 +1419,7 @@ class SRM2Storage( StorageBase ):
       if "checksum" in urlDict and ( urlDict['checksum'] != '0x' ):
         statDict["Checksum"] = urlDict["checksum"]
         
-      if urlDict.has_key( 'locality' ):
+      if "locality" in urlDict: 
         urlLocality = urlDict['locality']
         if re.search( 'ONLINE', urlLocality ):
           statDict['Cached'] = 1
@@ -1572,7 +1565,9 @@ class SRM2Storage( StorageBase ):
       gfalDict['surls'] = urls
       gfalDict['nbfiles'] = len( urls )
       gfalDict['timeout'] = self.stageTimeout
-      res = self.__gfal_operation_wrapper( 'gfal_prestage', gfalDict, timeout_sendreceive = self.fileTimeout * len( urls ) )
+      res = self.__gfal_operation_wrapper( 'gfal_prestage', 
+                                           gfalDict, 
+                                           timeout_sendreceive = self.fileTimeout * len( urls ) )
       gDataStoreClient.addRegister( res['AccountingOperation'] )
       if not res['OK']:
         for url in urls:
@@ -1817,47 +1812,55 @@ class SRM2Storage( StorageBase ):
     res['AccountingOperation'] = oDataOperation
     return res
 
-  def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
+  def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None, retry = 3 ):
 
-    res = self.__create_gfal_object( gfalDict )
-    if not res['OK']:
-      result = S_ERROR( res['Message'] )
-      return result
+    while retry:
 
-    gfalObject = res['Value']
-    if srmRequestID:
-      res = self.__gfal_set_ids( gfalObject, srmRequestID )
+      retry -= 1
+
+      gfalObject = self.__create_gfal_object( gfalDict )
+      if not gfalObject["OK"]:
+        if retry:
+          continue
+        return gfalObject
+      gfalObject = gfalObject['Value']
+
+      if srmRequestID:
+        res = self.__gfal_set_ids( gfalObject, srmRequestID )
+        if not res['OK']:
+          if retry:
+            continue
+          return res
+
+      res = self.__gfal_exec( gfalObject, operation, timeout_sendreceive )
       if not res['OK']:
-        result = S_ERROR( res['Message'] )
-        return result
+        if retry:
+          continue
+        return res
 
-    res = self.__gfal_exec( gfalObject, operation, timeout_sendreceive )
-    if not res['OK']:
-      result = S_ERROR( res['Message'] )
-      return result
+      gfalObject = res['Value']
+      res = self.__gfal_get_ids( gfalObject )
+      if not res['OK']:
+        newSRMRequestID = srmRequestID
+      else:
+        newSRMRequestID = res['Value']
 
-    gfalObject = res['Value']
-    res = self.__gfal_get_ids( gfalObject )
-    if not res['OK']:
-      newSRMRequestID = srmRequestID
-    else:
-      newSRMRequestID = res['Value']
+      res = self.__get_results( gfalObject )
+      if not res['OK']:
+        if retry:
+          continue
+        return res
 
-    res = self.__get_results( gfalObject )
-    if not res['OK']:
-      result = S_ERROR( res['Message'] )
-      return result
+      resultList = []
+      pfnRes = res['Value']
+      for myDict in pfnRes:
+        myDict['SRMReqID'] = newSRMRequestID
+        resultList.append( myDict )
 
-    resultList = []
-    pfnRes = res['Value']
-    for myDict in pfnRes:
-      myDict['SRMReqID'] = newSRMRequestID
-      resultList.append( myDict )
+      self.__destroy_gfal_object( gfalObject )
 
-    self.__destroy_gfal_object( gfalObject )
-    result = S_OK( resultList )
-    return result
-
+    return S_OK( resultList )
+ 
   def __initialiseAccountingObject( self, operation, se, files ):
     import DIRAC
     accountingDict = {}
