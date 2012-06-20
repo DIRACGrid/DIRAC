@@ -1,12 +1,12 @@
 # $HeadURL$
 """ GGUSTicketsClient class is a client for the GGUS Tickets DB.
 """
-__RCSID__ = "$Id$"
-
-from suds import WebFault
+from suds        import WebFault
 from suds.client import Client
 
 from DIRAC import S_OK
+
+__RCSID__ = "$Id$"
 
 class GGUSTicketsClient:
   # FIXME: Why is this a class and not just few methods?
@@ -14,17 +14,17 @@ class GGUSTicketsClient:
 
   def __init__( self ):
     # FIXME: Why all these are Attributes of the class and not local variables?
-    self.count = {}
-    self.endDate = None
-    self.gclient = None
-    self.query = ''
-    self.selectedTickets = {}
-    self.siteName = ''
-    self.startDate = None
-    self.statusCount = {}
+    self.count            = {}
+    self.endDate          = None
+    self.gclient          = None
+    self.query            = ''
+    self.selectedTickets  = {}
+    self.siteName         = ''
+    self.startDate        = None
+    self.statusCount      = {}
+    self.shortDescription = {}
 
-
-#############################################################################
+################################################################################
 
   def getTicketsList( self, name, startDate = None, endDate = None ):
     """ Return tickets of entity in name
@@ -37,7 +37,7 @@ class GGUSTicketsClient:
     self.shortDescription = {}
 
     # create client instance using GGUS wsdl:
-    self.gclient = Client( "https://gusiwr.fzk.de/arsys/WSDL/public/gusiwr/Grid_HelpDesk" )
+    self.gclient = Client( "https://prod-ars.ggus.eu/arsys/WSDL/public/prod-ars/GGUS" )
     authInfo = self.gclient.factory.create( "AuthenticationInfo" )
     authInfo.userName = "ticketinfo"
     authInfo.password = "TicketInfo"
@@ -104,7 +104,7 @@ class GGUSTicketsClient:
 
     return S_OK( ( self.statusCount, ggusURL, self.shortDescription ) )
 
-#############################################################################
+################################################################################
   def globalStatistics( self ):
     '''
         Get some statistics about the tickets for the site: total number
@@ -143,4 +143,5 @@ class GGUSTicketsClient:
 # st = 'ERROR! GGUS status unknown: ', status
 # gLogger.error(st)
 
-#############################################################################
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
