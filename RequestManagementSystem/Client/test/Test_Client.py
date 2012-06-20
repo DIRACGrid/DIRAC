@@ -197,7 +197,6 @@ class AddOperationsTestCase( reqContainerTestCase ):
     self.assertEqual( rc_o.subRequests, subRequestExpected )
 
     fileLastOp = rc_o._getLastOrder( 'foo' )
-    print fileLastOp
     rc_o.addSubRequest( {'Attributes': {'SubRequestID': 'x', 'CreationTime': '2012-06-06 14:53:43.763743', 'ExecutionOrder': fileLastOp + 1}},
                         'someOtherType' )
 
@@ -251,8 +250,8 @@ class AddOperationsTestCase( reqContainerTestCase ):
 
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{"File1":{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231,
-                                'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}},
+    reqDic = {'Files':[{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231,
+                        'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}],
               'Datasets':{'Dataset1':'DC06Stripping'},
               'Attributes':{'TargetSE':'CERN-tape', 'Operation':'MoveAndRegister', 'SourceSE':'RAL-tape'}}
     # Add this to transfer type list
@@ -292,11 +291,11 @@ class AddOperationsTestCase( reqContainerTestCase ):
 
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{'File1':{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1,
-                                'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn',
-                                'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175',
-                                'Addler': 'addler32', 'Md5': 'md5'}},
-              'Datasets':{'Dataset1':'DC06Stripping'},
+    reqDic = {'Files':[{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1,
+                        'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn',
+                        'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175',
+                        'Addler': 'addler32', 'Md5': 'md5'}],
+              'Datasets':[{'Dataset1':'DC06Stripping'}],
               'Attributes':{'TargetSE':'CERN-tape', 'Operation':'RegisterFile', 'Status':'Waiting'}}
     # Add this to transfer type list
     self.reqContainer.addSubRequest( reqDic, 'register' )
@@ -334,8 +333,11 @@ class AddOperationsTestCase( reqContainerTestCase ):
   def test_addRemoval( self ):
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{'File1':{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},
-                       'Datasets':{'Dataset1':'DC06Stripping'},
+    reqDic = {'Files':[{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1,
+                        'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn',
+                        'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175',
+                        'Addler': 'addler32', 'Md5': 'md5'}],
+                       'Datasets':[{'Dataset1':'DC06Stripping'}],
                        'Attributes':{'TargetSE':'CERN-tape', 'Operation':'RemoveReplica', 'Catalogue':'LFC'}}
     # Add this to transfer type list
     self.reqContainer.addSubRequest( reqDic, 'removal' )
@@ -373,8 +375,11 @@ class AddOperationsTestCase( reqContainerTestCase ):
   def test_addStage( self ):
     # Set up dummy request
     lfn = '/lhcb/production/test/case.lfn'
-    reqDic = {'Files':{'File1':{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},
-              'Datasets':{'Dataset1':'DC06Stripping'},
+    reqDic = {'Files':[{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1,
+                        'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn',
+                        'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175',
+                        'Addler': 'addler32', 'Md5': 'md5'}],
+              'Datasets':[{'Dataset1':'DC06Stripping'}],
               'Attributes':{'TargetSE':'CERN-tape', 'Operation':'StageAndPin'}}
     # Add this to transfer type list
     self.reqContainer.addSubRequest( reqDic, 'stage' )
@@ -412,24 +417,39 @@ class AddOperationsTestCase( reqContainerTestCase ):
   def test_toFile( self ):
     lfn = '/lhcb/production/test/case.lfn'
     # Add dummy transfer request
-    transferDic = {'Attributes': {'Status': 'Waiting', 'SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9', 'Catalogue':'', 'TargetSE':'CERN-tape', 'Operation':'MoveAndRegister', 'SourceSE':'RAL-tape'},
-                   'Files':{'File1':{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}},
-                   'Datasets':{'Dataset1':'DC06Stripping'}}
+    transferDic = {'Attributes': {'Status': 'Waiting', 'SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9',
+                                  'Catalogue':'', 'TargetSE':'CERN-tape', 'Operation':'MoveAndRegister', 'SourceSE':'RAL-tape'},
+                   'Files':[{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': '', 'Size': 1231231,
+                             'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': '', 'Md5': ''}],
+                   'Datasets':[{'Dataset1':'DC06Stripping'}]
+                   }
     self.reqContainer.addSubRequest( transferDic, 'transfer' )
     # Add dummy register request
-    registerDic = {'Attributes':{'Status': 'Waiting', 'SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9', 'Catalogue':'', 'TargetSE':'CERN-tape', 'Operation':'RegisterFile'},
-                   'Files':{'File1':{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},
-                   'Datasets':{'Dataset1':'DC06Stripping'}}
+    registerDic = {'Attributes':{'Status': 'Waiting', 'SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9',
+                                 'Catalogue':'', 'TargetSE':'CERN-tape', 'Operation':'RegisterFile'},
+                   'Files':[{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1,
+                             'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn',
+                             'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],
+                   'Datasets':[{'Dataset1':'DC06Stripping'}]
+                   }
     self.reqContainer.addSubRequest( registerDic, 'register' )
     # Add dummy removal request
-    removalDic = {'Attributes':{'Status': 'Waiting', 'SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9', 'Catalogue':'', 'TargetSE':'CERN-tape', 'Operation':'RemoveReplica', 'Catalogue':'LFC'},
-                  'Files':{'File1':{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},
-                  'Datasets':{'Dataset1':'DC06Stripping'}}
+    removalDic = {'Attributes':{'Status': 'Waiting', 'SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9',
+                                'Catalogue':'', 'TargetSE':'CERN-tape', 'Operation':'RemoveReplica', 'Catalogue':'LFC'},
+                  'Files':[{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1,
+                            'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn',
+                            'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],
+                  'Datasets':[{'Dataset1':'DC06Stripping'}]
+                  }
     self.reqContainer.addSubRequest( removalDic, 'removal' )
     # Add dummy stage request
-    stageDic = {'Attributes':{'Status': 'Waiting', 'SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9', 'Catalogue':'', 'TargetSE':'CERN-tape', 'Operation':'StageAndPin'},
-                'Files':{'File1':{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1, 'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn', 'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}},
-                'Datasets':{'Dataset1':'DC06Stripping'}}
+    stageDic = {'Attributes':{'Status': 'Waiting', 'SubRequestID': '7F7C1D94-E452-CD50-204C-EE2E2F1816A9',
+                              'Catalogue':'', 'TargetSE':'CERN-tape', 'Operation':'StageAndPin'},
+                'Files':[{'LFN':lfn, 'Status': 'Waiting', 'Attempt': 1,
+                          'PFN': 'srm://srm.cern.ch/castor/cern.ch/grid/lhcb/production/test/case.lfn',
+                          'Size': 1231231, 'GUID': '7E9CED5A-295B-ED88-CE9A-CF41A62D2175', 'Addler': 'addler32', 'Md5': 'md5'}],
+                'Datasets':[{'Dataset1':'DC06Stripping'}]
+                }
     self.reqContainer.addSubRequest( stageDic, 'stage' )
     # Get the XML string of the DM request
     string = self.reqContainer.toXML()
