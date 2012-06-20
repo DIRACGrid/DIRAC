@@ -273,7 +273,7 @@ class RequestContainer:
 
     if requestDict.has_key( 'Files' ):
       files = []
-      for rFile in requestDict['Files'].values():
+      for rFile in requestDict['Files']:
         fileDict = {'Status':'Waiting', 'FileID':makeGuid(), 'Attempt':1}
         for attr, value in rFile.items():
           fileDict[attr] = value
