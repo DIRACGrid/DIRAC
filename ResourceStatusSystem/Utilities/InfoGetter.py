@@ -7,7 +7,7 @@
 
 import copy
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAt
+from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAtOperations
 from DIRAC.ResourceStatusSystem.Utilities    import Utils
 from DIRAC.ResourceStatusSystem              import views_panels
 
