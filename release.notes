@@ -53,6 +53,14 @@ FIX: TransformationCLI - take into accout possible failures in resetFile command
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
 
+[v6r4p10]
+
+*RequestManagement
+BUGFIX: RequestContainer - in addSubrequest() function
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
+
 [v6r4p9]
 
 *DMS
@@ -190,6 +198,11 @@ FIX: if there is no failed files, put an empty dict
 
 *Transformation
 FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r3p18]
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
 
 [v6r3p17]
 
