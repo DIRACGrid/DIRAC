@@ -61,6 +61,12 @@ BUGFIX: RequestContainer - in addSubrequest() function
 *Resources
 BUGFIX: SRM2Storage - in checksum type evaluation
 
+*ResourceStatusSystem
+BUGFIX: InfoGetter - wrong import statement
+
+*WMS
+BUGFIX: SandboxMetadataDB - __init__() can not return a value
+
 [v6r4p9]
 
 *DMS
