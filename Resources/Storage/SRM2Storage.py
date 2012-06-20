@@ -37,6 +37,11 @@ class SRM2Storage( StorageBase ):
 
   """
 
+  ## placeholder for lcg_util
+  __lcg_util = None
+  ## placeholder for gfal
+  __gfal = None
+
   def __init__( self, storageName, protocol, path, host, port, spaceToken, wspath ):
     """ c'tor
 
@@ -107,37 +112,36 @@ class SRM2Storage( StorageBase ):
     self.insecure = 0
     self.defaultLocalProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
 
-
-
     self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10 # 10 MB ???
     self.MIN_BANDWIDTH = 0.5 * ( 1024 * 1024 ) # 0.5 MB/s ???
 
-  def __importExternals( self ):
-    if ( self.lcg_util ) and ( self.gfal ):
-      return S_OK()
-    try:
+  def lcg_util( self ):
+    """ import and get lcg_util module
+
+    :param self: self reference
+    """
+    if not self.__lcg_util:
       import lcg_util
-      self.log.debug( "Using lcg_util version %s from %s" % ( lcg_util.lcg_util_version(), lcg_util.__file__ ) )
-    except ImportError, error:
-      errStr = "Failed to import lcg_util"
-      self.log.exception( errStr, '', error )
-      return S_ERROR( errStr )
-    try:
-      import gfalthr as gfal
-      self.log.debug( "Using gfalthr version %s from %s" % ( gfal.gfal_version(), gfal.__file__ ) )
-    except ImportError, error:
-      errStr = "Failed to import gfalthr: %s." % ( error )
-      self.log.warn( errStr )
+      self.__lcg_util = lcg_util
+      self.log.debug( "using lcg_util version %s from %s" % ( lcg_util.lcg_util_version(), lcg_util.__file__ ) )
+    return self.__lcg_util
+
+  def gfal( self ):
+    """ import and get gfalthr or gfal module
+
+    :param self: self reference
+    """
+    if not self.__gfal:
       try:
-        import gfal
-        self.log.debug( "Using gfal version %s from %s" % ( gfal.gfal_version(), gfal.__file__ ) )                                         
+        import gfalthr as gfal
+        self.__gfal = gfal
+        self.log.debug( "Using gfalthr version %s from %s" % ( gfal.gfal_version(), gfal.__file__ ) )
       except ImportError, error:
-        errStr = "Failed to import gfal"
-        self.log.exception( errStr, '', error )
-        return S_ERROR( errStr )
-    self.lcg_util = lcg_util
-    self.gfal = gfal
-    return S_OK()
+        self.log.warn( "Failed to import gfalthr: %s" % str(error) )
+        import gfal
+        self.__gfal = gfal
+        self.log.debug( "Using gfal version %s from %s" % ( gfal.gfal_version(), gfal.__file__ ) )                                         
+    return self.__gfal
 
 ################################################################################
 #
@@ -345,7 +349,7 @@ class SRM2Storage( StorageBase ):
           self.log.debug( "removeFile: File did not exist, sucessfully removed: %s" % pathSURL )
           successful[pathSURL] = True
         else:
-          errStr = "SRM2Storage.removeFile: Failed to remove file."
+          errStr = "removeFile: Failed to remove file."
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( pathSURL, errMessage ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
@@ -372,7 +376,7 @@ class SRM2Storage( StorageBase ):
     else:
       return S_ERROR( "SRM2Storage.getTransportURL: Must supply desired protocols to this plug-in." )
 
-    self.log.debug( "SRM2Storage.getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
+    self.log.debug( "getTransportURL: Obtaining tURLs for %s file(s)." % len( urls ) )
     resDict = self.__gfalturlsfromsurls_wrapper( urls, listProtocols )['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
@@ -381,18 +385,18 @@ class SRM2Storage( StorageBase ):
       if urlDict.has_key( 'surl' ) and urlDict['surl']:
         pathSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
-          self.log.debug( "SRM2Storage.getTransportURL: Obtained tURL for file. %s" % pathSURL )
+          self.log.debug( "getTransportURL: Obtained tURL for file. %s" % pathSURL )
           successful[pathSURL] = urlDict['turl']
         elif urlDict['status'] == 2:
-          errMessage = "SRM2Storage.getTransportURL: File does not exist."
+          errMessage = "getTransportURL: File does not exist."
           self.log.error( errMessage, pathSURL )
           failed[pathSURL] = errMessage
         else:
-          errStr = "SRM2Storage.getTransportURL: Failed to obtain turls."
+          errStr = "getTransportURL: Failed to obtain turls."
           errMessage = urlDict['ErrorMessage']
           self.log.error( errStr, "%s: %s" % ( pathSURL, errMessage ) )
           failed[pathSURL] = "%s %s" % ( errStr, errMessage )
-    resDict = {'Failed':failed, 'Successful':successful}
+    resDict = { 'Failed' : failed, 'Successful' : successful }
     return S_OK( resDict )
 
   def prestageFile( self, path, lifetime = 60 * 60 * 24 ):
