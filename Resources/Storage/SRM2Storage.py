@@ -7,7 +7,7 @@
     =================
  
     .. module: python
-    :synopsis: SRM 2 interface to StorageElement
+    :synopsis: SRM v2 interface to StorageElement
 """
 
 ## imports 
@@ -28,6 +28,7 @@ from DIRAC.Core.Utilities.File import getSize
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
+## RSCID
 __RCSID__ = "$Id$"
 
 class SRM2Storage( StorageBase ):
@@ -90,7 +91,7 @@ class SRM2Storage( StorageBase ):
         self.log.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
         self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
       else:
-        gLogger.warn("SRM2Storage: unknown checksum type %s, checksum check disabled")
+        self.log.warn("SRM2Storage: unknown checksum type %s, checksum check disabled" % self.checksumType )
         ## GFAL_CKSM_NONE
         self.checksumType = 0
 
