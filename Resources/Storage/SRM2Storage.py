@@ -42,8 +42,8 @@ class SRM2Storage( StorageBase ):
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
-    ## set checksum type, by default this is GFAL_CKSM_NONE
-    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", None )
+    ## set checksum type, by default this is 0 (GFAL_CKSM_NONE)
+    self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
     # enum gfal_cksm_type
     #	GFAL_CKSM_NONE = 0,
     #	GFAL_CKSM_CRC32,
@@ -58,10 +58,9 @@ class SRM2Storage( StorageBase ):
         gLogger.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
         self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
       else:
-        gLogger.warn("SRM2Storage: unknown checksum type %s, disabling checksum check")
-        gLogger.warn("SRM2Storage: will only comparing src and dest file sizes")
+        gLogger.warn("SRM2Storage: unknown checksum type %s, checksum check disabled")
         ## GFAL_CKSM_NONE
-        self.ckecksumType = 0
+        self.checksumType = 0
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
