@@ -2056,8 +2056,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         failed.update( res['Value']['Failed'] )
         successful = res['Value']['Successful']
-    resDict = { 'Successful':successful, 'Failed':failed }
-    return S_OK( resDict )
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
   def removeReplica( self, storageElementName, lfn ):
     """ Remove replica at the supplied Storage Element from Storage Element then file catalogue
@@ -2109,9 +2108,8 @@ class ReplicaManager( CatalogToStorage ):
       return res
     failed.update( res['Value']['Failed'] )
     successful.update( res['Value']['Successful'] )
-    resDict = {'Successful':successful, 'Failed':failed}
     gDataStoreClient.commit()
-    return S_OK( resDict )
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
   def __removeReplica( self, storageElementName, fileTuple ):
     pfnDict = {}
@@ -2146,8 +2144,7 @@ class ReplicaManager( CatalogToStorage ):
     else:
       failed.update( res['Value']['Failed'] )
       successful = res['Value']['Successful']
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } ) 
 
   def removeReplicaFromCatalog( self, storageElementName, lfn ):
     """ remove :lfn: replica from :storageElementName: SE

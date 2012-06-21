@@ -64,8 +64,6 @@ class RemovalTask( RequestTask ):
       return dirMeta
     dirMeta = dirMeta["Value"]
     
-    #ownerGroup = None
-
     ownerRole = "/%s" % dirMeta["OwnerRole"] if not dirMeta["OwnerRole"].startswith("/") else dirMeta["OwnerRole"]
     ownerDN = dirMeta["OwnerDN"]
 
@@ -116,14 +114,16 @@ class RemovalTask( RequestTask ):
     removalStatus = dict.fromkeys( lfns, "" )  
     self.addMark( "RemoveFileAtt", len( lfns ) )
 
+    ## loop over LFNs
     for lfn in lfns:
-   
       self.debug("removeFile: processing file %s" % lfn )
       try:
         ## try to remove using os.environ proxy 
         removal = self.replicaManager().removeFile( lfn )
         ## not OK but request belongs to DataManager? 
-        if not removal["OK"] and not self.requestOwnerDN:
+        if not removal["OK"] and \
+              "Write access not permitted for this credential." in removal["Message"] and \
+              not self.requestOwnerDN:
           self.debug("removeFile: retrieving proxy for %s" % lfn )
           getProxyForLFN = self.getProxyForLFN( lfn )
           ## can't get correct proxy? continue
@@ -170,14 +170,13 @@ class RemovalTask( RequestTask ):
         self.warn("removeFile: unable to remove file %s : %s" % ( lfn, error ) )
         subRequestError.append( "%s:%s" % ( lfn, error) )
         ## set file error
-        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", str(error)[:255].replace("'", "\'") )  
+        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", error[:255] )  
         if not fileError["OK"]:
           self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
-        ## not a DataManager nad operation not permitted? get lost, file status will be set to Failed
-        #if self.requestOwnerDN and "Permission denied" in str(error):
-        #  fileStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )  
-        #  if not fileStatus["OK"]:
-        #    self.error("removeFile: unable to set Status for %s: %s" % ( lfn, fileStatus["Message"] ) )
+        if self.requestOwnerDN and "Write access not permitted for this credential." in error:
+          fileStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )  
+          if not fileStatus["OK"]:
+            self.error("removeFile: unable to set Status to 'Failed' for %s: %s" % ( lfn, fileStatus["Message"] ) )
 
     self.addMark( "RemoveFileDone", filesRemoved )
     self.addMark( "RemoveFileFail", filesFailed )
@@ -228,12 +227,15 @@ class RemovalTask( RequestTask ):
           ## try to remove using current proxy 
           removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
           ## not OK but request belongs to DataManager?
-          if not removeReplica["OK"] and not self.requestOwnerDN:
+          if not removeReplica["OK"] and \
+                "Write access not permitted for this credential." in removeReplica["Message"] and \
+                not self.requestOwnerDN:not self.requestOwnerDN:
             ## get proxy for LFN
             getProxyForLFN = self.getProxyForLFN( lfn )
             ## can't get correct proxy? 
             if not getProxyForLFN["OK"]:
               self.warn("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+              removeReplica = getProxyForLFN
             else:
               ## got correct proxy? try to remove again 
               removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
@@ -282,7 +284,7 @@ class RemovalTask( RequestTask ):
       subRequestError.append( fileError )
       fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", fileError )
       if not fileError["OK"]:
-        self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
+        self.error("replicaRemoval: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
  
     self.addMark( "ReplicaRemovalDone", replicasRemoved )
     self.addMark( "ReplicaRemovalFail", replicasFailed )
