@@ -120,22 +120,15 @@ class RemovalTask( RequestTask ):
    
       self.debug("removeFile: processing file %s" % lfn )
       try:
-        ## try to remove using current proxy 
+        ## try to remove using os.environ proxy 
         removal = self.replicaManager().removeFile( lfn )
-        ## operation not permitted?
-        if not removal["OK"] and \
-              "Message" in removal and \
-              "Write access not permitted for this credential" in removal["Message"] and \
-              not self.requestOwnerDN:
+        ## not OK but request belongs to DataManager? 
+        if not removal["OK"] and not self.requestOwnerDN:
           self.debug("removeFile: retrieving proxy for %s" % lfn )
           getProxyForLFN = self.getProxyForLFN( lfn )
           ## can't get correct proxy? continue
           if not getProxyForLFN["OK"]:
             self.warn("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
-            if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
-              removal = S_OK( { "Failed" : { lfn : getProxyForLFN["Message"] } } )
-            else:
-              removal = getProxyForLFN
           else:
             ## you're a DataManager, retry with the new one proxy
             removal = self.replicaManager().removeFile( lfn )           
@@ -177,14 +170,14 @@ class RemovalTask( RequestTask ):
         self.warn("removeFile: unable to remove file %s : %s" % ( lfn, error ) )
         subRequestError.append( "%s:%s" % ( lfn, error) )
         ## set file error
-        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", error[:255] )  
+        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", str(error)[:255].replace("'", "\'") )  
         if not fileError["OK"]:
           self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
         ## not a DataManager nad operation not permitted? get lost, file status will be set to Failed
-        if self.requestOwnerDN and "Permission denied" in str(error):
-          fileStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )  
-          if not fileStatus["OK"]:
-            self.error("removeFile: unable to set Status for %s: %s" % ( lfn, fileStatus["Message"] ) )
+        #if self.requestOwnerDN and "Permission denied" in str(error):
+        #  fileStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )  
+        #  if not fileStatus["OK"]:
+        #    self.error("removeFile: unable to set Status for %s: %s" % ( lfn, fileStatus["Message"] ) )
 
     self.addMark( "RemoveFileDone", filesRemoved )
     self.addMark( "RemoveFileFail", filesFailed )
@@ -234,22 +227,15 @@ class RemovalTask( RequestTask ):
         for targetSE in targetSEs: 
           ## try to remove using current proxy 
           removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
-          ## operation not permitted but using DataManager proxy?
-          if not removeReplica["OK"] and \
-              "Message" in removeReplica and \
-              "Write access not permitted for this credential" in removeReplica["Message"] and \
-              not self.requestOwnerDN:
+          ## not OK but request belongs to DataManager?
+          if not removeReplica["OK"] and not self.requestOwnerDN:
             ## get proxy for LFN
             getProxyForLFN = self.getProxyForLFN( lfn )
             ## can't get correct proxy? 
             if not getProxyForLFN["OK"]:
               self.warn("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
-              if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
-                removeReplica = S_OK( { "Failed" : { lfn : getProxyForLFN["Message"] } } )
-              else:
-                removeReplica = getProxyForLFN
             else:
-              ## got correct proxy - remove again 
+              ## got correct proxy? try to remove again 
               removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
            
           if not removeReplica["OK"]:
