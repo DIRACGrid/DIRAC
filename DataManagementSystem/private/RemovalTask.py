@@ -123,22 +123,19 @@ class RemovalTask( RequestTask ):
         ## try to remove using current proxy 
         removal = self.replicaManager().removeFile( lfn )
         ## operation not permitted?
-        if removal["OK"] and not removal["Value"]: 
-          ## ..but you're a DataManager
-          if not self.requestOwnerDN:
-            self.debug("removeFile: retrieving proxy for %s" % lfn )
-            getProxyForLFN = self.getProxyForLFN( lfn )
-            ## can't get correct proxy? continue
-            if not getProxyForLFN["OK"]:
-              removal = getProxyForLFN
-              self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
-            else:
-              ## you're a DataManager, retry with the new one proxy
-              removal = self.replicaManager().removeFile( lfn )
+        if removal["OK"] and \
+              ( lfn in removal["Value"]["Failed"] ) and \
+              ( "Permission denied" in removal["Value"]["Failed"][lfn].values() ) and \
+              not self.requestOwnerDN:
+          self.debug("removeFile: retrieving proxy for %s" % lfn )
+          getProxyForLFN = self.getProxyForLFN( lfn )
+          ## can't get correct proxy? continue
+          if not getProxyForLFN["OK"]:
+            removal = getProxyForLFN
+            self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
           else:
-            ## you're not a DataManager - get lost!
-            self.error("removeFile: operation not permitted for this credential" )
-            removal = S_ERROR( "operation not permitted for this credential" )            
+            ## you're a DataManager, retry with the new one proxy
+            removal = self.replicaManager().removeFile( lfn )           
       finally:
         ## make sure DataManager proxy is set back in place
         if not self.requestOwnerDN and self.dataManagerProxy():
@@ -181,7 +178,7 @@ class RemovalTask( RequestTask ):
         if not fileError["OK"]:
           self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
         ## not a DataManager nad operation not permitted? get lost, file status will be set to Failed
-        if self.requestOwnerDN and error == "operation not permitted for this credential":
+        if self.requestOwnerDN and "Permission denied" in str(error):
           fileStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )  
           if not fileStatus["OK"]:
             self.error("removeFile: unable to set Status for %s: %s" % ( lfn, fileStatus["Message"] ) )
@@ -235,22 +232,19 @@ class RemovalTask( RequestTask ):
           ## try to remove using current proxy 
           removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
           ## operation not permitted?
-          if removeReplica["OK"] and not removeReplica["Value"]: 
-            ## ..but you're a DataManager
-            if not self.requestOwnerDN:
-              getProxyForLFN = self.getProxyForLFN( lfn )
-              ## can't get correct proxy? continue
-              if not getProxyForLFN["OK"]:
-                removeReplica = getProxyForLFN
-                self.error("removeReplica: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
-              else:
-                ## you're a DataManager, retry with the new one proxy
-                removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
+          if removeReplica["OK"] and \
+                ( lfn in removeReplica["Value"]["Failed"] ) and \
+                ( "Permission denied" in removeReplica["Value"]["Failed"][lfn].values() ) and \
+                not self.requestOwnerDN:
+            getProxyForLFN = self.getProxyForLFN( lfn )
+            ## can't get correct proxy? continue
+            if not getProxyForLFN["OK"]:
+              removeReplica = getProxyForLFN
+              self.error("removeReplica: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
             else:
-              ## you're not a DataManager - get lost!
-              self.error("removeReplica: operation not permitted for this credential" )
-              removeReplica = S_ERROR( "operation not permitted for this credential" )
-
+              ## you're a DataManager, retry with the new one proxy
+              removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
+           
           if not removeReplica["OK"]:
             removalStatus[lfn][targetSE] = removeReplica["Message"]
             continue
