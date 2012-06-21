@@ -391,15 +391,15 @@ class RequestClient( Client ):
 
     # update the job pending request digest in any case since it is modified
     self.log.info( "RequestClient.finalizeRequest: Updating request digest for job %d" % jobID )
-    result = self.getDigest( requestName, url )
-    if res["OK"]:
-      digest = res["Value"]
+    digest = self.getDigest( requestName, url )
+    if digest["OK"]:
+      digest = digest["Value"]
       self.log.verbose( digest )
       res = stateServer.setJobParameter( jobID, "PendingRequest", digest )
       if not res["OK"]:
         self.log.error( "RequestClient.finalizeRequest: Failed to set job parameter" )
     else:
       self.log.error( "RequestClient.finalizeRequest: Failed to get request digest for %s: %s" % ( requestName, 
-                                                                                                   result["Message"] ) )
+                                                                                                   digest["Message"] ) )
 
     return S_OK()
