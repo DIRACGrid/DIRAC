@@ -1981,7 +1981,7 @@ class ReplicaManager( CatalogToStorage ):
     if not res['OK']:
       return res
     if not res['Value']:
-      errStr = "__replicate: Write access not permitted for this credential."
+      errStr = "removeFile: Write access not permitted for this credential."
       self.log.error( errStr, lfns )
       return S_ERROR( errStr )
 

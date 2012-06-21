@@ -123,16 +123,19 @@ class RemovalTask( RequestTask ):
         ## try to remove using current proxy 
         removal = self.replicaManager().removeFile( lfn )
         ## operation not permitted?
-        if removal["OK"] and \
-              ( lfn in removal["Value"]["Failed"] ) and \
-              ( "Permission denied" in removal["Value"]["Failed"][lfn].values() ) and \
+        if not removal["OK"] and \
+              "Message" in removal and \
+              "Write access not permitted for this credential" in removal["Message"] and \
               not self.requestOwnerDN:
           self.debug("removeFile: retrieving proxy for %s" % lfn )
           getProxyForLFN = self.getProxyForLFN( lfn )
           ## can't get correct proxy? continue
           if not getProxyForLFN["OK"]:
-            removal = getProxyForLFN
-            self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+            self.warn("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+            if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
+              removal = S_OK( { "Failed" : { lfn : getProxyForLFN["Message"] } } )
+            else:
+              removal = getProxyForLFN
           else:
             ## you're a DataManager, retry with the new one proxy
             removal = self.replicaManager().removeFile( lfn )           
@@ -172,7 +175,7 @@ class RemovalTask( RequestTask ):
       else:
         filesFailed += 1
         self.warn("removeFile: unable to remove file %s : %s" % ( lfn, error ) )
-        subRequestError.append( "%s:%s" % (lfn, error) )
+        subRequestError.append( "%s:%s" % ( lfn, error) )
         ## set file error
         fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", error[:255] )  
         if not fileError["OK"]:
@@ -231,18 +234,22 @@ class RemovalTask( RequestTask ):
         for targetSE in targetSEs: 
           ## try to remove using current proxy 
           removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
-          ## operation not permitted?
-          if removeReplica["OK"] and \
-                ( lfn in removeReplica["Value"]["Failed"] ) and \
-                ( "Permission denied" in removeReplica["Value"]["Failed"][lfn].values() ) and \
-                not self.requestOwnerDN:
+          ## operation not permitted but using DataManager proxy?
+          if not removeReplica["OK"] and \
+              "Message" in removeReplica and \
+              "Write access not permitted for this credential" in removeReplica["Message"] and \
+              not self.requestOwnerDN:
+            ## get proxy for LFN
             getProxyForLFN = self.getProxyForLFN( lfn )
-            ## can't get correct proxy? continue
+            ## can't get correct proxy? 
             if not getProxyForLFN["OK"]:
-              removeReplica = getProxyForLFN
-              self.error("removeReplica: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+              self.warn("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+              if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
+                removeReplica = S_OK( { "Failed" : { lfn : getProxyForLFN["Message"] } } )
+              else:
+                removeReplica = getProxyForLFN
             else:
-              ## you're a DataManager, retry with the new one proxy
+              ## got correct proxy - remove again 
               removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
            
           if not removeReplica["OK"]:
