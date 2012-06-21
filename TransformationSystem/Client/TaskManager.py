@@ -282,9 +282,11 @@ class WorkflowTasks( TaskBase ):
         taskDict[taskNumber]['TaskObject'] = ''
         continue
       else:
-        sitesString = ', '.join( sites )
-        self.log.verbose( 'Setting Site: ', sitesString )
-        oJob.setDestination( sitesString )
+        self.log.verbose( 'Setting Site: ', str( sites ) )
+        res = oJob.setDestination( sites )
+        if not res['OK']:
+          self.log.error( 'Could not set the site: %s' % res['Message'] )
+          continue
 
       self._handleInputs( oJob, paramsDict )
       self._handleRest( oJob, paramsDict )
