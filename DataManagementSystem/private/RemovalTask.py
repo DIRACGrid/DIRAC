@@ -126,6 +126,7 @@ class RemovalTask( RequestTask ):
         if removal["OK"] and not removal["Value"]: 
           ## ..but you're a DataManager
           if not self.requestOwnerDN:
+            self.debug("removeFile: retrieving proxy for %s" % lfn )
             getProxyForLFN = self.getProxyForLFN( lfn )
             ## can't get correct proxy? continue
             if not getProxyForLFN["OK"]:
@@ -254,7 +255,7 @@ class RemovalTask( RequestTask ):
             removalStatus[lfn][targetSE] = removeReplica["Message"]
             continue
           removeReplica = removeReplica["Value"]
-          ## check failed status
+          ## check failed status for missing files
           if lfn in removeReplica["Failed"]:
             error = str( removeReplica["Failed"][lfn] )
             missingFile = re.search( "no such file or directory", error.lower() ) 
@@ -267,40 +268,6 @@ class RemovalTask( RequestTask ):
             os.unlink( os.environ["X509_USER_PROXY"] )
           ## put back DataManager proxy  
           os.environ["X509_USER_PROXY"] = self.dataManagerProxy()
-
-      #try:
-      #  ## are you DataManager?
-      #  if not self.requestOwnerDN:
-      #    getProxyForLFN = self.getProxyForLFN( lfn )
-      #    if not getProxyForLFN["OK"]:
-      #      if re.search( "no such file or directory", getProxyForLFN["Message"].lower() ):
-      #        removalStatus[lfn] = dict.fromkeys( targetSEs, "" )
-      #      else:
-      #        ## this LFN will be 'Waiting' unless proxy will be uploaded and/or retrieved
-      #        self.error("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
-      #      continue
-      #  ## loop over targetSEs
-      #  for targetSE in targetSEs:
-      #    ## prepare status dict
-      #    if lfn not in removalStatus:
-      #      removalStatus.setdefault( lfn, {} )
-      #    ## a priori OK
-      #    removalStatus[lfn][targetSE] = ""
-      #    ## call ReplicaManager
-      #    removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
-      #    if not removeReplica["OK"]:
-      #      removalStatus[lfn][targetSE] = removeReplica["Message"]
-      #      continue
-      #    removeReplica = removeReplica["Value"]
-      #    ## check failed status
-      #    if lfn in removeReplica["Failed"]:
-      #      error = str( removeReplica["Failed"][lfn] )
-      #      missingFile = re.search( "no such file or directory", error.lower() ) 
-      #      removalStatus[lfn][targetSE] = "" if missingFile else error
-      #finally:
-      #  ## make sure DataManager proxy is set back in place
-      #  if not self.requestOwnerDN and self.dataManagerProxy():
-      #    os.environ["X509_USER_PROXY"] = self.dataManagerProxy()
 
     replicasRemoved = 0
     replicasFailed = 0
