@@ -1,11 +1,11 @@
 ########################################################################
 # $HeadURL $
-# File: RemoveTask.py
+# File: RemovalTask.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/10/25 07:52:37
 ########################################################################
 
-""" :mod: RemoveTask 
+""" :mod: RemovalTask 
     =======================
  
     .. module: RemovalTask
@@ -118,7 +118,7 @@ class RemovalTask( RequestTask ):
     for lfn in lfns:
       self.debug("removeFile: processing file %s" % lfn )
       try:
-        ## try to remove using os.environ proxy 
+        ## try to remove using proxy already defined in os.environ 
         removal = self.replicaManager().removeFile( lfn )
         ## not OK but request belongs to DataManager? 
         if not removal["OK"] and \
@@ -126,9 +126,10 @@ class RemovalTask( RequestTask ):
               not self.requestOwnerDN:
           self.debug("removeFile: retrieving proxy for %s" % lfn )
           getProxyForLFN = self.getProxyForLFN( lfn )
-          ## can't get correct proxy? continue
+          ## can't get correct proxy? continue...
           if not getProxyForLFN["OK"]:
             self.warn("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+            removal = getProxyForLFN
           else:
             ## you're a DataManager, retry with the new one proxy
             removal = self.replicaManager().removeFile( lfn )           
@@ -173,10 +174,10 @@ class RemovalTask( RequestTask ):
         fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", error[:255] )  
         if not fileError["OK"]:
           self.error("removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
-        if self.requestOwnerDN and "Write access not permitted for this credential." in error:
-          fileStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )  
-          if not fileStatus["OK"]:
-            self.error("removeFile: unable to set Status to 'Failed' for %s: %s" % ( lfn, fileStatus["Message"] ) )
+        #if self.requestOwnerDN and "Write access not permitted for this credential." in error:
+        #  fileStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Failed" )  
+        #  if not fileStatus["OK"]:
+        #    self.error("removeFile: unable to set Status to 'Failed' for %s: %s" % ( lfn, fileStatus["Message"] ) )
 
     self.addMark( "RemoveFileDone", filesRemoved )
     self.addMark( "RemoveFileFail", filesFailed )
