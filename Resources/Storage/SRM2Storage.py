@@ -1795,6 +1795,9 @@ class SRM2Storage( StorageBase ):
     if timeout_sendreceive:
       timeout = timeout_sendreceive
     res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID, timeout_sendreceive )
+    if not res["OK"] and "busy" in str(res["Message"]).lower()
+      
+
     end = time.time()
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', end - start )
@@ -1812,30 +1815,20 @@ class SRM2Storage( StorageBase ):
     res['AccountingOperation'] = oDataOperation
     return res
 
-  def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None, retry = 3 ):
-
-    while retry:
-
-      retry -= 1
+  def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
 
       gfalObject = self.__create_gfal_object( gfalDict )
       if not gfalObject["OK"]:
-        if retry:
-          continue
         return gfalObject
       gfalObject = gfalObject['Value']
 
       if srmRequestID:
         res = self.__gfal_set_ids( gfalObject, srmRequestID )
         if not res['OK']:
-          if retry:
-            continue
           return res
 
       res = self.__gfal_exec( gfalObject, operation, timeout_sendreceive )
       if not res['OK']:
-        if retry:
-          continue
         return res
 
       gfalObject = res['Value']
@@ -1847,8 +1840,6 @@ class SRM2Storage( StorageBase ):
 
       res = self.__get_results( gfalObject )
       if not res['OK']:
-        if retry:
-          continue
         return res
 
       resultList = []
