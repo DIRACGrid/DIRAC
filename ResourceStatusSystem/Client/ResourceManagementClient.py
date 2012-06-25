@@ -1001,7 +1001,7 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'VOBOXCache', locals() )  
-  def addOrModifyElementSpaceTokenOccupancyCache( self, site, token, total, 
+  def addOrModifySpaceTokenOccupancyCache( self, site, token, total, 
                                                   guaranteed, free, 
                                                   lastCheckTime, meta = None ):
     '''
