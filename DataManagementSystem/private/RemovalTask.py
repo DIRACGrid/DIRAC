@@ -235,14 +235,14 @@ class RemovalTask( RequestTask ):
             getProxyForLFN = self.getProxyForLFN( lfn )
             ## can't get correct proxy? 
             if not getProxyForLFN["OK"]:
-              self.warn("removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+              self.warn("replicaRemoval: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
               removeReplica = getProxyForLFN
             else:
               ## got correct proxy? try to remove again 
               removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
            
           if not removeReplica["OK"]:
-            removalStatus[lfn][targetSE] = removeReplica["Message"]
+            removalStatus[lfn][targetSE] = "" if  "no such file or directory" not in str(removeReplica["Message"]).lower() else removeReplica["Message"]
             continue
           removeReplica = removeReplica["Value"]
           ## check failed status for missing files
