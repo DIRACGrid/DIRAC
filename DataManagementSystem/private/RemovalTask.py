@@ -229,8 +229,8 @@ class RemovalTask( RequestTask ):
           removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
           ## not OK but request belongs to DataManager?
           if not self.requestOwnerDN and \
-                ( not removal["OK"] and "Write access not permitted for this credential." in removal["Message"] ) or \
-                ( lfn in removal["Value"]["Failed"] and "permission denied" in str(removal["Value"]["Failed"][lfn]).lower() ):  
+                ( not removeReplica["OK"] and "Write access not permitted for this credential." in removeReplica["Message"] ) or \
+                ( lfn in removeReplica["Value"]["Failed"] and "permission denied" in str(removeReplica["Value"]["Failed"][lfn]).lower() ):  
             ## get proxy for LFN
             getProxyForLFN = self.getProxyForLFN( lfn )
             ## can't get correct proxy? 
@@ -281,7 +281,7 @@ class RemovalTask( RequestTask ):
       for targetSE, error in failed:
         self.warn("replicaRemoval: failed to remove %s from %s: %s" % ( lfn, targetSE, error ) )
 
-      fileError = ";".join( [ "%s:%s" % error.replace("'")."" for error in failed ] )[:255]
+      fileError = ";".join( [ "%s:%s" % error.replace("'", "") for error in failed ] )[:255]
       subRequestError.append( fileError )
       fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Error", fileError )
       if not fileError["OK"]:
