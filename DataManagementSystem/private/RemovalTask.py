@@ -144,9 +144,8 @@ class RemovalTask( RequestTask ):
 
       ## save error
       if not removal["OK"]:
-        removalStatus[lfn] = removal["Message"]
+        removalStatus[lfn] = "" if "no such file or directory" in str(removal["Message"]).lower() else removal["Message"]
         continue
-
       ## check fail reason, filter out missing files
       removal = removal["Value"]  
       if lfn in removal["Failed"]:
@@ -242,7 +241,7 @@ class RemovalTask( RequestTask ):
               removeReplica = self.replicaManager().removeReplica( targetSE, lfn )
            
           if not removeReplica["OK"]:
-            removalStatus[lfn][targetSE] = "" if  "no such file or directory" not in str(removeReplica["Message"]).lower() else removeReplica["Message"]
+            removalStatus[lfn][targetSE] = "" if "no such file or directory" in str(removeReplica["Message"]).lower() else removeReplica["Message"]
             continue
           removeReplica = removeReplica["Value"]
           ## check failed status for missing files
