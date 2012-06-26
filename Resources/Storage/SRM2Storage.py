@@ -14,6 +14,7 @@
 import os
 import re
 import time
+import errno
 from types import StringType, StringTypes, DictType, ListType, IntType
 from stat import S_ISREG, S_ISDIR, S_IMODE, ST_MODE, ST_SIZE
 ## from DIRAC
@@ -69,24 +70,28 @@ class SRM2Storage( StorageBase ):
 
     StorageBase.__init__( self, self.name, self.path )
 
-    self.timeout = 100
-    self.long_timeout = 1200
+  
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
 
+    self.gfalTimeout  = gConfig.getValue( "/Resources/StorageElements/gfalTimeout", 100 )
+    self.gfalLongTimeOut = gConfig.getValue( "/Resources/StorageElements/gfalLongTimeout", 1200 )
+    self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/gfalRetry", 3 )
+  
     ## set checksum type, by default this is 0 (GFAL_CKSM_NONE)
     self.checksumType = gConfig.getValue( "/Resources/StorageElements/ChecksumType", 0 )
-    # enum gfal_cksm_type
+    # enum gfal_cksm_type, all in lcg_util
     #	GFAL_CKSM_NONE = 0,
     #	GFAL_CKSM_CRC32,
     #	GFAL_CKSM_ADLER32,
     #	GFAL_CKSM_MD5,
     #	GFAL_CKSM_SHA1    
     # GFAL_CKSM_NULL = 0
-    self.checksumTypes = { None : 0, "CRC32" : 1, "ADLER32" : 2, 
-                           "MD5" : 3, "SHA1" : 4, "NONE" : 0, "NULL" : 0 }
-    if self.checksumType:
+    self.checksumTypes = { "CRC32" : 1, "ADLER32" : 2, 
+                           "MD5" : 3, "SHA1" : 4, 
+                           "NONE" : 0, "NULL" : 0 }
+    if self.checksumType not in self.checksumTypes.values():
       if str(self.checksumType).upper() in self.checksumTypes: 
         self.log.debug("SRM2Storage: will use %s checksum check" % self.checksumType )
         self.checksumType = self.checksumTypes[ self.checksumType.upper() ]
@@ -94,6 +99,10 @@ class SRM2Storage( StorageBase ):
         self.log.warn("SRM2Storage: unknown checksum type %s, checksum check disabled" % self.checksumType )
         ## GFAL_CKSM_NONE
         self.checksumType = 0
+    else:
+      ## invert and get name
+      name = dict( zip( self.checksumTypes.values(), self.checksumTypes.keys() ) )[self.checksumType]
+      self.log.debug("SRM2Storage: will use %s checksum check" % name )
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
@@ -183,6 +192,11 @@ class SRM2Storage( StorageBase ):
       return S_ERROR( "Failed to create URL %s" % error )
 
   def isPfnForProtocol( self, pfn ):
+    """ check if PFN :pfn: is valid for :self.protocol:
+
+    :param self: self reference
+    :param str pfn: PFN
+    """
     res = pfnparse( pfn )
     if not res['OK']:
       return res
@@ -190,7 +204,11 @@ class SRM2Storage( StorageBase ):
     return S_OK( pfnDict['Protocol'] == self.protocol )
 
   def getProtocolPfn( self, pfnDict, withPort ):
-    """ From the pfn dict construct the SURL to be used
+    """ construct SURL using :self.host:, :self.protocol: and optionally :self.port: and :self.wspath:
+
+    :param self: self reference
+    :param dict pfnDict: pfn dict 
+    :param bool withPort: include port information
     """
     #For srm2 keep the file name and path
     pfnDict['Protocol'] = self.protocol
@@ -219,7 +237,11 @@ class SRM2Storage( StorageBase ):
                    False : 'srm://%s%s' % ( self.host, self.path ) }[withPort] )
 
   def getUrl( self, path, withPort = True ):
-    """ This gets the URL for path supplied. With port is optional.
+    """ get SRM PFN for :path: with optional port info
+
+    :param self: self reference
+    :param str path: file path
+    :param bool withPort: toggle port info
     """
     pfnDict = pfnparse( path )['Value']
     if not re.search( self.path, path ):
@@ -260,7 +282,10 @@ class SRM2Storage( StorageBase ):
   #
 
   def createDirectory( self, path ):
-    """ Make recursively new directory(ies) on the physical storage
+    """ mkdir -p path on storage
+    
+    :param self: self reference
+    :param str path:
     """
     urls = self.checkArgumentFormat( path )
     if not urls['OK']:
@@ -283,6 +308,11 @@ class SRM2Storage( StorageBase ):
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def __makeDir( self, path ):
+    """ mkdir path ina weird way
+    
+    :param self: self reference
+    :param str path:
+    """
     srcFile = '%s/%s' % ( os.getcwd(), 'dirac_directory' )
     dfile = open( srcFile, 'w' )
     dfile.write( " " )
@@ -295,7 +325,10 @@ class SRM2Storage( StorageBase ):
     return res
 
   def __makeDirs( self, path ):
-    """  Black magic contained within....
+    """ black magic contained within... 
+
+    :param self: self reference
+    :param str path: dir name
     """
     dirName = os.path.dirname( path )
     res = self.__executeOperation( path, 'exists' )
@@ -322,7 +355,10 @@ class SRM2Storage( StorageBase ):
 ################################################################################
 
   def removeFile( self, path ):
-    """Remove physically the file specified by its path
+    """ rm path on storage
+    
+    :param self: self reference
+    :param str path: file path
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
@@ -351,7 +387,11 @@ class SRM2Storage( StorageBase ):
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def getTransportURL( self, path, protocols = False ):
-    """ Obtain the tURLs for the supplied path and protocols
+    """ obtain the tURLs for the supplied path and protocols
+    
+    :param self: self reference
+    :param str path: path on storage
+    :param mixed protocols: protocols to use
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
@@ -699,6 +739,13 @@ class SRM2Storage( StorageBase ):
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def __putFile( self, src_file, dest_url, sourceSize ):
+    """ put :src_file: to :dest_url: 
+
+    :param self: self reference
+    :param str src_file: file path in local fs
+    :param str dest_url: destination url on storage
+    :param int sourceSize: :src_file: size in B
+    """
     # Pre-transfer check
     res = self.__executeOperation( dest_url, 'exists' )
     if not res['OK']:
@@ -788,6 +835,19 @@ class SRM2Storage( StorageBase ):
 
   def __lcg_cp_wrapper( self, src_url, dest_url, srctype, dsttype, nbstreams,
                         timeout, src_spacetokendesc, dest_spacetokendesc ):
+    """ lcg_util.lcg_cp wrapper
+
+    :param self: self reference
+    :param str src_url: source SURL 
+    :param str dest_url: destination SURL
+    :param srctype: source SE type 
+    :param dsttype: destination SE type
+    :param int nbstreams: nb of streams used for trasnfer
+    :param int timeout: timeout in seconds
+    :param str src_spacetoken: source space token
+    :param str dest_spacetoken: destination space token
+    """
+
 
     try:
       errCode, errStr = self.lcg_util.lcg_cp4( src_url, 
@@ -825,7 +885,11 @@ class SRM2Storage( StorageBase ):
       return S_ERROR( "Exception while attempting file upload" )
 
   def getFile( self, path, localPath = False ):
-    """ Get a local copy in the current directory of a physical file specified by its path
+    """ make a local copy of a storage :path: 
+    
+    :param self: self reference
+    :param str path: path on storage
+    :param mixed localPath: if not specified, os.getcwd()
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
@@ -845,10 +909,15 @@ class SRM2Storage( StorageBase ):
         successful[src_url] = res['Value']
       else:
         failed[src_url] = res['Message']
-    resDict = {'Failed':failed, 'Successful':successful}
-    return S_OK( resDict )
+    return S_OK( { 'Failed' : failed, 'Successful' : successful } )
 
   def __getFile( self, src_url, dest_file ):
+    """ do a real copy of storage file :src_url: to local fs under :dest_file:
+    
+    :param self: self reference
+    :param str src_url: SE url to cp
+    :param str dest_file: local fs path
+    """
     if not os.path.exists( os.path.dirname( dest_file ) ):
       os.makedirs( os.path.dirname( dest_file ) )
     if os.path.exists( dest_file ):
@@ -894,7 +963,11 @@ class SRM2Storage( StorageBase ):
     return S_ERROR( errorMessage )
 
   def __executeOperation( self, url, method ):
-    """ Executes the requested functionality with the supplied url
+    """ executes the requested :method: with the supplied url
+
+    :param self: self reference
+    :param str url: SE url
+    :param str method: fcn name
     """
     fcn = None
     if hasattr( self, method ) and callable( getattr(self, method) ):
@@ -923,7 +996,10 @@ class SRM2Storage( StorageBase ):
   #
 
   def isDirectory( self, path ):
-    """Check if the given path exists and it is a directory
+    """ isdir on storage path 
+
+    :param self: self reference
+    :param str path: SE path
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
@@ -936,7 +1012,7 @@ class SRM2Storage( StorageBase ):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key( 'surl' ) and urlDict['surl']:
+      if "surl" in urlDict and urlDict['surl']:
         dirSURL = self.getUrl( urlDict['surl'] )['Value']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata( urlDict )
@@ -960,7 +1036,10 @@ class SRM2Storage( StorageBase ):
     return S_OK( { 'Failed' : failed, 'Successful' : successful } ) 
 
   def getDirectoryMetadata( self, path ):
-    """ Get the metadata for the directory
+    """ get the metadata for the directory :path:
+   
+    :param self: self reference
+    :param str path: SE path
     """
     res = self.checkArgumentFormat( path )
     if not res['OK']:
@@ -1486,7 +1565,7 @@ class SRM2Storage( StorageBase ):
       allResults = []
       gfalDict['surls'] = [url]
       gfalDict['nbfiles'] = 1
-      gfalDict['timeout'] = self.long_timeout
+      gfalDict['timeout'] = self.gfalLongTimeOut
       allObtained = False
       iteration = 0
       while not allObtained:
@@ -1512,15 +1591,16 @@ class SRM2Storage( StorageBase ):
           allResults.extend( results )
           if len( results ) < tempStep:
             allObtained = True
-      successful.append( {'surl':url, 'status':0, 'subpaths':allResults} )
+      successful.append( { 'surl':url, 'status':0, 'subpaths' : allResults } )
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = successful
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : successful, "Failed" : failed } )
 
   def __gfalls_wrapper( self, urls, depth ):
-    """ This is a function that can be reused everywhere to perform the gfal_ls
+    """ gfal_ls wrapper 
+
+    :param self: self reference
+    :param list urls: urls to check
+    :param int depth: srmv2_lslevel (0 or 1)
     """
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
@@ -1543,13 +1623,14 @@ class SRM2Storage( StorageBase ):
         allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfalprestage_wrapper( self, urls, lifetime ):
-    """ This is a function that can be reused everywhere to perform the gfal_prestage
+    """ gfal_prestage wrapper 
+
+    :param self: self refefence
+    :param list urls: urls to prestage
+    :param int lifetime: prestage lifetime
     """
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
@@ -1576,10 +1657,7 @@ class SRM2Storage( StorageBase ):
         allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } )
 
   def __gfalturlsfromsurls_wrapper( self, urls, listProtocols ):
     """ This is a function that can be reused everywhere to perform the gfal_turlsfromsurls
@@ -1606,10 +1684,7 @@ class SRM2Storage( StorageBase ):
         allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
 
   def __gfaldeletesurls_wrapper( self, urls ):
     """ This is a function that can be reused everywhere to perform the gfal_deletesurls
@@ -1617,6 +1692,7 @@ class SRM2Storage( StorageBase ):
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
+
     allResults = []
     failed = {}
 
@@ -1634,10 +1710,7 @@ class SRM2Storage( StorageBase ):
         allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
 
   def __gfalremovedir_wrapper( self, urls ):
     """ This is a function that can be reused everywhere to perform the gfal_removedir
@@ -1663,10 +1736,7 @@ class SRM2Storage( StorageBase ):
         allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
 
   def __gfal_pin_wrapper( self, urls, lifetime ):
     gfalDict = {}
@@ -1699,10 +1769,7 @@ class SRM2Storage( StorageBase ):
           allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
 
   def __gfal_prestagestatus_wrapper( self, urls ):
     gfalDict = {}
@@ -1734,10 +1801,7 @@ class SRM2Storage( StorageBase ):
           allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
 
   def __gfal_release_wrapper( self, urls ):
     gfalDict = {}
@@ -1768,10 +1832,7 @@ class SRM2Storage( StorageBase ):
           allResults.extend( res['Value'] )
 
     #gDataStoreClient.commit()
-    resDict = {}
-    resDict['AllResults'] = allResults
-    resDict['Failed'] = failed
-    return S_OK( resDict )
+    return S_OK( { "AllResults" : allResults, "Failed" : failed } ) 
 
   def __gfal_operation_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
 
@@ -1792,12 +1853,12 @@ class SRM2Storage( StorageBase ):
 
 
     timeout = gfalDict['timeout']
+
     if timeout_sendreceive:
       timeout = timeout_sendreceive
-    res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID, timeout_sendreceive )
-    if not res["OK"] and "busy" in str(res["Message"]).lower()
       
-
+    res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID, timeout_sendreceive )
+    
     end = time.time()
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey( 'TransferTime', end - start )
@@ -1817,38 +1878,38 @@ class SRM2Storage( StorageBase ):
 
   def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
 
-      gfalObject = self.__create_gfal_object( gfalDict )
-      if not gfalObject["OK"]:
-        return gfalObject
-      gfalObject = gfalObject['Value']
+    gfalObject = self.__create_gfal_object( gfalDict )
+    if not gfalObject["OK"]:
+      return gfalObject
+    gfalObject = gfalObject['Value']
 
-      if srmRequestID:
-        res = self.__gfal_set_ids( gfalObject, srmRequestID )
-        if not res['OK']:
-          return res
-
-      res = self.__gfal_exec( gfalObject, operation, timeout_sendreceive )
+    if srmRequestID:
+      res = self.__gfal_set_ids( gfalObject, srmRequestID )
       if not res['OK']:
         return res
+      
+    res = self.__gfal_exec( gfalObject, operation, timeout_sendreceive )
+    if not res['OK']:
+      return res
 
-      gfalObject = res['Value']
-      res = self.__gfal_get_ids( gfalObject )
-      if not res['OK']:
-        newSRMRequestID = srmRequestID
-      else:
-        newSRMRequestID = res['Value']
+    gfalObject = res['Value']
+    res = self.__gfal_get_ids( gfalObject )
+    if not res['OK']:
+      newSRMRequestID = srmRequestID
+    else:
+      newSRMRequestID = res['Value']
 
-      res = self.__get_results( gfalObject )
-      if not res['OK']:
-        return res
+    res = self.__get_results( gfalObject )
+    if not res['OK']:
+      return res
 
-      resultList = []
-      pfnRes = res['Value']
-      for myDict in pfnRes:
-        myDict['SRMReqID'] = newSRMRequestID
-        resultList.append( myDict )
-
-      self.__destroy_gfal_object( gfalObject )
+    resultList = []
+    pfnRes = res['Value']
+    for myDict in pfnRes:
+      myDict['SRMReqID'] = newSRMRequestID
+      resultList.append( myDict )
+      
+    self.__destroy_gfal_object( gfalObject )
 
     return S_OK( resultList )
  
@@ -1879,8 +1940,12 @@ class SRM2Storage( StorageBase ):
 #######################################################################
 
   # These methods are for the creation of the gfal object
-
   def __create_gfal_object( self, gfalDict ):
+    """ create gfal object by calling gfal.gfal_init
+
+    :param self: self reference
+    :param dict gfalDict: gfal params dict
+    """
     self.log.debug( "SRM2Storage.__create_gfal_object: Performing gfal_init." )
     errCode, gfalObject, errMessage = self.gfal.gfal_init( gfalDict )
     if not errCode == 0:
@@ -1911,7 +1976,8 @@ class SRM2Storage( StorageBase ):
   def __gfal_exec( self, gfalObject, method, timeout_sendreceive = None ):
     """
       In gfal, for every method (synchronous or asynchronous), you can define a sendreceive timeout and a connect timeout.
-      The connect timeout sets the maximum amount of time a client accepts to wait before establishing a successful TCP connection to SRM (default 60 seconds).
+      The connect timeout sets the maximum amount of time a client accepts to wait before establishing a successful TCP
+      connection to SRM (default 60 seconds).
       The sendreceive timeout, allows a client to set the maximum time the send
       of a request to SRM can take (normally all send operations return immediately unless there is no free TCP buffer) 
       and the maximum time to receive a reply (a token for example). Default 0, i.e. no timeout.
@@ -1926,27 +1992,47 @@ class SRM2Storage( StorageBase ):
       gfal_set_timeout_srm (int value)
       
     """
-    self.log.debug( "SRM2Storage.__gfal_exec: Performing %s." % method )
+    self.log.debug( "SRM2Storage.__gfal_exec(%s): Starting" % method )
     fcn = None
     if hasattr( self.gfal, method ) and callable( getattr( self.gfal, method) ):
       fcn = getattr( self.gfal, method )
     if not fcn:
       return S_ERROR( "Unable to invoke %s for gfal, it isn't a member function" % method )
-    if timeout_sendreceive:
-      self.gfal.gfal_set_timeout_sendreceive( timeout_sendreceive )
-    errCode, gfalObject, errMessage = fcn( gfalObject )
-    if errCode:
-      errStr = "SRM2Storage.__gfal_exec: Failed to perform %s." % method
+    
+    ## retry 
+    retry = self.gfalRetry if self.gfalRetry else 1
+    ## initial timeout
+    timeout = timeout_sendreceive if timeout_sendreceive else self.gfalTimeout
+    ## errCode, errMessage, errNo
+    errCode, errMessage, errNo = 0, "", 0
+    while retry:
+      retry -= 1
+      self.gfal.gfal_set_timeout_sendreceive( timeout )
+      errCode, gfalObject, errMessage = fcn( gfalObject )
+      if errCode == -1:
+        errNo = self.gfal.gfal_get_errno()
+      if errCode == -1 and errNo == errno.ECOMM:
+        timeout *= 2
+        self.log.debug("SRM2Storage.__gfal_exec(%s): got ECOMM, extending timeout to %s s" % ( method, timeout ) )
+        continue
+      else:
+        break
+    if errCode:  
+      errStr = "SRM2Storage.__gfal_exec(%s): Execution failed." % method
       if not errMessage:
-        errMessage = os.strerror( errCode )
-      self.log.error( errStr, errMessage )
-      return S_ERROR( "%s%s" % ( errStr, errMessage ) )
-    self.log.debug( "SRM2Storage.__gfal_exec: Successfully performed %s." % method )
+        errMessage = os.strerror( errNo ) if errNo else "UNKNOWN ERROR"
+        self.log.error( errStr, errMessage )
+      return S_ERROR( "%s %s" % ( errStr, errMessage ) )
+    self.log.debug( "SRM2Storage.__gfal_exec(%s): Successfully invoked." % method )
     return S_OK( gfalObject )
     
   # These methods are for retrieving output information
-
   def __get_results( self, gfalObject ):
+    """ retrive gfal results
+    
+    :param self: self reference
+    :param gfalObject: gfal object
+    """
     self.log.debug( "SRM2Storage.__get_results: Performing gfal_get_results" )
     numberOfResults, gfalObject, listOfResults = self.gfal.gfal_get_results( gfalObject )
     if numberOfResults <= 0:
@@ -1965,6 +2051,11 @@ class SRM2Storage( StorageBase ):
       return S_OK( listOfResults )
 
   def __gfal_get_ids( self, gfalObject ):
+    """ get srmRequestToken
+    
+    :param self: self reference
+    :param gfalObject: gfalObject
+    """
     self.log.debug( "SRM2Storage.__gfal_get_ids: Performing gfal_get_ids." )
     numberOfResults, gfalObject, srm1RequestID, srm1FileIDs, srmRequestToken = self.gfal.gfal_get_ids( gfalObject )
     if numberOfResults <= 0:
@@ -1978,6 +2069,11 @@ class SRM2Storage( StorageBase ):
   # Destroy the gfal object after use
 
   def __destroy_gfal_object( self, gfalObject ):
+    """ del gfal object by calling gfal.gfal_internal_free
+    
+    :param self: self reference
+    :param gfalObject: gfalObject
+    """
     self.log.debug( "SRM2Storage.__destroy_gfal_object: Performing gfal_internal_free." )
     self.gfal.gfal_internal_free( gfalObject )
     return S_OK()
