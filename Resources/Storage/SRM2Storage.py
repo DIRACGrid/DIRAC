@@ -9,7 +9,6 @@
     .. module: python
     :synopsis: SRM v2 interface to StorageElement
 """
-
 ## imports 
 import os
 import re
@@ -55,9 +54,12 @@ class SRM2Storage( StorageBase ):
 
     self.isok = True
 
+    ## placeholder for gfal reference 
     self.gfal = None
+    ## placeholder for lcg_util reference 
     self.lcg_util = None
-
+    
+    ## save c'tor params
     self.protocolName = 'SRM2'
     self.name = storageName
     self.protocol = protocol
@@ -67,16 +69,20 @@ class SRM2Storage( StorageBase ):
     self.wspath = wspath
     self.spaceToken = spaceToken
     self.cwd = self.path
-
+    ## init base class
     StorageBase.__init__( self, self.name, self.path )
 
-  
+    ## stage limit - 12h
     self.stageTimeout = gConfig.getValue( '/Resources/StorageElements/StageTimeout', 12 * 60 * 60 )
+    ## 1 file timeout 
     self.fileTimeout = gConfig.getValue( '/Resources/StorageElements/FileTimeout', 30 )
+    ## nb of surls per gfal call
     self.filesPerCall = gConfig.getValue( '/Resources/StorageElements/FilesPerCall', 20 )
-
+    ## gfal timeout
     self.gfalTimeout  = gConfig.getValue( "/Resources/StorageElements/gfalTimeout", 100 )
+    ## gfal long timeout 
     self.gfalLongTimeOut = gConfig.getValue( "/Resources/StorageElements/gfalLongTimeout", 1200 )
+    ## gfal retry on errno.ECONN
     self.gfalRetry = gConfig.getValue( "/Resources/StorageElements/gfalRetry", 3 )
   
     ## set checksum type, by default this is 0 (GFAL_CKSM_NONE)
@@ -101,8 +107,8 @@ class SRM2Storage( StorageBase ):
         self.checksumType = 0
     else:
       ## invert and get name
-      name = dict( zip( self.checksumTypes.values(), self.checksumTypes.keys() ) )[self.checksumType]
-      self.log.debug("SRM2Storage: will use %s checksum check" % name )
+      self.log.debug("SRM2Storage: will use %s checksum check" %  dict( zip( self.checksumTypes.values(), 
+                                                                             self.checksumTypes.keys() ) )[self.checksumType] )
 
     # setting some variables for use with lcg_utils
     self.nobdii = 1
@@ -180,6 +186,9 @@ class SRM2Storage( StorageBase ):
 
   def getCurrentURL( self, fileName ):
     """ Obtain the current file URL from the current working directory and the filename
+
+    :param self: self reference
+    :param str fileName: path on storage
     """
     if fileName:
       if fileName[0] == '/':
@@ -847,8 +856,6 @@ class SRM2Storage( StorageBase ):
     :param str src_spacetoken: source space token
     :param str dest_spacetoken: destination space token
     """
-
-
     try:
       errCode, errStr = self.lcg_util.lcg_cp4( src_url, 
                                                dest_url, 
@@ -1462,20 +1469,27 @@ class SRM2Storage( StorageBase ):
 
   @staticmethod
   def checkArgumentFormat( path ):
+    """ check arsg format before calling wrappers
+
+    :param mixed path: path arg for wrapper
+    """
     if type( path ) in StringTypes:
-      urls = {path:False}
+      urls = { path : False }
     elif type( path ) == ListType:
-      urls = {}
-      for url in path:
-        urls[url] = False
+      urls = dict.fromkeys( path, False )
     elif type( path ) == DictType:
       urls = path
     else:
       return S_ERROR( "SRM2Storage.checkArgumentFormat: Supplied path is not of the correct format." )
     return S_OK( urls )
 
-  def __parse_stat( self, stat ):
-    statDict = {'File':False, 'Directory':False}
+  @staticmethod
+  def __parse_stat( stat ):
+    """ get size, ftype and mode from stat struct
+ 
+    :param stat: stat struct
+    """
+    statDict = { 'File' : False, 'Directory' : False }
     if S_ISREG( stat[ST_MODE] ):
       statDict['File'] = True
       statDict['Size'] = stat[ST_SIZE]
@@ -1877,7 +1891,14 @@ class SRM2Storage( StorageBase ):
     return res
 
   def __gfal_wrapper( self, operation, gfalDict, srmRequestID = None, timeout_sendreceive = None ):
+    """ execute gfal :operation:
 
+    :param self: self reference
+    :param str operation: fcn to call
+    :param dict gfalDict: gfal config dict
+    :param srmRequestID: srm request id
+    :param int timeout_sendrecieve: timeout for gfal send request and recieve results in seconds
+    """
     gfalObject = self.__create_gfal_object( gfalDict )
     if not gfalObject["OK"]:
       return gfalObject
@@ -1913,7 +1934,14 @@ class SRM2Storage( StorageBase ):
 
     return S_OK( resultList )
  
-  def __initialiseAccountingObject( self, operation, se, files ):
+  @staticmethod
+  def __initialiseAccountingObject( operation, se, files ):
+    """ create DataOperation accounting object
+    
+    :param str operation: operation performed 
+    :param str se: destination SE name
+    :param int files: nb of files 
+    """
     import DIRAC
     accountingDict = {}
     accountingDict['OperationType'] = operation
@@ -1959,6 +1987,12 @@ class SRM2Storage( StorageBase ):
       return S_OK( gfalObject )
 
   def __gfal_set_ids( self, gfalObject, srmRequestID ):
+    """ set :srmRequestID: 
+    
+    :param self: self reference
+    :param gfalObject: gfal object
+    :param srmRequestID: srm request id
+    """
     self.log.debug( "SRM2Storage.__gfal_set_ids: Performing gfal_set_ids." )
     errCode, gfalObject, errMessage = self.gfal.gfal_set_ids( gfalObject, None, 0, str( srmRequestID ) )
     if not errCode == 0:
