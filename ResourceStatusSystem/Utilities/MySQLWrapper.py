@@ -22,8 +22,12 @@ def insert( database, params, meta ):
   if set( meta.keys() ) & set( accepted_keys ):
     return S_ERROR( 'Insert statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
     
-  tableName = meta[ 'table' ]
-  if not tableName in database.getTablesList():
+  tableName  = meta[ 'table' ]
+  tablesList = database.getTablesList()
+  if not tablesList[ 'OK' ]:
+    return tablesList
+  
+  if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
     
   return database.insertFields( tableName, inDict = params )    
@@ -40,8 +44,12 @@ def update( database, params, meta ):
   if set( meta.keys() ) & set( accepted_keys ):
     return S_ERROR( 'Update statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
     
-  tableName = meta[ 'table' ]
-  if not tableName in database.getTablesList():
+  tableName  = meta[ 'table' ]
+  tablesList = database.getTablesList()
+  if not tablesList[ 'OK' ]:
+    return tablesList
+  
+  if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
    
   if 'uniqueKeys' in meta:
@@ -74,8 +82,12 @@ def select( database, params, meta ):
   if set( meta.keys() ) & set( accepted_keys ):
     return S_ERROR( 'Select statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
 
-  tableName = meta[ 'table' ]
-  if not tableName in database.getTablesList():
+  tableName  = meta[ 'table' ]
+  tablesList = database.getTablesList()
+  if not tablesList[ 'OK' ]:
+    return tablesList
+  
+  if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
   
   outFields, limit, order = None, None, None
@@ -101,8 +113,12 @@ def delete( database, params, meta ):
   if set( meta.keys() ) & set( accepted_keys ):
     return S_ERROR( 'Delete statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
 
-  tableName = meta[ 'table' ]
-  if not tableName in database.getTablesList():
+  tableName  = meta[ 'table' ]
+  tablesList = database.getTablesList()
+  if not tablesList[ 'OK' ]:
+    return tablesList
+  
+  if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
 
   return database.deleteEntries( tableName, condDict = params )
