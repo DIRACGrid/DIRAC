@@ -108,8 +108,6 @@ class ResourceStatusDB2( object ):
        
     return tables
 
-#  @CheckDBExecution
-#  @ValidateDBTypes
   def insert( self, params, meta ):
     '''
     Inserts args in the DB making use of kwargs where parameters such as
@@ -129,8 +127,6 @@ class ResourceStatusDB2( object ):
     '''
     return MySQLWrapper.insert( self.database, params, meta )
 
-#  @CheckDBExecution
-#  @ValidateDBTypes
   def update( self, params, meta ):
     '''
     Updates row with values given on args. The row selection is done using the
@@ -152,8 +148,6 @@ class ResourceStatusDB2( object ):
     '''
     return MySQLWrapper.update( self.database, params, meta )
 
-#  @CheckDBExecution
-#  @ValidateDBTypes
   def select( self, params, meta ):
     '''
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the
@@ -172,8 +166,6 @@ class ResourceStatusDB2( object ):
     '''
     return MySQLWrapper.select( self.database, params, meta )
 
-#  @CheckDBExecution
-#  @ValidateDBTypes
   def delete( self, params, meta ):
     '''
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the
@@ -197,7 +189,7 @@ class ResourceStatusDB2( object ):
 
   def getTable( self, tableName ):
     '''
-      Returns a table given its name 
+      Returns a table dictionary description given its name 
     '''
     if tableName in self.tables:
       return S_OK( self.tables[ tableName ] )

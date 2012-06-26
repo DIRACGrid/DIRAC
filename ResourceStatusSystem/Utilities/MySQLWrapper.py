@@ -9,7 +9,6 @@
 from DIRAC import S_ERROR
 
 __RCSID__ = '$Id: $'
-
      
 def insert( database, params, meta ):
   '''
