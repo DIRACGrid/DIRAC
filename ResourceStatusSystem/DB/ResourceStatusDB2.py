@@ -94,19 +94,7 @@ class ResourceStatusDB2( object ):
       self.database = DB( 'ResourceStatusDB', 
                           'ResourceStatus/ResourceStatusDB', maxQueueSize )  
 
-  def __generateTables( self ):
-    '''
-      Method used to transform the class variables into instance variables,
-      for safety reasons.
-    '''
-  
-    tables = self.__tables
-    
-    for tableName, tableLike in self.__likeToTable.items():
-      
-      tables[ tableName ] = self.__tablesLike[ tableLike ]
-       
-    return tables
+  ## SQL Methods ###############################################################
 
   def insert( self, params, meta ):
     '''
@@ -187,6 +175,23 @@ class ResourceStatusDB2( object ):
     '''
     return MySQLWrapper.delete( self.database, params, meta )
 
+  ## Auxiliar methods ##########################################################
+
+  def createTables( self, tableName = None ):
+    '''
+      Writes the schema in the database. If no tableName is given, all tables
+      are written in the database.
+    '''
+
+    tables = []
+    if tableName is None:
+      tables = self.getTablesList()
+    
+    elif tableName in self.tables:
+      tables = [ tableName ]
+      
+    return self.database._createTables( tables )  
+
   def getTable( self, tableName ):
     '''
       Returns a table dictionary description given its name 
@@ -201,6 +206,22 @@ class ResourceStatusDB2( object ):
       Returns a list of the table names in the schema.
     '''
     return S_OK( self.tables.keys() )
+
+  ## Private methods ###########################################################
+
+  def __generateTables( self ):
+    '''
+      Method used to transform the class variables into instance variables,
+      for safety reasons.
+    '''
   
+    tables = self.__tables
+    
+    for tableName, tableLike in self.__likeToTable.items():
+      
+      tables[ tableName ] = self.__tablesLike[ tableLike ]
+       
+    return tables
+    
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF   
