@@ -189,9 +189,9 @@ class ResourceStatusDB( object ):
       return tablesCreatedRes
     tablesCreated = [ tableCreated[0] for tableCreated in tablesCreatedRes[ 'Value' ] ]
 
-    tables = []
+    tables = {}
     if tableName is None:
-      tables = self.__tables
+      tables.update( self.__tables )
    
     elif tableName in self.__tables:
       tables = { tableName : self.__tables[ tableName ] }
@@ -236,7 +236,9 @@ class ResourceStatusDB( object ):
       for safety reasons.
     '''
   
-    tables = self.__tablesDB
+    # Avoids copying object.
+    tables = {}
+    tables.update( self.__tablesDB )
     
     for tableName, tableLike in self.__likeToTable.items():
       
