@@ -1,4 +1,4 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' ResourceStatusClient
 
   Client to interact with the ResourceStatusDB.
@@ -14,7 +14,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node      
 from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
        
 class ResourceStatusClient:
   '''
