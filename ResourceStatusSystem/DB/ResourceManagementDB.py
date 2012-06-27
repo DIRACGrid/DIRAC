@@ -234,7 +234,10 @@ class ResourceManagementDB( object ):
     if not res[ 'OK' ]:
       return res
     
-    res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
+    if res[ 'Value' ] == 0:
+      res[ 'Value' ] = 'No tables created'
+    else:
+      res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
     return res      
 
   def getTable( self, tableName ):
