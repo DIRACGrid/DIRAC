@@ -183,15 +183,15 @@ class ResourceStatusDB( object ):
       are written in the database.
     '''
 
-    tables = []
-    if tableName is None:
-      tables = self.__tables
-
     # Horrible SQL here !!
     tablesCreated = self.database._query( "show tables" )
     if not tablesCreated[ 'OK' ]:
       return tablesCreated
-    
+
+    tables = []
+    if tableName is None:
+      tables = self.__tables
+   
     elif tableName in self.__tables:
       tables = { tableName : self.__tables[ tableName ] }
     
