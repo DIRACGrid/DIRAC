@@ -1439,6 +1439,8 @@ class JobDB( DB ):
     if not systemConfig:
       systemConfig = classAdJob.getAttributeString( 'Platform' )
     cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
+    if cpuTime == 0:
+      cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
 
     classAdReq.insertAttributeInt( 'UserPriority', priority )
 
