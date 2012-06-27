@@ -211,9 +211,10 @@ class ResourceManagementDB( object ):
     '''
 
     # Horrible SQL here !!
-    tablesCreated = self.database._query( "show tables" )
-    if not tablesCreated[ 'OK' ]:
-      return tablesCreated
+    tablesCreatedRes = self.database._query( "show tables" )
+    if not tablesCreatedRes[ 'OK' ]:
+      return tablesCreatedRes
+    tablesCreated = [ tableCreated[0] for tableCreated in tablesCreatedRes[ 'Value' ] ]
 
     tables = []
     if tableName is None:
