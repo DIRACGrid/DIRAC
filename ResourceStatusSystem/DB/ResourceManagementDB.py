@@ -113,7 +113,7 @@ class ResourceManagementDB( object ):
       Constructor, accepts any DB or mySQL connection, mostly used for testing
       purposes.
     '''
-    self.__tables = self.__generateTables()
+    self._tableDict = self.__generateTables()
     
     if mySQL is not None:
       self.database = mySQL
@@ -204,7 +204,32 @@ class ResourceManagementDB( object ):
 
   ## Auxiliar methods ##########################################################
 
-  def createTables( self, tableName = None ):
+  def getTable( self, tableName ):
+    '''
+      Returns a table dictionary description given its name 
+    '''
+    if tableName in self._tableDict:
+      return S_OK( self._tableDict[ tableName ] )
+    
+    return S_ERROR( '%s is not on the schema' % tableName )
+    
+  def getTablesList( self ):
+    '''
+      Returns a list of the table names in the schema.
+    '''
+    return S_OK( self._tableDict.keys() )
+
+  ## Protected methods #########################################################
+
+  def _checkTable( self ):
+    '''
+      Method used by database tools to write the schema
+    '''  
+    return self.__createTables()
+
+  ## Private methods ###########################################################
+
+  def __createTables( self, tableName = None ):
     '''
       Writes the schema in the database. If no tableName is given, all tables
       are written in the database. If a table is already in the schema, it is
@@ -219,10 +244,10 @@ class ResourceManagementDB( object ):
 
     tables = {}
     if tableName is None:
-      tables.update( self.__tables )
+      tables.update( self._tableDict )
     
-    elif tableName in self.__tables:
-      tables = { tableName : self.__tables[ tableName ] }
+    elif tableName in self._tableDict:
+      tables = { tableName : self._tableDict[ tableName ] }
     
     else:
       return S_ERROR( '"%s" is not a known table' % tableName )    
@@ -241,24 +266,7 @@ class ResourceManagementDB( object ):
     else:
       res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
     return res      
-
-  def getTable( self, tableName ):
-    '''
-      Returns a table dictionary description given its name 
-    '''
-    if tableName in self.__tables:
-      return S_OK( self.__tables[ tableName ] )
-    
-    return S_ERROR( '%s is not on the schema' % tableName )
-    
-  def getTablesList( self ):
-    '''
-      Returns a list of the table names in the schema.
-    '''
-    return S_OK( self.__tables.keys() )
-
-  ## Private methods ###########################################################
-
+  
   def __generateTables( self ):
     '''
       Method used to transform the class variables into instance variables,
