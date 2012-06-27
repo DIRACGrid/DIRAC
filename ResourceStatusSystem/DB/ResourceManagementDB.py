@@ -234,7 +234,7 @@ class ResourceManagementDB( object ):
     if not res[ 'OK' ]:
       return res
     
-    res[ 'Value' ] += 'Tables created: %s' % ( tables.keys() )
+    res[ 'Value' ] = 'Tables created: %s' % ( ','.join( tables.keys() ) )
     return res      
 
   def getTable( self, tableName ):
