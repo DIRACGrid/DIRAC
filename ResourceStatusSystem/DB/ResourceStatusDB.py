@@ -58,7 +58,7 @@ class ResourceStatusDB( object ):
                      'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "RS_SVC"',
                      'TokenExpiration' : 'DATETIME NOT NULL'
                     },
-                    'PrimaryKey' : None                
+                    'PrimaryKey' : [ 'ID' ]                
                                     }
 
   __likeToTable = { 
