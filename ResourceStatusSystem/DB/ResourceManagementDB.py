@@ -5,103 +5,130 @@
 
 '''
 
-from DIRAC.ResourceStatusSystem.Utilities.MySQLMonkey import MySQLMonkey
-from DIRAC.ResourceStatusSystem.Utilities.Decorators  import CheckDBExecution, ValidateDBTypes
+from DIRAC                                import S_OK, S_ERROR 
+from DIRAC.Core.Base.DB                   import DB
+from DIRAC.ResourceStatusSystem.Utilities import MySQLWrapper
 
 __RCSID__ = '$Id: $'
 
-class ResourceManagementDB(object):
-  """
-  The ResourceManagementDB class is a front-end to the ResourceManagementDB MySQL db.
-  If exposes four basic methods:
+class ResourceManagementDB( object ):
 
-  - insert
-  - update
-  - get
-  - delete
+  # Written PrimaryKey as list on purpose !!
+  __tablesDB = {}
+  __tablesDB[ 'AccountingCache' ] = { 'Fields' : 
+                      {
+                       #'AccountingCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'PlotType'      : 'VARCHAR(16) NOT NULL',
+                       'PlotName'      : 'VARCHAR(64) NOT NULL',                     
+                       'Result'        : 'TEXT NOT NULL',
+                       'DateEffective' : 'DATETIME NOT NULL',
+                       'LastCheckTime' : 'DATETIME NOT NULL'
+                      },
+                      'PrimaryKey' : [ 'Name', 'PlotType', 'PlotName' ]                                            
+                                }
 
-  all them defined on the MySQL monkey class.
-  Moreover, there are a set of key-worded parameters that can be used, specially
-  on the getX and deleteX functions ( to know more, again, check the MySQL monkey
-  documentation ).
+  __tablesDB[ 'ClientCache' ] = { 'Fields' :
+                      {
+                       #'ClientCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'CommandName'   : 'VARCHAR(64) NOT NULL',
+                       'Opt_ID'        : 'VARCHAR(64)',
+                       'Value'         : 'VARCHAR(16) NOT NULL',
+                       'Result'        : 'VARCHAR(255) NOT NULL',        
+                       'DateEffective' : 'DATETIME NOT NULL',
+                       'LastCheckTime' : 'DATETIME NOT NULL'     
+                      },
+                      'PrimaryKey' : [ 'Name', 'CommandName', 'Value' ]
+                                }
 
-  The DB schema has NO foreign keys, so there may be some small consistency checks,
-  called validators on the insert and update functions.
+  __tablesDB[ 'PolicyResult' ] = { 'Fields' : 
+                      {
+                       #'PolicyResultID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Granularity'   : 'VARCHAR(32) NOT NULL',
+                       'Name'          : 'VARCHAR(64) NOT NULL',
+                       'PolicyName'    : 'VARCHAR(64) NOT NULL',
+                       'StatusType'    : 'VARCHAR(16) NOT NULL DEFAULT ""',
+                       'Status'        : 'VARCHAR(16) NOT NULL',
+                       'Reason'        : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
+                       'DateEffective' : 'DATETIME NOT NULL',
+                       'LastCheckTime' : 'DATETIME NOT NULL'
+                      },
+                      'PrimaryKey' : [ 'Name', 'StatusType', 'PolicyName' ] 
+                                }
+  
+  __tablesDB[ 'PolicyResultLog' ] = { 'Fields' : 
+                      {
+                       'PolicyResultLogID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Granularity'       : 'VARCHAR(32) NOT NULL',
+                       'Name'              : 'VARCHAR(64) NOT NULL',
+                       'PolicyName'        : 'VARCHAR(64) NOT NULL',
+                       'StatusType'        : 'VARCHAR(16) NOT NULL DEFAULT ""',
+                       'Status'            : 'VARCHAR(8) NOT NULL',
+                       'Reason'            : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
+                       'LastCheckTime'     : 'DATETIME NOT NULL'                                   
+                      },
+                      'PrimaryKey' : [ 'PolicyResultLogID' ]
+                                }
 
-  The simplest way to instantiate an object of type :class:`ResourceManagementDB`
-  is simply by calling
+  __tablesDB[ 'SpaceTokenOccupancyCache' ] = { 'Fields' :
+                      {
+                       #'SpaceTokenOccupancyCacheID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Site'          : 'VARCHAR( 64 ) NOT NULL',
+                       'Token'         : 'VARCHAR( 64 ) NOT NULL',
+                       'Total'         : 'INTEGER NOT NULL DEFAULT 0',                      
+                       'Guaranteed'    : 'INTEGER NOT NULL DEFAULT 0',
+                       'Free'          : 'INTEGER NOT NULL DEFAULT 0',                     
+                       'LastCheckTime' : 'DATETIME NOT NULL' 
+                      },
+                      'PrimaryKey' : [ 'Site', 'Token' ]                                             
+                                } 
+ 
+  __tablesDB[ 'UserRegistryCache' ] = { 'Fields' : 
+                      {
+                       'Login' : 'VARCHAR(16)',
+                       'Name'  : 'VARCHAR(64) NOT NULL',
+                       'Email' : 'VARCHAR(64) NOT NULL' 
+                      },
+                      'PrimaryKey' : [ 'Login' ]           
+                                }   
 
-   >>> rmDB = ResourceManagementDB()
-
-  This way, it will use the standard :mod:`DIRAC.Core.Base.DB`.
-  But there's the possibility to use other DB classes.
-  For example, we could pass custom DB instantiations to it,
-  provided the interface is the same exposed by :mod:`DIRAC.Core.Base.DB`.
-
-   >>> AnotherDB = AnotherDBClass()
-   >>> rmDB = ResourceManagementDB( DBin = AnotherDB )
-
-  Alternatively, for testing purposes, you could do:
-
-   >>> from mock import Mock
-   >>> mockDB = Mock()
-   >>> rmDB = ResourceManagementDB( DBin = mockDB )
-
-  Or, if you want to work with a local DB, providing it's mySQL:
-
-   >>> rmDB = ResourceManagementDB( DBin = [ 'UserName', 'Password' ] )
-
-  The ResourceStatusDB also exposes database Schema information, either on a
-  dictionary or on a MySQLSchema tree object.
-
-  - getSchema
-  - inspectSchema
-
-  Alternatively, we can access the MySQLSchema XML and tree as follows:
-
-   >>> rmDB = ResourceManagementDB()
-   >>> xml  = rmDB.mm.SCHEMA
-   >>> tree = rmDB.mm.mSchema
-   >>> tree
-   >>> tree.
-   >>> tree.PolicyResult.Name
-
-  """
-
-  def __init__( self, *args, **kwargs ):
-    """Constructor."""
-    if len(args) == 1:
-      if isinstance( args[ 0 ], str ):
-        maxQueueSize = 10
-      if isinstance( args[ 0 ], int ):
-        maxQueueSize = args[ 0 ]
-    elif len(args) == 2:
-      maxQueueSize = args[ 1 ]
-    elif len(args) == 0:
-      maxQueueSize = 10
-
-    if 'DBin' in kwargs.keys():
-      dbIn = kwargs[ 'DBin' ]
-      if isinstance( dbIn, list ):
-        from DIRAC.Core.Utilities.MySQL import MySQL
-        self.db = MySQL( 'localhost', dbIn[0], dbIn[1], 'ResourceManagementDB' )
-      else:
-        self.db = dbIn
+  __tablesDB[ 'VOBOXCache' ] = { 'Fields' :
+                      {
+                       #'VOBOXCacheID'  : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
+                       'Site'          : 'VARCHAR( 64 ) NOT NULL',
+                       'System'        : 'VARCHAR( 64 ) NOT NULL',
+                       'ServiceUp'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'MachineUp'     : 'INTEGER NOT NULL DEFAULT 0',
+                       'LastCheckTime' : 'DATETIME NOT NULL'                                            
+                      },        
+                      'PrimaryKey' : [ 'Site', 'System' ]        
+                                }
+  
+  __tablesLike  = {}
+  __likeToTable = {}
+  
+  def __init__( self, maxQueueSize = 10, mySQL = None ):
+    '''
+      Constructor, accepts any DB or mySQL connection, mostly used for testing
+      purposes.
+    '''
+    self.__tables = self.__generateTables()
+    
+    if mySQL is not None:
+      self.database = mySQL
     else:
-      from DIRAC.Core.Base.DB import DB
-      self.db = DB( 'ResourceManagementDB', 'ResourceStatus/ResourceManagementDB', maxQueueSize )
+      self.database = DB( 'ResourceManagementDB', 
+                          'ResourceStatus/ResourceManagementDB', maxQueueSize )
 
-    self.mm = MySQLMonkey( self )
-
-  @CheckDBExecution
-  @ValidateDBTypes
+  ## SQL Methods ############################################################### 
+      
   def insert( self, params, meta ):
-    """
+    '''
     Inserts args in the DB making use of kwargs where parameters such as
-    the table are specified ( filled automatically by the Client). In order to
-    do the insertion, it uses MySQLMonkey to do the parsing, execution and
-    error handling. Typically you will not pass kwargs to this function, unless
-    you know what are you doing and you have a very special use case.
+    the 'table' are specified ( filled automatically by the Client). Typically you 
+    will not pass kwargs to this function, unless you know what are you doing 
+    and you have a very special use case.
 
     :Parameters:
       **params** - `dict`
@@ -112,19 +139,17 @@ class ResourceManagementDB(object):
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """
-    return self.mm.insert( params, meta )
+    '''
+    return MySQLWrapper.insert( self.database, params, meta )
 
-  @CheckDBExecution
-  @ValidateDBTypes
   def update( self, params, meta ):
-    """
+    '''
     Updates row with values given on args. The row selection is done using the
     default of MySQLMonkey ( column.primary or column.keyColumn ). It can be
-    modified using kwargs, but it is not explained here. The table keyword
-    argument is mandatory, and filled automatically by the Client. Typically
-    you will not pass kwargs to this function, unless you know what are you
-    doing and you have a very special use case.
+    modified using kwargs. The 'table' keyword argument is mandatory, and 
+    filled automatically by the Client. Typically you will not pass kwargs to 
+    this function, unless you know what are you doing and you have a very 
+    special use case.
 
     :Parameters:
       **params** - `dict`
@@ -135,16 +160,14 @@ class ResourceManagementDB(object):
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """
-    return self.mm.update( params, meta )
+    '''
+    return MySQLWrapper.update( self.database, params, meta )
 
-  @CheckDBExecution
-  @ValidateDBTypes
-  def get( self, params, meta ):
-    """
+  def select( self, params, meta ):
+    '''
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the
     sql statement desired is more complex, you can use kwargs to interact with
-    the MySQLStatement parser and generate a more sophisticated query.
+    the MySQL buildCondition parser and generate a more sophisticated query.
 
     :Parameters:
       **params** - `dict`
@@ -155,19 +178,17 @@ class ResourceManagementDB(object):
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """
-    return self.mm.get( params, meta )
+    '''
+    return MySQLWrapper.select( self.database, params, meta )
 
-  @CheckDBExecution
-  @ValidateDBTypes
   def delete( self, params, meta ):
-    """
+    '''
     Uses arguments to build conditional SQL statement ( WHERE ... ). If the
     sql statement desired is more complex, you can use kwargs to interact with
-    the MySQLStatement parser and generate a more sophisticated query. There is
-    only one forbidden query, with all parameters None ( this would mean a query
-    of the type `DELETE * from TableName` ). The usage of kwargs is the same
-    as in the get function.
+    the MySQL buildCondition parser and generate a more sophisticated query. 
+    There is only one forbidden query, with all parameters None ( this would 
+    mean a query of the type `DELETE * from TableName` ). The usage of kwargs 
+    is the same as in the get function.
 
     :Parameters:
       **params** - `dict`
@@ -178,113 +199,60 @@ class ResourceManagementDB(object):
         with the proper table name.
 
     :return: S_OK() || S_ERROR()
-    """
-    return self.mm.delete( params, meta )
+    '''
+    return MySQLWrapper.delete( self.database, params, meta )
 
-  @CheckDBExecution
-  def getSchema( self ):
-    """
-    Returns a dictionary with database schema, this includes table and column
-    names. It has two variants, columns and keyUsage. The first one has at least,
-    as many keys as keyUsage, it is the complete schema. The second one is the
-    one used for the default updates and selects -- not taking into account
-    auto_increment fields, but taking into account primary and keyUsage fields.
+  ## Auxiliar methods ##########################################################
 
-    :Parameters:
-      `None`
+  def createTables( self, tableName = None ):
+    '''
+      Writes the schema in the database. If no tableName is given, all tables
+      are written in the database.
+    '''
 
-    :return: S_OK()
-    """
-    return { 'OK': True, 'Value' : self.mm.SCHEMA }
+    tables = []
+    if tableName is None:
+      tables = self.__tables
+    
+    elif tableName in self.__tables:
+      tables = { tableName : self.__tables[ tableName ] }
+    
+    else:
+      return S_ERROR( '"%s" is not a known table' % tableName )  
+      
+    return self.database._createTables( tables )  
+          
 
-  @CheckDBExecution
-  def inspectSchema( self ):
-    """
-    Returns an object which represents the database schema and can be browsed.
-     >>> db = ResourceManagementDB()
-     >>> schema = db.inspectSchema()[ 'Value' ]
-     >>> schema
-         Schema 123:
-         <TableName1>,<TableName2>...
-     >>> schema.TableName1
-         Table TableName1:
-         <ColumnName1>,<ColumnName2>..
+  def getTable( self, tableName ):
+    '''
+      Returns a table dictionary description given its name 
+    '''
+    if tableName in self.__tables:
+      return S_OK( self.__tables[ tableName ] )
+    
+    return S_ERROR( '%s is not on the schema' % tableName )
+    
+  def getTablesList( self ):
+    '''
+      Returns a list of the table names in the schema.
+    '''
+    return S_OK( self.__tables.keys() )
 
-    Every column has a few attributes ( primary, keyUsage, extra, position,
-    dataType and charMaxLen ).
+  ## Private methods ###########################################################
 
-    :Parameters:
-      `None`
-
-    :return: S_OK()
-    """
-    return { 'OK': True, 'Value' : self.mm.mSchema }
+  def __generateTables( self ):
+    '''
+      Method used to transform the class variables into instance variables,
+      for safety reasons.
+    '''
+  
+    tables = self.__tablesDB
+    
+    for tableName, tableLike in self.__likeToTable.items():
+      
+      tables[ tableName ] = self.__tablesLike[ tableLike ]
+       
+    return tables
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
-
-################################################################################
-## Web functions
-################################################################################
-#
-################################################################################
-#
-#  def getDownTimesWeb(self, selectDict, _sortList = [], startItem = 0, maxItems = 1000):
-#    """
-#    Get downtimes registered in the RSS DB (with a web layout)
-#
-#    :params:
-#      :attr:`selectDict`: { 'Granularity':['Site', 'Resource'], 'Severity': ['OUTAGE', 'AT_RISK']}
-#
-#      :attr:`sortList`
-#
-#      :attr:`startItem`
-#
-#      :attr:`maxItems`
-#    """
-#
-#    granularity = selectDict['Granularity']
-#    severity = selectDict['Severity']
-#
-#    if not isinstance(granularity, list):
-#      granularity = [granularity]
-#    if not isinstance(severity, list):
-#      severity = [severity]
-#
-#    paramNames = ['Granularity', 'Name', 'Severity', 'When']
-#
-#    req = "SELECT Granularity, Name, Reason FROM PolicyRes WHERE "
-#    req = req + "PolicyName LIKE 'DT_%' AND Reason LIKE \'%found%\' "
-#    req = req + "AND Granularity in (%s)" %(','.join(['"'+x.strip()+'"' for x in granularity]))
-#    resQuery = self.db._query(req)
-#    if not resQuery['OK']:
-#      raise RSSManagementDBException, resQuery['Message']
-#    if not resQuery['Value']:
-#      records = []
-#    else:
-#      resQuery = resQuery['Value']
-#      records = []
-#      for tuple_ in resQuery:
-#        sev = tuple_[2].split()[2]
-#        if sev not in severity:
-#          continue
-#        when = tuple_[2].split(sev)[1][1:]
-#        if when == '':
-#          when = 'Ongoing'
-#        records.append([tuple_[0], tuple_[1], sev, when])
-#
-#    finalDict = {}
-#    finalDict['TotalRecords'] = len(records)
-#    finalDict['ParameterNames'] = paramNames
-#
-#    # Return all the records if maxItems == 0 or the specified number otherwise
-#    if maxItems:
-#      finalDict['Records'] = records[startItem:startItem+maxItems]
-#    else:
-#      finalDict['Records'] = records
-#
-#    finalDict['Extras'] = None
-#
-#    return finalDict
-#
-################################################################################
