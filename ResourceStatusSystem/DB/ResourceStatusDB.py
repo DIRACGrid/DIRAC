@@ -186,14 +186,28 @@ class ResourceStatusDB( object ):
     tables = []
     if tableName is None:
       tables = self.__tables
+
+    # Horrible SQL here !!
+    tablesCreated = self.database._query( "show tables" )
+    if not tablesCreated[ 'OK' ]:
+      return tablesCreated
     
     elif tableName in self.__tables:
       tables = { tableName : self.__tables[ tableName ] }
     
     else:
-      return S_ERROR( '"%s" is not a known table' % tableName )  
+      return S_ERROR( '"%s" is not a known table' % tableName )    
       
-    return self.database._createTables( tables )    
+    for tableName in tablesCreated:
+      if tableName in tables:
+        del tables[ tableName ]  
+              
+    res = self.database._createTables( tables )
+    if not res[ 'OK' ]:
+      return res
+    
+    res[ 'Value' ] += 'Tables created: %s' % ( tables.keys() )
+    return res    
 
   def getTable( self, tableName ):
     '''
