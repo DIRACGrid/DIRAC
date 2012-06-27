@@ -207,7 +207,8 @@ class ResourceManagementDB( object ):
   def createTables( self, tableName = None ):
     '''
       Writes the schema in the database. If no tableName is given, all tables
-      are written in the database.
+      are written in the database. If a table is already in the schema, it is
+      skipped to avoid problems trying to create a table that already exists.
     '''
 
     # Horrible SQL here !!
@@ -234,6 +235,7 @@ class ResourceManagementDB( object ):
     if not res[ 'OK' ]:
       return res
     
+    # Human readable S_OK message
     if res[ 'Value' ] == 0:
       res[ 'Value' ] = 'No tables created'
     else:
