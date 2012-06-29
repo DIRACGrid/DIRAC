@@ -54,6 +54,11 @@ FIX: TransformationCLI - take into accout possible failures in resetFile command
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
 
+[v6r4p13]
+
+*DMS
+FIX: dirac-admin-allow-se - added missing interpreter line
+
 [v6r4p12]
 
 *DMS
