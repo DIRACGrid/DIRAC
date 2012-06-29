@@ -31,22 +31,7 @@ class ResourceStatusDB( object ):
                     'PrimaryKey' : [ 'Name', 'StatusType' ]              
                                     }
     
-  __tablesLike[ 'ElementLog' ]       = { 'Fields' : 
-                    {
-                     'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
-                     'Name'            : 'VARCHAR(64) NOT NULL',
-                     'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT ""',
-                     'Status'          : 'VARCHAR(8) NOT NULL',
-                     'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
-                     'DateEffective'   : 'DATETIME NOT NULL',
-                     'LastCheckTime'   : 'DATETIME NOT NULL',
-                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "RS_SVC"',
-                     'TokenExpiration' : 'DATETIME NOT NULL'
-                    },
-                    'PrimaryKey' : [ 'ID' ]                
-                                    }
-  
-  __tablesLike[ 'ElementScheduled' ] = { 'Fields' : 
+  __tablesLike[ 'ElementWithID' ]       = { 'Fields' : 
                     {
                      'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
@@ -63,17 +48,17 @@ class ResourceStatusDB( object ):
 
   __likeToTable = { 
                     'SiteStatus'        : 'ElementStatus',
-                    'SiteLog'           : 'ElementLog',
-                    'SiteHistory'       : 'ElementLog',
-                    'SiteScheduled'     : 'ElementScheduled',
+                    'SiteLog'           : 'ElementWithID',
+                    'SiteHistory'       : 'ElementWithID',
+                    'SiteScheduled'     : 'ElementWithID',
                     'ResourceStatus'    : 'ElementStatus',
-                    'ResourceLog'       : 'ElementLog',
-                    'ResourceHistory'   : 'ElementLog',
-                    'ResourceScheduled' : 'ElementScheduled',
+                    'ResourceLog'       : 'ElementWithID',
+                    'ResourceHistory'   : 'ElementWithID',
+                    'ResourceScheduled' : 'ElementWithID',
                     'NodeStatus'        : 'ElementStatus',
-                    'NodeLog'           : 'ElementLog',
-                    'NodeHistory'       : 'ElementLog',      
-                    'NodeScheduled'     : 'ElementScheduled'             
+                    'NodeLog'           : 'ElementWithID',
+                    'NodeHistory'       : 'ElementWithID',      
+                    'NodeScheduled'     : 'ElementWithID'             
                    }
 
 # No idea whether they make sense or not
