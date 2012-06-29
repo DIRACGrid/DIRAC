@@ -21,7 +21,7 @@ class ResourceManagementClient:
   It has the 'direct-db-access' functions, the ones of the type:
    - insert
    - update
-   - get
+   - select
    - delete 
     
   that return parts of the RSSConfiguration stored on the CS, and used everywhere
@@ -68,7 +68,7 @@ class ResourceManagementClient:
       with the right table name. 
     '''
     # Functions we can call, just a light safety measure.
-    _gateFunctions = [ 'insert', 'update', 'get', 'delete' ] 
+    _gateFunctions = [ 'insert', 'update', 'select', 'delete' ] 
     if not queryType in _gateFunctions:
       return S_ERROR( '"%s" is not a proper gate call' % queryType )
     
@@ -84,41 +84,27 @@ class ResourceManagementClient:
     gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
     return gateFunction( params, meta )
 
-################################################################################
-# ENVIRONMENT CACHE FUNCTIONS
+  ##############################################################################
+  # ACCOUNTING CACHE METHODS
 
-  def insertEnvironmentCache( self, hashEnv, siteName, environment, meta = None ):
+  def insertAccountingCache( self, name, plotType, plotName, result, 
+                             dateEffective, lastCheckTime, meta = None ):
     '''
-    Inserts on EnvironmentCache a new row with the arguments given.
+    Inserts on AccountingCache a new row with the arguments given.
     
     :Parameters:
-      **hashEnv** - `string`
-        hash for the given environment and site 
-      **siteName** - `string`
-        name of the site
-      **environment** - `string`
-        environment to be cached
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'EnvironmentCache', locals() )
-  def updateEnvironmentCache( self, hashEnv, siteName, environment, meta = None ):
-    '''
-    Updates EnvironmentCache with the parameters given. By default, `hashEnv`
-    will be the parameter used to select the row. 
-    
-    :Parameters:
-      **hashEnv** - `string`
-        hash for the given environment and site 
-      **siteName** - `string`
-        name of the site
-      **environment** - `string`
-        environment to be cached
+      **name** - `string`
+        name of an individual of the grid topology  
+      **plotType** - `string`
+        the plotType name (e.g. 'Pilot')
+      **plotName** - `string`
+        the plot name
+      **result** - `string`
+        command result
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
@@ -127,52 +113,218 @@ class ResourceManagementClient:
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'update', 'EnvironmentCache', locals() )
-  def getEnvironmentCache( self, hashEnv = None, siteName = None, 
-                           environment = None, meta = None ):
+    return self.__query( 'insert', 'AccountingCache', locals() )
+  def updateAccountingCache( self, name, plotType, plotName, result, 
+                             dateEffective, lastCheckTime, meta = None ):
     '''
-    Gets from EnvironmentCache all rows that match the parameters given.
+    Updates AccountingCache with the parameters given. By default, `name`, 
+    `plotType` and `plotName` will be the parameters used to select the row.
     
     :Parameters:
-      **hashEnv** - `[, string, list]`
-        hash for the given environment and site 
-      **siteName** - `[,string, list]`
-        name of the site
-      **environment** - `[, string, list]`
-        environment to be cached
+      **name** - `string`
+        name of an individual of the grid topology  
+      **plotType** - `string`
+        the plotType name (e.g. 'Pilot')
+      **plotName** - `string`
+        the plot name
+      **result** - `string`
+        command result
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'AccountingCache', locals() )
+  def selectAccountingCache( self, name = None, plotType = None, plotName = None, 
+                             result = None, dateEffective = None, 
+                             lastCheckTime = None, meta = None ):
+    '''
+    Gets from PolicyResult all rows that match the parameters given.
+    
+    :Parameters:
+      **name** - `[, string, list]`
+        name of an individual of the grid topology  
+      **plotType** - `[, string, list]`
+        the plotType name (e.g. 'Pilot')
+      **plotName** - `[, string, list]`
+        the plot name
+      **result** - `[, string, list]`
+        command result
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'select', 'AccountingCache', locals() )
+  def deleteAccountingCache( self, name = None, plotType = None, 
+                             plotName = None, result = None, 
+                             dateEffective = None, lastCheckTime = None, 
+                             meta = None ):
+    '''
+    Deletes from PolicyResult all rows that match the parameters given.
+    
+    :Parameters:
+      **name** - `[, string, list]`
+        name of an individual of the grid topology  
+      **plotType** - `[, string, list]`
+        the plotType name (e.g. 'Pilot')
+      **plotName** - `[, string, list]`
+        the plot name
+      **result** - `[, string, list]`
+        command result
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'AccountingCache', locals() )
+
+  ##############################################################################
+  # CLIENT CACHE Methods
+
+  def insertClientCache( self, name, commandName, opt_ID, value, result,
+                         dateEffective, lastCheckTime, meta = None ):
+    '''
+    Inserts on ClientCache a new row with the arguments given.
+    
+    :Parameters:
+      **name** - `string`
+        name of an individual of the grid topology  
+      **commandName** - `string`
+        name of the command executed
+      **opt_ID** - `string`
+        optional ID (e.g. used for downtimes)
+      **value** - `string`
+        it is the type of result ( e.g. `Link`, `PE_S`... )
+      **result** - `string`
+        output of the command ( of value type )    
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
-    # Unused argument
+    # Unused argument    
     # pylint: disable-msg=W0613
-    return self.__query( 'get', 'EnvironmentCache', locals() )
-  def deleteEnvironmentCache( self, hashEnv = None, siteName = None, 
-                              environment = None, meta = None ):
+    return self.__query( 'insert', 'ClientCache', locals() )
+  def updateClientCache( self, name, commandName, opt_ID, value, result,
+                         dateEffective, lastCheckTime, meta = None ):
     '''
-    Deletes from EnvironmentCache all rows that match the parameters given.
+    Updates ClientCache with the parameters given. By default, `name`, 
+    `commandName` and `value` will be the parameters used to select the row.
     
     :Parameters:
-      **hashEnv** - `[, string, list]`
-        hash for the given environment and site 
-      **siteName** - `[, string, list]`
-        name of the site
-      **environment** - `[, string, list]`
-        environment to be cached
+      **name** - `string`
+        name of an individual of the grid topology  
+      **commandName** - `string`
+        name of the command executed
+      **opt_ID** - `string`
+        optional ID (e.g. used for downtimes)
+      **value** - `string`
+        it is the type of result ( e.g. `Link`, `PE_S`... )
+      **result** - `string`
+        output of the command ( of value type )    
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
     '''
+    # Unused argument    
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'ClientCache', locals() )
+  def selectClientCache( self, name = None, commandName = None, opt_ID = None, 
+                         value = None, result = None, dateEffective = None, 
+                         lastCheckTime = None, meta = None ):
+    '''
+    Gets from ClientCache all rows that match the parameters given.
+    
+    :Parameters:
+      **name** - `[, string, list]`
+        name of an individual of the grid topology  
+      **commandName** - `[, string, list]`
+        name of the command executed
+      **opt_ID** - `[, string, list]`
+        optional ID (e.g. used for downtimes)
+      **value** - `[, string, list]`
+        it is the type of result ( e.g. `Link`, `PE_S`... )
+      **result** - `[, string, list]`
+        output of the command ( of value type )    
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which this result is effective
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time this result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'EnvironmentCache', locals() )
+    return self.__query( 'select', 'ClientCache', locals() )
+  def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
+                         value = None, result = None, dateEffective = None, 
+                         lastCheckTime = None, meta = None ):
+    '''
+    Deletes from PolicyResult all rows that match the parameters given.
+    
+    :Parameters:
+      **name** - `[, string, list]`
+        name of an individual of the grid topology  
+      **commandName** - `[, string, list]`
+        name of the command executed
+      **opt_ID** - `[, string, list]`
+        optional ID (e.g. used for downtimes)
+      **value** - `[, string, list]`
+        it is the type of result ( e.g. `Link`, `PE_S`... )
+      **result** - `[, string, list]`
+        output of the command ( of value type )    
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which this result is effective
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time this result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'ClientCache', locals() )
   
-################################################################################
-# POLICY RESULT FUNCTIONS
+  ##############################################################################
+  # POLICY RESULT Methods
 
   def insertPolicyResult( self, granularity, name, policyName, statusType,
                           status, reason, dateEffective, lastCheckTime,
@@ -243,9 +395,9 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'PolicyResult', locals() )
-  def getPolicyResult( self, granularity = None, name = None, policyName = None, 
-                       statusType = None, status = None, reason = None, 
-                       dateEffective = None, lastCheckTime = None, meta = None ):
+  def selectPolicyResult( self, granularity = None, name = None, policyName = None, 
+                          statusType = None, status = None, reason = None, 
+                          dateEffective = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
     
@@ -276,7 +428,7 @@ class ResourceManagementClient:
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'get', 'PolicyResult', locals() )
+    return self.__query( 'select', 'PolicyResult', locals() )
   def deletePolicyResult( self, granularity = None, name = None, 
                           policyName = None, statusType = None, status = None, 
                           reason = None, dateEffective = None, 
@@ -313,8 +465,8 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'PolicyResult', locals() )
 
-################################################################################
-# POLICY RESULT LOG FUNCTIONS
+  ##############################################################################
+  # POLICY RESULT LOG Methods
 
   def insertPolicyResultLog( self, granularity, name, policyName, statusType,
                              status, reason, lastCheckTime, meta = None ):
@@ -380,9 +532,9 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'PolicyResultLog', locals() )
-  def getPolicyResultLog( self, granularity = None, name = None, 
-                          policyName = None, statusType = None, status = None, 
-                          reason = None, lastCheckTime = None, meta = None ):
+  def selectPolicyResultLog( self, granularity = None, name = None, 
+                              policyName = None, statusType = None, status = None, 
+                              reason = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResultLog all rows that match the parameters given.
     
@@ -411,7 +563,7 @@ class ResourceManagementClient:
     '''
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'get', 'PolicyResultLog', locals() )
+    return self.__query( 'select', 'PolicyResultLog', locals() )
   def deletePolicyResultLog( self, granularity = None, name = None, 
                              policyName = None, statusType = None, status = None, 
                              reason = None, lastCheckTime = None, meta = None ):
@@ -445,352 +597,8 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'PolicyResultLog', locals() )
     
-################################################################################
-# CLIENT CACHE FUNCTIONS
-
-  def insertClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, meta = None ):
-    '''
-    Inserts on ClientCache a new row with the arguments given.
-    
-    :Parameters:
-      **name** - `string`
-        name of an individual of the grid topology  
-      **commandName** - `string`
-        name of the command executed
-      **opt_ID** - `string`
-        optional ID (e.g. used for downtimes)
-      **value** - `string`
-        it is the type of result ( e.g. `Link`, `PE_S`... )
-      **result** - `string`
-        output of the command ( of value type )    
-      **dateEffective** - `datetime`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'ClientCache', locals() )
-  def updateClientCache( self, name, commandName, opt_ID, value, result,
-                         dateEffective, lastCheckTime, meta = None ):
-    '''
-    Updates ClientCache with the parameters given. By default, `name`, 
-    `commandName` and `value` will be the parameters used to select the row.
-    
-    :Parameters:
-      **name** - `string`
-        name of an individual of the grid topology  
-      **commandName** - `string`
-        name of the command executed
-      **opt_ID** - `string`
-        optional ID (e.g. used for downtimes)
-      **value** - `string`
-        it is the type of result ( e.g. `Link`, `PE_S`... )
-      **result** - `string`
-        output of the command ( of value type )    
-      **dateEffective** - `datetime`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-    # Unused argument    
-    # pylint: disable-msg=W0613
-    return self.__query( 'update', 'ClientCache', locals() )
-  def getClientCache( self, name = None, commandName = None, opt_ID = None, 
-                      value = None, result = None, dateEffective = None, 
-                      lastCheckTime = None, meta = None ):
-    '''
-    Gets from ClientCache all rows that match the parameters given.
-    
-    :Parameters:
-      **name** - `[, string, list]`
-        name of an individual of the grid topology  
-      **commandName** - `[, string, list]`
-        name of the command executed
-      **opt_ID** - `[, string, list]`
-        optional ID (e.g. used for downtimes)
-      **value** - `[, string, list]`
-        it is the type of result ( e.g. `Link`, `PE_S`... )
-      **result** - `[, string, list]`
-        output of the command ( of value type )    
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which this result is effective
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time this result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'get', 'ClientCache', locals() )
-  def deleteClientCache( self, name = None, commandName = None, opt_ID = None, 
-                         value = None, result = None, dateEffective = None, 
-                         lastCheckTime = None, meta = None ):
-    '''
-    Deletes from PolicyResult all rows that match the parameters given.
-    
-    :Parameters:
-      **name** - `[, string, list]`
-        name of an individual of the grid topology  
-      **commandName** - `[, string, list]`
-        name of the command executed
-      **opt_ID** - `[, string, list]`
-        optional ID (e.g. used for downtimes)
-      **value** - `[, string, list]`
-        it is the type of result ( e.g. `Link`, `PE_S`... )
-      **result** - `[, string, list]`
-        output of the command ( of value type )    
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which this result is effective
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time this result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'ClientCache', locals() )
-  
-################################################################################
-# ACCOUNTING CACHE FUNCTIONS
-
-  def insertAccountingCache( self, name, plotType, plotName, result, 
-                             dateEffective, lastCheckTime, meta = None ):
-    '''
-    Inserts on AccountingCache a new row with the arguments given.
-    
-    :Parameters:
-      **name** - `string`
-        name of an individual of the grid topology  
-      **plotType** - `string`
-        the plotType name (e.g. 'Pilot')
-      **plotName** - `string`
-        the plot name
-      **result** - `string`
-        command result
-      **dateEffective** - `datetime`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'AccountingCache', locals() )
-  def updateAccountingCache( self, name, plotType, plotName, result, 
-                             dateEffective, lastCheckTime, meta = None ):
-    '''
-    Updates AccountingCache with the parameters given. By default, `name`, 
-    `plotType` and `plotName` will be the parameters used to select the row.
-    
-    :Parameters:
-      **name** - `string`
-        name of an individual of the grid topology  
-      **plotType** - `string`
-        the plotType name (e.g. 'Pilot')
-      **plotName** - `string`
-        the plot name
-      **result** - `string`
-        command result
-      **dateEffective** - `datetime`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'update', 'AccountingCache', locals() )
-  def getAccountingCache( self, name = None, plotType = None, plotName = None, 
-                          result = None, dateEffective = None, 
-                          lastCheckTime = None, meta = None ):
-    '''
-    Gets from PolicyResult all rows that match the parameters given.
-    
-    :Parameters:
-      **name** - `[, string, list]`
-        name of an individual of the grid topology  
-      **plotType** - `[, string, list]`
-        the plotType name (e.g. 'Pilot')
-      **plotName** - `[, string, list]`
-        the plot name
-      **result** - `[, string, list]`
-        command result
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'get', 'AccountingCache', locals() )
-  def deleteAccountingCache( self, name = None, plotType = None, 
-                             plotName = None, result = None, 
-                             dateEffective = None, lastCheckTime = None, 
-                             meta = None ):
-    '''
-    Deletes from PolicyResult all rows that match the parameters given.
-    
-    :Parameters:
-      **name** - `[, string, list]`
-        name of an individual of the grid topology  
-      **plotType** - `[, string, list]`
-        the plotType name (e.g. 'Pilot')
-      **plotName** - `[, string, list]`
-        the plot name
-      **result** - `[, string, list]`
-        command result
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'AccountingCache', locals() )
-  
-################################################################################
-# VOBOX CACHE FUNCTIONS
-
-  def insertVOBOXCache( self, site, system, serviceUp, machineUp, 
-                             lastCheckTime, meta = None ):
-    '''
-    Inserts on VOBOXCache a new row with the arguments given.
-    
-    :Parameters:
-      **site** - `string`
-        name of the site hosting the VOBOX  
-      **system** - `string`
-        DIRAC system ( e.g. ConfigurationService )
-      **serviceUp** - `integer`
-        seconds the system has been up
-      **machineUp** - `integer`
-        seconds the machine has been up
-      **lastCheckTime** - `datetime`
-        time-stamp from which the result is effective
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'VOBOXCache', locals() )
-  def updateVOBOXCache( self, site, system, serviceUp, machineUp, 
-                             lastCheckTime, meta = None ):
-    '''
-    Updates VOBOXCache with the parameters given. By default, `site` and 
-    `system` will be the parameters used to select the row.
-    
-    :Parameters:
-      **site** - `string`
-        name of the site hosting the VOBOX  
-      **system** - `string`
-        DIRAC system ( e.g. ConfigurationService )
-      **serviceUp** - `integer`
-        seconds the system has been up
-      **machineUp** - `integer`
-        seconds the machine has been up
-      **lastCheckTime** - `datetime`
-        time-stamp from which the result is effective
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'update', 'VOBOXCache', locals() )
-  def getVOBOXCache( self, site = None, system = None, serviceUp = None, 
-                     machineUp = None, lastCheckTime = None, meta = None ):
-    '''
-    Gets from VOBOXCache all rows that match the parameters given.
-    
-    :Parameters:
-      **site** - `[, string, list ]`
-        name of the site hosting the VOBOX  
-      **system** - `[, string, list ]`
-        DIRAC system ( e.g. ConfigurationService )
-      **serviceUp** - `[, integer, list]`
-        seconds the system has been up
-      **machineUp** - `[, integer, list]`
-        seconds the machine has been up
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp from which the result is effective
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'get', 'VOBOXCache', locals() )
-  def deleteVOBOXCache( self, site = None, system = None, serviceUp = None, 
-                        machineUp = None, lastCheckTime = None, meta = None ):
-    '''
-    Deletes from VOBOXCache all rows that match the parameters given.
-    
-    :Parameters:
-      **site** - `[, string, list ]`
-        name of the site hosting the VOBOX  
-      **system** - `[, string, list ]`
-        DIRAC system ( e.g. ConfigurationService )
-      **serviceUp** - `[, integer, list]`
-        seconds the system has been up
-      **machineUp** - `[, integer, list]`
-        seconds the machine has been up
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp from which the result is effective
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'VOBOXCache', locals() )  
-
-################################################################################
-# SpaceTokenOccupancy CACHE FUNCTIONS
+  ##############################################################################
+  # SpaceTokenOccupancy CACHE Methods
 
   def insertSpaceTokenOccupancyCache( self, site, token, total, guaranteed,
                                       free, lastCheckTime, meta = None ):
@@ -847,9 +655,9 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'SpaceTokenOccupancyCache', locals() )
-  def getSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
-                                   guaranteed = None, free = None, 
-                                   lastCheckTime = None, meta = None ):
+  def selectSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
+                                      guaranteed = None, free = None, 
+                                      lastCheckTime = None, meta = None ):
     '''
     Gets from SpaceTokenOccupancyCache all rows that match the parameters given.
     
@@ -874,7 +682,7 @@ class ResourceManagementClient:
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'get', 'SpaceTokenOccupancyCache', locals() )
+    return self.__query( 'select', 'SpaceTokenOccupancyCache', locals() )
   def deleteSpaceTokenOccupancyCache( self, site = None, token = None, total = None, 
                                       guaranteed = None, free = None, 
                                       lastCheckTime = None, meta = None ):
@@ -904,8 +712,8 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'SpaceTokenOccupancyCache', locals() )  
   
-################################################################################
-# USER REGISTRY CACHE FUNCTIONS
+  ##############################################################################
+  # USER REGISTRY CACHE Methods
 
   def insertUserRegistryCache( self, login, name, email, meta = None ):
     '''
@@ -948,7 +756,7 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'UserRegistryCache', locals() )
-  def getUserRegistryCache( self, login = None, name = None, email = None, 
+  def selectUserRegistryCache( self, login = None, name = None, email = None, 
                             meta = None ):
     '''
     Gets from UserRegistryCache all rows that match the parameters given.
@@ -968,7 +776,7 @@ class ResourceManagementClient:
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__query( 'get', 'UserRegistryCache', locals() )
+    return self.__query( 'select', 'UserRegistryCache', locals() )
   def deleteUserRegistryCache( self, login = None, name = None, email = None, 
                                meta = None ):                                            
     '''
@@ -991,30 +799,173 @@ class ResourceManagementClient:
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'UserRegistryCache', locals() )
 
-################################################################################
-# EXTENDED BASE API METHODS
+  ##############################################################################
+  # VOBOX CACHE Methods
 
-  def addOrModifyEnvironmentCache( self, hashEnv, siteName, environment ):
+  def insertVOBOXCache( self, site, system, serviceUp, machineUp, 
+                             lastCheckTime, meta = None ):
     '''
-    Using `hashEnv` to query the database, decides whether to insert or update
-    the table.
+    Inserts on VOBOXCache a new row with the arguments given.
     
     :Parameters:
-      **hashEnv** - `string`
-        hash for the given environment and site 
-      **siteName** - `string`
-        name of the site
-      **environment** - `string`
-        environment to be cached
+      **site** - `string`
+        name of the site hosting the VOBOX  
+      **system** - `string`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `integer`
+        seconds the system has been up
+      **machineUp** - `integer`
+        seconds the machine has been up
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective
       **meta** - `[, dict]`
         meta-data for the MySQL query. It will be filled automatically with the\
        `table` key and the proper table name.
 
     :return: S_OK() || S_ERROR()
-    '''
+    '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'EnvironmentCache', locals() )
+    return self.__query( 'insert', 'VOBOXCache', locals() )
+  def updateVOBOXCache( self, site, system, serviceUp, machineUp, 
+                        lastCheckTime, meta = None ):
+    '''
+    Updates VOBOXCache with the parameters given. By default, `site` and 
+    `system` will be the parameters used to select the row.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site hosting the VOBOX  
+      **system** - `string`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `integer`
+        seconds the system has been up
+      **machineUp** - `integer`
+        seconds the machine has been up
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', 'VOBOXCache', locals() )
+  def selectVOBOXCache( self, site = None, system = None, serviceUp = None, 
+                        machineUp = None, lastCheckTime = None, meta = None ):
+    '''
+    Gets from VOBOXCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site hosting the VOBOX  
+      **system** - `[, string, list ]`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `[, integer, list]`
+        seconds the system has been up
+      **machineUp** - `[, integer, list]`
+        seconds the machine has been up
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'select', 'VOBOXCache', locals() )
+  def deleteVOBOXCache( self, site = None, system = None, serviceUp = None, 
+                        machineUp = None, lastCheckTime = None, meta = None ):
+    '''
+    Deletes from VOBOXCache all rows that match the parameters given.
+    
+    :Parameters:
+      **site** - `[, string, list ]`
+        name of the site hosting the VOBOX  
+      **system** - `[, string, list ]`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `[, integer, list]`
+        seconds the system has been up
+      **machineUp** - `[, integer, list]`
+        seconds the machine has been up
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', 'VOBOXCache', locals() )  
+
+
+  ##############################################################################
+  # EXTENDED BASE API METHODS
+
+  def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
+                                  dateEffective, lastCheckTime ):
+    '''
+    Using `name`, `plotType` and `plotName` to query the database, 
+    decides whether to insert or update the table.
+    
+    :Parameters:
+      **name** - `string`
+        name of an individual of the grid topology  
+      **plotType** - `string`
+        the plotType name (e.g. 'Pilot')
+      **plotName** - `string`
+        the plot name
+      **result** - `string`
+        command result
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__addOrModifyElement( 'AccountingCache', locals() )
+  def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
+                              dateEffective, lastCheckTime ):
+    '''
+    Using `name`, `commandName` and `value` to query the database, 
+    decides whether to insert or update the table.
+    
+    :Parameters:
+      **name** - `string`
+        name of an individual of the grid topology  
+      **commandName** - `string`
+        name of the command executed
+      **opt_ID** - `string`
+        optional ID (e.g. used for downtimes)
+      **value** - `string`
+        it is the type of result ( e.g. `Link`, `PE_S`... )
+      **result** - `string`
+        output of the command ( of value type )    
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__addOrModifyElement( 'ClientCache', locals() )
   def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
                                status, reason, dateEffective, lastCheckTime ):
     '''
@@ -1049,7 +1000,6 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'PolicyResult', locals() )
-
 # THIS METHOD DOES NOT WORK AS EXPECTED 
 # __addOrModifyElement overwrittes the field lastCheckTime.
 # Anyway, this table is a pure insert / get / delete table. No updates foreseen.
@@ -1089,90 +1039,6 @@ class ResourceManagementClient:
 #    # Unused argument
 #    # pylint: disable-msg=W0613
 #    return self.__addOrModifyElement( 'PolicyResultLog', locals() )  
-  def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
-                              dateEffective, lastCheckTime ):
-    '''
-    Using `name`, `commandName` and `value` to query the database, 
-    decides whether to insert or update the table.
-    
-    :Parameters:
-      **name** - `string`
-        name of an individual of the grid topology  
-      **commandName** - `string`
-        name of the command executed
-      **opt_ID** - `string`
-        optional ID (e.g. used for downtimes)
-      **value** - `string`
-        it is the type of result ( e.g. `Link`, `PE_S`... )
-      **result** - `string`
-        output of the command ( of value type )    
-      **dateEffective** - `datetime`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'ClientCache', locals() )
-  def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
-                                  dateEffective, lastCheckTime ):
-    '''
-    Using `name`, `plotType` and `plotName` to query the database, 
-    decides whether to insert or update the table.
-    
-    :Parameters:
-      **name** - `string`
-        name of an individual of the grid topology  
-      **plotType** - `string`
-        the plotType name (e.g. 'Pilot')
-      **plotName** - `string`
-        the plot name
-      **result** - `string`
-        command result
-      **dateEffective** - `datetime`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'AccountingCache', locals() )
-  def addOrModifyVOBOXCache( self, site, system, serviceUp, machineUp, 
-                             lastCheckTime ):
-    '''
-    Using `site` and `system` to query the database, 
-    decides whether to insert or update the table.
-    
-    :Parameters:
-      **site** - `string`
-        name of the site hosting the VOBOX  
-      **system** - `string`
-        DIRAC system ( e.g. ConfigurationService )
-      **serviceUp** - `integer`
-        seconds the system has been up
-      **machineUp** - `integer`
-        seconds the machine has been up
-      **lastCheckTime** - `datetime`
-        time-stamp from which the result is effective
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'VOBOXCache', locals() )  
   def addOrModifySpaceTokenOccupancyCache( self, site, token, total, 
                                            guaranteed, free, 
                                            lastCheckTime, meta = None ):
@@ -1223,6 +1089,32 @@ class ResourceManagementClient:
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyElement( 'UserRegistryCache', locals() ) 
+  def addOrModifyVOBOXCache( self, site, system, serviceUp, machineUp, 
+                             lastCheckTime ):
+    '''
+    Using `site` and `system` to query the database, 
+    decides whether to insert or update the table.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site hosting the VOBOX  
+      **system** - `string`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `integer`
+        seconds the system has been up
+      **machineUp** - `integer`
+        seconds the machine has been up
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__addOrModifyElement( 'VOBOXCache', locals() ) 
 
 ################################################################################
 # Getter functions
@@ -1234,7 +1126,6 @@ class ResourceManagementClient:
     fname = 'insert%s' % element
     fElem = getattr( self, fname )
     return fElem( **kwargs )
-
   def _updateElement( self, element, kwargs ): 
     '''
       Method that executes the update method of the given element.
@@ -1242,15 +1133,13 @@ class ResourceManagementClient:
     fname = 'update%s' % element
     fElem = getattr( self, fname )
     return fElem( **kwargs )
-
-  def _getElement( self, element, kwargs ):
+  def _selectElement( self, element, kwargs ):
     '''
       Method that executes the get method of the given element.
     '''
-    fname = 'get%s' % element
+    fname = 'select%s' % element
     fElem = getattr( self, fname )
     return fElem( **kwargs )
-
   def _deleteElement( self, element, kwargs ):
     '''
       Method that executes the delete method of the given element.
@@ -1267,28 +1156,28 @@ class ResourceManagementClient:
       Method that executes update if the item is not new, otherwise inserts it
       on the element table.
     '''
+    # Remove 'self' key added by locals() 
     del kwargs[ 'self' ]
-       
+          
     kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
-    
-    sqlQuery = self._getElement( element, kwargs )   
+    sqlQuery = self._selectElement( element, kwargs )   
     if not sqlQuery[ 'OK' ]:
       return sqlQuery
-        
+    
+    # No meta used to insert or update    
     del kwargs[ 'meta' ]
     
-    if sqlQuery[ 'Value' ]:      
-      #if element in [ 'PolicyResult', 'ClientCache', 'AccountingCache' ]:
-      if kwargs.has_key( 'lastCheckTime' ):
-        kwargs[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )      
+    _now = datetime.utcnow().replace( microsecond = 0 ) 
+    if 'lastCheckTime' in kwargs:
+      kwargs[ 'lastCheckTime' ] = _now
+    
+    if sqlQuery[ 'Value' ]:             
       
       return self._updateElement( element, kwargs )
-    else: 
-      
-      if kwargs.has_key( 'lastCheckTime' ):
-        kwargs[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )
-      if kwargs.has_key( 'dateEffective' ):
-        kwargs[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+    else:
+      # If we are inserting, we force dateEffective to be now
+      if 'dateEffective' in kwargs:
+        kwargs[ 'dateEffective' ] = _now
       
       return self._insertElement( element, kwargs ) 
     
