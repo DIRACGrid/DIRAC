@@ -5,14 +5,14 @@
 
 '''
 
-from datetime import datetime, timedelta
+#from datetime import datetime, timedelta
 
-from DIRAC                                           import S_OK, S_ERROR, gLogger
+from DIRAC                                           import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                      import RPCClient        
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName            
+#from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName            
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
-from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node      
-from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
+#from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node      
+#from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
 
 __RCSID__ = '$Id:  $'
        
@@ -59,9 +59,237 @@ class ResourceStatusClient:
         # Pilots will connect here, as MySQLdb is not installed for them
         self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
     else:
-      self.gate = serviceIn
+      self.gate = serviceIn 
 
-  def __query( self, queryType, tableName, kwargs ):
+  ################################################################################
+  # Element status methods - enjoy ! 
+  
+  def insertStatusElement( self, element, tableType, name, statusType, status, 
+                           reason, dateEffective, lastCheckTime, tokenOwner, 
+                           tokenExpiration, meta = None ): 
+    '''
+    Inserts on <element><tableType> a new row with the arguments given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]  
+      **name** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'insert', locals() )
+  def updateStatusElement( self, element, tableType, name, statusType, status, 
+                           reason, dateEffective, lastCheckTime, tokenOwner, 
+                           tokenExpiration, meta = None ):
+    '''
+    Updates <element><tableType> with the parameters given. 
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+      **name** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'update', locals() )
+  def selectStatusElement( self, element, tableType, name = None, statusType = None, 
+                           status = None, reason = None, dateEffective = None, 
+                           lastCheckTime = None, tokenOwner = None, 
+                           tokenExpiration = None, meta = None ):
+    '''
+    Gets from <element><tableType> all rows that match the parameters given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+      **name** - `[, string, list]`
+        name of the individual of class element  
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'select', locals() )
+  def deleteStatusElement( self, element, tableType, name = None, statusType = None, 
+                           status = None, reason = None, dateEffective = None, 
+                           lastCheckTime = None, tokenOwner = None, 
+                           tokenExpiration = None, meta = None ):
+    '''
+    Deletes from <element><tableType> all rows that match the parameters given.
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+      **name** - `[, string, list]`
+        name of the individual of class element  
+      **statusType** - `[, string, list]`
+        it has to be a valid status type for the element class
+      **status** - `[, string, list]`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `[, string, list]`
+        decision that triggered the assigned status
+      **dateEffective** - `[, datetime, list]`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `[, datetime, list]`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `[, string, list]`
+        token assigned to the site & status type
+      **tokenExpiration** - `[, datetime, list]`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__query( 'delete', locals() )
+  def addOrModifyStatusElement( self, element, tableType, name = None, 
+                                statusType = None, status = None, reason = None, 
+                                dateEffective = None, lastCheckTime = None, 
+                                tokenOwner = None, tokenExpiration = None, 
+                                meta = None ):
+    '''
+    Adds or updates-if-duplicated from <element><tableType>. 
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+      **name** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__addOrModifyStatusElement( locals() )
+
+
+  ##############################################################################
+  # Protected methods - Use carefully !!
+
+  def _extermineStatusElement( self, element, name, keepLogs = True ):
+    '''
+    Deletes from <element>Status,
+                 <element>History              
+                 <element>Log,  
+                 <element>ScheduledStatus 
+     all rows with `elementName`. It removes all the entries, logs, etc..
+    Use with common sense !
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidElements ), any of the defaults: \ 
+          `Site` | `Resource` | `Node`
+      **name** - `[, string, list]`
+        name of the individual of class element  
+      **keepLogs** - `bool`
+        if active, logs are kept in the database  
+    
+    :return: S_OK() || S_ERROR()
+    '''
+    return self.__extermineStatusElement( element, name, keepLogs )
+
+
+  ##############################################################################
+  # Private methods - where magic happens ;)
+
+  def __query( self, queryType, parameters ):
     '''
       This method is a rather important one. It will format the input for the DB
       queries, instead of doing it on a decorator. Two dictionaries must be passed
@@ -77,1343 +305,72 @@ class ResourceStatusClient:
     gateFunction = getattr( self.gate, queryType )
     
     # If meta is None, we set it to {}
-    meta   = ( True and kwargs.pop( 'meta' ) ) or {}
+    meta = ( True and parameters.pop( 'meta' ) ) or {}
     # Remove self, added by locals()
-    del kwargs[ 'self' ]     
+    del parameters[ 'self' ]     
         
     # This is an special case with the Element tables.
-    if tableName.startswith( 'Element' ):
-      element   = kwargs.pop( 'element' )
-      tableName = tableName.replace( 'Element', element )
+    #if tableName.startswith( 'Element' ):
+    element   = parameters.pop( 'element' )
+    tableType = parameters.pop( 'tableType' )
+    #tableName = tableName.replace( 'Element', element )
+    tableName = '%s%s' % ( element, tableType )
           
     meta[ 'table' ] = tableName
     
-    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, kwargs, meta ) )  
-    return gateFunction( kwargs, meta )    
+    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, parameters, meta ) )  
+    return gateFunction( parameters, meta )   
 
-################################################################################
-# ELEMENT STATUS METHODS
-
-  def insertElementStatus( self, element, name, statusType, status, reason, 
-                           dateEffective, lastCheckTime, tokenOwner, 
-                           tokenExpiration, meta = None ): 
+  def __addOrModifyStatusElement( self, parameters ):
     '''
-    Inserts on <element>Status a new row with the arguments given.
+      This method checks the existence of the element in the database. Then,
+      it inserts or updates.
+    '''
+
+    # Remove self added by locals()
+    del parameters[ 'self' ]
     
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **elementName** - `string`
-        name of the individual of class element  
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership  
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'ElementStatus', locals() )
-  def updateElementStatus( self, element, name, statusType, status, reason, 
-                           dateEffective, lastCheckTime, tokenOwner, 
-                           tokenExpiration, meta = None ):
-    '''
-    Updates <element>Status with the parameters given. By default, 
-    `name` and 'statusType' will be the parameters used to select the row.
+    # We force to search using the unique keys   
+    parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
     
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **elementName** - `string`
-        name of the individual of class element  
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership  
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
+    #sqlQuery = self._getElement( element, parameters )
+    selectQuery = self.selectStatusElement( **parameters )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery
+         
+    # Remove meta parameters to do the insert     
+    parameters[ 'meta' ] = None 
+       
+    ## CALLBACKS ARE MISSING !!   
+       
+    if selectQuery[ 'Value' ]:      
+      return self.updateStatusElement( **parameters )
+    else: 
+      insertQuery = self.insertStatusElement( **parameters )
+#      if insertQuery[ 'OK' ]:       
+#        res = self.__setElementInitStatus( element, **parameters )
+#        if not res[ 'OK' ]:
+#          return res
+      return insertQuery   
 
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'update', 'ElementStatus', locals() )
-  def selectElementStatus( self, element, elementName = None, statusType = None, 
-                           status = None, reason = None, dateEffective = None,  
-                           lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, meta = None ):
+  def __extermineStatusElement( self, element, name, keepLogs ):
     '''
-    Gets from <element>Status all rows that match the parameters given.
+      This method iterates over the three ( or four ) table types - depending
+      on the value of keepLogs - deleting all matches of `name`.
+    '''
+  
+    tableTypes = [ 'Status', 'Scheduled', 'History' ]
+    if keepLogs == False:
+      tableTypes.append( 'Log' )
     
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **elementName** - `[, string, list]`
-        name of the individual of class element  
-      **statusType** - `[, string, list]`
-        it has to be a valid status type for the element class
-      **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`
-      **reason** - `[, string, list]`
-        decision that triggered the assigned status
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `[, string, list]`
-        token assigned to the site & status type
-      **tokenExpiration** - `[, datetime, list]`
-        time-stamp setting validity of token ownership  
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
+    for table in tableTypes:
+      
+      deleteQuery = self.deleteStatusElement( element, table, name = name )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery
 
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'select', 'ElementStatus', locals() )
-  def deleteElementStatus( self, element, elementName = None, statusType = None, 
-                           status = None, reason = None, dateEffective = None,  
-                           lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, meta = None ):
-    '''
-    Deletes from <element>Status all rows that match the parameters given.
-    
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
-      **elementName** - `[, string, list]`
-        name of the individual of class element  
-      **statusType** - `[, string, list]`
-        it has to be a valid status type for the element class
-      **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`
-      **reason** - `[, string, list]`
-        decision that triggered the assigned status
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the status & status type are effective
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `[, string, list]`
-        token assigned to the site & status type
-      **tokenExpiration** - `[, datetime, list]`
-        time-stamp setting validity of token ownership  
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'ElementStatus', locals() )
-
-################################################################################
-# ELEMENT HISTORY METHODS
-
-  def insertElementHistory( self, element, name, statusType, status, 
-                            reason, dateCreated, dateEffective, dateEnd, 
-                            lastCheckTime, tokenOwner, tokenExpiration, 
-                            meta = None ): 
-    '''
-    Inserts on <element>History a new row with the arguments given.
-    
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Service` | `Resource` | `StorageElement`
-      **elementName** - `string`
-        name of the individual of class element  
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateCreated** - `datetime`
-        time-stamp setting status assignment    
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **dateEnd** - `datetime`
-        time-stamp setting end of status validity    
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership  
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'insert', 'ElementHistory', locals() )
-  def updateElementHistory( self, element, elementName, statusType, status, 
-                            reason, dateCreated, dateEffective, dateEnd, 
-                            lastCheckTime, tokenOwner, tokenExpiration, 
-                            meta = None ):
-    '''
-    Updates <element>History with the parameters given. By default, 
-    `elementName`, 'statusType', `reason` and `dateEnd` will be the parameters 
-    used to select the row.
-    
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Service` | `Resource` | `StorageElement`
-      **elementName** - `string`
-        name of the individual of class element  
-      **statusType** - `string`
-        it has to be a valid status type for the element class
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateCreated** - `datetime`
-        time-stamp setting status assignment    
-      **dateEffective** - `datetime`
-        time-stamp from which the status & status type are effective
-      **dateEnd** - `datetime`
-        time-stamp setting end of status validity    
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `string`
-        token assigned to the site & status type
-      **tokenExpiration** - `datetime`
-        time-stamp setting validity of token ownership  
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'update', 'ElementHistory', locals() )
-  def getElementHistory( self, element, elementName = None, statusType = None, 
-                         status = None, reason = None, dateCreated = None, 
-                         dateEffective = None, dateEnd = None, 
-                         lastCheckTime = None, tokenOwner = None, 
-                         tokenExpiration = None, meta = None ):
-    '''
-    Gets from <element>History all rows that match the parameters given.
-    
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Service` | `Resource` | `StorageElement`
-      **elementName** - `[, string, list]`
-        name of the individual of class element  
-      **statusType** - `[, string, list]`
-        it has to be a valid status type for the element class
-      **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`
-      **reason** - `[, string, list]`
-        decision that triggered the assigned status
-      **dateCreated** - `[, datetime, list]`
-        time-stamp setting status assignment    
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the status & status type are effective
-      **dateEnd** - `[, datetime, list]`
-        time-stamp setting end of status validity    
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `[, string, list]`
-        token assigned to the site & status type
-      **tokenExpiration** - `[, datetime, list]`
-        time-stamp setting validity of token ownership  
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''    
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'get', 'ElementHistory', locals() )
-  def deleteElementHistory( self, element, elementName = None, 
-                            statusType = None, status = None, reason = None, 
-                            dateCreated = None, dateEffective = None, 
-                            dateEnd = None, lastCheckTime = None, 
-                            tokenOwner = None, tokenExpiration = None, 
-                            meta = None ):
-    '''
-    Deletes from <element>History all rows that match the parameters given.
-
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Service` | `Resource` | `StorageElement`
-      **elementName** - `[, string, list]`
-        name of the individual of class element  
-      **statusType** - `[, string, list]`
-        it has to be a valid status type for the element class
-      **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-        `Probing` | `Banned`
-      **reason** - `[, string, list]`
-        decision that triggered the assigned status
-      **dateCreated** - `[, datetime, list]`
-        time-stamp setting status assignment    
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the status & status type are effective
-      **dateEnd** - `[, datetime, list]`
-        time-stamp setting end of status validity    
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the status & status were checked
-      **tokenOwner** - `[, string, list]`
-        token assigned to the site & status type
-      **tokenExpiration** - `[, datetime, list]`
-        time-stamp setting validity of token ownership  
-      **meta** - `[, dict]`
-        meta-data for the MySQL query. It will be filled automatically with the\
-       `table` key and the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''   
-    # Unused argument
-    # pylint: disable-msg=W0613
-    return self.__query( 'delete', 'ElementHistory', locals() ) 
-
-#################################################################################
-## SITE FUNCTIONS
-#      
-#  def insertSite( self, siteName, siteType, gridSiteName, meta = None ):
-#    '''
-#    Inserts on Site a new row with the arguments given.
-#    
-#    :Parameters:
-#      **siteName** - `string`
-#        name of the site 
-#      **siteType** - `string`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`
-#      **gridSiteName** - `string`
-#        name of the  grid site the site belongs ( if any )
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'insert', 'Site', locals() )
-#  def updateSite( self, siteName, siteType, gridSiteName, meta = None ):
-#    '''
-#    Updates Site with the parameters given. By default, `siteName` will be the \
-#    parameter used to select the row. 
-#    
-#    :Parameters:
-#      **siteName** - `string`
-#        name of the site 
-#      **siteType** - `string`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`
-#      **gridSiteName** - `string`
-#        name of the  grid site the site belongs ( if any )
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument   
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'update', 'Site', locals() )
-#  def selectSite( self, siteName = None, siteType = None, gridSiteName = None, 
-#               meta = None ):
-#    '''
-#    Gets from Site all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **siteName** - `[, string, list]`
-#        name of the site 
-#      **siteType** - `[, string, list]`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`
-#      **gridSiteName** - `[, string, list]`
-#        name of the  grid site the site belongs ( if any )
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''   
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'select', 'Site', locals() )
-#  def deleteSite( self, siteName = None, siteType = None, gridSiteName = None, 
-#                  meta = None ):
-#    '''
-#    Deletes from Site all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **siteName** - `[, string, list]`
-#        name of the site 
-#      **siteType** - `[, string, list]`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`
-#      **gridSiteName** - `[, string, list]`
-#        name of the  grid site the site belongs ( if any )
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''   
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'delete', 'Site', locals() )
-#  def getSitePresent( self, siteName = None, siteType = None, 
-#                      gridSiteName = None, gridTier = None, statusType = None, 
-#                      status = None, dateEffective = None, reason = None, 
-#                      lastCheckTime = None, tokenOwner = None, 
-#                      tokenExpiration = None, formerStatus = None, meta = None ):
-#    '''
-#    Gets from the view composed by Site, SiteStatus and SiteHistory all rows 
-#    that match the parameters given ( not necessarily returns the same number 
-#    of rows as are there on Site or SiteStatus ).
-#    
-#    :Parameters:
-#      **siteName** - `[, string, list]`
-#        name of the site 
-#      **siteType** - `[, string, list]`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`
-#      **gridSiteName** - `[, string, list]`
-#        name of the  grid site the site belongs ( if any )
-#      **gridTier** - `[, string, list]`
-#        grid tier of the associated grid site ( if any )   
-#      **statusType** - `[, string, list]`
-#        it has to be a valid status type for the `Site` granularity
-#      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`  
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which the status & status type are effective
-#      **reason** - `[, string, list]`
-#        decision that triggered the assigned status  
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string, list]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime, list]`
-#        time-stamp setting validity of token ownership    
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument   
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'get', 'SitePresent', locals() )
-#
-#################################################################################
-## SERVICE FUNCTIONS
-#
-#  def insertService( self, serviceName, serviceType, siteName, meta = None ):
-#    '''
-#    Inserts on Service a new row with the arguments given.
-#    
-#    :Parameters:
-#      **serviceName** - `string`
-#        name of the service 
-#      **serviceType** - `string`
-#        it has to be a valid service type, any of the defaults: `Computing` |\
-#         `Storage` ...
-#      **siteName** - `string`
-#        name of the site the service belongs
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''   
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'insert', 'Service', locals() )
-#  def updateService( self, serviceName, serviceType, siteName, meta = None ):
-#    '''
-#    Updates Service with the parameters given. By default, `serviceName` will \
-#    be the parameter used to select the row.
-#    
-#    :Parameters:
-#      **serviceName** - `string`
-#        name of the service 
-#      **serviceType** - `string`
-#        it has to be a valid service type, any of the defaults: `Computing` | \
-#        `Storage` ...
-#      **siteName** - `string`
-#        name of the site the service belongs
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''   
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'update', 'Service', locals() )
-#  def selectService( self, serviceName = None, serviceType = None, siteName = None, 
-#                     meta = None ):
-#    '''
-#    Gets from Service all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **serviceName** - `[, string, list]`
-#        name of the service 
-#      **serviceType** - `[, string, list]`
-#        it has to be a valid service type, any of the defaults: `Computing` | \
-#        `Storage` ...
-#      **siteName** - `[, string, list]`
-#        name of the site the service belongs
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''   
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'select', 'Service', locals() )
-#  def deleteService( self, serviceName = None, serviceType = None, 
-#                     siteName = None, meta = None ):
-#    '''
-#    Deletes from Service all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **serviceName** - `[, string, list]`
-#        name of the service 
-#      **serviceType** - `[, string, list]`
-#        it has to be a valid service type, any of the defaults: `Computing` | \
-#        `Storage` ...
-#      **siteName** - `[, string, list]`
-#        name of the site the service belongs
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'delete', 'Service', locals() )
-#  def getServicePresent( self, serviceName = None, siteName = None, 
-#                         siteType = None, serviceType = None, statusType = None, 
-#                         status = None, dateEffective = None, reason = None, 
-#                         lastCheckTime = None, tokenOwner = None, 
-#                         tokenExpiration = None, formerStatus = None, 
-#                         meta = None ):
-#    '''
-#    Gets from the view composed by Service, ServiceStatus and ServiceHistory all 
-#    rows that match the parameters given ( not necessarily returns the same 
-#    number of rows as are there on Service or ServiceStatus ).
-#    
-#    :Parameters:
-#      **serviceName** - `[, string, list]`
-#        name of the service 
-#      **siteName** - `[, string, list]`
-#        name of the site the service belongs
-#      **siteType** - `[, string, list]`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`
-#      **serviceType** - `[, string, list]`
-#        it has to be a valid service type, any of the defaults: `Computing` | \
-#        `Storage` ... 
-#      **statusType** - `[, string, list]`
-#        it has to be a valid status type for the `Service` granularity
-#      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`  
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which the status & status type are effective
-#      **reason** - `[, string, list]`
-#        decision that triggered the assigned status  
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string, list]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime, list]`
-#        time-stamp setting validity of token ownership    
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'get', 'ServicePresent', locals() )
-#
-#################################################################################
-## RESOURCE FUNCTIONS
-#
-#  def insertResource( self, resourceName, resourceType, serviceType, siteName,
-#                      gridSiteName, meta = None ):
-#    '''
-#    Inserts on Resource a new row with the arguments given.
-#    
-#    :Parameters:
-#      **resourceName** - `string`
-#        name of the resource 
-#      **resourceType** - `string`
-#        it has to be a valid resource type, any of the defaults: `CE` | \
-#        `CREAMCE` ...
-#      **serviceType** - `string`
-#        type of the service it belongs, defaults are: `Computing` | `Storage` ..
-#      **siteName** - `string`
-#        name of the site the resource belongs ( if any )
-#      **gridSiteName** - `string`
-#        name of the grid site the resource belongs ( if any )  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'insert', 'Resource', locals() )
-#  def updateResource( self, resourceName, resourceType, serviceType, siteName,
-#                      gridSiteName, meta = None ):
-#    '''
-#    Updates Resource with the parameters given. By default, `resourceName` will 
-#    be the parameter used to select the row.
-#    
-#    :Parameters:
-#      **resourceName** - `string`
-#        name of the resource 
-#      **resourceType** - `string`
-#        it has to be a valid resource type, any of the defaults: `CE` | \
-#        `CREAMCE` ...
-#      **serviceType** - `string`
-#        type of the service it belongs, defaults are: `Computing` | `Storage` ..
-#      **siteName** - `string`
-#        name of the site the resource belongs ( if any )
-#      **gridSiteName** - `string`
-#        name of the grid site the resource belongs ( if any )
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''   
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'update', 'Resource', locals() )
-#  def selectResource( self, resourceName = None, resourceType = None, 
-#                      serviceType = None, siteName = None, gridSiteName = None, 
-#                      meta = None ):
-#    '''
-#    Gets from Resource all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **resourceName** - `[, string, list]`
-#        name of the resource 
-#      **resourceType** - `[, string, list]`
-#        it has to be a valid resource type, any of the defaults: `CE` | \
-#        `CREAMCE` ...
-#      **serviceType** - `[, string, list]`
-#        type of the service it belongs, defaults are: `Computing` | `Storage` ..
-#      **siteName** - `[, string, list]`
-#        name of the site the resource belongs ( if any )
-#      **gridSiteName** - `[, string, list]`
-#        name of the grid site the resource belongs ( if any )
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'get', 'Resource', locals() )
-#  def deleteResource( self, resourceName = None, resourceType = None, 
-#                      serviceType = None, siteName = None, gridSiteName = None, 
-#                      meta = None ):
-#    '''
-#    Deletes from Resource all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **resourceName** - `[, string, list]`
-#        name of the resource 
-#      **resourceType** - `[, string, list]`
-#        it has to be a valid resource type, any of the defaults: `CE` | \
-#        `CREAMCE` ...
-#      **serviceType** - `[, string, list]`
-#        type of the service it belongs, defaults are: `Computing` | `Storage` ...
-#      **siteName** - `[, string, list]`
-#        name of the site the resource belongs ( if any )   
-#      **gridSiteName** - `[, string, list]`
-#        name of the grid site the resource belongs ( if any )
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'delete', 'Resource', locals() )
-#  def getResourcePresent( self, resourceName = None, siteName = None, 
-#                          serviceType = None, gridSiteName = None, 
-#                          siteType = None, resourceType = None, 
-#                          statusType = None, status = None, 
-#                          dateEffective = None, reason = None, 
-#                          lastCheckTime = None, tokenOwner = None, 
-#                          tokenExpiration = None, formerStatus = None, 
-#                          meta = None ):
-#    '''
-#    Gets from the view composed by Resource, ResourceStatus and ResourceHistory 
-#    all rows that match the parameters given ( not necessarily returns the same 
-#    number of rows as are there on Resource or ResourceStatus ).
-#    
-#    :Parameters:
-#      **resourceName** - `[, string, list]`
-#        name of the resource
-#      **siteName** - `[, string, list]`
-#        name of the site the resource belongs ( if any )
-#      **serviceType** - `[, string, list]`
-#        it has to be a valid service type, any of the defaults: `Computing` | \
-#        `Storage` ...
-#      **gridSiteName** - `[, string, list]`
-#        name of the grid site the resource belongs ( if any )      
-#      **siteType** - `[, string, list]`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`
-#      **resourceType** - `[, string, list]`
-#        it has to be a valid resource type, any of the defaults: `CE` | \
-#        `CREAMCE` ...     
-#      **statusType** - `[, string, list]`
-#        it has to be a valid status type for the `Resource` granularity
-#      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`  
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which the status & status type are effective
-#      **reason** - `[, string, list]`
-#        decision that triggered the assigned status  
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string, list]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime, list]`
-#        time-stamp setting validity of token ownership    
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'get', 'ResourcePresent', locals() )
-#
-#################################################################################
-## STORAGE ELEMENT FUNCTIONS
-#
-#  def insertStorageElement( self, storageElementName, resourceName, 
-#                            gridSiteName, meta = None ):
-#    '''
-#    Inserts on StorageElement a new row with the arguments given.
-#    
-#    :Parameters:
-#      **storageElementName** - `string`
-#        name of the storage element 
-#      **resourceName** - `string`
-#        name of the resource the storage element belongs
-#      **gridSiteName** - `string`
-#        name of the grid site the storage element belongs
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''  
-#    # Unused argument
-#    # pylint: disable-msg=W0613  
-#    return self.__query( 'insert', 'StorageElement', locals() )
-#  def updateStorageElement( self, storageElementName, resourceName, 
-#                            gridSiteName, meta = None ):
-#    '''
-#    Updates StorageElement with the parameters given. By default, 
-#    `storageElementName` will be the parameter used to select the row.
-#    
-#    :Parameters:
-#      **storageElementName** - `string`
-#        name of the storage element 
-#      **resourceName** - `string`
-#        name of the resource the storage element belongs
-#      **gridSiteName** - `string`
-#        name of the grid site the storage element belongs
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'update', 'StorageElement', locals() )
-#  def selectStorageElement( self, storageElementName = None, resourceName = None, 
-#                            gridSiteName = None, meta = None ):
-#    '''
-#    Gets from StorageElement all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **storageElementName** - `[, string, list]`
-#        name of the storage element 
-#      **resourceName** - `[, string, list]`
-#        name of the resource the storage element belongs
-#      **gridSiteName** - `[, string, list]`
-#        name of the grid site the storage element belongs
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''   
-#    # Unused argument
-#    # pylint: disable-msg=W0613 
-#    return self.__query( 'select', 'StorageElement', locals() )
-#  def deleteStorageElement( self, storageElementName = None, 
-#                            resourceName = None, gridSiteName = None, 
-#                            meta = None ):
-#    '''
-#    Deletes from StorageElement all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **storageElementName** - `[, string, list]`
-#        name of the storage element 
-#      **resourceName** - `[, string, list]`
-#        name of the resource the storage element belongs
-#      **gridSiteName** - `[, string, list]`
-#        name of the grid site the storage element belongs
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'delete', 'StorageElement', locals() )    
-#  def getStorageElementPresent( self, storageElementName = None, 
-#                                resourceName = None, gridSiteName = None, 
-#                                siteType = None, statusType = None, 
-#                                status = None, dateEffective = None, 
-#                                reason = None, lastCheckTime = None, 
-#                                tokenOwner = None, tokenExpiration = None, 
-#                                formerStatus = None, meta = None ):
-#    '''
-#    Gets from the view composed by StorageElement, StorageElementStatus and 
-#    StorageElementHistory all rows that match the parameters given ( not 
-#    necessarily returns the same number of rows as are there on StorageElement 
-#    or StorageElementStatus ).
-#    
-#    :Parameters:
-#      **storageElementName** - `[, string, list]`
-#        name of the storage element
-#      **resourceName** - `[, string, list]`
-#        name of the resource
-#      **gridSiteName** - `[, string, list]`
-#        name of the grid site the storage element belongs ( if any )
-#      **siteType** - `[, string, list]`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`     
-#      **statusType** - `[, string, list]`
-#        it has to be a valid status type for the `StorageElement` granularity
-#      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`  
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which the status & status type are effective
-#      **reason** - `[, string, list]`
-#        decision that triggered the assigned status  
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string, list]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime, list]`
-#        time-stamp setting validity of token ownership    
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument    
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'get', 'StorageElementPresent', locals() )
-#
-#################################################################################
-## GRID SITE FUNCTIONS
-#
-#  def insertGridSite( self, gridSiteName, gridTier, meta = None ):
-#    '''
-#    Inserts on GridSite a new row with the arguments given.
-#    
-#    :Parameters:
-#      **gridSiteName** - `string`
-#        name of the grid site
-#      **gridTier** - `string`
-#        grid tier of the grid site
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument    
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'insert', 'GridSite', locals() )
-#  def updateGridSite( self, gridSiteName, gridTier, meta = None ):
-#    '''
-#    Updates GridSite with the parameters given. By default, 
-#    `gridSiteName` will be the parameter used to select the row.
-#    
-#    :Parameters:
-#      **gridSiteName** - `string`
-#        name of the grid site
-#      **gridTier** - `string`
-#        grid tier of the grid site
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'update', 'GridSite', locals() )   
-#  def selectGridSite( self, gridSiteName = None, gridTier = None, meta = None ):
-#    '''
-#    Gets from GridSite all rows that match the parameters given.
-#
-#    :Parameters:
-#      **gridSiteName** - `[, string, list]`
-#        name of the grid site
-#      **gridTier** - `[, string, list]`
-#        grid tier of the grid site
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'select', 'GridSite', locals() )
-#  def deleteGridSite( self, gridSiteName = None, gridTier = None, meta = None ): 
-#    '''
-#    Deletes from GridSite all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **gridSiteName** - `[, string, list]`
-#        name of the grid site
-#      **gridTier** - `[, string, list]`
-#        grid tier of the grid site
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''     
-#    # Unused argument
-#    # pylint: disable-msg=W0613      
-#    return self.__query( 'delete', 'GridSite', locals() )
-#
-
-#################################################################################
-## ELEMENT SCHEDULED STATUS FUNCTIONS
-#
-#  def insertElementScheduledStatus( self, element, elementName, statusType, 
-#                                    status, reason, dateCreated, dateEffective, 
-#                                    dateEnd, lastCheckTime, tokenOwner, 
-#                                    tokenExpiration, meta = None ): 
-#    '''
-#    Inserts on <element>ScheduledStatus a new row with the arguments given.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `string`
-#        name of the individual of class element  
-#      **statusType** - `string`
-#        it has to be a valid status type for the element class
-#      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `string`
-#        decision that triggered the assigned status
-#      **dateCreated** - `datetime`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `datetime`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `string`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `datetime`
-#        time-stamp setting validity of token ownership  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'insert', 'ElementScheduledStatus', locals() )
-#  def updateElementScheduledStatus( self, element, elementName, statusType, 
-#                                    status, reason, dateCreated, dateEffective, 
-#                                    dateEnd, lastCheckTime, tokenOwner, 
-#                                    tokenExpiration, meta = None ):
-#    '''
-#    Updates <element>ScheduledStatus with the parameters given. By default, 
-#    `elementName`, 'statusType' and `dateEffective` will be the parameters used 
-#    to select the row.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `string`
-#        name of the individual of class element  
-#      **statusType** - `string`
-#        it has to be a valid status type for the element class
-#      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `string`
-#        decision that triggered the assigned status
-#      **dateCreated** - `datetime`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `datetime`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `string`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `datetime`
-#        time-stamp setting validity of token ownership  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'update', 'ElementScheduledStatus', locals() )
-#  def getElementScheduledStatus( self, element, elementName = None, 
-#                                 statusType = None, status = None, 
-#                                 reason = None, dateCreated = None, 
-#                                 dateEffective = None, dateEnd = None, 
-#                                 lastCheckTime = None, tokenOwner = None, 
-#                                 tokenExpiration = None, meta = None ):
-#    '''
-#    Gets from <element>ScheduledStatus all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `[, string, list]`
-#        name of the individual of class element  
-#      **statusType** - `[, string, list]`
-#        it has to be a valid status type for the element class
-#      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `[, string, list]`
-#        decision that triggered the assigned status
-#      **dateCreated** - `[, datetime, list]`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `[, datetime, list]`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string, list]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime, list]`
-#        time-stamp setting validity of token ownership  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'get', 'ElementScheduledStatus', locals() )
-#  def deleteElementScheduledStatus( self, element, elementName = None, 
-#                                    statusType = None, status = None, 
-#                                    reason = None, dateCreated = None,
-#                                    dateEffective = None, dateEnd = None, 
-#                                    lastCheckTime = None, tokenOwner = None, 
-#                                    tokenExpiration = None, meta = None ):
-#    '''
-#    Deletes from <element>ScheduledStatus all rows that match the parameters 
-#    given.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `[, string, list]`
-#        name of the individual of class element  
-#      **statusType** - `[, string, list]`
-#        it has to be a valid status type for the element class
-#      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `[, string, list]`
-#        decision that triggered the assigned status
-#      **dateCreated** - `[, datetime, list]`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `[, datetime, list]`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string, list]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime, list]`
-#        time-stamp setting validity of token ownership  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'delete', 'ElementScheduledStatus', locals() )
-#
-#################################################################################
-## ELEMENT HISTORY FUNCTIONS
-#
-#  def insertElementHistory( self, element, elementName, statusType, status, 
-#                            reason, dateCreated, dateEffective, dateEnd, 
-#                            lastCheckTime, tokenOwner, tokenExpiration, 
-#                            meta = None ): 
-#    '''
-#    Inserts on <element>History a new row with the arguments given.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `string`
-#        name of the individual of class element  
-#      **statusType** - `string`
-#        it has to be a valid status type for the element class
-#      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `string`
-#        decision that triggered the assigned status
-#      **dateCreated** - `datetime`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `datetime`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `string`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `datetime`
-#        time-stamp setting validity of token ownership  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'insert', 'ElementHistory', locals() )
-#  def updateElementHistory( self, element, elementName, statusType, status, 
-#                            reason, dateCreated, dateEffective, dateEnd, 
-#                            lastCheckTime, tokenOwner, tokenExpiration, 
-#                            meta = None ):
-#    '''
-#    Updates <element>History with the parameters given. By default, 
-#    `elementName`, 'statusType', `reason` and `dateEnd` will be the parameters 
-#    used to select the row.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `string`
-#        name of the individual of class element  
-#      **statusType** - `string`
-#        it has to be a valid status type for the element class
-#      **status** - `string`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `string`
-#        decision that triggered the assigned status
-#      **dateCreated** - `datetime`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `datetime`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `datetime`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `datetime`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `string`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `datetime`
-#        time-stamp setting validity of token ownership  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'update', 'ElementHistory', locals() )
-#  def getElementHistory( self, element, elementName = None, statusType = None, 
-#                         status = None, reason = None, dateCreated = None, 
-#                         dateEffective = None, dateEnd = None, 
-#                         lastCheckTime = None, tokenOwner = None, 
-#                         tokenExpiration = None, meta = None ):
-#    '''
-#    Gets from <element>History all rows that match the parameters given.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `[, string, list]`
-#        name of the individual of class element  
-#      **statusType** - `[, string, list]`
-#        it has to be a valid status type for the element class
-#      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `[, string, list]`
-#        decision that triggered the assigned status
-#      **dateCreated** - `[, datetime, list]`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `[, datetime, list]`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string, list]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime, list]`
-#        time-stamp setting validity of token ownership  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'get', 'ElementHistory', locals() )
-#  def deleteElementHistory( self, element, elementName = None, 
-#                            statusType = None, status = None, reason = None, 
-#                            dateCreated = None, dateEffective = None, 
-#                            dateEnd = None, lastCheckTime = None, 
-#                            tokenOwner = None, tokenExpiration = None, 
-#                            meta = None ):
-#    '''
-#    Deletes from <element>History all rows that match the parameters given.
-#
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `[, string, list]`
-#        name of the individual of class element  
-#      **statusType** - `[, string, list]`
-#        it has to be a valid status type for the element class
-#      **status** - `[, string, list]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `[, string, list]`
-#        decision that triggered the assigned status
-#      **dateCreated** - `[, datetime, list]`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `[, datetime, list]`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `[, datetime, list]`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `[, datetime, list]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string, list]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime, list]`
-#        time-stamp setting validity of token ownership  
-#      **meta** - `[, dict]`
-#        meta-data for the MySQL query. It will be filled automatically with the\
-#       `table` key and the proper table name.
-#
-#    :return: S_OK() || S_ERROR()
-#    '''   
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__query( 'delete', 'ElementHistory', locals() ) 
-#  
+    return S_OK()
+      
 #################################################################################
 ## CS VALID ELEMENTS
 #  
@@ -1480,177 +437,7 @@ class ResourceStatusClient:
 #
 #################################################################################
 ## EXTENDED FUNCTIONS
-#
-#  def addOrModifySite( self, siteName, siteType, gridSiteName ):
-#    '''
-#    Using `siteName` to query the database, decides whether to insert or update
-#    the table.
-#    
-#    :Parameters:
-#      **siteName** - `string`
-#        name of the site 
-#      **siteType** - `string`
-#        it has to be a valid site type, any of the defaults: `T0` | `T1` | `T2`\
-#         | `T3`
-#      **gridSiteName** - `string`
-#        name of the  grid site the site belongs ( if any )
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'Site', locals() )
-#
-#  def addOrModifyService( self, serviceName, serviceType, siteName ):
-#    '''
-#    Using `serviceName` to query the database, decides whether to insert or 
-#    update the table.
-#    
-#    :Parameters:
-#      **serviceName** - `string`
-#        name of the service 
-#      **serviceType** - `string`
-#        it has to be a valid service type, any of the defaults: `Computing` | \
-#        `Storage` ...
-#      **siteName** - `string`
-#        name of the site the service belongs
-#
-#    :return: S_OK() || S_ERROR()
-#    '''    
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'Service', locals() )
-#
-#  def addOrModifyResource( self, resourceName, resourceType, serviceType, 
-#                           siteName, gridSiteName ):
-#    '''
-#    Using `resourceName` to query the database, decides whether to insert or 
-#    update the table.
-#    
-#    :Parameters:
-#      **resourceName** - `string`
-#        name of the resource 
-#      **resourceType** - `string`
-#        it has to be a valid resource type, any of the defaults: `CE` | \
-#        `CREAMCE` ...
-#      **serviceType** - `string`
-#        type of the service it belongs, defaults are: `Computing` | `Storage` ..
-#      **siteName** - `string`
-#        name of the site the resource belongs ( if any )
-#      **gridSiteName** - `string`
-#        name of the grid site the resource belongs ( if any )  
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument    
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'Resource', locals() )
-#
-#  def addOrModifyStorageElement( self, storageElementName, resourceName, 
-#                                 gridSiteName ):
-#    '''
-#    Using `storageElementName` to query the database, decides whether to insert 
-#    or update the table.
-#    
-#    :Parameters:
-#      **storageElementName** - `string`
-#        name of the storage element 
-#      **resourceName** - `string`
-#        name of the resource the storage element belongs
-#      **gridSiteName** - `string`
-#        name of the grid site the storage element belongs
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument    
-#    # pylint: disable-msg=W0613
-#    return self.__addOrModifyElement( 'StorageElement', locals() )
-#
-#  def addOrModifyGridSite( self, gridSiteName, gridTier ):
-#    '''
-#    Using `gridSiteName` to query the database, decides whether to insert or 
-#    update the table.
-#    
-#    :Parameters:
-#      **gridSiteName** - `string`
-#        name of the grid site
-#      **gridTier** - `string`
-#        grid tier of the grid site
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#
-#    args = ( gridSiteName, gridTier )
-#    kwargs = { 'gridSiteName' : gridSiteName, 'gridTier' : gridTier, 
-#               'meta' : { 'onlyUniqueKeys' : True } }
-#      
-#    sqlQuery = self.getGridSite( **kwargs )
-#   
-#    if sqlQuery[ 'Value' ]:
-#      return self.updateGridSite( *args )      
-#    else:
-#      return self.insertGridSite( *args )   
-#
-#  def modifyElementStatus( self, element, elementName, statusType, 
-#                           status = None, reason = None, dateCreated = None, 
-#                           dateEffective = None, dateEnd = None,
-#                           lastCheckTime = None, tokenOwner = None, 
-#                           tokenExpiration = None ):
-#    '''
-#    Updates <element>Status with the parameters given. By default, 
-#    `elementName` and 'statusType' will be the parameters used to select the 
-#    row.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `string`
-#        name of the individual of class element  
-#      **statusType** - `string`
-#        it has to be a valid status type for the element class
-#      **status** - `[, string]`
-#        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
-#        `Probing` | `Banned`
-#      **reason** - `[, string]`
-#        decision that triggered the assigned status
-#      **dateCreated** - `[, datetime]`
-#        time-stamp setting status assignment    
-#      **dateEffective** - `[, datetime]`
-#        time-stamp from which the status & status type are effective
-#      **dateEnd** - `[, datetime]`
-#        time-stamp setting end of status validity    
-#      **lastCheckTime** - `[, datetime]`
-#        time-stamp setting last time the status & status were checked
-#      **tokenOwner** - `[, string]`
-#        token assigned to the site & status type
-#      **tokenExpiration** - `[, datetime]`
-#        time-stamp setting validity of token ownership  
-#
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument
-#    # pylint: disable-msg=W0613
-#    return self.__modifyElementStatus( locals() )
-#
-#  def removeElement( self, element, elementName ):
-#    '''
-#    Deletes from <element>, <element>Status, <element>ScheduledStatus and 
-#    <element>History all rows with `elementName`.
-#    
-#    :Parameters:
-#      **element** - `string`
-#        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
-#        | `Service` | `Resource` | `StorageElement`
-#      **elementName** - `[, string, list]`
-#        name of the individual of class element  
-#    
-#    :return: S_OK() || S_ERROR()
-#    '''
-#    # Unused argument       
-#    # pylint: disable-msg=W0613
-#    return self.__removeElement( element, elementName )
-#
+
 #  def getServiceStats( self, siteName, statusType = None ):
 #    '''
 #    Computes simple statistics of `Active`, `Bad`, `Probing` and `Banned` 
@@ -2708,37 +1495,37 @@ class ResourceStatusClient:
 ################################################################################
 # Getter functions
 
-  def _insertElement( self, elementTable, paramsDict ):
-    '''
-      Method that executes the insert method of the given element.
-    '''    
-    fname = 'insert%s' % elementTable
-    fElem = getattr( self, fname )
-    return fElem( **paramsDict )
-
-  def _updateElement( self, elementTable, paramsDict ):
-    '''
-      Method that executes the update method of the given element.
-    '''        
-    fname = 'update%s' % elementTable
-    fElem = getattr( self, fname )
-    return fElem( **paramsDict )
-
-  def _selectElement( self, elementTable, paramsDict ):
-    '''
-      Method that executes the get method of the given element.
-    '''
-    fname = 'select%s' % elementTable
-    fElem = getattr( self, fname )
-    return fElem( **paramsDict )
-  
-  def _deleteElement( self, elementTable, paramsDict ): 
-    '''
-      Method that executes the delete method of the given element.
-    '''        
-    fname = 'delete%s' % elementTable
-    fElem = getattr( self, fname )
-    return fElem( **paramsDict )     
+#  def _insertElement( self, elementTable, paramsDict ):
+#    '''
+#      Method that executes the insert method of the given element.
+#    '''    
+#    fname = 'insert%s' % elementTable
+#    fElem = getattr( self, fname )
+#    return fElem( **paramsDict )
+#
+#  def _updateElement( self, elementTable, paramsDict ):
+#    '''
+#      Method that executes the update method of the given element.
+#    '''        
+#    fname = 'update%s' % elementTable
+#    fElem = getattr( self, fname )
+#    return fElem( **paramsDict )
+#
+#  def _selectElement( self, elementTable, paramsDict ):
+#    '''
+#      Method that executes the get method of the given element.
+#    '''
+#    fname = 'select%s' % elementTable
+#    fElem = getattr( self, fname )
+#    return fElem( **paramsDict )
+#  
+#  def _deleteElement( self, elementTable, paramsDict ): 
+#    '''
+#      Method that executes the delete method of the given element.
+#    '''        
+#    fname = 'delete%s' % elementTable
+#    fElem = getattr( self, fname )
+#    return fElem( **paramsDict )     
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    
