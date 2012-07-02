@@ -68,7 +68,7 @@ def getRegistryUsers():
   for userName in userNames:
     
     # returns { 'Email' : x, 'DN': y, 'CA' : z }
-    userDetails = gConfig.getOptionsDict( '%s%s' % ( _basePath, userName ) )
+    userDetails = gConfig.getOptionsDict( '%s/%s' % ( _basePath, userName ) )
     if not userDetails[ 'OK' ]:   
       return userDetails
     
