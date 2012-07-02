@@ -13,7 +13,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagemen
 
 __RCSID__ = '$Id:  $'
 
-class ResourceManagementClient:
+class ResourceManagementClient( object ):
   """
   The :class:`ResourceManagementClient` class exposes the :mod:`DIRAC.ResourceManagement` 
   API. All functions you need are on this client.

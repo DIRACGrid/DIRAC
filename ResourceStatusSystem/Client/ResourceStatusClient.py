@@ -16,7 +16,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB
 
 __RCSID__ = '$Id:  $'
        
-class ResourceStatusClient:
+class ResourceStatusClient( object ):
   '''
   The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus` 
   API. All functions you need are on this client.
