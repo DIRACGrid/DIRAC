@@ -20,6 +20,18 @@ def _capitalize( params ):
     capitalizedParams[ key[0].upper() + key[1:] ] = value
   
   return capitalizedParams  
+
+def _discardNones( params ):
+  '''
+    Remove all keys with None as value in the key,value pair
+  '''
+     
+  validParams = {}
+  for key, value in params.items():
+    if value is not None:
+      validParams[ key ] = value
+      
+  return validParams       
      
 def insert( rssDB, params, meta ):
   '''
@@ -30,6 +42,7 @@ def insert( rssDB, params, meta ):
   accepted_keys = [ 'table' ]
 
   params = _capitalize( params )
+  params = _discardNones( params )
     
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
@@ -54,6 +67,7 @@ def update( rssDB, params, meta ):
   accepted_keys = [ 'table', 'uniqueKeys' ]
 
   params = _capitalize( params )
+  params = _discardNones( params )
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
@@ -94,6 +108,7 @@ def select( rssDB, params, meta ):
   accepted_keys = [ 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys' ]
 
   params = _capitalize( params )
+  params = _discardNones( params )
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
@@ -140,6 +155,7 @@ def delete( rssDB, params, meta ):
   accepted_keys = [ 'table' ]
 
   params = _capitalize( params )
+  params = _discardNones( params )
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
