@@ -9,14 +9,27 @@
 from DIRAC import S_ERROR
 
 __RCSID__ = '$Id: $'
+
+def _capitalize( params ):
+  '''
+    Capitalize first letter of all keys in dictionary
+  '''
+  
+  capitalizedParams = {}
+  for key, value in params.items():
+    capitalizedParams[ key[0].upper() + key[1:] ] = value
+  
+  return capitalizedParams  
      
 def insert( rssDB, params, meta ):
   '''
     Method that transforms the RSS DB insert into the MySQL insertFields 
     method.
   '''
-
+  
   accepted_keys = [ 'table' ]
+
+  params = _capitalize( params )
     
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
@@ -39,6 +52,8 @@ def update( rssDB, params, meta ):
   '''
 
   accepted_keys = [ 'table', 'uniqueKeys' ]
+
+  params = _capitalize( params )
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
@@ -77,6 +92,8 @@ def select( rssDB, params, meta ):
   '''
 
   accepted_keys = [ 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys' ]
+
+  params = _capitalize( params )
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
@@ -121,6 +138,8 @@ def delete( rssDB, params, meta ):
   '''
     
   accepted_keys = [ 'table' ]
+
+  params = _capitalize( params )
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):

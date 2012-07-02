@@ -52,12 +52,14 @@ class ResourceStatusClient( object ):
     '''
     if not serviceIn:
       try:
-        self.gate = ResourceStatusDB()
-      except SystemExit:
         self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
       except ImportError:
-        # Pilots will connect here, as MySQLdb is not installed for them
-        self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
+        self.gate = ResourceStatusDB()
+      except SystemExit:
+        gLogger.exception( 'Unable to connect to Server and DB' )
+        
+#        # Pilots will connect here, as MySQLdb is not installed for them
+#        self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
     else:
       self.gate = serviceIn 
 
@@ -337,15 +339,14 @@ class ResourceStatusClient( object ):
     selectQuery = self.selectStatusElement( **parameters )
     if not selectQuery[ 'OK' ]:
       return selectQuery
-         
-    # Remove meta parameters to do the insert     
-    parameters[ 'meta' ] = None 
        
     ## CALLBACKS ARE MISSING !!   
        
     if selectQuery[ 'Value' ]:      
       return self.updateStatusElement( **parameters )
-    else: 
+    else:
+      # Remove meta parameters to do the insert     
+      parameters[ 'meta' ] = None  
       insertQuery = self.insertStatusElement( **parameters )
 #      if insertQuery[ 'OK' ]:       
 #        res = self.__setElementInitStatus( element, **parameters )

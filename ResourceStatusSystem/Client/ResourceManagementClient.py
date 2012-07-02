@@ -50,12 +50,13 @@ class ResourceManagementClient( object ):
     '''
     if not serviceIn:
       try:
+        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )
+      except ImportError:        
         self.gate = ResourceManagementDB()
       except SystemExit:
-        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )
-      except ImportError:
-        # Pilots will connect here, as MySQLdb is not installed for them        
-        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
+        gLogger.exception( 'Unable to connect to Server and DB' )
+#        # Pilots will connect here, as MySQLdb is not installed for them        
+#        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
     else:
       self.gate = serviceIn    
 
