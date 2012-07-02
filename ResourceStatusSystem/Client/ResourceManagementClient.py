@@ -49,14 +49,7 @@ class ResourceManagementClient( object ):
     fails, then tries to connect to the Service :class:ResourceManagementHandler.
     '''
     if not serviceIn:
-      try:
-        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )
-      except ImportError:        
-        self.gate = ResourceManagementDB()
-      except SystemExit:
-        gLogger.exception( 'Unable to connect to Server and DB' )
-#        # Pilots will connect here, as MySQLdb is not installed for them        
-#        self.gate = RPCClient( "ResourceStatus/ResourceManagement" )        
+      self.gate = RPCClient( "ResourceStatus/ResourceManagement" )    
     else:
       self.gate = serviceIn    
 

@@ -50,16 +50,8 @@ class ResourceStatusClient( object ):
       The client tries to connect to :class:ResourceStatusDB by default. If it 
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
-    if not serviceIn:
-      try:
-        self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
-      except ImportError:
-        self.gate = ResourceStatusDB()
-      except SystemExit:
-        gLogger.exception( 'Unable to connect to Server and DB' )
-        
-#        # Pilots will connect here, as MySQLdb is not installed for them
-#        self.gate = RPCClient( "ResourceStatus/ResourceStatus" )  
+    if not serviceIn:     
+      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
     else:
       self.gate = serviceIn 
 
