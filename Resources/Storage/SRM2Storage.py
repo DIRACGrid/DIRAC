@@ -2035,7 +2035,7 @@ class SRM2Storage( StorageBase ):
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_set_ids: Failed to perform gfal_set_ids."
       if not errMessage:
-        errMessage = os.strerror( errCode )
+        errMessage = os.strerror( errCode ) 
       self.log.error( errStr, errMessage )
       return S_ERROR( "%s%s" % ( errStr, errMessage ) )
     else:
