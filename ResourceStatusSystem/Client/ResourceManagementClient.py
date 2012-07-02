@@ -48,10 +48,13 @@ class ResourceManagementClient( object ):
     The client tries to connect to :class:ResourceManagementDB by default. If it 
     fails, then tries to connect to the Service :class:ResourceManagementHandler.
     '''
-    if not serviceIn:
-      self.gate = RPCClient( "ResourceStatus/ResourceManagement" )    
-    else:
-      self.gate = serviceIn    
+    
+    self.gate = ResourceManagementDB()
+    
+#    if not serviceIn:
+#      self.gate = RPCClient( "ResourceStatus/ResourceManagement" )    
+#    else:
+#      self.gate = serviceIn    
 
 
   ##############################################################################

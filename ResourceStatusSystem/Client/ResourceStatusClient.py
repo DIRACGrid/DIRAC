@@ -50,10 +50,11 @@ class ResourceStatusClient( object ):
       The client tries to connect to :class:ResourceStatusDB by default. If it 
       fails, then tries to connect to the Service :class:ResourceStatusHandler.
     '''
-    if not serviceIn:     
-      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
-    else:
-      self.gate = serviceIn 
+    self.gate = ResourceStatusDB()
+#    if not serviceIn:     
+#      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
+#    else:
+#      self.gate = serviceIn 
 
   ################################################################################
   # Element status methods - enjoy ! 
