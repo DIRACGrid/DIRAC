@@ -21,12 +21,12 @@ class ResourceStatusDB( object ):
                     {
                      'Name'            : 'VARCHAR(64) NOT NULL',
                      'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT ""',
-                     'Status'          : 'VARCHAR(8) NOT NULL',
+                     'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
                      'DateEffective'   : 'DATETIME NOT NULL',
                      'LastCheckTime'   : 'DATETIME NOT NULL',
-                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "RS_SVC"',
-                     'TokenExpiration' : 'DATETIME NOT NULL'
+                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
+                     'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
                     'PrimaryKey' : [ 'Name', 'StatusType' ]              
                                     }
@@ -36,12 +36,12 @@ class ResourceStatusDB( object ):
                      'ID'              : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
                      'Name'            : 'VARCHAR(64) NOT NULL',
                      'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT ""',
-                     'Status'          : 'VARCHAR(8) NOT NULL',
+                     'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
                      'DateEffective'   : 'DATETIME NOT NULL',
                      'LastCheckTime'   : 'DATETIME NOT NULL',
-                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "RS_SVC"',
-                     'TokenExpiration' : 'DATETIME NOT NULL'
+                     'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
+                     'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
                     'PrimaryKey' : [ 'ID' ]                
                                     }
