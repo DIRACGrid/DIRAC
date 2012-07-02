@@ -90,7 +90,7 @@ def select( rssDB, params, meta ):
   if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
   
-  outFields, inFields, limit, order = None, None, None
+  outFields, limit, order = None, None, None
   if 'columns' in meta:
     outFields = meta[ 'columns' ]
   if 'limit' in meta:
