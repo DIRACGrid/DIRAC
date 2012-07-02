@@ -76,7 +76,7 @@ def select( rssDB, params, meta ):
     Method that transforms the RSS DB select into the MySQL getFields method.
   '''
 
-  accepted_keys = [ 'table', 'columns', 'order', 'limit' ]
+  accepted_keys = [ 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys' ]
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
@@ -90,17 +90,30 @@ def select( rssDB, params, meta ):
   if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
   
-  outFields, limit, order = None, None, None
+  outFields, inFields, limit, order = None, None, None
   if 'columns' in meta:
     outFields = meta[ 'columns' ]
   if 'limit' in meta:
     limit     = meta[ 'limit' ]  
   if 'order' in meta:
     order     = meta[ 'order' ]
-  
+  if 'onlyUniqueKeys' in meta:
+    
+    tableDefinition = rssDB.getTable( tableName )
+    if not tableDefinition[ 'OK' ]:
+      return tableDefinition
+    keys = tableDefinition[ 'Value' ][ 'PrimaryKey' ]
+    
+    newParams = {}
+    for key in keys:
+      if key in params:
+        newParams[ key ] = params[ key ]
+         
+    params = newParams   
+      
   return rssDB.database.getFields( tableName, condDict = params, 
-                                  outFields = outFields, limit = limit,
-                                    orderAttribute = order )
+                                   outFields = outFields, limit = limit,
+                                   orderAttribute = order )
       
 def delete( rssDB, params, meta ):
   '''

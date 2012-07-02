@@ -34,7 +34,8 @@ class Synchronizer( object ):
     
     gLogger.debug( '%s sites found in CS' % len( sitesCS ) )
     
-    sitesDB = self.rStatus.selectStatusElement( 'Site', 'Status', meta = { 'columns' : 'name' } ) 
+    sitesDB = self.rStatus.selectStatusElement( 'Site', 'Status', 
+                                                meta = { 'columns' : [ 'name' ] } ) 
     if not sitesDB[ 'OK' ]:
       return sitesDB    
     sitesDB = sitesDB[ 'Value' ]
@@ -57,7 +58,8 @@ class Synchronizer( object ):
       return statusTypes
     statusTypes = statusTypes[ 'Value' ]
 
-    sitesTuple = self.rStatus.selectStatusElement( 'Site', 'Status', meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    sitesTuple = self.rStatus.selectStatusElement( 'Site', 'Status', 
+                                                   meta = { 'columns' : [ 'name', 'statusType' ] } ) 
     if not sitesTuple[ 'OK' ]:
       return sitesTuple   
     sitesTuple = sitesTuple[ 'Value' ]
@@ -94,7 +96,8 @@ class Synchronizer( object ):
     
     gLogger.debug( '%s storage elements found in CS' % len( sesCS ) )
     
-    sesDB = self.rStatus.selectStatusElement( 'Resource', 'Status', meta = { 'columns' : 'name' } ) 
+    sesDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                              meta = { 'columns' : [ 'name' ] } ) 
     if not sesDB[ 'OK' ]:
       return sesDB    
     sesDB = sesDB[ 'Value' ]
@@ -160,13 +163,13 @@ class Synchronizer( object ):
     
     gLogger.debug( '%s users found in CS' % len( usersCS ) )
     
-    usersDB = self.rManagement.selectUserRegistryCache( meta = { 'columns' : 'login' } ) 
+    usersDB = self.rManagement.selectUserRegistryCache( meta = { 'columns' : [ 'login' ] } ) 
     if not usersDB[ 'OK' ]:
       return usersDB    
     usersDB = usersDB[ 'Value' ]
     
     # Users that are in DB but not in CS
-    toBeDeleted = list( set( usersDB.keys() ).intersection( set( usersCS ) ) )
+    toBeDeleted = list( set( usersDB ).intersection( set( usersCS.keys() ) ) )
     gLogger.debug( '%s users to be deleted' % len( toBeDeleted ) )
     
     # Delete users
