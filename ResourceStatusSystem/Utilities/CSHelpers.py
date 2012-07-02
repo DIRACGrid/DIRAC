@@ -34,6 +34,7 @@ def getSites():
     domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
     if not domainSites[ 'OK' ]:
       return domainSites
+    domainSites = domainSites[ 'Value' ]
     
     sites.append( domainSites )  
 
