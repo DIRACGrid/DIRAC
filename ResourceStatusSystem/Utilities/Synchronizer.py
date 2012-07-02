@@ -43,7 +43,7 @@ class Synchronizer( object ):
     sitesDB = sitesDB[ 'Value' ]
        
     # Sites that are in DB but not in CS
-    toBeDeleted = list( set( sitesDB.keys() ).intersection( set( sitesCS ) ) )
+    toBeDeleted = list( set( sitesDB ).intersection( set( sitesCS ) ) )
     gLogger.debug( '%s sites to be deleted' % len( toBeDeleted ) )
     
     # Delete sites
@@ -56,9 +56,9 @@ class Synchronizer( object ):
         return deleteQuery         
 
     statusTypes = RssConfiguration.getValidStatusTypes()
-    if not statusTypes[ 'OK' ]:
-      return statusTypes
-    statusTypes = statusTypes[ 'Value' ]
+#    if not statusTypes[ 'OK' ]:
+#      return statusTypes
+#    statusTypes = statusTypes[ 'Value' ]
 
     sitesTuple = self.rStatus.selectStatusElement( 'Site', 'Status', 
                                                    meta = { 'columns' : [ 'name', 'statusType' ] } ) 
@@ -121,9 +121,9 @@ class Synchronizer( object ):
 #        return deleteQuery            
     
     statusTypes = RssConfiguration.getValidStatusTypes()
-    if not statusTypes[ 'OK' ]:
-      return statusTypes
-    statusTypes = statusTypes[ 'Value' ]
+#    if not statusTypes[ 'OK' ]:
+#      return statusTypes
+#    statusTypes = statusTypes[ 'Value' ]
 
     sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
                                                    meta = { 'columns' : [ 'name', 'statusType' ] } ) 

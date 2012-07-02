@@ -36,7 +36,7 @@ def getSites():
       return domainSites
     domainSites = domainSites[ 'Value' ]
     
-    sites.append( domainSites )  
+    sites.extend( domainSites )  
 
   # Remove duplicated ( just in case )
   sites = list( set ( sites ) )
