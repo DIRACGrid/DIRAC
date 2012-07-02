@@ -10,7 +10,7 @@ from DIRAC import S_ERROR
 
 __RCSID__ = '$Id: $'
      
-def insert( database, params, meta ):
+def insert( rssDB, params, meta ):
   '''
     Method that transforms the RSS DB insert into the MySQL insertFields 
     method.
@@ -23,16 +23,16 @@ def insert( database, params, meta ):
     return S_ERROR( 'Insert statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
     
   tableName  = meta[ 'table' ]
-  tablesList = database.getTablesList()
+  tablesList = rssDB.getTablesList()
   if not tablesList[ 'OK' ]:
     return tablesList
   
   if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
     
-  return database.insertFields( tableName, inDict = params )    
+  return rssDB.database.insertFields( tableName, inDict = params )    
   
-def update( database, params, meta ):
+def update( rssDB, params, meta ):
   '''
     Method that transforms the RSS DB update into the MySQL updateFields 
     method.
@@ -45,7 +45,7 @@ def update( database, params, meta ):
     return S_ERROR( 'Update statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
     
   tableName  = meta[ 'table' ]
-  tablesList = database.getTablesList()
+  tablesList = rssDB.getTablesList()
   if not tablesList[ 'OK' ]:
     return tablesList
   
@@ -55,7 +55,7 @@ def update( database, params, meta ):
   if 'uniqueKeys' in meta:
     uniqueKeys = meta[ 'uniqueKeys' ]
   else:
-    res = database.getTable( tableName )
+    res = rssDB.database.getTable( tableName )
     if not res[ 'OK' ]:
       return res
     uniqueKeys = res[ 'Value' ][ 'PrimaryKey' ]  
@@ -68,10 +68,10 @@ def update( database, params, meta ):
   paramsToSelect = [ ( key, value ) for ( key, value ) in params.items() if key in uniqueKeys ]
   paramsToSelect = dict( paramsToSelect )
   
-  return database.updateFields( tableName, condDict = paramsToSelect, 
-                                updateDict = paramsToUpdate )  
+  return rssDB.database.updateFields( tableName, condDict = paramsToSelect, 
+                                      updateDict = paramsToUpdate )  
   
-def select( database, params, meta ):
+def select( rssDB, params, meta ):
   '''
     Method that transforms the RSS DB select into the MySQL getFields method.
   '''
@@ -83,7 +83,7 @@ def select( database, params, meta ):
     return S_ERROR( 'Select statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
 
   tableName  = meta[ 'table' ]
-  tablesList = database.getTablesList()
+  tablesList = rssDB.getTablesList()
   if not tablesList[ 'OK' ]:
     return tablesList
   
@@ -98,11 +98,11 @@ def select( database, params, meta ):
   if 'order' in meta:
     order     = meta[ 'order' ]
   
-  return database.getFields( tableName, condDict = params, 
+  return rssDB.database.getFields( tableName, condDict = params, 
                                   outFields = outFields, limit = limit,
                                     orderAttribute = order )
       
-def delete( database, params, meta ):
+def delete( rssDB, params, meta ):
   '''
     Method that transforms the RSS DB delete into the MySQL 
   '''
@@ -114,14 +114,14 @@ def delete( database, params, meta ):
     return S_ERROR( 'Delete statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
 
   tableName  = meta[ 'table' ]
-  tablesList = database.getTablesList()
+  tablesList = rssDB.getTablesList()
   if not tablesList[ 'OK' ]:
     return tablesList
   
   if not tableName in tablesList[ 'Value' ]:
     return S_ERROR( '"%s" is not on the schema tables' )
 
-  return database.deleteEntries( tableName, condDict = params )
+  return rssDB.database.deleteEntries( tableName, condDict = params )
       
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

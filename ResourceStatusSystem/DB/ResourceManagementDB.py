@@ -140,7 +140,7 @@ class ResourceManagementDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    return MySQLWrapper.insert( self.database, params, meta )
+    return MySQLWrapper.insert( self, params, meta )
 
   def update( self, params, meta ):
     '''
@@ -161,7 +161,7 @@ class ResourceManagementDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    return MySQLWrapper.update( self.database, params, meta )
+    return MySQLWrapper.update( self, params, meta )
 
   def select( self, params, meta ):
     '''
@@ -179,7 +179,7 @@ class ResourceManagementDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    return MySQLWrapper.select( self.database, params, meta )
+    return MySQLWrapper.select( self, params, meta )
 
   def delete( self, params, meta ):
     '''
@@ -200,7 +200,7 @@ class ResourceManagementDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
-    return MySQLWrapper.delete( self.database, params, meta )
+    return MySQLWrapper.delete( self, params, meta )
 
   ## Auxiliar methods ##########################################################
 
