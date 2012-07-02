@@ -19,7 +19,7 @@ def insert( database, params, meta ):
   accepted_keys = [ 'table' ]
     
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
-  if set( meta.keys() ) & set( accepted_keys ):
+  if set( meta.keys() ) - set( accepted_keys ):
     return S_ERROR( 'Insert statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
     
   tableName  = meta[ 'table' ]
@@ -41,7 +41,7 @@ def update( database, params, meta ):
   accepted_keys = [ 'table', 'uniqueKeys' ]
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
-  if set( meta.keys() ) & set( accepted_keys ):
+  if set( meta.keys() ) - set( accepted_keys ):
     return S_ERROR( 'Update statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
     
   tableName  = meta[ 'table' ]
@@ -79,7 +79,7 @@ def select( database, params, meta ):
   accepted_keys = [ 'table', 'columns', 'order', 'limit' ]
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
-  if set( meta.keys() ) & set( accepted_keys ):
+  if set( meta.keys() ) - set( accepted_keys ):
     return S_ERROR( 'Select statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
 
   tableName  = meta[ 'table' ]
@@ -110,7 +110,7 @@ def delete( database, params, meta ):
   accepted_keys = [ 'table' ]
 
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
-  if set( meta.keys() ) & set( accepted_keys ):
+  if set( meta.keys() ) - set( accepted_keys ):
     return S_ERROR( 'Delete statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
 
   tableName  = meta[ 'table' ]
