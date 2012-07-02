@@ -15,13 +15,15 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, RssConfiguration
 
 class Synchronizer( object ):
   
-  def __init__( self ):
+  def __init__( self, rStatus = None, rManagement = None ):
     
     # Warm up local CS
     CSHelpers.warmUp()
     
-    self.rStatus     = ResourceStatusClient.ResourceStatusClient() 
-    self.rManagement = ResourceManagementClient.ResourceManagementClient()
+    if rStatus is None:
+      self.rStatus     = ResourceStatusClient.ResourceStatusClient()
+    if rManagement is None:   
+      self.rManagement = ResourceManagementClient.ResourceManagementClient()
   
   def _syncSites( self ):
     
