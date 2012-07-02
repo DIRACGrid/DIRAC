@@ -26,9 +26,6 @@ def S_OK( value = "" ):
 def S_ERROR( msg = "" ):
   return { 'OK' : False, 'Message' : msg }
 
-g_GlobalDefaultsLoc = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
-#g_GlobalDefaultsLoc = "file:///home/adria/tmp/insttest/globalDefaults.cfg"
-
 ############
 # Start of CFG
 ############
@@ -53,6 +50,8 @@ class Params:
     self.lcgVer = ''
     self.useVersionsDir = False
     self.installSource = ""
+    self.globalDefaults = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
+    self.timeout = 300
 
 cliParams = Params()
 
@@ -302,7 +301,7 @@ class ReleaseConfig:
     if urlcfg in self.__cfgCache:
       return S_OK( self.__cfgCache[ urlcfg ] )
     try:
-      cfgData = urlretrieveTimeout( urlcfg, timeout = 60 )
+      cfgData = urlretrieveTimeout( urlcfg, timeout = cliParams.timeout )
       if not cfgData:
         return S_ERROR( "Could not get data from %s" % urlcfg )
     except:
@@ -340,8 +339,8 @@ class ReleaseConfig:
     return self.__loadObjectDefaults( "Projects", self.__projectName )
 
   def __loadGlobalDefaults( self ):
-    self.__dbgMsg( "Loading global defaults from: %s" % g_GlobalDefaultsLoc )
-    result = self.__loadCFGFromURL( g_GlobalDefaultsLoc )
+    self.__dbgMsg( "Loading global defaults from: %s" % cliParams.globalDefaults )
+    result = self.__loadCFGFromURL( cliParams.globalDefaults )
     if not result[ 'OK' ]:
       return result
     self.__globalDefaults = result[ 'Value' ]
@@ -761,7 +760,7 @@ def logNOTICE( msg ):
 def alarmTimeoutHandler( *args ):
   raise Exception( 'Timeout' )
 
-def urlretrieveTimeout( url, fileName='', timeout = 0 ):
+def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
   """
    Retrieve remote url to local file, with timeout wrapper
   """
@@ -793,7 +792,7 @@ def urlretrieveTimeout( url, fileName='', timeout = 0 ):
       receivedBytes += len( data )
       if fileName:
         localFD.write( data )
-      else:  
+      else:
         urlData += data
       data = remoteFD.read( 16384 )
       if count % 100 == 0:
@@ -803,7 +802,7 @@ def urlretrieveTimeout( url, fileName='', timeout = 0 ):
       count += 1
     if progressBar:
       print
-    if fileName:  
+    if fileName:
       localFD.close()
     remoteFD.close()
     if receivedBytes != expectedBytes:
@@ -824,10 +823,10 @@ def urlretrieveTimeout( url, fileName='', timeout = 0 ):
 
   if timeout:
     signal.alarm( 0 )
-    
+
   if fileName:
-    return True  
-  else:  
+    return True
+  else:
     return urlData
 
 def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache = False ):
@@ -842,7 +841,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
   else:
     logNOTICE( "Retrieving %s" % tarFileURL )
     try:
-      if not urlretrieveTimeout( tarFileURL, tarPath, 300 ):
+      if not urlretrieveTimeout( tarFileURL, tarPath, cliParams.timeout ):
         logERROR( "Cannot download %s" % tarName )
         return False
     except Exception, e:
@@ -859,7 +858,7 @@ def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache
     else:
       logNOTICE( "Retrieving %s" % md5FileURL )
       try:
-        if not urlretrieveTimeout( md5FileURL, md5Path, 300 ):
+        if not urlretrieveTimeout( md5FileURL, md5Path, 60 ):
           logERROR( "Cannot download %s" % tarName )
           return False
       except Exception, e:
@@ -1008,7 +1007,9 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'V:', 'installation=', 'Installation from which to extract parameter values' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
+            ( 'D:', 'defaults', 'Where to retrieve the global defaults from' ),
             ( 'h', 'help', 'Show this help' ),
+            ( 'T:', 'Timeout=', 'Timeout for downloads (default = %s)', cliParams.timeout )
           )
 
 def usage():
@@ -1026,7 +1027,8 @@ def usage():
                    ( 'UseVersionsDir', cliParams.useVersionsDir ),
                    ( 'BuildExternals', cliParams.buildExternals ),
                    ( 'NoAutoBuild', cliParams.noAutoBuild ),
-                   ( 'Debug', cliParams.debug ) ]:
+                   ( 'Debug', cliParams.debug ),
+                   ( 'Timeout', cliParams.timeout ) ]:
     print " %s = %s" % options
 
   sys.exit( 1 )
@@ -1046,6 +1048,8 @@ def loadConfiguration():
       cliParams.installation = v
     elif o in ( "-d", "--debug" ):
       cliParams.debug = True
+    elif o in ( "-D", "--defaults" ):
+      cliParams.globalDefaults = v
 
   releaseConfig = ReleaseConfig( instName = cliParams.installation )
   if cliParams.debug:
@@ -1064,9 +1068,9 @@ def loadConfiguration():
         logNOTICE( "Loaded %s" % arg )
 
   for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
-                  'buildExternals', 'noAutoBuild', 'debug' ,
+                  'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
                   'lcgVer', 'useVersionsDir', 'targetPath',
-                  'project', 'release', 'extraModules', 'extensions' ):
+                  'project', 'release', 'extraModules', 'extensions', 'timeout' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
     except KeyError:
@@ -1119,6 +1123,13 @@ def loadConfiguration():
       cliParams.noAutoBuild = True
     elif o in ( '-X', '--externalsOnly' ):
       cliParams.externalsOnly = True
+    elif o in ( '-T', '--Timeout' ):
+      try:
+        cliParams.timeout = max( cliParams.timeout, float( v ) )
+        cliParams.timeout = min( cliParams.timeout, 3600 )
+      except ValueError:
+        pass
+
 
   if not cliParams.release:
     logERROR( "Missing release to install" )

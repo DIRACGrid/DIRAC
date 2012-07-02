@@ -7,7 +7,8 @@
 
 import collections
 
-from DIRAC import gConfig
+from DIRAC                import gConfig
+from DIRAC.Core.Utilities import List
 
 __RCSID__ = '$Id: $'
 
@@ -15,11 +16,14 @@ __RCSID__ = '$Id: $'
 # useful functions
 #############################################################################
 
+def getTypedList( stringValue ):
+  '''
+  Returns a typed list from a csv
+  '''
+  return [ typedobj_of_string(e) for e in List.fromChar( stringValue ) ]
+
 def where(c, f):
   return "Class " + str(c.__class__.__name__) + ", in Function " + (f.__name__)
-
-def whoRaised(x):
-  return "Exception: " + str(x.__class__.__name__) +", raised by " + str(x)
 
 def convertTime(t, inTo = None):
 
@@ -128,30 +132,30 @@ def canonicalURL(url):
 
 # RPC utils
 
-class RPCError(Exception):
-  pass
+#class RPCError(Exception):
+#  pass
+#
+#def unpack(dirac_value):
+#  if type(dirac_value) != dict:
+#    raise ValueError, "Not a DIRAC value."
+#  if 'OK' not in dirac_value.keys():
+#    raise ValueError, "Not a DIRAC value."
+#  try:
+#    return dirac_value['Value']
+#  except KeyError:
+#    raise RPCError, dirac_value['Message']
 
-def unpack(dirac_value):
-  if type(dirac_value) != dict:
-    raise ValueError, "Not a DIRAC value."
-  if 'OK' not in dirac_value.keys():
-    raise ValueError, "Not a DIRAC value."
-  try:
-    return dirac_value['Value']
-  except KeyError:
-    raise RPCError, dirac_value['Message']
-
-def protect2(f, *args, **kw):
-  """Wrapper protect"""
-  try:
-    ret = f(*args, **kw)
-    if type(ret) == dict and ret['OK'] == False:
-      print "function " + f.f.__name__ + " called with " + str( args )
-      print "%s\n" % ret['Message']
-    return ret
-  except Exception as e:
-    print "function " + str(f) + " called with " + str(args)
-    raise e
+#def protect2(f, *args, **kw):
+#  """Wrapper protect"""
+#  try:
+#    ret = f(*args, **kw)
+#    if type(ret) == dict and ret['OK'] == False:
+#      print "function " + f.f.__name__ + " called with " + str( args )
+#      print "%s\n" % ret['Message']
+#    return ret
+#  except Exception as e:
+#    print "function " + str(f) + " called with " + str(args)
+#    raise e
 
 # (Duck) type checking
 
@@ -172,10 +176,10 @@ def typedobj_of_string(s):
 
 # List utils
 
-def list_(a):
-  """Same as list() except if arg is a string, in this case, return
-  [a]"""
-  return (list(a) if type(a) != str else [a])
+#def list_(a):
+#  """Same as list() except if arg is a string, in this case, return
+#  [a]"""
+#  return (list(a) if type(a) != str else [a])
 
 def list_flatten(l):
   try:
@@ -222,17 +226,17 @@ def dictMatch(dict1, dict2):
 
 # XML utils
 
-def xml_append(doc, tag, value_=None, elt_=None, **kw):
-  new_elt = doc.createElement(tag)
-  for k in kw:
-    new_elt.setAttribute(k, str(kw[k]))
-  if value_ != None:
-    textnode = doc.createTextNode(str(value_))
-    new_elt.appendChild(textnode)
-  if elt_ != None:
-    return elt_.appendChild(new_elt)
-  else:
-    return doc.documentElement.appendChild(new_elt)
+#def xml_append(doc, tag, value_=None, elt_=None, **kw):
+#  new_elt = doc.createElement(tag)
+#  for k in kw:
+#    new_elt.setAttribute(k, str(kw[k]))
+#  if value_ != None:
+#    textnode = doc.createTextNode(str(value_))
+#    new_elt.appendChild(textnode)
+#  if elt_ != None:
+#    return elt_.appendChild(new_elt)
+#  else:
+#    return doc.documentElement.appendChild(new_elt)
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

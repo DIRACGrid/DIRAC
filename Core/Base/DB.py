@@ -77,9 +77,7 @@ class DB( MySQL ):
                    self.dbName, self.dbPort, maxQueueSize = maxQueueSize )
 
     if not self._connected:
-      err = 'Can not connect to DB, exiting...'
-      self.log.fatal( err )
-      sys.exit( err )
+      raise RuntimeError( 'Can not connect to DB %s, exiting...' % dbname )
 
 
     self.log.info( "==================================================" )

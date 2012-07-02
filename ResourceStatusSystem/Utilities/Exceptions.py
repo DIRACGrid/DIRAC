@@ -5,9 +5,6 @@
 
 '''
 
-from DIRAC.ResourceStatusSystem import ValidRes, ValidStatus, ValidSiteType, \
-    ValidServiceType, ValidResourceType
-
 __RCSID__  = '$Id: $'
 
 class RSSDBException( Exception ):

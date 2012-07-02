@@ -259,7 +259,8 @@ def _addCfgToCS( cfg ):
   result = cfgClient.mergeFromCFG( cfg )
   if not result['OK']:
     return result
-  return cfgClient.commit()
+  result = cfgClient.commit()
+  return result
 
 def _addCfgToLocalCS( cfg ):
   """
@@ -480,11 +481,13 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
   sectionName = "Agents"
   if componentType == 'service':
     sectionName = "Services"
+  elif componentType == 'executor':  
+    sectionName = "Executors"
 
   # Check if the component CS options exist
   addOptions = True
+  componentSection = cfgPath( 'Systems', system, compInstance, sectionName, component )
   if not overwrite:
-    componentSection = cfgPath( 'Systems', system, compInstance, sectionName, component )
     if gConfig:
       result = gConfig.getOptions( componentSection )
       if result['OK']:
@@ -499,8 +502,17 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName,
     return result
   compCfg = result['Value']
 
-  gLogger.notice( 'Adding to CS', '%s/%s' % ( system, component ) )
-  return _addCfgToCS( compCfg )
+  gLogger.notice( 'Adding to CS', '%s %s/%s' % ( componentType, system, component ) )
+  resultAddToCFG = _addCfgToCS( compCfg )
+  if componentType == 'executor':
+    # Is it a container ?        
+    execList = compCfg.getOption('%s/Load' % componentSection,[])
+    for element in execList:
+      result = addDefaultOptionsToCS( gConfig, componentType, systemName, element, extensions, setup, 
+                                      {}, overwrite)
+      resultAddToCFG.setdefault('Modules',{})
+      resultAddToCFG['Modules'][element] = result['OK']
+  return resultAddToCFG  
 
 def addDefaultOptionsToComponentCfg( componentType, systemName, component, extensions ):
   """
@@ -746,6 +758,21 @@ def getSoftwareComponents( extensions ):
               service = 'ServerHandler.py'
             services[system].append( service.replace( '.py', '' ).replace( 'Handler', '' ) )
       except OSError:
+        pass
+      try:
+        executorDir = os.path.join( rootPath, extension, sys, 'Executor' )
+        executorList = os.listdir( executorDir )
+        for executor in executorList:
+          if executor[-3:] == ".py":
+            executorFile = os.path.join( executorDir, executor )
+            afile = open( executorFile, 'r' )
+            body = afile.read()
+            afile.close()
+            if body.find( 'OptimizerExecutor' ) != -1:
+              if not executors.has_key( system ):
+                executors[system] = []
+              executors[system].append( executor.replace( '.py', '' ) )
+      except OSError:       
         pass
 
   resultDict = {}
@@ -1385,7 +1412,7 @@ def installComponent( componentType, system, component, extensions, componentMod
   cModule = componentModule
   if not cModule:
     cModule = component
-  if not checkComponentSoftware( componentType, system, cModule, extensions )['OK']:
+  if not checkComponentSoftware( componentType, system, cModule, extensions )['OK'] and componentType != 'executor':
     error = 'Software for %s %s/%s is not installed' % ( componentType, system, component )
     if exitOnError:
       gLogger.error( error )

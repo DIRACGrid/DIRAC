@@ -7,6 +7,7 @@
 
 import datetime
 
+from DIRAC                                                import gLogger 
 from DIRAC.ResourceStatusSystem.PolicySystem              import Status
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
@@ -50,7 +51,7 @@ class PDP:
     PDP (Policy Decision Point) initialization
 
     :params:
-      :attr:`granularity`: string - a ValidRes
+      :attr:`granularity`: string - a ValidElement
       :attr:`name`: string - name (e.g. of a site)
       :attr:`status`: string - status
       :attr:`formerStatus`: string - former status
@@ -188,7 +189,9 @@ class PDP:
 
       if res[ 'Status' ] not in ( 'Error', 'Unknown' ):
         policyResults.append( res )
-
+      else:
+        gLogger.warn( res )      
+      
     return policyResults
 
 ################################################################################

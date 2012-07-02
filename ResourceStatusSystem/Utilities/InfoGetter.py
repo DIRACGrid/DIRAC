@@ -9,7 +9,6 @@ import copy
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAtOperations
 from DIRAC.ResourceStatusSystem.Utilities    import RssConfiguration, Utils
-from DIRAC.ResourceStatusSystem              import views_panels
 
 __RCSID__ = '$Id: $'
 
@@ -32,7 +31,7 @@ class InfoGetter:
         :params:
           :attr:`args`: a tuple. Can contain: 'policy', 'policyType', 'panel_info', 'view_info'
 
-          :attr:`granularity`: a ValidRes
+          :attr:`granularity`: a ValidElement
 
           :attr:`status`: a ValidStatus
 
@@ -174,7 +173,7 @@ class InfoGetter:
                 'ServiceType'  : serviceType,
                 'ResourceType' : resourceType }
 
-    pTconfig = getTypedDictRootedAtOperations("PolicyTypes")
+    pTconfig = RssConfiguration.getValidPolicyTypes()
     return (pt for pt in pTconfig if Utils.dictMatch(argsdict, pTconfig[pt]))
 
   def getNewPolicyType(self, granularity, newStatus):
@@ -246,17 +245,7 @@ class InfoGetter:
   def __getViewPanels( self, granularity ):
     if granularity is None:
       granularity = 'Site'
-    return views_panels[granularity]
-
-################################################################################
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-################################################################################
-
-'''
-  HOW DOES THIS WORK.
-
-    will come soon...
-'''
+    return RssConfiguration.views_panels[ granularity ]
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -9,11 +9,10 @@ from datetime import datetime, timedelta
 
 from DIRAC                                           import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RPCClient                      import RPCClient        
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName       
-from DIRAC.ResourceStatusSystem                      import ValidRes, ValidStatus, \
-  ValidStatusTypes, ValidSiteType, ValidServiceType, ValidResourceType       
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName            
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
-from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node       
+from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node      
+from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
 
 __RCSID__ = '$Id: $'
        
@@ -755,7 +754,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `string`
         name of the individual of class element  
@@ -797,7 +796,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `string`
         name of the individual of class element  
@@ -839,7 +838,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `[, string, list]`
         name of the individual of class element  
@@ -881,7 +880,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `[, string, list]`
         name of the individual of class element  
@@ -926,7 +925,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `string`
         name of the individual of class element  
@@ -969,7 +968,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `string`
         name of the individual of class element  
@@ -1012,7 +1011,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `[, string, list]`
         name of the individual of class element  
@@ -1056,7 +1055,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `[, string, list]`
         name of the individual of class element  
@@ -1101,7 +1100,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `string`
         name of the individual of class element  
@@ -1144,7 +1143,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `string`
         name of the individual of class element  
@@ -1186,7 +1185,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `[, string, list]`
         name of the individual of class element  
@@ -1229,7 +1228,7 @@ class ResourceStatusClient:
 
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `[, string, list]`
         name of the individual of class element  
@@ -1267,59 +1266,64 @@ class ResourceStatusClient:
   
   def getValidElements( self ):
     '''
-    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/Resources`
+    Gets ValidElement from Operations: RSSConfiguration/GeneralConfig/Granularity
     
     :Parameters: `None`
     
     :return: S_OK()
-    '''   
-    return S_OK( ValidRes )
+    '''
+    validElements = RssConfiguration.getValidElements()   
+    return S_OK( validElements )
   def getValidStatuses( self ):
     '''
-    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/Status`
+    Gets ValidStatus from Operations: RSSConfiguration/GeneralConfig/Status
     
     :Parameters: `None`
     
     :return: S_OK()
     '''    
-    return S_OK( ValidStatus )
+    validStatus = RssConfiguration.getValidStatus()
+    return S_OK( validStatus )
   def getValidStatusTypes( self ):  
     '''
-    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/Resources`
+    Gets ValidStatusTypes from Operations: RSSConfiguration/GeneralConfig/Resources
     
     :Parameters: `None`
     
     :return: S_OK()
     '''    
-    return S_OK( ValidStatusTypes )
+    validStatusTypes = RssConfiguration.getValidStatusTypes()
+    return S_OK( validStatusTypes )
   def getValidSiteTypes( self ):
     '''
-    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/SiteType`
+    Gets ValidSiteTypes from Operations: RSSConfiguration/GeneralConfig/SiteType
     
     :Parameters: `None`
     
     :return: S_OK()
     '''    
-    return S_OK( ValidSiteType )
+    validSiteTypes = RssConfiguration.getValidSiteTypes()
+    return S_OK( validSiteTypes )
   def getValidServiceTypes( self ):
     '''
-    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/ServiceType`
+    Gets ValidServiceTypes from Operations: RSSConfiguration/GeneralConfig/ServiceType
     
     :Parameters: `None`
     
     :return: S_OK()
     '''    
-    return S_OK( ValidServiceType ) 
+    validServiceTypes = RssConfiguration.getValidServiceTypes()
+    return S_OK( validServiceTypes ) 
   def getValidResourceTypes( self ):
     '''
-    Gets ValidRes from `CS/Operations/RSSConfiguration/GeneralConfig/Resource\
-    Type`
+    Gets ValidResourceTypes from Operations: RSSConfiguration/GeneralConfig/ResourceType
     
     :Parameters: `None`
     
     :return: S_OK()
     '''    
-    return S_OK( ValidResourceType )
+    validResourceTypes = RssConfiguration.getValidResourceTypes()
+    return S_OK( validResourceTypes )
 
 ################################################################################
 # EXTENDED FUNCTIONS
@@ -1446,7 +1450,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `string`
         name of the individual of class element  
@@ -1483,7 +1487,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **elementName** - `[, string, list]`
         name of the individual of class element  
@@ -1707,7 +1711,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **name** - `string`
         name of the element
@@ -1732,7 +1736,7 @@ class ResourceStatusClient:
 
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **name** - `[, string, list]`
         name of the element  
@@ -1769,7 +1773,7 @@ class ResourceStatusClient:
         
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **name** - `string`
         name of the element  
@@ -1804,7 +1808,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **name** - `string`
         name of the element  
@@ -1832,7 +1836,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **name** - `string`
         name of the element  
@@ -1862,7 +1866,10 @@ class ResourceStatusClient:
     
     :return: S_OK || S_ERROR
     '''
-    for g in ValidRes:
+    
+    validElements = RssConfiguration.getValidElements()
+    
+    for g in validElements:
 
       elementName = '%sName' % (g[0].lower() + g[1:])
 
@@ -1883,7 +1890,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **checkFrequency** - `dict`
         used to set chech frequency depending on state and type
@@ -2023,7 +2030,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **name** - `string`
         name of the element
@@ -2042,7 +2049,7 @@ class ResourceStatusClient:
     
     :Parameters:
       **granularity** - `string`
-        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        it has to be a valid element ( ValidElements ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`
       **selectDict** - `dict`
         meta-data for the MySQL query
@@ -2362,7 +2369,8 @@ class ResourceStatusClient:
 
     # This three lines make not much sense, but sometimes statusToSet is '',
     # and we need it as a list to work properly
-    statusToSet = ValidStatusTypes[ element ][ 'StatusType' ]
+    validStatusTypes = RssConfiguration.getValidStatusTypes()
+    statusToSet = validStatusTypes[ element ][ 'StatusType' ]
     
     elementName = '%sName' % ( element[0].lower() + element[1:] )
     
@@ -2532,8 +2540,10 @@ class ResourceStatusClient:
     if not sqlQuery[ 'OK' ]:
       return sqlQuery 
 
+    validStatuses = RssConfiguration.getValidStatus()
+
     count = { 'Total' : 0 }
-    for validStatus in ValidStatus:
+    for validStatus in validStatuses:
       count[ validStatus ] = 0
 
     for x in sqlQuery[ 'Value' ]:

@@ -112,7 +112,7 @@ class AuthManager:
     if "authenticated" in lowerCaseProperties:
       return True
     if not self.matchProperties( credDict, requiredProperties ):
-      self.__authLogger.warn( "Client is not authorized\nValid properties: %s\Client: %s" % ( requiredProperties, credDict ) )
+      self.__authLogger.warn( "Client is not authorized\nValid properties: %s\nClient: %s" % ( requiredProperties, credDict ) )
       return False
     return True
 
