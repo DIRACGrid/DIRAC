@@ -55,7 +55,7 @@ def update( rssDB, params, meta ):
   if 'uniqueKeys' in meta:
     uniqueKeys = meta[ 'uniqueKeys' ]
   else:
-    res = rssDB.database.getTable( tableName )
+    res = rssDB.getTable( tableName )
     if not res[ 'OK' ]:
       return res
     uniqueKeys = res[ 'Value' ][ 'PrimaryKey' ]  
