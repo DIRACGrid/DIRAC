@@ -39,9 +39,10 @@ def getValidStatusTypes():
   '''
   
   DEFAULTS = { 
-               'Site'          : { 'StatusType' : "''" },
-               'Service'       : { 'StatusType' : "''" },
-               'Resource'      : { 'StatusType' : "''" },
+               'Site'          : { 'StatusType' : "" },
+               'Service'       : { 'StatusType' : "" },
+               'Resource'      : { 'StatusType' : "" },
+               'Node'          : { 'StatusType' : "" },
                'StorageElement': { 'StatusType' : [ 'Read', 'Write', 'Remove', 'Check' ] }
               }
   
