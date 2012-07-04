@@ -148,7 +148,7 @@ class Synchronizer( object ):
       _name            = ftsTuple[ 0 ]
       _statusType      = ftsTuple[ 1 ]
       _reason          = 'Synchronzed'
-      _elementType     = 'StorageElement'
+      _elementType     = 'FTS'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
                                                        statusType = _statusType,
