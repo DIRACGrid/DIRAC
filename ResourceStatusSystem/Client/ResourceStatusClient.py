@@ -5,7 +5,7 @@
 
 '''
 
-#from datetime import datetime, timedelta
+from datetime import datetime#, timedelta
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                      import RPCClient        
@@ -340,6 +340,11 @@ class ResourceStatusClient( object ):
     else:
       # Remove meta parameters to do the insert     
       parameters[ 'meta' ] = None  
+      
+      # Set DateEffective to now if not present.
+      if 'DateEffective' in parameters and parameters[ 'DateEffective' ] is None:
+        parameters[ 'DateEffective' ] = datetime.now().replace( microsecond = 0 )
+      
       insertQuery = self.insertStatusElement( **parameters )
 #      if insertQuery[ 'OK' ]:       
 #        res = self.__setElementInitStatus( element, **parameters )
