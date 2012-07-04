@@ -118,19 +118,20 @@ class Synchronizer( object ):
 #      if not deleteQuery[ 'OK' ]:
 #        return deleteQuery            
     
-    statusTypes = RssConfiguration.getValidStatusTypes()
+    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 #    if not statusTypes[ 'OK' ]:
 #      return statusTypes
 #    statusTypes = statusTypes[ 'Value' ]
 
     sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
-                                                   meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+                                                 elementType = 'StorageElement', 
+                                                 meta = { 'columns' : [ 'name', 'statusType' ] } ) 
     if not sesTuple[ 'OK' ]:
       return sesTuple   
     sesTuple = sesTuple[ 'Value' ]        
   
     # For each ( se, statusType ) tuple not present in the DB, add it.
-    sesStatusTuples = [ ( se, statusType ) for se in sesTuple for statusType in statusTypes ]     
+    sesStatusTuples = [ ( se, statusType ) for se in sesCS for statusType in statusTypes ]     
     toBeAdded = list( set( sesStatusTuples ).difference( set( sesTuple ) ) )
     
     gLogger.debug( '%s storage element entries to be added' % len( toBeAdded ) )
@@ -140,10 +141,12 @@ class Synchronizer( object ):
       _name            = seTuple[ 0 ]
       _statusType      = seTuple[ 1 ]
       _reason          = 'Synchronzed'
+      _elementType     = 'StorageElement'
       
-      query = self.rStatus.addOrModifyStatusElement( 'Resource', 'Status', name = _name, 
-                                                     statusType = _statusType, 
-                                                     reason = _reason )
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
       if not query[ 'OK' ]:
         return query
       
