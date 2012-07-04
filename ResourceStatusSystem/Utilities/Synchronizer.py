@@ -105,7 +105,7 @@ class Synchronizer( object ):
   
   def __syncFileCatalogs( self ): 
     
-    catalogsCS = CSHelpers.getFTS()
+    catalogsCS = CSHelpers.getFileCatalogs()
     if not catalogsCS[ 'OK' ]:
       return catalogsCS
     catalogsCS = catalogsCS[ 'Value' ]        
