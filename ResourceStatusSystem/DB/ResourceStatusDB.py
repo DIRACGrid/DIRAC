@@ -23,8 +23,8 @@ class ResourceStatusDB( object ):
                      'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT ""',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
-                     'DateEffective'   : 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP',
-                     'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+                     'DateEffective'   : 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+                     'LastCheckTime'   : 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
                      'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
                      'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
@@ -38,8 +38,8 @@ class ResourceStatusDB( object ):
                      'StatusType'      : 'VARCHAR(16) NOT NULL DEFAULT ""',
                      'Status'          : 'VARCHAR(8) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
-                     'DateEffective'   : 'DATETIME NOT NULL',
-                     'LastCheckTime'   : 'DATETIME NOT NULL',
+                     'DateEffective'   : 'TIMESTAMP NOT NULL',
+                     'LastCheckTime'   : 'TIMESTAMP NOT NULL',
                      'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
                      'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
