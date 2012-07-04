@@ -69,14 +69,232 @@ def sendNumTaskQueues():
   else:
     gLogger.error( "Cannot get the number of task queues", result[ 'Message' ] )
 
+
+class Limiter:
+
+  __csDictCache = DictCache()
+  __condCache = DictCache()
+  __delayMem = {}
+
+  def __init__( self, opsHelper ):
+    """ Constructor
+    """
+    self.__runningLimitSection = "JobScheduling/RunningLimit" 
+    self.__matchingDelaySection = "JobScheduling/MatchingDelay"
+    self.__opsHelper = opsHelper
+
+  def checkJobLimit( self ):
+    return self.__opsHelper.getValue( "JobScheduling/CheckJobLimits", True )
+
+  def checkMatchingDelay( self ):
+    return self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True )
+
+  def getNegativeCond( self ):
+    """ Get negative condition for ALL sites
+    """
+    orCond = Limiter.__condCache.get( "GLOBAL" )
+    if orCond:
+      return orCond
+    negCond = {}
+    #Run Limit
+    result = self.__opsHelper.getSections( self.__runningLimitSection )
+    if not result[ 'OK' ]:
+      sites = []
+    sites = result[ 'Value' ]
+    for siteName in sites:
+      result = self.__getRunningCondition( siteName )
+      if not result[ 'OK' ]:
+        continue
+      data = result[ 'Value' ]
+      if data:
+        negCond[ siteName ] = data 
+    #Delay limit
+    result = self.__opsHelper.getSections( self.__matchingDelaySection )
+    if not result[ 'OK' ]:
+      sites = []
+    sites = result[ 'Value' ]
+    for siteName in sites:
+      result = self.__getDelayCondition( siteName )
+      if not result[ 'OK' ]:
+        continue
+      data = result[ 'Value' ]
+      if not data:
+        continue
+      if siteName in negCond:
+        negCond[ siteName ] = self.__mergeCond( negCond[ siteName ], data )
+      else:
+        negCond[ siteName ] = data
+    orCond = []
+    for siteName in negCond:
+      negCond[ siteName ][ 'Site' ] = siteName
+      orCond.append( negCond[ siteName ] )
+    Limiter.__condCache.add( "GLOBAL", 10, orCond )
+    return orCond  
+
+  def getNegativeCondForSite( self, siteName ):
+    """ Generate a negative query based on the limits set on the site
+    """
+    # Check if Limits are imposed onto the site
+    negativeCond = {}
+    if self.checkJobLimit():
+      result = self.__getRunningCondition( siteName )
+      if result['OK']:
+        negativeCond = result['Value']
+      gLogger.verbose( 'Negative conditions for site %s after checking limits are: %s' % ( siteName, str( negativeCond ) ) )
+
+    if self.checkMatchingDelay():
+      result = self.__getDelayCondition( siteName )
+      if result['OK']:
+        delayCond = result['Value']
+        gLogger.verbose( 'Negative conditions for site %s after delay checking are: %s' % ( siteName, str( delayCond ) ) )
+        negCond = self.__mergeCond( negativeCond, delayCond )
+
+    if negativeCond:
+      gLogger.info( 'Negative conditions for site %s are: %s' % ( siteName, str( negativeCond ) ) )
+
+    return negativeCond
+
+  def __mergeCond( self, negCond, addCond ):
+    """ Merge two negative dicts
+    """
+    #Merge both negative dicts
+    for attr in addCond:
+      if attr not in negCond:
+        negCond[ attr ] = []
+      for value in addCond[ attr ]:
+        if value not in negCond[ attr ]:
+          negCond[ attr ].append( value )
+    return negCond
+
+  def __extractCSData( self, section ):
+    """ Extract limiting information from the CS in the form:
+        { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
+    """
+    stuffDict = Limiter.__csDictCache.get( section )
+    if stuffDict:
+      return S_OK( stuffDict )
+
+    result = self.__opsHelper.getSections( section )
+    if not result['OK']:
+      return result
+    attribs = result['Value']
+    stuffDict = {}
+    for attName in attribs:
+      result = self.__opsHelper.getOptionsDict( "%s/%s" % ( section, attName ) )
+      if not result[ 'OK' ]:
+        return result
+      attLimits = result[ 'Value' ]
+      try:
+        attLimits = dict( [ ( k, int( attLimits[k] ) ) for k in attLimits ] )
+      except Exception, excp:
+        errMsg = "%s/%s has to contain numbers: %s" % ( section, attName, str( excp ) )
+        gLogger.error( errMsg )
+        return S_ERROR( errMsg )
+      stuffDict[ attName ] = attLimits
+
+    Limiter.__csDictCache.add( section, 300, stuffDict )
+    return S_OK( stuffDict )
+
+  def __getRunningCondition( self, siteName ):
+    """ Get extra conditions allowing site throttling
+    """
+    siteSection = "%s/%s" % ( self.__runningLimitSection, siteName )
+    result = self.__extractCSData( siteSection )
+    if not result['OK']:
+      return result
+    limitsDict = result[ 'Value' ]
+    #limitsDict is something like { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
+    if not limitsDict:
+      return S_OK( {} )
+    # Check if the site exceeding the given limits
+    negCond = {}
+    for attName in limitsDict:
+      if attName not in gJobDB.jobAttributeNames:
+        gLogger.error( "Attribute %s does not exist. Check the job limits" % attName )
+        continue
+      cK = "Running:%s:%s" % ( siteName, attName )
+      data = self.__condCache.get( cK )
+      if not data:
+        result = gJobDB.getCounters( 'Jobs', [ attName ], { 'Site' : siteName, 'Status' : [ 'Running', 'Matched', 'Stalled' ] } )
+        if not result[ 'OK' ]:
+          return result
+        data = result[ 'Value' ]
+        data = dict( [ ( k[0][ attName ], k[1] )  for k in data ] )
+        self.__condCache.add( cK, 10, data )
+      for attValue in limitsDict[ attName ]:
+        limit = limitsDict[ attName ][ attValue ]
+        running = data.get( attValue, 0 )
+        if running >= limit:
+          gLogger.verbose( 'Job Limit imposed at %s on %s/%s=%d,'
+                           ' %d jobs already deployed' % ( siteName, attName, attValue, limit, running ) )
+          if attName not in negCond:
+            negCond[ attName ] = []
+          negCond[ attName ].append( attValue )
+    #negCond is something like : {'JobType': ['Merge']}
+    return S_OK( negCond )
+
+  def updateDelayCounters( self, siteName, jid ):
+    #Get the info from the CS
+    siteSection = "%s/%s" % ( self.__matchingDelaySection, siteName )
+    result = self.__extractCSData( siteSection )
+    if not result['OK']:
+      return result
+    delayDict = result[ 'Value' ]
+    #limitsDict is something like { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
+    if not delayDict:
+      return S_OK()
+    attNames = []
+    for attName in delayDict:
+      if attName not in gJobDB.jobAttributeNames:
+        gLogger.error( "Attribute %s does not exist in the JobDB. Please fix it!" % attName )
+      else:
+        attNames.append( attName )
+    result = gJobDB.getJobAttributes( jid, attNames )
+    if not result[ 'OK' ]:
+      gLogger.error( "While retrieving attributes coming from %s: %s" % ( siteSection, result[ 'Message' ] ) )
+      return result
+    atts = result[ 'Value' ]
+    #Create the DictCache if not there
+    if siteName not in Limiter.__delayMem:
+      Limiter.__delayMem[ siteName ] = DictCache()
+    #Update the counters
+    delayCounter = Limiter.__delayMem[ siteName ]
+    for attName in atts:
+      attValue = atts[ attName ]
+      if attValue in delayDict[ attName ]:
+        delayTime = delayDict[ attName ][ attValue ]
+        gLogger.notice( "Adding delay for %s/%s=%s of %s secs" % ( siteName, attName,
+                                                                   attValue, delayTime ) )
+        delayCounter.add( ( attName, attValue ), delayTime )
+    return S_OK()
+
+  def __getDelayCondition( self, siteName ):
+    """ Get extra conditions allowing matching delay
+    """
+    if siteName not in Limiter.__delayMem:
+      return S_OK( {} )
+    lastRun = Limiter.__delayMem[ siteName ].getKeys()
+    negCond = {}
+    for attName, attValue in lastRun:
+      if attName not in negCond:
+        negCond[ attName ] = []
+      negCond[ attName ].append( attValue )
+    return S_OK( negCond )
+
+
+#####
+#
+#  End of Limiter
+#
+#####
+
 class MatcherHandler( RequestHandler ):
 
   __opsCache = {}
-  __csDictCache = DictCache()
-  __delayMem = {}
 
   def initialize( self ):
     self.__opsHelper = self.__getOpsHelper()
+    self.__limiter = Limiter( self.__opsHelper )
 
   def __getOpsHelper( self, setup = False, vo = False ):
     if not setup:
@@ -133,6 +351,8 @@ class MatcherHandler( RequestHandler ):
           resourceDict[ k ] = resourceDescription[ k ]
 
     return resourceDict
+
+
 
   def selectJob( self, resourceDescription ):
     """ Main job selection function to find the highest priority job
@@ -212,30 +432,7 @@ class MatcherHandler( RequestHandler ):
     for key in resourceDict:
      gLogger.verbose( "%s : %s" % ( key.rjust( 20 ), resourceDict[ key ] ) )
 
-    # Check if Limits are imposed onto the site
-    negativeCond = {}
-    if self.__opsHelper.getValue( "JobScheduling/CheckJobLimits", True ):
-      result = self.__getRunningCondition( siteName )
-      if result['OK']:
-        negativeCond = result['Value']
-      gLogger.verbose( 'Negative conditions for site %s after checking limits are: %s' % ( siteName, str( negativeCond ) ) )
-
-    if self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
-      result = self.__getDelayCondition( siteName )
-      if result['OK']:
-        delayCond = result['Value']
-        gLogger.verbose( 'Negative conditions for site %s after delay checking are: %s' % ( siteName, str( delayCond ) ) )
-        #Merge both negative dicts
-        for attr in delayCond:
-          if attr not in negativeCond:
-            negativeCond[ attr ] = []
-          for value in delayCond[ attr ]:
-            if value not in negativeCond[ attr ]:
-              negativeCond[ attr ].append( value )
-
-    if negativeCond:
-      gLogger.info( 'Negative conditions for site %s are: %s' % ( siteName, str( negativeCond ) ) )
-
+    negativeCond = self.__limiter.getNegativeCondForSite( siteName )
     result = gTaskQueueDB.matchAndGetJob( resourceDict, negativeCond = negativeCond )
 
     if DEBUG:
@@ -290,120 +487,11 @@ class MatcherHandler( RequestHandler ):
       return S_ERROR( 'No attributes returned for job' )
 
     if self.__opsHelper.getValue( "JobScheduling/CheckMatchingDelay", True ):
-      self.__updateDelayCounters( siteName, jobID )
+      self.__limiter.updateDelayCounters( siteName, jobID )
 
     resultDict['DN'] = resAtt['Value']['OwnerDN']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
     return S_OK( resultDict )
-
-  def __extractCSDictOfDicts( self, section ):
-    stuffDict = MatcherHandler.__csDictCache.get( section )
-    if stuffDict:
-      return S_OK( stuffDict )
-
-    result = self.__opsHelper.getSections( section )
-    if not result['OK']:
-      return result
-    attribs = result['Value']
-    stuffDict = {}
-    for attName in attribs:
-      result = self.__opsHelper.getOptionsDict( "%s/%s" % ( section, attName ) )
-      if not result[ 'OK' ]:
-        return result
-      attLimits = result[ 'Value' ]
-      try:
-        attLimits = dict( [ ( k, int( attLimits[k] ) ) for k in attLimits ] )
-      except Exception, excp:
-        errMsg = "%s/%s has to contain numbers: %s" % ( section, attName, str( excp ) )
-        gLogger.error( errMsg )
-        return S_ERROR( errMsg )
-      stuffDict[ attName ] = attLimits
-
-    MatcherHandler.__csDictCache.add( section, 300, stuffDict )
-    return S_OK( stuffDict )
-
-  def __getRunningCondition( self, siteName ):
-    """ Get extra conditions allowing site throttling
-    """
-    siteSection = "JobScheduling/RunningLimit/%s" % siteName
-    result = self.__extractCSDictOfDicts( siteSection )
-    if not result['OK']:
-      return result
-    limitsDict = result[ 'Value' ]
-    #limitsDict is something like { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
-    if not limitsDict:
-      return S_OK( {} )
-    # Check if the site exceeding the given limits
-    negCond = {}
-    for attName in limitsDict:
-      if attName not in gJobDB.jobAttributeNames:
-        gLogger.error( "Attribute %s does not exist. Check the job limits" % attName )
-        continue
-      result = gJobDB.getCounters( 'Jobs', [ attName ], { 'Site' : siteName, 'Status' : [ 'Running', 'Matched', 'Stalled' ] } )
-      if not result[ 'OK' ]:
-        return result
-      data = result[ 'Value' ]
-      data = dict( [ ( k[0][ attName ], k[1] )  for k in data ] )
-      for attValue in limitsDict[ attName ]:
-        limit = limitsDict[ attName ][ attValue ]
-        running = data.get( attValue, 0 )
-        if running >= limit:
-          gLogger.verbose( 'Job Limit imposed at %s on %s/%s=%d,'
-                           ' %d jobs already deployed' % ( siteName, attName, attValue, limit, running ) )
-          if attName not in negCond:
-            negCond[ attName ] = []
-          negCond[ attName ].append( attValue )
-    #negCond is something like : {'JobType': ['Merge']}
-    return S_OK( negCond )
-
-  def __updateDelayCounters( self, siteName, jid ):
-    #Get the info from the CS
-    siteSection = "JobScheduling/MatchingDelay/%s" % siteName
-    result = self.__extractCSDictOfDicts( siteSection )
-    if not result['OK']:
-      return result
-    delayDict = result[ 'Value' ]
-    #limitsDict is something like { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
-    if not delayDict:
-      return S_OK()
-    attNames = []
-    for attName in delayDict:
-      if attName not in gJobDB.jobAttributeNames:
-        gLogger.error( "Attribute %s does not exist in the JobDB. Please fix it!" % attName )
-      else:
-        attNames.append( attName )
-    result = gJobDB.getJobAttributes( jid, attNames )
-    if not result[ 'OK' ]:
-      gLogger.error( "While retrieving attributes coming from %s: %s" % ( siteSection, result[ 'Message' ] ) )
-      return result
-    atts = result[ 'Value' ]
-    #Create the DictCache if not there
-    if siteName not in MatcherHandler.__delayMem:
-      MatcherHandler.__delayMem[ siteName ] = DictCache()
-    #Update the counters
-    delayCounter = MatcherHandler.__delayMem[ siteName ]
-    for attName in atts:
-      attValue = atts[ attName ]
-      if attValue in delayDict[ attName ]:
-        delayTime = delayDict[ attName ][ attValue ]
-        gLogger.notice( "Adding delay for %s/%s=%s of %s secs" % ( siteName, attName,
-                                                                   attValue, delayTime ) )
-        delayCounter.add( ( attName, attValue ), delayTime )
-    return S_OK()
-
-
-  def __getDelayCondition( self, siteName ):
-    """ Get extra conditions allowing matching delay
-    """
-    if siteName not in MatcherHandler.__delayMem:
-      return S_OK( {} )
-    lastRun = MatcherHandler.__delayMem[ siteName ].getKeys()
-    negCond = {}
-    for attName, attValue in lastRun:
-      if attName not in negCond:
-        negCond[ attName ] = []
-      negCond[ attName ].append( attValue )
-    return S_OK( negCond )
 
 ##############################################################################
   types_requestJob = [ [StringType, DictType] ]
@@ -428,7 +516,11 @@ class MatcherHandler( RequestHandler ):
   def export_getMatchingTaskQueues( self, resourceDict ):
     """ Return all task queues
     """
-    return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDict )
+    if 'Site' in resourceDict and type( resourceDict[ 'Site' ] ) in types.StringTypes:
+      negativeCond = self.__limiter.getNegativeCond( resourceDict[ 'Site' ] )
+    else:
+      negativeCond = self.__limiter.getNegativeCond()
+    return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDict, negativeCond = negativeCond )
 
 ##############################################################################
   types_matchAndGetTaskQueue = [ DictType ]
