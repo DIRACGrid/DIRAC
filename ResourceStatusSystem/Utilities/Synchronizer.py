@@ -87,7 +87,79 @@ class Synchronizer( object ):
   def _syncResources( self ):
     
     gLogger.debug( '-- Synchronizing Resources --')
+    
     gLogger.debug( '-> StorageElements' )
+    ses = self.__syncStorageElements()
+    if not ses[ 'OK' ]:
+      gLogger.error( ses[ 'Message' ] )
+    
+    gLogger.debug( '-> FTS' )
+    fts = self.__syncFTS()
+    if not fts[ 'OK' ]:
+      gLogger.error( fts[ 'Message' ] )
+    
+    
+  def __syncFTS( self ): 
+    
+    ftsCS = CSHelpers.getFTS()
+    if not ftsCS[ 'OK' ]:
+      return ftsCS
+    ftsCS = ftsCS[ 'Value' ]        
+    
+    gLogger.debug( '%s FTS endpoints found in CS' % len( ftsCS ) )
+    
+    ftsDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                              elementType = 'FTS',
+                                              meta = { 'columns' : [ 'name' ] } ) 
+    if not ftsDB[ 'OK' ]:
+      return ftsDB    
+    ftsDB = ftsDB[ 'Value' ]
+       
+    # StorageElements that are in DB but not in CS
+    toBeDeleted = list( set( ftsDB ).intersection( set( ftsCS ) ) )
+    gLogger.debug( '%s FTS endpoints to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for ftsName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', ftsName )
+      
+      gLogger.debug( '... %s' % ftsName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+
+    sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                 elementType = 'FTS', 
+                                                 meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not sesTuple[ 'OK' ]:
+      return sesTuple   
+    sesTuple = sesTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    ftsStatusTuples = [ ( se, statusType ) for se in ftsCS for statusType in statusTypes ]     
+    toBeAdded = list( set( ftsStatusTuples ).difference( set( sesTuple ) ) )
+    
+    gLogger.debug( '%s FTS endpoints entries to be added' % len( toBeAdded ) )
+  
+    for ftsTuple in toBeAdded:
+      
+      _name            = ftsTuple[ 0 ]
+      _statusType      = ftsTuple[ 1 ]
+      _reason          = 'Synchronzed'
+      _elementType     = 'StorageElement'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()      
+ 
+  def __syncStorageElements( self ): 
     
     sesCS = CSHelpers.getStorageElements()
     if not sesCS[ 'OK' ]:

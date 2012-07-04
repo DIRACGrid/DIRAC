@@ -52,6 +52,16 @@ def getStorageElements():
   seNames = gConfig.getSections( _basePath )
   return seNames 
 
+def getFTS():
+  '''
+    Gets all storage elements from /Resources/FTSEndpoints
+  '''
+  
+  _basePath = 'Resources/FTSEndpoints'
+    
+  ftsEndpoints = gConfig.getOptions( _basePath )
+  return ftsEndpoints 
+
 def getRegistryUsers():
   '''
     Gets all users from /Registry/Users
