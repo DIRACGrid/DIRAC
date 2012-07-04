@@ -39,11 +39,12 @@ def getValidStatusTypes():
   '''
   
   DEFAULTS = { 
-               'Site'          : { 'StatusType' : "" },
-               'Service'       : { 'StatusType' : "" },
-               'Resource'      : { 'StatusType' : "" },
-               'Node'          : { 'StatusType' : "" },
-               'StorageElement': { 'StatusType' : [ 'Read', 'Write', 'Remove', 'Check' ] }
+               'Site'          : [ '' ],
+               'Service'       : [ '' ],
+               'Resource'      : [ '' ],
+               'Node'          : [ '' ],
+               'StorageElement': [ 'ReadAccess', 'WriteAccess', 
+                                   'RemoveAccess', 'CheckAccess' ]
               }
   
   opHelper = Operations()
@@ -57,11 +58,11 @@ def getValidStatusTypes():
     res = opHelper.getValue( 'RSSConfiguration/GeneralConfig/Resources/%s/StatusType' % section )
     if res is None:
       if DEFAULTS.has_key( section ):
-        result[ section ] = { 'StatusType' : DEFAULTS[ section ] }
+        result[ section ] = DEFAULTS[ section ]
       else:
-        result[ section ] = { 'StatusType' : None }  
+        result[ section ] = []  
     else:
-      result[ section ] = { 'StatusType' : Utils.getTypedList( res ) }
+      result[ section ] = Utils.getTypedList( res )
       
   return result     
   

@@ -55,7 +55,7 @@ class Synchronizer( object ):
       if not deleteQuery[ 'OK' ]:
         return deleteQuery         
 
-    statusTypes = RssConfiguration.getValidStatusTypes()
+    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Site' ]
 #    if not statusTypes[ 'OK' ]:
 #      return statusTypes
 #    statusTypes = statusTypes[ 'Value' ]
