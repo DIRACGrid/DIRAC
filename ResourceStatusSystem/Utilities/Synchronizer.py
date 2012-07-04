@@ -67,7 +67,7 @@ class Synchronizer( object ):
     sitesTuple = sitesTuple[ 'Value' ]
     
     # For each ( site, statusType ) tuple not present in the DB, add it.
-    siteStatusTuples = [ ( site, statusType ) for site in sitesTuple for statusType in statusTypes ]     
+    siteStatusTuples = [ ( site, statusType ) for site in sitesCS for statusType in statusTypes ]     
     toBeAdded = list( set( siteStatusTuples ).difference( set( sitesTuple ) ) )
     
     gLogger.debug( '%s site entries to be added' % len( toBeAdded ) )
