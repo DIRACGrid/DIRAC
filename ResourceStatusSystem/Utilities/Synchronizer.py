@@ -97,6 +97,7 @@ class Synchronizer( object ):
     gLogger.debug( '%s storage elements found in CS' % len( sesCS ) )
     
     sesDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                              elementType = 'StorageElement',
                                               meta = { 'columns' : [ 'name' ] } ) 
     if not sesDB[ 'OK' ]:
       return sesDB    
@@ -105,23 +106,17 @@ class Synchronizer( object ):
     # StorageElements that are in DB but not in CS
     toBeDeleted = list( set( sesDB ).intersection( set( sesCS ) ) )
     gLogger.debug( '%s storage elements to be deleted' % len( toBeDeleted ) )
-    
-# WE CANNOT DELETE THIS WAY, as we cannot know what is what. We have to gather
-# all resources and delete after.    
-    
-#    # Delete storage elements
-#    for sesName in toBeDeleted:
-#      
-#      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', sesName )
-#      
-#      gLogger.debug( '... %s' % sesName )
-#      if not deleteQuery[ 'OK' ]:
-#        return deleteQuery            
+       
+    # Delete storage elements
+    for sesName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', sesName )
+      
+      gLogger.debug( '... %s' % sesName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
     
     statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-#    if not statusTypes[ 'OK' ]:
-#      return statusTypes
-#    statusTypes = statusTypes[ 'Value' ]
 
     sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
                                                  elementType = 'StorageElement', 
