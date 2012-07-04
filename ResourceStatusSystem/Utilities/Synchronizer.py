@@ -56,9 +56,6 @@ class Synchronizer( object ):
         return deleteQuery         
 
     statusTypes = RssConfiguration.getValidStatusTypes()[ 'Site' ]
-#    if not statusTypes[ 'OK' ]:
-#      return statusTypes
-#    statusTypes = statusTypes[ 'Value' ]
 
     sitesTuple = self.rStatus.selectStatusElement( 'Site', 'Status', 
                                                    meta = { 'columns' : [ 'name', 'statusType' ] } ) 
@@ -106,7 +103,7 @@ class Synchronizer( object ):
     sesDB = sesDB[ 'Value' ]
        
     # StorageElements that are in DB but not in CS
-    toBeDeleted = list( set( sesDB.keys() ).intersection( set( sesCS ) ) )
+    toBeDeleted = list( set( sesDB ).intersection( set( sesCS ) ) )
     gLogger.debug( '%s storage elements to be deleted' % len( toBeDeleted ) )
     
 # WE CANNOT DELETE THIS WAY, as we cannot know what is what. We have to gather

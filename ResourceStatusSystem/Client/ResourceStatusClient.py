@@ -60,8 +60,8 @@ class ResourceStatusClient( object ):
   # Element status methods - enjoy ! 
   
   def insertStatusElement( self, element, tableType, name, statusType, status, 
-                           reason, dateEffective, lastCheckTime, tokenOwner, 
-                           tokenExpiration, meta = None ): 
+                           elementType, reason, dateEffective, lastCheckTime, 
+                           tokenOwner, tokenExpiration, meta = None ): 
     '''
     Inserts on <element><tableType> a new row with the arguments given.
     
@@ -78,6 +78,9 @@ class ResourceStatusClient( object ):
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the diferent elements in the same element
+        table.  
       **reason** - `string`
         decision that triggered the assigned status
       **dateEffective** - `datetime`
@@ -98,8 +101,8 @@ class ResourceStatusClient( object ):
     # pylint: disable-msg=W0613
     return self.__query( 'insert', locals() )
   def updateStatusElement( self, element, tableType, name, statusType, status, 
-                           reason, dateEffective, lastCheckTime, tokenOwner, 
-                           tokenExpiration, meta = None ):
+                           elementType, reason, dateEffective, lastCheckTime, 
+                           tokenOwner, tokenExpiration, meta = None ):
     '''
     Updates <element><tableType> with the parameters given. 
     
@@ -116,6 +119,9 @@ class ResourceStatusClient( object ):
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the diferent elements in the same element
+        table.  
       **reason** - `string`
         decision that triggered the assigned status
       **dateEffective** - `datetime`
@@ -136,9 +142,9 @@ class ResourceStatusClient( object ):
     # pylint: disable-msg=W0613
     return self.__query( 'update', locals() )
   def selectStatusElement( self, element, tableType, name = None, statusType = None, 
-                           status = None, reason = None, dateEffective = None, 
-                           lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, meta = None ):
+                           status = None, elementType = None, reason = None, 
+                           dateEffective = None, lastCheckTime = None, 
+                           tokenOwner = None, tokenExpiration = None, meta = None ):
     '''
     Gets from <element><tableType> all rows that match the parameters given.
     
@@ -155,6 +161,9 @@ class ResourceStatusClient( object ):
       **status** - `[, string, list]`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`
+      **elementType** - `[, string, list]`
+        column to distinguish between the diferent elements in the same element
+        table.  
       **reason** - `[, string, list]`
         decision that triggered the assigned status
       **dateEffective** - `[, datetime, list]`
@@ -175,9 +184,9 @@ class ResourceStatusClient( object ):
     # pylint: disable-msg=W0613
     return self.__query( 'select', locals() )
   def deleteStatusElement( self, element, tableType, name = None, statusType = None, 
-                           status = None, reason = None, dateEffective = None, 
-                           lastCheckTime = None, tokenOwner = None, 
-                           tokenExpiration = None, meta = None ):
+                           status = None, elementType = None, reason = None, 
+                           dateEffective = None, lastCheckTime = None, 
+                           tokenOwner = None, tokenExpiration = None, meta = None ):
     '''
     Deletes from <element><tableType> all rows that match the parameters given.
     
@@ -194,6 +203,9 @@ class ResourceStatusClient( object ):
       **status** - `[, string, list]`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`
+      **elementType** - `[, string, list]`
+        column to distinguish between the diferent elements in the same element
+        table.  
       **reason** - `[, string, list]`
         decision that triggered the assigned status
       **dateEffective** - `[, datetime, list]`
@@ -214,7 +226,8 @@ class ResourceStatusClient( object ):
     # pylint: disable-msg=W0613
     return self.__query( 'delete', locals() )
   def addOrModifyStatusElement( self, element, tableType, name = None, 
-                                statusType = None, status = None, reason = None, 
+                                statusType = None, status = None, 
+                                elementType = None, reason = None, 
                                 dateEffective = None, lastCheckTime = None, 
                                 tokenOwner = None, tokenExpiration = None, 
                                 meta = None ):
@@ -234,6 +247,9 @@ class ResourceStatusClient( object ):
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the diferent elements in the same element
+        table.  
       **reason** - `string`
         decision that triggered the assigned status
       **dateEffective** - `datetime`
@@ -254,7 +270,8 @@ class ResourceStatusClient( object ):
     # pylint: disable-msg=W0613
     return self.__addOrModifyStatusElement( locals() )
   def addIfNotThereStatusElement( self, element, tableType, name = None, 
-                                  statusType = None, status = None, reason = None, 
+                                  statusType = None, status = None, 
+                                  elementType = None, reason = None, 
                                   dateEffective = None, lastCheckTime = None, 
                                   tokenOwner = None, tokenExpiration = None, 
                                   meta = None ):
@@ -274,6 +291,9 @@ class ResourceStatusClient( object ):
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`
+      **elementType** - `string`
+        column to distinguish between the diferent elements in the same element
+        table.  
       **reason** - `string`
         decision that triggered the assigned status
       **dateEffective** - `datetime`
