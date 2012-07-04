@@ -98,7 +98,71 @@ class Synchronizer( object ):
     if not fts[ 'OK' ]:
       gLogger.error( fts[ 'Message' ] )
     
+    gLogger.debug( '-> FileCatalogs' )
+    fileCatalogs = self.__syncFileCatalogs()
+    if not fileCatalogs[ 'OK' ]:
+      gLogger.error( fileCatalogs[ 'Message' ] ) 
+  
+  def __syncFileCatalogs( self ): 
     
+    catalogsCS = CSHelpers.getFTS()
+    if not catalogsCS[ 'OK' ]:
+      return catalogsCS
+    catalogsCS = catalogsCS[ 'Value' ]        
+    
+    gLogger.debug( '%s File catalogs found in CS' % len( catalogsCS ) )
+    
+    catalogsDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                   elementType = 'Catalog',
+                                                   meta = { 'columns' : [ 'name' ] } ) 
+    if not catalogsDB[ 'OK' ]:
+      return catalogsDB    
+    catalogsDB = catalogsDB[ 'Value' ]
+       
+    # StorageElements that are in DB but not in CS
+    toBeDeleted = list( set( catalogsDB ).intersection( set( catalogsCS ) ) )
+    gLogger.debug( '%s File catalogs to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for catalogName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', catalogName )
+      
+      gLogger.debug( '... %s' % catalogName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+
+    sesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                 elementType = 'Catalog', 
+                                                 meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not sesTuple[ 'OK' ]:
+      return sesTuple   
+    sesTuple = sesTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    catalogsStatusTuples = [ ( se, statusType ) for se in catalogsCS for statusType in statusTypes ]     
+    toBeAdded = list( set( catalogsStatusTuples ).difference( set( sesTuple ) ) )
+    
+    gLogger.debug( '%s File catalogs entries to be added' % len( toBeAdded ) )
+  
+    for catalogTuple in toBeAdded:
+      
+      _name            = catalogTuple[ 0 ]
+      _statusType      = catalogTuple[ 1 ]
+      _reason          = 'Synchronzed'
+      _elementType     = 'Catalog'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()      
+
   def __syncFTS( self ): 
     
     ftsCS = CSHelpers.getFTS()

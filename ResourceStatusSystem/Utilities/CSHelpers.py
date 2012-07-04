@@ -62,6 +62,16 @@ def getFTS():
   ftsEndpoints = gConfig.getOptions( _basePath )
   return ftsEndpoints 
 
+def getFileCatalogs():
+  '''
+    Gets all storage elements from /Resources/FileCatalogs
+  '''
+  
+  _basePath = 'Resources/FileCatalogs'
+    
+  fileCatalogs = gConfig.getSections( _basePath )
+  return fileCatalogs 
+
 def getRegistryUsers():
   '''
     Gets all users from /Registry/Users
