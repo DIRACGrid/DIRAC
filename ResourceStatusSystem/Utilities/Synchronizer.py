@@ -76,11 +76,12 @@ class Synchronizer( object ):
       
       _name            = siteTuple[ 0 ]
       _statusType      = siteTuple[ 1 ]
+      _status          = 'Banned'
       _reason          = 'Synchronzed'
       
-      query = self.rStatus.addOrModifyStatusElement( 'Site', 'Status', name = _name, 
-                                                     statusType = _statusType, 
-                                                     reason = _reason )
+      query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status', name = _name, 
+                                                       statusType = _statusType, 
+                                                       reason = _reason )
       if not query[ 'OK' ]:
         return query
       

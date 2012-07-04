@@ -253,7 +253,46 @@ class ResourceStatusClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__addOrModifyStatusElement( locals() )
+  def addIfNotThereStatusElement( self, element, tableType, name = None, 
+                                  statusType = None, status = None, reason = None, 
+                                  dateEffective = None, lastCheckTime = None, 
+                                  tokenOwner = None, tokenExpiration = None, 
+                                  meta = None ):
+    '''
+    Adds if-not-duplicated from <element><tableType>. 
+    
+    :Parameters:
+      **element** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Resource` | `Node`
+      **tableType** - `string`
+        it has to be a valid tableType [ 'Status', 'Log', 'History', 'Scheduled' ]          
+      **name** - `string`
+        name of the individual of class element  
+      **statusType** - `string`
+        it has to be a valid status type for the element class
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the status & status type are effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the status & status were checked
+      **tokenOwner** - `string`
+        token assigned to the site & status type
+      **tokenExpiration** - `datetime`
+        time-stamp setting validity of token ownership  
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
 
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    return self.__addIfNotThereStatusElement( locals() )
 
   ##############################################################################
   # Protected methods - Use carefully !!
@@ -328,7 +367,6 @@ class ResourceStatusClient( object ):
     # We force to search using the unique keys   
     parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
     
-    #sqlQuery = self._getElement( element, parameters )
     selectQuery = self.selectStatusElement( **parameters )
     if not selectQuery[ 'OK' ]:
       return selectQuery
@@ -346,11 +384,35 @@ class ResourceStatusClient( object ):
         parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
       
       insertQuery = self.insertStatusElement( **parameters )
-#      if insertQuery[ 'OK' ]:       
-#        res = self.__setElementInitStatus( element, **parameters )
-#        if not res[ 'OK' ]:
-#          return res
       return insertQuery   
+
+  def __addIfNotThereStatusElement( self, parameters ):
+    '''
+      This method checks the existence of the element in the database. Then,
+      it inserts if not there.
+    '''
+
+    # Remove self added by locals()
+    del parameters[ 'self' ]
+    
+    # We force to search using the unique keys   
+    parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
+    
+    selectQuery = self.selectStatusElement( **parameters )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery
+             
+    if selectQuery[ 'Value' ]:
+      return selectQuery      
+    # Remove meta parameters to do the insert     
+    parameters[ 'meta' ] = None  
+      
+    # Set DateEffective to now if not present.
+    if 'dateEffective' in parameters and parameters[ 'dateEffective' ] is None:
+      parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
+      
+    insertQuery = self.insertStatusElement( **parameters )
+    return insertQuery   
 
   def __extermineStatusElement( self, element, name, keepLogs ):
     '''
