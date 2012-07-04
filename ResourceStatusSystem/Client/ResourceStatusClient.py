@@ -342,8 +342,8 @@ class ResourceStatusClient( object ):
       parameters[ 'meta' ] = None  
       
       # Set DateEffective to now if not present.
-      if 'DateEffective' in parameters and parameters[ 'DateEffective' ] is None:
-        parameters[ 'DateEffective' ] = datetime.now().replace( microsecond = 0 )
+      if 'dateEffective' in parameters and parameters[ 'dateEffective' ] is None:
+        parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
       
       insertQuery = self.insertStatusElement( **parameters )
 #      if insertQuery[ 'OK' ]:       
