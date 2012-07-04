@@ -132,12 +132,13 @@ from DIRAC.WorkloadManagementSystem.private.gLitePilotDirector   import gLitePil
 from DIRAC.WorkloadManagementSystem.private.LCGPilotDirector     import LCGPilotDirector
 from DIRAC.WorkloadManagementSystem.private.DIRACPilotDirector   import DIRACPilotDirector
 
-from DIRAC.Resources.Computing.ComputingElement import getResourceDict
+from DIRAC.Resources.Computing.ComputingElement                  import getResourceDict
 
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils           import pilotAgentsDB
 
-from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
-from DIRAC import S_OK, S_ERROR, List, Time, DictCache
+from DIRAC.Core.Utilities.ThreadPool                             import ThreadPool
+from DIRAC.Core.DISET.RPCClient                                  import RPCClient
+from DIRAC                                                       import S_OK, S_ERROR, List, Time, DictCache
 
 import random, time
 import DIRAC
@@ -197,7 +198,8 @@ class TaskQueueDirector( AgentModule ):
 
     self.directorDict = getResourceDict()
 
-    result = taskQueueDB.getMatchingTaskQueues( self.directorDict )
+    rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
+    result = rpcMatcher.getMatchingTaskQueues( self.directorDict )
     if not result['OK']:
       self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
       return result
