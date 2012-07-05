@@ -103,6 +103,44 @@ def getComputingElements():
     
   return S_OK( ces ) 
 
+def getQueues():
+  '''
+    Gets all computing elements from /Resources/Sites/<>/<>/CE/Queues
+  '''
+  _basePath = 'Resources/Sites'
+  
+  queues = []
+  
+  domainNames = gConfig.getSections( _basePath )
+  if not domainNames[ 'OK' ]:
+    return domainNames
+  domainNames = domainNames[ 'Value' ]
+  
+  for domainName in domainNames:
+    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
+    if not domainSites[ 'OK' ]:
+      return domainSites
+    domainSites = domainSites[ 'Value' ]
+    
+    for site in domainSites:
+      siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
+      if not siteCEs[ 'OK' ]:
+        return siteCEs
+      siteCEs = siteCEs[ 'Value' ]
+      
+      for siteCE in siteCEs:
+        siteQueue = gConfig.getSections( '%s/%s/%s/CEs/%s/Queues' % ( _basePath, domainName, site, siteCE ) )
+        if not siteQueue[ 'OK' ]:
+          return siteQueue
+        siteQueue = siteQueue[ 'Value' ]
+        
+        queues.extend( siteQueue )  
+
+  # Remove duplicated ( just in case )
+  queues = list( set ( queues ) )
+    
+  return S_OK( queues ) 
+
 def getRegistryUsers():
   '''
     Gets all users from /Registry/Users

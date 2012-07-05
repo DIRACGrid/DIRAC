@@ -29,7 +29,7 @@ class ResourceStatusDB( object ):
                      'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
                      'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
-                    'PrimaryKey' : [ 'Name', 'StatusType' ]              
+                    'PrimaryKey' : [ 'Name', 'StatusType', 'ElementType' ]              
                                     }
     
   __tablesLike[ 'ElementWithID' ]       = { 'Fields' : 

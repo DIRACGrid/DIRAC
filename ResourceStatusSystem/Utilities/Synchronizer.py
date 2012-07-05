@@ -86,7 +86,7 @@ class Synchronizer( object ):
   
   def _syncResources( self ):
     
-    gLogger.debug( '-- Synchronizing Resources --')
+    gLogger.debug( '-- Synchronizing Resources --' )
     
     gLogger.debug( '-> StorageElements' )
     ses = self.__syncStorageElements()
@@ -107,6 +107,75 @@ class Synchronizer( object ):
     computingElements = self.__syncComputingElements()
     if not computingElements[ 'OK' ]:
       gLogger.error( computingElements[ 'Message' ] )
+
+  def _syncNodes( self ):
+    
+    gLogger.debug( '-- Synchronizing Nodes --' )
+  
+    gLogger.debug( '-> Queues' )
+    queues = self.__syncQueues()
+    if not queues[ 'OK' ]:
+      gLogger.error( queues[ 'Message' ] )
+
+  def __syncQueues( self ):
+
+    queuesCS = CSHelpers.getQueues()
+    if not queuesCS[ 'OK' ]:
+      return queuesCS
+    queuesCS = queuesCS[ 'Value' ]        
+    
+    gLogger.debug( '%s Queues found in CS' % len( queuesCS ) )
+    
+    queuesDB = self.rStatus.selectStatusElement( 'Node', 'Status', 
+                                                 elementType = 'Queue',
+                                                 meta = { 'columns' : [ 'name' ] } ) 
+    if not queuesDB[ 'OK' ]:
+      return queuesDB    
+    queuesDB = queuesDB[ 'Value' ]
+       
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list( set( queuesDB ).intersection( set( queuesDB ) ) )
+    gLogger.debug( '%s Queues to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for queueName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Node', queueName )
+      
+      gLogger.debug( '... %s' % queueName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
+
+    queueTuple = self.rStatus.selectStatusElement( 'Node', 'Status', 
+                                                   elementType = 'Queue', 
+                                                   meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not queueTuple[ 'OK' ]:
+      return queueTuple   
+    queueTuple = queueTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    queueStatusTuples = [ ( se, statusType ) for se in queuesCS for statusType in statusTypes ]     
+    toBeAdded = list( set( queueStatusTuples ).difference( set( queueTuple ) ) )
+    
+    gLogger.debug( '%s Queue entries to be added' % len( toBeAdded ) )
+  
+    for queueTuple in toBeAdded:
+      
+      _name            = queueTuple[ 0 ]
+      _statusType      = queueTuple[ 1 ]
+      _reason          = 'Synchronzed'
+      _elementType     = 'Queue'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Node', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()      
 
   def __syncComputingElements( self ): 
     
