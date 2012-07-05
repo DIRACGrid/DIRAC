@@ -72,6 +72,37 @@ def getFileCatalogs():
   fileCatalogs = gConfig.getSections( _basePath )
   return fileCatalogs 
 
+def getComputingElements():
+  '''
+    Gets all computing elements from /Resources/Sites/<>/<>/CE
+  '''
+  _basePath = 'Resources/Sites'
+  
+  ces = []
+  
+  domainNames = gConfig.getSections( _basePath )
+  if not domainNames[ 'OK' ]:
+    return domainNames
+  domainNames = domainNames[ 'Value' ]
+  
+  for domainName in domainNames:
+    domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
+    if not domainSites[ 'OK' ]:
+      return domainSites
+    domainSites = domainSites[ 'Value' ]
+    
+    for site in domainSites:
+      siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
+      if not siteCEs[ 'OK' ]:
+        return siteCEs
+      siteCEs = siteCEs[ 'Value' ]
+      ces.extend( siteCEs )  
+
+  # Remove duplicated ( just in case )
+  ces = list( set ( ces ) )
+    
+  return S_OK( ces ) 
+
 def getRegistryUsers():
   '''
     Gets all users from /Registry/Users

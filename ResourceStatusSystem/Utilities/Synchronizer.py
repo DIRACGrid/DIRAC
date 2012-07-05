@@ -102,6 +102,66 @@ class Synchronizer( object ):
     fileCatalogs = self.__syncFileCatalogs()
     if not fileCatalogs[ 'OK' ]:
       gLogger.error( fileCatalogs[ 'Message' ] ) 
+
+  def __syncComputingElements( self ): 
+    
+    cesCS = CSHelpers.getComputingElements()
+    if not cesCS[ 'OK' ]:
+      return cesCS
+    cesCS = cesCS[ 'Value' ]        
+    
+    gLogger.debug( '%s Computing elements found in CS' % len( cesCS ) )
+    
+    cesDB = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                   elementType = 'CE',
+                                                   meta = { 'columns' : [ 'name' ] } ) 
+    if not cesDB[ 'OK' ]:
+      return cesDB    
+    cesDB = cesDB[ 'Value' ]
+       
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list( set( cesDB ).intersection( set( cesDB ) ) )
+    gLogger.debug( '%s Computing elements to be deleted' % len( toBeDeleted ) )
+       
+    # Delete storage elements
+    for ceName in toBeDeleted:
+      
+      deleteQuery = self.rStatus._extermineStatusElement( 'Resource', ceName )
+      
+      gLogger.debug( '... %s' % ceName )
+      if not deleteQuery[ 'OK' ]:
+        return deleteQuery            
+    
+    statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+
+    cesTuple = self.rStatus.selectStatusElement( 'Resource', 'Status', 
+                                                 elementType = 'CE', 
+                                                 meta = { 'columns' : [ 'name', 'statusType' ] } ) 
+    if not cesTuple[ 'OK' ]:
+      return cesTuple   
+    cesTuple = cesTuple[ 'Value' ]        
+  
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    cesStatusTuples = [ ( se, statusType ) for se in cesCS for statusType in statusTypes ]     
+    toBeAdded = list( set( cesStatusTuples ).difference( set( cesTuple ) ) )
+    
+    gLogger.debug( '%s Computing elements entries to be added' % len( toBeAdded ) )
+  
+    for ceTuple in toBeAdded:
+      
+      _name            = ceTuple[ 0 ]
+      _statusType      = ceTuple[ 1 ]
+      _reason          = 'Synchronzed'
+      _elementType     = 'CE'
+      
+      query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
+                                                       statusType = _statusType,
+                                                       elementType = _elementType, 
+                                                       reason = _reason )
+      if not query[ 'OK' ]:
+        return query
+      
+    return S_OK()    
   
   def __syncFileCatalogs( self ): 
     
