@@ -103,6 +103,11 @@ class Synchronizer( object ):
     if not fileCatalogs[ 'OK' ]:
       gLogger.error( fileCatalogs[ 'Message' ] ) 
 
+    gLogger.debug( '-> ComputingElements' )
+    computingElements = self.__syncComputingElements()
+    if not computingElements[ 'OK' ]:
+      gLogger.error( computingElements[ 'Message' ] )
+
   def __syncComputingElements( self ): 
     
     cesCS = CSHelpers.getComputingElements()
