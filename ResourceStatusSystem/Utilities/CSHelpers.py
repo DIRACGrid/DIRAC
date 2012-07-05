@@ -5,7 +5,7 @@
   modules.  
 '''
 
-from DIRAC                                                 import gConfig, S_OK
+from DIRAC                                                 import gConfig, gLogger, S_OK
 
 __RCSID__ = '$Id:  $'
 
@@ -34,6 +34,7 @@ def getSites():
     domainSites = gConfig.getSections( '%s/%s' % ( _basePath, domainName ) )
     if not domainSites[ 'OK' ]:
       return domainSites
+    
     domainSites = domainSites[ 'Value' ]
     
     sites.extend( domainSites )  
@@ -94,7 +95,9 @@ def getComputingElements():
     for site in domainSites:
       siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
       if not siteCEs[ 'OK' ]:
-        return siteCEs
+        #return siteCEs
+        gLogger.error( siteCEs[ 'Message' ] )
+        continue
       siteCEs = siteCEs[ 'Value' ]
       ces.extend( siteCEs )  
 
@@ -125,13 +128,17 @@ def getQueues():
     for site in domainSites:
       siteCEs = gConfig.getSections( '%s/%s/%s/CEs' % ( _basePath, domainName, site ) )
       if not siteCEs[ 'OK' ]:
-        return siteCEs
+        #return siteCEs
+        gLogger.error( siteCEs[ 'Message' ] )
+        continue
       siteCEs = siteCEs[ 'Value' ]
       
       for siteCE in siteCEs:
         siteQueue = gConfig.getSections( '%s/%s/%s/CEs/%s/Queues' % ( _basePath, domainName, site, siteCE ) )
         if not siteQueue[ 'OK' ]:
-          return siteQueue
+          #return siteQueue
+          gLogger.error( siteQueue[ 'Message' ] )
+          continue
         siteQueue = siteQueue[ 'Value' ]
         
         queues.extend( siteQueue )  

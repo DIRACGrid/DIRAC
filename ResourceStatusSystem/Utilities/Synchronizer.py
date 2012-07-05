@@ -417,9 +417,6 @@ class Synchronizer( object ):
       
     return S_OK()  
   
-  def _syncNodes( self ):
-    pass
-  
   def _syncUsers( self ):
     
     gLogger.debug( '-- Synchronizing users --')
@@ -458,7 +455,7 @@ class Synchronizer( object ):
       query = self.rManagement.addOrModifyUserRegistryCache( userLogin, _name, _email )
       gLogger.debug( '-> %s' % userLogin )
       if not query[ 'OK' ]:
-        return query      
+        return query     
   
     return S_OK()
     
