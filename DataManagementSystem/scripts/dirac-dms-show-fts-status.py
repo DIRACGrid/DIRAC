@@ -109,9 +109,14 @@ def showChannels():
       line = colors[color] % lineTemplate 
     else:
       line = lineTemplate
-    printOut.append( line % ( chId, name, status, waitingFiles, successFiles, 
-                              failedFiles, filePut, throughPut, fRate, fFiles ) )
-
+    printOut.append( line % ( chId, name, status, 
+                              waitingFiles if waitingFiles else 0, 
+                              successFiles if successFiles else 0, 
+                              failedFiles if failedFiles else 0, 
+                              filePut if filePut else 0, 
+                              throughPut if througPut else 0, 
+                              fRate if fRate else 0, 
+                              fFiles if fFiles else 0 ) )
       
   if printOut:
     printOut = [ scInfo,  header, dashLine ] + printOut 
