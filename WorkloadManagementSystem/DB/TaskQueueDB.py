@@ -30,6 +30,7 @@ class TaskQueueDB( DB ):
     self.__multiValueMatchFields = ( 'GridCE', 'Site', 'GridMiddleware', 'LHCbPlatform',
                                      'PilotType', 'SubmitPool', 'JobType' )
     self.__bannedJobMatchFields = ( 'Site', )
+    self.__strictRequireMatchFields = ( 'SubmitPool', 'LHCbPlatform', 'PilotType' )
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'Setup', 'CPUTime' )
     self.__defaultCPUSegments = maxCPUSegments
@@ -577,13 +578,14 @@ class TaskQueueDB( DB ):
     condList = []
     for field in negativeCond:
       if field in self.__multiValueMatchFields:
-        tableN, fullTableN = self.__insertIntoTablesDict( tableDict, field )
+        fullTableN = '`tq_TQTo%ss`' % field
         valList = negativeCond[ field ]
         if type( valList ) not in ( types.TupleType, types.ListType ):
           valList = ( valList, )
         for value in valList:
           value = self._escapeString( value )[ 'Value' ]
-          sql = "%s != %s.Value" % ( value, tableN )
+          sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( value, 
+                                                                    fullTableN, fullTableN, fullTableN )
           condList.append( sql )
       elif field in self.__singleValueDefFields:
         for value in negativeCond[field]:
@@ -598,8 +600,8 @@ class TaskQueueDB( DB ):
     if fullTableName not in sqlTables:
       tableN = field.lower()
       sqlTables[ fullTableName ] = tableN
-      return tableN, fullTableName, 
-    return  sqlTables[ fullTableName ], fullTableName
+      return tableN, "`%s`" % fullTableName, 
+    return  sqlTables[ fullTableName ], "`%s`" % fullTableName
 
   def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1, negativeCond = {} ):
     """
@@ -644,41 +646,40 @@ class TaskQueueDB( DB ):
       if field in tqMatchDict and tqMatchDict[ field ]:
         tableN, fullTableN = self.__insertIntoTablesDict( sqlTables, field )
         sqlMultiCondList = []
+        sqlCondList.insert( 0, "%s.TQId = tq.TQId" % tableN )
         if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
           # that the GridCE matches explicetly so the COUNT can not be 0. In this case we skip this 
           # condition
-          sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0 " % ( fullTableN, fullTableN, fullTableN ) )
+          sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
         csql = self.__generateSQLSubCond( "%%s = %s.Value" % ( tableN ), tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
         sqlCondList.append( "( %s )" % " OR ".join( sqlMultiCondList ) )
         #In case of Site, check it's not in job banned sites
         if field in self.__bannedJobMatchFields:
-          banTableN, fullTableN = self.__insertIntoTablesDict( sqlTables, "Banned%s" % field )
-          csql = self.__generateSQLSubCond( "%%s != %s.Value" % ( banTableN ),
-                                            tqMatchDict[ field ],
-                                            boolOp = 'AND' )
+          fullTableN = '`tq_TQToBanned%ss`' % field
+          csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
+                                                                    fullTableN, fullTableN ), tqMatchDict[ field ], boolOp = 'AND' )
           sqlCondList.append( csql )
       #Resource banning
       bannedField = "Banned%s" % field
       if bannedField in tqMatchDict and tqMatchDict[ bannedField ]:
-        tableN, fullTableN = self.__insertIntoTablesDict( sqlTables, field )
-        csql = self.__generateSQLSubCond( "%%s != %s.Value" % ( tableN ),
-                                     tqMatchDict[ bannedField ],
-                                     boolOp = 'AND' )
+        fullTableN = '`tq_TQTo%ss`' % field
+        csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN,
+                                                                  fullTableN, fullTableN ), tqMatchDict[ bannedField ], boolOp = 'AND' )
         sqlCondList.append( csql )
 
-    #If not pilot type was not specified, none must be in the task queue
-    if 'PilotType' not in tqMatchDict:
-      tableN, fullTableN = self.__insertIntoTablesDict( sqlTables, "PilotType" )
-      sqlCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
+    #For certain fields, the require is strict. If it is not in the tqMatchDict, the job cannot require it
+    for field in self.__strictRequireMatchFields:
+      if field in tqMatchDict:
+        continue
+      fullTableN = '`tq_TQTo%ss`' % field
+      sqlCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) ) 
+
     # Add extra conditions
     if negativeCond:
       sqlCondList.append( self.__generateNotSQL( sqlTables, negativeCond ) )
-    #Add the table relations
-    for tableN in sqlTables.values():
-      sqlCondList.insert( 0, "%s.TQId = tq.TQId" % tableN )
     #Generate the final query string
     tqSqlCmd = "SELECT tq.TQId, tq.OwnerDN, tq.OwnerGroup FROM %s WHERE %s" % ( ", ".join( [ "`%s` %s" % ( tn, sqlTables[ tn ] ) for tn in sqlTables ] ),
                                                                                                                       " AND ".join( sqlCondList ) )
