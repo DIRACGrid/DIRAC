@@ -1,4 +1,4 @@
-[v6r5-pre4]
+[v6r5-pre5]
 
 NEW: Executor framework
 
@@ -19,6 +19,7 @@ FIX: dirac-install - add -T/--Timeout option to define timeout for distribution 
 NEW: dirac-install - added possibility of defining dirac-install's global defaults by command line switch
 BUGFIX: avoid PathFinder.getServiceURL and use Client class ( DataLoggingClient,LfcFileCatalogProxyClient ) 
 FIX: MySQL - added TIMESTAMPADD and TIMESTAMPDIFF to special values not to be scaped by MySQL
+NEW: ObjectLoader utility
 
 *RSS
 CHANGE: removed code execution from __init__
@@ -52,6 +53,48 @@ FIX: TransformationCLI - take into accout possible failures in resetFile command
 *Accounting
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
+
+[v6r4p13]
+
+*DMS
+FIX: dirac-admin-allow-se - added missing interpreter line
+
+[v6r4p12]
+
+*DMS
+CHANGE: RemovalTask - for DataManager shifter change creds after failure of removal with her/his proxy.
+
+*RSS
+NEW: Added RssConfiguration class
+FIX: ResourceManagementClient  - Fixed wrong method name
+
+[v6r4p11]
+
+*Core
+FIX: GGUSTicketsClient - GGUS SOAP URL updated
+
+*DMS
+BUGFIX: ReplicaManager - wrong for loop
+
+*RequestManagement
+BUGFIX: RequestClient - bug fix in finalizeRequest()
+
+*Transformation
+FIX: TaskManager - fix for correctly setting the sites (as list)
+
+[v6r4p10]
+
+*RequestManagement
+BUGFIX: RequestContainer - in addSubrequest() function
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
+
+*ResourceStatusSystem
+BUGFIX: InfoGetter - wrong import statement
+
+*WMS
+BUGFIX: SandboxMetadataDB - __init__() can not return a value
 
 [v6r4p9]
 
@@ -190,6 +233,11 @@ FIX: if there is no failed files, put an empty dict
 
 *Transformation
 FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
+
+[v6r3p18]
+
+*Resources
+BUGFIX: SRM2Storage - in checksum type evaluation
 
 [v6r3p17]
 

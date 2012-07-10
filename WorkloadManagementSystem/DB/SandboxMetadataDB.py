@@ -13,18 +13,17 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security import Properties, CS
 
-class SandboxMetadataDB(DB):
+class SandboxMetadataDB( DB ):
 
   def __init__( self, maxQueueSize = 10 ):
-    if not DB.__init__( self, 'SandboxMetadataDB', 'WorkloadManagement/SandboxMetadataDB', maxQueueSize ):
-      raise RuntimeError( "Can't initialize the SandboxStoreDB" )
+    DB.__init__( self, 'SandboxMetadataDB', 'WorkloadManagement/SandboxMetadataDB', maxQueueSize )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise RuntimeError( "Can't create tables: %s" % result[ 'Message' ] )
     self.__assignedSBGraceDays = 0
     self.__unassignedSBGraceDays = 15
 
-  def __initializeDB(self):
+  def __initializeDB( self ):
     """
     Create the tables
     """
@@ -219,12 +218,12 @@ class SandboxMetadataDB(DB):
     if not result[ 'OK' ]:
       return result
     return S_OK( assigned )
-  
+
   def __filterEntitiesByRequester( self, entitiesList, entitiesSetup, requesterName, requesterGroup ):
     """
     Given a list of entities and a requester, return the ones that the requester is allowed to modify
     """
-    sqlCond = [ "s.OwnerId=o.OwnerId" , "s.SBId=e.SBId", "e.EntitySetup=%s" %  entitiesSetup ]
+    sqlCond = [ "s.OwnerId=o.OwnerId" , "s.SBId=e.SBId", "e.EntitySetup=%s" % entitiesSetup ]
     requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
     if Properties.JOB_ADMINISTRATOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
@@ -237,7 +236,7 @@ class SandboxMetadataDB(DB):
     else:
       return S_ERROR( "Not authorized to access sandbox" )
     for i in range( len( entitiesList ) ):
-    
+
       entitiesList[i] = self._escapeString( entitiesList[ i ] )[ 'Value' ]
     if len( entitiesList ) == 1:
       sqlCond.append( "e.EntityId = %s" % entitiesList[0] )
@@ -269,7 +268,7 @@ class SandboxMetadataDB(DB):
       if not ids:
         return S_OK( 0 )
       sqlCond = [ "EntitySetup = %s" % escapedSetup ]
-      sqlCond.append( "EntityId in ( %s )" % ", ".join ( [ "'%s'" % str(eid) for eid in ids ] ) )
+      sqlCond.append( "EntityId in ( %s )" % ", ".join ( [ "'%s'" % str( eid ) for eid in ids ] ) )
       sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE %s" % " AND ".join( sqlCond )
       result = self._update( sqlCmd )
       if not result[ 'OK' ]:
@@ -318,7 +317,7 @@ class SandboxMetadataDB(DB):
     """
     Delete sandboxes
     """
-    sqlSBList = ", ".join( [ str(sbid) for sbid in SBIdList ] )
+    sqlSBList = ", ".join( [ str( sbid ) for sbid in SBIdList ] )
     for table in ( 'sb_SandBoxes', 'sb_EntityMapping' ):
       sqlCmd = "DELETE FROM `%s` WHERE SBId IN ( %s )" % ( table, sqlSBList )
       result = self._update( sqlCmd )

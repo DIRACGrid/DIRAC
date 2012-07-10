@@ -1981,7 +1981,7 @@ class ReplicaManager( CatalogToStorage ):
     if not res['OK']:
       return res
     if not res['Value']:
-      errStr = "__replicate: Write access not permitted for this credential."
+      errStr = "removeFile: Write access not permitted for this credential."
       self.log.error( errStr, lfns )
       return S_ERROR( errStr )
 
@@ -2056,8 +2056,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         failed.update( res['Value']['Failed'] )
         successful = res['Value']['Successful']
-    resDict = { 'Successful':successful, 'Failed':failed }
-    return S_OK( resDict )
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
   def removeReplica( self, storageElementName, lfn ):
     """ Remove replica at the supplied Storage Element from Storage Element then file catalogue
@@ -2109,9 +2108,8 @@ class ReplicaManager( CatalogToStorage ):
       return res
     failed.update( res['Value']['Failed'] )
     successful.update( res['Value']['Successful'] )
-    resDict = {'Successful':successful, 'Failed':failed}
     gDataStoreClient.commit()
-    return S_OK( resDict )
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } )
 
   def __removeReplica( self, storageElementName, fileTuple ):
     pfnDict = {}
@@ -2146,8 +2144,7 @@ class ReplicaManager( CatalogToStorage ):
     else:
       failed.update( res['Value']['Failed'] )
       successful = res['Value']['Successful']
-    resDict = {'Successful':successful, 'Failed':failed}
-    return S_OK( resDict )
+    return S_OK( { 'Successful' : successful, 'Failed' : failed } ) 
 
   def removeReplicaFromCatalog( self, storageElementName, lfn ):
     """ remove :lfn: replica from :storageElementName: SE
@@ -2430,7 +2427,7 @@ class ReplicaManager( CatalogToStorage ):
         del replicaDict['Successful'][ lfn ]
         replicaDict['Failed'][lfn] = 'Wrong replica info'
         continue
-      for se in replicas:
+      for se in replicas.keys():
         if se not in seReadStatus:
           res = self.__SEActive( se )
           if res['OK']:
