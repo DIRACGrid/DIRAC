@@ -304,14 +304,14 @@ class StalledJobAgent( AgentModule ):
 
     lastCPUTime, lastWallTime, lastHeartBeatTime = self.__checkHeartBeat( jobID, jobDict )
 
-    if fromString( lastHeartBeatTime ) > endTime:
+    if lastHeartBeatTime and fromString( lastHeartBeatTime ) > endTime:
       endTime = fromString( lastHeartBeatTime )
 
     cpuNormalization = self.jobDB.getJobParameter( jobID, 'CPUNormalizationFactor' )
     if not cpuNormalization['OK'] or not cpuNormalization['Value']:
       cpuNormalization = 0.0
     else:
-      cpuNormalization = cpuNormalization['Value']
+      cpuNormalization = float( cpuNormalization['Value'] )
 
     processingType = self.__getProcessingType( jobID )
 
@@ -348,8 +348,7 @@ class StalledJobAgent( AgentModule ):
     if result['OK']:
       self.jobDB.setJobAttribute( jobID, 'AccountedFlag', 'True' )
     else:
-      self.log.warn( 'Failed to send accounting report for job %d' % int( jobID ) )
-      self.log.error( result['Message'] )
+      self.log.error( 'Failed to send accounting report', 'Job: %d, Error: %s' % ( int( jobID ), result['Message'] ) )
     return result
 
   def __checkHeartBeat( self, jobID, jobDict ):
@@ -360,6 +359,9 @@ class StalledJobAgent( AgentModule ):
     lastCPUTime = 0
     lastWallTime = 0
     lastHeartBeatTime = jobDict['StartExecTime']
+    if lastHeartBeatTime == "None":
+      lastHeartBeatTime = 0
+    
     if result['OK']:
       for name, value, heartBeatTime in result['Value']:
         if 'CPUConsumed' == name:
