@@ -42,8 +42,8 @@ class ExecutorMindHandler( RequestHandler ):
     def cbDisconectExecutor( self, eId ):
       return self.__disconnectCB( eId )
 
-    def cbTaskError( self, taskId, errorMsg ):
-      return self.__taskErrCB( taskId, errorMsg )
+    def cbTaskError( self, taskId, taskObj, errorMsg ):
+      return self.__taskErrCB( taskId, taskObj, errorMsg )
 
     def cbTaskProcessed( self, taskId, taskObj, eType ):
       return self.__taskProcDB( taskId, taskObj, eType )

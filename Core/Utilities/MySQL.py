@@ -299,6 +299,11 @@ class MySQL:
     specialValues = ( 'UTC_TIMESTAMP', 'TIMESTAMPADD', 'TIMESTAMPDIFF' )
 
     try:
+      myString = str( myString )
+    except ValueError:
+      return S_ERROR( "Cannot escape value!" )
+
+    try:
       for sV in specialValues:
         if myString.find( sV ) == 0:
           return S_OK( myString )
