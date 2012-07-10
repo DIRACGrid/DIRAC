@@ -24,8 +24,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSCleaningAgent class.
 
 ## imports 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 
@@ -39,18 +38,36 @@ class FTSCleaningAgent( AgentModule ):
   """
   ## placeholder fot TransferDB instance
   __transferDB = None
+  ## 2 months grace period  
+  __gracePeriod = 60
+  ## FTS requests per cycle
+  __selectLimit = 10
+  ## TransferDB table names
+  __tblNames = [ "FTSReq", "FTSReqLogging", "FileToFTS", "FileToCat", "Channel", "ReplicationTree" ]
 
-  ## one week grace period  
-  __gracePeriod = 7
-  
+  def __init__( self, agentName, baseAgentName=False, properties=dict() ):
+    """ c'tor
+
+    :param self: self reference
+    :param str agentName: name of agent
+    :param bool baseAgentName: whatever  
+    :param dict properties: whatever else
+    """
+    AgentModule.__init__( self, agentName, baseAgentName, properties )
+      
   def initialize( self ):
     """ Agent initialization.
 
     :param self: self reference
     """
-    self.__gracePeriod = self.am_getOption( "GracePeriod", 7 )
+    ## grace period
+    self.__gracePeriod = self.am_getOption( "GraceDaysPeriod", self.__gracePeriod )
+    self.log.info( "grace period        = %s days" % self.__gracePeriod )
+    self.__selectLimit = self.am_getOption( "FTSRequestsPerCycle", self.__selectLimit )
+    self.log.info( "FTS requests/cycle  = %s" % self.__selectLimit )
     ## shifterProxy
     self.am_setOption( "shifterProxy", "DataManager" )
+    return S_OK()
     
   def transferDB( self ):
     """ TransferDB facade 
@@ -66,11 +83,19 @@ class FTSCleaningAgent( AgentModule ):
 
     :param self: self reference
     """    
-
-    obsoleteChannels = self.transferDB().selectObsoleteChannels( limit = 10 )
-
-
-    older = datetime.datetime.now() - datetime.timedelta( days = self.__gracePeriod )
-    ftsRequests = self.transferDB().selectFTSReq( older = older, limit = 50 )
-    
+    self.log.info("will try clean up %s FTS jobs older than %s days" % ( self.__selectLimit, self.__gracePeriod ) )    
+    ## do clean up
+    cleanUp = self.transferDB().cleanUp( self.__gracePeriod, self.__selectLimit )
+    if not cleanUp["OK"]:
+      return cleanUp
+    cleanUp = cleanUp["Value"]
+    ## fill counters
+    counters = dict.fromkeys( [ "DELETE FROM %s " % tblName for tblName in self.__tblNames ], 0 ) 
+    for cmd, ret in cleanUp:
+      for key in counters:
+        if cmd.startswith( key ):
+          counters[key] += ret
+    ## print counters into logger
+    for key, value in sorted( counters.items() ):
+      self.log.info( "%s table" % key.replace("DELETE FROM", "deleted %s records from" % value ) )
     return S_OK()
