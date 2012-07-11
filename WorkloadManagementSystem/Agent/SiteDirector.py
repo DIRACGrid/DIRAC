@@ -327,8 +327,8 @@ class SiteDirector( AgentModule ):
                                            'GridType':ceType,
                                            'GridSite':siteName,
                                            'TaskQueueID':tqIDList },
-                                           newer = lastUpdateTime,
-                                           timeStamp = 'LastUpdateTime' )
+                                           lastUpdateTime,
+                                           'LastUpdateTime' )
         if not result['OK']:
           self.log.error( 'Could not retrieve Pilot Agent counters', result['Message'] )
           return result
