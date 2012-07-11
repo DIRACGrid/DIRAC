@@ -30,6 +30,7 @@ TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready
 WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 ERROR_TOKEN = 'Invalid proxy token request'
+MAX_PILOTS_TO_SUBMIT = 100
 
 class SiteDirector( AgentModule ):
   """
@@ -82,6 +83,7 @@ class SiteDirector( AgentModule ):
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
     self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
+    self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', MAX_PILOTS_TO_SUBMIT )
     
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 7200 )
@@ -135,6 +137,7 @@ class SiteDirector( AgentModule ):
     self.log.always( 'CEs:', ces )
     self.log.always( 'GenericPilotDN:', self.genericPilotDN )
     self.log.always( 'GenericPilotGroup:', self.genericPilotGroup )
+    self.log.always( 'MaxPilotsToSubmit:', self.maxPilotsToSubmit )
 
     self.localhost = socket.getfqdn()
     self.proxy = ''
@@ -339,6 +342,9 @@ class SiteDirector( AgentModule ):
       pilotsToSubmit = min( totalSlots, totalTQJobs-totalWaitingPilots )
       self.log.verbose( 'Available slots=%d, TQ jobs=%d, Waiting Pilots=%d, Pilots to submit=%d' % \
                               ( totalSlots, totalTQJobs, totalWaitingPilots, pilotsToSubmit ) )
+
+      # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
+      pilotsToSubmit = min( self.maxPilotsToSubmit, pilotsToSubmit )
 
       if pilotsToSubmit > 0:
         self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
