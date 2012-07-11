@@ -1305,7 +1305,7 @@ class TransferDB( DB ):
     return S_OK( ftsReqs )
 
 
-  def getObsoleteChannels( self, limit = 100 ):
+  def cleanUpChannels( self, limit = 100 ):
     """ get obsolete Channel records 
 
     :param self: self reference
@@ -1313,11 +1313,19 @@ class TransferDB( DB ):
 
     :return: list ( tuple( ChannelID, FileID, Status ), ... )
     """
-    query = "SELECT ChannelID, FileID, Status FROM Channel WHERE FileID NOT IN ( SELECT FileID from Files ) LIMIT %s;" % int(limit)
-    return self._query( query )
+    channels = 
 
-  def cleanUp( self, gracePeriod = 60, limit = 10 ):
+    channels =  self._query( "SELECT ChannelID, FileID, Status FROM Channel " \
+                               "WHERE FileID NOT IN ( SELECT FileID from Files ) LIMIT %s;" % int(limit) )
+    if not channels["OK"]:
+      return channels
+    
+
+  
+  def cleanUpFTS( self, gracePeriod = 60, limit = 10 ):
     """ delete completed FTS requests 
+
+    it is using txns to be sure we have a proper snapshot of db
     
     :param self: self reference
     :param int gracePeriod: grace period in days
@@ -1329,14 +1337,16 @@ class TransferDB( DB ):
  
     :return: S_OK( list( tuple( 'txCmd',  txRes ), ... ) )
     """
-    query = self._query( "".join( [ "SELECT FTSReqID, ChannelID FROM FTSReq WHERE Status = 'Finished' ",
+    ftsReqs = self._query( "".join( [ "SELECT FTSReqID, ChannelID FROM FTSReq WHERE Status = 'Finished' ",
                                     "AND LastMonitor < DATE_SUB( UTC_DATE(), INTERVAL %s DAY ) LIMIT %s;" % ( gracePeriod,
                                                                                                               limit ) ] ) )
-    if not query["OK"]:
-      return query
-    query = [ item for item in query["Value"] if item ]    
+    if not ftsReqs["OK"]:
+      return ftsReqs
+    ftsReqs = [ item for item in ftsReqs["Value"] if None not in item ]    
+  
     delQueries = []
-    for ftsReqID, channelID in query:
+    
+    for ftsReqID, channelID in ftsReqs:
       fileIDs = self._query( "SELECT FileID from FileToFTS WHERE FTSReqID = %s AND ChannelID = %s;" % ( ftsReqID, channelID ) )
       if not fileIDs["OK"]:
         continue
@@ -1344,10 +1354,18 @@ class TransferDB( DB ):
       for fileID in fileIDs:
         delQueries.append( "DELETE FROM FileToFTS WHERE FileID = %s and FTSReqID = %s AND Status = 'Completed';" % ( fileID, ftsReqID ) )
         delQueries.append( "DELETE FROM FileToCat WHERE FileID = %s and ChannelID = %s AND Status = 'Executing';" % ( fileID, channelID ) )
-        #delQueries.append( "DELETE FROM Channel WHERE FileID = %s AND ChannelID = %s AND Status = 'Done'; " % ( fileID, channelID ) )
-        #delQueries.append( "DELETE FROM ReplicationTree WHERE FileID = %s AND ChannelID = %s;" % ( fileID, channelID ) )
       delQueries.append( "DELETE FROM FTSReqLogging WHERE FTSReqID = %s;" % ftsReqID )
       delQueries.append( "DELETE FROM FTSReq WHERE FTSReqID = %s;" % ftsReqID )
+      
+    channels = self._query( "".join( [ "SELECT FileID, ChannelID FROM Channel ",
+                                       "WHERE FileID NOT IN ( SELECT FileID FROM Files ) " 
+                                       "AND FileID NOT IN ( SELECT FileID FROM FileToFTS ) LIMIT %s;" % int(limit) ] ) )
+    if not channels["OK"]:
+      return channels
+    channels = [ channel for channel in channels["Value"] if None not in channel ]
+    for channel in channels:
+      delQuery.append( "DELETE FROM Channel WHERE FileID = %s AND ChannelID = %s;" % channel )
+      delQuery.append( "DELETE FROM ReplicationTree WHERE FileID = %s AND ChannelID = %s;" % channel )
 
     return self._transaction( sorted(delQueries) )
 
