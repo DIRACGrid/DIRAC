@@ -1304,25 +1304,8 @@ class TransferDB( DB ):
                         str( lastMonitor ), complete, status, files, size ) )
     return S_OK( ftsReqs )
 
-
-  def cleanUpChannels( self, limit = 100 ):
-    """ get obsolete Channel records 
-
-    :param self: self reference
-    :param int limit: query limit
-
-    :return: list ( tuple( ChannelID, FileID, Status ), ... )
-    """
-    channels = 
-
-    channels =  self._query( "SELECT ChannelID, FileID, Status FROM Channel " \
-                               "WHERE FileID NOT IN ( SELECT FileID from Files ) LIMIT %s;" % int(limit) )
-    if not channels["OK"]:
-      return channels
-    
-
   
-  def cleanUpFTS( self, gracePeriod = 60, limit = 10 ):
+  def cleanUp( self, gracePeriod = 60, limit = 10 ):
     """ delete completed FTS requests 
 
     it is using txns to be sure we have a proper snapshot of db
@@ -1358,7 +1341,7 @@ class TransferDB( DB ):
       delQueries.append( "DELETE FROM FTSReq WHERE FTSReqID = %s;" % ftsReqID )
       
     channels = self._query( "".join( [ "SELECT FileID, ChannelID FROM Channel ",
-                                       "WHERE FileID NOT IN ( SELECT FileID FROM Files ) " 
+                                       "WHERE Status = 'Done' AND FileID NOT IN ( SELECT FileID FROM Files ) " 
                                        "AND FileID NOT IN ( SELECT FileID FROM FileToFTS ) LIMIT %s;" % int(limit) ] ) )
     if not channels["OK"]:
       return channels
