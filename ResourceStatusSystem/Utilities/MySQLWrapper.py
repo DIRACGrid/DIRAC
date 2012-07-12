@@ -126,7 +126,11 @@ def select( rssDB, params, meta ):
   if 'columns' in meta:
     outFields = meta[ 'columns' ]
   else:
-    outFields = rssDB.getTable( tableName )[ 'Fields' ].keys()  
+    tableDefinition = rssDB.getTable( tableName )
+    if not tableDefinition[ 'OK' ]:
+      return tableDefinition
+    outFields = tableDefinition[ 'Value' ][ 'Fields' ].keys()
+      
   if 'limit' in meta:
     limit     = meta[ 'limit' ]  
   if 'order' in meta:
