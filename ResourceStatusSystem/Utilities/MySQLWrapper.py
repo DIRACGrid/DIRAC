@@ -171,6 +171,10 @@ def delete( rssDB, params, meta ):
   params = _capitalize( params )
   params = _discardNones( params )
 
+  # Small secutiry measure, this prevents full table deletion.. by mistake I hope.
+  if not params:
+    return S_ERROR( 'Dude, you are going to delete the whole table !')
+
   # Protection to avoid misunderstandings between MySQLMonkey and new code.
   if set( meta.keys() ) - set( accepted_keys ):
     return S_ERROR( 'Delete statement only accepts %s, got %s' % ( accepted_keys, meta.keys() ) )
