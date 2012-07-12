@@ -31,6 +31,7 @@ WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 ERROR_TOKEN = 'Invalid proxy token request'
 MAX_PILOTS_TO_SUBMIT = 100
+MAX_PILOTS_IN_FILLING_MODE = 5
 
 class SiteDirector( AgentModule ):
   """
@@ -84,6 +85,7 @@ class SiteDirector( AgentModule ):
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
     self.pilotLogLevel = self.am_getOption( 'PilotLogLevel', 'INFO' )
     self.maxPilotsToSubmit = self.am_getOption( 'MaxPilotsToSubmit', MAX_PILOTS_TO_SUBMIT )
+    self.maxJobsInFillMode = self.am_getOption( 'MaxJobsInFillMode', MAX_PILOTS_IN_FILLING_MODE )
     
     self.pilotWaitingFlag = self.am_getOption( 'PilotWaitingFlag', True )
     self.pilotWaitingTime = self.am_getOption( 'MaxPilotWaitingTime', 7200 )
@@ -462,14 +464,14 @@ class SiteDirector( AgentModule ):
 
     ownerDN = self.genericPilotDN
     ownerGroup = self.genericPilotGroup
-    result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit * 5 )
+    result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode )
     if not result[ 'OK' ]:
       self.log.error( ERROR_TOKEN, result['Message'] )
       return S_ERROR( ERROR_TOKEN )
     ( token, numberOfUses ) = result[ 'Value' ]
     pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
     # Use Filling mode
-    pilotOptions.append( '-M %s' % 5 )
+    pilotOptions.append( '-M %s' % self.maxJobsInFillMode )
 
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
