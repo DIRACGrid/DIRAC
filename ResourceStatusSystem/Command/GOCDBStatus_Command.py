@@ -28,9 +28,9 @@ class GOCDBStatus_Command(Command):
     Return getStatus from GOC DB Client
     
     :attr:`args`: 
-     - args[0]: string: should be a ValidRes
+     - args[0]: string: should be a ValidElement
 
-     - args[1]: string: should be the name of the ValidRes
+     - args[1]: string: should be the name of the ValidElement
 
      - args[2]: string: optional, number of hours in which 
      the down time is starting
@@ -118,9 +118,9 @@ class DTCached_Command(Command):
     Returns DT Information that are cached.
 
     :attr:`args`: 
-       - args[0]: string: should be a ValidRes
+       - args[0]: string: should be a ValidElement
   
-       - args[1]: string should be the name of the ValidRes
+       - args[1]: string should be the name of the ValidElement
 
        - args[2]: string: optional, number of hours in which 
        the down time is starting
@@ -289,9 +289,9 @@ class DTInfo_Cached_Command(Command):
     Returns DT info that are cached.
 
     :attr:`args`: 
-       - args[0]: string: should be a ValidRes
+       - args[0]: string: should be a ValidElement
   
-       - args[1]: string should be the name of the ValidRes
+       - args[1]: string should be the name of the ValidElement
 
        - args[2]: string: optional, number of hours in which 
        the down time is starting

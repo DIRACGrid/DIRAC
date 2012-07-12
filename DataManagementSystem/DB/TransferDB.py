@@ -172,11 +172,6 @@ class TransferDB( DB ):
       channelID = record[0]
       channelTuple = record[1:]
       channels[channelID] = dict( zip( keyTuple, channelTuple ) )
-      #channels[channelID]['Source'] = sourceSite
-      #channels[channelID]['Destination'] = destSite
-      #channels[channelID]['Status'] = status
-      #channels[channelID]['Files'] = files
-      #channels[channelID]['ChannelName'] = channelName
     return S_OK( channels )
 
   def getChannelsForState( self, status ):
@@ -460,7 +455,6 @@ class TransferDB( DB ):
         return res
     return res
 
-
   def removeFileFromChannel( self, channelID, fileID ):
     """ remove single file from Channel given FileID and ChannelID
 
@@ -650,7 +644,6 @@ class TransferDB( DB ):
     if not res['OK']:
       err = "TransferDB.getChannelQueues: Failed to get Channel contents for Channels."
       return S_ERROR( '%s\n%s' % ( err, res['Message'] ) )
-    #channelDict = {}
     for channelID, fileCount, sizeCount in res['Value']:
       channels[channelID]['Files'] = int( fileCount )
       channels[channelID]['Size'] = int( sizeCount )
@@ -659,6 +652,12 @@ class TransferDB( DB ):
         channels[channelID]['Files'] = 0
         channels[channelID]['Size'] = 0
     return S_OK( channels )
+
+
+  def getCompletedChannels( self, limit = 100 ):
+    query = "SELECT DISTINCT FileID FROM Channel where Status = 'Done' AND FileID NOT IN ( SELECT FileID from Files ) LIMIT %s;" % limit
+    return self._query(query) 
+    
 
   #################################################################################
   # These are the methods for managing the FTSReq table
@@ -1287,6 +1286,7 @@ class TransferDB( DB ):
 
     return S_OK( { 'SourceSites' : sourceSites, 'DestinationSites' : destSites } )
 
+
   def getFTSJobs( self ):
     """ get FTS jobs
 
@@ -1303,6 +1303,54 @@ class TransferDB( DB ):
       ftsReqs.append( ( ftsReqID, ftsGUID, ftsServer, str( submitTime ),
                         str( lastMonitor ), complete, status, files, size ) )
     return S_OK( ftsReqs )
+
+  
+  def cleanUp( self, gracePeriod = 60, limit = 10 ):
+    """ delete completed FTS requests 
+
+    it is using txns to be sure we have a proper snapshot of db
+    
+    :param self: self reference
+    :param int gracePeriod: grace period in days
+    :param int limit: selection of FTSReq limit
+
+    :warn: all failed records should be preserved, this means that only records with statuses:
+           FTSReq 'Finished', FileToFTS 'Completed', FileToCat 'Executing' and Channel 'Done' will be removed  
+    :todo: special treatment of Channel table? maybe some day, at the moment this is commented out 
+ 
+    :return: S_OK( list( tuple( 'txCmd',  txRes ), ... ) )
+    """
+    ftsReqs = self._query( "".join( [ "SELECT FTSReqID, ChannelID FROM FTSReq WHERE Status = 'Finished' ",
+                                    "AND LastMonitor < DATE_SUB( UTC_DATE(), INTERVAL %s DAY ) LIMIT %s;" % ( gracePeriod,
+                                                                                                              limit ) ] ) )
+    if not ftsReqs["OK"]:
+      return ftsReqs
+    ftsReqs = [ item for item in ftsReqs["Value"] if None not in item ]    
+  
+    delQueries = []
+    
+    for ftsReqID, channelID in ftsReqs:
+      fileIDs = self._query( "SELECT FileID from FileToFTS WHERE FTSReqID = %s AND ChannelID = %s;" % ( ftsReqID, channelID ) )
+      if not fileIDs["OK"]:
+        continue
+      fileIDs = [ fileID[0] for fileID in fileIDs["Value"] if fileID ]
+      for fileID in fileIDs:
+        delQueries.append( "DELETE FROM FileToFTS WHERE FileID = %s and FTSReqID = %s AND Status = 'Completed';" % ( fileID, ftsReqID ) )
+        delQueries.append( "DELETE FROM FileToCat WHERE FileID = %s and ChannelID = %s AND Status = 'Executing';" % ( fileID, channelID ) )
+      delQueries.append( "DELETE FROM FTSReqLogging WHERE FTSReqID = %s;" % ftsReqID )
+      delQueries.append( "DELETE FROM FTSReq WHERE FTSReqID = %s;" % ftsReqID )
+      
+    channels = self._query( "".join( [ "SELECT FileID, ChannelID FROM Channel ",
+                                       "WHERE Status = 'Done' AND FileID NOT IN ( SELECT FileID FROM Files ) " 
+                                       "AND FileID NOT IN ( SELECT FileID FROM FileToFTS ) LIMIT %s;" % int(limit) ] ) )
+    if not channels["OK"]:
+      return channels
+    channels = [ channel for channel in channels["Value"] if None not in channel ]
+    for channel in channels:
+      delQuery.append( "DELETE FROM Channel WHERE FileID = %s AND ChannelID = %s;" % channel )
+      delQuery.append( "DELETE FROM ReplicationTree WHERE FileID = %s AND ChannelID = %s;" % channel )
+
+    return self._transaction( sorted(delQueries) )
 
   def getAttributesForReqList( self, reqIDList, attrList = None ):
     """ Get attributes for the requests in the req ID list.

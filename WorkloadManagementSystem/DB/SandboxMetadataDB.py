@@ -157,12 +157,11 @@ class SandboxMetadataDB( DB ):
     sqlCond = [ "%s=%s" % ( key, condDict[ key ] ) for key in condDict ]
     return self._update( "UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE %s" % " AND ".join( sqlCond ) )
 
-  def assignSandboxesToEntities( self, entitiesToSandboxList, requesterName, requesterGroup, ownerName = "", ownerGroup = "" ):
+  def assignSandboxesToEntities( self, enDict, requesterName, requesterGroup, enSetup, ownerName = "", ownerGroup = "" ):
     """
     Assign jobs to entities
     """
-    sbIds = []
-    assigned = 0
+
     if ownerName or ownerGroup:
       requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
       if Properties.JOB_ADMINISTRATOR in requesterProps:
@@ -170,6 +169,29 @@ class SandboxMetadataDB( DB ):
           requesterName = ownerName
         if ownerGroup:
           requesterGroup = ownerGroup
+
+    entitiesToSandboxList = []
+    for entityId in enDict:
+      for sbTuple in enDict[ entityId ]:
+        if type( sbTuple ) not in ( types.TupleType, types.ListType ):
+          return S_ERROR( "Entry for entity %s is not a itterable of tuples/lists" % entityId )
+        if len( sbTuple ) != 2:
+          return S_ERROR( "SB definition is not ( SBLocation, Type )! It's '%s'" % str( sbTuple ) )
+        SBLocation = sbTuple[0]
+        if SBLocation.find( "SB:" ) != 0:
+          return S_ERROR( "%s doesn't seem to be a sandbox" % SBLocation )
+        SBLocation = SBLocation[3:]
+        splitted = List.fromChar( SBLocation, "|" )
+        if len( splitted ) < 2:
+          return S_ERROR( "SB Location has to have SEName|SEPFN form" )
+        SEName = splitted[0]
+        SEPFN = ":".join( splitted[1:] )
+        entitiesToSandboxList.append( ( entityId, enSetup, sbTuple[1], SEName, SEPFN ) )
+    if not entitiesToSandboxList:
+      return S_OK()
+
+    sbIds = []
+    assigned = 0
     for entityId, entitySetup, SBType, SEName, SEPFN in entitiesToSandboxList:
       result = self.getSandboxId( SEName, SEPFN, requesterName, requesterGroup )
       insertValues = []

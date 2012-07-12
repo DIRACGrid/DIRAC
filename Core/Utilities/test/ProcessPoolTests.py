@@ -41,15 +41,11 @@ import threading
 
 def ResultCallback( task, taskResult ):
   """ dummy result callback """
-  print "results callback for task %s" % task.getTaskID()
-  print "result is %s" % taskResult
-
+  print "callback for %s result is %s" % ( task.getTaskID(), taskResult )
 
 def ExceptionCallback( task, exec_info ):
   """ dummy exception callback """
-  print "exception callback for task %s" % task.getTaskID()
-  print "exception is %s" % exec_info
-
+  print "callback for %s exception is %s" % ( task.getTaskID(), exec_info )
 
 def CallableFunc( taskID, timeWait, raiseException = False ):
   """ global function to be executed in task """
@@ -311,7 +307,7 @@ class TaskTimeOutTests( unittest.TestCase ):
     i = 0
     while True:
       if self.processPool.getFreeSlots() > 0:
-        timeWait = random.randint(0, 5)
+        timeWait = random.randint(0, 5) * 5
         raiseException = False
         if not timeWait:
           raiseException = True 

@@ -7,7 +7,7 @@
 
 from DIRAC                                      import gLogger
 from DIRAC.ResourceStatusSystem.Utilities.Utils import id_fun
-from DIRAC.ResourceStatusSystem                 import ValidStatus
+from DIRAC.ResourceStatusSystem.Utilities       import RssConfiguration 
 
 __RCSID__  = '$Id: $'
 
@@ -43,8 +43,10 @@ def status_of_value( value ):
   To be refactored
   '''
   # Hack: rely on the order of values in ValidStatus
+  validStatus = RssConfiguration.getValidStatus()
+  
   try:
-    return ValidStatus[ value ]
+    return validStatus[ value ]
   except IndexError:
     #Temporary fix, not anymore InvalidStatus exception raising
     gLogger.error( 'status_of_value returning -1' )

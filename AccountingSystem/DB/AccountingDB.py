@@ -139,7 +139,6 @@ class AccountingDB( DB ):
           self.dbCatalog[ typeName ][ 'dataTimespan' ] = typeClass().getDataTimespan()
           self.dbCatalog[ typeName ][ 'definition' ] = { 'keys' : definitionKeyFields,
                                                          'values' : definitionAccountingFields }
-
     return S_OK()
 
   def __loadCatalogFromDB( self ):
@@ -377,7 +376,7 @@ class AccountingDB( DB ):
           pass
       else:
         self.log.notice( "ReadOnly mode: %s is OK" % name )
-      return S_OK( False )
+      return S_OK( not updateDBCatalog )
 
     if tables:
       retVal = self._createTables( tables )
@@ -958,6 +957,20 @@ class AccountingDB( DB ):
         return S_ERROR( "Order fields %s are not defined" % ", ".join( missing ) )
     return S_OK()
 
+  def retrieveRawRecords( self, typeName, startTime, endTime, condDict, orderFields, connObj = False ):
+    """
+    Get RAW data from the DB
+    """
+    if typeName not in self.dbCatalog:
+      return S_ERROR( "Type %s not defined" % typeName )
+    selectFields = [ [ "%s", "%s" ], [ "startTime", "endTime" ] ]
+    for tK in ( 'keys', 'values' ):
+      for key in self.dbCatalog[ typeName ][ tK ]:
+        selectFields[ 0 ].append( "%s" )
+        selectFields[ 1 ].append( key )
+    selectFields[ 0 ] = ", ".join( selectFields[ 0 ] )
+    return self.__queryType( typeName, startTime, endTime, selectFields, 
+                             condDict, False, orderFields, "type" )
 
   def retrieveBucketedData( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj = False ):
     """
@@ -1335,14 +1348,19 @@ class AccountingDB( DB ):
     for table, field in ( ( _getTableName( "type", typeName ), 'endTime' ),
                           ( _getTableName( "bucket", typeName ), 'startTime + bucketLength' ) ):
       self.log.info( "[COMPACT] Deleting old records for table %s" % table )
-      sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d" % ( table, field, dataTimespan )
-      result = self._update( sqlCmd )
-      if not result[ 'OK' ]:
-        self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
-                                                                                          dataTimespan,
-                                                                                          result[ 'Message' ] ) )
-      else:
+      deleteLimit = 10000
+      deleted = deleteLimit
+      while deleted >= deleteLimit:
+        sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d LIMIT %d" % ( table, field, dataTimespan, deleteLimit )
+        result = self._update( sqlCmd )
+        if not result[ 'OK' ]:
+          self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
+                                                                                            dataTimespan,
+                                                                                            result[ 'Message' ] ) )
+          break
         self.log.info( "[COMPACT] Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
+        deleted = result[ 'Value' ]
+        time.sleep( 1 )
 
   def regenerateBuckets( self, typeName ):
     if self.__readOnly:
