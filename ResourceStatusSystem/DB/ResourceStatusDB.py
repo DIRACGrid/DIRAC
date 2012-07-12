@@ -200,7 +200,7 @@ class ResourceStatusDB( object ):
     
     if self.recordLogs:
       
-      if 'tableName' in meta and meta[ 'tableName' ].endswith( 'Status' ):
+      if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
         
         if isUpdate:
           updateRes = self.select( params, meta )
