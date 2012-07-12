@@ -218,9 +218,7 @@ class ResourceStatusDB( object ):
           params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
                 
         meta[ 'tableName' ] = meta[ 'tableName' ].replace( 'Status', 'Log' )
-        
-        
-                
+
         logRes = self.insert( params, meta )
         if not logRes[ 'OK' ]:
           return logRes

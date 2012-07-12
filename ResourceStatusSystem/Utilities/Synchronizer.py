@@ -12,7 +12,6 @@ from DIRAC.ResourceStatusSystem.Client    import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client    import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, RssConfiguration
 
-
 class Synchronizer( object ):
   
   def __init__( self, rStatus = None, rManagement = None ):

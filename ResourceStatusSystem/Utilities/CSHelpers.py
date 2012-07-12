@@ -63,6 +63,14 @@ def getFTS():
   ftsEndpoints = gConfig.getOptions( _basePath )
   return ftsEndpoints 
 
+#def getVOMSEndpoints():
+#  ''' Get VOMS endpoints '''
+#  
+#  endpoints = gConfig.getSections( '/Registry/VOMS/Servers/lhcb' )
+#  if endpoints[ 'OK' ]:
+#    return endpoints[ 'Value' ]
+#  return [] 
+
 def getFileCatalogs():
   '''
     Gets all storage elements from /Resources/FileCatalogs

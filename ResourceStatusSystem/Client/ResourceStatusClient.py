@@ -402,68 +402,7 @@ class ResourceStatusClient( object ):
         return deleteQuery
 
     return S_OK()
-  
-################################################################################  
-
-#  def __addOrModifyStatusElement( self, parameters ):
-#    '''
-#      This method checks the existence of the element in the database. Then,
-#      it inserts or updates.
-#    '''
-#
-#    # Remove self added by locals()
-#    del parameters[ 'self' ]
-#    
-#    # We force to search using the unique keys   
-#    parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
-#    
-#    selectQuery = self.selectStatusElement( **parameters )
-#    if not selectQuery[ 'OK' ]:
-#      return selectQuery
-#       
-#    ## CALLBACKS ARE MISSING !!   
-#       
-#    if selectQuery[ 'Value' ]:      
-#      return self.updateStatusElement( **parameters )
-#    else:
-#      # Remove meta parameters to do the insert     
-#      parameters[ 'meta' ] = None  
-#      
-#      # Set DateEffective to now if not present.
-#      if 'dateEffective' in parameters and parameters[ 'dateEffective' ] is None:
-#        parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
-#      
-#      insertQuery = self.insertStatusElement( **parameters )
-#      return insertQuery   
-#
-#  def __addIfNotThereStatusElement( self, parameters ):
-#    '''
-#      This method checks the existence of the element in the database. Then,
-#      it inserts if not there.
-#    '''
-#
-#    # Remove self added by locals()
-#    del parameters[ 'self' ]
-#    
-#    # We force to search using the unique keys   
-#    parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
-#    
-#    selectQuery = self.selectStatusElement( **parameters )
-#    if not selectQuery[ 'OK' ]:
-#      return selectQuery
-#             
-#    if selectQuery[ 'Value' ]:
-#      return selectQuery      
-#    # Remove meta parameters to do the insert     
-#    parameters[ 'meta' ] = None  
-#      
-#    # Set DateEffective to now if not present.
-#    if 'dateEffective' in parameters and parameters[ 'dateEffective' ] is None:
-#      parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
-#      
-#    insertQuery = self.insertStatusElement( **parameters )
-#    return insertQuery   
-      
+        
 #################################################################################
 ## CS VALID ELEMENTS
 #  
