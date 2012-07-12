@@ -12,7 +12,7 @@ from DIRAC.Core.DISET.RPCClient                      import RPCClient
 #from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping     import getDIRACSiteName            
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB  import ResourceStatusDB 
 #from DIRAC.ResourceStatusSystem.Utilities.NodeTree   import Node      
-#from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
+from DIRAC.ResourceStatusSystem.Utilities            import RssConfiguration  
 
 __RCSID__ = '$Id:  $'
        
@@ -55,6 +55,9 @@ class ResourceStatusClient( object ):
 #      self.gate = RPCClient( "ResourceStatus/ResourceStatus" )
 #    else:
 #      self.gate = serviceIn 
+
+    self.validElements = RssConfiguration.getValidElements()
+    self.__recordLogs  = RssConfiguration.getRecordLogs()
 
   ################################################################################
   # Element status methods - enjoy ! 
@@ -366,6 +369,10 @@ class ResourceStatusClient( object ):
     # This is an special case with the Element tables.
     #if tableName.startswith( 'Element' ):
     element   = parameters.pop( 'element' )
+    if not element in self.validElements:
+      gLogger.debug( '"%s" is not a valid element like %s' % ( element, self.validElements ) )
+      return S_ERROR( '"%s" is not a valid element like %s' % ( element, self.validElements ) )
+    
     tableType = parameters.pop( 'tableType' )
     #tableName = tableName.replace( 'Element', element )
     tableName = '%s%s' % ( element, tableType )
@@ -373,7 +380,27 @@ class ResourceStatusClient( object ):
     meta[ 'table' ] = tableName
     
     gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, parameters, meta ) )  
-    return gateFunction( parameters, meta )   
+    userRes = gateFunction( parameters, meta )
+    
+    # No more processing on for select and delete queries
+    if queryType in [ 'select', 'delete' ]:
+      return userRes
+    
+    # If something went wrong, we return
+    if not userRes[ 'OK' ]:
+      return userRes
+
+    # If the operation is on a table different than 'Status', we return
+    if not tableType == 'Status':
+      return userRes
+    
+    # If the flag is active, we record this entry on the <element>Log table
+    if self.__recordLogs:
+      logRes = self.insertStatusElement( element, 'Log', meta = meta, **parameters )
+      if not logRes[ 'OK' ]:
+        gLogger.error( '%s inserting log' % logRes[ 'Message' ] )
+    
+    return userRes    
 
   def __addOrModifyStatusElement( self, parameters ):
     '''
