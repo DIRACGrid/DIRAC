@@ -58,6 +58,6 @@ class DataLoggingClientTestCase( unittest.TestCase ):
 
 ## test execution
 if __name__ == "__main__":
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(DataLoggingClientTestCase)
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(DataLoggingClientTestCase)
+  unittest.TextTestRunner( verbosity = 2 ).run( SUITE )
 

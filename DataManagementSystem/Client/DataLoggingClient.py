@@ -19,15 +19,15 @@ class DataLoggingClient( Client ):
   """ 
   .. class:: DataLoggingClient
 
-  client for DataLoggingDB 
+  rpc client for DataLoggingDB 
   """
-  def __init__( self, url = None ):
-    """ Constructor of the DataLogging client
+  def __init__( self, url = "DataManagement/DataLogging" ):
+    """ c'tor
 
     :param self: self reference
     :param str url: service URL
     """
     Client.__init__( self )
-    rec = self.setServer( url ) if url else self.setServer( "DataManagement/DataLogging" )
+    self.setServer( url ) 
     self.setTimeout( 120 )
 
