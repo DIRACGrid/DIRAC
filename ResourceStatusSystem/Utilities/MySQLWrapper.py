@@ -39,7 +39,8 @@ def insert( rssDB, params, meta ):
     method.
   '''
   
-  accepted_keys = [ 'table' ]
+  # onlyUniqueKeys is not used, but if deleted here, addOrModify method crashes
+  accepted_keys = [ 'table', 'onlyUniqueKeys' ]
 
   params = _capitalize( params )
   params = _discardNones( params )
