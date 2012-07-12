@@ -47,39 +47,38 @@ def getRecordLogs():
 #  return DEFAULTS
 #
 #
-#def getValidStatusTypes():
-#  '''
-#  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/Resources
-#  '''
-#  
-#  DEFAULTS = { 
-#               'Site'          : [ '' ],
-#               'Service'       : [ '' ],
-#               'Resource'      : [ '' ],
-#               'Node'          : [ '' ],
+def getValidStatusTypes():
+  '''
+  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/Resources
+  '''
+  
+  DEFAULTS = { 
+               'Site'          : [ '' ],
+               'Resource'      : [ '' ],
+               'Node'          : [ '' ]
 #               'StorageElement': [ 'ReadAccess', 'WriteAccess', 
 #                                   'RemoveAccess', 'CheckAccess' ]
-#              }
-#  
-#  opHelper = Operations()
-#  
-#  sections = opHelper.getSections( 'RSSConfiguration/GeneralConfig/Resources' )
-#  if not sections[ 'OK' ]:
-#    return DEFAULTS
-#  
-#  result = {}
-#  for section in sections[ 'Value' ]:
-#    res = opHelper.getValue( 'RSSConfiguration/GeneralConfig/Resources/%s/StatusType' % section )
-#    if res is None:
-#      if DEFAULTS.has_key( section ):
-#        result[ section ] = DEFAULTS[ section ]
-#      else:
-#        result[ section ] = []  
-#    else:
-#      result[ section ] = Utils.getTypedList( res )
-#      
-#  return result     
-#  
+              }
+  
+  opHelper = Operations()
+  
+  sections = opHelper.getSections( 'RSSConfiguration/GeneralConfig/Resources' )
+  if not sections[ 'OK' ]:
+    return DEFAULTS
+  
+  result = {}
+  for section in sections[ 'Value' ]:
+    res = opHelper.getValue( 'RSSConfiguration/GeneralConfig/Resources/%s/StatusType' % section )
+    if res is None:
+      if DEFAULTS.has_key( section ):
+        result[ section ] = DEFAULTS[ section ]
+      else:
+        result[ section ] = []  
+    else:
+      result[ section ] = Utils.getTypedList( res )
+      
+  return result     
+  
 #def getValidPolicyResult():
 #  '''
 #  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/PolicyResult
