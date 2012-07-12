@@ -64,7 +64,7 @@ def update( rssDB, params, meta ):
     method.
   '''
 
-  accepted_keys = [ 'table', 'uniqueKeys' ]
+  accepted_keys = [ 'table', 'onlyUniqueKeys', 'uniqueKeys' ]
 
   params = _capitalize( params )
   params = _discardNones( params )
