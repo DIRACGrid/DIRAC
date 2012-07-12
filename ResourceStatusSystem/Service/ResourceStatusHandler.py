@@ -54,7 +54,8 @@ class ResourceStatusHandler( RequestHandler ):
    >>> server = RPCCLient( "ResourceStatus/ResourceStatus" )
   '''
 
-  def __logResult( self, methodName, result ):
+  @staticmethod
+  def __logResult( methodName, result ):
     '''
       Method that writes to log error messages 
     '''
@@ -62,7 +63,8 @@ class ResourceStatusHandler( RequestHandler ):
     if not result[ 'OK' ]:
       gLogger.error( '%s%s' % ( methodName, result[ 'Message' ] ) )  
 
-  def setDatabase( self, database ):
+  @staticmethod
+  def setDatabase( database ):
     '''
     This method let us inherit from this class and overwrite the database object
     without having problems with the global variables.
@@ -175,6 +177,56 @@ class ResourceStatusHandler( RequestHandler ):
     self.__logResult( 'delete', res )
     
     return res   
+  
+  types_addOrModify = [ dict, dict ]
+  def export_addOrModify( self, params, meta ):
+    '''
+    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
+    not add neither processing nor validation. If you need to know more about
+    this method, you must keep reading on the database documentation.
+
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+
+    gLogger.info( 'addOrModify: %s %s' % ( params, meta ) )
+    
+    res = db.addOrModify( params, meta )
+    self.__logResult( 'addOrModify', res )
+    
+    return res  
+  
+  types_addIfNotThere = [ dict, dict ]
+  def export_addIfNotThere( self, params, meta ):
+    '''
+    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
+    not add neither processing nor validation. If you need to know more about
+    this method, you must keep reading on the database documentation.
+
+    :Parameters:
+      **args** - `tuple`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **kwargs** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+
+    gLogger.info( 'addIfNotThere: %s %s' % ( params, meta ) )
+    
+    res = db.addIfNotThere( params, meta )
+    self.__logResult( 'addIfNotThere', res )
+    
+    return res    
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

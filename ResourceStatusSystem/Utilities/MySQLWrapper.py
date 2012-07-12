@@ -125,17 +125,24 @@ def select( rssDB, params, meta ):
   outFields, limit, order = None, None, None
   if 'columns' in meta:
     outFields = meta[ 'columns' ]
+  else:
+    outFields = rssDB.getTable( tableName )[ 'Fields' ].keys()  
   if 'limit' in meta:
     limit     = meta[ 'limit' ]  
   if 'order' in meta:
     order     = meta[ 'order' ]
-  if 'onlyUniqueKeys' in meta:
     
+  keys = []
+    
+  if 'uniqueKeys' in meta:
+    keys = meta[ 'uniqueKeys' ]
+  elif 'onlyUniqueKeys' in meta:   
     tableDefinition = rssDB.getTable( tableName )
     if not tableDefinition[ 'OK' ]:
       return tableDefinition
     keys = tableDefinition[ 'Value' ][ 'PrimaryKey' ]
     
+  if keys:  
     newParams = {}
     for key in keys:
       if key in params:
@@ -143,10 +150,12 @@ def select( rssDB, params, meta ):
          
     params = newParams   
       
-  return rssDB.database.getFields( tableName, condDict = params, 
-                                   outFields = outFields, limit = limit,
-                                   orderAttribute = order )
-      
+  selectResult = rssDB.database.getFields( tableName, condDict = params, 
+                                           outFields = outFields, limit = limit,
+                                           orderAttribute = order )
+  selectResult[ 'Columns' ] = outFields
+  return selectResult
+        
 def delete( rssDB, params, meta ):
   '''
     Method that transforms the RSS DB delete into the MySQL 

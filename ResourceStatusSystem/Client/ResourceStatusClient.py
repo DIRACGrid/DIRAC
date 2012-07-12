@@ -57,7 +57,6 @@ class ResourceStatusClient( object ):
 #      self.gate = serviceIn 
 
     self.validElements = RssConfiguration.getValidElements()
-    self.__recordLogs  = RssConfiguration.getRecordLogs()
 
   ################################################################################
   # Element status methods - enjoy ! 
@@ -271,7 +270,8 @@ class ResourceStatusClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addOrModifyStatusElement( locals() )
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', locals() )
   def addIfNotThereStatusElement( self, element, tableType, name = None, 
                                   statusType = None, status = None, 
                                   elementType = None, reason = None, 
@@ -315,7 +315,8 @@ class ResourceStatusClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addIfNotThereStatusElement( locals() )
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', locals() )
 
   ##############################################################################
   # Protected methods - Use carefully !!
@@ -355,7 +356,7 @@ class ResourceStatusClient( object ):
       with the right table name. 
     '''
     # Functions we can call, just a light safety measure.
-    _gateFunctions = [ 'insert', 'update', 'select', 'delete' ] 
+    _gateFunctions = [ 'insert', 'update', 'select', 'delete', 'addOrModify', 'addIfNotThere' ] 
     if not queryType in _gateFunctions:
       return S_ERROR( '"%s" is not a proper gate call' % queryType )
     
@@ -382,84 +383,7 @@ class ResourceStatusClient( object ):
     gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, parameters, meta ) )  
     userRes = gateFunction( parameters, meta )
     
-    # No more processing on for select and delete queries
-    if queryType in [ 'select', 'delete' ]:
-      return userRes
-    
-    # If something went wrong, we return
-    if not userRes[ 'OK' ]:
-      return userRes
-
-    # If the operation is on a table different than 'Status', we return
-    if not tableType == 'Status':
-      return userRes
-    
-    # If the flag is active, we record this entry on the <element>Log table
-    if self.__recordLogs:
-      logRes = self.insertStatusElement( element, 'Log', meta = meta, **parameters )
-      if not logRes[ 'OK' ]:
-        gLogger.error( '%s inserting log' % logRes[ 'Message' ] )
-    
     return userRes    
-
-  def __addOrModifyStatusElement( self, parameters ):
-    '''
-      This method checks the existence of the element in the database. Then,
-      it inserts or updates.
-    '''
-
-    # Remove self added by locals()
-    del parameters[ 'self' ]
-    
-    # We force to search using the unique keys   
-    parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
-    
-    selectQuery = self.selectStatusElement( **parameters )
-    if not selectQuery[ 'OK' ]:
-      return selectQuery
-       
-    ## CALLBACKS ARE MISSING !!   
-       
-    if selectQuery[ 'Value' ]:      
-      return self.updateStatusElement( **parameters )
-    else:
-      # Remove meta parameters to do the insert     
-      parameters[ 'meta' ] = None  
-      
-      # Set DateEffective to now if not present.
-      if 'dateEffective' in parameters and parameters[ 'dateEffective' ] is None:
-        parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
-      
-      insertQuery = self.insertStatusElement( **parameters )
-      return insertQuery   
-
-  def __addIfNotThereStatusElement( self, parameters ):
-    '''
-      This method checks the existence of the element in the database. Then,
-      it inserts if not there.
-    '''
-
-    # Remove self added by locals()
-    del parameters[ 'self' ]
-    
-    # We force to search using the unique keys   
-    parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
-    
-    selectQuery = self.selectStatusElement( **parameters )
-    if not selectQuery[ 'OK' ]:
-      return selectQuery
-             
-    if selectQuery[ 'Value' ]:
-      return selectQuery      
-    # Remove meta parameters to do the insert     
-    parameters[ 'meta' ] = None  
-      
-    # Set DateEffective to now if not present.
-    if 'dateEffective' in parameters and parameters[ 'dateEffective' ] is None:
-      parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
-      
-    insertQuery = self.insertStatusElement( **parameters )
-    return insertQuery   
 
   def __extermineStatusElement( self, element, name, keepLogs ):
     '''
@@ -478,6 +402,67 @@ class ResourceStatusClient( object ):
         return deleteQuery
 
     return S_OK()
+  
+################################################################################  
+
+#  def __addOrModifyStatusElement( self, parameters ):
+#    '''
+#      This method checks the existence of the element in the database. Then,
+#      it inserts or updates.
+#    '''
+#
+#    # Remove self added by locals()
+#    del parameters[ 'self' ]
+#    
+#    # We force to search using the unique keys   
+#    parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
+#    
+#    selectQuery = self.selectStatusElement( **parameters )
+#    if not selectQuery[ 'OK' ]:
+#      return selectQuery
+#       
+#    ## CALLBACKS ARE MISSING !!   
+#       
+#    if selectQuery[ 'Value' ]:      
+#      return self.updateStatusElement( **parameters )
+#    else:
+#      # Remove meta parameters to do the insert     
+#      parameters[ 'meta' ] = None  
+#      
+#      # Set DateEffective to now if not present.
+#      if 'dateEffective' in parameters and parameters[ 'dateEffective' ] is None:
+#        parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
+#      
+#      insertQuery = self.insertStatusElement( **parameters )
+#      return insertQuery   
+#
+#  def __addIfNotThereStatusElement( self, parameters ):
+#    '''
+#      This method checks the existence of the element in the database. Then,
+#      it inserts if not there.
+#    '''
+#
+#    # Remove self added by locals()
+#    del parameters[ 'self' ]
+#    
+#    # We force to search using the unique keys   
+#    parameters[ 'meta' ] = { 'onlyUniqueKeys' : True }
+#    
+#    selectQuery = self.selectStatusElement( **parameters )
+#    if not selectQuery[ 'OK' ]:
+#      return selectQuery
+#             
+#    if selectQuery[ 'Value' ]:
+#      return selectQuery      
+#    # Remove meta parameters to do the insert     
+#    parameters[ 'meta' ] = None  
+#      
+#    # Set DateEffective to now if not present.
+#    if 'dateEffective' in parameters and parameters[ 'dateEffective' ] is None:
+#      parameters[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
+#      
+#    insertQuery = self.insertStatusElement( **parameters )
+#    return insertQuery   
       
 #################################################################################
 ## CS VALID ELEMENTS

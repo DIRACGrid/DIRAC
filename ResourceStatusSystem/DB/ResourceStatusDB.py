@@ -5,9 +5,11 @@
 
 '''
 
+from datetime                             import datetime 
+
 from DIRAC                                import S_OK, S_ERROR 
 from DIRAC.Core.Base.DB                   import DB
-from DIRAC.ResourceStatusSystem.Utilities import MySQLWrapper
+from DIRAC.ResourceStatusSystem.Utilities import MySQLWrapper, RssConfiguration
 
 __RCSID__ = '$Id: $'
 
@@ -80,6 +82,8 @@ class ResourceStatusDB( object ):
     else:
       self.database = DB( 'ResourceStatusDB', 
                           'ResourceStatus/ResourceStatusDB', maxQueueSize )  
+
+    self.recordLogs = RssConfiguration.getRecordLogs()
 
   ## SQL Methods ###############################################################
 
@@ -162,6 +166,94 @@ class ResourceStatusDB( object ):
     '''
     return MySQLWrapper.delete( self, params, meta )
 
+  ## Extended SQL methods ######################################################
+  
+  def addOrModify( self, params, meta ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is there, it is updated, if not, it is inserted as a new entry. 
+    
+    :Parameters:
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **meta** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+        
+    selectQuery = self.select( params, meta )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery 
+       
+    isUpdate = False
+       
+    if selectQuery[ 'Value' ]:      
+      userQuery  = self.update( params, meta )
+      isUpdate   = True
+    else:
+      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+        params[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
+      userQuery = self.insert( params, meta )
+    
+    if self.recordLogs:
+      
+      if 'tableName' in meta and meta[ 'tableName' ].endswith( 'Status' ):
+        
+        if isUpdate:
+          updateRes = self.select( params, meta )
+          if not updateRes[ 'OK' ]:
+            return updateRes
+          
+          if len( updateRes[ 'Value' ] ) != 1:
+            # Uyyy, something went seriously wrong !!
+            return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
+          if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
+            # Uyyy, something went seriously wrong !!
+            return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
+                    
+          params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
+                
+        meta[ 'tableName' ] = meta[ 'tableName' ].replace( 'Status', 'Log' )
+        
+        
+                
+        logRes = self.insert( params, meta )
+        if not logRes[ 'OK' ]:
+          return logRes
+    
+    return userQuery      
+
+  def addIfNotThere( self, params, meta ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is not there, it is inserted as a new entry. 
+    
+    :Parameters:
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **meta** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+        
+    selectQuery = self.select( params, meta )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery 
+       
+    if selectQuery[ 'Value' ]:      
+      return selectQuery
+    
+    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+      params[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
+    
+    return self.insert( params, meta )      
+
   ## Auxiliar methods ##########################################################
 
   def getTable( self, tableName ):
@@ -186,6 +278,26 @@ class ResourceStatusDB( object ):
       Method used by database tools to write the schema
     '''  
     return self.__createTables()
+
+  def _logRecord( self, params, meta ):
+    pass
+#    # No more processing on for select and delete queries
+#    if queryType in [ 'select', 'delete' ]:
+#      return userRes
+#    
+#    # If something went wrong, we return
+#    if not userRes[ 'OK' ]:
+#      return userRes
+#
+#    # If the operation is on a table different than 'Status', we return
+#    if not tableType == 'Status':
+#      return userRes
+#    
+#    # If the flag is active, we record this entry on the <element>Log table
+#    if self.__recordLogs:
+#      logRes = self.insertStatusElement( element, 'Log', meta = meta, **parameters )
+#      if not logRes[ 'OK' ]:
+#        gLogger.error( '%s inserting log' % logRes[ 'Message' ] )    
 
   ## Private methods ###########################################################
 
