@@ -107,6 +107,8 @@ class Synchronizer( object ):
     if not computingElements[ 'OK' ]:
       gLogger.error( computingElements[ 'Message' ] )
 
+    return S_OK()
+
   def _syncNodes( self ):
     
     gLogger.debug( '-- Synchronizing Nodes --' )
@@ -115,6 +117,8 @@ class Synchronizer( object ):
     queues = self.__syncQueues()
     if not queues[ 'OK' ]:
       gLogger.error( queues[ 'Message' ] )
+    
+    return S_OK()  
 
   def __syncQueues( self ):
 

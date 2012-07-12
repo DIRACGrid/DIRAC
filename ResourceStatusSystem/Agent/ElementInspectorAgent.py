@@ -18,19 +18,16 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 from DIRAC.ResourceStatusSystem.Utilities                   import CS
 
 __RCSID__  = '$Id: $'
-AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
+AGENT_NAME = 'ResourceStatus/ElementInspectorAgent'
 
-class RSInspectorAgent( AgentModule ):
-  """
-    The RSInspector agent ( ResourceInspectorAgent ) is one of the four
-    InspectorAgents of the RSS.
+class ElementInspectorAgent( AgentModule ):
+  '''
+    The ElementInspector agent is a generic agent used to check the elements
+    of one of the elementTypes ( e.g. Site, Resource, Node ).
 
-    This Agent takes care of the Resources. In order to do so, it gathers
+    This Agent takes care of the Elements. In order to do so, it gathers
     the eligible ones and then evaluates their statuses with the PEP.
-
-    If you want to know more about the RSInspectorAgent, scroll down to the
-    end of the file.
-  """
+  '''
 
   # Too many public methods
   # pylint: disable-msg=R0904
