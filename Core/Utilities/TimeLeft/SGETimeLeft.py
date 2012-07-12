@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
 
-import os, re, time
+import os, re, time, socket
 
 class SGETimeLeft:
   """
@@ -88,30 +88,29 @@ scheduling info:            (Collecting of scheduler job information is turned o
 
     lines = result['Value'].split( '\n' )
     for line in lines:
-      info = line.split()
       if re.search( 'usage.*cpu.*', line ):
-        if len( info ) >= 3:
-          cpuList = info[2].split( '=' )[1].split( ':' )
-          try:
-            newcpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2][:-1] )
-          except ValueError:
-            self.log.warn( 'Problem parsing "%s" for CPU consumed' % line )
+        match = re.search( 'cpu=([\d,:]*),', line )
+        if match:
+          cpuList = match.groups()[0].split( ':' )
+        try:
+          newcpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2][:-1] )
           if not cpu or newcpu > cpu:
             cpu = newcpu
-        else:
+        except ValueError:
           self.log.warn( 'Problem parsing "%s" for CPU consumed' % line )
       if re.search( 'hard resource_list.*cpu.*', line ):
-        if len( info ) >= 2:
-          try:
-            newcpuLimit = float( info[2].split( ',' )[1].split( '=' )[1] )
-          except ValueError:
-            self.log.warn( 'Problem parsing "%s" for CPU limit' % line )
-          if not cpuLimit or newcpuLimit < cpuLimit:
-            cpuLimit = newcpuLimit
-        else:
-          self.log.warn( 'Problem parsing "%s" for CPU limit' % line )
+        match = re.search( '_cpu=(\d*)', line )
+        if match:
+          cpuLimit = float( match.groups()[0] )
+        match = re.search( '_rt=(\d*)', line )
+        if match:
+          wallClockLimit = float( match.groups()[0] )
 
-    # SGE does not seem to provide information about WallClock usage or Limit
+    # Some SGE batch systems apply CPU scaling factor to the CPU consumption figures
+    if cpu:
+      factor = self.__getCPUScalingFactor()
+      if factor:
+        cpu = cpu/factor
 
     consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
     self.log.debug( consumed )
@@ -142,9 +141,25 @@ scheduling info:            (Collecting of scheduler job information is turned o
       retVal['Value'] = consumed
       return retVal
 
+  def __getCPUScalingFactor(self):
+
+    host = socket.getfqdn()
+    cmd = 'qconf -se %s' % host
+    result = runCommand( cmd )
+    if not result['OK']:
+      return None
+    lines = result['Value'].split( '\n' )
+    for line in lines:
+      if re.search( 'usage_scaling', line ):
+        match = re.search('cpu=([\d,\.]*),',line)
+        if match:
+          return float( match.groups()[0] )
+    return None
+
 if __name__ == '__main__':
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   print SGETimeLeft().getResourceUsage()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+
