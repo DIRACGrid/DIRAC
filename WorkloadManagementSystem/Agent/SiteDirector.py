@@ -78,7 +78,7 @@ class SiteDirector( AgentModule ):
         return S_ERROR('Invalid generic pilot DN: %s ' % self.genericPilotDN )
       self.genericPilotUserName = result['Value']
     self.genericPilotGroup = self.operations.getValue( '/Pilot/GenericPilotGroup', 'Unknown' )
-    self.pilot = DIRAC_PILOT
+    self.pilot = self.am_getOption( 'PilotScript', DIRAC_PILOT )
     self.install = DIRAC_INSTALL
     self.workingDirectory = self.am_getOption( 'WorkDirectory' )
     self.maxQueueLength = self.am_getOption( 'MaxQueueLength', 86400 * 3 )
@@ -272,7 +272,7 @@ class SiteDirector( AgentModule ):
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
 
-      self.log.verbose( "Getting generic pilot proxy for %s/%s" % ( self.genericPilotDN, self.genericPilotGroup ) )
+      self.log.verbose( "Getting generic pilot proxy for %s/%s %d long" % ( self.genericPilotDN, self.genericPilotGroup, cpuTime ) )
       result = gProxyManager.getPilotProxyFromDIRACGroup( self.genericPilotDN, self.genericPilotGroup, cpuTime )
       if not result['OK']:
         return result
