@@ -207,8 +207,9 @@ class ResourceStatusDB( object ):
           if not updateRes[ 'OK' ]:
             return updateRes
           
+          # If we are updating more that one result at a time, this is most likely
+          # going to be a mess. All queries must be one at a time, if need to do
           if len( updateRes[ 'Value' ] ) != 1:
-            # Uyyy, something went seriously wrong !!
             return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
           if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
             # Uyyy, something went seriously wrong !!
