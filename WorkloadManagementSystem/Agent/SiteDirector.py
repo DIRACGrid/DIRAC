@@ -140,6 +140,7 @@ class SiteDirector( AgentModule ):
     self.log.always( 'GenericPilotDN:', self.genericPilotDN )
     self.log.always( 'GenericPilotGroup:', self.genericPilotGroup )
     self.log.always( 'MaxPilotsToSubmit:', self.maxPilotsToSubmit )
+    self.log.always( 'MaxJobsInFillMode:', self.maxJobsInFillMode )
 
     self.localhost = socket.getfqdn()
     self.proxy = ''
