@@ -800,13 +800,15 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
       else:
         urlData += data
       data = remoteFD.read( 16384 )
-      if count % 100 == 0:
-        print ".",
+      if count % 20 == 0:
+        print '\033[1D'+".",
         sys.stdout.flush()
         progressBar = True
       count += 1
     if progressBar:
-      print
+      # return cursor to the beginning of the line
+      print '\033[1K',
+      print '\033[1A'
     if fileName:
       localFD.close()
     remoteFD.close()

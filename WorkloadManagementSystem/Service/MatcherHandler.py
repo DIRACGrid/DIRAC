@@ -430,3 +430,10 @@ class MatcherHandler( RequestHandler ):
     """
     return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDict )
 
+##############################################################################
+  types_matchAndGetTaskQueue = [ DictType ]
+  def export_matchAndGetTaskQueue( self, resourceDict ):
+    """ Return matching task queues
+    """
+    return gTaskQueueDB.matchAndGetTaskQueue( resourceDict )
+
