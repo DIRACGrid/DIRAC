@@ -15,7 +15,7 @@ def getValidElements():
   Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/ValidElements
   '''
   
-  _DEFAULTS = [ 'Site', 'Resource', 'Node' ]
+  _DEFAULTS = ( 'Site', 'Resource', 'Node' )
   
   result = Operations().getValue( 'RSSConfiguration/GeneralConfig/ValidElements' )
   if result is not None:
@@ -33,6 +33,19 @@ def getRecordLogs():
   if result == 'Active':
     return True
   return False
+
+## RssConfiguration/InspectionFreqs ############################################
+
+def getInspectionFreqs():
+  '''
+  Returns from the OperationsHelper: RSSConfiguration/InspectionFreqs
+  '''
+  
+  #result = Operations().getValue( 'RSSConfiguration/Logs/Record' )
+  #if result == 'Active':
+  #  return True
+  return { 'Site' : { '' : { 'Active' : 2, 'Bad' : 2, 'Probing' : 2, 'Banned' : 2 } } }
+  
 
 #def getValidStatus():
 #  '''
@@ -53,9 +66,9 @@ def getValidStatusTypes():
   '''
   
   DEFAULTS = { 
-               'Site'          : [ '' ],
-               'Resource'      : [ '' ],
-               'Node'          : [ '' ]
+               'Site'          : ( '' ),
+               'Resource'      : ( '' ),
+               'Node'          : ( '' )
 #               'StorageElement': [ 'ReadAccess', 'WriteAccess', 
 #                                   'RemoveAccess', 'CheckAccess' ]
               }

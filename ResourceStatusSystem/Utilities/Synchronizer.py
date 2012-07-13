@@ -76,7 +76,7 @@ class Synchronizer( object ):
       _reason          = 'Synchronzed'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Site', 'Status', name = _name, 
-                                                       statusType = _statusType, 
+                                                       statusType = _statusType, status = _status, 
                                                        reason = _reason )
       if not query[ 'OK' ]:
         return query
@@ -168,11 +168,13 @@ class Synchronizer( object ):
       
       _name            = queueTuple[ 0 ]
       _statusType      = queueTuple[ 1 ]
+      _status          = 'Banned'
       _reason          = 'Synchronzed'
       _elementType     = 'Queue'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Node', 'Status', name = _name, 
                                                        statusType = _statusType,
+                                                       status = _status,
                                                        elementType = _elementType, 
                                                        reason = _reason )
       if not query[ 'OK' ]:
@@ -228,11 +230,13 @@ class Synchronizer( object ):
       
       _name            = ceTuple[ 0 ]
       _statusType      = ceTuple[ 1 ]
+      _status          = 'Banned'
       _reason          = 'Synchronzed'
       _elementType     = 'CE'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
                                                        statusType = _statusType,
+                                                       status = _status,
                                                        elementType = _elementType, 
                                                        reason = _reason )
       if not query[ 'OK' ]:
@@ -288,11 +292,13 @@ class Synchronizer( object ):
       
       _name            = catalogTuple[ 0 ]
       _statusType      = catalogTuple[ 1 ]
+      _status          = 'Banned'
       _reason          = 'Synchronzed'
       _elementType     = 'Catalog'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
                                                        statusType = _statusType,
+                                                       status = _status,
                                                        elementType = _elementType, 
                                                        reason = _reason )
       if not query[ 'OK' ]:
@@ -348,11 +354,13 @@ class Synchronizer( object ):
       
       _name            = ftsTuple[ 0 ]
       _statusType      = ftsTuple[ 1 ]
+      _status          = 'Banned'
       _reason          = 'Synchronzed'
       _elementType     = 'FTS'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
                                                        statusType = _statusType,
+                                                       status = _status,
                                                        elementType = _elementType, 
                                                        reason = _reason )
       if not query[ 'OK' ]:
@@ -408,11 +416,13 @@ class Synchronizer( object ):
       
       _name            = seTuple[ 0 ]
       _statusType      = seTuple[ 1 ]
+      _status          = 'Banned'
       _reason          = 'Synchronzed'
       _elementType     = 'StorageElement'
       
       query = self.rStatus.addIfNotThereStatusElement( 'Resource', 'Status', name = _name, 
                                                        statusType = _statusType,
+                                                       status = _status,
                                                        elementType = _elementType, 
                                                        reason = _reason )
       if not query[ 'OK' ]:

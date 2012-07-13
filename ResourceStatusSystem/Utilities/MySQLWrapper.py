@@ -40,7 +40,7 @@ def insert( rssDB, params, meta ):
   '''
   
   # onlyUniqueKeys is not used, but if deleted here, addOrModify method crashes
-  accepted_keys = [ 'table', 'onlyUniqueKeys' ]
+  accepted_keys = ( 'table', 'onlyUniqueKeys' )
 
   params = _capitalize( params )
   params = _discardNones( params )
@@ -65,7 +65,7 @@ def update( rssDB, params, meta ):
     method.
   '''
 
-  accepted_keys = [ 'table', 'onlyUniqueKeys', 'uniqueKeys' ]
+  accepted_keys = ( 'table', 'onlyUniqueKeys', 'uniqueKeys' )
 
   params = _capitalize( params )
   params = _discardNones( params )
@@ -106,7 +106,7 @@ def select( rssDB, params, meta ):
     Method that transforms the RSS DB select into the MySQL getFields method.
   '''
 
-  accepted_keys = [ 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys' ]
+  accepted_keys = ( 'table', 'columns', 'order', 'limit', 'onlyUniqueKeys' )
 
   params = _capitalize( params )
   params = _discardNones( params )
@@ -166,7 +166,7 @@ def delete( rssDB, params, meta ):
     Method that transforms the RSS DB delete into the MySQL 
   '''
     
-  accepted_keys = [ 'table' ]
+  accepted_keys = ( 'table' )
 
   params = _capitalize( params )
   params = _discardNones( params )
