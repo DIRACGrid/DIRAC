@@ -110,9 +110,9 @@ class Limiter:
         negCond[ siteName ] = data 
     #Delay limit
     result = self.__opsHelper.getSections( self.__matchingDelaySection )
-    if not result[ 'OK' ]:
-      sites = []
-    sites = result[ 'Value' ]
+    sites = []
+    if result[ 'OK' ]:
+      sites = result[ 'Value' ]
     for siteName in sites:
       result = self.__getDelayCondition( siteName )
       if not result[ 'OK' ]:
