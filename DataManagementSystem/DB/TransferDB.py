@@ -1314,10 +1314,6 @@ class TransferDB( DB ):
     :param int gracePeriod: grace period in days
     :param int limit: selection of FTSReq limit
 
-    :warn: all failed records should be preserved, this means that only records with statuses:
-           FTSReq 'Finished', FileToFTS 'Completed', FileToCat 'Executing' and Channel 'Done' will be removed  
-    :todo: special treatment of Channel table? maybe some day, at the moment this is commented out 
- 
     :return: S_OK( list( tuple( 'txCmd',  txRes ), ... ) )
     """
     ftsReqs = self._query( "".join( [ "SELECT FTSReqID, ChannelID FROM FTSReq WHERE Status = 'Finished' ",
@@ -1335,20 +1331,21 @@ class TransferDB( DB ):
         continue
       fileIDs = [ fileID[0] for fileID in fileIDs["Value"] if fileID ]
       for fileID in fileIDs:
-        delQueries.append( "DELETE FROM FileToFTS WHERE FileID = %s and FTSReqID = %s AND Status = 'Completed';" % ( fileID, ftsReqID ) )
-        delQueries.append( "DELETE FROM FileToCat WHERE FileID = %s and ChannelID = %s AND Status = 'Executing';" % ( fileID, channelID ) )
+        delQueries.append( "DELETE FROM FileToFTS WHERE FileID = %s and FTSReqID = %s;" % ( fileID, ftsReqID ) )
       delQueries.append( "DELETE FROM FTSReqLogging WHERE FTSReqID = %s;" % ftsReqID )
       delQueries.append( "DELETE FROM FTSReq WHERE FTSReqID = %s;" % ftsReqID )
       
     channels = self._query( "".join( [ "SELECT FileID, ChannelID FROM Channel ",
-                                       "WHERE Status = 'Done' AND FileID NOT IN ( SELECT FileID FROM Files ) " 
+                                       "WHERE FileID NOT IN ( SELECT FileID FROM Files ) " 
                                        "AND FileID NOT IN ( SELECT FileID FROM FileToFTS ) LIMIT %s;" % int(limit) ] ) )
     if not channels["OK"]:
       return channels
     channels = [ channel for channel in channels["Value"] if None not in channel ]
     for channel in channels:
-      delQuery.append( "DELETE FROM Channel WHERE FileID = %s AND ChannelID = %s;" % channel )
-      delQuery.append( "DELETE FROM ReplicationTree WHERE FileID = %s AND ChannelID = %s;" % channel )
+      delQueries.append( "DELETE FROM Channel WHERE FileID = %s AND ChannelID = %s;" % channel )
+      delQueries.append( "DELETE FROM ReplicationTree WHERE FileID = %s AND ChannelID = %s;" % channel )
+      delQueries.append( "DELETE FROM FileToCat WHERE FileID = %s and ChannelID = %s;" % channel )
+
 
     return self._transaction( sorted(delQueries) )
 
