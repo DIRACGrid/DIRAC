@@ -70,96 +70,140 @@ class PDP:
             'EndDate: datetime.datetime (in a string)}
     """
 
-    polToEval = self.iGetter.getInfoToApply( ( 'policy', 'policyType' ),
-                                        element  = self.element,
-                                        statusType   = self.statusType,
-                                        status       = self.status,
-                                        formerStatus = self.formerStatus,
-                                        siteType     = self.__siteType,
-                                        serviceType  = self.__serviceType,
-                                        resourceType = self.__resourceType,
-                                        useNewRes    = self.__useNewRes )
+    policiesThatApply = self.iGetter.getPoliciesThatApply( self.decissionParams )
+    if not policiesThatApply[ 'OK' ]:
+      return policiesThatApply
+    policiesThatApply = policiesThatApply[ 'Value' ]
+    
+#    polToEval = self.iGetter.getInfoToApply( ( 'policy', 'policyType' ),
+#                                        element  = self.element,
+#                                        statusType   = self.statusType,
+#                                        status       = self.status,
+#                                        formerStatus = self.formerStatus,
+#                                        siteType     = self.__siteType,
+#                                        serviceType  = self.__serviceType,
+#                                        resourceType = self.__resourceType,
+#                                        useNewRes    = self.__useNewRes )
 
-    policyType = polToEval[ 'PolicyType' ] # type: generator
+#    policyType = polToEval[ 'PolicyType' ] # type: generator
 
-    if policyIn:
-      # Only the policy provided will be evaluated
-      # FIXME: Check that the policies are valid.
-      singlePolicyResults = policyIn.evaluate()
+#    if policyIn:
+#      # Only the policy provided will be evaluated
+#      # FIXME: Check that the policies are valid.
+#      singlePolicyResults = policyIn.evaluate()
+#
+#    else:
+#    singlePolicyResults = self._invocation( self.__granularity,
+#                                            self.__name, self.__status, policyIn,
+#                                            argsIn, polToEval['Policies'] )
 
-    else:
-      singlePolicyResults = self._invocation( self.__granularity,
-                                              self.__name, self.__status, policyIn,
-                                              argsIn, polToEval['Policies'] )
-
-    policyCombinedResults = self._policyCombination( singlePolicyResults )
-
-    if policyCombinedResults == {}:
-      policyCombinedResults[ 'Action' ]     = False
-      policyCombinedResults[ 'Reason' ]     = 'No policy results'
-      policyCombinedResults[ 'PolicyType' ] = policyType
-
-    if policyCombinedResults.has_key( 'Status' ):
-      newstatus = policyCombinedResults[ 'Status' ]
-
-      if newstatus != self.__status: # Policies satisfy
-        newPolicyType = self.iGetter.getNewPolicyType( self.__granularity, newstatus )
-        policyType    = set( policyType ) & set( newPolicyType )
+    singlePolicyResults   = self._runPolicies( policiesThatApply )
+    if not singlePolicyResults[ 'OK' ]:
+      return singlePolicyResults
         
-        policyCombinedResults[ 'Action' ] = True
+    policyCombinedResults = self._combinePoliciesResults( singlePolicyResults )
+    if not policyCombinedResults[ 'OK' ]:
+      return policyCombinedResults
 
-      else:                          # Policies does not satisfy
-        policyCombinedResults[ 'Action' ] = False
+    policyActionsThatApply = [] 
+    if policyCombinedResults[ 'Value' ]:
+      policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decissionParams )
 
-      policyCombinedResults[ 'PolicyType' ] = policyType
 
-    return { 'SinglePolicyResults'  : singlePolicyResults,
-             'PolicyCombinedResult' : policyCombinedResults }
+#    if policyCombinedResults == {}:
+#      policyCombinedResults[ 'Action' ]     = False
+#      policyCombinedResults[ 'Reason' ]     = 'No policy results'
+#      policyCombinedResults[ 'PolicyType' ] = policyType
+#
+#    if policyCombinedResults.has_key( 'Status' ):
+#      newstatus = policyCombinedResults[ 'Status' ]
+#
+#      if newstatus != self.__status: # Policies satisfy
+#        newPolicyType = self.iGetter.getNewPolicyType( self.__granularity, newstatus )
+#        policyType    = set( policyType ) & set( newPolicyType )
+#        
+#        policyCombinedResults[ 'Action' ] = True
+#
+#      else:                          # Policies does not satisfy
+#        policyCombinedResults[ 'Action' ] = False
+#
+#      policyCombinedResults[ 'PolicyType' ] = policyType
+
+    return S_OK( 
+                { 
+                 'SinglePolicyResults'  : singlePolicyResults,
+                 'PolicyCombinedResult' : policyCombinedResults 
+                 }
+                )
+
+################################################################################
+
+  def _runPolicies( self, policies, decissionParams = None ):
+    
+    if decissionParams is None:
+      decissionParams = self.decissionParams
+      
+    policyInvocationResults = []
+    
+    for policyDict in policies:
+      
+      policyInvocationResult = self.pCaller.policyInvocation( decissionParams,
+                                                              policyDict ) 
+      #FIXME: a faulty policy will crash all other policies !!
+      if not policyInvocationResult[ 'OK' ]:
+        return policyInvocationResult
+       
+      #FIXME: check policy output here makes any sense ? 
+      policyInvocationResults.append( policyInvocationResult[ 'Value' ] )
+      
+    return S_OK( policyInvocationResults )   
+    
+#  def _invocation2( self, granularity, name, status, policy, args, policies ):
+#    '''
+#      One by one, use the PolicyCaller to invoke the policies, and putting
+#      their results in `policyResults`. When the status is `Unknown`, invokes
+#      `self.__useOldPolicyRes`. Always returns a list, possibly empty.
+#    '''
+#
+#    policyResults = []
+#
+#    for pol in policies:
+#      
+#      pName     = pol[ 'Name' ]
+#      pModule   = pol[ 'Module' ]
+#      extraArgs = pol[ 'args' ]
+#      commandIn = pol[ 'commandIn' ]
+#      
+#      res = self.pCaller.policyInvocation( granularity = granularity, name = name,
+#                                           status = status, policy = policy, 
+#                                           args = args, pName = pName,
+#                                           pModule = pModule, extraArgs = extraArgs, 
+#                                           commandIn = commandIn )
+#
+#      # If res is empty, return immediately
+#      if not res: 
+#        return policyResults
+#
+#      if not res.has_key( 'Status' ):
+#        print('\n\n Policy result ' + str(res) + ' does not return "Status"\n\n')
+#        raise TypeError
+#
+#      # Else
+#      if res[ 'Status' ] == 'Unknown':
+#        res = self.__useOldPolicyRes( name = name, policyName = pName )
+#
+#      if res[ 'Status' ] not in ( 'Error', 'Unknown' ):
+#        policyResults.append( res )
+#      else:
+#        gLogger.warn( res )      
+#      
+#    return policyResults
 
 ################################################################################
 
-  def _invocation( self, granularity, name, status, policy, args, policies ):
-    '''
-      One by one, use the PolicyCaller to invoke the policies, and putting
-      their results in `policyResults`. When the status is `Unknown`, invokes
-      `self.__useOldPolicyRes`. Always returns a list, possibly empty.
-    '''
-
-    policyResults = []
-
-    for pol in policies:
-      
-      pName     = pol[ 'Name' ]
-      pModule   = pol[ 'Module' ]
-      extraArgs = pol[ 'args' ]
-      commandIn = pol[ 'commandIn' ]
-      
-      res = self.pCaller.policyInvocation( granularity = granularity, name = name,
-                                           status = status, policy = policy, 
-                                           args = args, pName = pName,
-                                           pModule = pModule, extraArgs = extraArgs, 
-                                           commandIn = commandIn )
-
-      # If res is empty, return immediately
-      if not res: 
-        return policyResults
-
-      if not res.has_key( 'Status' ):
-        print('\n\n Policy result ' + str(res) + ' does not return "Status"\n\n')
-        raise TypeError
-
-      # Else
-      if res[ 'Status' ] == 'Unknown':
-        res = self.__useOldPolicyRes( name = name, policyName = pName )
-
-      if res[ 'Status' ] not in ( 'Error', 'Unknown' ):
-        policyResults.append( res )
-      else:
-        gLogger.warn( res )      
-      
-    return policyResults
-
-################################################################################
+  def _combinePoliciesResults( self, policiesResults ):
+    
+    return S_OK()
 
   def _policyCombination( self, pol_results ):
     '''
