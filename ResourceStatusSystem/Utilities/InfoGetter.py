@@ -7,19 +7,20 @@
 
 import copy
 
-from DIRAC.ResourceStatusSystem.Utilities.CS import getTypedDictRootedAtOperations
-from DIRAC.ResourceStatusSystem.Utilities    import RssConfiguration, Utils
+from DIRAC                                import S_OK
+from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
 
 __RCSID__ = '$Id: $'
 
 class InfoGetter:
-  """ Class InfoGetter is in charge of getting information from the RSS Configurations
+  """ 
+    Class InfoGetter is in charge of getting information from the RSS Configurations
   """
 
   def __init__( self ):
     
-    configModule    = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.Configurations' )
-    self.C_Policies = copy.deepcopy( configModule.Policies )
+    configModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.Configurations' )
+    self.policies = copy.deepcopy( configModule.Policies )
 
   def sanitizeDecissionParams( self, decissionParams ):
     
@@ -36,7 +37,8 @@ class InfoGetter:
     
     for key in sanitizedParams.keys():
       if key in decissionParams:
-        sanitizedParams[ key ] = decissionParams[ key ]
+        # In CS names are with upper case, capitalize them here
+        sanitizedParams[ key[0].upper() + key[1:] ] = decissionParams[ key ]
             
     return sanitizedParams
 
@@ -50,16 +52,57 @@ class InfoGetter:
 
     decissionParams = self.sanitizeDecissionParams( decissionParams )    
     
-    pass
+    return self.__getPolicyActionsThatApply( decissionParams )
 
   def __getPoliciesThatApply( self, decissionParams ):
     
-    pConfig = getTypedDictRootedAtOperations( 'Policies' )
+    policiesThatApply = []
     
-    return 1
+    # Get policies configuration metadata from CS.
+    policiesConfig = RssConfiguration.getPolicies()
+    if not policiesConfig[ 'OK' ]:
+      return policiesConfig
+    policiesConfig = policiesConfig[ 'Value' ]
+    
+    # Get policies that match the given decissionParameters
+    for policyName, policyConfig in policiesConfig.items():
+      policyMatch = Utils.configMatch( decissionParams, policyConfig )   
+      if policyMatch:
+        policiesThatApply.append( policyName )
+        
+    policiesToBeLoaded = []    
+    
+    # Gets policies parameters from code.    
+    for policyName in policiesThatApply:
+      
+      if not policyName in self.policies:
+        continue
+      
+      policiesToBeLoaded.append( self.policies[ policyName ] )
+       
+    return S_OK( policiesToBeLoaded )
+
+  def __getPolicyActionsThatApply( self, decissionParams ):
+    
+    policyActionsThatApply = []
+    
+    # Get policies configuration metadata from CS.
+    policyActionsConfig = RssConfiguration.getPolicyActions()
+    if not policyActionsConfig[ 'OK' ]:
+      return policyActionsConfig
+    policyActionsConfig = policyActionsConfig[ 'Value' ]
+    
+    # Get policies that match the given decissionParameters
+    for policyActionName, policyActionConfig in policyActionsConfig.items():
+      policyMatch = Utils.configMatch( decissionParams, policyActionConfig )   
+      if policyMatch:
+        policyActionsThatApply.append( policyActionName )
+               
+    return S_OK( policyActionsThatApply )
 
 
 ################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
 
 #  def getInfoToApply( self, args, granularity, statusType = None, status = None,
 #                      formerStatus = None, siteType = None, serviceType = None,
@@ -140,151 +183,151 @@ class InfoGetter:
 #
 #    return EVAL
 
-################################################################################
-
-  def __getPolToEval( self, granularity, statusType = None, status=None,
-                      formerStatus=None, siteType=None, serviceType=None,
-                      resourceType=None, useNewRes=False ):
-    """Returns a possibly empty list of dicts, each dict containing
-    enough information to evaluate a given policy"""
-
-    # This dict is constructed to be used with function dictMatch that
-    # helps selecting policies. **kwargs are not used due to the fact
-    # that it's too dangerous here.
-    argsdict = { 'Granularity'  : granularity,
-                 'StatusType'   : statusType,
-                 'Status'       : status,
-                 'FormerStatus' : formerStatus,
-                 'SiteType'     : siteType,
-                 'ServiceType'  : serviceType,
-                 'ResourceType' : resourceType }
-
-    pConfig = getTypedDictRootedAtOperations("Policies")
-    pol_to_eval = (p for p in pConfig if Utils.dictMatch(argsdict, pConfig[p]))
-    polToEval_Args = []
-
-    for p in pol_to_eval:
-      try:
-        moduleName = self.C_Policies[p]['module']
-      except KeyError:
-        moduleName = None
-      try:
-        ConfirmationPolicy = self.C_Policies[p]['ConfirmationPolicy']
-      except KeyError:
-        ConfirmationPolicy = None
-
-      if useNewRes:
-        try:
-          commandIn = self.C_Policies[p]['commandInNewRes']
-        except KeyError:
-          commandIn = self.C_Policies[p]['commandIn']
-        try:
-          args = self.C_Policies[p]['argsNewRes']
-        except KeyError:
-          args = self.C_Policies[p]['args']
-      else:
-        commandIn = self.C_Policies[p]['commandIn']
-        args = self.C_Policies[p]['args']
-
-      polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args,
-                             'ConfirmationPolicy' : ConfirmationPolicy,
-                             'commandIn' : commandIn})
-
-    return polToEval_Args
-
-################################################################################
-
-  def __getPolTypes( self, granularity, statusType=None, status=None,
-                     formerStatus=None, newStatus=None, siteType=None,
-                     serviceType=None, resourceType=None ):
-    """Get Policy Types from config that match the given keyword
-    arguments. Always returns a generator object, possibly empty."""
-
-    # This dict is constructed to be used with function dictMatch that
-    # helps selecting policies. **kwargs are not used due to the fact
-    # that it's too dangerous here.
-    argsdict = {'Granularity'  : granularity,
-                'StatusType'   : statusType,
-                'Status'       : status,
-                'FormerStatus' : formerStatus,
-                'NewStatus'    : newStatus,
-                'SiteType'     : siteType,
-                'ServiceType'  : serviceType,
-                'ResourceType' : resourceType }
-
-    pTconfig = RssConfiguration.getValidPolicyTypes()
-    return (pt for pt in pTconfig if Utils.dictMatch(argsdict, pTconfig[pt]))
-
-  def getNewPolicyType(self, granularity, newStatus):
-    return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
-
-################################################################################
-
-  def __getPanelsInfo( self, granularity, statusType = None, status = None,
-                       formerStatus = None, siteType = None, serviceType = None,
-                       resourceType = None, panel_name = None, useNewRes = False ):
-
-    info = []
-
-    # First, select only policies we want.
-    argsdict = {'Granularity'  : granularity,
-                'StatusType'   : statusType,
-                'Status'       : status,
-                'FormerStatus' : formerStatus,
-                'SiteType'     : siteType,
-                'ServiceType'  : serviceType,
-                'ResourceType' : resourceType}
-
-
-    all_policies = getTypedDictRootedAtOperations("Policies")
-    selected_policies = []
-    for p in all_policies:
-      if Utils.dictMatch(argsdict, all_policies[p]):
-        selected_policies.append(p)
-
-    for p in selected_policies:                   # For selected policies
-      if panel_name in self.C_Policies[p].keys(): # For selected panel_name (arguments)
-
-        toAppend = copy.deepcopy(self.C_Policies[p][panel_name]) # type(toAppend) = list
-
-        # Put CommandIn and args to correct values according to useNewRes
-        if useNewRes:
-          for panel in toAppend:
-            for info_type in panel.keys():
-
-              if type(panel[info_type]) == dict:
-                try:
-                  panel[info_type]['CommandIn'] = panel[info_type]['CommandInNewRes']
-                  del panel[info_type]['CommandInNewRes']
-                except KeyError:
-                  pass
-                try:
-                  panel[info_type]['args'] = panel[info_type]['argsNewRes']
-                  del panel[info_type]['argsNewRes']
-                except KeyError:
-                  pass
-        else:
-          for panel in toAppend:
-            for info_type in panel.keys():
-              try:
-                del panel[info_type]['CommandInNewRes']
-              except KeyError:
-                pass
-              try:
-                del panel[info_type]['argsNewRes']
-              except KeyError:
-                pass
-
-        info.append({p:toAppend})
-
-    return info
-
-################################################################################
-
-  def __getViewPanels( self, granularity ):
-    if granularity is None:
-      granularity = 'Site'
-    return RssConfiguration.views_panels[ granularity ]
+#################################################################################
+#
+#  def __getPolToEval( self, granularity, statusType = None, status=None,
+#                      formerStatus=None, siteType=None, serviceType=None,
+#                      resourceType=None, useNewRes=False ):
+#    """Returns a possibly empty list of dicts, each dict containing
+#    enough information to evaluate a given policy"""
+#
+#    # This dict is constructed to be used with function dictMatch that
+#    # helps selecting policies. **kwargs are not used due to the fact
+#    # that it's too dangerous here.
+#    argsdict = { 'Granularity'  : granularity,
+#                 'StatusType'   : statusType,
+#                 'Status'       : status,
+#                 'FormerStatus' : formerStatus,
+#                 'SiteType'     : siteType,
+#                 'ServiceType'  : serviceType,
+#                 'ResourceType' : resourceType }
+#
+#    pConfig = getTypedDictRootedAtOperations("Policies")
+#    pol_to_eval = (p for p in pConfig if Utils.dictMatch(argsdict, pConfig[p]))
+#    polToEval_Args = []
+#
+#    for p in pol_to_eval:
+#      try:
+#        moduleName = self.C_Policies[p]['module']
+#      except KeyError:
+#        moduleName = None
+#      try:
+#        ConfirmationPolicy = self.C_Policies[p]['ConfirmationPolicy']
+#      except KeyError:
+#        ConfirmationPolicy = None
+#
+#      if useNewRes:
+#        try:
+#          commandIn = self.C_Policies[p]['commandInNewRes']
+#        except KeyError:
+#          commandIn = self.C_Policies[p]['commandIn']
+#        try:
+#          args = self.C_Policies[p]['argsNewRes']
+#        except KeyError:
+#          args = self.C_Policies[p]['args']
+#      else:
+#        commandIn = self.C_Policies[p]['commandIn']
+#        args = self.C_Policies[p]['args']
+#
+#      polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args,
+#                             'ConfirmationPolicy' : ConfirmationPolicy,
+#                             'commandIn' : commandIn})
+#
+#    return polToEval_Args
+#
+#################################################################################
+#
+#  def __getPolTypes( self, granularity, statusType=None, status=None,
+#                     formerStatus=None, newStatus=None, siteType=None,
+#                     serviceType=None, resourceType=None ):
+#    """Get Policy Types from config that match the given keyword
+#    arguments. Always returns a generator object, possibly empty."""
+#
+#    # This dict is constructed to be used with function dictMatch that
+#    # helps selecting policies. **kwargs are not used due to the fact
+#    # that it's too dangerous here.
+#    argsdict = {'Granularity'  : granularity,
+#                'StatusType'   : statusType,
+#                'Status'       : status,
+#                'FormerStatus' : formerStatus,
+#                'NewStatus'    : newStatus,
+#                'SiteType'     : siteType,
+#                'ServiceType'  : serviceType,
+#                'ResourceType' : resourceType }
+#
+#    pTconfig = RssConfiguration.getValidPolicyTypes()
+#    return (pt for pt in pTconfig if Utils.dictMatch(argsdict, pTconfig[pt]))
+#
+#  def getNewPolicyType(self, granularity, newStatus):
+#    return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
+#
+#################################################################################
+#
+#  def __getPanelsInfo( self, granularity, statusType = None, status = None,
+#                       formerStatus = None, siteType = None, serviceType = None,
+#                       resourceType = None, panel_name = None, useNewRes = False ):
+#
+#    info = []
+#
+#    # First, select only policies we want.
+#    argsdict = {'Granularity'  : granularity,
+#                'StatusType'   : statusType,
+#                'Status'       : status,
+#                'FormerStatus' : formerStatus,
+#                'SiteType'     : siteType,
+#                'ServiceType'  : serviceType,
+#                'ResourceType' : resourceType}
+#
+#
+#    all_policies = getTypedDictRootedAtOperations("Policies")
+#    selected_policies = []
+#    for p in all_policies:
+#      if Utils.dictMatch(argsdict, all_policies[p]):
+#        selected_policies.append(p)
+#
+#    for p in selected_policies:                   # For selected policies
+#      if panel_name in self.C_Policies[p].keys(): # For selected panel_name (arguments)
+#
+#        toAppend = copy.deepcopy(self.C_Policies[p][panel_name]) # type(toAppend) = list
+#
+#        # Put CommandIn and args to correct values according to useNewRes
+#        if useNewRes:
+#          for panel in toAppend:
+#            for info_type in panel.keys():
+#
+#              if type(panel[info_type]) == dict:
+#                try:
+#                  panel[info_type]['CommandIn'] = panel[info_type]['CommandInNewRes']
+#                  del panel[info_type]['CommandInNewRes']
+#                except KeyError:
+#                  pass
+#                try:
+#                  panel[info_type]['args'] = panel[info_type]['argsNewRes']
+#                  del panel[info_type]['argsNewRes']
+#                except KeyError:
+#                  pass
+#        else:
+#          for panel in toAppend:
+#            for info_type in panel.keys():
+#              try:
+#                del panel[info_type]['CommandInNewRes']
+#              except KeyError:
+#                pass
+#              try:
+#                del panel[info_type]['argsNewRes']
+#              except KeyError:
+#                pass
+#
+#        info.append({p:toAppend})
+#
+#    return info
+#
+#################################################################################
+#
+#  def __getViewPanels( self, granularity ):
+#    if granularity is None:
+#      granularity = 'Site'
+#    return RssConfiguration.views_panels[ granularity ]
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

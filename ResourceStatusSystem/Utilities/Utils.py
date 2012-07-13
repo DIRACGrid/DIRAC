@@ -114,14 +114,16 @@ id_fun = lambda x: x
 
 # Import utils
 
-def voimport(base_mod):
-  for ext in gConfig.getValue("DIRAC/Extensions", []):
+def voimport( base_mod ):
+  
+  for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
+  
     try:
-      return  __import__(ext + base_mod, globals(), locals(), ['*'])
+      return  __import__( ext + base_mod, globals(), locals(), ['*'] )
     except ImportError:
       continue
   # If not found in extensions, import it in DIRAC base.
-  return  __import__(base_mod, globals(), locals(), ['*'])
+  return  __import__( base_mod, globals(), locals(), ['*'] )
 
 # socket utils
 
@@ -180,29 +182,29 @@ def getCSTree( csPath = '' ):
     csTreeDict = {}
     
     opts = opHelper.getOptionsDict( path )
-    if not opts[ 'OK' ]:
-      return opts
-    opts = opts[ 'Value' ]
+    if opts[ 'OK' ]:
+      
+      opts = opts[ 'Value' ]
+    
+      for optKey, optValue in opts.items():
+        if optValue.find( ',' ) > -1:
+          optValue = List.fromChar( optValue )
+        else:
+          optValue = [ optValue ]
+        csTreeDict[ optKey ] = optValue    
     
     secs = opHelper.getSections( path )
-    if not secs[ 'OK' ]:
-      return secs
-    secs = secs[ 'Value' ]
-    
-    for optKey, optValue in opts:
-      if optValue.find( ',' ) > -1:
-        optValue = List.fromChar( optValue )
-      else:
-        optValue = [ optValue ]
-      csTreeDict[ optKey ] = optValue
+    if secs[ 'OK' ]:
+      
+      secs = secs[ 'Value' ]
             
-    for sec in secs:
+      for sec in secs:
       
-      secTree = getCSTreeAsDict( '%s/%s' % ( path, sec ) )
-      if not secTree[ 'OK' ]:
-        return secTree
+        secTree = getCSTreeAsDict( '%s/%s' % ( path, sec ) )
+        if not secTree[ 'OK' ]:
+          return secTree
       
-      csTreeDict[ sec ] = secTree[ 'Value' ]  
+        csTreeDict[ sec ] = secTree[ 'Value' ]  
     
     return S_OK( csTreeDict )
     
@@ -246,6 +248,28 @@ def set_sanitize(l):
     return [i for i in l if i]
 
 # Dict utils
+
+def configMatch( candidateParams, configParams ):
+  '''
+    For a given configuration, the candidate will be rejected if:
+    - it is missing at least one of the params in the config
+    - if a param of the candidate does not match the config params  
+    - if a candidate param is None, is considered as wildcard
+  '''
+
+  for key in configParams:
+    
+    if not key in candidateParams:
+      # The candidateParams is missing one of the parameters required
+      return False
+    
+    if candidateParams[ key ] is None:
+      # None is assumed to be a wildcard (*)
+      continue 
+    elif candidateParams[ key ] not in configParams[ key ]:
+      return False
+    
+  return True  
 
 def dictMatch(dict1, dict2):
   """Checks if fields of dict1 are in fields of dict2. Returns True if

@@ -40,6 +40,15 @@ def getPolicies():
   '''
   
   return Utils.getCSTree( 'RSSConfiguration/Policies' )
+
+## RssConfiguration/PolicyActions ##############################################
+
+def getPolicyActions():
+  '''
+  Returns from the OperationsHelper: RSSConfiguration/PolicyActions
+  '''
+  
+  return Utils.getCSTree( 'RSSConfiguration/PolicyActions' )
   
 ## RssConfiguration/GeneralConfig ##############################################
 
