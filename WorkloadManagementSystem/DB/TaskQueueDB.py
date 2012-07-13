@@ -4,7 +4,7 @@
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id$"
+__RCSID__ = "ebed3a8 (2012-07-06 20:33:11 +0200) Adri Casajs <adria@ecm.ub.es>"
 
 import types
 import random
@@ -595,7 +595,7 @@ class TaskQueueDB( DB ):
     return "( %s )" % " AND ".join( condList )
 
 
-  def __insertIntoTablesDict( self, sqlTables, field ):
+  def __generateTablesName( self, sqlTables, field ):
     fullTableName = 'tq_TQTo%ss' % field
     if fullTableName not in sqlTables:
       tableN = field.lower()
@@ -644,16 +644,15 @@ class TaskQueueDB( DB ):
       #It has to be %ss , with an 's' at the end because the columns names
       # are plural and match options are singular
       if field in tqMatchDict and tqMatchDict[ field ]:
-        tableN, fullTableN = self.__insertIntoTablesDict( sqlTables, field )
+        tableN, fullTableN = self.__generateTablesName( sqlTables, field )
         sqlMultiCondList = []
-        sqlCondList.insert( 0, "%s.TQId = tq.TQId" % tableN )
         if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
           # that the GridCE matches explicetly so the COUNT can not be 0. In this case we skip this 
           # condition
           sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
-        csql = self.__generateSQLSubCond( "%%s = %s.Value" % ( tableN ), tqMatchDict[ field ] )
+        csql = self.__generateSQLSubCond( "%%s IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( fullTableN, fullTableN, fullTableN ), tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
         sqlCondList.append( "( %s )" % " OR ".join( sqlMultiCondList ) )
         #In case of Site, check it's not in job banned sites
@@ -681,8 +680,7 @@ class TaskQueueDB( DB ):
     if negativeCond:
       sqlCondList.append( self.__generateNotSQL( sqlTables, negativeCond ) )
     #Generate the final query string
-    tqSqlCmd = "SELECT tq.TQId, tq.OwnerDN, tq.OwnerGroup FROM %s WHERE %s" % ( ", ".join( [ "`%s` %s" % ( tn, sqlTables[ tn ] ) for tn in sqlTables ] ),
-                                                                                                                      " AND ".join( sqlCondList ) )
+    tqSqlCmd = "SELECT tq.TQId, tq.OwnerDN, tq.OwnerGroup FROM `tq_TaskQueues` tq WHERE %s" % ( " AND ".join( sqlCondList ) )
     #Apply priorities
     tqSqlCmd = "%s ORDER BY RAND() / tq.Priority ASC" % tqSqlCmd
     #Do we want a limit?
