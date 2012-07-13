@@ -5,7 +5,7 @@
   modules.  
 '''
 
-from DIRAC                                                 import gConfig, gLogger, S_OK
+from DIRAC                                               import gConfig, gLogger, S_OK
 
 __RCSID__ = '$Id:  $'
 
@@ -15,6 +15,8 @@ def warmUp():
   '''
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
   gRefresher.refreshConfigurationIfNeeded()
+
+## /Resources ##################################################################
 
 def getSites():
   '''
@@ -155,6 +157,8 @@ def getQueues():
   queues = list( set ( queues ) )
     
   return S_OK( queues ) 
+
+## /Registry ###################################################################
 
 def getRegistryUsers():
   '''

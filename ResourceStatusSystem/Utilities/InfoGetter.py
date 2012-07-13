@@ -16,90 +16,129 @@ class InfoGetter:
   """ Class InfoGetter is in charge of getting information from the RSS Configurations
   """
 
-  def __init__(self):
-    configModule    = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations")
-    self.C_Policies = copy.deepcopy(configModule.Policies)
+  def __init__( self ):
+    
+    configModule    = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.Configurations' )
+    self.C_Policies = copy.deepcopy( configModule.Policies )
+
+  def sanitizeDecissionParams( self, decissionParams ):
+    
+    sanitizedParams = { 
+                       'element'     : None,
+                       'name'        : None,
+                       'elementType' : None,
+                       'statusType'  : None,
+                       'status'      : None,
+                       #'formerStatus' : None,
+                       'reason'      : None,
+                       'tokenOwner'  : None
+                      }
+    
+    for key in sanitizedParams.keys():
+      if key in decissionParams:
+        sanitizedParams[ key ] = decissionParams[ key ]
+            
+    return sanitizedParams
+
+  def getPoliciesThatApply( self, decissionParams ):
+
+    decissionParams = self.sanitizeDecissionParams( decissionParams )    
+    
+    return self.__getPoliciesThatApply(decissionParams)
+
+  def getPolicyActionsThatApply( self, decissionParams ):
+
+    decissionParams = self.sanitizeDecissionParams( decissionParams )    
+    
+    pass
+
+  def __getPoliciesThatApply( self, decissionParams ):
+    
+    pConfig = getTypedDictRootedAtOperations( 'Policies' )
+    
+    return 1
+
 
 ################################################################################
 
-  def getInfoToApply( self, args, granularity, statusType = None, status = None,
-                      formerStatus = None, siteType = None, serviceType = None,
-                      resourceType = None, useNewRes = False ):
-    """ Main method. Use internal methods to parse information regarding:
-        policies to be applied, policy types, panel and view info.
-
-        :params:
-          :attr:`args`: a tuple. Can contain: 'policy', 'policyType', 'panel_info', 'view_info'
-
-          :attr:`granularity`: a ValidElement
-
-          :attr:`status`: a ValidStatus
-
-          :attr:`formerStatus`: a ValidStatus
-
-          :attr:`siteType`: a ValidSiteType
-
-          :attr:`serviceType`: a ValidServiceType
-
-          :attr:`resourceType`: a ValidSiteType
-    """
-
-    EVAL = {}
-
-    if 'policy' in args:
-      EVAL['Policies'] = self.__getPolToEval( granularity = granularity, statusType = statusType,
-                                              status = status, formerStatus = formerStatus,
-                                              siteType = siteType, serviceType = serviceType,
-                                              resourceType = resourceType, useNewRes = useNewRes)
-
-    if 'policyType' in args:
-      EVAL['PolicyType'] = self.__getPolTypes( granularity = granularity, statusType = statusType,
-                                               status = status, formerStatus = formerStatus,
-                                               siteType = siteType, serviceType = serviceType,
-                                               resourceType = resourceType)
-
-    if 'panel_info' in args:
-      if granularity in ('Site', 'Sites'):
-        info = 'Site_Panel'
-      elif granularity in ('Service', 'Services'):
-        if serviceType == 'Storage':
-          info = 'Service_Storage_Panel'
-        elif serviceType == 'Computing':
-          info = 'Service_Computing_Panel'
-        elif serviceType == 'VO-BOX':
-          info = 'Service_VO-BOX_Panel'
-        elif serviceType == 'VOMS':
-          info = 'Service_VOMS_Panel'
-      elif granularity in ('Resource', 'Resources'):
-        info = 'Resource_Panel'
-      elif granularity in ('StorageElementRead', 'StorageElementsRead'):
-        info = 'SE_Panel'
-      elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
-        info = 'SE_Panel'
-      EVAL['Info'] = self.__getPanelsInfo( granularity = granularity, statusType = statusType,
-                                           status = status, formerStatus = formerStatus,
-                                           siteType = siteType, serviceType = serviceType,
-                                           resourceType = resourceType, panel_name = info,
-                                           useNewRes = useNewRes )
-
-    if 'view_info' in args:
-      panels_info_dict = {}
-
-      if granularity in ('Site', 'Sites'):
-        granularity = None
-
-      view_panels = self.__getViewPanels(granularity)
-      for panel in view_panels:
-        panel_info = self.__getPanelsInfo( granularity = granularity, statusType = statusType,
-                                           status = status, formerStatus = formerStatus,
-                                           siteType = siteType, serviceType = serviceType,
-                                           resourceType = resourceType, panel_name = panel,
-                                           useNewRes = useNewRes )
-        panels_info_dict[panel] = panel_info
-
-      EVAL['Panels'] = panels_info_dict
-
-    return EVAL
+#  def getInfoToApply( self, args, granularity, statusType = None, status = None,
+#                      formerStatus = None, siteType = None, serviceType = None,
+#                      resourceType = None, useNewRes = False ):
+#    """ Main method. Use internal methods to parse information regarding:
+#        policies to be applied, policy types, panel and view info.
+#
+#        :params:
+#          :attr:`args`: a tuple. Can contain: 'policy', 'policyType', 'panel_info', 'view_info'
+#
+#          :attr:`granularity`: a ValidElement
+#
+#          :attr:`status`: a ValidStatus
+#
+#          :attr:`formerStatus`: a ValidStatus
+#
+#          :attr:`siteType`: a ValidSiteType
+#
+#          :attr:`serviceType`: a ValidServiceType
+#
+#          :attr:`resourceType`: a ValidSiteType
+#    """
+#
+#    EVAL = {}
+#
+#    if 'policy' in args:
+#      EVAL['Policies'] = self.__getPolToEval( granularity = granularity, statusType = statusType,
+#                                              status = status, formerStatus = formerStatus,
+#                                              siteType = siteType, serviceType = serviceType,
+#                                              resourceType = resourceType, useNewRes = useNewRes)
+#
+#    if 'policyType' in args:
+#      EVAL['PolicyType'] = self.__getPolTypes( granularity = granularity, statusType = statusType,
+#                                               status = status, formerStatus = formerStatus,
+#                                               siteType = siteType, serviceType = serviceType,
+#                                               resourceType = resourceType)
+#
+#    if 'panel_info' in args:
+#      if granularity in ('Site', 'Sites'):
+#        info = 'Site_Panel'
+#      elif granularity in ('Service', 'Services'):
+#        if serviceType == 'Storage':
+#          info = 'Service_Storage_Panel'
+#        elif serviceType == 'Computing':
+#          info = 'Service_Computing_Panel'
+#        elif serviceType == 'VO-BOX':
+#          info = 'Service_VO-BOX_Panel'
+#        elif serviceType == 'VOMS':
+#          info = 'Service_VOMS_Panel'
+#      elif granularity in ('Resource', 'Resources'):
+#        info = 'Resource_Panel'
+#      elif granularity in ('StorageElementRead', 'StorageElementsRead'):
+#        info = 'SE_Panel'
+#      elif granularity in ('StorageElementWrite', 'StorageElementsWrite'):
+#        info = 'SE_Panel'
+#      EVAL['Info'] = self.__getPanelsInfo( granularity = granularity, statusType = statusType,
+#                                           status = status, formerStatus = formerStatus,
+#                                           siteType = siteType, serviceType = serviceType,
+#                                           resourceType = resourceType, panel_name = info,
+#                                           useNewRes = useNewRes )
+#
+#    if 'view_info' in args:
+#      panels_info_dict = {}
+#
+#      if granularity in ('Site', 'Sites'):
+#        granularity = None
+#
+#      view_panels = self.__getViewPanels(granularity)
+#      for panel in view_panels:
+#        panel_info = self.__getPanelsInfo( granularity = granularity, statusType = statusType,
+#                                           status = status, formerStatus = formerStatus,
+#                                           siteType = siteType, serviceType = serviceType,
+#                                           resourceType = resourceType, panel_name = panel,
+#                                           useNewRes = useNewRes )
+#        panels_info_dict[panel] = panel_info
+#
+#      EVAL['Panels'] = panels_info_dict
+#
+#    return EVAL
 
 ################################################################################
 

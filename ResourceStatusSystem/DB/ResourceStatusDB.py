@@ -27,7 +27,7 @@ class ResourceStatusDB( object ):
                      'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
                      'DateEffective'   : 'DATETIME NOT NULL',
-                     'LastCheckTime'   : 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+                     'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
                      'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
                      'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
@@ -43,7 +43,7 @@ class ResourceStatusDB( object ):
                      'ElementType'     : 'VARCHAR(32) NOT NULL DEFAULT ""',
                      'Reason'          : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
                      'DateEffective'   : 'DATETIME NOT NULL',
-                     'LastCheckTime'   : 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP',
+                     'LastCheckTime'   : 'DATETIME NOT NULL DEFAULT "1000-01-01 00:00:00"',
                      'TokenOwner'      : 'VARCHAR(16) NOT NULL DEFAULT "rs_svc"',
                      'TokenExpiration' : 'DATETIME NOT NULL DEFAULT "9999-12-31 23:59:59"'
                     },
@@ -104,6 +104,18 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
+   
+    
+    utcnow = datetime.utcnow().replace( microsecond = 0 )
+    # We force lastCheckTime to utcnow if it is not present on the params
+    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+      params[ 'lastCheckTime' ] = utcnow
+    
+    # If it is a XStatus table, we force dateEffective to now.
+    if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
+      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+        params[ 'dateEffective' ] = utcnow      
+        
     return MySQLWrapper.insert( self, params, meta )
 
   def update( self, params, meta ):
@@ -125,6 +137,10 @@ class ResourceStatusDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
+    # We force lastCheckTime to utcnow if it is not present on the params
+    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+      params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )    
+    
     return MySQLWrapper.update( self, params, meta )
 
   def select( self, params, meta ):
@@ -194,8 +210,8 @@ class ResourceStatusDB( object ):
       userQuery  = self.update( params, meta )
       isUpdate   = True
     else:      
-      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+#      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+#        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
       userQuery = self.insert( params, meta )
     
     if self.recordLogs:
@@ -247,9 +263,8 @@ class ResourceStatusDB( object ):
        
     if selectQuery[ 'Value' ]:      
       return selectQuery
-    
-    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+#    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+#      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
     
     return self.insert( params, meta )      
 

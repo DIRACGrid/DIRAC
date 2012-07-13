@@ -7,8 +7,10 @@
 
 import collections
 
-from DIRAC                import gConfig
+from DIRAC                import gConfig, S_OK
 from DIRAC.Core.Utilities import List
+
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 __RCSID__ = '$Id: $'
 
@@ -163,6 +165,48 @@ def isiterable(obj):
   return isinstance(obj,collections.Iterable)
 
 # Type conversion
+
+def getCSTree( csPath = '' ):
+  '''
+    Gives the configuration rooted at path in a Python dict. The
+    result is a Python dictionnary that reflects the structure of the
+    config file.
+  '''
+
+  opHelper = Operations()
+
+  def getCSTreeAsDict( path ):
+    
+    csTreeDict = {}
+    
+    opts = opHelper.getOptionsDict( path )
+    if not opts[ 'OK' ]:
+      return opts
+    opts = opts[ 'Value' ]
+    
+    secs = opHelper.getSections( path )
+    if not secs[ 'OK' ]:
+      return secs
+    secs = secs[ 'Value' ]
+    
+    for optKey, optValue in opts:
+      if optValue.find( ',' ) > -1:
+        optValue = List.fromChar( optValue )
+      else:
+        optValue = [ optValue ]
+      csTreeDict[ optKey ] = optValue
+            
+    for sec in secs:
+      
+      secTree = getCSTreeAsDict( '%s/%s' % ( path, sec ) )
+      if not secTree[ 'OK' ]:
+        return secTree
+      
+      csTreeDict[ sec ] = secTree[ 'Value' ]  
+    
+    return S_OK( csTreeDict )
+    
+  return getCSTreeAsDict( csPath )  
 
 def typedobj_of_string(s):
   if s == '_none_':

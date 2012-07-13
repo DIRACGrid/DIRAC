@@ -7,7 +7,7 @@
 
 import datetime
 
-from DIRAC                                                import gLogger 
+from DIRAC                                                import gLogger, S_OK 
 from DIRAC.ResourceStatusSystem.PolicySystem              import Status
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
@@ -22,61 +22,26 @@ class PDP:
     2. Invokes an evaluation of the policies, and returns the result (to a PEP)
   """
 
-  def __init__( self, **clients ):
+  def __init__( self, clients ):
     '''
       Constructor. Defines members that will be used later on.
     '''
     
-    cc                  = CommandCaller()
-    self.clients        = clients
-    self.pCaller        = PolicyCaller( cc, **clients )
-    self.iGetter        = InfoGetter()
+    cc                   = CommandCaller()
+    self.clients         = clients
+    self.pCaller         = PolicyCaller( cc, **clients )
+    self.iGetter         = InfoGetter()
 
-    self.__granularity  = None
-    self.__name         = None
-    self.__statusType   = None
-    self.__status       = None
-    self.__formerStatus = None
-    self.__reason       = None
-    self.__siteType     = None
-    self.__serviceType  = None
-    self.__resourceType = None
-    self.__useNewRes    = None
+    self.decissionParams = {}  
+
+  def setup( self, decissionParams = None ):
+
+    if decissionParams is not None:
+      self.decissionParams = decissionParams
         
-
-  def setup( self, granularity = None, name = None, statusType = None,
-             status = None, formerStatus = None, reason = None, siteType = None,
-             serviceType = None, resourceType = None, useNewRes = False ):
-    """
-    PDP (Policy Decision Point) initialization
-
-    :params:
-      :attr:`granularity`: string - a ValidElement
-      :attr:`name`: string - name (e.g. of a site)
-      :attr:`status`: string - status
-      :attr:`formerStatus`: string - former status
-      :attr:`reason`: string - optional reason for last status change
-      :attr:`siteType`: string - optional site type
-      :attr:`serviceType`: string - optional service type
-      :attr:`resourceType`: string - optional resource type
-    """
-
-    self.__granularity  = granularity
-    self.__name         = name
-    self.__statusType   = statusType
-    self.__status       = status
-    self.__formerStatus = formerStatus
-    self.__reason       = reason
-    self.__siteType     = siteType
-    self.__serviceType  = serviceType
-    self.__resourceType = resourceType
-    self.__useNewRes    = useNewRes
-
-
-
 ################################################################################
 
-  def takeDecision( self, policyIn = None, argsIn = None, knownInfo = None ):
+  def takeDecision( self ):#, policyIn = None, argsIn = None, knownInfo = None ):
     """ PDP MAIN FUNCTION
 
         decides policies that have to be applied, based on
@@ -106,10 +71,10 @@ class PDP:
     """
 
     polToEval = self.iGetter.getInfoToApply( ( 'policy', 'policyType' ),
-                                        granularity  = self.__granularity,
-                                        statusType   = self.__statusType,
-                                        status       = self.__status,
-                                        formerStatus = self.__formerStatus,
+                                        element  = self.element,
+                                        statusType   = self.statusType,
+                                        status       = self.status,
+                                        formerStatus = self.formerStatus,
                                         siteType     = self.__siteType,
                                         serviceType  = self.__serviceType,
                                         resourceType = self.__resourceType,

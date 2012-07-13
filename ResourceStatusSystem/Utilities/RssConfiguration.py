@@ -8,20 +8,6 @@
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
-## RssConfiguration/GeneralConfig ##############################################
-
-def getValidElements():
-  '''
-  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/ValidElements
-  '''
-  
-  _DEFAULTS = ( 'Site', 'Resource', 'Node' )
-  
-  result = Operations().getValue( 'RSSConfiguration/GeneralConfig/ValidElements' )
-  if result is not None:
-    return Utils.getTypedList( result )
-  return _DEFAULTS
-
 ## RssConfiguration/Logs #######################################################
 
 def getRecordLogs():
@@ -45,7 +31,29 @@ def getInspectionFreqs():
   #if result == 'Active':
   #  return True
   return { 'Site' : { '' : { 'Active' : 2, 'Bad' : 2, 'Probing' : 2, 'Banned' : 2 } } }
+
+## RssConfiguration/Policies ###################################################
+
+def getPolicies():
+  '''
+  Returns from the OperationsHelper: RSSConfiguration/Policies
+  '''
   
+  return Utils.getCSTree( 'RSSConfiguration/Policies' )
+  
+## RssConfiguration/GeneralConfig ##############################################
+
+def getValidElements():
+  '''
+  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/ValidElements
+  '''
+  #FIXME: no defaults. If it fails, I want to know it.
+  _DEFAULTS = ( 'Site', 'Resource', 'Node' )
+  
+  result = Operations().getValue( 'RSSConfiguration/GeneralConfig/ValidElements' )
+  if result is not None:
+    return Utils.getTypedList( result )
+  return _DEFAULTS  
 
 #def getValidStatus():
 #  '''
@@ -64,7 +72,7 @@ def getValidStatusTypes():
   '''
   Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/Resources
   '''
-  
+  #FIXME: no defaults. If it fails, I want to know it.
   DEFAULTS = { 
                'Site'          : ( '' ),
                'Resource'      : ( '' ),
@@ -91,6 +99,8 @@ def getValidStatusTypes():
       result[ section ] = Utils.getTypedList( res )
       
   return result     
+
+
   
 #def getValidPolicyResult():
 #  '''

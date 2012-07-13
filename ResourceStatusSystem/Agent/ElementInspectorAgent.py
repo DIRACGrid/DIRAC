@@ -81,11 +81,11 @@ class ElementInspectorAgent( AgentModule ):
         # be there, but in any case, it is not a big problem.
         
         self.elementsToBeChecked.put( elemDict )
-        self.log.info( '%s-%s-%s-%s-%s' % ( elemDict[ 'Name' ], 
-                                            elemDict[ 'ElementType' ],
-                                            elemDict[ 'StatusType' ],
-                                            elemDict[ 'Status' ],
-                                            elemDict[ 'LastCheckTime' ]) )
+        self.log.info( '"%s"-"%s"-"%s"-"%s"-"%s"' % ( elemDict[ 'Name' ], 
+                                                      elemDict[ 'ElementType' ],
+                                                      elemDict[ 'StatusType' ],
+                                                      elemDict[ 'Status' ],
+                                                      elemDict[ 'LastCheckTime' ]) )
        
     
     # Measure size of the queue, more or less, to know how many threads should
@@ -116,9 +116,11 @@ class ElementInspectorAgent( AgentModule ):
         
   def _execute( self, threadNumber ):
 
-    tHeader = 'Thread%d' % threadNumber
+    tHeader = 'Job%d' % threadNumber
     
     self.log.info( '%s UP' % tHeader )
+    
+    pep = PEP( clients = clients )
     
     while True:
     
@@ -132,8 +134,6 @@ class ElementInspectorAgent( AgentModule ):
       self.elementsToBeChecked.task_done()
       self.log.info( element )    
 
-#  # Too many public methods
-#  # pylint: disable-msg=R0904
 #
 #  def initialize( self ):
 #
