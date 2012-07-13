@@ -1314,10 +1314,6 @@ class TransferDB( DB ):
     :param int gracePeriod: grace period in days
     :param int limit: selection of FTSReq limit
 
-    :warn: all failed records should be preserved, this means that only records with statuses:
-           FTSReq 'Finished', FileToFTS 'Completed', FileToCat 'Executing' and Channel 'Done' will be removed  
-    :todo: special treatment of Channel table? maybe some day, at the moment this is commented out 
- 
     :return: S_OK( list( tuple( 'txCmd',  txRes ), ... ) )
     """
     ftsReqs = self._query( "".join( [ "SELECT FTSReqID, ChannelID FROM FTSReq WHERE Status = 'Finished' ",
@@ -1340,7 +1336,7 @@ class TransferDB( DB ):
       delQueries.append( "DELETE FROM FTSReq WHERE FTSReqID = %s;" % ftsReqID )
       
     channels = self._query( "".join( [ "SELECT FileID, ChannelID FROM Channel ",
-                                       "WHERE Status = 'Done' AND FileID NOT IN ( SELECT FileID FROM Files ) " 
+                                       "WHERE FileID NOT IN ( SELECT FileID FROM Files ) " 
                                        "AND FileID NOT IN ( SELECT FileID FROM FileToFTS ) LIMIT %s;" % int(limit) ] ) )
     if not channels["OK"]:
       return channels

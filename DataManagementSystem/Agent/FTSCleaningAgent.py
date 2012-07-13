@@ -38,10 +38,10 @@ class FTSCleaningAgent( AgentModule ):
   """
   ## placeholder fot TransferDB instance
   __transferDB = None
-  ## 2 months grace period  
-  __gracePeriod = 60
+  ## 6 months grace period  
+  __gracePeriod = 180
   ## FTS requests per cycle
-  __selectLimit = 10
+  __selectLimit = 50
   ## TransferDB table names
   __tblNames = [ "FTSReq", "FTSReqLogging", "FileToFTS", "FileToCat", "Channel", "ReplicationTree" ]
 
@@ -83,7 +83,7 @@ class FTSCleaningAgent( AgentModule ):
 
     :param self: self reference
     """    
-    self.log.info("will try clean up %s FTS jobs older than %s days" % ( self.__selectLimit, self.__gracePeriod ) )    
+    self.log.info("will try to clean up %s FTS jobs and Channels older than %s days" % ( self.__selectLimit, self.__gracePeriod ) )    
     ## do clean up
     cleanUp = self.transferDB().cleanUp( self.__gracePeriod, self.__selectLimit )
     if not cleanUp["OK"]:
