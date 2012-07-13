@@ -10,13 +10,14 @@
 from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import CSGlobals, getVO, Registry, Operations, Resources
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, jobDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import getGridEnv
 from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot             import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient         import gDataStoreClient
 from DIRAC.Core.Security                                   import CS
+from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping                    import getSiteForCE
 from DIRAC.Core.Utilities.Time                             import dateTime, second               
 import os, base64, bz2, tempfile, random, socket
@@ -235,7 +236,8 @@ class SiteDirector( AgentModule ):
       tqDict['Community'] = self.vo
     if self.group:
       tqDict['OwnerGroup'] = self.group
-    result = taskQueueDB.matchAndGetTaskQueue( tqDict )
+    rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
+    result = rpcMatcher.matchAndGetTaskQueue( tqDict )
     if not result[ 'OK' ]:
       return result
     if not result['Value']:
