@@ -98,9 +98,9 @@ class Limiter:
     negCond = {}
     #Run Limit
     result = self.__opsHelper.getSections( self.__runningLimitSection )
-    if not result[ 'OK' ]:
-      sites = []
-    sites = result[ 'Value' ]
+     sites = []
+    if result[ 'OK' ]:
+      sites = result[ 'Value' ]
     for siteName in sites:
       result = self.__getRunningCondition( siteName )
       if not result[ 'OK' ]:
