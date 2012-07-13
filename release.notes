@@ -1,4 +1,4 @@
-[v6r5-pre5]
+[v6r5-pre6]
 
 NEW: Executor framework
 
@@ -20,6 +20,8 @@ NEW: dirac-install - added possibility of defining dirac-install's global defaul
 BUGFIX: avoid PathFinder.getServiceURL and use Client class ( DataLoggingClient,LfcFileCatalogProxyClient ) 
 FIX: MySQL - added TIMESTAMPADD and TIMESTAMPDIFF to special values not to be scaped by MySQL
 NEW: ObjectLoader utility
+CHANGE: dirac-distribution - added global defaults flag and changed the flag to -M or --defaultsURL
+FIX: Convert to string before trying to escape value in MySQL
 
 *RSS
 CHANGE: removed code execution from __init__
@@ -28,6 +30,8 @@ NEW: Log all policy results
 
 *Resources
 NEW: updated SSHComputingElement which allows multiple job submission
+FIX: SGETimeLeft - better parsing of the batch system commands output
+FIX: InProcessComputingElement - when starting a new job discard renewal of the previous proxy
 
 *WMS
 CHANGE: WMS Optimizers are now executors
@@ -43,7 +47,11 @@ CHANGE: Whenever a DB is not properly initialized it will raise a catchable Runt
 FIX: InputDataResolution - just quick mod for easier extensibility, plus removed some LHCb specific stuff
 NEW: allow jobids in a file in dirac-wms-job-get-output
 NEW: JobManager - zfill in %n parameter substitution to allow alphabetical sorting
-
+NEW: Directors - added checking of the TaskQueue limits when getting eligible queues
+CHANGE: Natcher - refactor to simpify the logic, introduced Limiter class
+CHANGE: Treat MaxCPUTime and CPUTime the same way in the JDL to avoid confusion
+NEW: SiteDirector - added options PilotScript, MaxPilotsToSubmit, MaxJobsInFillMode
+BUGFIX: StalledJobAgent - use cpuNormalization as float, not string 
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
@@ -53,6 +61,13 @@ FIX: TransformationCLI - take into accout possible failures in resetFile command
 *Accounting
 NEW: AccountingDB - added retrieving RAW records for internal stuff
 FIX: AccountingDB - fixed some logic for readonly cases
+CHANGE: Added new simpler and faster bucket insertion mechanism
+NEW: Added more info when rebucketing
+
+*DMS
+NEW: SRM2Storage - added retry in the gfal calls
+NEW: added new FTSCleaningAgent cleaning up TransferDB tables
+FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
 
 [v6r4p13]
 
