@@ -72,8 +72,11 @@ class CachedJobState( object ):
   def jid( self ):
     return self.__jid
 
-  def _addTrace( self, actionTuple ):
-    self.__trace.append( actionTuple )
+  def _addTrace( self, actionTuple, start = True ):
+    if start:
+      self.__trace.insert( 0, actionTuple )
+    else:
+      self.__trace.append( actionTuple )
 
   def getTrace( self ):
     return copy.copy( self.__trace )
@@ -242,7 +245,7 @@ class CachedJobState( object ):
     manCFG = manifest.dumpAsCFG()
     if self.__manifest and ( self.__manifest.dumpAsCFG() == manCFG and not manifest.isDirty() ):
       return S_OK()
-    self._addTrace( ( "setManifest", ( manCFG, ) ) )
+    self._addTrace( ( "setManifest", ( manCFG, ) ), start = True )
     self.__manifest = manifest
     self.__manifest.clearDirty()
     return S_OK()
