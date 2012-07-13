@@ -1335,8 +1335,7 @@ class TransferDB( DB ):
         continue
       fileIDs = [ fileID[0] for fileID in fileIDs["Value"] if fileID ]
       for fileID in fileIDs:
-        delQueries.append( "DELETE FROM FileToFTS WHERE FileID = %s and FTSReqID = %s AND Status = 'Completed';" % ( fileID, ftsReqID ) )
-        delQueries.append( "DELETE FROM FileToCat WHERE FileID = %s and ChannelID = %s AND Status = 'Executing';" % ( fileID, channelID ) )
+        delQueries.append( "DELETE FROM FileToFTS WHERE FileID = %s and FTSReqID = %s;" % ( fileID, ftsReqID ) )
       delQueries.append( "DELETE FROM FTSReqLogging WHERE FTSReqID = %s;" % ftsReqID )
       delQueries.append( "DELETE FROM FTSReq WHERE FTSReqID = %s;" % ftsReqID )
       
@@ -1347,8 +1346,10 @@ class TransferDB( DB ):
       return channels
     channels = [ channel for channel in channels["Value"] if None not in channel ]
     for channel in channels:
-      delQuery.append( "DELETE FROM Channel WHERE FileID = %s AND ChannelID = %s;" % channel )
-      delQuery.append( "DELETE FROM ReplicationTree WHERE FileID = %s AND ChannelID = %s;" % channel )
+      delQueries.append( "DELETE FROM Channel WHERE FileID = %s AND ChannelID = %s;" % channel )
+      delQueries.append( "DELETE FROM ReplicationTree WHERE FileID = %s AND ChannelID = %s;" % channel )
+      delQueries.append( "DELETE FROM FileToCat WHERE FileID = %s and ChannelID = %s;" % channel )
+
 
     return self._transaction( sorted(delQueries) )
 

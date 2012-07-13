@@ -97,5 +97,5 @@ class FTSCleaningAgent( AgentModule ):
           counters[key] += ret
     ## print counters into logger
     for key, value in sorted( counters.items() ):
-      self.log.info( "%s table" % key.replace("DELETE FROM", "deleted %s records from" % value ) )
+      self.log.info( "%stable" % key.replace("DELETE FROM", "deleted %s records from" % value ) )
     return S_OK()
