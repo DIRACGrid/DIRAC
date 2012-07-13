@@ -195,7 +195,7 @@ class ResourceStatusDB( object ):
       isUpdate   = True
     else:      
       if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-        params[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
+        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
       userQuery = self.insert( params, meta )
     
     if self.recordLogs:
@@ -249,7 +249,7 @@ class ResourceStatusDB( object ):
       return selectQuery
     
     if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-      params[ 'dateEffective' ] = datetime.now().replace( microsecond = 0 )
+      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
     
     return self.insert( params, meta )      
 
