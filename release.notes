@@ -52,6 +52,7 @@ CHANGE: Natcher - refactor to simpify the logic, introduced Limiter class
 CHANGE: Treat MaxCPUTime and CPUTime the same way in the JDL to avoid confusion
 NEW: SiteDirector - added options PilotScript, MaxPilotsToSubmit, MaxJobsInFillMode
 BUGFIX: StalledJobAgent - use cpuNormalization as float, not string 
+FIX: Don't kill an executor if a task has been taken out from it
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
