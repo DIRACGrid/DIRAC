@@ -22,6 +22,7 @@ FIX: MySQL - added TIMESTAMPADD and TIMESTAMPDIFF to special values not to be sc
 NEW: ObjectLoader utility
 CHANGE: dirac-distribution - added global defaults flag and changed the flag to -M or --defaultsURL
 FIX: Convert to string before trying to escape value in MySQL
+NEW: DISET Services - added PacketTimeout option
 
 *RSS
 CHANGE: removed code execution from __init__
