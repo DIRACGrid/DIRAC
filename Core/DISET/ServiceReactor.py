@@ -21,7 +21,9 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class ServiceReactor:
 
-  __transportExtraKeywords = [ "SSLSessionTimeout", 'IgnoreCRLs' ]
+  __transportExtraKeywords = { 'SSLSessionTimeout' : False, 
+                               'IgnoreCRLs': False, 
+                               'PacketTimeout': 'timeout' }
 
   def __init__( self ):
     self.__services = {}
@@ -83,6 +85,11 @@ class ServiceReactor:
       for kw in ServiceReactor.__transportExtraKeywords:
         value = svcCfg.getOption( kw )
         if value:
+          ikw = ServiceReactor.__transportExtraKeywords[ kw ]
+          if ikw:
+            kw = ikw
+          if kw == 'timeout':
+            value = int( value )
           transportArgs[ kw ] = value
       gLogger.verbose( "Initializing %s transport" % protocol, svcCfg.getURL() )
       transport = gProtocolDict[ protocol ][ 'transport' ]( ( "", port ),
