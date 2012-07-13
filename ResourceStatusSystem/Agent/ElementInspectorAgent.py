@@ -74,7 +74,7 @@ class ElementInspectorAgent( AgentModule ):
       elemDict = dict( zip( elements[ 'Columns' ], element ) )
       
       timeToNextCheck = self.inspectionFreqs[ elemDict[ 'ElementType' ] ][ elemDict[ 'Status' ] ]      
-      if utcnow - timeToNextCheck > elemDict[ 'LastCheckTime' ]:
+      if utcnow - datetime.timedelta( minutes = timeToNextCheck ) > elemDict[ 'LastCheckTime' ]:
         
         
         # We are not checking if the item is already on the queue or not. It may
