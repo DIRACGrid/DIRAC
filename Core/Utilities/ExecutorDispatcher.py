@@ -254,7 +254,7 @@ class ExecutorDispatcherCallbacks:
   def cbDisconectExecutor( self, eId ):
     return S_ERROR( "No disconnect callback defined" )
 
-  def cbTaskError( self, taskId, errorMsg ):
+  def cbTaskError( self, taskId, taskObj, errorMsg ):
     return S_ERROR( "No error callback defined" )
 
   def cbTaskProcessed( self, taskId, taskObj, eType ):
@@ -422,7 +422,7 @@ class ExecutorDispatcher:
     if not isFrozen:
       self.removeTask( taskId )
       if self.__failedOnTooFrozen:
-        self.__cbHolder.cbTaskError( taskId, "Retried more than 10 times. Last error: %s" % errMsg )
+        self.__cbHolder.cbTaskError( taskId, eTask.taskObj, "Retried more than 10 times. Last error: %s" % errMsg )
       return False
     return True
 
@@ -488,6 +488,12 @@ class ExecutorDispatcher:
     finally:
       self.__tasksLock.release()
 
+  def getTask( self, taskId ):
+    try:
+      return self.__tasks[ taskId ].taskObj
+    except KeyError:
+      return None
+
   def __dispatchTask( self, taskId, defrozeIfNeeded = True ):
     self.__log.verbose( "Dispatching task %s" % taskId )
     #If task already in executor skip
@@ -503,8 +509,9 @@ class ExecutorDispatcher:
         if self.__freezeTask( taskId, result[ 'Message' ] ):
           return S_OK()
         return result
+      taskObj = self.getTask( taskId )
       self.removeTask( taskId )
-      self.__cbHolder.cbTaskError( taskId, "Could not dispatch task: %s" % result[ 'Message' ] )
+      self.__cbHolder.cbTaskError( taskId, taskObj, "Could not dispatch task: %s" % result[ 'Message' ] )
       return S_ERROR( "Could not add task. Dispatching task failed" )
 
     eType = result[ 'Value' ]
