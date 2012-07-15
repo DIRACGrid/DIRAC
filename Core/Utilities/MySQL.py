@@ -164,7 +164,7 @@ import Queue
 import types
 import time
 import threading
-from types import StringTypes, DictType
+from types import StringTypes, DictType, ListType
 
 MAXCONNECTRETRY = 10
 
@@ -305,6 +305,11 @@ class MySQL:
     """
 
     specialValues = ( 'UTC_TIMESTAMP', 'TIMESTAMPADD', 'TIMESTAMPDIFF' )
+
+    try:
+      myString = str( myString )
+    except ValueError:
+      return S_ERROR( "Cannot escape value!" )
 
     try:
       for sV in specialValues:
@@ -509,6 +514,44 @@ class MySQL:
 
     return retDict
 
+
+  def _transaction( self, cmdList, conn = None ):
+    """ dummy transaction support 
+
+    :param self: self reference
+    :param list cmdList: list of queries to be executed within the transaction
+    :param MySQLDB.Connection conn: connection 
+
+    :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR 
+    """
+    if type( cmdList ) != ListType:
+      return S_ERROR( "_transaction: wrong type (%s) for cmdList" % type( cmdList ) )
+
+    ## get connection 
+    connection = conn
+    if not connection:
+      retDict = self._getConnection()
+      if not retDict['OK']:
+        return retDict
+      connection = retDict[ 'Value' ]
+
+    ## list with cmds and their results   
+    cmdRet = []
+    try:
+      cursor = connection.cursor()
+      for cmd in cmdList:
+        cmdRet.append( ( cmd, cursor.execute( cmd ) ) )
+      connection.commit()
+    except Exception, error:
+      self.logger.execption( error )
+      ## rollback, put back connection to the pool 
+      connection.rollback()
+      self.__putConnection( connection )
+      return S_ERROR( error )
+    ## close cursor, put back connection to the pool
+    cursor.close()
+    self.__putConnection( connection )
+    return S_OK( cmdRet )
 
   def _createTables( self, tableDict, force = False ):
     """

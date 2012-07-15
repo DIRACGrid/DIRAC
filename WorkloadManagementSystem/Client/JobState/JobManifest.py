@@ -181,10 +181,12 @@ class JobManifest( object ):
     if secName not in self.__manifest:
       if contents and not isinstance( contents, CFG ):
         return S_ERROR( "Contents for section %s is not a cfg object" % secName )
+      self.__dirty = True
       S_OK( self.__manifest.createSection( secName, contents = contents ) )
     return S_ERROR( "Section %s already exists" % secName )
 
   def getSection( self, secName ):
+    self.__dirty = True
     sec = self.__manifest[ secName ]
     if not sec:
       return S_ERROR( "%s does not exist" )
@@ -194,6 +196,7 @@ class JobManifest( object ):
   def setSectionContents( self, secName, contents ):
     if contents and not isinstance( contents, CFG ):
       return S_ERROR( "Contents for section %s is not a cfg object" % secName )
+    self.__dirty = True
     if secName in self.__manifest:
       self.__manifest[ secName ].reset()
       self.__manifest[ secName ].mergeWith( contents )

@@ -42,8 +42,8 @@ class ExecutorMindHandler( RequestHandler ):
     def cbDisconectExecutor( self, eId ):
       return self.__disconnectCB( eId )
 
-    def cbTaskError( self, taskId, errorMsg ):
-      return self.__taskErrCB( taskId, errorMsg )
+    def cbTaskError( self, taskId, taskObj, errorMsg ):
+      return self.__taskErrCB( taskId, taskObj, errorMsg )
 
     def cbTaskProcessed( self, taskId, taskObj, eType ):
       return self.__taskProcDB( taskId, taskObj, eType )
@@ -148,7 +148,10 @@ class ExecutorMindHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     taskObj = result[ 'Value' ]
-    return self.__eDispatch.taskProcessed( self.srv_getTransportID(), msgObj.taskId, taskObj )
+    result = self.__eDispatch.taskProcessed( self.srv_getTransportID(), msgObj.taskId, taskObj )
+    if not result[ 'OK' ]:
+      gLogger.error( "There was a problem freezing task %s: %s" % ( taskId, result[ 'Message' ] ) )
+    return S_OK()
 
   auth_msg_TaskFreeze = [ 'all' ]
   def msg_TaskFreeze( self, msgObj ):
@@ -163,8 +166,11 @@ class ExecutorMindHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     taskObj = result[ 'Value' ]
-    return self.__eDispatch.freezeTask( self.srv_getTransportID(), msgObj.taskId,
-                                        msgObj.freezeTime, taskObj )
+    result = self.__eDispatch.freezeTask( self.srv_getTransportID(), msgObj.taskId,
+                                          msgObj.freezeTime, taskObj )
+    if not result[ 'OK' ]:
+      gLogger.error( "There was a problem freezing task %s: %s" % ( taskId, result[ 'Message' ] ) )
+    return S_OK()
 
   auth_msg_TaskError = [ 'all' ]
   def msg_TaskError( self, msgObj ):

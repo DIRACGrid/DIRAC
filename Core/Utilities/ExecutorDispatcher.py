@@ -254,7 +254,7 @@ class ExecutorDispatcherCallbacks:
   def cbDisconectExecutor( self, eId ):
     return S_ERROR( "No disconnect callback defined" )
 
-  def cbTaskError( self, taskId, errorMsg ):
+  def cbTaskError( self, taskId, taskObj, errorMsg ):
     return S_ERROR( "No error callback defined" )
 
   def cbTaskProcessed( self, taskId, taskObj, eType ):
@@ -422,7 +422,7 @@ class ExecutorDispatcher:
     if not isFrozen:
       self.removeTask( taskId )
       if self.__failedOnTooFrozen:
-        self.__cbHolder.cbTaskError( taskId, "Retried more than 10 times. Last error: %s" % errMsg )
+        self.__cbHolder.cbTaskError( taskId, eTask.taskObj, "Retried more than 10 times. Last error: %s" % errMsg )
       return False
     return True
 
@@ -488,6 +488,12 @@ class ExecutorDispatcher:
     finally:
       self.__tasksLock.release()
 
+  def getTask( self, taskId ):
+    try:
+      return self.__tasks[ taskId ].taskObj
+    except KeyError:
+      return None
+
   def __dispatchTask( self, taskId, defrozeIfNeeded = True ):
     self.__log.verbose( "Dispatching task %s" % taskId )
     #If task already in executor skip
@@ -503,8 +509,9 @@ class ExecutorDispatcher:
         if self.__freezeTask( taskId, result[ 'Message' ] ):
           return S_OK()
         return result
+      taskObj = self.getTask( taskId )
       self.removeTask( taskId )
-      self.__cbHolder.cbTaskError( taskId, "Could not dispatch task: %s" % result[ 'Message' ] )
+      self.__cbHolder.cbTaskError( taskId, taskObj, "Could not dispatch task: %s" % result[ 'Message' ] )
       return S_ERROR( "Could not add task. Dispatching task failed" )
 
     eType = result[ 'Value' ]
@@ -623,9 +630,8 @@ class ExecutorDispatcher:
       self.__log.error( errMsg )
       return S_ERROR( errMsg )
     if not self.__states.removeTask( taskId, eId ):
-      errMsg = "Executor %s says it's processed task but it was not sent to it" % eId
-      self.__log.error( errMsg )
-      return S_ERROR( errMsg )
+      self.__log.info( "Executor %s says it's processed task %s but it didn't have it" % ( eId, taskId ) )
+      return S_OK()
     if eTask.eType not in self.__idMap[ eId ]:
       errMsg = "Executor type invalid for %s. Redoing task %s" % ( eId, taskId )
       self.__log.error( errMsg )
@@ -642,10 +648,17 @@ class ExecutorDispatcher:
     if not result[ 'OK' ]:
       return result
     eType = result[ 'Value' ]
+    #Executor didn't have the task.
+    if not eType:
+      #Fill the executor
+      self.__sendTaskToExecutor( eId )
+      return S_OK()
     if not taskObj:
       taskObj = self.__tasks[ taskId ].taskObj
     result = self.__taskFreezeCallback( taskId, taskObj, eType )
     if not result[ 'OK' ]:
+      #Fill the executor
+      self.__sendTaskToExecutor( eId )
       return result
     try:
       self.__tasks[ taskId ].taskObj = taskObj
@@ -663,11 +676,18 @@ class ExecutorDispatcher:
     if not result[ 'OK' ]:
       return result
     eType = result[ 'Value' ]
+    #Executor didn't have the task.
+    if not eType:
+      #Fill the executor
+      self.__sendTaskToExecutor( eId )
+      return S_OK()
     #Call the done callback
     if not taskObj:
       taskObj = self.__tasks[ taskId ].taskObj
     result = self.__taskProcessedCallback( taskId, taskObj, eType )
     if not result[ 'OK' ]:
+      #Fill the executor
+      self.__sendTaskToExecutor( eId )
       return result
     #Up until here it's an executor error. From now on it can be a task error
     try:
@@ -688,9 +708,9 @@ class ExecutorDispatcher:
       self.__log.error( errMsg )
       return S_ERROR( errMsg )
     if not self.__states.removeTask( taskId, eId ):
-      errMsg = "Executor %s says it's processed task but it was not sent to it" % eId
-      self.__log.error( errMsg )
-      return S_ERROR( errMsg )
+      self.__log.info( "Executor %s says it's processed task %s but it didn't have it" % ( eId, taskId ) )
+      self.__sendTaskToExecutor( eId )
+      return S_OK()
     self.__log.verbose( "Executor %s did NOT process task %s, retrying" % ( eId, taskId ) )
     try:
       self.__tasks[ taskId ].retries += 1

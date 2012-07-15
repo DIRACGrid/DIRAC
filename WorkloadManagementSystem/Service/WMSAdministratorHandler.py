@@ -538,3 +538,12 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.countPilots(condDict, older, newer, timeStamp )
     return result
   
+  ##########################################################################################
+  types_getCounters = [ StringTypes, ListType, DictType ]
+  def export_getCounters(self, table, keys, condDict, newer=None, timeStamp='SubmissionTime'):
+    """ Set the pilot agent status
+    """
+
+    result = pilotDB.getCounters( table, keys, condDict, newer=newer, timeStamp=timeStamp )
+    return result
+  

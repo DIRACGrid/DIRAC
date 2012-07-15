@@ -22,6 +22,7 @@ class AccountingDB( DB ):
     self.autoCompact = False
     self.__readOnly = readOnly
     self.__doingCompaction = False
+    self.__oldBucketMethod = False
     self.__doingPendingLockTime = 0
     self.__deadLockRetries = 2
     self.__queuedRecordsLock = ThreadSafe.Synchronizer()
@@ -320,10 +321,10 @@ class AccountingDB( DB ):
     fieldsDict = {}
     bucketFieldsDict = {}
     inbufferDict = { 'id' : 'INTEGER NOT NULL AUTO_INCREMENT' }
-    indexesDict = {}
+    bucketIndexes = { 'startTimeIndex' : [ 'startTime' ], 'bucketLengthIndex' : [ 'bucketLength' ] } 
     uniqueIndexFields = []
     for field in definitionKeyFields:
-      indexesDict[ "%sIndex" % field[0] ] = [ field[0] ]
+      bucketIndexes[ "%sIndex" % field[0] ] = [ field[0] ]
       uniqueIndexFields.append( field[ 0 ] )
       fieldsDict[ field[0] ] = "INTEGER NOT NULL"
       bucketFieldsDict[ field[0] ] = "INTEGER NOT NULL"
@@ -345,21 +346,13 @@ class AccountingDB( DB ):
     uniqueIndexFields.append( 'bucketLength' )
     bucketTableName = _getTableName( "bucket", name )
     if bucketTableName not in tablesInThere:
-      bucketIndexes = dict( indexesDict )
-      bucketIndexes.update( { 'startTimeIndex' : [ 'startTime' ],
-                              'bucketLengthIndex' : [ 'bucketLength' ] } )
       tables[ bucketTableName ] = { 'Fields' : bucketFieldsDict,
                                       'Indexes' : bucketIndexes,
                                       'UniqueIndexes' : { 'UniqueConstraint' : uniqueIndexFields }
                                     }
     typeTableName = _getTableName( "type", name )
     if typeTableName not in tablesInThere:
-      typeIndexes = dict( indexesDict )
-      typeIndexes.update( { 'startTimeIndex' : [ 'startTime' ],
-                            'endTimeIndex' : [ 'endTime' ] } )
-      tables[ typeTableName ] = { 'Fields' : fieldsDict,
-                                    'Indexes' : indexesDict,
-                                  }
+      tables[ typeTableName ] = { 'Fields' : fieldsDict }
     inTableName = _getTableName( "in", name )
     if inTableName not in tablesInThere:
       tables[ inTableName ] = { 'Fields' : inbufferDict,
@@ -386,9 +379,9 @@ class AccountingDB( DB ):
     if updateDBCatalog:
       bucketsLength.sort()
       bucketsEncoding = DEncode.encode( bucketsLength )
-      self._insert( self.catalogTableName,
-                    [ 'name', 'keyFields', 'valueFields', 'bucketsLength' ],
-                    [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ), bucketsEncoding ] )
+      self.insertFields( self.catalogTableName,
+                         [ 'name', 'keyFields', 'valueFields', 'bucketsLength' ],
+                         [ name, ",".join( keyFieldsList ), ",".join( valueFieldsList ), bucketsEncoding ] )
       self.__addToCatalog( name, keyFieldsList, valueFieldsList, bucketsLength )
     self.log.info( "Registered type %s" % name )
     return S_OK( True )
@@ -518,7 +511,7 @@ class AccountingDB( DB ):
       return retVal
     connection = retVal[ 'Value' ]
     self.log.info( "Value %s for key %s didn't exist, inserting" % ( keyValue, keyName ) )
-    retVal = self._insert( keyTable, [ 'id', 'value' ], [ 0, keyValue ], connection )
+    retVal = self.insertFields( keyTable, [ 'id', 'value' ], [ 0, keyValue ], connection )
     if not retVal[ 'OK' ] and retVal[ 'Message' ].find( "Duplicate key" ) == -1:
       return retVal
     result = self.__getIdForKeyValue( typeName, keyName, keyValue, connection )
@@ -573,7 +566,7 @@ class AccountingDB( DB ):
       return S_ERROR( "Fields mismatch for record %s. %s fields and %s expected" % ( typeName,
                                                                                      numRcv,
                                                                                      numExp ) )
-    retVal = self._insert( _getTableName( "in", typeName ),
+    retVal = self.insertFields( _getTableName( "in", typeName ),
                            sqlFields,
                            sqlValues )
     if not retVal[ 'OK' ]:
@@ -656,7 +649,7 @@ class AccountingDB( DB ):
       return retVal
     connObj = retVal[ 'Value' ]
     try:
-      retVal = self._insert( _getTableName( "type", typeName ),
+      retVal = self.insertFields( _getTableName( "type", typeName ),
                              self.dbCatalog[ typeName ][ 'typeFields' ],
                              insertList,
                              conn = connObj )
@@ -766,34 +759,40 @@ class AccountingDB( DB ):
       bucketStartTime = bucketInfo[0]
       bucketProportion = bucketInfo[1]
       bucketLength = bucketInfo[2]
-      #INSERT!
-      retVal = self.__insertBucket( typeName,
-                                    bucketStartTime,
-                                    bucketLength,
-                                    keyValues,
-                                    valuesList, bucketProportion, connObj = connObj )
-      #If OK insert is successful
-      if retVal[ 'OK' ]:
-        continue
-      #if not OK and NOT duplicate keys error then real error
-      if retVal[ 'Message' ].find( 'Duplicate entry' ) == -1:
-        return retVal
-      #Duplicate keys!!. If that's the case..
-      #Update!
-      for i in range( max( 1, self.__deadLockRetries ) ):
-        retVal = self.__updateBucket( typeName,
+      if not self.__oldBucketMethod:
+        result = self.__writeBucket( typeName, bucketStartTime, bucketLength, keyValues,
+                                     valuesList, bucketProportion, connObj = connObj )
+        if not result[ 'OK' ]:
+          return result
+      else:
+        #INSERT!
+        retVal = self.__insertBucket( typeName,
                                       bucketStartTime,
                                       bucketLength,
                                       keyValues,
                                       valuesList, bucketProportion, connObj = connObj )
-        if not retVal[ 'OK' ]:
-          #If failed because of dead lock try restarting
-          if retVal[ 'Message' ].find( "try restarting transaction" ):
-            continue
-          return retVal
-        #If OK, break loop
+        #If OK insert is successful
         if retVal[ 'OK' ]:
-          break
+          continue
+        #if not OK and NOT duplicate keys error then real error
+        if retVal[ 'Message' ].find( 'Duplicate entry' ) == -1:
+          return retVal
+        #Duplicate keys!!. If that's the case..
+        #Update!
+        for i in range( max( 1, self.__deadLockRetries ) ):
+          retVal = self.__updateBucket( typeName,
+                                        bucketStartTime,
+                                        bucketLength,
+                                        keyValues,
+                                        valuesList, bucketProportion, connObj = connObj )
+          if not retVal[ 'OK' ]:
+            #If failed because of dead lock try restarting
+            if retVal[ 'Message' ].find( "try restarting transaction" ):
+              continue
+            return retVal
+          #If OK, break loop
+          if retVal[ 'OK' ]:
+            break
     return S_OK()
 
   def __deleteFromBuckets( self, typeName, startTime, endTime, valuesList, numInsertions, connObj = False ):
@@ -887,6 +886,43 @@ class AccountingDB( DB ):
                                                                             bucketLength )
     cmd += self.__generateSQLConditionForKeys( typeName, keyValues )
     return self._update( cmd, conn = connObj )
+
+
+  def __writeBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, proportion, connObj = False ):
+    """ Insert or update a bucket
+    """
+    tableName = _getTableName( "bucket", typeName )
+    #INSERT PART OF THE QUERY
+    sqlFields = [ '`startTime`', '`bucketLength`', '`entriesInBucket`' ]
+    sqlValues = [ startTime, bucketLength, "(%s*%s)" % ( bucketValues[-1], proportion )]
+    sqlUpData = [ "`entriesInBucket`=`entriesInBucket`+(%s*%s)" % ( bucketValues[-1], proportion ) ]
+    for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
+      sqlFields.append( "`%s`" % self.dbCatalog[ typeName ][ 'keys' ][ keyPos ] )
+      sqlValues.append( keyValues[ keyPos ] )
+    for valPos in range( len( self.dbCatalog[ typeName ][ 'values' ] ) ):
+      valueField = "`%s`" % self.dbCatalog[ typeName ][ 'values' ][ valPos ]
+      value = bucketValues[ valPos ]
+      sqlUpData.append( "%s=%s+(%s*%s)" % ( valueField, valueField, value, proportion ) )
+      sqlFields.append( valueField )
+      sqlValues.append( "(%s*%s)" % ( bucketValues[ valPos ], proportion ) )
+
+    cmd = "INSERT INTO `%s` ( %s ) " % ( _getTableName( "bucket", typeName ), ", ".join( sqlFields ) )
+    cmd += "VALUES ( %s ) " % ", ".join( [ str( val ) for val in sqlValues ] )
+    cmd += "ON DUPLICATE KEY UPDATE %s" % ", ".join( sqlUpData )
+
+    for i in range( max( 1, self.__deadLockRetries ) ):
+      result = self._update( cmd, conn = connObj )
+      if not result[ 'OK' ]:
+        #If failed because of dead lock try restarting
+        if result[ 'Message' ].find( "try restarting transaction" ):
+          continue
+        return retVal
+      #If OK, break loopo
+      if result[ 'OK' ]:
+        return result
+
+    return S_ERROR( "Cannot update bucket: %s" % result[ 'Message' ] )
+
 
   def __updateBucket( self, typeName, startTime, bucketLength, keyValues, bucketValues, proportion, connObj = False ):
     """
@@ -1369,6 +1405,11 @@ class AccountingDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     connObj = retVal[ 'Value' ]
+    #Delete old entries if any
+    if self.dbCatalog[ typeName ][ 'dataTimespan' ] > 0:
+      self.log.info( "[REBUCKET] Deleting records older that timespan for type %s" % typeName )
+      self.__deleteRecordsOlderThanDataTimespan( typeName )
+      self.log.info( "[REBUCKET] Done deleting old records" )
     rawTableName = _getTableName( "type", typeName )
     #retVal = self.__startTransaction( connObj )
     #if not retVal[ 'OK' ]:
@@ -1465,6 +1506,8 @@ class AccountingDB( DB ):
       rawData = retVal[ 'Value' ]
       self.log.info( "[REBUCKET] Retrieved %s records" % len( rawData ) )
       rebucketedRecords = 0
+      startQuery = time.time()
+      startBlock = time.time()
       for entry in rawData:
         startT = entry[0]
         endT = entry[1]
@@ -1475,7 +1518,15 @@ class AccountingDB( DB ):
           return retVal
         rebucketedRecords += 1
         if rebucketedRecords % 1000 == 0:
-          self.log.info( "[REBUCKET] Rebucketed %s records..." % rebucketedRecords )
+          numRecords = len( rawData )
+          queryAvg = rebucketedRecords / float( time.time() - startQuery )
+          blockAvg = 1000 / float( time.time() - startBlock )
+          startBlock = time.time()
+          perDone =  100 * rebucketedRecords / float ( numRecords )
+          expectedEnd = str( datetime.timedelta( seconds = int( numRecords / blockAvg ) ) )
+          self.log.info( "[REBUCKET] Rebucketed %.2f%% %s (%.2f r/s block %.2f r/s query | ETA %s )..." % ( perDone, typeName,
+                                                                                                            blockAvg, queryAvg, 
+                                                                                                            expectedEnd ) )
     #return self.__commitTransaction( connObj )
     connObj.close()
     return S_OK()

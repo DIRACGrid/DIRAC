@@ -1,8 +1,13 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" DataLoggingDB class is a front-end to the Data Logging Database.
-    The following methods are provided
+""" :mod: DataLoggingDB
+    ===================
+ 
+    .. module: DataLoggingDB
+    :synopsis: front-end to the Data Logging database
+
+    The following methods are provided:
 
     addFileRecord()
     getFileLoggingInfo()
@@ -28,20 +33,22 @@ class DataLoggingDB( DB ):
 
   Python interface to DataLoggingDB.
 
-DROP TABLE IF EXISTS DataLoggingInfo;
-CREATE TABLE DataLoggingInfo(
-   FileID INTEGER NOT NULL AUTO_INCREMENT,
-   LFN VARCHAR(255) NOT NULL,
-   Status VARCHAR(255) NOT NULL,
-   MinorStatus VARCHAR(255) NOT NULL DEFAULT 'Unknown',
-   StatusTime DATETIME,
-   StatusTimeOrder DOUBLE(11,3) NOT NULL,
-   Source VARCHAR(127) NOT NULL DEFAULT 'Unknown',
-   PRIMARY KEY (FileID),
-   INDEX (LFN)
-);
-"""
+  DROP TABLE IF EXISTS DataLoggingInfo;
+  CREATE TABLE DataLoggingInfo (
+    FileID INTEGER NOT NULL AUTO_INCREMENT,
+    LFN VARCHAR(255) NOT NULL,
+    Status VARCHAR(255) NOT NULL,
+    MinorStatus VARCHAR(255) NOT NULL DEFAULT 'Unknown',
+    StatusTime DATETIME,
+    StatusTimeOrder DOUBLE(11,3) NOT NULL,
+    Source VARCHAR(127) NOT NULL DEFAULT 'Unknown',
+    PRIMARY KEY (FileID),
+    INDEX (LFN)
+    );
+  """
+  ## table name
   tableName = 'DataLoggingInfo'
+  ## table def
   tableDict = { tableName: { 'Fields' : { 'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
                                           'LFN': 'VARCHAR(255) NOT NULL',
                                           'Status': 'VARCHAR(255) NOT NULL',
@@ -113,9 +120,8 @@ CREATE TABLE DataLoggingInfo(
       date = Time.dateTime()
       time_order = Time.toEpoch( _date )
 
-    # Reduce to a smalle number and add more precision
+    # Reduce to a smallest number and add more precision
     time_order = time_order - MAGIC_EPOC_NUMBER + _date.microsecond / 1000000.
-
 
     inDict = { 'Status': status,
                'MinorStatus': minor,
@@ -123,9 +129,7 @@ CREATE TABLE DataLoggingInfo(
                'StatusTimeOrder': time_order,
                'Source': source
               }
-
     result = S_OK( 0 )
-
     for lfn in lfns:
       inDict['LFN'] = lfn
       res = self.insertFields( self.tableName, inDict = inDict )
@@ -133,16 +137,14 @@ CREATE TABLE DataLoggingInfo(
         return res
       result['Value'] += res['Value']
       result['lastRowId'] = res['lastRowId']
-
     return result
 
   def getFileLoggingInfo( self, lfn ):
     """ Returns a Status,StatusTime,StatusSource tuple
         for each record found for the file specified by its LFN in historical order
     """
-
     return self.getFields( self.tableName, ['Status', 'MinorStatus', 'StatusTime', 'Source'],
-                          condDict = {'LFN': lfn }, orderAttribute = ['StatusTimeOrder', 'StatusTime'] )
+                           condDict = {'LFN': lfn }, orderAttribute = ['StatusTimeOrder', 'StatusTime'] )
 
   def getUniqueStates( self ):
     """ Returns the distinct status from the data logging DB
@@ -229,8 +231,6 @@ def test():
       print result
 
     sys.exit( 1 )
-
-
 
 if __name__ == '__main__':
   from DIRAC.Core.Base import Script

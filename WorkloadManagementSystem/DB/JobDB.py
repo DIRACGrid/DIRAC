@@ -1439,6 +1439,8 @@ class JobDB( DB ):
     if not systemConfig:
       systemConfig = classAdJob.getAttributeString( 'Platform' )
     cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
+    if cpuTime == 0:
+      cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
 
     classAdReq.insertAttributeInt( 'UserPriority', priority )
 
@@ -1606,7 +1608,7 @@ class JobDB( DB ):
 
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
-      self.log.error( 'Maximum number of reschedulings is reached', 'Job %s' % jobID )
+      self.log.warn( 'Maximum number of reschedulings is reached', 'Job %s' % jobID )
       res = self.setJobStatus( jobID, status = 'Failed', minor = 'Maximum of reschedulings reached' )
       return S_ERROR( 'Maximum number of reschedulings is reached: %s' % self.maxRescheduling )
 

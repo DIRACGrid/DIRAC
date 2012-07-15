@@ -50,7 +50,7 @@ class Params:
     self.lcgVer = ''
     self.useVersionsDir = False
     self.installSource = ""
-    self.globalDefaults = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
+    self.globalDefaults = False
     self.timeout = 300
 
 cliParams = Params()
@@ -257,7 +257,12 @@ class ReleaseConfig:
 
     #END OF CFG CLASS
 
-  def __init__( self, instName = 'DIRAC', projectName = 'DIRAC' ):
+  def __init__( self, instName = 'DIRAC', projectName = 'DIRAC', globalDefaultsURL = False ):
+
+    if globalDefaultsURL:
+      self.__globalDefaultsURL = globalDefaultsURL
+    else:
+      self.__globalDefaultsURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
     self.__globalDefaults = ReleaseConfig.CFG()
     self.__loadedCfgs = []
     self.__prjDepends = {}
@@ -339,8 +344,8 @@ class ReleaseConfig:
     return self.__loadObjectDefaults( "Projects", self.__projectName )
 
   def __loadGlobalDefaults( self ):
-    self.__dbgMsg( "Loading global defaults from: %s" % cliParams.globalDefaults )
-    result = self.__loadCFGFromURL( cliParams.globalDefaults )
+    self.__dbgMsg( "Loading global defaults from: %s" % self.__globalDefaultsURL )
+    result = self.__loadCFGFromURL( self.__globalDefaultsURL )
     if not result[ 'OK' ]:
       return result
     self.__globalDefaults = result[ 'Value' ]
@@ -795,13 +800,15 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
       else:
         urlData += data
       data = remoteFD.read( 16384 )
-      if count % 100 == 0:
-        print ".",
+      if count % 20 == 0:
+        print '\033[1D'+".",
         sys.stdout.flush()
         progressBar = True
       count += 1
     if progressBar:
-      print
+      # return cursor to the beginning of the line
+      print '\033[1K',
+      print '\033[1A'
     if fileName:
       localFD.close()
     remoteFD.close()
@@ -1007,9 +1014,9 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'V:', 'installation=', 'Installation from which to extract parameter values' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
-            ( 'D:', 'defaults', 'Where to retrieve the global defaults from' ),
+            ( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from' ),
             ( 'h', 'help', 'Show this help' ),
-            ( 'T:', 'Timeout=', 'Timeout for downloads (default = %s)', cliParams.timeout )
+            ( 'T:', 'Timeout=', 'Timeout for downloads (default = %s)' )
           )
 
 def usage():
@@ -1048,10 +1055,10 @@ def loadConfiguration():
       cliParams.installation = v
     elif o in ( "-d", "--debug" ):
       cliParams.debug = True
-    elif o in ( "-D", "--defaults" ):
+    elif o in ( "-M", "--defaultsURL" ):
       cliParams.globalDefaults = v
 
-  releaseConfig = ReleaseConfig( instName = cliParams.installation )
+  releaseConfig = ReleaseConfig( instName = cliParams.installation, globalDefaultsURL = cliParams.globalDefaults )
   if cliParams.debug:
     releaseConfig.setDebugCB( logDEBUG )
 
