@@ -409,7 +409,6 @@ class RequestAgentBase( AgentModule ):
             time.sleep( 0.1 )
             break
       
-
     return S_OK()
 
   def finalize( self ):

@@ -82,7 +82,7 @@ class ResourceManagementDB(object):
 
     if 'DBin' in kwargs.keys():
       dbIn = kwargs[ 'DBin' ]
-      if isinstance(DBin, list):
+      if isinstance( dbIn, list ):
         from DIRAC.Core.Utilities.MySQL import MySQL
         self.db = MySQL( 'localhost', dbIn[0], dbIn[1], 'ResourceManagementDB' )
       else:

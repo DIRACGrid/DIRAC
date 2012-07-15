@@ -1,8 +1,7 @@
-########################################################################
-# $HeadURL$
-########################################################################
+"""  TransformationAgent processes transformations found in the transformation database. 
+"""
+
 __RCSID__ = "$Id$"
-"""  TransformationAgent processes transformations found in the transformation database. """
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
@@ -15,13 +14,14 @@ AGENT_NAME = 'Transformation/TransformationAgent'
 class TransformationAgent( AgentModule ):
 
   def initialize( self ):
-    self.pluginLocation = self.am_getOption( 'PluginLocation', 'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
+    """ standard init
+    """
+    self.pluginLocation = self.am_getOption( 'PluginLocation',
+                                             'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
+    self.transformationStatus = self.am_getOption( 'transformationStatus', ['Active', 'Completing', 'Flush'] )
     self.maxFiles = self.am_getOption( 'MaxFiles', 5000 )
 
-    # This sets the Default Proxy to used as that defined under
-    # /Operations/Shifter/ProductionManager
-    # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     self.transDB = TransformationClient( 'TransformationDB' )
@@ -30,39 +30,41 @@ class TransformationAgent( AgentModule ):
     return S_OK()
 
   def execute( self ):
-    # Get the transformations to process
+    """ get and process the transformations to be processed
+    """
     res = self.getTransformations()
     if not res['OK']:
-      gLogger.info( "%s.execute: Failed to obtain transformations: %s" % ( AGENT_NAME, res['Message'] ) )
+      gLogger.info( "execute: Failed to obtain transformations: %s" % res['Message'] )
       return S_OK()
     # Process the transformations
     for transDict in res['Value']:
       transID = long( transDict['TransformationID'] )
-      gLogger.info( "%s.execute: Processing transformation %s." % ( AGENT_NAME, transID ) )
+      gLogger.info( "execute: Processing transformation %s." % transID )
       startTime = time.time()
       res = self.processTransformation( transDict )
       if not res['OK']:
-        gLogger.info( "%s.execute: Failed to process transformation: %s" % ( AGENT_NAME, res['Message'] ) )
+        gLogger.info( "execute: Failed to process transformation: %s" % res['Message'] )
       else:
-        gLogger.info( "%s.execute: Processed transformation in %.1f seconds" % ( AGENT_NAME, time.time() - startTime ) )
+        gLogger.info( "execute: Processed transformation in %.1f seconds" % ( time.time() - startTime ) )
     return S_OK()
 
   def getTransformations( self ):
-    # Obtain the transformations to be executed
+    """ Obtain the transformations to be executed 
+    """
     transName = self.am_getOption( 'Transformation', 'All' )
     if transName == 'All':
-      gLogger.info( "%s.getTransformations: Initializing general purpose agent." % AGENT_NAME )
-      res = self.transDB.getTransformations( {'Status':['Active', 'Completing', 'Flush']}, extraParams = True )
+      gLogger.info( "getTransformations: Initializing general purpose agent." )
+      res = self.transDB.getTransformations( {'Status':self.transformationStatus}, extraParams = True )
       if not res['OK']:
-        gLogger.error( "%s.getTransformations: Failed to get transformations." % AGENT_NAME, res['Message'] )
+        gLogger.error( "getTransformations: Failed to get transformations: %s" % res['Message'] )
         return res
       transformations = res['Value']
-      gLogger.info( "%s.getTransformations: Obtained %d transformations to process" % ( AGENT_NAME, len( transformations ) ) )
+      gLogger.info( "getTransformations: Obtained %d transformations to process" % len( transformations ) )
     else:
-      gLogger.info( "%s.getTransformations: Initializing for transformation %s." % ( AGENT_NAME, transName ) )
+      gLogger.info( "getTransformations: Initializing for transformation %s." % transName )
       res = self.transDB.getTransformation( transName, extraParams = True )
       if not res['OK']:
-        gLogger.error( "%s.getTransformations: Failed to get transformation." % AGENT_NAME, res['Message'] )
+        gLogger.error( "getTransformations: Failed to get transformation: %s." % res['Message'] )
         return res
       transformations = [res['Value']]
     return S_OK( transformations )
@@ -72,23 +74,23 @@ class TransformationAgent( AgentModule ):
     # First get the LFNs associated to the transformation
     res = self.transDB.getTransformationFiles( condDict = {'TransformationID':transID, 'Status':'Unused'} )
     if not res['OK']:
-      gLogger.error( "%s.processTransformation: Failed to obtain input data." % AGENT_NAME, res['Message'] )
+      gLogger.error( "processTransformation: Failed to obtain input data: %s." % res['Message'] )
       return res
     transFiles = res['Value']
     lfns = res['LFNs']
 
     if not lfns:
-      gLogger.info( "%s.processTransformation: No 'Unused' files found for transformation." % AGENT_NAME )
+      gLogger.info( "processTransformation: No 'Unused' files found for transformation." )
       if transDict['Status'] == 'Flush':
         res = self.transDB.setTransformationParameter( transID, 'Status', 'Active' )
         if not res['OK']:
-          gLogger.error( "%s.execute: Failed to update transformation status to 'Active'." % AGENT_NAME, res['Message'] )
+          gLogger.error( "processTransformation: Failed to update transformation status to 'Active': %s." % res['Message'] )
         else:
-          gLogger.info( "%s.execute: Updated transformation status to 'Active'." % AGENT_NAME )
+          gLogger.info( "processTransformation: Updated transformation status to 'Active'." )
       return S_OK()
     #Check if something new happened
     if len( lfns ) == self.unusedFiles.get( transID, 0 ) and transDict['Status'] != 'Flush':
-      gLogger.info( "%s.processTransformation: No new 'Unused' files found for transformation." % AGENT_NAME )
+      gLogger.info( "processTransformation: No new 'Unused' files found for transformation." )
       return S_OK()
 
     replicateOrRemove = transDict['Type'].lower() in ["replication", "removal"]
@@ -99,7 +101,7 @@ class TransformationAgent( AgentModule ):
     # Check the data is available with replicas
     res = self.__getDataReplicas( transID, lfns, active = not replicateOrRemove )
     if not res['OK']:
-      gLogger.error( "%s.processTransformation: Failed to get data replicas" % AGENT_NAME, res['Message'] )
+      gLogger.error( "processTransformation: Failed to get data replicas: %s" % res['Message'] )
       return res
     dataReplicas = res['Value']
 
@@ -107,7 +109,7 @@ class TransformationAgent( AgentModule ):
     plugin = 'Standard'
     if transDict.has_key( 'Plugin' ) and transDict['Plugin']:
       plugin = transDict['Plugin']
-    gLogger.info( "%s.processTransformation: Processing transformation with '%s' plug-in." % ( AGENT_NAME, plugin ) )
+    gLogger.info( "processTransformation: Processing transformation with '%s' plug-in." % plugin )
     res = self.__generatePluginObject( plugin )
     if not res['OK']:
       return res
@@ -119,7 +121,7 @@ class TransformationAgent( AgentModule ):
     oPlugin.setTransformationFiles( transFiles )
     res = oPlugin.generateTasks()
     if not res['OK']:
-      gLogger.error( "%s.processTransformation: Failed to generate tasks for transformation." % AGENT_NAME, res['Message'] )
+      gLogger.error( "processTransformation: Failed to generate tasks for transformation: %s" % res['Message'] )
       return res
     tasks = res['Value']
     # Create the tasks
@@ -128,22 +130,22 @@ class TransformationAgent( AgentModule ):
     for se, lfns in tasks:
       res = self.transDB.addTaskForTransformation( transID, lfns, se )
       if not res['OK']:
-        gLogger.error( "%s.processTransformation: Failed to add task generated by plug-in." % AGENT_NAME, res['Message'] )
+        gLogger.error( "processTransformation: Failed to add task generated by plug-in: %s." % res['Message'] )
         allCreated = False
       else:
         created += 1
         unusedFiles -= len( lfns )
     if created:
-      gLogger.info( "%s.processTransformation: Successfully created %d tasks for transformation." % ( AGENT_NAME, created ) )
+      gLogger.info( "processTransformation: Successfully created %d tasks for transformation." % created )
     self.unusedFiles[transID] = unusedFiles
 
     # If this production is to Flush
     if transDict['Status'] == 'Flush' and allCreated:
       res = self.transDB.setTransformationParameter( transID, 'Status', 'Active' )
       if not res['OK']:
-        gLogger.error( "%s.execute: Failed to update transformation status to 'Active'." % AGENT_NAME, res['Message'] )
+        gLogger.error( "processTransformation: Failed to update transformation status to 'Active': %s." % res['Message'] )
       else:
-        gLogger.info( "%s.execute: Updated transformation status to 'Active'." % AGENT_NAME )
+        gLogger.info( "processTransformation: Updated transformation status to 'Active'." )
     return S_OK()
 
   ######################################################################
@@ -156,18 +158,21 @@ class TransformationAgent( AgentModule ):
     """
     try:
       plugModule = __import__( self.pluginLocation, globals(), locals(), ['TransformationPlugin'] )
-    except Exception, x:
-      gLogger.exception( "%s.__generatePluginObject: Failed to import 'TransformationPlugin'" % AGENT_NAME, '', x )
+    except ImportError, e:
+      gLogger.exception( "__generatePluginObject: Failed to import 'TransformationPlugin' %s: %s" % ( plugin, e ) )
       return S_ERROR()
     try:
-      evalString = "plugModule.TransformationPlugin('%s')" % plugin
-      return S_OK( eval( evalString ) )
-    except Exception, x:
-      gLogger.exception( "%s.__generatePluginObject: Failed to create %s()." % ( AGENT_NAME, plugin ), '', x )
+      plugin_o = getattr( plugModule, 'TransformationPlugin' )( '%s' % plugin,
+                                                                transClient = self.transDB,
+                                                                replicaManager = self.rm )
+      return S_OK( plugin_o )
+    except AttributeError, e:
+      gLogger.exception( "__generatePluginObject: Failed to create %s(): %s." % ( plugin, e ) )
       return S_ERROR()
 
   def __getDataReplicas( self, transID, lfns, active = True ):
-    """ Get the replicas for the LFNs and check their statuses """
+    """ Get the replicas for the LFNs and check their statuses 
+    """
     startTime = time.time()
     if active:
       res = self.rm.getActiveReplicas( lfns )
@@ -175,14 +180,14 @@ class TransformationAgent( AgentModule ):
       res = self.rm.getReplicas( lfns )
     if not res['OK']:
       return res
-    gLogger.info( "%s.__getDataReplicas: Replica results for %d files obtained in %.2f seconds" % ( AGENT_NAME, len( lfns ), time.time() - startTime ) )
+    gLogger.info( "__getDataReplicas: Replica results for %d files obtained in %.2f seconds" % ( len( lfns ), time.time() - startTime ) )
     # Create a dictionary containing all the file replicas
     dataReplicas = {}
     for lfn, replicaDict in res['Value']['Successful'].items():
       ses = replicaDict.keys()
       for se in ses:
         if active and re.search( 'failover', se.lower() ):
-          gLogger.warn( "%s.__getDataReplicas: Ignoring failover replica for %s." % ( AGENT_NAME, lfn ) )
+          gLogger.warn( "__getDataReplicas: Ignoring failover replica for %s." % lfn )
         else:
           if not dataReplicas.has_key( lfn ):
             dataReplicas[lfn] = {}
@@ -191,12 +196,12 @@ class TransformationAgent( AgentModule ):
     missingLfns = []
     for lfn, reason in res['Value']['Failed'].items():
       if re.search( "No such file or directory", reason ):
-        gLogger.warn( "%s.__getDataReplicas: %s not found in the catalog." % ( AGENT_NAME, lfn ) )
+        gLogger.warn( "__getDataReplicas: %s not found in the catalog." % lfn )
         missingLfns.append( lfn )
     if missingLfns:
       res = self.transDB.setFileStatusForTransformation( transID, 'MissingLFC', missingLfns )
       if not res['OK']:
-        gLogger.warn( "%s.__getDataReplicas: Failed to update status of missing files." % AGENT_NAME, res['Message'] )
+        gLogger.warn( "__getDataReplicas: Failed to update status of missing files: %s." % res['Message'] )
     if not dataReplicas:
       return S_ERROR( "No replicas obtained" )
     return S_OK( dataReplicas )
