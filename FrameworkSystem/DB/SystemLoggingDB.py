@@ -1,5 +1,5 @@
 # $HeadURL$
-__RCSID__ = "$Id$"
+# 
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -8,18 +8,16 @@ __RCSID__ = "$Id$"
     getMessagesByFixedText()
     getMessages()
 """
+__RCSID__ = "$Id$"
 
-import re, os, sys, string, types
-import time
-import threading
-from types import ListType, StringTypes, NoneType
+import re
+import os
+import sys
+from types import ListType, StringTypes
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from types                                     import *
 from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day, fromString, toString, List
-from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
+from DIRAC.Core.Base.DB                        import DB
+from DIRAC.Core.Utilities                      import Time, List
 
 DEBUG = 1
 
@@ -97,12 +95,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
   PRIMARY KEY (`AgentID`) ) ENGINE=InnoDB;
 
 """
-  tableNames = [ 'AgentPersistentData',
-                 'MessageRepository',
-                   'FixedTextMessages',
-                     'SubSystems', 'Systems',
-                   'ClientIPs', 'Sites',
-                   'UserDNs' ]
+
   tableDict = { 'UserDNs': {
                             'Fields': { 'UserDNID': 'INT NOT NULL AUTO_INCREMENT',
                                         'OwnerDN': "VARCHAR(255) NOT NULL DEFAULT 'unknown'",
@@ -189,7 +182,48 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
   def _checkTable( self ):
     """ Make sure the tables are created
     """
+    # To fix the schema SubSystem points to System and not System points SubSystem
+    result = self.__removeOldSchema()
+    if not result['OK']:
+      return result
     return self._createTables( self.tableDict, force = False )
+
+  def __removeOldSchema( self ):
+    """ remove the old schema if necessary
+    """
+    result = self._query( 'SHOW TABLES' )
+    if not result['OK']:
+      return result
+
+    tables = [row[0] for row in result['Value']]
+    if 'SubSystems' not in tables:
+      return S_OK()
+
+    if 'Systems' not in tables:
+      return S_ERROR( 'Wrong DB schema' )
+
+    result = self._query( 'DESCRIBE SubSystems' )
+    if not result['OK']:
+      return result
+
+    if 3 == len( result['Value'] ):
+      # the table has already the correct schema
+      return S_OK()
+
+    # We need to change the SubSystems table definition 
+    # and change the dependence from Systems pointing to SubSystems
+    # to SubSystems pointing to Systems
+    # Due to the Cascade Mechanism that was defined this can not be easily done
+    # thus, the tables are removed and new ones should be created.
+
+    for tableName in [ 'MessageRepository', 'FixedTextMessages', 'Systems', 'SubSystems',
+                       'AgentPersistentData', 'ClientIPs', 'Sites', 'UserDNs' ]:
+
+      result = self._update( 'DROP TABLE `%s`' % tableName )
+      if not result['OK']:
+        return result
+
+    return S_OK()
 
 
   def _buildConditionTest( self, condDict, olderDate = None, newerDate = None ):
@@ -203,7 +237,6 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     """ build the SQL list of tables needed for the query
         from the list of variables provided
     """
-    import re
     idPattern = re.compile( r'ID' )
 
     tableDict = { 'MessageTime':'MessageRepository',
@@ -220,7 +253,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
 
     conjunction = ' NATURAL JOIN '
 
-    gLogger.debug( '__buildTableList:', 'showFieldList = %s' % showFieldList )
+    self.log.debug( '__buildTableList:', 'showFieldList = %s' % showFieldList )
     if len( showFieldList ):
       for field in showFieldList:
         if not idPattern.search( field ) and ( field in tableDictKeys ):
@@ -234,7 +267,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
       try:
         tableList.pop( tableList.index( 'MessageRepository' ) )
         tableString = 'MessageRepository'
-      except:
+      except ValueError:
         pass
 
       if tableList.count( 'Sites' ) and tableList.count( 'MessageRepository' ) and not \
@@ -262,7 +295,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     else:
       tableString = conjunction.join( List.uniqueElements( tableDict.values() ) )
 
-    gLogger.debug( '__buildTableList:', 'tableString = "%s"' % tableString )
+    self.log.debug( '__buildTableList:', 'tableString = "%s"' % tableString )
 
     return tableString
 
@@ -290,7 +323,7 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     elif not type( showFieldList ) is ListType:
       errorString = 'The showFieldList variable should be a string or a list of strings'
       errorDesc = 'The type provided was: %s' % type ( showFieldList )
-      gLogger.warn( errorString, errorDesc )
+      self.log.warn( errorString, errorDesc )
       return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
 
     tableList = self.__buildTableList( showFieldList )
@@ -340,26 +373,28 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     result = self.insertFields( tableName, inFields, inValues )
     rowID = 0
     if not result['OK'] and 'Duplicate entry' not in result['Message']:
-      gLogger.error( '__DBCommit failed to insert data into DB', result['Message'] )
+      self.log.error( '__DBCommit failed to insert data into DB', result['Message'] )
       return S_ERROR( 'Could not insert the data into %s table' % tableName )
     elif not result['OK']:
-      gLogger.verbose( '__DBCommit duplicated record' )
+      self.log.verbose( '__DBCommit duplicated record' )
     elif result['Value'] == 0:
-      gLogger.error( '__DBCommit failed to insert data into DB' )
+      self.log.error( '__DBCommit failed to insert data into DB' )
     else:
       rowID = result['lastRowId']
-      gLogger.verbose( '__DBCommit new entry added', rowID )
+      self.log.verbose( '__DBCommit new entry added', rowID )
     # check the inserted values
     condDict = {}
     condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
     result = self.getFields( tableName, outFields + inFields, condDict = condDict )
     if not result['OK']:
-      gLogger.error( '__DBCommit failed to query DB', result['Message'] )
+      self.log.error( '__DBCommit failed to query DB', result['Message'] )
       return S_ERROR()
     if len( result['Value'] ) == 0:
-      error = 'Inserted Value does not match %s: "%s" != "%s"' % ( inField[i], inValue[i], insertedValues[i] )
+      error = 'Could not retrieved inserted values'
       if rowID:
+        condDict = { outFields[0]: rowID  }
         self.deleteEntries( tableName, condDict )
+      self.log.error( error )
       return S_ERROR( error )
 
     outValues = result['Value'][0][:len( outFields )]
@@ -367,18 +402,17 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     error = ''
     for i in range( len( inValues ) ):
       if inValues[i] != insertedValues[i]:
-        error = 'Inserted Value does not match %s: "%s" != "%s"' % ( inField[i], inValue[i], insertedValues[i] )
+        error = 'Inserted Value does not match %s: "%s" != "%s"' % ( inFields[i], inValues[i], insertedValues[i] )
         break
 
     if error:
-      gLogger.error( error )
+      self.log.error( error )
       return S_ERROR( 'Failed while check of inserted Values' )
 
     return S_OK( int( outValues[0] ) )
 
 
-  def _insertMessageIntoSystemLoggingDB( self, message, site, nodeFQDN,
-                                         userDN, userGroup, remoteAddress ):
+  def _insertMessage( self, message, site, nodeFQDN, userDN, userGroup, remoteAddress ):
     """ This function inserts the Log message into the DB
     """
     messageDate = Time.toString( message.getTime() )
@@ -430,21 +464,19 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     result = self.__DBCommit( 'Systems', outFields, inFields, inValues )
     if not result['OK']:
       return result
-    SystemIDKey = result['Value']
+    systemIDKey = result['Value']
 
     if not messageSubSystemName:
       messageSubSystemName = 'Unknown'
     inFields = [ 'SubSystemName', 'SystemID' ]
-    inValues = [ messageSubSystemName, SystemIDKey  ]
+    inValues = [ messageSubSystemName, systemIDKey  ]
     outFields = [ 'SubSystemID' ]
     result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues )
     if not result['OK']:
       return result
-    subSystemsKey = result['Value']
-
 
     inFields = [ 'FixedTextString' , 'SubSystemID' ]
-    inValues = [ message.getFixedMessage(), SystemIDKey ]
+    inValues = [ message.getFixedMessage(), systemIDKey ]
     outFields = [ 'FixedTextID' ]
     result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
                               inValues )
@@ -482,6 +514,8 @@ CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
     return self._update( cmd )
 
   def _getDataFromAgentTable( self, agentName ):
+    """ Get persistent data needed by SystemLogging Agents
+    """
     outFields = [ 'AgentData' ]
     inFields = [ 'AgentName' ]
     inValues = [ agentName ]
@@ -517,6 +551,7 @@ def testSystemLoggingDB():
   frameInfo = ""
   message = tupleToMessage( ( systemName, level, time, msgTest, variableText, frameInfo, subSystemName ) )
   site = 'somewehere'
+  longSite = 'somewehere1234567890123456789012345678901234567890123456789012345678901234567890'
   nodeFQDN = '127.0.0.1'
   userDN = 'Yo'
   userGroup = 'Us'
@@ -529,7 +564,7 @@ def testSystemLoggingDB():
 
   try:
     if False:
-      for tableName in db.tableNames:
+      for tableName in db.tableDict.keys():
         result = db._update( 'DROP TABLE `%s`' % tableName )
         assert result['OK']
 
@@ -544,12 +579,15 @@ def testSystemLoggingDB():
 
     gLogger.info( '\n Inserting some records\n' )
     for k in range( records ):
-      result = db._insertMessageIntoSystemLoggingDB( message, site, nodeFQDN,
-                                           userDN, userGroup, remoteAddress )
+      result = db._insertMessage( message, site, nodeFQDN,
+                                  userDN, userGroup, remoteAddress )
       assert result['OK']
       assert result['lastRowId'] == k + 1
       assert result['Value'] == 1
 
+    result = db._insertMessage( message, longSite, nodeFQDN,
+                                  userDN, userGroup, remoteAddress )
+    assert not result['OK']
 
     result = db._queryDB( showFieldList = [ 'SiteName' ] )
     assert result['OK']
@@ -577,13 +615,9 @@ def testSystemLoggingDB():
     assert result['Value'][0][2] == records
 
 
-    print result
-
-
-
-
     gLogger.info( '\n Removing Table\n' )
-    for tableName in db.tableNames:
+    for tableName in [ 'MessageRepository', 'FixedTextMessages', 'SubSystems', 'Systems',
+                       'AgentPersistentData', 'ClientIPs', 'Sites', 'UserDNs' ]:
       result = db._update( 'DROP TABLE `%s`' % tableName )
       assert result['OK']
 
