@@ -5,9 +5,8 @@
 
 '''
 
-from DIRAC import S_ERROR, S_OK#, gLogger
-from DIRAC.ResourceStatusSystem.Utilities              import Utils
-#from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
+from DIRAC                                import S_ERROR, S_OK
+from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 __RCSID__ = '$Id: $'
 
@@ -31,7 +30,8 @@ class CommandCaller:
 
 ################################################################################
 
-  def commandInvocation( self, commandTuple, pArgs, decissionParams, clients ):
+  def commandInvocation( self, commandTuple, pArgs = None, 
+                         decissionParams = None, clients = None ):
     """
     Returns a command object, given comm
 
@@ -55,21 +55,6 @@ class CommandCaller:
 
     return S_OK( commandObject ) 
 
-################################################################################
-#
-#  def setClient( self, commandObj, clientName, clientInstance ):
-#    commandObj.setAPI( clientName, clientInstance )
-#
-#################################################################################
-#  
-#  def setDecissionParams( self, commandObj, decissionParams ):
-#    commandObj.setDecissionParams( decissionParams )
-#
-#################################################################################
-#
-#  def setArgs( self, commandObj, args ):
-#    commandObj.setArgs( args )
-#
 #################################################################################
 #
 #  def _innerCall(self, command, args):#, clientIn = None):
