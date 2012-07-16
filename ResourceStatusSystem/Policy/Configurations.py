@@ -37,9 +37,10 @@ Policies = {
                                          'args': None}}]
     },
 
-  'AlwaysFalse' :
+  'AlwaysActive' :
     {
-      'Description' : "A Policy that always returns false",
+      'Description' : "A Policy that always returns Active",
+      'module'      : 'AlwaysActive_Policy',
       'commandIn'   : None,
       'args'        : None
     }

@@ -1,17 +1,18 @@
 # $HeadURL $
-''' AlwaysFalse_Policy
+''' AlwaysActive_Policy
  
-  The AlwaysFalse_Policy class is a policy class that... checks nothing!
+  The AlwaysActive_Policy class is a policy class that... checks nothing!
   
 '''
 
+from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 __RCSID__ = '$Id: $'
 
-class AlwaysFalse_Policy( PolicyBase ):
+class AlwaysActive_Policy( PolicyBase ):
 
-  def evaluate( self, commandIn = None, knownInfo = None ):
+  def evaluate( self ):
     """
     Does nothing.
 
@@ -22,9 +23,12 @@ class AlwaysFalse_Policy( PolicyBase ):
         }
     """
 
-    return { 'Status' : 'Active', 'Reason' : 'This is the AlwasyFalse policy' }
-
-  evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__
+    policyResult = { 
+                     'Status' : 'Active', 
+                     'Reason' : 'This is the AlwasyActive policy' 
+                   }
+    
+    return S_OK( policyResult )
   
 ################################################################################ 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
