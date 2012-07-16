@@ -77,7 +77,7 @@ class PolicyCaller:
     
     policy  = getattr( policyModule, pModuleName )() 
     
-    command = self.cCaller.commandInvocation( pCommand )
+    command = self.cCaller.commandInvocation( pCommand, pArgs, decissionParams, self.clients )
     if not command[ 'OK' ]:
       return command
     command = command[ 'Value' ]
@@ -85,7 +85,7 @@ class PolicyCaller:
 #    res[ 'PolicyName' ] = pName
 #    return res
     
-    evaluationResult = self.policyEvaluation( policy, command, pArgs, decissionParams )
+    evaluationResult = self.policyEvaluation( policy, command )
     
     return evaluationResult
 
@@ -126,14 +126,14 @@ class PolicyCaller:
 #    res[ 'PolicyName' ] = pName
 #    return res
 
-  def policyEvaluation( self, policy, command, pArgs, decissionParams ):
+  def policyEvaluation( self, policy, command ):#, pArgs, decissionParams ):
     
-    for clientName, clientInstance in self.clients.items():
-      
-      command.setAPI( clientName, clientInstance )
+#    for clientName, clientInstance in self.clients.items():
+#      
+#      command.setAPI( clientName, clientInstance )
 
-    command.setDecissionParams( decissionParams )
-    command.setArgs( pArgs )
+#    command.setDecissionParams( decissionParams )
+#    command.setArgs( pArgs )
 
     policy.setCommand( command )
 

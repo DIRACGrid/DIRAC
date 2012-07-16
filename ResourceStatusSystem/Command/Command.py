@@ -5,8 +5,6 @@
 
 '''
 
-from DIRAC import gLogger
-
 __RCSID__ = '$Id: $'
 
 class Command( object ):
@@ -15,50 +13,18 @@ class Command( object ):
     for interacting with the clients
   """
 
-  def __init__( self ):
+  def __init__( self, args = None, decissionParams = None, clients = None ):
     
-    self.args            = {}
-    self.decissionParams = {}
-    self.APIs            = {}
-
-################################################################################
-
-  def setArgs( self, argsIn ):
-    """
-    Set the command arguments, as a tuple. The tuple has to contain at least 2 values.
-
-    :params:
-
-      :attr:`args`: a tuple
-        - `args[0]` should be a ValidElement
-
-        - `args[1]` should be the name of the ValidElement
-    """
-#    if type(argsIn) != tuple:
-#      raise TypeError("`Args` of commands should be in a tuple.")
-
-    self.args = argsIn
-
-################################################################################
-
-  def setDecissionParams( self, decissionParams ):
-    
-    self.decissionParams = decissionParams
-
-################################################################################
-
-  def setAPI( self, apiName, apiInstance ):
-    self.APIs[ apiName ] = apiInstance
-
-################################################################################
+    self.args            = ( 1 and args ) or {}
+    self.decissionParams = ( 1 and decissionParams ) or {}   
+    self.APIs            = ( 1 and clients ) or {}
 
   #to be extended by real commands
   def doCommand( self ):
     """ Before use, call at least `setArgs`.
     """
-
-    if self.args is None:
-      gLogger.error( "Before, set `self.args` with `self.setArgs(a)` function." )
+    
+    return { 'Result' : self.args }
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

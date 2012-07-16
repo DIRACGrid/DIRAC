@@ -31,7 +31,7 @@ class CommandCaller:
 
 ################################################################################
 
-  def commandInvocation( self, commandTuple ):
+  def commandInvocation( self, commandTuple, pArgs, decissionParams, clients ):
     """
     Returns a command object, given comm
 
@@ -51,7 +51,7 @@ class CommandCaller:
     if not hasattr( commandModule, cClass ):
       return S_ERROR( '%s has no %s' % ( cModule, cClass ) )
       
-    commandObject = getattr( commandModule, cClass )() 
+    commandObject = getattr( commandModule, cClass )( pArgs, decissionParams, clients ) 
 
     return S_OK( commandObject ) 
 

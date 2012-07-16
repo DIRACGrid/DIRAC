@@ -5,20 +5,21 @@
 
 '''
 
-from DIRAC.ResourceStatusSystem.Command.Command import *
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 
 __RCSID__ = '$Id: $'
 
 class DoNothing_Command( Command ):
   
+  def __init__( self, *args, **kwargs ):
+    super( DoNothing_Command, self ).__init__( *args, **kwargs )
+  
   def doCommand( self ):
     ''' Do nothing.       
     '''
-    super( DoNothing_Command, self ).doCommand()
+    #super( DoNothing_Command, self ).doCommand()
 
     return { 'Result' : None }
-
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
