@@ -25,10 +25,8 @@ __RCSID__ = "$Id$"
 ## imports
 import time
 import re
-import random
 ## from DIRAC (globals and Core)
-from DIRAC import gLogger, gMonitor, S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC import gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 ## base class
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
@@ -42,8 +40,6 @@ from DIRAC.DataManagementSystem.private.TransferTask import TransferTask
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 ## from Resources
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
-## from RSS
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 ## agent name
 AGENT_NAME = "DataManagement/TransferAgent"
@@ -139,6 +135,8 @@ class TransferAgent( RequestAgentBase ):
     :param str baseAgentName: base agent name
     :param dict properties: whatever else properties
     """
+    self.setRequestType( "transfer" )
+    self.setRequestTask( TransferTask )
     RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
 
     ## gMonitor stuff
@@ -577,13 +575,6 @@ class TransferAgent( RequestAgentBase ):
                                                                                  ownerGroup["Value"] ) )
       return S_OK( False )
 
-    ## check request owner
-    #ownerDN = requestObj.getAttribute( "OwnerDN" ) 
-    #if ownerDN["OK"] and ownerDN["Value"]:
-    #  self.log.info("excuteFTS: request %s has its owner %s, can't use FTS" % ( requestDict["requestName"], 
-    #                                                                            ownerDN["Value"] ) )
-    #  return S_OK( False )
-
     ## check operation
     res = requestObj.getNumSubRequests( "transfer" )
     if not res["OK"]:
@@ -683,11 +674,10 @@ class TransferAgent( RequestAgentBase ):
       
       subRequestStatus = subAttrs["Status"]
 
-      #executionOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
-      #if executionOrder > requestDict["executionOrder"]:
-      #  self.info.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder " % ( iSubRequest, 
-      #                                                                                                       executionOrder, 
-      #                                                                                                       requestDict["executionOrder"] ) )
+      #execOrder = int(subAttrs["ExecutionOrder"]) if "ExecutionOrder" in subAttrs else 0
+      #if execOrder > requestDict["executionOrder"]:
+      #  strTup = ( iSubRequest, execOrder, requestDict["executionOrder"] )
+      #  self.info.warn("schedule: skipping %s subrequest, executionOrder %s > request's executionOrder" % strTup )  
       #  continue 
 
       if subRequestStatus != "Waiting" :
@@ -770,9 +760,12 @@ class TransferAgent( RequestAgentBase ):
       requestStatus = requestStatus["Value"]
       self.log.debug( "schedule: requestStatus is %s" % requestStatus )
       ## ...and request status == 'Done' (or subrequests statuses not in Waiting or Assigned 
-      if requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ) and requestStatus["RequestStatus"] == "Done":
+      if ( requestStatus["SubRequestStatus"] not in ( "Waiting", "Assigned" ) ) and \
+            ( requestStatus["RequestStatus"] == "Done" ):
         self.log.info( "schedule: will finalize request: %s" % requestName )
-        finalize = self.requestClient().finalizeRequest( requestName, requestDict["jobID"], requestDict["sourceServer"] )
+        finalize = self.requestClient().finalizeRequest( requestName, 
+                                                         requestDict["jobID"], 
+                                                         requestDict["sourceServer"] )
         if not finalize["OK"]:
           self.log.error("schedule: error in request finalization: %s" % finalize["Message"] )
           return finalize
