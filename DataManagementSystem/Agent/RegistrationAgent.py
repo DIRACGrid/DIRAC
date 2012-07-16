@@ -8,12 +8,8 @@
 __RCSID__ = "$Id$"
 
 ## imports
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig, gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ProcessPool import ProcessPool, ProcessTask
-from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
-from DIRAC.DataManagementSystem.private.RequestTask import RequestTask
 from DIRAC.DataManagementSystem.private.RegistrationTask import RegistrationTask
 
 ## agent name
@@ -47,8 +43,9 @@ class RegistrationAgent( RequestAgentBase ):
 
     :param self: self reference
     """
-    RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
+    self.setRequestType( "register" )
     self.setRequestTask( RegistrationTask )
+    RequestAgentBase.__init__( self, agentName, baseAgentName, properties )
     self.log.info("%s has been constructed" % agentName  )
     
   
