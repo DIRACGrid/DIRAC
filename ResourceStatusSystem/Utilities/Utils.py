@@ -252,7 +252,7 @@ def set_sanitize(l):
 def configMatch( candidateParams, configParams ):
   '''
     For a given configuration, the candidate will be rejected if:
-    - it is missing at least one of the params in the config
+#    - it is missing at least one of the params in the config
     - if a param of the candidate does not match the config params  
     - if a candidate param is None, is considered as wildcard
   '''
@@ -261,12 +261,18 @@ def configMatch( candidateParams, configParams ):
     
     if not key in candidateParams:
       # The candidateParams is missing one of the parameters required
-      return False
+      # return False
+      continue
     
     if candidateParams[ key ] is None:
       # None is assumed to be a wildcard (*)
       continue 
-    elif candidateParams[ key ] not in configParams[ key ]:
+    
+    cParameter = candidateParams[ key ]
+    if not isinstance( cParameter, list ):
+      cParameter = [ cParameter ]
+    
+    elif not set( cParameter ).intersection( set( configParams[ key ] ) ):
       return False
     
   return True  

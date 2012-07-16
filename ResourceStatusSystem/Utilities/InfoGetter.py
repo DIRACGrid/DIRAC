@@ -81,7 +81,10 @@ class InfoGetter:
       if not policyName in self.policies:
         continue
       
-      policiesToBeLoaded.append( self.policies[ policyName ] )
+      policyDict = { 'name' : policyName }
+      policyDict.update( self.policies[ policyName ] ) 
+      
+      policiesToBeLoaded.append( policyDict )
        
     return S_OK( policiesToBeLoaded )
 
