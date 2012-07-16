@@ -5,6 +5,8 @@
 
 '''
 
+from DIRAC import S_OK
+
 __RCSID__ = '$Id: $'
 
 class Command( object ):
@@ -24,7 +26,7 @@ class Command( object ):
     """ Before use, call at least `setArgs`.
     """
     
-    return { 'Result' : self.args }
+    return S_OK( { 'Result' : None } )
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

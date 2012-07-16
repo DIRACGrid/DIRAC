@@ -10,6 +10,7 @@
 #from DIRAC.ResourceStatusSystem.Command.CommandCaller       import CommandCaller
 #from DIRAC.ResourceStatusSystem.Utilities                   import RssConfiguration
 
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 
 __RCSID__  = '$Id: $'
 
@@ -27,7 +28,7 @@ class PolicyBase( object ):
     
 #    self.args            = None
 #    self.decissionParams = None 
-    self.command         = None
+    self.command         = Command()
 #    self.commandName     = None
 #    self.knownInfo       = None
 #    self.infoName        = None
@@ -62,7 +63,8 @@ class PolicyBase( object ):
     :params:
       :attr:`commandIn`: a command object
     '''
-    self.command = policyCommand
+    if policyCommand is not None:
+      self.command = policyCommand
 
 #  def setCommandName( self, commandNameIn = None ):
 #    '''

@@ -38,6 +38,10 @@ class CommandCaller:
     :params:
       `comm`: a tuple, where comm[0] is a module name and comm[1] is a class name (inside the module)
     """
+    
+    if commandTuple is None:
+      return S_OK( None )
+    
     try:
       cModule = commandTuple[ 0 ]
       cClass  = commandTuple[ 1 ]
