@@ -67,6 +67,7 @@ class JobLoggingDB(DB):
           epoc = time.mktime(_date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
           time_order = round(epoc,3)  
         elif type(date) == Time._dateTimeType:
+          _date = date
           epoc = time.mktime(_date.timetuple())+_date.microsecond/1000000. - MAGIC_EPOC_NUMBER
           time_order = round(epoc,3)  
         else:

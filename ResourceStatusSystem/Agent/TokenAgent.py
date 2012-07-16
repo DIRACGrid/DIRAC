@@ -10,10 +10,10 @@ import datetime
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.FrameworkSystem.Client.NotificationClient            import NotificationClient
-from DIRAC.ResourceStatusSystem                                 import ValidRes
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                import PDP
+from DIRAC.ResourceStatusSystem.Utilities                       import RssConfiguration 
 
 __RCSID__  = '$Id: $'
 AGENT_NAME = 'ResourceStatus/TokenAgent'
@@ -64,7 +64,9 @@ class TokenAgent( AgentModule ):
       #reAssign the token to RS_SVC
       #for g in self.ELEMENTS:
 
-      for granularity in ValidRes:
+      validElements = RssConfiguration.getValidElements()
+
+      for granularity in validElements:
         tokensExpired = self.rsClient.getTokens( granularity, 
                                                  tokenExpiration = datetime.datetime.utcnow() )
 
@@ -85,7 +87,7 @@ class TokenAgent( AgentModule ):
       #notify token owners
       inNHours = datetime.datetime.utcnow() + datetime.timedelta( hours = self.notifyHours )
       #for g in self.ELEMENTS:
-      for granularity in ValidRes:
+      for granularity in validElements:
 
         tokensExpiring = self.rsClient.getTokens( granularity, tokenExpiration = inNHours )
 

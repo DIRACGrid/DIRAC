@@ -38,3 +38,5 @@ BOOKKEEPING_MANAGEMENT = "BookkeepingManagement"
 ALARMS_MANAGEMENT = "AlarmsManagement"
 #Allow FC Management
 FC_MANAGEMENT = "FileCatalogManagement"
+#Allow staging files
+STAGE_ALLOWED = "StageAllowed"

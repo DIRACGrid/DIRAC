@@ -58,17 +58,17 @@ if len( args ) != 2:
   exit( -1 )
 #
 system = args[0]
-service = args[1]
+executor = args[1]
 
-result = InstallTools.addDefaultOptionsToCS( gConfig, 'executor', system, service,
+result = InstallTools.addDefaultOptionsToCS( gConfig, 'executor', system, executor,
                                              getCSExtensions(), 
                                              specialOptions=specialOptions, 
                                              overwrite = overwrite )
 if not result['OK']:
   print "ERROR:", result['Message']
 else:
-  result = InstallTools.installComponent( 'service', system, service, getCSExtensions(), module )
+  result = InstallTools.installComponent( 'executor', system, executor, getCSExtensions(), module )
   if not result['OK']:
     print "ERROR:", result['Message']
   else:
-    print "Successfully installed executor %s in %s system" % ( service, system )
+    print "Successfully installed executor %s in %s system" % ( executor, system )

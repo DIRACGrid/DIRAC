@@ -522,3 +522,10 @@ class MatcherHandler( RequestHandler ):
       negativeCond = self.__limiter.getNegativeCond()
     return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDict, negativeCond = negativeCond )
 
+##############################################################################
+  types_matchAndGetTaskQueue = [ DictType ]
+  def export_matchAndGetTaskQueue( self, resourceDict ):
+    """ Return matching task queues
+    """
+    return gTaskQueueDB.matchAndGetTaskQueue( resourceDict )
+

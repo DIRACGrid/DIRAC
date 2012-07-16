@@ -23,9 +23,7 @@ import sys, os
 import DIRAC
 from DIRAC import gLogger, gConfig
 
-res = gConfig.getOption("/LocalSite/FileCatalog","")
-if res['OK']:
-  fcType = res['Value']
+fcType = gConfig.getValue("/LocalSite/FileCatalog","")
 
 res = gConfig.getSections("/Resources/FileCatalogs",listOrdered = True)
 fcList = res['Value']

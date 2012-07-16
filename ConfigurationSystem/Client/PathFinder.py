@@ -42,6 +42,12 @@ def getAgentSection( agentName, agentTuple = False, setup = False ):
   systemSection = getSystemSection( agentName, agentTuple, setup = setup )
   return "%s/Agents/%s" % ( systemSection, agentTuple[1] )
 
+def getExecutorSection( agentName, agentTuple = False, setup = False ):
+  if not agentTuple:
+    agentTuple = divideFullName( agentName )
+  systemSection = getSystemSection( agentName, agentTuple, setup = setup )
+  return "%s/Executors/%s" % ( systemSection, agentTuple[1] )
+
 def getDatabaseSection( dbName, dbTuple = False, setup = False ):
   if not dbTuple:
     dbTuple = divideFullName( dbName )
@@ -56,7 +62,12 @@ def getServiceURL( serviceName, serviceTuple = False, setup = False ):
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
-  return gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
+  url = gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
+  if not url:
+    return ""
+  if len( url.split( "/" ) ) < 5:
+    url = "%s/%s" % ( url, serviceName )
+  return url
 
 def getGatewayURLs( serviceName = "" ):
   siteName = gConfigurationData.extractOptionFromCFG( "/LocalSite/Site" )
