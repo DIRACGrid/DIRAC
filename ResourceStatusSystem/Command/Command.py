@@ -16,8 +16,10 @@ class Command( object ):
   """
 
   def __init__( self ):
-    self.args = None
-    self.APIs = {}
+    
+    self.args            = {}
+    self.decissionParams = {}
+    self.APIs            = {}
 
 ################################################################################
 
@@ -32,10 +34,16 @@ class Command( object ):
 
         - `args[1]` should be the name of the ValidElement
     """
-    if type(argsIn) != tuple:
-      raise TypeError("`Args` of commands should be in a tuple.")
+#    if type(argsIn) != tuple:
+#      raise TypeError("`Args` of commands should be in a tuple.")
 
     self.args = argsIn
+
+################################################################################
+
+  def setDecissionParams( self, decissionParams ):
+    
+    self.decissionParams = decissionParams
 
 ################################################################################
 

@@ -106,11 +106,15 @@ class PEP:
     ## policy decision #########################################################
 
     resDecisions = self.pdp.takeDecision()
-
+    if not resDecisions[ 'OK' ]:
+      return resDecisions
+    resDecisions = resDecisions[ 'Value' ]
+    
 # commented out for a while, while development is ongoing.
 
-#    ## record all results before doing anything else    
-#    for resP in resDecisions[ 'SinglePolicyResults' ]:
+    ## record all results before doing anything else    
+    for resPolicy in resDecisions[ 'singlePolicyResults' ]:
+      print resPolicy
 #      
 #      if not resP.has_key( 'OLD' ):       
 #        self.clients[ "rmClient" ].insertPolicyResultLog( granularity, name,

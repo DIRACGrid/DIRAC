@@ -24,18 +24,21 @@ class InfoGetter:
 
   def sanitizeDecissionParams( self, decissionParams ):
     
-    sanitizedParams = { 
-                       'element'     : None,
-                       'name'        : None,
-                       'elementType' : None,
-                       'statusType'  : None,
-                       'status'      : None,
-                       #'formerStatus' : None,
-                       'reason'      : None,
-                       'tokenOwner'  : None
-                      }
+    params = ( 'element', 'name', 'elemenType', 'statusType', 'status', 
+               'reason', 'tokenOwner' )
     
-    for key in sanitizedParams.keys():
+    sanitizedParams = {} 
+#                       'element'     : None,
+#                       'name'        : None,
+#                       'elementType' : None,
+#                       'statusType'  : None,
+#                       'status'      : None,
+#                       #'formerStatus' : None,
+#                       'reason'      : None,
+#                       'tokenOwner'  : None
+#                      }
+    
+    for key in params:
       if key in decissionParams:
         # In CS names are with upper case, capitalize them here
         sanitizedParams[ key[0].upper() + key[1:] ] = decissionParams[ key ]

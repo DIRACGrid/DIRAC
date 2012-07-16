@@ -11,7 +11,7 @@ from DIRAC                                                import gLogger, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem              import Status
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
-from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
+#from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
 
 __RCSID__  = '$Id: $'
 
@@ -27,17 +27,30 @@ class PDP:
       Constructor. Defines members that will be used later on.
     '''
     
-    cc                   = CommandCaller()
-    self.clients         = clients
-    self.pCaller         = PolicyCaller( cc, **clients )
+#    cc                   = CommandCaller()
+    #self.clients         = clients
+    self.pCaller         = PolicyCaller( clients = clients )
     self.iGetter         = InfoGetter()
 
     self.decissionParams = {}  
 
   def setup( self, decissionParams = None ):
 
+    standardParamsDict = {
+                          'element'     : None,
+                          'name'        : None,
+                          'elementType' : None,
+                          'statusType'  : None,
+                          'status'      : None,
+                          'reason'      : None,
+                          'tokenOwner'  : None
+                          }
+
+
     if decissionParams is not None:
-      self.decissionParams = decissionParams
+      standardParamsDict.update( decissionParams )
+      
+    self.decissionParams = standardParamsDict  
         
 ################################################################################
 
@@ -100,15 +113,19 @@ class PDP:
     singlePolicyResults   = self._runPolicies( policiesThatApply )
     if not singlePolicyResults[ 'OK' ]:
       return singlePolicyResults
+    singlePolicyResults = singlePolicyResults[ 'Value' ]    
         
     policyCombinedResults = self._combinePoliciesResults( singlePolicyResults )
     if not policyCombinedResults[ 'OK' ]:
       return policyCombinedResults
+    policyCombinedResults = policyCombinedResults[ 'Value' ]
 
     policyActionsThatApply = [] 
     if policyCombinedResults[ 'Value' ]:
       policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decissionParams )
-
+      if not policyActionsThatApply[ 'OK' ]:
+        return policyActionsThatApply
+      policyActionsThatApply = policyActionsThatApply[ 'Value' ]
 
 #    if policyCombinedResults == {}:
 #      policyCombinedResults[ 'Action' ]     = False
@@ -116,13 +133,13 @@ class PDP:
 #      policyCombinedResults[ 'PolicyType' ] = policyType
 #
 #    if policyCombinedResults.has_key( 'Status' ):
-#      newstatus = policyCombinedResults[ 'Status' ]
+    newstatus = policyCombinedResults[ 'Status' ]
 #
-#      if newstatus != self.__status: # Policies satisfy
+    if newstatus != self.decissionParams[ 'status' ]: # Policies satisfy
 #        newPolicyType = self.iGetter.getNewPolicyType( self.__granularity, newstatus )
 #        policyType    = set( policyType ) & set( newPolicyType )
 #        
-#        policyCombinedResults[ 'Action' ] = True
+      policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
 #
 #      else:                          # Policies does not satisfy
 #        policyCombinedResults[ 'Action' ] = False
@@ -131,8 +148,8 @@ class PDP:
 
     return S_OK( 
                 { 
-                 'SinglePolicyResults'  : singlePolicyResults,
-                 'PolicyCombinedResult' : policyCombinedResults 
+                 'singlePolicyResults'  : singlePolicyResults,
+                 'policyCombinedResult' : policyCombinedResults 
                  }
                 )
 
@@ -201,11 +218,7 @@ class PDP:
 
 ################################################################################
 
-  def _combinePoliciesResults( self, policiesResults ):
-    
-    return S_OK()
-
-  def _policyCombination( self, pol_results ):
+  def _combinePoliciesResults( self, pol_results ):
     '''
     INPUT: list type
     OUTPUT: dict type
@@ -221,9 +234,11 @@ class PDP:
     pol_results.sort( key=Status.value_of_policy )
     newStatus = -1 # First, set an always invalid status
 
+    #FIXME: this whole method is ugly as hell... beautify it !
+
     try:
       # We are in a special status, maybe forbidden transitions
-      _prio, access_list, gofun = Status.statesInfo[ self.__status ]
+      _prio, access_list, gofun = Status.statesInfo[ self.decissionParams[ 'status' ] ]
       if access_list != set():
         # Restrictions on transitions, checking if one is suitable:
         for polRes in pol_results:
@@ -235,8 +250,12 @@ class PDP:
         # returning result.
         if newStatus == -1:
           newStatus = gofun( access_list )
-          return { 'Status': Status.status_of_value( newStatus ),
-                   'Reason': 'Status forced by PDP' }
+          return { 
+                  'Status'       : Status.status_of_value( newStatus ),
+                  'Reason'       : 'Status forced by PDP',
+                  'EndDate'      : None,
+                  'PolicyAction' : None 
+                  }
 
       else:
         # Special Status, but no restriction on transitions
@@ -282,48 +301,57 @@ class PDP:
     endDatePolicies = [ p for p in worstResults if p.has_key( 'EndDate' ) ]
 
     # Building and returning result
-    res = {}
+    res = {
+           'Status'       : None,
+           'Reason'       : None,
+           'EndDate'      : None,
+           'PolicyAction' : None
+           }
+    
     res[ 'Status' ] = Status.status_of_value( newStatus )
+    
     if concatenatedRes != '': 
       res[ 'Reason' ]  = concatenatedRes
+    
     if endDatePolicies != []: 
       res[ 'EndDate' ] = endDatePolicies[ 0 ][ 'EndDate' ]
+    
     return res
 
 ################################################################################
 
-  def __useOldPolicyRes( self, name, policyName ):
-    '''
-     Use the RSS Service to get an old policy result.
-     If such result is older than 2 hours, it returns {'Status':'Unknown'}
-    '''
-    res = self.clients[ 'ResourceManagementClient' ].getPolicyResult( name = name, policyName = policyName )
-    
-    if not res[ 'OK' ]:
-      return { 'Status' : 'Unknown' }
-    
-    res = res[ 'Value' ]
-
-    if res == []:
-      return { 'Status' : 'Unknown' }
-
-    res = res[ 0 ]
-
-    oldStatus     = res[ 5 ]
-    oldReason     = res[ 6 ]
-    lastCheckTime = res[ 8 ]
-
-    if ( lastCheckTime + datetime.timedelta(hours = 2) ) < datetime.datetime.utcnow():
-      return { 'Status' : 'Unknown' }
-
-    result = {}
-
-    result[ 'Status' ]     = oldStatus
-    result[ 'Reason' ]     = oldReason
-    result[ 'OLD' ]        = True
-    result[ 'PolicyName' ] = policyName
-
-    return result
+#  def __useOldPolicyRes( self, name, policyName ):
+#    '''
+#     Use the RSS Service to get an old policy result.
+#     If such result is older than 2 hours, it returns {'Status':'Unknown'}
+#    '''
+#    res = self.clients[ 'ResourceManagementClient' ].getPolicyResult( name = name, policyName = policyName )
+#    
+#    if not res[ 'OK' ]:
+#      return { 'Status' : 'Unknown' }
+#    
+#    res = res[ 'Value' ]
+#
+#    if res == []:
+#      return { 'Status' : 'Unknown' }
+#
+#    res = res[ 0 ]
+#
+#    oldStatus     = res[ 5 ]
+#    oldReason     = res[ 6 ]
+#    lastCheckTime = res[ 8 ]
+#
+#    if ( lastCheckTime + datetime.timedelta(hours = 2) ) < datetime.datetime.utcnow():
+#      return { 'Status' : 'Unknown' }
+#
+#    result = {}
+#
+#    result[ 'Status' ]     = oldStatus
+#    result[ 'Reason' ]     = oldReason
+#    result[ 'OLD' ]        = True
+#    result[ 'PolicyName' ] = policyName
+#
+#    return result
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

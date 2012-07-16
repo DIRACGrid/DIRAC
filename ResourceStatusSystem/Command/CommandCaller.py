@@ -5,9 +5,9 @@
 
 '''
 
-from DIRAC import gLogger
+from DIRAC import S_ERROR, S_OK#, gLogger
 from DIRAC.ResourceStatusSystem.Utilities              import Utils
-from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
+#from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
 
 __RCSID__ = '$Id: $'
 
@@ -17,18 +17,21 @@ class CommandCaller:
     real policies, based on the policy name
   """
 
-  def commandInvocation(self, granularity = None, name = None, command = None,
-                        args = None, comm = None, extraArgs = None):
+  def __init__( self ):
+    pass
 
-    c = command if command else self.setCommandObject(comm)
-    a = (granularity, name) if not extraArgs else (granularity, name) + extraArgs
-
-    res = self._innerCall(c, a)
-    return res
+#  def commandInvocation( self, granularity = None, name = None, command = None,
+#                         comm = None, extraArgs = None):
+#
+#    c = command if command else self.setCommandObject(comm)
+#    a = (granularity, name) if not extraArgs else (granularity, name) + extraArgs
+#
+#    res = self._innerCall(c, a)
+#    return res
 
 ################################################################################
 
-  def setCommandObject( self, comm ):
+  def commandInvocation( self, commandTuple ):
     """
     Returns a command object, given comm
 
@@ -36,36 +39,50 @@ class CommandCaller:
       `comm`: a tuple, where comm[0] is a module name and comm[1] is a class name (inside the module)
     """
     try:
-      cModule = comm[0]
-      cClass = comm[1]
-      commandModule = Utils.voimport("DIRAC.ResourceStatusSystem.Command." + cModule)
+      cModule = commandTuple[ 0 ]
+      cClass  = commandTuple[ 1 ]
+      commandModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Command.' + cModule )
     except ImportError:
-      gLogger.warn("Command %s/%s not found, using dummy command DoNothing_Command." % (cModule, cClass))
-      cClass = "DoNothing_Command"
-      commandModule = __import__("DIRAC.ResourceStatusSystem.Command.DoNothing_Command", globals(), locals(), ['*'])
+      #gLogger.warn( "Command %s/%s not found, using dummy command DoNothing_Command." % ( cModule, cClass ) )
+      return S_ERROR( "Import error for command %s." % ( cModule ) )
+      #cClass = "DoNothing_Command"
+      #commandModule = __import__( "DIRAC.ResourceStatusSystem.Command.DoNothing_Command", globals(), locals(), ['*'] )
 
-    c = getattr(commandModule, cClass)()
+    if not hasattr( commandModule, cClass ):
+      return S_ERROR( '%s has no %s' % ( cModule, cClass ) )
+      
+    commandObject = getattr( commandModule, cClass )() 
 
-    return c
+    return S_OK( commandObject ) 
 
 ################################################################################
-
-  def setAPI( self, cObj, apiName, apiInstance ):
-    cObj.setAPI( apiName, apiInstance )
-
-################################################################################
-
-  def _innerCall(self, c, a):#, clientIn = None):
-    """ command call
-    """
-    clientsInvoker = ClientsInvoker()
-
-    c.setArgs(a)
-    clientsInvoker.setCommand(c)
-
-    res = clientsInvoker.doCommand()
-
-    return res
+#
+#  def setClient( self, commandObj, clientName, clientInstance ):
+#    commandObj.setAPI( clientName, clientInstance )
+#
+#################################################################################
+#  
+#  def setDecissionParams( self, commandObj, decissionParams ):
+#    commandObj.setDecissionParams( decissionParams )
+#
+#################################################################################
+#
+#  def setArgs( self, commandObj, args ):
+#    commandObj.setArgs( args )
+#
+#################################################################################
+#
+#  def _innerCall(self, command, args):#, clientIn = None):
+#    """ command call
+#    """
+#    #clientsInvoker = ClientsInvoker()
+#
+#    command.setArgs(args)
+#    #clientsInvoker.setCommand(c)
+#
+#    res = command.doCommand()
+#
+#    return res
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
