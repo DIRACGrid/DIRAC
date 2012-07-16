@@ -18,18 +18,18 @@ Policies = {
             
   'DT_OnGoing_Only' :
     {
-      'Description' : "Ongoing down-times",
+      'description' : "Ongoing down-times",
       'module'      : 'DT_Policy',
-      'commandIn'   : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
+      'command'     : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
       'args'        : None
     },
 
   'DT_Scheduled' :
     {
-      'Description'     : "Ongoing and scheduled down-times",
+      'description'     : "Ongoing and scheduled down-times",
       'module'          : 'DT_Policy',
       'commandInNewRes' : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
-      'commandIn'       : ( 'GOCDBStatus_Command', 'DTCached_Command' ),
+      'command'         : ( 'GOCDBStatus_Command', 'DTCached_Command' ),
       'args'            : ( 12, ),#Hacked to avoid executing code( pp["DTinHours"], ),
       'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
                                          'args': None}},],
@@ -39,9 +39,9 @@ Policies = {
 
   'AlwaysActive' :
     {
-      'Description' : "A Policy that always returns Active",
+      'description' : "A Policy that always returns Active",
       'module'      : 'AlwaysActive_Policy',
-      'commandIn'   : None,
+      'command'     : None,
       'args'        : None
     }
             
