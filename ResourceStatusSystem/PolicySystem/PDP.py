@@ -121,7 +121,7 @@ class PDP:
     policyCombinedResults = policyCombinedResults[ 'Value' ]
 
     policyActionsThatApply = [] 
-    if policyCombinedResults[ 'Value' ]:
+    if policyCombinedResults:
       policyActionsThatApply = self.iGetter.getPolicyActionsThatApply( self.decissionParams )
       if not policyActionsThatApply[ 'OK' ]:
         return policyActionsThatApply
@@ -250,12 +250,12 @@ class PDP:
         # returning result.
         if newStatus == -1:
           newStatus = gofun( access_list )
-          return { 
-                  'Status'       : Status.status_of_value( newStatus ),
-                  'Reason'       : 'Status forced by PDP',
-                  'EndDate'      : None,
-                  'PolicyAction' : None 
-                  }
+          return S_OK( { 
+                        'Status'       : Status.status_of_value( newStatus ),
+                        'Reason'       : 'Status forced by PDP',
+                        'EndDate'      : None,
+                        'PolicyAction' : None 
+                       })
 
       else:
         # Special Status, but no restriction on transitions
@@ -316,7 +316,7 @@ class PDP:
     if endDatePolicies != []: 
       res[ 'EndDate' ] = endDatePolicies[ 0 ][ 'EndDate' ]
     
-    return res
+    return S_OK( res )
 
 ################################################################################
 
