@@ -24,8 +24,8 @@ def getTypedList( stringValue ):
   '''
   return [ typedobj_of_string(e) for e in List.fromChar( stringValue ) ]
 
-def where(c, f):
-  return "Class " + str(c.__class__.__name__) + ", in Function " + (f.__name__)
+#def where(c, f):
+#  return "Class " + str(c.__class__.__name__) + ", in Function " + (f.__name__)
 
 def convertTime(t, inTo = None):
 
