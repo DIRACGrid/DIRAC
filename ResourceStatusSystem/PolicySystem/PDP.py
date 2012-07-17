@@ -5,7 +5,7 @@
 
 '''
 
-import datetime
+#import datetime
 
 from DIRAC                                                import gLogger, S_OK 
 from DIRAC.ResourceStatusSystem.PolicySystem              import Status
@@ -27,8 +27,6 @@ class PDP:
       Constructor. Defines members that will be used later on.
     '''
     
-#    cc                   = CommandCaller()
-    #self.clients         = clients
     self.pCaller         = PolicyCaller( clients = clients )
     self.iGetter         = InfoGetter()
 
@@ -45,7 +43,6 @@ class PDP:
                           'reason'      : None,
                           'tokenOwner'  : None
                           }
-
 
     if decissionParams is not None:
       standardParamsDict.update( decissionParams )

@@ -19,26 +19,6 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PDP                 import PDP
 __RCSID__  = '$Id:  $'
 
 class PEP:
-#  '''
-#  PEP (Policy Enforcement Point) initialization
-#
-#  :params:
-#    :attr:`granularity`       : string - a ValidElement (optional)
-#    :attr:`name`              : string - optional name (e.g. of a site)
-#    :attr:`status`            : string - optional status
-#    :attr:`formerStatus`      : string - optional former status
-#    :attr:`reason`            : string - optional reason for last status change
-#    :attr:`siteType`          : string - optional site type
-#    :attr:`serviceType`       : string - optional service type
-#    :attr:`resourceType`      : string - optional resource type
-#    :attr:`futureEnforcement` :          optional
-#      [
-#        {
-#          'PolicyType': a PolicyType
-#          'Granularity': a ValidElement (optional)
-#        }
-#      ]
-#  '''
 
   def __init__( self, clients = None ):
 #    '''
@@ -74,10 +54,6 @@ class PEP:
 
     self.pdp = PDP( clients )
 
-#  def enforce( self, element = None, name = None, statusType = None, 
-#               status = None, formerStatus = None, reason = None, 
-#               elementType = None, tokenOwner = None ):
-
   def enforce( self, decissionParams ):
     
     '''
@@ -91,15 +67,7 @@ class PEP:
 #      if tokenOwner == 'rs_svc':
 #        realBan = True
    
-    ## policy setup ############################################################  
-
-#    decissionParams = {}
-#    localParams     = locals()
-#    
-#    # Small workaround to avoid deleting from locals() 
-#    for lParamK, lParamV in localParams.items():
-#      if lParamK != 'self':
-#        decissionParams[ lParamK ] = lParamV
+    ## policy decision point setup #############################################  
     
     self.pdp.setup( decissionParams )
 
