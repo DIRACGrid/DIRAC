@@ -1,13 +1,13 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' MacrosCommand 
   
 '''
 
 from DIRAC.ResourceStatusSystem.Command.MacroCommand import MacroCommand
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
-class TransferQualityOnSE_Command( MacroCommand ):
+class TransferQualityOnSECommand( MacroCommand ):
   
   def doCommand(self):
     #da decidere quali comandi

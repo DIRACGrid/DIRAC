@@ -1,7 +1,7 @@
-# $HeadURL $
-''' Pilots_Command
+# $HeadURL:  $
+''' PilotsCommand
  
-  The Pilots_Command class is a command class to know about
+  The PilotsCommand class is a command class to know about
   present pilots efficiency.
   
 '''
@@ -9,14 +9,14 @@
 from DIRAC                                           import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command      import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+#from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
-class PilotsStats_Command( Command ):
+class PilotsStatsCommand( Command ):
 
   __APIs__ = [ 'PilotsClient' ]
 
@@ -25,7 +25,7 @@ class PilotsStats_Command( Command ):
     Return getPilotStats from Pilots Client
     """
     
-    super( PilotsStats_Command, self ).doCommand()
+#    super( PilotsStats_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -35,16 +35,16 @@ class PilotsStats_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class PilotsEff_Command( Command ):
+class PilotsEffCommand( Command ):
 
   __APIs__ = [ 'PilotsClient' ]
 
@@ -53,7 +53,7 @@ class PilotsEff_Command( Command ):
     Return getPilotsEff from Pilots Client
     """
     
-    super( PilotsEff_Command, self ).doCommand()
+#    super( PilotsEff_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -63,16 +63,16 @@ class PilotsEff_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
   
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class PilotsEffSimple_Command( Command ):
+class PilotsEffSimpleCommand( Command ):
 
   __APIs__ = [ 'ResourceStatusClient', 'PilotsClient' ]
 
@@ -91,7 +91,7 @@ class PilotsEffSimple_Command( Command ):
       }
     """
     
-    super( PilotsEffSimple_Command, self ).doCommand()
+#    super( PilotsEffSimple_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
     try:
@@ -104,7 +104,7 @@ class PilotsEffSimple_Command( Command ):
         name        = self.args[1]
         granularity = self.args[0]
       else:
-        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
+        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
 
       res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff( granularity, name )
       if res is None:
@@ -117,16 +117,16 @@ class PilotsEffSimple_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : S_OK( res ) }
+    return S_OK( res )
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class PilotsEffSimpleCached_Command( Command ):
+class PilotsEffSimpleCachedCommand( Command ):
 
   __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
 
@@ -145,7 +145,7 @@ class PilotsEffSimpleCached_Command( Command ):
       }
     """
     
-    super( PilotsEffSimpleCached_Command, self ).doCommand()
+#    super( PilotsEffSimpleCached_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
     try:
@@ -158,7 +158,7 @@ class PilotsEffSimpleCached_Command( Command ):
         name        = self.args[1]
         granularity = self.args[0]
       else:
-        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
+        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
 
       clientDict = { 
                      'name'        : name,
@@ -180,11 +180,11 @@ class PilotsEffSimpleCached_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF  

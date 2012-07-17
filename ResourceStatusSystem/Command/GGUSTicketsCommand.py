@@ -1,5 +1,5 @@
-# $HeadURL $
-''' GGUSTickets_Command
+# $HeadURL:  $
+''' GGUSTicketsCommand
  
   The GGUSTickets_Command class is a command class to know about 
   the number of active present opened tickets.
@@ -13,7 +13,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 def callClient( name, clientIn ):
    
@@ -25,7 +25,7 @@ def callClient( name, clientIn ):
 ################################################################################
 ################################################################################
 
-class GGUSTickets_Open( Command ):
+class GGUSTicketsOpen( Command ):
   
   __APIs__ = [ 'GGUSTicketsClient' ]
   
@@ -36,7 +36,7 @@ class GGUSTickets_Open( Command ):
       - args[0]: string: should be the name of the site
     """
     
-    super( GGUSTickets_Open, self ).doCommand()
+#    super( GGUSTickets_Open, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -49,16 +49,16 @@ class GGUSTickets_Open( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class GGUSTickets_Link(Command):
+class GGUSTicketsLink(Command):
   
   __APIs__ = [ 'GGUSTicketsClient' ]
   
@@ -70,7 +70,7 @@ class GGUSTickets_Link(Command):
      - args[0]: string: should be the name of the site
     """
     
-    super( GGUSTickets_Link, self ).doCommand()
+#    super( GGUSTickets_Link, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try: 
@@ -84,16 +84,16 @@ class GGUSTickets_Link(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class GGUSTickets_Info(Command):
+class GGUSTicketsInfo(Command):
   
   __APIs__ = [ 'GGUSTicketsClient' ]
   
@@ -105,7 +105,7 @@ class GGUSTickets_Info(Command):
      - args[0]: string: should be the name of the site
     """
     
-    super( GGUSTickets_Info, self ).doCommand()
+#    super( GGUSTickets_Info, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try: 
@@ -119,12 +119,11 @@ class GGUSTickets_Info(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

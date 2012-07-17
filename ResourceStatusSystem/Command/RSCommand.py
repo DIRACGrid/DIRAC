@@ -1,19 +1,19 @@
-# $HeadURL $
-''' RS_Command
+# $HeadURL:  $
+''' RSCommand
 
 '''
 
 from DIRAC                                            import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command       import Command
 from DIRAC.ResourceStatusSystem.Command.knownAPIs     import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities             import RssConfiguration, Utils
+from DIRAC.ResourceStatusSystem.Utilities             import RssConfiguration
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
-class RSPeriods_Command( Command ):
+class RSPeriodsCommand( Command ):
 
   __APIs__ = [ 'ResourceStatusClient' ]
 
@@ -30,7 +30,7 @@ class RSPeriods_Command( Command ):
     - args[3] are the number of hours requested
     """
 
-    super( RSPeriods_Command, self ).doCommand()
+#    super( RSPeriods_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -40,16 +40,14 @@ class RSPeriods_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
-
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return res
 
 ################################################################################
 ################################################################################
 
-class ServiceStats_Command( Command ):
+class ServiceStatsCommand( Command ):
   """
   The ServiceStats_Command class is a command class to know about
   present services stats
@@ -71,7 +69,7 @@ class ServiceStats_Command( Command ):
       {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz}
     """
 
-    super( ServiceStats_Command, self ).doCommand()
+#    super( ServiceStats_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -81,16 +79,14 @@ class ServiceStats_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
-
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return res
 
 ################################################################################
 ################################################################################
 
-class ResourceStats_Command( Command ):
+class ResourceStatsCommand( Command ):
   """
   The ResourceStats_Command class is a command class to know about
   present resources stats
@@ -112,7 +108,7 @@ class ResourceStats_Command( Command ):
 
     """
 
-    super( ResourceStats_Command, self ).doCommand()
+#    super( ResourceStats_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -122,16 +118,14 @@ class ResourceStats_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
-
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return res
 
 ################################################################################
 ################################################################################
 
-class StorageElementsStats_Command( Command ):
+class StorageElementsStatsCommand( Command ):
   """
   The StorageElementsStats_Command class is a command class to know about
   present storageElementss stats
@@ -153,7 +147,7 @@ class StorageElementsStats_Command( Command ):
 
     """
 
-    super( StorageElementsStats_Command, self ).doCommand()
+#    super( StorageElementsStats_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -165,23 +159,23 @@ class StorageElementsStats_Command( Command ):
         granularity = self.args[0]
         name        = self.args[1]
       else:
-        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
+        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
 
       res = self.APIs[ 'ResourceStatusClient' ].getStorageElementStats( granularity, name, statusType = None )
       
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class MonitoredStatus_Command( Command ):
+class MonitoredStatusCommand( Command ):
   """
   The MonitoredStatus_Command class is a command class to know about
   monitored status.
@@ -204,7 +198,7 @@ class MonitoredStatus_Command( Command ):
       {'MonitoredStatus': 'Active'|'Probing'|'Banned'}
     """
 
-    super( MonitoredStatus_Command, self ).doCommand()
+#    super( MonitoredStatus_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -230,11 +224,11 @@ class MonitoredStatus_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

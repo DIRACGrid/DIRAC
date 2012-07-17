@@ -1,7 +1,7 @@
-# $HeadURL $
-''' DIRACAccounting_Command
+# $HeadURL:  $
+''' DIRACAccountingCommand
  
-  The DIRACAccounting_Command class is a command class to 
+  The DIRACAccountingCommand class is a command class to 
   interrogate the DIRAC Accounting.
   
 '''
@@ -13,12 +13,12 @@ from DIRAC.ResourceStatusSystem.Command.Command      import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
-class DIRACAccounting_Command( Command ):
+class DIRACAccountingCommand( Command ):
   
   __APIs__ = [ 'ReportGenerator', 'ReportsClient' ]
   
@@ -42,7 +42,7 @@ class DIRACAccounting_Command( Command ):
        - args[6]: dictionary - optional conditions
     """
     
-    super( DIRACAccounting_Command, self ).doCommand()
+#    super( DIRACAccounting_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
     self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -83,16 +83,16 @@ class DIRACAccounting_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }      
+    return res      
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class TransferQuality_Command( Command ):
+class TransferQualityCommand( Command ):
 
   __APIs__ = [ 'ReportGenerator', 'ReportsClient' ]
 
@@ -112,7 +112,7 @@ class TransferQuality_Command( Command ):
     :returns:
       {'Result': None | a float between 0.0 and 100.0}
     """
-    super( TransferQuality_Command, self ).doCommand()
+#    super( TransferQuality_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
     self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -152,11 +152,11 @@ class TransferQuality_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }      
+    return res      
   
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
@@ -198,7 +198,7 @@ class TransferQuality_Command( Command ):
 ################################################################################
 ################################################################################
 
-class CachedPlot_Command( Command ):
+class CachedPlotCommand( Command ):
 
   __APIs__ = [ 'ResourceManagementClient' ]
   
@@ -219,7 +219,7 @@ class CachedPlot_Command( Command ):
       a plot
     """
 
-    super( CachedPlot_Command, self ).doCommand()
+#    super( CachedPlot_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs ) 
       
     try:  
@@ -253,16 +253,16 @@ class CachedPlot_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class TransferQualityFromCachedPlot_Command(Command):
+class TransferQualityFromCachedPlotCommand(Command):
   
   __APIs__ = [ 'ResourceManagementClient' ]
   
@@ -279,7 +279,7 @@ class TransferQualityFromCachedPlot_Command(Command):
       {'Result': None | a float between 0.0 and 100.0}
     """
     
-    super(TransferQualityFromCachedPlot_Command, self).doCommand()
+#    super(TransferQualityFromCachedPlot_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )     
 
     try:
@@ -318,11 +318,11 @@ class TransferQualityFromCachedPlot_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

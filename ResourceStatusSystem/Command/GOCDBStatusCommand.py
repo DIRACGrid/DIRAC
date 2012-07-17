@@ -1,4 +1,4 @@
-# $HeadURL $
+# $HeadURL:  $
 ''' GOCDBStatus_Command 
   The GOCDBStatus_Command class is a command class to know about 
   present downtimes
@@ -14,12 +14,12 @@ from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
 from DIRAC.ResourceStatusSystem.Utilities.Utils   import convertTime
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
-class GOCDBStatus_Command(Command):
+class GOCDBStatusCommand(Command):
   
   __APIs__ = [ 'GOCDBClient' ]
   
@@ -38,7 +38,7 @@ class GOCDBStatus_Command(Command):
     
     timeFormat = "%Y-%m-%d %H:%M"
     
-    super(GOCDBStatus_Command, self).doCommand()
+#    super(GOCDBStatus_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
     
     try:
@@ -56,12 +56,12 @@ class GOCDBStatus_Command(Command):
       res = self.APIs[ 'GOCDBClient' ].getStatus( granularity, name, None, hours )
 
       if not res['OK']:
-        return { 'Result' : res }     
+        return res     
         
       res = res['Value']
        
       if res is None or res == {}:
-        return { 'Result' : S_OK( { 'DT' : None } ) }
+        return S_OK( { 'DT' : None } )
           
       DT_dict_result = {}
       now = datetime.utcnow().replace( microsecond = 0, second = 0 )
@@ -100,16 +100,16 @@ class GOCDBStatus_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class DTCached_Command(Command):
+class DTCachedCommand(Command):
   
   __APIs__ = [ 'ResourceManagementClient' ]
   
@@ -128,7 +128,7 @@ class DTCached_Command(Command):
     
     timeFormat = "%Y-%m-%d %H:%M"
     
-    super(DTCached_Command, self).doCommand()
+#    super(DTCached_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
     try:
@@ -147,12 +147,12 @@ class DTCached_Command(Command):
       res = self.APIs[ 'ResourceManagementClient' ].getClientCache( name = name, commandName = commandName, meta = meta)
     
       if not res[ 'OK' ]:
-        return { 'Result' : res }
+        return res
     
       res = res[ 'Value' ]
         
       if res is None or len( res ) == 0:
-        return { 'Result' : S_OK( { 'DT' : None } ) }
+        return S_OK( { 'DT' : None } )
       
       #CachedResult
       clientDict = { 
@@ -247,7 +247,7 @@ class DTCached_Command(Command):
       end_datetime   = datetime.strptime(endSTR, timeFormat )      
     
       if end_datetime < now:
-        return { 'Result' : S_OK( { 'DT' : None } ) } 
+        return S_OK( { 'DT' : None } ) 
       
       clientDict[ 'value' ]  = 'Severity'
       clientDict[ 'opt_ID' ] = DT_ID 
@@ -262,7 +262,7 @@ class DTCached_Command(Command):
         self.args[2]
         diff = convertTime(start_datetime - now, 'hours')
         if diff > self.args[2]:
-          return { 'Result' : S_OK( { 'DT' : None } ) }
+          return S_OK( { 'DT' : None } )
       
         DT_dict_result['DT'] = DT_dict_result['DT'] + " in " + str(diff) + ' hours'
       
@@ -271,16 +271,16 @@ class DTCached_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }      
+    return res      
             
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class DTInfo_Cached_Command(Command):
+class DTInfoCachedCommand(Command):
   
   __APIs__ = [ 'ResourceManagementClient' ]
   
@@ -299,7 +299,7 @@ class DTInfo_Cached_Command(Command):
     
     timeFormat = "%Y-%m-%d %H:%M"
     
-    super(DTInfo_Cached_Command, self).doCommand()
+#    super(DTInfo_Cached_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )     
 
     try:
@@ -318,7 +318,7 @@ class DTInfo_Cached_Command(Command):
       res = self.APIs[ 'ResourceManagementClient' ].getClientCache( name = name, commandName = commandName, meta = meta )
       
       if not res[ 'OK' ]:
-        return { 'Result' : res }
+        return res
       
       res = res[ 'Value' ]    
       
@@ -407,7 +407,7 @@ class DTInfo_Cached_Command(Command):
         endSTR = endSTR[0][0]
       end_datetime = datetime.strptime( endSTR, timeFormat )
       if end_datetime < now:
-        return { 'Result' : S_OK( { 'DT' : None } ) }
+        return S_OK( { 'DT' : None } )
     
       DT_dict_result['EndDate'] = endSTR
     
@@ -445,7 +445,7 @@ class DTInfo_Cached_Command(Command):
           self.args[2]
           diff = convertTime(start_datetime - now, 'hours')
           if diff > self.args[2]:
-            return { 'Result': S_OK( { 'DT' : None } ) }
+            return S_OK( { 'DT' : None } )
         
           DT_dict_result['DT'] = DT_dict_result['DT'] + " in " + str(diff) + ' hours'
         
@@ -454,11 +454,11 @@ class DTInfo_Cached_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }      
+    return res      
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

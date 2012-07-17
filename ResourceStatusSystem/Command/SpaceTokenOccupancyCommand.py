@@ -1,4 +1,4 @@
-# $HeadURL: $
+# $HeadURL:  $
 ''' SpaceTokenOccupancyCommand
   
   The Command gets information of the SpaceTokenOccupancy from the lcg_utils
@@ -10,7 +10,7 @@ import lcg_util
 from DIRAC                                      import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 class SpaceTokenOccupancyCommand( Command ):
   '''
@@ -21,7 +21,7 @@ class SpaceTokenOccupancyCommand( Command ):
     '''
     Run the command.
     '''
-    super( SpaceTokenOccupancyCommand, self ).doCommand()
+    #super( SpaceTokenOccupancyCommand, self ).doCommand()
 
     spaceTokenEndpoint = self.args[ 0 ] 
     spaceToken         = self.args[ 1 ]
@@ -35,13 +35,18 @@ class SpaceTokenOccupancyCommand( Command ):
       guaranteed = float( output[ 'guaranteedsize' ] ) / 1e12
       free       = float( output[ 'unusedsize' ] ) / 1e12
       
-      res = S_OK( { 'total' : total, 'free' : free, 'guaranteed' : guaranteed } )
-          
+      result = S_OK( 
+                    { 
+                     'total'      : total, 
+                     'free'       : free, 
+                     'guaranteed' : guaranteed 
+                     } 
+                    )
     else:  
 
-      res = S_ERROR( occupancy )
+      result = S_ERROR( occupancy )
 
-    return { 'Result' : res }
+    return result
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

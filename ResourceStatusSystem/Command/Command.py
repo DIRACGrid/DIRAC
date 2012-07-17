@@ -17,7 +17,7 @@ class Command( object ):
 
   def __init__( self, args = None, decissionParams = None, clients = None ):
     
-    self.args            = ( 1 and args ) or {}
+    self.args            = ( 1 and args ) or ()
     self.decissionParams = ( 1 and decissionParams ) or {}   
     self.APIs            = ( 1 and clients ) or {}
 

@@ -1,7 +1,7 @@
 # $HeadURL $
 ''' AccountingCacheCommand
  
-  The AccountingCache_Command class is a command module that collects command 
+  The AccountingCacheCommand class is a command module that collects command 
   classes to store accounting results in the accounting cache.
   
 '''
@@ -11,14 +11,14 @@ from datetime                                     import datetime, timedelta
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command   import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
+#from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
 
 __RCSID__ = '$Id: $'
 
 ################################################################################
 ################################################################################
 
-class TransferQualityByDestSplitted_Command( Command ):
+class TransferQualityByDestSplittedCommand( Command ):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
   
@@ -36,7 +36,7 @@ class TransferQualityByDestSplitted_Command( Command ):
       
     """
 
-    super( TransferQualityByDestSplitted_Command, self ).doCommand()
+#    super( TransferQualityByDestSplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -45,18 +45,18 @@ class TransferQualityByDestSplitted_Command( Command ):
         meta = { 'columns' : 'StorageElementName' }
         SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = meta )
         if not SEs[ 'OK' ]:
-          return { 'Result' : SEs } 
+          return SEs 
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
       if sources is None:
         meta = { 'columns' : 'SiteName' }
         sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = meta )      
         if not sources[ 'OK' ]:
-          return { 'Result' : sources }
+          return sources
         sources = [ s[0] for s in sources[ 'Value' ] ]
     
       if not sources + SEs:
-        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
+        return S_ERROR( 'Sources + SEs is empty' )
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -72,7 +72,7 @@ class TransferQualityByDestSplitted_Command( Command ):
                                                     'Destination' )
       
       if not qualityAll[ 'OK' ]:
-        return { 'Result' : qualityAll }
+        return qualityAll
       
       qualityAll    = qualityAll[ 'Value' ]
       listOfDestSEs = qualityAll[ 'data' ].keys()
@@ -90,16 +90,16 @@ class TransferQualityByDestSplitted_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class TransferQualityByDestSplittedSite_Command( Command ):
+class TransferQualityByDestSplittedSiteCommand( Command ):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]   
   
@@ -117,7 +117,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
       
     """
    
-    super( TransferQualityByDestSplittedSite_Command, self ).doCommand()
+#    super( TransferQualityByDestSplittedSite_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -125,17 +125,17 @@ class TransferQualityByDestSplittedSite_Command( Command ):
       if SEs is None:
         SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = {'columns': 'StorageElementName' })
         if not SEs[ 'OK' ]:
-          return { 'Result' : SEs } 
+          return SEs 
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
       if sources is None:
         sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )
         if not sources[ 'OK' ]:
-          return { 'Result' : sources } 
+          return sources 
         sources = [ si[0] for si in sources[ 'Value' ] ]
     
       if not sources + SEs:
-        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
+        return S_ERROR( 'Sources + SEs is empty' )
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
  
@@ -150,7 +150,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
                                                      }, 
                                                      'Destination' )
       if not qualityAll[ 'OK' ]:
-        return { 'Result' : qualityAll } 
+        return qualityAll 
       
       qualityAll = qualityAll[ 'Value' ]
       listOfDest = qualityAll[ 'data' ].keys()
@@ -159,7 +159,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
                                                                 { 'StorageElementName': listOfDest }, 0, 300 )
     
       if not storSitesWeb[ 'OK' ]:
-        return { 'Result' : storSitesWeb } 
+        return storSitesWeb 
       
       storSitesWeb  = storSitesWeb[ 'Value' ][ 'Records' ]
       SESiteMapping = {}
@@ -195,11 +195,11 @@ class TransferQualityByDestSplittedSite_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
@@ -306,7 +306,7 @@ class TransferQualityByDestSplittedSite_Command( Command ):
 ################################################################################
 ################################################################################
 
-class FailedTransfersBySourceSplitted_Command( Command ):
+class FailedTransfersBySourceSplittedCommand( Command ):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
   
@@ -324,7 +324,7 @@ class FailedTransfersBySourceSplitted_Command( Command ):
       
     """
   
-    super( FailedTransfersBySourceSplitted_Command, self ).doCommand()
+#    super( FailedTransfersBySourceSplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -333,18 +333,18 @@ class FailedTransfersBySourceSplitted_Command( Command ):
         meta = { 'columns' : 'StorageElementName' }
         SEs = self.APIs[ 'ResourceStatusClient' ].getStorageElement( meta = meta)
         if not SEs[ 'OK' ]:
-          return { 'Result' : SEs } 
+          return SEs 
         SEs = [ se[0] for se in SEs[ 'Value' ] ]
     
       if sources is None:
         meta = { 'columns' : 'SiteName' }
         sources = self.APIs[ 'ResourceStatusClient' ].getSite( meta = meta )      
         if not sources[ 'OK' ]:
-          return { 'Result' : sources } 
+          return sources 
         sources = [ si[0] for si in sources[ 'Value' ] ]
 
       if not sources + SEs:
-        return { 'Result' : S_ERROR( 'Sources + SEs is empty' ) }
+        return S_ERROR( 'Sources + SEs is empty' )
 
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -360,7 +360,7 @@ class FailedTransfersBySourceSplitted_Command( Command ):
                                                     }, 
                                                     'Source' )
       if not ft_source[ 'OK' ]:
-        return { 'Result' : ft_source } 
+        return ft_source
       
       ft_source = ft_source[ 'Value' ]
       listOfSources = ft_source[ 'data' ].keys()   
@@ -379,16 +379,16 @@ class FailedTransfersBySourceSplitted_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class SuccessfullJobsBySiteSplitted_Command( Command ):
+class SuccessfullJobsBySiteSplittedCommand( Command ):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
@@ -404,7 +404,7 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
       
     """
 
-    super( SuccessfullJobsBySiteSplitted_Command, self ).doCommand()
+#    super( SuccessfullJobsBySiteSplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -412,11 +412,11 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName' })
         if not sites['OK']:
-          return { 'Result' : sites } 
+          return sites 
         sites = [ si[0] for si in sites['Value'] ]
     
       if not sites:
-        return { 'Result' : S_ERROR( 'Sites is empty' ) }
+        return S_ERROR( 'Sites is empty' )
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -426,7 +426,7 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
       succ_jobs = self.APIs[ 'ReportsClient' ].getReport('Job', 'NumberOfJobs', fromD, toD, 
                                         {'FinalStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_jobs['OK']:
-        return { 'Result' : succ_jobs } 
+        return succ_jobs 
 
       succ_jobs   = succ_jobs['Value']
       listOfSites = succ_jobs['data'].keys()   
@@ -445,16 +445,16 @@ class SuccessfullJobsBySiteSplitted_Command( Command ):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class FailedJobsBySiteSplitted_Command(Command):
+class FailedJobsBySiteSplittedCommand(Command):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
@@ -470,7 +470,7 @@ class FailedJobsBySiteSplitted_Command(Command):
       
     """
     
-    super( FailedJobsBySiteSplitted_Command, self ).doCommand()
+#    super( FailedJobsBySiteSplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -478,11 +478,11 @@ class FailedJobsBySiteSplitted_Command(Command):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns' : 'SiteName'} )      
         if not sites['OK']:
-          return { 'Result' : sites } 
+          return sites 
         sites = [ si[0] for si in sites['Value'] ]
 
       if not sites:
-        return { 'Result' : S_ERROR( 'Sites is empty' ) }
+        return S_ERROR( 'Sites is empty' )
 
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -492,7 +492,7 @@ class FailedJobsBySiteSplitted_Command(Command):
       failed_jobs = self.APIs[ 'ReportsClient' ].getReport('Job', 'NumberOfJobs', fromD, toD, 
                                           {'FinalStatus':['Failed'], 'Site':sites}, 'Site')
       if not failed_jobs['OK']:
-        return { 'Result' : failed_jobs } 
+        return failed_jobs 
       
       failed_jobs = failed_jobs['Value']   
       listOfSites = failed_jobs['data'].keys()   
@@ -511,16 +511,16 @@ class FailedJobsBySiteSplitted_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class SuccessfullPilotsBySiteSplitted_Command(Command):
+class SuccessfullPilotsBySiteSplittedCommand(Command):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
   
@@ -536,7 +536,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       
     """
     
-    super( SuccessfullPilotsBySiteSplitted_Command, self ).doCommand()
+#    super( SuccessfullPilotsBySiteSplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -544,11 +544,11 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns':'SiteName'} )      
         if not sites['OK']:
-          return { 'Result' : sites } 
+          return sites 
         sites = [ si[0] for si in sites['Value'] ]
 
       if not sites:
-        return { 'Result' : S_ERROR( 'Sites is empty' ) }
+        return S_ERROR( 'Sites is empty' )
 
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -558,7 +558,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       succ_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                         {'GridStatus':['Done'], 'Site':sites}, 'Site')
       if not succ_pilots['OK']:
-        return { 'Result' : succ_pilots } 
+        return succ_pilots 
       
       succ_pilots = succ_pilots['Value']
       listOfSites = succ_pilots['data'].keys()   
@@ -577,16 +577,16 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class FailedPilotsBySiteSplitted_Command(Command):
+class FailedPilotsBySiteSplittedCommand(Command):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
@@ -602,7 +602,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
       
     """
 
-    super( FailedPilotsBySiteSplitted_Command, self ).doCommand()
+#    super( FailedPilotsBySiteSplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:    
@@ -610,11 +610,11 @@ class FailedPilotsBySiteSplitted_Command(Command):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )      
         if not sites['OK']:
-          return { 'Result' : sites } 
+          return sites 
         sites = [ si[0] for si in sites['Value'] ]
     
       if not sites:
-        return { 'Result' : S_ERROR( 'Sites is empty' ) }    
+        return S_ERROR( 'Sites is empty' )    
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -624,7 +624,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
       failed_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                           {'GridStatus':['Aborted'], 'Site':sites}, 'Site')
       if not failed_pilots['OK']:
-        return { 'Result' : failed_pilots } 
+        return failed_pilots 
       
       failed_pilots = failed_pilots['Value']   
       listOfSites   = failed_pilots['data'].keys() 
@@ -643,16 +643,16 @@ class FailedPilotsBySiteSplitted_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class SuccessfullPilotsByCESplitted_Command(Command):
+class SuccessfullPilotsByCESplittedCommand(Command):
 
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]  
   
@@ -668,7 +668,7 @@ class SuccessfullPilotsByCESplitted_Command(Command):
       
     """
     
-    super( SuccessfullPilotsByCESplitted_Command, self ).doCommand()
+#    super( SuccessfullPilotsByCESplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -677,11 +677,11 @@ class SuccessfullPilotsByCESplitted_Command(Command):
         meta = {'columns':'ResourceName'}
         CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], meta = meta )
         if not CEs['OK']:
-          return { 'Result' : CEs } 
+          return CEs 
         CEs = [ ce[0] for ce in CEs['Value'] ]
 
       if not CEs:
-        return { 'Result' : S_ERROR( 'CEs is empty' ) }
+        return S_ERROR( 'CEs is empty' )
 
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -691,7 +691,7 @@ class SuccessfullPilotsByCESplitted_Command(Command):
       succ_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                           {'GridStatus':['Done'], 'GridCE':CEs}, 'GridCE')
       if not succ_pilots['OK']:
-        return { 'Result' : succ_pilots } 
+        return succ_pilots 
       
       succ_pilots = succ_pilots['Value']
       listOfCEs   = succ_pilots['data'].keys()    
@@ -710,16 +710,16 @@ class SuccessfullPilotsByCESplitted_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class FailedPilotsByCESplitted_Command(Command):
+class FailedPilotsByCESplittedCommand(Command):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ] 
   
@@ -735,7 +735,7 @@ class FailedPilotsByCESplitted_Command(Command):
       
     """
 
-    super( FailedPilotsByCESplitted_Command, self ).doCommand()
+#    super( FailedPilotsByCESplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -743,11 +743,11 @@ class FailedPilotsByCESplitted_Command(Command):
       if CEs is None:
         CEs = self.APIs[ 'ResourceStatusClient' ].getResource( resourceType = [ 'CE','CREAMCE' ], meta = {'columns': 'ResourceName'})     
         if not CEs['OK']:
-          return { 'Result' : CEs } 
+          return CEs 
         CEs = [ ce[0] for ce in CEs['Value'] ]
     
       if not CEs:
-        return { 'Result' : S_ERROR( 'CEs is empty' ) }    
+        return S_ERROR( 'CEs is empty' )    
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -757,7 +757,7 @@ class FailedPilotsByCESplitted_Command(Command):
       failed_pilots = self.APIs[ 'ReportsClient' ].getReport('Pilot', 'NumberOfPilots', fromD, toD, 
                                             {'GridStatus':['Aborted'], 'GridCE':CEs}, 'GridCE')
       if not failed_pilots['OK']:
-        return { 'Result' : failed_pilots }
+        return failed_pilots
 
       failed_pilots = failed_pilots['Value']
       listOfCEs     = failed_pilots['data'].keys()
@@ -776,16 +776,16 @@ class FailedPilotsByCESplitted_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 ################################################################################
 
-class RunningJobsBySiteSplitted_Command(Command):
+class RunningJobsBySiteSplittedCommand(Command):
   
   __APIs__ = [ 'ResourceStatusClient', 'ReportsClient', 'ReportGenerator' ]
   
@@ -801,7 +801,7 @@ class RunningJobsBySiteSplitted_Command(Command):
       
     """
 
-    super( RunningJobsBySiteSplitted_Command, self ).doCommand()
+#    super( RunningJobsBySiteSplitted_Command, self ).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -809,11 +809,11 @@ class RunningJobsBySiteSplitted_Command(Command):
       if sites is None:
         sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = {'columns': 'SiteName'} )
         if not sites['OK']:
-          return { 'Result' : sites } 
+          return sites 
         sites = [ si[0] for si in sites['Value'] ]
     
       if not sites:
-        return { 'Result' : S_ERROR( 'Sites is empty' ) }       
+        return S_ERROR( 'Sites is empty' )
     
       self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
 
@@ -823,7 +823,7 @@ class RunningJobsBySiteSplitted_Command(Command):
       run_jobs = self.APIs[ 'ReportsClient' ].getReport('WMSHistory', 'NumberOfJobs', fromD, toD, 
                                        {}, 'Site')
       if not run_jobs['OK']:
-        return { 'Result' : run_jobs } 
+        return run_jobs 
 
       run_jobs    = run_jobs['Value']
       listOfSites = run_jobs['data'].keys()
@@ -842,11 +842,11 @@ class RunningJobsBySiteSplitted_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res } 
+    return res 
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

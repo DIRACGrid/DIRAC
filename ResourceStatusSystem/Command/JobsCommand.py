@@ -1,5 +1,5 @@
-# $HeadURL $
-''' Jobs_Command
+# $HeadURL:  $
+''' JobsCommand
  
   The Jobs_Command class is a command class to know about 
   present jobs efficiency
@@ -9,14 +9,14 @@
 from DIRAC                                           import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Command.Command      import *
 from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+#from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
-class JobsStats_Command(Command):
+class JobsStatsCommand(Command):
   
   __APIs__ = [ 'JobsClient' ]
   
@@ -35,7 +35,7 @@ class JobsStats_Command(Command):
     }
     """
 
-    super(JobsStats_Command, self).doCommand()
+#    super(JobsStats_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
       
     try:
@@ -45,16 +45,16 @@ class JobsStats_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : S_OK( res ) }   
+    return S_OK( res )   
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class JobsEff_Command(Command):
+class JobsEffCommand(Command):
 
   __APIs__ = [ 'JobsClient' ]  
   
@@ -73,7 +73,7 @@ class JobsEff_Command(Command):
       }
     """
     
-    super(JobsEff_Command, self).doCommand()
+#    super(JobsEff_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
     try:
@@ -83,14 +83,14 @@ class JobsEff_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : S_OK( res ) }   
+    return S_OK( res )   
 
 ################################################################################
 ################################################################################
 
-class SystemCharge_Command(Command):
+class SystemChargeCommand(Command):
   
   __APIs__ = [ 'JobsClient' ]
   
@@ -104,7 +104,7 @@ class SystemCharge_Command(Command):
           }
     """
     
-    super(SystemCharge_Command, self).doCommand()
+#    super(SystemCharge_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs ) 
      
     try:
@@ -114,16 +114,16 @@ class SystemCharge_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : S_OK( res ) }   
+    return S_OK( res )   
        
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class JobsEffSimple_Command(Command):
+class JobsEffSimpleCommand(Command):
   
   __APIs__ = [ 'ResourceStatusClient', 'JobsClient' ]
   
@@ -142,7 +142,7 @@ class JobsEffSimple_Command(Command):
       }
     """
     
-    super (JobsEffSimple_Command, self).doCommand()
+#    super (JobsEffSimple_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
 
     try:
@@ -155,7 +155,7 @@ class JobsEffSimple_Command(Command):
         name        = self.args[1]
         granularity = self.args[0]
       else:
-        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
+        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
          
       res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( name )
      
@@ -167,16 +167,16 @@ class JobsEffSimple_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class JobsEffSimpleCached_Command(Command):
+class JobsEffSimpleCachedCommand(Command):
   
   __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
   
@@ -195,7 +195,7 @@ class JobsEffSimpleCached_Command(Command):
       }
     """
     
-    super(JobsEffSimpleCached_Command, self).doCommand()
+#    super(JobsEffSimpleCached_Command, self).doCommand()
     self.APIs = initAPIs( self.__APIs__, self.APIs )
       
     try:  
@@ -208,7 +208,7 @@ class JobsEffSimpleCached_Command(Command):
         name        = self.args[1]
         granularity = self.args[0]
       else:
-        return { 'Result' : S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] ) }
+        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
      
       clientDict = { 
                      'name'        : name,
@@ -230,11 +230,11 @@ class JobsEffSimpleCached_Command(Command):
     except Exception, e:
       _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
       gLogger.exception( _msg )
-      return { 'Result' : S_ERROR( _msg ) }
+      return S_ERROR( _msg )
 
-    return { 'Result' : res }
+    return res
 
-  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
