@@ -21,7 +21,6 @@ class SpaceTokenOccupancyCommand( Command ):
     '''
     Run the command.
     '''
-    #super( SpaceTokenOccupancyCommand, self ).doCommand()
 
     if not 'spaceTokenEndpoint' in self.args:
       return S_ERROR( '"spaceTokenEndpoint" not found in self.args' )
@@ -36,10 +35,10 @@ class SpaceTokenOccupancyCommand( Command ):
     if occupancy[ 0 ] != 0:
       return S_ERROR( occupancy )  
     
-    output     = occupancy[1][0]
-    total      = float( output[ 'totalsize' ] ) / 1e12 # Bytes to Terabytes
-    guaranteed = float( output[ 'guaranteedsize' ] ) / 1e12
-    free       = float( output[ 'unusedsize' ] ) / 1e12
+    output     = occupancy[ 1 ][ 0 ]
+    total      = float( output.get( 'totalsize', '-1' ) ) / 1e12 # Bytes to Terabytes
+    guaranteed = float( output.get( 'guaranteedsize' ) ) / 1e12
+    free       = float( output.get( 'unusedsize' ) ) / 1e12
       
     result = S_OK( 
                   { 
