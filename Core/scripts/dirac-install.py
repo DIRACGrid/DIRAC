@@ -761,7 +761,7 @@ def logNOTICE( msg ):
 def alarmTimeoutHandler( *args ):
   raise Exception( 'Timeout' )
 
-def urlretrieveTimeout( url, fileName='', timeout = 0 ):
+def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
   """
    Retrieve remote url to local file, with timeout wrapper
   """
@@ -793,7 +793,7 @@ def urlretrieveTimeout( url, fileName='', timeout = 0 ):
       receivedBytes += len( data )
       if fileName:
         localFD.write( data )
-      else:  
+      else:
         urlData += data
       data = remoteFD.read( 16384 )
       if count % 100 == 0:
@@ -803,7 +803,7 @@ def urlretrieveTimeout( url, fileName='', timeout = 0 ):
       count += 1
     if progressBar:
       print
-    if fileName:  
+    if fileName:
       localFD.close()
     remoteFD.close()
     if receivedBytes != expectedBytes:
@@ -824,10 +824,10 @@ def urlretrieveTimeout( url, fileName='', timeout = 0 ):
 
   if timeout:
     signal.alarm( 0 )
-    
+
   if fileName:
-    return True  
-  else:  
+    return True
+  else:
     return urlData
 
 def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache = False ):
@@ -1246,6 +1246,7 @@ def createBashrc():
     bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
     if cliParams.useVersionsDir:
       bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
+      proPath = os.path.join( cliParams.basePath, 'pro' )
     logNOTICE( 'Creating %s' % bashrcFile )
     if not os.path.exists( bashrcFile ):
       lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
@@ -1297,6 +1298,7 @@ def createCshrc():
     cshrcFile = os.path.join( cliParams.targetPath, 'cshrc' )
     if cliParams.useVersionsDir:
       cshrcFile = os.path.join( cliParams.basePath, 'cshrc' )
+      proPath = os.path.join( cliParams.basePath, 'pro' )
     logNOTICE( 'Creating %s' % cshrcFile )
     if not os.path.exists( cshrcFile ):
       lines = [ '# DIRAC cshrc file, used by clients to set up the environment',
