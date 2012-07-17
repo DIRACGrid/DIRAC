@@ -10,9 +10,17 @@ import datetime
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName, getDIRACSiteName
-from DIRAC.ResourceStatusSystem.Command.Command   import *
-from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
+from DIRAC.ResourceStatusSystem.Command.Command   import Command
+#from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
+#from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
+
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.JobsClient           import JobsClient
+from DIRAC.ResourceStatusSystem.Client.PilotsClient         import PilotsClient
+from DIRAC.Core.LCG.GOCDBClient                   import GOCDBClient
+
+from DIRAC.Core.DISET.RPCClient import RPCClient
+
 
 __RCSID__ = '$Id:  $'
 
@@ -21,9 +29,28 @@ __RCSID__ = '$Id:  $'
 
 class JobsEffSimpleEveryOneCommand( Command ):
 
-  __APIs__ = [ 'ResourceStatusClient', 'JobsClient', 'WMSAdministrator' ]
+#  __APIs__ = [ 'ResourceStatusClient', 'JobsClient', 'WMSAdministrator' ]
 
-  def doCommand( self, sites = None ):
+  def __init__( self, args = None, clients = None ):
+    
+    super( JobsEffSimpleEveryOneCommand, self ).__init__( args, clients )
+    
+    if 'ResourceStatusClient' in self.APIs:
+      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    else:
+      self.rsClient = ResourceStatusClient() 
+
+    if 'JobsClient' in self.APIs:
+      self.jClient = self.APIs[ 'JobsClient' ]
+    else:
+      self.jClient = JobsClient() 
+    
+    if 'WMSAdministrator' in self.APIs:
+      self.wClient = self.APIs[ 'WMSAdministrator' ]
+    else:
+      self.wClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+    
+  def doCommand( self ):
     """ 
     Returns simple jobs efficiency for all the sites in input.
         
@@ -34,32 +61,37 @@ class JobsEffSimpleEveryOneCommand( Command ):
       {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
     """
 
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try:
+    sites = None
 
-      if sites is None:
-        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' } )
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+
+#    try:
+
+    if sites is None:
+      sites = self.rsClient.getSite( meta = { 'columns' : 'SiteName' } )
         
-        if not sites['OK']:
-          return sites
+      if not sites['OK']:
+        return sites
          
-        sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
+      sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
 
-      res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( sites, self.APIs[ 'WMSAdministrator' ] )
-      if res is None:
-        res = []
+    res = self.jClient.getJobsSimpleEff( sites, self.wClient )
+    if res is None:
+      res = []
 
-      resToReturn = {}
-      for site in res:
-        resToReturn[ site ] = { 'JE_S' : res[ site ] }
+    resToReturn = {}
+    for site in res:
+      resToReturn[ site ] = { 'JE_S' : res[ site ] }
 
-      res = S_OK( resToReturn )
+    res = S_OK( resToReturn )
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res 
 
@@ -70,9 +102,28 @@ class JobsEffSimpleEveryOneCommand( Command ):
 
 class PilotsEffSimpleEverySitesCommand( Command ):
 
-  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient', 'WMSAdministrator' ]
+#  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient', 'WMSAdministrator' ]
 
-  def doCommand( self, sites = None ):
+  def __init__( self, args = None, clients = None ):
+    
+    super( PilotsEffSimpleEverySitesCommand, self ).__init__( args, clients )
+    
+    if 'ResourceStatusClient' in self.APIs:
+      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    else:
+      self.rsClient = ResourceStatusClient() 
+
+    if 'PilotsClient' in self.APIs:
+      self.pClient = self.APIs[ 'PilotsClient' ]
+    else:
+      self.pClient = PilotsClient() 
+    
+    if 'WMSAdministrator' in self.APIs:
+      self.wClient = self.APIs[ 'WMSAdministrator' ]
+    else:
+      self.wClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+
+  def doCommand( self ):
     """ 
     Returns simple pilots efficiency for all the sites and resources in input.
         
@@ -83,31 +134,36 @@ class PilotsEffSimpleEverySitesCommand( Command ):
       {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
 
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try:
+    sites = None
 
-      if sites is None:
-        sites = self.APIs[ 'ResourceStatusClient' ].getSite( meta = { 'columns' : 'SiteName' })
-        if not sites['OK']:
-          return sites
-        sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
 
-      res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff( 'Site', sites, None, self.APIs[ 'WMSAdministrator' ] )
-      if res is None:
-        res = []
+#    try:
 
-      resToReturn = {}
+    if sites is None:
+      sites = self.rsClient.getSite( meta = { 'columns' : 'SiteName' })
+      if not sites['OK']:
+        return sites
+      sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
 
-      for site in res:
-        resToReturn[site] = { 'PE_S' : res[ site ] }
+    res = self.pClient.getPilotsSimpleEff( 'Site', sites, None, self.wClient )
+    if res is None:
+      res = []
 
-      res = S_OK( resToReturn )
+    resToReturn = {}
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+    for site in res:
+      resToReturn[site] = { 'PE_S' : res[ site ] }
+
+    res = S_OK( resToReturn )
+
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res 
 
@@ -195,9 +251,23 @@ class PilotsEffSimpleEverySitesCommand( Command ):
 
 class DTEverySitesCommand( Command ):
 
-  __APIs__ = [ 'ResourceStatusClient', 'GOCDBClient' ]
+#  __APIs__ = [ 'ResourceStatusClient', 'GOCDBClient' ]
 
-  def doCommand( self, sites = None ):
+  def __init__( self, args = None, clients = None ):
+    
+    super( DTEverySitesCommand, self ).__init__( args, clients )
+    
+    if 'ResourceStatusClient' in self.APIs:
+      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    else:
+      self.rsClient = ResourceStatusClient() 
+
+    if 'GOCDBClient' in self.APIs:
+      self.gClient = self.APIs[ 'GOCDBClient' ]
+    else:
+      self.gClient = GOCDBClient() 
+
+  def doCommand( self ):
     """ 
     Returns downtimes information for all the sites in input.
         
@@ -209,59 +279,64 @@ class DTEverySitesCommand( Command ):
                     'StartDate': 'aDate', ...} ... }
     """
 
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try:
+    sites = None
+
+    if 'sites' in self.args:
+      sites = self.args[ 'sites' ] 
+
+#    try:
       
-      if sites is None:
-        GOC_sites = self.APIs[ 'ResourceStatusClient' ].getGridSite( meta = { 'columns' : 'GridSiteName' })
-        if not GOC_sites['OK']:
-          return GOC_sites
-        GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
-      else:
-        GOC_sites = [ getGOCSiteName( x )['Value'] for x in sites ]
+    if sites is None:
+      GOC_sites = self.rsClient.getGridSite( meta = { 'columns' : 'GridSiteName' })
+      if not GOC_sites['OK']:
+        return GOC_sites
+      GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
+    else:
+      GOC_sites = [ getGOCSiteName( x )['Value'] for x in sites ]
 
-      resGOC = self.APIs[ 'GOCDBClient' ].getStatus( 'Site', GOC_sites, None, 120 )
+    resGOC = self.gClient.getStatus( 'Site', GOC_sites, None, 120 )
 
-      if not resGOC['OK']:
-        return resGOC
+    if not resGOC['OK']:
+      return resGOC
       
-      resGOC = resGOC['Value']
+    resGOC = resGOC['Value']
 
-      if resGOC == None:
-        resGOC = []
+    if resGOC == None:
+      resGOC = []
 
-      res = {}
+    res = {}
 
-      for dt_ID in resGOC:
+    for dt_ID in resGOC:
         
-        try:
+      try:
           
-          dt                = {}
-          dt['ID']          = dt_ID
-          dt['StartDate']   = resGOC[dt_ID]['FORMATED_START_DATE']
-          dt['EndDate']     = resGOC[dt_ID]['FORMATED_END_DATE']
-          dt['Severity']    = resGOC[dt_ID]['SEVERITY']
-          dt['Description'] = resGOC[dt_ID]['DESCRIPTION'].replace( '\'', '' )
-          dt['Link']        = resGOC[dt_ID]['GOCDB_PORTAL_URL']
+        dt                = {}
+        dt['ID']          = dt_ID
+        dt['StartDate']   = resGOC[dt_ID]['FORMATED_START_DATE']
+        dt['EndDate']     = resGOC[dt_ID]['FORMATED_END_DATE']
+        dt['Severity']    = resGOC[dt_ID]['SEVERITY']
+        dt['Description'] = resGOC[dt_ID]['DESCRIPTION'].replace( '\'', '' )
+        dt['Link']        = resGOC[dt_ID]['GOCDB_PORTAL_URL']
         
-          DIRACnames = getDIRACSiteName( res[dt_ID]['SITENAME'] )
+        DIRACnames = getDIRACSiteName( res[dt_ID]['SITENAME'] )
           
-          if not DIRACnames['OK']:
-            return DIRACnames
+        if not DIRACnames['OK']:
+          return DIRACnames
           
-          for DIRACname in DIRACnames['Value']:
-            res[dt_ID.split()[0] + ' ' + DIRACname] = dt
+        for DIRACname in DIRACnames['Value']:
+          res[dt_ID.split()[0] + ' ' + DIRACname] = dt
             
-        except KeyError:
-          continue
+      except KeyError:
+        continue
 
-      res = S_OK( res )        
+    res = S_OK( res )        
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res 
 
@@ -272,7 +347,21 @@ class DTEverySitesCommand( Command ):
 
 class DTEveryResourcesCommand( Command ):
 
-  __APIs__ = [ 'ResourceStatusClient', 'GOCDBClient' ]
+#  __APIs__ = [ 'ResourceStatusClient', 'GOCDBClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( DTEveryResourcesCommand, self ).__init__( args, clients )
+    
+    if 'ResourceStatusClient' in self.APIs:
+      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    else:
+      self.rsClient = ResourceStatusClient() 
+
+    if 'GOCDBClient' in self.APIs:
+      self.gClient = self.APIs[ 'GOCDBClient' ]
+    else:
+      self.gClient = GOCDBClient() 
 
   def doCommand( self, resources = None ):
     """ 
@@ -286,45 +375,45 @@ class DTEveryResourcesCommand( Command ):
                     'StartDate': 'aDate', ...} ... }
     """
 
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try:
+#    try:
 
-      if resources is None:
-        meta = { 'columns' : 'ResourceName' }
-        resources = self.APIs[ 'ResourceStatusClient' ].getResource( meta = meta )
-        if not resources['OK']:
-          return resources
-        resources = [ re[0] for re in resources['Value'] ]
+    if resources is None:
+      meta = { 'columns' : 'ResourceName' }
+      resources = self.rsClient.getResource( meta = meta )
+      if not resources['OK']:
+        return resources
+      resources = [ re[0] for re in resources['Value'] ]
 
-      resGOC = self.APIs[ 'GOCDBClient' ].getStatus( 'Resource', resources, None, 120 )
+    resGOC = self.gClient.getStatus( 'Resource', resources, None, 120 )
     
-      if not resGOC['OK']:
-        return resGOC
+    if not resGOC['OK']:
+      return resGOC
     
-      resGOC = resGOC['Value']
+    resGOC = resGOC['Value']
 
-      if resGOC == None:
-        resGOC = []
+    if resGOC == None:
+      resGOC = []
 
-      res = {}
+    res = {}
 
-      for dt_ID in resGOC:
-        dt                 = {}
-        dt['ID']           = dt_ID
-        dt['StartDate']    = resGOC[dt_ID]['FORMATED_START_DATE']
-        dt['EndDate']      = resGOC[dt_ID]['FORMATED_END_DATE']
-        dt['Severity']     = resGOC[dt_ID]['SEVERITY']
-        dt['Description']  = resGOC[dt_ID]['DESCRIPTION'].replace( '\'', '' )
-        dt['Link']         = resGOC[dt_ID]['GOCDB_PORTAL_URL']
-        res[dt_ID] = dt
+    for dt_ID in resGOC:
+      dt                 = {}
+      dt['ID']           = dt_ID
+      dt['StartDate']    = resGOC[dt_ID]['FORMATED_START_DATE']
+      dt['EndDate']      = resGOC[dt_ID]['FORMATED_END_DATE']
+      dt['Severity']     = resGOC[dt_ID]['SEVERITY']
+      dt['Description']  = resGOC[dt_ID]['DESCRIPTION'].replace( '\'', '' )
+      dt['Link']         = resGOC[dt_ID]['GOCDB_PORTAL_URL']
+      res[dt_ID] = dt
 
-      res = S_OK( res )
+    res = S_OK( res )
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res 
 

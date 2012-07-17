@@ -6,10 +6,14 @@
   
 '''
 
-from DIRAC                                           import gLogger, S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Command.Command      import Command
-from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
+from DIRAC                                                      import gLogger, S_OK, S_ERROR
+from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+#from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
 #from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+from DIRAC.ResourceStatusSystem.Client.PilotsClient             import PilotsClient 
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient 
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient 
+
 
 __RCSID__ = '$Id:  $'
 
@@ -18,24 +22,30 @@ __RCSID__ = '$Id:  $'
 
 class PilotsStatsCommand( Command ):
 
-  __APIs__ = [ 'PilotsClient' ]
+#  __APIs__ = [ 'PilotsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( PilotsStatsCommand, self ).__init__( args, clients )
+    
+    if 'PilotsClient' in self.APIs:
+      self.pClient = self.APIs[ 'PilotsClient' ]
+    else:
+      self.pClient = PilotsClient()     
 
   def doCommand( self ):
     """
     Return getPilotStats from Pilots Client
     """
     
-#    super( PilotsStats_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-    try:
+#    try:
       
-      res = self.APIs[ 'PilotsClient' ].getPilotsStats( self.args[0], self.args[1], self.args[2] )
+    res = self.pClient.getPilotsStats( self.args[0], self.args[1], self.args[2] )
       
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
 
@@ -46,7 +56,16 @@ class PilotsStatsCommand( Command ):
 
 class PilotsEffCommand( Command ):
 
-  __APIs__ = [ 'PilotsClient' ]
+#  __APIs__ = [ 'PilotsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( PilotsEffCommand, self ).__init__( args, clients )
+    
+    if 'PilotsClient' in self.APIs:
+      self.pClient = self.APIs[ 'PilotsClient' ]
+    else:
+      self.pClient = PilotsClient()  
 
   def doCommand( self ):
     """
@@ -54,16 +73,16 @@ class PilotsEffCommand( Command ):
     """
     
 #    super( PilotsEff_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try:
+#    try:
       
-      res = self.APIs[ 'PilotsClient' ].getPilotsEff( self.args[0], self.args[1], self.args[2] )
+    res = self.pClient.getPilotsEff( self.args[0], self.args[1], self.args[2] )
        
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
   
@@ -74,7 +93,21 @@ class PilotsEffCommand( Command ):
 
 class PilotsEffSimpleCommand( Command ):
 
-  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient' ]
+#  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( PilotsEffSimpleCommand, self ).__init__( args, clients )
+    
+    if 'ResourceStatusClient' in self.APIs:
+      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    else:
+      self.rsClient = ResourceStatusClient()      
+    
+    if 'PilotsClient' in self.APIs:
+      self.pClient = self.APIs[ 'PilotsClient' ]
+    else:
+      self.pClient = PilotsClient()  
 
   def doCommand( self, RSClientIn = None ):
     """
@@ -92,32 +125,32 @@ class PilotsEffSimpleCommand( Command ):
     """
     
 #    super( PilotsEffSimple_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-    try:
+#    try:
 
-      if self.args[ 0 ] == 'Service':
-        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )
-        name        = name[ 'Value' ][ 0 ]
-        granularity = 'Site'
-      elif self.args[0] in [ 'Site', 'Resource' ]:
-        name        = self.args[1]
-        granularity = self.args[0]
-      else:
-        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+    if self.args[ 0 ] == 'Service':
+      name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
+      name        = name[ 'Value' ][ 0 ]
+      granularity = 'Site'
+    elif self.args[0] in [ 'Site', 'Resource' ]:
+      name        = self.args[1]
+      granularity = self.args[0]
+    else:
+      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
 
-      res = self.APIs[ 'PilotsClient' ].getPilotsSimpleEff( granularity, name )
-      if res is None:
-        res = 'Idle'
-      elif res[ name ] is None:
-        res = 'Idle'
-      else:
-        res = res[ name ] 
+    res = self.pClient.getPilotsSimpleEff( granularity, name )
+    if res is None:
+      res = 'Idle'
+    elif res[ name ] is None:
+      res = 'Idle'
+    else:
+      res = res[ name ] 
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return S_OK( res )
 
@@ -128,7 +161,21 @@ class PilotsEffSimpleCommand( Command ):
 
 class PilotsEffSimpleCachedCommand( Command ):
 
-  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+#  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( PilotsEffSimpleCachedCommand, self ).__init__( args, clients )
+    
+    if 'ResourceStatusClient' in self.APIs:
+      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    else:
+      self.rsClient = ResourceStatusClient()      
+    
+    if 'ResourceManagementClient' in self.APIs:
+      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+    else:
+      self.emClient = ResourceManagementClient()  
 
   def doCommand( self ):
     """
@@ -146,41 +193,41 @@ class PilotsEffSimpleCachedCommand( Command ):
     """
     
 #    super( PilotsEffSimpleCached_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-    try:
+#    try:
 
-      if self.args[0] == 'Service':
-        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )
-        name        = name[ 'Value' ][ 0 ]
-        granularity = 'Site'
-      elif self.args[0] == 'Site':
-        name        = self.args[1]
-        granularity = self.args[0]
+    if self.args[0] == 'Service':
+      name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
+      name        = name[ 'Value' ][ 0 ]
+      granularity = 'Site'
+    elif self.args[0] == 'Site':
+      name        = self.args[1]
+      granularity = self.args[0]
+    else:
+      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+
+    clientDict = { 
+                  'name'        : name,
+                  'commandName' : 'PilotsEffSimpleEverySites',
+                  'value'       : 'PE_S',
+                  'opt_ID'      : 'NULL',
+                  'meta'        : { 'columns'     : 'Result' }
+                  }
+      
+    res = self.rmClient.getClientCache( **clientDict )
+      
+    if res[ 'OK' ]:               
+      res = res[ 'Value' ] 
+      if res == None or res == []:
+        res = S_OK( 'Idle' )
       else:
-        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+        res = S_OK( res[ 0 ] )
 
-      clientDict = { 
-                     'name'        : name,
-                     'commandName' : 'PilotsEffSimpleEverySites',
-                     'value'       : 'PE_S',
-                     'opt_ID'      : 'NULL',
-                     'meta'        : { 'columns'     : 'Result' }
-                   }
-      
-      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )
-      
-      if res[ 'OK' ]:               
-        res = res[ 'Value' ] 
-        if res == None or res == []:
-          res = S_OK( 'Idle' )
-        else:
-          res = S_OK( res[ 0 ] )
-
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
 

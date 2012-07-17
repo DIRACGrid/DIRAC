@@ -7,18 +7,31 @@
 '''
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Command.Command      import *
-from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
+from DIRAC.ResourceStatusSystem.Command.Command      import Command
+#from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
 #from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+
 
 __RCSID__ = '$Id:  $'
 
 ################################################################################
 ################################################################################
 
-class JobsStatsCommand(Command):
+class JobsStatsCommand( Command ):
   
-  __APIs__ = [ 'JobsClient' ]
+#  __APIs__ = [ 'JobsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( JobsStatsCommand, self ).__init__( args, clients )
+    
+    if 'JobsClient' in self.APIs:
+      self.jClient = self.APIs[ 'JobsClient' ]
+    else:
+      self.jClient = JobsClient()  
   
   def doCommand(self):
     """ 
@@ -36,16 +49,16 @@ class JobsStatsCommand(Command):
     """
 
 #    super(JobsStats_Command, self).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
       
-    try:
+#    try:
 
-      res = self.APIs[ 'JobsClient' ].getJobsStats( self.args[0], self.args[1], self.args[2] )
+    res = self.jClient.getJobsStats( self.args[0], self.args[1], self.args[2] )
       
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return S_OK( res )   
 
@@ -54,11 +67,20 @@ class JobsStatsCommand(Command):
 ################################################################################
 ################################################################################
 
-class JobsEffCommand(Command):
+class JobsEffCommand( Command ):
 
-  __APIs__ = [ 'JobsClient' ]  
+#  __APIs__ = [ 'JobsClient' ]  
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( JobsEffCommand, self ).__init__( args, clients )
+    
+    if 'JobsClient' in self.APIs:
+      self.jClient = self.APIs[ 'JobsClient' ]
+    else:
+      self.jClient = JobsClient()  
   
-  def doCommand(self):
+  def doCommand( self ):
     """ 
     Return getJobsEff from Jobs Client  
     
@@ -74,25 +96,34 @@ class JobsEffCommand(Command):
     """
     
 #    super(JobsEff_Command, self).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )    
 
-    try:
+#    try:
       
-      res = self.APIs[ 'JobsClient' ].getJobsEff( self.args[0], self.args[1], self.args[2] )
+    res = self.jClient.getJobsEff( self.args[0], self.args[1], self.args[2] )
        
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return S_OK( res )   
 
 ################################################################################
 ################################################################################
 
-class SystemChargeCommand(Command):
+class SystemChargeCommand( Command ):
   
-  __APIs__ = [ 'JobsClient' ]
+#  __APIs__ = [ 'JobsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( SystemChargeCommand, self ).__init__( args, clients )
+    
+    if 'JobsClient' in self.APIs:
+      self.jClient = self.APIs[ 'JobsClient' ]
+    else:
+      self.jClient = JobsClient()  
   
   def doCommand(self):
     """ Returns last hour system charge, and the system charge of an hour before
@@ -105,16 +136,16 @@ class SystemChargeCommand(Command):
     """
     
 #    super(SystemCharge_Command, self).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs ) 
+#    self.APIs = initAPIs( self.__APIs__, self.APIs ) 
      
-    try:
+#    try:
       
-      res = self.APIs[ 'JobsClient' ].getSystemCharge()
+    res = self.jClient.getSystemCharge()
        
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return S_OK( res )   
        
@@ -123,11 +154,25 @@ class SystemChargeCommand(Command):
 ################################################################################
 ################################################################################
 
-class JobsEffSimpleCommand(Command):
+class JobsEffSimpleCommand( Command ):
   
-  __APIs__ = [ 'ResourceStatusClient', 'JobsClient' ]
+#  __APIs__ = [ 'ResourceStatusClient', 'JobsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( JobsEffSimpleCommand, self ).__init__( args, clients )
+    
+    if 'JobsClient' in self.APIs:
+      self.jClient = self.APIs[ 'JobsClient' ]
+    else:
+      self.jClient = JobsClient()  
+      
+    if 'ResourceStatusClient' in self.APIs:
+      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    else:
+      self.rsClient = ResourceStatusClient()  
   
-  def doCommand(self ):
+  def doCommand( self ):
     """ 
     Returns simple jobs efficiency
 
@@ -143,31 +188,31 @@ class JobsEffSimpleCommand(Command):
     """
     
 #    super (JobsEffSimple_Command, self).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try:
+#    try:
     
-      if self.args[0] == 'Service':
-        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )    
-        name        = name[ 'Value' ][ 0 ]
-        granularity = 'Site'
-      elif self.args[0] == 'Site':
-        name        = self.args[1]
-        granularity = self.args[0]
-      else:
-        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+    if self.args[0] == 'Service':
+      name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )    
+      name        = name[ 'Value' ][ 0 ]
+      granularity = 'Site'
+    elif self.args[0] == 'Site':
+      name        = self.args[1]
+      granularity = self.args[0]
+    else:
+      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
          
-      res = self.APIs[ 'JobsClient' ].getJobsSimpleEff( name )
+    res = self.jClient.getJobsSimpleEff( name )
      
-      if res == None:
-        res = S_OK( 'Idle' )
-      else:
-        res = S_OK( res[ name ] ) 
+    if res == None:
+      res = S_OK( 'Idle' )
+    else:
+      res = S_OK( res[ name ] ) 
     
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
 
@@ -176,11 +221,25 @@ class JobsEffSimpleCommand(Command):
 ################################################################################
 ################################################################################
 
-class JobsEffSimpleCachedCommand(Command):
+class JobsEffSimpleCachedCommand( Command ):
   
-  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+#  __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( JobsEffSimpleCachedCommand, self ).__init__( args, clients )
+          
+    if 'ResourceStatusClient' in self.APIs:
+      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+    else:
+      self.rsClient = ResourceStatusClient()  
   
-  def doCommand(self):
+    if 'ResourceManagementClient' in self.APIs:
+      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+    else:
+      self.rmClient = ResourceManagementClient()   
+  
+  def doCommand( self ):
     """ 
     Returns simple jobs efficiency
 
@@ -196,41 +255,41 @@ class JobsEffSimpleCachedCommand(Command):
     """
     
 #    super(JobsEffSimpleCached_Command, self).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
       
-    try:  
+#    try:  
       
-      if self.args[0] == 'Service':
-        name = self.APIs[ 'ResourceStatusClient' ].getGeneralName( self.args[0], self.args[1], 'Site' )
-        name        = name[ 'Value' ][ 0 ]
-        granularity = 'Site'
-      elif self.args[0] == 'Site':
-        name        = self.args[1]
-        granularity = self.args[0]
-      else:
-        return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
+    if self.args[0] == 'Service':
+      name = self.rsClient.getGeneralName( self.args[0], self.args[1], 'Site' )
+      name        = name[ 'Value' ][ 0 ]
+      granularity = 'Site'
+    elif self.args[0] == 'Site':
+      name        = self.args[1]
+      granularity = self.args[0]
+    else:
+      return S_ERROR( '%s is not a valid granularity' % self.args[ 0 ] )
      
-      clientDict = { 
-                     'name'        : name,
-                     'commandName' : 'JobsEffSimpleEveryOne',
-                     'value'       : 'JE_S',
-                     'opt_ID'      : 'NULL',
-                     'meta'        : { 'columns'     : 'Result' }
-                   }
+    clientDict = { 
+                  'name'        : name,
+                  'commandName' : 'JobsEffSimpleEveryOne',
+                  'value'       : 'JE_S',
+                  'opt_ID'      : 'NULL',
+                  'meta'        : { 'columns'     : 'Result' }
+                  }
       
-      res = self.APIs[ 'ResourceManagementClient' ].getClientCache( **clientDict )
+    res = self.rmClient.getClientCache( **clientDict )
       
-      if res[ 'OK' ]:
-        res = res[ 'Value' ]
-        if res == None or res == []:
-          res = S_OK( 'Idle' )
-        else:
-          res = S_OK( res[ 0 ] )
+    if res[ 'OK' ]:
+      res = res[ 'Value' ]
+      if res == None or res == []:
+        res = S_OK( 'Idle' )
+      else:
+        res = S_OK( res[ 0 ] )
         
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
 

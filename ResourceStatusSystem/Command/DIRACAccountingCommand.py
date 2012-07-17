@@ -9,9 +9,13 @@
 from datetime                                        import datetime, timedelta
 
 from DIRAC                                           import gLogger, S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Command.Command      import *
-from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
-from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+from DIRAC.ResourceStatusSystem.Command.Command      import Command
+#from DIRAC.ResourceStatusSystem.Command.knownAPIs    import initAPIs
+#from DIRAC.ResourceStatusSystem.Utilities.Utils      import where
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+
 
 __RCSID__ = '$Id:  $'
 
@@ -20,7 +24,21 @@ __RCSID__ = '$Id:  $'
 
 class DIRACAccountingCommand( Command ):
   
-  __APIs__ = [ 'ReportGenerator', 'ReportsClient' ]
+#  __APIs__ = [ 'ReportGenerator', 'ReportsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( DIRACAccountingCommand, self ).__init__( args, clients )
+    
+    if 'ReportGenerator' in self.APIs:
+      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    else:
+      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
+
+    if 'ReportsClient' in self.APIs:
+      self.rClient = self.APIs[ 'ReportsClient' ]
+    else:
+      self.rClient = ReportsClient() 
   
   def doCommand( self ):
     """ 
@@ -43,47 +61,47 @@ class DIRACAccountingCommand( Command ):
     """
     
 #    super( DIRACAccounting_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
-    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
+    self.rClient.rpcClient = self.rgClient
 
-    try:
+#    try:
 
-      granularity = self.args[0]
-      name        = self.args[1]
-      accounting  = self.args[2]
-      plot        = self.args[3]
-      period      = self.args[4]
-      grouping    = self.args[5]
-    
-      if period[ 'Format' ] == 'LastHours':
-        fromT = datetime.utcnow() - timedelta( hours = period[ 'hours' ] )
-        toT   = datetime.utcnow()
-      elif period[ 'Format' ] == 'Periods':
-        #TODO
-        pass
+    granularity = self.args[0]
+    name        = self.args[1]
+    accounting  = self.args[2]
+    plot        = self.args[3]
+    period      = self.args[4]
+    grouping    = self.args[5]
+   
+    if period[ 'Format' ] == 'LastHours':
+      fromT = datetime.utcnow() - timedelta( hours = period[ 'hours' ] )
+      toT   = datetime.utcnow()
+    elif period[ 'Format' ] == 'Periods':
+      #TODO
+      pass
         
-      if self.args[6] is not None:
-        conditions = self.args[6]
-      else:
-        conditions = {}
-        if accounting == 'Job' or accounting == 'Pilot':
-          if granularity == 'Resource':
-            conditions[ 'GridCE' ] = [ name ]
-          elif granularity == 'Service':
-            conditions[ 'Site' ] = [ name.split('@').pop() ]
-          elif granularity == 'Site':
-            conditions[ 'Site' ] = [ name ]
-          else:
-            return { 'Result' : S_ERROR( '%s is not a valid granularity' % granularity ) }
-        elif accounting == 'DataOperation':
-          conditions[ 'Destination' ] = [ name ]
+    if self.args[6] is not None:
+      conditions = self.args[6]
+    else:
+      conditions = {}
+      if accounting == 'Job' or accounting == 'Pilot':
+        if granularity == 'Resource':
+          conditions[ 'GridCE' ] = [ name ]
+        elif granularity == 'Service':
+          conditions[ 'Site' ] = [ name.split('@').pop() ]
+        elif granularity == 'Site':
+          conditions[ 'Site' ] = [ name ]
+        else:
+          return S_ERROR( '%s is not a valid granularity' % granularity )
+      elif accounting == 'DataOperation':
+        conditions[ 'Destination' ] = [ name ]
 
-      res = self.APIs[ 'ReportsClient' ].getReport( accounting, plot, fromT, toT, conditions, grouping )
+    res = self.rClient.getReport( accounting, plot, fromT, toT, conditions, grouping )
     
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res      
 
@@ -94,7 +112,21 @@ class DIRACAccountingCommand( Command ):
 
 class TransferQualityCommand( Command ):
 
-  __APIs__ = [ 'ReportGenerator', 'ReportsClient' ]
+#  __APIs__ = [ 'ReportGenerator', 'ReportsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( TransferQualityCommand, self ).__init__( args, clients )
+    
+    if 'ReportGenerator' in self.APIs:
+      self.rgClient = self.APIs[ 'ReportGenerator' ]
+    else:
+      self.rgClient = RPCClient( 'Accounting/ReportGenerator' ) 
+
+    if 'ReportsClient' in self.APIs:
+      self.rClient = self.APIs[ 'ReportsClient' ]
+    else:
+      self.rClient = ReportsClient() 
 
   def doCommand( self ):
     """ 
@@ -113,46 +145,46 @@ class TransferQualityCommand( Command ):
       {'Result': None | a float between 0.0 and 100.0}
     """
 #    super( TransferQuality_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )    
-    self.APIs[ 'ReportsClient' ].rpcClient = self.APIs[ 'ReportGenerator' ]
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )    
+    self.rClient.rpcClient = self.rgClient
 
-    try:
+#    try:
 
-      if self.args[2] is None:
-        fromD = datetime.utcnow()-timedelta(hours = 2)
-      else:
-        fromD = self.args[2]
+    if self.args[2] is None:
+      fromD = datetime.utcnow()-timedelta( hours = 2 )
+    else:
+      fromD = self.args[2]
 
-      if self.args[3] is None:
-        toD = datetime.utcnow()
-      else:
-        toD = self.args[3]
+    if self.args[3] is None:
+      toD = datetime.utcnow()
+    else:
+      toD = self.args[3]
 
-      res = self.APIs[ 'ReportsClient' ].getReport( 'DataOperation', 'Quality', fromD, toD, 
+    res = self.rClient.getReport( 'DataOperation', 'Quality', fromD, toD, 
                                           { 'OperationType': 'putAndRegister', 
                                             'Destination'  : [ self.args[1] ] }, 
                                           'Channel' )
       
-      if res['OK']:
+    if res['OK']:
     
-        pr_q_d = res[ 'Value' ][ 'data' ]
+      pr_q_d = res[ 'Value' ][ 'data' ]
     
-        values = []
-        if len( pr_q_d ) == 1:
-          for k in pr_q_d.keys():
-            for n in pr_q_d[ k ].values():
-              values.append( n )
-          res = S_OK( sum( values ) / len( values ) )    
+      values = []
+      if len( pr_q_d ) == 1:
+        for k in pr_q_d.keys():
+          for n in pr_q_d[ k ].values():
+            values.append( n )
+        res = S_OK( sum( values ) / len( values ) )    
 
-        else:
-          for n in pr_q_d['Total'].values():
-            values.append(n)
-          res = S_OK( sum( values ) / len( values ) )
+      else:
+        for n in pr_q_d['Total'].values():
+          values.append(n)
+        res = S_OK( sum( values ) / len( values ) )
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res      
   
@@ -200,7 +232,16 @@ class TransferQualityCommand( Command ):
 
 class CachedPlotCommand( Command ):
 
-  __APIs__ = [ 'ResourceManagementClient' ]
+#  __APIs__ = [ 'ResourceManagementClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( CachedPlotCommand, self ).__init__( args, clients )
+    
+    if 'ResourceManagementClient' in self.APIs:
+      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+    else:
+      self.rmClient = ResourceManagementClient() 
   
   def doCommand( self ):
     """ 
@@ -220,40 +261,40 @@ class CachedPlotCommand( Command ):
     """
 
 #    super( CachedPlot_Command, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs ) 
+#    self.APIs = initAPIs( self.__APIs__, self.APIs ) 
       
-    try:  
+#    try:  
       
-      granularity = self.args[0]
-      name        = self.args[1]
-      plotType    = self.args[2]
-      plotName    = self.args[3]
+    granularity = self.args[0]
+    name        = self.args[1]
+    plotType    = self.args[2]
+    plotName    = self.args[3]
     
-      if granularity == 'Service':
-        name = name.split('@')[1]
+    if granularity == 'Service':
+      name = name.split('@')[1]
     
-      accountingDict = { 
-                        'name'     : name,
-                        'plotType' : plotType,
-                        'plotName' : plotName
-                   }
-      kwargs     = { 'meta' : { 'columns'     : 'Result' } }
-      accountingDict.update( kwargs )  
+    accountingDict = { 
+                      'name'     : name,
+                      'plotType' : plotType,
+                      'plotName' : plotName
+                     }
+    kwargs     = { 'meta' : { 'columns'     : 'Result' } }
+    accountingDict.update( kwargs )  
       
-      res = self.APIs[ 'ResourceManagementClient' ].getAccountingCache( **accountingDict )
+    res = self.rmClient.getAccountingCache( **accountingDict )
       
-      if res[ 'OK' ]:      
-        res = res[ 'Value' ]
+    if res[ 'OK' ]:      
+      res = res[ 'Value' ]
       
-        if res == []:
-          res = S_OK( { 'data' : {}, 'granularity' : 900 } )
-        else:
-          res = S_OK( eval( res[0] ) )
+      if res == []:
+        res = S_OK( { 'data' : {}, 'granularity' : 900 } )
+      else:
+        res = S_OK( eval( res[0] ) )
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
 
@@ -262,11 +303,20 @@ class CachedPlotCommand( Command ):
 ################################################################################
 ################################################################################
 
-class TransferQualityFromCachedPlotCommand(Command):
+class TransferQualityFromCachedPlotCommand( Command ):
   
-  __APIs__ = [ 'ResourceManagementClient' ]
+#  __APIs__ = [ 'ResourceManagementClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( TransferQualityFromCachedPlotCommand, self ).__init__( args, clients )
+    
+    if 'ResourceManagementClient' in self.APIs:
+      self.rmClient = self.APIs[ 'ResourceManagementClient' ]
+    else:
+      self.rmClient = ResourceManagementClient() 
   
-  def doCommand(self):
+  def doCommand( self ):
     """ 
     Returns transfer quality from the plot cached in the accounting cache.
 
@@ -280,45 +330,45 @@ class TransferQualityFromCachedPlotCommand(Command):
     """
     
 #    super(TransferQualityFromCachedPlot_Command, self).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )     
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )     
 
-    try:
+#    try:
 
-      name        = self.args[1]
-      plotType    = self.args[2]
-      plotName    = self.args[3]
+    name        = self.args[1]
+    plotType    = self.args[2]
+    plotName    = self.args[3]
              
-      accountingDict = { 
-                        'name'     : name,
-                        'plotType' : plotType,
-                        'plotName' : plotName
-                   }
-      kwargs     = { 'meta' : { 'columns' : 'Result' } }
-      accountingDict.update( kwargs )  
+    accountingDict = { 
+                      'name'     : name,
+                      'plotType' : plotType,
+                      'plotName' : plotName
+                     }
+    kwargs     = { 'meta' : { 'columns' : 'Result' } }
+    accountingDict.update( kwargs )  
       
-      res = self.APIs[ 'ResourceManagementClient' ].getAccountingCache( **accountingDict )
+    res = self.rmClient.getAccountingCache( **accountingDict )
     
-      if res['OK']:
-        res = res[ 'Value']
+    if res['OK']:
+      res = res[ 'Value']
 
-        if res == []:
-          res = S_OK( None )
-        else: 
-          res = eval(res[0][0])
+      if res == []:
+        res = S_OK( None )
+      else: 
+        res = eval(res[0][0])
       
-          s,n = 0,0
-          SE = res[ 'data' ].keys()[ 0 ]
+        s,n = 0,0
+        SE = res[ 'data' ].keys()[ 0 ]
       
-          n = n + len(res['data'][SE])
-          s = s + sum(res['data'][SE].values())
-          meanQuality = s/n
+        n = n + len(res['data'][SE])
+        s = s + sum(res['data'][SE].values())
+        meanQuality = s/n
           
-          res = S_OK( meanQuality )
+        res = S_OK( meanQuality )
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
 

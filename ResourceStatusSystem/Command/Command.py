@@ -15,10 +15,9 @@ class Command( object ):
     for interacting with the clients
   """
 
-  def __init__( self, args = None, decissionParams = None, clients = None ):
+  def __init__( self, args = None, clients = None ):
     
-    self.args            = ( 1 and args ) or ()
-    self.decissionParams = ( 1 and decissionParams ) or {}   
+    self.args            = ( 1 and args ) or {}      
     self.APIs            = ( 1 and clients ) or {}
 
   #to be extended by real commands

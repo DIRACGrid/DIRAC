@@ -7,7 +7,7 @@
 
 import urlparse
 
-from DIRAC                                      import S_OK
+from DIRAC                                      import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                 import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
@@ -24,7 +24,9 @@ class VOBOXAvailabilityCommand( Command ):
     '''
     #super( VOBOXAvailabilityCommand, self ).doCommand()
     
-    serviceURL   = self.args[ 0 ]
+    if not 'serviceURL' in self.args:
+      return S_ERROR( '"serviceURL" not found in self.args' )
+    serviceURL   = self.args[ 'serviceURL' ]
     
     pinger  = RPCClient( serviceURL )
     resPing = pinger.ping()

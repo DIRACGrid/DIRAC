@@ -10,24 +10,34 @@ import urllib2
 
 from DIRAC                                        import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
-from DIRAC.ResourceStatusSystem.Command.Command   import *
-from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
+from DIRAC.ResourceStatusSystem.Command.Command   import Command
+#from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
+from DIRAC.Core.LCG.GGUSTicketsClient import GGUSTicketsClient
 
 __RCSID__ = '$Id:  $'
 
-def callClient( name, clientIn ):
-   
-  name = getGOCSiteName( name )[ 'Value' ]
-    
-  openTickets = clientIn.getTicketsList( name )
-  return openTickets
+#def callClient( name, clientIn ):
+#   
+#  name = getGOCSiteName( name )[ 'Value' ]
+#    
+#  openTickets = clientIn.getTicketsList( name )
+#  return openTickets
     
 ################################################################################
 ################################################################################
 
 class GGUSTicketsOpen( Command ):
   
-  __APIs__ = [ 'GGUSTicketsClient' ]
+#  __APIs__ = [ 'GGUSTicketsClient' ]
+ 
+  def __init__( self, args = None, clients = None ):
+    
+    super( GGUSTicketsOpen, self ).__init__( args, clients )
+    
+    if 'GGUSTicketsClient' in self.APIs:
+      self.gClient = self.APIs[ 'GGUSTicketsClient' ]
+    else:
+      self.gClient = GGUSTicketsClient() 
   
   def doCommand( self ):
     """ 
@@ -37,30 +47,43 @@ class GGUSTicketsOpen( Command ):
     """
     
 #    super( GGUSTickets_Open, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try:
+    if not 'name' in self.args:
+      return S_ERROR( '"name" not found in self.args')
 
-      res = callClient( self.args[1], self.APIs[ 'GGUSTicketsClient' ] )
+    name = self.args[ 'name' ]
+
+#    try:
+
+    name = getGOCSiteName( name )[ 'Value' ] 
+    res = self.gClient.getTicketsList( name )
         
-      if res[ 'OK' ]:
-        res =  S_OK( res[ 'Value' ][ 0 ][ 'open' ] ) 
+    if res[ 'OK' ]:
+      res =  S_OK( res[ 'Value' ][ 0 ][ 'open' ] ) 
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 ################################################################################
 ################################################################################
 
-class GGUSTicketsLink(Command):
+class GGUSTicketsLink( Command ):
   
-  __APIs__ = [ 'GGUSTicketsClient' ]
+#  __APIs__ = [ 'GGUSTicketsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( GGUSTicketsLink, self ).__init__( args, clients )
+    
+    if 'GGUSTicketsClient' in self.APIs:
+      self.gClient = self.APIs[ 'GGUSTicketsClient' ]
+    else:
+      self.gClient = GGUSTicketsClient() 
   
   def doCommand( self ):
     """ 
@@ -71,20 +94,26 @@ class GGUSTicketsLink(Command):
     """
     
 #    super( GGUSTickets_Link, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try: 
+    if not 'name' in self.args:
+      return S_ERROR( '"name" not found in self.args')
+
+    name = self.args[ 'name' ]
+
+#    try: 
       
-      res = callClient( self.args[ 1 ], self.APIs[ 'GGUSTicketsClient' ] )
+    name = getGOCSiteName( name )[ 'Value' ] 
+    res = self.gClient.getTicketsList( name )
     #if openTickets == 'Unknown':
     #  return { 'GGUS_Link':'Unknown' }
-      if res[ 'OK' ]:
-        res = S_OK( res[ 'Value' ][ 1 ] ) 
+    if res[ 'OK' ]:
+      res = S_OK( res[ 'Value' ][ 1 ] ) 
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
 
@@ -93,11 +122,20 @@ class GGUSTicketsLink(Command):
 ################################################################################
 ################################################################################
 
-class GGUSTicketsInfo(Command):
+class GGUSTicketsInfo( Command ):
   
-  __APIs__ = [ 'GGUSTicketsClient' ]
+#  __APIs__ = [ 'GGUSTicketsClient' ]
+
+  def __init__( self, args = None, clients = None ):
+    
+    super( GGUSTicketsInfo, self ).__init__( args, clients )
+    
+    if 'GGUSTicketsClient' in self.APIs:
+      self.gClient = self.APIs[ 'GGUSTicketsClient' ]
+    else:
+      self.gClient = GGUSTicketsClient() 
   
-  def doCommand(self):
+  def doCommand( self ):
     """ 
     Use callClient to get GGUS info  
 
@@ -106,20 +144,26 @@ class GGUSTicketsInfo(Command):
     """
     
 #    super( GGUSTickets_Info, self ).doCommand()
-    self.APIs = initAPIs( self.__APIs__, self.APIs )
+#    self.APIs = initAPIs( self.__APIs__, self.APIs )
 
-    try: 
+    if not 'name' in self.args:
+      return S_ERROR( '"name" not found in self.args')
+
+    name = self.args[ 'name' ]
+
+#    try: 
       
-      res = callClient( self.args[ 1 ], self.APIs[ 'GGUSTicketsClient' ] )     
+    name = getGOCSiteName( name )[ 'Value' ] 
+    res = self.gClient.getTicketsList( name )
 #    if openTickets == 'Unknown':
 #      return { 'GGUS_Info' : 'Unknown' }
-      if res[ 'OK' ]:
-        res = S_OK( res[ 'Value' ][ 2 ] ) 
+    if res[ 'OK' ]:
+      res = S_OK( res[ 'Value' ][ 2 ] ) 
 
-    except Exception, e:
-      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-      gLogger.exception( _msg )
-      return S_ERROR( _msg )
+#    except Exception, e:
+#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
+#      gLogger.exception( _msg )
+#      return S_ERROR( _msg )
 
     return res
 

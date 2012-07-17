@@ -23,28 +23,31 @@ class SpaceTokenOccupancyCommand( Command ):
     '''
     #super( SpaceTokenOccupancyCommand, self ).doCommand()
 
-    spaceTokenEndpoint = self.args[ 0 ] 
-    spaceToken         = self.args[ 1 ]
+    if not 'spaceTokenEndpoint' in self.args:
+      return S_ERROR( '"spaceTokenEndpoint" not found in self.args' )
+    if not 'spaceToken' in self.args:
+      return S_ERROR( '"spaceToken" not found in self.args' )
+
+    spaceTokenEndpoint = self.args[ 'spaceTokenEndpoint' ] 
+    spaceToken         = self.args[ 'spaceToken' ]
          
     occupancy = lcg_util.lcg_stmd( spaceToken, spaceTokenEndpoint, True, 0 )
            
-    if occupancy[ 0 ] == 0:
+    if occupancy[ 0 ] != 0:
+      return S_ERROR( occupancy )  
     
-      output     = occupancy[1][0]
-      total      = float( output[ 'totalsize' ] ) / 1e12 # Bytes to Terabytes
-      guaranteed = float( output[ 'guaranteedsize' ] ) / 1e12
-      free       = float( output[ 'unusedsize' ] ) / 1e12
+    output     = occupancy[1][0]
+    total      = float( output[ 'totalsize' ] ) / 1e12 # Bytes to Terabytes
+    guaranteed = float( output[ 'guaranteedsize' ] ) / 1e12
+    free       = float( output[ 'unusedsize' ] ) / 1e12
       
-      result = S_OK( 
-                    { 
-                     'total'      : total, 
-                     'free'       : free, 
-                     'guaranteed' : guaranteed 
-                     } 
-                    )
-    else:  
-
-      result = S_ERROR( occupancy )
+    result = S_OK( 
+                  { 
+                   'total'      : total, 
+                   'free'       : free, 
+                   'guaranteed' : guaranteed 
+                   } 
+                  )
 
     return result
     

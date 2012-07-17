@@ -5,6 +5,8 @@
 
 '''
 
+import copy
+
 from DIRAC                                import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
@@ -54,8 +56,12 @@ class CommandCaller:
 
     if not hasattr( commandModule, cClass ):
       return S_ERROR( '%s has no %s' % ( cModule, cClass ) )
+    
+    # We merge decision parameters and policy arguments.
+    newArgs = copy.deepcopy( decissionParams )
+    newArgs.update( pArgs )
       
-    commandObject = getattr( commandModule, cClass )( pArgs, decissionParams, clients ) 
+    commandObject = getattr( commandModule, cClass )( newArgs, clients ) 
 
     return S_OK( commandObject ) 
 
