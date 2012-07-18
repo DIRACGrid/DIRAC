@@ -30,22 +30,19 @@ class DT_Policy( PolicyBase ):
       result[ 'Status' ] = 'Error'
       result[ 'Reason' ] = status[ 'Message' ]
       return result
-
     
     status = status[ 'Value' ]
-    #elif status == 'Unknown':
-    #  return { 'Status' : 'Unknown' }
 
     if status[ 'DT' ] == None:
-      result[ 'Status' ]  = 'Active'
-      result[ 'Reason' ]  = 'No DownTime announced'
+      result[ 'Status' ] = 'Active'
+      result[ 'Reason' ] = 'No DownTime announced'
       return result
     
     elif 'OUTAGE' in status[ 'DT' ]:
-      result[ 'Status' ]  = 'Banned'
+      result[ 'Status' ] = 'Banned'
       
     elif 'WARNING' in status['DT']:
-      result[ 'Status' ]  = 'Bad'
+      result[ 'Status' ] = 'Bad'
 
     else:
       return { 'Status' : 'Error', 'Reason' : 'GOCDB returned an unknown value for DT' }

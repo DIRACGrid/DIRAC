@@ -311,7 +311,7 @@ class PDP:
            'PolicyAction' : None
            }
 
-    newStatusValue = Status.status_of_value( newStatusIndex )
+    newStatusValue = Status.status_of_value( newStatus )
     if not newStatusValue[ 'OK' ]:
       return newStatusValue
     newStatusValue = newStatusValue[ 'Value' ]  

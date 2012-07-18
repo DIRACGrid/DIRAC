@@ -78,18 +78,18 @@ def getValidStatus():
   Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/Status
   '''
   
-  #FIXME: DEFAULTS ??
-  #DEFAULTS = ( 'Active', 'Bad', 'Probing', 'Banned' )
+  #FIXME: DEFAULTS hardcoded ??
+  DEFAULTS = ( 'Active', 'Bad', 'Probing', 'Banned' )
+  return S_OK( DEFAULTS )  
+#  result = Utils.getCSTree( '%s/GeneralConfig' % rssConfigPath )
+#  if not result[ 'OK' ]:
+#    return result
+#  result = result[ 'Value' ]
+#  
+#  if not 'Status' in result:
+#    return S_ERROR( 'RssConfiguration: No "Status" section' )
   
-  result = Utils.getCSTree( '%s/GeneralConfig' % rssConfigPath )
-  if not result[ 'OK' ]:
-    return result
-  result = result[ 'Value' ]
-  
-  if not 'Status' in result:
-    return S_ERROR( 'No "Status" section' )
-  
-  return S_OK( result[ 'Status' ] )
+#  return S_OK( result[ 'Status' ] )
   
 #  result = Operations().getValue( 'RSSConfiguration/GeneralConfig/Status' )
 #  if result is not None:
