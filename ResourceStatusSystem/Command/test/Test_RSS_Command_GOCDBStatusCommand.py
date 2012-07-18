@@ -219,39 +219,6 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
     self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
     self.assertEqual( '2013-07-20 00:00', res[ 'Value' ][ 'EndDate' ] ) 
  
-#    
-#    command = self.testClass( args = { 'element' : 'X' } )
-#    res = command.doCommand()
-#    
-#    self.assertEqual( True, res[ 'OK' ] )
-#    self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
-    
-#    command = self.testClass( args = { 'serviceURL' : 'protocol://site:port/path1/path2' } )
-#    res = command.doCommand()
-#    self.assertEqual( True, res[ 'OK' ] )
-#    self.assertEqual( 0, res[ 'Value' ][ 'serviceUpTime' ] )
-#    self.assertEqual( 0, res[ 'Value' ][ 'machineUpTime' ] )
-#    self.assertEqual( 'site', res[ 'Value' ][ 'site' ] )
-#    self.assertEqual( 'path1', res[ 'Value' ][ 'system' ] )
-#    self.assertEqual( 'path2', res[ 'Value' ][ 'service' ] )
-#    
-#    mock_RPC = mock.Mock()
-#    mock_RPC.ping.return_value        = { 'OK'    : True, 
-#                                          'Value' : {
-#                                                     'service uptime' : 1,
-#                                                     'host uptime'    : 2
-#                                                     } }
-#    
-#    self.moduleTested.RPCClient.return_value = mock_RPC
-#    command = self.testClass( args = { 'serviceURL' : 'protocol://site:port/path1/path2' } )
-#    res = command.doCommand()
-#    self.assertEqual( True, res[ 'OK' ] )
-#    self.assertEqual( 1, res[ 'Value' ][ 'serviceUpTime' ] )
-#    self.assertEqual( 2, res[ 'Value' ][ 'machineUpTime' ] )
-#    self.assertEqual( 'site', res[ 'Value' ][ 'site' ] )
-#    self.assertEqual( 'path1', res[ 'Value' ][ 'system' ] )
-#    self.assertEqual( 'path2', res[ 'Value' ][ 'service' ] )
-#
     # Restore the module
     self.moduleTested.GOCDBClient = self.mock_GOCDBClient
     reload( self.moduleTested )   
