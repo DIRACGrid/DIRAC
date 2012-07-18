@@ -165,6 +165,8 @@ class PDP:
                                                               policyDict ) 
       #FIXME: a faulty policy will crash all other policies !!
       if not policyInvocationResult[ 'OK' ]:
+        print policyInvocationResult
+        gLogger.error( policyInvocationResult )
         return policyInvocationResult
        
       #FIXME: check policy output here makes any sense ? 

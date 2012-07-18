@@ -6,6 +6,7 @@
   
 '''
 
+from DIRAC                                              import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 __RCSID__ = '$Id: $'
@@ -24,19 +25,20 @@ class DT_Policy( PolicyBase ):
         }
     """
     status = super( DT_Policy, self ).evaluate()
-    result = {}
 
     if not status[ 'OK' ]:
-      result[ 'Status' ] = 'Error'
-      result[ 'Reason' ] = status[ 'Message' ]
-      return result
+      return status
+      #result[ 'Status' ] = 'Error'
+      #result[ 'Reason' ] = status[ 'Message' ]
+      #return S_OK( result )
     
     status = status[ 'Value' ]
+    result = {}
 
     if status[ 'DT' ] == None:
       result[ 'Status' ] = 'Active'
       result[ 'Reason' ] = 'No DownTime announced'
-      return result
+      return S_OK( result )
     
     elif 'OUTAGE' in status[ 'DT' ]:
       result[ 'Status' ] = 'Banned'
@@ -45,13 +47,11 @@ class DT_Policy( PolicyBase ):
       result[ 'Status' ] = 'Bad'
 
     else:
-      return { 'Status' : 'Error', 'Reason' : 'GOCDB returned an unknown value for DT' }
+      return S_ERROR( 'GOCDB returned an unknown value for DT: "%s"' % status[ 'DT' ] )
 
     result[ 'EndDate' ] = status[ 'EndDate' ]
     result[ 'Reason' ]  = 'DownTime found: %s' % status[ 'DT' ]
-    return result
-
-  evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__
+    return S_OK( result )
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
