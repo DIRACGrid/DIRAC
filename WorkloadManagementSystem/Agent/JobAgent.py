@@ -240,13 +240,16 @@ class JobAgent( AgentModule ):
       self.log.verbose( 'Before %sCE submitJob()' % ( self.ceName ) )
       submission = self.__submitJob( jobID, params, resourceParams, optimizerParams, jobJDL, proxyChain )
       if not submission['OK']:
+        self.log.notice( "Submission failed in %sCE with error: %s" % ( self.ceName, submission[ 'Message' ] ) )
         self.__report( jobID, 'Failed', submission['Message'] )
         return self.__finish( submission['Message'] )
       elif 'PayloadFailed' in submission:
+        self.log.notice( "Payload failed in %sCE with error: %s" % ( self.ceName, submission[ 'PayloadFailed' ] ) )
         # Do not keep running and do not overwrite the Payload error
         return self.__finish( 'Payload execution failed with error code %s' % submission['PayloadFailed'],
                               self.stopOnApplicationFailure )
-
+      else:
+        self.log.notice( "Payload finished successfully with %sCE" % self.ceName )
       self.log.verbose( 'After %sCE submitJob()' % ( self.ceName ) )
     except Exception:
       self.log.exception()
@@ -413,7 +416,7 @@ class JobAgent( AgentModule ):
         rescheduleFailedJob( jobID, submission['Message'], self.__report )
       else:
         if 'Value' in submission:
-          self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % submission['Value'] )
+          self.log.error( 'Error in DIRAC JobWrapper:', 'exit code = %s' % str( submission['Value'] ) )
         # make sure the Job is declared Failed
         self.__report( jobID, 'Failed', submission['Message'] )
       return S_ERROR( '%s CE Submission Error: %s' % ( self.ceName, submission['Message'] ) )
@@ -596,6 +599,9 @@ class JobAgent( AgentModule ):
     result = wmsAdmin.setPilotBenchmark( str( self.pilotReference ), float( self.cpuFactor ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
+
+
+    self.__setJobParam( jobID, "Pilot_Reference", str( self.pilotReference ) )
 
     return S_OK()
 

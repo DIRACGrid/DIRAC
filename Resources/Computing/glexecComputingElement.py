@@ -18,6 +18,9 @@ from DIRAC                                                  import S_OK, S_ERROR
 import DIRAC
 
 import os
+import stat
+import shutil
+import tempfile
 
 MandatoryParameters = [ ]
 
@@ -29,8 +32,93 @@ class glexecComputingElement( ComputingElement ):
   def __init__( self, ceUniqueID ):
     """ Standard constructor.
     """
+    self.__secureDir = False
+    self.__targetDir = False
+    self.__stickyDir = False
+    self.__sourceDir = False
+    self.__glexecPath = False
+    self.__errorCodes = { 127 : 'Shell exited, command not found',
+                          129 : 'Shell interrupt signal 1 (SIGHUP)',
+                          130 : 'Shell interrupt signal 2 (SIGINT)',
+                          201 : 'glexec failed with client error',
+                          202 : 'glexec failed with internal error',
+                          203 : 'glexec failed with authorization error'
+                        }
     ComputingElement.__init__( self, ceUniqueID )
     self.submittedJobs = 0
+
+
+  def __rmDirs( self ):
+
+    #Make sure sticky dir is writable by glexec
+    try: 
+      os.chmod( self.__stickyDir, 777 )
+    except OSError:
+      pass
+
+    if os.path.isdir( self.__targetDir ):
+      result = shellCall( 0, "%s rm -rf '%s'" % ( self.__glexecPath, self.__targetDir ) )
+
+      if not result[ 'OK' ] or not result[ 'Value' ][0] != 0:
+        self.log.error( "Could not delete target dir via glexec:\n %s%s" % ( result['Value'][1], result[ 'Value' ][2] ) )
+
+    if self.__secureDir:
+      try:
+        shutil.rmtree( self.__secureDir )
+      except OSError, excp:
+        self.log.error( "Cannot delete secure dir %s: %s" % ( self.__secureDir, str( excp ) ) )
+
+    self.__secureDir = False
+    self.__targetDir = False
+    self.__stickyDir = False
+    self.__sourceDir = False
+
+  def __createDirs( self ):
+    if self.__targetDir:
+      return self.__sourceDir, self.__targetDir, 
+    self.__secureDir = tempfile.mkdtemp( prefix = "glexec.dirac.%d." % os.getpid() )
+    opwd = self.__secureDir
+    split = os.path.split( opwd )
+    while split[1] != "":
+      mode = int( oct( os.stat( opwd )[stat.ST_MODE] & 0777 ) ) | stat.S_IXOTH
+      try:
+        os.chmod( opwd, mode )
+      except OSError:
+        break
+      opwd = split[0]
+      split = os.path.split( opwd )   
+
+    os.chmod( self.__secureDir, 0700 )
+    self.__stickyDir = os.path.join( self.__secureDir, "sticky" )
+    try:
+      os.mkdir( self.__stickyDir )
+    except OSError, excp:
+      self.log.error( "Could not create glexec sticky dir: %s" % str( excp ) )
+      self.__rmDirs()
+      return False
+    os.chmod( self.__stickyDir, 1777 )
+
+    self.__sourceDir = os.path.join( self.__stickyDir, "source" )
+    try:
+      os.mkdir( self.__sourceDir )
+      os.chmod( self.__sourceDir, 0755 )
+    except OSError, excp:
+      self.log.error( "Cannot create source dir: %s" % ( self.__sourceDir, str( excp ) ) )
+      self.__rmDirs()
+      return False
+    
+    os.chmod( self.__secureDir, 0711 )
+    targetDir = os.path.join( self.__stickyDir, "target" )
+    result = shellCall( 0, "cd %s; %s mkdir '%s'" % ( self.__stickyDir, self.__glexecPath, targetDir ) )
+    if not result[ 'OK' ] or not result[ 'Value' ][0] != 0:
+      self.log.error( "Could not create target dir via glexec:\n %s%s" % ( result['Value'][1], result[ 'Value' ][2] ) )
+      self.__rmDirs()
+      return False
+    #Absurdity: Just following recommended mkgltempdir rules
+    os.chmod( self.__secureDir, 0755 )
+    self.__targetDir = targetDir
+
+    return self.__sourceDir, targetDir
 
   #############################################################################
   def _addCEConfigDefaults( self ):
@@ -44,6 +132,7 @@ class glexecComputingElement( ComputingElement ):
   def submitJob( self, executableFile, proxy, dummy = None ):
     """ Method to submit job, should be overridden in sub-class.
     """
+    self.log.info( "Exeutable file is %s" % executableFile )
     self.log.verbose( 'Setting up proxy for payload' )
     result = self.writeProxyToFile( proxy )
     if not result['OK']:
@@ -63,13 +152,10 @@ class glexecComputingElement( ComputingElement ):
                                 'GLEXEC_SOURCE_PROXY=%s' % payloadProxy ] ) )
 
     #Determine glexec location (default to standard InProcess behaviour if not found)
-    glexecLocation = None
-    result = self.glexecLocate()
-    if result['OK']:
-      glexecLocation = result['Value']
-      self.log.info( 'glexec found for local site at %s' % glexecLocation )
+    if self.__find():
+      self.log.info( 'glexec found for local site at %s' % self.__glexecPath )
 
-    if glexecLocation:
+    if self.__glexecPath:
       result = self.recursivelyChangePermissions()
       if not result['OK']:
         self.log.error( 'Permissions change failed, continuing regardless...' )
@@ -77,24 +163,23 @@ class glexecComputingElement( ComputingElement ):
       self.log.info( 'glexec not found, no permissions to change' )
 
     #Test glexec with payload proxy prior to submitting the job
-    result = self.glexecTest( glexecLocation )
+    result = self.__test()
     if not result['OK']:
-      res = self.analyseExitCode( result['Value'] ) #take no action as we currently default to InProcess
-      glexecLocation = None
       if 'RescheduleOnError' in self.ceParameters and self.ceParameters['RescheduleOnError']:
         result = S_ERROR( 'gLexec Test Failed: %s' % res['Value'] )
         result['ReschedulePayload'] = True
+        self.__rmDirs()
         return result
       self.log.info( 'glexec test failed, will submit payload regardless...' )
 
     #Revert to InProcess behaviour
-    if not glexecLocation:
+    if not self.__glexecPath:
       self.log.info( 'glexec is not found, setting X509_USER_PROXY for payload proxy' )
       os.environ[ 'X509_USER_PROXY' ] = payloadProxy
 
     self.log.verbose( 'Starting process for monitoring payload proxy' )
     gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
-                                      taskArgs = ( glexecLocation, pilotProxy, payloadProxy ),
+                                      taskArgs = ( pilotProxy, payloadProxy ),
                                       executions = 0, elapsedTime = 0 )
 
     #Submit job
@@ -104,86 +189,64 @@ class glexecComputingElement( ComputingElement ):
     except Exception, x:
       self.log.error( 'Failed to change permissions of executable to 0755 with exception:\n%s' % ( x ) )
 
-    result = self.glexecExecute( os.path.abspath( executableFile ), glexecLocation )
+    result = self.__execute( os.path.abspath( executableFile ) )
     if not result['OK']:
-      self.analyseExitCode( result['Value'] ) #take no action as we currently default to InProcess
       self.log.error( result )
+      self.__rmDirs()
       return result
 
     self.log.debug( 'glexec CE result OK' )
     self.submittedJobs += 1
+    self.__rmDirs()
     return S_OK()
 
   #############################################################################
-  def recursivelyChangePermissions( self ):
+  def recursivelyChangePermissions( self, startDir = False ):
     """ Ensure that the current directory and all those beneath have the correct
         permissions.
     """
-    currentDir = os.getcwd()
+    if not startDir:
+      startDir = os.getcwd()
     try:
-      self.log.info( 'Trying to explicitly change permissions for parent directory %s' % currentDir )
-      os.chmod( currentDir, 0755 )
+      self.log.info( 'Trying to explicitly change permissions for parent directory %s' % startDir )
+      os.chmod( startDir, 0755 )
     except Exception, x:
       self.log.error( 'Problem changing directory permissions in parent directory', str( x ) )
 
-    return S_OK()
+    cDir = startDir
+    split = os.path.split( cDir )
+    while split[1] != "":
+      mode = int( oct( os.stat( cDir )[stat.ST_MODE] & 0777 ) )
+      if mode & stat.S_IXOTH == 0:
+        try:
+          os.chmod( cDir, mode | stat.S_IXOTH )
+          self.log.info( "Fixed mode for dir %s now is %s" % ( cDir, mode | stat.S_IXOTH ) )
+        except OSError:
+          self.log.error( "Not everybody can access dir %s mode is %s" % ( cDir, mode ) )
+      else:
+        self.log.info( "Mode for dir %s is %s" % ( cDir, mode ) )
+      cDir = split[0]
+      split = os.path.split( cDir )   
 
-    userID = None
-
-    res = shellCall( 0, 'ls -al' )
-    if res['OK'] and res['Value'][0] == 0:
-      self.log.info( 'Contents of the working directory before permissions change:' )
-      self.log.info( str( res['Value'][1] ) )
-    else:
-      self.log.error( 'Failed to list the log directory contents', str( res['Value'][2] ) )
-
-    res = shellCall( 0, 'id -u' )
-    if res['OK'] and res['Value'][0] == 0:
-      userID = res['Value'][1]
-      self.log.info( 'Current user ID is: %s' % ( userID ) )
-    else:
-      self.log.error( 'Failed to obtain current user ID', str( res['Value'][2] ) )
-      return res
-
-    res = shellCall( 0, 'ls -al %s/../' % currentDir )
-    if res['OK'] and res['Value'][0] == 0:
-      self.log.info( 'Contents of the parent directory before permissions change:' )
-      self.log.info( str( res['Value'][1] ) )
-    else:
-      self.log.error( 'Failed to list the parent directory contents', str( res['Value'][2] ) )
-
-    self.log.verbose( 'Changing permissions to 0755 in current directory %s' % currentDir )
-    for dirName, subDirs, files in os.walk( currentDir ):
+    self.log.verbose( 'Changing permissions to 0755 in current directory %s and subdirs' % startDir )
+    for dirName, subDirs, files in os.walk( startDir ):
       try:
-        self.log.info( 'Changing file and directory permissions to 0755 for %s' % dirName )
-        if os.stat( dirName )[4] == userID and not os.path.islink( dirName ):
-          os.chmod( dirName, 0755 )
-        for toChange in files:
-          toChange = os.path.join( dirName, toChange )
-          if os.stat( toChange )[4] == userID and not os.path.islink( toChange ):
-            os.chmod( toChange, 0755 )
+        if os.path.isdir( dirName ):
+          mode = int( oct( os.stat( dirName )[stat.ST_MODE] & 0777 ) ) | stat.S_IROTH | stat.S_IXOTH
+          os.chmod( dirName, mode )
+        for filename in files:
+          filepath = os.path.join( dirName, filename )
+          if os.path.isfile( filepath ):
+            mode = int( oct( os.stat( filepath )[stat.ST_MODE] & 0777 ) ) | stat.S_IROTH
+            os.chmod( filepath, mode )
       except Exception, x:
-        self.log.error( 'Problem changing directory permissions', str( x ) )
+        self.log.error( 'Problem changing permissions', str( x ) )
 
-    self.log.info( 'Permissions in current directory %s updated successfully' % ( currentDir ) )
-    res = shellCall( 0, 'ls -al' )
-    if res['OK'] and res['Value'][0] == 0:
-      self.log.info( 'Contents of the working directory after changing permissions:' )
-      self.log.info( str( res['Value'][1] ) )
-    else:
-      self.log.error( 'Failed to list the log directory contents', str( res['Value'][2] ) )
-
-    res = shellCall( 0, 'ls -al %s/../' % currentDir )
-    if res['OK'] and res['Value'][0] == 0:
-      self.log.info( 'Contents of the parent directory after permissions change:' )
-      self.log.info( str( res['Value'][1] ) )
-    else:
-      self.log.error( 'Failed to list the parent directory contents', str( res['Value'][2] ) )
-
+    self.log.info( 'Permissions in current directory %s updated successfully' % ( startDir ) )
     return S_OK()
 
   #############################################################################
-  def analyseExitCode( self, resultTuple ):
+  def __analyzeExitCode( self, resultTuple ):
     """ Analyses the exit codes in case of glexec failures.  The convention for
         glexec exit codes is listed below:
 
@@ -205,51 +268,60 @@ class glexecComputingElement( ComputingElement ):
     #   < 0 if there are problems with the wrapper itself
     #   0 if everything is OK
 
-    codes = {}
-    codes[127] = 'Shell exited, command not found'
-    codes[129] = 'Shell interrupt signal 1 (SIGHUP)'
-    codes[130] = 'Shell interrupt signal 2 (SIGINT)'
-    codes[201] = 'glexec failed with client error'
-    codes[202] = 'glexec failed with internal error'
-    codes[203] = 'glexec failed with authorization error'
-
     status = resultTuple[0]
-    stdOutput = resultTuple[1]
-    stdError = resultTuple[2]
+    stdOutput = resultTuple[1].strip()
+    stdError = resultTuple[2].strip()
 
-    self.log.info( 'glexec call failed with status %s' % ( status ) )
-    self.log.info( 'glexec stdout:\n%s' % stdOutput )
-    self.log.info( 'glexec stderr:\n%s' % stdError )
-
-    error = None
-    for code, msg in codes.items():
-      self.log.verbose( 'Exit code %s => %s' % ( code, msg ) )
-      if status == code:
-        error = msg
-
-    if not error:
-      self.log.error( 'glexec exit code %s not in expected list' % ( status ) )
+    if status == 0:
+      self.log.info( 'glexec call suceeded' )
     else:
-      self.log.error( 'Resolved glexec return code %s = %s' % ( status, error ) )
+      self.log.info( 'glexec call failed with status %s' % ( status ) )
+    if stdOutput:
+      self.log.info( 'glexec stdout:\n%s' % stdOutput )
+    if stdError:
+      self.log.info( 'glexec stderr:\n%s' % stdError )
 
-    return S_OK( error )
+    if status != 0:
+      error = None
+      if status in self.__errorCodes:
+        error = self.__errorCodes[ status ]
+        self.log.error( 'Resolved glexec return code %s = %s' % ( status, error ) )
+        return S_ERROR( "Error %s = %s" % ( status, error ) )
+
+      self.log.error( 'glexec exit code %s not in expected list' % status )
+      return S_ERROR( "Error code %s" % status )
+
+    return S_OK()
 
   #############################################################################
-  def glexecTest( self, glexecLocation ):
+  def __test( self ):
     """Ensure that the current DIRAC distribution is group readable e.g. dirac-proxy-info
        also check the status code of the glexec call.
     """
-    if not glexecLocation:
+    if not self.__glexecPath:
       return S_OK( 'Nothing to test' )
 
-    testFile = 'glexecTest.sh'
-    cmds = ['#!/bin/sh']
-    cmds.append( 'id' )
-    cmds.append( 'hostname' )
-    cmds.append( 'date' )
-    cmds.append( '%s/scripts/dirac-proxy-info' % DIRAC.rootPath )
+    dirs = self.__createDirs()
+    if not dirs:
+      return S_ERROR( "Could not create glexec target dir" )
+
+    sourceDir, targetDir = dirs
+    testFile = os.path.join( sourceDir, "glexecTest.sh" )
+
+    self.log.info( "Test script lives in %s" % testFile )
+
+    testdata = """#!/usr/bin/env python
+
+from DIRAC.Core.Base import Script
+
+Script.parseCommandLine()
+
+from DIRAC import gLogger
+
+gLogger.always( "It works!" )
+"""
     fopen = open( testFile, 'w' )
-    fopen.write( '\n'.join( cmds ) )
+    fopen.write( testdata )
     fopen.close()
     self.log.info( 'Changing permissions of test script to 0755' )
     try:
@@ -258,50 +330,57 @@ class glexecComputingElement( ComputingElement ):
       self.log.error( 'Failed to change permissions of test script to 0755 with exception:\n%s' % ( x ) )
       return S_ERROR( 'Could not change permissions of test script' )
 
-    return self.glexecExecute( os.path.abspath( testFile ), glexecLocation )
+    return self.__execute( os.path.abspath( testFile ) )
 
   #############################################################################
-  def glexecExecute( self, executableFile, glexecLocation ):
+  def __execute( self, executableFile ):
     """Run glexec with checking of the exit status code.
     """
-    cmd = executableFile
-    if glexecLocation and executableFile:
-      cmd = "%s /bin/bash -lc '%s'" % ( glexecLocation, executableFile )
-    if glexecLocation and not executableFile:
-      cmd = '%s' % ( glexecLocation )
+    if not self.__glexecPath:
+      cmd = executableFile
+    else:
+      if not executableFile:
+        cmd = self.__glexecPath
+      else:
+        dirs = self.__createDirs()
+        if dirs:
+          wrap = os.path.join( dirs[0], "glwrap.%s" % os.getpid() )
+          wrapContents = """#!/bin/bash
+cd '{tdir}'
+{glexec} {exe}
+""".format( **{ 'tdir' : dirs[1], 'glexec': self.__glexecPath, 'exe' : executableFile } )
+          fd = open( wrap, "w" )
+          fd.write( wrapContents )
+          fd.close()
+          os.chmod( wrap, stat.S_IRWXU | stat.S_IREAD | stat.S_IEXEC )
+          self.log.info( "Generated wrap:\n%s" % wrapContents )
+          executableFile = wrap
+        cmd = executableFile 
 
     self.log.info( 'CE submission command is: %s' % cmd )
     result = shellCall( 0, cmd, callbackFunction = self.sendOutput )
-    if not result['OK']:
-      result['Value'] = ( 0, '', '' )
-      return result
-
-    resultTuple = result['Value']
-    status = resultTuple[0]
-    stdOutput = resultTuple[1]
-    stdError = resultTuple[2]
-    self.log.info( "Status after the glexec execution is %s" % str( status ) )
-    if status:
-      error = S_ERROR( status )
-      error['Value'] = ( status, stdOutput, stdError )
-      return error
-
+    if self.__glexecPath:
+      return self.__analyzeExitCode( result[ 'Value' ] )
     return result
 
   #############################################################################
-  def glexecLocate( self ):
+  def __find( self ):
     """Try to find glexec on the local system, if not found default to InProcess.
     """
     if not os.environ.has_key( 'GLITE_LOCATION' ):
       self.log.info( 'Unable to locate glexec, site does not have GLITE_LOCATION defined' )
-      return S_ERROR( 'glexec not found' )
+      return False
 
-    glexecPath = '%s/sbin/glexec' % ( os.environ['GLITE_LOCATION'] )
-    if not os.path.exists( glexecPath ):
-      self.log.info( '$GLITE_LOCATION/sbin/glexec not found at path %s' % ( glexecPath ) )
-      return S_ERROR( 'glexec not found' )
+    for name in ( 'glexec_wrap.sh', 'glexec' ):
+    #for name in ( 'glexec', ):
+      glexecPath = '%s/sbin/%s' % ( os.environ['GLITE_LOCATION'], name )
+      if os.path.exists( glexecPath ):
+        self.__glexecPath = glexecPath
+        return True
+   
+    self.log.info( '$GLITE_LOCATION/sbin/glexec not found at path %s' % ( glexecPath ) )
 
-    return S_OK( glexecPath )
+    return False
 
   #############################################################################
   def getDynamicInfo( self ):
@@ -314,7 +393,7 @@ class glexecComputingElement( ComputingElement ):
     return result
 
   #############################################################################
-  def monitorProxy( self, glexecLocation, pilotProxy, payloadProxy ):
+  def monitorProxy( self, pilotProxy, payloadProxy ):
     """ Monitor the payload proxy and renew as necessary.
     """
     retVal = self._monitorProxy( pilotProxy, payloadProxy )
@@ -326,9 +405,9 @@ class glexecComputingElement( ComputingElement ):
       # No need to renew the proxy, nothing else to be done
       return retVal
 
-    if glexecLocation:
+    if self.__glexecPath:
       self.log.info( 'Rerunning glexec without arguments to renew payload proxy' )
-      result = self.glexecExecute( None, glexecLocation )
+      result = self.__execute( None )
       if not result['OK']:
         self.log.error( result )
     else:
