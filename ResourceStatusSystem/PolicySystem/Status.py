@@ -5,7 +5,7 @@
 
 '''
 
-from DIRAC                                      import gLogger
+from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities.Utils import id_fun
 from DIRAC.ResourceStatusSystem.Utilities       import RssConfiguration 
 
@@ -41,16 +41,26 @@ def value_of_policy( policy ):
 def status_of_value( value ):
   '''
   To be refactored
-  '''
-  # Hack: rely on the order of values in ValidStatus
-  validStatus = RssConfiguration.getValidStatus()
   
-  try:
-    return validStatus[ value ]
-  except IndexError:
-    #Temporary fix, not anymore InvalidStatus exception raising
-    gLogger.error( 'status_of_value returning -1' )
-    return -1
+  '''
+  #FIXME: Hack: rely on the order of values in ValidStatus
+  
+  validStatus = RssConfiguration.getValidStatus()
+  if not validStatus[ 'OK' ]:
+    return validStatus
+  validStatus = validStatus[ 'Value' ]
+  
+  if not value in validStatus:
+    return S_ERROR( '"%s" not in %s' % ( value, validStatus ) )
+  
+  return S_OK( validStatus[ value ] )  
+  
+#  try:
+#    return validStatus[ value ]
+#  except IndexError:
+#    #Temporary fix, not anymore InvalidStatus exception raising
+#    gLogger.error( 'status_of_value returning -1' )
+#    return -1
         
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -246,9 +246,15 @@ class PDP:
         # No status from policies suitable, applying stategy and
         # returning result.
         if newStatus == -1:
-          newStatus = gofun( access_list )
+          newStatusIndex = gofun( access_list )
+          
+          newStatus = Status.status_of_value( newStatusIndex )
+          if not newStatus[ 'OK' ]:
+            return newStatus
+          newStatus = newStatus[ 'Value' ]         
+          
           return S_OK( { 
-                        'Status'       : Status.status_of_value( newStatus ),
+                        'Status'       : newStatus,
                         'Reason'       : 'Status forced by PDP',
                         'EndDate'      : None,
                         'PolicyAction' : None 
@@ -304,8 +310,13 @@ class PDP:
            'EndDate'      : None,
            'PolicyAction' : None
            }
+
+    newStatusValue = Status.status_of_value( newStatusIndex )
+    if not newStatusValue[ 'OK' ]:
+      return newStatusValue
+    newStatusValue = newStatusValue[ 'Value' ]  
     
-    res[ 'Status' ] = Status.status_of_value( newStatus )
+    res[ 'Status' ] = newStatusValue
     
     if concatenatedRes != '': 
       res[ 'Reason' ]  = concatenatedRes

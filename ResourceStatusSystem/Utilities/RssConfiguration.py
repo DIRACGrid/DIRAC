@@ -18,6 +18,8 @@ def getRecordLogs():
   '''
   Returns from the OperationsHelper: <rssConfigPath>/Logs/Record
   '''
+
+  #FIXME: return S_OK
   
   result = Operations().getValue( '%s/Logs/Record' % rssConfigPath )
   if result == 'Active':
@@ -34,6 +36,8 @@ def getInspectionFreqs():
   #result = Operations().getValue( 'RSSConfiguration/Logs/Record' )
   #if result == 'Active':
   #  return True
+  
+  #FIXME: Return S_OK
   return { 'Site' : { '' : { 'Active' : 2, 'Bad' : 2, 'Probing' : 2, 'Banned' : 2 } } }
 
 ## RssConfiguration/Policies ###################################################
@@ -61,6 +65,7 @@ def getValidElements():
   Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/ValidElements
   '''
   #FIXME: no defaults. If it fails, I want to know it.
+  #FIXME: return S_OK
   _DEFAULTS = ( 'Site', 'Resource', 'Node' )
   
   result = Operations().getValue( '%s/GeneralConfig/ValidElements' % rssConfigPath )
@@ -74,16 +79,17 @@ def getValidStatus():
   '''
   
   #FIXME: DEFAULTS ??
-  DEFAULTS = ( 'Active', 'Bad', 'Probing', 'Banned' )
+  #DEFAULTS = ( 'Active', 'Bad', 'Probing', 'Banned' )
   
   result = Utils.getCSTree( '%s/GeneralConfig' % rssConfigPath )
   if not result[ 'OK' ]:
     return result
+  result = result[ 'Value' ]
   
-  if not 'Status' in result[ 'Value' ]:
+  if not 'Status' in result:
     return S_ERROR( 'No "Status" section' )
   
-  return S_OK( result[ 'Value' ][ 'Status' ] )
+  return S_OK( result[ 'Status' ] )
   
 #  result = Operations().getValue( 'RSSConfiguration/GeneralConfig/Status' )
 #  if result is not None:
@@ -96,6 +102,9 @@ def getValidStatusTypes():
   Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/Resources
   '''
   #FIXME: no defaults. If it fails, I want to know it.
+  
+  #FIXME: return S_OK
+  
   DEFAULTS = { 
                'Site'          : ( '' ),
                'Resource'      : ( '' ),
