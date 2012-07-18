@@ -345,10 +345,10 @@ class WorkflowTasks( TaskBase ):
         if seSites == []:
           seSites = copy.deepcopy( thisSESites )
         else:
-          # If it is not the first SE, keep only those that are common
-          for nSE in list( seSites ):
-            if nSE not in thisSESites:
-              seSites.remove( nSE )
+          # We make an OR of the possible sites F.S.
+          for nSE in list( thisSESites ):
+            if nSE not in seSites:
+              seSites.append( nSE )
 
     # Now we need to make the AND with the sites, if defined
     if sites == ['ANY']:
