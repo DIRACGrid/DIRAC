@@ -71,6 +71,23 @@ NEW: SRM2Storage - added retry in the gfal calls
 NEW: added new FTSCleaningAgent cleaning up TransferDB tables
 FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
 
+[v6r4p16]
+
+*Core:
+FIX: dirac-install - bashrc/cshrc were wrongly created when using versionsDir
+
+*Accounting
+CHANGE: Added new simpler and faster bucket insertion mechanism
+NEW: Added more info when rebucketing
+
+*WMS
+CHANGE: Matcher - refactored to take into account job limits when providing info to directors
+NEW: JoAgent - reports SubmitPool parameter if applicable
+FIX: Matcher - bad codition if invalid result
+
+*Transformation
+FIX: TaskManager - when the file is on many SEs, wrong results were generated
+
 [v6r4p15]
 
 *WMS
