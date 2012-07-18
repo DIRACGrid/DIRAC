@@ -100,7 +100,8 @@ class gLitePilotDirector( GridPilotDirector ):
     myProxyServer = self.myProxyServer.strip()
     if not myProxyServer:
       #Random string to avoid caching
-      myProxyServer = md5( str( time.time() ) ).hexdigest()
+      #myProxyServer = md5( str( time.time() ) ).hexdigest()
+      myProxyServer = "%s.cern.ch" % md5( str( time.time() ) ).hexdigest()[:10]
 
     wmsClientJDL = """
 RetryCount = 0;
