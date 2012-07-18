@@ -12,7 +12,7 @@ __RCSID__ = '$Id: $'
 #pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
 
 def getPolicyParameters():
-  return Utils.getCSTree( 'RSSConfiguration/PolicyParameters' )
+  return Utils.getCSTree( 'RSSConfiguration2/PolicyParameters' )
 
 Policies = {
             

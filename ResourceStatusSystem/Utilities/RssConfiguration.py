@@ -12,12 +12,14 @@ from DIRAC.ResourceStatusSystem.Utilities                import Utils
 
 ## RssConfiguration/Logs #######################################################
 
+rssConfigPath = 'RSSConfiguration2'
+
 def getRecordLogs():
   '''
-  Returns from the OperationsHelper: RSSConfiguration/Logs/Record
+  Returns from the OperationsHelper: <rssConfigPath>/Logs/Record
   '''
   
-  result = Operations().getValue( 'RSSConfiguration/Logs/Record' )
+  result = Operations().getValue( '%s/Logs/Record' % rssConfigPath )
   if result == 'Active':
     return True
   return False
@@ -26,7 +28,7 @@ def getRecordLogs():
 
 def getInspectionFreqs():
   '''
-  Returns from the OperationsHelper: RSSConfiguration/InspectionFreqs
+  Returns from the OperationsHelper: <rssConfigPath>/InspectionFreqs
   '''
   
   #result = Operations().getValue( 'RSSConfiguration/Logs/Record' )
@@ -38,43 +40,43 @@ def getInspectionFreqs():
 
 def getPolicies():
   '''
-  Returns from the OperationsHelper: RSSConfiguration/Policies
+  Returns from the OperationsHelper: <rssConfigPath>/Policies
   '''
   
-  return Utils.getCSTree( 'RSSConfiguration/Policies' )
+  return Utils.getCSTree( '%s/Policies' % rssConfigPath )
 
 ## RssConfiguration/PolicyActions ##############################################
 
 def getPolicyActions():
   '''
-  Returns from the OperationsHelper: RSSConfiguration/PolicyActions
+  Returns from the OperationsHelper: <rssConfigPath>/PolicyActions
   '''
   
-  return Utils.getCSTree( 'RSSConfiguration/PolicyActions' )
+  return Utils.getCSTree( '%s/PolicyActions' % rssConfigPath )
   
 ## RssConfiguration/GeneralConfig ##############################################
 
 def getValidElements():
   '''
-  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/ValidElements
+  Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/ValidElements
   '''
   #FIXME: no defaults. If it fails, I want to know it.
   _DEFAULTS = ( 'Site', 'Resource', 'Node' )
   
-  result = Operations().getValue( 'RSSConfiguration/GeneralConfig/ValidElements' )
+  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % rssConfigPath )
   if result is not None:
     return Utils.getTypedList( result )
   return _DEFAULTS  
 
 def getValidStatus():
   '''
-  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/Status
+  Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/Status
   '''
   
   #FIXME: DEFAULTS ??
   DEFAULTS = ( 'Active', 'Bad', 'Probing', 'Banned' )
   
-  result = Utils.getCSTree( 'RSSConfiguration/GeneralConfig' )
+  result = Utils.getCSTree( '%s/GeneralConfig' % rssConfigPath )
   if not result[ 'OK' ]:
     return result
   
@@ -91,7 +93,7 @@ def getValidStatus():
 
 def getValidStatusTypes():
   '''
-  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/Resources
+  Returns from the OperationsHelper: <rssConfigPath>/GeneralConfig/Resources
   '''
   #FIXME: no defaults. If it fails, I want to know it.
   DEFAULTS = { 
@@ -104,13 +106,13 @@ def getValidStatusTypes():
   
   opHelper = Operations()
   
-  sections = opHelper.getSections( 'RSSConfiguration/GeneralConfig/Resources' )
+  sections = opHelper.getSections( '%s/GeneralConfig/Resources' % rssConfigPath )
   if not sections[ 'OK' ]:
     return DEFAULTS
   
   result = {}
   for section in sections[ 'Value' ]:
-    res = opHelper.getValue( 'RSSConfiguration/GeneralConfig/Resources/%s/StatusType' % section )
+    res = opHelper.getValue( '%s/GeneralConfig/Resources/%s/StatusType' % ( rssConfigPath, section ) )
     if res is None:
       if DEFAULTS.has_key( section ):
         result[ section ] = DEFAULTS[ section ]
