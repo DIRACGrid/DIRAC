@@ -256,6 +256,11 @@ FIX: if there is no failed files, put an empty dict
 *Transformation
 FIX: Wrong calls to TCA::cleanMetadataCatalogFiles
 
+[v6r3p19]
+
+*WMS
+FIX: gLitePilotDirector - fix the name of the MyProxy server to avoid crashes of the gLite WMS
+
 [v6r3p18]
 
 *Resources
