@@ -3,11 +3,12 @@
 
 '''
 
-import datetime
 import mock
 import unittest
 
 import DIRAC.ResourceStatusSystem.Command.GOCDBStatusCommand as moduleTested 
+
+from datetime import datetime, timedelta
 
 __RCSID__ = '$Id:  $'
 
@@ -32,9 +33,14 @@ class GOCDBStatusCommand_TestCase( unittest.TestCase ):
     mock_getGOCSiteName.return_value = { 'OK' : True, 'Value' : 'GOCSiteName' }
     self.mock_getGOCSiteName         = mock_getGOCSiteName      
     
+    mock_convertTime              = mock.Mock()
+    mock_convertTime.return_value = 2
+    self.mock_convertTime         = mock_convertTime
+    
     # Add mocks to moduleTested
-    moduleTested.GOCDBClient    = self.mock_GOCDBClient
-    moduleTested.getGOCSiteName = self.mock_getGOCSiteName
+    moduleTested.GOCDBClient      = self.mock_GOCDBClient
+    moduleTested.getGOCSiteName   = self.mock_getGOCSiteName
+    moduleTested.convertTime      = self.mock_convertTime
     
     self.moduleTested = moduleTested
     self.testClass    = self.moduleTested.GOCDBStatusCommand
@@ -95,20 +101,89 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
                                                        'SEVERITY': 'OUTAGE', 
                                                        'HOSTNAME': 'devel.edu.mk', 
                                                        'GOCDB_PORTAL_URL': 'myURL', 
-                                                       'FORMATED_END_DATE': '2012-07-20 00:00', 
-                                                       'FORMATED_START_DATE': '2012-07-16 00:00'
+                                                       'FORMATED_END_DATE': '2011-07-20 00:00', 
+                                                       'FORMATED_START_DATE': '2011-07-16 00:00'
                                                                          }
                                                       }     
                                         }
     
     self.moduleTested.GOCDBClient.return_value = mock_GOCDB
-    command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' })  
+    command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )  
     res = command.doCommand()
  
     self.assertEqual( True, res[ 'OK' ] )
     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
     self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
-    self.assertEqual( '2012-07-20 00:00', res[ 'Value' ][ 'EndDate' ] ) 
+    self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] ) 
+
+    command = self.testClass( args = { 'element' : 'X', 'name' : 'Y', 'hours' : 1 } )  
+    res = command.doCommand()
+ 
+    self.assertEqual( True, res[ 'OK' ] )
+    self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
+    self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
+    self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] ) 
+
+    mock_GOCDB = mock.Mock()
+    
+    newStartDate = datetime.strftime( datetime.now() + timedelta( hours = 1 ), "%Y-%m-%d %H:%M" )
+    
+    mock_GOCDB.getStatus.return_value = { 'OK'    : True, 
+                                          'Value' : { 
+                                                     '669 devel.edu.mk': {
+                                                       'HOSTED_BY': 'MK-01-UKIM_II', 
+                                                       'DESCRIPTION': 'Problem with SE server', 
+                                                       'SEVERITY': 'OUTAGE', 
+                                                       'HOSTNAME': 'devel.edu.mk', 
+                                                       'GOCDB_PORTAL_URL': 'myURL', 
+                                                       'FORMATED_END_DATE': '2011-07-20 00:00', 
+                                                       'FORMATED_START_DATE': newStartDate
+                                                                         }
+                                                      }     
+                                        }
+    
+    self.moduleTested.GOCDBClient.return_value = mock_GOCDB
+    command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )  
+    res = command.doCommand()
+ 
+    self.assertEqual( True, res[ 'OK' ] )
+    self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
+    self.assertEqual( 'OUTAGE in 2 hours', res[ 'Value' ][ 'DT' ] )
+    self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )     
+
+    newStartDate2 = datetime.strftime( datetime.now() + timedelta( hours = 2 ), "%Y-%m-%d %H:%M" )
+
+    mock_GOCDB.getStatus.return_value = { 'OK'    : True, 
+                                          'Value' : { 
+                                                     '669 devel.edu.mk': {
+                                                       'HOSTED_BY': 'MK-01-UKIM_II', 
+                                                       'DESCRIPTION': 'Problem with SE server', 
+                                                       'SEVERITY': 'OUTAGE', 
+                                                       'HOSTNAME': 'devel.edu.mk', 
+                                                       'GOCDB_PORTAL_URL': 'myURL', 
+                                                       'FORMATED_END_DATE': '2011-07-20 00:00', 
+                                                       'FORMATED_START_DATE': newStartDate
+                                                                         },
+                                                     '669 devel.edu.mk 1': {
+                                                       'HOSTED_BY': 'MK-01-UKIM_II', 
+                                                       'DESCRIPTION': 'Problem with SE server', 
+                                                       'SEVERITY': 'OUTAGE', 
+                                                       'HOSTNAME': 'devel.edu.mk 1', 
+                                                       'GOCDB_PORTAL_URL': 'myURL', 
+                                                       'FORMATED_END_DATE': '2013-07-20 00:00', 
+                                                       'FORMATED_START_DATE': newStartDate2
+                                                                         }
+                                                      }     
+                                        }
+    
+    self.moduleTested.GOCDBClient.return_value = mock_GOCDB
+    command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )  
+    res = command.doCommand()
+ 
+    self.assertEqual( True, res[ 'OK' ] )
+    self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
+    self.assertEqual( 'OUTAGE in 2 hours', res[ 'Value' ][ 'DT' ] )
+    self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )  
  
 #    
 #    command = self.testClass( args = { 'element' : 'X' } )
