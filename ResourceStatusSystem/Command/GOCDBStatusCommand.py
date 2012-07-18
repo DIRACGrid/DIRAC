@@ -58,7 +58,10 @@ class GOCDBStatusCommand( Command ):
       hours = self.args[ 'hours' ]
             
     if element == 'Site':
-      name = getGOCSiteName( name )[ 'Value' ]
+      name = getGOCSiteName( name )
+      if not name[ 'OK' ]:
+        return name
+      name = name[ 'Value' ]
       
     resDTGOC = self.gClient.getStatus( element, name, None, hours )
 

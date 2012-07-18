@@ -38,6 +38,7 @@ class VOBOXAvailabilityCommand_TestCase( unittest.TestCase ):
     TearDown
     '''
     del self.testClass
+    del self.moduleTested
     del self.mock_RPCClient
       
 ################################################################################
