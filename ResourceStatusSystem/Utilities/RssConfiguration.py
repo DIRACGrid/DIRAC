@@ -79,7 +79,7 @@ def getValidStatus():
   '''
   
   #FIXME: DEFAULTS hardcoded ??
-  DEFAULTS = ( 'Active', 'Bad', 'Probing', 'Banned' )
+  DEFAULTS = ( 'Banned', 'Probing', 'Bad', 'Active' )
   return S_OK( DEFAULTS )  
 #  result = Utils.getCSTree( '%s/GeneralConfig' % rssConfigPath )
 #  if not result[ 'OK' ]:

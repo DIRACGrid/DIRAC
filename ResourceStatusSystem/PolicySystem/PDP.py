@@ -12,6 +12,7 @@ from DIRAC.ResourceStatusSystem.PolicySystem              import Status
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 #from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
+from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration
 
 __RCSID__  = '$Id: $'
 
@@ -169,7 +170,23 @@ class PDP:
         gLogger.error( policyInvocationResult )
         return policyInvocationResult
        
-      #FIXME: check policy output here makes any sense ? 
+      #FIXME: check policy output here makes any sense ? YES
+      
+      if not 'Status' in policyInvocationResult[ 'Value' ]:
+        print policyInvocationResult
+        gLogger.error( policyInvocationResult )
+        return policyInvocationResult
+      
+      if not policyInvocationResult[ 'Value' ][ 'Status' ] in RssConfiguration.getValidStatus()['Value']:
+        print policyInvocationResult
+        gLogger.error( policyInvocationResult )
+        return policyInvocationResult
+
+      if not 'Reason' in policyInvocationResult[ 'Value' ]:
+        print policyInvocationResult
+        gLogger.error( policyInvocationResult )
+        return policyInvocationResult
+       
       policyInvocationResults.append( policyInvocationResult[ 'Value' ] )
       
     return S_OK( policyInvocationResults )   
