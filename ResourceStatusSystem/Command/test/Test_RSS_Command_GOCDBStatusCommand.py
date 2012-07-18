@@ -1,0 +1,151 @@
+# $HeadURL:  $
+''' Test_RSS_Command_GOCDBStatusCommand
+
+'''
+
+import datetime
+import mock
+import unittest
+
+import DIRAC.ResourceStatusSystem.Command.GOCDBStatusCommand as moduleTested 
+
+__RCSID__ = '$Id:  $'
+
+################################################################################
+
+class GOCDBStatusCommand_TestCase( unittest.TestCase ):
+  
+  def setUp( self ):
+    '''
+    Setup
+    '''
+    
+    # Mock external libraries / modules not interesting for the unit test
+    mock_GOCDB                        = mock.Mock()
+    mock_GOCDB.getStatus.return_value = { 'OK' : True, 'Value' : None } 
+    
+    mock_GOCDBClient = mock.Mock()
+    mock_GOCDBClient.return_value = mock_GOCDB
+    self.mock_GOCDBClient = mock_GOCDBClient
+    
+    mock_getGOCSiteName              = mock.Mock()
+    mock_getGOCSiteName.return_value = { 'OK' : True, 'Value' : 'GOCSiteName' }
+    self.mock_getGOCSiteName         = mock_getGOCSiteName      
+    
+    # Add mocks to moduleTested
+    moduleTested.GOCDBClient    = self.mock_GOCDBClient
+    moduleTested.getGOCSiteName = self.mock_getGOCSiteName
+    
+    self.moduleTested = moduleTested
+    self.testClass    = self.moduleTested.GOCDBStatusCommand
+    
+  def tearDown( self ):
+    '''
+    TearDown
+    '''
+    del self.testClass
+    del self.moduleTested
+    del self.mock_GOCDBClient
+    del self.mock_getGOCSiteName
+      
+################################################################################
+# Tests
+
+class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
+  
+  def test_instantiate( self ):
+    ''' tests that we can instantiate one object of the tested class
+    '''  
+    
+    command = self.testClass()
+    self.assertEqual( 'GOCDBStatusCommand', command.__class__.__name__ )
+  
+  def test_init( self ):
+    ''' tests that the init method does what it should do
+    '''
+    
+    command = self.testClass()  
+    self.assertEqual( {}, command.args )      
+    self.assertEqual( {}, command.APIs )
+    
+  def test_doCommand( self ):  
+    ''' tests the doCommand method
+    '''
+
+    command = self.testClass()  
+    res = command.doCommand()
+    
+    self.assertEqual( False, res[ 'OK' ] )
+    
+    command = self.testClass( args = { 'element' : 'X' } )
+    res = command.doCommand()
+    self.assertEqual( False, res[ 'OK' ] )
+    
+    command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' } )
+    res = command.doCommand()
+    self.assertEqual( True, res[ 'OK' ] )
+    self.assertEqual( { 'DT' : None }, res[ 'Value' ] )
+    
+    mock_GOCDB = mock.Mock()
+    mock_GOCDB.getStatus.return_value = { 'OK'    : True, 
+                                          'Value' : { 
+                                                     '669 devel.edu.mk': {
+                                                       'HOSTED_BY': 'MK-01-UKIM_II', 
+                                                       'DESCRIPTION': 'Problem with SE server', 
+                                                       'SEVERITY': 'OUTAGE', 
+                                                       'HOSTNAME': 'devel.edu.mk', 
+                                                       'GOCDB_PORTAL_URL': 'myURL', 
+                                                       'FORMATED_END_DATE': '2012-07-20 00:00', 
+                                                       'FORMATED_START_DATE': '2012-07-16 00:00'
+                                                                         }
+                                                      }     
+                                        }
+    
+    self.moduleTested.GOCDBClient.return_value = mock_GOCDB
+    command = self.testClass( args = { 'element' : 'X', 'name' : 'Y' })  
+    res = command.doCommand()
+ 
+    self.assertEqual( True, res[ 'OK' ] )
+    self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
+    self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
+    self.assertEqual( '2012-07-20 00:00', res[ 'Value' ][ 'EndDate' ] ) 
+ 
+#    
+#    command = self.testClass( args = { 'element' : 'X' } )
+#    res = command.doCommand()
+#    
+#    self.assertEqual( True, res[ 'OK' ] )
+#    self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
+    
+#    command = self.testClass( args = { 'serviceURL' : 'protocol://site:port/path1/path2' } )
+#    res = command.doCommand()
+#    self.assertEqual( True, res[ 'OK' ] )
+#    self.assertEqual( 0, res[ 'Value' ][ 'serviceUpTime' ] )
+#    self.assertEqual( 0, res[ 'Value' ][ 'machineUpTime' ] )
+#    self.assertEqual( 'site', res[ 'Value' ][ 'site' ] )
+#    self.assertEqual( 'path1', res[ 'Value' ][ 'system' ] )
+#    self.assertEqual( 'path2', res[ 'Value' ][ 'service' ] )
+#    
+#    mock_RPC = mock.Mock()
+#    mock_RPC.ping.return_value        = { 'OK'    : True, 
+#                                          'Value' : {
+#                                                     'service uptime' : 1,
+#                                                     'host uptime'    : 2
+#                                                     } }
+#    
+#    self.moduleTested.RPCClient.return_value = mock_RPC
+#    command = self.testClass( args = { 'serviceURL' : 'protocol://site:port/path1/path2' } )
+#    res = command.doCommand()
+#    self.assertEqual( True, res[ 'OK' ] )
+#    self.assertEqual( 1, res[ 'Value' ][ 'serviceUpTime' ] )
+#    self.assertEqual( 2, res[ 'Value' ][ 'machineUpTime' ] )
+#    self.assertEqual( 'site', res[ 'Value' ][ 'site' ] )
+#    self.assertEqual( 'path1', res[ 'Value' ][ 'system' ] )
+#    self.assertEqual( 'path2', res[ 'Value' ][ 'service' ] )
+#
+    # Restore the module
+    self.moduleTested.GOCDBClient = self.mock_GOCDBClient
+    reload( self.moduleTested )   
+    
+################################################################################
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

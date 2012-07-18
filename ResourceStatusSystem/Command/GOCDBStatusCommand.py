@@ -65,7 +65,7 @@ class GOCDBStatusCommand( Command ):
       
     resDTGOC = self.gClient.getStatus( element, name, None, hours )
 
-    if not resDTGOC['OK']:
+    if not resDTGOC[ 'OK' ]:
       return resDTGOC    
         
     resDTGOC = resDTGOC[ 'Value' ]
