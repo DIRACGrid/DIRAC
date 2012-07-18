@@ -44,6 +44,12 @@ class CommandCaller:
     if commandTuple is None:
       return S_OK( None )
     
+    if decissionParams is None:
+      decissionParams = {}
+      
+    if pArgs is None:
+      pArgs = {}  
+    
     try:
       cModule = commandTuple[ 0 ]
       cClass  = commandTuple[ 1 ]

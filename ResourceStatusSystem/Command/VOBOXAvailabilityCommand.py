@@ -23,9 +23,13 @@ class VOBOXAvailabilityCommand( Command ):
     Run the command.
     '''
     
+    ## INPUT PARAMETERS
+    
     if not 'serviceURL' in self.args:
       return S_ERROR( '"serviceURL" not found in self.args' )
     serviceURL   = self.args[ 'serviceURL' ]
+    
+    ##
     
     pinger  = RPCClient( serviceURL )
     resPing = pinger.ping()

@@ -36,9 +36,9 @@ class SpaceTokenOccupancyCommand( Command ):
       return S_ERROR( occupancy )  
     
     output     = occupancy[ 1 ][ 0 ]
-    total      = float( output.get( 'totalsize', '-1' ) ) / 1e12 # Bytes to Terabytes
-    guaranteed = float( output.get( 'guaranteedsize' ) ) / 1e12
-    free       = float( output.get( 'unusedsize' ) ) / 1e12
+    total      = float( output.get( 'totalsize',      '0' ) ) / 1e12 # Bytes to Terabytes
+    guaranteed = float( output.get( 'guaranteedsize', '0' ) ) / 1e12
+    free       = float( output.get( 'unusedsize',     '0' ) ) / 1e12
       
     result = S_OK( 
                   { 
