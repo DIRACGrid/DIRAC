@@ -20,7 +20,7 @@ Policies = {
     {
       'description' : "Ongoing down-times",
       'module'      : 'DT_Policy',
-      'command'     : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
+      'command'     : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
       'args'        : None
     },
 
@@ -28,9 +28,9 @@ Policies = {
     {
       'description'     : "Ongoing and scheduled down-times",
       'module'          : 'DT_Policy',
-      'commandInNewRes' : ( 'GOCDBStatus_Command', 'GOCDBStatus_Command' ),
-      'command'         : ( 'GOCDBStatus_Command', 'DTCached_Command' ),
-      'args'            : ( 12, ),#Hacked to avoid executing code( pp["DTinHours"], ),
+      #'commandInNewRes' : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
+      'command'         : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
+      'args'            : { 'hours' : 12 },
       'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
                                          'args': None}},],
       'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
