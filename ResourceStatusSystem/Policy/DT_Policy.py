@@ -23,7 +23,7 @@ class DT_Policy( PolicyBase ):
           'EndDate':datetime (if needed)
         }
     """
-    status = super(DT_Policy, self).evaluate()
+    status = super( DT_Policy, self ).evaluate()
     result = {}
 
     if not status[ 'OK' ]:
