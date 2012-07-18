@@ -85,13 +85,13 @@ CHANGE: Matcher - refactored to take into account job limits when providing info
 NEW: JoAgent - reports SubmitPool parameter if applicable
 FIX: Matcher - bad codition if invalid result
 
-*Transformation
-FIX: TaskManager - when the file is on many SEs, wrong results were generated
-
 [v6r4p15]
 
 *WMS
 FIX: gLitePilotDirector - fix the name of the MyProxy server to avoid crasehs of the gLite WMS
+
+*Transformation
+FIX: TaskManager - when the file is on many SEs, wrong results were generated
 
 [v6r4p13]
 
