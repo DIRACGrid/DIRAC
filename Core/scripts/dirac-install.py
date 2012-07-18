@@ -5,7 +5,7 @@ Compile the externals
 """
 __RCSID__ = "$Id$"
 
-import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat, types, shutil
+import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat, types, shutil, urlparse
 
 try:
   import zipfile
@@ -52,6 +52,7 @@ class Params:
     self.installSource = ""
     self.globalDefaults = False
     self.timeout = 300
+    self.cacheDir = False
 
 cliParams = Params()
 
@@ -302,15 +303,43 @@ class ReleaseConfig:
     if self.__debugCB:
       self.__debugCB( msg )
 
-  def __loadCFGFromURL( self, urlcfg, checkHash = False ):
+  def __loadCFGFromURL( self, urlcfg, checkHash = False, cache = True ):
     if urlcfg in self.__cfgCache:
       return S_OK( self.__cfgCache[ urlcfg ] )
-    try:
-      cfgData = urlretrieveTimeout( urlcfg, timeout = cliParams.timeout )
-      if not cfgData:
-        return S_ERROR( "Could not get data from %s" % urlcfg )
-    except:
-      return S_ERROR( "Could not open %s" % urlcfg )
+    urlhash = md5.md5( urlcfg ).hexdigest()
+    if cliParams.cacheDir:
+      cacheDir = cliParams.cacheDir
+    else:
+      cacheDir = os.path.join( cliParams.basePath, ".installCache" )
+    cacheFile = os.path.join( cacheDir, "%s.cfg" % urlhash )
+    cfgData = False
+    if cache and  os.path.isfile( cacheFile ):
+      try:
+        fd = open( cacheFile )
+        cfgData = fd.read()
+        fd.close()
+        logDEBUG( "Read %s from cache %s" % ( urlcfg, cacheFile ) )
+      except IOError:
+        pass
+    if not cfgData:
+      try:
+        cfgData = urlretrieveTimeout( urlcfg, timeout = cliParams.timeout )
+        if not cfgData:
+          return S_ERROR( "Could not get data from %s" % urlcfg )
+      except:
+        return S_ERROR( "Could not open %s" % urlcfg )
+      if cache:
+        if not os.path.isdir( cacheDir ):
+          try:
+            os.makedirs( cacheDir )
+          except IOError:
+            pass
+        try:
+          fd = open( cacheFile, "w" )
+          fd.write( cfgData )
+          fd.close()
+        except IOError:
+          pass
     try:
       #cfgData = cfgFile.read()
       cfg = ReleaseConfig.CFG( cfgData )
@@ -335,7 +364,7 @@ class ReleaseConfig:
     result = self.__loadGlobalDefaults()
     if not result[ 'OK' ]:
       return result
-    return self.__loadObjectDefaults( "Installations", self.__instName )
+    return self.__loadObjectDefaults( "Installations", self.__instName, cache = False )
 
   def loadProjectDefaults( self ):
     result = self.__loadGlobalDefaults()
@@ -345,7 +374,7 @@ class ReleaseConfig:
 
   def __loadGlobalDefaults( self ):
     self.__dbgMsg( "Loading global defaults from: %s" % self.__globalDefaultsURL )
-    result = self.__loadCFGFromURL( self.__globalDefaultsURL )
+    result = self.__loadCFGFromURL( self.__globalDefaultsURL, cache = False )
     if not result[ 'OK' ]:
       return result
     self.__globalDefaults = result[ 'Value' ]
@@ -355,7 +384,7 @@ class ReleaseConfig:
     self.__dbgMsg( "Loaded global defaults" )
     return S_OK()
 
-  def __loadObjectDefaults( self, rootPath, objectName ):
+  def __loadObjectDefaults( self, rootPath, objectName, cache = True ):
     basePath = "%s/%s" % ( rootPath, objectName )
     if basePath in self.__loadedCfgs:
       return S_OK()
@@ -368,7 +397,7 @@ class ReleaseConfig:
 
     if aliasTo:
       self.__dbgMsg( "%s is an alias to %s" % ( objectName, aliasTo ) )
-      result = self.__loadObjectDefaults( rootPath, aliasTo )
+      result = self.__loadObjectDefaults( rootPath, aliasTo, cache = cache )
       if not result[ 'OK' ]:
         return result
       cfg = result[ 'Value' ]
@@ -385,7 +414,7 @@ class ReleaseConfig:
       self.__dbgMsg( "No defaults file defined for %s %s" % ( rootPath.lower()[:-1], objectName ) )
     else:
       self.__dbgMsg( "Defaults for %s are in %s" % ( basePath, defaultsLocation ) )
-      result = self.__loadCFGFromURL( defaultsLocation )
+      result = self.__loadCFGFromURL( defaultsLocation , cache = cache )
       if not result[ 'OK' ]:
         return result
       cfg = result[ 'Value' ]
@@ -836,11 +865,15 @@ def urlretrieveTimeout( url, fileName = '', timeout = 0 ):
   else:
     return urlData
 
-def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache = False ):
+def downloadAndExtractTarball( tarsURL, pkgName, pkgVer, checkHash = True, cache = True ):
   tarName = "%s-%s.tar.gz" % ( pkgName, pkgVer )
   tarPath = os.path.join( cliParams.targetPath, tarName )
   tarFileURL = "%s/%s" % ( tarsURL, tarName )
-  cacheDir = os.path.join( cliParams.basePath, ".installCache" )
+  if cliParams.cacheDir:
+    cacheDir = cliParams.cacheDir
+  else:
+    cacheDir = os.path.join( cliParams.basePath, ".installCache" )
+  logDEBUG( "Cache dir is %s" % cacheDir )
   tarCachePath = os.path.join( cacheDir, tarName )
   if cache and os.path.isfile( tarCachePath ):
     logNOTICE( "Using cached copy of %s" % tarName )
@@ -1016,7 +1049,8 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'X', 'externalsOnly', 'Only install external binaries' ),
             ( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from' ),
             ( 'h', 'help', 'Show this help' ),
-            ( 'T:', 'Timeout=', 'Timeout for downloads (default = %s)' )
+            ( 'T:', 'Timeout=', 'Timeout for downloads (default = %s)' ),
+            ( 'C:', 'cacheDir=', 'Cache dir for tarballs downloaded' )
           )
 
 def usage():
@@ -1076,7 +1110,7 @@ def loadConfiguration():
 
   for opName in ( 'release', 'externalsType', 'installType', 'pythonVersion',
                   'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
-                  'lcgVer', 'useVersionsDir', 'targetPath',
+                  'lcgVer', 'useVersionsDir', 'targetPath', 'cacheDir',
                   'project', 'release', 'extraModules', 'extensions', 'timeout' ):
     try:
       opVal = releaseConfig.getInstallationConfig( "LocalInstallation/%s" % ( opName[0].upper() + opName[1:] ) )
@@ -1136,6 +1170,8 @@ def loadConfiguration():
         cliParams.timeout = min( cliParams.timeout, 3600 )
       except ValueError:
         pass
+    elif o in ( '-C', '--cacheDir' ):
+      cliParams.cacheDir = v
 
 
   if not cliParams.release:
@@ -1205,7 +1241,7 @@ def installExternals( releaseConfig ):
       tarsURL = cliParams.installSource
     else:
       tarsURL = releaseConfig.getTarsLocation( 'DIRAC' )[ 'Value' ]
-    if not downloadAndExtractTarball( tarsURL, "Externals", extVer, cache = True ):
+    if not downloadAndExtractTarball( tarsURL, "Externals", extVer ):
       return ( not cliParams.noAutoBuild ) and compileExternals( externalsVersion )
     logNOTICE( "Fixing externals paths..." )
     fixBuildPaths()
@@ -1217,7 +1253,7 @@ def installExternals( releaseConfig ):
   if lcgVer:
     verString = "%s-%s-python%s" % ( lcgVer, cliParams.platform, cliParams.pythonVersion )
     #HACK: try to find a more elegant solution for the lcg bundles location
-    if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache = True ):
+    if not downloadAndExtractTarball( tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False ):
       logERROR( "Check that there is a release for your platform: DIRAC-lcg-%s" % verString )
   return True
 
