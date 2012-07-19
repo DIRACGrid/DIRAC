@@ -160,7 +160,12 @@ class PDP:
     
     if decissionParams is None:
       decissionParams = self.decissionParams
-      
+    
+    validStatus             = RssConfiguration.getValidStatus()
+    if not validStatus[ 'OK' ]:
+      return validStatus
+    validStatus = validStatus[ 'Value' ]
+       
     policyInvocationResults = []
     
     for policyDict in policies:
@@ -182,7 +187,7 @@ class PDP:
         gLogger.error( policyInvocationResult )
         return policyInvocationResult
       
-      if not policyInvocationResult[ 'Status' ] in RssConfiguration.getValidStatus():
+      if not policyInvocationResult[ 'Status' ] in validStatus:
         print policyInvocationResult
         gLogger.error( policyInvocationResult )
         return policyInvocationResult
