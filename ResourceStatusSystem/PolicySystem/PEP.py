@@ -14,7 +14,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import Resource
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
 #from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP                 import PDP
-#from DIRAC.ResourceStatusSystem.Utilities                        import Utils
+from DIRAC.ResourceStatusSystem.Utilities                        import Utils
 
 __RCSID__  = '$Id:  $'
 
@@ -86,6 +86,14 @@ class PEP:
     ## record all results before doing anything else    
     for resPolicy in resDecisions[ 'singlePolicyResults' ]:
       print ( decissionParams, resPolicy )
+    
+    policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
+      
+    for policyAction in policyCombinedResult[ 'PolicyAction' ]:
+      
+      print policyAction
+      Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyAction )
+        
 #      
 #      if not resP.has_key( 'OLD' ):       
 #        self.clients[ "rmClient" ].insertPolicyResultLog( granularity, name,
