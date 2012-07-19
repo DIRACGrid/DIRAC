@@ -6,7 +6,7 @@
   
 '''
 
-from DIRAC                                            import gLogger, S_ERROR
+from DIRAC                                            import S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities             import Utils
 from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
 
@@ -81,11 +81,11 @@ class PolicyCaller:
     if not command[ 'OK' ]:
       return command
     command = command[ 'Value' ]
-
-#    res[ 'PolicyName' ] = pName
-#    return res
     
     evaluationResult = self.policyEvaluation( policy, command )
+    
+    if evaluationResult[ 'OK' ]:
+      evaluationResult[ 'policy' ] = policyDict
     
     return evaluationResult
 
@@ -126,31 +126,14 @@ class PolicyCaller:
 #    res[ 'PolicyName' ] = pName
 #    return res
 
-  def policyEvaluation( self, policy, command ):#, pArgs, decissionParams ):
+  @staticmethod
+  def policyEvaluation( policy, command ):
     
-#    for clientName, clientInstance in self.clients.items():
-#      
-#      command.setAPI( clientName, clientInstance )
-
-#    command.setDecissionParams( decissionParams )
-#    command.setArgs( pArgs )
-
+    
     policy.setCommand( command )
-
-    _evaluationResult = self._policyEvaluation( policy )
+    evaluationResult = policy.evaluate()
     
-    return _evaluationResult    
-
-  def _policyEvaluation( self, policy ):#decissionParams, policyArguments, policyCommand ):
-    '''
-      Policy evaluation
-    '''
-    
-    #policy.setArgs( policyArguments )
-    #policy.setDecissionParams( decissionParams )
-    #policy.setCommand( policyCommand )
-    
-    return policy.evaluate()
+    return evaluationResult    
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

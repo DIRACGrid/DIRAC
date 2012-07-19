@@ -133,11 +133,13 @@ class PDP:
 #    if policyCombinedResults.has_key( 'Status' ):
     newstatus = policyCombinedResults[ 'Status' ]
 #
-    if newstatus != self.decissionParams[ 'status' ]: # Policies satisfy
+    if newstatus != self.decissionParams[ 'status' ] and newstatus is not None: # Policies satisfy
 #        newPolicyType = self.iGetter.getNewPolicyType( self.__granularity, newstatus )
 #        policyType    = set( policyType ) & set( newPolicyType )
 #        
       policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
+    else:
+      policyCombinedResults[ 'PolicyAction' ] = []  
 #
 #      else:                          # Policies does not satisfy
 #        policyCombinedResults[ 'Action' ] = False
@@ -147,7 +149,8 @@ class PDP:
     return S_OK( 
                 { 
                  'singlePolicyResults'  : singlePolicyResults,
-                 'policyCombinedResult' : policyCombinedResults 
+                 'policyCombinedResult' : policyCombinedResults,
+                 'decissionParams'      : self.decissionParams 
                  }
                 )
 
@@ -172,22 +175,24 @@ class PDP:
        
       #FIXME: check policy output here makes any sense ? YES
       
-      if not 'Status' in policyInvocationResult[ 'Value' ]:
+      policyInvocationResult = policyInvocationResult[ 'Value' ]
+      
+      if not 'Status' in policyInvocationResult:
         print policyInvocationResult
         gLogger.error( policyInvocationResult )
         return policyInvocationResult
       
-      if not policyInvocationResult[ 'Value' ][ 'Status' ] in RssConfiguration.getValidStatus()['Value']:
+      if not policyInvocationResult[ 'Status' ] in RssConfiguration.getValidStatus():
         print policyInvocationResult
         gLogger.error( policyInvocationResult )
         return policyInvocationResult
 
-      if not 'Reason' in policyInvocationResult[ 'Value' ]:
+      if not 'Reason' in policyInvocationResult:
         print policyInvocationResult
         gLogger.error( policyInvocationResult )
         return policyInvocationResult
        
-      policyInvocationResults.append( policyInvocationResult[ 'Value' ] )
+      policyInvocationResults.append( policyInvocationResult )
       
     return S_OK( policyInvocationResults )   
     

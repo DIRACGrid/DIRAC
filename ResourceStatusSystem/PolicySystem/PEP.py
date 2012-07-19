@@ -80,9 +80,12 @@ class PEP:
     
 # commented out for a while, while development is ongoing.
 
+    # We take from PDP the decision parameters used to find the policies
+    decissionParams = resDecisions[ 'decissionParams' ]
+
     ## record all results before doing anything else    
     for resPolicy in resDecisions[ 'singlePolicyResults' ]:
-      print resPolicy
+      print ( decissionParams, resPolicy )
 #      
 #      if not resP.has_key( 'OLD' ):       
 #        self.clients[ "rmClient" ].insertPolicyResultLog( granularity, name,
