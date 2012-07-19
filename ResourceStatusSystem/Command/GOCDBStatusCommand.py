@@ -46,16 +46,16 @@ class GOCDBStatusCommand( Command ):
     ## INPUT PARAMETERS
     
     if not 'element' in self.args:
-      return S_ERROR( '"element" not found in self.args' )
+      return S_ERROR( 'GOCDBStatusCommand: "element" not found in self.args' )
     element = self.args[ 'element' ]
     if element is None:
-      return S_ERROR( '"element" should not be None')
+      return S_ERROR( 'GOCDBStatusCommand: "element" should not be None')
     
     if not 'name' in self.args:
-      return S_ERROR( '"name" not found in self.args' )
+      return S_ERROR( 'GOCDBStatusCommand: "name" not found in self.args' )
     name = self.args[ 'name' ]
     if name is None:
-      return S_ERROR( '"name" should not be None')
+      return S_ERROR( 'GOCDBStatusCommand: "name" should not be None')
     
     hours = None
     if 'hours' in self.args:

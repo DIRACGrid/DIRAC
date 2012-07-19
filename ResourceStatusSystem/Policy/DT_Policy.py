@@ -47,7 +47,7 @@ class DT_Policy( PolicyBase ):
       result[ 'Status' ] = 'Bad'
 
     else:
-      return S_ERROR( 'GOCDB returned an unknown value for DT: "%s"' % status[ 'DT' ] )
+      return S_ERROR( 'DT_Policy: GOCDB returned an unknown value for DT: "%s"' % status[ 'DT' ] )
 
     result[ 'EndDate' ] = status[ 'EndDate' ]
     result[ 'Reason' ]  = 'DownTime found: %s' % status[ 'DT' ]

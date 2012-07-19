@@ -5,7 +5,7 @@
 
 '''
 
-from DIRAC                                               import S_OK, S_ERROR
+from DIRAC                                               import S_OK
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.Utilities                import Utils
