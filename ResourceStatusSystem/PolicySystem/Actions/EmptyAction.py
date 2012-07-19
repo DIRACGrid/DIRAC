@@ -5,26 +5,24 @@
   
 '''
 
-from DIRAC                                                      import gLogger
+from DIRAC                                                      import gLogger, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 
 __RCSID__  = '$Id: $'
 
 class EmptyAction( BaseAction ):
   
-  def __init__( self, decissionParams, enforcementResult ):
+  def __init__( self, decissionParams, enforcementResult, singlePolicyResults ):
     
-    super( EmptyAction, self ).__init__( decissionParams, enforcementResult )
+    super( EmptyAction, self ).__init__( decissionParams, enforcementResult, singlePolicyResults )
     
     self.actionName = 'EmptyAction'
   
   def run( self ):
     """Do nothing, but log it :)"""
     
-    
     gLogger.info( '%s: ' % self.actionName )
-    
-    #gLogger.info( 'EmptyAction at %s with %s' % (self.name, str(self.pdp_decision)))
+    return S_OK()
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

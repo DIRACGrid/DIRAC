@@ -9,7 +9,7 @@
        c. other....
 '''
 
-#from DIRAC                                                       import S_ERROR
+from DIRAC                                                       import gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
 #from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
@@ -81,18 +81,33 @@ class PEP:
 # commented out for a while, while development is ongoing.
 
     # We take from PDP the decision parameters used to find the policies
-    decissionParams = resDecisions[ 'decissionParams' ]
-
-    ## record all results before doing anything else    
-    for resPolicy in resDecisions[ 'singlePolicyResults' ]:
-      print ( decissionParams, resPolicy )
-    
+    decissionParams      = resDecisions[ 'decissionParams' ]
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]
-      
+    singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
+    
+    ## record all results before doing anything else    
+    for resPolicy in singlePolicyResults:
+      print ( decissionParams, resPolicy )
+         
     for policyAction in policyCombinedResult[ 'PolicyAction' ]:
       
       print policyAction
-      Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyAction )
+      try:
+        actionMod = Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyAction )
+      except ImportError:
+        gLogger.error( 'Error importing %s action' % policyAction )
+        
+      if not hasattr( actionMod, policyAction ):
+        gLogger.error( 'Error importing %s action class' % policyAction )
+      
+      action = getattr( actionMod, policyAction )( decissionParams, policyCombinedResult,
+                                                   singlePolicyResults )
+      
+      actionResult = action.run()
+      if not actionResult[ 'OK' ]:
+        gLogger.error( actionResult[ 'Message' ] )
+        
+      gLogger.debug( '> %s' % policyAction )     
         
 #      
 #      if not resP.has_key( 'OLD' ):       

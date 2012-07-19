@@ -133,7 +133,7 @@ class PDP:
 #    if policyCombinedResults.has_key( 'Status' ):
     newstatus = policyCombinedResults[ 'Status' ]
 #
-    if newstatus != self.decissionParams[ 'status' ] and newstatus is not None: # Policies satisfy
+    if newstatus != self.decissionParams[ 'status' ] and self.decissionParams[ 'status' ] is not None: # Policies satisfy
 #        newPolicyType = self.iGetter.getNewPolicyType( self.__granularity, newstatus )
 #        policyType    = set( policyType ) & set( newPolicyType )
 #        

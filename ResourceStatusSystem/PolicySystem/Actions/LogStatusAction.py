@@ -11,9 +11,9 @@ __RCSID__ = '$Id:  $'
 
 class LogStatusAction( BaseAction ):
 
-  def __init__( self, decissionParams, enforcementResult ):
+  def __init__( self, decissionParams, enforcementResult, singlePolicyResults ):
     
-    super( LogStatusAction, self ).__init__( decissionParams, enforcementResult )
+    super( LogStatusAction, self ).__init__( decissionParams, enforcementResult, singlePolicyResults )
     self.actionName = 'LogStatusAction'
     
     self.rsClient   = ResourceStatusClient()
