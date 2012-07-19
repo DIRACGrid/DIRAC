@@ -59,6 +59,8 @@ class InfoGetter:
 
   def __getPoliciesThatApply( self, decissionParams ):
     
+    #FIXME: allow policy filtering on Configurations, overwritten by CS 
+    
     policiesThatApply = []
     
     # Get policies configuration metadata from CS.

@@ -63,6 +63,7 @@ class GOCDBStatusCommand( Command ):
         return name
       name = name[ 'Value' ]
       
+    #FIXME: check if that certainly works or not. Right now, no idea  
     resDTGOC = self.gClient.getStatus( element, name, None, hours )
 
     if not resDTGOC[ 'OK' ]:
