@@ -31,8 +31,7 @@ class TypedList( list ):
   """ 
   .. class:: TypedList
 
-  A list-like object holding only objects of specified type.
-
+  A list-like class holding only objects of specified type(s).
   """   
   def __init__(self, iterable=None, allowedTypes=None):
     """ c'tor
@@ -159,35 +158,4 @@ class TypedList( list ):
     """
     self._typeCheck( val )
     list.insert( self, i, val )
-   
 
-if __name__ == "__main__":
-
-  rl = TypedList( allowedTypes=( int ) )
-  rl.append( 10 )
-  rl.append( 9 )
-  rl.extend( (1, 2 ) )
-  rl[2] = 5
-  
-  rl.insert( 0, 100 )
-
-  rl += [ 3, 2 ]
-  a = [ 1, 3 ] + rl
-  print type(a), a
-
-  b = rl + [ 3, 5 ]
-
-  print type(b), b
-
-  r2 = TypedList( (1,2,3), allowedTypes=( int ) )
-
-  print type(r2 + rl), r2 + rl
-  print type(rl + r2), rl + r2
-
-  
-  print rl, sorted( rl )
-
-  num = TypedList( allowedTypes = ( float, long, int ) )
-
-  num += [ 1, 1.0, 1L ]
-  print num
