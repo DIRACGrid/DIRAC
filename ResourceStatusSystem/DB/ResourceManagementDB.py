@@ -5,6 +5,8 @@
 
 '''
 
+from datetime                             import datetime
+
 from DIRAC                                import S_OK, S_ERROR 
 from DIRAC.Core.Base.DB                   import DB
 from DIRAC.ResourceStatusSystem.Utilities import MySQLWrapper
@@ -140,6 +142,11 @@ class ResourceManagementDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
+
+    # We force lastCheckTime to utcnow if it is not present on the params
+    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+      params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )  
+    
     return MySQLWrapper.insert( self, params, meta )
 
   def update( self, params, meta ):
@@ -161,6 +168,11 @@ class ResourceManagementDB( object ):
 
     :return: S_OK() || S_ERROR()
     '''
+    
+    # We force lastCheckTime to utcnow if it is not present on the params
+    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+      params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 ) 
+    
     return MySQLWrapper.update( self, params, meta )
 
   def select( self, params, meta ):
@@ -202,6 +214,93 @@ class ResourceManagementDB( object ):
     '''
     return MySQLWrapper.delete( self, params, meta )
 
+  ## Extended SQL methods ######################################################
+  
+  def addOrModify( self, params, meta ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is there, it is updated, if not, it is inserted as a new entry. 
+    
+    :Parameters:
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **meta** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+        
+    selectQuery = self.select( params, meta )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery 
+       
+#    isUpdate = False
+       
+    if selectQuery[ 'Value' ]:      
+      userQuery  = self.update( params, meta )
+#      isUpdate   = True
+    else:      
+      #FIXME: dateEffective set by default as well ??
+#      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+#        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+      userQuery = self.insert( params, meta )
+    
+#    if self.recordLogs:
+#      
+#      if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
+#        
+#        if isUpdate:
+#          updateRes = self.select( params, meta )
+#          if not updateRes[ 'OK' ]:
+#            return updateRes
+#          
+#          # If we are updating more that one result at a time, this is most likely
+#          # going to be a mess. All queries must be one at a time, if need to do
+#          if len( updateRes[ 'Value' ] ) != 1:
+#            return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
+#          if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
+#            # Uyyy, something went seriously wrong !!
+#            return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
+#                    
+#          params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
+#                
+#        meta[ 'tableName' ] = meta[ 'tableName' ].replace( 'Status', 'Log' )
+#
+#        logRes = self.insert( params, meta )
+#        if not logRes[ 'OK' ]:
+#          return logRes
+#    
+    return userQuery      
+
+  def addIfNotThere( self, params, meta ):
+    '''
+    Using the PrimaryKeys of the table, it looks for the record in the database.
+    If it is not there, it is inserted as a new entry. 
+    
+    :Parameters:
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
+
+      **meta** - `dict`
+        metadata for the mysql query. It must contain, at least, `table` key
+        with the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+        
+    selectQuery = self.select( params, meta )
+    if not selectQuery[ 'OK' ]:
+      return selectQuery 
+       
+    if selectQuery[ 'Value' ]:      
+      return selectQuery
+#    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+#      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+    
+    return self.insert( params, meta )   
+
   ## Auxiliar methods ##########################################################
 
   def getTable( self, tableName ):
@@ -226,6 +325,9 @@ class ResourceManagementDB( object ):
       Method used by database tools to write the schema
     '''  
     return self.__createTables()
+
+  def _logRecord( self, params, meta ):
+    pass
 
   ## Private methods ###########################################################
 
