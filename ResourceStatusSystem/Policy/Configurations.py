@@ -26,15 +26,15 @@ Policies = {
 
   'DT_Scheduled' :
     {
-      'description'     : "Ongoing and scheduled down-times",
-      'module'          : 'DT_Policy',
+      'description' : "Ongoing and scheduled down-times",
+      'module'      : 'DT_Policy',
       #'commandInNewRes' : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
-      'command'         : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
-      'args'            : { 'hours' : 12 },
-      'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
-                                         'args': None}},],
-      'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
-                                         'args': None}}]
+      'command'     : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
+      'args'        : { 'hours' : 12 },
+#      'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
+#                                         'args': None}},],
+#      'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
+#                                         'args': None}}]
     },
 
   'AlwaysActive' :
