@@ -172,11 +172,15 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'AccountingCache', locals() )
-  def addOrModifyAccountingCache( self, name, plotType, plotName, result, 
-                                  dateEffective, lastCheckTime ):
+  #FIXME: should they be None or not ??
+  def addOrModifyAccountingCache( self, name = None, plotType = None, 
+                                  plotName = None, result = None, 
+                                  dateEffective = None, lastCheckTime = None,
+                                  meta = None ):
     '''
-    Using `name`, `plotType` and `plotName` to query the database, 
-    decides whether to insert or update the table.
+    Adds or updates-if-duplicated from AccountingCache
+#    Using `name`, `plotType` and `plotName` to query the database, 
+#    decides whether to insert or update the table.
     
     :Parameters:
       **name** - `string`
@@ -199,9 +203,41 @@ class ResourceManagementClient( object ):
     '''    
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'AccountingCache', locals() )
-  
-  
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', 'AccountingCache', locals() )    
+  def addIfNotThereAccountingCache( self, name = None, plotType = None, 
+                                    plotName = None, result = None, 
+                                    dateEffective = None, lastCheckTime = None,
+                                    meta = None ):
+    '''
+    Adds or updates-if-duplicated from AccountingCache
+#    Using `name`, `plotType` and `plotName` to query the database, 
+#    decides whether to insert or update the table.
+    
+    :Parameters:
+      **name** - `string`
+        name of an individual of the grid topology  
+      **plotType** - `string`
+        the plotType name (e.g. 'Pilot')
+      **plotName** - `string`
+        the plot name
+      **result** - `string`
+        command result
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', 'AccountingCache', locals() )    
+    
   ##############################################################################
   # CLIENT CACHE Methods
 
@@ -324,8 +360,9 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'ClientCache', locals() )
-  def addOrModifyClientCache( self, name, commandName, opt_ID, value, result,
-                              dateEffective, lastCheckTime ):
+  def addOrModifyClientCache( self, name = None, commandName = None, opt_ID = None, 
+                              value = None, result = None, dateEffective = None, 
+                              lastCheckTime = None, meta = None ):
     '''
     Using `name`, `commandName` and `value` to query the database, 
     decides whether to insert or update the table.
@@ -351,10 +388,48 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''    
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'ClientCache', locals() )
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'ClientCache', locals() )
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', 'ClientCache', locals() )    
+  def addIfNotThereClientCache( self, name = None, commandName = None, opt_ID = None, 
+                                value = None, result = None, dateEffective = None, 
+                                lastCheckTime = None, meta = None ):
+    '''
+    Using `name`, `commandName` and `value` to query the database, 
+    decides whether to insert or update the table.
     
+    :Parameters:
+      **name** - `string`
+        name of an individual of the grid topology  
+      **commandName** - `string`
+        name of the command executed
+      **opt_ID** - `string`
+        optional ID (e.g. used for downtimes)
+      **value** - `string`
+        it is the type of result ( e.g. `Link`, `PE_S`... )
+      **result** - `string`
+        output of the command ( of value type )    
+      **dateEffective** - `datetime`
+        time-stamp from which the result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'ClientCache', locals() )
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', 'ClientCache', locals() )       
     
   ##############################################################################
   # POLICY RESULT Methods
@@ -497,8 +572,10 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'PolicyResult', locals() )
-  def addOrModifyPolicyResult( self, granularity, name, policyName, statusType,
-                               status, reason, dateEffective, lastCheckTime ):
+  def addOrModifyPolicyResult( self, granularity = None, name = None, 
+                               policyName = None, statusType = None,
+                               status = None, reason = None, dateEffective = None, 
+                               lastCheckTime = None, meta = None ):
     '''
     Using `name`, `policyName` and `statusType` to query the database, 
     decides whether to insert or update the table.
@@ -528,11 +605,54 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'PolicyResult', locals() )
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'PolicyResult', locals() )
-  
-  
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', 'PolicyResult', locals() )      
+  def addIfNotTherePolicyResult( self, granularity = None, name = None, 
+                                 policyName = None, statusType = None,
+                                 status = None, reason = None, dateEffective = None, 
+                                 lastCheckTime = None, meta = None ):
+    '''
+    Using `name`, `policyName` and `statusType` to query the database, 
+    decides whether to insert or update the table.
+
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`  
+      **name** - `string`
+        name of the element
+      **policyName** - `string`
+        name of the policy
+      **statusType** - `string`
+        it has to be a valid status type for the given granularity
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`    
+      **reason** - `string`
+        decision that triggered the assigned status
+      **dateEffective** - `datetime`
+        time-stamp from which the policy result is effective
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the policy result was checked
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'PolicyResult', locals() )
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', 'PolicyResult', locals() )     
+    
   ##############################################################################
   # POLICY RESULT LOG Methods
 
@@ -664,7 +784,80 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'PolicyResultLog', locals() )
+  def addOrModifyPolicyResultLog( self, granularity = None, name = None, 
+                                  policyName = None, statusType = None,
+                                  status = None, reason = None, lastCheckTime = None, 
+                                  meta = None ):
+    '''
+    AddsOrModifies on PolicyResult a new row with the arguments given.
     
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`  
+      **name** - `string`
+        name of the element
+      **policyName** - `string`
+        name of the policy
+      **statusType** - `string`
+        it has to be a valid status type for the given granularity
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`    
+      **reason** - `string`
+        decision that triggered the assigned status
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the policy result was checked
+      **meta** - `[,dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__query( 'insert', 'PolicyResultLog', locals() )  
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', 'PolicyResultLog', locals() )         
+  def addIfNotTherePolicyResultLog( self, granularity = None, name = None, 
+                                    policyName = None, statusType = None,
+                                    status = None, reason = None, 
+                                    lastCheckTime = None, meta = None ):
+    '''
+    AddsIfNotThere on PolicyResult a new row with the arguments given.
+    
+    :Parameters:
+      **granularity** - `string`
+        it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
+        | `Service` | `Resource` | `StorageElement`  
+      **name** - `string`
+        name of the element
+      **policyName** - `string`
+        name of the policy
+      **statusType** - `string`
+        it has to be a valid status type for the given granularity
+      **status** - `string`
+        it has to be a valid status, any of the defaults: `Active` | `Bad` | \
+        `Probing` | `Banned`    
+      **reason** - `string`
+        decision that triggered the assigned status
+      **lastCheckTime** - `datetime`
+        time-stamp setting last time the policy result was checked
+      **meta** - `[,dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__query( 'insert', 'PolicyResultLog', locals() )  
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', 'PolicyResultLog', locals() )         
     
   ##############################################################################
   # SpaceTokenOccupancy CACHE Methods
@@ -780,9 +973,10 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'SpaceTokenOccupancyCache', locals() )  
-  def addOrModifySpaceTokenOccupancyCache( self, site, token, total, 
-                                           guaranteed, free, 
-                                           lastCheckTime, meta = None ):
+  def addOrModifySpaceTokenOccupancyCache( self, site = None, token = None, 
+                                           total = None, guaranteed = None, 
+                                           free = None, lastCheckTime = None, 
+                                           meta = None ):
     '''
     Using `site` and `token` to query the database, decides whether to insert or 
     update the table.
@@ -806,11 +1000,48 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''    
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'SpaceTokenOccupancyCache', locals() ) 
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'SpaceTokenOccupancyCache', locals() )  
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', 'SpaceTokenOccupancyCache', locals() )        
+  def addIfNotThereSpaceTokenOccupancyCache( self, site = None, token = None, 
+                                             total = None, guaranteed = None, 
+                                             free = None, lastCheckTime = None, 
+                                             meta = None ):
+    '''
+    Using `site` and `token` to query the database, decides whether to insert or 
+    update the table.
     
-    
+    :Parameters:
+      **site** - `string`
+        name of the space token site  
+      **token** - `string`
+        name of the token
+      **total** - `integer`
+        total terabytes
+      **guaranteed** - `integer`
+        guaranteed terabytes
+      **free** - `integer`
+        free terabytes
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'SpaceTokenOccupancyCache', locals() ) 
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', 'SpaceTokenOccupancyCache', locals() ) 
+        
   ##############################################################################
   # USER REGISTRY CACHE Methods
 
@@ -897,7 +1128,8 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'UserRegistryCache', locals() )
-  def addOrModifyUserRegistryCache( self, login, name, email ):
+  def addOrModifyUserRegistryCache( self, login = None, name = None, 
+                                    email = None, meta = None ):
     '''
     Using `login` to query the database, decides whether to insert or update 
     the table.
@@ -915,10 +1147,39 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''    
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'UserRegistryCache', locals() )   
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'UserRegistryCache', locals() )   
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', 'UserRegistryCache', locals() )   
+  def addIfNotThereUserRegistryCache( self, login = None, name = None, 
+                                       email = None, meta = None ):
+    '''
+    Using `login` to query the database, decides whether to insert or update 
+    the table.
+    
+    :Parameters:
+      **login** - `string`
+        user's login ID  
+      **name** - `string`
+        user's name
+      **email** - `string`
+        user's email
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
 
+    :return: S_OK() || S_ERROR()
+    '''    
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'UserRegistryCache', locals() )   
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', 'UserRegistryCache', locals() )   
 
   ##############################################################################
   # VOBOX CACHE Methods
@@ -1024,8 +1285,8 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'VOBOXCache', locals() )  
-  def addOrModifyVOBOXCache( self, site, system, serviceUp, machineUp, 
-                             lastCheckTime ):
+  def addOrModifyVOBOXCache( self, site = None, system = None, serviceUp = None, 
+                             machineUp = None, lastCheckTime = None, meta = None ):
     '''
     Using `site` and `system` to query the database, 
     decides whether to insert or update the table.
@@ -1047,9 +1308,45 @@ class ResourceManagementClient( object ):
 
     :return: S_OK() || S_ERROR()
     '''    
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'VOBOXCache', locals() ) 
     # Unused argument
     # pylint: disable-msg=W0613
-    return self.__addOrModifyElement( 'VOBOXCache', locals() ) 
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addOrModify', 'VOBOXCache', locals() )   
+  
+  def addIfNotThereVOBOXCache( self, site = None, system = None, serviceUp = None, 
+                               machineUp = None, lastCheckTime = None, meta = None ):
+    '''
+    Using `site` and `system` to query the database, 
+    decides whether to insert or update the table.
+    
+    :Parameters:
+      **site** - `string`
+        name of the site hosting the VOBOX  
+      **system** - `string`
+        DIRAC system ( e.g. ConfigurationService )
+      **serviceUp** - `integer`
+        seconds the system has been up
+      **machineUp** - `integer`
+        seconds the machine has been up
+      **lastCheckTime** - `datetime`
+        time-stamp from which the result is effective
+      **meta** - `[, dict]`
+        meta-data for the MySQL query. It will be filled automatically with the\
+       `table` key and the proper table name.
+
+    :return: S_OK() || S_ERROR()
+    '''    
+#    # Unused argument
+#    # pylint: disable-msg=W0613
+#    return self.__addOrModifyElement( 'VOBOXCache', locals() ) 
+    # Unused argument
+    # pylint: disable-msg=W0613
+    meta = { 'onlyUniqueKeys' : True }
+    return self.__query( 'addIfNotThere', 'VOBOXCache', locals() )   
+
 
 # THIS METHOD DOES NOT WORK AS EXPECTED 
 # __addOrModifyElement overwrittes the field lastCheckTime.
@@ -1094,39 +1391,39 @@ class ResourceManagementClient( object ):
   ################################################################################
   # Protected methods
 
-  def _insertElement( self, element, kwargs ):
-    '''
-      Method that executes the insert method of the given element.
-    '''
-    fname = 'insert%s' % element
-    fElem = getattr( self, fname )
-    return fElem( **kwargs )
-  def _updateElement( self, element, kwargs ): 
-    '''
-      Method that executes the update method of the given element.
-    '''    
-    fname = 'update%s' % element
-    fElem = getattr( self, fname )
-    return fElem( **kwargs )
-  def _selectElement( self, element, kwargs ):
-    '''
-      Method that executes the get method of the given element.
-    '''
-    fname = 'select%s' % element
-    fElem = getattr( self, fname )
-    return fElem( **kwargs )
-  def _deleteElement( self, element, kwargs ):
-    '''
-      Method that executes the delete method of the given element.
-    '''    
-    fname = 'delete%s' % element
-    fElem = getattr( self, fname )
-    return fElem( **kwargs )
+#  def _insertElement( self, element, kwargs ):
+#    '''
+#      Method that executes the insert method of the given element.
+#    '''
+#    fname = 'insert%s' % element
+#    fElem = getattr( self, fname )
+#    return fElem( **kwargs )
+#  def _updateElement( self, element, kwargs ): 
+#    '''
+#      Method that executes the update method of the given element.
+#    '''    
+#    fname = 'update%s' % element
+#    fElem = getattr( self, fname )
+#    return fElem( **kwargs )
+#  def _selectElement( self, element, kwargs ):
+#    '''
+#      Method that executes the get method of the given element.
+#    '''
+#    fname = 'select%s' % element
+#    fElem = getattr( self, fname )
+#    return fElem( **kwargs )
+#  def _deleteElement( self, element, kwargs ):
+#    '''
+#      Method that executes the delete method of the given element.
+#    '''    
+#    fname = 'delete%s' % element
+#    fElem = getattr( self, fname )
+#    return fElem( **kwargs )
 
   ##############################################################################
   # Private methods
 
-  def __query( self, queryType, tableName, kwargs ):
+  def __query( self, queryType, tableName, parameters ):
     '''
       This method is a rather important one. It will format the input for the DB
       queries, instead of doing it on a decorator. Two dictionaries must be passed
@@ -1135,51 +1432,52 @@ class ResourceManagementClient( object ):
       with the right table name. 
     '''
     # Functions we can call, just a light safety measure.
-    _gateFunctions = [ 'insert', 'update', 'select', 'delete' ] 
+    _gateFunctions = [ 'insert', 'update', 'select', 'delete', 'addOrModify', 'addIfNotThere'  ] 
     if not queryType in _gateFunctions:
       return S_ERROR( '"%s" is not a proper gate call' % queryType )
     
     gateFunction = getattr( self.gate, queryType )
     
     # If meta is None, we set it to {}
-    meta   = ( True and kwargs.pop( 'meta' ) ) or {}
-    params = kwargs
-    del params[ 'self' ]     
+    meta   = ( True and parameters.pop( 'meta' ) ) or {}
+#    params = parameters
+    # Remove self, added by locals()
+    del parameters[ 'self' ]     
         
     meta[ 'table' ] = tableName
     
-    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, params, meta ) )  
-    return gateFunction( params, meta )
+    gLogger.debug( 'Calling %s, with \n params %s \n meta %s' % ( queryType, parameters, meta ) )  
+    return gateFunction( parameters, meta )
 
-  def __addOrModifyElement( self, element, kwargs ):
-    '''
-      Method that executes update if the item is not new, otherwise inserts it
-      on the element table.
-    '''
-    # Remove 'self' key added by locals() 
-    del kwargs[ 'self' ]
-          
-    kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
-    sqlQuery = self._selectElement( element, kwargs )   
-    if not sqlQuery[ 'OK' ]:
-      return sqlQuery
-    
-    # No meta used to insert or update    
-    del kwargs[ 'meta' ]
-    
-    _now = datetime.utcnow().replace( microsecond = 0 ) 
-    if 'lastCheckTime' in kwargs:
-      kwargs[ 'lastCheckTime' ] = _now
-    
-    if sqlQuery[ 'Value' ]:             
-      
-      return self._updateElement( element, kwargs )
-    else:
-      # If we are inserting, we force dateEffective to be now
-      if 'dateEffective' in kwargs:
-        kwargs[ 'dateEffective' ] = _now
-      
-      return self._insertElement( element, kwargs ) 
+#  def __addOrModifyElement( self, element, kwargs ):
+#    '''
+#      Method that executes update if the item is not new, otherwise inserts it
+#      on the element table.
+#    '''
+#    # Remove 'self' key added by locals() 
+#    del kwargs[ 'self' ]
+#          
+#    kwargs[ 'meta' ] = { 'onlyUniqueKeys' : True }
+#    sqlQuery = self._selectElement( element, kwargs )   
+#    if not sqlQuery[ 'OK' ]:
+#      return sqlQuery
+#    
+#    # No meta used to insert or update    
+#    del kwargs[ 'meta' ]
+#    
+#    _now = datetime.utcnow().replace( microsecond = 0 ) 
+#    if 'lastCheckTime' in kwargs:
+#      kwargs[ 'lastCheckTime' ] = _now
+#    
+#    if sqlQuery[ 'Value' ]:             
+#      
+#      return self._updateElement( element, kwargs )
+#    else:
+#      # If we are inserting, we force dateEffective to be now
+#      if 'dateEffective' in kwargs:
+#        kwargs[ 'dateEffective' ] = _now
+#      
+#      return self._insertElement( element, kwargs ) 
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
