@@ -23,28 +23,31 @@ class LogStatusAction( BaseAction ):
     # Minor security checks
     
     element = self.decissionParams[ 'element' ]
-    if element is not None:
+    if element is None:
       return S_ERROR( 'element should not be None' )
     
     name = self.decissionParams[ 'name' ] 
-    if name is not None:
+    if name is None:
       return S_ERROR( 'name should not be None' )
     
     statusType = self.decissionParams[ 'statusType' ]
-    if statusType is not None:
+    if statusType is None:
       return S_ERROR( 'statusType should not be None' )
     
     status = self.decissionParams[ 'status' ]    
-    if status is not None:
+    if status is None:
       return S_ERROR( 'status should not be None' )
     
     elementType = self.decissionParams[ 'elementType' ]
-    if elementType is not None:
+    if elementType is None:
       return S_ERROR( 'elementType should not be None' )
     
     reason = self.decissionParams[ 'reason' ]
-    if reason is not None:
+    if reason is None:
       return S_ERROR( 'reason should not be None' )
+
+#    newStatus = self.enforcementResult[ 'Status' ]
+#    if newStatus == status:
     
     resLogUpdate = self.rsClient.addOrModifyStatusElement( element, 'Status',
                                                            name = name, statusType = statusType,

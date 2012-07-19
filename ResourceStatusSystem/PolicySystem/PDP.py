@@ -131,15 +131,18 @@ class PDP:
 #      policyCombinedResults[ 'PolicyType' ] = policyType
 #
 #    if policyCombinedResults.has_key( 'Status' ):
-    newstatus = policyCombinedResults[ 'Status' ]
+#FIXME: it newStatus != status, do not apply actions ( done on the actions, individually,
+# it is up to them
+
+#    newstatus = policyCombinedResults[ 'Status' ]
 #
-    if newstatus != self.decissionParams[ 'status' ] and self.decissionParams[ 'status' ] is not None: # Policies satisfy
+#    if newstatus != self.decissionParams[ 'status' ] and self.decissionParams[ 'status' ] is not None: # Policies satisfy
 #        newPolicyType = self.iGetter.getNewPolicyType( self.__granularity, newstatus )
 #        policyType    = set( policyType ) & set( newPolicyType )
 #        
       policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
-    else:
-      policyCombinedResults[ 'PolicyAction' ] = []  
+#    else:
+#      policyCombinedResults[ 'PolicyAction' ] = []  
 #
 #      else:                          # Policies does not satisfy
 #        policyCombinedResults[ 'Action' ] = False
