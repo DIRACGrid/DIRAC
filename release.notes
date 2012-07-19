@@ -1,4 +1,4 @@
-[v6r5-pre6]
+[v6r5-pre7]
 
 NEW: Executor framework
 
@@ -23,6 +23,7 @@ NEW: ObjectLoader utility
 CHANGE: dirac-distribution - added global defaults flag and changed the flag to -M or --defaultsURL
 FIX: Convert to string before trying to escape value in MySQL
 NEW: DISET Services - added PacketTimeout option
+NEW: SystemLoggingDB - updated to use the renewed MySQL interface and SQL schema
 
 *RSS
 CHANGE: removed code execution from __init__
@@ -33,6 +34,7 @@ NEW: Log all policy results
 NEW: updated SSHComputingElement which allows multiple job submission
 FIX: SGETimeLeft - better parsing of the batch system commands output
 FIX: InProcessComputingElement - when starting a new job discard renewal of the previous proxy
+NEW: BOINCComputingElement - new CE clietn to work with the BOINC desktop grid infrastructure 
 
 *WMS
 CHANGE: WMS Optimizers are now executors
@@ -54,6 +56,7 @@ CHANGE: Treat MaxCPUTime and CPUTime the same way in the JDL to avoid confusion
 NEW: SiteDirector - added options PilotScript, MaxPilotsToSubmit, MaxJobsInFillMode
 BUGFIX: StalledJobAgent - use cpuNormalization as float, not string 
 FIX: Don't kill an executor if a task has been taken out from it
+NEW: dirac-boinc-pilot - pilot script to be used on the BOINC volunteer nodes
 
 *Transformation
 FIX: TransformationAgent - a small improvement: now can pick the prods status to handle from the CS, 
@@ -70,6 +73,7 @@ NEW: Added more info when rebucketing
 NEW: SRM2Storage - added retry in the gfal calls
 NEW: added new FTSCleaningAgent cleaning up TransferDB tables
 FIX: DataLoggingClient and DataLoggingDB - tests moved to separate files
+CHANGE: request agents cleanup
 
 [v6r4p16]
 
