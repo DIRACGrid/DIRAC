@@ -108,7 +108,8 @@ class ResourceStatusDB( object ):
     
     utcnow = datetime.utcnow().replace( microsecond = 0 )
     # We force lastCheckTime to utcnow if it is not present on the params
-    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+    #if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+    if 'lastCheckTime' in params and params[ 'lastCheckTime' ] is None:  
       params[ 'lastCheckTime' ] = utcnow
     
     # If it is a XStatus table, we force dateEffective to now.
@@ -207,11 +208,29 @@ class ResourceStatusDB( object ):
     isUpdate = False
        
     if selectQuery[ 'Value' ]:      
+      
+      columns = selectQuery[ 'Columns' ]
+      values  = selectQuery[ 'Value' ]
+      
+      if len( values ) != 1:
+        return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
+
+      selectDict = dict( zip( columns, values[ 0 ] ) )
+      
+      newDateEffective = None
+      
+      for key, value in params.items():
+        if key in ( 'lastCheckTime', 'dateEffective' ):
+          continue
+        
+        if value != selectDict[ key[0].upper() + key[1:] ]:
+          newDateEffective = datetime.utcnow().replace( microsecond = 0 )   
+      
+      params[ 'dateEffective' ] = newDateEffective              
+      
       userQuery  = self.update( params, meta )
       isUpdate   = True
     else:      
-#      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-#        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
       userQuery = self.insert( params, meta )
     
     if self.recordLogs:

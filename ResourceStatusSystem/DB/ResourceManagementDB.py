@@ -243,9 +243,7 @@ class ResourceManagementDB( object ):
     selectQuery = self.select( params, meta )
     if not selectQuery[ 'OK' ]:
       return selectQuery 
-       
-#    isUpdate = False
-       
+              
     if selectQuery[ 'Value' ]:      
       
       # Pseudo - code
@@ -256,7 +254,7 @@ class ResourceManagementDB( object ):
       columns = selectQuery[ 'Columns' ]
       values  = selectQuery[ 'Value' ]
       
-      if len( values ) != 0:
+      if len( values ) != 1:
         return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
 
       selectDict = dict( zip( columns, values[ 0 ] ) )
@@ -273,11 +271,9 @@ class ResourceManagementDB( object ):
       params[ 'dateEffective' ] = newDateEffective              
       
       userQuery  = self.update( params, meta )
-#      isUpdate   = True
+
     else:      
-      #FIXME: dateEffective set by default as well ??
-#      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-#        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+
       userQuery = self.insert( params, meta )
     
 #    if self.recordLogs:
