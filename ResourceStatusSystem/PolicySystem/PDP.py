@@ -5,14 +5,11 @@
 
 '''
 
-#import datetime
-
 from DIRAC                                                import gLogger, S_OK 
-from DIRAC.ResourceStatusSystem.PolicySystem              import Status
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
-#from DIRAC.ResourceStatusSystem.Command.CommandCaller     import CommandCaller
-from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration
+from DIRAC.ResourceStatusSystem.PolicySystem              import Status
+from DIRAC.ResourceStatusSystem.Utilities                 import RssConfiguration
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import InfoGetter
 
 __RCSID__  = '$Id: $'
 
@@ -86,28 +83,6 @@ class PDP:
       return policiesThatApply
     policiesThatApply = policiesThatApply[ 'Value' ]
     
-#    polToEval = self.iGetter.getInfoToApply( ( 'policy', 'policyType' ),
-#                                        element  = self.element,
-#                                        statusType   = self.statusType,
-#                                        status       = self.status,
-#                                        formerStatus = self.formerStatus,
-#                                        siteType     = self.__siteType,
-#                                        serviceType  = self.__serviceType,
-#                                        resourceType = self.__resourceType,
-#                                        useNewRes    = self.__useNewRes )
-
-#    policyType = polToEval[ 'PolicyType' ] # type: generator
-
-#    if policyIn:
-#      # Only the policy provided will be evaluated
-#      # FIXME: Check that the policies are valid.
-#      singlePolicyResults = policyIn.evaluate()
-#
-#    else:
-#    singlePolicyResults = self._invocation( self.__granularity,
-#                                            self.__name, self.__status, policyIn,
-#                                            argsIn, polToEval['Policies'] )
-
     singlePolicyResults   = self._runPolicies( policiesThatApply )
     if not singlePolicyResults[ 'OK' ]:
       return singlePolicyResults

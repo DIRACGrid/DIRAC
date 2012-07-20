@@ -21,24 +21,6 @@ __RCSID__  = '$Id:  $'
 class PEP:
 
   def __init__( self, clients = None ):
-#    '''
-#    Enforce policies, using a PDP  (Policy Decision Point), based on
-#
-#     self.__granularity (optional)
-#     self.__name (optional)
-#     self.__status (optional)
-#     self.__formerStatus (optional)
-#     self.__reason (optional)
-#     self.__siteType (optional)
-#     self.__serviceType (optional)
-#     self.__realBan (optional)
-#     self.__user (optional)
-#     self.__futurePolicyType (optional)
-#     self.__futureGranularity (optional)
-#
-#     :params:
-#       :attr:`clients`   : a dictionary containing modules corresponding to clients.
-#    '''
    
     if clients is None:
       clients = {}
@@ -79,8 +61,6 @@ class PEP:
       return resDecisions
     resDecisions = resDecisions[ 'Value' ]
     
-# commented out for a while, while development is ongoing.
-
     # We take from PDP the decision parameters used to find the policies
     decissionParams      = resDecisions[ 'decissionParams' ]
     policyCombinedResult = resDecisions[ 'policyCombinedResult' ]

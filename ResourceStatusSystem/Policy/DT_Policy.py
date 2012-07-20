@@ -28,9 +28,6 @@ class DT_Policy( PolicyBase ):
 
     if not status[ 'OK' ]:
       return status
-      #result[ 'Status' ] = 'Error'
-      #result[ 'Reason' ] = status[ 'Message' ]
-      #return S_OK( result )
     
     status = status[ 'Value' ]
     result = {}

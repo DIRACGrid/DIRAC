@@ -9,8 +9,6 @@ from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 __RCSID__ = '$Id: $'
 
-#pp = CS.getTypedDictRootedAt( 'PolicyParameters' )
-
 def getPolicyParameters():
   return Utils.getCSTree( 'RSSConfiguration2/PolicyParameters' )
 

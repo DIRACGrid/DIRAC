@@ -28,10 +28,7 @@ class PolicyCaller:
     if clients is not None: 
       self.clients = clients       
 
-  def policyInvocation( self, decissionParams, policyDict ):
-#  def policyInvocation( self, granularity = None, name = None,
-#                        status = None, policy = None, args = None, pName = None,
-#                        pModule = None, extraArgs = None, commandIn = None ):    
+  def policyInvocation( self, decissionParams, policyDict ):  
     '''
     Invokes a policy:
 
@@ -89,47 +86,9 @@ class PolicyCaller:
     
     return evaluationResult
 
-################################################################################
-
-#    try:
-#      
-#      policyModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.%s' % policyModule )
-#        
-#    except ImportError:
-#      _msg = 'Unable to import a policy module named %s, falling back on AlwaysFalse_Policy.' % pModule
-#      gLogger.warn( _msg )
-#      policyModule = __import__( 'DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy',
-#                                   globals(), locals(), ['*'] )
-#      pModule = 'AlwaysFalse_Policy'
-#        
-#    try:
-#        
-#      policy = getattr( policyModule, pModule )()
-#        
-#    except AttributeError as exc:
-#      print policyModule, pModule
-#      raise exc
-#
-#    if not args:
-#      args = ( granularity, name )
-#
-#    if extraArgs:
-#      args = args + tuple( extraArgs )
-#
-#    if commandIn:
-#      commandIn = self.cCaller.setCommandObject( commandIn )
-#      for clientName, clientInstance in self.clients.items():
-#        
-#        self.cCaller.setAPI( commandIn, clientName, clientInstance )
-#    res = self._innerEval( policy, args, commandIn = commandIn )
-#    # Just adding the PolicyName to the result of the evaluation of the policy
-#    res[ 'PolicyName' ] = pName
-#    return res
-
   @staticmethod
   def policyEvaluation( policy, command ):
-    
-    
+       
     policy.setCommand( command )
     evaluationResult = policy.evaluate()
     
