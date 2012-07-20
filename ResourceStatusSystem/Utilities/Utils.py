@@ -257,9 +257,9 @@ def configMatch( candidateParams, configParams ):
     - if a candidate param is None, is considered as wildcard
   '''
 
-  for key in configParams:
+  for key in candidateParams:
     
-    if not key in candidateParams:
+    if not key in configParams:
       # The candidateParams is missing one of the parameters required
       # return False
       continue
@@ -276,6 +276,25 @@ def configMatch( candidateParams, configParams ):
       return False
     
   return True  
+#  for key in configParams:
+#    
+#    if not key in candidateParams:
+#      # The candidateParams is missing one of the parameters required
+#      # return False
+#      continue
+#    
+#    if candidateParams[ key ] is None:
+#      # None is assumed to be a wildcard (*)
+#      continue 
+#    
+#    cParameter = candidateParams[ key ]
+#    if not isinstance( cParameter, list ):
+#      cParameter = [ cParameter ]
+#    
+#    elif not set( cParameter ).intersection( set( configParams[ key ] ) ):
+#      return False
+#    
+#  return True  
 
 def dictMatch(dict1, dict2):
   """Checks if fields of dict1 are in fields of dict2. Returns True if

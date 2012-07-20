@@ -34,7 +34,7 @@ class LogStatusAction( BaseAction ):
     if statusType is None:
       return S_ERROR( 'statusType should not be None' )
     
-    status = self.decissionParams[ 'status' ]    
+    status = self.enforcementResult[ 'Status' ]    
     if status is None:
       return S_ERROR( 'status should not be None' )
     
@@ -42,12 +42,9 @@ class LogStatusAction( BaseAction ):
     if elementType is None:
       return S_ERROR( 'elementType should not be None' )
     
-    reason = self.decissionParams[ 'reason' ]
+    reason = self.enforcementResult[ 'Reason' ]
     if reason is None:
       return S_ERROR( 'reason should not be None' )
-
-#    newStatus = self.enforcementResult[ 'Status' ]
-#    if newStatus == status:
     
     resLogUpdate = self.rsClient.addOrModifyStatusElement( element, 'Status',
                                                            name = name, statusType = statusType,

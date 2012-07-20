@@ -85,7 +85,7 @@ class PolicyCaller:
     evaluationResult = self.policyEvaluation( policy, command )
     
     if evaluationResult[ 'OK' ]:
-      evaluationResult[ 'policy' ] = policyDict
+      evaluationResult[ 'Value' ][ 'Policy' ] = policyDict
     
     return evaluationResult
 

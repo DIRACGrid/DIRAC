@@ -106,34 +106,34 @@ def getValidStatusTypes():
   #FIXME: return S_OK
   
   DEFAULTS = { 
-               'Site'          : ( '' ),
-               'Resource'      : ( '' ),
-               'Node'          : ( '' )
+               'Site'          : ( '', ),
+               'Resource'      : ( '', ),
+               'Node'          : ( '', )
 #               'StorageElement': [ 'ReadAccess', 'WriteAccess', 
 #                                   'RemoveAccess', 'CheckAccess' ]
               }
   
-  opHelper = Operations()
-  
-  sections = opHelper.getSections( '%s/GeneralConfig/Resources' % rssConfigPath )
-  if not sections[ 'OK' ]:
-    return DEFAULTS
-  
-  result = {}
-  for section in sections[ 'Value' ]:
-    res = opHelper.getValue( '%s/GeneralConfig/Resources/%s/StatusType' % ( rssConfigPath, section ) )
-    if res is None:
-      if DEFAULTS.has_key( section ):
-        result[ section ] = DEFAULTS[ section ]
-      else:
-        result[ section ] = []  
-    else:
-      result[ section ] = Utils.getTypedList( res )
-      
-  return result     
+  #FIXME: it does not work with empty configuration
+#  opHelper = Operations()
+#  
+#  sections = opHelper.getSections( '%s/GeneralConfig/Resources' % rssConfigPath )
+#  if not sections[ 'OK' ]:
+#    return DEFAULTS
+#  
+#  result = {}
+#  for section in sections[ 'Value' ]:
+#    res = opHelper.getValue( '%s/GeneralConfig/Resources/%s/StatusType' % ( rssConfigPath, section ) )
+#    if res is None:
+#      if DEFAULTS.has_key( section ):
+#        result[ section ] = DEFAULTS[ section ]
+#      else:
+#        result[ section ] = []  
+#    else:
+#      result[ section ] = Utils.getTypedList( res )
+#      
+#  return result     
+  return DEFAULTS  
 
-
-  
 #def getValidPolicyResult():
 #  '''
 #  Returns from the OperationsHelper: RSSConfiguration/GeneralConfig/PolicyResult
