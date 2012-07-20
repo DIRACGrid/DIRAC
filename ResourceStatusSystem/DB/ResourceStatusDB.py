@@ -222,6 +222,9 @@ class ResourceStatusDB( object ):
       for key, value in params.items():
         if key in ( 'lastCheckTime', 'dateEffective' ):
           continue
+
+        if value is None:
+          continue
         
         if value != selectDict[ key[0].upper() + key[1:] ]:
           newDateEffective = datetime.utcnow().replace( microsecond = 0 )   
@@ -233,30 +236,9 @@ class ResourceStatusDB( object ):
     else:      
       userQuery = self.insert( params, meta )
     
-    if self.recordLogs:
-      
-      if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
-        
-        if isUpdate:
-          updateRes = self.select( params, meta )
-          if not updateRes[ 'OK' ]:
-            return updateRes
-          
-          # If we are updating more that one result at a time, this is most likely
-          # going to be a mess. All queries must be one at a time, if need to do
-          if len( updateRes[ 'Value' ] ) != 1:
-            return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
-          if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
-            # Uyyy, something went seriously wrong !!
-            return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
-                    
-          params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
-                
-        meta[ 'tableName' ] = meta[ 'tableName' ].replace( 'Status', 'Log' )
-
-        logRes = self.insert( params, meta )
-        if not logRes[ 'OK' ]:
-          return logRes
+    logResult = self._logRecord( params, meta, isUpdate )
+    if not logResult[ 'OK' ]:
+      return logResult
     
     return userQuery      
 
@@ -282,11 +264,21 @@ class ResourceStatusDB( object ):
        
     if selectQuery[ 'Value' ]:      
       return selectQuery
-#    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-#      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
     
-    return self.insert( params, meta )      
+    insertQuery = self.insert( params, meta )  
+  
+    if self.recordLogs:
+      
+      if 'table' in meta and meta[ 'table' ].endswith( 'Status' ):
+                
+        meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
 
+        logRes = self.insert( params, meta )
+        if not logRes[ 'OK' ]:
+          return logRes  
+        
+    return insertQuery        
+      
   ## Auxiliar methods ##########################################################
 
   def getTable( self, tableName ):
@@ -312,25 +304,34 @@ class ResourceStatusDB( object ):
     '''  
     return self.__createTables()
 
-  def _logRecord( self, params, meta ):
-    pass
-#    # No more processing on for select and delete queries
-#    if queryType in [ 'select', 'delete' ]:
-#      return userRes
-#    
-#    # If something went wrong, we return
-#    if not userRes[ 'OK' ]:
-#      return userRes
-#
-#    # If the operation is on a table different than 'Status', we return
-#    if not tableType == 'Status':
-#      return userRes
-#    
-#    # If the flag is active, we record this entry on the <element>Log table
-#    if self.__recordLogs:
-#      logRes = self.insertStatusElement( element, 'Log', meta = meta, **parameters )
-#      if not logRes[ 'OK' ]:
-#        gLogger.error( '%s inserting log' % logRes[ 'Message' ] )    
+  def _logRecord( self, params, meta, isUpdate ):
+
+    if not self.recordLogs:
+      return S_OK()
+      
+    if not ( 'table' in meta and meta[ 'table' ].endswith( 'Status' ) ):
+      return S_OK()
+        
+    if isUpdate:
+      updateRes = self.select( params, meta )
+      if not updateRes[ 'OK' ]:
+        return updateRes
+          
+      # If we are updating more that one result at a time, this is most likely
+      # going to be a mess. All queries must be one at a time, if need to do
+      if len( updateRes[ 'Value' ] ) != 1:
+        return S_ERROR( ' PLEASE REPORT to developers !!: %s, %s' % ( params, meta ) )
+      if len( updateRes[ 'Value' ][ 0 ] ) != len( updateRes[ 'Columns' ] ):
+        # Uyyy, something went seriously wrong !!
+        return S_ERROR( ' PLEASE REPORT to developers !!: %s' % updateRes )
+                    
+      params = dict( zip( updateRes['Columns'], updateRes[ 'Value' ][0] )) 
+                
+    meta[ 'table' ] = meta[ 'table' ].replace( 'Status', 'Log' )
+
+    logRes = self.insert( params, meta )
+    
+    return logRes
 
   ## Private methods ###########################################################
 
