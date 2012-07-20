@@ -79,7 +79,7 @@ class Limiter:
   def __init__( self, opsHelper ):
     """ Constructor
     """
-    self.__runningLimitSection = "JobScheduling/RunningLimit" 
+    self.__runningLimitSection = "JobScheduling/RunningLimit"
     self.__matchingDelaySection = "JobScheduling/MatchingDelay"
     self.__opsHelper = opsHelper
 
@@ -107,7 +107,7 @@ class Limiter:
         continue
       data = result[ 'Value' ]
       if data:
-        negCond[ siteName ] = data 
+        negCond[ siteName ] = data
     #Delay limit
     result = self.__opsHelper.getSections( self.__matchingDelaySection )
     sites = []
@@ -129,7 +129,7 @@ class Limiter:
       negCond[ siteName ][ 'Site' ] = siteName
       orCond.append( negCond[ siteName ] )
     Limiter.__condCache.add( "GLOBAL", 10, orCond )
-    return orCond  
+    return orCond
 
   def getNegativeCondForSite( self, siteName ):
     """ Generate a negative query based on the limits set on the site
@@ -516,8 +516,8 @@ class MatcherHandler( RequestHandler ):
   def export_getMatchingTaskQueues( self, resourceDict ):
     """ Return all task queues
     """
-    if 'Site' in resourceDict and type( resourceDict[ 'Site' ] ) in types.StringTypes:
-      negativeCond = self.__limiter.getNegativeCond( resourceDict[ 'Site' ] )
+    if 'Site' in resourceDict and type( resourceDict[ 'Site' ] ) in StringTypes:
+      negativeCond = self.__limiter.getNegativeCondForSite( resourceDict[ 'Site' ] )
     else:
       negativeCond = self.__limiter.getNegativeCond()
     return gTaskQueueDB.retrieveTaskQueuesThatMatch( resourceDict, negativeCond = negativeCond )
