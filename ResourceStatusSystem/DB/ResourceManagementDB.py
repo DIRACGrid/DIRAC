@@ -243,8 +243,8 @@ class ResourceManagementDB( object ):
 #      isUpdate   = True
     else:      
       #FIXME: dateEffective set by default as well ??
-#      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-#        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
       userQuery = self.insert( params, meta )
     
 #    if self.recordLogs:
@@ -296,8 +296,9 @@ class ResourceManagementDB( object ):
        
     if selectQuery[ 'Value' ]:      
       return selectQuery
-#    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-#      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+
+    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
     
     return self.insert( params, meta )   
 
