@@ -159,3 +159,101 @@ class TypedList( list ):
     self._typeCheck( val )
     list.insert( self, i, val )
 
+class BooleanList( TypedList ):
+  """
+  .. class:: BooleanList
+
+  A list holding only True or False items.
+  """
+  def __init__( self, iterable = None ):
+    """ c'tor
+
+    :param self: self reference
+    :param mixed iterable: initial values
+    """
+    TypedList.__init__( self, iterable, allowedTypes = bool )
+  
+class IntList( TypedList ):
+  """
+  .. class:: IntList
+
+  A list holding only int type items.
+  """
+  def __init__( self, iterable = None ):
+    """ c'tor
+
+    :param self: self reference
+    :param mixed iterable: initial values
+    """
+    TypedList.__init__( self, iterable, allowedTypes = int )
+
+class LongList( TypedList ):
+  """
+  .. class:: LongList
+
+  A list holding only long type items.
+  """
+  def __init__( self, iterable = None ):
+    """ c'tor
+
+    :param self: self reference
+    :param mixed iterable: initial values
+    """
+    TypedList.__init__( self, iterable, allowedTypes = long )
+
+class FloatList( TypedList ):
+  """
+  .. class:: FloatList
+
+  A list holding only float type items.
+  """
+  def __init__( self, iterable = None ):
+    """ c'tor
+
+    :param self: self reference
+    :param mixed iterable: initial values
+    """
+    TypedList.__init__( self, iterable, allowedTypes = float )
+
+class NumericList( TypedList ):
+  """
+  .. class:: NumericList
+
+  A list holding only int, long  or float type items.
+  """
+  def __init__( self, iterable = None ):
+    """ c'tor
+
+    :param self: self reference
+    :param mixed iterable: initial values
+    """
+
+    TypedList.__init__( self, iterable, allowedTypes = ( int, long, float ) )
+
+class StrList( TypedList ):
+  """
+  .. class:: StrList
+
+  A list holding only str type items.
+  """
+  def __init__( self, iterable = None ):
+    """ c'tor
+
+    :param self: self reference
+    :param mixed iterable: initial values
+    """
+    TypedList.__init__( self, iterable, allowedTypes = str )
+
+class StringsList( TypedList ):
+  """
+  .. class:: StringsList
+
+  A list holding only str or unicode type items.
+  """
+  def __init__( self, iterable = None ):
+    """ c'tor
+
+    :param self: self reference
+    :param mixed iterable: initial values
+    """
+    TypedList.__init__( self, iterable, allowedTypes = ( str, unicode ) )

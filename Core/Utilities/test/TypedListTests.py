@@ -29,7 +29,7 @@ import unittest
 from DIRAC.Core.Utilities.TypedList import TypedList
 
 class TestClass( object ):
-  """ dummy class """
+  """ dummy test class """
   pass
 
 ########################################################################
@@ -65,7 +65,7 @@ class TypedListTestCase(unittest.TestCase):
     
 
   def test02_add_iadd_radd( self ):
-    """ += +lvalue +rvalue """
+    """ plus operators  """
     NumericList = TypedList( (1, 1.0, 1L), self.numericTypes )
     ## +=
     NumericList += [ 2, 2.0, 2L ]
@@ -82,7 +82,32 @@ class TypedListTestCase(unittest.TestCase):
     self.assertEqual( rList, [ 0, 0.0, 0L, 1, 1.0, 1L, 2, 2.0, 2L ] )
 
   def test03_setitem_append_extend_insert( self ):
-    pass
+    """ setitem append extend insert """
+
+    TestClassList = TypedList( allowedTypes = self.testClassType )    
+
+    ## append 
+    item = TestClass()
+    TestClassList.append( item )
+    self.assertEqual( len(TestClassList), 1 )
+    self.assertEqual( TestClassList[0], item )
+
+    ## setitem
+    newItem = TestClass()
+    TestClassList[0] = newItem
+    self.assertEqual( len(TestClassList), 1 )
+    self.assertEqual( TestClassList[0], newItem )
+
+    ## extend
+    toExtend = [ item ]
+    TestClassList.extend( toExtend )
+    self.assertEqual( len(TestClassList), 2 )
+    self.assertEqual( TestClassList, [ newItem, item ] )
+    
+    ## insert
+    TestClassList.insert( 0, item )
+    self.assertEqual( len(TestClassList), 3 )
+    self.assertEqual( TestClassList, [ item, newItem, item ] )
 
 
 ## test execution
