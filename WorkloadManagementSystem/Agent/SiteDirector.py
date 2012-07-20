@@ -237,7 +237,7 @@ class SiteDirector( AgentModule ):
     if self.group:
       tqDict['OwnerGroup'] = self.group
     rpcMatcher = RPCClient( "WorkloadManagement/Matcher" )
-    result = rpcMatcher.matchAndGetTaskQueue( tqDict )
+    result = rpcMatcher.getMatchingTaskQueues( tqDict )
     if not result[ 'OK' ]:
       return result
     if not result['Value']:
