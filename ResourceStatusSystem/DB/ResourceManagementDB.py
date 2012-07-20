@@ -53,7 +53,7 @@ class ResourceManagementDB( object ):
                        'StatusType'    : 'VARCHAR(16) NOT NULL DEFAULT ""',
                        'Status'        : 'VARCHAR(16) NOT NULL',
                        'Reason'        : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
-#                       'DateEffective' : 'DATETIME NOT NULL',
+                       'DateEffective' : 'DATETIME NOT NULL',
                        'LastCheckTime' : 'DATETIME NOT NULL'
                       },
                       'PrimaryKey' : [ 'Element', 'Name', 'StatusType', 'PolicyName' ] 
@@ -68,6 +68,7 @@ class ResourceManagementDB( object ):
                        'StatusType'        : 'VARCHAR(16) NOT NULL DEFAULT ""',
                        'Status'            : 'VARCHAR(8) NOT NULL',
                        'Reason'            : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
+                       'DateEffective'     : 'DATETIME NOT NULL',                       
                        'LastCheckTime'     : 'DATETIME NOT NULL'                                   
                       },
                       'PrimaryKey' : [ 'PolicyResultLogID' ]
@@ -143,9 +144,15 @@ class ResourceManagementDB( object ):
     :return: S_OK() || S_ERROR()
     '''
 
+    utcnow = datetime.utcnow().replace( microsecond = 0 )
+
     # We force lastCheckTime to utcnow if it is not present on the params
-    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
-      params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 )  
+    #if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+    if 'lastCheckTime' in params and params[ 'lastCheckTime' ] is None:  
+      params[ 'lastCheckTime' ] = utcnow  
+
+    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+      params[ 'dateEffective' ] = utcnow
     
     return MySQLWrapper.insert( self, params, meta )
 
@@ -170,7 +177,8 @@ class ResourceManagementDB( object ):
     '''
     
     # We force lastCheckTime to utcnow if it is not present on the params
-    if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+    #if not( 'lastCheckTime' in params and not( params[ 'lastCheckTime' ] is None ) ):
+    if 'lastCheckTime' in params and params[ 'lastCheckTime' ] is None:      
       params[ 'lastCheckTime' ] = datetime.utcnow().replace( microsecond = 0 ) 
     
     return MySQLWrapper.update( self, params, meta )
@@ -239,12 +247,37 @@ class ResourceManagementDB( object ):
 #    isUpdate = False
        
     if selectQuery[ 'Value' ]:      
+      
+      # Pseudo - code
+      # for all column not being PrimaryKey and not a time column: 
+      #   if one or more column different than params if not None:
+      #     we update dateTime as well
+      
+      columns = selectQuery[ 'Columns' ]
+      values  = selectQuery[ 'Value' ]
+      
+      if len( values ) != 0:
+        return S_ERROR( 'More than one value returned on addOrModify, please report !!' )
+
+      selectDict = dict( zip( columns, values[ 0 ] ) )
+      
+      newDateEffective = None
+      
+      for key, value in params.items():
+        if key in ( 'lastCheckTime', 'dateEffective' ):
+          continue
+        
+        if value != selectDict[ key[0].upper() + key[1:] ]:
+          newDateEffective = datetime.utcnow().replace( microsecond = 0 )   
+      
+      params[ 'dateEffective' ] = newDateEffective              
+      
       userQuery  = self.update( params, meta )
 #      isUpdate   = True
     else:      
       #FIXME: dateEffective set by default as well ??
-      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+#      if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+#        params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
       userQuery = self.insert( params, meta )
     
 #    if self.recordLogs:
@@ -297,8 +330,8 @@ class ResourceManagementDB( object ):
     if selectQuery[ 'Value' ]:      
       return selectQuery
 
-    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
-      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
+#    if 'dateEffective' in params and params[ 'dateEffective' ] is None:
+#      params[ 'dateEffective' ] = datetime.utcnow().replace( microsecond = 0 )
     
     return self.insert( params, meta )   
 
