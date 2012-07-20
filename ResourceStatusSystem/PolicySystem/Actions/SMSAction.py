@@ -53,7 +53,16 @@ class SMSAction( BaseAction ):
     text = '%s %s is %s ( %s )' % ( name, statusType, status, reason )   
     print text
     
-    return S_OK()    
+    address = ''
+    return self._sendSMS( address, '' )    
+
+  @staticmethod
+  def _sendSMS( address, text ):
+    
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+    diracAdmin = DiracAdmin()
+    
+    return diracAdmin.sendSMS( address, text )
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF    

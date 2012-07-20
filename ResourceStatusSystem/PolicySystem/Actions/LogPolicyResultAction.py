@@ -42,7 +42,7 @@ class LogPolicyResultAction( BaseAction ):
       if reason is None:
         return S_ERROR( 'reason should not be None' )
     
-      policyName = singlePolicyResult[ 'policy' ][ 'name' ]
+      policyName = singlePolicyResult[ 'Policy' ][ 'name' ]
       if policyName is None:
         return S_ERROR( 'policyName should not be None' )
     

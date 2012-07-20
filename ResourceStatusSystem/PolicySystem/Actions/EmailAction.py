@@ -52,25 +52,34 @@ class EmailAction( BaseAction ):
       
     subject = '%s %s %s is on status %s' % ( element, name, statusType, status )
     
-    body = 'Enforcement result/n'
-    body += '/n'.join( [ '%s : %s' % ( key, value ) for key, value in self.enforcementResult ] )
-    body += '/n'
+    body = 'Enforcement result\n'
+    body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in self.enforcementResult.items() ] )
+    body += '\n'
     body += '*' * 50
-    body += '/nOriginal parameters/n'
-    body += '/n'.join( [ '%s : %s' % ( key, value ) for key, value in self.decissionParams ] )
-    body += '/n'
+    body += '\nOriginal parameters\n'
+    body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in self.decissionParams.items() ] )
+    body += '\n'
     body += '*' * 50
-    body += '/nPolicies run/n'
+    body += '\nPolicies run/n'
     
     for policy in self.singlePolicyResults:
       
-      body += '/n'.join( [ '%s : %s' % ( key, value ) for key, value in policy if not key == 'policy' ] )
-      body += '/n'.join( [ '%s : %s' % ( key, value ) for key, value in policy[ 'policy' ] ] )
+      body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in policy.items() if not key == 'Policy' ] )
+      body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in policy[ 'Policy' ].items() ] )
     
     print subject
     print body
+    address = ''
     
-    return S_OK()    
+    return self._sendMail( address, subject, body )
 
+  @staticmethod
+  def _sendMail( address, subject, body ):
+    
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+    diracAdmin = DiracAdmin()
+    
+    return diracAdmin.sendMail( address, subject, body )
+    
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
