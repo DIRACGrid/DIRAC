@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 #from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
-#from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
 #from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 #from DIRAC.ResourceStatusSystem.Utilities                   import CS
 
@@ -50,6 +50,8 @@ class ElementInspectorAgent( AgentModule ):
 
     self.rsClient            = ResourceStatusClient()
 
+    self.clients             = {}
+
     # Do we really need multi-threading ?, most of the times there are few
     # entries to be checked !
     #for _i in xrange( self.maxNumberOfThreads ):
@@ -80,7 +82,11 @@ class ElementInspectorAgent( AgentModule ):
         # We are not checking if the item is already on the queue or not. It may
         # be there, but in any case, it is not a big problem.
         
-        self.elementsToBeChecked.put( elemDict )
+        lowerElementDict = {}
+        for key, value in elemDict.items():
+          lowerElementDict[ key[0].lower() + key[1:] ] = value
+        
+        self.elementsToBeChecked.put( lowerElementDict )
         self.log.info( '"%s"-"%s"-"%s"-"%s"-"%s"' % ( elemDict[ 'Name' ], 
                                                       elemDict[ 'ElementType' ],
                                                       elemDict[ 'StatusType' ],
@@ -120,7 +126,7 @@ class ElementInspectorAgent( AgentModule ):
     
     self.log.info( '%s UP' % tHeader )
     
-    pep = PEP( clients = clients )
+    pep = PEP( clients = self.clients )
     
     while True:
     
@@ -129,6 +135,8 @@ class ElementInspectorAgent( AgentModule ):
       except Queue.Empty:
         self.log.info( '%s DOWN' % tHeader )
         return S_OK()
+      
+      print pep.enforce( element )
       
       # Used together with join !
       self.elementsToBeChecked.task_done()
