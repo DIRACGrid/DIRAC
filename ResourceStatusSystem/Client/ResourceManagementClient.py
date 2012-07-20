@@ -434,9 +434,8 @@ class ResourceManagementClient( object ):
   ##############################################################################
   # POLICY RESULT Methods
 
-  def insertPolicyResult( self, granularity, name, policyName, statusType,
-                          status, reason, dateEffective, lastCheckTime,
-                          meta = None ):
+  def insertPolicyResult( self, element, name, policyName, statusType,
+                          status, reason, lastCheckTime, meta = None ):
     '''
     Inserts on PolicyResult a new row with the arguments given.
     
@@ -455,8 +454,6 @@ class ResourceManagementClient( object ):
         `Probing` | `Banned`    
       **reason** - `string`
         decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the policy result was checked
       **meta** - `[,dict]`
@@ -468,9 +465,8 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'insert', 'PolicyResult', locals() ) 
-  def updatePolicyResult( self, granularity, name, policyName, statusType,
-                          status, reason, dateEffective, lastCheckTime, 
-                          meta = None ):
+  def updatePolicyResult( self, element, name, policyName, statusType,
+                          status, reason, lastCheckTime, meta = None ):
     '''
     Updates PolicyResult with the parameters given. By default, `name`, 
     `policyName` and `statusType` will be the parameters used to select the row.
@@ -490,8 +486,6 @@ class ResourceManagementClient( object ):
         `Probing` | `Banned`    
       **reason** - `string`
         decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
       **lastCheckTime** - `datetime`
         time-stamp setting last time the policy result was checked
       **meta** - `[, dict]`
@@ -503,9 +497,9 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'PolicyResult', locals() )
-  def selectPolicyResult( self, granularity = None, name = None, policyName = None, 
+  def selectPolicyResult( self, element = None, name = None, policyName = None, 
                           statusType = None, status = None, reason = None, 
-                          dateEffective = None, lastCheckTime = None, meta = None ):
+                          lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResult all rows that match the parameters given.
     
@@ -524,8 +518,6 @@ class ResourceManagementClient( object ):
         `Probing` | `Banned`    
       **reason** - `[, string, list]`
         decision that triggered the assigned status
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the policy result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
       **meta** - `[, dict]`
@@ -537,10 +529,9 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'select', 'PolicyResult', locals() )
-  def deletePolicyResult( self, granularity = None, name = None, 
+  def deletePolicyResult( self, element = None, name = None, 
                           policyName = None, statusType = None, status = None, 
-                          reason = None, dateEffective = None, 
-                          lastCheckTime = None, meta = None ):
+                          reason = None, lastCheckTime = None, meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
@@ -559,8 +550,6 @@ class ResourceManagementClient( object ):
         `Probing` | `Banned`    
       **reason** - `[, string, list]`
         decision that triggered the assigned status
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the policy result is effective
       **lastCheckTime** - `[, datetime, list]`
         time-stamp setting last time the policy result was checked
       **meta** - `[, dict]`
@@ -572,7 +561,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'PolicyResult', locals() )
-  def addOrModifyPolicyResult( self, granularity = None, name = None, 
+  def addOrModifyPolicyResult( self, element = None, name = None, 
                                policyName = None, statusType = None,
                                status = None, reason = None, dateEffective = None, 
                                lastCheckTime = None, meta = None ):
@@ -581,7 +570,7 @@ class ResourceManagementClient( object ):
     decides whether to insert or update the table.
 
     :Parameters:
-      **granularity** - `string`
+      **element** - `string`
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
@@ -589,7 +578,7 @@ class ResourceManagementClient( object ):
       **policyName** - `string`
         name of the policy
       **statusType** - `string`
-        it has to be a valid status type for the given granularity
+        it has to be a valid status type for the given element
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`    
@@ -612,7 +601,7 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self.__query( 'addOrModify', 'PolicyResult', locals() )      
-  def addIfNotTherePolicyResult( self, granularity = None, name = None, 
+  def addIfNotTherePolicyResult( self, element = None, name = None, 
                                  policyName = None, statusType = None,
                                  status = None, reason = None, dateEffective = None, 
                                  lastCheckTime = None, meta = None ):
@@ -621,7 +610,7 @@ class ResourceManagementClient( object ):
     decides whether to insert or update the table.
 
     :Parameters:
-      **granularity** - `string`
+      **element** - `string`
         it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
@@ -629,7 +618,7 @@ class ResourceManagementClient( object ):
       **policyName** - `string`
         name of the policy
       **statusType** - `string`
-        it has to be a valid status type for the given granularity
+        it has to be a valid status type for the given element
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`    
@@ -656,13 +645,13 @@ class ResourceManagementClient( object ):
   ##############################################################################
   # POLICY RESULT LOG Methods
 
-  def insertPolicyResultLog( self, granularity, name, policyName, statusType,
+  def insertPolicyResultLog( self, element, name, policyName, statusType,
                              status, reason, lastCheckTime, meta = None ):
     '''
     Inserts on PolicyResult a new row with the arguments given.
     
     :Parameters:
-      **granularity** - `string`
+      **element** - `string`
         it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
@@ -670,7 +659,7 @@ class ResourceManagementClient( object ):
       **policyName** - `string`
         name of the policy
       **statusType** - `string`
-        it has to be a valid status type for the given granularity
+        it has to be a valid status type for the given element
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`    
@@ -687,7 +676,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'insert', 'PolicyResultLog', locals() ) 
-  def updatePolicyResultLog( self, granularity, name, policyName, statusType,
+  def updatePolicyResultLog( self, element, name, policyName, statusType,
                              status, reason, lastCheckTime, meta = None ):
     '''
     Updates PolicyResultLog with the parameters given. By default, `name`, 
@@ -695,7 +684,7 @@ class ResourceManagementClient( object ):
     select the row.
     
     :Parameters:
-      **granularity** - `string`
+      **element** - `string`
         it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
@@ -703,7 +692,7 @@ class ResourceManagementClient( object ):
       **policyName** - `string`
         name of the policy
       **statusType** - `string`
-        it has to be a valid status type for the given granularity
+        it has to be a valid status type for the given element
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`    
@@ -720,14 +709,14 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'update', 'PolicyResultLog', locals() )
-  def selectPolicyResultLog( self, granularity = None, name = None, 
+  def selectPolicyResultLog( self, element = None, name = None, 
                               policyName = None, statusType = None, status = None, 
                               reason = None, lastCheckTime = None, meta = None ):
     '''
     Gets from PolicyResultLog all rows that match the parameters given.
     
     :Parameters:
-      **granularity** - `[, string, list]`
+      **element** - `[, string, list]`
         it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `[, string, list]`
@@ -735,7 +724,7 @@ class ResourceManagementClient( object ):
       **policyName** - `[, string, list]`
         name of the policy
       **statusType** - `[, string, list]`
-        it has to be a valid status type for the given granularity
+        it has to be a valid status type for the given element
       **status** - `[, string, list]`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`    
@@ -752,14 +741,14 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'select', 'PolicyResultLog', locals() )
-  def deletePolicyResultLog( self, granularity = None, name = None, 
+  def deletePolicyResultLog( self, element = None, name = None, 
                              policyName = None, statusType = None, status = None, 
                              reason = None, lastCheckTime = None, meta = None ):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
     
     :Parameters:
-      **granularity** - `[, string, list]`
+      **element** - `[, string, list]`
         it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `[, string, list]`
@@ -767,7 +756,7 @@ class ResourceManagementClient( object ):
       **policyName** - `[, string, list]`
         name of the policy
       **statusType** - `[, string, list]`
-        it has to be a valid status type for the given granularity
+        it has to be a valid status type for the given element
       **status** - `[, string, list]`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`    
@@ -784,7 +773,7 @@ class ResourceManagementClient( object ):
     # Unused argument
     # pylint: disable-msg=W0613
     return self.__query( 'delete', 'PolicyResultLog', locals() )
-  def addOrModifyPolicyResultLog( self, granularity = None, name = None, 
+  def addOrModifyPolicyResultLog( self, element = None, name = None, 
                                   policyName = None, statusType = None,
                                   status = None, reason = None, lastCheckTime = None, 
                                   meta = None ):
@@ -792,7 +781,7 @@ class ResourceManagementClient( object ):
     AddsOrModifies on PolicyResult a new row with the arguments given.
     
     :Parameters:
-      **granularity** - `string`
+      **element** - `string`
         it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
@@ -800,7 +789,7 @@ class ResourceManagementClient( object ):
       **policyName** - `string`
         name of the policy
       **statusType** - `string`
-        it has to be a valid status type for the given granularity
+        it has to be a valid status type for the given element
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`    
@@ -821,7 +810,7 @@ class ResourceManagementClient( object ):
     # pylint: disable-msg=W0613
     meta = { 'onlyUniqueKeys' : True }
     return self.__query( 'addOrModify', 'PolicyResultLog', locals() )         
-  def addIfNotTherePolicyResultLog( self, granularity = None, name = None, 
+  def addIfNotTherePolicyResultLog( self, element = None, name = None, 
                                     policyName = None, statusType = None,
                                     status = None, reason = None, 
                                     lastCheckTime = None, meta = None ):
@@ -829,7 +818,7 @@ class ResourceManagementClient( object ):
     AddsIfNotThere on PolicyResult a new row with the arguments given.
     
     :Parameters:
-      **granularity** - `string`
+      **element** - `string`
         it has to be a valid element ( ValidRes ), any of the defaults: `Site` \
         | `Service` | `Resource` | `StorageElement`  
       **name** - `string`
@@ -837,7 +826,7 @@ class ResourceManagementClient( object ):
       **policyName** - `string`
         name of the policy
       **statusType** - `string`
-        it has to be a valid status type for the given granularity
+        it has to be a valid status type for the given element
       **status** - `string`
         it has to be a valid status, any of the defaults: `Active` | `Bad` | \
         `Probing` | `Banned`    
