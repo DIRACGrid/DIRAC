@@ -60,7 +60,7 @@ class EmailAction( BaseAction ):
     body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in self.decissionParams.items() ] )
     body += '\n'
     body += '*' * 50
-    body += '\nPolicies run/n'
+    body += '\nPolicies run\n'
     
     for policy in self.singlePolicyResults:
       
