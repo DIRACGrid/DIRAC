@@ -11,7 +11,7 @@ __RCSID__  = '$Id:  $'
 
 class BaseAction( object ):
   
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults ):
+  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients ):
 
     # enforcementResult supposed to look like:
     # { 
@@ -36,6 +36,7 @@ class BaseAction( object ):
     self.decissionParams     = decissionParams
     self.enforcementResult   = enforcementResult
     self.singlePolicyResults = singlePolicyResults
+    self.clients             = clients
 
   def run( self ):
     

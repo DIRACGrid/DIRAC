@@ -34,7 +34,8 @@ class PEP:
     else: 
       self.rmClient = ResourceManagementClient()
 
-    self.pdp = PDP( clients )
+    self.clients = clients
+    self.pdp     = PDP( clients )   
 
   def enforce( self, decissionParams ):
     
@@ -82,7 +83,7 @@ class PEP:
         gLogger.error( 'Error importing %s action class' % policyAction )
       
       action = getattr( actionMod, policyAction )( decissionParams, policyCombinedResult,
-                                                   singlePolicyResults )
+                                                   singlePolicyResults, self.clients )
       
       actionResult = action.run()
       if not actionResult[ 'OK' ]:

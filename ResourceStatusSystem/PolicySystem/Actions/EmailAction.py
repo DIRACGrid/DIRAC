@@ -11,9 +11,10 @@ __RCSID__ = '$Id:  $'
 
 class EmailAction( BaseAction ):
 
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults ):
+  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
     
-    super( EmailAction, self ).__init__( decissionParams, enforcementResult, singlePolicyResults )
+    super( EmailAction, self ).__init__( decissionParams, enforcementResult, 
+                                         singlePolicyResults, clients )
     self.actionName = 'EmailAction'
     
 #    self.rsClient   = ResourceStatusClient()

@@ -11,9 +11,10 @@ __RCSID__ = '$Id:  $'
 
 class SMSAction( BaseAction ):
 
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults ):
+  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
     
-    super( SMSAction, self ).__init__( decissionParams, enforcementResult, singlePolicyResults )
+    super( SMSAction, self ).__init__( decissionParams, enforcementResult, 
+                                       singlePolicyResults, clients )
     self.actionName = 'SMSAction'
     
 #    self.rsClient   = ResourceStatusClient()

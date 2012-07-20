@@ -11,12 +11,16 @@ __RCSID__ = '$Id:  $'
 
 class LogPolicyResultAction( BaseAction ):
 
-  def __init__( self, decissionParams, enforcementResult, singlePolicyResults ):
+  def __init__( self, decissionParams, enforcementResult, singlePolicyResults, clients = None ):
     
-    super( LogPolicyResultAction, self ).__init__( decissionParams, enforcementResult, singlePolicyResults )
+    super( LogPolicyResultAction, self ).__init__( decissionParams, enforcementResult, 
+                                                   singlePolicyResults, clients )
     self.actionName = 'LogPolicyResultAction'
 
-    self.rmClient = ResourceManagementClient()
+    if clients is not None and 'ResourceManagementClient' in clients:
+      self.rmClient = clients[ 'ResourceManagementClient' ]
+    else:
+      self.rmClient = ResourceManagementClient()
 
   def run( self ):
   

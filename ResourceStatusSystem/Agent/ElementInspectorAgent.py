@@ -8,13 +8,14 @@
 import datetime
 import Queue
 
-from DIRAC                                                  import S_OK
-from DIRAC.Core.Base.AgentModule                            import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                        import ThreadPool
+from DIRAC                                                      import S_OK
+from DIRAC.Core.Base.AgentModule                                import AgentModule
+from DIRAC.Core.Utilities.ThreadPool                            import ThreadPool
 
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 #from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP            import PEP
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP                import PEP
 #from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
 #from DIRAC.ResourceStatusSystem.Utilities                   import CS
 
@@ -50,7 +51,10 @@ class ElementInspectorAgent( AgentModule ):
 
     self.rsClient            = ResourceStatusClient()
 
-    self.clients             = {}
+    self.clients             = { 
+                                 'ResourceStatusClient'     : self.rsClient,
+                                 'ResourceManagementClient' : ResourceManagementClient() 
+                               }
 
     # Do we really need multi-threading ?, most of the times there are few
     # entries to be checked !
@@ -82,7 +86,7 @@ class ElementInspectorAgent( AgentModule ):
         # We are not checking if the item is already on the queue or not. It may
         # be there, but in any case, it is not a big problem.
         
-        lowerElementDict = {}
+        lowerElementDict = { 'element' : 'Site' }
         for key, value in elemDict.items():
           lowerElementDict[ key[0].lower() + key[1:] ] = value
         
