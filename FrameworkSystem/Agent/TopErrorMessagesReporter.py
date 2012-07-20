@@ -26,9 +26,10 @@ class TopErrorMessagesReporter( AgentModule ):
 
     mailList = self.am_getOption( "MailList", [] )
 
-    userString = self.am_getOption( "Reviewer", 'mseco' )
-    userList = List.fromChar( userString, "," )
-    self.log.debug( "Users to be notified", ": " + userString )
+    userList = self.am_getOption( "Reviewer", [] )
+
+    self.log.debug( "Users to be notified:", ', '.join( userList ) )
+
     for user in userList:
       mail = getUserOption( user, 'Email', '' )
       if not mail:
