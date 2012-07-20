@@ -47,22 +47,22 @@ class ResourceManagementDB( object ):
   __tablesDB[ 'PolicyResult' ] = { 'Fields' : 
                       {
                        #'PolicyResultID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
-                       'Granularity'   : 'VARCHAR(32) NOT NULL',
+                       'Element'       : 'VARCHAR(32) NOT NULL',
                        'Name'          : 'VARCHAR(64) NOT NULL',
                        'PolicyName'    : 'VARCHAR(64) NOT NULL',
                        'StatusType'    : 'VARCHAR(16) NOT NULL DEFAULT ""',
                        'Status'        : 'VARCHAR(16) NOT NULL',
                        'Reason'        : 'VARCHAR(255) NOT NULL DEFAULT "Unspecified"',
-                       'DateEffective' : 'DATETIME NOT NULL',
+#                       'DateEffective' : 'DATETIME NOT NULL',
                        'LastCheckTime' : 'DATETIME NOT NULL'
                       },
-                      'PrimaryKey' : [ 'Name', 'StatusType', 'PolicyName' ] 
+                      'PrimaryKey' : [ 'Element', 'Name', 'StatusType', 'PolicyName' ] 
                                 }
   
   __tablesDB[ 'PolicyResultLog' ] = { 'Fields' : 
                       {
                        'PolicyResultLogID' : 'INT UNSIGNED AUTO_INCREMENT NOT NULL',
-                       'Granularity'       : 'VARCHAR(32) NOT NULL',
+                       'Element'           : 'VARCHAR(32) NOT NULL',
                        'Name'              : 'VARCHAR(64) NOT NULL',
                        'PolicyName'        : 'VARCHAR(64) NOT NULL',
                        'StatusType'        : 'VARCHAR(16) NOT NULL DEFAULT ""',
