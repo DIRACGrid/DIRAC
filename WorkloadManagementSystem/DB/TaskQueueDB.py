@@ -550,7 +550,7 @@ class TaskQueueDB( DB ):
 
   def __generateSQLSubCond( self, sqlString, value, boolOp = 'OR' ):
     if type( value ) not in ( types.ListType, types.TupleType ):
-      return sqlString % str( value ).strip() 
+      return sqlString % str( value ).strip()
     sqlORList = []
     for v in value:
       sqlORList.append( sqlString % str( v ).strip() )
@@ -566,7 +566,7 @@ class TaskQueueDB( DB ):
     if condType in ( types.ListType, types.TupleType ):
       sqlCond = []
       for cD in negativeCond:
-        sqlCond.append( self.__generateNotDictSQL( tableDict, cD ) ) 
+        sqlCond.append( self.__generateNotDictSQL( tableDict, cD ) )
       return " ( %s )" % " OR  ".join( sqlCond )
     elif condType == types.DictType:
       return self.__generateNotDictSQL( tableDict, negativeCond )
@@ -584,7 +584,7 @@ class TaskQueueDB( DB ):
           valList = ( valList, )
         for value in valList:
           value = self._escapeString( value )[ 'Value' ]
-          sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( value, 
+          sql = "%s NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )" % ( value,
                                                                     fullTableN, fullTableN, fullTableN )
           condList.append( sql )
       elif field in self.__singleValueDefFields:
@@ -600,7 +600,7 @@ class TaskQueueDB( DB ):
     if fullTableName not in sqlTables:
       tableN = field.lower()
       sqlTables[ fullTableName ] = tableN
-      return tableN, "`%s`" % fullTableName, 
+      return tableN, "`%s`" % fullTableName,
     return  sqlTables[ fullTableName ], "`%s`" % fullTableName
 
   def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1, negativeCond = {} ):
@@ -624,7 +624,7 @@ class TaskQueueDB( DB ):
           ownerConds.append( "tq.OwnerGroup = %s" % group )
         else:
           for dn in dns:
-            ownerConds.append( "( tq.OwnerDN = %s AND tq.OwnerGroup = %s )" % ( dn, sqlGroup ) )
+            ownerConds.append( "( tq.OwnerDN = %s AND tq.OwnerGroup = %s )" % ( dn, group ) )
       sqlCondList.append( " OR ".join( ownerConds ) )
     else:
       #If not both are defined, just add the ones that are defined
@@ -674,7 +674,7 @@ class TaskQueueDB( DB ):
       if field in tqMatchDict:
         continue
       fullTableN = '`tq_TQTo%ss`' % field
-      sqlCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) ) 
+      sqlCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % ( fullTableN, fullTableN, fullTableN ) )
 
     # Add extra conditions
     if negativeCond:
