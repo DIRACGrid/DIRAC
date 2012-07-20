@@ -464,8 +464,8 @@ def addOptionToDiracCfg( option, value ):
   return S_ERROR( 'Could not merge %s=%s with local configuration' % ( option, value ) )
 
 def addDefaultOptionsToCS( gConfig, componentType, systemName,
-                           component, extensions, mySetup = setup, 
-                           specialOptions={}, overwrite = False ):
+                           component, extensions, mySetup = setup,
+                           specialOptions = {}, overwrite = False ):
   """ Add the section with the component options to the CS
   """
   system = systemName.replace( 'System', '' )
@@ -550,7 +550,7 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
   gLogger.error( error )
   return S_ERROR( error )
 
-def getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions={} ):
+def getComponentCfg( componentType, system, component, compInstance, extensions, specialOptions = {} ):
   """
   Get the CFG object of the component configuration
   """
@@ -563,7 +563,7 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   componentModule = component
   if "Module" in specialOptions:
     componentModule = specialOptions['Module']
- 
+
   extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
   compCfg = CFG()
   for ext in extensionsDIRAC + ['DIRAC']:
@@ -593,7 +593,7 @@ def getComponentCfg( componentType, system, component, compInstance, extensions,
   cfg = __getCfg( sectionPath )
   cfg.createNewSection( cfgPath( sectionPath, component ), '', compCfg )
 
-  for option,value in specialOptions.items():
+  for option, value in specialOptions.items():
     cfg.setOption( cfgPath( sectionPath, component, option ), value )
 
   # Add the service URL
@@ -784,7 +784,7 @@ def getInstalledComponents():
         elif body.find( 'dirac-executor' ) != -1:
           if not executors.has_key( system ):
             executors[system] = []
-          executors[system].append( component )  
+          executors[system].append( component )
       except IOError:
         pass
 
@@ -825,7 +825,7 @@ def getSetupComponents():
         system, executor = component.split( '_' )
         if not executorss.has_key( system ):
           executors[system] = []
-        executors[system].append( agent )  
+        executors[system].append( agent )
     except IOError:
       pass
 
@@ -901,17 +901,17 @@ def getStartupComponentStatus( componentTupleList ):
 
   return S_OK( componentDict )
 
-def getComponentModule( gConfig,system,component,compType ):
+def getComponentModule( gConfig, system, component, compType ):
   """ Get the component software module
   """
   setup = CSGlobals.getSetup()
-  instance = gConfig.getValue( cfgPath( 'DIRAC', 'Setups', setup, system ),'' )
+  instance = gConfig.getValue( cfgPath( 'DIRAC', 'Setups', setup, system ), '' )
   if not instance:
-    return S_OK(component)
-  module = gConfig.getValue( cfgPath( 'Systems',system,instance,compType,component,'Module' ),'' )
+    return S_OK( component )
+  module = gConfig.getValue( cfgPath( 'Systems', system, instance, compType, component, 'Module' ), '' )
   if not module:
     module = component
-  return S_OK(module)  
+  return S_OK( module )
 
 def getOverallStatus( extensions ):
   """  Get the list of all the components ( services and agents ) 
@@ -982,7 +982,7 @@ def getOverallStatus( extensions ):
           if compType in resultDict:
             if system in resultDict[compType]:
               if component in resultDict[compType][system]:
-                continue 
+                continue
           resultDict[compType][system][component] = {}
           resultDict[compType][system][component]['Setup'] = False
           resultDict[compType][system][component]['Installed'] = True
@@ -1378,7 +1378,7 @@ exec svlogd .
   os.chmod( logRunFile, gDefaultPerms )
 
 
-def installComponent( componentType, system, component, extensions, componentModule='' ):
+def installComponent( componentType, system, component, extensions, componentModule = '' ):
   """ Install runit directory for the specified component
   """
   # Check that the software for the component is installed
@@ -1444,7 +1444,7 @@ exec dirac-%(componentType)s %(system)s/%(component)s %(componentCfg)s < /dev/nu
 
   return S_OK( runitCompDir )
 
-def setupComponent( componentType, system, component, extensions, componentModule='' ):
+def setupComponent( componentType, system, component, extensions, componentModule = '' ):
   """
   Install and create link in startup
   """
@@ -1950,11 +1950,11 @@ def installDatabase( dbName ):
             DIRAC.exit( -1 )
           return S_ERROR( error )
         perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER"
-        for cmd in ["GRANT %s ON `%s`.* TO 'Dirac'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName,
+        for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                                        mysqlPassword ),
-                    "GRANT %s ON `%s`.* TO 'Dirac'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName,
+                    "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                                 mysqlHost, mysqlPassword ),
-                    "GRANT %s ON `%s`.* TO 'Dirac'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName,
+                    "GRANT %s ON `%s`.* TO '%s'@'%%' IDENTIFIED BY '%s'" % ( perms, dbName, mysqlUser,
                                                                                 mysqlPassword ),
                     ]:
           result = execMySQL( cmd )
