@@ -68,8 +68,8 @@ class PEP:
     singlePolicyResults  = resDecisions[ 'singlePolicyResults' ]
     
     ## record all results before doing anything else    
-    for resPolicy in singlePolicyResults:
-      print ( decissionParams, resPolicy )
+#    for resPolicy in singlePolicyResults:
+#      print ( decissionParams, resPolicy )
          
     for policyAction in policyCombinedResult[ 'PolicyAction' ]:
       
@@ -85,11 +85,13 @@ class PEP:
       action = getattr( actionMod, policyAction )( decissionParams, policyCombinedResult,
                                                    singlePolicyResults, self.clients )
       
+      gLogger.debug( policyAction )
+      
       actionResult = action.run()
       if not actionResult[ 'OK' ]:
         gLogger.error( actionResult[ 'Message' ] )
         
-      gLogger.debug( '> %s' % policyAction )     
+#      gLogger.debug( '> %s' % policyAction )     
         
 #      
 #      if not resP.has_key( 'OLD' ):       

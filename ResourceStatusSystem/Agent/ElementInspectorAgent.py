@@ -14,10 +14,7 @@ from DIRAC.Core.Utilities.ThreadPool                            import ThreadPoo
 
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-#from DIRAC.ResourceStatusSystem.Command                     import knownAPIs
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP                import PEP
-#from DIRAC.ResourceStatusSystem.Utilities.Utils             import where
-#from DIRAC.ResourceStatusSystem.Utilities                   import CS
 
 __RCSID__  = '$Id: $'
 AGENT_NAME = 'ResourceStatus/ElementInspectorAgent'
@@ -140,11 +137,14 @@ class ElementInspectorAgent( AgentModule ):
         self.log.info( '%s DOWN' % tHeader )
         return S_OK()
       
+      self.log.info( 'processed %s' % element[ 'name' ] )
       print pep.enforce( element )
       
       # Used together with join !
       self.elementsToBeChecked.task_done()
       self.log.info( element )    
+
+    return S_OK()
 
 #
 #  def initialize( self ):

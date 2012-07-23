@@ -52,7 +52,7 @@ class SMSAction( BaseAction ):
       return S_OK()
       
     text = '%s %s is %s ( %s )' % ( name, statusType, status, reason )   
-    print text
+#    print text
     
     address = ''
     return self._sendSMS( address, '' )    

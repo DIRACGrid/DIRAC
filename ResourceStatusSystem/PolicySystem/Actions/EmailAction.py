@@ -54,12 +54,12 @@ class EmailAction( BaseAction ):
     
     body = 'Enforcement result\n'
     body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in self.enforcementResult.items() ] )
-    body += '\n'
-    body += '*' * 50
+    body += '\n\n'
+    body += '*' * 80
     body += '\nOriginal parameters\n'
     body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in self.decissionParams.items() ] )
-    body += '\n'
-    body += '*' * 50
+    body += '\n\n'
+    body += '*' * 80
     body += '\nPolicies run\n'
     
     for policy in self.singlePolicyResults:
