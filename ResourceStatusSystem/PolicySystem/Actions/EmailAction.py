@@ -3,7 +3,7 @@
 
 '''
 
-from DIRAC                                                      import S_ERROR, S_OK, gLogger, gConfig
+from DIRAC                                                      import S_ERROR, S_OK, gConfig#, gLogger
 #from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
@@ -93,7 +93,7 @@ class EmailAction( BaseAction ):
       if not 'users' in addressDict:
         return S_ERROR( 'Malformed address dict %s' % addressDict )     
     
-      gLogger.info( 'Notifying users of %s' % addressDict[ 'name' ] )
+      #gLogger.info( 'Notifying users of %s' % addressDict[ 'name' ] )
       
       for user in addressDict[ 'users' ]:
       

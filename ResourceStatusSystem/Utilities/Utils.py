@@ -272,7 +272,7 @@ def configMatch( candidateParams, configParams ):
     if not isinstance( cParameter, list ):
       cParameter = [ cParameter ]
     
-    elif not set( cParameter ).intersection( set( configParams[ key ] ) ):
+    if not set( cParameter ).intersection( set( configParams[ key ] ) ):
       return False
     
   return True  
