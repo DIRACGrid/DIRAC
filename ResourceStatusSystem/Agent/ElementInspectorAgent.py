@@ -123,7 +123,7 @@ class ElementInspectorAgent( AgentModule ):
         
   def _execute( self, threadNumber ):
 
-    tHeader = 'Job%d' % threadNumber
+    tHeader = '%sJob%d' % ( '* '*30, threadNumber )
     
     self.log.info( '%s UP' % tHeader )
     
@@ -137,7 +137,7 @@ class ElementInspectorAgent( AgentModule ):
         self.log.info( '%s DOWN' % tHeader )
         return S_OK()
       
-      self.log.info( '%s processed' % element[ 'name' ] )
+      self.log.info( '%s being processed' % element[ 'name' ] )
       
       resEnforce = pep.enforce( element )
       if not resEnforce[ 'OK' ]:

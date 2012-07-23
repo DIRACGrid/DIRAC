@@ -24,8 +24,9 @@ class InfoGetter:
 
   def sanitizeDecissionParams( self, decissionParams ):
     
+    # active is a hook to disable the policy / action if needed
     params = ( 'element', 'name', 'elemenType', 'statusType', 'status', 
-               'reason', 'tokenOwner' )
+               'reason', 'tokenOwner', 'active' )
     
     sanitizedParams = {} 
 #                       'element'     : None,
