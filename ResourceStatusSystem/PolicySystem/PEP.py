@@ -9,7 +9,7 @@
        c. other....
 '''
 
-from DIRAC                                                       import gLogger
+from DIRAC                                                       import gLogger, S_OK
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient      import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient  import ResourceManagementClient
 #from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmptyAction import EmptyAction
@@ -73,7 +73,6 @@ class PEP:
          
     for policyAction in policyCombinedResult[ 'PolicyAction' ]:
       
-      print policyAction
       try:
         actionMod = Utils.voimport( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s' % policyAction )
       except ImportError:
@@ -133,7 +132,7 @@ class PEP:
 #        action = Utils.voimport( '%s.RealBanAction' % actionBaseMod )
 #        action.RealBanAction(granularity, name, resDecisions).run()
 
-    return resDecisions
+    return S_OK( resDecisions )
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

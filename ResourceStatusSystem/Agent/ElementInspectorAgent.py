@@ -102,11 +102,11 @@ class ElementInspectorAgent( AgentModule ):
     threadsToStart = min( self.maxNumberOfThreads, queueSize / 30 ) 
     threadsRunning = self.threadPool.numWorkingThreads()
     
-    self.log.info( 'Starting %d jobs to process %d elements' % ( threadsToStart, queueSize ) )
+    self.log.info( 'Needed %d threads to process %d elements' % ( threadsToStart, queueSize ) )
     if threadsRunning:
-      self.log.info( 'Already %d jobs running' % threadsRunning )
+      self.log.info( 'Already %d threads running' % threadsRunning )
       threadsToStart = max( 0, threadsToStart - threadsRunning )
-      self.log.info( 'Starting %d jobs to process %d elements' % ( threadsToStart, queueSize ) )
+      self.log.info( 'Starting %d threads to process %d elements' % ( threadsToStart, queueSize ) )
     
     for _x in xrange( threadsToStart ):
       self.threadPool.generateJobAndQueueIt( self._execute, args = ( _x, ) )

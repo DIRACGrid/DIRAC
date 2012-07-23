@@ -3,7 +3,7 @@
 
 '''
 
-from DIRAC                                                      import S_ERROR, S_OK, gLogger
+from DIRAC                                                      import S_ERROR, S_OK, gLogger, gConfig
 #from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
@@ -49,23 +49,30 @@ class EmailAction( BaseAction ):
     if self.decissionParams[ 'reason' ] == reason:
       # If reason has not changed, we skip
       return S_OK()
+
+    if not 'Banned' in ( status, self.decissionParams[ 'status' ] ):
+      # not really interesting to send an email
+      return S_OK()
       
-    subject = '%s %s %s is on status %s' % ( element, name, statusType, status )
+    setup = gConfig.getValue( 'DIRAC/Setup')  
+      
+    subject = '[%s]%s %s %s is on status %s' % ( setup, element, name, statusType, status )
     
-    body = 'Enforcement result\n'
-    body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in self.enforcementResult.items() ] )
+    body = 'ENFORCEMENT RESULT\n\n'
+    body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in self.enforcementResult.items() ] )
     body += '\n\n'
     body += '*' * 80
-    body += '\nOriginal parameters\n'
-    body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in self.decissionParams.items() ] )
+    body += '\nORGINAL PARAMETERS\n\n'
+    body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in self.decissionParams.items() ] )
     body += '\n\n'
     body += '*' * 80
-    body += '\nPolicies run\n'
+    body += '\nPOLICIES RUN\n\n'
     
     for policy in self.singlePolicyResults:
       
-      body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in policy.items() if not key == 'Policy' ] )
-      body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in policy[ 'Policy' ].items() ] )
+      body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in policy.items() if not key == 'Policy' ] )
+      body += '\n'
+      body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in policy[ 'Policy' ].items() ] )
       body += '\n'
         
     return self._sendMail( subject, body )
