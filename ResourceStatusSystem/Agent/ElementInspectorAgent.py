@@ -137,12 +137,20 @@ class ElementInspectorAgent( AgentModule ):
         self.log.info( '%s DOWN' % tHeader )
         return S_OK()
       
-      self.log.info( 'processed %s' % element[ 'name' ] )
-      print pep.enforce( element )
+      self.log.info( '%s processed' % element[ 'name' ] )
+      resEnforce = pep.enforce( element )
       
+      oldStatus  = resEnforce[ 'decissionParams' ][ 'status' ]
+      statusType = resEnforce[ 'decissionParams' ][ 'statusType' ]
+      newStatus  = resEnforce[ 'policyCombinedResult' ][ 'Status' ]
+      reason     = resEnforce[ 'policyCombinedResult' ][ 'Reason' ]
+      
+      if oldStatus != newStatus:
+        self.log.info( '%s (%s) is now %s ( %s ), before %s' % ( element[ 'name' ], statusType,
+                                                                 newStatus, reason, oldStatus ) )
+        
       # Used together with join !
-      self.elementsToBeChecked.task_done()
-      self.log.info( element )    
+      self.elementsToBeChecked.task_done()   
 
     return S_OK()
 
