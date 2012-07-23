@@ -138,7 +138,11 @@ class ElementInspectorAgent( AgentModule ):
         return S_OK()
       
       self.log.info( '%s processed' % element[ 'name' ] )
+      
       resEnforce = pep.enforce( element )
+      if not resEnforce[ 'OK' ]:
+        self.log.error( resEnforce[ 'Message' ] )
+      resEnforce = resEnforce[ 'Value' ]  
       
       oldStatus  = resEnforce[ 'decissionParams' ][ 'status' ]
       statusType = resEnforce[ 'decissionParams' ][ 'statusType' ]
