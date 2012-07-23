@@ -3,9 +3,10 @@
 
 '''
 
-from DIRAC                                                      import S_ERROR, S_OK
+from DIRAC                                                      import S_ERROR, S_OK, gLogger
 #from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
 
 __RCSID__ = '$Id:  $'
 
@@ -16,8 +17,6 @@ class EmailAction( BaseAction ):
     super( EmailAction, self ).__init__( decissionParams, enforcementResult, 
                                          singlePolicyResults, clients )
     self.actionName = 'EmailAction'
-    
-#    self.rsClient   = ResourceStatusClient()
 
   def run( self ):
     
@@ -67,20 +66,35 @@ class EmailAction( BaseAction ):
       
       body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in policy.items() if not key == 'Policy' ] )
       body += '\n'.join( [ '%s : %s' % ( key, value ) for key, value in policy[ 'Policy' ].items() ] )
-    
-    print subject
-    print body
-    address = ''
-    
-    return self._sendMail( address, subject, body )
+      body += '\n'
+        
+    return self._sendMail( subject, body )
 
-  @staticmethod
-  def _sendMail( address, subject, body ):
+  def _sendMail( self, subject, body ):
     
     from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
     diracAdmin = DiracAdmin()
     
-    return diracAdmin.sendMail( address, subject, body )
+    address = InfoGetter().getNotificationsThatApply( self.decissionParams, self.actionName )
+    if not address[ 'OK' ]:
+      return address 
+    address = address[ 'Value' ]
+    
+    for addressDict in address:
+      if not 'name' in addressDict:
+        return S_ERROR( 'Malformed address dict %s' % addressDict ) 
+      if not 'users' in addressDict:
+        return S_ERROR( 'Malformed address dict %s' % addressDict )     
+    
+      gLogger.info( 'Notifying users of %s' % addressDict[ 'name' ] )
+      
+      for user in addressDict[ 'users' ]:
+      
+        resEmail = diracAdmin.sendMail( user, subject, body )
+        if not resEmail[ 'OK' ]:
+          return S_ERROR( 'Cannot send email to user "%s"' % user )    
+      
+    return resEmail 
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

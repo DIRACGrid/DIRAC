@@ -57,6 +57,15 @@ def getPolicyActions():
   '''
   
   return Utils.getCSTree( '%s/PolicyActions' % rssConfigPath )
+
+## RssConfiguration/Notifications ##############################################
+
+def getNotifications():
+  '''
+  Returns from the OperationsHelper: <rssConfigPath>/Notification
+  '''
+  
+  return Utils.getCSTree( '%s/Notification' % rssConfigPath )
   
 ## RssConfiguration/GeneralConfig ##############################################
 
