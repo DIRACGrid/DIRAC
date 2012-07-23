@@ -39,7 +39,9 @@ class PDP:
                           'statusType'  : None,
                           'status'      : None,
                           'reason'      : None,
-                          'tokenOwner'  : None
+                          'tokenOwner'  : None,
+                          # Last parameter allows policies to be deactivated
+                          'active'      : True
                           }
 
     if decissionParams is not None:

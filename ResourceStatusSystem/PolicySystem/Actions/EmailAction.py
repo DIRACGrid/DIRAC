@@ -73,7 +73,7 @@ class EmailAction( BaseAction ):
       body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in policy.items() if not key == 'Policy' ] )
       body += '\n'
       body += '\n'.join( [ '%s : "%s"' % ( key, value ) for key, value in policy[ 'Policy' ].items() ] )
-      body += '\n'
+      body += '\n\n'
         
     return self._sendMail( subject, body )
 
