@@ -142,6 +142,9 @@ class ElementInspectorAgent( AgentModule ):
       resEnforce = pep.enforce( element )
       if not resEnforce[ 'OK' ]:
         self.log.error( resEnforce[ 'Message' ] )
+        self.elementsToBeChecked.task_done()
+        continue
+      
       resEnforce = resEnforce[ 'Value' ]  
       
       oldStatus  = resEnforce[ 'decissionParams' ][ 'status' ]
