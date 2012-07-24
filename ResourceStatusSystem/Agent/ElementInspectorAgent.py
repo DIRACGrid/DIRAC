@@ -76,6 +76,10 @@ class ElementInspectorAgent( AgentModule ):
       # Maybe an overkill, but this way I have never again to worry about order
       elemDict = dict( zip( elements[ 'Columns' ], element ) )
       
+      if not elemDict[ 'ElementType' ] in self.inspectionFreqs:
+        self.log.error( '"%s" not in inspectionFreqs' % elemDict[ 'ElementType' ] )
+        continue
+      
       timeToNextCheck = self.inspectionFreqs[ elemDict[ 'ElementType' ] ][ elemDict[ 'Status' ] ]      
       if utcnow - datetime.timedelta( minutes = timeToNextCheck ) > elemDict[ 'LastCheckTime' ]:
         
@@ -88,7 +92,7 @@ class ElementInspectorAgent( AgentModule ):
           lowerElementDict[ key[0].lower() + key[1:] ] = value
         
         self.elementsToBeChecked.put( lowerElementDict )
-        self.log.info( '"%s"-"%s"-"%s"-"%s"-"%s"' % ( elemDict[ 'Name' ], 
+        self.log.info( '%s-"%s"-"%s"-%s-%s' % ( elemDict[ 'Name' ], 
                                                       elemDict[ 'ElementType' ],
                                                       elemDict[ 'StatusType' ],
                                                       elemDict[ 'Status' ],
@@ -158,6 +162,8 @@ class ElementInspectorAgent( AgentModule ):
         
       # Used together with join !
       self.elementsToBeChecked.task_done()   
+
+    self.log.info( '%s DOWN' % tHeader )
 
     return S_OK()
 

@@ -44,7 +44,7 @@ class PolicyBase( object ):
     the command (if necessary) as it is provided and returns the results.
     '''
 
-    result = self.command.doCommand()       
+    result = self.command.doCommand()
     return result
 
 ################################################################################

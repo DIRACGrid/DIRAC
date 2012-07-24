@@ -4,6 +4,8 @@
   present downtimes
 '''
 
+import urllib2
+
 from datetime import datetime
 
 from DIRAC                                                      import S_OK, S_ERROR
@@ -55,7 +57,7 @@ class GOCDBStatusCommand( Command ):
       return S_ERROR( 'GOCDBStatusCommand: "name" not found in self.args' )
     name = self.args[ 'name' ]
     if name is None:
-      return S_ERROR( 'GOCDBStatusCommand: "name" should not be None')
+      return S_ERROR( 'GOCDBStatusCommand: "name" should not be None' )
     
     hours = None
     if 'hours' in self.args:
@@ -68,7 +70,10 @@ class GOCDBStatusCommand( Command ):
       name = name[ 'Value' ]
       
     #FIXME: check if that certainly works or not. Right now, no idea  
-    resDTGOC = self.gClient.getStatus( element, name, None, hours )
+    try:
+      resDTGOC = self.gClient.getStatus( element, name, None, hours )
+    except urllib2.URLError:
+      return S_ERROR( 'URLError on getStatus with %s, %s, %s' % ( element, name, hours ) )  
 
     if not resDTGOC[ 'OK' ]:
       return resDTGOC    
