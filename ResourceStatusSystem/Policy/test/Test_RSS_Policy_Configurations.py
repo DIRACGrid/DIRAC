@@ -1,13 +1,12 @@
 # $HeadURL:  $
 ''' Test_RSS_Policy_Configurations
-
 '''
 
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.Configurations as moduleTested
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
 ################################################################################
 
