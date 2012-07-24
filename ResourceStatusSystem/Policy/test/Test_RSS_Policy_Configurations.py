@@ -41,7 +41,7 @@ class Configurations_Success( Configurations_TestCase ):
     
     for _policyName, policyMeta in policiesMeta.items():
       
-      self.assertEquals( [ 'args', 'command', 'description', 'module' ], policyMeta.keys() )
+      self.assertEqual( [ 'args', 'command', 'description', 'module' ], policyMeta.keys() )
     
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
