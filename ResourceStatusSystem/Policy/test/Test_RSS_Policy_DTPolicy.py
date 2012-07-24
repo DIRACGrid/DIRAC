@@ -51,7 +51,7 @@ class DTPolicy_Success( DTPolicy_TestCase ):
     
     # command mock
     mock_command = mock.Mock()
-    mock_command.return_value = { 'OK' : False, 'Message' : 'Grumpy command' }
+    mock_command.doCommand.return_value = { 'OK' : False, 'Message' : 'Grumpy command' }
     
     policy.command = mock_command
     
