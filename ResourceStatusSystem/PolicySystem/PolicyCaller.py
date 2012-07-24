@@ -45,13 +45,6 @@ class PolicyCaller:
     to get a command object
     '''
 
-    # policyDict.keys() = [ 'description', 'module', 'commandIn', 'args'... ]    
-
-#    print policyDict[ 'description' ]
-#    print policyDict[ 'module' ]
-#    print policyDict[ 'command' ]
-#    print policyDict[ 'args' ]
-
     if not 'module' in policyDict:
       return S_ERROR( 'Malformed policyDict %s' % policyDict )
     pModuleName = policyDict[ 'module' ]
