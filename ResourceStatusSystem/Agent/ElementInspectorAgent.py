@@ -31,14 +31,16 @@ class ElementInspectorAgent( AgentModule ):
   def initialize( self ):
     
     
+    
+    
     self.maxNumberOfThreads  = 5
 #    self.maxNumberOfThreads  = self.am_getOption( 'maxThreadsInPool', 5 )
     self.elementType         = 'Site'
 #    self.elementType         = self.am_getOption( 'elementType' )
     #self.inspectionFreqs     = self.am_getOption( 'inspectionFreqs' )
-    self.inspectionFreqs = { '' : { 'Active'  : 2, 
-                                    'Bad'     : 2, 
-                                    'Probing' : 2, 
+    self.inspectionFreqs = { '' : { 'Active'  : 8, 
+                                    'Bad'     : 6, 
+                                    'Probing' : 4, 
                                     'Banned'  : 2 } }
     
     
@@ -92,18 +94,18 @@ class ElementInspectorAgent( AgentModule ):
           lowerElementDict[ key[0].lower() + key[1:] ] = value
         
         self.elementsToBeChecked.put( lowerElementDict )
-        self.log.info( '%s-"%s"-"%s"-%s-%s' % ( elemDict[ 'Name' ], 
-                                                      elemDict[ 'ElementType' ],
-                                                      elemDict[ 'StatusType' ],
-                                                      elemDict[ 'Status' ],
-                                                      elemDict[ 'LastCheckTime' ]) )
+        self.log.info( '%s # "%s" # "%s" # %s # %s' % ( elemDict[ 'Name' ], 
+                                                        elemDict[ 'ElementType' ],
+                                                        elemDict[ 'StatusType' ],
+                                                        elemDict[ 'Status' ],
+                                                        elemDict[ 'LastCheckTime' ]) )
        
     
     # Measure size of the queue, more or less, to know how many threads should
     # we start !
     queueSize      = self.elementsToBeChecked.qsize()
     # 30, could have been other number.. but it works reasonably well.
-    threadsToStart = min( self.maxNumberOfThreads, queueSize / 30 ) 
+    threadsToStart = max( min( self.maxNumberOfThreads, queueSize / 30 ), 1 ) 
     threadsRunning = self.threadPool.numWorkingThreads()
     
     self.log.info( 'Needed %d threads to process %d elements' % ( threadsToStart, queueSize ) )
@@ -113,8 +115,10 @@ class ElementInspectorAgent( AgentModule ):
       self.log.info( 'Starting %d threads to process %d elements' % ( threadsToStart, queueSize ) )
     
     for _x in xrange( threadsToStart ):
-      self.threadPool.generateJobAndQueueIt( self._execute, args = ( _x, ) )
-       
+      jobUp = self.threadPool.generateJobAndQueueIt( self._execute, args = ( _x, ) )
+      if not jobUp[ 'OK' ]:
+        self.log.error( jobUp[ 'Message' ] )
+        
     return S_OK()
 
   def finalize( self ):
@@ -124,6 +128,8 @@ class ElementInspectorAgent( AgentModule ):
     self.elementsToBeChecked.join()  
     
     return S_OK()
+        
+## Private methods #############################################################        
         
   def _execute( self, threadNumber ):
 
@@ -157,8 +163,11 @@ class ElementInspectorAgent( AgentModule ):
       reason     = resEnforce[ 'policyCombinedResult' ][ 'Reason' ]
       
       if oldStatus != newStatus:
-        self.log.info( '%s (%s) is now %s ( %s ), before %s' % ( element[ 'name' ], statusType,
-                                                                 newStatus, reason, oldStatus ) )
+        self.log.info( '%s (%s) is now %s ( %s ), before %s' % ( element[ 'name' ], 
+                                                                 statusType,
+                                                                 newStatus, 
+                                                                 reason, 
+                                                                 oldStatus ) )
         
       # Used together with join !
       self.elementsToBeChecked.task_done()   
@@ -166,134 +175,6 @@ class ElementInspectorAgent( AgentModule ):
     self.log.info( '%s DOWN' % tHeader )
 
     return S_OK()
-
-#
-#  def initialize( self ):
-#
-#    # Attribute defined outside __init__ 
-#    # pylint: disable-msg=W0201
-#
-#    try:
-#      self.rsClient             = ResourceStatusClient()
-#      self.resourcesFreqs       = CS.getTypedDictRootedAtOperations( 'CheckingFreqs/ResourcesFreqs' )
-#      self.resourcesToBeChecked = Queue.Queue()
-#      self.resourceNamesInCheck = []
-#
-#      self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-#      self.threadPool         = ThreadPool( self.maxNumberOfThreads,
-#                                            self.maxNumberOfThreads )
-#      if not self.threadPool:
-#        self.log.error( 'Can not create Thread Pool' )
-#        return S_ERROR( 'Can not create Thread Pool' )
-#
-#      for _i in xrange( self.maxNumberOfThreads ):
-#        self.threadPool.generateJobAndQueueIt( self._executeCheck, args = ( None, ) )
-#
-#      return S_OK()
-#
-#    except Exception:
-#      errorStr = "RSInspectorAgent initialization"
-#      self.log.exception( errorStr )
-#      return S_ERROR( errorStr )
-#
-#  def execute( self ):
-#
-#    try:
-#
-#      kwargs = { 'meta' : {} }
-#      kwargs['meta']['columns'] = [ 'ResourceName', 'StatusType', 'Status',
-#                                    'FormerStatus', 'SiteType', 'ResourceType', \
-#                                    'TokenOwner' ]
-#      kwargs[ 'tokenOwner' ]    = 'RS_SVC'
-#
-#      resQuery = self.rsClient.getStuffToCheck( 'Resource', self.resourcesFreqs, **kwargs )
-#      if not resQuery[ 'OK' ]:
-#        self.log.error( resQuery[ 'Message' ] )
-#        return resQuery
-#
-#      resQuery = resQuery[ 'Value' ]  
-#      self.log.info( 'Found %d candidates to be checked.' % len( resQuery ) )
-#
-#      for resourceTuple in resQuery:
-#
-#        if ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) in self.resourceNamesInCheck:
-#          self.log.info( '%s(%s) discarded, already on the queue' % ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
-#          continue
-#
-#        resourceL = [ 'Resource' ] + resourceTuple
-#
-#        self.resourceNamesInCheck.insert( 0, ( resourceTuple[ 0 ], resourceTuple[ 1 ] ) )
-#        self.resourcesToBeChecked.put( resourceL )
-#
-#      return S_OK()
-#
-#    except Exception, x:
-#      errorStr = where( self, self.execute )
-#      self.log.exception( errorStr, lException = x )
-#      return S_ERROR( errorStr )
-#
-#  def finalize( self ):
-#    '''
-#      Method executed at the end of the last cycle. It waits until the queue
-#      is empty.
-#    '''   
-#    if self.resourceNamesInCheck:
-#      _msg = "Wait for queue to get empty before terminating the agent (%d tasks)"
-#      _msg = _msg % len( self.resourceNamesInCheck )
-#      self.log.info( _msg )
-#      while self.resourceNamesInCheck:
-#        time.sleep( 2 )
-#      self.log.info( "Queue is empty, terminating the agent..." )
-#    return S_OK()
-#
-#################################################################################
-#
-#  def _executeCheck( self, _arg ):
-#    '''
-#      Method executed by the threads in the pool. Picks one element from the
-#      common queue, and enforces policies on that element.
-#    '''
-#    # Init the APIs beforehand, and reuse them.
-#    __APIs__ = [ 'ResourceStatusClient', 'ResourceManagementClient' ]
-#    clients = knownAPIs.initAPIs( __APIs__, {} )
-#
-#    pep = PEP( clients = clients )
-#
-#    while True:
-#
-#      toBeChecked  = self.resourcesToBeChecked.get()
-#
-#      pepDict = { 'granularity'  : toBeChecked[ 0 ],
-#                  'name'         : toBeChecked[ 1 ],
-#                  'statusType'   : toBeChecked[ 2 ],
-#                  'status'       : toBeChecked[ 3 ],
-#                  'formerStatus' : toBeChecked[ 4 ],
-#                  'siteType'     : toBeChecked[ 5 ],
-#                  'resourceType' : toBeChecked[ 6 ],
-#                  'tokenOwner'   : toBeChecked[ 7 ] }
-#
-#      try:
-#
-#        self.log.info( "Checking Resource %s, with type/status: %s/%s" % \
-#                      ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
-#
-#        pepRes =  pep.enforce( **pepDict )
-#        if pepRes.has_key( 'PolicyCombinedResult' ) and pepRes[ 'PolicyCombinedResult' ].has_key( 'Status' ):
-#          pepStatus = pepRes[ 'PolicyCombinedResult' ][ 'Status' ]
-#          if pepStatus != pepDict[ 'status' ]:
-#            self.log.info( 'Updated Site %s (%s) from %s to %s' %
-#                          ( pepDict['name'], pepDict['statusType'], pepDict['status'], pepStatus ))
-#
-#        # remove from InCheck list
-#        self.resourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
-#
-#      except Exception:
-#        self.log.exception( "RSInspector._executeCheck Checking Resource %s, with type/status: %s/%s" % \
-#                      ( pepDict['name'], pepDict['statusType'], pepDict['status'] ) )
-#        try:
-#          self.resourceNamesInCheck.remove( ( pepDict[ 'name' ], pepDict[ 'statusType' ] ) )
-#        except IndexError:
-#          pass
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
