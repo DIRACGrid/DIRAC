@@ -3,8 +3,7 @@
 
 '''
 
-from DIRAC                                                      import S_ERROR, S_OK, gConfig#, gLogger
-#from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
+from DIRAC                                                      import S_ERROR, S_OK, gConfig
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import InfoGetter
 
@@ -54,7 +53,7 @@ class EmailAction( BaseAction ):
       # not really interesting to send an email
       return S_OK()
       
-    setup = gConfig.getValue( 'DIRAC/Setup')  
+    setup = gConfig.getValue( 'DIRAC/Setup' )  
       
     subject = '[%s]%s %s %s is on status %s' % ( setup, element, name, statusType, status )
     
@@ -92,10 +91,10 @@ class EmailAction( BaseAction ):
         return S_ERROR( 'Malformed address dict %s' % addressDict ) 
       if not 'users' in addressDict:
         return S_ERROR( 'Malformed address dict %s' % addressDict )     
-    
-      #gLogger.info( 'Notifying users of %s' % addressDict[ 'name' ] )
       
       for user in addressDict[ 'users' ]:
+      
+      #FIXME: should not I get the info from the RSS User cache ?
       
         resEmail = diracAdmin.sendMail( user, subject, body )
         if not resEmail[ 'OK' ]:
