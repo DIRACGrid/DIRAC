@@ -1,44 +1,43 @@
-# $HeadURL $
-''' Configurations
+# $HeadURL:  $
+''' Configurations module
 
-  Collects everything needed to configure policies.
+  Configuration to use policies.
+  
+  Follows the schema:
+  
+  <PolicyNameInCS> : {
+             'description' : <some human readable description>,
+             'module'      : <policy module name>,
+             'command'     : ( <command module name >, < command class name > ),
+             'args'        : { arguments for the command } or None 
+                     }
   
 '''
 
-from DIRAC.ResourceStatusSystem.Utilities import Utils
+__RCSID__ = '$Id:  $'
 
-__RCSID__ = '$Id: $'
-
-def getPolicyParameters():
-  return Utils.getCSTree( 'RSSConfiguration2/PolicyParameters' )
-
-Policies = {
+policiesMeta = {
             
-  'DT_OnGoing_Only' :
+  'DTOnGoingOnly' :
     {
       'description' : "Ongoing down-times",
-      'module'      : 'DT_Policy',
+      'module'      : 'DTPolicy',
       'command'     : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
       'args'        : None
     },
 
-  'DT_Scheduled' :
+  'DTScheduled' :
     {
       'description' : "Ongoing and scheduled down-times",
-      'module'      : 'DT_Policy',
-      #'commandInNewRes' : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
+      'module'      : 'DTPolicy',
       'command'     : ( 'GOCDBStatusCommand', 'GOCDBStatusCommand' ),
       'args'        : { 'hours' : 12 },
-#      'Site_Panel'      : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
-#                                         'args': None}},],
-#      'Resource_Panel'  : [ {'WebLink': {'CommandIn': ( 'GOCDBStatus_Command', 'DTInfo_Cached_Command' ),
-#                                         'args': None}}]
     },
 
   'AlwaysActive' :
     {
       'description' : "A Policy that always returns Active",
-      'module'      : 'AlwaysActive_Policy',
+      'module'      : 'AlwaysActivePolicy',
       'command'     : None,
       'args'        : None
     }

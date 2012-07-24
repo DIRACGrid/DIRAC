@@ -1,30 +1,31 @@
-# $HeadURL:
-''' DT_Policy
-
-  The DT_Policy class is a policy class satisfied when a site is in downtime,
-  or when a downtime is revoked.
-  
+# $HeadURL:  $
+''' DTPolicy module
 '''
 
 from DIRAC                                              import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id:  $'
 
-class DT_Policy( PolicyBase ):
+class DTPolicy( PolicyBase ):
+  '''
+    The DTPolicy checks for downtimes, scheduled or ongoing, depending on the
+    command parameters. 
+  '''
 
   def evaluate( self ):
-    """
-    Evaluate policy on possible ongoing or scheduled downtimes.
-
-    :returns:
-        {
-          'Status':Unknown|Active|Bad|Banned,
-          'Reason':'DT:None'|'DT:OUTAGE|'DT:AT_RISK',
-          'EndDate':datetime (if needed)
-        }
-    """
-    status = super( DT_Policy, self ).evaluate()
+    '''
+      It returns Active status if there is no downtime announced. 
+      Banned if the element is in OUTAGE.
+      Bad if it is on WARNING status.
+      
+      Otherwise, it returns error.
+      #FIXME: use it or scratch it.
+      On top of that, it also returns the downtime end date ( which is not currently
+      used ).
+    '''
+    
+    status = super( DTPolicy, self ).evaluate()
 
     if not status[ 'OK' ]:
       return status
