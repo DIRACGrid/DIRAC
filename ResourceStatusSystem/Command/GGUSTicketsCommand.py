@@ -6,30 +6,18 @@
   
 '''
 
-import urllib2
-
-from DIRAC                                        import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName
-from DIRAC.ResourceStatusSystem.Command.Command   import Command
-#from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
-from DIRAC.Core.LCG.GGUSTicketsClient import GGUSTicketsClient
+from DIRAC                                       import S_OK, S_ERROR
+from DIRAC.Core.LCG.GGUSTicketsClient            import GGUSTicketsClient
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.ResourceStatusSystem.Command.Command  import Command
 
 __RCSID__ = '$Id:  $'
 
-#def callClient( name, clientIn ):
-#   
-#  name = getGOCSiteName( name )[ 'Value' ]
-#    
-#  openTickets = clientIn.getTicketsList( name )
-#  return openTickets
-    
 ################################################################################
 ################################################################################
 
 class GGUSTicketsOpen( Command ):
   
-#  __APIs__ = [ 'GGUSTicketsClient' ]
- 
   def __init__( self, args = None, clients = None ):
     
     super( GGUSTicketsOpen, self ).__init__( args, clients )
@@ -46,36 +34,29 @@ class GGUSTicketsOpen( Command ):
       - args[0]: string: should be the name of the site
     """
     
-#    super( GGUSTickets_Open, self ).doCommand()
-#    self.apis = initAPIs( self.__APIs__, self.apis )
-
     if not 'name' in self.args:
-      return S_ERROR( '"name" not found in self.args')
-
+      return S_ERROR( '"name" not found in self.args' )
     name = self.args[ 'name' ]
 
-#    try:
-
-    name = getGOCSiteName( name )[ 'Value' ] 
-    res = self.gClient.getTicketsList( name )
+    name    = getGOCSiteName( name )[ 'Value' ] 
+    results = self.gClient.getTicketsList( name )
         
-    if res[ 'OK' ]:
-      res =  S_OK( res[ 'Value' ][ 0 ][ 'open' ] ) 
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
 
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
+    if not len( results ) > 0:
+      return S_ERROR( 'No tickets to open (0)' ) 
+    if not 'open' in results[ 0 ]:
+      return S_ERROR( 'Missing open key')
 
-    return res
+    return  S_OK( results[ 0 ][ 'open' ] ) 
     
 ################################################################################
 ################################################################################
 
 class GGUSTicketsLink( Command ):
   
-#  __APIs__ = [ 'GGUSTicketsClient' ]
-
   def __init__( self, args = None, clients = None ):
     
     super( GGUSTicketsLink, self ).__init__( args, clients )
@@ -92,40 +73,29 @@ class GGUSTicketsLink( Command ):
    :attr:`args`: 
      - args[0]: string: should be the name of the site
     """
-    
-#    super( GGUSTickets_Link, self ).doCommand()
-#    self.apis = initAPIs( self.__APIs__, self.apis )
 
     if not 'name' in self.args:
       return S_ERROR( '"name" not found in self.args')
-
     name = self.args[ 'name' ]
 
-#    try: 
-      
-    name = getGOCSiteName( name )[ 'Value' ] 
-    res = self.gClient.getTicketsList( name )
+    name    = getGOCSiteName( name )[ 'Value' ] 
+    results = self.gClient.getTicketsList( name )
     #if openTickets == 'Unknown':
     #  return { 'GGUS_Link':'Unknown' }
-    if res[ 'OK' ]:
-      res = S_OK( res[ 'Value' ][ 1 ] ) 
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
+    
+    if not len( results ) >= 1:
+      return S_ERROR( 'No tickets to open (1)' )
+    
+    return S_OK( results[ 1 ] ) 
     
 ################################################################################
 ################################################################################
 
 class GGUSTicketsInfo( Command ):
   
-#  __APIs__ = [ 'GGUSTicketsClient' ]
-
   def __init__( self, args = None, clients = None ):
     
     super( GGUSTicketsInfo, self ).__init__( args, clients )
@@ -142,32 +112,23 @@ class GGUSTicketsInfo( Command ):
    :attr:`args`: 
      - args[0]: string: should be the name of the site
     """
-    
-#    super( GGUSTickets_Info, self ).doCommand()
-#    self.apis = initAPIs( self.__APIs__, self.apis )
 
     if not 'name' in self.args:
-      return S_ERROR( '"name" not found in self.args')
-
+      return S_ERROR( '"name" not found in self.args' )
     name = self.args[ 'name' ]
-
-#    try: 
-      
-    name = getGOCSiteName( name )[ 'Value' ] 
-    res = self.gClient.getTicketsList( name )
+     
+    name    = getGOCSiteName( name )[ 'Value' ] 
+    results = self.gClient.getTicketsList( name )
 #    if openTickets == 'Unknown':
 #      return { 'GGUS_Info' : 'Unknown' }
-    if res[ 'OK' ]:
-      res = S_OK( res[ 'Value' ][ 2 ] ) 
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
 
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    if not len( results ) >= 2:
+      return S_ERROR( 'No tickets to open (2)')
     
+    return S_OK( results[ 2 ] ) 
+
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
