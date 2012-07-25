@@ -10,7 +10,6 @@ from DIRAC                                                  import S_OK
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping            import getGOCSiteName, getDIRACSiteName
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.Core.LCG.GOCDBClient                             import GOCDBClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.JobsClient           import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient         import PilotsClient
 from DIRAC.ResourceStatusSystem.Command.Command             import Command
@@ -25,11 +24,6 @@ class JobsEffSimpleEveryOneCommand( Command ):
   def __init__( self, args = None, clients = None ):
     
     super( JobsEffSimpleEveryOneCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'JobsClient' in self.APIs:
       self.jClient = self.APIs[ 'JobsClient' ]
@@ -64,8 +58,8 @@ class JobsEffSimpleEveryOneCommand( Command ):
         
       if not sites['OK']:
         return sites
-         
-      sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
+      sites = sites[ 'Value' ]   
+      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
 
     results = self.jClient.getJobsSimpleEff( sites, self.wClient )
     if not results[ 'OK' ]:
@@ -92,11 +86,6 @@ class PilotsEffSimpleEverySitesCommand( Command ):
   def __init__( self, args = None, clients = None ):
     
     super( PilotsEffSimpleEverySitesCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'PilotsClient' in self.APIs:
       self.pClient = self.APIs[ 'PilotsClient' ]
@@ -130,8 +119,8 @@ class PilotsEffSimpleEverySitesCommand( Command ):
       sites = CSHelpers.getSites()      
       if not sites[ 'OK' ]:
         return sites
-      
-      sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
+      sites = sites[ 'Value' ]
+      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
 
     results = self.pClient.getPilotsSimpleEff( 'Site', sites, None, self.wClient )
     if not results[ 'OK' ]:
@@ -235,11 +224,6 @@ class DTEverySitesCommand( Command ):
   def __init__( self, args = None, clients = None ):
     
     super( DTEverySitesCommand, self ).__init__( args, clients )
-    
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
 
     if 'GOCDBClient' in self.APIs:
       self.gClient = self.APIs[ 'GOCDBClient' ]
@@ -269,8 +253,8 @@ class DTEverySitesCommand( Command ):
       sites = CSHelpers.getSites()      
       if not sites['OK']:
         return sites
-      
-      sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
+      sites = sites[ 'Value' ]
+      #sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
       
 #    if sites is None:
 #      GOC_sites = self.rsClient.getGridSite( meta = { 'columns' : 'GridSiteName' })
@@ -330,11 +314,6 @@ class DTEveryResourcesCommand( Command ):
     
     super( DTEveryResourcesCommand, self ).__init__( args, clients )
     
-#    if 'ResourceStatusClient' in self.APIs:
-#      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-#    else:
-#      self.rsClient = ResourceStatusClient() 
-
     if 'GOCDBClient' in self.APIs:
       self.gClient = self.APIs[ 'GOCDBClient' ]
     else:
@@ -352,12 +331,7 @@ class DTEveryResourcesCommand( Command ):
                     'StartDate': 'aDate', ...} ... }
     """
 
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
-#    try:
-
     resources = None
-
     if 'resources' in self.args:
       resources = self.args[ 'resources' ] 
     
@@ -372,8 +346,8 @@ class DTEveryResourcesCommand( Command ):
       resources = CSHelpers.getResources()      
       if not resources[ 'OK' ]:
         return resources
-      
-      resources = [ resource[ 0 ] for resource in resources[ 'Value' ] ]  
+      resources = resources[ 'Value' ]
+      #resources = [ resource[ 0 ] for resource in resources[ 'Value' ] ]  
       
 
     resGOC = self.gClient.getStatus( 'Resource', resources, None, 120 )
@@ -398,13 +372,6 @@ class DTEveryResourcesCommand( Command ):
       res[ dt_ID ] = dt
 
     return S_OK( res )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
