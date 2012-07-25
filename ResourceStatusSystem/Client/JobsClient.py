@@ -1,22 +1,23 @@
-# $HeadURL $
-''' JobsClient
-
-  Module to get jobs stats. 
-
+# $HeadURL:  $
+''' JobsClient module
 '''
 
-__RCSID__  = '$Id: $'
+from DIRAC                      import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient import RPCClient
+
+__RCSID__  = '$Id:  $'
 
 class JobsClient( object ):
-  """ 
-  JobResultsClient class is a client to get jobs' stats.
-  """
+  ''' 
+    JobResultsClient class is a client to get jobs' stats.
+  '''
   
   def __init__( self ):
-    self.gate = PrivateJobsClient()
+    
+    self.gate = RPCClient( 'WorkloadManagement/WMSAdministrator' )
 
-  def getJobsSimpleEff( self, name, RPCWMSAdmin = None ):
-    """  
+  def getJobsSimpleEff( self, name ):
+    '''  
     Return simple jobs efficiency
     
     :Parameters:
@@ -27,8 +28,35 @@ class JobsClient( object ):
         RPCClient to RPCWMSAdmin
 
     :return: { SiteName : Good | Fair | Poor | Idle | Bad }
-    """
-    return self.gate.getJobsSimpleEff( name, RPCWMSAdmin = RPCWMSAdmin )
+    '''
+    
+    results = self.gate.getSiteSummaryWeb( { 'Site' : name }, [] , 0, 500 )
+    
+    if not results[ 'OK' ]:
+      return results
+    
+    if not 'Records' in results[ 'Value' ]:
+      return S_ERROR( 'No Records key on result' )  
+    results = results[ 'Value' ][ 'Records' ]
+    
+    if len( results ) == 0:
+      return S_ERROR( 'No records found' ) 
+    
+    effRes = {}
+    
+    for result in results:
+      
+      name = result[ 0 ]
+      
+      try:
+        #FIXME: WTF is this returning ?
+        eff = result[ 16 ]
+      except IndexError:
+        eff = 'Idle'
+        
+      effRes[ name ] = eff 
+    
+    return S_OK( effRes )
 
 #  def getJobsStats(self, name, periods = None):
 #    pass
@@ -38,39 +66,6 @@ class JobsClient( object ):
 
 #  def getSystemCharge(self):
 #    pass
-
-################################################################################
-
-class PrivateJobsClient( object ):
-  
-  def getJobsSimpleEff( self, name, RPCWMSAdmin = None ):
-  
-    if RPCWMSAdmin is not None: 
-      RPC = RPCWMSAdmin
-    else:
-      from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient( "WorkloadManagement/WMSAdministrator" )
-
-    res = RPC.getSiteSummaryWeb( { 'Site' : name }, [] , 0, 500 )
-    if not res[ 'OK' ]:
-      print res[ 'Message' ]
-      return None
-    else:
-      res = res[ 'Value' ][ 'Records' ]
-    
-    effRes = {}
-    
-    if len( res ) == 0:
-      return None 
-    for r in res:
-      name = r[ 0 ]
-      try:
-        eff = r[ 16 ]
-      except IndexError:
-        eff = 'Idle'
-      effRes[ name ] = eff 
-    
-    return effRes
   
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
