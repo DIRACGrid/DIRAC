@@ -16,7 +16,7 @@ def warmUp():
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
   gRefresher.refreshConfigurationIfNeeded()
 
-## /Resources ##################################################################
+## Main functions ##############################################################
 
 def getSites():
   '''
@@ -44,6 +44,22 @@ def getSites():
   # Remove duplicated ( just in case )
   sites = list( set ( sites ) )
   return S_OK( sites )
+
+def getResources():
+  '''
+    Gets all resources
+  '''
+  #FIXME: to be implemented, and updated the syncrhonzer.
+  pass 
+
+def getNodes():
+  '''
+    Gets all nodes
+  '''
+  #FIXME: to be implemented, and updated the syncrhonzer.
+  pass
+
+################################################################################
 
 def getStorageElements():
   '''
