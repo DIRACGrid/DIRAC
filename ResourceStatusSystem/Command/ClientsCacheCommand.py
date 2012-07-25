@@ -1,35 +1,26 @@
 # $HeadURL:  $
-''' ClientsCacheCommand 
+''' ClientsCacheCommand module
 
   The ClientsCacheCommand class is a command module to know about collective 
   clients results (to be cached).
   
 '''
 
-import datetime
-
-from DIRAC                                        import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping  import getGOCSiteName, getDIRACSiteName
-from DIRAC.ResourceStatusSystem.Command.Command   import Command
-#from DIRAC.ResourceStatusSystem.Command.knownAPIs import initAPIs
-#from DIRAC.ResourceStatusSystem.Utilities.Utils   import where
-
+from DIRAC                                                  import S_OK
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping            import getGOCSiteName, getDIRACSiteName
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.Core.LCG.GOCDBClient                             import GOCDBClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.JobsClient           import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient         import PilotsClient
-from DIRAC.Core.LCG.GOCDBClient                   import GOCDBClient
-
-from DIRAC.Core.DISET.RPCClient import RPCClient
-
+from DIRAC.ResourceStatusSystem.Command.Command             import Command
+from DIRAC.ResourceStatusSystem.Utilities                   import CSHelpers
 
 __RCSID__ = '$Id:  $'
 
-################################################################################
-################################################################################
-
 class JobsEffSimpleEveryOneCommand( Command ):
 
-#  __APIs__ = [ 'ResourceStatusClient', 'JobsClient', 'WMSAdministrator' ]
+  #FIXME: write propper docstrings
 
   def __init__( self, args = None, clients = None ):
     
@@ -61,48 +52,42 @@ class JobsEffSimpleEveryOneCommand( Command ):
       {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
     """
 
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
     sites = None
 
     if 'sites' in self.args:
       sites = self.args[ 'sites' ] 
 
-#    try:
-
     if sites is None:
-      sites = self.rsClient.getSite( meta = { 'columns' : 'SiteName' } )
+      #FIXME: we do not get them from RSS DB anymore, from CS now.
+      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+      sites = CSHelpers.getSites()
         
       if not sites['OK']:
         return sites
          
-      sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
+      sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
 
-    res = self.jClient.getJobsSimpleEff( sites, self.wClient )
-    if res is None:
-      res = []
+    results = self.jClient.getJobsSimpleEff( sites, self.wClient )
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
+        
+    if results is None:
+      results = []
 
     resToReturn = {}
-    for site in res:
-      resToReturn[ site ] = { 'JE_S' : res[ site ] }
 
-    res = S_OK( resToReturn )
+    for site in results:
+      resToReturn[ site ] = { 'JE_S' : results[ site ] }
 
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( resToReturn ) 
 
 ################################################################################
 ################################################################################
 
 class PilotsEffSimpleEverySitesCommand( Command ):
 
-#  __APIs__ = [ 'ResourceStatusClient', 'PilotsClient', 'WMSAdministrator' ]
+  #FIXME: write propper docstrings
 
   def __init__( self, args = None, clients = None ):
     
@@ -134,40 +119,34 @@ class PilotsEffSimpleEverySitesCommand( Command ):
       {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
 
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
     sites = None
 
     if 'sites' in self.args:
       sites = self.args[ 'sites' ] 
 
-#    try:
-
     if sites is None:
-      sites = self.rsClient.getSite( meta = { 'columns' : 'SiteName' })
-      if not sites['OK']:
+      #FIXME: we do not get them from RSS DB anymore, from CS now.
+      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+      sites = CSHelpers.getSites()      
+      if not sites[ 'OK' ]:
         return sites
-      sites = [ si[ 0 ] for si in sites[ 'Value' ] ]
+      
+      sites = [ site[ 0 ] for site in sites[ 'Value' ] ]
 
-    res = self.pClient.getPilotsSimpleEff( 'Site', sites, None, self.wClient )
-    if res is None:
-      res = []
+    results = self.pClient.getPilotsSimpleEff( 'Site', sites, None, self.wClient )
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ]
+    
+    if results is None:
+      results = []
 
     resToReturn = {}
 
-    for site in res:
-      resToReturn[site] = { 'PE_S' : res[ site ] }
+    for site in results:
+      resToReturn[ site ] = { 'PE_S' : results[ site ] }
 
-    res = S_OK( resToReturn )
-
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( resToReturn )
 
 ################################################################################
 ################################################################################
@@ -251,7 +230,7 @@ class PilotsEffSimpleEverySitesCommand( Command ):
 
 class DTEverySitesCommand( Command ):
 
-#  __APIs__ = [ 'ResourceStatusClient', 'GOCDBClient' ]
+  #FIXME: write propper docstrings
 
   def __init__( self, args = None, clients = None ):
     
@@ -279,91 +258,89 @@ class DTEverySitesCommand( Command ):
                     'StartDate': 'aDate', ...} ... }
     """
 
-#    self.APIs = initAPIs( self.__APIs__, self.APIs )
-
     sites = None
 
     if 'sites' in self.args:
       sites = self.args[ 'sites' ] 
-
-#    try:
-      
+    
     if sites is None:
-      GOC_sites = self.rsClient.getGridSite( meta = { 'columns' : 'GridSiteName' })
-      if not GOC_sites['OK']:
-        return GOC_sites
-      GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
-    else:
-      GOC_sites = [ getGOCSiteName( x )['Value'] for x in sites ]
+      #FIXME: we do not get them from RSS DB anymore, from CS now.
+      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
+      sites = CSHelpers.getSites()      
+      if not sites['OK']:
+        return sites
+      
+      sites = [ site[ 0 ] for site in sites[ 'Value' ] ]  
+      
+#    if sites is None:
+#      GOC_sites = self.rsClient.getGridSite( meta = { 'columns' : 'GridSiteName' })
+#      if not GOC_sites['OK']:
+#        return GOC_sites
+#      GOC_sites = [ gs[0] for gs in GOC_sites['Value'] ]
+#    else:
+#      GOC_sites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
 
-    resGOC = self.gClient.getStatus( 'Site', GOC_sites, None, 120 )
+    gocSites = [ getGOCSiteName( x )[ 'Value' ] for x in sites ]
 
-    if not resGOC['OK']:
+    resGOC = self.gClient.getStatus( 'Site', gocSites, None, 120 )
+    if not resGOC[ 'OK' ]:
       return resGOC
       
-    resGOC = resGOC['Value']
+    resGOC = resGOC[ 'Value' ]
 
     if resGOC == None:
       resGOC = []
 
-    res = {}
+    results = {}
 
     for dt_ID in resGOC:
         
-      try:
+#      try:
           
-        dt                = {}
-        dt['ID']          = dt_ID
-        dt['StartDate']   = resGOC[dt_ID]['FORMATED_START_DATE']
-        dt['EndDate']     = resGOC[dt_ID]['FORMATED_END_DATE']
-        dt['Severity']    = resGOC[dt_ID]['SEVERITY']
-        dt['Description'] = resGOC[dt_ID]['DESCRIPTION'].replace( '\'', '' )
-        dt['Link']        = resGOC[dt_ID]['GOCDB_PORTAL_URL']
+      dt                  = {}
+      dt[ 'ID' ]          = dt_ID
+      dt[ 'StartDate' ]   = resGOC[ dt_ID ][ 'FORMATED_START_DATE' ]
+      dt[ 'EndDate' ]     = resGOC[ dt_ID ][ 'FORMATED_END_DATE' ]
+      dt[ 'Severity' ]    = resGOC[ dt_ID ][ 'SEVERITY' ]
+      dt[ 'Description' ] = resGOC[ dt_ID ][ 'DESCRIPTION' ].replace( '\'', '' )
+      dt[ 'Link' ]        = resGOC[ dt_ID ][ 'GOCDB_PORTAL_URL' ]
         
-        DIRACnames = getDIRACSiteName( res[dt_ID]['SITENAME'] )
+      diracNames = getDIRACSiteName( resGOC[ dt_ID ][ 'SITENAME' ] )
           
-        if not DIRACnames['OK']:
-          return DIRACnames
+      if not diracNames[ 'OK' ]:
+        return diracNames
           
-        for DIRACname in DIRACnames['Value']:
-          res[dt_ID.split()[0] + ' ' + DIRACname] = dt
-            
-      except KeyError:
-        continue
+      for diracName in diracNames[ 'Value' ]:
+        results[ '%s %s' % ( dt_ID.split()[0], diracName ) ] = dt
 
-    res = S_OK( res )        
+# FIXME: why does it fail ?            
+#      except KeyError:
+#        continue
 
-#    except Exception, e:
-#      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
-#      gLogger.exception( _msg )
-#      return S_ERROR( _msg )
-
-    return res 
-
-#  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    return S_OK( results )        
 
 ################################################################################
 ################################################################################
 
 class DTEveryResourcesCommand( Command ):
 
-#  __APIs__ = [ 'ResourceStatusClient', 'GOCDBClient' ]
+  #FIXME: write propper docstrings
 
   def __init__( self, args = None, clients = None ):
     
     super( DTEveryResourcesCommand, self ).__init__( args, clients )
     
-    if 'ResourceStatusClient' in self.APIs:
-      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
-    else:
-      self.rsClient = ResourceStatusClient() 
+#    if 'ResourceStatusClient' in self.APIs:
+#      self.rsClient = self.APIs[ 'ResourceStatusClient' ]
+#    else:
+#      self.rsClient = ResourceStatusClient() 
 
     if 'GOCDBClient' in self.APIs:
       self.gClient = self.APIs[ 'GOCDBClient' ]
     else:
       self.gClient = GOCDBClient() 
 
-  def doCommand( self, resources = None ):
+  def doCommand( self ):
     """ 
     Returns downtimes information for all the resources in input.
         
@@ -379,18 +356,30 @@ class DTEveryResourcesCommand( Command ):
 
 #    try:
 
+    resources = None
+
+    if 'resources' in self.args:
+      resources = self.args[ 'resources' ] 
+    
     if resources is None:
-      meta = { 'columns' : 'ResourceName' }
-      resources = self.rsClient.getResource( meta = meta )
-      if not resources['OK']:
+
+      #FIXME: we do not get them from RSS DB anymore, from CS now.
+#      meta = { 'columns' : 'ResourceName' }
+#      resources = self.rsClient.getResource( meta = meta )
+#      if not resources['OK']:
+#        return resources
+#      resources = [ re[0] for re in resources['Value'] ]
+      resources = CSHelpers.getResources()      
+      if not resources[ 'OK' ]:
         return resources
-      resources = [ re[0] for re in resources['Value'] ]
+      
+      resources = [ resource[ 0 ] for resource in resources[ 'Value' ] ]  
+      
 
     resGOC = self.gClient.getStatus( 'Resource', resources, None, 120 )
     
     if not resGOC['OK']:
       return resGOC
-    
     resGOC = resGOC['Value']
 
     if resGOC == None:
@@ -399,23 +388,21 @@ class DTEveryResourcesCommand( Command ):
     res = {}
 
     for dt_ID in resGOC:
-      dt                 = {}
-      dt['ID']           = dt_ID
-      dt['StartDate']    = resGOC[dt_ID]['FORMATED_START_DATE']
-      dt['EndDate']      = resGOC[dt_ID]['FORMATED_END_DATE']
-      dt['Severity']     = resGOC[dt_ID]['SEVERITY']
-      dt['Description']  = resGOC[dt_ID]['DESCRIPTION'].replace( '\'', '' )
-      dt['Link']         = resGOC[dt_ID]['GOCDB_PORTAL_URL']
-      res[dt_ID] = dt
+      dt                   = {}
+      dt[ 'ID' ]           = dt_ID
+      dt[ 'StartDate' ]    = resGOC[ dt_ID ][ 'FORMATED_START_DATE' ]
+      dt[ 'EndDate' ]      = resGOC[ dt_ID ][ 'FORMATED_END_DATE' ]
+      dt[ 'Severity' ]     = resGOC[ dt_ID ][ 'SEVERITY' ]
+      dt[ 'Description' ]  = resGOC[ dt_ID ][ 'DESCRIPTION' ].replace( '\'', '' )
+      dt[ 'Link' ]         = resGOC[ dt_ID ][ 'GOCDB_PORTAL_URL' ]
+      res[ dt_ID ] = dt
 
-    res = S_OK( res )
+    return S_OK( res )
 
 #    except Exception, e:
 #      _msg = '%s (%s): %s' % ( self.__class__.__name__, self.args, e )
 #      gLogger.exception( _msg )
 #      return S_ERROR( _msg )
-
-    return res 
 
 #  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
