@@ -57,9 +57,16 @@ class DTPolicy_Success( DTPolicy_TestCase ):
     res = policy.evaluate()
     self.assertEqual( False, res[ 'OK' ] )
     self.assertEqual( 'Grumpy command', res[ 'Message' ] )
-    
+
     # command mock
     mock_command.doCommand.return_value = { 'OK' : True, 'Value' : None }
+    policy.command = mock_command
+    
+    res = policy.evaluate()
+    self.assertEqual( False, res[ 'OK' ] )
+   
+    # command mock
+    mock_command.doCommand.return_value = { 'OK' : True, 'Value' : { 'DT' : None } }
     policy.command = mock_command
     
     res = policy.evaluate()
