@@ -5,6 +5,7 @@
 
 '''
 
+from DIRAC                                                  import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
@@ -18,8 +19,7 @@ class PilotsClient( object ):
   def __init__( self ):
     self.gate = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     
-  def getPilotsSimpleEff( self, granularity, name, siteName = None, 
-                          RPCWMSAdmin = None  ):  
+  def getPilotsSimpleEff( self, element, name, siteName = None, RPCWMSAdmin = None ):  
     """
     
     Return pilots simple efficiency of entity in args for periods
@@ -38,66 +38,83 @@ class PilotsClient( object ):
       
     """
 
-    #FIXME: return S_OK / S_ERROR !!!
-
-    if granularity == 'Site':
-      res = self.gate.getPilotSummaryWeb( { 'GridSite' : name }, [], 0, 300 )
+    if element == 'Site':
+      results = self.gate.getPilotSummaryWeb( { 'GridSite' : name }, [], 0, 300 )
       
-    elif granularity == 'Resource':
+    elif element == 'Resource':
       
-      if siteName is None:
-        
-        rsClient = ResourceStatusClient()
-        siteName = rsClient.getGeneralName( granularity, name, 'Site' )
-        if not siteName[ 'OK' ]:
-          print res[ 'Message' ]
-          return {}
-  
-        if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
-          return {}
-        siteName = siteName['Value']
-
-      res = self.gate.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 50 )
+      #FIXME: implement it !
+      return S_ERROR( 'Not implemented yet' )
+ 
+      
+#      if siteName is None:
+#        
+#        rsClient = ResourceStatusClient()
+#        siteName = rsClient.getGeneralName( granularity, name, 'Site' )
+#        if not siteName[ 'OK' ]:
+#          print res[ 'Message' ]
+#          return {}
+#  
+#        if siteName[ 'Value' ] is None or siteName[ 'Value' ] == []:
+#          return {}
+#        siteName = siteName['Value']
+#
+#      res = self.gate.getPilotSummaryWeb( { 'ExpandSite' : siteName }, [], 0, 50 )
     
     else:
-      return {}
+      return S_ERROR( 'Not accepted element %s' % element )
 
-    if not res['OK']:
-      print res[ 'Message' ]
-      return {}
-    
-    res = res['Value']['Records']
+    if not results[ 'OK' ]:
+      return results
+    results = results[ 'Value' ][ 'Records' ]
 
-    if len(res) == 0:
-      return {}
+    if len( results ) == 0:
+      return S_ERROR( 'No records found' )
 
+# FIXME: modified logic !! Check if it works.
+#
+#    try:
+#      if granularity == 'Site':
+#        for r in res:
+#          name = r[0]
+#          try:
+#            eff = r[14]
+#          except IndexError:
+#            eff = 'Idle'
+#          effRes[name] = eff
+#
+#      elif granularity == 'Resource':
+#        eff = None
+#        for r in res:
+#          if r[1] == name:
+#            try:
+#              eff = r[14]
+#            except IndexError:
+#              eff = 'Idle'
+#            break
+#        effRes[name] = eff
+#
+#      return effRes
+#
+#    except IndexError:
+#      return {}
+#         
     effRes = {}
 
-    try:
-      if granularity == 'Site':
-        for r in res:
-          name = r[0]
-          try:
-            eff = r[14]
-          except IndexError:
-            eff = 'Idle'
-          effRes[name] = eff
+    for result in results:
+      
+      if element == 'Site':
+        name = result[ 0 ]
+      elif result[ 1 ] != name:
+        continue        
+          
+      try:
+        eff = result[ 14 ]
+      except IndexError:
+        eff = 'Idle'
+      effRes[ name ] = eff
 
-      elif granularity == 'Resource':
-        eff = None
-        for r in res:
-          if r[1] == name:
-            try:
-              eff = r[14]
-            except IndexError:
-              eff = 'Idle'
-            break
-        effRes[name] = eff
-
-      return effRes
-
-    except IndexError:
-      return {}
+    return S_OK( effRes )
              
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
