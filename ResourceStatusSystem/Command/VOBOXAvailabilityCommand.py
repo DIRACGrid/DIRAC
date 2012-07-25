@@ -1,8 +1,5 @@
 # $HeadURL:  $
-''' VOBOXAvailabilityCommand
-  
-  The Command pings a service on a vobox.
-  
+''' VOBOXAvailabilityCommand module 
 '''
 
 import urlparse
@@ -15,12 +12,22 @@ __RCSID__ = '$Id:  $'
 
 class VOBOXAvailabilityCommand( Command ):
   '''
-  Given an url pointing to a service on a vobox, use DIRAC ping against it.
+    Given an url pointing to a service on a vobox, use DIRAC ping against it.
   ''' 
   
   def doCommand( self ):
-    '''
-    Run the command.
+    '''  
+      The Command pings a service on a vobox, it needs a service URL to ping it.
+      
+      It returns a dict with the following:
+        { 
+          'serviceUpTime' : <serviceUpTime>,
+          'machineUpTime' : <machineUpTime>,
+          'site'          : <site>,
+          'system'        : <system>,
+          'service'       : <service>
+        }
+       
     '''
     
     ## INPUT PARAMETERS
