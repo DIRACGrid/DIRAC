@@ -1,7 +1,5 @@
 # $HeadURL:  $
-''' GOCDBStatus_Command 
-  The GOCDBStatus_Command class is a command class to know about 
-  present downtimes
+''' GOCDBStatusCommand module 
 '''
 
 import urllib2
@@ -11,7 +9,6 @@ from datetime import datetime
 from DIRAC                                                      import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient                                 import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
-#from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command                 import Command
 from DIRAC.ResourceStatusSystem.Utilities.Utils                 import convertTime
 
@@ -20,6 +17,9 @@ __RCSID__ = '$Id:  $'
 ################################################################################
 
 class GOCDBStatusCommand( Command ):
+  '''
+    The GOCDBStatus_Command class is a command class to know about downtimes
+  '''
   
   def __init__( self, args = None, clients = None ):
     
@@ -31,17 +31,14 @@ class GOCDBStatusCommand( Command ):
       self.gClient = GOCDBClient() 
   
   def doCommand( self ):
-    """ 
-    Return getStatus from GOC DB Client
-    
-    :attr:`args`: 
-     - args[0]: string: should be a ValidElement
-
-     - args[1]: string: should be the name of the ValidElement
-
-     - args[2]: string: optional, number of hours in which 
-     the down time is starting
-    """
+    ''' 
+      Returns downtimes if any from GOCDB on the following format:
+        { 'DT' : X, 'EndDate' : Y }
+      
+      It needs as input parameters a valid element: [ Site, Resource, Node ],
+      a valid element name and optionally a number of hours in which the
+      downtime will start.
+    '''
     
     _timeFormat = "%Y-%m-%d %H:%M"
     
